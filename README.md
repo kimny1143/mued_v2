@@ -26,3 +26,48 @@ MUEDは以下の特徴を持つ音楽教育プラットフォームです：
 > 以下の手順を実行するには [NodeJS](https://nodejs.org/en/) がインストールされている必要があります。
 
 ### 依存関係のインストール
+
+```bash
+# 依存関係のインストール
+npm install
+
+# 開発サーバーの起動
+npm run dev
+
+# テストの実行
+npm test
+
+# ビルド
+npm run build
+```
+
+### 環境変数の設定
+
+`.env`ファイルを作成し、以下の環境変数を設定してください：
+
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+### 開発ガイドライン
+
+- コミットメッセージは[Conventional Commits](https://www.conventionalcommits.org/)に従ってください
+- プルリクエストは必ずレビューを受けてからマージしてください
+- テストカバレッジは80%以上を維持してください
+
+## プロジェクト構造
+
+```
+src/
+├── components/     # 再利用可能なUIコンポーネント
+├── contexts/       # Reactコンテキスト
+├── hooks/         # カスタムフック
+├── lib/           # ユーティリティ関数
+├── screens/       # ページコンポーネント
+└── types/         # TypeScript型定義
+```
+
+## ライセンス
+
+© 2024 株式会社グラスワークス All Rights Reserved.
