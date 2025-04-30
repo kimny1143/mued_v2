@@ -64,6 +64,9 @@
 
 ## 🧑‍💻 鈴木（DevOps / Test）
 
+- [🟡] **@vitest/coverage-v8 パッケージ追加（緊急）**  
+  - CI の test:coverage で必要なパッケージ追加  
+  - 期限: **今日中**
 - [ ] **Codecov / Artifacts によるカバレッジ可視化**  
   - GitHub Actions でレポートアップロード設定  
   - 期限: **週2** (目安: 週4)
