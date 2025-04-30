@@ -1,1 +1,0 @@
-export { ContainerByAnima } from "./ContainerByAnima";

@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "../../../../components/ui/select";
 
-export const ContainerByAnima = (): JSX.Element => {
+export const Container = (): JSX.Element => {
   return (
     <section className="flex items-start px-4 sm:px-0 py-12 relative self-stretch w-full flex-[0_0_auto] z-[2]">
       <div className="flex flex-col items-start relative flex-1 grow">

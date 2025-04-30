@@ -1,1 +1,0 @@
-export { SoftwareCompanyByAnima } from "./SoftwareCompanyByAnima";

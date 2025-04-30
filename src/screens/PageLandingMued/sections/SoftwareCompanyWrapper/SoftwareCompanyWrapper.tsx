@@ -2,7 +2,7 @@ import { FacebookIcon, InstagramIcon, TwitterIcon } from "lucide-react";
 import React from "react";
 import { Separator } from "../../../../components/ui/separator";
 
-export const SoftwareCompanyWrapperByAnima = (): JSX.Element => {
+export const SoftwareCompanyWrapper = (): JSX.Element => {
   // Footer navigation data
   const footerColumns = [
     {

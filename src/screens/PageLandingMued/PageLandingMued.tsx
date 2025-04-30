@@ -1,9 +1,9 @@
 import React from "react";
 import { Card } from "../../components/ui/card";
-import { ContainerByAnima } from "./sections/ContainerByAnima";
-import { MainContentWrapperByAnima } from "./sections/MainContentWrapperByAnima";
-import { SoftwareCompanyByAnima } from "./sections/SoftwareCompanyByAnima";
-import { SoftwareCompanyWrapperByAnima } from "./sections/SoftwareCompanyWrapperByAnima/SoftwareCompanyWrapperByAnima";
+import { Container } from "./sections/Container";
+import { MainContentWrapper } from "./sections/MainContentWrapper";
+import { SoftwareCompany } from "./sections/SoftwareCompany";
+import { SoftwareCompanyWrapper } from "./sections/SoftwareCompanyWrapper/SoftwareCompanyWrapper";
 
 export const PageLandingMued = (): JSX.Element => {
   return (
@@ -11,10 +11,10 @@ export const PageLandingMued = (): JSX.Element => {
       className="flex flex-col w-full min-h-[900px] items-start px-12 py-0 relative bg-white border-2 border-solid border-black rounded-none"
       data-model-id="4:125"
     >
-      <SoftwareCompanyByAnima />
-      <ContainerByAnima />
-      <MainContentWrapperByAnima />
-      <SoftwareCompanyWrapperByAnima />
+      <SoftwareCompany />
+      <Container />
+      <MainContentWrapper />
+      <SoftwareCompanyWrapper />
     </Card>
   );
 };

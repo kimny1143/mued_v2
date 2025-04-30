@@ -10,7 +10,7 @@ import {
 import { Separator } from "../../../../components/ui/separator";
 import { Link, useNavigate } from "react-router-dom";
 
-export const SoftwareCompanyByAnima = (): JSX.Element => {
+export const SoftwareCompany = (): JSX.Element => {
   const navigate = useNavigate();
   
   const navItems = [

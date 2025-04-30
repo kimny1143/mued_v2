@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "../../../../components/ui/button";
 import { Card, CardContent } from "../../../../components/ui/card";
 
-export const MainContentWrapperByAnima = (): JSX.Element => {
+export const MainContentWrapper = (): JSX.Element => {
   const plans = [
     {
       name: "Basic",
