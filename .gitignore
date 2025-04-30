@@ -1,0 +1,50 @@
+# 依存関係
+node_modules
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+.pnp
+.pnp.js
+package-lock.json
+yarn.lock
+
+# ビルド出力
+/dist
+/build
+/out
+/.next
+/.nuxt
+
+# 環境変数
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# エディタ設定
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+
+# テスト関連
+/coverage
+.nyc_output
+
+# キャッシュ
+.cache
+.parcel-cache
+.eslintcache
+.stylelintcache
+
+# ログ
+logs
+*.log
+
+# その他
+.DS_Store
+Thumbs.db
+.cursor/*
+.cursor/
