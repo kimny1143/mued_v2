@@ -2,6 +2,7 @@
 MUED LMS AI Service - Data Models
 """
 from typing import List, Optional
+from datetime import datetime
 from pydantic import BaseModel, Field
 
 class CourseGenerationRequest(BaseModel):
@@ -71,4 +72,27 @@ class CourseGenerationResponse(BaseModel):
                     }
                 ]
             }
-        } 
+        }
+
+# 練習ログ関連のモデル
+class ExerciseLogCreate(BaseModel):
+    """練習記録作成リクエスト"""
+    user_id: str
+    instrument: str
+    duration_minutes: int
+    difficulty: str  # 'easy', 'medium', 'hard'
+    notes: Optional[str] = None
+    mood: Optional[str] = None  # 'good', 'normal', 'bad'
+    date: Optional[datetime] = None
+
+class ExerciseLog(BaseModel):
+    """練習記録レスポンス"""
+    id: str
+    user_id: str
+    instrument: str
+    duration_minutes: int
+    difficulty: str
+    notes: Optional[str] = None
+    mood: Optional[str] = None
+    date: datetime
+    created_at: datetime 

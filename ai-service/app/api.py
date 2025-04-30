@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 import uuid
 from datetime import datetime
 
-from app.models import CourseGenerationRequest, CourseGenerationResponse, CourseModule, LessonContent
+from app.models import CourseGenerationRequest, CourseGenerationResponse, CourseModule, LessonContent, ExerciseLogCreate, ExerciseLog
 
 router = APIRouter()
 
@@ -81,6 +81,35 @@ async def generate_course(request: CourseGenerationRequest) -> CourseGenerationR
                 lessons=module2_lessons
             )
         ]
+    )
+    
+    return response
+
+@router.post("/exercise/logs", response_model=ExerciseLog)
+async def create_exercise_log(request: ExerciseLogCreate) -> ExerciseLog:
+    """
+    練習記録保存エンドポイント
+    
+    ユーザーの練習記録を保存します。
+    現在はモックデータを返します。
+    """
+    # 実際にはデータベースに保存する処理を実装
+    # 現段階ではモックレスポンスを返す
+    
+    # 日付が設定されていない場合は現在時刻を使用
+    log_date = request.date or datetime.now()
+    
+    # レスポンスの作成
+    response = ExerciseLog(
+        id=str(uuid.uuid4()),
+        user_id=request.user_id,
+        instrument=request.instrument,
+        duration_minutes=request.duration_minutes,
+        difficulty=request.difficulty,
+        notes=request.notes,
+        mood=request.mood,
+        date=log_date,
+        created_at=datetime.now()
     )
     
     return response 

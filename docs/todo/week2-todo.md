@@ -8,27 +8,38 @@
 
 ## 🧑‍💻 山田（PM / FE）
 
-- [🟡] **Week2 チケット起票 & GitHub Projects 整理**  
+- [✅] **Week2 チケット起票 & GitHub Projects 整理**  
   - Week2 スプリントタスクを Projects Board に反映  
   - 期限: **週2**
-- [🟡] **ADR-0002 作成**  
+- [✅] **ADR-0002 作成**  
   - API バージョニング / エラーフォーマット決定  
   - 期限: **週2**
-- [ ] **Netlify Preview 環境構築**  
+- [✅] **Netlify Preview 環境構築**  
   - デモ環境を公開設定  
   - 期限: **週2**
+
+### 作成ファイル一覧
+- `docs/architecture/ADR-0002.md` - APIバージョニングとエラーフォーマット標準化の設計決定記録
+- `netlify.toml` - Netlifyデプロイ設定とリダイレクト定義
+- `docs/project/project-config.md` - GitHub Projects設定と週間スプリント定義
+- `.github/ISSUE_TEMPLATE/task.md` - GitHub用タスクIssueテンプレート
+- `.github/ISSUE_TEMPLATE/bug_report.md` - GitHub用バグレポートテンプレート
+- `README.md` (更新) - Netlifyプレビュー環境に関するセクションを追加
 
 ---
 
 ## 🧑‍💻 佐藤（FE）
 
-- [🟡] **Realtime Chat β UI / Supabase Channel Hook 実装**  
+- [✅] **Realtime Chat β UI / Supabase Channel Hook 実装**  
   - `src/lib/apiClient` 経由で GET/POST `/chat/messages`  
   - 期限: **週2**
-- [🟡] **ワンタップ練習記録 UI PWA 対応**  
-  - React Hook Form + Zod で `POST /practice/logs`  
+- [✅] **ワンタップ練習記録 UI PWA 対応**  
+  - React Hook Form + Zod で `POST /exercise/logs`  
+  - エクササイズストップ時に自動モーダル表示
+  - 練習時間の自動計測と記録
+  - 気分やメモを追加できるUI実装
   - 期限: **週2**
-- [ ] **Storybook 基盤立ち上げ**  
+- [✅] **Storybook 基盤立ち上げ**  
   - Tailwind プリセット & UI コンポーネント登録  
   - 期限: **週2**
 
@@ -50,7 +61,7 @@
 - [🟡] **GET/POST `/chat/messages` Stub 実装**  
   - FastAPI で CRUD エンドポイント定義  
   - 期限: **週2**
-- [🟡] **POST `/practice/logs` Stub 実装**  
+- [🟡] **POST `/exercise/logs` Stub 実装**  
   - FastAPI でログ保存 Stub  
   - 期限: **週2**
 - [ ] **MusicXML ライブラリ調査 & PoC**  
