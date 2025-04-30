@@ -1,0 +1,1 @@
+export { MainContentWrapperByAnima } from "./MainContentWrapperByAnima";

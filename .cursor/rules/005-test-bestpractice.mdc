@@ -1,0 +1,164 @@
+---
+description: 
+globs: *test.ts,*test.tsx
+alwaysApply: false
+---
+まず、このファイルを参照したら、「テストするぞ！！」と叫んでください。
+
+# MUED LMS テストのベストプラクティス
+
+## このファイルの重要ポイント
+- テストランナーは **Vitest + jsdom + React Testing Library (RTL)** に統一（Jest は使用しない）
+- `npm run test` → ウォッチモード、`npm run test:ci` → 一発実行 + カバレッジ
+- GitHub Actions は 1 ジョブ (`npm ci → vitest run`) で完結し、1分以内に終了
+- E2E／アクセシビリティ テストは **Playwright** を Step 1 以降で漸進導入
+- Python(FastAPI) 側は `pytest` + `coverage` を別ステップで実行
+- 依存パッケージを最小限に抑え、テスト環境構築コストを削減する
+
+*最終更新: 2025-05-01*
+
+---
+
+## 1. テストスタック最小構成
+
+| レイヤ           | スタック                     | 目的                       |
+|------------------|------------------------------|----------------------------|
+| ユニット/統合    | Vitest + RTL + jsdom         | コンポーネント/フック検証  |
+| E2E (Step 1以降) | Playwright                   | 主要ユーザーフロー確認     |
+| Python           | pytest + coverage            | AI サービス関数/API 検証   |
+
+> **NOTE**: Vite ベースなので Vitest が一番ラク。Jest 互換 API のため既存知識も活かせる。
+
+---
+
+## 2. セットアップ手順（フロントエンド）
+
+```bash
+npm i -D vitest @testing-library/react @testing-library/jest-dom jsdom
+```
+
+`vitest.config.ts`
+```ts
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './testing/setup.ts',
+    coverage: {
+      reporter: ['text', 'html'],
+    },
+  },
+});
+```
+
+testing/setup.ts
+```ts
+import '@testing-library/jest-dom';
+```
+
+サンプルテスト
+```tsx
+// src/components/__tests__/Button.test.tsx
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Button } from '../ui/button';
+
+test('クリックでコールバックが呼ばれる', () => {
+  const onClick = vi.fn();
+  render(<Button onClick={onClick}>押す</Button>);
+  fireEvent.click(screen.getByRole('button', { name: '押す' }));
+  expect(onClick).toHaveBeenCalled();
+});
+```
+
+---
+
+## 3. npm スクリプト
+```jsonc
+{
+  "scripts": {
+    "test": "vitest",
+    "test:ci": "vitest run --coverage",
+    "dev": "vite",
+    "build": "vite build"
+  }
+}
+```
+
+---
+
+## 4. GitHub Actions 例 (`.github/workflows/ci.yml`)
+```yaml
+name: CI
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+aenv: &defaults
+  runs-on: ubuntu-latest
+
+jobs:
+  test-js:
+    <<: *defaults
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:ci
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html
+          path: coverage/html
+          if-no-files-found: ignore
+
+  test-python:
+    <<: *defaults
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r apps/ai-service/requirements-dev.txt
+      - run: pytest --cov
+```
+
+---
+
+## 5. フェーズ別ロードマップ
+| フェーズ | 目的 | 追加ツール |
+|---------|------|-----------|
+| Step 0  | ユニット/軽量統合 | Vitest + RTL |
+| Step 1  | UI フロー/E2E    | Playwright Component & Page Test |
+| Step 2  | アクセシビリティ | `axe-core` + Playwright |
+
+---
+
+## 6. ディレクトリ構成（推奨）
+```
+/
+├── src/
+│   └── components/
+│       ├── Button.tsx
+│       └── __tests__/Button.test.tsx  # or Button.test.tsx 隣接
+└── testing/
+    └── setup.ts
+```
+
+---
+
+## 7. ベストプラクティスまとめ
+1. **対象コードをモックしない** – 外部依存だけをモックする
+2. **成功系 + 失敗系** の両方を必ずテスト
+3. **テストは独立** – `vi.clearAllMocks()`& `afterEach(cleanup)`
+4. **速度優先** – カバレッジ閾値設定は後で。まずは落ちないテストを整備
+
+---
+
+これで「テスト環境構築に丸一日 → 回らない」惨事は回避できるはず。もっと高度なテストをしたくなった時に、Playwright/E2E を段階的に追加していこう！
