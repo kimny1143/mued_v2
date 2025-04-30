@@ -1,0 +1,290 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MUED LMS AI Service",
+    "description": "AI Service for Music Education LMS",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/courses/generate": {
+      "post": {
+        "summary": "Generate Course",
+        "description": "コース生成エンドポイント\n\n指定されたトピックと条件に基づいて新しいコースを生成します。\n現在はモックデータを返します。",
+        "operationId": "generate_course_api_v1_courses_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CourseGenerationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseGenerationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "ルートエンドポイント",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CourseGenerationRequest": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "title": "Topic",
+            "description": "コースのトピック"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level",
+            "description": "難易度レベル (beginner, intermediate, advanced)"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal",
+            "description": "学習目標"
+          },
+          "keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keywords",
+            "description": "含めるべきキーワード"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic",
+          "level"
+        ],
+        "title": "CourseGenerationRequest",
+        "description": "コース生成リクエストモデル"
+      },
+      "CourseGenerationResponse": {
+        "properties": {
+          "course_id": {
+            "type": "string",
+            "title": "Course Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "estimated_duration_hours": {
+            "type": "number",
+            "title": "Estimated Duration Hours"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/CourseModule"
+            },
+            "type": "array",
+            "title": "Modules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "course_id",
+          "title",
+          "description",
+          "level",
+          "estimated_duration_hours",
+          "modules"
+        ],
+        "title": "CourseGenerationResponse",
+        "description": "コース生成レスポンスモデル"
+      },
+      "CourseModule": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order"
+          },
+          "lessons": {
+            "items": {
+              "$ref": "#/components/schemas/LessonContent"
+            },
+            "type": "array",
+            "title": "Lessons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "order",
+          "lessons"
+        ],
+        "title": "CourseModule",
+        "description": "コースモジュールモデル"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LessonContent": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type",
+            "description": "コンテンツタイプ (video, text, exercise)"
+          },
+          "duration_minutes": {
+            "type": "integer",
+            "title": "Duration Minutes"
+          },
+          "content_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Url"
+          },
+          "content_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "content_type",
+          "duration_minutes"
+        ],
+        "title": "LessonContent",
+        "description": "レッスンコンテンツモデル"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
