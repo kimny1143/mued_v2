@@ -18,15 +18,68 @@ services:
     build:
       context: ./ai-service
       dockerfile: Dockerfile
+      target: development
     ports:
       - "8000:8000"
     volumes:
       - ./ai-service/app:/app/app
+      - ./ai-service/tests:/app/tests
+      - ./ai-service/conftest.py:/app/conftest.py
     environment:
       - PYTHONUNBUFFERED=1
       - ENVIRONMENT=development
+      - PYTHONPATH=/app:/app/app
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
       timeout: 10s
-      retries: 3 
+      retries: 3
+        
+    # docker-compose.ymlに以下を追加
+#  postgres:
+#    image: postgres:13
+#    environment:
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: postgres
+#      POSTGRES_DB: postgres
+#    ports:
+#      - "5432:5432"
+  metabase:
+    image: metabase/metabase:latest
+    ports:
+      - "3000:3000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      - MB_DB_TYPE=postgres
+      - MB_DB_DBNAME=metabase
+      - MB_DB_PORT=5432
+      - MB_DB_USER=postgres
+      - MB_DB_PASS=postgres
+      - MB_DB_HOST=metabase-db
+    depends_on:
+      - metabase-db
+    volumes:
+      - metabase-data:/metabase-data
+    networks:
+      - mued-net
+    
+  metabase-db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=metabase
+    volumes:
+      - metabase-db-data:/var/lib/postgresql/data
+    networks:
+      - mued-net
+
+volumes:
+  metabase-data:
+  metabase-db-data: 
+
+networks:
+  mued-net:
+    driver: bridge 

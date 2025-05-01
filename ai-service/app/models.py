@@ -1,7 +1,7 @@
 """
 MUED LMS AI Service - Data Models
 """
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel, Field
 
@@ -74,6 +74,40 @@ class CourseGenerationResponse(BaseModel):
             }
         }
 
+# チャットメッセージ関連のモデル
+class ChatMessageCreate(BaseModel):
+    """チャットメッセージ作成リクエスト"""
+    room_id: str
+    user_id: str
+    username: str
+    message: str
+
+class ChatMessage(BaseModel):
+    """チャットメッセージレスポンス"""
+    id: str
+    room_id: str
+    user_id: str
+    username: str
+    message: str
+    created_at: datetime
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": "msg-123456",
+                "room_id": "room-abc123",
+                "user_id": "user-456",
+                "username": "田中先生",
+                "message": "こんにちは、レッスンの準備はできていますか？",
+                "created_at": "2024-05-01T12:30:45.123456"
+            }
+        }
+
+class ChatMessageList(BaseModel):
+    """チャットメッセージリストレスポンス"""
+    messages: List[ChatMessage]
+    total: int
+
 # 練習ログ関連のモデル
 class ExerciseLogCreate(BaseModel):
     """練習記録作成リクエスト"""
@@ -95,4 +129,71 @@ class ExerciseLog(BaseModel):
     notes: Optional[str] = None
     mood: Optional[str] = None
     date: datetime
-    created_at: datetime 
+    created_at: datetime
+
+# MusicXML関連のモデル
+class MusicXMLConvertRequest(BaseModel):
+    """MusicXML変換リクエスト"""
+    xml_content: str = Field(..., description="MusicXMLコンテンツ（Base64エンコード）")
+    format: str = Field(..., description="変換フォーマット (json, preview)")
+    options: Optional[Dict[str, Any]] = Field(None, description="変換オプション")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "xml_content": "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBNdXNpY1hNTCBTYW1wbGUgLS0+CjxzY29yZS1wYXJ0aXdpc2U+PC9zY29yZS1wYXJ0aXdpc2U+",
+                "format": "json",
+                "options": {
+                    "includeMetadata": True,
+                    "includeNotations": True
+                }
+            }
+        }
+
+class MusicXMLConvertResponse(BaseModel):
+    """MusicXML変換レスポンス"""
+    id: str
+    format: str
+    result: Dict[str, Any]
+    preview_url: Optional[str] = None
+    created_at: datetime
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": "convert-123456",
+                "format": "json",
+                "result": {
+                    "metadata": {
+                        "title": "楽譜タイトル",
+                        "composer": "作曲者名"
+                    },
+                    "parts": [
+                        {
+                            "id": "P1",
+                            "name": "Piano",
+                            "measures": []
+                        }
+                    ]
+                },
+                "preview_url": "https://example.com/preview/123456.png",
+                "created_at": "2024-05-01T12:30:45.123456"
+            }
+        }
+
+# Webhookモデル
+class WebhookEvent(BaseModel):
+    """汎用Webhookイベントモデル"""
+    id: str = Field(..., description="イベントID")
+    type: str = Field(..., description="イベントタイプ")
+    created: datetime = Field(..., description="作成日時")
+    data: Dict[str, Any] = Field(..., description="イベントデータ")
+
+class StripeWebhookEvent(BaseModel):
+    """Stripe Webhook用のモデル"""
+    id: str = Field(..., description="Stripeイベント識別子")
+    type: str = Field(..., description="イベントタイプ (payment_intent.succeeded 等)")
+    created: int = Field(..., description="UNIXタイムスタンプ")
+    data: Dict[str, Any] = Field(..., description="イベントデータ")
+    livemode: bool = Field(..., description="本番環境のイベントかどうか")
+    api_version: Optional[str] = None 

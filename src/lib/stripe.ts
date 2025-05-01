@@ -8,7 +8,12 @@ export async function createCheckoutSession(priceId: string, mode: 'payment' | '
       throw new Error('No session found');
     }
 
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
+    // 環境変数に基づいてエンドポイントを選択
+    const apiEndpoint = import.meta.env.PROD 
+      ? `${import.meta.env.VITE_SUPABASE_URL_PROD}/functions/v1/stripe-checkout`
+      : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`;
+
+    const response = await fetch(apiEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
