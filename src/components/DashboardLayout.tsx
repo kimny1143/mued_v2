@@ -13,7 +13,8 @@ import {
   FolderIcon, 
   XIcon, 
   ChevronLeftIcon, 
-  ChevronRightIcon
+  ChevronRightIcon,
+  DumbbellIcon
 } from 'lucide-react';
 
 // ナビゲーション項目を分離して定義
@@ -21,8 +22,10 @@ export const dashboardNavItems = [
   { icon: HomeIcon, label: "Dashboard", path: "/dashboard" },
   { icon: FolderIcon, label: "Materials", path: "/materials" },
   { icon: BookOpenIcon, label: "My Lessons", path: "/my-lessons" },
+  { icon: DumbbellIcon, label: "Exercise", path: "/exercise" },
   { icon: MessageSquareIcon, label: "Messages", path: "/messages" },
   { icon: SettingsIcon, label: "Settings", path: "/settings" }
+
 ];
 
 interface DashboardLayoutProps {
@@ -108,7 +111,7 @@ function Header({ toggleSidebar, handleSignOut }: HeaderProps) {
         <div className="flex justify-between h-16">
           {/* Left section */}
           <div className="flex items-center gap-8">
-            <Button variant="ghost" size="icon" className="lg:hidden" onClick={toggleSidebar}>
+            <Button variant="ghost" size="sm" className="lg:hidden" onClick={toggleSidebar}>
               <MenuIcon className="h-6 w-6" />
             </Button>
             <div className="flex items-center gap-2">
@@ -119,11 +122,11 @@ function Header({ toggleSidebar, handleSignOut }: HeaderProps) {
 
           {/* Right section */}
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="sm" className="relative">
               <BellIcon className="h-6 w-6" />
               <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
             </Button>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="sm">
               <UserCircleIcon className="h-6 w-6" />
             </Button>
             <Button 
@@ -170,7 +173,7 @@ function Sidebar({
       {/* Collapse toggle button */}
       <Button
         variant="ghost"
-        size="icon"
+        size="sm"
         className="absolute -right-4 top-24 hidden lg:flex h-8 w-8 rounded-full bg-white border shadow-md"
         onClick={toggleSidebarCollapse}
       >
@@ -184,7 +187,7 @@ function Sidebar({
       {/* Close button for mobile */}
       <Button 
         variant="ghost" 
-        size="icon" 
+        size="sm" 
         className="absolute top-4 right-4 lg:hidden"
         onClick={toggleSidebar}
       >

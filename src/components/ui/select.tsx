@@ -145,6 +145,28 @@ const SelectSeparator = React.forwardRef<
 ));
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
 
+// 単純なHTMLセレクト用コンポーネント（練習ログ用）
+export interface SimpleSelectProps
+  extends React.SelectHTMLAttributes<HTMLSelectElement> {}
+
+const SimpleSelect = React.forwardRef<HTMLSelectElement, SimpleSelectProps>(
+  ({ className, children, ...props }, ref) => {
+    return (
+      <select
+        className={cn(
+          "h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      >
+        {children}
+      </select>
+    );
+  }
+);
+SimpleSelect.displayName = "SimpleSelect";
+
 export {
   Select,
   SelectGroup,
@@ -156,4 +178,5 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
+  SimpleSelect,
 };

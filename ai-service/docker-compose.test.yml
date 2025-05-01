@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  ai-service-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: testing
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+      - ./conftest.py:/app/conftest.py
+    environment:
+      - PYTHONPATH=/app:/app/app
+      - PYTEST_ADDOPTS="-v"
+    command: pytest -xvs --cov=app --cov-report=term-missing
+
+  ai-service-test-watch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: testing
+    volumes:
+      - ./app:/app/app
+      - ./tests:/app/tests
+      - ./conftest.py:/app/conftest.py
+    environment:
+      - PYTHONPATH=/app:/app/app
+      - PYTEST_ADDOPTS="-v"
+    command: pytest-watch -- -xvs 

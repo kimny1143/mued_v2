@@ -68,6 +68,30 @@ src/
 └── types/         # TypeScript型定義
 ```
 
+## Netlifyプレビュー環境
+
+プロジェクトはNetlify上でプレビュー環境を自動的に提供します。これにより以下が可能になります：
+
+- 各ブランチの自動デプロイ
+- プルリクエストごとの一時的なプレビュー環境
+- 本番環境のステージング検証
+
+### 環境URL
+
+- 本番環境: [https://mued-lms.netlify.app](https://mued-lms.netlify.app)
+- プレビュー環境: PRごとに一意のURLが生成されます（PRコメントで通知）
+- ブランチプレビュー: `https://branch-name--mued-lms.netlify.app`
+
+### Netlify環境変数の設定
+
+Netlifyダッシュボード上で以下の環境変数を設定してください：
+
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_URL=your_api_url
+```
+
 ## ライセンス
 
 © 2024 株式会社グラスワークス All Rights Reserved.

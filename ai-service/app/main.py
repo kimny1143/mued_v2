@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import router as api_router
+from app.error_handlers import register_error_handlers
 
 app = FastAPI(
     title="MUED LMS AI Service",
@@ -20,6 +21,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# エラーハンドラーを登録
+register_error_handlers(app)
 
 # ルーターを登録
 app.include_router(api_router, prefix="/api/v1")
