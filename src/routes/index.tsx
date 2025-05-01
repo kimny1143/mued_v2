@@ -10,6 +10,7 @@ import { MessagesPage } from "../screens/MessagesPage";
 import { PlansPage } from "../screens/PlansPage";
 import { SuccessPage } from "../screens/SuccessPage";
 import { CancelPage } from "../screens/CancelPage";
+import { ExercisePage, ExerciseDetailPage } from "../screens/ExercisePage";
 import { PrivateRoute } from "../components/PrivateRoute";
 import { AuthProvider } from "../contexts/AuthContext";
 
@@ -62,6 +63,14 @@ const protectedRoutes = [
   {
     path: "/plans",
     element: <PlansPage />
+  },
+  {
+    path: "/exercise",
+    element: <ExercisePage />
+  },
+  {
+    path: "/exercise/:id",
+    element: <ExerciseDetailPage />
   }
 ];
 

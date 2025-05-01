@@ -48,3 +48,7 @@ logs
 Thumbs.db
 .cursor/*
 .cursor/
+
+#bolt_mockフォルダ配下全て除外
+bolt_mock/
+*storybook.log

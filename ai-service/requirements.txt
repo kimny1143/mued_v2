@@ -3,4 +3,12 @@ uvicorn==0.22.0
 pydantic==1.10.8
 pytest==7.3.1
 httpx==0.24.1
-python-multipart==0.0.6 
+python-multipart==0.0.6
+music21==9.1.0
+lxml==4.9.3
+Pillow==10.1.0
+
+# テスト用依存関係
+pytest-cov==4.1.0
+pytest-xdist==3.3.1
+pytest-watch==4.2.0 
