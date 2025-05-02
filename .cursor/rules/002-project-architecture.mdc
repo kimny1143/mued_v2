@@ -399,6 +399,27 @@ export function subscribeToMessages(roomId: string, callback: (message: any) => 
    - 負荷テストと対応
    - 運用監視の強化
 
+
+### 7.4 デプロイメント環境
+
+1. **ホスティング構成**:
+   - **フロントエンド**: Vercel（静的サイト最適化を活用）
+   - **AIサービス**: Heroku（Pythonランタイム）
+   - **データベース**: Supabase（PostgreSQL）
+
+2. **現在の実装状況 (2024年Q2時点)**:
+   - フロントエンド: Vite + React18 (MVPフェーズ)
+   - AIサービス: Python/FastAPI（デプロイ済み）
+   - 外部サービス連携: Supabase, Cloudinary, Stripe
+
+3. **統合テスト重点ポイント**:
+   - フロントエンド(Vercel) → AIサービス(Heroku)間のAPI通信
+   - フロントエンド → Supabaseへの認証・データアクセス
+   - メディアアセット管理（Cloudinary連携）
+   - 決済フロー（Stripe連携）
+
+   
+
 ## 8. クロスカッティング関心事
 
 ### 8.1 認証・認可
