@@ -1,8 +1,18 @@
- # チーム別 TODO リスト（MVP ‑ Phase 0 / Week4）
+# チーム別 TODO リスト（MVP ‑ Phase 0 / Week4）
 
 > 各タスクの進捗状況:  
 > ✅ 完了 | 🟡 進行中 | ⬜ 未着手  
 > 期限は「週番号＝ロードマップ表上の週」を示す（例: 週5＝開始5週目末）。
+
+---
+
+## 📋 今週の進捗
+
+- [✅] **フロントエンド・AIサービス連携テスト実装完了**
+  - `ApiTestPanel`コンポーネント作成（UI経由でのAPI接続確認）
+  - `apiTestClient`実装（APIエンドポイント接続用統一インターフェース）
+  - CI/CD環境向けテスト自動化（モック/実環境の切り替え機能）
+  - 詳細は`docs/architecture/api-integration-testing.md`参照
 
 ---
 
