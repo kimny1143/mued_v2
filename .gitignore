@@ -21,6 +21,7 @@ yarn.lock
 .env.development.local
 .env.test.local
 .env.production.local
+.env.heroku
 
 # エディタ設定
 .idea
@@ -52,3 +53,4 @@ Thumbs.db
 #bolt_mockフォルダ配下全て除外
 bolt_mock/
 *storybook.log
+.env.heroku
