@@ -196,7 +196,7 @@ function Sidebar({
 
       <div className={`p-6 ${isSidebarCollapsed ? 'lg:p-4' : ''}`}>
         {/* User Profile */}
-        <div className="mb-8 mt-16 lg:mt-0">
+        <div className="mb-8 mt-16 lg:mt-16">
           <div className={`flex items-center gap-4 mb-4 ${isSidebarCollapsed ? 'lg:justify-center' : ''}`}>
             <UserCircleIcon className="h-12 w-12" />
             {!isSidebarCollapsed && (
