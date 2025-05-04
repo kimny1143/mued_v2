@@ -1,123 +1,68 @@
-# チーム別 TODO リスト（MVP ‑ Phase 0 / Week4）
+# Sprint 1 TODO リスト（Week1-2）
 
-> 各タスクの進捗状況:  
-> ✅ 完了 | 🟡 進行中 | ⬜ 未着手  
-> 期限は「週番号＝ロードマップ表上の週」を示す（例: 週5＝開始5週目末）。
-
----
-
-## 📋 今週の進捗
-
-- [✅] **フロントエンド・AIサービス連携テスト実装完了**
-  - `ApiTestPanel`コンポーネント作成（UI経由でのAPI接続確認）
-  - `apiTestClient`実装（APIエンドポイント接続用統一インターフェース）
-  - CI/CD環境向けテスト自動化（モック/実環境の切り替え機能）
-  - 詳細は`docs/architecture/api-integration-testing.md`参照
+> **注意**: このファイルはSprint 1の計画を反映しています。以前の`week4-todo.md`の内容は破棄されました。
+> 各タスクの進捗状況:
+> ✅ 完了 | 🟡 進行中 | ⬜ 未着手
+> スプリント目標: Next.js App Router骨格と認証／DBスキーマを完成させ、ログイン後ダッシュボードまで動線を繋ぐ。
 
 ---
 
-## 🧑‍💻 山田（PM / FE）
+## 🧑‍💻 チーム全体
 
-- [⬜] **Roadmap更新とディレクトリ戦略の明文化**  
-  - `docs/project/roadmap-0503.md` 作成
-  - Phase0→Phase1 移行計画を追記
-  - `002-project-architecture.mdc`の整合性確保
-  - 期限: **週4**
+- [⬜] **Sprint 1 チケット起票 & Projects Board 更新** (PM: 山田)
+  - `docs/project/project-config.md` 更新
+  - 期限: Week 1 Day 1
 
-- [⬜] **MVP必須要件のQA**  
-  - 全画面のユーザーフロー確認
-  - モバイル表示チェック
-  - アクセシビリティ（WCAG AA）確認
-  - 期限: **週4**
+- [⬜] **GitHub Actions: eslint+test+build (Story 5)** (FE3: 鈴木)
+  - PRで自動CIが走る
+  - 期限: Week 1 Day 3
 
 ---
 
-## 🧑‍💻 佐藤（FE）
+## 🔒 基盤 & 認証 (Backend)
 
-- [⬜] **認証画面 UI 実装**  
-  - ログイン/新規登録/パスワードリセット画面
-  - Google OAuth 連携
-  - 期限: **週4**
+- [⬜] **`auth`パッケージ: NextAuth.js + Google OAuth (Story 1)** (BE1: 木村)
+  - ログイン/ログアウト機能 + JWT発行
+  - 期限: Week 2 Day 2
 
-- [⬜] **セキュリティヘッダー設定**  
-  - CSP設定
-  - X-Content-Type-Options など追加
-  - 期限: **週4**
+- [⬜] **Supabase接続 & Prisma schema v1 (`User`, `Role`) (Story 2)** (BE2: 佐藤)
+  - migration成功 + RLSテストOK
+  - 期限: Week 1 Day 5
 
 ---
 
-## 🧑‍💻 田中（FE / 決済）
+## 🖥️ UI & フロントエンド
 
-- [⬜] **Stripe返金処理 PoC**  
-  - 予約キャンセル時の返金ロジック実装
-  - 返金率カスタマイズ機能
-  - 期限: **週4**
+- [⬜] **App Routerレイアウト / Tailwindテーマ (Story 3)** (FE1: 田中)
+  - `/(auth)/login`, `/dashboard` 画面表示
+  - 期限: Week 1 Day 4
 
-- [⬜] **キャンセルポリシー設定**  
-  - UI上で各レッスンのキャンセルポリシー設定
-  - キャンセルステータスの管理
-  - 期限: **週4**
+- [⬜] **StorybookベースUIライブラリ（Button/Card）(Story 4)** (FE2: 佐藤)
+  - 2種類のUIコンポーネント + Docs
+  - 期限: Week 1 Day 5
 
----
-
-## 🧑‍💻 木村（AI サービス）
-
-- [⬜] **AIサービス: LangChain PoC**  
-  - FastAPI と LangChain 連携
-  - OpenAI API 基本統合
-  - 期限: **週4**
-
-- [⬜] **教材生成β版**  
-  - `/api/generate/material` エンドポイント作成
-  - ダミーレスポンス→実APIレスポンス切替
-  - テストケース追加
-  - 期限: **週4**
+- [⬜] **セキュリティヘッダー設定 (関連タスク)** (FE2: 佐藤)
+  - CSP, X-Content-Type-Options等 (`next.config.js`)
+  - 期限: Week 2 Day 1
 
 ---
 
-## 🧑‍💻 鈴木（DevOps / Test）
+## 🚀 優先タスク（旧Week4より移行）
 
-- [⬜] **Heroku Pipeline設定**  
-  - review-apps 設定
-  - staging環境デプロイ
-  - 期限: **週4**
+- [🟡] **AI教材生成β版 - バックエンド準備 (Sprint 3 Story 12 先行着手)** (AI: 木村)
+  - FastAPIエンドポイント `/generate/material` の基本設計
+  - 音楽家提供のサンプル仕様確認
+  - 期限: Week 2 Day 5 (設計完了)
 
-- [⬜] **Vercel/Heroku連携ヘルスチェック**  
-  - フロントエンド→API疎通テスト追加
-  - 自動デプロイ失敗時のロールバック検証
-  - 期限: **週4**
-
-- [⬜] **Next.js PoC用CI optional job作成**  
-  - feature/next-app-router ブランチでのみ実行
-  - ビルド・テスト確認
-  - 期限: **週4**
+- [🟡] **βユーザー招待準備 (マーケティング連携)** (マーケ: 鈴木)
+  - 招待メール文面作成
+  - βユーザーリスト最終化
+  - 期限: Week 1 Day 3
 
 ---
 
-## ディレクトリ戦略
+## 📅 イベント
 
-```
-# 現在（Phase 0 / MVP）
-/
-├─ src/                 # Vite＋React のモノリス
-│   ├─ components/…
-│   ├─ screens/…
-│   └─ …
-├─ ai-service/          # FastAPI
-├─ prisma/              # DB スキーマ
-└─ tests/               # Vitest / Playwright
-```
-
-- **Phase 0 (MVP)**: Vite モノリス (/src)
-- **Phase 1 PoC**: Next.js (apps/web) ※別ブランチ `feature/next-app-router` で進行
-- **AI/Payment Stub**: 現行ディレクトリを維持
-
----
-
-## ✅ 共通
-
-- [⬜] **Week4 チケット起票 & Projects Board 更新**  
-  - `docs/project/project-config.md` 更新  
-  - 期限: **週4**
-- [⬜] **Next Daily**: 5/3 10:00 JST  
-  - 完了チェック: 各担当 Week4 進捗確認
+- **Daily Standup**: 平日毎朝10:00 JST
+- **Sprint 1 レビュー**: Week 2 金曜午後
+- **Sprint 1 リトロスペクティブ**: レビュー直後
