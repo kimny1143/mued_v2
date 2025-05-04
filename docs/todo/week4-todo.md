@@ -41,7 +41,7 @@
 
 ## 🔒 基盤 & 認証 (Backend)
 
-- [⬜] **`auth`パッケージ: NextAuth.js + Google OAuth (Story 1)** (BE1: 木村)
+- [✅] **`auth`パッケージ: NextAuth.js + Google OAuth (Story 1)** (BE1: 木村)
   - ログイン/ログアウト機能実装
   - Google OAuthプロバイダー統合
   - JWT発行と検証機能
