@@ -31,10 +31,14 @@
    - `Test` - テスト追加
 
 3. **Sprint**
-   - `Week 1` - 第1週のスプリント
-   - `Week 2` - 第2週のスプリント
-   - `Week 3` - 第3週のスプリント
-   - `Week 4` - 第4週のスプリント
+   - `Sprint 1-Week 1` - スプリント1の第1週
+   - `Sprint 1-Week 2` - スプリント1の第2週
+   - `Sprint 2-Week 3` - スプリント2の第3週
+   - `Sprint 2-Week 4` - スプリント2の第4週
+   - `Sprint 3-Week 5` - スプリント3の第5週
+   - `Sprint 3-Week 6` - スプリント3の第6週
+   - `Sprint 4-Week 7` - スプリント4の第7週
+   - `Sprint 4-Week 8` - スプリント4の第8週
 
 4. **Estimated Effort**
    - `XS` - 1 ストーリーポイント (～1時間)
@@ -58,48 +62,61 @@ GitHub Projectsでは以下のオートメーションを設定します:
 3. **Sprint終了通知**
    - Sprintの終了が近づくと、未完了のIssueに関して通知
 
-## Week2スプリントチケット
+## Sprint 1 チケット
 
-Week2のスプリントには以下のチケットを含めます:
+Sprint 1には以下のチケットを含めます:
 
-### 山田（PM / FE）
-1. **Week2 チケット起票 & GitHub Projects 整理**
-   - Type: `Documentation`, Priority: `High`, Sprint: `Week 2`
-2. **ADR-0002 作成**
-   - Type: `Documentation`, Priority: `Medium`, Sprint: `Week 2`
-3. **Netlify Preview 環境構築**
-   - Type: `Feature`, Priority: `Medium`, Sprint: `Week 2`
+### チーム全体
 
-### 佐藤（FE）
-1. **Realtime Chat β UI / Supabase Channel Hook 実装**
-   - Type: `Feature`, Priority: `High`, Sprint: `Week 2`
-2. **ワンタップ練習記録 UI PWA 対応**
-   - Type: `Feature`, Priority: `Medium`, Sprint: `Week 2`
-3. **Storybook 基盤立ち上げ**
-   - Type: `Documentation`, Priority: `Low`, Sprint: `Week 2`
+1. **Sprint 1 チケット起票 & Projects Board 更新**
+   - Type: `Documentation`, Priority: `High`, Sprint: `Sprint 1-Week 1`, Estimated Effort: `S`
+   - Assignees: 山田
+   - 期限: Week 1 Day 1
 
-### 田中（FE / 決済）
-1. **Stripe Checkout 本番 API キー切替**
-   - Type: `Feature`, Priority: `High`, Sprint: `Week 2`
-2. **FastAPI Webhook Stub 実装**
-   - Type: `Feature`, Priority: `Medium`, Sprint: `Week 2`
+2. **GitHub Actions: eslint+test+build**
+   - Type: `Feature`, Priority: `High`, Sprint: `Sprint 1-Week 1`, Estimated Effort: `S`
+   - Assignees: 鈴木
+   - 期限: Week 1 Day 3
 
-### 木村（AI サービス）
-1. **GET/POST `/chat/messages` Stub 実装**
-   - Type: `Feature`, Priority: `High`, Sprint: `Week 2`
-2. **POST `/exercise/logs` Stub 実装**
-   - Type: `Feature`, Priority: `Medium`, Sprint: `Week 2`
-3. **MusicXML ライブラリ調査 & PoC**
-   - Type: `Documentation`, Priority: `Medium`, Sprint: `Week 2`
-4. **OpenAPI スキーマ更新**
-   - Type: `Documentation`, Priority: `Low`, Sprint: `Week 2`
+### 基盤 & 認証 (Backend)
 
-### 鈴木（DevOps / Test）
-1. **@vitest/coverage-v8 パッケージ追加**
-   - Type: `Bug`, Priority: `Critical`, Sprint: `Week 2`
-2. **Codecov / Artifacts によるカバレッジ可視化**
-   - Type: `Feature`, Priority: `Medium`, Sprint: `Week 2`
-3. **pytest による FastAPI エラーハンドリングテスト追加**
-   - Type: `Test`, Priority: `Medium`, Sprint: `Week 2`
-4. **KPI ダッシュボード初版作成**
-   - Type: `Feature`, Priority: `Low`, Sprint: `Week 2` 
+1. **`auth`パッケージ: NextAuth.js + Google OAuth**
+   - Type: `Feature`, Priority: `High`, Sprint: `Sprint 1-Week 2`, Estimated Effort: `L`
+   - Assignees: 木村
+   - 期限: Week 2 Day 2
+
+2. **Supabase接続 & Prisma schema v1 (`User`, `Role`)**
+   - Type: `Feature`, Priority: `High`, Sprint: `Sprint 1-Week 1`, Estimated Effort: `M`
+   - Assignees: 佐藤
+   - 期限: Week 1 Day 5
+
+### UI & フロントエンド
+
+1. **App Routerレイアウト / Tailwindテーマ**
+   - Type: `Feature`, Priority: `High`, Sprint: `Sprint 1-Week 1`, Estimated Effort: `M`
+   - Assignees: 田中
+   - 期限: Week 1 Day 4
+
+2. **StorybookベースUIライブラリ（Button/Card）**
+   - Type: `Feature`, Priority: `Medium`, Sprint: `Sprint 1-Week 1`, Estimated Effort: `S`
+   - Assignees: 佐藤
+   - 期限: Week 1 Day 5
+
+3. **セキュリティヘッダー設定**
+   - Type: `Feature`, Priority: `Medium`, Sprint: `Sprint 1-Week 2`, Estimated Effort: `S`
+   - Assignees: 佐藤
+   - 期限: Week 2 Day 1
+
+### 優先タスク（旧Week4より移行）
+
+1. **AI教材生成β版 - バックエンド準備**
+   - Type: `Feature`, Priority: `High`, Sprint: `Sprint 1-Week 2`, Estimated Effort: `L`
+   - Assignees: 木村
+   - Status: `In Progress`
+   - 期限: Week 2 Day 5
+
+2. **βユーザー招待準備**
+   - Type: `Documentation`, Priority: `High`, Sprint: `Sprint 1-Week 1`, Estimated Effort: `S`
+   - Assignees: 鈴木
+   - Status: `In Progress`
+   - 期限: Week 1 Day 3 
