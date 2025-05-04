@@ -2,9 +2,9 @@
 
 interface ImportMeta {
   readonly env: {
-    readonly VITE_SUPABASE_URL: string;
+    readonly SUPABASE_URL: string;
     readonly VITE_API_URL: string;
-    readonly VITE_STRIPE_PUBLIC_KEY: string;
+    readonly STRIPE_PUBLIC_KEY: string;
     readonly MODE: string;
     readonly DEV: boolean;
     readonly PROD: boolean;
