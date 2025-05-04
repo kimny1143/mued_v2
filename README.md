@@ -57,8 +57,8 @@ npm run build
 `.env`ファイルを作成し、以下の環境変数を設定してください：
 
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
 POSTGRES_PASSWORD=your_postgres_password
 METABASE_DB_PASSWORD=your_metabase_db_password
 STRIPE_SECRET_KEY=your_stripe_secret_key

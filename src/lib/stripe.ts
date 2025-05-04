@@ -10,8 +10,8 @@ export async function createCheckoutSession(priceId: string, mode: 'payment' | '
 
     // 環境変数に基づいてエンドポイントを選択
     const apiEndpoint = import.meta.env.PROD 
-      ? `${import.meta.env.VITE_SUPABASE_URL_PROD}/functions/v1/stripe-checkout`
-      : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`;
+      ? `${import.meta.env.SUPABASE_URL_PROD}/functions/v1/stripe-checkout`
+      : `${import.meta.env.SUPABASE_URL}/functions/v1/stripe-checkout`;
 
     const response = await fetch(apiEndpoint, {
       method: 'POST',
