@@ -21,7 +21,9 @@ from app.models import (
     ChatMessage,
     ChatMessageList,
     MusicXMLConvertRequest,
-    MusicXMLConvertResponse
+    MusicXMLConvertResponse,
+    MaterialGenerationRequest,
+    MaterialGenerationResponse
 )
 
 router = APIRouter()
@@ -299,4 +301,67 @@ async def convert_musicxml(request: MusicXMLConvertRequest) -> MusicXMLConvertRe
         
     except Exception as e:
         logger.error(f"Error converting MusicXML: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Conversion error: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Conversion error: {str(e)}")
+
+@router.post("/generate/material", response_model=MaterialGenerationResponse)
+async def generate_material(request: MaterialGenerationRequest) -> MaterialGenerationResponse:
+    """
+    教材生成エンドポイント
+    
+    指定されたトピックと条件に基づいて新しい教材を生成します。
+    ADR-0002に従った標準フォーマットでレスポンスを返します。
+    現在はモックデータを返します。
+    """
+    logger.info(f"Material generation requested for topic: {request.topic}, level: {request.level}, format: {request.format}")
+    
+    try:
+        # 実際の実装では、ここでAIモデルを使用して教材を生成
+        # 現段階ではモックレスポンスを返す
+        
+        # 一意のIDを生成
+        material_id = f"{'-'.join(request.topic.lower().split()[:3])}-{uuid.uuid4().hex[:8]}"
+        
+        # ファイル名とURLを生成
+        file_name = f"{material_id}.{request.format}"
+        download_base_url = "https://storage.mued-lms.com/materials"
+        preview_base_url = "https://storage.mued-lms.com/previews"
+        
+        # レスポンスの作成
+        response = MaterialGenerationResponse(
+            material_id=material_id,
+            title=f"{request.topic} - {request.level.capitalize()}レベル教材",
+            description=f"{request.topic}に関する{request.level}レベルの学習教材です。" + 
+                       (f"目標: {request.goal}" if request.goal else ""),
+            format=request.format,
+            download_url=f"{download_base_url}/{file_name}",
+            preview_url=f"{preview_base_url}/{material_id}-preview.png" if request.format == "pdf" else None,
+            metadata={
+                "pages": 12,
+                "word_count": 3500,
+                "topics": request.topic.split(','),
+                "language": request.language
+            },
+            success=True,
+            error=None
+        )
+        
+        logger.info(f"Material generation completed: {material_id}")
+        return response
+        
+    except Exception as e:
+        logger.error(f"Material generation failed: {str(e)}")
+        # ADR-0002に従ったエラーレスポンスフォーマット
+        error_response = MaterialGenerationResponse(
+            material_id="",
+            title="",
+            description="",
+            format=request.format,
+            download_url="",
+            success=False,
+            error={
+                "code": "AI_PROCESSING_GENERATION_FAILED",
+                "message": "教材の生成中にエラーが発生しました",
+                "details": str(e)
+            }
+        )
+        return error_response 

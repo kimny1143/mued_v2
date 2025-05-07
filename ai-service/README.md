@@ -117,4 +117,32 @@ POST /api/v1/webhooks/general
 POST /api/v1/webhooks/stripe
 ```
 
-様々なサービスからのイベント通知を受け取るためのWebhookエンドポイント。 
+様々なサービスからのイベント通知を受け取るためのWebhookエンドポイント。
+
+## APIエンドポイント
+
+### コース生成エンドポイント
+- エンドポイント: `/courses/generate`
+- メソッド: POST
+- 説明: 指定されたトピックと条件に基づいて新しいコースを生成します
+
+### 教材生成エンドポイント
+- エンドポイント: `/generate/material`
+- メソッド: POST
+- 説明: 指定されたトピックと条件に基づいて新しい教材を生成します
+- リクエスト例:
+```json
+{
+  "topic": "ジャズピアノ入門",
+  "level": "beginner",
+  "format": "pdf",
+  "language": "ja",
+  "goal": "ジャズピアノの基本テクニックを習得する",
+  "additional_instructions": "初心者向けに詳しく説明してください"
+}
+```
+
+### 練習記録保存エンドポイント
+- エンドポイント: `/exercise/logs`
+- メソッド: POST
+- 説明: ユーザーの練習記録を保存します 
