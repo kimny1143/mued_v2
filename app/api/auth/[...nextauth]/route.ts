@@ -1,54 +1,74 @@
-import NextAuth, { AuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "../../../../lib/prisma";
-import { JWT } from "next-auth/jwt";
-import { Session } from "next-auth";
+import NextAuth, { NextAuthOptions } from 'next-auth';
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
+import GoogleProvider from 'next-auth/providers/google';
+import { PrismaClient } from '@prisma/client';
+import { Session } from 'next-auth';
+import { JWT } from 'next-auth/jwt';
 
-interface CustomUser {
-  id?: string;
-  role?: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-}
+const prisma = new PrismaClient();
 
+// カスタムセッション型
 interface CustomSession extends Session {
-  user?: CustomUser;
+  accessToken?: string;
+  error?: string;
 }
 
-export const authOptions: AuthOptions = {
+// カスタムJWT型
+interface CustomToken extends JWT {
+  accessToken?: string;
+  refreshToken?: string;
+  expiresAt?: number;
+  error?: string;
+}
+
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      authorization: {
+        params: {
+          scope: 'openid email profile https://www.googleapis.com/auth/calendar',
+          prompt: 'consent',
+          access_type: 'offline',
+        }
+      }
     }),
+    // 他の認証プロバイダーをここに追加
   ],
+  secret: process.env.NEXTAUTH_SECRET,
   session: {
-    strategy: "jwt" as const,
-    maxAge: 30 * 24 * 60 * 60, // 30日
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30日間
   },
   callbacks: {
-    async session({ session, token }: { session: CustomSession; token: JWT }) {
-      if (token && session.user) {
-        session.user.id = token.sub;
-        session.user.role = token.role as string;
+    jwt: async ({ token, account }) => {
+      // 初回サインイン時にアカウント情報をトークンに追加
+      if (account) {
+        token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
+        token.expiresAt = account.expires_at;
       }
-      return session;
+      return token as CustomToken;
     },
-    async jwt({ token, user }: { token: JWT; user?: CustomUser }) {
-      if (user) {
-        token.role = user.role || "student";
-      }
-      return token;
-    },
+    session: async ({ session, token }) => {
+      // JWTトークンからセッションにカスタムプロパティを追加
+      const customSession = session as CustomSession;
+      customSession.accessToken = (token as CustomToken).accessToken;
+      customSession.error = (token as CustomToken).error;
+      
+      return customSession;
+    }
   },
   pages: {
-    signIn: "/login",
-    error: "/login",
+    signIn: '/auth/signin',
+    signOut: '/auth/signout',
+    error: '/auth/error',
   },
+  debug: process.env.NODE_ENV === 'development',
 };
 
 const handler = NextAuth(authOptions);
+
 export { handler as GET, handler as POST }; 

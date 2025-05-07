@@ -4,6 +4,20 @@ const nextConfig = {
   images: {
     domains: ['images.unsplash.com', 'cloudinary.com'],
   },
+  env: {
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+  },
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': `${__dirname}/app`,
+      '@components': `${__dirname}/app/components`,
+      '@ui': `${__dirname}/app/components/ui`,
+      '@sections': `${__dirname}/app/sections`,
+    };
+    return config;
+  },
   async headers() {
     return [
       {

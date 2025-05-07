@@ -1,7 +1,15 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import { getToken } from 'next-auth/jwt';
+
+// WhereInputの型を定義
+type LessonSlotWhereInput = {
+  teacherId?: string;
+  startTime?: {
+    gte?: Date;
+    lte?: Date;
+  };
+};
 
 // レッスンスロット一覧を取得
 export async function GET(request: NextRequest) {
@@ -13,7 +21,7 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate');
     
     // クエリ条件を構築
-    const where: any = {};
+    const where: LessonSlotWhereInput = {};
     
     if (teacherId) {
       where.teacherId = teacherId;

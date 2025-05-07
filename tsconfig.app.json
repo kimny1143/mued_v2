@@ -20,9 +20,18 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./app/*"],
+      "@components/*": ["./app/components/*"],
+      "@ui/*": ["./app/components/ui/*"],
+      "@sections/*": ["./app/landing-sections/*"],
+      "@lib/*": ["./lib/*"]
+    }
   },
   "include": [
-    "src"
+    "app",
+    "lib"
   ]
 }

@@ -1,6 +1,24 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { Prisma } from '../../../src/generated/prisma';
+
+// 予約ステータスの列挙型
+enum ReservationStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED'
+}
+
+// 支払いステータスの列挙型
+enum PaymentStatus {
+  UNPAID = 'UNPAID',
+  PROCESSING = 'PROCESSING',
+  PAID = 'PAID',
+  REFUNDED = 'REFUNDED',
+  FAILED = 'FAILED'
+}
 
 // 予約一覧を取得
 export async function GET(request: NextRequest) {
@@ -21,7 +39,7 @@ export async function GET(request: NextRequest) {
     const slotId = searchParams.get('slotId');
     
     // クエリ条件を構築
-    const where: any = {};
+    const where: Prisma.ReservationWhereInput = {};
     
     // 教師（メンター）は自分の全予約を、生徒は自分の予約のみを見られる
     if (token.role === 'mentor') {
@@ -35,8 +53,8 @@ export async function GET(request: NextRequest) {
       where.studentId = token.sub;
     }
     
-    if (status) {
-      where.status = status;
+    if (status && Object.values(ReservationStatus).includes(status as ReservationStatus)) {
+      where.status = status as ReservationStatus;
     }
     
     if (slotId) {
@@ -115,7 +133,7 @@ export async function POST(request: NextRequest) {
         reservations: {
           where: {
             status: {
-              in: ['PENDING', 'CONFIRMED'],
+              in: [ReservationStatus.PENDING, ReservationStatus.CONFIRMED],
             },
           },
         },
@@ -166,8 +184,8 @@ export async function POST(request: NextRequest) {
       data: {
         slotId: data.slotId,
         studentId: token.sub as string,
-        status: 'PENDING',
-        paymentStatus: 'UNPAID',
+        status: ReservationStatus.PENDING,
+        paymentStatus: PaymentStatus.UNPAID,
         notes: data.notes,
       },
       include: {

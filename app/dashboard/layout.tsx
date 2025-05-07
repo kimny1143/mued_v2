@@ -21,12 +21,12 @@ import { useAuth } from "../../lib/auth";
 
 // ナビゲーション項目
 const dashboardNavItems = [
-  { icon: HomeIcon, label: "ダッシュボード", path: "/dashboard" },
-  { icon: FolderIcon, label: "教材", path: "/dashboard/materials" },
-  { icon: BookOpenIcon, label: "レッスン", path: "/dashboard/lessons" },
-  { icon: DumbbellIcon, label: "エクササイズ", path: "/dashboard/exercise" },
-  { icon: MessageSquareIcon, label: "メッセージ", path: "/dashboard/messages" },
-  { icon: SettingsIcon, label: "設定", path: "/dashboard/settings" }
+  { icon: HomeIcon, label: "Dashboard", path: "/dashboard" },
+  { icon: FolderIcon, label: "Materials", path: "/dashboard/materials" },
+  { icon: BookOpenIcon, label: "Lessons", path: "/dashboard/lessons" },
+  { icon: DumbbellIcon, label: "Exercises", path: "/dashboard/exercise" },
+  { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" },
+  { icon: SettingsIcon, label: "Settings", path: "/dashboard/settings" }
 ];
 
 export default function DashboardLayout({
@@ -51,7 +51,7 @@ export default function DashboardLayout({
     try {
       await signOut({ callbackUrl: "/" });
     } catch (error) {
-      console.error("サインアウトに失敗:", error);
+      console.error("Sign out failed:", error);
     }
   };
 
@@ -88,7 +88,7 @@ export default function DashboardLayout({
                 className="hidden lg:flex items-center gap-2 text-gray-500 hover:text-gray-700 focus:outline-none"
                 onClick={handleSignOut}
               >
-                <span className="text-sm">サインアウト</span>
+                <span className="text-sm">Sign Out</span>
               </button>
             </div>
           </div>
@@ -139,7 +139,7 @@ export default function DashboardLayout({
               {!isSidebarCollapsed && (
                 <div className="hidden lg:block">
                   <h3 className="font-semibold">{user?.email}</h3>
-                  <p className="text-sm text-gray-500">無料プラン</p>
+                  <p className="text-sm text-gray-500">Free Plan</p>
                 </div>
               )}
             </div>
@@ -148,7 +148,7 @@ export default function DashboardLayout({
                 className="w-full hidden lg:flex items-center justify-center py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50"
                 href="/dashboard/plans"
               >
-                プランをアップグレード
+                Upgrade Plan
               </Link>
             )}
           </div>

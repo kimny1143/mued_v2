@@ -1,6 +1,13 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+
+// 更新データの型を定義
+type LessonSlotUpdateData = {
+  startTime?: Date;
+  endTime?: Date;
+  isAvailable?: boolean;
+};
 
 // 特定のレッスンスロットを取得
 export async function GET(
@@ -74,7 +81,7 @@ export async function PUT(
     const data = await request.json();
     
     // 更新可能なフィールドを検証
-    const updateData: any = {};
+    const updateData: LessonSlotUpdateData = {};
     
     if (data.startTime) updateData.startTime = new Date(data.startTime);
     if (data.endTime) updateData.endTime = new Date(data.endTime);
