@@ -84,150 +84,6 @@
         }
       }
     },
-    "/api/v1/chat/messages": {
-      "get": {
-        "summary": "Get Chat Messages",
-        "description": "チャットメッセージ取得エンドポイント\n\n指定されたルームのチャットメッセージを取得します。\n現在はモックデータを返します。",
-        "operationId": "get_chat_messages_api_v1_chat_messages_get",
-        "parameters": [
-          {
-            "name": "room_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 20
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChatMessageList"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "summary": "Create Chat Message",
-        "description": "チャットメッセージ作成エンドポイント\n\n新しいチャットメッセージを作成します。\n現在はモックレスポンスを返します。",
-        "operationId": "create_chat_message_api_v1_chat_messages_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ChatMessageCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ChatMessage"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/musicxml/convert": {
-      "post": {
-        "summary": "Convert MusicXML",
-        "description": "MusicXML変換エンドポイント\n\nMusicXMLデータをJSON形式またはプレビュー画像に変換します。\n現在はモックデータを返します。",
-        "operationId": "convert_musicxml_api_v1_musicxml_convert_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MusicXMLConvertRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MusicXMLConvertResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/webhooks/general": {
       "post": {
         "summary": "General Webhook Handler",
@@ -282,6 +138,171 @@
         }
       }
     },
+    "/api/v1/chat/messages": {
+      "get": {
+        "summary": "Get Chat Messages",
+        "description": "チャットメッセージ取得エンドポイント\n\n指定されたルームのチャットメッセージを取得します。\n現在はモックデータを返します。",
+        "operationId": "get_chat_messages_api_v1_chat_messages_get",
+        "parameters": [
+          {
+            "name": "room_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Room Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessageList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Chat Message",
+        "description": "チャットメッセージ作成エンドポイント\n\n新しいチャットメッセージを作成します。\n現在はモックレスポンスを返します。",
+        "operationId": "create_chat_message_api_v1_chat_messages_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatMessageCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/musicxml/convert": {
+      "post": {
+        "summary": "Convert Musicxml",
+        "description": "MusicXML変換エンドポイント\n\nMusicXMLデータをJSON形式またはプレビュー画像に変換します。\n現在はモックデータを返します。",
+        "operationId": "convert_musicxml_api_v1_musicxml_convert_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MusicXMLConvertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MusicXMLConvertResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/generate/material": {
+      "post": {
+        "summary": "Generate Material",
+        "description": "教材生成エンドポイント\n\n指定されたトピックと条件に基づいて新しい教材を生成します。\nADR-0002に従った標準フォーマットでレスポンスを返します。\n現在はモックデータを返します。",
+        "operationId": "generate_material_api_v1_generate_material_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialGenerationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialGenerationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/": {
       "get": {
         "summary": "Root",
@@ -303,30 +324,34 @@
   "components": {
     "schemas": {
       "ChatMessage": {
-        "title": "ChatMessage",
-        "description": "チャットメッセージレスポンス",
-        "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "title": "Id"
           },
           "room_id": {
-            "type": "string"
+            "type": "string",
+            "title": "Room Id"
           },
           "user_id": {
-            "type": "string"
+            "type": "string",
+            "title": "User Id"
           },
           "username": {
-            "type": "string"
+            "type": "string",
+            "title": "Username"
           },
           "message": {
-            "type": "string"
+            "type": "string",
+            "title": "Message"
           },
           "created_at": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "title": "Created At"
           }
         },
+        "type": "object",
         "required": [
           "id",
           "room_id",
@@ -335,127 +360,139 @@
           "message",
           "created_at"
         ],
-        "example": {
-          "id": "msg-123456",
-          "room_id": "room-abc123",
-          "user_id": "user-456",
-          "username": "田中先生",
-          "message": "こんにちは、レッスンの準備はできていますか？",
-          "created_at": "2024-05-01T12:30:45.123456"
-        }
+        "title": "ChatMessage",
+        "description": "チャットメッセージレスポンス"
       },
       "ChatMessageCreate": {
-        "title": "ChatMessageCreate",
-        "description": "チャットメッセージ作成リクエスト",
-        "type": "object",
         "properties": {
           "room_id": {
-            "type": "string"
+            "type": "string",
+            "title": "Room Id"
           },
           "user_id": {
-            "type": "string"
+            "type": "string",
+            "title": "User Id"
           },
           "username": {
-            "type": "string"
+            "type": "string",
+            "title": "Username"
           },
           "message": {
-            "type": "string"
+            "type": "string",
+            "title": "Message"
           }
         },
+        "type": "object",
         "required": [
           "room_id",
           "user_id",
           "username",
           "message"
-        ]
+        ],
+        "title": "ChatMessageCreate",
+        "description": "チャットメッセージ作成リクエスト"
       },
       "ChatMessageList": {
-        "title": "ChatMessageList",
-        "description": "チャットメッセージリストレスポンス",
-        "type": "object",
         "properties": {
           "messages": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/ChatMessage"
-            }
+            },
+            "type": "array",
+            "title": "Messages"
           },
           "total": {
-            "type": "integer"
+            "type": "integer",
+            "title": "Total"
           }
         },
+        "type": "object",
         "required": [
           "messages",
           "total"
-        ]
+        ],
+        "title": "ChatMessageList",
+        "description": "チャットメッセージリストレスポンス"
       },
       "CourseGenerationRequest": {
-        "title": "CourseGenerationRequest",
-        "description": "コース生成リクエストモデル",
-        "type": "object",
         "properties": {
           "topic": {
             "type": "string",
+            "title": "Topic",
             "description": "コースのトピック"
           },
           "level": {
             "type": "string",
+            "title": "Level",
             "description": "難易度レベル (beginner, intermediate, advanced)"
           },
           "goal": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal",
             "description": "学習目標"
           },
           "keywords": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keywords",
             "description": "含めるべきキーワード"
           }
         },
+        "type": "object",
         "required": [
           "topic",
           "level"
         ],
-        "example": {
-          "topic": "ジャズピアノ入門",
-          "level": "beginner",
-          "goal": "基本的なジャズピアノコードと即興演奏の基礎を学ぶ",
-          "keywords": [
-            "ジャズハーモニー",
-            "コードプログレッション",
-            "即興演奏"
-          ]
-        }
+        "title": "CourseGenerationRequest",
+        "description": "コース生成リクエストモデル"
       },
       "CourseGenerationResponse": {
-        "title": "CourseGenerationResponse",
-        "description": "コース生成レスポンスモデル",
-        "type": "object",
         "properties": {
           "course_id": {
-            "type": "string"
+            "type": "string",
+            "title": "Course Id"
           },
           "title": {
-            "type": "string"
+            "type": "string",
+            "title": "Title"
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "title": "Description"
           },
           "level": {
-            "type": "string"
+            "type": "string",
+            "title": "Level"
           },
           "estimated_duration_hours": {
-            "type": "number"
+            "type": "number",
+            "title": "Estimated Duration Hours"
           },
           "modules": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/CourseModule"
-            }
+            },
+            "type": "array",
+            "title": "Modules"
           }
         },
+        "type": "object",
         "required": [
           "course_id",
           "title",
@@ -464,319 +501,466 @@
           "estimated_duration_hours",
           "modules"
         ],
-        "example": {
-          "course_id": "jazz-piano-basics-001",
-          "title": "ジャズピアノ入門: 基礎から即興演奏まで",
-          "description": "ジャズピアノの基本的な技術とハーモニーを学び、簡単な即興演奏ができるようになるためのコースです。",
-          "level": "beginner",
-          "estimated_duration_hours": 12.5,
-          "modules": [
-            {
-              "title": "ジャズハーモニーの基礎",
-              "description": "ジャズで使われる基本的なコードとスケールを学びます。",
-              "order": 1,
-              "lessons": [
-                {
-                  "title": "ジャズピアノ入門",
-                  "description": "ジャズピアノの基本とコースの概要",
-                  "content_type": "video",
-                  "duration_minutes": 15,
-                  "content_url": "https://example.com/videos/jazz-intro"
-                }
-              ]
-            }
-          ]
-        }
+        "title": "CourseGenerationResponse",
+        "description": "コース生成レスポンスモデル"
       },
       "CourseModule": {
-        "title": "CourseModule",
-        "description": "コースモジュールモデル",
-        "type": "object",
         "properties": {
           "title": {
-            "type": "string"
+            "type": "string",
+            "title": "Title"
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "title": "Description"
           },
           "order": {
-            "type": "integer"
+            "type": "integer",
+            "title": "Order"
           },
           "lessons": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/LessonContent"
-            }
+            },
+            "type": "array",
+            "title": "Lessons"
           }
         },
+        "type": "object",
         "required": [
           "title",
           "description",
           "order",
           "lessons"
-        ]
+        ],
+        "title": "CourseModule",
+        "description": "コースモジュールモデル"
       },
       "ExerciseLog": {
-        "title": "ExerciseLog",
-        "description": "練習記録レスポンス",
-        "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "title": "Id"
           },
           "user_id": {
-            "type": "string"
+            "type": "string",
+            "title": "User Id"
           },
           "instrument": {
-            "type": "string"
+            "type": "string",
+            "title": "Instrument"
           },
           "duration_minutes": {
-            "type": "integer"
+            "type": "integer",
+            "title": "Duration Minutes"
           },
           "difficulty": {
-            "type": "string"
+            "type": "string",
+            "title": "Difficulty"
           },
           "notes": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
           },
           "mood": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mood"
           },
           "date": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "title": "Date"
           },
           "created_at": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "title": "Created At"
           }
         },
+        "type": "object",
         "required": [
           "id",
           "user_id",
           "instrument",
           "duration_minutes",
           "difficulty",
+          "notes",
+          "mood",
           "date",
           "created_at"
-        ]
+        ],
+        "title": "ExerciseLog",
+        "description": "練習記録レスポンス"
       },
       "ExerciseLogCreate": {
-        "title": "ExerciseLogCreate",
-        "description": "練習記録作成リクエスト",
-        "type": "object",
         "properties": {
           "user_id": {
-            "type": "string"
+            "type": "string",
+            "title": "User Id"
           },
           "instrument": {
-            "type": "string"
+            "type": "string",
+            "title": "Instrument"
           },
           "duration_minutes": {
-            "type": "integer"
+            "type": "integer",
+            "title": "Duration Minutes"
           },
           "difficulty": {
-            "type": "string"
+            "type": "string",
+            "title": "Difficulty"
           },
           "notes": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
           },
           "mood": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mood"
           },
           "date": {
-            "type": "string",
-            "format": "date-time"
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
           }
         },
+        "type": "object",
         "required": [
           "user_id",
           "instrument",
           "duration_minutes",
           "difficulty"
-        ]
-      },
-      "HTTPError": {
-        "title": "HTTPError",
-        "type": "object",
-        "properties": {
-          "detail": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "detail"
-        ]
+        ],
+        "title": "ExerciseLogCreate",
+        "description": "練習記録作成リクエスト"
       },
       "HTTPValidationError": {
-        "title": "HTTPValidationError",
-        "type": "object",
         "properties": {
           "detail": {
-            "type": "array",
             "items": {
               "$ref": "#/components/schemas/ValidationError"
-            }
+            },
+            "type": "array",
+            "title": "Detail"
           }
-        }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
       },
       "LessonContent": {
-        "title": "LessonContent",
-        "description": "レッスンコンテンツモデル",
-        "type": "object",
         "properties": {
           "title": {
-            "type": "string"
+            "type": "string",
+            "title": "Title"
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "title": "Description"
           },
           "content_type": {
             "type": "string",
+            "title": "Content Type",
             "description": "コンテンツタイプ (video, text, exercise)"
           },
           "duration_minutes": {
-            "type": "integer"
+            "type": "integer",
+            "title": "Duration Minutes"
           },
           "content_url": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Url"
           },
           "content_text": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Text"
           }
         },
+        "type": "object",
         "required": [
           "title",
           "description",
           "content_type",
-          "duration_minutes"
-        ]
+          "duration_minutes",
+          "content_url",
+          "content_text"
+        ],
+        "title": "LessonContent",
+        "description": "レッスンコンテンツモデル"
+      },
+      "MaterialGenerationRequest": {
+        "properties": {
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level",
+            "default": "intermediate"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format",
+            "default": "pdf"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language",
+            "default": "ja"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
+          },
+          "additional_instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Additional Instructions"
+          },
+          "references": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "References"
+          }
+        },
+        "type": "object",
+        "required": [
+          "topic"
+        ],
+        "title": "MaterialGenerationRequest",
+        "description": "教材生成リクエストモデル"
+      },
+      "MaterialGenerationResponse": {
+        "properties": {
+          "material_id": {
+            "type": "string",
+            "title": "Material Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "download_url": {
+            "type": "string",
+            "title": "Download Url"
+          },
+          "preview_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Url"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "material_id",
+          "title",
+          "description",
+          "format",
+          "download_url",
+          "preview_url",
+          "created_at",
+          "metadata",
+          "success",
+          "error"
+        ],
+        "title": "MaterialGenerationResponse",
+        "description": "教材生成レスポンスモデル"
       },
       "MusicXMLConvertRequest": {
-        "title": "MusicXMLConvertRequest",
-        "description": "MusicXML変換リクエスト",
-        "type": "object",
         "properties": {
           "xml_content": {
             "type": "string",
+            "title": "Xml Content",
             "description": "MusicXMLコンテンツ（Base64エンコード）"
           },
           "format": {
             "type": "string",
+            "title": "Format",
             "description": "変換フォーマット (json, preview)"
           },
           "options": {
-            "type": "object",
-            "additionalProperties": true,
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options",
             "description": "変換オプション"
           }
         },
+        "type": "object",
         "required": [
           "xml_content",
           "format"
         ],
-        "example": {
-          "xml_content": "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPCEtLSBNdXNpY1hNTCBTYW1wbGUgLS0+CjxzY29yZS1wYXJ0aXdpc2U+PC9zY29yZS1wYXJ0aXdpc2U+",
-          "format": "json",
-          "options": {
-            "includeMetadata": true,
-            "includeNotations": true
-          }
-        }
+        "title": "MusicXMLConvertRequest",
+        "description": "MusicXML変換リクエスト"
       },
       "MusicXMLConvertResponse": {
-        "title": "MusicXMLConvertResponse",
-        "description": "MusicXML変換レスポンス",
-        "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "title": "Id"
           },
           "format": {
-            "type": "string"
+            "type": "string",
+            "title": "Format"
           },
           "result": {
             "type": "object",
-            "additionalProperties": true
+            "title": "Result"
           },
           "preview_url": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Url"
           },
           "created_at": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "title": "Created At"
           }
         },
+        "type": "object",
         "required": [
           "id",
           "format",
           "result",
+          "preview_url",
           "created_at"
         ],
-        "example": {
-          "id": "convert-123456",
-          "format": "json",
-          "result": {
-            "metadata": {
-              "title": "楽譜タイトル",
-              "composer": "作曲者名"
-            },
-            "parts": [
-              {
-                "id": "P1",
-                "name": "Piano",
-                "measures": []
-              }
-            ]
-          },
-          "preview_url": "https://example.com/preview/123456.png",
-          "created_at": "2024-05-01T12:30:45.123456"
-        }
-      },
-      "StripeWebhookEvent": {
-        "title": "StripeWebhookEvent",
-        "description": "Stripe Webhook用のモデル",
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "Stripeイベント識別子"
-          },
-          "type": {
-            "type": "string",
-            "description": "イベントタイプ (payment_intent.succeeded 等)"
-          },
-          "created": {
-            "type": "integer",
-            "description": "UNIXタイムスタンプ"
-          },
-          "data": {
-            "type": "object",
-            "additionalProperties": true,
-            "description": "イベントデータ"
-          },
-          "livemode": {
-            "type": "boolean",
-            "description": "本番環境のイベントかどうか"
-          },
-          "api_version": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "created",
-          "data",
-          "livemode"
-        ]
+        "title": "MusicXMLConvertResponse",
+        "description": "MusicXML変換レスポンス"
       },
       "ValidationError": {
-        "title": "ValidationError",
-        "type": "object",
         "properties": {
           "loc": {
-            "type": "array",
             "items": {
               "anyOf": [
                 {
@@ -786,51 +970,60 @@
                   "type": "integer"
                 }
               ]
-            }
+            },
+            "type": "array",
+            "title": "Location"
           },
           "msg": {
-            "type": "string"
+            "type": "string",
+            "title": "Message"
           },
           "type": {
-            "type": "string"
+            "type": "string",
+            "title": "Error Type"
           }
         },
+        "type": "object",
         "required": [
           "loc",
           "msg",
           "type"
-        ]
+        ],
+        "title": "ValidationError"
       },
       "WebhookEvent": {
-        "title": "WebhookEvent",
-        "description": "汎用Webhookイベントモデル",
-        "type": "object",
         "properties": {
           "id": {
             "type": "string",
+            "title": "Id",
             "description": "イベントID"
           },
           "type": {
             "type": "string",
+            "title": "Type",
             "description": "イベントタイプ"
           },
           "created": {
             "type": "string",
             "format": "date-time",
+            "title": "Created",
             "description": "作成日時"
           },
           "data": {
             "type": "object",
-            "additionalProperties": true,
+            "title": "Data",
             "description": "イベントデータ"
           }
         },
+        "type": "object",
         "required": [
           "id",
           "type",
           "created",
           "data"
-        ]
+        ],
+        "title": "WebhookEvent",
+        "description": "汎用Webhookイベントモデル"
       }
     }
   }
