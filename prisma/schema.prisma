@@ -48,9 +48,34 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  role          String    @default("student")
+  roleId        String    @default("student")
   accounts      Account[]
   sessions      Session[]
+  role          Role      @relation(fields: [roleId], references: [id])
+  
+  @@index([roleId])
+}
+
+model Role {
+  id          String @id
+  name        String
+  description String?
+  users       User[]
+  permissions Permission[]
+  
+  @@map("roles")
+}
+
+model Permission {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([roleId])
+  @@map("permissions")
 }
 
 model VerificationToken {
