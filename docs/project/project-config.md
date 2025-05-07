@@ -112,7 +112,7 @@ Sprint 1には以下のチケットを含めます:
 1. **AI教材生成β版 - バックエンド準備**
    - Type: `Feature`, Priority: `High`, Sprint: `Sprint 1-Week 2`, Estimated Effort: `L`
    - Assignees: 木村
-   - Status: `In Progress`
+   - Status: `Done`
    - 期限: Week 2 Day 5
 
 2. **βユーザー招待準備**
