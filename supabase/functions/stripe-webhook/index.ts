@@ -1,191 +1,151 @@
-import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
-import Stripe from 'npm:stripe@17.7.0';
-import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
+// @ts-nocheck
+import { serve } from 'https://deno.land/std@0.131.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.0.0';
+import Stripe from 'https://esm.sh/stripe@12.10.0?dts';
 
-const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
-const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
-const stripe = new Stripe(stripeSecret, {
-  appInfo: {
-    name: 'Bolt Integration',
-    version: '1.0.0',
-  },
+// Stripeの初期化
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+  apiVersion: '2022-11-15',
 });
 
-const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+// Webhookエンドポイントシークレット
+const endpointSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET') || '';
 
-Deno.serve(async (req) => {
+serve(async (req) => {
+  // リクエストボディとSignatureヘッダーを取得
+  const body = await req.text();
+  const signature = req.headers.get('stripe-signature');
+
+  if (!signature) {
+    console.error('Webhook error: 署名が見つかりません');
+    return new Response('Signature missing', { status: 400 });
+  }
+
+  let event;
   try {
-    // Handle OPTIONS request for CORS preflight
-    if (req.method === 'OPTIONS') {
-      return new Response(null, { status: 204 });
-    }
-
-    if (req.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405 });
-    }
-
-    // get the signature from the header
-    const signature = req.headers.get('stripe-signature');
-
-    if (!signature) {
-      return new Response('No signature found', { status: 400 });
-    }
-
-    // get the raw body
-    const body = await req.text();
-
-    // verify the webhook signature
-    let event: Stripe.Event;
-
-    try {
-      event = await stripe.webhooks.constructEventAsync(body, signature, stripeWebhookSecret);
-    } catch (error: any) {
-      console.error(`Webhook signature verification failed: ${error.message}`);
-      return new Response(`Webhook signature verification failed: ${error.message}`, { status: 400 });
-    }
-
-    EdgeRuntime.waitUntil(handleEvent(event));
-
-    return Response.json({ received: true });
-  } catch (error: any) {
-    console.error('Error processing webhook:', error);
-    return Response.json({ error: error.message }, { status: 500 });
-  }
-});
-
-async function handleEvent(event: Stripe.Event) {
-  const stripeData = event?.data?.object ?? {};
-
-  if (!stripeData) {
-    return;
+    // イベント検証
+    event = stripe.webhooks.constructEvent(body, signature, endpointSecret);
+  } catch (err: any) {
+    console.error(`Webhook signature verification failed: ${err.message}`);
+    return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  if (!('customer' in stripeData)) {
-    return;
-  }
+  // Supabaseクライアントの初期化
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_KEY') || '';
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // for one time payments, we only listen for the checkout.session.completed event
-  if (event.type === 'payment_intent.succeeded' && event.data.object.invoice === null) {
-    return;
-  }
+  console.log(`Received Stripe event: ${event.type}`);
 
-  const { customer: customerId } = stripeData;
-
-  if (!customerId || typeof customerId !== 'string') {
-    console.error(`No customer received on event: ${JSON.stringify(event)}`);
-  } else {
-    let isSubscription = true;
-
-    if (event.type === 'checkout.session.completed') {
-      const { mode } = stripeData as Stripe.Checkout.Session;
-
-      isSubscription = mode === 'subscription';
-
-      console.info(`Processing ${isSubscription ? 'subscription' : 'one-time payment'} checkout session`);
-    }
-
-    const { mode, payment_status } = stripeData as Stripe.Checkout.Session;
-
-    if (isSubscription) {
-      console.info(`Starting subscription sync for customer: ${customerId}`);
-      await syncCustomerFromStripe(customerId);
-    } else if (mode === 'payment' && payment_status === 'paid') {
-      try {
-        // Extract the necessary information from the session
-        const {
-          id: checkout_session_id,
-          payment_intent,
-          amount_subtotal,
-          amount_total,
-          currency,
-        } = stripeData as Stripe.Checkout.Session;
-
-        // Insert the order into the stripe_orders table
-        const { error: orderError } = await supabase.from('stripe_orders').insert({
-          checkout_session_id,
-          payment_intent_id: payment_intent,
-          customer_id: customerId,
-          amount_subtotal,
-          amount_total,
-          currency,
-          payment_status,
-          status: 'completed', // assuming we want to mark it as completed since payment is successful
-        });
-
-        if (orderError) {
-          console.error('Error inserting order:', orderError);
-          return;
+  // イベントタイプに基づいて処理
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        
+        // メタデータから予約情報を取得
+        const reservationId = session.metadata.reservationId;
+        const lessonSlotId = session.metadata.lessonSlotId;
+        const userId = session.metadata.userId;
+        
+        if (!reservationId || !lessonSlotId || !userId) {
+          console.error('メタデータ不足:', session.metadata);
+          return new Response('Missing metadata', { status: 400 });
         }
-        console.info(`Successfully processed one-time payment for session: ${checkout_session_id}`);
-      } catch (error) {
-        console.error('Error processing one-time payment:', error);
+        
+        console.log(`Processing completed checkout for reservation ${reservationId}`);
+        
+        // 予約ステータスを確定に更新
+        const { error: reservationError } = await supabase
+          .from('reservations')
+          .update({ 
+            status: 'confirmed',
+            payment_status: 'paid',
+            payment_intent_id: session.payment_intent,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', reservationId);
+        
+        if (reservationError) {
+          console.error('予約更新エラー:', reservationError);
+          return new Response('Reservation update failed', { status: 500 });
+        }
+        
+        // レッスン枠の利用状況更新
+        const { error: lessonSlotError } = await supabase
+          .from('lesson_slots')
+          .update({ available: false })
+          .eq('id', lessonSlotId);
+        
+        if (lessonSlotError) {
+          console.error('レッスン枠更新エラー:', lessonSlotError);
+          return new Response('Lesson slot update failed', { status: 500 });
+        }
+        
+        // 支払い記録の作成
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .insert({
+            user_id: userId,
+            reservation_id: reservationId,
+            amount: session.amount_total,
+            currency: session.currency,
+            payment_intent_id: session.payment_intent,
+            payment_status: 'succeeded',
+            payment_method: session.payment_method_types[0],
+          });
+        
+        if (paymentError) {
+          console.error('支払い記録作成エラー:', paymentError);
+          return new Response('Payment record creation failed', { status: 500 });
+        }
+        
+        console.log(`Successfully processed payment for reservation ${reservationId}`);
+        break;
       }
+        
+      case 'checkout.session.expired': {
+        // 期限切れの場合、予約を取り消す
+        const expiredSession = event.data.object;
+        const expiredReservationId = expiredSession.metadata.reservationId;
+        
+        if (expiredReservationId) {
+          console.log(`Processing expired checkout for reservation ${expiredReservationId}`);
+          
+          const { error } = await supabase
+            .from('reservations')
+            .update({ 
+              status: 'cancelled',
+              payment_status: 'expired',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', expiredReservationId);
+          
+          if (error) {
+            console.error('期限切れ予約キャンセルエラー:', error);
+            return new Response('Reservation cancellation failed', { status: 500 });
+          }
+          
+          console.log(`Successfully cancelled expired reservation ${expiredReservationId}`);
+        }
+        break;
+      }
+        
+      // その他のイベントタイプについても必要に応じて処理を追加
     }
-  }
-}
-
-// based on the excellent https://github.com/t3dotgg/stripe-recommendations
-async function syncCustomerFromStripe(customerId: string) {
-  try {
-    // fetch latest subscription data from Stripe
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      limit: 1,
-      status: 'all',
-      expand: ['data.default_payment_method'],
+    
+    // 成功レスポンス
+    return new Response(JSON.stringify({ received: true }), {
+      headers: { 'Content-Type': 'application/json' },
     });
-
-    // TODO verify if needed
-    if (subscriptions.data.length === 0) {
-      console.info(`No active subscriptions found for customer: ${customerId}`);
-      const { error: noSubError } = await supabase.from('stripe_subscriptions').upsert(
-        {
-          customer_id: customerId,
-          subscription_status: 'not_started',
-        },
-        {
-          onConflict: 'customer_id',
-        },
-      );
-
-      if (noSubError) {
-        console.error('Error updating subscription status:', noSubError);
-        throw new Error('Failed to update subscription status in database');
+  } catch (err: any) {
+    console.error(`Webhook processing error: ${err.message}`);
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
       }
-    }
-
-    // assumes that a customer can only have a single subscription
-    const subscription = subscriptions.data[0];
-
-    // store subscription state
-    const { error: subError } = await supabase.from('stripe_subscriptions').upsert(
-      {
-        customer_id: customerId,
-        subscription_id: subscription.id,
-        price_id: subscription.items.data[0].price.id,
-        current_period_start: subscription.current_period_start,
-        current_period_end: subscription.current_period_end,
-        cancel_at_period_end: subscription.cancel_at_period_end,
-        ...(subscription.default_payment_method && typeof subscription.default_payment_method !== 'string'
-          ? {
-              payment_method_brand: subscription.default_payment_method.card?.brand ?? null,
-              payment_method_last4: subscription.default_payment_method.card?.last4 ?? null,
-            }
-          : {}),
-        status: subscription.status,
-      },
-      {
-        onConflict: 'customer_id',
-      },
     );
-
-    if (subError) {
-      console.error('Error syncing subscription:', subError);
-      throw new Error('Failed to sync subscription in database');
-    }
-    console.info(`Successfully synced subscription for customer: ${customerId}`);
-  } catch (error) {
-    console.error(`Failed to sync subscription for customer ${customerId}:`, error);
-    throw error;
   }
-}
+});

@@ -1,1 +1,0 @@
-export { MaterialsPage } from "./MaterialsPage";

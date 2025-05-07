@@ -1,6 +1,24 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { Prisma } from '../../../../src/generated/prisma';
+
+// 予約ステータスの列挙型
+enum ReservationStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED'
+}
+
+// 支払いステータスの列挙型
+enum PaymentStatus {
+  UNPAID = 'UNPAID',
+  PROCESSING = 'PROCESSING',
+  PAID = 'PAID',
+  REFUNDED = 'REFUNDED',
+  FAILED = 'FAILED'
+}
 
 // 特定の予約を取得
 export async function GET(
@@ -119,7 +137,7 @@ export async function PUT(
     const data = await request.json();
     
     // 更新可能なフィールドを検証
-    const updateData: any = {};
+    const updateData: Prisma.ReservationUpdateInput = {};
     
     // 予約のステータス更新 (PENDING, CONFIRMED, CANCELLED, COMPLETED)
     if (data.status) {
@@ -130,15 +148,15 @@ export async function PUT(
       
       if (isAdmin) {
         // 管理者は全ての状態変更が可能
-        updateData.status = data.status;
+        updateData.status = data.status as ReservationStatus;
       } else if (isTeacher) {
         // 講師の場合
         if (
-          (existingReservation.status === 'PENDING' && data.status === 'CONFIRMED') ||
-          (existingReservation.status === 'CONFIRMED' && data.status === 'COMPLETED') ||
-          (existingReservation.status === 'PENDING' && data.status === 'CANCELLED')
+          (existingReservation.status === ReservationStatus.PENDING && data.status === ReservationStatus.CONFIRMED) ||
+          (existingReservation.status === ReservationStatus.CONFIRMED && data.status === ReservationStatus.COMPLETED) ||
+          (existingReservation.status === ReservationStatus.PENDING && data.status === ReservationStatus.CANCELLED)
         ) {
-          updateData.status = data.status;
+          updateData.status = data.status as ReservationStatus;
         } else {
           return NextResponse.json(
             { error: 'このステータス変更は許可されていません' },
@@ -147,8 +165,8 @@ export async function PUT(
         }
       } else if (isStudent) {
         // 生徒の場合
-        if (existingReservation.status === 'PENDING' && data.status === 'CANCELLED') {
-          updateData.status = data.status;
+        if (existingReservation.status === ReservationStatus.PENDING && data.status === ReservationStatus.CANCELLED) {
+          updateData.status = data.status as ReservationStatus;
         } else {
           return NextResponse.json(
             { error: 'このステータス変更は許可されていません' },
@@ -160,7 +178,7 @@ export async function PUT(
     
     // 支払いステータスの更新 (管理者のみ)
     if (data.paymentStatus && isAdmin) {
-      updateData.paymentStatus = data.paymentStatus;
+      updateData.paymentStatus = data.paymentStatus as PaymentStatus;
     }
     
     // 支払いIDの更新 (管理者のみ)

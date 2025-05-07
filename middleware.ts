@@ -1,22 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-export async function middleware(req: NextRequest) {
+// パブリックルートのリスト
+const publicPaths = ["/login", "/register", "/", "/api/auth"];
+
+export default async function middleware(req: NextRequest) {
+  const path = req.nextUrl.pathname;
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  
-  const publicPaths = ["/login", "/register", "/", "/api/auth"];
-  const isPublicPath = publicPaths.some(path => req.nextUrl.pathname.startsWith(path));
-  
-  // 未認証で保護されたルートにアクセスしようとしている場合
+
+  // パブリックルートへのアクセスはそのまま許可
+  const isPublicPath = publicPaths.some((publicPath) => 
+    path === publicPath || path.startsWith(`${publicPath}/`)
+  );
+
+  // ルート判定とリダイレクト処理
   if (!token && !isPublicPath) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    // 認証されていないユーザーで、非公開パスへのアクセスの場合
+    const url = new URL("/login", req.url);
+    url.searchParams.set("callbackUrl", encodeURI(path));
+    return NextResponse.redirect(url);
   }
-  
-  // 管理者以外が管理者用ページにアクセスしようとしている場合
-  if (req.nextUrl.pathname.startsWith("/admin") && token?.role !== "admin") {
+
+  if (token && (path === "/login" || path === "/register")) {
+    // すでに認証済みのユーザーがログイン/登録ページにアクセスした場合
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
-  
+
+  // 管理者以外が管理者用ページにアクセスしようとしている場合
+  if (path.startsWith("/admin") && token?.role !== "admin") {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
   return NextResponse.next();
 }
 
