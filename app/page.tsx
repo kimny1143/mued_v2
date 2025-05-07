@@ -7,14 +7,13 @@ import Image from "next/image";
 
 export default function PageLandingMued(): JSX.Element {
   return (
-    <Card
-      className="flex flex-col w-full min-h-[900px] items-start px-12 py-0 relative bg-white border-2 border-solid border-black rounded-none"
-      data-model-id="4:125"
+    <div
+      className="flex flex-col w-full min-h-[900px] items-start px-0 sm:px-12 py-0 relative bg-white border-none rounded-none"
     >
       <SoftwareCompany />
       <Container />
       <MainContentWrapper />
       <SoftwareCompanyWrapper />
-    </Card>
+    </div>
   );
 }

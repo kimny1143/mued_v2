@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* フォントのインポート */
+@import url("https://fonts.googleapis.com/css?family=Shantell+Sans:500,700,400|Flow+Circular:400");
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
 @layer base {
   :root {
     font-size: 18px;
@@ -32,6 +36,11 @@
     
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
+
+    /* MUED特有の色 */
+    --mued-border: #000000cc;
+    --mued-text: #000000cc;
+    --mued-bg: #eeeeee;
     
     --radius: 0.5rem;
   }
@@ -64,6 +73,11 @@
     
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
+
+    /* MUED特有の色 - ダークモード */
+    --mued-border: #ffffffcc;
+    --mued-text: #ffffffcc;
+    --mued-bg: #333333;
   }
 }
 
@@ -77,25 +91,38 @@
   body {
     @apply bg-background text-foreground;
     font-size: 1rem;
-    font-feature-settings: "palt";
+    font-feature-settings: "palt", "rlig" 1, "calt" 1;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-family: 'Shantell Sans', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
   }
 
   h1 {
-    font-size: 2.5rem !important; /* 45px */
+    font-size: 2.778rem !important; /* 50px */
     line-height: 1.2 !important;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-family: 'Shantell Sans', cursive !important;
+    color: var(--mued-text);
   }
   
   h2 {
-    font-size: 2rem !important; /* 36px */
+    font-size: 2.222rem !important; /* 40px */
     line-height: 1.2 !important;
+    letter-spacing: -0.015em;
+    font-weight: 600;
+    font-family: 'Shantell Sans', cursive !important;
+    color: var(--mued-text);
   }
   
   h3 {
-    font-size: 1.5rem !important; /* 27px */
+    font-size: 1.667rem !important; /* 30px */
     line-height: 1.3 !important;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+    font-family: 'Shantell Sans', cursive !important;
+    color: var(--mued-text);
   }
   
   p, div {
@@ -112,81 +139,176 @@
   }
   
   .font-sans {
-    font-family: 'Inter', system-ui, sans-serif !important;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
   }
-  
-  .text-xxs {
-    font-size: 0.778rem !important; /* 14px */
-  }
-  
-  .text-xs {
-    font-size: 0.889rem !important; /* 16px */
-  }
-  
-  .text-sm {
-    font-size: 1rem !important; /* 18px */
-  }
-  
-  .text-base {
-    font-size: 1.111rem !important; /* 20px */
-  }
-  
-  .text-md {
-    font-size: 1.222rem !important; /* 22px */
-  }
-  
-  .text-lg {
-    font-size: 1.333rem !important; /* 24px */
-  }
-  
-  .text-xl {
-    font-size: 1.5rem !important; /* 27px */
-  }
-  
-  .text-2xl {
-    font-size: 1.778rem !important; /* 32px */
-  }
-  
-  .text-3xl {
-    font-size: 2rem !important; /* 36px */
+
+  .font-jp {
+    font-family: 'Noto Sans JP', sans-serif !important;
   }
 }
 
-/* フォントサイズクラスをコンポーネント層に移して優先度を上げる */
+/* フォントサイズクラスを一貫性のある値で定義 */
 @layer components {
+  /* フォントサイズ */
   .text-xxs {
     font-size: 0.778rem !important; /* 14px */
+    line-height: 1.4 !important;
+    font-family: 'Noto Sans JP', sans-serif !important;
   }
 
   .text-xs {
     font-size: 0.889rem !important; /* 16px */
+    line-height: 1.4 !important;
+    font-family: 'Noto Sans JP', sans-serif !important;
   }
   
   .text-sm {
     font-size: 1rem !important; /* 18px */
+    line-height: 1.5 !important;
   }
   
   .text-base {
     font-size: 1.111rem !important; /* 20px */
+    line-height: 1.5 !important;
   }
 
   .text-md {
     font-size: 1.222rem !important; /* 22px */
+    line-height: 1.5 !important;
   }
   
   .text-lg {
     font-size: 1.333rem !important; /* 24px */
+    line-height: 1.4 !important;
   }
   
   .text-xl {
     font-size: 1.5rem !important; /* 27px */
+    line-height: 1.4 !important;
   }
   
   .text-2xl {
     font-size: 1.778rem !important; /* 32px */
+    line-height: 1.3 !important;
   }
   
   .text-3xl {
     font-size: 2rem !important; /* 36px */
+    line-height: 1.2 !important;
+  }
+  
+  .text-4xl {
+    font-size: 2.5rem !important; /* 45px */
+    line-height: 1.1 !important;
+  }
+  
+  .text-5xl {
+    font-size: 3rem !important; /* 54px */
+    line-height: 1 !important;
+  }
+
+  .text-6xl {
+    font-size: 3.5rem !important; /* 63px */
+    line-height: 1 !important;
+  }
+
+  .text-7xl {
+    font-size: 4rem !important; /* 72px */
+    line-height: 1 !important;
+  }
+
+  /* MUED特有のコンポーネント */
+  .mued-border {
+    border: 2px solid var(--mued-border) !important;
+    border-radius: 0.5rem;
+  }
+  
+  .mued-card {
+    @apply bg-white rounded-lg;
+    border: 2px solid var(--mued-border) !important;
+    overflow: hidden;
+  }
+  
+  .mued-btn {
+    @apply px-8 py-4 rounded font-shantell font-medium text-xl;
+    background-color: var(--mued-text);
+    color: white;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .mued-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mued-btn-outline {
+    @apply px-8 py-4 rounded font-shantell font-medium text-xl;
+    background-color: white;
+    color: var(--mued-text);
+    border: 2px solid var(--mued-border) !important;
+  }
+  
+  .mued-container {
+    @apply flex items-center gap-16 sm:gap-32 pt-12 sm:pt-24 pb-0 px-4 sm:px-24;
+    background: linear-gradient(176deg, rgba(255,255,255,0.7) 14%, rgba(51,51,51,0.06) 100%), 
+               linear-gradient(0deg, rgba(255,255,255,1) 0%, rgba(255,255,255,1) 100%);
+  }
+  
+  .mued-hero-text {
+    @apply font-shantell font-medium text-4xl sm:text-6xl text-center leading-tight;
+    color: var(--mued-text);
+  }
+
+  .mued-logo-text {
+    @apply font-shantell font-bold;
+    font-size: 3.5rem !important; /* 63px */
+    color: var(--mued-text);
+    line-height: 1 !important;
+  }
+  
+  .mued-phone-mockup {
+    @apply relative w-[90%] max-w-[513px] h-[975px] mx-auto bg-white rounded-[44px] overflow-hidden;
+    border: 2px solid var(--mued-border) !important;
+  }
+
+  /* Small text clean-up */
+  .text-small-clean {
+    font-family: 'Noto Sans JP', sans-serif !important;
+    letter-spacing: -0.01em;
+    font-size: 1rem !important;
+  }
+}
+
+/* レスポンシブ対応の強化 */
+@media (max-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+  
+  h1 {
+    font-size: 2.25rem !important;
+  }
+  
+  h2 {
+    font-size: 1.75rem !important;
+  }
+  
+  h3 {
+    font-size: 1.5rem !important;
+  }
+  
+  .mued-hero-text {
+    @apply text-3xl sm:text-5xl;
+  }
+
+  .mued-logo-text {
+    font-size: 2.5rem !important; /* 40px */
+  }
+}
+
+/* 特に小さいデバイス用の調整 */
+@media (max-width: 480px) {
+  html {
+    font-size: 15px;
   }
 } 
