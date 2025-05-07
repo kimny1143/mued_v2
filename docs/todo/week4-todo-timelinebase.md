@@ -105,3 +105,41 @@
 - **Daily Standup**: 平日毎朝10:00 JST
 - **Sprint 1 レビュー**: Week 2 金曜午後
 - **Sprint 1 リトロスペクティブ**: レビュー直後
+
+---
+
+## 🌿 ブランチ管理方針
+
+### App Router移行について
+
+現在の状況:
+- mainブランチ: App Router移行前のVite + React構成を保持
+- splint1-week1ブランチ: App Routerへの移行を進行中
+
+### PRとブランチ戦略
+
+App Router移行を進めながらmainブランチを保持するため、以下の手順で進めます:
+
+1. **統合ブランチの作成**
+   ```bash
+   git checkout -b app-router-dev splint1-week1
+   ```
+   splint1-week1の内容を基にした新しい統合ブランチを作成します
+
+2. **PRの作成方針**
+   - app-router-devブランチから新しいブランチを作成し機能単位でPRを作成
+   - PRのターゲットはmainではなく別の新しいブランチ（例：next-main）に設定
+
+3. **mainブランチの保護**
+   ```bash
+   git branch -m main legacy-main  # 必要に応じて古いmainをリネーム
+   ```
+   リポジトリの設定でmainブランチを保護し、直接プッシュできないよう設定します
+
+4. **将来的な統合計画**
+   - App Router移行が完全に完了したら、統合ブランチをmainにマージ
+   - または完了時点でapp-router-devを新しいmainとして設定
+
+この方法により、既存のmainブランチの状態を保持しながら、並行して新しいApp Router版の開発を進めることができます。
+
+**手順実施状況**: 木村がブランチ管理方針を立案、Sprint 1の完了に合わせて上記手順に基づいた実装を行う予定です。
