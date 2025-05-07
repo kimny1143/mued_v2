@@ -4,7 +4,7 @@ import React from "react";
 import { Card } from "@ui/card";
 import { Button } from "@ui/button";
 import { useAuth } from "@lib/auth";
-import { SubscriptionStatus } from "@/components/SubscriptionStatus";
+import { SubscriptionStatus } from "../components/SubscriptionStatus";
 
 export default function DashboardPage() {
   const { user, role, isLoading } = useAuth();

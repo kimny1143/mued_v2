@@ -1,8 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./src/**/*.{html,js,ts,jsx,tsx}",
     "./app/**/*.{js,ts,jsx,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
     "./lib/**/*.{js,ts,jsx,tsx}",
   ],
@@ -50,6 +50,8 @@ module.exports = {
       },
       fontFamily: {
         sans: [
+          "var(--font-inter)", 
+          "Inter",
           "ui-sans-serif",
           "system-ui",
           "sans-serif",
@@ -57,6 +59,16 @@ module.exports = {
           '"Segoe UI Emoji"',
           '"Segoe UI Symbol"',
           '"Noto Color Emoji"',
+        ],
+        shantell: [
+          "var(--font-shantell-sans)",
+          "Shantell Sans",
+          "cursive"
+        ],
+        flow: [
+          "var(--font-flow-circular)",
+          "Flow Circular",
+          "cursive"
         ],
       },
       keyframes: {
@@ -78,4 +90,9 @@ module.exports = {
   },
   plugins: [],
   darkMode: ["class"],
+  safelist: [
+    'font-sans',
+    'font-shantell',
+    'font-flow',
+  ],
 };

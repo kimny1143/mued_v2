@@ -8,7 +8,8 @@
     "eslint:recommended",
     "plugin:react/recommended",
     "plugin:react-hooks/recommended",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:@typescript-eslint/recommended",
+    "next/core-web-vitals"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -31,11 +32,28 @@
     "@typescript-eslint/no-unused-vars": ["warn", {
       "argsIgnorePattern": "^_",
       "varsIgnorePattern": "^_"
-    }]
+    }],
+    "react/no-unescaped-entities": "off",
+    "@next/next/no-img-element": "off"
   },
   "settings": {
     "react": {
       "version": "detect"
+    },
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      },
+      "alias": {
+        "map": [
+          ["@", "./app"],
+          ["@components", "./app/components"],
+          ["@ui", "./app/components/ui"],
+          ["@sections", "./app/sections"],
+          ["@lib", "./lib"]
+        ],
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      }
     }
   }
 } 

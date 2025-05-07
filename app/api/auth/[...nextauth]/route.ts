@@ -1,11 +1,9 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
-import { PrismaClient } from '@prisma/client';
 import { Session } from 'next-auth';
 import { JWT } from 'next-auth/jwt';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // カスタムセッション型
 interface CustomSession extends Session {

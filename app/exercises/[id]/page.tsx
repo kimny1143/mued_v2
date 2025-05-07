@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect } from "react";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import { DashboardLayout } from "../../components/DashboardLayout";
 import { Card } from "@ui/card";
 import { Button } from "@ui/button";
 import { Clock, PlayCircle, BarChart2, CheckCircle2, ClipboardEdit, XIcon, StopCircle } from "lucide-react";
-import { ExerciseLogForm } from "@/components/ExerciseLogForm";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ExerciseLogForm } from "../../components/ExerciseLogForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
 import type { ExerciseLogFormData } from "@lib/validationSchemas";
 
 // Helper function to format time

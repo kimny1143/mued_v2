@@ -1,10 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import Providers from './providers';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'MUED LMS',
@@ -18,9 +15,27 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className={inter.className}>
+      <head>
+        {/* Google Fontsのリンクを直接追加 */}
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" 
+          rel="stylesheet"
+        />
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500;700&display=swap"
+          rel="stylesheet"
+        />
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Flow+Circular&display=swap"
+          rel="stylesheet" 
+        />
+      </head>
+      <body className="font-sans">
         <Providers>
+          {/* NavigationWrapperはクライアントコンポーネントなのでそのままlayout.tsxに含めることはできません */}
+          <main className="min-h-screen">
           {children}
+          </main>
         </Providers>
       </body>
     </html>

@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js用のモデル
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id                  String        @id @default(cuid())
+  name                String?
+  email               String?       @unique
+  emailVerified       DateTime?
+  image               String?
+  roleId              String        @default("student")
+  accounts            Account[]
+  sessions            Session[]
+  role                Role          @relation(fields: [roleId], references: [id])
+  teacherSlots        LessonSlot[]  @relation("TeacherSlots")
+  studentReservations Reservation[] @relation("StudentReservations")
+
+  @@index([roleId])
+}
+
+model Role {
+  id          String       @id
+  name        String
+  description String?
+  users       User[]
+  permissions Permission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([roleId])
+  @@map("permissions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model LessonSlot {
+  id           String        @id @default(cuid())
+  teacherId    String // 講師のユーザーID
+  teacher      User          @relation("TeacherSlots", fields: [teacherId], references: [id])
+  startTime    DateTime // 開始時間
+  endTime      DateTime // 終了時間
+  isAvailable  Boolean       @default(true) // 予約可能かどうか
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  reservations Reservation[]
+
+  @@index([teacherId])
+  @@index([startTime, endTime])
+  @@map("lesson_slots")
+}
+
+model Reservation {
+  id            String            @id @default(cuid())
+  slotId        String // レッスンスロットID
+  slot          LessonSlot        @relation(fields: [slotId], references: [id])
+  studentId     String // 生徒のユーザーID
+  student       User              @relation("StudentReservations", fields: [studentId], references: [id])
+  status        ReservationStatus @default(PENDING) // 予約ステータス
+  paymentId     String? // 支払いID（Stripe等）
+  paymentStatus PaymentStatus     @default(UNPAID) // 支払いステータス
+  notes         String?           @db.Text // 備考・メモ
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([slotId])
+  @@index([studentId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@map("reservations")
+}
+
+enum ReservationStatus {
+  PENDING // 保留中
+  CONFIRMED // 確定
+  CANCELLED // キャンセル
+  COMPLETED // 完了
+}
+
+enum PaymentStatus {
+  UNPAID // 未払い
+  PROCESSING // 処理中
+  PAID // 支払い完了
+  REFUNDED // 返金済み
+  FAILED // 失敗
+}

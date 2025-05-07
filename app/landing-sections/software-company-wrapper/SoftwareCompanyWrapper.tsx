@@ -1,6 +1,10 @@
+'use client';
+
 import { FacebookIcon, InstagramIcon, TwitterIcon } from "lucide-react";
 import React from "react";
-import { Separator } from "@ui/separator";
+import { Separator } from "../../components/ui/separator";
+import Image from "next/image";
+import LogoImage from '../../../public/logo.png';
 
 export const SoftwareCompanyWrapper = (): JSX.Element => {
   // Footer navigation data
@@ -32,8 +36,15 @@ export const SoftwareCompanyWrapper = (): JSX.Element => {
         <div className="flex flex-col items-start justify-between flex-1 self-stretch">
           {/* Logo */}
           <div className="h-8 gap-1 inline-flex items-center">
-            <img className="w-7 h-7" alt="Logomark" src="/logomark-1.svg" />
-            <div className="[font-family:'Shantell_Sans',Helvetica] font-bold text-[#000000cc] text-[28px] leading-7 whitespace-nowrap">
+            <Image 
+              className="w-7 h-7 object-contain" 
+              alt="Logomark" 
+              src={LogoImage}
+              width={28}
+              height={28}
+              priority
+            />
+            <div className="font-shantell font-bold text-[#000000cc] text-[28px] leading-7 whitespace-nowrap">
               MUED
             </div>
           </div>
@@ -52,14 +63,14 @@ export const SoftwareCompanyWrapper = (): JSX.Element => {
             key={index}
             className="flex flex-col w-[200px] items-start justify-center gap-2"
           >
-            <div className="self-stretch mt-[-1.00px] [font-family:'Flow_Circular',Helvetica] font-normal text-[#000000cc] text-[15px] leading-5">
+            <div className="self-stretch mt-[-1.00px] font-flow font-normal text-[#000000cc] text-base leading-6">
               {column.title}
             </div>
 
             {column.links.map((link, linkIndex) => (
               <div
                 key={linkIndex}
-                className="self-stretch [font-family:'Flow_Circular',Helvetica] font-normal text-[#00000066] text-[15px] leading-5 cursor-pointer hover:text-black"
+                className="self-stretch font-flow font-normal text-[#00000066] text-base leading-6 cursor-pointer hover:text-black"
               >
                 {link}
               </div>
