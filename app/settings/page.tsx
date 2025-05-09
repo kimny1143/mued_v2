@@ -1,15 +1,45 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Button } from "@ui/button";
 import { Card } from "@ui/card";
 import { Separator } from "@ui/separator";
 import { UserCircleIcon } from "lucide-react";
-import { DashboardLayout } from "@/components/DashboardLayout";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js";
 
-export default function Page() {
-  const { user } = useAuth();
+export default function SettingsPage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const getUser = async () => {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user || null);
+      setLoading(false);
+    };
+    
+    getUser();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <DashboardLayout title="Settings">
+    <div>
+      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      
       {/* Profile Settings */}
       <Card className="mb-6 p-6">
         <h2 className="text-xl font-semibold mb-4">Profile Settings</h2>
@@ -90,6 +120,6 @@ export default function Page() {
           </div>
         </div>
       </Card>
-    </DashboardLayout>
+    </div>
   );
 }

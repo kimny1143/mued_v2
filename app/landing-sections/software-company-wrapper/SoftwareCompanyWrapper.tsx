@@ -63,14 +63,14 @@ export const SoftwareCompanyWrapper = (): JSX.Element => {
             key={index}
             className="flex flex-col w-[200px] items-start justify-center gap-2"
           >
-            <div className="self-stretch mt-[-1.00px] font-flow font-normal text-[#000000cc] text-base leading-6">
+            <div className="self-stretch mt-[-1.00px] font-shantell font-medium text-[#000000cc] text-[13px] leading-4">
               {column.title}
             </div>
 
             {column.links.map((link, linkIndex) => (
               <div
                 key={linkIndex}
-                className="self-stretch font-flow font-normal text-[#00000066] text-base leading-6 cursor-pointer hover:text-black"
+                className="self-stretch font-shantell font-medium text-[#00000066] text-[12px] leading-4 cursor-pointer hover:text-black"
               >
                 {link}
               </div>

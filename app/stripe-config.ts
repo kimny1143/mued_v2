@@ -6,31 +6,32 @@ export interface StripeProduct {
   mode: 'payment' | 'subscription';
 }
 
+// Stripeサンドボックスモードで作成した製品と価格ID
 export const products: StripeProduct[] = [
   {
-    id: 'prod_SDwjfpaGBSJw8I',
-    priceId: 'price_1RJUpvDLJ4SvE3u2bnmzT6qa',
+    id: 'prod_test_spot_lesson',
+    priceId: 'price_test_spot_lesson',
     name: 'Spot Lesson',
     description: 'One-time lesson with an expert instructor',
     mode: 'payment',
   },
   {
-    id: 'prod_SDwirBO9qgF1gM',
-    priceId: 'price_1RJUpJDLJ4SvE3u2Lwg8MvTS',
+    id: 'prod_SGrMMxymyqkwTz',
+    priceId: 'price_1RMJdXRYtspYtD2zESbuO5mG',
     name: 'Premium Subscription',
     description: 'Full access to all premium features and content',
     mode: 'subscription',
   },
   {
-    id: 'prod_SDwi1REd7prVuy',
-    priceId: 'price_1RJUolDLJ4SvE3u2lcg7C895',
+    id: 'prod_SGrLpJJwwRtj6h',
+    priceId: 'price_1RMJcpRYtspYtD2zQjRRmLXc',
     name: 'Starter Subscription',
     description: 'Basic access to learning materials',
     mode: 'subscription',
   },
   {
-    id: 'prod_SDwhXOe4Rxczzo',
-    priceId: 'price_1RJUntDLJ4SvE3u2a1TdJcn7',
+    id: 'prod_SGrKXJgrKyLhTI',
+    priceId: 'price_1RMJc0RYtspYtD2zcfoCAsph',
     name: 'Basic Subscription',
     description: 'Essential features for beginners',
     mode: 'subscription',

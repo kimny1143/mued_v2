@@ -18,38 +18,38 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 - **概要:** 既存のページコンポーネントをApp Routerの規約 (`app/page.tsx`, `app/layout.tsx`等) に合わせて再配置し、基本的なページ遷移が機能することを確認する。ESLint等の静的解析ツールもパスすること。
 - **DoD:** 全主要ページがApp Router経由で表示・遷移可能であること。ESLint/Prettierエラーがないこと。
 - **タスク:**
-    - [ ] FEチーム: `app/` ディレクトリ構造の設計と作成（`layout.tsx`, `page.tsx`, ルートグループ `(auth)` 等）。
-    - [ ] FEチーム: 既存のViteベースのページコンポーネントを `app/` 配下の適切なルーティングパスに移行・リファクタリング。
-    - [ ] FEチーム: `next/link` または `next/navigation` を用いたナビゲーションの実装とテスト。
-    - [ ] FEチーム: ESLint, Prettier のNext.js App Router対応設定と、全ファイルへの適用。
+    - [x] FEチーム: `app/` ディレクトリ構造の設計と作成（`layout.tsx`, `page.tsx`, ルートグループ `(auth)` 等）。
+    - [x] FEチーム: 既存のViteベースのページコンポーネントを `app/` 配下の適切なルーティングパスに移行・リファクタリング。
+    - [x] FEチーム: `next/link` または `next/navigation` を用いたナビゲーションの実装とテスト。
+    - [x] FEチーム: ESLint, Prettier のNext.js App Router対応設定と、全ファイルへの適用。
 
 ### Story R0-2: 環境変数・Auth（NextAuth.js）再設定
 - **担当:** FE & BEチーム
 - **概要:** Next.js App Router環境で環境変数が正しく読み込まれ、NextAuth.jsによる認証フロー（ログイン、ログアウト、セッション管理、保護ルート）が正常に機能することを確認する。
 - **DoD:** 環境変数が正しく読み込まれること。ユーザーがログインでき、保護されたページへのアクセス制御が機能すること。
 - **タスク:**
-    - [ ] FE & BE: `.env.local` 等の環境変数ファイルをApp Routerプロジェクトのルートに配置し、`process.env` または `NEXT_PUBLIC_` 経由での読み込みを確認。
-    - [ ] FE & BE: NextAuth.js の設定ファイル (`app/api/auth/[...nextauth]/route.ts` 等) をApp RouterのAPI Routes規約に沿って作成・移行。
-    - [ ] FE & BE: 認証プロバイダー（例: Google Provider）の設定とコールバックURLの更新。
-    - [ ] FE & BE: ログイン、ログアウト機能の実装とテスト。
-    - [ ] FE & BE: Middleware (`middleware.ts`) またはRoute Handlersを用いた保護ルートへのアクセス制御テスト。
+    - [x] FE & BE: `.env.local` 等の環境変数ファイルをApp Routerプロジェクトのルートに配置し、`process.env` または `NEXT_PUBLIC_` 経由での読み込みを確認。
+    - [x] FE & BE: NextAuth.js の設定ファイル (`app/api/auth/[...nextauth]/route.ts` 等) をApp RouterのAPI Routes規約に沿って作成・移行。
+    - [x] FE & BE: 認証プロバイダー（例: Google Provider）の設定とコールバックURLの更新。
+    - [x] FE & BE: ログイン、ログアウト機能の実装とテスト。
+    - [x] FE & BE: Middleware (`middleware.ts`) またはRoute Handlersを用いた保護ルートへのアクセス制御テスト。
 
 ### Story R0-3: Prisma Client & Edge Functions 動作検証
 - **担当:** BEチーム
 - **概要:** Prisma ClientがNext.js環境で正しくDBに接続し、基本的なCRUD操作が行えることを確認する。また、Supabase Edge Functionsがデプロイ可能で、簡単なAPI呼び出しに応答することを確認する。
 - **DoD:** Prisma Client経由でのDB読み書きが成功すること。Supabase Edge Functionがテスト呼び出しに対して200系レスポンスを返すこと。
 - **タスク:**
-    - [ ] BE: `lib/prisma.ts` にPrisma Clientのインスタンス化とエクスポート処理を実装。
-    - [ ] BE: `prisma/schema.prisma` の内容を確認し、必要であればApp Router環境に合わせた調整。
-    - [ ] BE: 簡単なAPI Route (`app/api/test-db/route.ts`等) を作成し、Prisma Clientを用いたDB読み書きテストを実施。
-    - [ ] BE: Supabase CLIを用いて、サンプルEdge Functionをデプロイし、cURL等で動作確認。
+    - [x] BE: `lib/prisma.ts` にPrisma Clientのインスタンス化とエクスポート処理を実装。
+    - [x] BE: `prisma/schema.prisma` の内容を確認し、必要であればApp Router環境に合わせた調整。
+    - [x] BE: 簡単なAPI Route (`app/api/test-db/route.ts`等) を作成し、Prisma Clientを用いたDB読み書きテストを実施。
+    - [x] BE: Supabase CLIを用いて、サンプルEdge Functionをデプロイし、cURL等で動作確認。
 
 ### Story R0-4: Vercel + Supabase + Heroku ワークフロー再構築
 - **担当:** DevOpsチーム
 - **概要:** フロントエンド (Vercel)、データベース/バックエンド (Supabase)、AIサービス (Heroku/Fly.io) の各環境間の連携設定を見直し、CI/CDパイプラインを再構築する。
 - **DoD:** GitHub等へのPushをトリガーに、Vercelでプレビューデプロイが自動実行され、URLが発行されること。各サービスの連携が確認できること。
 - **タスク:**
-    - [ ] DevOps: Vercelプロジェクトの設定をNext.js App Router向けに更新。
+    - [x] DevOps: Vercelプロジェクトの設定をNext.js App Router向けに更新。
     - [ ] DevOps: Vercel, Supabase, Heroku/Fly.io 間で必要な環境変数（APIキー、DB接続文字列等）の再設定と確認。
     - [ ] DevOps: GitHub Actions等のCI/CDツールで、Next.jsアプリケーションのビルド、テスト、Vercelへのデプロイフローを再構築。
     - [ ] DevOps: AIサービスのデプロイフロー (Heroku/Fly.io) とフロントエンドからの接続確認。
@@ -64,11 +64,11 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 - **概要:** Stripe Checkoutセッションを作成しユーザーをStripe決済ページへリダイレクトするAPIと、決済完了通知を受け取るStripe Webhook (Supabase Edge Function) を実装する。
 - **DoD:** ユーザーがStripeで支払いを完了すると、その情報がWebhook経由でシステムに通知され、DBの `Subscription` テーブル等が更新されること。Webhookは署名検証を行い、200レスポンスを返すこと。
 - **タスク:**
-    - [ ] BE: Stripe Checkout Session作成API (`app/api/stripe/checkout-sessions/route.ts` 等) の実装。商品IDやプランIDをリクエストに応じて動的に設定できるようにする。
-    - [ ] BE: Supabase Edge Function (`supabase/functions/stripe-webhook/index.ts` 等) でStripe Webhookエンドポイントを作成。
-    - [ ] BE: Webhook内でStripeからのリクエスト署名を検証するロジックを実装。
-    - [ ] BE: Webhookで `checkout.session.completed` 等のイベントを処理し、支払い情報を元にPrisma Clientを使ってDB (`User`, `Subscription` テーブル等) を更新するロジックを実装。
-    - [ ] BE: Webhook処理に関する単体テストおよびローカルでのStripe CLIを用いたテストを実施。
+    - [x] BE: Stripe Checkout Session作成API (`app/api/stripe/checkout-sessions/route.ts` 等) の実装。商品IDやプランIDをリクエストに応じて動的に設定できるようにする。
+    - [x] BE: Supabase Edge Function (`supabase/functions/stripe-webhook/index.ts` 等) でStripe Webhookエンドポイントを作成。
+    - [x] BE: Webhook内でStripeからのリクエスト署名を検証するロジックを実装。
+    - [x] BE: Webhookで `checkout.session.completed` 等のイベントを処理し、支払い情報を元にPrisma Clientを使ってDB (`User`, `Subscription` テーブル等) を更新するロジックを実装。
+    - [x] BE: Webhook処理に関する単体テストおよびローカルでのStripe CLIを用いたテストを実施。
 
 ### Story S1-2: `LessonSlot`,`Reservation` API (RLS & バリデーション)
 - **担当:** BEチーム

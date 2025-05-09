@@ -1,13 +1,15 @@
+'use client';
+
 import { useState } from 'react';
-import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card } from "@ui/card";
 import { Button } from "@ui/button";
 import { PlayCircle, CheckCircle, Clock, XIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { ExerciseLogForm } from "@/components/ExerciseLogForm";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ExerciseLogForm } from "@/app/components/ExerciseLogForm";
 
-export function ExercisePage() {
-  const navigate = useNavigate();
+export default function ExercisePage() {
+  const router = useRouter();
   const [showLogForm, setShowLogForm] = useState(false);
   
   const exercises = [
@@ -38,17 +40,17 @@ export function ExercisePage() {
   ];
 
   return (
-    <DashboardLayout 
-      title="Exercise"
-      actions={
+    <>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Exercise</h1>
         <Button 
           className="bg-black text-white w-full sm:w-auto"
           onClick={() => setShowLogForm(!showLogForm)}
         >
           {showLogForm ? "Back to Exercises" : "New Exercise"}
         </Button>
-      }
-    >
+      </div>
+
       {showLogForm ? (
         <div className="max-w-2xl mx-auto">
           <Card className="p-6 relative overflow-hidden border-0 shadow-lg rounded-xl">
@@ -72,7 +74,7 @@ export function ExercisePage() {
             <Card 
               key={index} 
               className="overflow-hidden cursor-pointer transition-transform hover:scale-105"
-              onClick={() => navigate(`/exercise/${exercise.id}`)}
+              onClick={() => router.push(`/dashboard/exercises/${exercise.id}`)}
             >
               <div className="aspect-video w-full overflow-hidden">
                 <img 
@@ -107,6 +109,10 @@ export function ExercisePage() {
                     <Button 
                       variant={exercise.status === "completed" ? "outline" : "default"}
                       size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/dashboard/exercises/${exercise.id}`);
+                      }}
                     >
                       {exercise.status === "completed" ? "Review" : "Start"}
                     </Button>
@@ -117,6 +123,6 @@ export function ExercisePage() {
           ))}
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 } 

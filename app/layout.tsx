@@ -1,11 +1,11 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
-import Providers from './providers';
 
 export const metadata: Metadata = {
   title: 'MUED LMS',
   description: '音楽教育のためのラーニングマネジメントシステム',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
 };
 
 export default function RootLayout({
@@ -31,12 +31,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans">
-        <Providers>
-          {/* NavigationWrapperはクライアントコンポーネントなのでそのままlayout.tsxに含めることはできません */}
-          <main className="min-h-screen">
+        <main className="min-h-screen">
           {children}
-          </main>
-        </Providers>
+        </main>
       </body>
     </html>
   );

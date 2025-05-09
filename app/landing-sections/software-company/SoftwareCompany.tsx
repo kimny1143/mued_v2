@@ -7,7 +7,6 @@ import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuList,
-  NavigationMenuTrigger,
 } from "../../components/ui/navigation-menu";
 import { Separator } from "../../components/ui/separator";
 import Link from "next/link";
@@ -19,11 +18,19 @@ export const SoftwareCompany = (): JSX.Element => {
   const router = useRouter();
   
   const navItems = [
-    { label: "Home" },
-    { label: "Features" },
-    { label: "Pricing" },
-    { label: "Contact" },
+    { label: "Home", sectionId: "home" },
+    { label: "Features", sectionId: "features" },
+    { label: "Pricing", sectionId: "pricing" },
+    { label: "Contact", sectionId: "contact" },
   ];
+
+  // スムーズスクロール関数
+  const scrollToSection = (sectionId: string) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <header className="flex items-center justify-between py-4 px-4 sm:px-6 relative w-full bg-white">
@@ -40,8 +47,11 @@ export const SoftwareCompany = (): JSX.Element => {
               height={48}
               priority
             />
-            <div className="font-shantell font-bold text-[#000000cc] text-[28px] leading-7">
-              MUED
+            <div className="font-shantell font-bold text-[#000000cc] text-[28px] leading-7 whitespace-nowrap">
+              <span className="font-shantell font-bold">M</span>
+              <span className="font-shantell font-bold">U</span>
+              <span className="font-shantell font-bold">E</span>
+              <span className="font-shantell font-bold">D</span>
             </div>
           </Link>
 
@@ -57,10 +67,12 @@ export const SoftwareCompany = (): JSX.Element => {
             <NavigationMenuList className="flex items-start gap-8">
               {navItems.map((item, index) => (
                 <NavigationMenuItem key={index}>
-                  <NavigationMenuTrigger className="flex items-center gap-1 px-0 py-0 h-auto bg-transparent font-shantell font-medium text-[#000000cc] text-[15px] leading-5">
+                  <button
+                    onClick={() => scrollToSection(item.sectionId)}
+                    className="flex items-center gap-1 px-0 py-0 h-auto font-shantell font-medium text-[#000000cc] text-[15px] leading-5 hover:text-black cursor-pointer"
+                  >
                     {item.label}
-                    <ChevronDownIcon className="w-4 h-4" />
-                  </NavigationMenuTrigger>
+                  </button>
                 </NavigationMenuItem>
               ))}
             </NavigationMenuList>

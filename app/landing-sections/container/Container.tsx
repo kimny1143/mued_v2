@@ -20,8 +20,15 @@ import {
 } from "../../components/ui/select";
 import Image from "next/image";
 import LogoImage from '../../../public/logo.png';
+import { useRouter } from "next/navigation";
 
 export const Container = (): JSX.Element => {
+  const router = useRouter();
+
+  const handleSignUp = () => {
+    router.push('/register');
+  };
+
   return (
     <section className="flex items-start px-4 sm:px-0 py-12 relative self-stretch w-full flex-[0_0_auto] z-[2]">
       <div className="flex flex-col items-start relative flex-1 grow">
@@ -29,11 +36,17 @@ export const Container = (): JSX.Element => {
         <div className="relative self-stretch w-full z-[3] bg-white overflow-hidden">
           <div className="mued-container flex-col w-full">
             <div className="flex flex-col items-center gap-12 sm:gap-24 relative self-stretch w-full flex-[0_0_auto]">
-              <h1 className="mued-hero-text relative self-stretch mt-[-1.00px]">
-                Learn Anytime, Anywhere with MUED
+              <h1 
+                className="relative self-stretch mt-[-1.00px] mued-hero-text-large"
+              >
+                <span className="block">Learn Anytime, Anywhere</span>
+                <span className="block">with <span className="mued-text-bold">MUED</span></span>
               </h1>
 
-              <button className="mued-btn w-full sm:w-auto">
+              <button 
+                className="mued-btn w-full sm:w-auto"
+                onClick={handleSignUp}
+              >
                 <span className="font-shantell font-medium text-white text-xl leading-7">
                   Get Started
                 </span>
@@ -45,7 +58,10 @@ export const Container = (): JSX.Element => {
                 <div className="absolute w-[70%] h-[42px] top-[378px] left-[15%] bg-[#00000033] rounded opacity-50" />
                 <div className="absolute w-[60%] h-[42px] top-[444px] left-[20%] bg-[#00000033] rounded opacity-50" />
 
-                <button className="mued-btn flex w-[85%] items-center justify-center gap-2 absolute top-[843px] left-[7.5%]">
+                <button 
+                  className="mued-btn flex w-[85%] items-center justify-center gap-2 absolute top-[800px] left-[7.5%]"
+                  onClick={handleSignUp}
+                >
                   <span className="font-shantell font-medium text-white text-xl leading-7">
                     Join Now
                   </span>
@@ -61,7 +77,10 @@ export const Container = (): JSX.Element => {
                     priority
                   />
                   <div className="mued-logo-text relative w-fit whitespace-nowrap">
-                    MUED
+                    <span className="font-shantell font-bold">M</span>
+                    <span className="font-shantell font-bold">U</span>
+                    <span className="font-shantell font-bold">E</span>
+                    <span className="font-shantell font-bold">D</span>
                   </div>
                 </div>
               </div>
@@ -155,7 +174,10 @@ export const Container = (): JSX.Element => {
                 <h2 className="relative self-stretch mt-[-1.00px] font-shantell font-normal text-[#000000cc] text-3xl sm:text-5xl text-center tracking-[0] leading-tight sm:leading-[1.2]">
                   Ready to Start Your Learning Journey?
                 </h2>
-                <button className="mued-btn-outline w-full sm:w-auto">
+                <button 
+                  className="mued-btn-outline w-full sm:w-auto"
+                  onClick={handleSignUp}
+                >
                   <span className="font-jp font-medium text-[#000000cc] text-xl leading-7 whitespace-nowrap">
                     今すぐはじめる
                   </span>

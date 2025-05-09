@@ -2,20 +2,21 @@
 
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../lib/auth';
+import { useAuth } from '../contexts/AuthContext';
 
-export function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+export default function PrivateRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!loading && !user) {
       router.push('/login');
     }
-  }, [user, isLoading, router]);
+  }, [user, loading, router]);
 
-  if (isLoading) return <div>Loading...</div>;
-  if (!user) return null;
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
-  return <>{children}</>;
+  return user ? <>{children}</> : null;
 }

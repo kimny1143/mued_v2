@@ -16,7 +16,7 @@ datasource db {
 // NextAuth.js用のモデル
 model Account {
   id                String  @id @default(cuid())
-  userId            String
+  userId            String // User.id を参照 (String UUID)
   type              String
   provider          String
   providerAccountId String
@@ -36,13 +36,13 @@ model Account {
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
-  userId       String
+  userId       String // User.id を参照 (String UUID)
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String    @id @default(uuid()) // UUIDに変更
   name          String?
   email         String?   @unique
   emailVerified DateTime?
@@ -51,10 +51,14 @@ model User {
   accounts      Account[]
   sessions      Session[]
   role          Role      @relation(fields: [roleId], references: [id])
-  teacherSlots  LessonSlot[] @relation("TeacherSlots")
-  studentReservations Reservation[] @relation("StudentReservations")
+  teacherSlots  LessonSlot[] @relation("TeacherSlots") // teacherId が String UUID を参照
+  studentReservations Reservation[] @relation("StudentReservations") // studentId が String UUID を参照
+  stripeCustomer      StripeCustomer?          @relation("UserStripeCustomer") // 1対1を想定
+  stripeSubscriptions StripeUserSubscription[] // userId が String UUID を参照
+  sentMessages        Message[]                @relation("UserMessages") // ★ Messageへの逆リレーション追加
   
   @@index([roleId])
+  @@map("users")
 }
 
 model Role {
@@ -70,7 +74,7 @@ model Role {
 model Permission {
   id        String   @id @default(cuid())
   name      String   @unique
-  roleId    String
+  roleId    String // Role.id を参照 (String UUID)
   role      Role     @relation(fields: [roleId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -89,7 +93,7 @@ model VerificationToken {
 
 model LessonSlot {
   id          String       @id @default(cuid())
-  teacherId   String       // 講師のユーザーID
+  teacherId   String       // User.id を参照 (String UUID)
   teacher     User         @relation("TeacherSlots", fields: [teacherId], references: [id])
   startTime   DateTime     // 開始時間
   endTime     DateTime     // 終了時間
@@ -105,9 +109,9 @@ model LessonSlot {
 
 model Reservation {
   id          String      @id @default(cuid())
-  slotId      String      // レッスンスロットID
+  slotId      String      // LessonSlot.id を参照 (String CUID or UUID)
   slot        LessonSlot  @relation(fields: [slotId], references: [id])
-  studentId   String      // 生徒のユーザーID
+  studentId   String      // User.id を参照 (String UUID)
   student     User        @relation("StudentReservations", fields: [studentId], references: [id])
   status      ReservationStatus @default(PENDING) // 予約ステータス
   paymentId   String?     // 支払いID（Stripe等）
@@ -136,4 +140,80 @@ enum PaymentStatus {
   PAID       // 支払い完了
   REFUNDED   // 返金済み
   FAILED     // 失敗
+}
+
+// --- Stripe関連テーブル ---
+
+model StripeCustomer {
+  id          Int     @id @default(autoincrement()) // 画像に合わせて int8 (自動インクリメント) に変更
+  userId      String  @unique // ★ @unique 追加 (User.id を参照, String UUID)
+  customerId  String  @unique // Stripe Customer ID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime? // 画像に合わせて追加
+
+  user        User    @relation("UserStripeCustomer", fields: [userId], references: [id]) // ★ Relation名を追加
+
+  @@map("stripe_customers")
+}
+
+model StripeUserSubscription {
+  id                   Int       @id @default(autoincrement()) // 画像に合わせて int8 (自動インクリメント) に変更
+  userId               String    // User.id を参照 (String UUID) - FK制約が必要な場合はuserリレーションを確認
+  customerId           String    // Stripe Customer ID
+  subscriptionId       String    @unique // Stripe Subscription ID
+  priceId              String?   // Stripe Price ID
+  status               String?   // 画像に合わせて status に変更 (型はenumも検討)
+  currentPeriodStart   BigInt?   // 画像に合わせて int8 (BigInt) に変更
+  currentPeriodEnd     BigInt?   // 画像に合わせて int8 (BigInt) に変更
+  cancelAtPeriodEnd    Boolean?
+  paymentMethodBrand   String?   // 画像に合わせてアンダースコア削除 (payment_method_brand -> paymentMethodBrand)
+  paymentMethodLast4   String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime? // 画像に合わせて追加
+
+  user                 User      @relation(fields: [userId], references: [id]) // userIdがFKなら必須
+
+  @@index([userId])
+  @@map("stripe_user_subscriptions") // テーブル名はこれで良いか再確認 (画像は stripe_subscriptions)
+}
+
+// stripe_orders テーブルが必要であれば、以下のようなモデルを定義
+// model StripeOrder {
+//   id                 String @id @default(cuid())
+//   checkoutSessionId  String?
+//   paymentIntentId    String?
+//   customerId         String?
+//   amountSubtotal     Int?
+//   amountTotal        Int?
+//   currency           String?
+//   paymentStatus      String? // 例: "paid", "unpaid"
+//   status             String? // 例: "open", "complete", "canceled"
+//   createdAt          DateTime @default(now())
+//   updatedAt          DateTime @updatedAt
+//   deletedAt          DateTime?
+//
+//   // 必要に応じてUserやStripeCustomerとのリレーションを追加
+//
+//   @@map("stripe_orders")
+// }
+
+
+// --- メッセージテーブル ---
+
+model Message {
+  id         String   @id @default(uuid())
+  content    String?  @db.Text
+  senderId   String   // User.id を参照 (String UUID) - 型注意: 画像は varchar
+  senderType String?  @map("sender_type") // 画像に合わせて varchar
+  roomId     String?  @map("room_id") // 画像に合わせて varchar
+  timestamp  DateTime @default(now()) @db.Timestamptz()
+  fileUrls   String[] @map("file_urls") @db.Text // 画像に合わせて _text[]
+
+  sender     User     @relation("UserMessages", fields: [senderId], references: [id]) // ★ Relation名を追加
+
+  @@index([roomId])
+  @@index([senderId])
+  @@map("messages")
 }

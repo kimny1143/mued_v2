@@ -1,7 +1,14 @@
 import Stripe from 'stripe';
 
 // Stripeインスタンスの初期化
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+// 環境変数が設定されているか確認
+if (!stripeSecretKey) {
+  console.error('STRIPE_SECRET_KEY環境変数が設定されていません。');
+}
+
+export const stripe = new Stripe(stripeSecretKey || 'dummy_key_for_development', {
   // @ts-expect-error: Stripe型定義の更新に対応
   apiVersion: '2023-10-16',
 });
@@ -142,17 +149,19 @@ export async function createCheckoutSession({
   cancelUrl,
   customerId,
   metadata,
+  mode = 'payment',
 }: {
   priceId: string;
   successUrl: string;
   cancelUrl: string;
   customerId?: string;
   metadata?: Record<string, string>;
+  mode?: 'payment' | 'subscription';
 }): Promise<Stripe.Checkout.Session> {
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     line_items: [{ price: priceId, quantity: 1 }],
-    mode: 'payment',
+    mode: mode,
     success_url: successUrl,
     cancel_url: cancelUrl,
     ...(customerId ? { customer: customerId } : {}),

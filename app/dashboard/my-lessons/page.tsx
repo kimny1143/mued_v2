@@ -1,9 +1,10 @@
+'use client';
+
 import { Button } from "@ui/button";
 import { Card } from "@ui/card";
 import { PlayCircleIcon, ClockIcon, CheckCircleIcon } from "lucide-react";
-import { DashboardLayout } from "@/components/DashboardLayout";
 
-export function MyLessonsPage() {
+export default function Page() {
   const lessons = [
     {
       title: "Introduction to Music Theory",
@@ -32,14 +33,15 @@ export function MyLessonsPage() {
   ];
 
   return (
-    <DashboardLayout 
-      title="My Lessons"
-      actions={
+    <>
+      {/* ページタイトルとアクション */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
+        <h1 className="text-2xl font-bold">My Lessons</h1>
         <Button className="bg-black text-white w-full sm:w-auto">
           Start New Lesson
         </Button>
-      }
-    >
+      </div>
+
       {/* Lessons Grid */}
       <div className="grid grid-cols-1 gap-4">
         {lessons.map((lesson, index) => (
@@ -102,6 +104,6 @@ export function MyLessonsPage() {
           </Card>
         ))}
       </div>
-    </DashboardLayout>
+    </>
   );
 }

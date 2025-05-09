@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -23,12 +23,31 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
           class: 'text-blue-500 hover:underline',
         },
       }),
-      Youtube.configure({
-        HTMLAttributes: {
-          class: 'w-full aspect-video',
+      // エディタでは通常のリンクとして表示し、プレビュー時のみYouTube埋め込みに変換
+      Link.extend({
+        name: 'youtubeLink',
+        priority: 1000, // 通常のLinkよりも優先度を高く
+        onCreate() {
+          // YouTubeリンクを検出するための正規表現
+          this.options.pattern = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
         },
-        inline: false,
-        allowFullscreen: true,
+        parseHTML() {
+          return [
+            {
+              tag: 'a[href]',
+              getAttrs: (node) => {
+                const href = node.getAttribute('href');
+                if (href && this.options.pattern.test(href)) {
+                  return { href };
+                }
+                return false;
+              }
+            }
+          ];
+        },
+        renderHTML({ HTMLAttributes }) {
+          return ['a', { ...HTMLAttributes, class: 'youtube-link text-blue-500 hover:underline bg-gray-100 px-2 py-1 rounded' }, 0];
+        }
       }),
     ],
     content,
@@ -37,27 +56,35 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
     },
   });
 
+  // contentプロパティが変更されたときにエディタの内容を更新
+  useEffect(() => {
+    if (editor && editor.getHTML() !== content) {
+      editor.commands.setContent(content);
+    }
+  }, [content, editor]);
+
   if (!editor) {
     return null;
   }
 
+  // YouTubeリンクを挿入する関数（エディタではリンクとして表示）
   const addYoutubeVideo = () => {
-    const url = prompt('Enter YouTube URL');
+    const url = prompt('YouTubeのURLを入力してください');
     if (url) {
-      // Extract video ID from various YouTube URL formats
-      const videoId = url.match(/(?:youtu\.be\/|youtube\.com(?:\/embed\/|\/v\/|\/watch\?v=|\/watch\?.+&v=))([\w-]{11})/);
-      if (videoId) {
-        editor.commands.setYoutubeVideo({
-          src: videoId[1],
-          width: 640,
-          height: 480,
-        });
+      // 通常のリンクとして挿入
+      editor.chain().focus().setLink({ href: url }).run();
+      
+      // リンクにYouTubeクラスを追加
+      const linkElement = editor.view.dom.querySelector('a[href="' + url + '"]');
+      if (linkElement) {
+        linkElement.classList.add('youtube-link');
+        linkElement.textContent = '🎬 ' + url;
       }
     }
   };
 
   const setLink = () => {
-    const url = prompt('Enter URL');
+    const url = prompt('URLを入力してください');
     if (url) {
       editor.chain().focus().setLink({ href: url }).run();
     }
