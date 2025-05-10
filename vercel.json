@@ -1,7 +1,8 @@
 {
-  "outputDirectory": ".next",
+  "outputDirectory": "dist",
   "trailingSlash": false,
   "cleanUrls": true,
+  "buildCommand": "npm run build && cp -r .next dist",
   "routes": [
     {
       "src": "/(.*)",
