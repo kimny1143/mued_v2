@@ -78,3 +78,4 @@ var/
 
 # Docker関連
 docker-compose.override.yml
+.vercel

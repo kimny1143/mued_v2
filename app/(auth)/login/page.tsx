@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { signInWithGoogle } from '@/app/actions/auth';
 
-export default function LoginPage() {
+// 検索パラメータを使用するコンポーネント
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
@@ -146,5 +147,14 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// メインコンポーネント
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">ロード中...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 } 
