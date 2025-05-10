@@ -95,12 +95,24 @@ function LoginContent() {
     
     try {
       // サーバーアクションを呼び出し
-      await signInWithGoogle();
-      // 注: リダイレクトはサーバーアクション内で行われるため、
-      // この下のコードは実行されません
+      const result = await signInWithGoogle();
+      
+      // リダイレクトURLが返された場合はクライアント側でリダイレクト
+      if (result.success && result.redirectUrl) {
+        window.location.href = result.redirectUrl;
+        return; // リダイレクト後は処理終了
+      }
+      
+      // エラーの場合
+      if (!result.success && result.error) {
+        setErrorMsg(result.error);
+      } else {
+        setErrorMsg('認証処理に失敗しました');
+      }
     } catch (err) {
       console.error('Googleログインエラー:', err);
       setErrorMsg('Googleログインに失敗しました');
+    } finally {
       setIsLoading(false);
     }
   };

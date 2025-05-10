@@ -1,7 +1,6 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
 // Google認証へのリダイレクト
@@ -52,16 +51,22 @@ export async function signInWithGoogle() {
   // エラーチェック
   if (error) {
     console.error('Google認証エラー:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message, redirectUrl: null };
   }
 
-  // 認証URLが取得できた場合はリダイレクト
+  // 認証URLが取得できた場合はリダイレクトURLを返す（クライアント側でリダイレクト実行）
   if (data?.url) {
-    // NEXT_REDIRECTエラーをキャッチしないようにするため、return しない
-    redirect(data.url);
+    return { 
+      success: true, 
+      redirectUrl: data.url 
+    };
   } else {
     console.error('認証URL取得エラー: URLがundefined');
-    return { success: false, error: '認証URLの取得に失敗しました' };
+    return { 
+      success: false, 
+      error: '認証URLの取得に失敗しました', 
+      redirectUrl: null 
+    };
   }
 }
 
@@ -81,9 +86,16 @@ export async function signOut() {
   
   if (error) {
     console.error('ログアウトエラー:', error);
-    return { success: false, error: error.message };
+    return { 
+      success: false, 
+      error: error.message, 
+      redirectUrl: null 
+    };
   }
 
-  // NEXT_REDIRECTエラーをキャッチしないようにするため、return しない
-  redirect('/login');
+  // リダイレクト先を返す（クライアント側でリダイレクト実行）
+  return { 
+    success: true, 
+    redirectUrl: '/login' 
+  };
 } 

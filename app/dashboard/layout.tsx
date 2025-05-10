@@ -16,6 +16,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import { PlanBadge } from "@/app/components/PlanBadge";
+import { signOut } from "@/app/actions/auth";
 
 // ナビゲーション項目
 const dashboardNavItems = [
@@ -76,10 +77,22 @@ export default function DashboardLayout({
   // サインアウト処理
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
-      router.push('/login');
+      // Server Actionを使用したサインアウト
+      const result = await signOut();
+      
+      // クライアント側でリダイレクト
+      if (result.success && result.redirectUrl) {
+        router.push(result.redirectUrl);
+      } else {
+        // エラーがあった場合でもローカルセッションをクリア
+        await supabase.auth.signOut();
+        router.push('/login');
+      }
     } catch (error) {
       console.error("Sign out failed:", error);
+      // エラー時はローカルでサインアウト
+      await supabase.auth.signOut();
+      router.push('/login');
     }
   };
 
