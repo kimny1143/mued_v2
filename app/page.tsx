@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card } from "./components/ui/card";
 import { Container } from "./landing-sections/container";
@@ -11,7 +11,8 @@ import Image from "next/image";
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
-export default function PageLandingMued(): JSX.Element {
+// useSearchParamsを使用するコンテンツコンポーネント
+function LandingPageContent(): JSX.Element {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromMiddleware = searchParams.get('from') === 'middleware';
@@ -98,5 +99,14 @@ export default function PageLandingMued(): JSX.Element {
       <MainContentWrapper />
       <SoftwareCompanyWrapper />
     </div>
+  );
+}
+
+// Suspenseでラップした親コンポーネント
+export default function PageLandingMued(): JSX.Element {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">ロード中...</div>}>
+      <LandingPageContent />
+    </Suspense>
   );
 }

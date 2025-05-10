@@ -224,4 +224,9 @@ export const ReservationPage: React.FC = () => {
       />
     </div>
   );
-}; 
+};
+
+// App Routerのページエクスポート
+export default function ReservationPageWrapper() {
+  return <ReservationPage />;
+} 

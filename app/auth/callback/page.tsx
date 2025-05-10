@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-export default function AuthCallback() {
+// useSearchParamsを使用するコンテンツコンポーネント
+function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const code = searchParams.get('code');
@@ -77,5 +78,14 @@ export default function AuthCallback() {
         <div className="mt-4 animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
       </div>
     </div>
+  );
+}
+
+// Suspenseでラップした親コンポーネント
+export default function AuthCallback() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">ロード中...</div>}>
+      <CallbackContent />
+    </Suspense>
   );
 } 

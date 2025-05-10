@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { CheckCircle } from 'lucide-react';
 import { Button } from '@ui/button';
 import { Card } from '@ui/card';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function CheckoutSuccessPage() {
+// useSearchParamsを使用するコンテンツコンポーネント
+function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(5);
@@ -68,5 +69,14 @@ export default function CheckoutSuccessPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+// Suspenseでラップした親コンポーネント
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">ロード中...</div>}>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 } 
