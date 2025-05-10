@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-import { syncCalendarToLessonSlots, syncLessonSlotsToCalendar } from '../../../../lib/googleCalendar';
+import { syncCalendarToLessonSlots, syncLessonSlotsToCalendar } from '@/lib/googleCalendar';
 
 // カスタムユーザー型
 interface CustomUser {
