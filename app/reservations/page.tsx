@@ -1,5 +1,5 @@
 import React from 'react';
-import { ReservationPage as ReservationContent } from '../components/screens/ReservationPage';
+import { ReservationPage as ReservationContent } from '../components/reservation/page';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
