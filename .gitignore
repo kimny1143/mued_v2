@@ -22,6 +22,9 @@ yarn.lock
 .env.test.local
 .env.production.local
 .env.heroku
+.env.staging.local
+.env.staging.heroku
+.env.production.heroku
 
 # エディタ設定
 .idea
