@@ -4,7 +4,7 @@
   "description": "A React Learning Management System project using Next.js App Router with Shadcn UI library",
   "scripts": {
     "dev": "next dev --port 3000 --hostname 0.0.0.0",
-    "build": "prisma generate && next build",
+    "build": "npx prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
