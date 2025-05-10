@@ -1,6 +1,7 @@
 {
   "trailingSlash": false,
   "cleanUrls": true,
+  "outputDirectory": ".next",
   "git": {
     "deploymentEnabled": {
       "main": true,
