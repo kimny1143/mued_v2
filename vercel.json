@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": ".next",
+  "outputDirectory": "out",
   "git": {
     "deploymentEnabled": {
       "main": true,
@@ -11,5 +11,13 @@
   "github": {
     "enabled": true,
     "silent": false
-  }
+  },
+  "framework": "nextjs",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
+  ],
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/" }
+  ]
 } 
