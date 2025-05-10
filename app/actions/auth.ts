@@ -26,72 +26,64 @@ export async function signInWithGoogle() {
   
   console.log(`認証リダイレクト先: ${origin}, 環境: ${process.env.VERCEL_ENV || 'local'}`);
 
-  try {
-    // Supabaseサーバークライアント初期化
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        auth: {
-          persistSession: false,
-        }
+  // Supabaseサーバークライアント初期化
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: false,
       }
-    );
+    }
+  );
 
-    // OAuth認証URLの生成
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${origin}/auth/callback`,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
+  // OAuth認証URLの生成
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
       },
-    });
+    },
+  });
 
-    // エラーチェック
-    if (error) {
-      console.error('Google認証エラー:', error);
-      return { success: false, error: error.message };
-    }
+  // エラーチェック
+  if (error) {
+    console.error('Google認証エラー:', error);
+    return { success: false, error: error.message };
+  }
 
-    // 認証URLが取得できた場合はリダイレクト
-    if (data?.url) {
-      return redirect(data.url);
-    } else {
-      console.error('認証URL取得エラー: URLがundefined');
-      return { success: false, error: '認証URLの取得に失敗しました' };
-    }
-  } catch (err) {
-    console.error('認証処理中の例外:', err);
-    return { success: false, error: '認証処理中にエラーが発生しました' };
+  // 認証URLが取得できた場合はリダイレクト
+  if (data?.url) {
+    // NEXT_REDIRECTエラーをキャッチしないようにするため、return しない
+    redirect(data.url);
+  } else {
+    console.error('認証URL取得エラー: URLがundefined');
+    return { success: false, error: '認証URLの取得に失敗しました' };
   }
 }
 
 // ログアウト処理
 export async function signOut() {
-  try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        auth: {
-          persistSession: false,
-        }
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: false,
       }
-    );
-
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      console.error('ログアウトエラー:', error);
-      return { success: false, error: error.message };
     }
+  );
 
-    return redirect('/login');
-  } catch (err) {
-    console.error('ログアウト処理中の例外:', err);
-    return { success: false, error: 'ログアウト処理中にエラーが発生しました' };
+  const { error } = await supabase.auth.signOut();
+  
+  if (error) {
+    console.error('ログアウトエラー:', error);
+    return { success: false, error: error.message };
   }
+
+  // NEXT_REDIRECTエラーをキャッチしないようにするため、return しない
+  redirect('/login');
 } 
