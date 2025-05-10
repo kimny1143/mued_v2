@@ -49,16 +49,10 @@ const nextConfig = {
       },
     ];
   },
-  // Vercelデプロイ用設定
-  output: 'export', // 静的エクスポートに変更
-  experimental: {
-    // SSR only
-    runtime: 'nodejs',
-    serverComponents: true,
-  },
+  // Vercelデプロイ用設定 - SSRモードを強制
+  output: 'standalone',
   // 静的解析を無効化
   staticPageGenerationTimeout: 1000,
-  distDir: process.env.NODE_ENV === 'development' ? '.next' : 'out',
   trailingSlash: true,
 };
 
