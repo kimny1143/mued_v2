@@ -1,18 +1,15 @@
 {
-  "outputDirectory": "dist",
   "trailingSlash": false,
   "cleanUrls": true,
-  "buildCommand": "npm run build && cp -r .next dist",
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "develop": true,
+      "feature/sprint-R0": true
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/$1"
-    }
-  ]
+  },
+  "github": {
+    "enabled": true,
+    "silent": false
+  }
 } 
