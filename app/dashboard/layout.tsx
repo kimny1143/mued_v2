@@ -21,7 +21,7 @@ import { PlanBadge } from "@/app/components/PlanBadge";
 const dashboardNavItems = [
   { icon: HomeIcon, label: "Dashboard", path: "/dashboard" },
   { icon: FolderIcon, label: "Materials", path: "/dashboard/materials" },
-  { icon: BookOpenIcon, label: "My Lessons", path: "/dashboard/lessons" },
+  { icon: BookOpenIcon, label: "My Lessons", path: "/dashboard/my-lessons" },
   { icon: DumbbellIcon, label: "Exercise", path: "/dashboard/exercises" },
   { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" },
   { icon: SettingsIcon, label: "Settings", path: "/dashboard/settings" }
