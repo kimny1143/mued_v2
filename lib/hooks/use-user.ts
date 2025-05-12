@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Session } from '@supabase/supabase-js';
 import { products } from '@/app/stripe-config';
-import { useSubscription } from './use-subscription'; // use-subscriptionフックをインポート
+import { useSubscription } from './use-subscription';
 
 type User = {
   id: string;
@@ -32,7 +32,6 @@ export function useUser() {
 
   // 強制リフレッシュ用の関数
   const refreshUserData = () => {
-    console.log('ユーザーデータを強制リフレッシュします');
     setLastRefresh(Date.now());
   };
 
@@ -84,35 +83,13 @@ export function useUser() {
           console.warn('ユーザー情報取得例外 (継続します):', userErr);
         }
         
-        // *** 修正: use-subscriptionフックからのデータを利用 ***
+        // use-subscriptionフックからのデータを利用
         if (subscriptionData) {
-          console.log('use-subscriptionフックからサブスクリプションデータを取得:', subscriptionData);
           subData = {
             price_id: subscriptionData.priceId || null,
             subscription_status: subscriptionData.status || 'unknown',
             current_period_end: subscriptionData.currentPeriodEnd || null
           };
-        } else {
-          console.log('use-subscriptionフックからデータを取得できませんでした - バックアップ方法を試行');
-          
-          // 以下は元のコードがエラー時に備えて残しておく（通常は実行されない）
-          try {
-            console.log('サブスクリプション情報取得開始 - ユーザーID:', currentSession.user.id);
-            
-            // サブスクリプション情報を取得（直接テーブルをチェック）
-            const { data: directSubData, error: directSubError } = await supabase
-              .from('stripe_user_subscriptions')
-              .select('*')
-              .eq('userId', currentSession.user.id);
-            
-            console.log('直接取得したサブスクリプションデータ:', 
-              directSubData ? directSubData : 'データなし', 
-              directSubError ? `エラー: ${directSubError.message}` : '');
-              
-            // 元のコードの続き...（省略）
-          } catch (subErr) {
-            console.warn('サブスクリプション情報取得例外 (継続します):', subErr);
-          }
         }
         
         // 基本ユーザー情報
@@ -126,7 +103,6 @@ export function useUser() {
         
         // サブスクリプション情報があればプラン情報を追加
         if (subData && subData.subscription_status === 'active') {
-          console.log('アクティブなサブスクリプションを検出:', subData);
           setSubscription(subData);
           
           // プラン名を取得
@@ -137,10 +113,8 @@ export function useUser() {
           }
           
           basicUser.plan = planName;
-          console.log(`ユーザープラン設定: ${planName}`);
         } else if (subscriptionData && subscriptionData.status === 'active') {
-          // 修正: 直接use-subscriptionフックのデータを使用する代替パス
-          console.log('use-subscriptionフックからアクティブなサブスクリプションを検出');
+          // 直接use-subscriptionフックのデータを使用する代替パス
           
           // プラン名を取得
           let planName = 'Free Plan';
@@ -150,28 +124,9 @@ export function useUser() {
           }
           
           basicUser.plan = planName;
-          console.log(`ユーザープラン設定(代替パス): ${planName}`);
         } else {
-          console.log('アクティブなサブスクリプションがありません - Free Planを設定');
-          // 本番環境でもローカル環境でもサブスクリプションがない場合はデフォルトプラン
+          // サブスクリプションがない場合はデフォルトプラン
           basicUser.plan = 'Free Plan';
-          
-          // 開発環境でのみ有効な特別テスト処理
-          if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost') {
-            // 特定のテストユーザーにはサブスクリプション情報を強制的に設定
-            const testUserIds = ['c3310083-3da2-41a8-b381-ac18ce3bdf23']; // テストユーザーID
-            if (testUserIds.includes(currentSession.user.id)) {
-              console.log('開発環境: テストサブスクリプションを設定します');
-              const manualPriceId = 'price_1RMJcpRYtspYtD2zQjRRmLXc'; // Starter Subscription
-              const testProduct = products.find(p => p.priceId === manualPriceId);
-              basicUser.plan = testProduct?.name || 'Starter Subscription';
-              setSubscription({
-                price_id: manualPriceId,
-                subscription_status: 'active',
-                current_period_end: 1749479615
-              });
-            }
-          }
         }
         
         setUser(basicUser);
@@ -215,8 +170,6 @@ export function useUser() {
       authListener.subscription.unsubscribe();
       clearInterval(intervalId);
     };
-  // lastRefreshも依存関係に追加し、強制リフレッシュできるようにする
-  // subscriptionDataを依存関係に追加
   }, [lastRefresh, subscriptionData]);
 
   return {

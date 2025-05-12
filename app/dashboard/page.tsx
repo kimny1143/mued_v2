@@ -5,7 +5,6 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/hooks/use-user";
 import { SubscriptionStatus } from "@/app/components/SubscriptionStatus";
-import StripeTestClient from './stripe-test-client';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -98,11 +97,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
-      {/* 開発環境でのみテストコンポーネントを表示 */}
-      {process.env.NODE_ENV === 'development' && (
-        <StripeTestClient session={user} />
-      )}
     </div>
   );
 } 

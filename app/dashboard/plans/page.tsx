@@ -10,53 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { Session, User } from "@supabase/supabase-js";
 
 export default function Page() {
-  const { user, loading, error, isAuthenticated, session, subscription, refreshUserData } = useUser();
-  const [authUser, setAuthUser] = useState<{ user: User | null } | null>(null);
-  const [sessionInfo, setSessionInfo] = useState<{ session: Session | null } | null>(null);
-  const [debugVisible, setDebugVisible] = useState(false);
-
-  // デバッグ用ログ出力を追加
-  useEffect(() => {
-    console.log('認証状態:', { 
-      isAuthenticated, 
-      user, 
-      loading, 
-      error,
-      session,
-      subscription
-    });
-
-    // Supabase認証情報を取得
-    async function getAuthInfo() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const { data: userData } = await supabase.auth.getUser();
-      
-      console.log('Supabase Session:', sessionData);
-      console.log('Supabase User:', userData);
-      
-      setSessionInfo(sessionData);
-      setAuthUser(userData);
-    }
-    
-    getAuthInfo();
-  }, [isAuthenticated, user, loading, error, session, subscription]);
-
-  // サブスクリプション情報を直接取得する（デバッグ用）
-  const fetchDirectSubscription = async () => {
-    if (!user?.id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('stripe_user_subscriptions')
-        .select('*')
-        .eq('userId', user.id);
-        
-      console.log('直接取得したサブスクリプション情報:', data, error);
-      refreshUserData();
-    } catch (e) {
-      console.error('サブスクリプションデータ取得エラー:', e);
-    }
-  };
+  const { user, loading, error, isAuthenticated, session, subscription } = useUser();
 
   const handlePurchase = async (priceId: string, mode: 'payment' | 'subscription') => {
     try {
@@ -68,8 +22,6 @@ export default function Page() {
       }
       
       const userId = user.id;
-      
-      console.log('決済処理を開始:', { priceId, mode, userId });
 
       // APIエンドポイントを呼び出し
       const response = await fetch('/api/checkout', {
@@ -91,8 +43,6 @@ export default function Page() {
       if (!response.ok) {
         throw new Error(data.error || '決済処理中にエラーが発生しました');
       }
-      
-      console.log('Stripe決済URL取得成功:', data.url);
       
       // 決済ページにリダイレクト
       window.location.href = data.url || '';
@@ -140,67 +90,6 @@ export default function Page() {
 
   return (
     <>
-      {/* デバッグ情報 */}
-      <div className="mb-8 p-4 border rounded bg-gray-50">
-        <div className="flex justify-between mb-2">
-          <h2 className="text-lg font-semibold">デバッグ情報</h2>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => fetchDirectSubscription()}>
-              サブスクリプション再取得
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => refreshUserData()}>
-              データ更新
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setDebugVisible(!debugVisible)}>
-              {debugVisible ? '隠す' : '表示'}
-            </Button>
-          </div>
-        </div>
-        
-        {debugVisible && (
-          <div className="space-y-4 text-sm">
-            <div>
-              <h3 className="font-medium">ユーザー情報:</h3>
-              <pre className="p-2 bg-gray-100 rounded overflow-auto max-h-40">
-                {JSON.stringify(user, null, 2)}
-              </pre>
-            </div>
-            
-            <div>
-              <h3 className="font-medium">サブスクリプション情報:</h3>
-              <pre className="p-2 bg-gray-100 rounded overflow-auto max-h-40">
-                {JSON.stringify(subscription, null, 2)}
-              </pre>
-            </div>
-            
-            <div>
-              <h3 className="font-medium">認証情報:</h3>
-              <pre className="p-2 bg-gray-100 rounded overflow-auto max-h-40">
-                {JSON.stringify({
-                  isAuthenticated,
-                  loading,
-                  error: error?.message
-                }, null, 2)}
-              </pre>
-            </div>
-            
-            <div>
-              <h3 className="font-medium">Supabase認証ユーザー:</h3>
-              <pre className="p-2 bg-gray-100 rounded overflow-auto max-h-40">
-                {JSON.stringify(authUser, null, 2)}
-              </pre>
-            </div>
-            
-            <div>
-              <h3 className="font-medium">Supabaseセッション:</h3>
-              <pre className="p-2 bg-gray-100 rounded overflow-auto max-h-40">
-                {JSON.stringify(sessionInfo, null, 2)}
-              </pre>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* ページタイトル */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Choose Your Plan</h1>
