@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/hooks/use-user";
-import { SubscriptionStatus } from "@/app/components/SubscriptionStatus";
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -50,17 +49,6 @@ export default function DashboardPage() {
         <div className="bg-white p-6 rounded border border-gray-100">
           <h3 className="text-sm font-medium mb-2">Next Lesson</h3>
           <p className="text-sm text-gray-500">No upcoming lessons</p>
-        </div>
-      </div>
-
-      {/* Subscription Status */}
-      <div className="mb-8">
-        <h2 className="text-lg font-bold mb-2">Your Subscription</h2>
-        <SubscriptionStatus />
-        <div className="mt-3">
-          <Link href="/dashboard/plans" className="text-sm text-blue-600 hover:underline">
-            Upgrade your plan
-          </Link>
         </div>
       </div>
 

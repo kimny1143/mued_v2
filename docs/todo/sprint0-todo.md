@@ -65,7 +65,7 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S1-1: Stripe Checkout / Webhook （EdgeFunction）実装
 - **担当:** BEチーム
-- **状態:** ✅ 完了
+- **状態:** ⚠️ 状況確認中
 - **概要:** Stripe Checkoutセッションを作成しユーザーをStripe決済ページへリダイレクトするAPIと、決済完了通知を受け取るStripe Webhook (Supabase Edge Function) を実装する。
 - **DoD:** ユーザーがStripeで支払いを完了すると、その情報がWebhook経由でシステムに通知され、DBの `Subscription` テーブル等が更新されること。Webhookは署名検証を行い、200レスポンスを返すこと。
 - **タスク:**
@@ -73,7 +73,7 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
     - [x] BE: Supabase Edge Function (`app/api/webhooks/stripe/` 等) でStripe Webhookエンドポイントを作成。
     - [x] BE: Webhook内でStripeからのリクエスト署名を検証するロジックを実装。
     - [x] BE: Webhookで `checkout.session.completed` 等のイベントを処理し、支払い情報を元にPrisma Clientを使ってDB (`User`, `Subscription` テーブル等) を更新するロジックを実装。
-    - [x] BE: Webhook処理に関する単体テストおよびローカルでのStripe CLIを用いたテストを実施。
+    - [ ] BE: Webhook処理に関する単体テストおよびローカルでのStripe CLIを用いたテストを実施。
 
 ### Story S1-2: `LessonSlot`,`Reservation` API (RLS & バリデーション)
 - **担当:** BEチーム
@@ -122,15 +122,15 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S2-1: Google OAuth & 差分同期サービス
 - **担当:** BEチーム
-- **状態:** ✅ 完了
+- **状態:** ⚠️ 状況確認中
 - **概要:** NextAuth.jsを用いてGoogle OAuth認証を導入し、ユーザーの同意を得てGoogle Calendar APIにアクセス。レッスン予約情報をユーザーのGoogle Calendarに登録し、またカレンダー側の変更を検知してシステムに反映する双方向の差分同期サービスを実装する。
 - **DoD:** ユーザーがGoogleアカウントで連携後、MUED LMSでの予約がGoogle Calendarに自動で追加・更新・削除されること。Google Calendar側での変更も一定間隔またはWebhookでMUED LMSに反映されること。同期成功率99%以上を目指す。
 - **タスク:**
-    - [x] BE: NextAuth.jsにGoogle Providerを追加し、OAuth認証フローを実装。Calendar APIスコープの同意取得を含む。
-    - [x] BE: Google Calendar APIクライアントライブラリを導入し、`lib/googleCalendar.ts` 等にAPI操作関数群を実装（イベント作成、更新、削除、一覧取得等）。
-    - [x] BE: ユーザーの予約情報とGoogle Calendarのイベント情報を比較し、差分のみを同期するロジックを実装。
-    - [x] BE: 同期処理を実行するAPIエンドポイント (`app/api/calendar/sync/route.ts` 等) または定期実行ジョブ (Supabase Cron Jobs等) を作成。
-    - [x] BE: Google Calendar APIのエラーハンドリング、リトライ機構を実装し、堅牢な同期処理を実現。アクセストークン、リフレッシュトークンの管理も適切に行う。
+    - [ ] BE: NextAuth.jsにGoogle Providerを追加し、OAuth認証フローを実装。Calendar APIスコープの同意取得を含む。
+    - [ ] BE: Google Calendar APIクライアントライブラリを導入し、`lib/googleCalendar.ts` 等にAPI操作関数群を実装（イベント作成、更新、削除、一覧取得等）。
+    - [ ] BE: ユーザーの予約情報とGoogle Calendarのイベント情報を比較し、差分のみを同期するロジックを実装。
+    - [ ] BE: 同期処理を実行するAPIエンドポイント (`app/api/calendar/sync/route.ts` 等) または定期実行ジョブ (Supabase Cron Jobs等) を作成。
+    - [ ] BE: Google Calendar APIのエラーハンドリング、リトライ機構を実装し、堅牢な同期処理を実現。アクセストークン、リフレッシュトークンの管理も適切に行う。
 
 ### Story S2-2: 予約確定メール (Supabase Trigger + Resend)
 - **担当:** BEチーム

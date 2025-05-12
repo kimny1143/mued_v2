@@ -153,9 +153,6 @@ export function useUser() {
 
     fetchUserData();
 
-    // 5秒ごとにサブスクリプション情報を再確認
-    const intervalId = setInterval(fetchUserData, 5000);
-
     // 認証状態変更のリスナー
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
@@ -168,7 +165,6 @@ export function useUser() {
 
     return () => {
       authListener.subscription.unsubscribe();
-      clearInterval(intervalId);
     };
   }, [lastRefresh, subscriptionData]);
 
