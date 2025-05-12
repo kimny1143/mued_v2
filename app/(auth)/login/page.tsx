@@ -19,8 +19,8 @@ function getAppBaseUrl() {
   }
   
   // Vercel環境でありURLが設定されていれば使用
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
   }
   
   // 明示的な設定があれば使用
@@ -41,6 +41,7 @@ function LoginContent() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isProcessingHash, setIsProcessingHash] = useState(false);
   
   // URLのエラーパラメータがあれば表示
   useEffect(() => {
@@ -51,92 +52,144 @@ function LoginContent() {
   
   // ハッシュフラグメントからのトークン処理（Implicit Flow対応）
   useEffect(() => {
-    // クライアント側でのみ実行
-    if (typeof window !== 'undefined') {
-      const handleHashChange = async () => {
+    async function processAccessToken() {
+      // 既に処理中なら実行しない
+      if (isProcessingHash) return;
+      
+      // クライアント側でのみ実行
+      if (typeof window !== 'undefined') {
         // #access_token=...の形式のハッシュがあるか確認
         if (window.location.hash && window.location.hash.includes('access_token')) {
+          setIsProcessingHash(true);
           setIsLoading(true);
           
           try {
-            console.log('アクセストークンを含むハッシュを検出');
+            console.log('[ハッシュ検出] アクセストークンを検出:', window.location.hash.substring(0, 20) + '...');
             
-            // ハッシュからのセッション設定を待機
+            // supabaseの自動セッション設定を確実にするため強制的に少し待機
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // セッションが正しく設定されたか確認
             const { data, error } = await supabase.auth.getSession();
             
             if (error) {
-              console.error('セッション取得エラー:', error.message);
+              console.error('[セッション取得エラー]', error);
               setErrorMsg('認証トークンの処理に失敗しました');
-            } else if (data.session) {
+              setIsLoading(false);
+              setIsProcessingHash(false);
+              return;
+            }
+            
+            if (data.session) {
               // セッション設定成功
-              console.log('セッション設定成功:', data.session.user.email);
+              console.log('[セッション成功] ユーザー:', data.session.user.email);
               
-              // ベースURLを取得してリダイレクト
+              // ベースURLを取得
               const baseUrl = getAppBaseUrl();
               const dashboardUrl = `${baseUrl}/dashboard`;
-              console.log('リダイレクト先:', dashboardUrl);
+              console.log('[リダイレクト] 宛先:', dashboardUrl);
               
               // URLのハッシュ部分をクリア
-              window.history.replaceState(
-                {}, 
-                document.title, 
-                window.location.pathname
-              );
+              window.history.replaceState({}, document.title, window.location.pathname);
               
-              // URLをチェックして適切にリダイレクト
-              if (window.location.origin === baseUrl || baseUrl.includes('localhost')) {
-                // 同じオリジンならルーター使用
+              // 現在のURLがbaseUrlと同じオリジンかチェック
+              const isLocalRedirect = window.location.origin === baseUrl || 
+                                     (baseUrl.includes('localhost') && window.location.host.includes('localhost'));
+              
+              if (isLocalRedirect) {
+                // 同一オリジンならルーターを使用
                 router.push('/dashboard');
               } else {
-                // 別オリジンならフルURLリダイレクト
+                // 異なるオリジンなら直接リダイレクト
                 window.location.href = dashboardUrl;
               }
             } else {
-              console.error('セッションが見つかりません');
-              setErrorMsg('セッションの設定に失敗しました');
+              console.log('[セッション失敗] 見つかりませんでした');
+              
+              // 2回目の試行 - トークンからセッションを手動で設定
+              try {
+                // ハッシュからアクセストークンを抽出
+                const hash = window.location.hash.substring(1);
+                const params = new URLSearchParams(hash);
+                const accessToken = params.get('access_token');
+                
+                if (accessToken) {
+                  console.log('[再試行] トークンからセッションを設定');
+                  
+                  // セッションを手動で設定
+                  const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: ''
+                  });
+                  
+                  if (sessionError) {
+                    console.error('[セッション設定エラー]', sessionError);
+                    setErrorMsg('セッション設定に失敗しました');
+                  } else if (sessionData.session) {
+                    console.log('[セッション再設定成功]');
+                    
+                    // URLのハッシュ部分をクリア
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    
+                    router.push('/dashboard');
+                    return;
+                  }
+                }
+                
+                setErrorMsg('セッションの設定に失敗しました');
+              } catch (err) {
+                console.error('[セッション手動設定エラー]', err);
+                setErrorMsg('認証処理中にエラーが発生しました');
+              }
             }
           } catch (err) {
-            console.error('認証エラー:', err);
+            console.error('[全体エラー]', err);
             setErrorMsg('認証処理中にエラーが発生しました');
           } finally {
             setIsLoading(false);
+            setIsProcessingHash(false);
           }
         }
-      };
-      
-      // ページロード時に実行
-      handleHashChange();
-      
-      // hashchangeイベントリスナーを追加
-      window.addEventListener('hashchange', handleHashChange);
-      return () => {
-        window.removeEventListener('hashchange', handleHashChange);
-      };
+      }
     }
-  }, [router]);
+    
+    processAccessToken();
+  }, [router, isProcessingHash]);
   
   // ログイン済みならリダイレクト
   useEffect(() => {
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        // ベースURLを取得
-        const baseUrl = getAppBaseUrl();
-        const dashboardUrl = `${baseUrl}/dashboard`;
-        
-        // URLをチェックして適切にリダイレクト
-        if (window.location.origin === baseUrl || baseUrl.includes('localhost')) {
-          // 同じオリジンならルーター使用
-          router.push('/dashboard');
-        } else {
-          // 別オリジンならフルURLリダイレクト
-          window.location.href = dashboardUrl;
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          console.log('[チェック] 既存セッション検出:', data.session.user.email);
+          
+          // ベースURLを取得
+          const baseUrl = getAppBaseUrl();
+          const dashboardUrl = `${baseUrl}/dashboard`;
+          
+          // URLをチェックして適切にリダイレクト
+          const isLocalRedirect = window.location.origin === baseUrl || 
+                              (baseUrl.includes('localhost') && window.location.host.includes('localhost'));
+          
+          if (isLocalRedirect) {
+            // 同じオリジンならルーター使用
+            router.push('/dashboard');
+          } else {
+            // 別オリジンならフルURLリダイレクト
+            window.location.href = dashboardUrl;
+          }
         }
+      } catch (err) {
+        console.error('[セッションチェックエラー]', err);
       }
     };
     
-    checkSession();
-  }, [router]);
+    // ハッシュ処理中でない場合のみセッションチェック
+    if (!isProcessingHash) {
+      checkSession();
+    }
+  }, [router, isProcessingHash]);
   
   // Google認証でサインイン
   const handleGoogleSignIn = async () => {
@@ -149,6 +202,7 @@ function LoginContent() {
       
       // リダイレクトURLが返された場合はクライアント側でリダイレクト
       if (result.success && result.redirectUrl) {
+        console.log('[認証開始] リダイレクト:', result.redirectUrl.substring(0, 50) + '...');
         window.location.href = result.redirectUrl;
         return; // リダイレクト後は処理終了
       }
