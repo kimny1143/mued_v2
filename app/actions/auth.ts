@@ -2,36 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
-
-/**
- * 現在の環境に応じたベースURLを取得する関数
- * Vercel環境変数を自動検出して適切なURLを返す
- */
-function getBaseUrl() {
-  // デプロイ環境の場合は明示的なURL設定（最優先）
-  const deployUrl = process.env.NEXT_PUBLIC_DEPLOY_URL || process.env.DEPLOY_URL;
-  if (deployUrl) {
-    return deployUrl.startsWith('http') ? deployUrl : `https://${deployUrl}`;
-  }
-  
-  // Vercel環境変数があればそれを使用
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  
-  // 本番環境の場合（VERCEL_ENV=production）
-  if (process.env.VERCEL_ENV === 'production') {
-    return 'https://mued-lms-fgm.vercel.app';
-  }
-  
-  // 明示的に設定された場合はそれを使用
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL;
-  }
-  
-  // ローカル開発環境
-  return 'http://localhost:3000';
-}
+import { getBaseUrl } from '@/lib/utils';
 
 // Google認証へのリダイレクト
 export async function signInWithGoogle() {

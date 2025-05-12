@@ -3,43 +3,7 @@
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-
-/**
- * 現在の環境に応じたベースURLを取得する関数
- */
-function getBaseUrl() {
-  // Vercel環境変数があればそれを使用
-  if (typeof window !== 'undefined') {
-    // 現在のURLが明らかにVercelのものであれば継続して使用
-    if (window.location.host.includes('vercel.app') || 
-        window.location.host.includes('mued.jp')) {
-      return window.location.origin;
-    }
-  }
-  
-  // Vercel環境変数があればそれを使用
-  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-  }
-  
-  // Vercel環境変数があれば使用
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  
-  // 本番環境の場合
-  if (process.env.VERCEL_ENV === 'production') {
-    return 'https://mued-lms-fgm.vercel.app';
-  }
-  
-  // 明示的に設定された場合はそれを使用
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL;
-  }
-  
-  // ローカル開発環境
-  return 'http://localhost:3000';
-}
+import { getBaseUrl } from '@/lib/utils';
 
 // useSearchParamsを使用するコンテンツコンポーネント
 function CallbackContent() {

@@ -5,32 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { signInWithGoogle } from '@/app/actions/auth';
-
-/**
- * 環境に応じて正しいベースURLを取得する
- */
-function getAppBaseUrl() {
-  if (typeof window !== 'undefined') {
-    // URLが明らかにVercelのものであれば継続して使用
-    if (window.location.host.includes('vercel.app') || 
-        window.location.host.includes('mued.jp')) {
-      return window.location.origin;
-    }
-  }
-  
-  // Vercel環境でありURLが設定されていれば使用
-  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
-  }
-  
-  // 明示的な設定があれば使用
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL;
-  }
-  
-  // ローカル環境のデフォルト
-  return 'http://localhost:3000';
-}
+import { getBaseUrl } from '@/lib/utils';
 
 // 検索パラメータを使用するコンポーネント
 function LoginContent() {
@@ -85,7 +60,7 @@ function LoginContent() {
               console.log('[セッション成功] ユーザー:', data.session.user.email);
               
               // ベースURLを取得
-              const baseUrl = getAppBaseUrl();
+              const baseUrl = getBaseUrl();
               const dashboardUrl = `${baseUrl}/dashboard`;
               console.log('[リダイレクト] 宛先:', dashboardUrl);
               
@@ -165,7 +140,7 @@ function LoginContent() {
           console.log('[チェック] 既存セッション検出:', data.session.user.email);
           
           // ベースURLを取得
-          const baseUrl = getAppBaseUrl();
+          const baseUrl = getBaseUrl();
           const dashboardUrl = `${baseUrl}/dashboard`;
           
           // URLをチェックして適切にリダイレクト
