@@ -50,25 +50,29 @@ module.exports = {
       },
       fontFamily: {
         sans: [
-          "var(--font-inter)", 
-          "Inter",
-          "ui-sans-serif",
-          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont", 
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
           "sans-serif",
           '"Apple Color Emoji"',
           '"Segoe UI Emoji"',
           '"Segoe UI Symbol"',
           '"Noto Color Emoji"',
         ],
-        shantell: [
+        display: [
           "var(--font-shantell-sans)",
           "Shantell Sans",
           "cursive"
         ],
-        flow: [
+        mono: [
           "var(--font-flow-circular)",
           "Flow Circular",
-          "cursive"
+          "SFMono-Regular",
+          "Menlo",
+          "monospace"
         ],
       },
       keyframes: {
@@ -86,13 +90,13 @@ module.exports = {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
-    container: { center: true, padding: "2rem", screens: { "2xl": "1400px" } },
+    container: { center: true, padding: "1rem", screens: { "2xl": "1400px" } },
   },
   plugins: [],
   darkMode: ["class"],
   safelist: [
     'font-sans',
-    'font-shantell',
-    'font-flow',
+    'font-display',
+    'font-mono',
   ],
 };

@@ -11,12 +11,17 @@ import {
   MessageSquareIcon, 
   SettingsIcon, 
   FolderIcon, 
-  DumbbellIcon
+  DumbbellIcon,
+  MenuIcon,
+  XIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
-import { PlanBadge } from "@/app/components/PlanBadge";
 import { signOut } from "@/app/actions/auth";
+import { Button } from "@/app/components/ui/button";
+import { cn } from "@/lib/utils";
 
 // ナビゲーション項目
 const dashboardNavItems = [
@@ -30,13 +35,19 @@ const dashboardNavItems = [
 
 export default function DashboardLayout({
   children,
+  title = "Welcome back!",
+  actions
 }: {
   children: React.ReactNode;
+  title?: string;
+  actions?: React.ReactNode;
 }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   // ユーザー情報を取得
   useEffect(() => {
@@ -73,6 +84,14 @@ export default function DashboardLayout({
       subscription.unsubscribe();
     };
   }, [router]);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
   
   // サインアウト処理
   const handleSignOut = async () => {
@@ -106,72 +125,150 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="dashboard-layout">
       {/* ヘッダー */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-10 flex items-center justify-between px-6">
-        <div className="flex items-center">
-          <div className="flex items-center gap-2">
-            <img src="/logomark.svg" alt="MUED" className="h-6 w-6" />
-            <span className="text-xl font-bold">MUED</span>
+      <header className="dashboard-header">
+        <div className="max-w-[1440px] mx-auto px-6">
+          <div className="flex justify-between h-16">
+            {/* Left section */}
+            <div className="flex items-center gap-8">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="lg:hidden w-10 h-10 p-0"
+                onClick={toggleSidebar}
+              >
+                <MenuIcon className="h-6 w-6" />
+              </Button>
+              <div className="flex items-center gap-2">
+                <img className="h-8 w-8" src="/logomark.svg" alt="MUED" />
+                <span className="text-2xl font-bold hidden lg:block font-shantell">MUED</span>
+              </div>
+            </div>
+
+            {/* Right section */}
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="relative w-10 h-10 p-0"
+              >
+                <BellIcon className="h-6 w-6" />
+                <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
+              </Button>
+              <Button 
+                variant="ghost"
+                size="sm"
+                className="w-10 h-10 p-0"
+              >
+                <UserCircleIcon className="h-6 w-6" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                className="hidden lg:flex items-center gap-2"
+                onClick={handleSignOut}
+              >
+                <span className="text-sm">Sign out</span>
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <BellIcon className="h-5 w-5" />
-            <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
-          </div>
-          <UserCircleIcon className="h-6 w-6" />
-          <div className="text-sm font-medium mr-4">
-            {user?.email}
-          </div>
-          <button 
-            onClick={handleSignOut} 
-            className="text-sm font-medium"
-          >
-            Sign out
-          </button>
         </div>
       </header>
 
-      {/* サイドバー */}
-      <div className="fixed top-16 left-0 bottom-0 w-64 bg-white border-r border-gray-200">
-        <div className="p-6 flex items-start gap-3">
-          <UserCircleIcon className="h-12 w-12" />
-          <div className="mt-1">
-            <PlanBadge />
-          </div>
-        </div>
-        <div className="px-6 pb-4">
-          <Link 
-            href="/dashboard/plans" 
-            className="block w-full py-2 text-center border border-gray-200 rounded text-sm font-medium"
-          >
-            Upgrade Plan
-          </Link>
-        </div>
-        <nav className="px-2 mt-4">
-          {dashboardNavItems.map((item, index) => (
-            <Link
-              key={index}
-              href={item.path}
-              className={`flex items-center py-2 px-4 my-1 rounded ${
-                pathname === item.path
-                  ? 'bg-black text-white' 
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <item.icon className="h-5 w-5 mr-3" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </nav>
-      </div>
+      <div className="flex">
+        {/* Mobile Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div 
+            className="mobile-overlay"
+            onClick={toggleSidebar}
+          />
+        )}
 
-      {/* メインコンテンツ */}
-      <div className="ml-64 pt-16 w-full bg-[#F7F8FA]">
-        <div className="p-6">
-          {children}
-        </div>
+        {/* サイドバー */}
+        <aside className={`
+          mobile-sidebar
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${isSidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}
+        `}>
+          {/* Collapse toggle button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute -right-4 top-8 hidden lg:flex h-8 w-8 p-0 rounded-full bg-white border shadow-md"
+            onClick={toggleSidebarCollapse}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRightIcon className="h-4 w-4" />
+            ) : (
+              <ChevronLeftIcon className="h-4 w-4" />
+            )}
+          </Button>
+
+          {/* Close button for mobile */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="absolute top-4 right-4 lg:hidden w-10 h-10 p-0"
+            onClick={toggleSidebar}
+          >
+            <XIcon className="h-6 w-6" />
+          </Button>
+
+          <div className={`p-6 ${isSidebarCollapsed ? 'lg:p-4' : ''}`}>
+            {/* User Profile */}
+            <div className="mb-8 mt-16 lg:mt-4">
+              <div className={`flex items-center gap-4 mb-4 ${isSidebarCollapsed ? 'lg:justify-center' : ''}`}>
+                <UserCircleIcon className="h-12 w-12" />
+                {!isSidebarCollapsed && (
+                  <div className="hidden lg:block">
+                    <h3 className="font-semibold">{user?.email}</h3>
+                    <p className="text-sm text-gray-500">Free Plan</p>
+                  </div>
+                )}
+              </div>
+              {!isSidebarCollapsed && (
+                <Button 
+                  className="w-full hidden lg:flex" 
+                  variant="outline"
+                  onClick={() => router.push('/dashboard/plans')}
+                >
+                  Upgrade Plan
+                </Button>
+              )}
+            </div>
+
+            {/* Navigation */}
+            <nav className="space-y-1">
+              {dashboardNavItems.map((item, index) => (
+                <Button
+                  key={index}
+                  variant={pathname === item.path ? "default" : "ghost"}
+                  className={`w-full justify-start ${
+                    pathname === item.path ? 'bg-black text-white' : ''
+                  } ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
+                  onClick={() => {
+                    router.push(item.path);
+                    setIsSidebarOpen(false);
+                  }}
+                >
+                  <item.icon className={`h-5 w-5 ${isSidebarCollapsed ? '' : 'mr-3'}`} />
+                  {!isSidebarCollapsed && <span>{item.label}</span>}
+                </Button>
+              ))}
+            </nav>
+          </div>
+        </aside>
+
+        {/* メインコンテンツ */}
+        <main className={`${isSidebarCollapsed ? 'dashboard-main-collapsed' : 'dashboard-main-expanded'} w-full`}>
+          <div className="max-w-[1440px] mx-auto p-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
+              {title && <h1 className="text-2xl font-bold font-shantell">{title}</h1>}
+              {actions}
+            </div>
+            {children}
+          </div>
+        </main>
       </div>
     </div>
   );
