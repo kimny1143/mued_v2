@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@/lib/hooks/use-user";
 import { SubscriptionStatus } from "@/app/components/SubscriptionStatus";
+import StripeTestClient from './stripe-test-client';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -34,8 +35,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold mb-6">Dashboard</h1>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold mb-6">ダッシュボード</h1>
       
       {/* Welcome section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -97,6 +98,11 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* 開発環境でのみテストコンポーネントを表示 */}
+      {process.env.NODE_ENV === 'development' && (
+        <StripeTestClient session={user} />
+      )}
     </div>
   );
 } 

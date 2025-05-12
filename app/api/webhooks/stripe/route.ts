@@ -1,40 +1,45 @@
 import { NextResponse } from 'next/server';
-import { stripe } from '@/lib/stripe';
-import { supabase } from '@/lib/supabase';
+import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { headers } from 'next/headers';
-import Stripe from 'stripe';
+
+// Stripeクライアントの初期化
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2023-10-16' as any // 型エラー回避
+});
 
 export async function POST(req: Request) {
   const body = await req.text();
-  const signature = headers().get('stripe-signature') || '';
-  
+  const signature = headers().get('Stripe-Signature');
+
+  if (!signature) {
+    console.error('署名がありません');
+    return new NextResponse('署名が必要です', { status: 400 });
+  }
+
+  // Webhookシークレット
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  const isLocalDev = process.env.NODE_ENV === 'development';
   
-  if (!webhookSecret && !isLocalDev) {
-    console.error('Webhook Secretが設定されていません');
-    return new NextResponse('Webhook Secret missing', { status: 500 });
+  if (!webhookSecret) {
+    console.error('Webhook秘密鍵が設定されていません');
+    return new NextResponse('設定エラー', { status: 500 });
   }
 
   let event: Stripe.Event;
-  
-  try {
-    // 開発環境では署名検証をスキップしてリクエスト本文から直接イベントを取得
-    if (isLocalDev) {
-      console.log('ローカル開発環境: 署名検証をスキップします');
-      event = JSON.parse(body) as Stripe.Event;
-    } else {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret!);
-    }
-    console.log(`Webhook受信: ${event.type}, ID: ${event.id}`);
-  } catch (err: unknown) {
-    const errorMessage = err instanceof Error ? err.message : '不明なエラー';
-    console.error(`Webhook署名検証エラー: ${errorMessage}`);
-    return new NextResponse(`Webhook Error: ${errorMessage}`, { status: 400 });
-  }
 
-  console.log(`イベント処理開始: ${event.type}`);
+  try {
+    // イベントを検証
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      webhookSecret
+    );
+    console.log(`Webhookイベント受信: ${event.id}, タイプ: ${event.type}`);
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : '不明なエラー';
+    console.error(`Webhook検証エラー: ${errorMessage}`);
+    return new NextResponse(`Webhook検証エラー: ${errorMessage}`, { status: 400 });
+  }
   
   try {
     switch (event.type) {
@@ -75,101 +80,108 @@ export async function POST(req: Request) {
   }
 }
 
-// セッション完了時にユーザーIDをカスタマーIDから検索
+// ユーザーIDを取得する関数
 async function findUserByCustomerId(customerId: string): Promise<string | null> {
-  console.log(`カスタマーID ${customerId} のユーザーを検索中...`);
-  
-  // supabaseAdminを使用して権限問題を解決
-  const { data, error } = await supabaseAdmin
-    .from('stripe_customers')
-    .select('user_id')
-    .eq('customer_id', customerId)
-    .single();
-  
-  if (error) {
-    console.error('カスタマーIDからユーザーの検索エラー:', error);
-    return null;
-  }
-  
-  if (!data || !data.user_id) {
-    console.error(`カスタマーID ${customerId} に関連するユーザーが見つかりませんでした`);
-    return null;
-  }
-  
-  console.log(`カスタマーID ${customerId} のユーザーを発見: ${data.user_id}`);
-  return data.user_id;
-}
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('stripe_customers')
+      .select('user_id')
+      .eq('customer_id', customerId)
+      .maybeSingle();
 
-// ユーザーIDからカスタマーIDを検索
-async function findCustomerByUserId(userId: string): Promise<string | null> {
-  // supabaseAdminを使用して権限問題を解決
-  const { data, error } = await supabaseAdmin
-    .from('stripe_customers')
-    .select('customer_id')
-    .eq('user_id', userId)
-    .single();
-  
-  if (error) {
-    console.error('ユーザーIDからカスタマーの検索エラー:', error);
+    if (error || !data) {
+      console.error('ユーザー検索エラー:', error || 'ユーザーが見つかりません');
+      return null;
+    }
+
+    return data.user_id;
+  } catch (error) {
+    console.error('顧客ID検索エラー:', error);
     return null;
   }
-  
-  if (!data) {
-    console.error(`ユーザーID ${userId} に関連するカスタマーが見つかりませんでした`);
-    return null;
-  }
-  
-  return data.customer_id;
 }
 
 // チェックアウト完了時の処理
 async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Session) {
   if (!session.customer || !session.subscription) {
-    console.error('セッションにcustomerまたはsubscriptionがありません', session);
+    console.error('必須データがありません', { customer: session.customer, subscription: session.subscription });
     return;
   }
-  
-  // メタデータからユーザーIDを取得（旧方式）またはcustomer_idから検索（新方式）
-  let userId = session.metadata?.userId || null;
-  
-  // メタデータからユーザーIDが見つからない場合は、customer_idから検索
+
+  console.log('チェックアウト完了処理開始:', {
+    sessionId: session.id,
+    customerId: session.customer,
+    subscriptionId: session.subscription
+  });
+
+  // メタデータからユーザーIDを取得
+  let userId = session.metadata?.userId;
+
+  // メタデータにない場合は顧客IDから検索
   if (!userId) {
-    console.log('メタデータからユーザーIDが見つかりません。customerIdから検索します:', session.customer);
-    userId = await findUserByCustomerId(session.customer as string);
-    
-    if (!userId) {
-      console.error('customerIdからもユーザーIDが見つかりませんでした。処理を中止します');
-      return;
+    const foundUserId = await findUserByCustomerId(session.customer as string);
+    if (foundUserId) {
+      userId = foundUserId;
     }
   }
-  
-  console.log(`チェックアウト完了処理: ユーザーID=${userId}, サブスクリプションID=${session.subscription}`);
-  
-  // Stripeからサブスクリプション詳細を取得
-  const subscriptionData = await stripe.subscriptions.retrieve(session.subscription as string);
-  console.log('取得したサブスクリプション情報:', subscriptionData);
-  
-  // 顧客情報をデータベースに登録/更新
-  const customerRecord = {
-    user_id: userId,
-    customer_id: session.customer as string,
-  };
-  
-  console.log('顧客情報をupsertします:', customerRecord);
-  
-  // supabaseAdminを使用して権限問題を解決
-  const { error: customerError } = await supabaseAdmin
-    .from('stripe_customers')
-    .upsert(customerRecord, {
-      onConflict: 'user_id',
-    });
-  
-  if (customerError) {
-    console.error('顧客情報の保存エラー:', customerError);
-    throw customerError;
+
+  if (!userId) {
+    console.error('ユーザーIDが見つかりません', { sessionId: session.id, customerId: session.customer });
+    
+    // ユーザーが見つからない場合は顧客レコードを作成
+    if (typeof session.customer === 'string') {
+      const customer = await stripe.customers.retrieve(session.customer);
+      
+      if (customer && !customer.deleted) {
+        // 顧客のメールアドレスからユーザーを検索
+        const { data: userData } = await supabaseAdmin
+          .from('users')
+          .select('id')
+          .eq('email', customer.email)
+          .maybeSingle();
+          
+        if (userData) {
+          userId = userData.id;
+          
+          // 顧客マッピングを作成
+          const { error: mappingError } = await supabaseAdmin
+            .from('stripe_customers')
+            .insert({
+              user_id: userId,
+              customer_id: session.customer
+            });
+            
+          if (mappingError) {
+            console.error('顧客マッピング作成エラー:', mappingError);
+          } else {
+            console.log('顧客マッピングを作成しました', { userId, customerId: session.customer });
+          }
+        }
+      }
+    }
+    
+    if (!userId) {
+      throw new Error('サブスクリプションに関連付けるユーザーが見つかりません');
+    }
   }
-  
-  console.log('顧客情報を保存しました');
+
+  console.log(`サブスクリプション処理: ユーザーID=${userId}`);
+
+  // サブスクリプションデータを取得
+  const subscriptionData = await stripe.subscriptions.retrieve(session.subscription as string, {
+    expand: ['items.data.price']
+  });
+
+  console.log('サブスクリプションデータ:', {
+    id: subscriptionData.id,
+    status: subscriptionData.status,
+    items: subscriptionData.items.data.map(item => ({
+      priceId: item.price.id,
+      productId: item.price.product,
+      amount: item.price.unit_amount,
+      interval: item.price.recurring?.interval
+    }))
+  });
 
   // データベース挿入処理の詳細デバッグ
   try {
@@ -180,8 +192,8 @@ async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Sess
       subscriptionId: subscriptionData.id,
       priceId: subscriptionData.items.data[0]?.price.id,
       status: subscriptionData.status,
-      currentPeriodStart: subscriptionData.items.data[0]?.current_period_start,
-      currentPeriodEnd: subscriptionData.items.data[0]?.current_period_end,
+      currentPeriodStart: subscriptionData.current_period_start || Math.floor(Date.now() / 1000),
+      currentPeriodEnd: subscriptionData.current_period_end || (Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60),
       cancelAtPeriodEnd: subscriptionData.cancel_at_period_end,
       updatedAt: new Date().toISOString(),
     };
@@ -192,7 +204,8 @@ async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Sess
     const { data, error } = await supabaseAdmin
       .from('stripe_user_subscriptions')
       .upsert(subscriptionRecord, {
-        onConflict: 'subscriptionId',
+        onConflict: 'userId',
+        ignoreDuplicates: false
       })
       .select('*')
       .single();
@@ -234,8 +247,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     subscriptionId: subscription.id,
     priceId: subscription.items.data[0]?.price.id,
     status: subscription.status,
-    currentPeriodStart: subscription.items.data[0]?.current_period_start,
-    currentPeriodEnd: subscription.items.data[0]?.current_period_end,
+    currentPeriodStart: subscription.current_period_start || Math.floor(Date.now() / 1000),
+    currentPeriodEnd: subscription.current_period_end || (Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60),
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
     updatedAt: new Date().toISOString(),
   };
@@ -246,7 +259,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
   const { data, error } = await supabaseAdmin
     .from('stripe_user_subscriptions')
     .upsert(subscriptionRecord, {
-      onConflict: 'subscriptionId',
+      onConflict: 'userId',
+      ignoreDuplicates: false
     })
     .select();
 
@@ -262,6 +276,17 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
 async function handleSubscriptionCancellation(subscription: Stripe.Subscription) {
   console.log(`サブスクリプションキャンセル処理: ${subscription.id}`);
 
+  // ユーザーIDを取得
+  const userId = await findUserByCustomerId(subscription.customer as string);
+  
+  if (!userId) {
+    console.error('サブスクリプションに関連するユーザーが見つかりませんでした', { 
+      subscriptionId: subscription.id,
+      customerId: subscription.customer
+    });
+    return;
+  }
+
   // サブスクリプションステータスを更新
   // supabaseAdminを使用して権限問題を解決
   const { data, error } = await supabaseAdmin
@@ -270,7 +295,7 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription)
       status: 'canceled',
       updatedAt: new Date().toISOString(),
     })
-    .eq('subscriptionId', subscription.id)
+    .eq('userId', userId)
     .select();
 
   if (error) {
