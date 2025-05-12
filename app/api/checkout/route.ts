@@ -7,6 +7,10 @@ export async function POST(request: Request) {
     console.log('チェックアウトAPIがリクエストを受信:', {
       headers: Object.fromEntries(request.headers),
       url: request.url,
+      method: request.method,
+      host: request.headers.get('host'),
+      origin: request.headers.get('origin'),
+      node_env: process.env.NODE_ENV,
     });
 
     const body = await request.json();
@@ -21,6 +25,11 @@ export async function POST(request: Request) {
       mode,
       userId,
       stripeKey: process.env.STRIPE_SECRET_KEY ? 'あり' : 'なし',
+      stripePubKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? 'あり' : 'なし',
+      env: {
+        VERCEL_ENV: process.env.VERCEL_ENV,
+        VERCEL_URL: process.env.VERCEL_URL,
+      }
     });
 
     // 必須パラメータを確認

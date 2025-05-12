@@ -22,6 +22,14 @@ export default function Page() {
       }
       
       const userId = user.id;
+      
+      // APIリクエスト前のデータをログに記録
+      console.log('Checkout API呼び出し前:', {
+        origin: window.location.origin,
+        priceId,
+        mode,
+        userId
+      });
 
       // APIエンドポイントを呼び出し
       const response = await fetch('/api/checkout', {
@@ -38,17 +46,28 @@ export default function Page() {
         }),
       });
 
+      // レスポンスのステータスとヘッダーをログに記録
+      console.log('Checkout APIレスポンス:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers),
+      });
+
       const data = await response.json();
+      console.log('Checkout APIデータ:', data);
       
       if (!response.ok) {
         throw new Error(data.error || '決済処理中にエラーが発生しました');
       }
       
+      // 決済ページへのリダイレクト前にログ
+      console.log('決済ページへリダイレクト:', data.url);
+      
       // 決済ページにリダイレクト
       window.location.href = data.url || '';
     } catch (error) {
-      console.error('Error creating checkout session:', error);
-      alert('決済処理の開始に失敗しました。もう一度お試しください。');
+      console.error('決済セッション作成エラー詳細:', error);
+      alert('決済処理の開始に失敗しました。デベロッパーコンソールで詳細を確認してください。');
     }
   };
 

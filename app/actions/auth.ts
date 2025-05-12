@@ -119,6 +119,6 @@ export async function signOut() {
   // リダイレクト先を返す（クライアント側でリダイレクト実行）
   return { 
     success: true, 
-    redirectUrl: '/login' 
+    redirectUrl: '/' 
   };
 } 

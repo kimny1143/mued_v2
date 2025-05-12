@@ -96,22 +96,27 @@ export default function DashboardLayout({
   // サインアウト処理
   const handleSignOut = async () => {
     try {
+      console.log("サインアウト処理を開始します");
+      
+      // 明示的にローカルセッションをクリア
+      const { error: localSignOutError } = await supabase.auth.signOut();
+      if (localSignOutError) {
+        console.error("ローカルセッションクリアエラー:", localSignOutError);
+      } else {
+        console.log("ローカルセッションクリア成功");
+      }
+      
       // Server Actionを使用したサインアウト
       const result = await signOut();
+      console.log("サーバーサインアウト結果:", result);
       
-      // クライアント側でリダイレクト
-      if (result.success && result.redirectUrl) {
-        router.push(result.redirectUrl);
-      } else {
-        // エラーがあった場合でもローカルセッションをクリア
-        await supabase.auth.signOut();
-        router.push('/login');
-      }
+      // 強制的にリダイレクト（結果に関わらず）
+      console.log("ランディングページにリダイレクトします");
+      router.replace('/');
     } catch (error) {
       console.error("Sign out failed:", error);
-      // エラー時はローカルでサインアウト
-      await supabase.auth.signOut();
-      router.push('/login');
+      // エラー時もリダイレクト
+      router.replace('/');
     }
   };
 
