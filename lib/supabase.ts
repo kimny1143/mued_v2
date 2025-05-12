@@ -5,9 +5,9 @@ import { createClient } from '@supabase/supabase-js';
  */
 function getSiteUrl() {
   // デプロイURLが明示的に設定されていれば最優先
-  if (process.env.NEXT_PUBLIC_DEPLOY_URL) {
-    return process.env.NEXT_PUBLIC_DEPLOY_URL;
-  }
+  // if (process.env.NEXT_PUBLIC_DEPLOY_URL) {
+  //   return process.env.NEXT_PUBLIC_DEPLOY_URL;
+  // }
 
   // Vercel環境変数があれば使用
   if (process.env.NEXT_PUBLIC_VERCEL_URL) {

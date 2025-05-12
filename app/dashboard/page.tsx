@@ -3,9 +3,12 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useUser } from "@/lib/hooks/use-user";
+import { SubscriptionStatus } from "@/app/components/SubscriptionStatus";
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
+  const { user } = useUser();
 
   // 認証状態を確認（ページ保護用）
   useEffect(() => {
@@ -53,7 +56,12 @@ export default function DashboardPage() {
       {/* Subscription Status */}
       <div className="mb-8">
         <h2 className="text-lg font-bold mb-2">Your Subscription</h2>
-        <p className="text-sm">No active subscription</p>
+        <SubscriptionStatus />
+        <div className="mt-3">
+          <Link href="/dashboard/plans" className="text-sm text-blue-600 hover:underline">
+            Upgrade your plan
+          </Link>
+        </div>
       </div>
 
       {/* Recent Activity */}

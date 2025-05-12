@@ -2,35 +2,65 @@
 
 import React from 'react';
 import { products } from '../stripe-config';
+import { useSubscription } from '@/lib/hooks/use-subscription';
 
 export function SubscriptionStatus() {
-  // ハードコードした固定値（緊急対応用）
-  const subscription = {
-    price_id: 'price_1RMJcpRYtspYtD2zQjRRmLXc', // Starter Subscription
-    subscription_status: 'active',
-    current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60 // 30日後
-  };
+  const { subscription, loading, error } = useSubscription();
 
-  const product = products.find(p => p.priceId === subscription.price_id);
+  // ローディング中表示
+  if (loading) {
+    return (
+      <div className="p-3 bg-white rounded-lg shadow-sm animate-pulse">
+        <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+        <div className="space-y-2">
+          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // サブスクリプションがない場合
+  if (!subscription || subscription.status !== 'active') {
+    return (
+      <div className="p-3 bg-white rounded-lg shadow-sm">
+        <h3 className="text-sm font-bold mb-2 text-gray-700">Subscription Status</h3>
+        <div className="space-y-1.5">
+          <p className="text-xs">
+            <span className="text-gray-500">Plan:</span> Free Plan
+          </p>
+          <p className="text-xs">
+            <span className="text-gray-500">Status:</span> Inactive
+          </p>
+          <p className="text-xs text-gray-600 mt-1">
+            No active subscription
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // アクティブなサブスクリプションの表示
+  const product = products.find(p => p.priceId === subscription.priceId);
 
   return (
     <div className="p-3 bg-white rounded-lg shadow-sm">
       <h3 className="text-sm font-bold mb-2 text-gray-700">Subscription Status</h3>
       <div className="space-y-1.5">
         <p className="text-xs">
-          <span className="text-gray-500">Plan:</span> {product?.name || 'No active plan'}
+          <span className="text-gray-500">Plan:</span> {product?.name || 'Custom Plan'}
         </p>
         <p className="text-xs">
-          <span className="text-gray-500">Status:</span> {subscription.subscription_status}
+          <span className="text-gray-500">Status:</span> {subscription.status}
         </p>
-        {subscription.current_period_end && (
+        {subscription.currentPeriodEnd && (
           <p className="text-xs">
             <span className="text-gray-500">Next billing date:</span>{' '}
-            {new Date(subscription.current_period_end * 1000).toLocaleDateString()}
+            {new Date(subscription.currentPeriodEnd * 1000).toLocaleDateString()}
           </p>
         )}
         <p className="text-xs text-green-600 mt-1">
-          <span className="font-bold">Active</span> - Fixed by debug API
+          <span className="font-bold">Active</span>
         </p>
       </div>
     </div>
