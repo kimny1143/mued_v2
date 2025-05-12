@@ -1,5 +1,7 @@
 import { stripe } from '@/lib/stripe';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: Request) {
   try {
@@ -13,24 +15,48 @@ export async function POST(request: Request) {
       node_env: process.env.NODE_ENV,
     });
 
+    // サーバーサイドのSupabaseクライアントを初期化
+    const cookieStore = cookies();
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+        global: {
+          headers: {
+            'X-Client-Info': `checkout-api/${process.env.NODE_ENV || 'development'}`,
+          },
+        },
+      }
+    );
+
+    // クッキーからセッションを取得する試み
+    const supabaseCookie = cookieStore.get('sb-access-token')?.value || 
+                          cookieStore.get('sb-refresh-token')?.value ||
+                          cookieStore.get('supabase-auth-token')?.value;
+
+    console.log('Supabase認証クッキー:', supabaseCookie ? '見つかりました' : '見つかりません');
+
+    // セッションの取得と認証チェック
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    // リクエストボディを解析
     const body = await request.json();
     const { priceId, successUrl, cancelUrl, mode, userId } = body;
 
-    // 詳細なリクエストボディをログに記録
-    console.log('チェックアウトリクエストの詳細:', {
-      body,
-      priceId,
-      successUrl,
-      cancelUrl,
-      mode,
-      userId,
-      stripeKey: process.env.STRIPE_SECRET_KEY ? 'あり' : 'なし',
-      stripePubKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? 'あり' : 'なし',
-      env: {
-        VERCEL_ENV: process.env.VERCEL_ENV,
-        VERCEL_URL: process.env.VERCEL_URL,
-      }
-    });
+    console.log('リクエストボディ:', { priceId, successUrl, cancelUrl, mode, userId });
+
+    // ユーザーIDのチェック（オプショナル）
+    let authenticatedUserId = null;
+    if (session && session.user) {
+      authenticatedUserId = session.user.id;
+      console.log('認証済みユーザー:', session.user.email);
+    } else {
+      console.warn('未認証アクセス - 続行します');
+    }
 
     // 必須パラメータを確認
     if (!priceId || !successUrl || !cancelUrl) {
@@ -61,8 +87,10 @@ export async function POST(request: Request) {
         success_url: successUrl,
         cancel_url: cancelUrl,
         metadata: {
-          userId: userId || 'anonymous'
-        }
+          userId: userId || authenticatedUserId || 'anonymous'
+        },
+        // サーバーサイドおよびクライアントサイドの両方からセッションが取得できるよう設定
+        expires_at: Math.floor(Date.now() / 1000) + 60 * 30, // 30分後に有効期限切れ
       });
 
       // セッションURLのログ（テスト環境のみ）
@@ -71,8 +99,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ url: session.url });
     } catch (stripeError) {
       console.error('Stripeセッション作成エラー:', stripeError);
+      
+      // Stripeエラーの詳細情報を抽出
+      const errorDetails = stripeError instanceof Error 
+        ? {
+            message: stripeError.message,
+            name: stripeError.name,
+            stack: process.env.NODE_ENV === 'development' ? stripeError.stack : undefined,
+            // @ts-expect-error: Stripeエラーの追加プロパティにアクセス
+            type: stripeError.type,
+            // @ts-expect-error: Stripeエラーの追加プロパティにアクセス
+            code: stripeError.code,
+            // @ts-expect-error: Stripeエラーの追加プロパティにアクセス
+            param: stripeError.param,
+          }
+        : stripeError;
+      
       return NextResponse.json(
-        { error: 'Stripeセッションの作成に失敗しました', details: stripeError }, 
+        { error: 'Stripeセッションの作成に失敗しました', details: errorDetails }, 
         { status: 500 }
       );
     }

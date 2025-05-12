@@ -11,12 +11,47 @@ import { Session, User } from "@supabase/supabase-js";
 
 export default function Page() {
   const { user, loading, error, isAuthenticated, session, subscription } = useUser();
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+
+  // ローカルストレージからデバッグログを読み込む
+  useEffect(() => {
+    try {
+      const storedLogs = localStorage.getItem('stripe_debug_logs');
+      if (storedLogs) {
+        setDebugLog(JSON.parse(storedLogs));
+      }
+    } catch (e) {
+      console.error('ログ読み込みエラー:', e);
+    }
+  }, []);
+
+  // デバッグログを追加する関数
+  const addDebugLog = (message: string, data?: unknown) => {
+    const logEntry = `${new Date().toISOString()} - ${message} ${data ? JSON.stringify(data) : ''}`;
+    console.log(logEntry); // 通常のコンソールにも出力
+    
+    setDebugLog(prev => {
+      // 最新の20件だけ保持
+      const newLogs = [...prev, logEntry].slice(-20);
+      // ローカルストレージに保存
+      try {
+        localStorage.setItem('stripe_debug_logs', JSON.stringify(newLogs));
+      } catch (e) {
+        console.error('ログ保存エラー:', e);
+      }
+      return newLogs;
+    });
+  };
 
   const handlePurchase = async (priceId: string, mode: 'payment' | 'subscription') => {
+    // 処理開始時のログ
+    addDebugLog('購入処理開始', { priceId, mode });
+    
     try {
       // ユーザーIDの検証と、未ログイン時は処理を中止
       if (!user?.id) {
-        console.error('ユーザーIDがありません。ログインが必要です。');
+        const errMsg = 'ユーザーIDがありません。ログインが必要です。';
+        addDebugLog('エラー', errMsg);
         alert('ログインが必要です');
         return;
       }
@@ -24,14 +59,17 @@ export default function Page() {
       const userId = user.id;
       
       // APIリクエスト前のデータをログに記録
-      console.log('Checkout API呼び出し前:', {
+      const requestInfo = {
         origin: window.location.origin,
+        host: window.location.host,
         priceId,
         mode,
         userId
-      });
+      };
+      addDebugLog('API呼び出し前', requestInfo);
 
       // APIエンドポイントを呼び出し
+      addDebugLog('fetchリクエスト開始');
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
@@ -44,30 +82,53 @@ export default function Page() {
           cancelUrl: `${window.location.origin}/dashboard/plans`,
           userId
         }),
+        credentials: 'include', // クッキーを必ず送信
       });
 
       // レスポンスのステータスとヘッダーをログに記録
-      console.log('Checkout APIレスポンス:', {
+      const responseInfo = {
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers),
-      });
+      };
+      addDebugLog('APIレスポンス受信', responseInfo);
 
-      const data = await response.json();
-      console.log('Checkout APIデータ:', data);
-      
       if (!response.ok) {
-        throw new Error(data.error || '決済処理中にエラーが発生しました');
+        // エラーレスポンスの詳細を取得
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
+        
+        addDebugLog('APIエラーレスポンス', errorData);
+        throw new Error(errorData.error || '決済処理中にエラーが発生しました');
+      }
+      
+      const data = await response.json();
+      addDebugLog('APIレスポンスデータ', data);
+      
+      if (!data.url) {
+        throw new Error('決済URLが返されませんでした');
       }
       
       // 決済ページへのリダイレクト前にログ
-      console.log('決済ページへリダイレクト:', data.url);
+      addDebugLog('決済ページへリダイレクト', { url: data.url });
       
-      // 決済ページにリダイレクト
-      window.location.href = data.url || '';
+      // リダイレクト前に少し待機して、ログが確実に記録されるようにする
+      setTimeout(() => {
+        // 決済ページにリダイレクト
+        window.location.href = data.url;
+      }, 500);
     } catch (error) {
-      console.error('決済セッション作成エラー詳細:', error);
-      alert('決済処理の開始に失敗しました。デベロッパーコンソールで詳細を確認してください。');
+      // エラー詳細をログに記録
+      const errorDetail = error instanceof Error ? error.message : '未知のエラー';
+      addDebugLog('決済処理エラー', errorDetail);
+      
+      // エラー情報を表示
+      alert(`決済処理の開始に失敗しました。エラー: ${errorDetail}`);
     }
   };
 
@@ -113,6 +174,27 @@ export default function Page() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Choose Your Plan</h1>
       </div>
+
+      {/* デバッグパネル (開発環境のみ表示) */}
+      {process.env.NODE_ENV !== 'production' && debugLog.length > 0 && (
+        <div className="mb-8 p-4 border border-orange-300 bg-orange-50 rounded-md overflow-auto max-h-60">
+          <h3 className="font-bold mb-2">デバッグログ:</h3>
+          <ul className="text-xs font-mono">
+            {debugLog.map((log, i) => (
+              <li key={i} className="mb-1">{log}</li>
+            ))}
+          </ul>
+          <button 
+            className="mt-2 text-xs text-red-500"
+            onClick={() => {
+              localStorage.removeItem('stripe_debug_logs');
+              setDebugLog([]);
+            }}
+          >
+            ログをクリア
+          </button>
+        </div>
+      )}
 
       <div className="text-center mb-12">
         <p className="text-gray-600 text-lg">
