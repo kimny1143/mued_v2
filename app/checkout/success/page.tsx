@@ -6,6 +6,7 @@ import { Button } from '@ui/button';
 import { Card } from '@ui/card';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 // useSearchParamsを使用するコンテンツコンポーネント
 function CheckoutSuccessContent() {
@@ -13,8 +14,54 @@ function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(5);
   const sessionId = searchParams.get('session_id');
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // サブスクリプションステータスを確認
+    async function checkSubscriptionStatus() {
+      try {
+        if (!sessionId) return;
+        
+        setLoading(true);
+        console.log('セッションID確認中:', sessionId);
+        
+        // セッション情報を取得
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !sessionData.session?.user) {
+          console.error('認証エラー:', sessionError);
+          return;
+        }
+        
+        const userId = sessionData.session.user.id;
+        console.log('ユーザーID:', userId);
+        
+        // サブスクリプション情報を取得
+        const { data: subData, error: subError } = await supabase
+          .from('stripe_user_subscriptions')
+          .select('*')
+          .eq('userId', userId)
+          .maybeSingle();
+        
+        if (subError) {
+          console.error('サブスクリプション取得エラー:', subError);
+        } else if (subData) {
+          console.log('サブスクリプション情報:', subData);
+          setSubscriptionStatus(subData.status || 'unknown');
+        } else {
+          console.log('サブスクリプション情報なし');
+          setSubscriptionStatus('not_found');
+        }
+      } catch (error) {
+        console.error('ステータス確認エラー:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    checkSubscriptionStatus();
+
     // 5秒後にダッシュボードにリダイレクト
     const timer = setTimeout(() => {
       router.push('/dashboard');
@@ -35,7 +82,7 @@ function CheckoutSuccessContent() {
       clearTimeout(timer);
       clearInterval(interval);
     };
-  }, [router]);
+  }, [router, sessionId]);
 
   return (
     <div className="container max-w-3xl py-12 mx-auto">
@@ -56,6 +103,29 @@ function CheckoutSuccessContent() {
               セッションID: {sessionId}
             </p>
           )}
+          
+          {/* サブスクリプションステータスの表示 */}
+          <div className="w-full p-4 bg-gray-50 rounded-md">
+            <h2 className="font-medium mb-2">サブスクリプションステータス</h2>
+            {loading ? (
+              <p className="text-sm text-gray-500">データ取得中...</p>
+            ) : subscriptionStatus ? (
+              <p className={`text-sm ${
+                subscriptionStatus === 'active' ? 'text-green-600' : 
+                subscriptionStatus === 'not_found' ? 'text-red-600' : 
+                'text-yellow-600'
+              }`}>
+                {subscriptionStatus === 'active' ? '有効' : 
+                 subscriptionStatus === 'not_found' ? '見つかりません' : 
+                 subscriptionStatus}
+              </p>
+            ) : (
+              <p className="text-sm text-yellow-600">ステータス不明</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              ※ステータスがすぐに反映されない場合があります。ダッシュボードで再確認してください。
+            </p>
+          </div>
           
           <div className="border-t border-gray-200 w-full pt-4 mt-4">
             <p className="text-gray-600 mb-4">
