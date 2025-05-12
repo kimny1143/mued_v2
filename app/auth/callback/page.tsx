@@ -9,14 +9,22 @@ import { supabase } from '@/lib/supabase';
  */
 function getBaseUrl() {
   // Vercel環境変数があればそれを使用
-  if (typeof window !== 'undefined' && window.location.host) {
-    // 現在表示されているページのホスト名を優先（最も正確）
-    return window.location.protocol + '//' + window.location.host;
+  if (typeof window !== 'undefined') {
+    // 現在のURLが明らかにVercelのものであれば継続して使用
+    if (window.location.host.includes('vercel.app') || 
+        window.location.host.includes('mued.jp')) {
+      return window.location.origin;
+    }
   }
   
   // Vercel環境変数があればそれを使用
   if (process.env.NEXT_PUBLIC_VERCEL_URL) {
     return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+  }
+  
+  // Vercel環境変数があれば使用
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
   }
   
   // 本番環境の場合
@@ -48,19 +56,26 @@ function CallbackContent() {
         const baseUrl = getBaseUrl();
         console.log('認証コールバック - 現在のホスト:', currentHost);
         console.log('認証コールバック - ベースURL:', baseUrl);
+        console.log('認証コールバック - 完全URL:', window.location.href);
         console.log('認証コールバック - VERCEL_ENV:', process.env.VERCEL_ENV || 'undefined');
         console.log('認証コールバック - VERCEL_URL:', process.env.VERCEL_URL || 'undefined');
         
-        // ホスト名の不一致を検出（localhostが紛れ込んだ場合など）
-        if (currentHost.includes('localhost') && !baseUrl.includes('localhost')) {
+        // ホスト名の不一致を検出（現在のホストがlocalhostだが、環境はVercelの場合）
+        if (currentHost.includes('localhost') && 
+            baseUrl !== 'http://localhost:3000' && 
+            !baseUrl.includes('localhost')) {
           console.log('ホスト名の不一致を検出: Vercel URLへリダイレクト');
-          window.location.href = baseUrl + window.location.pathname + window.location.search;
+          const correctUrl = baseUrl + window.location.pathname + window.location.search + window.location.hash;
+          console.log('修正URL:', correctUrl);
+          window.location.href = correctUrl;
           return;
         }
       }
       
       if (code) {
         try {
+          console.log('認証コードを処理中:', code.substring(0, 10) + '...');
+          
           // 認証コードをセッションに交換
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           
@@ -75,8 +90,20 @@ function CallbackContent() {
           
           if (sessionData.session) {
             console.log('認証成功: セッション設定完了');
-            // 成功: ダッシュボードへリダイレクト
-            router.push('/dashboard');
+            
+            // 適切なベースURLを取得
+            const baseUrl = getBaseUrl();
+            const dashboardUrl = `${baseUrl}/dashboard`;
+            console.log('リダイレクト先:', dashboardUrl);
+            
+            // URLをチェックして適切にリダイレクト
+            if (window.location.origin === baseUrl || baseUrl.includes('localhost')) {
+              // 同じオリジンならルーターを使用
+              router.push('/dashboard');
+            } else {
+              // 別オリジンならフルURLリダイレクト
+              window.location.href = dashboardUrl;
+            }
           } else {
             console.error('認証成功したがセッションが見つかりません');
             router.push('/login?error=session_missing');
@@ -88,23 +115,61 @@ function CallbackContent() {
       } else {
         // ハッシュフラグメントの処理（Implicit Flow対応）
         if (typeof window !== 'undefined' && window.location.hash) {
-          // #access_tokenを含むハッシュを検出
+          // #access_token=を含むハッシュを検出
           if (window.location.hash.includes('access_token')) {
-            // Supabaseによってハッシュが自動的に処理されるように少し待機
-            setTimeout(() => {
-              // ダッシュボードに移動する前にセッションを確認
-              const checkSession = async () => {
-                const { data } = await supabase.auth.getSession();
-                if (data.session) {
+            console.log('認証トークンハッシュを検出');
+            
+            // セッションを確認
+            try {
+              const { data } = await supabase.auth.getSession();
+              
+              if (data.session) {
+                console.log('セッションが見つかりました:', data.session.user.email);
+                
+                // 適切なベースURLを取得
+                const baseUrl = getBaseUrl();
+                const dashboardUrl = `${baseUrl}/dashboard`;
+                console.log('リダイレクト先:', dashboardUrl);
+                
+                // URLハッシュをクリア
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                // URLをチェックして適切にリダイレクト
+                if (window.location.origin === baseUrl || baseUrl.includes('localhost')) {
                   router.push('/dashboard');
                 } else {
-                  router.push('/login?error=セッションが見つかりません');
+                  window.location.href = dashboardUrl;
                 }
-              };
-              
-              checkSession();
-            }, 500);
-            return;
+                return;
+              } else {
+                console.log('アクセストークンはあるがセッションが見つかりません。自動設定を待機...');
+                
+                // Supabaseの自動セッション設定を待機
+                setTimeout(async () => {
+                  const { data: delayedData } = await supabase.auth.getSession();
+                  
+                  if (delayedData.session) {
+                    console.log('遅延セッション取得成功');
+                    
+                    // 適切なベースURLを取得
+                    const baseUrl = getBaseUrl();
+                    const dashboardUrl = `${baseUrl}/dashboard`;
+                    
+                    // URLをチェックして適切にリダイレクト
+                    if (window.location.origin === baseUrl || baseUrl.includes('localhost')) {
+                      router.push('/dashboard');
+                    } else {
+                      window.location.href = dashboardUrl;
+                    }
+                  } else {
+                    router.push('/login?error=session_setup_failed');
+                  }
+                }, 1000);
+                return;
+              }
+            } catch (err) {
+              console.error('セッション取得エラー:', err);
+            }
           }
         }
         
@@ -121,6 +186,7 @@ function CallbackContent() {
       <div className="text-center">
         <p className="text-lg">認証処理中...</p>
         <div className="mt-4 animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+        <p className="mt-2 text-sm text-gray-500">Supabase認証情報を処理しています...</p>
       </div>
     </div>
   );

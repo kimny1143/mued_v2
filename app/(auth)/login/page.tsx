@@ -6,6 +6,32 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { signInWithGoogle } from '@/app/actions/auth';
 
+/**
+ * 環境に応じて正しいベースURLを取得する
+ */
+function getAppBaseUrl() {
+  if (typeof window !== 'undefined') {
+    // URLが明らかにVercelのものであれば継続して使用
+    if (window.location.host.includes('vercel.app') || 
+        window.location.host.includes('mued.jp')) {
+      return window.location.origin;
+    }
+  }
+  
+  // Vercel環境でありURLが設定されていれば使用
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  
+  // 明示的な設定があれば使用
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  
+  // ローカル環境のデフォルト
+  return 'http://localhost:3000';
+}
+
 // 検索パラメータを使用するコンポーネント
 function LoginContent() {
   const router = useRouter();
@@ -33,28 +59,41 @@ function LoginContent() {
           setIsLoading(true);
           
           try {
-            // ハッシュフラグメントからセッションを設定
-            const hashUrl = window.location.href;
-            const { data, error } = await supabase.auth.signInWithOAuth({
-              provider: 'google',
-              options: {
-                skipBrowserRedirect: true,
-              },
-            });
+            console.log('アクセストークンを含むハッシュを検出');
+            
+            // ハッシュからのセッション設定を待機
+            const { data, error } = await supabase.auth.getSession();
             
             if (error) {
               console.error('セッション取得エラー:', error.message);
               setErrorMsg('認証トークンの処理に失敗しました');
-            } else {
+            } else if (data.session) {
               // セッション設定成功
-              console.log('セッション設定成功');
+              console.log('セッション設定成功:', data.session.user.email);
+              
+              // ベースURLを取得してリダイレクト
+              const baseUrl = getAppBaseUrl();
+              const dashboardUrl = `${baseUrl}/dashboard`;
+              console.log('リダイレクト先:', dashboardUrl);
+              
               // URLのハッシュ部分をクリア
               window.history.replaceState(
                 {}, 
                 document.title, 
-                window.location.pathname + window.location.search
+                window.location.pathname
               );
-              router.push('/dashboard');
+              
+              // URLをチェックして適切にリダイレクト
+              if (window.location.origin === baseUrl || baseUrl.includes('localhost')) {
+                // 同じオリジンならルーター使用
+                router.push('/dashboard');
+              } else {
+                // 別オリジンならフルURLリダイレクト
+                window.location.href = dashboardUrl;
+              }
+            } else {
+              console.error('セッションが見つかりません');
+              setErrorMsg('セッションの設定に失敗しました');
             }
           } catch (err) {
             console.error('認証エラー:', err);
@@ -81,7 +120,18 @@ function LoginContent() {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        router.push('/dashboard');
+        // ベースURLを取得
+        const baseUrl = getAppBaseUrl();
+        const dashboardUrl = `${baseUrl}/dashboard`;
+        
+        // URLをチェックして適切にリダイレクト
+        if (window.location.origin === baseUrl || baseUrl.includes('localhost')) {
+          // 同じオリジンならルーター使用
+          router.push('/dashboard');
+        } else {
+          // 別オリジンならフルURLリダイレクト
+          window.location.href = dashboardUrl;
+        }
       }
     };
     
