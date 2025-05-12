@@ -4,6 +4,35 @@ import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
+/**
+ * 現在の環境に応じたベースURLを取得する関数
+ */
+function getBaseUrl() {
+  // Vercel環境変数があればそれを使用
+  if (typeof window !== 'undefined' && window.location.host) {
+    // 現在表示されているページのホスト名を優先（最も正確）
+    return window.location.protocol + '//' + window.location.host;
+  }
+  
+  // Vercel環境変数があればそれを使用
+  if (process.env.NEXT_PUBLIC_VERCEL_URL) {
+    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+  }
+  
+  // 本番環境の場合
+  if (process.env.VERCEL_ENV === 'production') {
+    return 'https://mued-lms-fgm.vercel.app';
+  }
+  
+  // 明示的に設定された場合はそれを使用
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  
+  // ローカル開発環境
+  return 'http://localhost:3000';
+}
+
 // useSearchParamsを使用するコンテンツコンポーネント
 function CallbackContent() {
   const router = useRouter();
@@ -13,14 +42,21 @@ function CallbackContent() {
   useEffect(() => {
     // 認証コードの処理
     const handleCode = async () => {
-      // URLを0.0.0.0からlocalhostに正規化（必要に応じて）
-      if (typeof window !== 'undefined' && window.location.hostname === '0.0.0.0') {
-        // URLを書き換え（同じパスとクエリ文字列を保持）
-        const newUrl = window.location.href.replace('0.0.0.0', 'localhost');
-        window.history.replaceState({}, document.title, newUrl);
-        // リロードして正規化されたURLで処理し直す
-        window.location.reload();
-        return;
+      // 環境情報をログ出力（デバッグ用）
+      if (typeof window !== 'undefined') {
+        const currentHost = window.location.host;
+        const baseUrl = getBaseUrl();
+        console.log('認証コールバック - 現在のホスト:', currentHost);
+        console.log('認証コールバック - ベースURL:', baseUrl);
+        console.log('認証コールバック - VERCEL_ENV:', process.env.VERCEL_ENV || 'undefined');
+        console.log('認証コールバック - VERCEL_URL:', process.env.VERCEL_URL || 'undefined');
+        
+        // ホスト名の不一致を検出（localhostが紛れ込んだ場合など）
+        if (currentHost.includes('localhost') && !baseUrl.includes('localhost')) {
+          console.log('ホスト名の不一致を検出: Vercel URLへリダイレクト');
+          window.location.href = baseUrl + window.location.pathname + window.location.search;
+          return;
+        }
       }
       
       if (code) {
@@ -34,8 +70,17 @@ function CallbackContent() {
             return;
           }
           
-          // 成功: ダッシュボードへリダイレクト
-          router.push('/dashboard');
+          // セッションが正しく設定されたか確認
+          const { data: sessionData } = await supabase.auth.getSession();
+          
+          if (sessionData.session) {
+            console.log('認証成功: セッション設定完了');
+            // 成功: ダッシュボードへリダイレクト
+            router.push('/dashboard');
+          } else {
+            console.error('認証成功したがセッションが見つかりません');
+            router.push('/login?error=session_missing');
+          }
         } catch (err) {
           console.error('認証システムエラー:', err);
           router.push('/login?error=system_error');

@@ -3,27 +3,38 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 
-// Google認証へのリダイレクト
-export async function signInWithGoogle() {
-  // リダイレクト先のベースURLを設定
-  let origin = '';
-  
-  // リダイレクトURLの決定ロジック
-  if (process.env.VERCEL_ENV === 'production') {
-    // 本番環境
-    origin = 'https://mued.jp';
-  } else if (process.env.VERCEL_ENV === 'preview') {
-    // Vercelプレビュー環境
-    origin = `https://${process.env.VERCEL_URL}`;
-  } else if (process.env.VERCEL_ENV === 'development') {
-    // Vercel開発環境
-    origin = `https://${process.env.VERCEL_URL}`;
-  } else {
-    // ローカル開発環境
-    origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+/**
+ * 現在の環境に応じたベースURLを取得する関数
+ * Vercel環境変数を自動検出して適切なURLを返す
+ */
+function getBaseUrl() {
+  // Vercel環境変数があればそれを使用
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
   }
   
-  console.log(`認証リダイレクト先: ${origin}, 環境: ${process.env.VERCEL_ENV || 'local'}`);
+  // 本番環境の場合（VERCEL_ENV=production）
+  if (process.env.VERCEL_ENV === 'production') {
+    return 'https://mued-lms-fgm.vercel.app';
+  }
+  
+  // 明示的に設定された場合はそれを使用
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  
+  // ローカル開発環境
+  return 'http://localhost:3000';
+}
+
+// Google認証へのリダイレクト
+export async function signInWithGoogle() {
+  // 現在の環境用のベースURLを取得
+  const baseUrl = getBaseUrl();
+  const redirectUrl = `${baseUrl}/auth/callback`;
+  
+  console.log(`認証コールバックURL: ${redirectUrl}`);
+  console.log(`環境情報: VERCEL_ENV=${process.env.VERCEL_ENV || 'local'}, VERCEL_URL=${process.env.VERCEL_URL || 'なし'}`);
 
   // Supabaseサーバークライアント初期化
   const supabase = createClient(
@@ -40,7 +51,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      redirectTo: redirectUrl,
       queryParams: {
         access_type: 'offline',
         prompt: 'consent',
