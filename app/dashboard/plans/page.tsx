@@ -58,6 +58,13 @@ export default function Page() {
       
       const userId = user.id;
       
+      // 環境情報をログに記録
+      addDebugLog('環境情報', {
+        nodeEnv: process.env.NODE_ENV,
+        vercel: process.env.NEXT_PUBLIC_VERCEL_ENV || '不明',
+        appUrl: process.env.NEXT_PUBLIC_APP_URL || window.location.origin,
+      });
+      
       // APIリクエスト前のデータをログに記録
       const requestInfo = {
         origin: window.location.origin,
@@ -67,6 +74,11 @@ export default function Page() {
         userId
       };
       addDebugLog('API呼び出し前', requestInfo);
+
+      // 使用するURLをログに記録
+      const successUrl = `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${window.location.origin}/dashboard/plans`;
+      addDebugLog('リダイレクトURL', { successUrl, cancelUrl });
 
       // APIエンドポイントを呼び出し
       addDebugLog('fetchリクエスト開始');
@@ -78,8 +90,8 @@ export default function Page() {
         body: JSON.stringify({
           priceId,
           mode,
-          successUrl: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/dashboard/plans`,
+          successUrl,
+          cancelUrl,
           userId
         }),
         credentials: 'include', // クッキーを必ず送信
@@ -107,8 +119,14 @@ export default function Page() {
         throw new Error(errorData.error || '決済処理中にエラーが発生しました');
       }
       
-      const data = await response.json();
-      addDebugLog('APIレスポンスデータ', data);
+      let data;
+      try {
+        data = await response.json();
+        addDebugLog('APIレスポンスデータ', data);
+      } catch (e) {
+        addDebugLog('レスポンス解析エラー', e instanceof Error ? e.message : '不明なエラー');
+        throw new Error('APIレスポンスの解析に失敗しました');
+      }
       
       if (!data.url) {
         throw new Error('決済URLが返されませんでした');
@@ -126,6 +144,11 @@ export default function Page() {
       // エラー詳細をログに記録
       const errorDetail = error instanceof Error ? error.message : '未知のエラー';
       addDebugLog('決済処理エラー', errorDetail);
+      
+      // スタックトレースがあれば記録
+      if (error instanceof Error && error.stack) {
+        addDebugLog('エラースタック', error.stack);
+      }
       
       // エラー情報を表示
       alert(`決済処理の開始に失敗しました。エラー: ${errorDetail}`);

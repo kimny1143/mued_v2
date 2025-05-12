@@ -1,4 +1,4 @@
-import { stripe } from '@/lib/stripe';
+import { stripe, safeStripeCall } from '@/lib/stripe';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
@@ -79,19 +79,21 @@ export async function POST(request: Request) {
     console.log('Stripe checkout session creating with:', { priceId, mode, userId });
 
     try {
-      // Stripeセッションを作成
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [{ price: priceId, quantity: 1 }],
-        mode: mode || 'payment',
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        metadata: {
-          userId: userId || authenticatedUserId || 'anonymous'
-        },
-        // サーバーサイドおよびクライアントサイドの両方からセッションが取得できるよう設定
-        expires_at: Math.floor(Date.now() / 1000) + 60 * 30, // 30分後に有効期限切れ
-      });
+      // Stripeセッションを安全に作成
+      const session = await safeStripeCall(async () => {
+        return await stripe.checkout.sessions.create({
+          payment_method_types: ['card'],
+          line_items: [{ price: priceId, quantity: 1 }],
+          mode: mode || 'payment',
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          metadata: {
+            userId: userId || authenticatedUserId || 'anonymous'
+          },
+          // サーバーサイドおよびクライアントサイドの両方からセッションが取得できるよう設定
+          expires_at: Math.floor(Date.now() / 1000) + 60 * 30, // 30分後に有効期限切れ
+        });
+      }, 'Stripeセッション作成中にエラーが発生しました');
 
       // セッションURLのログ（テスト環境のみ）
       console.log('Stripe session created:', { sessionId: session.id, url: session.url });
