@@ -69,14 +69,15 @@ console.log(`Supabase基本設定: ${hasSupabaseUrl && hasSupabaseAnonKey ? '✅
 // 環境変数の出力フォーマット
 console.log('\n環境変数チェック完了');
 
-// ローカルテスト用に、意図的に改行を含む環境変数を設定する例
+// ローカルテスト用に、改行を含む安全なダミーキー値を使用
 if (process.env.NODE_ENV === 'development') {
   console.log('\n=== 改行テスト ===');
-  const testKey = 'sk_test_REMOVED_SECRET_KEY\nREMOVED_PART ';
-  console.log(`改行を含むキー: ${testKey.substring(0, 10)}...（${testKey.length}文字）`);
-  if (testKey.includes('\n')) {
+  // ダミーの構造（実際のAPIキーではありません）
+  const dummyKey = 'sk_test_dummy123456789abcdefABCDEFG\n1234567890abcdefghABCDEFG';
+  console.log(`改行を含むダミーキー: ${dummyKey.substring(0, 10)}...（${dummyKey.length}文字）`);
+  if (dummyKey.includes('\n')) {
     console.log(`⚠️ 警告: テストキーに改行が含まれています！`);
-    const lines = testKey.split('\n');
+    const lines = dummyKey.split('\n');
     console.log(`  改行数: ${lines.length - 1}`);
     console.log(`  最初の行: ${lines[0].substring(0, 20)}...`);
     console.log(`  2行目: ${lines[1].substring(0, 20)}...`);

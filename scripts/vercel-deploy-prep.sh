@@ -29,8 +29,9 @@ check_var() {
     # 環境変数を更新 (一時的)
     eval "$var_name=\"$clean_value\""
     
-    # 更新後の値を表示
-    echo "修正済みの値: ${clean_value:0:10}... (${#clean_value}文字)"
+    # セキュリティのため、値そのものは表示しない
+    # 更新後の値の長さだけを表示
+    echo "修正済み: ${#clean_value}文字"
     
     # 環境変数ファイルに書き込む場合
     if [[ "$WRITE_ENV_FILE" == "true" ]]; then
