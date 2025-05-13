@@ -2,6 +2,22 @@ import { stripe, safeStripeCall } from '@/lib/stripe';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
+import Stripe from 'stripe';
+
+// テスト価格情報の型定義
+type TestPriceInfo = {
+  name: string;
+  amount: number;
+  interval?: 'day' | 'week' | 'month' | 'year';
+};
+
+// テスト価格のマッピング
+const TEST_PRICES: Record<string, TestPriceInfo> = {
+  'price_test_starter': { name: 'Starter Subscription', amount: 2000, interval: 'month' },
+  'price_test_premium': { name: 'Premium Subscription', amount: 6000, interval: 'month' },
+  'price_test_basic': { name: 'Basic Subscription', amount: 1000, interval: 'month' },
+  'price_test_spot_lesson': { name: 'Spot Lesson', amount: 3000 }
+};
 
 export async function POST(request: Request) {
   try {
@@ -88,12 +104,90 @@ export async function POST(request: Request) {
     });
 
     try {
-      // Stripeセッションを安全に作成
+      // 価格IDがテスト価格で、かつサブスクリプションモードの場合のライン項目を作成
+      let lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+      let fallbackMode = (mode || 'payment') as Stripe.Checkout.SessionCreateParams.Mode;
+
+      try {
+        if (formattedPriceId in TEST_PRICES) {
+          console.log(`テスト価格ID ${formattedPriceId} のフォールバック価格データを使用します`);
+          const priceInfo = TEST_PRICES[formattedPriceId];
+          
+          if (priceInfo.interval && fallbackMode === 'subscription') {
+            // サブスクリプション価格を動的に作成
+            lineItems = [{
+              price_data: {
+                currency: 'usd',
+                product_data: {
+                  name: priceInfo.name,
+                  description: `テスト用の${priceInfo.name}です`,
+                },
+                unit_amount: priceInfo.amount,
+                recurring: {
+                  interval: priceInfo.interval
+                }
+              },
+              quantity: 1
+            }];
+          } else {
+            // 一回限りの支払い価格を動的に作成
+            lineItems = [{
+              price_data: {
+                currency: 'usd',
+                product_data: {
+                  name: priceInfo.name,
+                  description: `テスト用の${priceInfo.name}です`,
+                },
+                unit_amount: priceInfo.amount
+              },
+              quantity: 1
+            }];
+            fallbackMode = 'payment';
+          }
+        } else {
+          // 既存の価格IDを使用
+          lineItems = [{ price: formattedPriceId, quantity: 1 }];
+        }
+      } catch (priceError) {
+        console.error('価格データの処理エラー:', priceError);
+        // 安全策として、最もシンプルなテスト価格を作成
+        if (fallbackMode === 'subscription') {
+          lineItems = [{
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'テスト製品',
+                description: 'フォールバック用のテスト製品です',
+              },
+              unit_amount: 1000,
+              recurring: {
+                interval: 'month'
+              }
+            },
+            quantity: 1
+          }];
+        } else {
+          lineItems = [{
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'テスト製品',
+                description: 'フォールバック用のテスト製品です',
+              },
+              unit_amount: 1000
+            },
+            quantity: 1
+          }];
+        }
+      }
+
+      // Stripeセッションを安全に作成（動的価格データを使用）
+      console.log('Stripeセッション作成試行:', { lineItems, mode: fallbackMode });
       const session = await safeStripeCall(async () => {
         return await stripe.checkout.sessions.create({
           payment_method_types: ['card'],
-          line_items: [{ price: formattedPriceId, quantity: 1 }],
-          mode: mode || 'payment',
+          line_items: lineItems,
+          mode: fallbackMode,
           success_url: successUrl,
           cancel_url: cancelUrl,
           metadata: {
