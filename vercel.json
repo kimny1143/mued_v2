@@ -10,11 +10,30 @@
   },
   "github": {
     "enabled": true,
-    "silent": false
+    "silent": false,
+    "autoAlias": true
   },
   "framework": "nextjs",
   "routes": [
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/" }
-  ]
+  ],
+  "env": {
+    "NEXT_PUBLIC_VERCEL_URL": {
+      "type": "system"
+    },
+    "VERCEL_URL": {
+      "type": "system"
+    },
+    "VERCEL_REGION": {
+      "type": "system"
+    },
+    "VERCEL_ENV": {
+      "type": "system"
+    },
+    "NEXT_PUBLIC_DEPLOY_URL": {
+      "type": "system-override",
+      "value": "VERCEL_URL"
+    }
+  }
 } 

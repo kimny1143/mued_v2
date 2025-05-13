@@ -1,83 +1,165 @@
-# サブスクリプション権限問題の恒久的な解決方法
-
-本ドキュメントは、MUED LMSにおけるサブスクリプション情報取得に関する権限問題の恒久的な解決策を説明します。
+# Vercel環境でのStripe決済・Supabase権限問題報告書
 
 ## 問題概要
 
-現在、ダッシュボードからサブスクリプション情報（プラン情報）を取得する際に、以下のエラーが発生しています：
+ローカル開発環境では正常に動作していたStripe決済機能が、Vercel環境（プレビュー/本番）でのデプロイ後に機能しないという問題が発生しました。具体的には以下のエラーが確認されています：
 
-1. `permission denied for schema public` - テーブルアクセス権限の問題
-2. `Could not find the function public.get_subscription_by_user_id` - RPC関数が存在しない問題
+1. **Stripeエラー**：`No such price: 'price_test_starter'`
+2. **Supabase権限エラー**：`permission denied for schema public`
+3. **サブスクリプション取得エラー**：`API エラー: 401 {"error":"認証が必要です"}`
 
-これにより、サブスクリプションステータスがダッシュボードに正しく表示されず、「Free Plan」と誤って表示されています。
+## 発生環境
 
-## 解決策
+- **発生環境**：Vercel (Preview/Production)
+- **正常動作環境**：ローカル開発環境 (Docker/npm run dev)
+- **デプロイURL**：https://splint-mued-lms.vercel.app/
 
-この問題は以下の3つのアプローチで恒久的に解決します：
+## 問題が発生した明確な理由
 
-1. **サーバーサイドAPIエンドポイント**: 管理者権限を使用してデータベースからサブスクリプション情報を安全に取得
-2. **クライアントサイドフック**: APIエンドポイントを呼び出してサブスクリプション情報を取得
-3. **RLSポリシーの修正**: ユーザーが自身のサブスクリプション情報を直接取得できるよう権限を設定
+### 1. 環境変数の改行問題
 
-## 対応手順
+ローカル環境とVercel環境で重要な違いがあったのは環境変数の扱いです：
 
-### 1. データベース権限の修正
+- **ローカル環境**：`.env`/`.env.local`ファイルを使用しており、Nodeが環境変数を正しく処理
+- **Vercel環境**：ダッシュボードでの環境変数設定時に改行が含まれると、Stripe API呼び出し時の認証ヘッダー生成で問題が発生
 
-Supabaseダッシュボードでマイグレーションを実行するか、SQLエディタで以下のコマンドを実行してください：
+具体的には、`STRIPE_SECRET_KEY`に改行が含まれていると、HTTPヘッダーの`Authorization: Bearer {KEY}`部分が破損し、「Invalid character in header content」エラーが発生します。
 
-```sql
--- マイグレーションファイル: supabase/migrations/20240512_fix_subscription_permissions.sql の内容を実行
-```
+### 2. Stripe価格IDの環境依存問題
 
-### 2. APIエンドポイントの確認
+- **ローカル環境**：テスト用の価格ID（`price_test_starter`など）がハードコードされており、本来はStripeアカウントに登録済みであるべき
+- **Vercel環境**：デプロイ時に使用されるStripeアカウントには、これらのテスト価格IDが登録されていなかった
 
-プロジェクトルートにて、以下のファイルが存在するか確認してください：
+Stripeのテスト/本番環境の違いや、アカウント間での価格ID同期が行われていなかったことが原因です。
 
-- `/app/api/user/subscription/route.ts` - サブスクリプション情報取得API
-- `/lib/auth.ts` - 認証ヘルパー関数
+### 3. Supabase権限設定の相違
 
-### 3. クライアントフックの確認
+- **ローカル環境**：開発用のSupabaseプロジェクトでは、テスト用途に権限が緩く設定されている
+- **Vercel環境**：より厳格なRLS（Row Level Security）ポリシーが適用され、`public`スキーマへのアクセスが制限されている
 
-プロジェクトルートにて、以下のフックが正しく実装されているか確認してください：
+マイグレーションファイルに適切なRLSポリシーが含まれておらず、環境間で権限設定に不一致が生じていました。
 
-- `/lib/hooks/use-subscription.ts` - サブスクリプション情報取得フック
-- `/lib/hooks/use-user.ts` - ユーザー情報取得フック（サブスクリプションフックを利用）
+## 実装した対応策
 
-### 4. アプリケーションの再起動
+### 1. 環境変数問題への対応
+
+- 環境変数から改行を削除するスクリプト（`scripts/vercel-deploy-prep.sh`）を作成
+- クライアント側とサーバー側の両方で改行のない状態でStripe APIキーを使用するよう修正
 
 ```bash
-# 開発環境
-npm run dev
-
-# Docker環境
-docker-compose restart
+# 改行を削除する処理
+CLEAN_STRIPE_KEY=$(echo "$STRIPE_SECRET_KEY" | tr -d '\n\r')
 ```
 
-## 解決策の説明
+### 2. 動的価格生成システム
 
-### 1. サーバーサイドAPIエンドポイント
+サーバー側（`app/api/checkout/route.ts`）でフォールバックメカニズムを実装：
 
-`/app/api/user/subscription/route.ts`では、サービスロール権限を持つ`supabaseAdmin`クライアントを使用してデータベースからサブスクリプション情報を取得します。これにより、クライアント側の権限に関係なく、常に正しいデータを取得できます。
+```typescript
+// 価格IDがテスト価格で、かつサブスクリプションモードの場合のライン項目を作成
+if (formattedPriceId in TEST_PRICES) {
+  console.log(`テスト価格ID ${formattedPriceId} のフォールバック価格データを使用します`);
+  const priceInfo = TEST_PRICES[formattedPriceId];
+  
+  // サブスクリプション価格を動的に作成
+  lineItems = [{
+    price_data: {
+      currency: 'usd',
+      product_data: {
+        name: priceInfo.name,
+        description: `テスト用の${priceInfo.name}です`,
+      },
+      unit_amount: priceInfo.amount,
+      recurring: {
+        interval: priceInfo.interval
+      }
+    },
+    quantity: 1
+  }];
+}
+```
 
-### 2. クライアントサイドフック
+### 3. Supabase権限問題の一時的回避
 
-`use-subscription.ts`フックは、APIエンドポイントを呼び出してサブスクリプション情報を取得します。一時的なエラーが発生した場合でも、60秒ごとに再試行するため、信頼性の高いデータ取得が可能です。
+クライアント側（`app/dashboard/plans/page.tsx`）で権限エラーを検出し回避する機能を実装：
 
-### 3. RLSポリシー
+```typescript
+// Supabaseの権限エラーを検出
+useEffect(() => {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const errorMessage = String(error.message);
+    if (errorMessage.includes('permission denied') || errorMessage.includes('42501')) {
+      setPermissionError(true);
+      addDebugLog('Supabase権限エラーを検出', errorMessage);
+    }
+  }
+}, [error]);
 
-RLSポリシーを追加することで、通常のクライアントでもユーザー自身のサブスクリプション情報を直接取得できるようになります。さらに、RPC関数も追加されるため、SQL関数を通じたデータ取得も可能になります。
+// エラー時の代替処理
+const userId = permissionError ? 'test-user-id' : user?.id;
+```
 
-## テスト方法
+## 恒久的な解決策
 
-1. ユーザーとしてログインし、ダッシュボードにアクセス
-2. プラン情報が正しく表示されることを確認
-3. ブラウザコンソールで以下のAPIが成功することを確認:
-   ```javascript
-   fetch('/api/user/subscription').then(r => r.json()).then(console.log)
-   ```
+以下の対応をすべきです：
 
-## 今後の注意点
+### 1. 環境変数管理の改善
 
-1. Supabaseスキーマを変更する際は、RLSポリシーも適切に設定すること
-2. APIエンドポイントのセキュリティを定期的に確認すること
-3. クライアントサイドでのデータ取得に失敗した場合のフォールバック処理を常に実装すること 
+- Vercel環境変数設定時に改行が含まれないよう注意
+- 環境変数の整合性を確認するCI/CDパイプラインのステップを追加
+- `scripts/check-env.js`を活用した環境変数検証プロセスの標準化
+
+### 2. Stripe価格設定の統一
+
+- テスト/本番共通で使用する価格IDをStripeダッシュボードで適切に設定
+- 環境ごとに異なる価格IDを使い分ける明確なルールを策定
+- 価格ID参照をハードコードせず、環境変数や設定ファイルから読み込む方式に変更
+
+### 3. Supabase RLSポリシーの修正
+
+以下のマイグレーションファイルを作成・適用して適切なRLSポリシーを設定：
+
+```sql
+-- サブスクリプション関連の権限修正
+DO $$
+BEGIN
+  -- 既存のポリシーを削除
+  EXECUTE (
+    SELECT string_agg('DROP POLICY IF EXISTS ' || quote_ident(policyname) || ' ON stripe_user_subscriptions;', E'\n')
+    FROM pg_policies
+    WHERE tablename = 'stripe_user_subscriptions'
+  );
+EXCEPTION 
+  WHEN OTHERS THEN
+    RAISE NOTICE 'ポリシー削除中にエラーが発生しましたが続行します';
+END $$;
+
+-- RLS確実に有効化
+ALTER TABLE IF EXISTS stripe_user_subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- 認証ユーザーが自分のデータのみ閲覧可能なポリシー
+CREATE POLICY "ユーザーは自分のサブスクリプションのみ閲覧可能" 
+ON stripe_user_subscriptions FOR SELECT 
+TO authenticated
+USING ("userId"::text = auth.uid()::text);
+
+-- 管理者は全操作可能
+CREATE POLICY "管理者は全操作可能" 
+ON stripe_user_subscriptions FOR ALL 
+TO service_role
+USING (true) WITH CHECK (true);
+```
+
+## 結論
+
+今回の問題は、ローカル環境とVercel環境の違いに起因する複数の要因が重なった結果でした。特に環境変数の扱いとデータベース権限設定の違いが大きく影響しています。
+
+一時的な対応策として実装したフォールバックメカニズムにより、現在はVercel環境でも決済機能をテストできるようになりました。しかし、本番運用を見据えると、上記の恒久的な解決策を計画的に実施していくことが重要です。
+
+## 今後の予防策
+
+1. 環境間の差異を最小化するためのDevOps戦略の強化
+2. 各環境でのテストカバレッジ拡充
+3. 依存サービス（Stripe/Supabase）の設定を一元管理するリポジトリの整備
+
+以上

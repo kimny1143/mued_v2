@@ -48,15 +48,24 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
     - [x] BE: Supabase CLIを用いて、サンプルEdge Functionをデプロイし、cURL等で動作確認。
 
 ### Story R0-4: Vercel + Supabase + Heroku ワークフロー再構築
-- **担当:** DevOpsチーム
-- **状態:** ⚠️ 一部完了
-- **概要:** フロントエンド (Vercel)、データベース/バックエンド (Supabase)、AIサービス (Heroku/Fly.io) の各環境間の連携設定を見直し、CI/CDパイプラインを再構築する。
-- **DoD:** GitHub等へのPushをトリガーに、Vercelでプレビューデプロイが自動実行され、URLが発行されること。各サービスの連携が確認できること。
+- **担当:** DevOpsチーム (FE, BE, QAチームと密連携)
+- **状態:** ✅ 大部分完了
+- **概要:** フロントエンド (Vercel)、データベース/バックエンド (Supabase)、AIサービス (Heroku/Fly.io) の各環境間の連携における問題を解決し、CI/CDパイプラインを再構築する。特に、環境変数管理の統一、Stripe決済連携の安定化、Supabaseの権限問題の解消、動的なプレビューURLへの対応、E2EテストのCI統合を目指す。
+- **DoD:** GitHub等へのPushをトリガーに、Vercelでプレビューデプロイが自動実行され、プレビューURLが発行されること。CIパイプラインが全テスト (ユニットテスト、結合テスト、PlaywrightによるE2Eテスト含む) でGREENとなり、主要な連携 (認証、Stripe Checkoutテスト、Supabase DBアクセス、AIサービス連携) がプレビュー環境で正常に動作すること。特に`auth → checkout → reserve`のE2EテストシナリオがCI上で安定して成功すること。
 - **タスク:**
     - [x] DevOps: Vercelプロジェクトの設定をNext.js App Router向けに更新。
-    - [ ] DevOps: Vercel, Supabase, Heroku/Fly.io 間で必要な環境変数（APIキー、DB接続文字列等）の再設定と確認。
-    - [ ] DevOps: GitHub Actions等のCI/CDツールで、Next.jsアプリケーションのビルド、テスト、Vercelへのデプロイフローを再構築。
-    - [ ] DevOps: AIサービスのデプロイフロー (Heroku/Fly.io) とフロントエンドからの接続確認。
+    - [x] DevOps: 環境変数管理の統合と検証:
+        - [x] 共通の`.env.*.template`テンプレートを基に、`scripts/gen-env.ts`を使用して各ホスティングサービス向けの環境変数を生成する仕組みを実装
+        - [x] GitHub ActionsのCIジョブに環境変数をチェックするステップ (ENV-lint) を追加
+        - [ ] 各サービス間で必要な環境変数が正しく設定・同期されていることをCIで検証（Stripe関連の同期はさらなる調整が必要）
+    - [x] DevOps: CI/CDパイプラインの再構築とテスト自動化:
+        - [x] GitHub Actionsで、Next.jsアプリケーションのビルド、静的解析、ユーティリリテストを実行
+        - [x] PlaywrightによるE2Eテスト基盤を構築し、`auth → checkout → reserve` フローのテストケースを実装
+        - [x] E2Eテスト用のSeedデータ生成スクリプト (`scripts/seed-test-db.ts`) の実装
+        - [x] Stripe CLIをサービスコンテナとして利用する設定を追加
+    - [x] DevOps: AIサービスのデプロイフローと連携確認:
+        - [x] AIサービスとの連携確認を行うビルド前処理の実装 (`scripts/vercel-deploy-prep.sh`)
+        - [x] フロントエンドからAIサービスへの接続テストの組み込み
 
 ---
 
@@ -73,7 +82,8 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
     - [x] BE: Supabase Edge Function (`app/api/webhooks/stripe/` 等) でStripe Webhookエンドポイントを作成。
     - [x] BE: Webhook内でStripeからのリクエスト署名を検証するロジックを実装。
     - [x] BE: Webhookで `checkout.session.completed` 等のイベントを処理し、支払い情報を元にPrisma Clientを使ってDB (`User`, `Subscription` テーブル等) を更新するロジックを実装。
-    - [ ] BE: Webhook処理に関する単体テストおよびローカルでのStripe CLIを用いたテストを実施。
+    - [ ] BE: Webhook処理に関する単体テストおよびローカルでのStripe CLIを用いたテストを実施。（CIでのE2EテストはStory R0-4, S1-4でカバー）
+    - [ ] BE: `SUPABASE_SERVICE_ROLE_KEY` を利用するなど、Supabase Edge Functionの権限が適切に設定されていることを確認。
 
 ### Story S1-2: `LessonSlot`,`Reservation` API (RLS & バリデーション)
 - **担当:** BEチーム
@@ -85,7 +95,7 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
     - [x] BE: `LessonSlot` 用のCRUD APIエンドポイント群 (`app/api/lesson-slots/...`) を実装。
     - [x] BE: `Reservation` 用のCRUD APIエンドポイント群 (`app/api/reservations/...`) を実装。
     - [x] BE: APIリクエストボディの入力値バリデーションをZod等を用いて実装。
-    - [x] BE: Supabaseコンソールまたはマイグレーションファイルで `LessonSlot` と `Reservation` テーブルに対するRLSポリシーを設定（例: メンターは自身のスロットのみ作成・更新可能、ユーザーは自身の予約のみ作成・閲覧可能）。
+    - [x] BE: Supabaseコンソールまたはマイグレーションファイルで `LessonSlot` と `Reservation` テーブルに対するRLSポリシーを設定（例: メンターは自身のスロットのみ作成・更新可能、ユーザーは自身の予約のみ作成・閲覧可能）。（`20240512_rls_fix.sql` 等のマイグレーション適用をCIで確認 - Story R0-4と連携）
     - [x] BE: 予約作成時に、指定されたスロットが既に予約されていないか確認する重複予約防止ロジックを実装。
     - [ ] BE: 各APIエンドポイントに対する単体テスト (Vitest/Jest等) を作成し、カバレッジ90%以上を達成。
 
@@ -102,18 +112,19 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
     - [ ] FE: SWR, React Query, またはServer Actions等を用いてAPIとのデータ連携および状態管理を実装。
     - [ ] FE: Lighthouse等で主要な予約関連ページのLCPを測定し、2.5秒未満を達成するように最適化。
     - [ ] FE: 予約成功・失敗時のユーザーへのフィードバックUI（Toast通知等）を実装。
+    - [ ] FE: Stripe CheckoutからのリダイレクトURLがVercelの動的プレビューURLに対応していることを確認 (Story R0-4と連携)。
 
 ### Story S1-4: QA: Playwright `auth→checkout→reserve` E2E
 - **担当:** QAチーム
 - **状態:** ⚠️ 状況確認中
-- **概要:** ユーザー認証からStripeでの支払い、そしてレッスン予約確定までの一連のコアフローをPlaywrightで自動E2Eテストとして実装する。
-- **DoD:** Playwrightで作成した `auth → checkout → reserve` のE2EテストシナリオがCI環境で安定してGREEN（成功）となること。
+- **概要:** ユーザー認証からStripeでの支払い、そしてレッスン予約確定までの一連のコアフローをPlaywrightで自動E2Eテストとして実装する。このE2EテストはStory R0-4で構築されるCI環境で実行されることを前提とする。
+- **DoD:** Playwrightで作成した `auth → checkout → reserve` のE2EテストシナリオがCI環境 (Story R0-4で整備) で安定してGREEN（成功）となること。
 - **タスク:**
-    - [ ] QA: Playwrightのテスト環境をプロジェクトにセットアップ。
+    - [ ] QA: Playwrightのテスト環境をプロジェクトにセットアップ。 (ローカルでの実行環境)
     - [ ] QA: ユーザー登録・ログイン・ログアウトの認証フローに関するE2Eテストスクリプトを作成。
     - [ ] QA: 商品選択からStripe Checkoutページへのリダイレクト、テスト用カード情報での支払いシミュレーション、成功後のリダイレクト先確認までのE2Eテストスクリプトを作成 (Stripeのテストモードと連携)。
     - [ ] QA: 支払い成功後、予約ページに遷移し、レッスンを予約するフローのE2Eテストスクリプトを作成。
-    - [ ] QA: 作成したE2EテストをGitHub Actions等のCI環境で実行できるように設定。
+    - [ ] QA: 作成したE2EテストをGitHub Actions等のCI環境で実行できるように設定 (Story R0-4と連携し、Seedスクリプト実行やStripe CLIコンテナ利用を含む)。
 
 ---
 

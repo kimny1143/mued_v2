@@ -4,16 +4,20 @@
   "description": "A React Learning Management System project using Next.js App Router with Shadcn UI library",
   "scripts": {
     "dev": "next dev --port 3000 --hostname 0.0.0.0",
-    "build": "npx prisma generate && next build",
+    "build": "bash scripts/vercel-deploy-prep.sh && npx prisma generate && next build",
     "export": "next export",
-    "build:static": "npx prisma generate && next build && next export",
+    "build:static": "bash scripts/vercel-deploy-prep.sh && npx prisma generate && next build && next export",
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "gen-env": "npx tsx scripts/gen-env.ts",
+    "check-env": "node scripts/check-env.js",
+    "seed": "npx tsx scripts/seed-test-db.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.0",

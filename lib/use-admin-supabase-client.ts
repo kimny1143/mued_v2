@@ -6,10 +6,10 @@ import { createClient } from '@supabase/supabase-js';
  */
 export function getAdminSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
-    throw new Error('環境変数が設定されていません: NEXT_PUBLIC_SUPABASE_URL または SUPABASE_SERVICE_ROLE');
+    throw new Error('環境変数が設定されていません: NEXT_PUBLIC_SUPABASE_URL または SUPABASE_SERVICE_ROLE_KEY');
   }
 
   return createClient(supabaseUrl, supabaseServiceRoleKey, {
