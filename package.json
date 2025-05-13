@@ -61,6 +61,7 @@
     "react-hook-form": "^7.56.1",
     "react-responsive": "^10.0.1",
     "react-router-dom": "^6.30.0",
+    "resend": "^4.5.1",
     "sonner": "^2.0.3",
     "stripe": "^18.0.0",
     "tailwind-merge": "^2.5.4",

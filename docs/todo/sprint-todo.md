@@ -74,7 +74,7 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S1-1: Stripe Checkout / Webhook （EdgeFunction）実装
 - **担当:** BEチーム
-- **状態:** ⚠️ 状況確認中
+- **状態:** ✅ 完了
 - **概要:** Stripe Checkoutセッションを作成しユーザーをStripe決済ページへリダイレクトするAPIと、決済完了通知を受け取るStripe Webhook (Supabase Edge Function) を実装する。
 - **DoD:** ユーザーがStripeで支払いを完了すると、その情報がWebhook経由でシステムに通知され、DBの `Subscription` テーブル等が更新されること。Webhookは署名検証を行い、200レスポンスを返すこと。
 - **タスク:**
@@ -82,8 +82,8 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
     - [x] BE: Supabase Edge Function (`app/api/webhooks/stripe/` 等) でStripe Webhookエンドポイントを作成。
     - [x] BE: Webhook内でStripeからのリクエスト署名を検証するロジックを実装。
     - [x] BE: Webhookで `checkout.session.completed` 等のイベントを処理し、支払い情報を元にPrisma Clientを使ってDB (`User`, `Subscription` テーブル等) を更新するロジックを実装。
-    - [ ] BE: Webhook処理に関する単体テストおよびローカルでのStripe CLIを用いたテストを実施。（CIでのE2EテストはStory R0-4, S1-4でカバー）
-    - [ ] BE: `SUPABASE_SERVICE_ROLE_KEY` を利用するなど、Supabase Edge Functionの権限が適切に設定されていることを確認。
+    - [x] BE: Webhook処理に関する単体テストおよびローカルでのStripe CLIを用いたテストを実施。（CIでのE2EテストはStory R0-4, S1-4でカバー）
+    - [x] BE: `SUPABASE_SERVICE_ROLE_KEY` を利用するなど、Supabase Edge Functionの権限が適切に設定されていることを確認。
 
 ### Story S1-2: `LessonSlot`,`Reservation` API (RLS & バリデーション)
 - **担当:** BEチーム
@@ -101,18 +101,18 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S1-3: 予約UI（Table+Modal, Mobile Ready）
 - **担当:** FEチーム
-- **状態:** ⚠️ 状況確認中
+- **状態:** ✅ 完了
 - **概要:** ユーザーが利用可能なレッスン枠を一覧で確認し、モーダルウィンドウ経由で予約を実行できるUIを実装する。スマートフォン表示にも最適化し、LCP 2.5秒以内を目指す。
 - **DoD:** レッスン枠がテーブル形式で表示され、選択すると予約モーダルが開くこと。モーダル内で予約が実行でき、結果がユーザーにフィードバックされること。UIはレスポンシブ対応であり、主要画面のLCPが2.5秒未満であること。
 - **タスク:**
-    - [ ] FE: `app/reservations/page.tsx` 等の予約ページを作成。
-    - [ ] FE: 利用可能な `LessonSlot` を一覧表示するテーブルコンポーネント (`app/components/reservations/SlotTable.tsx` 等) を作成。APIから取得したデータを表示。
-    - [ ] FE: スロット選択時に表示される予約確認・実行用モーダルコンポーネント (`app/components/reservations/ReservationModal.tsx` 等) を作成。
-    - [ ] FE: TailwindCSSを用いて、テーブルおよびモーダルのレスポンシブデザインを実装。
-    - [ ] FE: SWR, React Query, またはServer Actions等を用いてAPIとのデータ連携および状態管理を実装。
-    - [ ] FE: Lighthouse等で主要な予約関連ページのLCPを測定し、2.5秒未満を達成するように最適化。
-    - [ ] FE: 予約成功・失敗時のユーザーへのフィードバックUI（Toast通知等）を実装。
-    - [ ] FE: Stripe CheckoutからのリダイレクトURLがVercelの動的プレビューURLに対応していることを確認 (Story R0-4と連携)。
+    - [x] FE: `app/reservations/page.tsx` 等の予約ページを作成。
+    - [x] FE: 利用可能な `LessonSlot` を一覧表示するテーブルコンポーネント (`app/components/reservations/SlotTable.tsx` 等) を作成。APIから取得したデータを表示。
+    - [x] FE: スロット選択時に表示される予約確認・実行用モーダルコンポーネント (`app/components/reservations/ReservationModal.tsx` 等) を作成。
+    - [x] FE: TailwindCSSを用いて、テーブルおよびモーダルのレスポンシブデザインを実装。
+    - [x] FE: SWR, React Query, またはServer Actions等を用いてAPIとのデータ連携および状態管理を実装。
+    - [x] FE: Lighthouse等で主要な予約関連ページのLCPを測定し、2.5秒未満を達成するように最適化。
+    - [x] FE: 予約成功・失敗時のユーザーへのフィードバックUI（Toast通知等）を実装。
+    - [x] FE: Stripe CheckoutからのリダイレクトURLがVercelの動的プレビューURLに対応していることを確認 (Story R0-4と連携)。
 
 ### Story S1-4: QA: Playwright `auth→checkout→reserve` E2E
 - **担当:** QAチーム
@@ -133,15 +133,15 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S2-1: Google OAuth & 差分同期サービス
 - **担当:** BEチーム
-- **状態:** ⚠️ 状況確認中
+- **状態:** ✅ 完了
 - **概要:** NextAuth.jsを用いてGoogle OAuth認証を導入し、ユーザーの同意を得てGoogle Calendar APIにアクセス。レッスン予約情報をユーザーのGoogle Calendarに登録し、またカレンダー側の変更を検知してシステムに反映する双方向の差分同期サービスを実装する。
 - **DoD:** ユーザーがGoogleアカウントで連携後、MUED LMSでの予約がGoogle Calendarに自動で追加・更新・削除されること。Google Calendar側での変更も一定間隔またはWebhookでMUED LMSに反映されること。同期成功率99%以上を目指す。
 - **タスク:**
-    - [ ] BE: NextAuth.jsにGoogle Providerを追加し、OAuth認証フローを実装。Calendar APIスコープの同意取得を含む。
-    - [ ] BE: Google Calendar APIクライアントライブラリを導入し、`lib/googleCalendar.ts` 等にAPI操作関数群を実装（イベント作成、更新、削除、一覧取得等）。
-    - [ ] BE: ユーザーの予約情報とGoogle Calendarのイベント情報を比較し、差分のみを同期するロジックを実装。
-    - [ ] BE: 同期処理を実行するAPIエンドポイント (`app/api/calendar/sync/route.ts` 等) または定期実行ジョブ (Supabase Cron Jobs等) を作成。
-    - [ ] BE: Google Calendar APIのエラーハンドリング、リトライ機構を実装し、堅牢な同期処理を実現。アクセストークン、リフレッシュトークンの管理も適切に行う。
+    - [x] BE: NextAuth.jsにGoogle Providerを追加し、OAuth認証フローを実装。Calendar APIスコープの同意取得を含む。
+    - [x] BE: Google Calendar APIクライアントライブラリを導入し、`lib/googleCalendar.ts` 等にAPI操作関数群を実装（イベント作成、更新、削除、一覧取得等）。
+    - [x] BE: ユーザーの予約情報とGoogle Calendarのイベント情報を比較し、差分のみを同期するロジックを実装。
+    - [x] BE: 同期処理を実行するAPIエンドポイント (`app/api/calendar/sync/route.ts` 等) または定期実行ジョブ (Supabase Cron Jobs等) を作成。
+    - [x] BE: Google Calendar APIのエラーハンドリング、リトライ機構を実装し、堅牢な同期処理を実現。アクセストークン、リフレッシュトークンの管理も適切に行う。
 
 ### Story S2-2: 予約確定メール (Supabase Trigger + Resend)
 - **担当:** BEチーム
@@ -255,20 +255,19 @@ PR作成時には、関連するIssue番号を必ず記載すること。
 
 ---
 
-## 実装進捗概要 (最終更新: 2024-05-XX)
+## 実装進捗概要 (最終更新: 2024-06-15)
 
-1. **Sprint Re:0**: App Router移行は概ね完了（3/4項目完了）。CI/CDワークフロー再構築が残りの課題です。
+1. **Sprint Re:0**: App Router移行は完了しました。CI/CDワークフローも整備されています。
 
-2. **Sprint 1**: コア機能であるStripe決済とレッスン予約システムのバックエンド実装は完了しました。フロントエンドUIとE2Eテストの実装が次の重点課題です。
+2. **Sprint 1**: コア機能である決済と予約システムの実装が完了しました。Stripe CheckoutとWebhook、レッスンスロットと予約のAPIおよびUI実装が完成しています。
 
-3. **Sprint 2**: Google Calendar同期機能は完了していますが、メール通知機能やリアルタイム更新、モニタリングの実装を進める必要があります。
+3. **Sprint 2**: Google Calendar同期機能は完了していますが、メール通知機能やリアルタイム更新、モニタリングの実装が引き続き必要です。
 
-4. **Sprint 3**: 現時点では未着手または確認中の項目が大部分です。アセスメントと優先順位付けが必要です。
+4. **認証システム**: NextAuthからSupabaseAuthへの移行が完了し、認証関連の機能が安定しています。
 
 ## 今後の重点課題
 
-1. DevOpsワークフローの完成（Story R0-4の残りのタスク）
-2. 予約UIの実装とモバイル最適化（Story S1-3）
-3. E2Eテスト環境の構築と重要フローのテスト自動化（Story S1-4）
-4. メール通知システムの実装（Story S2-2）
-5. リアルタイム更新とモニタリングシステムの構築（Story S2-3, S2-4）
+1. メール通知システムの実装（Story S2-2）
+2. リアルタイム更新とモニタリングシステムの構築（Story S2-3, S2-4）
+3. AI連携による教材生成機能の開発（Sprint 3）
+4. E2Eテスト環境の強化と自動化（Story S1-4）
