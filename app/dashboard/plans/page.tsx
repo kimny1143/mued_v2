@@ -8,6 +8,7 @@ import { useUser } from "@/lib/hooks/use-user";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Session, User } from "@supabase/supabase-js";
+import { redirectToCheckout } from "@/lib/client/stripe-client";
 
 export default function Page() {
   const { user, loading, error, isAuthenticated, session, subscription } = useUser();
@@ -63,83 +64,104 @@ export default function Page() {
         nodeEnv: process.env.NODE_ENV,
         vercel: process.env.NEXT_PUBLIC_VERCEL_ENV || '不明',
         appUrl: process.env.NEXT_PUBLIC_APP_URL || window.location.origin,
+        stripeKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? 'あり' : 'なし'
       });
-      
-      // APIリクエスト前のデータをログに記録
-      const requestInfo = {
-        origin: window.location.origin,
-        host: window.location.host,
-        priceId,
-        mode,
-        userId
-      };
-      addDebugLog('API呼び出し前', requestInfo);
 
-      // 使用するURLをログに記録
+      // リダイレクトURL設定
       const successUrl = `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
       const cancelUrl = `${window.location.origin}/dashboard/plans`;
       addDebugLog('リダイレクトURL', { successUrl, cancelUrl });
 
-      // APIエンドポイントを呼び出し
-      addDebugLog('fetchリクエスト開始');
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // クライアント側Stripeチェックアウトを試行
+      addDebugLog('クライアント側Stripeチェックアウト開始');
+      
+      try {
+        await redirectToCheckout({
           priceId,
           mode,
           successUrl,
           cancelUrl,
           userId
-        }),
-        credentials: 'include', // クッキーを必ず送信
-      });
+        });
+        
+        addDebugLog('チェックアウトリダイレクト成功');
+      } catch (clientError) {
+        addDebugLog('クライアント側Stripeエラー', clientError instanceof Error ? clientError.message : '不明なエラー');
+        
+        // クライアント側で失敗した場合、サーバー側APIにフォールバック
+        addDebugLog('サーバーサイドAPIにフォールバック');
+        
+        // APIリクエスト前のデータをログに記録
+        const requestInfo = {
+          origin: window.location.origin,
+          host: window.location.host,
+          priceId,
+          mode,
+          userId
+        };
+        addDebugLog('API呼び出し前', requestInfo);
 
-      // レスポンスのステータスとヘッダーをログに記録
-      const responseInfo = {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers),
-      };
-      addDebugLog('APIレスポンス受信', responseInfo);
+        // APIエンドポイントを呼び出し
+        addDebugLog('fetchリクエスト開始');
+        const response = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            priceId,
+            mode,
+            successUrl,
+            cancelUrl,
+            userId
+          }),
+          credentials: 'include', // クッキーを必ず送信
+        });
 
-      if (!response.ok) {
-        // エラーレスポンスの詳細を取得
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch (e) {
-          errorData = { error: errorText };
+        // レスポンスのステータスとヘッダーをログに記録
+        const responseInfo = {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers),
+        };
+        addDebugLog('APIレスポンス受信', responseInfo);
+
+        if (!response.ok) {
+          // エラーレスポンスの詳細を取得
+          const errorText = await response.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch (e) {
+            errorData = { error: errorText };
+          }
+          
+          addDebugLog('APIエラーレスポンス', errorData);
+          throw new Error(errorData.error || '決済処理中にエラーが発生しました');
         }
         
-        addDebugLog('APIエラーレスポンス', errorData);
-        throw new Error(errorData.error || '決済処理中にエラーが発生しました');
+        let data;
+        try {
+          data = await response.json();
+          addDebugLog('APIレスポンスデータ', data);
+        } catch (e) {
+          addDebugLog('レスポンス解析エラー', e instanceof Error ? e.message : '不明なエラー');
+          throw new Error('APIレスポンスの解析に失敗しました');
+        }
+        
+        if (!data.url) {
+          throw new Error('決済URLが返されませんでした');
+        }
+        
+        // 決済ページへのリダイレクト前にログ
+        addDebugLog('決済ページへリダイレクト', { url: data.url });
+        
+        // リダイレクト前に少し待機して、ログが確実に記録されるようにする
+        setTimeout(() => {
+          // 決済ページにリダイレクト
+          window.location.href = data.url;
+        }, 500);
       }
-      
-      let data;
-      try {
-        data = await response.json();
-        addDebugLog('APIレスポンスデータ', data);
-      } catch (e) {
-        addDebugLog('レスポンス解析エラー', e instanceof Error ? e.message : '不明なエラー');
-        throw new Error('APIレスポンスの解析に失敗しました');
-      }
-      
-      if (!data.url) {
-        throw new Error('決済URLが返されませんでした');
-      }
-      
-      // 決済ページへのリダイレクト前にログ
-      addDebugLog('決済ページへリダイレクト', { url: data.url });
-      
-      // リダイレクト前に少し待機して、ログが確実に記録されるようにする
-      setTimeout(() => {
-        // 決済ページにリダイレクト
-        window.location.href = data.url;
-      }, 500);
     } catch (error) {
       // エラー詳細をログに記録
       const errorDetail = error instanceof Error ? error.message : '未知のエラー';

@@ -64,6 +64,23 @@ else
   HEROKU_SKIP=false
 fi
 
+# 改行コードを完全に削除する関数
+# $1: 処理する文字列
+clean_newlines() {
+  # 改行コードとキャリッジリターンを完全に削除
+  # \nは改行、\rはキャリッジリターン、\sは空白文字
+  local cleaned_str
+  
+  # tr -d を使用して改行とキャリッジリターンを削除（2回適用）
+  cleaned_str=$(echo -n "$1" | tr -d '\n\r' | tr -d '\n\r')
+  
+  # 末尾の空白も削除
+  cleaned_str=$(echo -n "$cleaned_str" | sed 's/[[:space:]]*$//')
+  
+  # 改行なしで出力
+  printf "%s" "$cleaned_str"
+}
+
 # Herokuの環境変数を更新
 update_heroku_env() {
   if [ "$HEROKU_SKIP" = true ]; then
@@ -150,9 +167,28 @@ update_vercel_env() {
     key=$(echo "$line" | cut -d= -f1)
     value=$(echo "$line" | cut -d= -f2-)
     
-    # 環境変数を設定
+    # 環境変数を設定（改行を完全に削除）
     vercel env rm "$key" "$VERCEL_ENV" --yes 2>/dev/null || true
-    echo "$value" | vercel env add "$key" "$VERCEL_ENV"
+    
+    # 改行を完全に削除した値を取得
+    cleaned_value=$(clean_newlines "$value")
+    
+    # デバッグ表示（10文字目までを表示）
+    value_length=${#cleaned_value}
+    preview="${cleaned_value:0:10}"
+    echo "環境変数 $key を設定中 [長さ: $value_length 文字, プレビュー: $preview...]"
+    
+    # 一時ファイルを使用して環境変数を設定（printf使用で改行なし）
+    temp_file=$(mktemp)
+    printf "%s" "$cleaned_value" > "$temp_file"
+    
+    # ファイル内容確認（デバッグ用）
+    file_size=$(wc -c < "$temp_file")
+    echo "一時ファイルサイズ: $file_size バイト"
+    
+    # 環境変数を追加
+    vercel env add "$key" "$VERCEL_ENV" < "$temp_file"
+    rm "$temp_file"
   done < "$VERCEL_ENV_FILE"
   
   if [ $? -eq 0 ]; then
