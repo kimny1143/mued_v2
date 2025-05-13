@@ -75,15 +75,24 @@ export async function POST(request: Request) {
       );
     }
 
+    // 価格IDの前処理（price_プレフィックスの確認と追加）
+    const formattedPriceId = priceId.startsWith('price_') ? priceId : `price_${priceId}`;
+    
     // テスト用のログ
-    console.log('Stripe checkout session creating with:', { priceId, mode, userId });
+    console.log('Stripe checkout session creating with:', { 
+      originalPriceId: priceId, 
+      formattedPriceId, 
+      mode, 
+      userId,
+      stripeSecretKey: process.env.STRIPE_SECRET_KEY ? `${process.env.STRIPE_SECRET_KEY.substring(0, 10)}...` : 'なし'
+    });
 
     try {
       // Stripeセッションを安全に作成
       const session = await safeStripeCall(async () => {
         return await stripe.checkout.sessions.create({
           payment_method_types: ['card'],
-          line_items: [{ price: priceId, quantity: 1 }],
+          line_items: [{ price: formattedPriceId, quantity: 1 }],
           mode: mode || 'payment',
           success_url: successUrl,
           cancel_url: cancelUrl,
@@ -117,6 +126,7 @@ export async function POST(request: Request) {
           }
         : stripeError;
       
+      // カスタムエラーレスポンス
       return NextResponse.json(
         { error: 'Stripeセッションの作成に失敗しました', details: errorDetails }, 
         { status: 500 }
@@ -125,8 +135,13 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     console.error('チェックアウトセッション作成エラー:', error);
     const errorMessage = error instanceof Error ? error.message : '決済処理中にエラーが発生しました';
+    const errorDetails = error instanceof Error ? {
+      name: error.name,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    } : { type: typeof error };
+    
     return NextResponse.json(
-      { error: errorMessage }, 
+      { error: errorMessage, details: errorDetails }, 
       { status: 500 }
     );
   }

@@ -8,13 +8,15 @@ export interface StripeProduct {
 
 // Vercel環境とローカル環境の違いを検出する関数
 function isVercelProd(): boolean {
+  // VERCEL_ENV === 'production'の場合のみtrueを返す（Vercelの本番デプロイ環境）
   return process.env.VERCEL_ENV === 'production';
 }
 
 // 環境によって適切な価格IDを返す関数
 function getPriceId(realPriceId: string, fallbackId: string): string {
-  // 本番環境では実際のIDを、それ以外の場合はフォールバックを使用
-  return isVercelProd() ? realPriceId : fallbackId;
+  // テスト環境では常にテスト用IDを使用するよう変更
+  // ブラウザ環境では常にフォールバック（テスト）IDを使用
+  return typeof window !== 'undefined' || !isVercelProd() ? fallbackId : realPriceId;
 }
 
 // Stripeサンドボックスモードで作成した製品と価格ID
