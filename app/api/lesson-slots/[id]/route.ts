@@ -1,6 +1,6 @@
 import { prisma } from '../../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { getSessionFromRequest } from '@/lib/session';
 
 // 更新データの型を定義
 type LessonSlotUpdateData = {
@@ -56,7 +56,7 @@ export async function PUT(
 ) {
   try {
     const id = params.id;
-    const token = await getToken({ req: request });
+    const sessionInfo = await getSessionFromRequest(request);
     
     // スロットが存在するか確認
     const existingSlot = await prisma.lessonSlot.findUnique({
@@ -70,8 +70,16 @@ export async function PUT(
       );
     }
     
+    // 認証チェック
+    if (!sessionInfo) {
+      return NextResponse.json(
+        { error: '認証が必要です' },
+        { status: 401 }
+      );
+    }
+    
     // 権限チェック：講師本人またはアドミンのみ更新可能
-    if (!token || (token.role !== 'admin' && token.sub !== existingSlot.teacherId)) {
+    if (sessionInfo.role !== 'admin' && sessionInfo.user.id !== existingSlot.teacherId) {
       return NextResponse.json(
         { error: 'このレッスン枠を更新する権限がありません' },
         { status: 403 }
@@ -154,7 +162,7 @@ export async function DELETE(
 ) {
   try {
     const id = params.id;
-    const token = await getToken({ req: request });
+    const sessionInfo = await getSessionFromRequest(request);
     
     // スロットが存在するか確認
     const existingSlot = await prisma.lessonSlot.findUnique({
@@ -171,8 +179,16 @@ export async function DELETE(
       );
     }
     
+    // 認証チェック
+    if (!sessionInfo) {
+      return NextResponse.json(
+        { error: '認証が必要です' },
+        { status: 401 }
+      );
+    }
+    
     // 権限チェック：講師本人またはアドミンのみ削除可能
-    if (!token || (token.role !== 'admin' && token.sub !== existingSlot.teacherId)) {
+    if (sessionInfo.role !== 'admin' && sessionInfo.user.id !== existingSlot.teacherId) {
       return NextResponse.json(
         { error: 'このレッスン枠を削除する権限がありません' },
         { status: 403 }

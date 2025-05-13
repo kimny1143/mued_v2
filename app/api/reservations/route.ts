@@ -1,7 +1,7 @@
 import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
-import { Prisma } from '../../../src/generated/prisma';
+import { getSessionFromRequest } from '@/lib/session';
+import { Prisma } from '@prisma/client';
 
 // 予約ステータスの列挙型
 enum ReservationStatus {
@@ -23,10 +23,10 @@ enum PaymentStatus {
 // 予約一覧を取得
 export async function GET(request: NextRequest) {
   try {
-    // JWTトークンからユーザー情報を取得
-    const token = await getToken({ req: request });
+    // セッション情報を取得
+    const sessionInfo = await getSessionFromRequest(request);
     
-    if (!token) {
+    if (!sessionInfo) {
       return NextResponse.json(
         { error: '認証が必要です' },
         { status: 401 }
@@ -42,15 +42,15 @@ export async function GET(request: NextRequest) {
     const where: Prisma.ReservationWhereInput = {};
     
     // 教師（メンター）は自分の全予約を、生徒は自分の予約のみを見られる
-    if (token.role === 'mentor') {
+    if (sessionInfo.role === 'mentor') {
       where.slot = {
-        teacherId: token.sub,
+        teacherId: sessionInfo.user.id,
       };
-    } else if (token.role === 'admin') {
+    } else if (sessionInfo.role === 'admin') {
       // 管理者は全ての予約を閲覧可能
     } else {
       // 生徒は自分の予約のみ閲覧可能
-      where.studentId = token.sub;
+      where.studentId = sessionInfo.user.id;
     }
     
     if (status && Object.values(ReservationStatus).includes(status as ReservationStatus)) {
@@ -106,10 +106,10 @@ export async function GET(request: NextRequest) {
 // 新しい予約を作成
 export async function POST(request: NextRequest) {
   try {
-    // JWTトークンからユーザー情報を取得
-    const token = await getToken({ req: request });
+    // セッション情報を取得
+    const sessionInfo = await getSessionFromRequest(request);
     
-    if (!token) {
+    if (!sessionInfo) {
       return NextResponse.json(
         { error: '認証が必要です' },
         { status: 401 }
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 自分自身のレッスン枠は予約できない（講師が自分のレッスンを予約するケース）
-    if (token.sub === slot.teacherId) {
+    if (sessionInfo.user.id === slot.teacherId) {
       return NextResponse.json(
         { error: '自分自身のレッスン枠は予約できません' },
         { status: 400 }
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
     const newReservation = await prisma.reservation.create({
       data: {
         slotId: data.slotId,
-        studentId: token.sub as string,
+        studentId: sessionInfo.user.id,
         status: ReservationStatus.PENDING,
         paymentStatus: PaymentStatus.UNPAID,
         notes: data.notes,

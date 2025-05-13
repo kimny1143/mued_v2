@@ -1,7 +1,7 @@
 import { prisma } from '../../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
-import { Prisma } from '../../../../src/generated/prisma';
+import { getSessionFromRequest } from '@/lib/session';
+import { Prisma } from '@prisma/client';
 
 // 予約ステータスの列挙型
 enum ReservationStatus {
@@ -27,9 +27,9 @@ export async function GET(
 ) {
   try {
     const id = params.id;
-    const token = await getToken({ req: request });
+    const sessionInfo = await getSessionFromRequest(request);
     
-    if (!token) {
+    if (!sessionInfo) {
       return NextResponse.json(
         { error: '認証が必要です' },
         { status: 401 }
@@ -70,9 +70,9 @@ export async function GET(
     }
     
     // 権限チェック：生徒本人、担当講師、管理者のみアクセス可能
-    const isStudent = token.sub === reservation.studentId;
-    const isTeacher = token.sub === reservation.slot.teacherId;
-    const isAdmin = token.role === 'admin';
+    const isStudent = sessionInfo.user.id === reservation.studentId;
+    const isTeacher = sessionInfo.user.id === reservation.slot.teacherId;
+    const isAdmin = sessionInfo.role === 'admin';
     
     if (!isStudent && !isTeacher && !isAdmin) {
       return NextResponse.json(
@@ -98,9 +98,9 @@ export async function PUT(
 ) {
   try {
     const id = params.id;
-    const token = await getToken({ req: request });
+    const sessionInfo = await getSessionFromRequest(request);
     
-    if (!token) {
+    if (!sessionInfo) {
       return NextResponse.json(
         { error: '認証が必要です' },
         { status: 401 }
@@ -123,9 +123,9 @@ export async function PUT(
     }
     
     // 権限チェック
-    const isStudent = token.sub === existingReservation.studentId;
-    const isTeacher = token.sub === existingReservation.slot.teacherId;
-    const isAdmin = token.role === 'admin';
+    const isStudent = sessionInfo.user.id === existingReservation.studentId;
+    const isTeacher = sessionInfo.user.id === existingReservation.slot.teacherId;
+    const isAdmin = sessionInfo.role === 'admin';
     
     if (!isStudent && !isTeacher && !isAdmin) {
       return NextResponse.json(
@@ -242,32 +242,32 @@ export async function DELETE(
 ) {
   try {
     const id = params.id;
-    const token = await getToken({ req: request });
+    const sessionInfo = await getSessionFromRequest(request);
     
-    if (!token) {
+    if (!sessionInfo) {
       return NextResponse.json(
         { error: '認証が必要です' },
         { status: 401 }
       );
     }
     
-    // 管理者のみ削除可能
-    if (token.role !== 'admin') {
-      return NextResponse.json(
-        { error: '予約の削除は管理者のみ可能です' },
-        { status: 403 }
-      );
-    }
-    
     // 予約が存在するか確認
-    const existingReservation = await prisma.reservation.findUnique({
+    const reservation = await prisma.reservation.findUnique({
       where: { id },
     });
     
-    if (!existingReservation) {
+    if (!reservation) {
       return NextResponse.json(
         { error: '指定された予約が見つかりませんでした' },
         { status: 404 }
+      );
+    }
+    
+    // 権限チェック (管理者のみ)
+    if (sessionInfo.role !== 'admin') {
+      return NextResponse.json(
+        { error: '予約を削除する権限がありません (管理者のみ可能)' },
+        { status: 403 }
       );
     }
     
@@ -276,7 +276,7 @@ export async function DELETE(
       where: { id },
     });
     
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting reservation:', error);
     return NextResponse.json(

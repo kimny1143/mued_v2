@@ -4,7 +4,7 @@ import { GET, POST } from '../route';
 import { PUT, DELETE } from '../[id]/route';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
-import { getToken } from 'next-auth/jwt';
+import { getSessionFromRequest } from '@/lib/session';
 
 // 予約ステータスの列挙型
 enum ReservationStatus {
@@ -46,8 +46,8 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn()
 }));
 
-vi.mock('next-auth/jwt', () => ({
-  getToken: vi.fn()
+vi.mock('@/lib/session', () => ({
+  getSessionFromRequest: vi.fn()
 }));
 
 describe('Reservation API', () => {
@@ -72,15 +72,14 @@ describe('Reservation API', () => {
       session: {} as any,
     });
 
-    // getToken モックの設定
-    vi.mocked(getToken).mockResolvedValue({
-      sub: 'test-user-id',
-      name: 'テストユーザー',
-      email: 'test@example.com',
-      role: 'student',
-      iat: 1234567890,
-      exp: 1234567890,
-      jti: 'test-jti',
+    // getSessionFromRequest モックの設定
+    vi.mocked(getSessionFromRequest).mockResolvedValue({
+      session: {} as any,
+      user: {
+        id: 'test-user-id',
+        email: 'test@example.com'
+      },
+      role: 'student'
     });
   });
   
@@ -146,14 +145,13 @@ describe('Reservation API', () => {
     
     it('教師ロールのユーザーが自分のレッスンスロットに関連する予約を取得できる', async () => {
       // 教師ユーザーをモック
-      vi.mocked(getToken).mockResolvedValueOnce({
-        sub: 'teacher-1',
-        name: '教師ユーザー',
-        email: 'teacher@example.com',
-        role: 'mentor',
-        iat: 1234567890,
-        exp: 1234567890,
-        jti: 'test-jti',
+      vi.mocked(getSessionFromRequest).mockResolvedValueOnce({
+        session: {} as any,
+        user: {
+          id: 'teacher-1',
+          email: 'teacher@example.com'
+        },
+        role: 'mentor'
       });
       
       // モックデータ
@@ -244,7 +242,7 @@ describe('Reservation API', () => {
     
     it('認証されていない場合は401エラーを返す', async () => {
       // 未認証状態をモック
-      vi.mocked(getToken).mockResolvedValueOnce(null);
+      vi.mocked(getSessionFromRequest).mockResolvedValueOnce(null);
       
       // API呼び出し
       const response = await GET(mockReq);
@@ -560,14 +558,13 @@ describe('Reservation API', () => {
   describe('DELETE - 予約削除', () => {
     it('管理者は予約を削除できる', async () => {
       // 管理者ユーザーをモック
-      vi.mocked(getToken).mockResolvedValueOnce({
-        sub: 'admin-id',
-        name: '管理者',
-        email: 'admin@example.com',
-        role: 'admin',
-        iat: 1234567890,
-        exp: 1234567890,
-        jti: 'test-jti',
+      vi.mocked(getSessionFromRequest).mockResolvedValueOnce({
+        session: {} as any,
+        user: {
+          id: 'admin-id',
+          email: 'admin@example.com'
+        },
+        role: 'admin'
       });
 
       // URLパラメータの設定 (予約ID)
@@ -613,14 +610,13 @@ describe('Reservation API', () => {
     
     it('存在しない予約を削除しようとすると404エラーを返す', async () => {
       // 管理者ユーザーをモック
-      vi.mocked(getToken).mockResolvedValueOnce({
-        sub: 'admin-id',
-        name: '管理者',
-        email: 'admin@example.com',
-        role: 'admin',
-        iat: 1234567890,
-        exp: 1234567890,
-        jti: 'test-jti',
+      vi.mocked(getSessionFromRequest).mockResolvedValueOnce({
+        session: {} as any,
+        user: {
+          id: 'admin-id',
+          email: 'admin@example.com'
+        },
+        role: 'admin'
       });
 
       // URLパラメータの設定 (予約ID)
@@ -647,14 +643,13 @@ describe('Reservation API', () => {
     
     it('管理者以外のユーザーは予約を削除できない', async () => {
       // 一般ユーザーをモック
-      vi.mocked(getToken).mockResolvedValueOnce({
-        sub: 'user-id',
-        name: '一般ユーザー',
-        email: 'user@example.com',
-        role: 'student',
-        iat: 1234567890,
-        exp: 1234567890,
-        jti: 'test-jti',
+      vi.mocked(getSessionFromRequest).mockResolvedValueOnce({
+        session: {} as any,
+        user: {
+          id: 'user-id',
+          email: 'user@example.com'
+        },
+        role: 'student'
       });
 
       // URLパラメータの設定 (予約ID)

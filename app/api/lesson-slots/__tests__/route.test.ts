@@ -4,7 +4,7 @@ import { GET, POST } from '../route';
 import { PUT, DELETE } from '../[id]/route';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
-import { getToken } from 'next-auth/jwt';
+import { getSessionFromRequest } from '@/lib/session';
 
 // モック
 vi.mock('@/lib/prisma', () => ({
@@ -24,8 +24,8 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn()
 }));
 
-vi.mock('next-auth/jwt', () => ({
-  getToken: vi.fn()
+vi.mock('@/lib/session', () => ({
+  getSessionFromRequest: vi.fn()
 }));
 
 describe('LessonSlot API', () => {
@@ -50,15 +50,15 @@ describe('LessonSlot API', () => {
       session: {} as any,
     });
 
-    // getToken モックの設定
-    vi.mocked(getToken).mockResolvedValue({
-      sub: 'test-user-id',
-      name: 'テストユーザー',
-      email: 'test@example.com',
-      role: 'mentor',
-      iat: 1234567890,
-      exp: 1234567890,
-      jti: 'test-jti',
+    // getSessionFromRequest モックの設定
+    vi.mocked(getSessionFromRequest).mockResolvedValue({
+      session: {} as any,
+      user: {
+        id: 'test-user-id',
+        email: 'test@example.com',
+        name: 'テストユーザー'
+      },
+      role: 'mentor'
     });
   });
   
@@ -254,7 +254,7 @@ describe('LessonSlot API', () => {
     
     it('認証されていない場合は401エラーを返す', async () => {
       // 認証なしのケース
-      vi.mocked(getToken).mockResolvedValueOnce(null);
+      vi.mocked(getSessionFromRequest).mockResolvedValueOnce(null);
       
       // リクエストボディの作成
       const slotData = {

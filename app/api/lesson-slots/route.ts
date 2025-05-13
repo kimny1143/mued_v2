@@ -1,6 +1,6 @@
 import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { getSessionFromRequest } from '@/lib/session';
 
 // WhereInputの型を定義
 type LessonSlotWhereInput = {
@@ -65,10 +65,18 @@ export async function GET(request: NextRequest) {
 // 新しいレッスンスロットを作成
 export async function POST(request: NextRequest) {
   try {
-    // JWTトークンからユーザー情報を取得
-    const token = await getToken({ req: request });
+    // セッション情報を取得
+    const sessionInfo = await getSessionFromRequest(request);
     
-    if (!token || token.role !== 'mentor') {
+    if (!sessionInfo) {
+      return NextResponse.json(
+        { error: '認証が必要です' },
+        { status: 401 }
+      );
+    }
+    
+    // 権限チェック
+    if (sessionInfo.role !== 'mentor') {
       return NextResponse.json(
         { error: '講師のみがレッスン枠を作成できます' },
         { status: 403 }
@@ -99,7 +107,7 @@ export async function POST(request: NextRequest) {
     // スロットの重複をチェック
     const overlappingSlot = await prisma.lessonSlot.findFirst({
       where: {
-        teacherId: token.sub,
+        teacherId: sessionInfo.user.id,
         OR: [
           {
             startTime: { lte: startTime },
@@ -127,7 +135,7 @@ export async function POST(request: NextRequest) {
     // 新しいスロットを作成
     const newSlot = await prisma.lessonSlot.create({
       data: {
-        teacherId: token.sub as string,
+        teacherId: sessionInfo.user.id,
         startTime,
         endTime,
         isAvailable: data.isAvailable ?? true,
