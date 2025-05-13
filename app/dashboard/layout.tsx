@@ -15,7 +15,8 @@ import {
   MenuIcon,
   XIcon,
   ChevronLeftIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  CalendarIcon
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
@@ -28,6 +29,7 @@ const dashboardNavItems = [
   { icon: HomeIcon, label: "Dashboard", path: "/dashboard" },
   { icon: FolderIcon, label: "Materials", path: "/dashboard/materials" },
   { icon: BookOpenIcon, label: "My Lessons", path: "/dashboard/my-lessons" },
+  { icon: CalendarIcon, label: "Reservations", path: "/reservations" },
   { icon: DumbbellIcon, label: "Exercise", path: "/dashboard/exercises" },
   { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" },
   { icon: SettingsIcon, label: "Settings", path: "/dashboard/settings" }
