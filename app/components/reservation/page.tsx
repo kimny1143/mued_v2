@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -11,8 +11,9 @@ import { ReservationModal } from './_components/ReservationModal';
 import { LessonSlot } from './_components/ReservationTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 // APIからレッスンスロットを取得する関数
 const fetchLessonSlots = async () => {
@@ -42,9 +43,10 @@ const createReservation = async (slotId: string) => {
 };
 
 export const ReservationPage: React.FC = () => {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   
   const [selectedLesson, setSelectedLesson] = useState<LessonSlot | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -52,11 +54,34 @@ export const ReservationPage: React.FC = () => {
   // レスポンシブ対応のための画面幅チェック
   const isMobile = useMediaQuery({ maxWidth: 768 });
   
+  // Supabase認証状態を確認
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        setUser(data.session?.user || null);
+        setLoading(false);
+        
+        // セッションがない場合はログインページへリダイレクト
+        if (!data.session) {
+          router.push('/login');
+        }
+      } catch (err) {
+        console.error("セッション取得エラー:", err);
+        setLoading(false);
+      }
+    };
+    
+    getUser();
+  }, [router]);
+  
   // React Queryを使ってレッスンスロットを取得
-  const { data: lessonSlots, isLoading, error } = useQuery({
+  const { data: lessonSlots, isLoading: isLoadingSlots, error } = useQuery({
     queryKey: ['lessonSlots'],
     queryFn: fetchLessonSlots,
     staleTime: 1000 * 60 * 5, // 5分間キャッシュを有効にする
+    // ユーザーが認証されている場合のみクエリを実行
+    enabled: !!user,
   });
   
   // 予約作成のミューテーション
@@ -67,22 +92,22 @@ export const ReservationPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
       setIsModalOpen(false);
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast.error(`予約エラー: ${error.message}`);
     },
   });
 
   // 認証状態チェック
-  if (status === 'loading') {
+  if (loading) {
     return <div className="flex justify-center items-center h-64">認証情報を確認中...</div>;
   }
 
   // 未ログインの場合はログインページにリダイレクト
-  if (status === 'unauthenticated') {
+  if (!user) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <p className="text-center">レッスンを予約するにはログインが必要です。</p>
-        <Button onClick={() => router.push('/auth/signin')}>
+        <Button onClick={() => router.push('/login')}>
           ログインページへ
         </Button>
       </div>
@@ -100,7 +125,7 @@ export const ReservationPage: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoadingSlots) {
     return <div className="flex justify-center items-center h-64">読み込み中...</div>;
   }
 
