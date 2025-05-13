@@ -20,7 +20,8 @@
   ],
   "env": {
     "NEXT_PUBLIC_VERCEL_URL": {
-      "type": "system"
+      "type": "system-override",
+      "value": "VERCEL_URL"
     },
     "VERCEL_URL": {
       "type": "system"
