@@ -16,22 +16,36 @@ import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { ReservationModal } from './ReservationModal';
 
+export type Teacher = {
+  id: string;
+  name: string;
+  email: string;
+  image?: string | null;
+};
+
 export type LessonSlot = {
   id: string;
-  startTime: Date;
-  endTime: Date;
-  mentorId: string;
-  mentorName: string;
-  available: boolean;
-  price: number;
+  startTime: string | Date;  // API returns string, converted to Date in components
+  endTime: string | Date;    // API returns string, converted to Date in components
+  teacherId: string;
+  teacher?: Teacher;       // Included when using API's include option
+  mentorName?: string;     // For backward compatibility with mock data
+  isAvailable: boolean;    // API uses isAvailable instead of available
+  price?: number;          // Optional price field
+  reservations?: Reservation[];
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 };
 
 export type Reservation = {
   id: string;
-  lessonSlotId: string;
-  userId: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
-  createdAt: Date;
+  slotId: string;
+  studentId: string;
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  paymentId?: string;
+  paymentStatus?: 'UNPAID' | 'PROCESSING' | 'PAID' | 'REFUNDED' | 'FAILED'; 
+  createdAt: string | Date;
+  updatedAt?: string | Date;
 };
 
 interface ReservationTableProps {
@@ -77,17 +91,17 @@ export const ReservationTable: React.FC<ReservationTableProps> = ({
                 <div className="flex flex-col">
                   <span className="flex items-center gap-2">
                     <CalendarIcon className="h-4 w-4" />
-                    {format(slot.startTime, 'yyyy年M月d日', { locale: ja })}
+                    {format(new Date(slot.startTime), 'yyyy年M月d日', { locale: ja })}
                   </span>
                   <span className="text-sm text-gray-500">
-                    {format(slot.startTime, 'HH:mm', { locale: ja })} - 
-                    {format(slot.endTime, 'HH:mm', { locale: ja })}
+                    {format(new Date(slot.startTime), 'HH:mm', { locale: ja })} - 
+                    {format(new Date(slot.endTime), 'HH:mm', { locale: ja })}
                   </span>
                 </div>
               </TableCell>
-              <TableCell>{slot.mentorName}</TableCell>
+              <TableCell>{slot.teacher ? slot.teacher.name : slot.mentorName}</TableCell>
               <TableCell>
-                {slot.available ? (
+                {slot.isAvailable ? (
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                     空き枠あり
                   </Badge>
@@ -97,12 +111,12 @@ export const ReservationTable: React.FC<ReservationTableProps> = ({
                   </Badge>
                 )}
               </TableCell>
-              <TableCell className="text-right">¥{slot.price.toLocaleString()}</TableCell>
+              <TableCell className="text-right">¥{(slot.price || 5000).toLocaleString()}</TableCell>
               <TableCell className="text-right">
                 <Button
                   variant="default"
                   size="sm"
-                  disabled={!slot.available}
+                  disabled={!slot.isAvailable}
                   onClick={() => handleReserveClick(slot)}
                 >
                   予約する

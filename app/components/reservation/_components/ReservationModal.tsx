@@ -13,12 +13,14 @@ import {
 } from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { LessonSlot } from './ReservationTable';
+import { Loader2 } from 'lucide-react';
 
 interface ReservationModalProps {
   isOpen: boolean;
   onClose: () => void;
   slot: LessonSlot | null;
   onConfirm: () => Promise<void>;
+  isLoading?: boolean;
 }
 
 export const ReservationModal: React.FC<ReservationModalProps> = ({
@@ -26,13 +28,17 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
   onClose,
   slot,
   onConfirm,
+  isLoading = false,
 }) => {
   const handleConfirm = async () => {
+    if (isLoading) return;
+    
     try {
       await onConfirm();
+      // onConfirm内でモーダルを閉じるため、ここでは何もしない
     } catch (error) {
       console.error('予約確定エラー:', error);
-      // エラー処理を追加予定
+      // エラー処理はonConfirm内で行う
     }
   };
 
@@ -59,29 +65,36 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-5 items-center gap-4">
             <span className="col-span-1 font-medium text-sm">日付:</span>
-            <span className="col-span-4 text-sm">{formatDate(slot.startTime)}</span>
+            <span className="col-span-4 text-sm">{formatDate(new Date(slot.startTime))}</span>
           </div>
           <div className="grid grid-cols-5 items-center gap-4">
             <span className="col-span-1 font-medium text-sm">時間:</span>
             <span className="col-span-4 text-sm">
-              {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+              {formatTime(new Date(slot.startTime))} - {formatTime(new Date(slot.endTime))}
             </span>
           </div>
           <div className="grid grid-cols-5 items-center gap-4">
             <span className="col-span-1 font-medium text-sm">メンター:</span>
-            <span className="col-span-4 text-sm">{slot.mentorName}</span>
+            <span className="col-span-4 text-sm">{slot.teacher ? slot.teacher.name : slot.mentorName}</span>
           </div>
           <div className="grid grid-cols-5 items-center gap-4">
             <span className="col-span-1 font-medium text-sm">料金:</span>
-            <span className="col-span-4 text-sm font-bold">¥{slot.price.toLocaleString()}</span>
+            <span className="col-span-4 text-sm font-bold">¥{(slot.price || 5000).toLocaleString()}</span>
           </div>
         </div>
         <DialogFooter className="sm:justify-between">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             キャンセル
           </Button>
-          <Button onClick={handleConfirm}>
-            決済に進む
+          <Button onClick={handleConfirm} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                処理中...
+              </>
+            ) : (
+              '決済に進む'
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
