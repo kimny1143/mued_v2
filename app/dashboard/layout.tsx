@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 //import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
@@ -60,6 +60,34 @@ export default function DashboardLayout({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({});
   
+  // メモ化された値を使用して現在アクティブなメニューを判断
+  const activeMenuItem = React.useMemo(() => {
+    return dashboardNavItems.find(item => 
+      pathname === item.path || (item.subMenu?.some(sub => pathname === sub.path))
+    );
+  }, [pathname]);
+  
+  // 初期レンダリング後にアクティブなメニューを展開
+  useEffect(() => {
+    // パスが変わった時に、そのパスを含むメニュー項目があれば展開
+    const menuToExpand = dashboardNavItems.find(item => 
+      item.subMenu?.some(sub => pathname === sub.path)
+    );
+    
+    if (menuToExpand) {
+      setExpandedMenus(prev => {
+        // すでに設定されていれば状態更新をスキップ
+        if (prev[menuToExpand.label]) return prev;
+        
+        // メニュー展開状態の更新のみを行い、不要な再レンダリングを避ける
+        return {
+          ...prev,
+          [menuToExpand.label]: true
+        };
+      });
+    }
+  }, [pathname]);
+  
   // 展開されたメニューの切り替え
   const toggleSubmenu = (label: string) => {
     setExpandedMenus(prev => ({
@@ -68,32 +96,27 @@ export default function DashboardLayout({
     }));
   };
   
-  // メニュー項目が選択されているかチェック
-  const isMenuActive = (path: string, subMenu?: Array<{ label: string; path: string }>) => {
+  // メニュー項目が選択されているかチェック - メモ化してレンダリングを最適化
+  const isMenuActive = useCallback((path: string, subMenu?: Array<{ label: string; path: string }>) => {
     if (pathname === path) return true;
     if (subMenu) {
       return subMenu.some(item => pathname === item.path);
     }
     return false;
-  };
-  
-  // サブメニューの初期展開状態を設定
-  useEffect(() => {
-    dashboardNavItems.forEach(item => {
-      if (item.subMenu && item.subMenu.some(sub => pathname === sub.path)) {
-        setExpandedMenus(prev => ({
-          ...prev,
-          [item.label]: true
-        }));
-      }
-    });
   }, [pathname]);
   
   // ユーザー情報を取得
   useEffect(() => {
+    // フラグを使って一度だけ実行するようにする
+    let isMounted = true;
+    
     const getUser = async () => {
       try {
         const { data } = await supabase.auth.getSession();
+        
+        // コンポーネントがアンマウントされていたら何もしない
+        if (!isMounted) return;
+        
         setUser(data.session?.user || null);
         setLoading(false);
         
@@ -103,7 +126,9 @@ export default function DashboardLayout({
         }
       } catch (err) {
         console.error("セッション取得エラー:", err);
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     
@@ -112,7 +137,10 @@ export default function DashboardLayout({
     // 認証状態の変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setUser(session?.user || null);
+        // コンポーネントがマウントされていれば状態更新
+        if (isMounted) {
+          setUser(session?.user || null);
+        }
         // サインアウト時にリダイレクト
         if (event === 'SIGNED_OUT') {
           router.push('/login');
@@ -121,9 +149,10 @@ export default function DashboardLayout({
     );
     
     return () => {
+      isMounted = false; // アンマウント時にフラグをfalseに
       subscription.unsubscribe();
     };
-  }, [router]);
+  }, [router]); // 依存配列を最小限に
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -293,12 +322,18 @@ export default function DashboardLayout({
                     } ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
                     onClick={() => {
                       if (item.subMenu && !isSidebarCollapsed) {
+                        // サブメニューがある場合はトグル
                         toggleSubmenu(item.label);
                       } else if (item.subMenu && isSidebarCollapsed) {
                         // 折りたたまれた状態でサブメニューがある場合は最初のサブメニューに遷移
-                        router.push(item.subMenu[0].path);
-                        setIsSidebarOpen(false);
-                      } else {
+                        // 現在のパスと同じなら遷移しない（不要な再レンダリングを避ける）
+                        const firstSubItem = item.subMenu[0];
+                        if (pathname !== firstSubItem.path) {
+                          router.push(firstSubItem.path);
+                          setIsSidebarOpen(false);
+                        }
+                      } else if (pathname !== item.path) {
+                        // 現在のパスと異なる場合のみ遷移（不要な再レンダリングを避ける）
                         router.push(item.path);
                         setIsSidebarOpen(false);
                       }
@@ -327,8 +362,11 @@ export default function DashboardLayout({
                             pathname === subItem.path ? 'bg-black text-white' : ''
                           }`}
                           onClick={() => {
-                            router.push(subItem.path);
-                            setIsSidebarOpen(false);
+                            // 現在のパスと異なる場合のみ遷移（不要な再レンダリングを避ける）
+                            if (pathname !== subItem.path) {
+                              router.push(subItem.path);
+                              setIsSidebarOpen(false);
+                            }
                           }}
                         >
                           <span className="text-sm">{subItem.label}</span>
