@@ -90,14 +90,17 @@ console.log(`- Vercel URL: ${process.env.VERCEL_URL || 'なし'}`);
 // Supabaseの認証状態が変わったときのハンドラーを設定
 if (typeof window !== 'undefined') {
   // クライアント側でのみ実行
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'INITIAL_SESSION') {
       console.log(`認証設定: コールバックURLを設定 - ${siteUrl}/api/auth/callback`);
-      // 認証後のリダイレクト先を設定
-      // この方法はクライアントサイドのみで有効（TypeScriptエラーを回避）
-      const authConfig = { redirectTo: `${siteUrl}/api/auth/callback` };
-      // @ts-ignore - 型エラーを無視
-      supabase.auth.setAuth(authConfig);
+      // 非推奨のsetAuth()を使わない方法で設定
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${siteUrl}/api/auth/callback`
+        }
+      });
+      if (error) console.error("リダイレクト設定エラー:", error);
     } else if (event === 'SIGNED_IN' && session) {
       console.log('ログイン検知 - ユーザー:', session.user.email);
     } else if (event === 'SIGNED_OUT') {

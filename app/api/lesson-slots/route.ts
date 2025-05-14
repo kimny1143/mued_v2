@@ -16,6 +16,22 @@ export async function GET(request: NextRequest) {
   console.log("レッスンスロットAPI呼び出し - URL:", request.url);
   
   try {
+    // データベース接続テスト
+    try {
+      // 簡単なクエリでDB接続をテスト
+      await prisma.$queryRaw`SELECT 1 as connection_test`;
+      console.log("データベース接続テスト: 成功");
+    } catch (dbError) {
+      console.error("データベース接続テスト: 失敗", dbError);
+      return NextResponse.json({ 
+        error: "データベース接続エラー", 
+        details: dbError instanceof Error ? dbError.message : "不明なエラー",
+        database_url: process.env.DATABASE_URL ? "設定済み (形式非表示)" : "未設定",
+        connection_type: process.env.DATABASE_URL?.includes("pooler.supabase.com") 
+          ? "Transaction Pooler" : "Direct Connection"
+      }, { status: 500 });
+    }
+    
     // セッション情報を取得（デバッグ用）
     const sessionInfo = await getSessionFromRequest(request);
     console.log("API - 認証状態:", sessionInfo ? "認証済み" : "未認証", 
