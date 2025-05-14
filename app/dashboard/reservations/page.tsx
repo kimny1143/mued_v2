@@ -112,6 +112,9 @@ export default function ReservationsPage() {
   // 予約一覧を取得する関数
   const fetchReservations = useCallback(async () => {
     try {
+      // 初期化前の短い待機時間を追加（認証トークンの準備を待つ）
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // 認証トークンを取得
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) {
@@ -157,6 +160,9 @@ export default function ReservationsPage() {
   // レッスンスロットを取得する関数
   const fetchLessonSlots = useCallback(async () => {
     try {
+      // 初期化前の短い待機時間を追加（認証トークンの準備を待つ）
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
         throw new Error('ログインが必要です');
@@ -210,11 +216,15 @@ export default function ReservationsPage() {
     data: reservations = [], 
     isLoading: reservationsLoading,
     error: reservationsError,
-    refetch: refetchReservations
+    refetch: refetchReservations,
+    isFetching: reservationsFetching
   } = useQuery({
     queryKey: ['reservations'],
     queryFn: fetchReservations,
     enabled: !!user,
+    retry: 3,
+    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 30000),
+    staleTime: 1000 * 60 * 3 // 3分間キャッシュを有効に
   });
 
   // レッスンスロットのクエリ
@@ -222,11 +232,15 @@ export default function ReservationsPage() {
     data: lessonSlots = [],
     isLoading: slotsLoading,
     error: slotsError,
-    refetch: refetchSlots
+    refetch: refetchSlots,
+    isFetching: slotsFetching
   } = useQuery({
     queryKey: ['lessonSlots'],
     queryFn: fetchLessonSlots,
     enabled: !!user,
+    retry: 3,
+    retryDelay: attempt => Math.min(1000 * 2 ** attempt, 30000),
+    staleTime: 1000 * 60 * 3 // 3分間キャッシュを有効に
   });
 
   // ステータスに応じたバッジのスタイルを返す関数
@@ -296,6 +310,11 @@ export default function ReservationsPage() {
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
             <span>予約済みレッスン</span>
+            {reservationsFetching && !reservationsLoading && (
+              <span className="inline-block ml-2 text-xs text-blue-500 animate-pulse">
+                データ取得中...
+              </span>
+            )}
           </div>
         </h2>
 
@@ -313,6 +332,10 @@ export default function ReservationsPage() {
               <div>
                 <h3 className="text-lg font-semibold text-red-700 mb-1">予約データの取得に失敗しました</h3>
                 <p className="text-red-600 mb-4">{(reservationsError as Error).message}</p>
+                <p className="text-sm text-gray-700 mb-2">
+                  接続の問題が発生している可能性があります。自動的に再試行していますが、
+                  しばらく待っても解決しない場合は再取得ボタンを押してください。
+                </p>
                 <div className="flex space-x-3">
                   <Button onClick={() => refetchReservations()} variant="outline">
                     再取得
@@ -430,6 +453,11 @@ export default function ReservationsPage() {
           <div className="flex items-center gap-2">
             <PlusCircleIcon className="h-5 w-5" />
             <span>予約可能なレッスン</span>
+            {slotsFetching && !slotsLoading && (
+              <span className="inline-block ml-2 text-xs text-blue-500 animate-pulse">
+                データ取得中...
+              </span>
+            )}
           </div>
         </h2>
 
@@ -447,6 +475,10 @@ export default function ReservationsPage() {
               <div>
                 <h3 className="text-lg font-semibold text-red-700 mb-1">レッスン枠の取得に失敗しました</h3>
                 <p className="text-red-600 mb-4">{(slotsError as Error).message}</p>
+                <p className="text-sm text-gray-700 mb-2">
+                  データベース接続に問題が発生している可能性があります。自動的に再試行していますが、
+                  しばらく待っても解決しない場合は再取得ボタンを押してください。
+                </p>
                 <div className="flex space-x-3">
                   <Button onClick={() => refetchSlots()} variant="outline">
                     再取得
