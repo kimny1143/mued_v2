@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { CheckCircleIcon } from 'lucide-react';
 import { ReservationSuccessContent } from '../../../components/reservation/_components/ReservationSuccessContent';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { prisma } from '@/lib/prisma';
 
 interface SuccessPageProps {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -10,9 +12,45 @@ interface SuccessPageProps {
 
 export default async function SuccessPage({ searchParams }: SuccessPageProps) {
   const sessionId = searchParams.session_id as string;
+  const reservationId = searchParams.reservation_id as string;
 
-  if (!sessionId) {
+  if (!sessionId && !reservationId) {
     redirect('/dashboard/reservations');
+  }
+
+  let reservationData = null;
+  
+  // 予約IDがある場合はDBから予約情報を直接取得
+  if (reservationId) {
+    try {
+      const reservation = await prisma.reservation.findUnique({
+        where: { id: reservationId },
+        include: {
+          slot: {
+            include: {
+              teacher: true
+            }
+          },
+          student: true
+        }
+      });
+      
+      if (reservation) {
+        reservationData = {
+          id: reservation.id,
+          status: reservation.status,
+          paymentStatus: reservation.paymentStatus,
+          slot: {
+            id: reservation.slot.id,
+            startTime: reservation.slot.startTime.toISOString(),
+            endTime: reservation.slot.endTime.toISOString(),
+            teacherName: reservation.slot.teacher?.name || '不明な講師'
+          }
+        };
+      }
+    } catch (error) {
+      console.error('予約データ取得エラー:', error);
+    }
   }
 
   return (
@@ -27,7 +65,33 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
         </div>
 
         <div className="p-6">
-          <ReservationSuccessContent sessionId={sessionId} />
+          {reservationData ? (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4">予約内容</h2>
+              <div className="bg-gray-50 p-4 rounded-md space-y-3">
+                <div className="grid grid-cols-3 gap-2">
+                  <span className="text-gray-600 text-sm">予約ID:</span>
+                  <span className="col-span-2 text-sm font-medium">{reservationData.id}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <span className="text-gray-600 text-sm">ステータス:</span>
+                  <span className="col-span-2 text-sm font-medium">{reservationData.status}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <span className="text-gray-600 text-sm">開始時間:</span>
+                  <span className="col-span-2 text-sm font-medium">
+                    {new Date(reservationData.slot.startTime).toLocaleString()}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <span className="text-gray-600 text-sm">講師名:</span>
+                  <span className="col-span-2 text-sm font-medium">{reservationData.slot.teacherName}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <ReservationSuccessContent sessionId={sessionId} />
+          )}
           
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/dashboard/reservations" className="btn-secondary">

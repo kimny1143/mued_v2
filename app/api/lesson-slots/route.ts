@@ -25,7 +25,7 @@ async function getSingleLessonPrice() {
       priceId: 'price_1ROXvxRYtspYtD2zVhMlsy6M',
       unitAmount: 5000, // 50ドル = 5000セント
       currency: 'usd',
-      productId: 'prod_SJAGaI15P8MPGs'
+      productId: 'prod_test_singlelesson'
     };
   }
 }
@@ -41,95 +41,85 @@ type LessonSlotWhereInput = {
 
 // レッスンスロット一覧を取得
 export async function GET(request: NextRequest) {
-  console.log("レッスンスロットAPI呼び出し - URL:", request.url);
-  
   try {
-    // データベース接続テスト
-    try {
-      // 簡単なクエリでDB接続をテスト
-      await prisma.$queryRaw`SELECT 1 as connection_test`;
-      console.log("データベース接続テスト: 成功");
-    } catch (dbError) {
-      console.error("データベース接続テスト: 失敗", dbError);
-      return NextResponse.json({ 
-        error: "データベース接続エラー", 
-        details: dbError instanceof Error ? dbError.message : "不明なエラー",
-        database_url: process.env.DATABASE_URL ? "設定済み (形式非表示)" : "未設定",
-        connection_type: process.env.DATABASE_URL?.includes("pooler.supabase.com") 
-          ? "Transaction Pooler" : "Direct Connection"
-      }, { status: 500 });
-    }
-    
-    // セッション情報を取得（デバッグ用）
+    // セッション情報を取得
     const sessionInfo = await getSessionFromRequest(request);
-    console.log("API - 認証状態:", sessionInfo ? "認証済み" : "未認証", 
-      sessionInfo?.user?.email || "メール情報なし");
     
-    // URLからクエリパラメータを取得
-    const { searchParams } = new URL(request.url);
-    const teacherId = searchParams.get('teacherId');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
+    console.log("認証状態:", sessionInfo ? "認証済み" : "未認証", 
+                sessionInfo?.user?.email || "メール情報なし");
     
-    console.log("API - クエリパラメータ:", { teacherId, startDate, endDate });
-    
-    // クエリ条件を構築
-    const where: LessonSlotWhereInput = {};
-    
-    if (teacherId) {
-      where.teacherId = teacherId;
+    if (!sessionInfo) {
+      return NextResponse.json(
+        { error: '認証が必要です' },
+        { status: 401 }
+      );
     }
     
-    if (startDate && endDate) {
-      where.startTime = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      };
-    }
-    
-    console.log("API - クエリ条件:", JSON.stringify(where));
-    
-    // Stripeから単体レッスン価格情報を取得
-    const lessonPrice = await getSingleLessonPrice();
-    console.log("単体レッスン価格情報:", lessonPrice);
-    
-    // データベースからスロットを取得
-    const slots = await prisma.lessonSlot.findMany({
-      where,
-      orderBy: {
-        startTime: 'asc',
+    // 現在以降の利用可能なレッスン枠を取得
+    const lessonSlots = await prisma.lessonSlot.findMany({
+      where: {
+        startTime: {
+          gte: new Date(), // 現在時刻以降
+        },
       },
       include: {
         teacher: {
           select: {
             id: true,
             name: true,
-            email: true,
             image: true,
           },
         },
+        // 予約情報も取得
+        reservations: {
+          select: {
+            id: true,
+            status: true,
+            paymentStatus: true,
+            studentId: true,
+          }
+        }
+      },
+      orderBy: {
+        startTime: 'asc',
       },
     });
+
+    // Stripeから単体レッスン価格を取得
+    const priceInfo = await getSingleLessonPrice();
     
-    console.log(`API - 取得結果: ${slots.length}件のスロット`);
-    
-    // 各スロットに価格情報を付与
-    const slotsWithPrice = slots.map(slot => ({
-      ...slot,
-      price: lessonPrice.unitAmount,
-      currency: lessonPrice.currency,
-      priceId: lessonPrice.priceId
+    // レスポンスデータを整形
+    const formattedSlots = lessonSlots.map(slot => ({
+      id: slot.id,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      teacherId: slot.teacherId,
+      teacher: slot.teacher ? {
+        id: slot.teacher.id,
+        name: slot.teacher.name,
+        image: slot.teacher.image,
+      } : null,
+      mentorName: slot.teacher?.name || undefined,
+      isAvailable: slot.isAvailable,
+      // Stripe価格情報を追加
+      price: priceInfo.unitAmount,
+      currency: priceInfo.currency,
+      priceId: priceInfo.priceId,
+      // 予約情報
+      reservations: slot.reservations,
+      createdAt: slot.createdAt,
+      updatedAt: slot.updatedAt,
     }));
-    
-    return NextResponse.json(slotsWithPrice);
+
+    return NextResponse.json(formattedSlots);
   } catch (error) {
-    console.error('Error fetching lesson slots:', error);
-    // エラー詳細をレスポンスに含める
+    console.error("レッスンスロット取得エラー:", error);
+    
     return NextResponse.json(
       { 
-        error: '時間枠の取得中にエラーが発生しました', 
-        details: String(error),
-        stack: error instanceof Error ? error.stack : undefined 
+        error: 'レッスンスロットの取得中にエラーが発生しました', 
+        details: error instanceof Error ? error.message : String(error),
+        database_url: process.env.DATABASE_URL ? '設定済み (形式非表示)' : '未設定',
       },
       { status: 500 }
     );

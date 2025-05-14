@@ -298,7 +298,7 @@ export async function POST(request: NextRequest) {
       // チェックアウトセッションを作成
       const session = await createCheckoutSession({
         priceId: LESSON_PRICE_ID, // 直接固定IDを使用
-        successUrl: `${baseUrl}/dashboard/reservations/success?session_id=${newReservation.id}`,
+        successUrl: `${baseUrl}/dashboard/reservations/success?session_id=${newReservation.id}&reservation_id=${newReservation.id}`,
         cancelUrl: `${baseUrl}/dashboard/reservations`,
         metadata: {
           reservationId: newReservation.id,

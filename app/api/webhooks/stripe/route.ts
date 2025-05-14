@@ -342,6 +342,17 @@ async function handleCompletedLessonPayment(session: Stripe.Checkout.Session) {
     
     console.log(`レッスン支払い処理: 予約ID=${reservationId}, スロットID=${slotId}`);
     
+    // 現在のスロット状態を確認
+    const currentSlot = await prisma.lessonSlot.findUnique({
+      where: { id: slotId }
+    });
+    
+    console.log("現在のスロット状態:", {
+      id: currentSlot?.id,
+      isAvailable: currentSlot?.isAvailable,
+      teacherId: currentSlot?.teacherId
+    });
+    
     // 予約を更新: 状態を確定済み(CONFIRMED)に、支払い状態を支払い済み(PAID)に
     const updatedReservation = await prisma.reservation.update({
       where: { id: reservationId },
@@ -359,18 +370,36 @@ async function handleCompletedLessonPayment(session: Stripe.Checkout.Session) {
     });
     
     // レッスンスロットを更新: 利用不可に設定
-    const updatedSlot = await prisma.lessonSlot.update({
-      where: { id: slotId },
-      data: {
-        isAvailable: false, // スロットを予約済み状態に
-      },
-    });
-    
-    console.log('レッスンスロット更新完了:', {
-      id: updatedSlot.id,
-      isAvailable: updatedSlot.isAvailable,
-      teacherId: updatedSlot.teacherId
-    });
+    try {
+      const updatedSlot = await prisma.lessonSlot.update({
+        where: { id: slotId },
+        data: {
+          isAvailable: false, // スロットを予約済み状態に
+        },
+      });
+      
+      console.log('レッスンスロット更新完了:', {
+        id: updatedSlot.id,
+        isAvailable: updatedSlot.isAvailable,
+        teacherId: updatedSlot.teacherId
+      });
+    } catch (slotError) {
+      console.error("レッスンスロット更新エラー:", slotError);
+      
+      // 再試行: もう一度明示的にスロットの利用状態を更新
+      try {
+        await prisma.$executeRaw`
+          UPDATE "lesson_slots" 
+          SET "isAvailable" = false
+          WHERE id = ${slotId}
+        `;
+        console.log("SQLで直接スロット状態を更新しました");
+      } catch (rawError) {
+        console.error("SQL直接更新エラー:", rawError);
+        // エラーを再スロー
+        throw new Error(`レッスンスロット更新に失敗: ${String(rawError)}`);
+      }
+    }
     
     // ここで通知送信などの追加処理を行うこともできます
     
