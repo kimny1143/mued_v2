@@ -72,9 +72,9 @@ fi
 
 # APIルートに動的フラグを追加
 echo -e "${YELLOW}APIルートに動的フラグを追加しています...${NC}"
-if [ -f "scripts/add-dynamic-flag.ts" ]; then
+if [ -f "scripts/add-dynamic-flag.js" ]; then
   echo -e "${GREEN}APIルート動的フラグ追加スクリプトを実行します${NC}"
-  npx ts-node scripts/add-dynamic-flag.ts
+  node scripts/add-dynamic-flag.js
 else
   echo -e "${YELLOW}警告: APIルート動的フラグ追加スクリプトが見つかりません。スキップします。${NC}"
 fi
