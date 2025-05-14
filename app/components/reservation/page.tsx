@@ -69,7 +69,19 @@ const createReservation = async (slotId: string) => {
     throw new Error(errorData.error || 'レッスンの予約に失敗しました');
   }
   
-  return res.json();
+  const responseData = await res.json();
+  
+  // 成功時のリダイレクト先を /dashboard/reservations に更新
+  if (responseData.checkoutUrl) {
+    return responseData;
+  } else if (responseData.sessionId) {
+    return {
+      ...responseData,
+      redirectUrl: `/dashboard/reservations/success?session_id=${responseData.sessionId}`
+    };
+  }
+  
+  return responseData;
 };
 
 export const ReservationPage: React.FC = () => {
@@ -125,10 +137,17 @@ export const ReservationPage: React.FC = () => {
   // 予約作成のミューテーション
   const reserveMutation = useMutation({
     mutationFn: createReservation,
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success('レッスンの予約が完了しました');
       queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
       setIsModalOpen(false);
+      
+      // 新しいリダイレクト処理
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else if (data.redirectUrl) {
+        router.push(data.redirectUrl);
+      }
     },
     onError: (error: Error) => {
       toast.error(`予約エラー: ${error.message}`);
