@@ -81,204 +81,103 @@ interface LessonSlot {
 }
 
 export default function ReservationsPage() {
-  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [lessonSlots, setLessonSlots] = useState<LessonSlot[]>([]);
+  const [dataFetchAttempt, setDataFetchAttempt] = useState(0);
   const router = useRouter();
-  const queryClient = useQueryClient();
 
-  // Supabase認証状態を確認
   useEffect(() => {
-    const getUser = async () => {
+    // 認証状態の確認とデータ取得
+    const initializeData = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) console.error("認証エラー:", error);
-        
-        if (!data.session) {
-          console.log("未認証状態 - ログインが必要です");
+        // 1. 認証チェック
+        const { data: authData, error: authError } = await supabase.auth.getSession();
+        if (authError || !authData.session) {
+          console.log("認証エラーまたは未ログイン:", authError);
           router.push('/login');
           return;
         }
         
-        setUser(data.session.user);
+        setUser(authData.session.user);
         
-        // 認証完了後、初期化用のタイマーを設定
-        // これはSupabaseとの初期接続を安定させるための待機時間
-        setTimeout(() => {
-          setInitializing(false);
-          setLoading(false);
-        }, 2000);
+        // 2. データ取得準備のため少し待機（Supabase接続安定化）
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
-      } catch (err) {
-        console.error("セッション取得エラー:", err);
+        // 3. 予約とレッスンスロットを並行で取得
+        const [reservationsResponse, slotsResponse] = await Promise.all([
+          fetch('/api/reservations', {
+            headers: {
+              'Authorization': `Bearer ${authData.session.access_token}`,
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache, no-store'
+            }
+          }),
+          fetch('/api/lesson-slots', {
+            headers: {
+              'Authorization': `Bearer ${authData.session.access_token}`,
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache, no-store'
+            }
+          })
+        ]);
+        
+        // 4. レスポンス処理
+        if (!reservationsResponse.ok || !slotsResponse.ok) {
+          throw new Error('データ取得に失敗しました');
+        }
+        
+        // 5. データをパース
+        const reservationsData = await reservationsResponse.json();
+        const slotsData = await slotsResponse.json();
+        
+        // 6. レッスンスロットの処理（利用可能なもののみ）
+        const availableSlots = slotsData.filter((slot: LessonSlot) => {
+          if (!slot.isAvailable) return false;
+          
+          if (slot.reservations && slot.reservations.length > 0) {
+            if (slot.reservations.some(res => 
+              res.status === 'CONFIRMED' || 
+              res.paymentStatus === 'PAID')) {
+              return false;
+            }
+          }
+          
+          return true;
+        }).sort((a: LessonSlot, b: LessonSlot) => {
+          return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+        });
+        
+        // 7. 状態を更新
+        setReservations(reservationsData);
+        setLessonSlots(availableSlots);
         setLoading(false);
-        setInitializing(false);
+        
+      } catch (error) {
+        console.error("データ初期化エラー:", error);
+        // エラー時は少し待ってから再取得を試みる
+        if (dataFetchAttempt < 3) {
+          setTimeout(() => {
+            setDataFetchAttempt(prev => prev + 1);
+          }, 3000);
+        } else {
+          // 3回試行しても失敗したら空の配列で表示
+          setReservations([]);
+          setLessonSlots([]);
+          setLoading(false);
+        }
       }
     };
     
-    getUser();
-  }, [router]);
-
-  // 予約一覧を取得する関数
-  const fetchReservations = useCallback(async () => {
-    // 十分な待機時間を確保
-    if (initializing) {
-      await new Promise(resolve => setTimeout(resolve, 2500));
-    }
-    
-    try {
-      // 認証トークンを取得
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error('認証セッション取得エラー:', sessionError);
-        throw new Error('認証情報の取得に失敗しました');
-      }
-      
-      if (!sessionData.session) {
-        throw new Error('ログインが必要です');
-      }
-      
-      const token = sessionData.session.access_token;
-      
-      // テスト用にランダムなクエリパラメータを追加して、キャッシュを回避
-      const timestamp = new Date().getTime();
-      const randomParam = Math.floor(Math.random() * 1000);
-      
-      // APIから予約一覧を取得（明示的に認証トークンを含める）
-      const response = await fetch(`/api/reservations?nocache=${timestamp}-${randomParam}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('APIエラーレスポンス:', errorData);
-        throw new Error(errorData.error || '予約一覧の取得に失敗しました');
-      }
-      
-      const data = await response.json();
-      console.log('取得した予約データ:', data);
-      
-      return data;
-    } catch (err) {
-      console.error('予約取得エラー:', err);
-      // エラーをスローせず、空の配列を返すことで画面表示を維持
-      return [];
-    }
-  }, [initializing]);
-
-  // レッスンスロットを取得する関数
-  const fetchLessonSlots = useCallback(async () => {
-    // 十分な待機時間を確保
-    if (initializing) {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-    }
-    
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        throw new Error('ログインが必要です');
-      }
-      
-      const token = sessionData.session.access_token;
-      
-      // APIからレッスンスロット一覧を取得
-      const response = await fetch('/api/lesson-slots', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'レッスンスロットの取得に失敗しました');
-      }
-      
-      const data = await response.json();
-      
-      // スロットの可用性をチェック - すでに予約があるものは除外
-      const availableSlots = data.filter((slot: LessonSlot) => {
-        if (!slot.isAvailable) return false;
-        
-        if (slot.reservations && slot.reservations.length > 0) {
-          if (slot.reservations.some(res => 
-            res.status === 'CONFIRMED' || 
-            res.paymentStatus === 'PAID')) {
-            return false;
-          }
-        }
-        
-        return true;
-      });
-      
-      // 日付でソート
-      return availableSlots.sort((a: LessonSlot, b: LessonSlot) => {
-        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-      });
-    } catch (err) {
-      console.error('レッスンスロット取得エラー:', err);
-      // エラーをスローせず、空の配列を返すことで画面表示を維持
-      return [];
-    }
-  }, [initializing]);
-
-  // 予約一覧のクエリ
-  const { 
-    data: reservations = [], 
-    isLoading: reservationsLoading,
-    isFetching: reservationsFetching,
-    refetch: refetchReservations
-  } = useQuery({
-    queryKey: ['reservations'],
-    queryFn: fetchReservations,
-    enabled: !!user && !initializing,
-    staleTime: 1000 * 60 * 3, // 3分間キャッシュを有効に
-    // 自動更新間隔を固定値に設定
-    refetchInterval: 8000,
-  });
-
-  // 予約データがない場合は更新間隔を短くする
-  useEffect(() => {
-    if (reservations.length === 0) {
-      const intervalId = setInterval(() => {
-        refetchReservations();
-      }, 5000);
-      
-      return () => clearInterval(intervalId);
-    }
-  }, [reservations.length, refetchReservations]);
-
-  // レッスンスロットのクエリ
-  const {
-    data: lessonSlots = [],
-    isLoading: slotsLoading,
-    isFetching: slotsFetching,
-    refetch: refetchSlots
-  } = useQuery({
-    queryKey: ['lessonSlots'],
-    queryFn: fetchLessonSlots,
-    enabled: !!user && !initializing,
-    staleTime: 1000 * 60 * 3, // 3分間キャッシュを有効に
-    // 自動更新間隔を固定値に設定
-    refetchInterval: 10000,
-  });
-
-  // レッスンスロットがない場合は更新間隔を短くする
-  useEffect(() => {
-    if (lessonSlots.length === 0) {
-      const intervalId = setInterval(() => {
-        refetchSlots();
-      }, 6000);
-      
-      return () => clearInterval(intervalId);
-    }
-  }, [lessonSlots.length, refetchSlots]);
-
+    initializeData();
+  }, [router, dataFetchAttempt]);
+  
+  // レッスン予約処理
+  const handleBooking = (slotId: string) => {
+    router.push(`/dashboard/reservations/book?slotId=${slotId}`);
+  };
+  
   // ステータスに応じたバッジのスタイルを返す関数
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -315,26 +214,27 @@ export default function ReservationsPage() {
     }
   };
   
-  // 予約ボタンがクリックされたときの処理
-  const handleBooking = (slotId: string) => {
-    router.push(`/dashboard/reservations/book?slotId=${slotId}`);
-  };
-  
-  if (loading || initializing) {
+  // データロード中の表示
+  if (loading) {
     return (
       <div className="flex flex-col justify-center items-center h-[60vh]">
         <div className="text-center">
           <Loader2Icon className="h-12 w-12 mx-auto mb-4 text-primary animate-spin" />
-          <h3 className="text-lg font-medium mb-2">データベース接続中...</h3>
+          <h3 className="text-lg font-medium mb-2">データ読み込み中...</h3>
           <p className="text-sm text-gray-500 max-w-md mx-auto">
-            サーバーへ接続しています。この処理には少し時間がかかる場合があります。
-            しばらくお待ちください。
+            予約情報とレッスン枠を読み込んでいます。
+            {dataFetchAttempt > 0 && (
+              <span className="block mt-2 text-blue-500">
+                再取得を試みています ({dataFetchAttempt}/3)
+              </span>
+            )}
           </p>
         </div>
       </div>
     );
   }
 
+  // データロード完了後の表示
   return (
     <>
       <header className="mb-6">
@@ -350,23 +250,10 @@ export default function ReservationsPage() {
           <div className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
             <span>予約済みレッスン</span>
-            {reservationsFetching && (
-              <span className="inline-block ml-2 text-xs text-blue-500">
-                <Loader2Icon className="h-3 w-3 inline mr-1 animate-spin" />
-                更新中...
-              </span>
-            )}
           </div>
         </h2>
 
-        {reservationsLoading ? (
-          <div className="flex justify-center items-center h-48">
-            <div className="animate-pulse text-center">
-              <CalendarIcon className="h-10 w-10 mx-auto mb-4 text-gray-400" />
-              <p>予約情報を読み込み中...</p>
-            </div>
-          </div>
-        ) : reservations.length > 0 ? (
+        {reservations.length > 0 ? (
           <>
             {/* デスクトップ表示 */}
             <div className="hidden lg:block">
@@ -382,7 +269,7 @@ export default function ReservationsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {reservations.map((reservation: Reservation) => (
+                    {reservations.map((reservation) => (
                       <TableRow key={reservation.id}>
                         <TableCell className="font-medium">
                           <div className="flex flex-col">
@@ -423,7 +310,7 @@ export default function ReservationsPage() {
 
             {/* モバイル表示 */}
             <div className="lg:hidden space-y-4">
-              {reservations.map((reservation: Reservation) => (
+              {reservations.map((reservation) => (
                 <Card key={reservation.id} className="p-4">
                   <div className="mb-2 flex justify-between items-start">
                     <div>
@@ -465,12 +352,6 @@ export default function ReservationsPage() {
             <p className="text-gray-500 mb-4">
               現在予約中のレッスンはありません。下記から新しいレッスンを予約してみましょう。
             </p>
-            {reservationsFetching && (
-              <p className="text-sm text-blue-500 mb-2">
-                <Loader2Icon className="h-3 w-3 inline mr-1 animate-spin" />
-                データ取得中...
-              </p>
-            )}
           </div>
         )}
       </section>
@@ -481,23 +362,10 @@ export default function ReservationsPage() {
           <div className="flex items-center gap-2">
             <PlusCircleIcon className="h-5 w-5" />
             <span>予約可能なレッスン</span>
-            {slotsFetching && (
-              <span className="inline-block ml-2 text-xs text-blue-500">
-                <Loader2Icon className="h-3 w-3 inline mr-1 animate-spin" />
-                更新中...
-              </span>
-            )}
           </div>
         </h2>
 
-        {slotsLoading ? (
-          <div className="flex justify-center items-center h-48">
-            <div className="animate-pulse text-center">
-              <CalendarIcon className="h-10 w-10 mx-auto mb-4 text-gray-400" />
-              <p>レッスン枠を読み込み中...</p>
-            </div>
-          </div>
-        ) : lessonSlots.length > 0 ? (
+        {lessonSlots.length > 0 ? (
           <>
             {/* デスクトップ表示 */}
             <div className="hidden lg:block">
@@ -513,7 +381,7 @@ export default function ReservationsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {lessonSlots.map((slot: LessonSlot) => (
+                    {lessonSlots.map((slot) => (
                       <TableRow key={slot.id}>
                         <TableCell className="font-medium">
                           <div className="flex flex-col">
@@ -556,7 +424,7 @@ export default function ReservationsPage() {
 
             {/* モバイル表示 */}
             <div className="lg:hidden space-y-4">
-              {lessonSlots.map((slot: LessonSlot) => (
+              {lessonSlots.map((slot) => (
                 <Card key={slot.id} className="p-4">
                   <div className="mb-2 flex justify-between items-start">
                     <div>
@@ -602,13 +470,10 @@ export default function ReservationsPage() {
             <p className="text-gray-500 mb-4">
               現在予約可能なレッスン枠はありません。しばらく経ってから再度確認してください。
             </p>
-            {slotsFetching && (
-              <p className="text-sm text-blue-500 mb-2">
-                <Loader2Icon className="h-3 w-3 inline mr-1 animate-spin" />
-                データ取得中...
-              </p>
-            )}
-            <Button onClick={() => refetchSlots()}>
+            <Button onClick={() => {
+              setLoading(true);
+              setDataFetchAttempt(prev => prev + 1);
+            }}>
               再読み込み
             </Button>
           </div>
