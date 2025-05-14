@@ -106,8 +106,14 @@ export async function GET(request: NextRequest) {
 // 新しい予約を作成
 export async function POST(request: NextRequest) {
   try {
+    console.log("予約作成リクエスト受信");
+    
     // セッション情報を取得
     const sessionInfo = await getSessionFromRequest(request);
+    
+    console.log("認証状態:", sessionInfo ? "認証済み" : "未認証", 
+                sessionInfo?.user?.email || "メール情報なし", 
+                "ロール:", sessionInfo?.role || "ロールなし");
     
     if (!sessionInfo) {
       return NextResponse.json(
@@ -117,6 +123,7 @@ export async function POST(request: NextRequest) {
     }
     
     const data = await request.json();
+    console.log("リクエストデータ:", data);
     
     // 入力検証
     if (!data.slotId) {
@@ -140,6 +147,14 @@ export async function POST(request: NextRequest) {
       },
     });
     
+    console.log("スロット情報:", {
+      found: !!slot,
+      isAvailable: slot?.isAvailable,
+      reservationsCount: slot?.reservations.length,
+      startTime: slot?.startTime,
+      teacherId: slot?.teacherId
+    });
+    
     if (!slot) {
       return NextResponse.json(
         { error: '指定されたレッスン枠が見つかりませんでした' },
@@ -149,6 +164,7 @@ export async function POST(request: NextRequest) {
     
     // スロットが利用可能か確認
     if (!slot.isAvailable) {
+      console.log("スロット利用不可: isAvailable=false");
       return NextResponse.json(
         { error: 'このレッスン枠は現在予約できません' },
         { status: 409 }
@@ -157,6 +173,7 @@ export async function POST(request: NextRequest) {
     
     // すでに予約が存在するか確認
     if (slot.reservations.length > 0) {
+      console.log("既存予約あり:", slot.reservations);
       return NextResponse.json(
         { error: 'このレッスン枠は既に予約されています' },
         { status: 409 }
@@ -180,6 +197,12 @@ export async function POST(request: NextRequest) {
     }
     
     // 予約を作成
+    console.log("新規予約作成:", {
+      slotId: data.slotId,
+      studentId: sessionInfo.user.id,
+      notes: data.notes
+    });
+    
     const newReservation = await prisma.reservation.create({
       data: {
         slotId: data.slotId,
@@ -210,11 +233,23 @@ export async function POST(request: NextRequest) {
       },
     });
     
-    return NextResponse.json(newReservation, { status: 201 });
+    console.log("予約作成成功:", {
+      id: newReservation.id,
+      status: newReservation.status,
+      paymentStatus: newReservation.paymentStatus
+    });
+
+    // ★ TODO: ここでStripe決済処理への連携が必要
+    // 現段階では決済処理なしで成功扱い
+    return NextResponse.json({
+      ...newReservation,
+      sessionId: newReservation.id // 簡易的な実装。本来はStripeセッションIDを返す
+    }, { status: 201 });
+    
   } catch (error) {
-    console.error('Error creating reservation:', error);
+    console.error('予約作成エラー:', error);
     return NextResponse.json(
-      { error: '予約の作成中にエラーが発生しました' },
+      { error: '予約の作成中にエラーが発生しました', details: String(error) },
       { status: 500 }
     );
   }
