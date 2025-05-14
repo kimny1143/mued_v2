@@ -22,6 +22,10 @@ interface Subscription {
   subscription_id?: string;
 }
 
+// 全体的なエラー回数を記録（リロードするまで保持）
+let globalErrorCount = 0;
+const MAX_GLOBAL_ERRORS = 5;
+
 /**
  * サブスクリプション情報を取得するカスタムフック
  * サーバーAPIを使用してデータベースから最新のサブスクリプション情報を取得
@@ -32,15 +36,23 @@ export function useSubscription() {
   const [error, setError] = useState<Error | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
   const [retryCount, setRetryCount] = useState<number>(0);
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 2; // 3回から2回に減らす
 
   const fetchSubscription = useCallback(async (forceRefresh = false) => {
     try {
+      // グローバルエラーカウントが上限を超えていたら早期リターン
+      if (globalErrorCount >= MAX_GLOBAL_ERRORS) {
+        console.warn(`エラー回数が上限(${MAX_GLOBAL_ERRORS}回)を超えたため、サブスクリプション情報取得を中断します`);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       
-      // 連続した呼び出しを防ぐ（最低1秒の間隔を確保）- 強制更新の場合はスキップ
+      // 連続した呼び出しを防ぐ（最低2秒の間隔を確保）- 強制更新の場合でも最低0.5秒は空ける
       const now = Date.now();
-      if (!forceRefresh && now - lastFetchTime < 1000) {
+      const minInterval = forceRefresh ? 500 : 2000; // 間隔を長く
+      if (now - lastFetchTime < minInterval) {
         console.log('サブスクリプション取得: 連続呼び出しを制限');
         setLoading(false);
         return;
@@ -90,11 +102,12 @@ export function useSubscription() {
           console.log(`認証エラーが発生しました。セッションをリフレッシュして再試行します (${retryCount + 1}/${MAX_RETRIES})`);
           await supabase.auth.refreshSession(); // セッションリフレッシュ
           setRetryCount(prev => prev + 1);
+          globalErrorCount++;
           
           // 短い遅延を入れてリトライ
           setTimeout(() => {
             fetchSubscription(true);
-          }, 1000);
+          }, 2000); // 遅延を2秒に延長
           return;
         }
         
@@ -110,24 +123,36 @@ export function useSubscription() {
       
       // APIがエラーを返した場合
       if (data.error) {
-        // データベース権限エラーの場合はセッションのリフレッシュを試みる
+        // データベース権限エラーの場合
         if (data.error.includes('permission denied') && retryCount < MAX_RETRIES) {
           console.log(`DB権限エラーが発生しました。セッションをリフレッシュして再試行します (${retryCount + 1}/${MAX_RETRIES})`);
-          // セッションリフレッシュ
-          const { error: refreshError } = await supabase.auth.refreshSession();
           
-          if (refreshError) {
-            console.error('セッションリフレッシュエラー:', refreshError);
-            throw new Error(`セッションリフレッシュに失敗しました: ${refreshError.message}`);
+          // グローバルエラーカウントを増やす
+          globalErrorCount++;
+          
+          // グローバルエラー回数が上限以下の場合のみリトライ
+          if (globalErrorCount < MAX_GLOBAL_ERRORS) {
+            // セッションリフレッシュ
+            const { error: refreshError } = await supabase.auth.refreshSession();
+            
+            if (refreshError) {
+              console.error('セッションリフレッシュエラー:', refreshError);
+              throw new Error(`セッションリフレッシュに失敗しました: ${refreshError.message}`);
+            }
+            
+            setRetryCount(prev => prev + 1);
+            
+            // より長い遅延を入れてリトライ
+            setTimeout(() => {
+              fetchSubscription(true);
+            }, 3000); // 遅延を3秒に延長
+            return;
+          } else {
+            console.warn(`エラー回数が上限(${MAX_GLOBAL_ERRORS}回)を超えたため、リトライを中止します`);
+            // 権限エラーを無視して進む - 実質サブスクリプションなしと判断
+            setSubscription(null); 
+            return;
           }
-          
-          setRetryCount(prev => prev + 1);
-          
-          // 短い遅延を入れてリトライ
-          setTimeout(() => {
-            fetchSubscription(true);
-          }, 1000);
-          return;
         }
         
         throw new Error(data.error);
@@ -136,9 +161,15 @@ export function useSubscription() {
       // サブスクリプションデータを状態に設定
       setSubscription(data.subscription);
       setError(null);
+      
+      // 成功したらグローバルエラーカウントをリセット
+      globalErrorCount = 0;
     } catch (err) {
       console.error('サブスクリプション取得エラー:', err);
       setError(err instanceof Error ? err : new Error(String(err)));
+      
+      // エラーを記録
+      globalErrorCount++;
       
       // エラー時にはnullをセット
       setSubscription(null);
@@ -152,8 +183,8 @@ export function useSubscription() {
     // 初回読み込み
     fetchSubscription();
     
-    // 定期的にサブスクリプション情報を更新（60秒ごと）
-    const intervalId = setInterval(fetchSubscription, 60000);
+    // 定期的にサブスクリプション情報を更新（3分ごと - 長く）
+    const intervalId = setInterval(fetchSubscription, 180000);
     
     // クリーンアップ
     return () => {
@@ -163,8 +194,13 @@ export function useSubscription() {
 
   // 手動更新メソッドも提供
   const refreshSubscription = useCallback(() => {
-    setRetryCount(0); // リトライカウントをリセット
-    fetchSubscription(true);
+    // グローバルエラーカウントが上限未満の場合のみ実行
+    if (globalErrorCount < MAX_GLOBAL_ERRORS) {
+      setRetryCount(0); // リトライカウントをリセット
+      fetchSubscription(true);
+    } else {
+      console.warn(`エラー回数が上限(${MAX_GLOBAL_ERRORS}回)を超えているため、手動更新をスキップします`);
+    }
   }, [fetchSubscription]);
 
   return {
