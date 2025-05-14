@@ -1,6 +1,34 @@
 import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
+import { stripe } from '@/lib/stripe';
+
+// Stripeから単体レッスン価格を取得する関数
+async function getSingleLessonPrice() {
+  try {
+    // 単体レッスン用の価格ID
+    const LESSON_PRICE_ID = 'price_1ROXvxRYtspYtD2zVhMlsy6M';
+    
+    // 価格情報を取得
+    const price = await stripe.prices.retrieve(LESSON_PRICE_ID);
+    
+    return {
+      priceId: price.id,
+      unitAmount: price.unit_amount,
+      currency: price.currency,
+      productId: typeof price.product === 'string' ? price.product : price.product?.id
+    };
+  } catch (error) {
+    console.error('単体レッスン価格取得エラー:', error);
+    // エラー時はデフォルト値を返す
+    return {
+      priceId: 'price_1ROXvxRYtspYtD2zVhMlsy6M',
+      unitAmount: 5000, // 50ドル = 5000セント
+      currency: 'usd',
+      productId: 'prod_SJAGaI15P8MPGs'
+    };
+  }
+}
 
 // WhereInputの型を定義
 type LessonSlotWhereInput = {
@@ -61,6 +89,10 @@ export async function GET(request: NextRequest) {
     
     console.log("API - クエリ条件:", JSON.stringify(where));
     
+    // Stripeから単体レッスン価格情報を取得
+    const lessonPrice = await getSingleLessonPrice();
+    console.log("単体レッスン価格情報:", lessonPrice);
+    
     // データベースからスロットを取得
     const slots = await prisma.lessonSlot.findMany({
       where,
@@ -81,7 +113,15 @@ export async function GET(request: NextRequest) {
     
     console.log(`API - 取得結果: ${slots.length}件のスロット`);
     
-    return NextResponse.json(slots);
+    // 各スロットに価格情報を付与
+    const slotsWithPrice = slots.map(slot => ({
+      ...slot,
+      price: lessonPrice.unitAmount,
+      currency: lessonPrice.currency,
+      priceId: lessonPrice.priceId
+    }));
+    
+    return NextResponse.json(slotsWithPrice);
   } catch (error) {
     console.error('Error fetching lesson slots:', error);
     // エラー詳細をレスポンスに含める

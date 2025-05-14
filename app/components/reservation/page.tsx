@@ -84,6 +84,27 @@ const createReservation = async (slotId: string) => {
   return responseData;
 };
 
+// 通貨記号とフォーマット関数
+function formatCurrency(amount: number, currency = 'usd'): string {
+  if (!amount) return '0';
+  
+  // 単位を修正（センント -> 実際の通貨単位）
+  const actualAmount = amount / 100;
+  
+  // 通貨シンボルの設定
+  const currencySymbols: Record<string, string> = {
+    usd: '$',
+    jpy: '¥',
+    eur: '€',
+    gbp: '£',
+  };
+  
+  const symbol = currencySymbols[currency.toLowerCase()] || currency.toUpperCase();
+  
+  // 通貨記号と金額を結合して返す
+  return `${symbol}${actualAmount.toLocaleString()}`;
+}
+
 export const ReservationPage: React.FC = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -252,7 +273,7 @@ export const ReservationPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ¥{(lesson.price || 5000).toLocaleString()}
+                    {formatCurrency(lesson.price || 5000, lesson.currency || 'usd')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <Button
@@ -302,7 +323,7 @@ export const ReservationPage: React.FC = () => {
               <div>
                 <div className="text-sm font-medium">{lesson.teacher ? lesson.teacher.name : lesson.mentorName}</div>
                 <div className="text-sm text-gray-500">
-                  ¥{(lesson.price || 5000).toLocaleString()}
+                  {formatCurrency(lesson.price || 5000, lesson.currency || 'usd')}
                 </div>
               </div>
               <Button

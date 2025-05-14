@@ -23,6 +23,27 @@ interface ReservationModalProps {
   isLoading?: boolean;
 }
 
+// 通貨フォーマット関数
+function formatCurrency(amount: number, currency = 'usd'): string {
+  if (!amount) return '0';
+  
+  // 単位を修正（センット -> 実際の通貨単位）
+  const actualAmount = amount / 100;
+  
+  // 通貨シンボルの設定
+  const currencySymbols: Record<string, string> = {
+    usd: '$',
+    jpy: '¥',
+    eur: '€',
+    gbp: '£',
+  };
+  
+  const symbol = currencySymbols[currency.toLowerCase()] || currency.toUpperCase();
+  
+  // 通貨記号と金額を結合して返す
+  return `${symbol}${actualAmount.toLocaleString()}`;
+}
+
 export const ReservationModal: React.FC<ReservationModalProps> = ({
   isOpen,
   onClose,
@@ -79,7 +100,9 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
           </div>
           <div className="grid grid-cols-5 items-center gap-4">
             <span className="col-span-1 font-medium text-sm">料金:</span>
-            <span className="col-span-4 text-sm font-bold">¥{(slot.price || 5000).toLocaleString()}</span>
+            <span className="col-span-4 text-sm font-bold">
+              {formatCurrency(slot.price || 5000, slot.currency || 'usd')}
+            </span>
           </div>
         </div>
         <DialogFooter className="sm:justify-between">

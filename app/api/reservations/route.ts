@@ -245,10 +245,25 @@ export async function POST(request: NextRequest) {
     // Stripe決済処理を作成
     try {
       const baseUrl = getBaseUrl();
-      // 単体レッスン用の価格ID - $50価格に設定
-      const LESSON_PRICE_ID = 'prod_SJAGaI15P8MPGs'; // あなたの実際のPrice ID
+      // 単体レッスン用の正しい価格ID
+      const LESSON_PRICE_ID = 'price_1ROXvxRYtspYtD2zVhMlsy6M';
       
       console.log("設定された単体レッスン価格ID:", LESSON_PRICE_ID);
+      
+      // 価格IDが実際に存在するか検証
+      try {
+        // 価格情報を取得して詳細をログ
+        const price = await stripe.prices.retrieve(LESSON_PRICE_ID);
+        console.log("単体レッスン価格情報:", {
+          id: price.id,
+          amount: price.unit_amount,
+          currency: price.currency,
+          product: typeof price.product === 'string' ? price.product : price.product?.id
+        });
+      } catch (priceError) {
+        console.error("価格検証エラー:", priceError);
+        // エラー時も処理を継続
+      }
       
       // チェックアウトセッションを作成
       const session = await createCheckoutSession({
