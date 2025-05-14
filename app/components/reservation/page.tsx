@@ -14,135 +14,13 @@ import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
-import { useSupabaseSession, useSupabaseClient } from '@supabase/auth-helpers-nextjs';
-import { Spinner } from '@/components/Spinner';
-import { Toaster } from '@/components/Toaster';
+import { Toaster } from 'sonner';
 
-// APIからレッスンスロットを取得する関数
-const fetchLessonSlots = useCallback(async () => {
-  try {
-    setIsLoading(true);
-    setError(null);
-    
-    console.log('API通信開始 - 認証トークン:', session?.data ? '有効' : 'なし');
-    
-    // APIからレッスンスロット一覧を取得
-    const response = await fetch('/api/lesson-slots');
-    
-    if (!response.ok) {
-      const errorResponse = await response.json();
-      console.error('APIエラーレスポンス:', errorResponse);
-      
-      throw new Error(
-        errorResponse.error || 
-        `API通信エラー: ${response.status} ${response.statusText}`
-      );
-    }
-    
-    const data: LessonSlot[] = await response.json();
-    
-    console.log(`取得したレッスンスロット: ${data.length}件`);
-    
-    // スロットの可用性をチェック - すでに予約があるものは除外
-    const availableSlots = data.filter(slot => {
-      // isAvailableフラグがfalseなら確実に予約不可
-      if (!slot.isAvailable) return false;
-      
-      // 予約がある場合は、状態によって判断
-      if (slot.reservations && slot.reservations.length > 0) {
-        // すでに確定済みの予約がある場合は予約不可
-        if (slot.reservations.some(res => 
-          res.status === 'CONFIRMED' || 
-          res.paymentStatus === 'PAID')) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-    
-    // 日付でグループ化する前に、スロットを日付でソート
-    const sortedSlots = availableSlots.sort((a, b) => {
-      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-    });
-    
-    // 表示用にスロットを日付ごとにグループ化
-    const groupedByDate = sortedSlots.reduce((groups: Record<string, LessonSlot[]>, slot) => {
-      const date = new Date(slot.startTime).toLocaleDateString('ja-JP', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric',
-        weekday: 'long'
-      });
-      
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      
-      groups[date].push(slot);
-      return groups;
-    }, {});
-    
-    setLessonSlots(groupedByDate);
-  } catch (error) {
-    console.error('レッスンスロット取得エラー:', error);
-    setError(error as Error);
-  } finally {
-    setIsLoading(false);
-  }
-}, [session]);
-
-// 予約を作成する関数
-const createReservation = async (slotId: string) => {
-  if (!session?.data) {
-    setError(new Error('ログインが必要です。'));
-    return;
-  }
-  
-  try {
-    setIsProcessing(true);
-    setError(null);
-    
-    const response = await fetch('/api/reservations', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ slotId }),
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'レッスン予約に失敗しました');
-    }
-    
-    // 予約成功
-    if (data.url) {
-      // Stripeのチェックアウトページに遷移
-      window.location.href = data.url;
-    } else {
-      // 予約は作成されたがチェックアウトURLがない場合
-      // レッスンスロット一覧を再取得して最新の状態を表示
-      await fetchLessonSlots();
-      setIsModalOpen(false);
-      toast.success('レッスンの予約が完了しました！');
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : '予約処理中にエラーが発生しました';
-    setError(new Error(errorMessage));
-    console.error('予約エラー:', error);
-    toast.error(errorMessage);
-  } finally {
-    setIsProcessing(false);
-  }
-};
-
-// 通貨記号とフォーマット関数
+// 通貨フォーマット関数（コンポーネントの外でも問題ない純関数）
 function formatCurrency(amount: number, currency = 'usd'): string {
   if (!amount) return '0';
   
-  // 単位を修正（センント -> 実際の通貨単位）
+  // 単位を修正（セント -> 実際の通貨単位）
   const actualAmount = amount / 100;
   
   // 通貨シンボルの設定
@@ -170,14 +48,133 @@ export const ReservationPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [lessonSlots, setLessonSlots] = useState<Record<string, LessonSlot[]>>({});
+  const [groupedSlots, setGroupedSlots] = useState<Record<string, LessonSlot[]>>({});
   const isSmallScreen = useMediaQuery({ maxWidth: 1024 });
   
-  // セッション状態を取得
-  const session = useSupabaseSession();
-  
-  // Supabaseクライアント
-  const supabase = useSupabaseClient();
+  // APIからレッスンスロットを取得する関数
+  const fetchLessonSlots = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log('API通信開始 - 認証トークン:', user ? '有効' : 'なし');
+      
+      // APIからレッスンスロット一覧を取得
+      const response = await fetch('/api/lesson-slots');
+      
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        console.error('APIエラーレスポンス:', errorResponse);
+        
+        throw new Error(
+          errorResponse.error || 
+          `API通信エラー: ${response.status} ${response.statusText}`
+        );
+      }
+      
+      const data: LessonSlot[] = await response.json();
+      
+      console.log(`取得したレッスンスロット: ${data.length}件`);
+      
+      // スロットの可用性をチェック - すでに予約があるものは除外
+      const availableSlots = data.filter(slot => {
+        // isAvailableフラグがfalseなら確実に予約不可
+        if (!slot.isAvailable) return false;
+        
+        // 予約がある場合は、状態によって判断
+        if (slot.reservations && slot.reservations.length > 0) {
+          // すでに確定済みの予約がある場合は予約不可
+          if (slot.reservations.some(res => 
+            res.status === 'CONFIRMED' || 
+            res.paymentStatus === 'PAID')) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      // 日付でグループ化する前に、スロットを日付でソート
+      const sortedSlots = availableSlots.sort((a, b) => {
+        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+      });
+      
+      // 表示用にスロットを日付ごとにグループ化
+      const groupedByDate = sortedSlots.reduce((groups: Record<string, LessonSlot[]>, slot) => {
+        const date = new Date(slot.startTime).toLocaleDateString('ja-JP', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          weekday: 'long'
+        });
+        
+        if (!groups[date]) {
+          groups[date] = [];
+        }
+        
+        groups[date].push(slot);
+        return groups;
+      }, {});
+      
+      setGroupedSlots(groupedByDate);
+      return groupedByDate;
+    } catch (error) {
+      console.error('レッスンスロット取得エラー:', error);
+      setError(error as Error);
+      return {};
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  // 予約を作成する関数
+  const createReservation = useCallback(async (slotId: string) => {
+    if (!user) {
+      setError(new Error('ログインが必要です。'));
+      return;
+    }
+    
+    try {
+      setIsProcessing(true);
+      setError(null);
+      
+      const response = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ slotId }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'レッスン予約に失敗しました');
+      }
+      
+      // 予約成功
+      if (data.checkoutUrl) {
+        // Stripeのチェックアウトページに遷移
+        window.location.href = data.checkoutUrl;
+        return data;
+      } else {
+        // 予約は作成されたがチェックアウトURLがない場合
+        // レッスンスロット一覧を再取得して最新の状態を表示
+        await fetchLessonSlots();
+        setIsModalOpen(false);
+        toast.success('レッスンの予約が完了しました！');
+        return data;
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '予約処理中にエラーが発生しました';
+      setError(new Error(errorMessage));
+      console.error('予約エラー:', error);
+      toast.error(errorMessage);
+      throw error;
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [user, fetchLessonSlots]);
 
   // Supabase認証状態を確認
   useEffect(() => {
@@ -205,16 +202,12 @@ export const ReservationPage: React.FC = () => {
   }, [router]);
   
   // React Queryを使ってレッスンスロットを取得
-  const { data: lessonSlots, isLoading: isLoadingSlots, error: queryError } = useQuery({
+  const { data: lessonSlots = {}, isLoading: isLoadingSlots, error: queryError } = useQuery({
     queryKey: ['lessonSlots'],
     queryFn: fetchLessonSlots,
     staleTime: 1000 * 60 * 5, // 5分間キャッシュを有効にする
     // ユーザーが認証されている場合のみクエリを実行
     enabled: !!user,
-    retry: 3, // リトライ回数を設定
-    onError: (err) => {
-      console.error("レッスンスロット取得エラー詳細:", err);
-    }
   });
   
   // 予約作成のミューテーション
@@ -226,9 +219,9 @@ export const ReservationPage: React.FC = () => {
       setIsModalOpen(false);
       
       // 新しいリダイレクト処理
-      if (data.checkoutUrl) {
+      if (data?.checkoutUrl) {
         window.location.href = data.checkoutUrl;
-      } else if (data.redirectUrl) {
+      } else if (data?.redirectUrl) {
         router.push(data.redirectUrl);
       }
     },
