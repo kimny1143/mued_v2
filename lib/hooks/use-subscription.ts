@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../supabase';
 
 /**
  * サブスクリプションデータの型定義
@@ -46,14 +47,28 @@ export function useSubscription() {
       setLastFetchTime(now);
       console.log('APIからサブスクリプション情報を取得します...');
       
-      // APIエンドポイントからデータを取得
+      // Supabaseから認証トークンを取得
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      
+      if (!token) {
+        console.warn('認証トークンがありません - サブスクリプション情報の取得をスキップします');
+        setSubscription(null);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('認証トークン取得成功:', token.substring(0, 10) + '...');
+      
+      // APIエンドポイントからデータを取得（認証ヘッダーを追加）
       const response = await fetch('/api/user/subscription', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Authorization': `Bearer ${token}` // 認証トークンを明示的に設定
         },
-        credentials: 'include' // クッキーをリクエストに含める
+        credentials: 'include' // クッキーも念のため含める
       });
       
       // レスポンスステータスが正常でない場合

@@ -10,7 +10,7 @@ const prismaClientSingleton = () => {
       }
     },
     // エラーログを詳細に
-    log: ['query', 'error', 'warn']
+    log: ['query', 'info', 'warn', 'error']
   });
 };
 

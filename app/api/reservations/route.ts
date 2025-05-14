@@ -245,41 +245,14 @@ export async function POST(request: NextRequest) {
     // Stripe決済処理を作成
     try {
       const baseUrl = getBaseUrl();
-      // 単体レッスン用の価格ID - ここをtest_singlelessonの価格IDに置き換え
-      // 注：実際の価格IDはStripeダッシュボードから取得する必要があります
-      const LESSON_PRICE_ID = 'price_test_singlelesson'; // 暫定的な値
-
-      // 本物のStripe価格IDがセットされているか確認
-      // 本番環境では、この部分を削除またはコメントアウトします
-      let priceId = LESSON_PRICE_ID;
+      // 単体レッスン用の価格ID - $50価格に設定
+      const LESSON_PRICE_ID = 'prod_SJAGaI15P8MPGs'; // あなたの実際のPrice ID
       
-      // 価格IDが正しいフォーマットでない場合（仮の値の場合）、
-      // Stripeから単体レッスン用の価格を探す
-      if (!priceId.startsWith('price_')) {
-        console.log("価格IDを検索中...");
-        const prices = await stripe.prices.list({
-          active: true,
-          limit: 10,
-          expand: ['data.product'],
-        });
-        
-        // 商品名が「test_singlelesson」の価格を探す
-        const singleLessonPrice = prices.data.find(price => {
-          const product = price.product as Stripe.Product;
-          return product.name.includes('test_singlelesson');
-        });
-        
-        if (singleLessonPrice) {
-          priceId = singleLessonPrice.id;
-          console.log(`単体レッスン価格ID: ${priceId}`);
-        } else {
-          console.error("単体レッスン用の価格が見つかりません。Stripeに「test_singlelesson」という名前の商品が設定されていることを確認してください。");
-        }
-      }
+      console.log("設定された単体レッスン価格ID:", LESSON_PRICE_ID);
       
       // チェックアウトセッションを作成
       const session = await createCheckoutSession({
-        priceId: priceId,
+        priceId: LESSON_PRICE_ID, // 直接固定IDを使用
         successUrl: `${baseUrl}/dashboard/reservations/success?session_id=${newReservation.id}`,
         cancelUrl: `${baseUrl}/dashboard/reservations`,
         metadata: {
@@ -288,7 +261,7 @@ export async function POST(request: NextRequest) {
           studentId: sessionInfo.user.id,
           teacherId: newReservation.slot.teacherId,
         },
-        mode: 'payment', // 単発決済
+        mode: 'payment',
       });
       
       console.log("Stripeチェックアウトセッション作成成功:", {
