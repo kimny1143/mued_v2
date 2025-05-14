@@ -17,8 +17,27 @@ import { User } from '@supabase/supabase-js';
 
 // APIからレッスンスロットを取得する関数
 const fetchLessonSlots = async () => {
-  const res = await fetch('/api/lesson-slots');
+  // Supabaseセッションを取得してAuthヘッダーに含める
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
+  
+  // リクエストヘッダーを設定（認証トークンを含める）
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  // ログを追加
+  console.log('API通信開始 - 認証トークン:', token ? '有効' : '無効');
+  
+  const res = await fetch('/api/lesson-slots', { headers });
+  
   if (!res.ok) {
+    const errorText = await res.text();
+    console.error('APIエラーレスポンス:', errorText);
     throw new Error('レッスン枠の取得に失敗しました');
   }
   return res.json();
@@ -26,11 +45,22 @@ const fetchLessonSlots = async () => {
 
 // 予約を作成する関数
 const createReservation = async (slotId: string) => {
+  // Supabaseセッションを取得してAuthヘッダーに含める
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData?.session?.access_token;
+  
+  // リクエストヘッダーを設定
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
   const res = await fetch('/api/reservations', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
     body: JSON.stringify({ slotId }),
   });
   
@@ -58,12 +88,16 @@ export const ReservationPage: React.FC = () => {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
+        if (error) console.error("認証エラー:", error);
+        console.log("認証セッション:", data.session ? "あり" : "なし", data.session?.user?.email);
+        
         setUser(data.session?.user || null);
         setLoading(false);
         
-        // セッションがない場合はログインページへリダイレクト
         if (!data.session) {
+          // ログインページにリダイレクトする前にエラーログ
+          console.log("未認証状態 - ログインが必要です");
           router.push('/login');
         }
       } catch (err) {
@@ -82,6 +116,10 @@ export const ReservationPage: React.FC = () => {
     staleTime: 1000 * 60 * 5, // 5分間キャッシュを有効にする
     // ユーザーが認証されている場合のみクエリを実行
     enabled: !!user,
+    retry: 3, // リトライ回数を設定
+    onError: (err) => {
+      console.error("レッスンスロット取得エラー詳細:", err);
+    }
   });
   
   // 予約作成のミューテーション
@@ -130,9 +168,11 @@ export const ReservationPage: React.FC = () => {
   }
 
   if (error) {
+    console.error("API エラー詳細:", error);
     return (
       <div className="p-4 border border-red-300 bg-red-50 rounded-md">
         <p className="text-red-500">{(error as Error).message}</p>
+        <p className="text-sm text-red-400">ブラウザコンソールで詳細エラーを確認してください</p>
         <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['lessonSlots'] })} className="mt-2">
           再読み込み
         </Button>

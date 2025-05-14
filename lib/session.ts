@@ -8,7 +8,13 @@ import type { Session, User } from '@supabase/supabase-js';
 export async function getServerSession() {
   const { data, error } = await supabase.auth.getSession();
   
-  if (error || !data.session) {
+  if (error) {
+    console.error("サーバーセッション取得エラー:", error);
+    return null;
+  }
+  
+  if (!data.session) {
+    console.log("サーバーセッションなし");
     return null;
   }
   
@@ -20,20 +26,32 @@ export async function getServerSession() {
  * @returns ユーザー情報と権限、または認証されていない場合はnull
  */
 export async function getAuthenticatedUser(): Promise<{user: User, role: string} | null> {
-  const { data: sessionData } = await supabase.auth.getSession();
+  const { data: sessionData, error } = await supabase.auth.getSession();
+  
+  if (error) {
+    console.error("認証ユーザー取得エラー:", error);
+    return null;
+  }
   
   if (!sessionData?.session?.user) {
+    console.log("認証されたユーザーなし");
     return null;
   }
   
   // ユーザープロフィール＋ロールを取得
-  const { data: userData, error } = await supabase
+  const { data: userData, error: profileError } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', sessionData.session.user.id)
     .single();
     
-  if (error || !userData) {
+  if (profileError) {
+    console.error("プロフィール取得エラー:", profileError);
+    return null;
+  }
+  
+  if (!userData) {
+    console.log("ユーザープロフィールなし");
     return null;
   }
   
@@ -54,18 +72,78 @@ export async function getSessionFromRequest(request: Request): Promise<{
   role?: string;
 } | null> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    console.log("リクエストからセッション取得開始");
     
-    if (!session) {
+    // ヘッダーから認証トークンを取得
+    const authHeader = request.headers.get('Authorization');
+    let token = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+      console.log("Authorizationヘッダーからトークン検出");
+    }
+    
+    // 1. Authorizationヘッダーがあればそこからトークンを使ってセッション検証
+    if (token) {
+      const { data, error } = await supabase.auth.getUser(token);
+      
+      if (error) {
+        console.error("トークン認証エラー:", error);
+      } else if (data?.user) {
+        console.log("トークンからユーザー取得成功:", data.user.email);
+        
+        // ユーザープロフィール＋ロールを取得
+        const { data: userData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+          
+        if (profileError) {
+          console.error("プロフィール取得エラー:", profileError);
+        }
+        
+        // セッションオブジェクトを作成（トークンからは直接取得できないため）
+        return {
+          session: {
+            access_token: token,
+            refresh_token: '',
+            expires_in: 3600,
+            expires_at: 0,
+            token_type: 'bearer',
+            user: data.user
+          } as Session,
+          user: data.user,
+          role: userData?.role
+        };
+      }
+    }
+    
+    // 2. 標準のセッション取得（Cookieベース）
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error("標準セッション取得エラー:", error);
       return null;
     }
     
+    if (!session) {
+      console.log("有効なセッションなし");
+      return null;
+    }
+    
+    console.log("セッション取得成功:", session.user.email);
+    
     // ユーザープロフィール＋ロールを取得
-    const { data: userData, error } = await supabase
+    const { data: userData, error: profileError } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', session.user.id)
       .single();
+      
+    if (profileError) {
+      console.error("プロフィール取得エラー:", profileError);
+    }
       
     return {
       session,

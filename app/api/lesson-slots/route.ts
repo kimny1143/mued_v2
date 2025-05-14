@@ -13,12 +13,21 @@ type LessonSlotWhereInput = {
 
 // レッスンスロット一覧を取得
 export async function GET(request: NextRequest) {
+  console.log("レッスンスロットAPI呼び出し - URL:", request.url);
+  
   try {
+    // セッション情報を取得（デバッグ用）
+    const sessionInfo = await getSessionFromRequest(request);
+    console.log("API - 認証状態:", sessionInfo ? "認証済み" : "未認証", 
+      sessionInfo?.user?.email || "メール情報なし");
+    
     // URLからクエリパラメータを取得
     const { searchParams } = new URL(request.url);
     const teacherId = searchParams.get('teacherId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    
+    console.log("API - クエリパラメータ:", { teacherId, startDate, endDate });
     
     // クエリ条件を構築
     const where: LessonSlotWhereInput = {};
@@ -33,6 +42,8 @@ export async function GET(request: NextRequest) {
         lte: new Date(endDate),
       };
     }
+    
+    console.log("API - クエリ条件:", JSON.stringify(where));
     
     // データベースからスロットを取得
     const slots = await prisma.lessonSlot.findMany({
@@ -52,11 +63,18 @@ export async function GET(request: NextRequest) {
       },
     });
     
+    console.log(`API - 取得結果: ${slots.length}件のスロット`);
+    
     return NextResponse.json(slots);
   } catch (error) {
     console.error('Error fetching lesson slots:', error);
+    // エラー詳細をレスポンスに含める
     return NextResponse.json(
-      { error: '時間枠の取得中にエラーが発生しました' },
+      { 
+        error: '時間枠の取得中にエラーが発生しました', 
+        details: String(error),
+        stack: error instanceof Error ? error.stack : undefined 
+      },
       { status: 500 }
     );
   }

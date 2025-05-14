@@ -9,27 +9,43 @@ function getSiteUrl() {
   //   return process.env.NEXT_PUBLIC_DEPLOY_URL;
   // }
 
+  // 環境変数を出力（デバッグ用）
+  console.log('環境変数:', {
+    NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL || 'なし',
+    VERCEL_URL: process.env.VERCEL_URL || 'なし',
+    NODE_ENV: process.env.NODE_ENV || 'development',
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'なし'
+  });
+
   // Vercel環境変数があれば使用
   if (process.env.NEXT_PUBLIC_VERCEL_URL) {
-    return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+    const url = `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`;
+    console.log(`Vercel公開URL(NEXT_PUBLIC)を使用: ${url}`);
+    return url;
   }
   
   // Vercel環境変数（サーバーサイド）
   if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+    const url = `https://${process.env.VERCEL_URL}`;
+    console.log(`Vercel公開URL(サーバー)を使用: ${url}`);
+    return url;
   }
 
   // 本番環境なら固定URL
   if (process.env.NODE_ENV === 'production') {
-    return 'https://mued-lms-fgm.vercel.app';
+    const url = 'https://mued-lms-fgm.vercel.app';
+    console.log(`本番固定URLを使用: ${url}`);
+    return url;
   }
 
   // サイトURLが設定されていれば使用
   if (process.env.NEXT_PUBLIC_SITE_URL) {
+    console.log(`NEXT_PUBLIC_SITE_URLを使用: ${process.env.NEXT_PUBLIC_SITE_URL}`);
     return process.env.NEXT_PUBLIC_SITE_URL;
   }
 
-  // ローカル開発環境
+  // ローカル開発環境のデフォルト
+  console.log(`ローカル開発URLを使用: http://localhost:3000`);
   return 'http://localhost:3000';
 }
 
@@ -40,6 +56,8 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 // 環境変数チェック
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error("Supabase環境変数が設定されていません");
+  console.error("URL:", supabaseUrl ? "設定済み" : "未設定");
+  console.error("ANON_KEY:", supabaseAnonKey ? "設定済み" : "未設定");
 }
 
 // 現在の環境に合わせたサイトURL
@@ -52,9 +70,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    // 以下の設定はSupabaseの側で機能しない可能性がありますが、
-    // 重要なのは明示的なURLの指定が必要なことです
-    flowType: 'implicit'  // 明示的にImplicitフローを指定
+    // 明示的な認証フロー設定
+    flowType: 'implicit'
   },
   global: {
     // こちらがリダイレクトURLのベースとなるURL
@@ -74,10 +91,19 @@ console.log(`- Vercel URL: ${process.env.VERCEL_URL || 'なし'}`);
 if (typeof window !== 'undefined') {
   // クライアント側でのみ実行
   supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' && session) {
+    if (event === 'INITIAL_SESSION') {
+      console.log(`認証設定: コールバックURLを設定 - ${siteUrl}/api/auth/callback`);
+      // 認証後のリダイレクト先を設定
+      // この方法はクライアントサイドのみで有効（TypeScriptエラーを回避）
+      const authConfig = { redirectTo: `${siteUrl}/api/auth/callback` };
+      // @ts-ignore - 型エラーを無視
+      supabase.auth.setAuth(authConfig);
+    } else if (event === 'SIGNED_IN' && session) {
       console.log('ログイン検知 - ユーザー:', session.user.email);
     } else if (event === 'SIGNED_OUT') {
       console.log('ログアウト検知');
+    } else {
+      console.log('認証状態変更:', event);
     }
   });
 }
