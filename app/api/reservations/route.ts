@@ -2,6 +2,9 @@ import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { Prisma } from '@prisma/client';
+import { createCheckoutSession, stripe } from '@/lib/stripe';
+import { getBaseUrl } from '@/lib/utils';
+import Stripe from 'stripe';
 
 // 予約ステータスの列挙型
 enum ReservationStatus {
@@ -239,12 +242,86 @@ export async function POST(request: NextRequest) {
       paymentStatus: newReservation.paymentStatus
     });
 
-    // ★ TODO: ここでStripe決済処理への連携が必要
-    // 現段階では決済処理なしで成功扱い
-    return NextResponse.json({
-      ...newReservation,
-      sessionId: newReservation.id // 簡易的な実装。本来はStripeセッションIDを返す
-    }, { status: 201 });
+    // Stripe決済処理を作成
+    try {
+      const baseUrl = getBaseUrl();
+      // 単体レッスン用の価格ID - ここをtest_singlelessonの価格IDに置き換え
+      // 注：実際の価格IDはStripeダッシュボードから取得する必要があります
+      const LESSON_PRICE_ID = 'price_test_singlelesson'; // 暫定的な値
+
+      // 本物のStripe価格IDがセットされているか確認
+      // 本番環境では、この部分を削除またはコメントアウトします
+      let priceId = LESSON_PRICE_ID;
+      
+      // 価格IDが正しいフォーマットでない場合（仮の値の場合）、
+      // Stripeから単体レッスン用の価格を探す
+      if (!priceId.startsWith('price_')) {
+        console.log("価格IDを検索中...");
+        const prices = await stripe.prices.list({
+          active: true,
+          limit: 10,
+          expand: ['data.product'],
+        });
+        
+        // 商品名が「test_singlelesson」の価格を探す
+        const singleLessonPrice = prices.data.find(price => {
+          const product = price.product as Stripe.Product;
+          return product.name.includes('test_singlelesson');
+        });
+        
+        if (singleLessonPrice) {
+          priceId = singleLessonPrice.id;
+          console.log(`単体レッスン価格ID: ${priceId}`);
+        } else {
+          console.error("単体レッスン用の価格が見つかりません。Stripeに「test_singlelesson」という名前の商品が設定されていることを確認してください。");
+        }
+      }
+      
+      // チェックアウトセッションを作成
+      const session = await createCheckoutSession({
+        priceId: priceId,
+        successUrl: `${baseUrl}/dashboard/reservations/success?session_id=${newReservation.id}`,
+        cancelUrl: `${baseUrl}/dashboard/reservations`,
+        metadata: {
+          reservationId: newReservation.id,
+          slotId: data.slotId,
+          studentId: sessionInfo.user.id,
+          teacherId: newReservation.slot.teacherId,
+        },
+        mode: 'payment', // 単発決済
+      });
+      
+      console.log("Stripeチェックアウトセッション作成成功:", {
+        sessionId: session.id,
+        url: session.url
+      });
+      
+      // 予約を更新してStripeセッションIDを保存
+      await prisma.reservation.update({
+        where: { id: newReservation.id },
+        data: {
+          paymentId: session.id,
+          paymentStatus: PaymentStatus.PROCESSING,
+        }
+      });
+      
+      // クライアントに返す情報
+      return NextResponse.json({
+        ...newReservation,
+        checkoutUrl: session.url,
+        sessionId: session.id
+      }, { status: 201 });
+      
+    } catch (stripeError) {
+      console.error('Stripe決済セッション作成エラー:', stripeError);
+      
+      // エラーが発生したが予約自体は作成済みなので、エラー情報を返す
+      return NextResponse.json({
+        ...newReservation,
+        sessionId: newReservation.id, // フォールバックとして予約IDを返す
+        error: 'お支払い処理の準備中にエラーが発生しました。管理者にお問い合わせください。'
+      }, { status: 201 });
+    }
     
   } catch (error) {
     console.error('予約作成エラー:', error);

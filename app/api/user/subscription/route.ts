@@ -1,35 +1,25 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
-import { cookies } from 'next/headers';
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { getSessionFromRequest } from '@/lib/session';
+import type { NextRequest } from 'next/server';
 
 /**
  * ユーザーのサブスクリプション情報を取得するAPIエンドポイント
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   console.log("サブスクリプション情報取得API呼び出し");
   
   try {
-    // セッションからユーザーを取得（認証済みユーザーのみアクセス可能）
-    const supabase = createServerComponentClient({ cookies });
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    // getSessionFromRequestを使用してヘッダーからトークンを取得
+    const sessionInfo = await getSessionFromRequest(request);
     
     console.log("セッション取得結果:", {
-      hasSession: !!sessionData?.session,
-      userId: sessionData?.session?.user?.id || "なし",
-      email: sessionData?.session?.user?.email || "なし",
-      error: sessionError ? sessionError.message : "なし"
+      hasSession: !!sessionInfo,
+      userId: sessionInfo?.user?.id || "なし",
+      email: sessionInfo?.user?.email || "なし",
     });
     
-    if (sessionError) {
-      console.error("セッション取得エラー:", sessionError);
-      return NextResponse.json(
-        { error: 'セッションの取得に失敗しました', details: sessionError.message },
-        { status: 401 }
-      );
-    }
-    
-    if (!sessionData?.session?.user) {
+    if (!sessionInfo) {
       console.log("未認証アクセス: セッションデータなし");
       return NextResponse.json(
         { error: '認証が必要です' },
@@ -37,7 +27,7 @@ export async function GET() {
       );
     }
     
-    const userId = sessionData.session.user.id;
+    const userId = sessionInfo.user.id;
     console.log(`ユーザー ${userId} のサブスクリプション情報を検索中...`);
     
     // 直接テーブルクエリ
