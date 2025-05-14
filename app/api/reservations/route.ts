@@ -1,5 +1,7 @@
 // 動的ルートフラグ
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 
 import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
@@ -24,6 +26,35 @@ enum PaymentStatus {
   PAID = 'PAID',
   REFUNDED = 'REFUNDED',
   FAILED = 'FAILED'
+}
+
+// Prismaクエリ実行のラッパー関数（エラーハンドリング強化）
+async function executePrismaQuery<T>(queryFn: () => Promise<T>): Promise<T> {
+  try {
+    return await queryFn();
+  } catch (error) {
+    console.error('Prismaクエリエラー:', error);
+    
+    // PostgreSQL接続エラーの場合、一度明示的に接続を再確立
+    if (error instanceof Prisma.PrismaClientInitializationError || 
+        error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.log('Prisma接続リセット試行...');
+      
+      // エラー後の再試行（最大3回）
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          // 少し待機してから再試行
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          return await queryFn();
+        } catch (retryError) {
+          console.error(`再試行 ${attempt + 1}/3 失敗:`, retryError);
+          if (attempt === 2) throw retryError; // 最後の試行でもエラーなら投げる
+        }
+      }
+    }
+    
+    throw error;
+  }
 }
 
 // 予約一覧を取得
@@ -73,8 +104,8 @@ export async function GET(request: NextRequest) {
       where.slotId = slotId;
     }
     
-    // データベースから予約を取得
-    const reservations = await prisma.reservation.findMany({
+    // データベースから予約を取得（エラーハンドリング強化）
+    const reservations = await executePrismaQuery(() => prisma.reservation.findMany({
       where,
       include: {
         slot: {
@@ -103,13 +134,19 @@ export async function GET(request: NextRequest) {
           startTime: 'asc',
         },
       },
-    });
+    }));
     
-    return NextResponse.json(reservations);
+    return NextResponse.json(reservations, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error) {
     console.error('Error fetching reservations:', error);
     return NextResponse.json(
-      { error: '予約の取得中にエラーが発生しました' },
+      { error: '予約の取得中にエラーが発生しました', details: String(error) },
       { status: 500 }
     );
   }
@@ -146,7 +183,7 @@ export async function POST(request: NextRequest) {
     }
     
     // スロットが存在するか確認
-    const slot = await prisma.lessonSlot.findUnique({
+    const slot = await executePrismaQuery(() => prisma.lessonSlot.findUnique({
       where: { id: data.slotId },
       include: {
         reservations: {
@@ -157,7 +194,7 @@ export async function POST(request: NextRequest) {
           },
         },
       },
-    });
+    }));
     
     console.log("スロット情報:", {
       found: !!slot,
@@ -206,7 +243,7 @@ export async function POST(request: NextRequest) {
     // 既存の自分の予約があれば、それをキャンセルする（新しい決済試行のため）
     if (existingOwnReservations.length > 0) {
       console.log("既存の自分の予約をキャンセル:", existingOwnReservations);
-      await prisma.reservation.updateMany({
+      await executePrismaQuery(() => prisma.reservation.updateMany({
         where: {
           slotId: data.slotId,
           studentId: sessionInfo.user.id,
@@ -216,7 +253,7 @@ export async function POST(request: NextRequest) {
           status: ReservationStatus.CANCELLED,
           updatedAt: new Date()
         }
-      });
+      }));
     }
     
     // レッスン枠が過去のものでないことを確認
@@ -242,35 +279,38 @@ export async function POST(request: NextRequest) {
       notes: data.notes
     });
     
-    const newReservation = await prisma.reservation.create({
-      data: {
-        slotId: data.slotId,
-        studentId: sessionInfo.user.id,
-        status: ReservationStatus.PENDING,
-        paymentStatus: PaymentStatus.UNPAID,
-        notes: data.notes,
-      },
-      include: {
-        slot: {
-          include: {
-            teacher: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
+    // トランザクションでの予約作成
+    const newReservation = await executePrismaQuery(() => 
+      prisma.reservation.create({
+        data: {
+          slotId: data.slotId,
+          studentId: sessionInfo.user.id,
+          status: ReservationStatus.PENDING,
+          paymentStatus: PaymentStatus.UNPAID,
+          notes: data.notes,
+        },
+        include: {
+          slot: {
+            include: {
+              teacher: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
               },
             },
           },
-        },
-        student: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+          student: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-    });
+      })
+    );
     
     // この時点ではレッスン枠はまだisAvailable=trueのままにする
     // 決済完了後にWebhookでisAvailable=falseに更新する
@@ -334,20 +374,29 @@ export async function POST(request: NextRequest) {
       });
       
       // 予約を更新してStripeセッションIDを保存
-      await prisma.reservation.update({
-        where: { id: newReservation.id },
-        data: {
-          paymentId: session.id,
-          paymentStatus: PaymentStatus.PROCESSING,
-        }
-      });
+      await executePrismaQuery(() => 
+        prisma.reservation.update({
+          where: { id: newReservation.id },
+          data: {
+            paymentId: session.id,
+            paymentStatus: PaymentStatus.PROCESSING,
+          }
+        })
+      );
       
       // クライアントに返す情報
       return NextResponse.json({
         ...newReservation,
         checkoutUrl: session.url,
         sessionId: session.id
-      }, { status: 201 });
+      }, { 
+        status: 201,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      });
       
     } catch (stripeError) {
       console.error('Stripe決済セッション作成エラー:', stripeError);

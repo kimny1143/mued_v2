@@ -1,10 +1,13 @@
 // 動的ルートフラグ（キャッシュを無効化）
 export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
 
 import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { stripe } from '@/lib/stripe';
+import { Prisma } from '@prisma/client';
 
 // 予約ステータスの列挙型
 enum ReservationStatus {
@@ -21,6 +24,35 @@ enum PaymentStatus {
   PAID = 'PAID',
   REFUNDED = 'REFUNDED',
   FAILED = 'FAILED'
+}
+
+// Prismaクエリ実行のラッパー関数（エラーハンドリング強化）
+async function executePrismaQuery<T>(queryFn: () => Promise<T>): Promise<T> {
+  try {
+    return await queryFn();
+  } catch (error) {
+    console.error('Prismaクエリエラー:', error);
+    
+    // PostgreSQL接続エラーの場合、再試行
+    if (error instanceof Prisma.PrismaClientInitializationError || 
+        error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.log('Prisma接続リセット試行...');
+      
+      // エラー後の再試行（最大3回）
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          // 少し待機してから再試行
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          return await queryFn();
+        } catch (retryError) {
+          console.error(`再試行 ${attempt + 1}/3 失敗:`, retryError);
+          if (attempt === 2) throw retryError; // 最後の試行でもエラーなら投げる
+        }
+      }
+    }
+    
+    throw error;
+  }
 }
 
 // Stripeから単体レッスン価格を取得する関数
@@ -100,7 +132,7 @@ export async function GET(request: NextRequest) {
     
     // 現在以降の利用可能なレッスン枠を取得
     try {
-      const lessonSlots = await prisma.lessonSlot.findMany({
+      const lessonSlots = await executePrismaQuery(() => prisma.lessonSlot.findMany({
         where: {
           startTime: {
             gte: new Date(), // 現在時刻以降
@@ -129,7 +161,7 @@ export async function GET(request: NextRequest) {
         orderBy: {
           startTime: 'asc',
         },
-      });
+      }));
 
       // Stripeから単体レッスン価格を取得
       const priceInfo = await getSingleLessonPrice();
@@ -199,7 +231,13 @@ export async function GET(request: NextRequest) {
         };
       });
 
-      return NextResponse.json(formattedSlots);
+      return NextResponse.json(formattedSlots, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache', 
+          'Expires': '0'
+        }
+      });
     } catch (dbError) {
       console.error("データベースからのレッスンスロット取得エラー:", dbError);
       return NextResponse.json(
@@ -268,7 +306,7 @@ export async function POST(request: NextRequest) {
     }
     
     // スロットの重複をチェック
-    const overlappingSlot = await prisma.lessonSlot.findFirst({
+    const overlappingSlot = await executePrismaQuery(() => prisma.lessonSlot.findFirst({
       where: {
         teacherId: sessionInfo.user.id,
         OR: [
@@ -286,7 +324,7 @@ export async function POST(request: NextRequest) {
           },
         ],
       },
-    });
+    }));
     
     if (overlappingSlot) {
       return NextResponse.json(
@@ -296,20 +334,27 @@ export async function POST(request: NextRequest) {
     }
     
     // 新しいスロットを作成
-    const newSlot = await prisma.lessonSlot.create({
+    const newSlot = await executePrismaQuery(() => prisma.lessonSlot.create({
       data: {
         teacherId: sessionInfo.user.id,
         startTime,
         endTime,
         isAvailable: data.isAvailable ?? true,
       },
-    });
+    }));
     
-    return NextResponse.json(newSlot, { status: 201 });
+    return NextResponse.json(newSlot, { 
+      status: 201,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error) {
     console.error('Error creating lesson slot:', error);
     return NextResponse.json(
-      { error: 'レッスン枠の作成中にエラーが発生しました' },
+      { error: 'レッスン枠の作成中にエラーが発生しました', details: String(error) },
       { status: 500 }
     );
   }

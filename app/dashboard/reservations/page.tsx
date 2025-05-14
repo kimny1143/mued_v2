@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -26,7 +26,6 @@ import {
   TableRow 
 } from '@/app/components/ui/table';
 import { supabase } from '@/lib/supabase';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Toaster } from 'sonner';
 import { User } from '@supabase/supabase-js';
@@ -85,6 +84,9 @@ const fetchWithRetry = async (url: string, token: string, maxRetries = 3) => {
   let lastError;
   let waitTime = 2000; // 初回待機時間：2秒
   
+  // 指数バックオフを実装（最大10秒まで）
+  const getNextWaitTime = (current: number) => Math.min(current * 1.5, 10000);
+  
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       console.log(`${url} - 取得試行 ${attempt + 1}/${maxRetries}`);
@@ -93,7 +95,8 @@ const fetchWithRetry = async (url: string, token: string, maxRetries = 3) => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
         }
       });
       
@@ -109,7 +112,7 @@ const fetchWithRetry = async (url: string, token: string, maxRetries = 3) => {
       if (attempt < maxRetries - 1) {
         // 指数バックオフで待機時間を増加
         await new Promise(resolve => setTimeout(resolve, waitTime));
-        waitTime *= 1.5; // 次回の待機時間を1.5倍に
+        waitTime = getNextWaitTime(waitTime);
       }
     }
   }
@@ -119,6 +122,7 @@ const fetchWithRetry = async (url: string, token: string, maxRetries = 3) => {
 
 export default function ReservationsPage() {
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -144,35 +148,51 @@ export default function ReservationsPage() {
         setUser(authData.session.user);
         
         // 2. データ取得準備のため待機（Supabase接続安定化）
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // 3. 予約とレッスンスロットを並行で取得（リトライ機能付き）
-        const [reservationsData, slotsData] = await Promise.all([
-          fetchWithRetry('/api/reservations', authData.session.access_token),
-          fetchWithRetry('/api/lesson-slots', authData.session.access_token)
-        ]);
-        
-        // 4. レッスンスロットの処理（利用可能なもののみ）
-        const availableSlots = slotsData.filter((slot: LessonSlot) => {
-          if (!slot.isAvailable) return false;
+        try {
+          // 3. 予約とレッスンスロットを並行で取得（リトライ機能付き）
+          const [reservationsData, slotsData] = await Promise.all([
+            fetchWithRetry('/api/reservations', authData.session.access_token, 5),
+            fetchWithRetry('/api/lesson-slots', authData.session.access_token, 5)
+          ]);
           
-          if (slot.reservations && slot.reservations.length > 0) {
-            if (slot.reservations.some(res => 
-              res.status === 'CONFIRMED' || 
-              res.paymentStatus === 'PAID')) {
-              return false;
-            }
-          }
+          // 4. レッスンスロットの処理（利用可能なもののみ）
+          const availableSlots = slotsData
+            .filter((slot: LessonSlot) => {
+              // 利用可能フラグのチェック
+              if (!slot.isAvailable) return false;
+              
+              // 既に予約済みかチェック
+              if (slot.reservations && slot.reservations.length > 0) {
+                if (slot.reservations.some(res => 
+                  res.status === 'CONFIRMED' || 
+                  res.paymentStatus === 'PAID')) {
+                  return false;
+                }
+              }
+              
+              return true;
+            })
+            .sort((a: LessonSlot, b: LessonSlot) => {
+              return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+            });
           
-          return true;
-        }).sort((a: LessonSlot, b: LessonSlot) => {
-          return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-        });
+          // 5. 状態を更新
+          setReservations(reservationsData);
+          setLessonSlots(availableSlots);
+          setError(null);
+        } catch (fetchError) {
+          console.error("データ取得エラー:", fetchError);
+          
+          // エラー発生時も空配列でUIを表示（ユーザーに操作できるようにする）
+          setReservations([]);
+          setLessonSlots([]);
+          setError('データの取得に失敗しました。時間をおいて再読み込みしてください。');
+        }
         
-        // 5. 状態を更新
-        setReservations(reservationsData);
-        setLessonSlots(availableSlots);
         setLoading(false);
+        setInitialLoading(false);
         
       } catch (error) {
         console.error("データ初期化エラー:", error);
@@ -182,6 +202,7 @@ export default function ReservationsPage() {
         setReservations([]);
         setLessonSlots([]);
         setLoading(false);
+        setInitialLoading(false);
       }
     };
     
@@ -229,8 +250,8 @@ export default function ReservationsPage() {
     }
   };
   
-  // データロード中の表示
-  if (loading) {
+  // データ初回読み込み中の表示
+  if (initialLoading) {
     return (
       <div className="flex flex-col justify-center items-center h-[60vh]">
         <div className="text-center">
@@ -244,26 +265,6 @@ export default function ReservationsPage() {
     );
   }
 
-  // エラー発生時の表示
-  if (error) {
-    return (
-      <div className="flex flex-col justify-center items-center h-[60vh]">
-        <div className="text-center">
-          <XIcon className="h-12 w-12 mx-auto mb-4 text-red-500" />
-          <h3 className="text-lg font-medium mb-2">データの読み込みに失敗しました</h3>
-          <p className="text-sm text-gray-500 max-w-md mx-auto mb-4">
-            データの取得中にエラーが発生しました。再読み込みをお試しください。
-          </p>
-          <Button onClick={() => {
-            setDataFetchAttempt(prev => prev + 1);
-          }}>
-            再読み込み
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   // データロード完了後の表示
   return (
     <>
@@ -271,7 +272,24 @@ export default function ReservationsPage() {
         <h1 className="text-2xl font-bold">レッスン予約管理</h1>
         <p className="mt-2 text-gray-600">
           レッスンの予約状況確認と新規予約ができます。
+          {loading && <span className="ml-2 text-xs text-blue-500">更新中...</span>}
         </p>
+        {error && (
+          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+            <div className="flex items-center">
+              <XIcon className="h-4 w-4 mr-2" />
+              <span>{error}</span>
+            </div>
+            <Button 
+              onClick={() => setDataFetchAttempt(prev => prev + 1)} 
+              variant="outline" 
+              size="sm" 
+              className="mt-2 text-xs"
+            >
+              再読み込み
+            </Button>
+          </div>
+        )}
       </header>
 
       {/* マイ予約一覧セクション */}
@@ -500,11 +518,18 @@ export default function ReservationsPage() {
             <p className="text-gray-500 mb-4">
               現在予約可能なレッスン枠はありません。しばらく経ってから再度確認してください。
             </p>
-            <Button onClick={() => {
-              setDataFetchAttempt(prev => prev + 1);
-            }}>
-              再読み込み
-            </Button>
+            {loading ? (
+              <div className="flex justify-center">
+                <Loader2Icon className="h-6 w-6 text-blue-500 animate-spin" />
+              </div>
+            ) : (
+              <Button onClick={() => {
+                setDataFetchAttempt(prev => prev + 1);
+                toast.info("データを再読み込みしています...");
+              }}>
+                再読み込み
+              </Button>
+            )}
           </div>
         )}
       </section>
