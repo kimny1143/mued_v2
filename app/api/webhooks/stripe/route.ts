@@ -2,11 +2,29 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { headers } from 'next/headers';
+import { prisma } from '@/lib/prisma';
 
 // Stripeクライアントの初期化
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16' as any // 型エラー回避
 });
+
+// 予約ステータス列挙型
+enum ReservationStatus {
+  PENDING = 'PENDING',
+  CONFIRMED = 'CONFIRMED',
+  CANCELLED = 'CANCELLED',
+  COMPLETED = 'COMPLETED'
+}
+
+// 支払いステータス列挙型
+enum PaymentStatus {
+  UNPAID = 'UNPAID',
+  PROCESSING = 'PROCESSING',
+  PAID = 'PAID',
+  REFUNDED = 'REFUNDED',
+  FAILED = 'FAILED'
+}
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -48,10 +66,16 @@ export async function POST(req: Request) {
         console.log(`チェックアウト完了イベント: ${session.id}, モード: ${session.mode}`);
         console.log('セッションメタデータ:', session.metadata);
         
-        // セッションモードがサブスクリプションの場合のみ処理
+        // セッションモードがサブスクリプションの場合
         if (session.mode === 'subscription' && session.subscription) {
           console.log(`サブスクリプションID: ${session.subscription}, ユーザーメタデータ:`, session.metadata);
           await handleCompletedSubscriptionCheckout(session);
+        }
+        
+        // 単発決済（レッスン予約）の場合
+        if (session.mode === 'payment' && session.metadata?.reservationId) {
+          console.log(`単発決済: レッスン予約ID=${session.metadata.reservationId}`);
+          await handleCompletedLessonPayment(session);
         }
         break;
       }
@@ -304,4 +328,55 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription)
   }
 
   console.log('サブスクリプションキャンセル完了:', data);
+}
+
+// レッスン決済完了時の処理
+async function handleCompletedLessonPayment(session: Stripe.Checkout.Session) {
+  try {
+    const reservationId = session.metadata?.reservationId;
+    const slotId = session.metadata?.slotId;
+    
+    if (!reservationId || !slotId) {
+      throw new Error('予約IDまたはスロットIDがメタデータにありません');
+    }
+    
+    console.log(`レッスン支払い処理: 予約ID=${reservationId}, スロットID=${slotId}`);
+    
+    // 予約を更新: 状態を確定済み(CONFIRMED)に、支払い状態を支払い済み(PAID)に
+    const updatedReservation = await prisma.reservation.update({
+      where: { id: reservationId },
+      data: {
+        status: ReservationStatus.CONFIRMED,
+        paymentStatus: PaymentStatus.PAID,
+        paymentId: session.id, // 支払いIDを更新
+      },
+    });
+    
+    console.log('予約ステータス更新完了:', {
+      id: updatedReservation.id,
+      status: updatedReservation.status,
+      paymentStatus: updatedReservation.paymentStatus
+    });
+    
+    // レッスンスロットを更新: 利用不可に設定
+    const updatedSlot = await prisma.lessonSlot.update({
+      where: { id: slotId },
+      data: {
+        isAvailable: false, // スロットを予約済み状態に
+      },
+    });
+    
+    console.log('レッスンスロット更新完了:', {
+      id: updatedSlot.id,
+      isAvailable: updatedSlot.isAvailable,
+      teacherId: updatedSlot.teacherId
+    });
+    
+    // ここで通知送信などの追加処理を行うこともできます
+    
+    return { success: true };
+  } catch (error) {
+    console.error('レッスン支払い処理エラー:', error);
+    throw error;
+  }
 } 

@@ -174,13 +174,40 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // すでに予約が存在するか確認
-    if (slot.reservations.length > 0) {
-      console.log("既存予約あり:", slot.reservations);
+    // 既存の予約を確認
+    // - 自分以外の他のユーザーによる予約がある場合は拒否
+    // - 自分自身による既存の予約がある場合は処理を続行（新しい支払い試行として扱う）
+    const existingOtherReservations = slot.reservations.filter(
+      r => r.studentId !== sessionInfo.user.id
+    );
+    
+    if (existingOtherReservations.length > 0) {
+      console.log("他のユーザーによる既存予約あり:", existingOtherReservations);
       return NextResponse.json(
         { error: 'このレッスン枠は既に予約されています' },
         { status: 409 }
       );
+    }
+    
+    // 自分自身による既存予約を確認
+    const existingOwnReservations = slot.reservations.filter(
+      r => r.studentId === sessionInfo.user.id
+    );
+    
+    // 既存の自分の予約があれば、それをキャンセルする（新しい決済試行のため）
+    if (existingOwnReservations.length > 0) {
+      console.log("既存の自分の予約をキャンセル:", existingOwnReservations);
+      await prisma.reservation.updateMany({
+        where: {
+          slotId: data.slotId,
+          studentId: sessionInfo.user.id,
+          status: { in: [ReservationStatus.PENDING, ReservationStatus.CONFIRMED] }
+        },
+        data: { 
+          status: ReservationStatus.CANCELLED,
+          updatedAt: new Date()
+        }
+      });
     }
     
     // レッスン枠が過去のものでないことを確認
@@ -235,6 +262,9 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+    
+    // この時点ではレッスン枠はまだisAvailable=trueのままにする
+    // 決済完了後にWebhookでisAvailable=falseに更新する
     
     console.log("予約作成成功:", {
       id: newReservation.id,
