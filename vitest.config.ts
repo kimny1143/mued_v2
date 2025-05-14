@@ -31,8 +31,6 @@ export default defineConfig({
     env: {
       NEXT_PUBLIC_API_URL: 'http://localhost:3000',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/test_db',
-      NEXTAUTH_URL: 'http://localhost:3000',
-      NEXTAUTH_SECRET: 'test-secret',
     }
   },
   resolve: {

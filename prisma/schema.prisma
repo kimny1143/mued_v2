@@ -13,7 +13,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth.js用のモデル
+// Supabase Auth互換のユーザー認証モデル
 model Account {
   id                String  @id @default(cuid())
   userId            String // User.id を参照 (String UUID)

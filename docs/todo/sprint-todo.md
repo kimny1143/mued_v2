@@ -24,17 +24,17 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
     - [x] FEチーム: `next/link` または `next/navigation` を用いたナビゲーションの実装とテスト。
     - [x] FEチーム: ESLint, Prettier のNext.js App Router対応設定と、全ファイルへの適用。
 
-### Story R0-2: 環境変数・Auth（NextAuth.js）再設定
+### Story R0-2: 環境変数・認証システム（Supabase Auth + Google認証）再設定
 - **担当:** FE & BEチーム
 - **状態:** ✅ 完了
-- **概要:** Next.js App Router環境で環境変数が正しく読み込まれ、NextAuth.jsによる認証フロー（ログイン、ログアウト、セッション管理、保護ルート）が正常に機能することを確認する。
-- **DoD:** 環境変数が正しく読み込まれること。ユーザーがログインでき、保護されたページへのアクセス制御が機能すること。
+- **概要:** Next.js App Router環境で環境変数が正しく読み込まれ、Supabase AuthとGoogle OAuthプロバイダーによる認証フロー（ログイン、ログアウト、セッション管理、保護ルート）が正常に機能することを確認する。
+- **DoD:** 環境変数が正しく読み込まれること。ユーザーがGoogleアカウントでログインでき、保護されたページへのアクセス制御が機能すること。Supabase Authによるセッション管理が正常であること。
 - **タスク:**
     - [x] FE & BE: `.env.local` 等の環境変数ファイルをApp Routerプロジェクトのルートに配置し、`process.env` または `NEXT_PUBLIC_` 経由での読み込みを確認。
-    - [x] FE & BE: NextAuth.js の設定ファイル (`app/api/auth/[...nextauth]/route.ts` 等) をApp RouterのAPI Routes規約に沿って作成・移行。
-    - [x] FE & BE: 認証プロバイダー（例: Google Provider）の設定とコールバックURLの更新。
-    - [x] FE & BE: ログイン、ログアウト機能の実装とテスト。
-    - [x] FE & BE: Middleware (`middleware.ts`) またはRoute Handlersを用いた保護ルートへのアクセス制御テスト。
+    - [x] FE & BE: Supabase Auth関連の設定（Supabaseクライアント初期化、認証ヘルパー関数等）を実装・確認。
+    - [x] FE & BE: Google OAuthプロバイダーの設定（Supabaseダッシュボード及びコード内）とコールバックURLの更新。
+    - [x] FE & BE: Googleアカウントを用いたログイン、ログアウト機能の実装とテスト。
+    - [x] FE & BE: Middleware (`middleware.ts`) またはRoute Handlersを用いた保護ルートへのアクセス制御テスト（Supabaseセッションベース）。
 
 ### Story R0-3: Prisma Client & Edge Functions 動作検証
 - **担当:** BEチーム
@@ -66,6 +66,18 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
     - [x] DevOps: AIサービスのデプロイフローと連携確認:
         - [x] AIサービスとの連携確認を行うビルド前処理の実装 (`scripts/vercel-deploy-prep.sh`)
         - [x] フロントエンドからAIサービスへの接続テストの組み込み
+
+### Story R0-5: 認証まわりのリファクタリングとクリーンアップ
+- **担当:** BEチーム (主に), FEチーム
+- **状態:** ✅ 完了
+- **概要:** Supabase Authへの認証システム集約に伴い、コードベースに残存する可能性のある旧認証システム(NextAuth.js)の参照や設定を整理し、環境変数名の適切な変更や不要なコードの削除を行う。
+- **DoD:** NextAuth.jsへの不要な依存がなくなり、認証関連のコードと設定が一貫性を持ち、Supabase Authベースであることが明確になること。
+- **タスク:**
+    - [x] BE: `lib/googleCalendar.ts`内でGoogle OAuthの`redirect_uri`に使用されている`process.env.NEXTAUTH_URL`を、現在の認証フローに適した環境変数（例: `process.env.NEXT_PUBLIC_SITE_URL` またはSupabaseが提供するコールバックURLを指す適切な変数）に置き換える、またはその使用意図を再検証しドキュメント化する。
+    - [x] BE & FE: `vitest.config.ts`内のNextAuth.js関連の環境変数定義（`NEXTAUTH_URL`, `NEXTAUTH_SECRET`）が不要であれば削除する。
+    - [x] BE: `prisma/schema.prisma`内に残っている「NextAuth.js用のモデル」というコメントを削除または修正する。
+    - [x] BE: `app/api/checkout/lesson/route.ts`内の「実際の実装ではNextAuthなどを使用」という古いコメントを削除または修正する。
+    - [x] FE & BE: その他コードベース全体を`NextAuth`キーワードで検索し、上記以外にも修正・削除すべき箇所がないか最終確認を行う。
 
 ---
 
@@ -116,12 +128,12 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S1-4: QA: Playwright `auth→checkout→reserve` E2E
 - **担当:** QAチーム
-- **状態:** ⚠️ 状況確認中
+- **状態:** ⚠️ 進行中
 - **概要:** ユーザー認証からStripeでの支払い、そしてレッスン予約確定までの一連のコアフローをPlaywrightで自動E2Eテストとして実装する。このE2EテストはStory R0-4で構築されるCI環境で実行されることを前提とする。
 - **DoD:** Playwrightで作成した `auth → checkout → reserve` のE2EテストシナリオがCI環境 (Story R0-4で整備) で安定してGREEN（成功）となること。
 - **タスク:**
-    - [ ] QA: Playwrightのテスト環境をプロジェクトにセットアップ。 (ローカルでの実行環境)
-    - [ ] QA: ユーザー登録・ログイン・ログアウトの認証フローに関するE2Eテストスクリプトを作成。
+    - [x] QA: Playwrightのテスト環境をプロジェクトにセットアップ。 (ローカルでの実行環境)
+    - [x] QA: ユーザー登録・ログイン・ログアウトの認証フローに関するE2Eテストスクリプトを作成。
     - [ ] QA: 商品選択からStripe Checkoutページへのリダイレクト、テスト用カード情報での支払いシミュレーション、成功後のリダイレクト先確認までのE2Eテストスクリプトを作成 (Stripeのテストモードと連携)。
     - [ ] QA: 支払い成功後、予約ページに遷移し、レッスンを予約するフローのE2Eテストスクリプトを作成。
     - [ ] QA: 作成したE2EテストをGitHub Actions等のCI環境で実行できるように設定 (Story R0-4と連携し、Seedスクリプト実行やStripe CLIコンテナ利用を含む)。
@@ -134,40 +146,42 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 ### Story S2-1: Google OAuth & 差分同期サービス
 - **担当:** BEチーム
 - **状態:** ✅ 完了
-- **概要:** NextAuth.jsを用いてGoogle OAuth認証を導入し、ユーザーの同意を得てGoogle Calendar APIにアクセス。レッスン予約情報をユーザーのGoogle Calendarに登録し、またカレンダー側の変更を検知してシステムに反映する双方向の差分同期サービスを実装する。
+- **概要:** Google OAuth認証を導入し、ユーザーの同意を得てGoogle Calendar APIにアクセス。レッスン予約情報をユーザーのGoogle Calendarに登録し、またカレンダー側の変更を検知してシステムに反映する双方向の差分同期サービスを実装する。
 - **DoD:** ユーザーがGoogleアカウントで連携後、MUED LMSでの予約がGoogle Calendarに自動で追加・更新・削除されること。Google Calendar側での変更も一定間隔またはWebhookでMUED LMSに反映されること。同期成功率99%以上を目指す。
 - **タスク:**
-    - [x] BE: NextAuth.jsにGoogle Providerを追加し、OAuth認証フローを実装。Calendar APIスコープの同意取得を含む。
+    - [x] BE: Google OAuth認証フローを実装。Calendar APIスコープの同意取得を含む。
     - [x] BE: Google Calendar APIクライアントライブラリを導入し、`lib/googleCalendar.ts` 等にAPI操作関数群を実装（イベント作成、更新、削除、一覧取得等）。
     - [x] BE: ユーザーの予約情報とGoogle Calendarのイベント情報を比較し、差分のみを同期するロジックを実装。
-    - [x] BE: 同期処理を実行するAPIエンドポイント (`app/api/calendar/sync/route.ts` 等) または定期実行ジョブ (Supabase Cron Jobs等) を作成。
+    - [x] BE: 同期処理を実行するAPIエンドポイント (`app/api/calendar/sync/route.ts` 等) を作成。
     - [x] BE: Google Calendar APIのエラーハンドリング、リトライ機構を実装し、堅牢な同期処理を実現。アクセストークン、リフレッシュトークンの管理も適切に行う。
 
 ### Story S2-2: 予約確定メール (Supabase Trigger + Resend)
 - **担当:** BEチーム
-- **状態:** ⚠️ 状況確認中
+- **状態:** ⚠️ 部分的に実装済み
 - **概要:** ユーザーがレッスン予約を確定した際に、SupabaseのDBトリガーを利用して自動的にResend等のメール配信サービス経由で予約確定メールを送信する機能を実装する。
 - **DoD:** 予約がDBに正常に登録された後、ユーザー指定のメールアドレスに予約詳細情報を含む確定メールが送信されること。メール送信の成功・失敗ログが記録されること。
 - **タスク:**
-    - [ ] BE: `reservations` テーブルへのINSERT操作をトリガーとして発火するSupabase Database Function (PL/pgSQL) または Supabase Edge Function を作成。
-    - [ ] BE: Triggerから呼び出されるEdge Function内で、Resend APIクライアントを用いてメール送信処理を実装。
-    - [ ] BE: 送信するメールのテンプレート（HTML形式推奨）を作成。予約日時、レッスン名、メンター名等の動的情報を含める。
-    - [ ] BE: メールの送信成功・失敗のステータスをログテーブルまたは外部ロギングサービスに記録する処理を実装。
+    - [x] BE: メール送信機能の実装 (`lib/resend.ts`)。
+    - [x] BE: メールテンプレート（HTML形式）を作成。予約日時、レッスン名、メンター名等の動的情報を含める。
+    - [x] BE: `reservations` テーブルへのINSERTまたはUPDATE操作をトリガーとして発火するSupabase Database Function (PL/pgSQL) を作成 (`20250616000001_reservation_email_trigger.sql`)。
+    - [x] BE: Triggerから呼び出されるEdge Function (`supabase/functions/reservation-email`) を作成し、Resend APIクライアントを用いてメール送信処理を実装。
+    - [x] BE: メールの送信成功・失敗のステータスをログテーブル (`email_logs`) に記録する処理を実装。
+    - [ ] BE: 本番環境での統合テストとエラーハンドリングの強化。
 
 ### Story S2-3: ダッシュボード予約ステータス更新
 - **担当:** FEチーム
-- **状態:** ⚠️ 状況確認中
+- **状態:** ⚠️ 部分的に実装済み
 - **概要:** ユーザーダッシュボードに自身の予約一覧を表示し、Supabase Realtime機能を用いて予約ステータス（例: 確定、キャンセル済、完了等）がリアルタイムで更新されるようにする。
 - **DoD:** ダッシュボード上でユーザーの予約一覧が正しく表示されること。予約ステータスに変更があった場合、ページリロードなしに2秒以内にUIに反映されること。
 - **タスク:**
-    - [ ] FE: ユーザーダッシュボード (`app/dashboard/page.tsx` 等) に予約一覧表示セクションを作成。
+    - [x] FE: ユーザーダッシュボード (`app/dashboard/page.tsx`) の基本構造を実装。
     - [ ] FE: Supabase Client (`lib/supabase.ts`) を用いて、`reservations` テーブルの変更をリアルタイムに購読する処理を実装。
     - [ ] FE: リアルタイムで受け取った変更を基に、ダッシュボードの予約一覧UIを動的に更新。
     - [ ] FE: リアルタイム更新のパフォーマンス（遅延2秒以内）を確認・最適化。
 
 ### Story S2-4: DevOps: モニタリング & Alerting (Grafana/Logflare)
 - **担当:** DevOpsチーム
-- **状態:** ⚠️ 状況確認中
+- **状態:** ❌ 未実装
 - **概要:** アプリケーションの健全性を監視するため、Logflare等でログを収集し、Grafana等で主要メトリクスを可視化するダッシュボードを構築。クリティカルなエラー発生時にはアラート通知する仕組みを導入する。
 - **DoD:** 主要APIのエラーレート、レスポンスタイム、システムリソース使用状況等がダッシュボードで確認できること。設定した閾値を超える異常が発生した場合、Slackやメール等で開発チームにアラートが通知されること。
 - **タスク:**
@@ -183,7 +197,7 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S3-1: AI: FastAPI 教材生成エンドポイント v1
 - **担当:** AIチーム
-- **状態:** ⚠️ 状況確認中
+- **状態:** ⚠️ 未着手
 - **概要:** Python/FastAPIで実装されたAIサービスに、ユーザーがアップロードしたPDFファイルを受け取り、Markdown形式に変換して返す教材生成APIエンドポイントのバージョン1を実装する。
 - **DoD:** 指定されたAPIエンドポイントにPDFファイルをPOSTすると、変換されたMarkdownテキストがJSONレスポンスで返却されること。基本的なPDF構造（テキスト、見出しレベル程度）が維持されること。
 - **タスク:**
@@ -195,7 +209,7 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S3-2: FE: 教材ビューワ & マッチングUI
 - **担当:** FEチーム
-- **状態:** ⚠️ 状況確認中
+- **状態:** ⚠️ 未着手
 - **概要:** ユーザーが教材用PDFファイルをアップロードできるUIと、AIサービスによって生成されたMarkdown教材を閲覧できるビューワコンポーネントをフロントエンドに実装する。将来のメンターマッチング機能のためのUIプレースホルダーも検討する。
 - **DoD:** ユーザーが教材PDFをアップロードし、生成されたMarkdownコンテンツをウェブページ上で閲覧できること。Markdownの基本的な書式（見出し、リスト、太字等）が正しく表示されること。
 - **タスク:**
@@ -207,7 +221,7 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S3-3: PM: 財務メトリクス自動集計 PoC
 - **担当:** PM, BEチーム
-- **状態:** ⚠️ 状況確認中
+- **状態:** ⚠️ 未着手
 - **概要:** Stripe API等から売上データを定期的に取得し、Metabase等のBIツールに連携して主要な財務KPI（MRR、Churn Rate等）をダッシュボードで可視化する技術検証（PoC）を行う。
 - **DoD:** Stripeからのテストデータを用いて、MRR等の基本的なKPIがMetabase等のダッシュボードに表示されること。データ取得・連携の自動化（または半自動化）の目処が立つこと。
 - **タスク:**
@@ -218,7 +232,7 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S3-4: 全員: MVP Demo & 投資家向け報告資料
 - **担当:** 全員
-- **状態:** ⚠️ 未着手
+- **状態:** ❌ 未着手
 - **概要:** Sprint 3までの成果物を統合したMVP（Minimum Viable Product）のデモンストレーションを準備・実施し、投資家やステークホルダー向けの進捗報告資料を作成する。
 - **DoD:** 主要機能（認証、決済、予約、カレンダー同期、メール通知、教材生成v1）が連携して動作するMVPデモが成功裏に完了すること。投資家向けの報告資料が完成し、承認されること。
 - **タスク:**
@@ -252,22 +266,3 @@ PR作成時には、関連するIssue番号を必ず記載すること。
 - **元となった議事録:** `docs/dailyconf/20250507daly-2.md`
 - **Cursorルール:** `.cursor/rules/` 配下の各ルールファイル
 - **Figmaデザイン:** (別途共有されるFigmaリンクを参照)
-
----
-
-## 実装進捗概要 (最終更新: 2024-06-15)
-
-1. **Sprint Re:0**: App Router移行は完了しました。CI/CDワークフローも整備されています。
-
-2. **Sprint 1**: コア機能である決済と予約システムの実装が完了しました。Stripe CheckoutとWebhook、レッスンスロットと予約のAPIおよびUI実装が完成しています。
-
-3. **Sprint 2**: Google Calendar同期機能は完了していますが、メール通知機能やリアルタイム更新、モニタリングの実装が引き続き必要です。
-
-4. **認証システム**: NextAuthからSupabaseAuthへの移行が完了し、認証関連の機能が安定しています。
-
-## 今後の重点課題
-
-1. メール通知システムの実装（Story S2-2）
-2. リアルタイム更新とモニタリングシステムの構築（Story S2-3, S2-4）
-3. AI連携による教材生成機能の開発（Sprint 3）
-4. E2Eテスト環境の強化と自動化（Story S1-4）
