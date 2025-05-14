@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getSessionFromRequest } from '@/lib/session';
 import type { NextRequest } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
 /**
  * ユーザーのサブスクリプション情報を取得するAPIエンドポイント
@@ -30,33 +31,58 @@ export async function GET(request: NextRequest) {
     const userId = sessionInfo.user.id;
     console.log(`ユーザー ${userId} のサブスクリプション情報を検索中...`);
     
-    // 直接テーブルクエリ
+    // まずsupabaseAdminを使用して権限エラーを回避
     try {
-      const { data, error } = await supabaseAdmin
+      console.log("管理者権限でサブスクリプションデータを取得試行");
+      const { data: adminData, error: adminError } = await supabaseAdmin
         .from('stripe_user_subscriptions')
         .select('*')
         .eq('userId', userId)
         .maybeSingle();
       
-      if (error) {
-        console.error("サブスクリプション取得エラー:", error);
-        return NextResponse.json({
-          subscription: null,
-          error: error.message
-        });
+      if (adminError) {
+        console.error("管理者権限でのサブスクリプション取得エラー:", adminError);
+        console.log("通常権限でサブスクリプションデータを取得試行");
+        
+        // 通常のsupabaseクライアントでも試行
+        const { data: normalData, error: normalError } = await supabase
+          .from('stripe_user_subscriptions')
+          .select('*')
+          .eq('userId', userId)
+          .maybeSingle();
+        
+        if (normalError) {
+          console.error("通常権限でのサブスクリプション取得エラー:", normalError);
+          
+          return NextResponse.json({
+            subscription: null,
+            error: normalError.message,
+            details: {
+              adminError: adminError.message,
+              normalError: normalError.message,
+              code: normalError.code,
+              hint: normalError.hint
+            }
+          });
+        }
+        
+        console.log("通常権限でサブスクリプション取得結果:", normalData ? "データあり" : "データなし");
+        return NextResponse.json({ subscription: normalData });
       }
       
-      console.log("サブスクリプション取得結果:", data ? "データあり" : "データなし");
+      console.log("管理者権限でサブスクリプション取得結果:", adminData ? "データあり" : "データなし");
+      return NextResponse.json({ subscription: adminData });
       
-      // サブスクリプションがない場合は404ではなく正常応答でnullを返す
-      return NextResponse.json({
-        subscription: data
-      });
     } catch (err) {
       console.error("サブスクリプションクエリエラー:", err);
       return NextResponse.json({
         subscription: null,
-        error: err instanceof Error ? err.message : String(err)
+        error: err instanceof Error ? err.message : String(err),
+        details: {
+          timestamp: new Date().toISOString(),
+          userId: userId,
+          errorType: err instanceof Error ? err.constructor.name : typeof err
+        }
       });
     }
   } catch (err) {
@@ -64,7 +90,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'サーバーエラーが発生しました',
-        details: err instanceof Error ? err.message : String(err)
+        details: err instanceof Error ? err.message : String(err),
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
     );

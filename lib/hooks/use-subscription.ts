@@ -31,14 +31,16 @@ export function useSubscription() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  const [retryCount, setRetryCount] = useState<number>(0);
+  const MAX_RETRIES = 3;
 
-  const fetchSubscription = useCallback(async () => {
+  const fetchSubscription = useCallback(async (forceRefresh = false) => {
     try {
       setLoading(true);
       
-      // 連続した呼び出しを防ぐ（最低1秒の間隔を確保）
+      // 連続した呼び出しを防ぐ（最低1秒の間隔を確保）- 強制更新の場合はスキップ
       const now = Date.now();
-      if (now - lastFetchTime < 1000) {
+      if (!forceRefresh && now - lastFetchTime < 1000) {
         console.log('サブスクリプション取得: 連続呼び出しを制限');
         setLoading(false);
         return;
@@ -73,15 +75,34 @@ export function useSubscription() {
       
       // レスポンスステータスが正常でない場合
       if (!response.ok) {
+        let errorData = null;
         let errorText = '';
+        
         try {
-          const errorData = await response.json();
+          errorData = await response.json();
           errorText = JSON.stringify(errorData);
         } catch {
           errorText = await response.text();
         }
+        
+        // 401エラーの場合は認証セッションをリフレッシュしてリトライ
+        if (response.status === 401 && retryCount < MAX_RETRIES) {
+          console.log(`認証エラーが発生しました。セッションをリフレッシュして再試行します (${retryCount + 1}/${MAX_RETRIES})`);
+          await supabase.auth.refreshSession(); // セッションリフレッシュ
+          setRetryCount(prev => prev + 1);
+          
+          // 短い遅延を入れてリトライ
+          setTimeout(() => {
+            fetchSubscription(true);
+          }, 1000);
+          return;
+        }
+        
         throw new Error(`API エラー: ${response.status} ${errorText}`);
       }
+      
+      // 成功したらリトライカウントをリセット
+      setRetryCount(0);
       
       // レスポンスをJSONとしてパース
       const data = await response.json();
@@ -89,6 +110,26 @@ export function useSubscription() {
       
       // APIがエラーを返した場合
       if (data.error) {
+        // データベース権限エラーの場合はセッションのリフレッシュを試みる
+        if (data.error.includes('permission denied') && retryCount < MAX_RETRIES) {
+          console.log(`DB権限エラーが発生しました。セッションをリフレッシュして再試行します (${retryCount + 1}/${MAX_RETRIES})`);
+          // セッションリフレッシュ
+          const { error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError) {
+            console.error('セッションリフレッシュエラー:', refreshError);
+            throw new Error(`セッションリフレッシュに失敗しました: ${refreshError.message}`);
+          }
+          
+          setRetryCount(prev => prev + 1);
+          
+          // 短い遅延を入れてリトライ
+          setTimeout(() => {
+            fetchSubscription(true);
+          }, 1000);
+          return;
+        }
+        
         throw new Error(data.error);
       }
       
@@ -104,7 +145,7 @@ export function useSubscription() {
     } finally {
       setLoading(false);
     }
-  }, [lastFetchTime]);
+  }, [lastFetchTime, retryCount]);
 
   // コンポーネントマウント時と定期的に取得
   useEffect(() => {
@@ -122,7 +163,8 @@ export function useSubscription() {
 
   // 手動更新メソッドも提供
   const refreshSubscription = useCallback(() => {
-    fetchSubscription();
+    setRetryCount(0); // リトライカウントをリセット
+    fetchSubscription(true);
   }, [fetchSubscription]);
 
   return {
