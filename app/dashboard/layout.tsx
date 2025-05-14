@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
+//import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
   BellIcon, 
@@ -22,15 +22,23 @@ import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import { signOut } from "@/app/actions/auth";
 import { Button } from "@/app/components/ui/button";
-import { cn } from "@/lib/utils";
+//import { cn } from "@/lib/utils";
 
 // ナビゲーション項目
 const dashboardNavItems = [
   { icon: HomeIcon, label: "Dashboard", path: "/dashboard" },
   { icon: FolderIcon, label: "Materials", path: "/dashboard/materials" },
   { icon: BookOpenIcon, label: "My Lessons", path: "/dashboard/my-lessons" },
-  { icon: CalendarIcon, label: "Reservations", path: "/dashboard/reservations" },
-  { icon: DumbbellIcon, label: "Exercise", path: "/dashboard/exercises" },
+  { 
+    icon: CalendarIcon, 
+    label: "Reservations", 
+    path: "/dashboard/reservations",
+    subMenu: [
+      { label: "Book Lesson", path: "/dashboard/reservations" },
+      { label: "My Bookings", path: "/dashboard/my-reservations" }
+    ]
+  },
+  { icon: DumbbellIcon, label: "Exercises", path: "/dashboard/exercises" },
   { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" },
   { icon: SettingsIcon, label: "Settings", path: "/dashboard/settings" }
 ];
@@ -50,6 +58,36 @@ export default function DashboardLayout({
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({});
+  
+  // 展開されたメニューの切り替え
+  const toggleSubmenu = (label: string) => {
+    setExpandedMenus(prev => ({
+      ...prev,
+      [label]: !prev[label]
+    }));
+  };
+  
+  // メニュー項目が選択されているかチェック
+  const isMenuActive = (path: string, subMenu?: Array<{ label: string; path: string }>) => {
+    if (pathname === path) return true;
+    if (subMenu) {
+      return subMenu.some(item => pathname === item.path);
+    }
+    return false;
+  };
+  
+  // サブメニューの初期展開状態を設定
+  useEffect(() => {
+    dashboardNavItems.forEach(item => {
+      if (item.subMenu && item.subMenu.some(sub => pathname === sub.path)) {
+        setExpandedMenus(prev => ({
+          ...prev,
+          [item.label]: true
+        }));
+      }
+    });
+  }, [pathname]);
   
   // ユーザー情報を取得
   useEffect(() => {
@@ -247,20 +285,58 @@ export default function DashboardLayout({
             {/* Navigation */}
             <nav className="space-y-1">
               {dashboardNavItems.map((item, index) => (
-                <Button
-                  key={index}
-                  variant={pathname === item.path ? "default" : "ghost"}
-                  className={`w-full justify-start ${
-                    pathname === item.path ? 'bg-black text-white' : ''
-                  } ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
-                  onClick={() => {
-                    router.push(item.path);
-                    setIsSidebarOpen(false);
-                  }}
-                >
-                  <item.icon className={`h-5 w-5 ${isSidebarCollapsed ? '' : 'mr-3'}`} />
-                  {!isSidebarCollapsed && <span>{item.label}</span>}
-                </Button>
+                <React.Fragment key={index}>
+                  <Button
+                    variant={isMenuActive(item.path, item.subMenu) ? "default" : "ghost"}
+                    className={`w-full justify-start ${
+                      isMenuActive(item.path, item.subMenu) ? 'bg-black text-white' : ''
+                    } ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
+                    onClick={() => {
+                      if (item.subMenu && !isSidebarCollapsed) {
+                        toggleSubmenu(item.label);
+                      } else if (item.subMenu && isSidebarCollapsed) {
+                        // 折りたたまれた状態でサブメニューがある場合は最初のサブメニューに遷移
+                        router.push(item.subMenu[0].path);
+                        setIsSidebarOpen(false);
+                      } else {
+                        router.push(item.path);
+                        setIsSidebarOpen(false);
+                      }
+                    }}
+                  >
+                    <item.icon className={`h-5 w-5 ${isSidebarCollapsed ? '' : 'mr-3'}`} />
+                    {!isSidebarCollapsed && <span>{item.label}</span>}
+                    {!isSidebarCollapsed && item.subMenu && (
+                      <ChevronRightIcon 
+                        className={`ml-auto h-4 w-4 transition-transform ${
+                          expandedMenus[item.label] ? 'rotate-90' : ''
+                        }`} 
+                      />
+                    )}
+                  </Button>
+                  
+                  {/* サブメニュー - 標準表示時 */}
+                  {item.subMenu && expandedMenus[item.label] && !isSidebarCollapsed && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {item.subMenu.map((subItem, subIndex) => (
+                        <Button
+                          key={subIndex}
+                          variant={pathname === subItem.path ? "default" : "ghost"}
+                          size="sm"
+                          className={`w-full justify-start ${
+                            pathname === subItem.path ? 'bg-black text-white' : ''
+                          }`}
+                          onClick={() => {
+                            router.push(subItem.path);
+                            setIsSidebarOpen(false);
+                          }}
+                        >
+                          <span className="text-sm">{subItem.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
             </nav>
           </div>

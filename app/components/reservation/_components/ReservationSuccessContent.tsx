@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { CalendarIcon, ClockIcon, UserIcon, CreditCardIcon } from 'lucide-react';
-import { useReservation } from '../../../reservations/_hooks/useReservation';
+import { useReservation } from '../../../../lib/hooks/use-reservation';
 
 interface ReservationData {
   success: boolean;
