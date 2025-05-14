@@ -92,15 +92,7 @@ if (typeof window !== 'undefined') {
   // クライアント側でのみ実行
   supabase.auth.onAuthStateChange(async (event, session) => {
     if (event === 'INITIAL_SESSION') {
-      console.log(`認証設定: コールバックURLを設定 - ${siteUrl}/api/auth/callback`);
-      // 非推奨のsetAuth()を使わない方法で設定
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${siteUrl}/api/auth/callback`
-        }
-      });
-      if (error) console.error("リダイレクト設定エラー:", error);
+      console.log(`認証状態初期化: ${session ? '認証済み' : '未認証'}`);
     } else if (event === 'SIGNED_IN' && session) {
       console.log('ログイン検知 - ユーザー:', session.user.email);
     } else if (event === 'SIGNED_OUT') {

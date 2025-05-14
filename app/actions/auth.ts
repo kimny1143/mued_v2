@@ -11,8 +11,8 @@ export async function signInWithGoogle() {
     const baseUrl = getBaseUrl();
     
     // コールバック用のフルURLを構築
-    // Auth Callbackページを使用せずに直接ログインページに戻す（ハッシュフラグメントで処理）
-    const redirectUrl = `${baseUrl}/login`;
+    // 明示的に /auth/callback に戻す
+    const redirectUrl = `${baseUrl}/auth/callback`;
     
     console.log(`認証処理開始: ${new Date().toISOString()}`);
     console.log(`認証コールバックURL: ${redirectUrl}`);

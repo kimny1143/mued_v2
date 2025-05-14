@@ -134,8 +134,13 @@ function LoginContent() {
   // ログイン済みならリダイレクト
   useEffect(() => {
     const checkSession = async () => {
+      // isProcessingHashフラグがtrueの場合は処理をスキップ
+      if (isProcessingHash) return;
+      
       try {
         const { data } = await supabase.auth.getSession();
+        
+        // セッションが存在し、かつエラーがなければリダイレクト
         if (data.session) {
           console.log('[チェック] 既存セッション検出:', data.session.user.email);
           
@@ -160,10 +165,9 @@ function LoginContent() {
       }
     };
     
-    // ハッシュ処理中でない場合のみセッションチェック
-    if (!isProcessingHash) {
-      checkSession();
-    }
+    // 初回のみセッションチェックを実行
+    const initialCheck = setTimeout(checkSession, 500);
+    return () => clearTimeout(initialCheck);
   }, [router, isProcessingHash]);
   
   // Google認証でサインイン
