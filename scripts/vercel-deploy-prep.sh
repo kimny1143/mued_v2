@@ -70,6 +70,15 @@ else
   echo -e "${YELLOW}ビルドは継続しますが、AIサービスの状態を確認してください${NC}"
 fi
 
+# APIルートに動的フラグを追加
+echo -e "${YELLOW}APIルートに動的フラグを追加しています...${NC}"
+if [ -f "scripts/add-dynamic-flag.ts" ]; then
+  echo -e "${GREEN}APIルート動的フラグ追加スクリプトを実行します${NC}"
+  npx ts-node scripts/add-dynamic-flag.ts
+else
+  echo -e "${YELLOW}警告: APIルート動的フラグ追加スクリプトが見つかりません。スキップします。${NC}"
+fi
+
 # Prismaクライアントの生成
 echo -e "${YELLOW}Prismaクライアントを生成しています...${NC}"
 npx prisma generate

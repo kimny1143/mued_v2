@@ -4,6 +4,9 @@ import { getSessionFromRequest } from '@/lib/session';
 import type { NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+// このAPIルートは動的であることを明示的に宣言
+export const dynamic = 'force-dynamic';
+
 /**
  * ユーザーのサブスクリプション情報を取得するAPIエンドポイント
  */

@@ -19,6 +19,8 @@ const TEST_PRICES: Record<string, TestPriceInfo> = {
   'price_test_spot_lesson': { name: 'Spot Lesson', amount: 3000 }
 };
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     // リクエスト情報をログに記録

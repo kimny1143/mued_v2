@@ -2,6 +2,8 @@ import { prisma } from '../../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 
+export const dynamic = 'force-dynamic';
+
 // 更新データの型を定義
 type LessonSlotUpdateData = {
   startTime?: Date;
