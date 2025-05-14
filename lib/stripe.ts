@@ -194,6 +194,7 @@ export async function createCheckoutSession({
   customerId,
   metadata,
   mode = 'payment',
+  clientReferenceId,
 }: {
   priceId: string;
   successUrl: string;
@@ -201,6 +202,7 @@ export async function createCheckoutSession({
   customerId?: string;
   metadata?: Record<string, string>;
   mode?: 'payment' | 'subscription';
+  clientReferenceId?: string;
 }): Promise<Stripe.Checkout.Session> {
   console.log('Stripeセッション作成開始:', { priceId, mode });
   
@@ -214,6 +216,7 @@ export async function createCheckoutSession({
         cancel_url: cancelUrl,
         ...(customerId ? { customer: customerId } : {}),
         ...(metadata ? { metadata } : {}),
+        ...(clientReferenceId ? { client_reference_id: clientReferenceId } : {}),
       });
       
       console.log('Stripeセッション作成成功:', { sessionId: session.id });

@@ -295,11 +295,20 @@ export async function POST(request: NextRequest) {
         // エラー時も処理を継続
       }
       
+      // URLパラメータに予約IDを含める
+      const successUrl = `${baseUrl}/dashboard/reservations/success?session_id={CHECKOUT_SESSION_ID}&reservation_id=${newReservation.id}`;
+      const cancelUrl = `${baseUrl}/dashboard/reservations?canceled=true&reservation_id=${newReservation.id}`;
+      
+      console.log("リダイレクトURL:", {
+        success: successUrl,
+        cancel: cancelUrl
+      });
+      
       // チェックアウトセッションを作成
       const session = await createCheckoutSession({
         priceId: LESSON_PRICE_ID, // 直接固定IDを使用
-        successUrl: `${baseUrl}/dashboard/reservations/success?session_id=${newReservation.id}&reservation_id=${newReservation.id}`,
-        cancelUrl: `${baseUrl}/dashboard/reservations`,
+        successUrl: successUrl,
+        cancelUrl: cancelUrl,
         metadata: {
           reservationId: newReservation.id,
           slotId: data.slotId,
@@ -307,6 +316,7 @@ export async function POST(request: NextRequest) {
           teacherId: newReservation.slot.teacherId,
         },
         mode: 'payment',
+        clientReferenceId: newReservation.id, // 予約IDをクライアントリファレンスとして設定
       });
       
       console.log("Stripeチェックアウトセッション作成成功:", {
