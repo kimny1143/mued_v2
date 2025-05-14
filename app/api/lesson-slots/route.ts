@@ -1,3 +1,6 @@
+// 動的ルートフラグ（キャッシュを無効化）
+export const dynamic = 'force-dynamic';
+
 import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
@@ -310,6 +313,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-export const dynamic = 'force-dynamic'; 
+} 

@@ -80,8 +80,46 @@ interface LessonSlot {
   reservations?: Reservation[];
 }
 
+// データ取得の再試行処理を行う関数
+const fetchWithRetry = async (url: string, token: string, maxRetries = 3) => {
+  let lastError;
+  let waitTime = 2000; // 初回待機時間：2秒
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      console.log(`${url} - 取得試行 ${attempt + 1}/${maxRetries}`);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP エラー ${response.status}: ${await response.text()}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`${url} - 取得エラー (試行 ${attempt + 1}/${maxRetries}):`, error);
+      lastError = error;
+      
+      if (attempt < maxRetries - 1) {
+        // 指数バックオフで待機時間を増加
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        waitTime *= 1.5; // 次回の待機時間を1.5倍に
+      }
+    }
+  }
+  
+  throw lastError;
+};
+
 export default function ReservationsPage() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [lessonSlots, setLessonSlots] = useState<LessonSlot[]>([]);
@@ -92,6 +130,9 @@ export default function ReservationsPage() {
     // 認証状態の確認とデータ取得
     const initializeData = async () => {
       try {
+        setLoading(true);
+        setError(null);
+        
         // 1. 認証チェック
         const { data: authData, error: authError } = await supabase.auth.getSession();
         if (authError || !authData.session) {
@@ -102,37 +143,16 @@ export default function ReservationsPage() {
         
         setUser(authData.session.user);
         
-        // 2. データ取得準備のため少し待機（Supabase接続安定化）
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // 2. データ取得準備のため待機（Supabase接続安定化）
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
-        // 3. 予約とレッスンスロットを並行で取得
-        const [reservationsResponse, slotsResponse] = await Promise.all([
-          fetch('/api/reservations', {
-            headers: {
-              'Authorization': `Bearer ${authData.session.access_token}`,
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache, no-store'
-            }
-          }),
-          fetch('/api/lesson-slots', {
-            headers: {
-              'Authorization': `Bearer ${authData.session.access_token}`,
-              'Content-Type': 'application/json',
-              'Cache-Control': 'no-cache, no-store'
-            }
-          })
+        // 3. 予約とレッスンスロットを並行で取得（リトライ機能付き）
+        const [reservationsData, slotsData] = await Promise.all([
+          fetchWithRetry('/api/reservations', authData.session.access_token),
+          fetchWithRetry('/api/lesson-slots', authData.session.access_token)
         ]);
         
-        // 4. レスポンス処理
-        if (!reservationsResponse.ok || !slotsResponse.ok) {
-          throw new Error('データ取得に失敗しました');
-        }
-        
-        // 5. データをパース
-        const reservationsData = await reservationsResponse.json();
-        const slotsData = await slotsResponse.json();
-        
-        // 6. レッスンスロットの処理（利用可能なもののみ）
+        // 4. レッスンスロットの処理（利用可能なもののみ）
         const availableSlots = slotsData.filter((slot: LessonSlot) => {
           if (!slot.isAvailable) return false;
           
@@ -149,24 +169,19 @@ export default function ReservationsPage() {
           return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
         });
         
-        // 7. 状態を更新
+        // 5. 状態を更新
         setReservations(reservationsData);
         setLessonSlots(availableSlots);
         setLoading(false);
         
       } catch (error) {
         console.error("データ初期化エラー:", error);
-        // エラー時は少し待ってから再取得を試みる
-        if (dataFetchAttempt < 3) {
-          setTimeout(() => {
-            setDataFetchAttempt(prev => prev + 1);
-          }, 3000);
-        } else {
-          // 3回試行しても失敗したら空の配列で表示
-          setReservations([]);
-          setLessonSlots([]);
-          setLoading(false);
-        }
+        setError(error instanceof Error ? error.message : '不明なエラー');
+        
+        // エラー時は空の配列で表示
+        setReservations([]);
+        setLessonSlots([]);
+        setLoading(false);
       }
     };
     
@@ -222,13 +237,28 @@ export default function ReservationsPage() {
           <Loader2Icon className="h-12 w-12 mx-auto mb-4 text-primary animate-spin" />
           <h3 className="text-lg font-medium mb-2">データ読み込み中...</h3>
           <p className="text-sm text-gray-500 max-w-md mx-auto">
-            予約情報とレッスン枠を読み込んでいます。
-            {dataFetchAttempt > 0 && (
-              <span className="block mt-2 text-blue-500">
-                再取得を試みています ({dataFetchAttempt}/3)
-              </span>
-            )}
+            予約情報とレッスン枠を読み込んでいます。この処理には数秒かかることがあります。
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // エラー発生時の表示
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center h-[60vh]">
+        <div className="text-center">
+          <XIcon className="h-12 w-12 mx-auto mb-4 text-red-500" />
+          <h3 className="text-lg font-medium mb-2">データの読み込みに失敗しました</h3>
+          <p className="text-sm text-gray-500 max-w-md mx-auto mb-4">
+            データの取得中にエラーが発生しました。再読み込みをお試しください。
+          </p>
+          <Button onClick={() => {
+            setDataFetchAttempt(prev => prev + 1);
+          }}>
+            再読み込み
+          </Button>
         </div>
       </div>
     );
@@ -471,7 +501,6 @@ export default function ReservationsPage() {
               現在予約可能なレッスン枠はありません。しばらく経ってから再度確認してください。
             </p>
             <Button onClick={() => {
-              setLoading(true);
               setDataFetchAttempt(prev => prev + 1);
             }}>
               再読み込み
