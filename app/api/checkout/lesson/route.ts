@@ -2,6 +2,8 @@ import { stripe } from '../../../../lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     // 認証処理（Supabase Authを使用）

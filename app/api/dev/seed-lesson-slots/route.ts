@@ -2,6 +2,8 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   // 本番環境では実行しない安全対策
   if (process.env.NODE_ENV === 'production') {

@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import { createClient } from '@supabase/supabase-js';
 import { syncCalendarToLessonSlots, syncLessonSlotsToCalendar } from '@/lib/googleCalendar';
 
+export const dynamic = 'force-dynamic';
+
 // カスタムユーザー型
 interface CustomUser {
   id: string;

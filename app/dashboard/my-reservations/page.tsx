@@ -63,21 +63,59 @@ export default function MyReservationsPage() {
       setLoading(true);
       setError(null);
       
-      // APIから予約一覧を取得
-      const response = await fetch('/api/reservations?status=CONFIRMED');
+      // 認証トークンを取得
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('認証セッション取得エラー:', sessionError);
+        throw new Error('認証情報の取得に失敗しました');
+      }
+      
+      if (!sessionData.session) {
+        setError('ログインが必要です');
+        toast.error('ログインセッションが見つかりませんでした。再ログインしてください');
+        return;
+      }
+      
+      console.log('認証セッション:', sessionData.session ? `あり ${sessionData.session.user.email}` : 'なし');
+      const token = sessionData.session.access_token;
+      console.log('API通信開始 - 認証トークン:', token ? '有効' : 'なし');
+      
+      // テスト用にランダムなクエリパラメータを追加して、キャッシュを回避
+      const timestamp = new Date().getTime();
+      const randomParam = Math.floor(Math.random() * 1000);
+      
+      // APIから予約一覧を取得（明示的に認証トークンを含める）
+      const response = await fetch(`/api/reservations?nocache=${timestamp}-${randomParam}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store'
+        }
+      });
       
       if (!response.ok) {
-        throw new Error('予約一覧の取得に失敗しました');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('APIエラーレスポンス:', errorData);
+        throw new Error(errorData.error || '予約一覧の取得に失敗しました');
       }
       
       const data = await response.json();
       console.log('取得した予約データ:', data);
       
-      setReservations(data);
+      // CONFIRMEDステータスの予約のみフィルタリング
+      const confirmedReservations = data.filter(
+        (res: Reservation) => res.status === 'CONFIRMED'
+      );
+      
+      setReservations(confirmedReservations);
+      
+      if (confirmedReservations.length === 0 && data.length > 0) {
+        toast.info('確定済みの予約はありません。予約済みのレッスンは支払い完了後に表示されます。');
+      }
     } catch (err) {
       console.error('予約取得エラー:', err);
       setError(err instanceof Error ? err.message : '予約一覧の取得中にエラーが発生しました');
-      toast.error('予約一覧の取得に失敗しました');
+      toast.error(err instanceof Error ? err.message : '予約一覧の取得に失敗しました');
     } finally {
       setLoading(false);
     }
@@ -135,14 +173,34 @@ export default function MyReservationsPage() {
   };
   
   if (loading) {
-    return <div className="flex justify-center items-center h-64">読み込み中...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-pulse text-center">
+          <CalendarIcon className="h-10 w-10 mx-auto mb-4 text-gray-400" />
+          <p>予約情報を読み込み中...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="p-4 border border-red-300 bg-red-50 rounded-md">
-        <p className="text-red-500">{error}</p>
-        <Button onClick={fetchReservations} className="mt-2">再読み込み</Button>
+      <div className="p-6 border border-red-300 bg-red-50 rounded-md">
+        <div className="flex items-start">
+          <XIcon className="h-6 w-6 text-red-500 mr-3 flex-shrink-0" />
+          <div>
+            <h3 className="text-lg font-semibold text-red-700 mb-1">予約データの取得に失敗しました</h3>
+            <p className="text-red-600 mb-4">{error}</p>
+            <div className="flex space-x-3">
+              <Button onClick={fetchReservations} variant="outline">
+                再取得
+              </Button>
+              <Button onClick={() => router.push('/dashboard')} variant="ghost">
+                ダッシュボードへ戻る
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -255,7 +313,7 @@ export default function MyReservationsPage() {
           <p className="text-gray-500 mb-4">
             現在予約中のレッスンはありません。新しいレッスンを予約しましょう。
           </p>
-          <Button onClick={() => router.push('/reservations')}>
+          <Button onClick={() => router.push('/dashboard/reservations')}>
             レッスンを予約する
           </Button>
         </div>

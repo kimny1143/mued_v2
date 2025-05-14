@@ -1,3 +1,6 @@
+// 動的ルートフラグ
+export const dynamic = 'force-dynamic';
+
 import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
@@ -26,8 +29,14 @@ enum PaymentStatus {
 // 予約一覧を取得
 export async function GET(request: NextRequest) {
   try {
+    console.log('予約一覧API呼び出し - リクエストヘッダー:', 
+      Object.fromEntries(request.headers.entries()));
+    
     // セッション情報を取得
     const sessionInfo = await getSessionFromRequest(request);
+    
+    console.log('セッション取得結果:', 
+      sessionInfo ? `認証済み: ${sessionInfo.user.email} (${sessionInfo.role})` : '認証なし');
     
     if (!sessionInfo) {
       return NextResponse.json(

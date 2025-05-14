@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getAdminSupabaseClient } from '@/lib/use-admin-supabase-client';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * テスト用のウェブフックエンドポイント
  * Supabaseクライアントの動作確認とデバッグに使用します

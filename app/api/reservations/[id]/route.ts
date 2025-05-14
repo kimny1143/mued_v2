@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { Prisma } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 // 予約ステータスの列挙型
 enum ReservationStatus {
   PENDING = 'PENDING',
