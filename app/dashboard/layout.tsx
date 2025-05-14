@@ -24,20 +24,20 @@ import { signOut } from "@/app/actions/auth";
 import { Button } from "@/app/components/ui/button";
 //import { cn } from "@/lib/utils";
 
+// TypeScript型定義
+interface NavItem {
+  icon: React.ElementType;
+  label: string;
+  path: string;
+  subMenu?: Array<{ label: string; path: string }>;
+}
+
 // ナビゲーション項目
-const dashboardNavItems = [
+const dashboardNavItems: NavItem[] = [
   { icon: HomeIcon, label: "Dashboard", path: "/dashboard" },
   { icon: FolderIcon, label: "Materials", path: "/dashboard/materials" },
   { icon: BookOpenIcon, label: "My Lessons", path: "/dashboard/my-lessons" },
-  { 
-    icon: CalendarIcon, 
-    label: "Reservations", 
-    path: "/dashboard/reservations",
-    subMenu: [
-      { label: "Book Lesson", path: "/dashboard/reservations" },
-      { label: "My Bookings", path: "/dashboard/my-reservations" }
-    ]
-  },
+  { icon: CalendarIcon, label: "Reservations", path: "/dashboard/reservations" },
   { icon: DumbbellIcon, label: "Exercises", path: "/dashboard/exercises" },
   { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" },
   { icon: SettingsIcon, label: "Settings", path: "/dashboard/settings" }
