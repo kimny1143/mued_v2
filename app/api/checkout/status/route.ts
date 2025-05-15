@@ -66,7 +66,6 @@ export async function GET(req: Request) {
       reservation: {
         id: reservation.id,
         status: reservation.status,
-        paymentStatus: reservation.payment_status,
         createdAt: reservation.created_at,
         updatedAt: reservation.updated_at,
         lessonSlot: reservation.lesson_slots,
@@ -74,7 +73,6 @@ export async function GET(req: Request) {
       payment: payment || null,
       session: {
         id: session.id,
-        paymentStatus: session.payment_status,
         amountTotal: session.amount_total,
         currency: session.currency,
       },

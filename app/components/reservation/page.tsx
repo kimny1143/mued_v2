@@ -84,9 +84,7 @@ export const ReservationPage: React.FC = () => {
         // 予約がある場合は、状態によって判断
         if (slot.reservations && slot.reservations.length > 0) {
           // すでに確定済みの予約がある場合は予約不可
-          if (slot.reservations.some(res => 
-            res.status === 'CONFIRMED' || 
-            res.paymentStatus === 'PAID')) {
+          if (slot.reservations.some(res => res.status === 'CONFIRMED')) {
             return false;
           }
         }

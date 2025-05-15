@@ -12,15 +12,6 @@ enum ReservationStatus {
   COMPLETED = 'COMPLETED'
 }
 
-// 支払いステータスの列挙型
-enum PaymentStatus {
-  UNPAID = 'UNPAID',
-  PROCESSING = 'PROCESSING',
-  PAID = 'PAID',
-  REFUNDED = 'REFUNDED',
-  FAILED = 'FAILED'
-}
-
 // 特定の予約を取得
 export async function GET(
   request: NextRequest,

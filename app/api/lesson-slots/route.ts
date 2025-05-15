@@ -11,19 +11,8 @@ import { Prisma } from '@prisma/client';
 
 // 予約ステータスの列挙型
 enum ReservationStatus {
-  PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED'
-}
-
-// 支払いステータスの列挙型
-enum PaymentStatus {
-  UNPAID = 'UNPAID',
-  PROCESSING = 'PROCESSING',
-  PAID = 'PAID',
-  REFUNDED = 'REFUNDED',
-  FAILED = 'FAILED'
 }
 
 // Prismaクエリ実行のラッパー関数（エラーハンドリング強化）
@@ -162,7 +151,6 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               status: true,
-              paymentStatus: true,
               studentId: true,
               createdAt: true,
               updatedAt: true,
@@ -196,7 +184,6 @@ export async function GET(request: NextRequest) {
       const formattedSlots = lessonSlots.map(slot => {
         // 予約状況の解析（アクティブな予約のみ）
         const activeReservations = slot.reservations.filter(res => 
-          res.status === ReservationStatus.PENDING || 
           res.status === ReservationStatus.CONFIRMED
         );
 
@@ -215,8 +202,7 @@ export async function GET(request: NextRequest) {
         // 3. 自分自身の予約がある場合は特別扱い（UIで「あなたの予約」として表示）
         const hasMyReservation = myReservations.length > 0;
         const hasOtherConfirmedReservation = otherReservations.some(res => 
-          res.status === ReservationStatus.CONFIRMED || 
-          res.paymentStatus === PaymentStatus.PAID
+          res.status === ReservationStatus.CONFIRMED
         );
 
         // 実際の予約可能状態を計算

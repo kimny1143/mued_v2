@@ -17,15 +17,6 @@ enum ReservationStatus {
   COMPLETED = 'COMPLETED'
 }
 
-// 支払いステータス列挙型
-enum PaymentStatus {
-  UNPAID = 'UNPAID',
-  PROCESSING = 'PROCESSING',
-  PAID = 'PAID',
-  REFUNDED = 'REFUNDED',
-  FAILED = 'FAILED'
-}
-
 export async function POST(req: Request) {
   const body = await req.text();
   const signature = headers().get('Stripe-Signature');

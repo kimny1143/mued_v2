@@ -8,19 +8,8 @@ import { getSessionFromRequest } from '@/lib/session';
 
 // 予約ステータスの列挙型
 enum ReservationStatus {
-  PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED'
-}
-
-// 支払いステータスの列挙型
-enum PaymentStatus {
-  UNPAID = 'UNPAID',
-  PROCESSING = 'PROCESSING',
-  PAID = 'PAID',
-  REFUNDED = 'REFUNDED',
-  FAILED = 'FAILED'
 }
 
 // モック
@@ -110,7 +99,7 @@ describe('Reservation API', () => {
           id: 'rsv-2',
           studentId: 'test-user-id',
           slotId: 'slot-2',
-          status: ReservationStatus.PENDING,
+          status: ReservationStatus.CONFIRMED,
           createdAt: new Date(),
           updatedAt: new Date(),
           slot: {
@@ -291,7 +280,7 @@ describe('Reservation API', () => {
         id: 'new-rsv-1',
         studentId: 'test-user-id',
         slotId: 'slot-1',
-        status: ReservationStatus.PENDING,
+        status: ReservationStatus.CONFIRMED,
         createdAt: new Date(),
         updatedAt: new Date(),
         slot: availableSlot
@@ -310,7 +299,7 @@ describe('Reservation API', () => {
         data: expect.objectContaining({
           studentId: 'test-user-id',
           slotId: 'slot-1',
-          status: ReservationStatus.PENDING
+          status: ReservationStatus.CONFIRMED
         }),
         include: expect.any(Object)
       });
@@ -426,7 +415,7 @@ describe('Reservation API', () => {
       
       // 更新データ
       const updateData = {
-        status: ReservationStatus.CANCELLED,
+        status: ReservationStatus.COMPLETED,
       };
       
       // リクエストの作成
@@ -440,7 +429,7 @@ describe('Reservation API', () => {
         id: reservationId,
         studentId: 'test-user-id',
         slotId: 'slot-1',
-        status: ReservationStatus.PENDING,
+        status: ReservationStatus.CONFIRMED,
         createdAt: new Date(),
         updatedAt: new Date(),
         slot: {
@@ -457,7 +446,7 @@ describe('Reservation API', () => {
       // 更新結果のモック
       const updatedReservation = {
         ...existingReservation,
-        status: ReservationStatus.CANCELLED,
+        status: ReservationStatus.COMPLETED,
         updatedAt: new Date()
       };
       
@@ -470,11 +459,11 @@ describe('Reservation API', () => {
       // アサーション
       expect(response.status).toBe(200);
       expect(data.id).toBe(reservationId);
-      expect(data.status).toBe(ReservationStatus.CANCELLED);
+      expect(data.status).toBe(ReservationStatus.COMPLETED);
       expect(prisma.reservation.update).toHaveBeenCalledWith({
         where: { id: reservationId },
         data: expect.objectContaining({
-          status: ReservationStatus.CANCELLED
+          status: ReservationStatus.COMPLETED
         }),
         include: expect.any(Object)
       });
@@ -487,7 +476,7 @@ describe('Reservation API', () => {
       
       // 更新データ
       const updateData = {
-        status: ReservationStatus.CANCELLED,
+        status: ReservationStatus.COMPLETED,
       };
       
       // リクエストの作成
@@ -516,7 +505,7 @@ describe('Reservation API', () => {
       
       // 更新データ
       const updateData = {
-        status: ReservationStatus.CANCELLED,
+        status: ReservationStatus.COMPLETED,
       };
       
       // リクエストの作成
