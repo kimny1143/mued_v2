@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Toaster } from 'sonner';
 import { DatePicker } from '@/app/components/ui/date-picker';
+import { TimeSelect } from '@/app/components/ui/time-select';
 
 // シンプルなアラートコンポーネント
 const Alert: React.FC<{ className?: string; children: React.ReactNode }> = ({ className, children }) => (
@@ -69,7 +70,6 @@ export default function LessonSlotsPage() {
   const [userRole, setUserRole] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [formData, setFormData] = useState({
-    startDate: '',
     startTime: '',
     endTime: '',
   });
@@ -191,14 +191,6 @@ export default function LessonSlotsPage() {
     }
   };
 
-  // フォーム入力の処理
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
   // レッスンスロット作成の処理
   const handleCreateSlot = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,8 +204,8 @@ export default function LessonSlotsPage() {
       
       // 選択された日付とフォームの時間を組み合わせて日時を作成
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const startTime = new Date(`${dateStr}T${formData.startTime}`);
-      const endTime = new Date(`${dateStr}T${formData.endTime}`);
+      const startTime = new Date(`${dateStr}T${formData.startTime}:00`);
+      const endTime = new Date(`${dateStr}T${formData.endTime}:00`);
       
       // 開始時間が終了時間より前であることを確認
       if (startTime >= endTime) {
@@ -231,12 +223,22 @@ export default function LessonSlotsPage() {
       setError(null);
       setSlotLoading(true);
       
+      // 認証トークンを取得
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !sessionData.session?.access_token) {
+        throw new Error('認証情報の取得に失敗しました。もう一度ログインしてください。');
+      }
+      
+      const token = sessionData.session.access_token;
+      console.log('認証トークン取得成功:', token.substring(0, 10) + '...');
+      
       // APIリクエスト
       const response = await fetch('/api/lesson-slots', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           startTime: startTime.toISOString(),
@@ -246,8 +248,9 @@ export default function LessonSlotsPage() {
       });
       
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'レッスンスロットの作成に失敗しました');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('APIエラーレスポンス:', response.status, errorData);
+        throw new Error(errorData.error || `Error ${response.status}: レッスンスロットの作成に失敗しました`);
       }
       
       const newSlot = await response.json();
@@ -257,7 +260,6 @@ export default function LessonSlotsPage() {
       
       // フォームリセット
       setFormData({
-        startDate: '',
         startTime: '',
         endTime: '',
       });
@@ -271,9 +273,18 @@ export default function LessonSlotsPage() {
     } catch (err) {
       console.error('レッスンスロット作成エラー:', err);
       setError((err as Error).message);
+      toast.error((err as Error).message);
     } finally {
       setSlotLoading(false);
     }
+  };
+
+  // フォームで時間を扱う
+  const handleTimeChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   // ローディング中表示
@@ -301,82 +312,100 @@ export default function LessonSlotsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Lesson Slots Management</h1>
         
-        {/* スロット作成ボタン */}
+        {/* スロット作成ボタン - ダイアログの外に配置 */}
         <Button
           className="bg-blue-600 hover:bg-blue-700 text-white"
           onClick={() => setIsDialogOpen(true)}
         >
           <Plus className="mr-2 h-4 w-4" /> Create New Slot
         </Button>
+      </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Lesson Slot</DialogTitle>
-              <DialogDescription>
-                Register available time for lessons. Students can book these time slots.
-              </DialogDescription>
-            </DialogHeader>
+      {/* エラー表示エリア - ページ全体に対するエラー */}
+      {error && (
+        <div className="p-4 mb-6 border rounded-md bg-red-50 border-red-200 text-red-800">
+          <div className="flex items-center">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            <span className="font-medium">エラーが発生しました</span>
+          </div>
+          <div className="text-sm mt-1">
+            {error}
+            {error.includes('講師または管理者のみ') && (
+              <div className="mt-2 text-xs bg-yellow-50 p-2 rounded border border-yellow-100">
+                <strong>トラブルシューティング:</strong> ログアウトして再度ログインすると解決することがあります
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Lesson Slot</DialogTitle>
+            <DialogDescription>
+              Register available time for lessons. Students can book these time slots.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleCreateSlot}>
+            {error && (
+              <div className="p-4 mb-4 border rounded-md bg-red-50 border-red-200 text-red-800">
+                <div className="flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  <span className="font-medium">エラー</span>
+                </div>
+                <div className="text-sm mt-1">{error}</div>
+              </div>
+            )}
             
-            <form onSubmit={handleCreateSlot}>
-              {error && (
-                <div className="p-4 mb-4 border rounded-md bg-red-50 border-red-200 text-red-800">
-                  <AlertCircle className="h-4 w-4 inline-block mr-2" />
-                  <span className="font-medium">Error</span>
-                  <div className="text-sm mt-1">{error}</div>
-                </div>
-              )}
-              
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="startDate" className="text-right">
-                    Date
-                  </Label>
-                  <div className="col-span-3">
-                    <DatePicker
-                      date={selectedDate}
-                      setDate={setSelectedDate}
-                      placeholder="Select date"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="startTime" className="text-right">
-                    Start Time
-                  </Label>
-                  <Input
-                    id="startTime"
-                    name="startTime"
-                    type="time"
-                    value={formData.startTime}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="endTime" className="text-right">
-                    End Time
-                  </Label>
-                  <Input
-                    id="endTime"
-                    name="endTime"
-                    type="time"
-                    value={formData.endTime}
-                    onChange={handleInputChange}
-                    className="col-span-3"
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="startDate" className="text-right">
+                  Date
+                </Label>
+                <div className="col-span-3">
+                  <DatePicker
+                    date={selectedDate}
+                    setDate={setSelectedDate}
+                    placeholder="Select date"
                   />
                 </div>
               </div>
-              
-              <DialogFooter>
-                <Button type="submit" disabled={slotLoading}>
-                  {slotLoading ? 'Creating...' : 'Create'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="startTime" className="text-right">
+                  Start Time
+                </Label>
+                <div className="col-span-3">
+                  <TimeSelect
+                    value={formData.startTime}
+                    onChange={(value) => handleTimeChange('startTime', value)}
+                    placeholder="Select start time"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="endTime" className="text-right">
+                  End Time
+                </Label>
+                <div className="col-span-3">
+                  <TimeSelect
+                    value={formData.endTime}
+                    onChange={(value) => handleTimeChange('endTime', value)}
+                    placeholder="Select end time"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button type="submit" disabled={slotLoading}>
+                {slotLoading ? 'Creating...' : 'Create'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* タブコンテンツ */}
       <Tabs defaultValue="active">

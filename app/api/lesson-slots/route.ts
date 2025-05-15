@@ -290,16 +290,20 @@ export async function POST(request: NextRequest) {
     const sessionInfo = await getSessionFromRequest(request);
     
     if (!sessionInfo) {
+      console.error('認証情報なし - レッスンスロット作成失敗');
       return NextResponse.json(
         { error: '認証が必要です' },
         { status: 401 }
       );
     }
     
+    console.log(`レッスンスロット作成 - ユーザー: ${sessionInfo.user.email}, ロール: ${sessionInfo.role}`);
+    
     // 権限チェック
-    if (sessionInfo.role !== 'mentor') {
+    if (sessionInfo.role !== 'mentor' && sessionInfo.role !== 'admin') {
+      console.error(`権限エラー - レッスンスロット作成: ${sessionInfo.role}ロールでの作成は許可されていません`);
       return NextResponse.json(
-        { error: '講師のみがレッスン枠を作成できます' },
+        { error: '講師または管理者のみがレッスン枠を作成できます' },
         { status: 403 }
       );
     }
@@ -362,6 +366,8 @@ export async function POST(request: NextRequest) {
         isAvailable: data.isAvailable ?? true,
       },
     }));
+    
+    console.log(`レッスンスロット作成成功: ID ${newSlot.id}, 講師ID ${sessionInfo.user.id}`);
     
     return NextResponse.json(newSlot, { 
       status: 201,
