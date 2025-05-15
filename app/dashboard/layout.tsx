@@ -41,6 +41,12 @@ interface ExtendedUser extends SupabaseUser {
     email?: string;
     image?: string;
   };
+  db_user?: {
+    roleId?: string;
+    name?: string;
+    email?: string;
+    image?: string;
+  };
 }
 
 // ナビゲーション項目
@@ -129,66 +135,57 @@ export default function DashboardLayout({
     
     const getUser = async () => {
       try {
-        console.log("ユーザー情報取得開始...");
+        console.log("認証情報取得開始...");
         const { data } = await supabase.auth.getSession();
         
         // コンポーネントがアンマウントされていたら何もしない
         if (!isMounted) return;
         
         if (data.session?.user) {
-          console.log("セッションユーザー検出:", data.session.user.email);
-          console.log("ユーザーID:", data.session.user.id);
-          console.log("認証メタデータ:", data.session.user.user_metadata);
+          console.log("認証済みユーザー検出:", data.session.user.email);
           
-          setUser(data.session.user);
+          // 認証情報からユーザーデータを設定
+          const authUser = data.session.user;
+          setUser(authUser);
           
-          // ユーザーロールを取得
+          // デフォルトロール設定（メタデータ優先）
+          const defaultRole = authUser.user_metadata?.role || 'student';
+          setUserRole(defaultRole);
+          
+          // usersテーブルからロール情報を取得
           try {
-            console.log("usersテーブルからロール情報を取得中...");
-            const { data: userData, error } = await supabase
+            const { data: userData, error: userError } = await supabase
               .from('users')
               .select('roleId, name, email, image')
-              .eq('id', data.session.user.id)
+              .eq('id', authUser.id)
               .single();
               
-            if (error) {
-              console.error("Supabaseクエリエラー:", error);
-              throw error;
-            }
-            
-            console.log("取得したユーザーデータ:", userData);
-            
-            // Userオブジェクトを拡張
-            if (userData) {
-              setUser(prev => {
-                if (!prev) return prev;
-                return {
-                  ...prev,
-                  db_profile: userData // DBから取得した情報を保存
-                };
+            if (userError) {
+              console.error("ユーザーデータ取得エラー:", userError);
+            } else if (userData) {
+              console.log("ユーザーデータ取得成功:", userData);
+              // roleIdが存在すればそちらを優先
+              if (userData.roleId) {
+                console.log("DBから取得したロール:", userData.roleId);
+                setUserRole(userData.roleId);
+              }
+              
+              // ユーザー情報を拡張（DBの情報を追加）
+              setUser({
+                ...authUser,
+                db_user: userData
               });
             }
-            
-            setUserRole(userData?.roleId || 'student');
-          } catch (error) {
-            console.error("ロール取得エラー:", error);
-            console.log("セッションユーザー情報:", data.session.user);
-            // 認証メタデータからロールを取得してみる（フォールバック）
-            const fallbackRole = data.session.user.user_metadata?.role || 'student';
-            console.log("フォールバックロール:", fallbackRole);
-            setUserRole(fallbackRole);
+          } catch (err) {
+            console.error("データベース接続エラー:", err);
           }
         } else {
-          console.log("セッションなし - 未認証状態");
+          console.log("認証されていないユーザー - ログインページへリダイレクト");
           setUser(null);
+          router.push('/login');
         }
         
         setLoading(false);
-        
-        // セッションがない場合はログインページへリダイレクト
-        if (!data.session) {
-          router.push('/login');
-        }
       } catch (err) {
         console.error("セッション取得エラー:", err);
         if (isMounted) {
@@ -373,7 +370,7 @@ export default function DashboardLayout({
               {!isSidebarCollapsed && (
                 <div className="text-center">
                   <p className="font-medium text-sm truncate">
-                    {user?.db_profile?.name || user?.user_metadata?.name || user?.email || 'ユーザー'}
+                    {user?.db_user?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email || 'ユーザー'}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
                     {userRole === 'admin' ? '管理者' : userRole === 'mentor' ? 'メンター' : '生徒'}
