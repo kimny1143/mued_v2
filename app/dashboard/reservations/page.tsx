@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -35,8 +35,9 @@ interface Reservation {
   id: string;
   slotId: string;
   studentId: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
-  paymentStatus?: 'UNPAID' | 'PROCESSING' | 'PAID' | 'REFUNDED' | 'FAILED'; 
+  status: 'CONFIRMED' | 'COMPLETED';
+  paymentId?: string;
+  notes?: string;
   createdAt: string;
   updatedAt?: string;
   slot: {
@@ -173,31 +174,17 @@ export default function ReservationsPage() {
           });
           
           // 4. レッスンスロットの処理（利用可能なもののみ）
-          const availableSlots = slotsData
-            .filter((slot: LessonSlot) => {
-              // 利用可能フラグのチェック
-              if (!slot.isAvailable) {
-                console.log(`スロットID ${slot.id}: isAvailable = false のためフィルタリング`);
-                return false;
-              }
-              
-              // 既に予約済みかチェック
-              if (slot.reservations && slot.reservations.length > 0) {
-                const hasConfirmedReservation = slot.reservations.some(res => 
-                  res.status === 'CONFIRMED' || 
-                  res.paymentStatus === 'PAID');
-                
-                if (hasConfirmedReservation) {
-                  console.log(`スロットID ${slot.id}: 確定済み予約があるためフィルタリング`);
-                  return false;
-                }
-              }
-              
-              return true;
-            })
-            .sort((a: LessonSlot, b: LessonSlot) => {
-              return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
-            });
+          const activeReservations = useMemo(() => {
+            return reservationsData.filter((res: Reservation) => 
+              res.status === 'CONFIRMED' || res.status === 'COMPLETED');
+          }, [reservationsData]);
+          
+          const availableSlots = useMemo(() => {
+            return slotsData.filter((slot: LessonSlot) => 
+              slot.isAvailable && !slot.reservations?.some((res: any) => 
+                res.status === 'CONFIRMED' || res.status === 'COMPLETED')
+            );
+          }, [slotsData]);
           
           // デバッグ: フィルタリング後のデータをログ出力
           console.log("フィルタリング後の表示可能レッスンスロット:", {
@@ -212,11 +199,8 @@ export default function ReservationsPage() {
           });
           
           // 5. 状態を更新
-          // キャンセル済みと未払いのままの予約を除外
-          const filteredReservations = reservationsData.filter((res: Reservation) => 
-            res.status !== 'CANCELLED' && 
-            !(res.paymentStatus === 'UNPAID' && res.status === 'PENDING')
-          );
+          // フィルタリング条件の簡素化（キャンセル済みステータスは新スキーマには存在しないため）
+          const filteredReservations = activeReservations;
           
           console.log("表示する予約（フィルタリング後）:", {
             total: filteredReservations.length,
@@ -268,10 +252,6 @@ export default function ReservationsPage() {
     switch (status) {
       case 'CONFIRMED':
         return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">予約確定</Badge>;
-      case 'PENDING':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">支払い待ち</Badge>;
-      case 'CANCELLED':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">キャンセル済み</Badge>;
       case 'COMPLETED':
         return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">完了</Badge>;
       default:
@@ -279,26 +259,6 @@ export default function ReservationsPage() {
     }
   };
 
-  // 支払いステータスに応じたバッジのスタイルを返す関数
-  const getPaymentStatusBadge = (status?: string) => {
-    if (!status) return null;
-    
-    switch (status) {
-      case 'PAID':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">支払い完了</Badge>;
-      case 'PROCESSING':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">処理中</Badge>;
-      case 'UNPAID':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">未払い</Badge>;
-      case 'REFUNDED':
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">返金済み</Badge>;
-      case 'FAILED':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">失敗</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-  
   // データ初回読み込み中の表示
   if (initialLoading) {
     return (
@@ -361,7 +321,6 @@ export default function ReservationsPage() {
                       <TableHead className="w-[180px]">日時</TableHead>
                       <TableHead>講師</TableHead>
                       <TableHead>ステータス</TableHead>
-                      <TableHead>支払い状況</TableHead>
                       <TableHead className="text-right">アクション</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -385,9 +344,6 @@ export default function ReservationsPage() {
                         </TableCell>
                         <TableCell>
                           {getStatusBadge(reservation.status)}
-                        </TableCell>
-                        <TableCell>
-                          {getPaymentStatusBadge(reservation.paymentStatus)}
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
@@ -424,7 +380,6 @@ export default function ReservationsPage() {
                     </div>
                     <div className="flex flex-col gap-1">
                       {getStatusBadge(reservation.status)}
-                      {getPaymentStatusBadge(reservation.paymentStatus)}
                     </div>
                   </div>
                   <div className="flex justify-end mt-2">
