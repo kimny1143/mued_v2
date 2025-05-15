@@ -167,9 +167,18 @@ export default function DashboardLayout({
           try {
             // APIからユーザー情報を取得（サーバサイドでadmin権限で実行）
             console.log("APIからユーザー情報を取得中...");
-            const response = await fetch(`/api/user?userId=${authUser.id}`);
+            const response = await fetch(`/api/user?userId=${authUser.id}`, {
+              // キャッシュバスティング（開発時のキャッシュ問題回避）
+              cache: process.env.NODE_ENV === 'development' ? 'no-cache' : 'default',
+              headers: {
+                'pragma': 'no-cache',
+                'cache-control': 'no-cache'
+              }
+            });
             
             if (!response.ok) {
+              const errorText = await response.text();
+              console.error(`APIエラー: ${response.status}`, errorText);
               throw new Error(`APIエラー: ${response.status}`);
             }
             
@@ -183,6 +192,8 @@ export default function DashboardLayout({
               
               // ロールの設定（正確な値）
               setUserRole(dbRole);
+            } else {
+              console.log("DBデータにロール情報がありません。メタデータのロールを使用:", tempRole);
             }
             
             // ユーザー情報を拡張（DBの情報を追加）
@@ -190,10 +201,12 @@ export default function DashboardLayout({
               ...authUser,
               db_user: userData
             });
-            
           } catch (err) {
             console.error("ユーザー情報API呼び出しエラー:", err);
             console.log("メタデータのロールを使用:", tempRole);
+            
+            // エラー発生時もUser情報はセット（メタデータのみ）
+            setUser(authUser);
           }
         } else {
           console.log("認証されていないユーザー - ログインページへリダイレクト");
@@ -394,9 +407,23 @@ export default function DashboardLayout({
                      '生徒'}
                   </p>
                   {process.env.NODE_ENV !== 'production' && (
-                    <p className="text-xxs text-gray-400 mt-1 truncate">
-                      ID: {user?.id?.substring(0, 8)}...
-                    </p>
+                    <>
+                      <p className="text-xxs text-gray-400 mt-1 truncate">
+                        ID: {user?.id?.substring(0, 8)}...
+                      </p>
+                      <p className="text-xxs text-gray-400 truncate">
+                        Role: {userRole || 'unknown'}
+                      </p>
+                      <details className="text-xxs text-gray-400 text-left mt-1">
+                        <summary className="cursor-pointer">開発者情報</summary>
+                        <div className="text-left p-1 bg-gray-50 rounded text-[9px] mt-1">
+                          <p>Auth Type: {user?.app_metadata?.provider || 'unknown'}</p>
+                          <p>Email: {user?.email}</p>
+                          <p>Full ID: {user?.id}</p>
+                          <p>DB Info: {user?.db_user ? 'あり' : 'なし'}</p>
+                        </div>
+                      </details>
+                    </>
                   )}
                 </div>
               )}
