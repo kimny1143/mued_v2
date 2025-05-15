@@ -121,6 +121,30 @@ export async function GET(req: NextRequest) {
           userData.roleId = authUser.user.user_metadata.role;
           console.log('メタデータからロール検出:', userData.roleId);
         }
+
+        // --- ここで public.users テーブルに存在しない場合は挿入／既存なら更新 ---
+        try {
+          const upsertPayload = {
+            id: userId,
+            name: userData.name,
+            email: userData.email,
+            image: userData.image,
+            // roleId が未設定ならデフォルト student を採用
+            roleId: userData.roleId || 'student'
+          } as const;
+
+          const { error: upsertError } = await supabaseAdmin
+            .from('users')
+            .upsert(upsertPayload, { onConflict: 'id', ignoreDuplicates: false });
+
+          if (upsertError) {
+            console.error('users テーブルへの UPSERT 失敗:', upsertError);
+          } else {
+            console.log('users テーブルへの UPSERT 成功/既存更新完了');
+          }
+        } catch (upsertErr) {
+          console.error('users テーブルへの UPSERT 例外:', upsertErr);
+        }
       }
     } catch (authErr) {
       console.warn('Auth APIアクセスエラー:', authErr);
@@ -152,6 +176,31 @@ export async function GET(req: NextRequest) {
       }
       
       // users テーブルから基本情報とロール情報をJOINして取得
+      console.log('Supabaseサービスロールキー確認:', {
+        exists: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        length: process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0
+      });
+      
+      try {
+        console.log(`User ID "${userId}"のレコードを取得中...`);
+        
+        // まずサービスロールを使わない純粋なクエリで試行
+        const { data: directData, error: directError } = await supabaseAdmin
+          .from('users')
+          .select('id, roleId')
+          .eq('id', userId)
+          .single();
+          
+        if (directError) {
+          console.error('直接クエリエラー:', directError);
+        } else if (directData) {
+          console.log('直接クエリ成功:', directData);
+        }
+      } catch (directErr) {
+        console.error('直接クエリ例外:', directErr);
+      }
+
+      // 実際のクエリ実行
       const { data: dbUser, error: usersError } = await supabaseAdmin
         .from('users')
         .select(`
@@ -174,7 +223,58 @@ export async function GET(req: NextRequest) {
         console.error('エラーコード:', usersError.code);
         console.error('エラーメッセージ:', usersError.message);
         console.error('エラー詳細:', usersError.details);
-        // エラーがあってもAPI呼び出しは続行（バックアップ情報を使用）
+        
+        console.log('---サービスロール検証---');
+        // SERVICE_ROLEでの認証確認のためのシンプルなテスト
+        try {
+          console.log('サービスロールアクセステスト...');
+          
+          // カスタムSupabaseクライアントの作成（デバッグ用）
+          const { createClient } = require('@supabase/supabase-js');
+          const testSupabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+            process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+          );
+          
+          // シンプルなクエリで権限テスト
+          const { data: testData, error: testError } = await testSupabase
+            .from('users')
+            .select('count(*)', { count: 'exact' })
+            .limit(1);
+            
+          if (testError) {
+            console.error('サービスロールテストエラー:', testError);
+          } else {
+            console.log('サービスロールテスト成功:', testData);
+            console.log('サービスロールは正常に機能しています');
+          }
+        } catch (testErr) {
+          console.error('サービスロールテスト例外:', testErr);
+        }
+        console.log('---サービスロール検証終了---');
+        
+        // RLSポリシーのバイパステスト
+        try {
+          console.log('RLSバイパステスト...');
+          const { data: bypassData, error: bypassError } = await supabaseAdmin
+            .rpc('admin_get_user', { user_id: userId });
+            
+          if (bypassError) {
+            console.error('RLSバイパスエラー:', bypassError);
+          } else if (bypassData) {
+            console.log('RLSバイパス成功:', bypassData);
+            
+            // RPC成功したらそのデータを使用
+            if (bypassData.roleId) {
+              userData.roleId = bypassData.roleId;
+              console.log('RPCから取得したroleId:', userData.roleId);
+              dbAccessSuccessful = true;
+            }
+          }
+        } catch (bypassErr) {
+          console.error('RLSバイパステスト例外:', bypassErr);
+        }
+        
       } else if (dbUser) {
         dbAccessSuccessful = true;
         console.log('usersテーブルからユーザー情報取得成功:', dbUser);
