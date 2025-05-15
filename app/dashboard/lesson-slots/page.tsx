@@ -485,7 +485,7 @@ export default function LessonSlotsPage() {
             ).length === 0 && (
               <Alert>
                 <AlertDescription>
-                  予約済みのレッスンスロットはありません。
+                  No reserved lesson slots.
                 </AlertDescription>
               </Alert>
             )}
