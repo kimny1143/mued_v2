@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const runtime = 'nodejs';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // ユーザーデータの型定義
@@ -234,7 +235,7 @@ export async function GET(req: NextRequest) {
           console.log('サービスロールアクセステスト...');
           
           // カスタムSupabaseクライアントの作成（デバッグ用）
-          const { createClient } = require('@supabase/supabase-js');
+          const { createClient } = await import('@supabase/supabase-js');
           const testSupabase = createClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL || '',
             process.env.SUPABASE_SERVICE_ROLE_KEY || ''

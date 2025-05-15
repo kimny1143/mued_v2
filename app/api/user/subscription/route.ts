@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+export const runtime = 'nodejs';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getSessionFromRequest } from '@/lib/session';
 import type { NextRequest } from 'next/server';
