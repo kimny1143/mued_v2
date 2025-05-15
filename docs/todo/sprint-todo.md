@@ -84,6 +84,20 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 ## Sprint 1（3〜4週目）‐「決済 & 予約フロー MVP」
 **目標:** Stripeを用いたサブスクリプション決済フローと、コア機能であるレッスン予約システムの基本的なCRUD操作を実装する。ユーザーが支払いを行い、予約を確定できるMVPレベルの体験を提供する。
 
+### 🍀 Reservation End-to-End Flow（時系列一覧）
+以下の 5 ステップを順番に進めることで、
+「メンターが枠を公開 → 生徒が閲覧 → 予約 → Stripe 決済 → 予約確定」のフローが一通り機能する。
+
+| 時系列 | 担当 | 関連 Story / タスク | 進捗 |
+|-------|------|----------------------|------|
+| **F1. メンター: スロット作成 UI** | FE | S1-3 (モーダル/フォーム) | ‼️ 要確認 |
+| **F2. メンター: スロット登録 API** | BE | S1-2-API (LessonSlot POST) | ‼️ 要確認 |
+| **F3. 生徒: スロット一覧表示 UI** | FE | S1-3 (ReservationTable) | ‼️ 要確認 |
+| **F4. 生徒: 予約→Stripe Checkout** | FE/BE | S1-2 (Reservation POST) + S1-1 (Checkout) | ‼️ 要確認 |
+| **F5. Webhook & 予約確定レコード更新** | BE | S1-1 (Webhook) + S1-2 (RLS/重複チェック) | 🟡 進行中 |
+
+> 今後は **F5** がGREENになれば E2E フローが完成 → Playwrightシナリオ (Story S1-4) を緑にする。
+
 ### Story S1-1: Stripe Checkout / Webhook （EdgeFunction）実装
 - **担当:** BEチーム
 - **状態:** ✅ 完了
@@ -99,13 +113,13 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S1-2: `LessonSlot`,`Reservation` API (RLS & バリデーション)
 - **担当:** BEチーム
-- **状態:** ⚠️確認必要
+- **状態:** 🟡 進行中
 - **概要:** メンターがレッスン提供可能な時間枠 (`LessonSlot`) と、ユーザーがその枠を予約する `Reservation` のためのCRUD APIを実装する。入力値バリデーションとSupabase RLSによる適切な権限管理、重複予約防止ロジックも含む。
 - **DoD:** API経由で `LessonSlot` と `Reservation` のCRUD操作が正しく行えること。不正な入力や権限のない操作は適切に弾かれること。重複予約が防止されること。APIの単体テストカバレッジが90%以上であること。
 - **タスク:**
-    - [ ] BE: `prisma/schema.prisma` に `LessonSlot` と `Reservation` モデルを定義（既存の場合は確認・調整）。
-    - [ ] BE: `LessonSlot` 用のCRUD APIエンドポイント群 (`app/api/lesson-slots/...`) を実装。
-    - [ ] BE: `Reservation` 用のCRUD APIエンドポイント群 (`app/api/reservations/...`) を実装。
+    - [x] BE: `prisma/schema.prisma` に `LessonSlot` と `Reservation` モデルを定義（既存の場合は確認・調整）。
+    - [x] BE: `LessonSlot` 用のCRUD APIエンドポイント群 (`app/api/lesson-slots/...`) を実装。
+    - [x] BE: `Reservation` 用のCRUD APIエンドポイント群 (`app/api/reservations/...`) を実装。
     - [ ] BE: APIリクエストボディの入力値バリデーションをZod等を用いて実装。
     - [ ] BE: Supabaseコンソールまたはマイグレーションファイルで `LessonSlot` と `Reservation` テーブルに対するRLSポリシーを設定（例: メンターは自身のスロットのみ作成・更新可能、ユーザーは自身の予約のみ作成・閲覧可能）。（`20240512_rls_fix.sql` 等のマイグレーション適用をCIで確認 - Story R0-4と連携）
     - [ ] BE: 予約作成時に、指定されたスロットが既に予約されていないか確認する重複予約防止ロジックを実装。
@@ -113,15 +127,15 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S1-3: 予約UI（Table+Modal, Mobile Ready）
 - **担当:** FEチーム
-- **状態:** ⚠️確認必要
+- **状態:** 🟡 進行中
 - **概要:** ユーザーが利用可能なレッスン枠を一覧で確認し、モーダルウィンドウ経由で予約を実行できるUIを実装する。スマートフォン表示にも最適化し、LCP 2.5秒以内を目指す。
 - **DoD:** レッスン枠がテーブル形式で表示され、選択すると予約モーダルが開くこと。モーダル内で予約が実行でき、結果がユーザーにフィードバックされること。UIはレスポンシブ対応であり、主要画面のLCPが2.5秒未満であること。
 - **タスク:**
-    - [ ] FE: `app/reservations/page.tsx` 等の予約ページを作成。
-    - [ ] FE: 利用可能な `LessonSlot` を一覧表示するテーブルコンポーネント (`app/components/reservations/SlotTable.tsx` 等) を作成。APIから取得したデータを表示。
-    - [ ] FE: スロット選択時に表示される予約確認・実行用モーダルコンポーネント (`app/components/reservations/ReservationModal.tsx` 等) を作成。
-    - [ ] FE: TailwindCSSを用いて、テーブルおよびモーダルのレスポンシブデザインを実装。
-    - [ ] FE: SWR, React Query, またはServer Actions等を用いてAPIとのデータ連携および状態管理を実装。
+    - [x] FE: `app/reservations/page.tsx` 等の予約ページを作成。（現在は `app/dashboard/reservations/page.tsx` として実装済）
+    - [x] FE: 利用可能な `LessonSlot` を一覧表示するテーブルコンポーネント (`app/components/reservation/_components/ReservationTable.tsx`) を作成。APIから取得したデータを表示。
+    - [x] FE: スロット選択時に表示される予約確認・実行用モーダルコンポーネント (`app/components/reservation/_components/ReservationModal.tsx`) を作成。
+    - [x] FE: TailwindCSSを用いて、テーブルおよびモーダルのレスポンシブデザインを実装。
+    - [x] FE: フック (`lib/hooks/use-reservation.ts`) でAPIとのデータ連携および状態管理を実装。
     - [ ] FE: Lighthouse等で主要な予約関連ページのLCPを測定し、2.5秒未満を達成するように最適化。
     - [ ] FE: 予約成功・失敗時のユーザーへのフィードバックUI（Toast通知等）を実装。
     - [ ] FE: Stripe CheckoutからのリダイレクトURLがVercelの動的プレビューURLに対応していることを確認 (Story R0-4と連携)。
