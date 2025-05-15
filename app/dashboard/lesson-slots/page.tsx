@@ -296,13 +296,14 @@ export default function LessonSlotsPage() {
         <h1 className="text-2xl font-bold">Lesson Slots Management</h1>
         
         {/* スロット作成ボタン */}
+        <Button
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          onClick={() => setIsDialogOpen(true)}
+        >
+          <Plus className="mr-2 h-4 w-4" /> Create New Slot
+        </Button>
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700 text-white" 
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Create New Slot
-          </Button>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Lesson Slot</DialogTitle>
