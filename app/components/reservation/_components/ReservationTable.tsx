@@ -43,9 +43,8 @@ export type Reservation = {
   id: string;
   slotId: string;
   studentId: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  status: 'CONFIRMED' | 'COMPLETED';
   paymentId?: string;
-  paymentStatus?: 'UNPAID' | 'PROCESSING' | 'PAID' | 'REFUNDED' | 'FAILED'; 
   createdAt: string | Date;
   updatedAt?: string | Date;
 };

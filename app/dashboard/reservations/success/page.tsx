@@ -39,7 +39,6 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
         reservationData = {
           id: reservation.id,
           status: reservation.status,
-          paymentStatus: reservation.paymentStatus,
           slot: {
             id: reservation.slot.id,
             startTime: reservation.slot.startTime.toISOString(),

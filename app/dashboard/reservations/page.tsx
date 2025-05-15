@@ -173,18 +173,16 @@ export default function ReservationsPage() {
             }))
           });
           
-          // 4. レッスンスロットの処理（利用可能なもののみ）
-          const activeReservations = useMemo(() => {
-            return reservationsData.filter((res: Reservation) => 
-              res.status === 'CONFIRMED' || res.status === 'COMPLETED');
-          }, [reservationsData]);
+          // 4. フィルタリング処理
+          // アクティブな予約のみを抽出
+          const activeReservations = reservationsData.filter((res: Reservation) => 
+            res.status === 'CONFIRMED' || res.status === 'COMPLETED');
           
-          const availableSlots = useMemo(() => {
-            return slotsData.filter((slot: LessonSlot) => 
-              slot.isAvailable && !slot.reservations?.some((res: any) => 
-                res.status === 'CONFIRMED' || res.status === 'COMPLETED')
-            );
-          }, [slotsData]);
+          // 利用可能なスロットのみを抽出
+          const availableSlots = slotsData.filter((slot: LessonSlot) => 
+            slot.isAvailable && !slot.reservations?.some((res: Reservation) => 
+              res.status === 'CONFIRMED' || res.status === 'COMPLETED')
+          );
           
           // デバッグ: フィルタリング後のデータをログ出力
           console.log("フィルタリング後の表示可能レッスンスロット:", {
@@ -208,7 +206,6 @@ export default function ReservationsPage() {
             items: filteredReservations.map((res: Reservation) => ({
               id: res.id,
               status: res.status,
-              paymentStatus: res.paymentStatus,
             }))
           });
           

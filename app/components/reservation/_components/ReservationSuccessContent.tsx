@@ -12,7 +12,6 @@ interface ReservationData {
   reservation: {
     id: string;
     status: string;
-    paymentStatus: string;
     createdAt: string;
     updatedAt: string;
     lessonSlot: {
@@ -28,7 +27,6 @@ interface ReservationData {
   } | null;
   session: {
     id: string;
-    paymentStatus: string;
     amountTotal: number;
     currency: string;
   };
