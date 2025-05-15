@@ -185,13 +185,23 @@ export default function DashboardLayout({
             const userData = await response.json();
             console.log("API成功 - ユーザーデータ:", userData);
             
+            // DBから返されたroleIdを確実に検査して設定
             if (userData.roleId) {
               // ここが重要: roleIdが文字列として正確に一致するか確認
               const dbRole = userData.roleId.toLowerCase();
               console.log("DBから取得した正確なロール:", dbRole);
               
-              // ロールの設定（正確な値）
-              setUserRole(dbRole);
+              // ロールの設定（正確な値）- 強制的にチェックして設定
+              if (dbRole === 'mentor') {
+                setUserRole('mentor');
+                console.log("メンターロールを設定しました");
+              } else if (dbRole === 'admin') {
+                setUserRole('admin');
+                console.log("管理者ロールを設定しました");
+              } else {
+                setUserRole('student');
+                console.log("生徒ロールを設定しました");
+              }
             } else {
               console.log("DBデータにロール情報がありません。メタデータのロールを使用:", tempRole);
             }
@@ -401,18 +411,19 @@ export default function DashboardLayout({
                   <p className="font-medium text-sm truncate">
                     {user?.db_user?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email || 'ユーザー'}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-gray-500 font-bold truncate">
                     {userRole === 'admin' ? '管理者' : 
                      userRole === 'mentor' ? 'メンター' : 
                      '生徒'}
                   </p>
-                  {process.env.NODE_ENV !== 'production' && (
+                  {/* デバッグ情報 - 開発環境でなくても表示 */}
+                  {(process.env.NODE_ENV !== 'production' || true) && (
                     <>
                       <p className="text-xxs text-gray-400 mt-1 truncate">
                         ID: {user?.id?.substring(0, 8)}...
                       </p>
                       <p className="text-xxs text-gray-400 truncate">
-                        Role: {userRole || 'unknown'}
+                        <span className="font-bold">Role:</span> {userRole || 'unknown'} (<span className="text-red-500">{user?.db_user?.roleId || 'no-role'}</span>)
                       </p>
                       <details className="text-xxs text-gray-400 text-left mt-1">
                         <summary className="cursor-pointer">開発者情報</summary>
@@ -421,6 +432,7 @@ export default function DashboardLayout({
                           <p>Email: {user?.email}</p>
                           <p>Full ID: {user?.id}</p>
                           <p>DB Info: {user?.db_user ? 'あり' : 'なし'}</p>
+                          <p className="text-red-500">DB RoleId: {user?.db_user?.roleId}</p>
                         </div>
                       </details>
                     </>

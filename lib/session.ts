@@ -38,26 +38,28 @@ export async function getAuthenticatedUser(): Promise<{user: User, role: string}
     return null;
   }
   
-  // ユーザープロフィール＋ロールを取得
-  const { data: userData, error: profileError } = await supabase
-    .from('profiles')
-    .select('*')
+  // ユーザー情報＋ロールをusersテーブルから取得
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('roleId, role:roles(name)')
     .eq('id', sessionData.session.user.id)
     .single();
     
-  if (profileError) {
-    console.error("プロフィール取得エラー:", profileError);
+  if (userError) {
+    console.error("ユーザー情報取得エラー:", userError);
     return null;
   }
   
   if (!userData) {
-    console.log("ユーザープロフィールなし");
+    console.log("ユーザー情報なし");
     return null;
   }
   
+  console.log("ユーザーデータ取得結果:", userData);
+  
   return {
     user: sessionData.session.user,
-    role: userData.role || 'student' // デフォルト権限
+    role: userData.roleId || 'student' // roleIdを使用
   };
 }
 
@@ -95,17 +97,19 @@ export async function getSessionFromRequest(request: Request): Promise<{
         } else if (data?.user) {
           console.log("トークンからユーザー取得成功:", data.user.email);
           
-          // ユーザープロフィール＋ロールを取得
+          // ユーザー情報＋ロールをusersテーブルから取得
           try {
-            const { data: userData, error: profileError } = await supabase
-              .from('profiles')
-              .select('role')
+            const { data: userData, error: userError } = await supabase
+              .from('users')
+              .select('roleId, role:roles(name)')
               .eq('id', data.user.id)
               .single();
               
-            if (profileError) {
-              console.error("プロフィール取得エラー:", profileError);
+            if (userError) {
+              console.error("ユーザー情報取得エラー:", userError);
             }
+            
+            console.log("ユーザーデータ取得結果:", userData);
             
             // セッションオブジェクトを作成（トークンからは直接取得できないため）
             return {
@@ -118,12 +122,12 @@ export async function getSessionFromRequest(request: Request): Promise<{
                 user: data.user
               } as Session,
               user: data.user,
-              role: userData?.role || 'student' // デフォルトロールを設定
+              role: userData?.roleId || 'student' // roleIdを使用
             };
-          } catch (profileErr) {
-            console.error("プロフィール取得中に例外:", profileErr);
+          } catch (userErr) {
+            console.error("ユーザー情報取得中に例外:", userErr);
             
-            // プロフィール取得に失敗してもユーザー情報は返す
+            // ユーザー情報取得に失敗してもユーザー情報は返す
             return {
               session: {
                 access_token: token,
@@ -159,27 +163,29 @@ export async function getSessionFromRequest(request: Request): Promise<{
       
       console.log("セッション取得成功:", session.user.email);
       
-      // ユーザープロフィール＋ロールを取得
+      // ユーザープロフィール＋ロールをusersテーブルから取得
       try {
-        const { data: userData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('roleId, role:roles(name)')
           .eq('id', session.user.id)
           .single();
           
-        if (profileError) {
-          console.error("プロフィール取得エラー:", profileError);
+        if (userError) {
+          console.error("ユーザー情報取得エラー:", userError);
         }
+        
+        console.log("ユーザーデータ取得結果:", userData);
         
         return {
           session,
           user: session.user,
-          role: userData?.role || 'student' // プロフィールがなければデフォルトロール
+          role: userData?.roleId || 'student' // roleIdを使用
         };
-      } catch (profileErr) {
-        console.error("プロフィール取得中に例外:", profileErr);
+      } catch (userErr) {
+        console.error("ユーザー情報取得中に例外:", userErr);
         
-        // プロフィール取得に失敗してもセッション情報は返す
+        // ユーザー情報取得に失敗してもセッション情報は返す
         return {
           session,
           user: session.user,
