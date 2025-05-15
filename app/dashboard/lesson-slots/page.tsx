@@ -139,7 +139,19 @@ export default function LessonSlotsPage() {
     try {
       setSlotLoading(true);
       
-      const response = await fetch('/api/lesson-slots');
+      // Supabaseから認証トークンを取得して、APIリクエストに含める
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      
+      if (!token) {
+        throw new Error('認証トークンが取得できません');
+      }
+      
+      const response = await fetch('/api/lesson-slots', {
+        headers: {
+          'Authorization': `Bearer ${token}` // 認証トークンをヘッダーに追加
+        }
+      });
       
       if (!response.ok) {
         throw new Error(`APIエラー: ${response.status}`);
@@ -288,14 +300,14 @@ export default function LessonSlotsPage() {
       <div className="flex justify-between items-center mb-4">
         <Tabs defaultValue="active" className="w-full">
           <div className="flex items-center justify-between mb-4">
-            <TabsList>
+            <TabsList className="mr-4">
               <TabsTrigger value="active">All Slots</TabsTrigger>
               <TabsTrigger value="reserved">Reserved</TabsTrigger>
             </TabsList>
             
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <Button size="md" className="bg-blue-600 hover:bg-blue-700 text-white font-medium ml-4" onClick={() => setIsDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> Create New Slot
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md" onClick={() => setIsDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4 inline" /> Create New Slot
               </Button>
               <DialogContent>
                 <DialogHeader>
