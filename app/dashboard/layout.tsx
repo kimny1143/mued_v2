@@ -178,6 +178,10 @@ export default function DashboardLayout({
             
             const userData = await response.json();
             console.log("API成功 - ユーザーデータ:", userData);
+            console.log("API応答の生データ:", JSON.stringify(userData));
+            console.log("API応答からのroleId:", userData.roleId);
+            console.log("roleIdのタイプ:", typeof userData.roleId);
+            console.log("DBアクセス成功状態:", userData.dbAccessSuccessful);
             
             // DBから返されたroleIdを確実に検査して設定
             if (userData.roleId) {
@@ -197,7 +201,29 @@ export default function DashboardLayout({
                 console.log("生徒ロールを設定しました");
               }
             } else {
-              console.log("DBデータにロール情報がありません。メタデータのロールを使用:", tempRole);
+              console.log("DBデータにロール情報がありません。メタデータから確認します");
+              
+              // メタデータからrole情報を確認
+              const metaRole = authUser.user_metadata?.role;
+              if (metaRole) {
+                console.log("メタデータからロール検出:", metaRole);
+                const metaRoleStr = String(metaRole).toLowerCase();
+                
+                if (metaRoleStr === 'mentor') {
+                  setUserRole('mentor');
+                  console.log("メタデータからメンターロールを設定しました");
+                } else if (metaRoleStr === 'admin') {
+                  setUserRole('admin');
+                  console.log("メタデータから管理者ロールを設定しました");
+                } else {
+                  setUserRole('student');
+                  console.log("メタデータから生徒ロールを設定しました");
+                }
+              } else {
+                // フォールバック - デフォルトロール
+                console.log("ロール情報が見つかりません。デフォルトのstudentロールを使用");
+                setUserRole('student');
+              }
             }
             
             // ユーザー情報を拡張（DBの情報を追加）

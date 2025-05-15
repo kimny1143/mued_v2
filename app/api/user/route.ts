@@ -56,6 +56,44 @@ export async function GET(req: NextRequest) {
       image: null
     };
     
+    // データベースのテーブル構造と権限をテスト
+    try {
+      // 1. 最初の行を取得して構造確認
+      console.log('---DBテーブル構造テスト開始---');
+      const { data: firstUser, error: firstUserError } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .limit(1);
+        
+      if (firstUserError) {
+        console.error('テーブル最初の行取得エラー:', firstUserError);
+      } else if (firstUser && firstUser.length > 0) {
+        console.log('usersテーブル構造サンプル:', Object.keys(firstUser[0]));
+        console.log('roleIdカラム存在:', 'roleId' in firstUser[0]);
+        if ('roleId' in firstUser[0]) {
+          console.log('roleIdカラムの型:', typeof firstUser[0].roleId);
+          console.log('roleIdカラムのサンプル値:', firstUser[0].roleId);
+        }
+      } else {
+        console.log('usersテーブルは空です');
+      }
+      
+      // 2. 存在するすべての行のIDをカウント
+      const { count, error: countError } = await supabaseAdmin
+        .from('users')
+        .select('id', { count: 'exact' });
+        
+      if (countError) {
+        console.error('行カウントエラー:', countError);
+      } else {
+        console.log(`テーブル内の行数: ${count || 0}`);
+      }
+      
+      console.log('---DBテーブル構造テスト終了---');
+    } catch (structureErr) {
+      console.error('テーブル構造テストエラー:', structureErr);
+    }
+    
     // 1. まず auth.users テーブルからメタデータを取得
     try {
       const { data: authUser, error: authError } = await supabaseAdmin
@@ -93,6 +131,26 @@ export async function GET(req: NextRequest) {
     // 2. users テーブルからユーザー情報取得 & role情報も同時に取得
     try {
       console.log('usersテーブルからデータ取得開始...');
+      console.log('Supabase Admin URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log('Service Role Key 存在確認:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+      
+      // テーブル構造を確認
+      console.log('テーブル構造確認...');
+      try {
+        const { data: tableInfo, error: tableError } = await supabaseAdmin
+          .from('users')
+          .select('*')
+          .limit(0);
+          
+        if (tableError) {
+          console.error('テーブル構造確認エラー:', tableError);
+        } else {
+          console.log('テーブルカラム:', Object.keys(tableInfo || {}));
+        }
+      } catch (tableErr) {
+        console.error('テーブル構造確認例外:', tableErr);
+      }
+      
       // users テーブルから基本情報とロール情報をJOINして取得
       const { data: dbUser, error: usersError } = await supabaseAdmin
         .from('users')
@@ -120,6 +178,9 @@ export async function GET(req: NextRequest) {
       } else if (dbUser) {
         dbAccessSuccessful = true;
         console.log('usersテーブルからユーザー情報取得成功:', dbUser);
+        console.log('取得した生データ:', JSON.stringify(dbUser));
+        console.log('roleId直接アクセス:', dbUser.roleId);
+        console.log('roleIdのタイプ:', typeof dbUser.roleId);
         
         // 型キャストで安全にアクセス
         const typedUser = dbUser as unknown as DbUserWithRole;
