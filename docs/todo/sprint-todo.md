@@ -99,32 +99,32 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
 
 ### Story S1-2: `LessonSlot`,`Reservation` API (RLS & バリデーション)
 - **担当:** BEチーム
-- **状態:** ✅ 完了
+- **状態:** ⚠️確認必要
 - **概要:** メンターがレッスン提供可能な時間枠 (`LessonSlot`) と、ユーザーがその枠を予約する `Reservation` のためのCRUD APIを実装する。入力値バリデーションとSupabase RLSによる適切な権限管理、重複予約防止ロジックも含む。
 - **DoD:** API経由で `LessonSlot` と `Reservation` のCRUD操作が正しく行えること。不正な入力や権限のない操作は適切に弾かれること。重複予約が防止されること。APIの単体テストカバレッジが90%以上であること。
 - **タスク:**
-    - [x] BE: `prisma/schema.prisma` に `LessonSlot` と `Reservation` モデルを定義（既存の場合は確認・調整）。
-    - [x] BE: `LessonSlot` 用のCRUD APIエンドポイント群 (`app/api/lesson-slots/...`) を実装。
-    - [x] BE: `Reservation` 用のCRUD APIエンドポイント群 (`app/api/reservations/...`) を実装。
-    - [x] BE: APIリクエストボディの入力値バリデーションをZod等を用いて実装。
-    - [x] BE: Supabaseコンソールまたはマイグレーションファイルで `LessonSlot` と `Reservation` テーブルに対するRLSポリシーを設定（例: メンターは自身のスロットのみ作成・更新可能、ユーザーは自身の予約のみ作成・閲覧可能）。（`20240512_rls_fix.sql` 等のマイグレーション適用をCIで確認 - Story R0-4と連携）
-    - [x] BE: 予約作成時に、指定されたスロットが既に予約されていないか確認する重複予約防止ロジックを実装。
-    - [x] BE: 各APIエンドポイントに対する単体テスト (Vitest/Jest等) を作成し、カバレッジ90%以上を達成。
+    - [ ] BE: `prisma/schema.prisma` に `LessonSlot` と `Reservation` モデルを定義（既存の場合は確認・調整）。
+    - [ ] BE: `LessonSlot` 用のCRUD APIエンドポイント群 (`app/api/lesson-slots/...`) を実装。
+    - [ ] BE: `Reservation` 用のCRUD APIエンドポイント群 (`app/api/reservations/...`) を実装。
+    - [ ] BE: APIリクエストボディの入力値バリデーションをZod等を用いて実装。
+    - [ ] BE: Supabaseコンソールまたはマイグレーションファイルで `LessonSlot` と `Reservation` テーブルに対するRLSポリシーを設定（例: メンターは自身のスロットのみ作成・更新可能、ユーザーは自身の予約のみ作成・閲覧可能）。（`20240512_rls_fix.sql` 等のマイグレーション適用をCIで確認 - Story R0-4と連携）
+    - [ ] BE: 予約作成時に、指定されたスロットが既に予約されていないか確認する重複予約防止ロジックを実装。
+    - [ ] BE: 各APIエンドポイントに対する単体テスト (Vitest/Jest等) を作成し、カバレッジ90%以上を達成。
 
 ### Story S1-3: 予約UI（Table+Modal, Mobile Ready）
 - **担当:** FEチーム
-- **状態:** ✅ 完了
+- **状態:** ⚠️確認必要
 - **概要:** ユーザーが利用可能なレッスン枠を一覧で確認し、モーダルウィンドウ経由で予約を実行できるUIを実装する。スマートフォン表示にも最適化し、LCP 2.5秒以内を目指す。
 - **DoD:** レッスン枠がテーブル形式で表示され、選択すると予約モーダルが開くこと。モーダル内で予約が実行でき、結果がユーザーにフィードバックされること。UIはレスポンシブ対応であり、主要画面のLCPが2.5秒未満であること。
 - **タスク:**
-    - [x] FE: `app/reservations/page.tsx` 等の予約ページを作成。
-    - [x] FE: 利用可能な `LessonSlot` を一覧表示するテーブルコンポーネント (`app/components/reservations/SlotTable.tsx` 等) を作成。APIから取得したデータを表示。
-    - [x] FE: スロット選択時に表示される予約確認・実行用モーダルコンポーネント (`app/components/reservations/ReservationModal.tsx` 等) を作成。
-    - [x] FE: TailwindCSSを用いて、テーブルおよびモーダルのレスポンシブデザインを実装。
-    - [x] FE: SWR, React Query, またはServer Actions等を用いてAPIとのデータ連携および状態管理を実装。
-    - [x] FE: Lighthouse等で主要な予約関連ページのLCPを測定し、2.5秒未満を達成するように最適化。
-    - [x] FE: 予約成功・失敗時のユーザーへのフィードバックUI（Toast通知等）を実装。
-    - [x] FE: Stripe CheckoutからのリダイレクトURLがVercelの動的プレビューURLに対応していることを確認 (Story R0-4と連携)。
+    - [ ] FE: `app/reservations/page.tsx` 等の予約ページを作成。
+    - [ ] FE: 利用可能な `LessonSlot` を一覧表示するテーブルコンポーネント (`app/components/reservations/SlotTable.tsx` 等) を作成。APIから取得したデータを表示。
+    - [ ] FE: スロット選択時に表示される予約確認・実行用モーダルコンポーネント (`app/components/reservations/ReservationModal.tsx` 等) を作成。
+    - [ ] FE: TailwindCSSを用いて、テーブルおよびモーダルのレスポンシブデザインを実装。
+    - [ ] FE: SWR, React Query, またはServer Actions等を用いてAPIとのデータ連携および状態管理を実装。
+    - [ ] FE: Lighthouse等で主要な予約関連ページのLCPを測定し、2.5秒未満を達成するように最適化。
+    - [ ] FE: 予約成功・失敗時のユーザーへのフィードバックUI（Toast通知等）を実装。
+    - [ ] FE: Stripe CheckoutからのリダイレクトURLがVercelの動的プレビューURLに対応していることを確認 (Story R0-4と連携)。
 
 ### Story S1-4: QA: Playwright `auth→checkout→reserve` E2E
 - **担当:** QAチーム

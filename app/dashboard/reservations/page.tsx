@@ -157,17 +157,38 @@ export default function ReservationsPage() {
             fetchWithRetry('/api/lesson-slots', authData.session.access_token, 5)
           ]);
           
+          // デバッグ: APIから取得したデータをログ出力
+          console.log("APIから取得したレッスンスロット:", {
+            total: slotsData.length,
+            items: slotsData.map((slot: LessonSlot) => ({
+              id: slot.id,
+              teacherId: slot.teacherId,
+              teacherName: slot.teacher?.name || slot.mentorName,
+              startTime: slot.startTime,
+              endTime: slot.endTime,
+              isAvailable: slot.isAvailable,
+              hasReservations: (slot.reservations && slot.reservations.length > 0) || false,
+              reservationStatus: slot.reservations?.map((r: Reservation) => r.status)
+            }))
+          });
+          
           // 4. レッスンスロットの処理（利用可能なもののみ）
           const availableSlots = slotsData
             .filter((slot: LessonSlot) => {
               // 利用可能フラグのチェック
-              if (!slot.isAvailable) return false;
+              if (!slot.isAvailable) {
+                console.log(`スロットID ${slot.id}: isAvailable = false のためフィルタリング`);
+                return false;
+              }
               
               // 既に予約済みかチェック
               if (slot.reservations && slot.reservations.length > 0) {
-                if (slot.reservations.some(res => 
+                const hasConfirmedReservation = slot.reservations.some(res => 
                   res.status === 'CONFIRMED' || 
-                  res.paymentStatus === 'PAID')) {
+                  res.paymentStatus === 'PAID');
+                
+                if (hasConfirmedReservation) {
+                  console.log(`スロットID ${slot.id}: 確定済み予約があるためフィルタリング`);
                   return false;
                 }
               }
@@ -177,6 +198,18 @@ export default function ReservationsPage() {
             .sort((a: LessonSlot, b: LessonSlot) => {
               return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
             });
+          
+          // デバッグ: フィルタリング後のデータをログ出力
+          console.log("フィルタリング後の表示可能レッスンスロット:", {
+            total: availableSlots.length,
+            items: availableSlots.map((slot: LessonSlot) => ({
+              id: slot.id,
+              teacherId: slot.teacherId,
+              teacherName: slot.teacher?.name || slot.mentorName,
+              startTime: slot.startTime,
+              endTime: slot.endTime
+            }))
+          });
           
           // 5. 状態を更新
           setReservations(reservationsData);

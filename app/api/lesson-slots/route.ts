@@ -132,10 +132,21 @@ export async function GET(request: NextRequest) {
     
     // 現在以降の利用可能なレッスン枠を取得
     try {
+      console.log("レッスンスロット取得開始 - ユーザー:", sessionInfo.user.email);
+      
+      // 現在日時から6時間前まで含めた範囲で検索（タイムゾーンの問題に対応）
+      const searchStartTime = new Date();
+      searchStartTime.setHours(searchStartTime.getHours() - 6);
+      
+      console.log("検索日時範囲:", { 
+        from: searchStartTime.toISOString(),
+        currentServerTime: new Date().toISOString() 
+      });
+      
       const lessonSlots = await executePrismaQuery(() => prisma.lessonSlot.findMany({
         where: {
           startTime: {
-            gte: new Date(), // 現在時刻以降
+            gte: searchStartTime, // 現在時刻から6時間前以降を含める
           },
         },
         include: {
@@ -162,6 +173,21 @@ export async function GET(request: NextRequest) {
           startTime: 'asc',
         },
       }));
+
+      console.log(`DB検索結果: ${lessonSlots.length}件のレッスンスロット発見`);
+      if (lessonSlots.length > 0) {
+        console.log("レッスンスロット詳細:", lessonSlots.map(slot => ({
+          id: slot.id,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          teacherId: slot.teacherId,
+          teacherName: slot.teacher?.name,
+          isAvailable: slot.isAvailable,
+          reservationsCount: slot.reservations.length
+        })));
+      } else {
+        console.log("利用可能なレッスンスロットはありません");
+      }
 
       // Stripeから単体レッスン価格を取得
       const priceInfo = await getSingleLessonPrice();
@@ -195,6 +221,12 @@ export async function GET(request: NextRequest) {
 
         // 実際の予約可能状態を計算
         const isActuallyAvailable = slot.isAvailable && !hasOtherConfirmedReservation;
+
+        // 各スロットに対するフラグをログ
+        console.log(`スロットID ${slot.id}: isAvailable=${slot.isAvailable}, ` +
+          `hasMyReservation=${hasMyReservation}, ` +
+          `hasOtherConfirmedReservation=${hasOtherConfirmedReservation}, ` +
+          `isActuallyAvailable=${isActuallyAvailable}`);
         
         return {
           id: slot.id,
@@ -230,6 +262,8 @@ export async function GET(request: NextRequest) {
           updatedAt: slot.updatedAt,
         };
       });
+
+      console.log(`クライアントへの返却データ: ${formattedSlots.length}件のレッスンスロット`);
 
       return NextResponse.json(formattedSlots, {
         headers: {
