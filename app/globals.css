@@ -349,7 +349,7 @@
   }
 
   .dashboard-header {
-    @apply bg-white border-b border-gray-200 fixed w-full z-20 top-0 left-0;
+    @apply bg-white border-b border-gray-200 fixed w-full z-50 top-0 left-0;
     height: 4rem;
   }
 
@@ -417,7 +417,7 @@
   
   /* モバイル用ヘッダーの調整 */
   .dashboard-header {
-    @apply z-30;
+    @apply z-50;
   }
 }
 

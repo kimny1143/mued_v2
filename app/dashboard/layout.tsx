@@ -285,7 +285,7 @@ export default function DashboardLayout({
         {/* サイドバー */}
         <aside
           className={`
-            fixed inset-y-0 left-0 z-50 bg-white border-r pt-16 transition-all duration-300 ease-in-out
+            fixed inset-y-0 left-0 z-40 bg-white border-r pt-16 transition-all duration-300 ease-in-out
             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
             lg:translate-x-0 
             ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
@@ -315,7 +315,7 @@ export default function DashboardLayout({
           </div>
           <div className="h-full overflow-y-auto">
             <nav className="px-4 py-4">
-              <ul className="space-y-1">
+              <ul className="space-y-2">
                 {dashboardNavItems.map(({ icon: Icon, label, path, subMenu }) => {
                   const isActive = isMenuActive(path, subMenu);
                   const hasSubmenu = subMenu && subMenu.length > 0;
@@ -326,17 +326,19 @@ export default function DashboardLayout({
                         <>
                           <Button
                             variant={isActive ? "secondary" : "ghost"}
-                            className={`justify-between w-full ${isSidebarCollapsed ? 'px-2' : 'px-4'}`}
+                            className={`w-full h-10 ${isSidebarCollapsed ? 'px-2 justify-center' : 'px-4 flex justify-between'}`}
                             onClick={() => toggleSubmenu(label)}
                           >
                             <div className="flex items-center">
-                              <Icon className={`h-5 w-5 ${isSidebarCollapsed ? 'mr-0' : 'mr-2'}`} />
-                              {!isSidebarCollapsed && <span className="text-sm">{label}</span>}
+                              <Icon className="h-5 w-5 flex-shrink-0" />
+                              {!isSidebarCollapsed && <span className="text-sm ml-2">{label}</span>}
                             </div>
                             {!isSidebarCollapsed && (
-                              expandedMenus[label] ? 
-                              <ChevronLeftIcon className="h-4 w-4" /> : 
-                              <ChevronRightIcon className="h-4 w-4" />
+                              <span className="flex-shrink-0">
+                                {expandedMenus[label] ? 
+                                <ChevronLeftIcon className="h-4 w-4" /> : 
+                                <ChevronRightIcon className="h-4 w-4" />}
+                              </span>
                             )}
                           </Button>
                           {expandedMenus[label] && !isSidebarCollapsed && (
@@ -358,12 +360,12 @@ export default function DashboardLayout({
                       ) : (
                         <Button
                           variant={isActive ? "secondary" : "ghost"}
-                          className={`w-full ${isSidebarCollapsed ? 'px-2' : 'px-4'}`}
+                          className={`w-full h-10 ${isSidebarCollapsed ? 'px-2 justify-center' : 'px-4 flex justify-start'}`}
                           onClick={() => router.push(path)}
                         >
                           <div className="flex items-center">
-                            <Icon className={`h-5 w-5 ${isSidebarCollapsed ? 'mr-0' : 'mr-2'}`} />
-                            {!isSidebarCollapsed && <span className="text-sm">{label}</span>}
+                            <Icon className="h-5 w-5 flex-shrink-0" />
+                            {!isSidebarCollapsed && <span className="text-sm ml-2">{label}</span>}
                           </div>
                         </Button>
                       )}
@@ -375,7 +377,7 @@ export default function DashboardLayout({
                 {(userRole === 'mentor' || userRole === 'admin') && (
                   <>
                     <li className="pt-2">
-                      <div className={`px-3 py-1 text-xs font-medium text-gray-400 ${isSidebarCollapsed ? 'text-center' : ''}`}>
+                      <div className={`px-3 py-1 text-xs font-medium text-gray-400 ${isSidebarCollapsed ? 'text-center' : 'text-left'}`}>
                         {!isSidebarCollapsed && 'メンターメニュー'}
                       </div>
                     </li>
@@ -385,12 +387,12 @@ export default function DashboardLayout({
                         <li key={label}>
                           <Button
                             variant={isActive ? "secondary" : "ghost"}
-                            className={`w-full ${isSidebarCollapsed ? 'px-2' : 'px-4'}`}
+                            className={`w-full h-10 ${isSidebarCollapsed ? 'px-2 justify-center' : 'px-4 flex justify-start'}`}
                             onClick={() => router.push(path)}
                           >
                             <div className="flex items-center">
-                              <Icon className={`h-5 w-5 ${isSidebarCollapsed ? 'mr-0' : 'mr-2'}`} />
-                              {!isSidebarCollapsed && <span className="text-sm">{label}</span>}
+                              <Icon className="h-5 w-5 flex-shrink-0" />
+                              {!isSidebarCollapsed && <span className="text-sm ml-2">{label}</span>}
                             </div>
                           </Button>
                         </li>
