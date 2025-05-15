@@ -19,7 +19,7 @@ import {
   CalendarIcon
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 import { signOut } from "@/app/actions/auth";
 import { Button } from "@/app/components/ui/button";
 //import { cn } from "@/lib/utils";
@@ -31,6 +31,16 @@ interface NavItem {
   label: string;
   path: string;
   subMenu?: Array<{ label: string; path: string }>;
+}
+
+// 拡張ユーザータイプの定義
+interface ExtendedUser extends SupabaseUser {
+  db_profile?: {
+    roleId?: string;
+    name?: string;
+    email?: string;
+    image?: string;
+  };
 }
 
 // ナビゲーション項目
@@ -58,7 +68,7 @@ export default function DashboardLayout({
   title?: string;
   actions?: React.ReactNode;
 }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
@@ -119,27 +129,58 @@ export default function DashboardLayout({
     
     const getUser = async () => {
       try {
+        console.log("ユーザー情報取得開始...");
         const { data } = await supabase.auth.getSession();
         
         // コンポーネントがアンマウントされていたら何もしない
         if (!isMounted) return;
         
-        setUser(data.session?.user || null);
-        
-        // ユーザーロールを取得
         if (data.session?.user) {
+          console.log("セッションユーザー検出:", data.session.user.email);
+          console.log("ユーザーID:", data.session.user.id);
+          console.log("認証メタデータ:", data.session.user.user_metadata);
+          
+          setUser(data.session.user);
+          
+          // ユーザーロールを取得
           try {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('role')
+            console.log("usersテーブルからロール情報を取得中...");
+            const { data: userData, error } = await supabase
+              .from('users')
+              .select('roleId, name, email, image')
               .eq('id', data.session.user.id)
               .single();
               
-            setUserRole(profileData?.role || 'student');
+            if (error) {
+              console.error("Supabaseクエリエラー:", error);
+              throw error;
+            }
+            
+            console.log("取得したユーザーデータ:", userData);
+            
+            // Userオブジェクトを拡張
+            if (userData) {
+              setUser(prev => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  db_profile: userData // DBから取得した情報を保存
+                };
+              });
+            }
+            
+            setUserRole(userData?.roleId || 'student');
           } catch (error) {
             console.error("ロール取得エラー:", error);
-            setUserRole('student'); // デフォルトは student
+            console.log("セッションユーザー情報:", data.session.user);
+            // 認証メタデータからロールを取得してみる（フォールバック）
+            const fallbackRole = data.session.user.user_metadata?.role || 'student';
+            console.log("フォールバックロール:", fallbackRole);
+            setUserRole(fallbackRole);
           }
+        } else {
+          console.log("セッションなし - 未認証状態");
+          setUser(null);
         }
         
         setLoading(false);
@@ -332,7 +373,7 @@ export default function DashboardLayout({
               {!isSidebarCollapsed && (
                 <div className="text-center">
                   <p className="font-medium text-sm truncate">
-                    {user?.user_metadata?.full_name || user?.email || 'ユーザー'}
+                    {user?.db_profile?.name || user?.user_metadata?.name || user?.email || 'ユーザー'}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
                     {userRole === 'admin' ? '管理者' : userRole === 'mentor' ? 'メンター' : '生徒'}
