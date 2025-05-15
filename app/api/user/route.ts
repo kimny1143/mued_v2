@@ -129,7 +129,7 @@ export async function GET(req: NextRequest) {
         // --- ここで public.users テーブルに存在しない場合は挿入／既存なら更新 ---
         try {
           // 既存レコードの roleId を保持するため、roleId は upsert で更新しない。
-          // 新規挿入時のみ DB 側の DEFAULT 句（'student'）に任せる。
+          // 新規挿入後に meta の role が存在すれば別途 update で上書きする。
           const upsertPayload = {
             id: userId,
             name: userData.name,
@@ -145,6 +145,20 @@ export async function GET(req: NextRequest) {
             console.error('users テーブルへの UPSERT 失敗:', upsertError);
           } else {
             console.log('users テーブルへの UPSERT 成功/既存更新完了');
+
+            // メタデータに role があり、かつ student 以外の場合 DB を更新しておく
+            if (userData.roleId && userData.roleId !== 'student') {
+              const { error: roleUpdateError } = await supabaseAdmin
+                .from('users')
+                .update({ roleId: userData.roleId })
+                .eq('id', userId);
+
+              if (roleUpdateError) {
+                console.error('roleId 自動更新失敗:', roleUpdateError);
+              } else {
+                console.log('roleId 自動更新成功:', userData.roleId);
+              }
+            }
           }
         } catch (upsertErr) {
           console.error('users テーブルへの UPSERT 例外:', upsertErr);
