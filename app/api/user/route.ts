@@ -223,6 +223,7 @@ export async function GET(req: NextRequest) {
         console.error('エラーコード:', usersError.code);
         console.error('エラーメッセージ:', usersError.message);
         console.error('エラー詳細:', usersError.details);
+        console.error('エラーヒント:', usersError.hint);
         
         console.log('---サービスロール検証---');
         // SERVICE_ROLEでの認証確認のためのシンプルなテスト
