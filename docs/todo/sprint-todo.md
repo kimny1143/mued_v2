@@ -127,7 +127,7 @@ App Router への移行を完了させ (Sprint Re:0)、その後3スプリント
     - [ ] FE: Stripe CheckoutからのリダイレクトURLがVercelの動的プレビューURLに対応していることを確認 (Story R0-4と連携)。
 
 ### Story S1-4: QA: Playwright `auth→checkout→reserve` E2E
-- **担当:** QAチーム
+- **担当:** QAチーム 
 - **状態:** ⚠️ 進行中
 - **概要:** ユーザー認証からStripeでの支払い、そしてレッスン予約確定までの一連のコアフローをPlaywrightで自動E2Eテストとして実装する。このE2EテストはStory R0-4で構築されるCI環境で実行されることを前提とする。
 - **DoD:** Playwrightで作成した `auth → checkout → reserve` のE2EテストシナリオがCI環境 (Story R0-4で整備) で安定してGREEN（成功）となること。
