@@ -128,18 +128,18 @@ export async function GET(req: NextRequest) {
 
         // --- ここで public.users テーブルに存在しない場合は挿入／既存なら更新 ---
         try {
+          // 既存レコードの roleId を保持するため、roleId は upsert で更新しない。
+          // 新規挿入時のみ DB 側の DEFAULT 句（'student'）に任せる。
           const upsertPayload = {
             id: userId,
             name: userData.name,
             email: userData.email,
-            image: userData.image,
-            // roleId が未設定ならデフォルト student を採用
-            roleId: userData.roleId || 'student'
+            image: userData.image
           } as const;
 
           const { error: upsertError } = await supabaseAdmin
             .from('users')
-            .upsert(upsertPayload, { onConflict: 'id', ignoreDuplicates: false });
+            .upsert(upsertPayload, { onConflict: 'id', ignoreDuplicates: true });
 
           if (upsertError) {
             console.error('users テーブルへの UPSERT 失敗:', upsertError);
@@ -199,6 +199,14 @@ export async function GET(req: NextRequest) {
           console.error('直接クエリエラー:', directError);
         } else if (directData) {
           console.log('直接クエリ成功:', directData);
+
+          // JOIN が失敗した場合にも備えて roleId を一時保存
+          if (directData.roleId) {
+            if (!userData.roleId) {
+              userData.roleId = directData.roleId;
+            }
+            dbAccessSuccessful = true;
+          }
         }
       } catch (directErr) {
         console.error('直接クエリ例外:', directErr);
