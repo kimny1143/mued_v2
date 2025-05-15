@@ -33,6 +33,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
+    console.log('[SRK] key len =', process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0);
+    console.log('[SRK] starts  =', process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0,5));
+
     // URLからユーザーIDを取得
     const userId = req.nextUrl.searchParams.get('userId');
     
