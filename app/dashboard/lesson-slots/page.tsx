@@ -96,19 +96,27 @@ export default function LessonSlotsPage() {
           return;
         }
         
-        // ユーザーロールの取得
-        const { data: userData } = await supabase
-          .from('users')
-          .select('roleId')
-          .eq('id', data.session.user.id)
-          .single();
+        // ユーザーロールをAPI経由で取得
+        try {
+          const response = await fetch(`/api/user?userId=${data.session.user.id}`);
           
-        const role = userData?.roleId || 'student';
-        setUserRole(role);
-        
-        // メンターまたは管理者でない場合はダッシュボードにリダイレクト
-        if (role !== 'mentor' && role !== 'admin') {
-          toast.error('メンター専用のページです');
+          if (!response.ok) {
+            throw new Error('ユーザー情報の取得に失敗しました');
+          }
+          
+          const userData = await response.json();
+          const role = userData?.roleId || 'student';
+          setUserRole(role);
+          
+          // メンターまたは管理者でない場合はダッシュボードにリダイレクト
+          if (role !== 'mentor' && role !== 'admin') {
+            toast.error('メンター専用のページです');
+            router.push('/dashboard');
+            return;
+          }
+        } catch (err) {
+          console.error('ユーザーAPIエラー:', err);
+          toast.error('ユーザー情報の取得に失敗しました');
           router.push('/dashboard');
           return;
         }

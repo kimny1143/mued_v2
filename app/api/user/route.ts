@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 // ユーザーデータの型定義
 interface UserData {
   id: string;
-  roleId: string;
+  roleId?: string;
   name: string | null;
   email: string | null;
   image: string | null;
@@ -29,6 +29,8 @@ interface DbUserWithRole {
   } | null;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     // URLからユーザーIDを取得
@@ -48,8 +50,7 @@ export async function GET(req: NextRequest) {
     // ユーザーデータを格納するオブジェクト
     const userData: UserData = {
       id: userId,
-      roleId: 'student', // デフォルト値
-      // または Google OAuth から取得した場合のデフォルト情報
+      // デフォルトのroleIdは設定しない
       name: null,
       email: null,
       image: null
@@ -76,13 +77,22 @@ export async function GET(req: NextRequest) {
         
         const avatarUrl = authUser.user.user_metadata?.avatar_url || null;
         userData.image = avatarUrl;
+        
+        // メタデータにロール情報があれば一時的に設定（DBの情報が優先）
+        if (authUser.user.user_metadata?.role) {
+          userData.roleId = authUser.user.user_metadata.role;
+          console.log('メタデータからロール検出:', userData.roleId);
+        }
       }
     } catch (authErr) {
       console.warn('Auth APIアクセスエラー:', authErr);
     }
     
+    let dbAccessSuccessful = false;
+    
     // 2. users テーブルからユーザー情報取得 & role情報も同時に取得
     try {
+      console.log('usersテーブルからデータ取得開始...');
       // users テーブルから基本情報とロール情報をJOINして取得
       const { data: dbUser, error: usersError } = await supabaseAdmin
         .from('users')
@@ -102,8 +112,13 @@ export async function GET(req: NextRequest) {
         .single();
         
       if (usersError) {
-        console.warn('usersテーブルアクセスエラー:', usersError);
+        console.error('usersテーブルアクセスエラー:', usersError);
+        console.error('エラーコード:', usersError.code);
+        console.error('エラーメッセージ:', usersError.message);
+        console.error('エラー詳細:', usersError.details);
+        // エラーがあってもAPI呼び出しは続行（バックアップ情報を使用）
       } else if (dbUser) {
+        dbAccessSuccessful = true;
         console.log('usersテーブルからユーザー情報取得成功:', dbUser);
         
         // 型キャストで安全にアクセス
@@ -112,16 +127,20 @@ export async function GET(req: NextRequest) {
         // DBからの情報で上書き（より優先度が高い）
         userData.name = typedUser.name || userData.name;
         userData.email = typedUser.email || userData.email;
-        userData.roleId = typedUser.roleId || userData.roleId;
+        userData.roleId = typedUser.roleId; // null/undefinedでも上書き
         userData.image = typedUser.image || userData.image;
         
         // ロール情報があれば設定
         if (typedUser.role) {
           userData.role = typedUser.role;
         }
+        
+        console.log('DBから取得したroleId:', userData.roleId);
+      } else {
+        console.warn('usersテーブルからのユーザー取得結果が空です');
       }
     } catch (usersErr) {
-      console.warn('usersテーブルアクセスエラー (例外):', usersErr);
+      console.error('usersテーブルアクセス例外:', usersErr);
     }
     
     // 最終確認: ユーザー情報が取得できたか
@@ -140,7 +159,11 @@ export async function GET(req: NextRequest) {
     console.log(`ユーザー情報取得成功: ${userData.name || userData.email}`);
     console.log('最終ユーザーデータ:', userData);
     
-    return NextResponse.json(userData);
+    // ユーザーデータにDBから取得したロール情報も含める
+    return NextResponse.json({
+      ...userData,
+      dbAccessSuccessful // DBアクセスの成功/失敗状態も返す
+    });
   } catch (err) {
     console.error('ユーザー情報取得API エラー:', err);
     return NextResponse.json(

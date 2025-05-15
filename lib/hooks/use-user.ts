@@ -11,6 +11,7 @@ type User = {
   email: string;
   name?: string;
   plan?: string;
+  roleId?: string;
 };
 
 type SubscriptionStatus = {
@@ -67,17 +68,13 @@ export function useUser() {
         let subData = null;
 
         try {
-          // ユーザー情報を取得
-          const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', currentSession.user.id)
-            .single();
-            
-          if (!error) {
-            userData = data;
+          // ユーザー情報をAPIから取得（Supabaseに直接アクセスしない）
+          const response = await fetch(`/api/user?userId=${currentSession.user.id}`);
+          
+          if (response.ok) {
+            userData = await response.json();
           } else {
-            console.warn('ユーザー情報取得エラー (継続します):', error);
+            console.warn('APIからのユーザー情報取得エラー:', await response.text());
           }
         } catch (userErr) {
           console.warn('ユーザー情報取得例外 (継続します):', userErr);
@@ -99,6 +96,7 @@ export function useUser() {
           name: userData?.name || currentSession.user.user_metadata?.name || 
                 currentSession.user.user_metadata?.full_name || 
                 currentSession.user.email?.split('@')[0] || '',
+          roleId: userData?.roleId
         };
         
         // サブスクリプション情報があればプラン情報を追加
