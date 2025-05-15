@@ -23,6 +23,7 @@ import { User } from "@supabase/supabase-js";
 import { signOut } from "@/app/actions/auth";
 import { Button } from "@/app/components/ui/button";
 //import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 // TypeScript型定義
 interface NavItem {
@@ -43,6 +44,11 @@ const dashboardNavItems: NavItem[] = [
   { icon: SettingsIcon, label: "Settings", path: "/dashboard/settings" }
 ];
 
+// メンター/管理者向けのナビゲーション項目
+const mentorNavItems: NavItem[] = [
+  { icon: CalendarIcon, label: "Lesson Slots", path: "/dashboard/lesson-slots" },
+];
+
 export default function DashboardLayout({
   children,
   title = "Welcome back!",
@@ -59,6 +65,7 @@ export default function DashboardLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({});
+  const [userRole, setUserRole] = useState<string>('');
   
   // メモ化された値を使用して現在アクティブなメニューを判断
   const activeMenuItem = React.useMemo(() => {
@@ -118,6 +125,23 @@ export default function DashboardLayout({
         if (!isMounted) return;
         
         setUser(data.session?.user || null);
+        
+        // ユーザーロールを取得
+        if (data.session?.user) {
+          try {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', data.session.user.id)
+              .single();
+              
+            setUserRole(profileData?.role || 'student');
+          } catch (error) {
+            console.error("ロール取得エラー:", error);
+            setUserRole('student'); // デフォルトは student
+          }
+        }
+        
         setLoading(false);
         
         // セッションがない場合はログインページへリダイレクト
@@ -259,126 +283,125 @@ export default function DashboardLayout({
         )}
 
         {/* サイドバー */}
-        <aside className={`
-          mobile-sidebar
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${isSidebarCollapsed ? 'sidebar-collapsed' : 'sidebar-expanded'}
-        `}>
-          {/* Collapse toggle button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute -right-4 top-8 hidden lg:flex h-8 w-8 p-0 rounded-full bg-white border shadow-md"
-            onClick={toggleSidebarCollapse}
-          >
-            {isSidebarCollapsed ? (
-              <ChevronRightIcon className="h-4 w-4" />
-            ) : (
-              <ChevronLeftIcon className="h-4 w-4" />
-            )}
-          </Button>
-
-          {/* Close button for mobile */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="absolute top-4 right-4 lg:hidden w-10 h-10 p-0"
-            onClick={toggleSidebar}
-          >
-            <XIcon className="h-6 w-6" />
-          </Button>
-
-          <div className={`p-6 ${isSidebarCollapsed ? 'lg:p-4' : ''}`}>
-            {/* User Profile */}
-            <div className="mb-8 mt-16 lg:mt-4">
-              <div className={`flex items-center gap-4 mb-4 ${isSidebarCollapsed ? 'lg:justify-center' : ''}`}>
-                <UserCircleIcon className="h-12 w-12" />
-                {!isSidebarCollapsed && (
-                  <div className="hidden lg:block">
-                    <h3 className="font-semibold">{user?.email}</h3>
-                    <p className="text-sm text-gray-500">Free Plan</p>
-                  </div>
-                )}
-              </div>
-              {!isSidebarCollapsed && (
-                <Button 
-                  className="w-full hidden lg:flex" 
-                  variant="outline"
-                  onClick={() => router.push('/dashboard/plans')}
-                >
-                  Upgrade Plan
-                </Button>
+        <div
+          className={`
+            fixed inset-y-0 left-0 z-50 w-64 bg-white border-r pt-16 transition-transform duration-300 
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+            lg:translate-x-0 
+            ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
+          `}
+        >
+          <div className="flex items-center justify-end lg:px-4 py-2 border-b">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="lg:hidden w-10 h-10 p-0"
+              onClick={toggleSidebar}
+            >
+              <XIcon className="h-6 w-6" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden lg:flex w-10 h-10 p-0"
+              onClick={toggleSidebarCollapse}
+            >
+              {isSidebarCollapsed ? (
+                <ChevronRightIcon className="h-6 w-6" />
+              ) : (
+                <ChevronLeftIcon className="h-6 w-6" />
               )}
-            </div>
-
-            {/* Navigation */}
-            <nav className="space-y-1">
-              {dashboardNavItems.map((item, index) => (
-                <React.Fragment key={index}>
-                  <Button
-                    variant={isMenuActive(item.path, item.subMenu) ? "default" : "ghost"}
-                    className={`w-full justify-start ${
-                      isMenuActive(item.path, item.subMenu) ? 'bg-black text-white' : ''
-                    } ${isSidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}`}
-                    onClick={() => {
-                      if (item.subMenu && !isSidebarCollapsed) {
-                        // サブメニューがある場合はトグル
-                        toggleSubmenu(item.label);
-                      } else if (item.subMenu && isSidebarCollapsed) {
-                        // 折りたたまれた状態でサブメニューがある場合は最初のサブメニューに遷移
-                        // 現在のパスと同じなら遷移しない（不要な再レンダリングを避ける）
-                        const firstSubItem = item.subMenu[0];
-                        if (pathname !== firstSubItem.path) {
-                          router.push(firstSubItem.path);
-                          setIsSidebarOpen(false);
-                        }
-                      } else if (pathname !== item.path) {
-                        // 現在のパスと異なる場合のみ遷移（不要な再レンダリングを避ける）
-                        router.push(item.path);
-                        setIsSidebarOpen(false);
-                      }
-                    }}
-                  >
-                    <item.icon className={`h-5 w-5 ${isSidebarCollapsed ? '' : 'mr-3'}`} />
-                    {!isSidebarCollapsed && <span>{item.label}</span>}
-                    {!isSidebarCollapsed && item.subMenu && (
-                      <ChevronRightIcon 
-                        className={`ml-auto h-4 w-4 transition-transform ${
-                          expandedMenus[item.label] ? 'rotate-90' : ''
-                        }`} 
-                      />
-                    )}
-                  </Button>
+            </Button>
+          </div>
+          <div className="h-full overflow-y-auto">
+            <nav className="px-4 py-4">
+              <ul className="space-y-1">
+                {dashboardNavItems.map(({ icon: Icon, label, path, subMenu }) => {
+                  const isActive = isMenuActive(path, subMenu);
+                  const hasSubmenu = subMenu && subMenu.length > 0;
                   
-                  {/* サブメニュー - 標準表示時 */}
-                  {item.subMenu && expandedMenus[item.label] && !isSidebarCollapsed && (
-                    <div className="ml-6 mt-1 space-y-1">
-                      {item.subMenu.map((subItem, subIndex) => (
+                  return (
+                    <li key={label}>
+                      {hasSubmenu ? (
+                        <>
+                          <Button
+                            variant={isActive ? "secondary" : "ghost"}
+                            className={`justify-between w-full ${isSidebarCollapsed ? 'px-2' : 'px-4'}`}
+                            onClick={() => toggleSubmenu(label)}
+                          >
+                            <div className="flex items-center">
+                              <Icon className={`h-5 w-5 ${isSidebarCollapsed ? 'mr-0' : 'mr-2'}`} />
+                              {!isSidebarCollapsed && <span className="text-sm">{label}</span>}
+                            </div>
+                            {!isSidebarCollapsed && (
+                              expandedMenus[label] ? 
+                              <ChevronLeftIcon className="h-4 w-4" /> : 
+                              <ChevronRightIcon className="h-4 w-4" />
+                            )}
+                          </Button>
+                          {expandedMenus[label] && !isSidebarCollapsed && (
+                            <ul className="pl-6 mt-1 space-y-1">
+                              {subMenu.map(subItem => (
+                                <li key={subItem.path}>
+                                  <Button
+                                    variant={pathname === subItem.path ? "secondary" : "ghost"}
+                                    className="w-full px-4 py-2"
+                                    onClick={() => router.push(subItem.path)}
+                                  >
+                                    <span className="text-sm">{subItem.label}</span>
+                                  </Button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </>
+                      ) : (
                         <Button
-                          key={subIndex}
-                          variant={pathname === subItem.path ? "default" : "ghost"}
-                          size="sm"
-                          className={`w-full justify-start ${
-                            pathname === subItem.path ? 'bg-black text-white' : ''
-                          }`}
-                          onClick={() => {
-                            // 現在のパスと異なる場合のみ遷移（不要な再レンダリングを避ける）
-                            if (pathname !== subItem.path) {
-                              router.push(subItem.path);
-                              setIsSidebarOpen(false);
-                            }
-                          }}
+                          variant={isActive ? "secondary" : "ghost"}
+                          className={`w-full ${isSidebarCollapsed ? 'px-2' : 'px-4'}`}
+                          onClick={() => router.push(path)}
                         >
-                          <span className="text-sm">{subItem.label}</span>
+                          <div className="flex items-center">
+                            <Icon className={`h-5 w-5 ${isSidebarCollapsed ? 'mr-0' : 'mr-2'}`} />
+                            {!isSidebarCollapsed && <span className="text-sm">{label}</span>}
+                          </div>
                         </Button>
-                      ))}
-                    </div>
-                  )}
-                </React.Fragment>
-              ))}
+                      )}
+                    </li>
+                  );
+                })}
+                
+                {/* メンター/管理者向けメニューを表示（ユーザーロールで制御） */}
+                {(userRole === 'mentor' || userRole === 'admin') && (
+                  <>
+                    <li className="pt-2">
+                      <div className={`px-3 py-1 text-xs font-medium text-gray-400 ${isSidebarCollapsed ? 'text-center' : ''}`}>
+                        {!isSidebarCollapsed && 'メンターメニュー'}
+                      </div>
+                    </li>
+                    {mentorNavItems.map(({ icon: Icon, label, path, subMenu }) => {
+                      const isActive = isMenuActive(path, subMenu);
+                      return (
+                        <li key={label}>
+                          <Button
+                            variant={isActive ? "secondary" : "ghost"}
+                            className={`w-full ${isSidebarCollapsed ? 'px-2' : 'px-4'}`}
+                            onClick={() => router.push(path)}
+                          >
+                            <div className="flex items-center">
+                              <Icon className={`h-5 w-5 ${isSidebarCollapsed ? 'mr-0' : 'mr-2'}`} />
+                              {!isSidebarCollapsed && <span className="text-sm">{label}</span>}
+                            </div>
+                          </Button>
+                        </li>
+                      );
+                    })}
+                  </>
+                )}
+              </ul>
             </nav>
           </div>
-        </aside>
+        </div>
 
         {/* メインコンテンツ */}
         <main className={`${isSidebarCollapsed ? 'dashboard-main-collapsed' : 'dashboard-main-expanded'} w-full`}>
