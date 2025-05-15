@@ -97,13 +97,13 @@ export default function LessonSlotsPage() {
         }
         
         // ユーザーロールの取得
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('role')
+        const { data: userData } = await supabase
+          .from('users')
+          .select('roleId')
           .eq('id', data.session.user.id)
           .single();
           
-        const role = profileData?.role || 'student';
+        const role = userData?.roleId || 'student';
         setUserRole(role);
         
         // メンターまたは管理者でない場合はダッシュボードにリダイレクト

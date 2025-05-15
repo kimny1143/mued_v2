@@ -35,12 +35,6 @@ interface NavItem {
 
 // 拡張ユーザータイプの定義
 interface ExtendedUser extends SupabaseUser {
-  db_profile?: {
-    roleId?: string;
-    name?: string;
-    email?: string;
-    image?: string;
-  };
   db_user?: {
     roleId?: string;
     name?: string;
