@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@lib/supabase';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
@@ -15,17 +15,23 @@ interface UseSupabaseChannelOptions<T extends Record<string, any>> {
 
 /**
  * Supabaseのリアルタイムチャネルを購読するためのカスタムフック
+ * パフォーマンス最適化版
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useSupabaseChannel<T extends Record<string, any>>(
   channelName: string,
   options: UseSupabaseChannelOptions<T>
 ) {
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  // useRefを使用して最小限の再レンダリングでデータを保持
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const isConnectedRef = useRef(false);
+  const optionsRef = useRef(options);
+
+  // 最新のオプションを常に参照できるように
+  optionsRef.current = options;
 
   useEffect(() => {
-    const { schema = 'public', table, event = '*', filter, onEvent } = options;
+    const { schema = 'public', table, event = '*', filter } = options;
 
     // チャネルを作成
     const newChannel = supabase.channel(channelName);
@@ -42,45 +48,64 @@ export function useSupabaseChannel<T extends Record<string, any>>(
           filter,
         },
         (payload: RealtimePostgresChangesPayload<T>) => {
-          if (onEvent) {
-            onEvent(payload);
+          // 常に最新のコールバックを使用
+          if (optionsRef.current.onEvent) {
+            optionsRef.current.onEvent(payload);
           }
         }
       )
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setIsConnected(true);
-        }
+        isConnectedRef.current = status === 'SUBSCRIBED';
       });
 
-    setChannel(newChannel);
+    channelRef.current = newChannel;
 
     // クリーンアップ
     return () => {
       newChannel.unsubscribe();
-      setIsConnected(false);
+      isConnectedRef.current = false;
+      channelRef.current = null;
     };
-  }, [channelName, options]);
+  }, [channelName]); // オプションへの依存を削除
 
-  return { channel, isConnected };
+  // 状態を返さずにrefを直接返す
+  return {
+    get channel() { return channelRef.current; },
+    get isConnected() { return isConnectedRef.current; }
+  };
 }
 
 /**
  * チャットメッセージのリアルタイム更新を監視するためのカスタムフック
+ * パフォーマンス最適化版
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useChatMessages<T extends Record<string, any>>(
   roomId: string,
   onNewMessage: (message: T) => void
 ) {
+  // デバウンスされたコールバックのために前回のメッセージIDを追跡
+  const lastMessageIdRef = useRef<string | null>(null);
+  
+  // 高頻度の更新を防ぐためのデバウンス処理付きコールバック
+  const debouncedCallback = (payload: RealtimePostgresChangesPayload<T>) => {
+    if (payload.eventType === 'INSERT' && payload.new) {
+      const newMessage = payload.new as T;
+      // @ts-ignore - メッセージにはidがあることを前提
+      const messageId = newMessage.id;
+      
+      // 同じメッセージの重複処理を防止
+      if (messageId !== lastMessageIdRef.current) {
+        lastMessageIdRef.current = messageId;
+        onNewMessage(newMessage);
+      }
+    }
+  };
+
   return useSupabaseChannel<T>(`chat-room-${roomId}`, {
     table: 'messages',
     event: 'INSERT',
     filter: `room_id=eq.${roomId}`,
-    onEvent: (payload) => {
-      if (payload.eventType === 'INSERT' && payload.new) {
-        onNewMessage(payload.new as T);
-      }
-    },
+    onEvent: debouncedCallback
   });
 } 

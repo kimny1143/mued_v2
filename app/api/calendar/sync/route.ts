@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../../auth/[...nextauth]/route';
-import { syncCalendarToLessonSlots, syncLessonSlotsToCalendar } from '../../../../lib/googleCalendar';
+import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
+import { syncCalendarToLessonSlots, syncLessonSlotsToCalendar } from '@/lib/googleCalendar';
 
-// カスタムセッションユーザー型
+export const dynamic = 'force-dynamic';
+
+// カスタムユーザー型
 interface CustomUser {
   id: string;
   name?: string | null;
@@ -11,10 +13,27 @@ interface CustomUser {
   image?: string | null;
 }
 
+// サーバーサイドでSupabaseクライアントを作成
+const createServerSupabase = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_KEY || '',
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      }
+    }
+  );
+};
+
 export async function POST(req: NextRequest) {
   try {
+    // Supabaseクライアントを作成
+    const supabase = createServerSupabase();
+    
     // セッション取得
-    const session = await getServerSession(authOptions);
+    const { data: { session } } = await supabase.auth.getSession();
 
     if (!session || !session.user) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
@@ -28,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ユーザーIDを取得
-    const userId = (session.user as CustomUser).id || '';
+    const userId = session.user.id || '';
 
     if (!userId) {
       return NextResponse.json({ error: 'ユーザーIDが見つかりません' }, { status: 400 });
@@ -64,7 +83,11 @@ export async function POST(req: NextRequest) {
 // 同期状態を取得するGETエンドポイント
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    // Supabaseクライアントを作成
+    const supabase = createServerSupabase();
+    
+    // セッション取得
+    const { data: { session } } = await supabase.auth.getSession();
 
     if (!session || !session.user) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });

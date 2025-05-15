@@ -1,34 +1,21 @@
-import { useSession, signIn, signOut } from "next-auth/react";
-import { Session } from "next-auth";
+import { supabase } from './supabase';
 
-interface CustomUser {
-  id?: string;
-  role?: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-}
-
-interface CustomSession extends Session {
-  user?: CustomUser;
-}
-
-export function useAuth() {
-  const { data: session, status } = useSession();
-  const customSession = session as CustomSession | null;
-  
-  const isAuthenticated = status === "authenticated";
-  const isLoading = status === "loading";
-  const user = customSession?.user;
-  const role = user?.role || "guest";
-  
-  return {
-    session: customSession,
-    isAuthenticated,
-    isLoading,
-    user,
-    role,
-    signIn,
-    signOut,
-  };
+/**
+ * 現在のセッションユーザーの認証情報を取得
+ * @returns サーバーサイドでのみ使用可能なセッション情報
+ */
+export async function auth() {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error('認証情報取得エラー:', error);
+      return null;
+    }
+    
+    return data.session;
+  } catch (err) {
+    console.error('認証処理エラー:', err);
+    return null;
+  }
 } 

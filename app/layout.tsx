@@ -1,14 +1,12 @@
 import React from 'react';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
-import Providers from './providers';
-
-const inter = Inter({ subsets: ['latin'] });
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'MUED LMS',
   description: '音楽教育のためのラーニングマネジメントシステム',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
 };
 
 export default function RootLayout({
@@ -18,9 +16,26 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className={inter.className}>
+      <head>
+        {/* Google Fontsのリンクを直接追加 */}
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" 
+          rel="stylesheet"
+        />
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Shantell+Sans:wght@400;500;700&display=swap"
+          rel="stylesheet"
+        />
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Flow+Circular&display=swap"
+          rel="stylesheet" 
+        />
+      </head>
+      <body className="font-sans">
         <Providers>
-          {children}
+          <main className="min-h-screen">
+            {children}
+          </main>
         </Providers>
       </body>
     </html>

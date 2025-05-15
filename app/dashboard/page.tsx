@@ -1,28 +1,43 @@
 "use client";
 
-import React from "react";
-import { Card } from "@ui/card";
-import { Button } from "@ui/button";
-import { useAuth } from "@lib/auth";
-import { SubscriptionStatus } from "@/components/SubscriptionStatus";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { useUser } from "@/lib/hooks/use-user";
+import { Card } from "@/app/components/ui/card";
+import { Button } from "@/app/components/ui/button";
+import { SubscriptionStatus } from "@/app/components/SubscriptionStatus";
 
 export default function DashboardPage() {
-  const { user, role, isLoading } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const { user } = useUser();
 
-  if (isLoading) {
+  // 認証状態を確認（ページ保護用）
+  useEffect(() => {
+    // 初期セッションチェック
+    const getSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        // ログインしていない場合はログインページへリダイレクト
+        router.push('/login');
+      }
+      setLoading(false);
+    };
+
+    getSession();
+  }, [router]);
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-lg">Loading...</p>
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-sm">Loading dashboard...</p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
-        <h1 className="text-2xl font-bold">Welcome back!</h1>
-      </div>
-
       {/* Welcome section */}
       <section className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -47,25 +62,6 @@ export default function DashboardPage() {
         <SubscriptionStatus />
       </section>
 
-      {/* User information */}
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">User Information</h2>
-        <Card className="p-6 bg-white">
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Name</p>
-                <p>{user?.name || "Not set"}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-500">Email</p>
-                <p>{user?.email || "Not set"}</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </section>
-
       {/* Recent Activity */}
       <section>
         <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
@@ -76,7 +72,10 @@ export default function DashboardPage() {
                 <h4 className="font-medium">Completed Lesson {item}</h4>
                 <p className="text-sm text-gray-500">2 days ago</p>
               </div>
-              <Button variant="ghost" size="sm">
+              <Button 
+                variant="ghost" 
+                size="sm"
+              >
                 View Details
               </Button>
             </div>

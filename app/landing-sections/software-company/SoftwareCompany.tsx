@@ -1,24 +1,36 @@
+'use client';
+
 import { ChevronDownIcon } from "lucide-react";
 import React from "react";
-import { Button } from "@ui/button";
+import { Button } from "../../components/ui/button";
 import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@ui/navigation-menu";
-import { Separator } from "@ui/separator";
-import { Link, useNavigate } from "react-router-dom";
+} from "../../components/ui/navigation-menu";
+import { Separator } from "../../components/ui/separator";
+import Link from "next/link";
+import Image from "next/image";
+import LogoImage from '../../../public/logo.png';
+import { useRouter } from "next/navigation";
 
 export const SoftwareCompany = (): JSX.Element => {
-  const navigate = useNavigate();
+  const router = useRouter();
   
   const navItems = [
-    { label: "Home" },
-    { label: "Features" },
-    { label: "Pricing" },
-    { label: "Contact" },
+    { label: "Home", sectionId: "home" },
+    { label: "Features", sectionId: "features" },
+    { label: "Pricing", sectionId: "pricing" },
+    { label: "Contact", sectionId: "contact" },
   ];
+
+  // スムーズスクロール関数
+  const scrollToSection = (sectionId: string) => {
+    const section = document.getElementById(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <header className="flex items-center justify-between py-4 px-4 sm:px-6 relative w-full bg-white">
@@ -26,14 +38,20 @@ export const SoftwareCompany = (): JSX.Element => {
         {/* Left section: Logo and navigation */}
         <div className="flex items-center gap-4 sm:gap-12 w-full sm:w-auto justify-between sm:justify-start">
           {/* Logo */}
-          <Link to="/" className="flex h-8 items-center gap-1">
-            <img 
-              className="w-12 h-12" 
+          <Link href="/" className="flex h-8 items-center gap-1">
+            <Image 
+              className="w-12 h-12 object-contain" 
               alt="MUED Logo" 
-              src="/logo.svg" 
+              src={LogoImage}
+              width={48}
+              height={48}
+              priority
             />
-            <div className="[font-family:'Shantell_Sans',Helvetica] font-bold text-[#000000cc] text-[28px] leading-7">
-              MUED
+            <div className="font-shantell font-bold text-[#000000cc] text-[28px] leading-7 whitespace-nowrap">
+              <span className="font-shantell font-bold">M</span>
+              <span className="font-shantell font-bold">U</span>
+              <span className="font-shantell font-bold">E</span>
+              <span className="font-shantell font-bold">D</span>
             </div>
           </Link>
 
@@ -49,10 +67,12 @@ export const SoftwareCompany = (): JSX.Element => {
             <NavigationMenuList className="flex items-start gap-8">
               {navItems.map((item, index) => (
                 <NavigationMenuItem key={index}>
-                  <NavigationMenuTrigger className="flex items-center gap-1 px-0 py-0 h-auto bg-transparent [font-family:'Shantell_Sans',Helvetica] font-medium text-[#000000cc] text-[15px] leading-5">
+                  <button
+                    onClick={() => scrollToSection(item.sectionId)}
+                    className="flex items-center gap-1 px-0 py-0 h-auto font-shantell font-medium text-[#000000cc] text-[15px] leading-5 hover:text-black cursor-pointer"
+                  >
                     {item.label}
-                    <ChevronDownIcon className="w-4 h-4" />
-                  </NavigationMenuTrigger>
+                  </button>
                 </NavigationMenuItem>
               ))}
             </NavigationMenuList>
@@ -60,7 +80,7 @@ export const SoftwareCompany = (): JSX.Element => {
 
           {/* Right section: Download, Login, Sign Up */}
           <div className="flex items-center gap-4 sm:gap-8">
-            <div className="hidden sm:block [font-family:'Shantell_Sans',Helvetica] font-medium text-[#000000cc] text-[15px] leading-5">
+            <div className="hidden sm:block font-shantell font-medium text-[#000000cc] text-[15px] leading-5">
               Download app
             </div>
 
@@ -68,15 +88,15 @@ export const SoftwareCompany = (): JSX.Element => {
 
             <Button
               variant="ghost"
-              className="[font-family:'Shantell_Sans',Helvetica] font-medium text-[#000000cc] text-[15px] leading-5"
-              onClick={() => navigate('/login')}
+              className="font-shantell font-medium text-[#000000cc] text-[15px] leading-5"
+              onClick={() => router.push('/login')}
             >
               Log in
             </Button>
 
             <Button 
-              className="px-4 py-2 bg-[#000000cc] rounded [font-family:'Shantell_Sans',Helvetica] font-medium text-white text-[15px] leading-5"
-              onClick={() => navigate('/signup')}
+              className="px-4 py-2 bg-[#000000cc] rounded font-shantell font-medium text-white text-[15px] leading-5"
+              onClick={() => router.push('/register')}
             >
               Sign Up
             </Button>

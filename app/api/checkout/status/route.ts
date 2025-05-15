@@ -2,6 +2,9 @@ import { stripe } from '../../../../lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
+// このAPIルートは常に動的に生成されるべき
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -63,7 +66,6 @@ export async function GET(req: Request) {
       reservation: {
         id: reservation.id,
         status: reservation.status,
-        paymentStatus: reservation.payment_status,
         createdAt: reservation.created_at,
         updatedAt: reservation.updated_at,
         lessonSlot: reservation.lesson_slots,
@@ -71,7 +73,6 @@ export async function GET(req: Request) {
       payment: payment || null,
       session: {
         id: session.id,
-        paymentStatus: session.payment_status,
         amountTotal: session.amount_total,
         currency: session.currency,
       },

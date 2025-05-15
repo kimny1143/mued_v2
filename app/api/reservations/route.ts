@@ -1,32 +1,64 @@
+// 動的ルートフラグ
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
+
 import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getToken } from 'next-auth/jwt';
-import { Prisma } from '../../../src/generated/prisma';
+import { getSessionFromRequest } from '@/lib/session';
+import { Prisma } from '@prisma/client';
+import { createCheckoutSession, stripe } from '@/lib/stripe';
+import { getBaseUrl } from '@/lib/utils';
+import Stripe from 'stripe';
 
 // 予約ステータスの列挙型
 enum ReservationStatus {
-  PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED'
 }
 
-// 支払いステータスの列挙型
-enum PaymentStatus {
-  UNPAID = 'UNPAID',
-  PROCESSING = 'PROCESSING',
-  PAID = 'PAID',
-  REFUNDED = 'REFUNDED',
-  FAILED = 'FAILED'
+// Prismaクエリ実行のラッパー関数（エラーハンドリング強化）
+async function executePrismaQuery<T>(queryFn: () => Promise<T>): Promise<T> {
+  try {
+    return await queryFn();
+  } catch (error) {
+    console.error('Prismaクエリエラー:', error);
+    
+    // PostgreSQL接続エラーの場合、一度明示的に接続を再確立
+    if (error instanceof Prisma.PrismaClientInitializationError || 
+        error instanceof Prisma.PrismaClientKnownRequestError) {
+      console.log('Prisma接続リセット試行...');
+      
+      // エラー後の再試行（最大3回）
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          // 少し待機してから再試行
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          return await queryFn();
+        } catch (retryError) {
+          console.error(`再試行 ${attempt + 1}/3 失敗:`, retryError);
+          if (attempt === 2) throw retryError; // 最後の試行でもエラーなら投げる
+        }
+      }
+    }
+    
+    throw error;
+  }
 }
 
 // 予約一覧を取得
 export async function GET(request: NextRequest) {
   try {
-    // JWTトークンからユーザー情報を取得
-    const token = await getToken({ req: request });
+    console.log('予約一覧API呼び出し - リクエストヘッダー:', 
+      Object.fromEntries(request.headers.entries()));
     
-    if (!token) {
+    // セッション情報を取得
+    const sessionInfo = await getSessionFromRequest(request);
+    
+    console.log('セッション取得結果:', 
+      sessionInfo ? `認証済み: ${sessionInfo.user.email} (${sessionInfo.role})` : '認証なし');
+    
+    if (!sessionInfo) {
       return NextResponse.json(
         { error: '認証が必要です' },
         { status: 401 }
@@ -42,15 +74,15 @@ export async function GET(request: NextRequest) {
     const where: Prisma.ReservationWhereInput = {};
     
     // 教師（メンター）は自分の全予約を、生徒は自分の予約のみを見られる
-    if (token.role === 'mentor') {
+    if (sessionInfo.role === 'mentor') {
       where.slot = {
-        teacherId: token.sub,
+        teacherId: sessionInfo.user.id,
       };
-    } else if (token.role === 'admin') {
+    } else if (sessionInfo.role === 'admin') {
       // 管理者は全ての予約を閲覧可能
     } else {
       // 生徒は自分の予約のみ閲覧可能
-      where.studentId = token.sub;
+      where.studentId = sessionInfo.user.id;
     }
     
     if (status && Object.values(ReservationStatus).includes(status as ReservationStatus)) {
@@ -61,8 +93,8 @@ export async function GET(request: NextRequest) {
       where.slotId = slotId;
     }
     
-    // データベースから予約を取得
-    const reservations = await prisma.reservation.findMany({
+    // データベースから予約を取得（エラーハンドリング強化）
+    const reservations = await executePrismaQuery(() => prisma.reservation.findMany({
       where,
       include: {
         slot: {
@@ -91,25 +123,37 @@ export async function GET(request: NextRequest) {
           startTime: 'asc',
         },
       },
-    });
+    }));
     
-    return NextResponse.json(reservations);
+    return NextResponse.json(reservations, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error) {
     console.error('Error fetching reservations:', error);
     return NextResponse.json(
-      { error: '予約の取得中にエラーが発生しました' },
+      { error: '予約の取得中にエラーが発生しました', details: String(error) },
       { status: 500 }
     );
   }
 }
 
-// 新しい予約を作成
+// 新しい予約のための決済セッションを作成
 export async function POST(request: NextRequest) {
   try {
-    // JWTトークンからユーザー情報を取得
-    const token = await getToken({ req: request });
+    console.log("予約作成リクエスト受信");
     
-    if (!token) {
+    // セッション情報を取得
+    const sessionInfo = await getSessionFromRequest(request);
+    
+    console.log("認証状態:", sessionInfo ? "認証済み" : "未認証", 
+                sessionInfo?.user?.email || "メール情報なし", 
+                "ロール:", sessionInfo?.role || "ロールなし");
+    
+    if (!sessionInfo) {
       return NextResponse.json(
         { error: '認証が必要です' },
         { status: 401 }
@@ -117,6 +161,7 @@ export async function POST(request: NextRequest) {
     }
     
     const data = await request.json();
+    console.log("リクエストデータ:", data);
     
     // 入力検証
     if (!data.slotId) {
@@ -127,17 +172,26 @@ export async function POST(request: NextRequest) {
     }
     
     // スロットが存在するか確認
-    const slot = await prisma.lessonSlot.findUnique({
+    const slot = await executePrismaQuery(() => prisma.lessonSlot.findUnique({
       where: { id: data.slotId },
       include: {
-        reservations: {
-          where: {
-            status: {
-              in: [ReservationStatus.PENDING, ReservationStatus.CONFIRMED],
-            },
-          },
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
         },
+        reservations: true
       },
+    }));
+    
+    console.log("スロット情報:", {
+      found: !!slot,
+      isAvailable: slot?.isAvailable,
+      reservationsCount: slot?.reservations.length,
+      startTime: slot?.startTime,
+      teacherId: slot?.teacherId
     });
     
     if (!slot) {
@@ -149,72 +203,84 @@ export async function POST(request: NextRequest) {
     
     // スロットが利用可能か確認
     if (!slot.isAvailable) {
+      console.log("スロット利用不可: isAvailable=false");
       return NextResponse.json(
         { error: 'このレッスン枠は現在予約できません' },
         { status: 409 }
       );
     }
     
-    // すでに予約が存在するか確認
+    // 既存の予約を確認
     if (slot.reservations.length > 0) {
+      console.log("既存の予約あり:", slot.reservations);
       return NextResponse.json(
         { error: 'このレッスン枠は既に予約されています' },
         { status: 409 }
       );
     }
     
-    // レッスン枠が過去のものでないことを確認
-    if (new Date(slot.startTime) < new Date()) {
-      return NextResponse.json(
-        { error: '過去のレッスン枠は予約できません' },
-        { status: 400 }
-      );
-    }
+    // ベースURL
+    const baseUrl = getBaseUrl();
     
-    // 自分自身のレッスン枠は予約できない（講師が自分のレッスンを予約するケース）
-    if (token.sub === slot.teacherId) {
-      return NextResponse.json(
-        { error: '自分自身のレッスン枠は予約できません' },
-        { status: 400 }
-      );
-    }
-    
-    // 予約を作成
-    const newReservation = await prisma.reservation.create({
-      data: {
-        slotId: data.slotId,
-        studentId: token.sub as string,
-        status: ReservationStatus.PENDING,
-        paymentStatus: PaymentStatus.UNPAID,
-        notes: data.notes,
-      },
-      include: {
-        slot: {
-          include: {
-            teacher: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
-        student: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
+    // レッスン日時のフォーマット
+    const lessonDate = new Date(slot.startTime).toLocaleString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
     
-    return NextResponse.json(newReservation, { status: 201 });
+    // メタデータ
+    const metadata = {
+      slotId: slot.id,
+      studentId: sessionInfo.user.id,
+      teacherId: slot.teacherId,
+      startTime: slot.startTime.toISOString(),
+      endTime: slot.endTime.toISOString(),
+      notes: data.notes || ''
+    };
+    
+    // Stripe Checkout セッションを作成
+    try {
+      const session = await createCheckoutSession({
+        customer_email: sessionInfo.user.email!,
+        line_items: [
+          {
+            price_data: {
+              currency: 'jpy',
+              product_data: {
+                name: `レッスン予約: ${lessonDate}`,
+                description: `講師: ${slot.teacher.name || 'メンター'}`
+              },
+              unit_amount: 5000, // 金額は設定または取得
+              tax_behavior: 'inclusive'
+            },
+            quantity: 1
+          }
+        ],
+        metadata,
+        success_url: `${baseUrl}/dashboard/lessons?success=true&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/dashboard/lessons?cancelled=true`
+      });
+      
+      console.log("Stripe セッション作成成功:", session.id);
+      
+      return NextResponse.json({
+        checkoutUrl: session.url,
+        sessionId: session.id
+      });
+    } catch (error) {
+      console.error("Stripe セッション作成エラー:", error);
+      return NextResponse.json(
+        { error: '決済セッションの作成に失敗しました' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Error creating reservation:', error);
     return NextResponse.json(
-      { error: '予約の作成中にエラーが発生しました' },
+      { error: '予約処理中にエラーが発生しました', details: String(error) },
       { status: 500 }
     );
   }

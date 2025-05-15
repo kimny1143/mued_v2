@@ -1,4 +1,5 @@
 import { ChatMessage as ChatMessageType } from '@lib/types';
+import { useRef } from 'react';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -11,6 +12,8 @@ export function ChatMessage({ message, isOwnMessage }: ChatMessageProps) {
     hour: '2-digit', 
     minute: '2-digit'
   });
+
+  // YouTubeリンクの埋め込み処理を完全に除去し、リンクのまま表示する
 
   return (
     <div

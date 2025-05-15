@@ -1,10 +1,61 @@
 import Stripe from 'stripe';
 
 // Stripeインスタンスの初期化
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+// 環境変数が設定されているか確認
+if (!stripeSecretKey) {
+  console.error('STRIPE_SECRET_KEY環境変数が設定されていません。');
+}
+
+// API接続の設定とタイムアウト設定の追加
+export const stripe = new Stripe(stripeSecretKey || 'dummy_key_for_development', {
   // @ts-expect-error: Stripe型定義の更新に対応
   apiVersion: '2023-10-16',
+  typescript: true,
+  appInfo: {
+    name: 'MUED LMS',
+    version: '1.0.0',
+  },
+  maxNetworkRetries: 5,  // ネットワーク接続の再試行回数をさらに増やす
+  timeout: 60000, // タイムアウトを60秒に延長
+  telemetry: false, // テレメトリを無効化
+  host: 'api.stripe.com', // 明示的にホストを指定
+  protocol: 'https', // 明示的にプロトコルを指定
 });
+
+// 環境に関する情報をログに記録
+console.log('Stripe初期化完了:', {
+  env: process.env.NODE_ENV,
+  vercel: process.env.VERCEL,
+  vercelEnv: process.env.VERCEL_ENV,
+  hasKey: !!stripeSecretKey,
+  keyPrefix: stripeSecretKey ? stripeSecretKey.substring(0, 7) : 'なし',
+});
+
+// Stripeエラーのラッパー関数（再利用可能）
+export async function safeStripeCall<T>(
+  apiCall: () => Promise<T>, 
+  errorMessage = 'Stripe API呼び出しエラー'
+): Promise<T> {
+  try {
+    return await apiCall();
+  } catch (error) {
+    console.error(`${errorMessage}:`, error);
+    
+    // エラーメッセージを整形
+    let enhancedError;
+    if (error instanceof Error) {
+      enhancedError = new Error(`${errorMessage}: ${error.message}`);
+      // 元のエラーのスタックトレースを保持
+      enhancedError.stack = error.stack;
+    } else {
+      enhancedError = new Error(`${errorMessage}: 不明なエラー`);
+    }
+    
+    throw enhancedError;
+  }
+}
 
 // 10分間のキャッシュ設定
 const CACHE_TTL = 10 * 60 * 1000; // 10分（ミリ秒）
@@ -142,24 +193,37 @@ export async function createCheckoutSession({
   cancelUrl,
   customerId,
   metadata,
+  mode = 'payment',
+  clientReferenceId,
 }: {
   priceId: string;
   successUrl: string;
   cancelUrl: string;
   customerId?: string;
   metadata?: Record<string, string>;
+  mode?: 'payment' | 'subscription';
+  clientReferenceId?: string;
 }): Promise<Stripe.Checkout.Session> {
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [{ price: priceId, quantity: 1 }],
-    mode: 'payment',
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-    ...(customerId ? { customer: customerId } : {}),
-    ...(metadata ? { metadata } : {}),
-  });
-
-  return session;
+  console.log('Stripeセッション作成開始:', { priceId, mode });
+  
+  return safeStripeCall(
+    async () => {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: mode,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        ...(customerId ? { customer: customerId } : {}),
+        ...(metadata ? { metadata } : {}),
+        ...(clientReferenceId ? { client_reference_id: clientReferenceId } : {}),
+      });
+      
+      console.log('Stripeセッション作成成功:', { sessionId: session.id });
+      return session;
+    },
+    'チェックアウトセッションの作成に失敗しました'
+  );
 }
 
 // 一回限りの決済セッションの作成
