@@ -22,6 +22,7 @@ import { Badge } from '@/app/components/ui/badge';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { Toaster } from 'sonner';
+import { DatePicker } from '@/app/components/ui/date-picker';
 
 // シンプルなアラートコンポーネント
 const Alert: React.FC<{ className?: string; children: React.ReactNode }> = ({ className, children }) => (
@@ -72,6 +73,7 @@ export default function LessonSlotsPage() {
     startTime: '',
     endTime: '',
   });
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [groupedSlots, setGroupedSlots] = useState<Record<string, LessonSlot[]>>({});
 
@@ -203,13 +205,15 @@ export default function LessonSlotsPage() {
     
     try {
       // バリデーション
-      if (!formData.startDate || !formData.startTime || !formData.endTime) {
+      if (!selectedDate || !formData.startTime || !formData.endTime) {
         setError('すべての項目を入力してください');
         return;
       }
       
-      const startTime = new Date(`${formData.startDate}T${formData.startTime}`);
-      const endTime = new Date(`${formData.startDate}T${formData.endTime}`);
+      // 選択された日付とフォームの時間を組み合わせて日時を作成
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      const startTime = new Date(`${dateStr}T${formData.startTime}`);
+      const endTime = new Date(`${dateStr}T${formData.endTime}`);
       
       // 開始時間が終了時間より前であることを確認
       if (startTime >= endTime) {
@@ -232,6 +236,7 @@ export default function LessonSlotsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         },
         body: JSON.stringify({
           startTime: startTime.toISOString(),
@@ -256,6 +261,7 @@ export default function LessonSlotsPage() {
         startTime: '',
         endTime: '',
       });
+      setSelectedDate(undefined);
       
       // ダイアログを閉じる
       setIsDialogOpen(false);
@@ -326,14 +332,13 @@ export default function LessonSlotsPage() {
                   <Label htmlFor="startDate" className="text-right">
                     Date
                   </Label>
-                  <Input
-                    id="startDate"
-                    name="startDate"
-                    type="date"
-                    value={formData.startDate}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                  />
+                  <div className="col-span-3">
+                    <DatePicker
+                      date={selectedDate}
+                      setDate={setSelectedDate}
+                      placeholder="Select date"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="startTime" className="text-right">
