@@ -279,18 +279,22 @@ export default function LessonSlotsPage() {
 
   return (
     <>
-      {/* ページタイトルとアクション */}
+      {/* ページタイトル */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
-        <h1 className="text-2xl font-bold">レッスンスロット管理</h1>
+        <h1 className="text-2xl font-bold">Lesson Slots Management</h1>
+      </div>
+
+      {/* 作成ボタン - タブリストより上の目立つ位置に配置 */}
+      <div className="flex justify-end mb-4">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <Button className="bg-black text-white w-full sm:w-auto" onClick={() => setIsDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> 新しいスロットを作成
+          <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-medium" onClick={() => setIsDialogOpen(true)}>
+            <Plus className="mr-2 h-5 w-5" /> Create New Slot
           </Button>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>新しいレッスンスロットを作成</DialogTitle>
+              <DialogTitle>Create New Lesson Slot</DialogTitle>
               <DialogDescription>
-                レッスン可能な日時を登録します。学生はこの時間枠から予約できます。
+                Register available time for lessons. Students can book these time slots.
               </DialogDescription>
             </DialogHeader>
             
@@ -298,7 +302,7 @@ export default function LessonSlotsPage() {
               {error && (
                 <div className="p-4 mb-4 border rounded-md bg-red-50 border-red-200 text-red-800">
                   <AlertCircle className="h-4 w-4 inline-block mr-2" />
-                  <span className="font-medium">エラー</span>
+                  <span className="font-medium">Error</span>
                   <div className="text-sm mt-1">{error}</div>
                 </div>
               )}
@@ -306,7 +310,7 @@ export default function LessonSlotsPage() {
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="startDate" className="text-right">
-                    日付
+                    Date
                   </Label>
                   <Input
                     id="startDate"
@@ -319,7 +323,7 @@ export default function LessonSlotsPage() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="startTime" className="text-right">
-                    開始時間
+                    Start Time
                   </Label>
                   <Input
                     id="startTime"
@@ -332,7 +336,7 @@ export default function LessonSlotsPage() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="endTime" className="text-right">
-                    終了時間
+                    End Time
                   </Label>
                   <Input
                     id="endTime"
@@ -347,7 +351,7 @@ export default function LessonSlotsPage() {
               
               <DialogFooter>
                 <Button type="submit" disabled={slotLoading}>
-                  {slotLoading ? '作成中...' : '作成'}
+                  {slotLoading ? 'Creating...' : 'Create'}
                 </Button>
               </DialogFooter>
             </form>
@@ -355,22 +359,22 @@ export default function LessonSlotsPage() {
         </Dialog>
       </div>
       
-      {/* タブ */}
+      {/* タブ - ボタンとは別の行に配置 */}
       <Tabs defaultValue="active">
         <TabsList>
-          <TabsTrigger value="active">すべてのスロット</TabsTrigger>
-          <TabsTrigger value="reserved">予約済み</TabsTrigger>
+          <TabsTrigger value="active">All Slots</TabsTrigger>
+          <TabsTrigger value="reserved">Reserved</TabsTrigger>
         </TabsList>
         
         <TabsContent value="active" className="mt-4">
           {slotLoading ? (
             <div className="flex justify-center items-center h-32">
-              <p>スロットを読み込み中...</p>
+              <p>Loading slots...</p>
             </div>
           ) : Object.keys(groupedSlots).length === 0 ? (
             <Alert>
               <AlertDescription>
-                レッスンスロットがまだ登録されていません。「新しいスロットを作成」ボタンから登録してください。
+                No lesson slots have been registered yet. Click the "Create New Slot" button to add one.
               </AlertDescription>
             </Alert>
           ) : (
