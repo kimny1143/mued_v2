@@ -212,7 +212,23 @@ export default function ReservationsPage() {
           });
           
           // 5. 状態を更新
-          setReservations(reservationsData);
+          // キャンセル済みと未払いのままの予約を除外
+          const filteredReservations = reservationsData.filter((res: Reservation) => 
+            res.status !== 'CANCELLED' && 
+            !(res.paymentStatus === 'UNPAID' && res.status === 'PENDING')
+          );
+          
+          console.log("表示する予約（フィルタリング後）:", {
+            total: filteredReservations.length,
+            filtered: reservationsData.length - filteredReservations.length,
+            items: filteredReservations.map((res: Reservation) => ({
+              id: res.id,
+              status: res.status,
+              paymentStatus: res.paymentStatus,
+            }))
+          });
+          
+          setReservations(filteredReservations);
           setLessonSlots(availableSlots);
           setError(null);
         } catch (fetchError) {

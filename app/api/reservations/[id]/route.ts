@@ -2,14 +2,13 @@ import { prisma } from '../../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { Prisma } from '@prisma/client';
+import { stripe } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
 
 // 予約ステータスの列挙型
 enum ReservationStatus {
-  PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED'
 }
 
@@ -93,7 +92,7 @@ export async function GET(
   }
 }
 
-// 予約を更新
+// 予約を更新（レッスン完了のみ）
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -125,11 +124,10 @@ export async function PUT(
     }
     
     // 権限チェック
-    const isStudent = sessionInfo.user.id === existingReservation.studentId;
     const isTeacher = sessionInfo.user.id === existingReservation.slot.teacherId;
     const isAdmin = sessionInfo.role === 'admin';
     
-    if (!isStudent && !isTeacher && !isAdmin) {
+    if (!isTeacher && !isAdmin) {
       return NextResponse.json(
         { error: 'この予約を更新する権限がありません' },
         { status: 403 }
@@ -141,54 +139,18 @@ export async function PUT(
     // 更新可能なフィールドを検証
     const updateData: Prisma.ReservationUpdateInput = {};
     
-    // 予約のステータス更新 (PENDING, CONFIRMED, CANCELLED, COMPLETED)
-    if (data.status) {
-      // 予約ステータスの更新制限
-      // - 生徒はPENDINGをCANCELLEDに変更可能
-      // - 講師はPENDINGをCONFIRMEDに、CONFIRMEDをCOMPLETEDに変更可能
-      // - 管理者はすべての変更が可能
-      
-      if (isAdmin) {
-        // 管理者は全ての状態変更が可能
-        updateData.status = data.status as ReservationStatus;
-      } else if (isTeacher) {
-        // 講師の場合
-        if (
-          (existingReservation.status === ReservationStatus.PENDING && data.status === ReservationStatus.CONFIRMED) ||
-          (existingReservation.status === ReservationStatus.CONFIRMED && data.status === ReservationStatus.COMPLETED) ||
-          (existingReservation.status === ReservationStatus.PENDING && data.status === ReservationStatus.CANCELLED)
-        ) {
-          updateData.status = data.status as ReservationStatus;
-        } else {
-          return NextResponse.json(
-            { error: 'このステータス変更は許可されていません' },
-            { status: 403 }
-          );
-        }
-      } else if (isStudent) {
-        // 生徒の場合
-        if (existingReservation.status === ReservationStatus.PENDING && data.status === ReservationStatus.CANCELLED) {
-          updateData.status = data.status as ReservationStatus;
-        } else {
-          return NextResponse.json(
-            { error: 'このステータス変更は許可されていません' },
-            { status: 403 }
-          );
-        }
-      }
+    // レッスン完了への状態更新のみ許可
+    if (data.status === ReservationStatus.COMPLETED && 
+        existingReservation.status === ReservationStatus.CONFIRMED) {
+      updateData.status = ReservationStatus.COMPLETED;
+    } else {
+      return NextResponse.json(
+        { error: '確定済みの予約をCOMPLETEDに変更する操作のみ許可されています' },
+        { status: 400 }
+      );
     }
     
-    // 支払いステータスの更新 (管理者のみ)
-    if (data.paymentStatus && isAdmin) {
-      updateData.paymentStatus = data.paymentStatus as PaymentStatus;
-    }
-    
-    // 支払いIDの更新 (管理者のみ)
-    if (data.paymentId && isAdmin) {
-      updateData.paymentId = data.paymentId;
-    }
-    
-    // 備考の更新 (生徒、講師、管理者が可能)
+    // 備考の更新 (講師、管理者が可能)
     if (data.notes !== undefined) {
       updateData.notes = data.notes;
     }
@@ -237,7 +199,7 @@ export async function PUT(
   }
 }
 
-// 予約を削除 (管理者のみ)
+// 予約をキャンセル（削除）
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -254,35 +216,95 @@ export async function DELETE(
     }
     
     // 予約が存在するか確認
-    const reservation = await prisma.reservation.findUnique({
+    const existingReservation = await prisma.reservation.findUnique({
       where: { id },
+      include: {
+        slot: true,
+      },
     });
     
-    if (!reservation) {
+    if (!existingReservation) {
       return NextResponse.json(
         { error: '指定された予約が見つかりませんでした' },
         { status: 404 }
       );
     }
     
-    // 権限チェック (管理者のみ)
-    if (sessionInfo.role !== 'admin') {
+    // 権限チェック
+    const isStudent = sessionInfo.user.id === existingReservation.studentId;
+    const isAdmin = sessionInfo.role === 'admin';
+    
+    if (!isStudent && !isAdmin) {
       return NextResponse.json(
-        { error: '予約を削除する権限がありません (管理者のみ可能)' },
+        { error: 'この予約をキャンセルする権限がありません' },
         { status: 403 }
       );
     }
     
-    // 予約を削除
-    await prisma.reservation.delete({
-      where: { id },
-    });
+    // 過去の予約はキャンセル不可（レッスン開始時間より後）
+    const now = new Date();
+    if (new Date(existingReservation.slot.startTime) < now) {
+      return NextResponse.json(
+        { error: '過去のレッスンはキャンセルできません' },
+        { status: 400 }
+      );
+    }
     
-    return NextResponse.json({ success: true });
+    // レッスン完了済みはキャンセル不可
+    if (existingReservation.status === ReservationStatus.COMPLETED) {
+      return NextResponse.json(
+        { error: '完了済みのレッスンはキャンセルできません' },
+        { status: 400 }
+      );
+    }
+    
+    // Stripeでの返金処理（必要な場合）
+    if (existingReservation.paymentId) {
+      try {
+        // 支払いIDがpayment_intentの場合
+        if (existingReservation.paymentId.startsWith('pi_')) {
+          await stripe.refunds.create({
+            payment_intent: existingReservation.paymentId,
+          });
+        } 
+        // 支払いIDがチェックアウトセッションの場合
+        else if (existingReservation.paymentId.startsWith('cs_')) {
+          const session = await stripe.checkout.sessions.retrieve(existingReservation.paymentId);
+          if (session.payment_intent) {
+            await stripe.refunds.create({
+              payment_intent: session.payment_intent as string,
+            });
+          }
+        }
+        console.log(`予約ID ${id} の返金処理が完了しました`);
+      } catch (refundError) {
+        console.error('返金処理中にエラーが発生しました:', refundError);
+        // 返金処理に失敗しても、予約のキャンセル自体は続行
+      }
+    }
+    
+    // トランザクションで予約の削除とスロットの解放を実行
+    const [deletedReservation, updatedSlot] = await prisma.$transaction([
+      // 1. 予約レコードを削除
+      prisma.reservation.delete({
+        where: { id },
+      }),
+      
+      // 2. スロットを利用可能に更新
+      prisma.lessonSlot.update({
+        where: { id: existingReservation.slotId },
+        data: { isAvailable: true }
+      })
+    ]);
+    
+    return NextResponse.json({ 
+      message: '予約をキャンセルしました',
+      success: true
+    });
   } catch (error) {
-    console.error('Error deleting reservation:', error);
+    console.error('Error canceling reservation:', error);
     return NextResponse.json(
-      { error: '予約の削除中にエラーが発生しました' },
+      { error: '予約のキャンセル中にエラーが発生しました' },
       { status: 500 }
     );
   }

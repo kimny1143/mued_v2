@@ -113,9 +113,8 @@ model Reservation {
   slot        LessonSlot  @relation(fields: [slotId], references: [id])
   studentId   String      // User.id を参照 (String UUID)
   student     User        @relation("StudentReservations", fields: [studentId], references: [id])
-  status      ReservationStatus @default(PENDING) // 予約ステータス
+  status      ReservationStatus @default(CONFIRMED) // 予約ステータス（CONFIRMEDに変更）
   paymentId   String?     // 支払いID（Stripe等）
-  paymentStatus PaymentStatus @default(UNPAID) // 支払いステータス
   notes       String?     @db.Text // 備考・メモ
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -123,23 +122,12 @@ model Reservation {
   @@index([slotId])
   @@index([studentId])
   @@index([status])
-  @@index([paymentStatus])
   @@map("reservations")
 }
 
 enum ReservationStatus {
-  PENDING    // 保留中
-  CONFIRMED  // 確定
-  CANCELLED  // キャンセル
+  CONFIRMED  // 確定（支払い完了）
   COMPLETED  // 完了
-}
-
-enum PaymentStatus {
-  UNPAID     // 未払い
-  PROCESSING // 処理中
-  PAID       // 支払い完了
-  REFUNDED   // 返金済み
-  FAILED     // 失敗
 }
 
 // --- Stripe関連テーブル ---

@@ -13,9 +13,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 // 予約ステータス列挙型
 enum ReservationStatus {
-  PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED'
 }
 
@@ -78,58 +76,57 @@ export async function POST(req: Request) {
         else if (session.mode === 'payment') {
           console.log('単発レッスン決済を検出:', session.id);
           
-          // メタデータから予約IDを取得（直接指定されたもの）
-          let reservationId = session.metadata?.reservationId;
-          let slotId = session.metadata?.slotId;
+          // メタデータからスロット情報を取得
+          const slotId = session.metadata?.slotId;
+          const studentId = session.metadata?.studentId;
+          const notes = session.metadata?.notes || '';
           
-          // メタデータに両方の情報があれば処理を進める
-          if (reservationId && slotId) {
-            console.log(`メタデータから取得: 予約ID=${reservationId}, スロットID=${slotId}`);
-            await handleCompletedLessonPayment(session);
-          } 
-          // metadata に reservationId がない場合は、client_reference_id から探す
-          else if (session.client_reference_id) {
-            console.log(`client_reference_id から予約を探索: ${session.client_reference_id}`);
-            try {
-              // クライアントリファレンスIDから予約を検索
-              const reservation = await prisma.reservation.findFirst({
-                where: { 
-                  OR: [
-                    { id: session.client_reference_id },
-                    { paymentId: session.id }
-                  ]
-                },
-                include: { slot: true }
-              });
-              
-              if (reservation) {
-                console.log(`予約情報を発見: ID=${reservation.id}, スロットID=${reservation.slotId}`);
-                
-                // メタデータを補完して処理
-                const enrichedSession = {
-                  ...session,
-                  metadata: {
-                    ...session.metadata,
-                    reservationId: reservation.id,
-                    slotId: reservation.slotId
-                  }
-                } as Stripe.Checkout.Session;
-                
-                await handleCompletedLessonPayment(enrichedSession);
-              } else {
-                console.error('関連する予約が見つかりません:', session.id);
-                throw new Error('関連する予約が見つかりません');
-              }
-            } catch (error) {
-              console.error('予約検索エラー:', error);
-              throw error;
-            }
-          } else {
-            console.error('予約IDとスロットIDの両方が見つかりません:', session);
+          if (!slotId || !studentId) {
+            console.error('必要なメタデータがありません:', session.metadata);
             throw new Error('決済セッションに必要なメタデータがありません');
           }
-        } else {
-          console.log(`未対応のセッションモード: ${session.mode}, セッションID: ${session.id}`);
+          
+          // スロットの存在確認と可用性チェック
+          const slot = await prisma.lessonSlot.findUnique({
+            where: { id: slotId }
+          });
+          
+          if (!slot) {
+            console.error('スロットが見つかりません:', slotId);
+            throw new Error('関連するレッスンスロットが見つかりません');
+          }
+          
+          if (!slot.isAvailable) {
+            console.error('スロットは既に予約されています:', slotId);
+            throw new Error('このスロットは既に予約されています');
+          }
+          
+          // トランザクションで予約作成とスロット更新を実行
+          const [reservation, _] = await prisma.$transaction([
+            // 1. 予約レコードを作成（CONFIRMED状態）
+            prisma.reservation.create({
+              data: {
+                slotId: slotId,
+                studentId: studentId,
+                status: ReservationStatus.CONFIRMED,
+                paymentId: session.id,
+                notes: notes
+              }
+            }),
+            
+            // 2. スロットを利用不可に更新
+            prisma.lessonSlot.update({
+              where: { id: slotId },
+              data: { isAvailable: false }
+            })
+          ]);
+          
+          console.log('予約が完了しました:', {
+            reservationId: reservation.id,
+            slotId: slotId,
+            studentId: studentId,
+            paymentId: session.id
+          });
         }
         break;
       }
@@ -382,161 +379,4 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription)
   }
 
   console.log('サブスクリプションキャンセル完了:', data);
-}
-
-// レッスン決済完了時の処理
-async function handleCompletedLessonPayment(session: Stripe.Checkout.Session) {
-  try {
-    // メタデータから必要な情報を取得
-    const reservationId = session.metadata?.reservationId;
-    const slotId = session.metadata?.slotId;
-    
-    if (!reservationId) {
-      throw new Error('予約IDがメタデータにありません');
-    }
-    
-    if (!slotId) {
-      // スロットIDがない場合は予約から取得を試みる
-      const reservation = await prisma.reservation.findUnique({
-        where: { id: reservationId },
-        select: { slotId: true }
-      });
-      
-      if (reservation) {
-        console.log(`予約から取得したスロットID: ${reservation.slotId}`);
-      } else {
-        throw new Error(`予約ID ${reservationId} に関連する情報が見つかりません`);
-      }
-    }
-    
-    console.log(`レッスン支払い処理: 予約ID=${reservationId}, スロットID=${slotId}`);
-    
-    // Stripeセッション情報を確認
-    console.log("Stripeセッション詳細:", {
-      id: session.id,
-      paymentStatus: session.payment_status,
-      amount: session.amount_total,
-      currency: session.currency
-    });
-    
-    // 予約情報を確認
-    const existingReservation = await prisma.reservation.findUnique({
-      where: { id: reservationId },
-      include: { slot: true }
-    });
-    
-    if (!existingReservation) {
-      console.error(`予約ID ${reservationId} が見つかりません`);
-      throw new Error('予約が見つかりません');
-    }
-    
-    console.log("現在の予約状態:", {
-      id: existingReservation.id,
-      status: existingReservation.status,
-      paymentStatus: existingReservation.paymentStatus,
-      slotId: existingReservation.slotId,
-      isSlotAvailable: existingReservation.slot.isAvailable
-    });
-    
-    // 現在のスロット状態を確認
-    const currentSlot = await prisma.lessonSlot.findUnique({
-      where: { id: slotId || existingReservation.slotId }
-    });
-    
-    console.log("現在のスロット状態:", {
-      id: currentSlot?.id,
-      isAvailable: currentSlot?.isAvailable,
-      teacherId: currentSlot?.teacherId
-    });
-    
-    // すでに確定済みならスキップ
-    if (existingReservation.status === ReservationStatus.CONFIRMED && 
-        existingReservation.paymentStatus === PaymentStatus.PAID) {
-      console.log("すでに処理済みの予約です。スキップします。");
-      return { success: true, status: 'already_processed' };
-    }
-    
-    // 予約を更新: 状態を確定済み(CONFIRMED)に、支払い状態を支払い済み(PAID)に
-    try {
-      const updatedReservation = await prisma.reservation.update({
-        where: { id: reservationId },
-        data: {
-          status: ReservationStatus.CONFIRMED,
-          paymentStatus: PaymentStatus.PAID,
-          paymentId: session.id, // 支払いIDを更新
-        },
-      });
-      
-      console.log('予約ステータス更新完了:', {
-        id: updatedReservation.id,
-        status: updatedReservation.status,
-        paymentStatus: updatedReservation.paymentStatus
-      });
-    } catch (updateError) {
-      console.error("予約更新エラー:", updateError);
-      throw updateError;
-    }
-    
-    // レッスンスロットを更新: 利用不可に設定
-    try {
-      const updatedSlot = await prisma.lessonSlot.update({
-        where: { id: slotId || existingReservation.slotId },
-        data: {
-          isAvailable: false, // スロットを予約済み状態に
-        },
-      });
-      
-      console.log('レッスンスロット更新完了:', {
-        id: updatedSlot.id,
-        isAvailable: updatedSlot.isAvailable,
-        teacherId: updatedSlot.teacherId
-      });
-    } catch (slotError) {
-      console.error("レッスンスロット更新エラー:", slotError);
-      
-      // リトライ: トランザクション分離レベルを変更して再試行
-      try {
-        const targetSlotId = slotId || existingReservation.slotId;
-        console.log(`スロット更新リトライ: ID=${targetSlotId}`);
-        
-        // トランザクションでリトライ
-        await prisma.$transaction(async (tx) => {
-          // ロック取得のためのダミークエリ
-          await tx.$executeRawUnsafe(`SELECT id FROM "lesson_slots" WHERE id = '${targetSlotId}' FOR UPDATE`);
-          
-          // 更新処理
-          await tx.lessonSlot.update({
-            where: { id: targetSlotId },
-            data: { isAvailable: false },
-          });
-        });
-        
-        console.log("トランザクションによるスロット更新成功");
-      } catch (txError) {
-        console.error("トランザクションによる更新も失敗:", txError);
-        
-        // 最終手段: SQLで直接更新
-        try {
-          const targetSlotId = slotId || existingReservation.slotId;
-          await prisma.$executeRaw`
-            UPDATE "lesson_slots" 
-            SET "isAvailable" = false
-            WHERE id = ${targetSlotId}
-          `;
-          console.log("SQLで直接スロット状態を更新しました");
-        } catch (rawError) {
-          console.error("SQL直接更新エラー:", rawError);
-          // このエラーはスローしない - 予約自体は確定できているため
-          console.warn("スロット更新に失敗しましたが、予約自体は確定しています");
-        }
-      }
-    }
-    
-    // TODO: 予約確定メールの送信など追加処理
-    
-    return { success: true };
-  } catch (error) {
-    console.error('レッスン支払い処理エラー:', error);
-    throw error;
-  }
 } 
