@@ -142,42 +142,58 @@ export default function DashboardLayout({
         if (!isMounted) return;
         
         if (data.session?.user) {
+          // ユーザーID検証用の明示的なログ
+          console.log("==================================================");
+          console.log("現在のログインユーザーID:", data.session.user.id);
+          console.log("このIDをSupabaseの「usersテーブル」のIDと比較してください");
+          console.log("==================================================");
+          
           console.log("認証済みユーザー検出:", data.session.user.email);
+          console.log("ユーザーID:", data.session.user.id);
           
           // 認証情報からユーザーデータを設定
           const authUser = data.session.user;
           setUser(authUser);
           
-          // デフォルトロール設定（メタデータ優先）
-          const defaultRole = authUser.user_metadata?.role || 'student';
-          setUserRole(defaultRole);
+          // まずはメタデータから仮のロール値を設定
+          const userMeta = authUser.user_metadata || {};
+          console.log("ユーザーメタデータ:", userMeta);
           
-          // usersテーブルからロール情報を取得
+          // 仮のロール設定（後でAPIから取得した正確な値で上書き）
+          const tempRole = userMeta.role || 'student';
+          setUserRole(tempRole);
+          
+          // 代わりに専用APIを使用してユーザー情報を取得
           try {
-            const { data: userData, error: userError } = await supabase
-              .from('users')
-              .select('roleId, name, email, image')
-              .eq('id', authUser.id)
-              .single();
-              
-            if (userError) {
-              console.error("ユーザーデータ取得エラー:", userError);
-            } else if (userData) {
-              console.log("ユーザーデータ取得成功:", userData);
-              // roleIdが存在すればそちらを優先
-              if (userData.roleId) {
-                console.log("DBから取得したロール:", userData.roleId);
-                setUserRole(userData.roleId);
-              }
-              
-              // ユーザー情報を拡張（DBの情報を追加）
-              setUser({
-                ...authUser,
-                db_user: userData
-              });
+            // APIからユーザー情報を取得（サーバサイドでadmin権限で実行）
+            console.log("APIからユーザー情報を取得中...");
+            const response = await fetch(`/api/user?userId=${authUser.id}`);
+            
+            if (!response.ok) {
+              throw new Error(`APIエラー: ${response.status}`);
             }
+            
+            const userData = await response.json();
+            console.log("API成功 - ユーザーデータ:", userData);
+            
+            if (userData.roleId) {
+              // ここが重要: roleIdが文字列として正確に一致するか確認
+              const dbRole = userData.roleId.toLowerCase();
+              console.log("DBから取得した正確なロール:", dbRole);
+              
+              // ロールの設定（正確な値）
+              setUserRole(dbRole);
+            }
+            
+            // ユーザー情報を拡張（DBの情報を追加）
+            setUser({
+              ...authUser,
+              db_user: userData
+            });
+            
           } catch (err) {
-            console.error("データベース接続エラー:", err);
+            console.error("ユーザー情報API呼び出しエラー:", err);
+            console.log("メタデータのロールを使用:", tempRole);
           }
         } else {
           console.log("認証されていないユーザー - ログインページへリダイレクト");
@@ -373,8 +389,15 @@ export default function DashboardLayout({
                     {user?.db_user?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email || 'ユーザー'}
                   </p>
                   <p className="text-xs text-gray-500 truncate">
-                    {userRole === 'admin' ? '管理者' : userRole === 'mentor' ? 'メンター' : '生徒'}
+                    {userRole === 'admin' ? '管理者' : 
+                     userRole === 'mentor' ? 'メンター' : 
+                     '生徒'}
                   </p>
+                  {process.env.NODE_ENV !== 'production' && (
+                    <p className="text-xxs text-gray-400 mt-1 truncate">
+                      ID: {user?.id?.substring(0, 8)}...
+                    </p>
+                  )}
                 </div>
               )}
             </div>
