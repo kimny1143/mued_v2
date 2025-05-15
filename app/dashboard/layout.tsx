@@ -314,6 +314,33 @@ export default function DashboardLayout({
             </Button>
           </div>
           <div className="h-full overflow-y-auto">
+            {/* ユーザー情報セクション */}
+            <div className={`border-b px-4 py-4 ${isSidebarCollapsed ? 'text-center' : ''}`}>
+              <div className="flex items-center justify-center mb-2">
+                {user?.user_metadata?.avatar_url ? (
+                  <img 
+                    src={user.user_metadata.avatar_url} 
+                    alt="User avatar" 
+                    className="w-12 h-12 rounded-full bg-gray-200"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                    <UserCircleIcon className="h-10 w-10 text-gray-500" />
+                  </div>
+                )}
+              </div>
+              {!isSidebarCollapsed && (
+                <div className="text-center">
+                  <p className="font-medium text-sm truncate">
+                    {user?.user_metadata?.full_name || user?.email || 'ユーザー'}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {userRole === 'admin' ? '管理者' : userRole === 'mentor' ? 'メンター' : '生徒'}
+                  </p>
+                </div>
+              )}
+            </div>
+            
             <nav className="px-4 py-4">
               <ul className="space-y-2">
                 {dashboardNavItems.map(({ icon: Icon, label, path, subMenu }) => {
