@@ -283,9 +283,9 @@ export default function DashboardLayout({
         )}
 
         {/* サイドバー */}
-        <div
+        <aside
           className={`
-            fixed inset-y-0 left-0 z-50 w-64 bg-white border-r pt-16 transition-transform duration-300 
+            fixed inset-y-0 left-0 z-50 bg-white border-r pt-16 transition-all duration-300 ease-in-out
             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
             lg:translate-x-0 
             ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
@@ -401,10 +401,10 @@ export default function DashboardLayout({
               </ul>
             </nav>
           </div>
-        </div>
+        </aside>
 
         {/* メインコンテンツ */}
-        <main className={`${isSidebarCollapsed ? 'dashboard-main-collapsed' : 'dashboard-main-expanded'} w-full`}>
+        <main className={`dashboard-main ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
           <div className="max-w-[1440px] mx-auto p-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
               {title && <h1 className="text-2xl font-bold font-shantell">{title}</h1>}

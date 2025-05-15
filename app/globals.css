@@ -353,20 +353,24 @@
     height: 4rem;
   }
 
+  /* ダッシュボードメインコンテンツ */
+  .dashboard-main {
+    @apply pt-16 w-full;
+    min-height: calc(100vh - 4rem);
+  }
+
+  @media (min-width: 1024px) {
+    .dashboard-main {
+      @apply transition-all duration-300;
+    }
+  }
+
   .sidebar-collapsed {
     @apply lg:w-20 transition-all duration-300;
   }
 
   .sidebar-expanded {
     @apply lg:w-64 transition-all duration-300;
-  }
-
-  .dashboard-main-collapsed {
-    @apply pt-16 transition-all duration-300 lg:pl-20;
-  }
-
-  .dashboard-main-expanded {
-    @apply pt-16 transition-all duration-300 lg:pl-64;
   }
 
   /* SubscriptionStatus コンポーネント用スタイル */
@@ -402,5 +406,24 @@
 @media (max-width: 480px) {
   html {
     font-size: 15px;
+  }
+}
+
+/* ダッシュボードレイアウト強化 */
+@media (max-width: 1023px) {
+  .dashboard-layout {
+    @apply flex flex-col;
+  }
+  
+  /* モバイル用ヘッダーの調整 */
+  .dashboard-header {
+    @apply z-30;
+  }
+}
+
+/* モバイルレスポンシブ対応の強化 */
+@media (max-width: 768px) {
+  html {
+    font-size: 16px;
   }
 } 
