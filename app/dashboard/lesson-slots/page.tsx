@@ -281,7 +281,7 @@ export default function LessonSlotsPage() {
     <>
       {/* ページタイトルとアクション */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
-        <h1 className="text-2xl font-bold">レッスンスロット管理</h1>
+        <h1 className="text-2xl font-bold">Lesson Slots</h1>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <Button className="bg-black text-white w-full sm:w-auto" onClick={() => setIsDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> 新しいスロットを作成
