@@ -292,206 +292,206 @@ export default function LessonSlotsPage() {
   return (
     <>
       {/* ページタイトル */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
+      <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Lesson Slots Management</h1>
+        
+        {/* スロット作成ボタン */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700 text-white" 
+            onClick={() => setIsDialogOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" /> Create New Slot
+          </Button>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Lesson Slot</DialogTitle>
+              <DialogDescription>
+                Register available time for lessons. Students can book these time slots.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={handleCreateSlot}>
+              {error && (
+                <div className="p-4 mb-4 border rounded-md bg-red-50 border-red-200 text-red-800">
+                  <AlertCircle className="h-4 w-4 inline-block mr-2" />
+                  <span className="font-medium">Error</span>
+                  <div className="text-sm mt-1">{error}</div>
+                </div>
+              )}
+              
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="startDate" className="text-right">
+                    Date
+                  </Label>
+                  <Input
+                    id="startDate"
+                    name="startDate"
+                    type="date"
+                    value={formData.startDate}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="startTime" className="text-right">
+                    Start Time
+                  </Label>
+                  <Input
+                    id="startTime"
+                    name="startTime"
+                    type="time"
+                    value={formData.startTime}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="endTime" className="text-right">
+                    End Time
+                  </Label>
+                  <Input
+                    id="endTime"
+                    name="endTime"
+                    type="time"
+                    value={formData.endTime}
+                    onChange={handleInputChange}
+                    className="col-span-3"
+                  />
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button type="submit" disabled={slotLoading}>
+                  {slotLoading ? 'Creating...' : 'Create'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* タブとボタンを同じ行に配置 */}
-      <div className="flex justify-between items-center mb-4">
-        <Tabs defaultValue="active" className="w-full">
-          <div className="flex items-center justify-between mb-4">
-            <TabsList className="mr-4">
-              <TabsTrigger value="active">All Slots</TabsTrigger>
-              <TabsTrigger value="reserved">Reserved</TabsTrigger>
-            </TabsList>
-            
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md" onClick={() => setIsDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4 inline" /> Create New Slot
-              </Button>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Lesson Slot</DialogTitle>
-                  <DialogDescription>
-                    Register available time for lessons. Students can book these time slots.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <form onSubmit={handleCreateSlot}>
-                  {error && (
-                    <div className="p-4 mb-4 border rounded-md bg-red-50 border-red-200 text-red-800">
-                      <AlertCircle className="h-4 w-4 inline-block mr-2" />
-                      <span className="font-medium">Error</span>
-                      <div className="text-sm mt-1">{error}</div>
-                    </div>
-                  )}
-                  
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="startDate" className="text-right">
-                        Date
-                      </Label>
-                      <Input
-                        id="startDate"
-                        name="startDate"
-                        type="date"
-                        value={formData.startDate}
-                        onChange={handleInputChange}
-                        className="col-span-3"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="startTime" className="text-right">
-                        Start Time
-                      </Label>
-                      <Input
-                        id="startTime"
-                        name="startTime"
-                        type="time"
-                        value={formData.startTime}
-                        onChange={handleInputChange}
-                        className="col-span-3"
-                      />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="endTime" className="text-right">
-                        End Time
-                      </Label>
-                      <Input
-                        id="endTime"
-                        name="endTime"
-                        type="time"
-                        value={formData.endTime}
-                        onChange={handleInputChange}
-                        className="col-span-3"
-                      />
-                    </div>
-                  </div>
-                  
-                  <DialogFooter>
-                    <Button type="submit" disabled={slotLoading}>
-                      {slotLoading ? 'Creating...' : 'Create'}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-          
-          <TabsContent value="active" className="mt-4">
-            {slotLoading ? (
-              <div className="flex justify-center items-center h-32">
-                <p>Loading slots...</p>
-              </div>
-            ) : Object.keys(groupedSlots).length === 0 ? (
-              <Alert>
-                <AlertDescription>
-                  No lesson slots have been registered yet. Click the "Create New Slot" button to add one.
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <div className="space-y-8">
-                {Object.entries(groupedSlots).map(([date, dateSlots]) => (
-                  <div key={date}>
-                    <h3 className="text-lg font-medium mb-3">{date}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {dateSlots.map((slot) => (
-                        <Card key={slot.id}>
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="flex items-center text-sm text-gray-500 mb-2">
-                                  <Clock className="h-4 w-4 mr-1" />
-                                  {format(new Date(slot.startTime), 'HH:mm')} - {format(new Date(slot.endTime), 'HH:mm')}
-                                </div>
-                                <div className="flex items-center gap-2 mb-3">
-                                  <Badge variant={slot.isAvailable ? "outline" : "secondary"}>
-                                    {slot.isAvailable ? '予約可能' : '予約済み'}
-                                  </Badge>
-                                  {slot.reservations && slot.reservations.length > 0 && (
-                                    <Badge variant="default">
-                                      予約あり
-                                    </Badge>
-                                  )}
-                                </div>
+      {/* タブコンテンツ */}
+      <Tabs defaultValue="active">
+        <TabsList className="mb-4">
+          <TabsTrigger value="active">All Slots</TabsTrigger>
+          <TabsTrigger value="reserved">Reserved</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="active">
+          {slotLoading ? (
+            <div className="flex justify-center items-center h-32">
+              <p>Loading slots...</p>
+            </div>
+          ) : Object.keys(groupedSlots).length === 0 ? (
+            <Alert>
+              <AlertDescription>
+                No lesson slots have been registered yet. Click the "Create New Slot" button to add one.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="space-y-8">
+              {Object.entries(groupedSlots).map(([date, dateSlots]) => (
+                <div key={date}>
+                  <h3 className="text-lg font-medium mb-3">{date}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {dateSlots.map((slot) => (
+                      <Card key={slot.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center text-sm text-gray-500 mb-2">
+                                <Clock className="h-4 w-4 mr-1" />
+                                {format(new Date(slot.startTime), 'HH:mm')} - {format(new Date(slot.endTime), 'HH:mm')}
                               </div>
-                              <div className="flex space-x-2">
-                                <Button variant="outline" size="sm">
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="sm" className="text-red-600">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                              <div className="flex items-center gap-2 mb-3">
+                                <Badge variant={slot.isAvailable ? "outline" : "secondary"}>
+                                  {slot.isAvailable ? '予約可能' : '予約済み'}
+                                </Badge>
+                                {slot.reservations && slot.reservations.length > 0 && (
+                                  <Badge variant="default">
+                                    予約あり
+                                  </Badge>
+                                )}
                               </div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="reserved" className="mt-4">
-            <div className="space-y-8">
-              {Object.entries(groupedSlots).map(([date, dateSlots]) => {
-                // 予約があるスロットだけをフィルタリング
-                const reservedSlots = dateSlots.filter(
-                  (slot) => slot.reservations && slot.reservations.length > 0
-                );
-                
-                if (reservedSlots.length === 0) return null;
-                
-                return (
-                  <div key={date}>
-                    <h3 className="text-lg font-medium mb-3">{date}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {reservedSlots.map((slot) => (
-                        <Card key={slot.id}>
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="flex items-center text-sm text-gray-500 mb-2">
-                                  <Clock className="h-4 w-4 mr-1" />
-                                  {format(new Date(slot.startTime), 'HH:mm')} - {format(new Date(slot.endTime), 'HH:mm')}
-                                </div>
-                                <div className="flex items-center gap-2 mb-3">
-                                  <Badge variant="secondary">
-                                    予約済み
-                                  </Badge>
-                                </div>
-                                {/* 予約者情報 */}
-                                <div className="text-sm mt-2 border-t pt-2">
-                                  予約数: {slot.reservations?.length || 0}
-                                </div>
-                              </div>
+                            <div className="flex space-x-2">
                               <Button variant="outline" size="sm">
-                                詳細
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="sm" className="text-red-600">
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                );
-              })}
-              
-              {Object.values(groupedSlots).flat().filter(
-                slot => slot.reservations && slot.reservations.length > 0
-              ).length === 0 && (
-                <Alert>
-                  <AlertDescription>
-                    予約済みのレッスンスロットはありません。
-                  </AlertDescription>
-                </Alert>
-              )}
+                </div>
+              ))}
             </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="reserved">
+          <div className="space-y-8">
+            {Object.entries(groupedSlots).map(([date, dateSlots]) => {
+              // 予約があるスロットだけをフィルタリング
+              const reservedSlots = dateSlots.filter(
+                (slot) => slot.reservations && slot.reservations.length > 0
+              );
+              
+              if (reservedSlots.length === 0) return null;
+              
+              return (
+                <div key={date}>
+                  <h3 className="text-lg font-medium mb-3">{date}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {reservedSlots.map((slot) => (
+                      <Card key={slot.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center text-sm text-gray-500 mb-2">
+                                <Clock className="h-4 w-4 mr-1" />
+                                {format(new Date(slot.startTime), 'HH:mm')} - {format(new Date(slot.endTime), 'HH:mm')}
+                              </div>
+                              <div className="flex items-center gap-2 mb-3">
+                                <Badge variant="secondary">
+                                  予約済み
+                                </Badge>
+                              </div>
+                              {/* 予約者情報 */}
+                              <div className="text-sm mt-2 border-t pt-2">
+                                予約数: {slot.reservations?.length || 0}
+                              </div>
+                            </div>
+                            <Button variant="outline" size="sm">
+                              詳細
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+            
+            {Object.values(groupedSlots).flat().filter(
+              slot => slot.reservations && slot.reservations.length > 0
+            ).length === 0 && (
+              <Alert>
+                <AlertDescription>
+                  予約済みのレッスンスロットはありません。
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
       <Toaster />
     </>
   );
