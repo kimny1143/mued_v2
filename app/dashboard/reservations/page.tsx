@@ -25,7 +25,7 @@ import {
   TableHeader, 
   TableRow 
 } from '@/app/components/ui/table';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { toast } from 'sonner';
 import { Toaster } from 'sonner';
 import { User } from '@supabase/supabase-js';
@@ -139,7 +139,7 @@ export default function ReservationsPage() {
         setError(null);
         
         // 1. 認証チェック
-        const { data: authData, error: authError } = await supabase.auth.getSession();
+        const { data: authData, error: authError } = await supabaseBrowser.auth.getSession();
         if (authError || !authData.session) {
           console.log("認証エラーまたは未ログイン:", authError);
           router.push('/login');
@@ -242,7 +242,7 @@ export default function ReservationsPage() {
   // レッスン予約処理（Stripe Checkout に遷移）
   const handleBooking = async (slotId: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabaseBrowser.auth.getSession();
       if (!session?.access_token) throw new Error('認証トークンが取得できません');
 
       const res = await fetch('/api/reservations', {

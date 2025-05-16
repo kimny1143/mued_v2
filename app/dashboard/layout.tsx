@@ -18,7 +18,7 @@ import {
   ChevronRightIcon,
   CalendarIcon
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { signOut } from "@/app/actions/auth";
 import { Button } from "@/app/components/ui/button";
@@ -130,7 +130,7 @@ export default function DashboardLayout({
     const getUser = async () => {
       try {
         console.log("認証情報取得開始...");
-        const { data } = await supabase.auth.getSession();
+        const { data } = await supabaseBrowser.auth.getSession();
         
         // コンポーネントがアンマウントされていたら何もしない
         if (!isMounted) return;
@@ -256,7 +256,7 @@ export default function DashboardLayout({
     getUser();
     
     // 認証状態の変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       (event, session) => {
         // コンポーネントがマウントされていれば状態更新
         if (isMounted) {
@@ -289,7 +289,7 @@ export default function DashboardLayout({
       console.log("サインアウト処理を開始します");
       
       // 明示的にローカルセッションをクリア
-      const { error: localSignOutError } = await supabase.auth.signOut();
+      const { error: localSignOutError } = await supabaseBrowser.auth.signOut();
       if (localSignOutError) {
         console.error("ローカルセッションクリアエラー:", localSignOutError);
       } else {

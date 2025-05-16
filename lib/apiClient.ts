@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { ChatMessage, GetMessagesResponse, SendMessageRequest } from './types';
-import { supabase } from './supabase';
+import { supabaseServer } from './supabase-server';
 import { v4 as uuidv4 } from 'uuid';
 
 // APIクライアントの設定
@@ -50,7 +50,7 @@ export const exerciseLogsApi = {
 export const chatMessagesApi = {
   // メッセージ一覧を取得する
   getMessages: async (roomId: string, cursor?: string, limit = 20): Promise<GetMessagesResponse> => {
-    let query = supabase
+    let query = supabaseServer
       .from('messages')
       .select('*')
       .eq('room_id', roomId)
@@ -92,7 +92,7 @@ export const chatMessagesApi = {
       timestamp: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from('messages')
       .insert(newMessage)
       .select()
@@ -113,7 +113,7 @@ export const chatMessagesApi = {
     if (messageData.files && messageData.files.length > 0) {
       for (const file of messageData.files) {
         const filePath = `messages/${messageData.room_id}/${uuidv4()}-${file.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { data: uploadData, error: uploadError } = await supabaseServer.storage
           .from('chat_files')
           .upload(filePath, file);
 
@@ -122,7 +122,7 @@ export const chatMessagesApi = {
         }
 
         // 公開URLを取得
-        const { data: urlData } = supabase.storage
+        const { data: urlData } = supabaseServer.storage
           .from('chat_files')
           .getPublicUrl(filePath);
 
@@ -155,7 +155,7 @@ export const chatMessagesApi = {
       file_urls: fileUrls
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from('messages')
       .insert(newMessage)
       .select()

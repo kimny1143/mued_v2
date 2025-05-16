@@ -31,7 +31,7 @@ const siteUrl = getSiteUrl();
 console.log(`Supabase初期化 - サイトURL: ${siteUrl}`);
 
 // Supabaseクライアント設定
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabaseServer = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -56,7 +56,7 @@ if (process.env.NODE_ENV !== 'production') {
 // Supabaseの認証状態が変わったときのハンドラーを設定
 if (typeof window !== 'undefined') {
   // クライアント側でのみ実行
-  supabase.auth.onAuthStateChange(async (event, session) => {
+  supabaseServer.auth.onAuthStateChange(async (event, session) => {
     if (event === 'INITIAL_SESSION') {
       console.log(`認証状態初期化: ${session ? '認証済み' : '未認証'}`);
     } else if (event === 'SIGNED_IN' && session) {

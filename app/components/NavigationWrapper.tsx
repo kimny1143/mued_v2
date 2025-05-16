@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Navigation } from './Navigation';
 
 export function NavigationWrapper() {
@@ -9,13 +9,13 @@ export function NavigationWrapper() {
   
   useEffect(() => {
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseBrowser.auth.getSession();
       setIsAuthenticated(!!data.session);
     };
     
     checkSession();
     
-    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+    const { data: authListener } = supabaseBrowser.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') {
         setIsAuthenticated(true);
       } else if (event === 'SIGNED_OUT') {

@@ -1,9 +1,7 @@
-import React from 'react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { CheckCircleIcon } from 'lucide-react';
 import { ReservationSuccessContent } from '../../../components/reservation/_components/ReservationSuccessContent';
-//import { supabaseAdmin } from '@/lib/supabase-admin';
 import { prisma } from '@/lib/prisma';
 
 interface SuccessPageProps {

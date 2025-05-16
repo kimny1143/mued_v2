@@ -2,7 +2,7 @@
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { getBaseUrl } from '@/lib/utils';
 
 // useSearchParamsを使用するコンテンツコンポーネント
@@ -41,7 +41,7 @@ function CallbackContent() {
           console.log('認証コードを処理中:', code.substring(0, 10) + '...');
           
           // 認証コードをセッションに交換
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          const { error } = await supabaseBrowser.auth.exchangeCodeForSession(code);
           
           if (error) {
             console.error('認証コード交換エラー:', error.message);
@@ -50,7 +50,7 @@ function CallbackContent() {
           }
           
           // セッションが正しく設定されたか確認
-          const { data: sessionData } = await supabase.auth.getSession();
+          const { data: sessionData } = await supabaseBrowser.auth.getSession();
           
           if (sessionData.session) {
             console.log('認証成功: セッション設定完了');
@@ -85,7 +85,7 @@ function CallbackContent() {
             
             // セッションを確認
             try {
-              const { data } = await supabase.auth.getSession();
+              const { data } = await supabaseBrowser.auth.getSession();
               
               if (data.session) {
                 console.log('セッションが見つかりました:', data.session.user.email);
@@ -110,7 +110,7 @@ function CallbackContent() {
                 
                 // Supabaseの自動セッション設定を待機
                 setTimeout(async () => {
-                  const { data: delayedData } = await supabase.auth.getSession();
+                  const { data: delayedData } = await supabaseBrowser.auth.getSession();
                   
                   if (delayedData.session) {
                     console.log('遅延セッション取得成功');

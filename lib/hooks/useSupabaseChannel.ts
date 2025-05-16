@@ -1,6 +1,11 @@
+'use client';
+
 import { useEffect, useRef } from 'react';
-import { supabase } from '@lib/supabase';
-import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { supabaseBrowser } from '@/lib/supabase-browser';
+import type {
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+} from '@supabase/supabase-js';
 
 type PostgresChangeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
 
@@ -34,7 +39,7 @@ export function useSupabaseChannel<T extends Record<string, any>>(
     const { schema = 'public', table, event = '*', filter } = options;
 
     // チャネルを作成
-    const newChannel = supabase.channel(channelName);
+    const newChannel = supabaseBrowser.channel(channelName);
 
     // PostgreSQL変更をサブスクライブ
     // @ts-expect-error - Supabaseの型定義が不完全なためここでは無視
@@ -91,7 +96,7 @@ export function useChatMessages<T extends Record<string, any>>(
   const debouncedCallback = (payload: RealtimePostgresChangesPayload<T>) => {
     if (payload.eventType === 'INSERT' && payload.new) {
       const newMessage = payload.new as T;
-      // @ts-ignore - メッセージにはidがあることを前提
+      // @ts-expect-error - メッセージにはidがあることを前提
       const messageId = newMessage.id;
       
       // 同じメッセージの重複処理を防止

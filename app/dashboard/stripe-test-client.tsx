@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 interface StripeTestClientProps {
   session: User | null;
@@ -25,7 +25,7 @@ export default function StripeTestClient({ session }: StripeTestClientProps) {
   useEffect(() => {
     // 初期表示時にセッション情報を取得
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseBrowser.auth.getSession();
       console.log('現在のセッション情報:', data);
       setSessionData(data.session);
     };
@@ -34,7 +34,7 @@ export default function StripeTestClient({ session }: StripeTestClientProps) {
 
   const handleUpdateSubscription = async () => {
     // セッションの再取得を試行
-    const { data } = await supabase.auth.getSession();
+    const { data } = await supabaseBrowser.auth.getSession();
     const sessionUser = data.session?.user || session;
     
     if (!sessionUser) {

@@ -12,7 +12,7 @@ import { LessonSlot } from './_components/ReservationTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { User } from '@supabase/supabase-js';
 import { Toaster } from 'sonner';
 
@@ -178,7 +178,7 @@ export const ReservationPage: React.FC = () => {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await supabaseBrowser.auth.getSession();
         if (error) console.error("認証エラー:", error);
         console.log("認証セッション:", data.session ? "あり" : "なし", data.session?.user?.email);
         

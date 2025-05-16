@@ -3,7 +3,7 @@ export const runtime = 'nodejs';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getSessionFromRequest } from '@/lib/session';
 import type { NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase-server';
 
 // このAPIルートは動的であることを明示的に宣言
 export const dynamic = 'force-dynamic';

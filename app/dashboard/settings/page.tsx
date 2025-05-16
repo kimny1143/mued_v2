@@ -5,7 +5,7 @@ import { Button } from "@ui/button";
 import { Card } from "@ui/card";
 import { Separator } from "@ui/separator";
 import { UserCircleIcon } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { User } from "@supabase/supabase-js";
 
 export default function SettingsPage() {
@@ -14,14 +14,14 @@ export default function SettingsPage() {
   
   useEffect(() => {
     const getUser = async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseBrowser.auth.getSession();
       setUser(data.session?.user || null);
       setLoading(false);
     };
     
     getUser();
     
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user || null);
       }

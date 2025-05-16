@@ -20,7 +20,7 @@ import { Label } from '@/app/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
 import { Badge } from '@/app/components/ui/badge';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Toaster } from 'sonner';
 import { DatePicker } from '@/app/components/ui/date-picker';
 import { TimeSelect } from '@/app/components/ui/time-select';
@@ -84,7 +84,7 @@ export default function LessonSlotsPage() {
         setLoading(true);
         
         // 認証セッションの取得
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await supabaseBrowser.auth.getSession();
         
         if (error) {
           console.error('セッション取得エラー:', error);
@@ -142,7 +142,7 @@ export default function LessonSlotsPage() {
       setSlotLoading(true);
       
       // Supabaseから認証トークンを取得して、APIリクエストに含める
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData?.session?.access_token;
       
       if (!token) {
@@ -224,7 +224,7 @@ export default function LessonSlotsPage() {
       setSlotLoading(true);
       
       // 認証トークンを取得
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const { data: sessionData, error: sessionError } = await supabaseBrowser.auth.getSession();
       
       if (sessionError || !sessionData.session?.access_token) {
         throw new Error('認証情報の取得に失敗しました。もう一度ログインしてください。');
@@ -289,7 +289,7 @@ export default function LessonSlotsPage() {
 
   async function book(slotId: string) {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabaseBrowser.auth.getSession();
       if (!session?.access_token) throw new Error('not authed');
 
       const res = await fetch('/api/reservations', {

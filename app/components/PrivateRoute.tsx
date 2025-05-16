@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { User } from '@supabase/supabase-js';
 
 export default function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -14,7 +14,7 @@ export default function PrivateRoute({ children }: { children: React.ReactNode }
     // セッションチェック
     const checkSession = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data } = await supabaseBrowser.auth.getSession();
         setUser(data.session?.user || null);
         
         if (!data.session?.user) {
@@ -31,7 +31,7 @@ export default function PrivateRoute({ children }: { children: React.ReactNode }
     checkSession();
 
     // 認証状態変更のリスナー
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       (_event, session) => {
         const newUser = session?.user || null;
         setUser(newUser);

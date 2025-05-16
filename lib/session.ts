@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabaseServer } from './supabase-server';
 import { createClient } from '@supabase/supabase-js';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -7,7 +7,7 @@ import type { Session, User } from '@supabase/supabase-js';
  * @returns サーバーサイドでのセッション情報
  */
 export async function getServerSession() {
-  const { data, error } = await supabase.auth.getSession();
+  const { data, error } = await supabaseServer.auth.getSession();
   
   if (error) {
     console.error("サーバーセッション取得エラー:", error);
@@ -27,7 +27,7 @@ export async function getServerSession() {
  * @returns ユーザー情報と権限、または認証されていない場合はnull
  */
 export async function getAuthenticatedUser(): Promise<{user: User, role: string} | null> {
-  const { data: sessionData, error } = await supabase.auth.getSession();
+  const { data: sessionData, error } = await supabaseServer.auth.getSession();
   
   if (error) {
     console.error("認証ユーザー取得エラー:", error);
@@ -40,7 +40,7 @@ export async function getAuthenticatedUser(): Promise<{user: User, role: string}
   }
   
   // ユーザー情報＋ロールをusersテーブルから取得
-  const { data: userData, error: userError } = await supabase
+  const { data: userData, error: userError } = await supabaseServer
     .from('users')
     .select('roleId, role:roles(name)')
     .eq('id', sessionData.session.user.id)
@@ -108,7 +108,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
     if (token) {
       try {
         console.log(`トークン認証開始 (${token.substring(0, 10)}...)`);
-        const { data, error } = await supabase.auth.getUser(token);
+        const { data, error } = await supabaseServer.auth.getUser(token);
         
         if (error) {
           console.error("トークン認証エラー:", error);
@@ -192,7 +192,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
     // 2. 標準のセッション取得（Cookieベース）
     try {
       console.log("標準セッション取得を試行");
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabaseServer.auth.getSession();
       
       if (error) {
         console.error("標準セッション取得エラー:", error);
@@ -208,7 +208,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
       
       // ユーザープロフィール＋ロールをusersテーブルから取得
       try {
-        const { data: userData, error: userError } = await supabase
+        const { data: userData, error: userError } = await supabaseServer
           .from('users')
           .select('roleId, role:roles(name)')
           .eq('id', session.user.id)

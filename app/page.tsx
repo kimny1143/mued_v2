@@ -8,7 +8,7 @@ import { MainContentWrapper } from "./landing-sections/main-content-wrapper";
 import { SoftwareCompany } from "./landing-sections/software-company";
 import { SoftwareCompanyWrapper } from "./landing-sections/software-company-wrapper";
 import Image from "next/image";
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { User } from '@supabase/supabase-js';
 
 // useSearchParamsを使用するコンテンツコンポーネント
@@ -23,7 +23,7 @@ function LandingPageContent(): JSX.Element {
     // 直接セッションチェック
     const checkSession = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data } = await supabaseBrowser.auth.getSession();
         setUser(data.session?.user || null);
         setLoading(false);
         
@@ -52,7 +52,7 @@ function LandingPageContent(): JSX.Element {
     }
     
     // 認証状態変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
     });
     
