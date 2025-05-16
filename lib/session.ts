@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { createClient } from '@supabase/supabase-js';
 import type { Session, User } from '@supabase/supabase-js';
 
 /**
@@ -116,7 +117,20 @@ export async function getSessionFromRequest(request: Request): Promise<{
           
           // ユーザー情報＋ロールをusersテーブルから取得
           try {
-            const { data: userData, error: userError } = await supabase
+            // トークン付きの一時 Supabase クライアントを生成（RLS により anon key だけでは参照できない場合に対応）
+            const supabaseWithAuth = createClient(
+              process.env.NEXT_PUBLIC_SUPABASE_URL!,
+              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+              {
+                global: {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                },
+              }
+            );
+
+            const { data: userData, error: userError } = await supabaseWithAuth
               .from('users')
               .select('roleId, role:roles(name)')
               .eq('id', data.user.id)
