@@ -98,7 +98,14 @@ const ReservationSkeleton = () => (
 
 // データ取得用のfetcher関数
 const fetcher = async (url: string) => {
-  const response = await fetch(url);
+  // Supabaseのアクセストークンを取得
+  const { data: sessionData } = await supabaseBrowser.auth.getSession();
+  const token = sessionData?.session?.access_token;
+
+  const response = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
   if (!response.ok) {
     throw new Error('データの取得に失敗しました');
   }
