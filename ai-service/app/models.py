@@ -196,4 +196,31 @@ class StripeWebhookEvent(BaseModel):
     created: int = Field(..., description="UNIXタイムスタンプ")
     data: Dict[str, Any] = Field(..., description="イベントデータ")
     livemode: bool = Field(..., description="本番環境のイベントかどうか")
-    api_version: Optional[str] = None 
+    api_version: Optional[str] = None
+
+class MaterialGenerationRequest(BaseModel):
+    """
+    教材生成リクエストモデル
+    """
+    topic: str
+    level: str = "intermediate"  # beginner, intermediate, advanced
+    format: str = "pdf"  # pdf, markdown, html
+    language: str = "ja"
+    goal: Optional[str] = None
+    additional_instructions: Optional[str] = None
+    references: Optional[List[str]] = None
+
+class MaterialGenerationResponse(BaseModel):
+    """
+    教材生成レスポンスモデル
+    """
+    material_id: str
+    title: str
+    description: str
+    format: str
+    download_url: str
+    preview_url: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.now)
+    metadata: Optional[Dict[str, Any]] = None
+    success: bool = True
+    error: Optional[Dict[str, Any]] = None 

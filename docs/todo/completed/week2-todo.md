@@ -57,7 +57,7 @@
 ### 実装内容の概要
 - **Stripe Checkout 環境変数切替**:
   - 環境変数に基づいてエンドポイントを選択するロジック追加
-  - 本番環境(`PROD`)では`VITE_SUPABASE_URL_PROD`を使用し、開発環境では`VITE_SUPABASE_URL`を使用
+  - 本番環境(`PROD`)では`SUPABASE_URL_PROD`を使用し、開発環境では`SUPABASE_URL`を使用
 - **FastAPI Webhook実装**:
   - 汎用Webhookエンドポイント実装(`/api/v1/webhooks/general`)
   - Stripe専用Webhookエンドポイント実装(`/api/v1/webhooks/stripe`)

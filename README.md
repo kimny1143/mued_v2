@@ -57,8 +57,8 @@ npm run build
 `.env`ファイルを作成し、以下の環境変数を設定してください：
 
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
 POSTGRES_PASSWORD=your_postgres_password
 METABASE_DB_PASSWORD=your_metabase_db_password
 STRIPE_SECRET_KEY=your_stripe_secret_key
@@ -123,6 +123,78 @@ Metabaseダッシュボードは他のアプリケーションに埋め込むこ
 ### 環境変数の設定
 
 Vercel/Herokuダッシュボード上で必要な環境変数を設定してください。機密情報は`.env.production`に保存せず、各プラットフォームの環境変数設定を使用してください。
+
+## Vercel環境でのStripe設定に関する注意点
+
+### 発生する可能性のある問題
+
+Vercel環境でStripeを利用する際、以下の問題が発生する可能性があります：
+
+1. **環境変数に改行が含まれる**: 環境変数に改行が含まれると、Stripe APIリクエストの認証ヘッダーが破損し、`Invalid character in header content`エラーが発生する場合があります。
+2. **テスト価格IDが存在しない**: Stripeアカウントに存在しない価格IDを使用すると、`No such price: 'price_test_starter'` などのエラーが発生します。
+
+### 対策
+
+#### 環境変数の改行問題の解決方法
+
+1. **環境変数の改行を削除**: 環境変数を設定する際、改行やスペースが含まれていないか確認してください。
+2. **環境変数チェック**: 提供されたスクリプトを使用して環境変数の問題を検出・修正できます。
+
+```bash
+# 環境変数の問題を検出するスクリプト
+node scripts/check-env.js
+
+# 環境変数から改行を削除するスクリプト
+bash scripts/vercel-deploy-prep.sh
+```
+
+#### Stripe価格IDの問題解決
+
+テスト環境では、以下の方法で対応しています：
+
+1. **動的価格生成**: 存在しない価格IDが指定された場合、自動的にその場で価格を生成します。
+2. **フォールバックメカニズム**: 特定のテスト価格IDには、デフォルトの金額とプラン設定を用意しています。
+
+```
+- price_test_starter: 月額$20のスターターサブスクリプション
+- price_test_premium: 月額$60のプレミアムサブスクリプション
+- price_test_basic: 月額$10のベーシックサブスクリプション
+- price_test_spot_lesson: $30の単発レッスン
+```
+
+### 環境変数の設定方法
+
+#### ローカル環境
+
+`.env.local`ファイルに以下の変数を設定します（改行なし）：
+
+```
+STRIPE_SECRET_KEY=sk_test_51RAPn...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51RAPn...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+#### Vercel環境
+
+Vercelダッシュボードの環境変数設定で、改行なしで環境変数を設定してください。
+
+または、Vercel CLIを使用する場合：
+
+```bash
+# 環境変数の前処理
+bash scripts/vercel-deploy-prep.sh
+
+# クリーンな環境変数でデプロイ
+vercel --env-file .vercel/tmp/env.txt
+```
+
+### トラブルシューティング
+
+問題が発生した場合は、以下のログを確認してください：
+
+1. **ブラウザコンソールログ**: クライアント側のエラーを確認
+2. **Vercel Function Logs**: サーバー側のエラーを確認
+3. **Stripeダッシュボードログ**: Stripe API呼び出しのエラーを確認
 
 ## ライセンス
 

@@ -1,0 +1,38 @@
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+console.log("Supabase URL:", supabaseUrl ? "設定済み" : "未設定");
+console.log("Supabase ANON KEY:", supabaseAnonKey ? "設定済み" : "未設定");
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error("Missing Supabase environment variables");
+}
+
+// 開発環境と本番環境でのクッキー設定を区別
+const isLocalhost = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname === '0.0.0.0');
+
+// クライアントサイドでのSupabaseクライアント初期化（最小構成）
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  },
+  global: {
+    fetch: (url, options) => {
+      // カスタムフェッチ：必要ならCORS対応など
+      return fetch(url, options);
+    },
+  },
+  cookies: {
+    name: 'sb-auth-token',
+    lifetime: 60 * 60 * 24 * 7, // 1週間
+    domain: isLocalhost ? 'localhost' : undefined,
+    path: '/',
+    sameSite: 'lax',
+    secure: !isLocalhost
+  }
+});

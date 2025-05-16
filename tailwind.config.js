@@ -1,8 +1,10 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    "./src/**/*.{html,js,ts,jsx,tsx}",
-    "app/**/*.{ts,tsx}",
-    "components/**/*.{ts,tsx}",
+    "./app/**/*.{js,ts,jsx,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    "./lib/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -48,13 +50,29 @@ module.exports = {
       },
       fontFamily: {
         sans: [
-          "ui-sans-serif",
-          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont", 
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
           "sans-serif",
           '"Apple Color Emoji"',
           '"Segoe UI Emoji"',
           '"Segoe UI Symbol"',
           '"Noto Color Emoji"',
+        ],
+        display: [
+          "var(--font-shantell-sans)",
+          "Shantell Sans",
+          "cursive"
+        ],
+        mono: [
+          "var(--font-flow-circular)",
+          "Flow Circular",
+          "SFMono-Regular",
+          "Menlo",
+          "monospace"
         ],
       },
       keyframes: {
@@ -72,8 +90,13 @@ module.exports = {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
-    container: { center: true, padding: "2rem", screens: { "2xl": "1400px" } },
+    container: { center: true, padding: "1rem", screens: { "2xl": "1400px" } },
   },
   plugins: [],
   darkMode: ["class"],
+  safelist: [
+    'font-sans',
+    'font-display',
+    'font-mono',
+  ],
 };

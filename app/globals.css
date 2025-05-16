@@ -1,0 +1,429 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* フォントのインポート */
+@import url("https://fonts.googleapis.com/css?family=Shantell+Sans:500,700,400");
+@import url("https://fonts.googleapis.com/css?family=Flow+Circular:400");
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --mued-text: rgba(0, 0, 0, 0.8);
+    --mued-border: rgba(0, 0, 0, 0.8);
+    --mued-bg: #ffffff;
+    
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+ 
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+ 
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+ 
+    --card: transparent;
+    --card-foreground: 222.2 47.4% 11.2%;
+ 
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+ 
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+ 
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+ 
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+ 
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --ring: 215 20.2% 65.1%;
+ 
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --mued-text: rgba(255, 255, 255, 0.8);
+    --mued-border: rgba(255, 255, 255, 0.8);
+    --mued-bg: #121212;
+    
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+ 
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+ 
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+ 
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
+ 
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+ 
+    --card: transparent;
+    --card-foreground: 213 31% 91%;
+ 
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 1.2%;
+ 
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
+ 
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+ 
+    --ring: 216 34% 17%;
+ 
+    --radius: 0.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    font-size: 16px;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1, "palt" 1, "kern" 1;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
+  }
+  
+  h1 {
+    font-family: 'Shantell Sans', cursive !important;
+    font-weight: 500 !important;
+    font-size: 2rem !important;
+    line-height: 1.2 !important;
+    color: var(--foreground);
+    letter-spacing: -0.025em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  h2 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+    color: var(--foreground);
+    letter-spacing: -0.025em;
+  }
+  
+  h3 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    line-height: 1.4 !important;
+    color: var(--foreground);
+  }
+  
+  p, div {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+  }
+
+  .font-shantell {
+    font-family: 'Shantell Sans', cursive !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  .font-flow {
+    font-family: 'Flow Circular', cursive !important;
+  }
+  
+  .font-sans {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif !important;
+  }
+
+  .font-jp {
+    font-family: 'Noto Sans JP', sans-serif !important;
+  }
+}
+
+/* フォントサイズクラスを一貫性のある値で定義 */
+@layer components {
+  /* フォントサイズ */
+  .text-xxs {
+    font-size: 0.75rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .text-xs {
+    font-size: 0.875rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  .text-sm {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+  }
+  
+  .text-base {
+    font-size: 1.125rem !important;
+    line-height: 1.5 !important;
+  }
+
+  .text-md {
+    font-size: 1.25rem !important;
+    line-height: 1.5 !important;
+  }
+  
+  .text-lg {
+    font-size: 1.375rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  .text-xl {
+    font-size: 1.5rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  .text-2xl {
+    font-size: 1.75rem !important;
+    line-height: 1.3 !important;
+  }
+  
+  .text-3xl {
+    font-size: 2rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  .text-4xl {
+    font-size: 2.5rem !important;
+    line-height: 1.1 !important;
+  }
+  
+  .text-5xl {
+    font-size: 3rem !important;
+    line-height: 1 !important;
+  }
+
+  .text-6xl {
+    font-size: 3.5rem !important;
+    line-height: 1 !important;
+  }
+
+  .text-7xl {
+    font-size: 4rem !important;
+    line-height: 1 !important;
+  }
+
+  /* 新しい特大サイズ */
+  .text-8xl {
+    font-size: 5rem !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+  }
+
+  .text-9xl {
+    font-size: 6rem !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+  }
+
+  /* MUED特有のコンポーネント */
+  .mued-border {
+    border: 2px solid var(--mued-border) !important;
+    border-radius: 0.5rem;
+  }
+  
+  .mued-card {
+    @apply bg-white rounded-lg;
+    border: 2px solid var(--mued-border) !important;
+    overflow: hidden;
+  }
+  
+  .mued-btn {
+    @apply px-8 py-4 rounded font-shantell font-medium text-xl;
+    background-color: var(--mued-text);
+    color: white;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .mued-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .mued-btn-outline {
+    @apply px-8 py-4 rounded font-shantell font-medium text-xl;
+    background-color: white;
+    color: var(--mued-text);
+    border: 2px solid var(--mued-border) !important;
+  }
+  
+  .mued-container {
+    @apply flex items-center gap-16 sm:gap-32 pt-12 sm:pt-24 pb-0 px-4 sm:px-24;
+    background: linear-gradient(176deg, rgba(255,255,255,1) 0%, rgba(220,220,220,0.8) 50%, rgba(180,180,180,0.5) 100%),
+               linear-gradient(120deg, rgba(200,200,200,0.3) 0%, rgba(255,255,255,0.9) 50%, rgba(220,220,220,0.5) 100%);
+    box-shadow: inset 0 -20px 30px -10px rgba(0,0,0,0.05);
+  }
+  
+  .mued-hero-text {
+    @apply font-shantell font-medium text-4xl sm:text-6xl text-center leading-tight;
+    color: var(--mued-text);
+  }
+
+  /* 新しいヒーローテキストクラス - キャッシュ問題回避用 */
+  .mued-hero-text-large {
+    font-family: 'Shantell Sans', cursive !important;
+    font-weight: 500 !important;
+    font-size: 6rem !important; /* 108px */
+    line-height: 1.1 !important;
+    text-align: center;
+    color: var(--mued-text);
+  }
+
+  /* MUEDテキスト用の特別なスタイル */
+  .mued-text-bold {
+    font-weight: 800 !important;
+  }
+
+  .mued-logo-text {
+    @apply font-shantell font-bold;
+    font-size: 3.5rem !important; /* 63px */
+    color: var(--mued-text);
+    line-height: 1 !important;
+  }
+  
+  .mued-phone-mockup {
+    @apply relative w-[90%] max-w-[513px] mx-auto bg-white rounded-[44px] overflow-hidden;
+    height: 1000px; /* 高さを増やしてボタンが見切れないようにする */
+    border: 2px solid var(--mued-border) !important;
+  }
+
+  /* Small text clean-up */
+  .text-small-clean {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    letter-spacing: -0.01em;
+    font-size: 1rem !important;
+  }
+
+  /* 小さいテキストサイズで特に読みやすさを重視するクラス */
+  .mued-small-text {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    /* 特にサイズが小さい場合の可読性を向上 */
+    -webkit-font-smoothing: subpixel-antialiased;
+    -moz-osx-font-smoothing: auto;
+  }
+
+  /* モバイルネーミング対応 - Viteバージョンと同様の設定 */
+  .mobile-sidebar {
+    @apply fixed bg-white flex flex-col transform transition-transform duration-300 ease-in-out
+           shadow-lg border-r border-gray-200 z-50;
+    transform-origin: left center;
+    /* モバイル用の設定 */
+    @apply inset-y-0 left-0 w-64;
+  }
+
+  /* デスクトップ用サイドバー */
+  @media (min-width: 1024px) {
+    .mobile-sidebar {
+      @apply top-16 h-[calc(100%-4rem)];
+    }
+  }
+
+  .mobile-overlay {
+    @apply fixed inset-0 z-40 bg-black bg-opacity-50 
+           transition-opacity duration-300 ease-in-out backdrop-blur-sm;
+  }
+
+  /* ダッシュボードレイアウト用スタイル - Viteバージョンと同期 */
+  .dashboard-layout {
+    @apply min-h-screen bg-[#F7F8FA];
+  }
+
+  .dashboard-header {
+    @apply bg-white border-b border-gray-200 fixed w-full z-50 top-0 left-0;
+    height: 4rem;
+  }
+
+  /* ダッシュボードメインコンテンツ */
+  .dashboard-main {
+    @apply pt-16 w-full;
+    min-height: calc(100vh - 4rem);
+  }
+
+  @media (min-width: 1024px) {
+    .dashboard-main {
+      @apply transition-all duration-300;
+    }
+  }
+
+  .sidebar-collapsed {
+    @apply lg:w-20 transition-all duration-300;
+  }
+
+  .sidebar-expanded {
+    @apply lg:w-64 transition-all duration-300;
+  }
+
+  /* SubscriptionStatus コンポーネント用スタイル */
+  .subscription-status-card {
+    @apply p-4 bg-white rounded-lg shadow;
+  }
+}
+
+/* レスポンシブ対応の強化 */
+@media (max-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+  
+  h2 {
+    font-size: 1.25rem !important;
+  }
+  
+  h3 {
+    font-size: 1rem !important;
+  }
+  
+  .mued-hero-text {
+    @apply text-3xl sm:text-5xl;
+  }
+
+  .mued-logo-text {
+    font-size: 2.5rem !important; /* 40px */
+  }
+}
+
+/* 特に小さいデバイス用の調整 */
+@media (max-width: 480px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+/* ダッシュボードレイアウト強化 */
+@media (max-width: 1023px) {
+  .dashboard-layout {
+    @apply flex flex-col;
+  }
+  
+  /* モバイル用ヘッダーの調整 */
+  .dashboard-header {
+    @apply z-50;
+  }
+}
+
+/* モバイルレスポンシブ対応の強化 */
+@media (max-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+} 

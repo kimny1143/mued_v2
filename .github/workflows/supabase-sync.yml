@@ -1,0 +1,44 @@
+name: Supabase DB Sync
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "supabase/migrations/**"
+      - ".github/workflows/supabase-sync.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node (for pnpm & Supabase CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install pnpm
+        run: npm i -g pnpm
+
+      - name: Install project dependencies (lightweight)
+        run: pnpm install --frozen-lockfile --filter supabase... --ignore-scripts
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project (if not cached)
+        run: supabase link --project-ref $SUPABASE_PROJECT_ID --debug
+
+      - name: Push migrations to Supabase
+        run: supabase db push --linked --debug
+
+      - name: Output migration history
+        run: supabase db history --debug 
