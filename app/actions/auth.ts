@@ -27,6 +27,7 @@ export async function signInWithGoogle() {
           persistSession: false,
           autoRefreshToken: true,
           detectSessionInUrl: true,
+          flowType: 'pkce'
         }
       }
     );
