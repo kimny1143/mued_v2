@@ -323,21 +323,47 @@ export async function POST(request: NextRequest) {
       sessionValid: !!sessionInfo.session,
     });
     
-    // 権限チェック
-    if (sessionInfo.role !== 'mentor' && sessionInfo.role !== 'admin') {
+    // ロール文字列を安全に取得
+    const userRole = sessionInfo.role || '';
+    
+    // 権限チェックをより堅牢に（緩い比較で大文字小文字の違いなども許容）
+    const isMentor = 
+      typeof userRole === 'string' && 
+      (userRole.toLowerCase().includes('mentor') || 
+       userRole.toLowerCase() === 'mentor');
+       
+    const isAdmin = 
+      typeof userRole === 'string' && 
+      (userRole.toLowerCase().includes('admin') || 
+       userRole.toLowerCase() === 'admin');
+    
+    // ロール確認のログを詳細に出力
+    console.log("ロール確認詳細:", {
+      originalRole: userRole,
+      isMentor,
+      isAdmin,
+      roleType: typeof userRole,
+      roleLength: typeof userRole === 'string' ? userRole.length : 'not a string',
+      lowerCased: typeof userRole === 'string' ? userRole.toLowerCase() : 'not a string'
+    });
+    
+    // メンターまたは管理者の権限チェック
+    if (!isMentor && !isAdmin) {
       console.error(`権限エラー - レッスンスロット作成:`, {
-        userRole: sessionInfo.role,
+        userRole,
+        isMentor,
+        isAdmin,
         expectedRoles: ['mentor', 'admin'],
-        roleType: typeof sessionInfo.role,
-        roleExists: sessionInfo.role !== undefined,
-        roleComparison: {
-          mentorMatch: sessionInfo.role === 'mentor',
-          adminMatch: sessionInfo.role === 'admin',
-          anyMatch: sessionInfo.role === 'mentor' || sessionInfo.role === 'admin'
-        }
       });
       return NextResponse.json(
-        { error: '講師または管理者のみがレッスン枠を作成できます', roleInfo: { providedRole: sessionInfo.role } },
+        { 
+          error: '講師または管理者のみがレッスン枠を作成できます', 
+          roleInfo: { 
+            providedRole: userRole,
+            isMentor,
+            isAdmin 
+          } 
+        },
         { status: 403 }
       );
     }
