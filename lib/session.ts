@@ -75,6 +75,19 @@ export async function getSessionFromRequest(request: Request): Promise<{
 } | null> {
   try {
     console.log("リクエストからセッション取得開始");
+    console.log("環境:", process.env.NODE_ENV || "環境変数なし");
+    console.log("Supabaseサービス URL:", 
+      process.env.NEXT_PUBLIC_SUPABASE_URL ? 
+      `設定済み (${process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 20)}...)` : 
+      "未設定");
+    
+    // サーバー側のSupabase設定を確認
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseAnonKey) {
+      console.error("Supabase匿名キーが設定されていません");
+    } else {
+      console.log("Supabase匿名キー設定状態:", "設定済み");
+    }
     
     // ヘッダーから認証トークンを取得
     const authHeader = request.headers.get('Authorization');
@@ -82,14 +95,18 @@ export async function getSessionFromRequest(request: Request): Promise<{
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
-      console.log("Authorizationヘッダーからトークン検出:", token.substring(0, 10) + '...');
+      console.log("Authorizationヘッダーからトークン検出:", 
+        token ? `有効なトークン (${token.substring(0, 10)}...)` : "空のトークン");
     } else {
-      console.log("Authorizationヘッダーなし - Cookieセッション試行");
+      console.log("有効なAuthorizationヘッダーなし:", authHeader ? 
+        `不正な形式: ${authHeader.substring(0, 15)}...` : 
+        "ヘッダーなし");
     }
     
     // 1. Authorizationヘッダーがあればそこからトークンを使ってセッション検証
     if (token) {
       try {
+        console.log(`トークン認証開始 (${token.substring(0, 10)}...)`);
         const { data, error } = await supabase.auth.getUser(token);
         
         if (error) {
@@ -111,6 +128,17 @@ export async function getSessionFromRequest(request: Request): Promise<{
             
             console.log("ユーザーデータ取得結果:", userData);
             
+            // ロール確認（大文字・小文字やトリム）
+            const rawRole = userData?.roleId || 'student';
+            const normalizedRole = typeof rawRole === 'string' ? 
+              rawRole.trim().toLowerCase() : rawRole;
+            
+            console.log("ロール正規化:", {
+              raw: rawRole,
+              normalized: normalizedRole,
+              type: typeof normalizedRole
+            });
+            
             // セッションオブジェクトを作成（トークンからは直接取得できないため）
             return {
               session: {
@@ -122,7 +150,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
                 user: data.user
               } as Session,
               user: data.user,
-              role: userData?.roleId || 'student' // roleIdを使用
+              role: normalizedRole // 正規化したロールを使用
             };
           } catch (userErr) {
             console.error("ユーザー情報取得中に例外:", userErr);
@@ -149,6 +177,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
     
     // 2. 標準のセッション取得（Cookieベース）
     try {
+      console.log("標準セッション取得を試行");
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
@@ -177,10 +206,21 @@ export async function getSessionFromRequest(request: Request): Promise<{
         
         console.log("ユーザーデータ取得結果:", userData);
         
+        // ロール確認（大文字・小文字やトリム）
+        const rawRole = userData?.roleId || 'student';
+        const normalizedRole = typeof rawRole === 'string' ? 
+          rawRole.trim().toLowerCase() : rawRole;
+        
+        console.log("ロール正規化:", {
+          raw: rawRole,
+          normalized: normalizedRole,
+          type: typeof normalizedRole
+        });
+        
         return {
           session,
           user: session.user,
-          role: userData?.roleId || 'student' // roleIdを使用
+          role: normalizedRole // 正規化したロールを使用
         };
       } catch (userErr) {
         console.error("ユーザー情報取得中に例外:", userErr);

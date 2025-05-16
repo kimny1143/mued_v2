@@ -286,24 +286,58 @@ export async function GET(request: NextRequest) {
 // 新しいレッスンスロットを作成
 export async function POST(request: NextRequest) {
   try {
+    // リクエストヘッダーを詳細にログ出力（機密情報はマスク）
+    const authHeader = request.headers.get('Authorization');
+    console.log("認証ヘッダー存在:", authHeader ? "あり" : "なし");
+    if (authHeader) {
+      console.log("認証ヘッダー形式:", 
+        authHeader.startsWith('Bearer ') ? 
+        "Bearer形式（正しい）" : `不正な形式: ${authHeader.substring(0, 10)}...`);
+    }
+    
+    // サーバー側のSupabase設定ログ
+    console.log("Supabase URL確認:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "設定済み" : "未設定");
+    console.log("環境:", process.env.NODE_ENV || "環境変数なし");
+    
     // セッション情報を取得
     const sessionInfo = await getSessionFromRequest(request);
     
     if (!sessionInfo) {
-      console.error('認証情報なし - レッスンスロット作成失敗');
+      console.error('認証情報なし - レッスンスロット作成失敗', {
+        headers: Object.fromEntries([...request.headers.entries()].map(([key, value]) => 
+          key.toLowerCase() === 'authorization' ? 
+          [key, value.substring(0, 15) + '...'] : [key, value]
+        )),
+        url: request.url
+      });
       return NextResponse.json(
         { error: '認証が必要です' },
         { status: 401 }
       );
     }
     
-    console.log(`レッスンスロット作成 - ユーザー: ${sessionInfo.user.email}, ロール: ${sessionInfo.role}`);
+    console.log(`レッスンスロット作成 - ユーザー情報:`, {
+      id: sessionInfo.user.id,
+      email: sessionInfo.user.email,
+      role: sessionInfo.role || 'ロールなし',
+      sessionValid: !!sessionInfo.session,
+    });
     
     // 権限チェック
     if (sessionInfo.role !== 'mentor' && sessionInfo.role !== 'admin') {
-      console.error(`権限エラー - レッスンスロット作成: ${sessionInfo.role}ロールでの作成は許可されていません`);
+      console.error(`権限エラー - レッスンスロット作成:`, {
+        userRole: sessionInfo.role,
+        expectedRoles: ['mentor', 'admin'],
+        roleType: typeof sessionInfo.role,
+        roleExists: sessionInfo.role !== undefined,
+        roleComparison: {
+          mentorMatch: sessionInfo.role === 'mentor',
+          adminMatch: sessionInfo.role === 'admin',
+          anyMatch: sessionInfo.role === 'mentor' || sessionInfo.role === 'admin'
+        }
+      });
       return NextResponse.json(
-        { error: '講師または管理者のみがレッスン枠を作成できます' },
+        { error: '講師または管理者のみがレッスン枠を作成できます', roleInfo: { providedRole: sessionInfo.role } },
         { status: 403 }
       );
     }
