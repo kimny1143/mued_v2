@@ -13,7 +13,7 @@ console.log(`VERCEL_URL: ${process.env.VERCEL_URL || 'なし'}`);
 console.log('\n=== Stripe環境変数 ===');
 const stripeVars = [
   'STRIPE_SECRET_KEY',
-  'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+  'STRIPE_PUBLIC_KEY',
   'STRIPE_WEBHOOK_SECRET'
 ];
 
@@ -58,7 +58,7 @@ for (const varName of supabaseVars) {
 console.log('\n=== チェック結果 ===');
 // Stripe関連のチェック
 const hasStripeSecretKey = !!process.env.STRIPE_SECRET_KEY;
-const hasStripePublishableKey = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+const hasStripePublishableKey = !!process.env.STRIPE_PUBLIC_KEY;
 console.log(`Stripe基本設定: ${hasStripeSecretKey && hasStripePublishableKey ? '✅' : '❌'}`);
 
 // Supabase関連のチェック

@@ -31,7 +31,7 @@ serve(async (req) => {
   }
 
   // Supabaseクライアントの初期化
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  const supabaseUrl = Deno.env.get('NEXT_PUBLIC_SUPABASE_URL') || '';
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_KEY') || '';
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 

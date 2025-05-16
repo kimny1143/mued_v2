@@ -4,7 +4,7 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { cron } from 'https://deno.land/x/deno_cron@v1.0.0/cron.ts';
 
 // 環境変数の取得
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseUrl = Deno.env.get('NEXT_PUBLIC_SUPABASE_URL') || '';
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const resendApiKey = Deno.env.get('RESEND_API_KEY') || '';
 
