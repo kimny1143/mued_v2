@@ -16,10 +16,10 @@ echo -e "${YELLOW}環境変数を確認しています...${NC}"
 
 # helper
 safe_append () {
-  key=$1
-  val=$2
-  [ -z "$val" ] && { echo "❌ $key is EMPTY" ; exit 1 ; }
-  echo "$key=$val" >> .env.production
+  KEY=$1
+  VALUE=$2
+  [ -z "$VALUE" ] && return              # 空なら書かない
+  printf '%s=%s\n' "$KEY" "$VALUE" >> .env.production
 }
 
 # Vercel環境の特定
@@ -52,19 +52,19 @@ echo -e "${YELLOW}環境変数を設定しています...${NC}"
 # NEXT_PUBLIC_AI_SERVICE_URL が設定されていない場合は自動設定
 if [ -z "$NEXT_PUBLIC_AI_SERVICE_URL" ]; then
   echo -e "${YELLOW}NEXT_PUBLIC_AI_SERVICE_URL が未設定のため、$AI_SERVICE_URL を設定します${NC}"
-  echo "NEXT_PUBLIC_AI_SERVICE_URL=$AI_SERVICE_URL" >> .env.production
+  safe_append NEXT_PUBLIC_AI_SERVICE_URL "$AI_SERVICE_URL"
 fi
 
 # NEXT_PUBLIC_SITE_URL が設定されていない場合は自動設定
 if [ -z "$NEXT_PUBLIC_SITE_URL" ]; then
   echo -e "${YELLOW}NEXT_PUBLIC_SITE_URL が未設定のため、$DEPLOY_URL を設定します${NC}"
-  echo "NEXT_PUBLIC_SITE_URL=$DEPLOY_URL" >> .env.production
+  safe_append NEXT_PUBLIC_SITE_URL "$DEPLOY_URL"
 fi
 
 # NEXT_PUBLIC_DEPLOY_URL が設定されていない場合は自動設定
 if [ -z "$NEXT_PUBLIC_DEPLOY_URL" ]; then
   echo -e "${YELLOW}NEXT_PUBLIC_DEPLOY_URL が未設定のため、$DEPLOY_URL を設定します${NC}"
-  echo "NEXT_PUBLIC_DEPLOY_URL=$DEPLOY_URL" >> .env.production
+  safe_append NEXT_PUBLIC_DEPLOY_URL "$DEPLOY_URL"
 fi
 
 # AIサービスの接続確認
