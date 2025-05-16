@@ -29,8 +29,19 @@ type GlobalWithPrisma = typeof globalThis & {
 // グローバルオブジェクトの取得
 const globalForPrisma = globalThis as GlobalWithPrisma;
 
-// 既存のクライアントを使用するか、新規作成
-export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
+let prisma: PrismaClient;
+
+if (process.env.NODE_ENV === 'production') {
+  prisma = new PrismaClient();
+} else {
+  // @ts-ignore
+  if (!globalForPrisma.prisma) {
+    // @ts-ignore
+    globalForPrisma.prisma = prismaClientSingleton();
+  }
+  // @ts-ignore
+  prisma = globalForPrisma.prisma;
+}
 
 // 開発環境ではホットリロード間でインスタンスを保持
 if (isDev) {
@@ -45,3 +56,5 @@ if (isDev) {
 //     await prisma.$disconnect();
 //   });
 // } 
+
+export { prisma }; 
