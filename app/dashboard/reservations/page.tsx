@@ -283,11 +283,11 @@ export default function ReservationsPage() {
       )}
 
       {/* 予約可能なレッスン */}
-      {slotsData && slotsData.length > 0 && (
+      {slotsData && slotsData.filter((s) => s.isAvailable).length > 0 && (
         <div>
           <h2 className="text-2xl font-bold mb-4">予約可能なレッスン</h2>
           <div className="grid gap-4">
-            {slotsData.map((slot: LessonSlot) => (
+            {slotsData.filter((slot) => slot.isAvailable).map((slot: LessonSlot) => (
               <Card key={slot.id} className="p-4">
                 <div className="flex justify-between items-start">
                   <div>
@@ -318,7 +318,7 @@ export default function ReservationsPage() {
                     variant="default"
                     size="sm"
                     onClick={() => handleBooking(slot.id)}
-                    disabled={isProcessing}
+                    disabled={isProcessing || !slot.isAvailable}
                   >
                     {isProcessing ? (
                       <>
