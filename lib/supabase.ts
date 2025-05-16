@@ -14,14 +14,16 @@ function getSiteUrl() {
 }
 
 // Supabase環境変数
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// 環境変数チェック
+// 環境変数チェック（存在しなければビルドを失敗させる）
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("Supabase環境変数が設定されていません");
-  console.error("URL:", supabaseUrl ? "設定済み" : "未設定");
-  console.error("ANON_KEY:", supabaseAnonKey ? "設定済み" : "未設定");
+  throw new Error(
+    '❌ Supabase 環境変数が不足しています: ' +
+      `NEXT_PUBLIC_SUPABASE_URL=${supabaseUrl ?? 'undefined'} ` +
+      `NEXT_PUBLIC_SUPABASE_ANON_KEY=${supabaseAnonKey ? '(set)' : 'undefined'}`
+  );
 }
 
 // 現在の環境に合わせたサイトURL
