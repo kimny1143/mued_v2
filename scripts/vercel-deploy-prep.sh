@@ -14,6 +14,18 @@ echo -e "${YELLOW}MUED LMS Vercelデプロイ準備スクリプト実行中...${
 # 環境変数の確認
 echo -e "${YELLOW}環境変数を確認しています...${NC}"
 
+# 既存の .env.production をリセット（Vercel キャッシュで残った空キーを除去）
+echo -e "${YELLOW}.env.production をリセットします...${NC}"
+rm -f .env.production
+touch .env.production
+
+# Supabase キーを必ず書き込む
+echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL" >> .env.production
+echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY" >> .env.production
+echo "SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY" >> .env.production
+
+# 追加の環境変数は下で必要に応じて追記
+
 # Vercel環境の特定
 if [ "$VERCEL_ENV" = "production" ]; then
   ENV="production"
