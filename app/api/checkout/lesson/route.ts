@@ -1,112 +1,69 @@
-import { stripe } from '../../../../lib/stripe';
-import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { createCheckoutSession } from '@/lib/stripe';
+import { getBaseUrl } from '@/lib/utils';
+import { getSessionFromRequest } from '@/lib/session';
+import { Prisma } from '@prisma/client';
+
+// 利用するStripe価格ID（単発レッスン）
+const LESSON_PRICE_ID = 'price_1ROXvxRYtspYtD2zVhMlsy6M';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    // 認証処理（Supabase Authを使用）
-    // このMVP段階では簡略化のためにユーザーIDを固定
-    const userId = 'user-demo-123';
-    
-    const { lessonSlotId, successUrl, cancelUrl } = await req.json();
-    
-    if (!lessonSlotId || !successUrl || !cancelUrl) {
-      return NextResponse.json(
-        { error: '必須パラメータが不足しています' },
-        { status: 400 }
-      );
+    const { lessonSlotId } = await req.json();
+
+    if (!lessonSlotId) {
+      return NextResponse.json({ error: 'レッスン枠IDが必要です' }, { status: 400 });
     }
-    
-    // レッスン枠の情報を取得
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_KEY!
-    );
-    
-    const { data: lessonSlot, error } = await supabase
-      .from('lesson_slots')
-      .select('*, mentors(name)')
-      .eq('id', lessonSlotId)
-      .single();
-    
-    if (error || !lessonSlot) {
-      console.error('レッスン枠取得エラー:', error);
-      return NextResponse.json(
-        { error: 'レッスン枠が見つかりません' },
-        { status: 404 }
-      );
+
+    // 認証 (Cookie / Authorization)
+    const sessionInfo = await getSessionFromRequest(req);
+    if (!sessionInfo) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
-    
-    // レッスン枠が既に予約済みでないか確認
-    if (!lessonSlot.available) {
-      return NextResponse.json(
-        { error: 'このレッスン枠は既に予約されています' },
-        { status: 400 }
-      );
-    }
-    
-    // 予約情報を仮登録（ステータスはpending）
-    const { data: reservation, error: reservationError } = await supabase
-      .from('reservations')
-      .insert({
-        user_id: userId,
-        lesson_slot_id: lessonSlotId,
-        status: 'pending',
-      })
-      .select()
-      .single();
-    
-    if (reservationError) {
-      console.error('予約仮登録エラー:', reservationError);
-      return NextResponse.json(
-        { error: '予約の仮登録に失敗しました' },
-        { status: 500 }
-      );
-    }
-    
-    // Stripeチェックアウトセッションの作成
-    const startTime = new Date(lessonSlot.start_time);
-    const endTime = new Date(lessonSlot.end_time);
-    
-    const stripeSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'jpy',
-            product_data: {
-              name: `レッスン: ${lessonSlot.mentors?.name || 'メンター'}`,
-              description: `${startTime.toLocaleString('ja-JP')} 〜 ${endTime.toLocaleString('ja-JP')}`,
-            },
-            unit_amount: lessonSlot.price,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: cancelUrl,
-      client_reference_id: reservation.id, // 予約IDを参照IDとして設定
-      metadata: {
-        reservationId: reservation.id,
-        lessonSlotId: lessonSlotId,
-        userId: userId,
+
+    // Prisma でスロット取得 & 可用性チェック
+    const slot = await prisma.lessonSlot.findUnique({
+      where: { id: lessonSlotId },
+      include: {
+        teacher: true,
+        reservations: true,
       },
     });
-    
-    // セッションIDを返す
-    return NextResponse.json({ 
-      sessionId: stripeSession.id,
-      url: stripeSession.url
+
+    if (!slot) {
+      return NextResponse.json({ error: 'レッスン枠が見つかりません' }, { status: 404 });
+    }
+
+    if (!slot.isAvailable || slot.reservations.length > 0) {
+      return NextResponse.json({ error: 'このレッスン枠は予約できません' }, { status: 409 });
+    }
+
+    const baseUrl = getBaseUrl();
+    const lessonDate = new Date(slot.startTime).toLocaleString('ja-JP', {
+      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
     });
-  } catch (error: unknown) {
+
+    // Stripe セッション（登録済み Price ID 使用）
+    const session = await createCheckoutSession({
+      priceId: LESSON_PRICE_ID,
+      successUrl: `${baseUrl}/dashboard/lessons?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${baseUrl}/dashboard/lessons?cancelled=true`,
+      metadata: {
+        slotId: slot.id,
+        studentId: sessionInfo.user.id,
+        teacherId: slot.teacherId,
+        startTime: slot.startTime.toISOString(),
+        endTime: slot.endTime.toISOString(),
+      },
+      clientReferenceId: `${slot.id}:${sessionInfo.user.id}`,
+    });
+
+    return NextResponse.json({ sessionId: session.id, url: session.url });
+  } catch (error) {
     console.error('Checkout session creation error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'チェックアウトセッションの作成に失敗しました';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'チェックアウトセッション作成失敗' }, { status: 500 });
   }
 } 
