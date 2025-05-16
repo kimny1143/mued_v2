@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase-server';
+import { supabaseServer } from '@/lib/supabase-server';
 import { signInWithGoogle } from '@/app/actions/auth';
 import { getBaseUrl } from '@/lib/utils';
 
@@ -45,7 +45,7 @@ function LoginContent() {
             await new Promise(resolve => setTimeout(resolve, 500));
             
             // セッションが正しく設定されたか確認
-            const { data, error } = await supabase.auth.getSession();
+            const { data, error } = await supabaseServer.auth.getSession();
             
             if (error) {
               console.error('[セッション取得エラー]', error);
@@ -92,7 +92,7 @@ function LoginContent() {
                   console.log('[再試行] トークンからセッションを設定');
                   
                   // セッションを手動で設定
-                  const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+                  const { data: sessionData, error: sessionError } = await supabaseServer.auth.setSession({
                     access_token: accessToken,
                     refresh_token: ''
                   });
@@ -138,7 +138,7 @@ function LoginContent() {
       if (isProcessingHash) return;
       
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data } = await supabaseServer.auth.getSession();
         
         // セッションが存在し、かつエラーがなければリダイレクト
         if (data.session) {

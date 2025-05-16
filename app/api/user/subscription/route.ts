@@ -3,7 +3,7 @@ export const runtime = 'nodejs';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getSessionFromRequest } from '@/lib/session';
 import type { NextRequest } from 'next/server';
-import { supabase } from '@/lib/supabase-server';
+import { supabaseServer } from '@/lib/supabase-server';
 
 // このAPIルートは動的であることを明示的に宣言
 export const dynamic = 'force-dynamic';
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
         console.log("通常権限でサブスクリプションデータを取得試行");
         
         // 通常のsupabaseクライアントでも試行
-        const { data: normalData, error: normalError } = await supabase
+        const { data: normalData, error: normalError } = await supabaseServer
           .from('stripe_user_subscriptions')
           .select('*')
           .eq('userId', userId)

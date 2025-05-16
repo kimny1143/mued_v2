@@ -72,3 +72,5 @@ if (typeof window !== 'undefined') {
 if (!supabaseAnonKey) {
   console.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY missing!');
 }
+
+export { supabaseServer as supabase };
