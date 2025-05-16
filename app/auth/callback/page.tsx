@@ -40,17 +40,21 @@ function CallbackContent() {
         try {
           console.log('認証コードを処理中:', code.substring(0, 10) + '...');
           
-          // 認証コードをセッションに交換
-          const { error } = await supabaseBrowser.auth.exchangeCodeForSession(code);
-          
-          if (error) {
-            console.error('認証コード交換エラー:', error.message);
-            router.push(`/login?error=auth_error&message=${encodeURIComponent(error.message)}`);
-            return;
+          // detectSessionInUrl=true の場合、Supabase が自動で交換済みの可能性あり
+          let { data: sessionData } = await supabaseBrowser.auth.getSession();
+
+          if (!sessionData.session) {
+            // 未交換なら手動で交換
+            const { error } = await supabaseBrowser.auth.exchangeCodeForSession(code);
+            if (error) {
+              console.error('認証コード交換エラー:', error.message);
+              router.push(`/login?error=auth_error&message=${encodeURIComponent(error.message)}`);
+              return;
+            }
+
+            // 交換後に再取得
+            ({ data: sessionData } = await supabaseBrowser.auth.getSession());
           }
-          
-          // セッションが正しく設定されたか確認
-          const { data: sessionData } = await supabaseBrowser.auth.getSession();
           
           if (sessionData.session) {
             console.log('認証成功: セッション設定完了');
