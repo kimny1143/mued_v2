@@ -20,11 +20,16 @@ async function executePrismaQuery<T>(queryFn: () => Promise<T>): Promise<T> {
   try {
     return await queryFn();
   } catch (error) {
-    console.error('Prismaクエリエラー:', error);
+    if (error instanceof Prisma.PrismaClientUnknownRequestError) {
+      console.error('Prisma UnknownRequestError 詳細:', error.message);
+    } else {
+      console.error('Prismaクエリエラー:', error);
+    }
     
     // PostgreSQL接続エラーの場合、再試行
     if (error instanceof Prisma.PrismaClientInitializationError || 
-        error instanceof Prisma.PrismaClientKnownRequestError) {
+        error instanceof Prisma.PrismaClientKnownRequestError ||
+        error instanceof Prisma.PrismaClientUnknownRequestError) {
       console.log('Prisma接続リセット試行...');
       
       // エラー後の再試行（最大3回）
