@@ -77,7 +77,7 @@ export default function Page() {
         nodeEnv: process.env.NODE_ENV,
         vercel: process.env.NEXT_PUBLIC_VERCEL_ENV || '不明',
         appUrl: process.env.NEXT_PUBLIC_APP_URL || window.location.origin,
-        stripeKey: process.env.STRIPE_PUBLIC_KEY ? 'あり' : 'なし',
+        stripeKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? 'あり' : 'なし',
         permissionError
       });
 

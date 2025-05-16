@@ -11,14 +11,14 @@ let stripePromise: Promise<Stripe | null>;
  */
 export const getStripe = () => {
   if (!stripePromise) {
-    const key = process.env.STRIPE_PUBLIC_KEY;
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
     console.log('Stripe公開キー取得状態:', {
       hasKey: !!key,
       keyPrefix: key ? key.substring(0, 10) + '...' : 'なし'
     });
 
     if (!key) {
-      console.error('Stripe公開キーが設定されていません。環境変数STRIPE_PUBLIC_KEYを確認してください。');
+      console.error('Stripe公開キーが設定されていません。環境変数NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEYを確認してください。');
       return Promise.resolve(null);
     }
 
@@ -49,7 +49,7 @@ export const redirectToCheckout = async ({
     // 環境情報をログに記録
     console.log('Stripe環境情報:', {
       env: process.env.NODE_ENV,
-      publicKey: process.env.STRIPE_PUBLIC_KEY ? '設定済み' : '未設定',
+      publicKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? '設定済み' : '未設定',
       url: window.location.href,
       host: window.location.host
     });

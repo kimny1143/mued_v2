@@ -57,7 +57,7 @@ jobs:
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
-          STRIPE_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY }}
           NEXT_PUBLIC_AI_SERVICE_URL: ${{ secrets.NEXT_PUBLIC_TEST_AI_SERVICE_URL }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_TEST_WEBHOOK_SECRET }}
         run: npm run dev &
@@ -83,7 +83,7 @@ jobs:
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
-          STRIPE_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY }}
         run: npx playwright test
 
       # テスト成果物をアップロード
