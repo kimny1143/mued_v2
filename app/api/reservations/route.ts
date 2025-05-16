@@ -256,6 +256,10 @@ export async function POST(request: NextRequest) {
       
       console.log("Stripe セッション作成成功:", session.id);
       
+      // デバッグ: スロット更新結果を再取得してログ出力
+      const slotAfter = await prisma.lessonSlot.findUnique({ where: { id: slot.id }, select: { id: true, isAvailable: true } });
+      console.log('トランザクション後の isAvailable 状態:', slotAfter);
+      
       return NextResponse.json({
         checkoutUrl: session.url,
         sessionId: session.id,
