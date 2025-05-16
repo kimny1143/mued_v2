@@ -92,32 +92,33 @@ export async function POST(req: Request) {
             throw new Error('このスロットは既に予約されています');
           }
           
-          // トランザクションで予約作成とスロット更新を実行
-          const [reservation, _] = await prisma.$transaction([
-            // 1. 予約レコードを作成（CONFIRMED状態）
-            prisma.reservation.create({
-              data: {
+          // 既に pending 予約があれば更新、なければ作成
+          await prisma.$transaction([
+            prisma.reservation.upsert({
+              where: { id: session.metadata?.reservationId ?? '' },
+              create: {
+                id: session.metadata?.reservationId,
                 slotId: slotId,
                 studentId: studentId,
-                status: ReservationStatus.CONFIRMED,
+                status: ReservationStatus.COMPLETED,
+                paymentId: session.id,
+                notes: notes
+              },
+              update: {
+                status: ReservationStatus.COMPLETED,
                 paymentId: session.id,
                 notes: notes
               }
             }),
-            
-            // 2. スロットを利用不可に更新
             prisma.lessonSlot.update({
               where: { id: slotId },
               data: { isAvailable: false }
             })
           ]);
+
+          console.log('予約完了: reservationId', session.metadata?.reservationId);
           
-          console.log('予約が完了しました:', {
-            reservationId: reservation.id,
-            slotId: slotId,
-            studentId: studentId,
-            paymentId: session.id
-          });
+          console.log('予約が完了しました');
         }
         break;
       }

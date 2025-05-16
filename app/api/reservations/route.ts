@@ -215,14 +215,26 @@ export async function POST(request: NextRequest) {
       minute: '2-digit'
     });
     
-    // メタデータ
+    // ① まず予約レコード(PENDING)を作成
+    const pendingReservation = await executePrismaQuery(() =>
+      prisma.reservation.create({
+        data: {
+          slotId: slot.id,
+          studentId: sessionInfo.user.id,
+          status: ReservationStatus.CONFIRMED, // Stripe支払完了でCOMPLETEDへ
+          notes: data.notes || '',
+        },
+      })
+    );
+
+    // ② メタデータに reservationId を含める
     const metadata = {
+      reservationId: pendingReservation.id,
       slotId: slot.id,
       studentId: sessionInfo.user.id,
       teacherId: slot.teacherId,
       startTime: slot.startTime.toISOString(),
       endTime: slot.endTime.toISOString(),
-      notes: data.notes || ''
     };
     
     // Stripe Checkout セッションを作成
@@ -232,8 +244,8 @@ export async function POST(request: NextRequest) {
       
       const session = await createCheckoutSession({
         priceId,
-        successUrl: `${baseUrl}${successPath}?success=true&session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${baseUrl}${successPath}?cancelled=true`,
+        successUrl: `${baseUrl}${successPath}?reservation_id=${pendingReservation.id}&session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${baseUrl}${successPath}?reservation_id=${pendingReservation.id}&cancelled=true`,
         metadata,
         clientReferenceId: `${slot.id}:${sessionInfo.user.id}`,
       });
@@ -242,7 +254,8 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({
         checkoutUrl: session.url,
-        sessionId: session.id
+        sessionId: session.id,
+        reservationId: pendingReservation.id,
       });
     } catch (error) {
       console.error("Stripe セッション作成エラー:", error);
