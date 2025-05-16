@@ -227,10 +227,13 @@ export async function POST(request: NextRequest) {
     
     // Stripe Checkout セッションを作成
     try {
+      const priceId = process.env.NEXT_PUBLIC_LESSON_PRICE_ID ?? 'price_1RPE4rRYtspYtD2zW8Lni2Gf';
+      const successPath = '/dashboard/reservations/success';
+      
       const session = await createCheckoutSession({
-        priceId: 'price_1RPE4rRYtspYtD2zW8Lni2Gf',
-        successUrl: `${baseUrl}/dashboard/lessons?success=true&session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: `${baseUrl}/dashboard/lessons?cancelled=true`,
+        priceId,
+        successUrl: `${baseUrl}${successPath}?success=true&session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${baseUrl}${successPath}?cancelled=true`,
         metadata,
         clientReferenceId: `${slot.id}:${sessionInfo.user.id}`,
       });
