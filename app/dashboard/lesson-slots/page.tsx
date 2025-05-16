@@ -287,6 +287,31 @@ export default function LessonSlotsPage() {
     }));
   };
 
+  async function book(slotId: string) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('not authed');
+
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ slotId }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'failed');
+
+      // Stripe の hosted URL へ遷移
+      window.location.href = json.checkoutUrl ?? json.url;
+    } catch (e) {
+      console.error(e);
+      toast.error('予約に失敗しました');
+    }
+  }
+
   // ローディング中表示
   if (loading) {
     return (

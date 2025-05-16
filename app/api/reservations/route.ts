@@ -97,31 +97,16 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         slot: {
-          include: {
+          select: {
+            startTime: true,
+            endTime: true,
             teacher: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-              },
+              select: { id: true, name: true, image: true },
             },
           },
         },
-        student: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
       },
-      orderBy: {
-        slot: {
-          startTime: 'asc',
-        },
-      },
+      orderBy: { slot: { startTime: 'asc' } },
     }));
     
     return NextResponse.json(reservations, {

@@ -52,11 +52,10 @@ async function executePrismaQuery<T>(queryFn: () => Promise<T>): Promise<T> {
 // Stripeから単体レッスン価格を取得する関数
 async function getSingleLessonPrice() {
   try {
-    // 単体レッスン用の価格ID
-    const LESSON_PRICE_ID = 'price_1ROXvxRYtspYtD2zVhMlsy6M';
-    
+    const priceId = process.env.NEXT_PUBLIC_LESSON_PRICE_ID ?? 'price_1ROXvxRYtspYtD2zVhMlsy6M';
+
     // 価格情報を取得
-    const price = await stripe.prices.retrieve(LESSON_PRICE_ID);
+    const price = await stripe.prices.retrieve(priceId);
     
     return {
       priceId: price.id,

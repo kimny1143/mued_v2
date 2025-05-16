@@ -239,9 +239,33 @@ export default function ReservationsPage() {
     initializeData();
   }, [router, dataFetchAttempt]);
   
-  // レッスン予約処理
-  const handleBooking = (slotId: string) => {
-    router.push(`/dashboard/reservations/book?slotId=${slotId}`);
+  // レッスン予約処理（Stripe Checkout に遷移）
+  const handleBooking = async (slotId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('認証トークンが取得できません');
+
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ slotId }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || '予約 API エラー');
+
+      if (json.checkoutUrl || json.url) {
+        window.location.href = json.checkoutUrl ?? json.url;
+      } else {
+        throw new Error('決済 URL が取得できませんでした');
+      }
+    } catch (error) {
+      console.error('予約処理エラー:', error);
+      toast.error(error instanceof Error ? error.message : '予約に失敗しました');
+    }
   };
   
   // ステータスに応じたバッジのスタイルを返す関数

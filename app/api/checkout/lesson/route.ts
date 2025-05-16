@@ -6,7 +6,7 @@ import { getSessionFromRequest } from '@/lib/session';
 import { Prisma } from '@prisma/client';
 
 // 利用するStripe価格ID（単発レッスン）
-const LESSON_PRICE_ID = 'price_1ROXvxRYtspYtD2zVhMlsy6M';
+const LESSON_PRICE_ID: string | undefined = process.env.NEXT_PUBLIC_LESSON_PRICE_ID;
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +45,11 @@ export async function POST(req: NextRequest) {
     const lessonDate = new Date(slot.startTime).toLocaleString('ja-JP', {
       year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
     });
+
+    // Price ID 未設定チェック
+    if (!LESSON_PRICE_ID) {
+      return NextResponse.json({ error: 'Stripe Price ID が設定されていません' }, { status: 500 });
+    }
 
     // Stripe セッション（登録済み Price ID 使用）
     const session = await createCheckoutSession({
