@@ -25,6 +25,21 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Toaster } from 'sonner';
 import { DatePicker } from '@/app/components/ui/date-picker';
 import { TimeSelect } from '@/app/components/ui/time-select';
+import {
+  CalendarIcon,
+  ClockIcon,
+  UserIcon,
+  CheckCircleIcon,
+  XIcon,
+  FilterIcon,
+  PlusCircleIcon,
+  Loader2Icon,
+  Plus,
+  AlertCircle,
+  Clock,
+  Edit,
+  Trash2
+} from 'lucide-react';
 
 // シンプルなアラートコンポーネント
 const Alert: React.FC<{ className?: string; children: React.ReactNode }> = ({ className, children }) => (
