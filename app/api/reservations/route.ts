@@ -7,7 +7,7 @@ import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { Prisma } from '@prisma/client';
-import { createOneTimePriceCheckoutSession } from '@/lib/stripe';
+import { createCheckoutSession } from '@/lib/stripe';
 import { getBaseUrl } from '@/lib/utils';
 
 // 予約ステータスの列挙型
@@ -242,14 +242,12 @@ export async function POST(request: NextRequest) {
     
     // Stripe Checkout セッションを作成
     try {
-      const session = await createOneTimePriceCheckoutSession({
-        unitAmount: 5000, // TODO: 将来的には価格IDまたはDBから取得
-        currency: 'jpy',
-        name: `レッスン予約: ${lessonDate}`,
-        description: `講師: ${slot.teacher.name || 'メンター'}`,
+      const session = await createCheckoutSession({
+        priceId: 'price_1ROXvxRYtspYtD2zVhMlsy6M',
         successUrl: `${baseUrl}/dashboard/lessons?success=true&session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${baseUrl}/dashboard/lessons?cancelled=true`,
         metadata,
+        clientReferenceId: `${slot.id}:${sessionInfo.user.id}`,
       });
       
       console.log("Stripe セッション作成成功:", session.id);
