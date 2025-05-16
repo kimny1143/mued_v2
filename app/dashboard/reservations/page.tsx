@@ -102,9 +102,25 @@ const fetcher = async (url: string) => {
   const { data: sessionData } = await supabaseBrowser.auth.getSession();
   const token = sessionData?.session?.access_token;
 
+  if (!token) {
+    console.warn('[fetcher] トークン未取得のためリトライ待機');
+    // 少し待って再帰的にリトライ（最大2回）
+    await new Promise((r) => setTimeout(r, 300));
+    const { data: s2 } = await supabaseBrowser.auth.getSession();
+    if (!s2.session?.access_token) {
+      throw new Error('トークン未取得');
+    }
+    return fetcher(url); // 再呼び出し
+  }
+
   const response = await fetch(url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: { Authorization: `Bearer ${token}` },
   });
+
+  console.log('[fetcher] URL:', url, 'status:', response.status);
+  if (response.status === 401) {
+    console.error('[fetcher] 401 Unauthorized - トークン送信済みか確認');
+  }
 
   if (!response.ok) {
     throw new Error('データの取得に失敗しました');
