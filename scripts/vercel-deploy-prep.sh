@@ -22,12 +22,6 @@ safe_append () {
   echo "$key=$val" >> .env.production
 }
 
-rm -f .env.production && touch .env.production
-
-safe_append NEXT_PUBLIC_SUPABASE_URL      "$NEXT_PUBLIC_SUPABASE_URL"
-safe_append NEXT_PUBLIC_SUPABASE_ANON_KEY "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
-safe_append SUPABASE_SERVICE_ROLE_KEY     "$SUPABASE_SERVICE_ROLE_KEY"
-
 # Vercel環境の特定
 if [ "$VERCEL_ENV" = "production" ]; then
   ENV="production"
