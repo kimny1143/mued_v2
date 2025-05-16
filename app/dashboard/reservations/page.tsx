@@ -187,10 +187,24 @@ export default function ReservationsPage() {
     setError(null);
 
     try {
+      // Supabaseのアクセストークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      if (!token) {
+        // トークンがない場合はエラー処理またはログインへ誘導
+        toast.error('認証が必要です。再度ログインしてください。');
+        setError('認証トークンがありません。');
+        setIsProcessing(false);
+        // router.push('/login'); // 必要に応じてログインページへ
+        return;
+      }
+
       const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ slotId }),
       });
