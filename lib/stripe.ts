@@ -10,7 +10,7 @@ if (!stripeSecretKey) {
 
 // API接続の設定とタイムアウト設定の追加
 export const stripe = new Stripe(stripeSecretKey || 'dummy_key_for_development', {
-  // @ts-expect-error: Stripe型定義の更新に対応
+  // @ts-expect-error: Stripeの型定義の問題を一時的に回避（2023-10-16は有効なAPIバージョン）
   apiVersion: '2023-10-16',
   typescript: true,
   appInfo: {
@@ -185,6 +185,27 @@ export async function getYearlyPrices(options?: {
     price.recurring?.interval === 'year'
   );
 }
+
+// サブスクリプション関連の型定義
+export type StripeSubscription = Stripe.Subscription & {
+  customer: Stripe.Customer;
+  items: {
+    data: Array<{
+      price: Stripe.Price;
+      quantity: number;
+    }>;
+  };
+  status: 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid';
+  current_period_end: number;
+  cancel_at_period_end: boolean;
+};
+
+// チェックアウトセッションの型定義
+export type StripeCheckoutSession = Stripe.Checkout.Session & {
+  customer: Stripe.Customer;
+  subscription?: StripeSubscription;
+  payment_intent?: Stripe.PaymentIntent;
+};
 
 // 決済セッションの作成
 export async function createCheckoutSession({

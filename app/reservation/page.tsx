@@ -1,14 +1,16 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
-import { Clock, ChevronRight } from 'lucide-react';
+//import { ja } from 'date-fns/locale';
+//import { Clock, ChevronRight } from 'lucide-react';
 import { Button } from '@ui/button';
 import { Card } from '@ui/card';
-import { ReservationModal } from './_components/ReservationModal';
-import { LessonSlot } from './_components/ReservationTable';
+import { ReservationModal } from '@/app/components/reservation/_components/ReservationModal';
+import { LessonSlot } from '@/app/components/reservation/_components/ReservationTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -45,16 +47,13 @@ export const ReservationPage: React.FC = () => {
   
   const [selectedSlot, setSelectedSlot] = useState<LessonSlot | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [groupedSlots, setGroupedSlots] = useState<Record<string, LessonSlot[]>>({});
   const isSmallScreen = useMediaQuery({ maxWidth: 1024 });
   
   // APIからレッスンスロットを取得する関数
   const fetchLessonSlots = useCallback(async () => {
     try {
-      setIsLoading(true);
       setError(null);
       
       console.log('API通信開始 - 認証トークン:', user ? '有効' : 'なし');
@@ -98,7 +97,7 @@ export const ReservationPage: React.FC = () => {
       });
       
       // 表示用にスロットを日付ごとにグループ化
-      const groupedByDate = sortedSlots.reduce((groups: Record<string, LessonSlot[]>, slot) => {
+      return sortedSlots.reduce((groups: Record<string, LessonSlot[]>, slot) => {
         const date = new Date(slot.startTime).toLocaleDateString('ja-JP', { 
           year: 'numeric', 
           month: 'long', 
@@ -113,15 +112,10 @@ export const ReservationPage: React.FC = () => {
         groups[date].push(slot);
         return groups;
       }, {});
-      
-      setGroupedSlots(groupedByDate);
-      return groupedByDate;
     } catch (error) {
       console.error('レッスンスロット取得エラー:', error);
       setError(error as Error);
       return {};
-    } finally {
-      setIsLoading(false);
     }
   }, [user]);
 
@@ -252,7 +246,7 @@ export const ReservationPage: React.FC = () => {
   
   const handleConfirmBooking = async () => {
     if (selectedSlot) {
-      await createReservation(selectedSlot.id);
+      await reserveMutation.mutateAsync(selectedSlot.id);
     }
   };
 

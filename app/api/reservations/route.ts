@@ -154,54 +154,70 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    // スロットが存在するか確認
-    const slot = await executePrismaQuery(() => prisma.lessonSlot.findUnique({
-      where: { id: data.slotId },
-      include: {
-        teacher: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
+
+    // トランザクション内で予約処理を実行
+    const result = await prisma.$transaction(async (tx) => {
+      // スロットを悲観ロックで取得
+      // @ts-expect-error: Prismaの型定義の問題を一時的に回避（悲観ロックの型定義が正しく認識されない）
+      const slot = await tx.lessonSlot.findFirst({
+        where: { 
+          id: data.slotId,
+          isAvailable: true // 利用可能なスロットのみを対象
         },
-        reservations: true
-      },
-    }));
-    
-    console.log("スロット情報:", {
-      found: !!slot,
-      isAvailable: slot?.isAvailable,
-      reservationsCount: slot?.reservations.length,
-      startTime: slot?.startTime,
-      teacherId: slot?.teacherId
+        include: {
+          teacher: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          },
+          reservations: true
+        },
+        lock: 'pessimistic' // 悲観ロックを適用
+      });
+      
+      console.log("スロット情報:", {
+        found: !!slot,
+        isAvailable: slot?.isAvailable,
+        reservationsCount: slot?.reservations.length,
+        startTime: slot?.startTime,
+        teacherId: slot?.teacherId
+      });
+      
+      if (!slot) {
+        throw new Error('指定されたレッスン枠が見つからないか、既に予約されています');
+      }
+      
+      // 既存の予約を確認
+      if (slot.reservations.length > 0) {
+        console.log("既存の予約あり:", slot.reservations);
+        throw new Error('このレッスン枠は既に予約されています');
+      }
+      
+      // 予約レコードを作成
+      const pendingReservation = await tx.reservation.create({
+        data: {
+          slotId: slot.id,
+          studentId: sessionInfo.user.id,
+          status: ReservationStatus.CONFIRMED,
+          notes: data.notes || '',
+        },
+      });
+
+      // スロットを利用不可に更新
+      await tx.lessonSlot.update({
+        where: { id: slot.id },
+        data: { isAvailable: false }
+      });
+
+      return { slot, pendingReservation };
+    }, {
+      maxWait: 5000, // トランザクションの最大待機時間（ミリ秒）
+      timeout: 10000 // トランザクションのタイムアウト時間（ミリ秒）
     });
-    
-    if (!slot) {
-      return NextResponse.json(
-        { error: '指定されたレッスン枠が見つかりませんでした' },
-        { status: 404 }
-      );
-    }
-    
-    // スロットが利用可能か確認
-    if (!slot.isAvailable) {
-      console.log("スロット利用不可: isAvailable=false");
-      return NextResponse.json(
-        { error: 'このレッスン枠は現在予約できません' },
-        { status: 409 }
-      );
-    }
-    
-    // 既存の予約を確認
-    if (slot.reservations.length > 0) {
-      console.log("既存の予約あり:", slot.reservations);
-      return NextResponse.json(
-        { error: 'このレッスン枠は既に予約されています' },
-        { status: 409 }
-      );
-    }
+
+    const { slot, pendingReservation } = result;
     
     // ベースURL
     const baseUrl = getBaseUrl();
@@ -215,19 +231,7 @@ export async function POST(request: NextRequest) {
       minute: '2-digit'
     });
     
-    // ① まず予約レコード(PENDING)を作成
-    const pendingReservation = await executePrismaQuery(() =>
-      prisma.reservation.create({
-        data: {
-          slotId: slot.id,
-          studentId: sessionInfo.user.id,
-          status: ReservationStatus.CONFIRMED, // Stripe支払完了でCOMPLETEDへ
-          notes: data.notes || '',
-        },
-      })
-    );
-
-    // ② メタデータに reservationId を含める
+    // メタデータに reservationId を含める
     const metadata = {
       reservationId: pendingReservation.id,
       slotId: slot.id,
@@ -259,6 +263,18 @@ export async function POST(request: NextRequest) {
       });
     } catch (error) {
       console.error("Stripe セッション作成エラー:", error);
+      
+      // Stripeセッション作成に失敗した場合、予約とスロットをロールバック
+      await prisma.$transaction([
+        prisma.reservation.delete({
+          where: { id: pendingReservation.id }
+        }),
+        prisma.lessonSlot.update({
+          where: { id: slot.id },
+          data: { isAvailable: true }
+        })
+      ]);
+      
       return NextResponse.json(
         { error: '決済セッションの作成に失敗しました' },
         { status: 500 }
@@ -266,9 +282,15 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('Error creating reservation:', error);
+    
+    // エラーメッセージを適切に整形
+    const errorMessage = error instanceof Error ? error.message : '予約処理中にエラーが発生しました';
+    const statusCode = errorMessage.includes('見つかりませんでした') ? 404 : 
+                      errorMessage.includes('予約できません') ? 409 : 500;
+    
     return NextResponse.json(
-      { error: '予約処理中にエラーが発生しました', details: String(error) },
-      { status: 500 }
+      { error: errorMessage },
+      { status: statusCode }
     );
   }
 } 
