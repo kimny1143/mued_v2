@@ -18,8 +18,9 @@ jobs:
       - name: Run load test
         run: k6 run tests/load/reservation-flow.js
         env:
-          API_URL: ${{ secrets.API_URL }}
-          API_TOKEN: ${{ secrets.API_TOKEN }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Upload k6 report
         uses: actions/upload-artifact@v4
@@ -37,7 +38,7 @@ jobs:
       - name: Start ZAP Scan
         uses: zaproxy/action-baseline@v0.12.0
         with:
-          target: ${{ secrets.APP_URL }}
+          target: ${{ secrets.NEXT_PUBLIC_API_URL }}
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a'
 

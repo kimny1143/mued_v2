@@ -15,12 +15,12 @@ jobs:
       stripe-cli:
         image: stripe/stripe-cli:latest
         env:
-          STRIPE_API_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
         ports:
           - 4242:4242
         # Webhookフォワーディングを設定
         options: >-
-          --health-cmd "stripe listen --api-key=$STRIPE_API_KEY --forward-to localhost:3000/api/webhooks/stripe --forward-connect-to localhost:3000/api/webhooks/stripe --log-level info"
+          --health-cmd "stripe listen --api-key=$STRIPE_SECRET_KEY --forward-to localhost:3000/api/webhooks/stripe --forward-connect-to localhost:3000/api/webhooks/stripe --log-level info"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -46,7 +46,7 @@ jobs:
       # テスト用データベースのセットアップ
       - name: Setup test database
         env:
-          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           npx prisma migrate deploy
           node scripts/seed-test-db.js
@@ -54,12 +54,14 @@ jobs:
       # 開発サーバーのバックグラウンド起動
       - name: Start development server
         env:
-          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
-          NEXT_PUBLIC_SITE_URL: http://localhost:3000
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_AI_SERVICE_URL: ${{ secrets.NEXT_PUBLIC_TEST_AI_SERVICE_URL }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_TEST_WEBHOOK_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          NEXT_PUBLIC_AI_SERVICE_URL: ${{ secrets.NEXT_PUBLIC_AI_SERVICE_URL }}
         run: npm run dev &
         # サーバー起動を待機
         
@@ -80,10 +82,13 @@ jobs:
       # E2Eテスト実行
       - name: Run E2E tests
         env:
-          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
-          NEXT_PUBLIC_SITE_URL: http://localhost:3000
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_AI_SERVICE_URL: ${{ secrets.NEXT_PUBLIC_AI_SERVICE_URL }}
         run: npx playwright test
 
       # テスト成果物をアップロード

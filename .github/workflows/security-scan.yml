@@ -15,7 +15,7 @@ jobs:
       - name: Start ZAP Scan
         uses: zaproxy/action-baseline@v0.12.0
         with:
-          target: ${{ secrets.APP_URL }}
+          target: ${{ secrets.NEXT_PUBLIC_API_URL }}
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a'
 
