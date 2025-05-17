@@ -8,11 +8,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { stripe } from '@/lib/stripe';
 import { Prisma } from '@prisma/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 
-// 予約ステータスの列挙型
-enum ReservationStatus {
+// 予約ステータスの列挙型（現在は未使用だがAPIの拡張で使用予定）
+enum _ReservationStatus {
   CONFIRMED = 'CONFIRMED',
   COMPLETED = 'COMPLETED'
 }
@@ -51,8 +49,8 @@ async function executePrismaQuery<T>(queryFn: () => Promise<T>): Promise<T> {
   }
 }
 
-// Stripeから単体レッスン価格を取得する関数
-async function getSingleLessonPrice() {
+// Stripeから単体レッスン価格を取得する関数（将来の拡張用に保持）
+async function _getSingleLessonPrice() {
   try {
     const priceId = process.env.NEXT_PUBLIC_LESSON_PRICE_ID ?? 'price_1RPE4rRYtspYtD2zW8Lni2Gf';
 
@@ -77,8 +75,8 @@ async function getSingleLessonPrice() {
   }
 }
 
-// WhereInputの型を定義
-type LessonSlotWhereInput = {
+// WhereInputの型を定義（将来のクエリ拡張用）
+type _LessonSlotWhereInput = {
   teacherId?: string;
   startTime?: {
     gte?: Date;
@@ -90,8 +88,8 @@ type LessonSlotWhereInput = {
 // レッスンスロット一覧を取得
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
+    const sessionInfo = await getSessionFromRequest(request);
+    if (!sessionInfo) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

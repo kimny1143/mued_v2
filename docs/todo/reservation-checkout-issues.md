@@ -108,6 +108,9 @@
   - [x] 本番環境へのデプロイ（Vercel自動デプロイ）
   - [x] データベースマイグレーション（完了済み）
   - [x] 環境変数設定（完了済み）
+  - [x] リンターエラーの修正
+    - [x] `app/api/lesson-slots/route.ts` の未使用変数・関数の修正
+    - [x] `tests/load/reservation-flow.js` の k6 環境設定の追加
 - [ ] デプロイ後の動作確認
   - [ ] Vercel Preview デプロイでの確認
     - [ ] 予約フロー全体の動作確認

@@ -1,3 +1,7 @@
+/* eslint-env browser, es6, k6 */
+/* eslint-disable import/no-anonymous-default-export */
+/* global __ENV */
+
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Rate } from 'k6/metrics';
@@ -18,7 +22,7 @@ export const options = {
 
 const BASE_URL = __ENV.API_URL || 'http://localhost:3000';
 
-export default function () {
+export default function runReservationFlow() {
   const params = {
     headers: {
       'Content-Type': 'application/json',
