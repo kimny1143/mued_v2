@@ -1,5 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ReservationStatus } from '@prisma/client';
+import { useSupabaseChannel } from '../useSupabaseChannel';
+import { useUser } from '../use-user';
 
 export interface LessonSlot {
   id: string;
@@ -34,6 +36,20 @@ export interface UseReservationsOptions {
 }
 
 export function useReservations(options?: UseReservationsOptions) {
+  const queryClient = useQueryClient();
+  const { user } = useUser();
+
+  // リアルタイム更新の設定
+  useSupabaseChannel('reservations', {
+    table: 'reservations',
+    event: '*', // INSERT, UPDATE, DELETE すべてのイベントを監視
+    filter: user ? `student_id=eq.${user.id}` : undefined,
+    onEvent: () => {
+      // キャッシュを無効化して再取得をトリガー
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
+    }
+  });
+
   return useQuery<Reservation[]>({
     queryKey: ['reservations', options],
     queryFn: async () => {

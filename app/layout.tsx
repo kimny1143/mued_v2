@@ -1,12 +1,12 @@
-import React from 'react';
-import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
+import { Inter } from 'next/font/google';
 
-export const metadata: Metadata = {
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata = {
   title: 'MUED LMS',
-  description: '音楽教育のためのラーニングマネジメントシステム',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  description: 'MUED Learning Management System',
 };
 
 export default function RootLayout({
@@ -31,7 +31,7 @@ export default function RootLayout({
           rel="stylesheet" 
         />
       </head>
-      <body className="font-sans">
+      <body className={inter.className}>
         <Providers>
           <main className="min-h-screen">
             {children}

@@ -104,6 +104,7 @@ model LessonSlot {
   
   @@index([teacherId])
   @@index([startTime, endTime])
+  @@index([startTime, isAvailable])
   @@map("lesson_slots")
 }
 

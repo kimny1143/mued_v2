@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { stripe } from '@/lib/stripe';
 import { Prisma } from '@prisma/client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // 予約ステータスの列挙型
 enum ReservationStatus {
@@ -88,125 +90,40 @@ type LessonSlotWhereInput = {
 // レッスンスロット一覧を取得
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const from = searchParams.get('from');
     const to = searchParams.get('to');
-    const take = Number(searchParams.get('take') ?? 20);
-    const skip = Number(searchParams.get('skip') ?? 0);
 
-    const sessionInfo = await getSessionFromRequest(request);
-    if (!sessionInfo) {
-      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    if (!from || !to) {
+      return NextResponse.json(
+        { error: 'from and to parameters are required' },
+        { status: 400 }
+      );
     }
 
-    const currentUserId = sessionInfo.user.id;
-
-    // 検索条件の構築
-    const where: LessonSlotWhereInput = {
-      isAvailable: true,
-    };
-
-    if (from || to) {
-      where.startTime = {};
-      if (from) where.startTime.gte = new Date(from);
-      if (to) where.startTime.lte = new Date(to);
-    } else {
-      // デフォルトで現在時刻から6時間前以降
-      const searchStartTime = new Date();
-      searchStartTime.setHours(searchStartTime.getHours() - 6);
-      where.startTime = { gte: searchStartTime };
-    }
-
-    // レッスンスロットの取得
-    const lessonSlots = await prisma.lessonSlot.findMany({
-      where,
-      include: {
-        teacher: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
+    const slots = await prisma.lessonSlot.findMany({
+      where: {
+        startTime: {
+          gte: new Date(from),
+          lte: new Date(to),
         },
-        reservations: {
-          select: {
-            id: true,
-            status: true,
-            studentId: true,
-            createdAt: true,
-            updatedAt: true,
-          }
-        }
+        isAvailable: true,
       },
       orderBy: {
         startTime: 'asc',
       },
-      take,
-      skip,
     });
 
-    // レスポンスデータの整形
-    const formattedSlots = lessonSlots.map(slot => {
-      const activeReservations = slot.reservations.filter(res => 
-        res.status === ReservationStatus.CONFIRMED
-      );
-
-      const myReservations = activeReservations.filter(res => 
-        res.studentId === currentUserId
-      );
-      
-      const otherReservations = activeReservations.filter(res => 
-        res.studentId !== currentUserId
-      );
-      
-      const hasMyReservation = myReservations.length > 0;
-      const hasOtherConfirmedReservation = otherReservations.some(res => 
-        res.status === ReservationStatus.CONFIRMED
-      );
-
-      const isActuallyAvailable = slot.isAvailable && !hasOtherConfirmedReservation;
-      
-      return {
-        id: slot.id,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        teacherId: slot.teacherId,
-        teacher: slot.teacher ? {
-          id: slot.teacher.id,
-          name: slot.teacher.name,
-          image: slot.teacher.image,
-        } : null,
-        mentorName: slot.teacher?.name || undefined,
-        isAvailable: isActuallyAvailable,
-        isReservedByMe: hasMyReservation,
-        myReservation: myReservations.length > 0 
-          ? myReservations.reduce((latest, res) => 
-              !latest || new Date(res.updatedAt) > new Date(latest.updatedAt) ? res : latest
-            ) 
-          : null,
-        reservations: sessionInfo.role === 'admin' || 
-                      (sessionInfo.role === 'mentor' && slot.teacherId === currentUserId)
-                      ? slot.reservations
-                      : undefined,
-        createdAt: slot.createdAt,
-        updatedAt: slot.updatedAt,
-      };
-    });
-
-    return NextResponse.json(formattedSlots, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    });
+    return NextResponse.json(slots);
   } catch (error) {
-    console.error("レッスンスロット取得エラー:", error);
+    console.error('Error fetching lesson slots:', error);
     return NextResponse.json(
-      { 
-        error: 'レッスンスロットの取得中にエラーが発生しました', 
-        details: error instanceof Error ? error.message : String(error)
-      },
+      { error: 'Internal Server Error' },
       { status: 500 }
     );
   }
