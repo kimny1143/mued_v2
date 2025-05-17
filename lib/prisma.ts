@@ -8,45 +8,22 @@ const isDev = process.env.NODE_ENV !== 'production';
  * サーバーレス環境での接続問題に対応するための設定を含む
  */
 const prismaClientSingleton = () => {
-  // Prismaクライアントの作成 (開発環境ではログを有効化)
-  const client = new PrismaClient({
-    log: isDev ? ['query', 'error', 'warn'] : ['error'],
+  return new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
-
-  // 接続エラー対策: アプリケーションの起動時に接続を確立
-  if (isDev) {
-    console.log('Prisma クライアント初期化 - 開発環境');
-  }
-
-  return client;
 };
 
-// Prismaクライアントをグローバルに格納するための型定義
-type GlobalWithPrisma = typeof globalThis & {
-  prisma: PrismaClient | undefined;
+type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClientSingleton | undefined;
 };
 
-// グローバルオブジェクトの取得
-const globalForPrisma = globalThis as GlobalWithPrisma;
+const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
-let prisma: PrismaClient;
+export { prisma };
 
-if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient();
-} else {
-  // @ts-ignore
-  if (!globalForPrisma.prisma) {
-    // @ts-ignore
-    globalForPrisma.prisma = prismaClientSingleton();
-  }
-  // @ts-ignore
-  prisma = globalForPrisma.prisma;
-}
-
-// 開発環境ではホットリロード間でインスタンスを保持
-if (isDev) {
-  globalForPrisma.prisma = prisma;
-}
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 // このファイルが開発環境でホットリロードされた際に
 // データベース接続をクリーンアップする
@@ -56,5 +33,3 @@ if (isDev) {
 //     await prisma.$disconnect();
 //   });
 // } 
-
-export { prisma }; 
