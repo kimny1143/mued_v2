@@ -2,229 +2,121 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
-import { 
-  CalendarIcon, 
-  ClockIcon, 
-  UserIcon, 
-  CheckCircleIcon, 
-  XIcon,
-  FilterIcon,
-  PlusCircleIcon,
-  Loader2Icon
-} from 'lucide-react';
-import { Card } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
-import { Badge } from '@/app/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/app/components/ui/table';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { toast } from 'sonner';
 import { Toaster } from 'sonner';
-import { User } from '@supabase/supabase-js';
-import useSWR from 'swr';
-import { useSupabaseChannel } from '@/lib/hooks/useSupabaseChannel';
-
-// 予約データの型定義
-interface Reservation {
-  id: string;
-  slotId: string;
-  studentId: string;
-  status: 'CONFIRMED' | 'COMPLETED';
-  paymentId?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt?: string;
-  slot: {
-    id: string;
-    startTime: string;
-    endTime: string;
-    teacherId: string;
-    isAvailable: boolean;
-    teacher?: {
-      id: string;
-      name: string;
-      email: string;
-      image?: string;
-    };
-  };
-  student: {
-    id: string;
-    name: string;
-    email: string;
-    image?: string;
-  };
-}
-
-// レッスンスロットの型定義
-interface LessonSlot {
-  id: string;
-  startTime: string;
-  endTime: string;
-  teacherId: string;
-  isAvailable: boolean;
-  price?: number;
-  currency?: string;
-  mentorName?: string;
-  teacher?: {
-    id: string;
-    name: string;
-    email: string;
-    image?: string;
-  };
-  reservations?: Reservation[];
-}
-
-// Loading Skeletonコンポーネント
-const ReservationSkeleton = () => (
-  <div className="space-y-4">
-    <div className="h-8 bg-gray-200 rounded animate-pulse" />
-    <div className="space-y-2">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="h-24 bg-gray-100 rounded animate-pulse" />
-      ))}
-    </div>
-  </div>
-);
-
-// データ取得用のfetcher関数
-const fetcher = async (url: string) => {
-  // Supabaseのアクセストークンを取得
-  const { data: sessionData } = await supabaseBrowser.auth.getSession();
-  const token = sessionData?.session?.access_token;
-
-  if (!token) {
-    console.warn('[fetcher] トークン未取得のためリトライ待機');
-    // 少し待って再帰的にリトライ（最大2回）
-    await new Promise((r) => setTimeout(r, 300));
-    const { data: s2 } = await supabaseBrowser.auth.getSession();
-    if (!s2.session?.access_token) {
-      throw new Error('トークン未取得');
-    }
-    return fetcher(url); // 再呼び出し
-  }
-
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  console.log('[fetcher] URL:', url, 'status:', response.status);
-  if (response.status === 401) {
-    console.error('[fetcher] 401 Unauthorized - トークン送信済みか確認');
-  }
-
-  if (!response.ok) {
-    throw new Error('データの取得に失敗しました');
-  }
-  return response.json();
-};
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useReservations, Reservation, LessonSlot } from '@/lib/hooks/queries/useReservations';
+import { ReservationCard } from './_components/ReservationCard';
+import { LessonSlotCard } from './_components/LessonSlotCard';
+import { ReservationSkeleton } from './_components/ReservationSkeleton';
 
 export default function ReservationsPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const queryClient = useQueryClient();
 
-  // useSWRを使用してデータを取得
-  const { data: reservationsData, error: reservationsError, isLoading: isLoadingReservations, mutate: mutateReservations } = useSWR<Reservation[]>(
-    '/api/reservations',
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      errorRetryCount: 0,
-      dedupingInterval: 5000,
-    }
-  );
+  // React Queryを使用して予約データを取得
+  const { 
+    data: reservationsData,
+    isLoading: isLoadingReservations,
+    error: reservationsError
+  } = useReservations();
 
-  const { data: slotsData, error: slotsError, isLoading: isLoadingSlots, mutate: mutateSlots } = useSWR<LessonSlot[]>(
-    '/api/lesson-slots',
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      errorRetryCount: 0,
-      dedupingInterval: 5000,
-    }
-  );
-
-  // 予約データのリアルタイム更新
-  useSupabaseChannel<Reservation>('reservations', {
-    table: 'reservations',
-    event: '*',
-    onEvent: (payload) => {
-      console.log('予約データが更新されました:', payload);
-      mutateReservations();
-    }
-  });
-
-  // レッスンスロットのリアルタイム更新
-  useSupabaseChannel<LessonSlot>('lesson-slots', {
-    table: 'lesson_slots',
-    event: '*',
-    onEvent: (payload) => {
-      console.log('レッスンスロットが更新されました:', payload);
-      mutateSlots();
-    }
-  });
-
-  // エラー状態の管理
-  useEffect(() => {
-    if (reservationsError || slotsError) {
-      setError('データの取得に失敗しました。時間をおいて再読み込みしてください。');
-    }
-  }, [reservationsError, slotsError]);
-
-  // 予約処理
-  const handleBooking = async (slotId: string) => {
-    setIsProcessing(true);
-    setError(null);
-
-    try {
-      // Supabaseのアクセストークンを取得
-      const { data: sessionData } = await supabaseBrowser.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      if (!token) {
-        // トークンがない場合はエラー処理またはログインへ誘導
-        toast.error('認証が必要です。再度ログインしてください。');
-        setError('認証トークンがありません。');
-        setIsProcessing(false);
-        // router.push('/login'); // 必要に応じてログインページへ
-        return;
+  // React Queryを使用してレッスンスロットを取得
+  const { 
+    data: slotsData,
+    isLoading: isLoadingSlots,
+    error: slotsError
+  } = useQuery<LessonSlot[]>({
+    queryKey: ['lessonSlots'],
+    queryFn: async () => {
+      const response = await fetch('/api/lesson-slots');
+      if (!response.ok) {
+        throw new Error('レッスンスロットの取得に失敗しました');
       }
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000, // 5分間キャッシュを新鮮と見なす
+  });
 
+  // 予約キャンセルのミューテーション
+  const cancelReservationMutation = useMutation({
+    mutationFn: async (reservationId: string) => {
+      const response = await fetch(`/api/reservations/${reservationId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('予約のキャンセルに失敗しました');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      toast.success('予約をキャンセルしました');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // 予約作成のミューテーション
+  const createReservationMutation = useMutation({
+    mutationFn: async (slotId: string) => {
       const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ slotId }),
       });
-
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || '予約処理中にエラーが発生しました');
+        throw new Error('予約の作成に失敗しました');
       }
-
+      return response.json();
+    },
+    onSuccess: (data) => {
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else {
-        toast.success('レッスンの予約が完了しました！');
-        router.refresh();
+        queryClient.invalidateQueries({ queryKey: ['reservations', 'lessonSlots'] });
+        toast.success('予約が完了しました');
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '予約処理中にエラーが発生しました';
-      setError(errorMessage);
-      toast.error(errorMessage);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  // エラー処理
+  useEffect(() => {
+    if (reservationsError) {
+      setError(reservationsError.message);
+    }
+    if (slotsError) {
+      setError(slotsError.message);
+    }
+  }, [reservationsError, slotsError]);
+
+  // 予約キャンセルハンドラー
+  const handleCancelReservation = async (reservationId: string) => {
+    try {
+      await cancelReservationMutation.mutateAsync(reservationId);
+    } catch (error) {
+      console.error('予約キャンセルエラー:', error);
+    }
+  };
+
+  // レッスン予約ハンドラー
+  const handleReserveLesson = async (slotId: string) => {
+    try {
+      setIsProcessing(true);
+      await createReservationMutation.mutateAsync(slotId);
+    } catch (error) {
+      console.error('予約エラー:', error);
     } finally {
       setIsProcessing(false);
     }
@@ -265,90 +157,41 @@ export default function ReservationsPage() {
       <Toaster />
       
       {/* 予約済みレッスン */}
-      {reservationsData && reservationsData.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold mb-4">予約済みレッスン</h2>
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold">予約済みレッスン</h2>
+        {reservationsData && reservationsData.length > 0 ? (
           <div className="grid gap-4">
-            {reservationsData.map((reservation: Reservation) => (
-              <Card key={reservation.id} className="p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium">
-                      {reservation.slot.teacher?.name || '講師情報なし'}
-                    </div>
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <CalendarIcon className="h-3 w-3" />
-                      {format(new Date(reservation.slot.startTime), 'yyyy年M月d日', { locale: ja })}
-                    </div>
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <ClockIcon className="h-3 w-3" />
-                      {format(new Date(reservation.slot.startTime), 'HH:mm', { locale: ja })} - 
-                      {format(new Date(reservation.slot.endTime), 'HH:mm', { locale: ja })}
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {reservation.status === 'CONFIRMED' ? '予約済み' : '完了'}
-                  </Badge>
-                </div>
-              </Card>
+            {reservationsData.map((reservation) => (
+              <ReservationCard
+                key={reservation.id}
+                reservation={reservation}
+                onCancel={handleCancelReservation}
+              />
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="text-gray-500">予約済みのレッスンはありません</p>
+        )}
+      </div>
 
       {/* 予約可能なレッスン */}
-      {slotsData && slotsData.filter((s) => s.isAvailable).length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold mb-4">予約可能なレッスン</h2>
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold">予約可能なレッスン</h2>
+        {slotsData && slotsData.length > 0 ? (
           <div className="grid gap-4">
-            {slotsData.filter((slot) => slot.isAvailable).map((slot: LessonSlot) => (
-              <Card key={slot.id} className="p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-medium">
-                      {slot.teacher?.name || slot.mentorName || '講師情報なし'}
-                    </div>
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <CalendarIcon className="h-3 w-3" />
-                      {format(new Date(slot.startTime), 'yyyy年M月d日', { locale: ja })}
-                    </div>
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <ClockIcon className="h-3 w-3" />
-                      {format(new Date(slot.startTime), 'HH:mm', { locale: ja })} - 
-                      {format(new Date(slot.endTime), 'HH:mm', { locale: ja })}
-                    </div>
-                    <div className="text-sm mt-1">
-                      {slot.price ? `¥${slot.price.toLocaleString()}` : '¥5,000'}
-                    </div>
-                  </div>
-                  <div>
-                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                      予約可能
-                    </Badge>
-                  </div>
-                </div>
-                <div className="flex justify-end mt-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleBooking(slot.id)}
-                    disabled={isProcessing || !slot.isAvailable}
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-                        処理中...
-                      </>
-                    ) : (
-                      '予約する'
-                    )}
-                  </Button>
-                </div>
-              </Card>
+            {slotsData.map((slot: LessonSlot) => (
+              <LessonSlotCard
+                key={slot.id}
+                slot={slot}
+                onReserve={handleReserveLesson}
+                isProcessing={isProcessing}
+              />
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="text-gray-500">予約可能なレッスン枠はありません</p>
+        )}
+      </div>
     </div>
   );
 } 

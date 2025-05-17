@@ -3,208 +3,137 @@ import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { ReservationStatus, PaymentStatus } from '@prisma/client';
 
-export const dynamic = 'force-dynamic';
+// エッジ関数として実行
+export const runtime = 'edge';
 
 // Stripeクライアントの初期化
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16' as const
+  apiVersion: '2025-03-31.basil' as const
 });
 
-// 予約ステータス列挙型
-enum ReservationStatus {
-  CONFIRMED = 'CONFIRMED',
-  COMPLETED = 'COMPLETED'
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+
+// リトライロジック
+async function processWithRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`Attempt ${i + 1} failed:`, error);
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+    }
+  }
+  
+  throw lastError;
+}
+
+// パフォーマンスモニタリング
+async function monitorWebhookPerformance(
+  eventType: string,
+  startTime: number
+) {
+  const duration = Date.now() - startTime;
+  console.log(`Webhook ${eventType} processed in ${duration}ms`);
 }
 
 export async function POST(req: Request) {
-  const body = await req.text();
-  const signature = headers().get('Stripe-Signature');
-
-  if (!signature) {
-    console.error('署名がありません');
-    return new NextResponse('署名が必要です', { status: 400 });
-  }
-
-  // Webhookシークレット
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const startTime = Date.now();
   
-  if (!webhookSecret) {
-    console.error('Webhook秘密鍵が設定されていません');
-    return new NextResponse('設定エラー', { status: 500 });
-  }
-
-  let event: Stripe.Event;
-
   try {
-    // イベントを検証
-    event = stripe.webhooks.constructEvent(
+    const body = await req.text();
+    const signature = headers().get('stripe-signature');
+
+    if (!signature) {
+      return NextResponse.json(
+        { error: 'Stripe signature is missing' },
+        { status: 400 }
+      );
+    }
+
+    // Webhookイベントの検証
+    const event = stripe.webhooks.constructEvent(
       body,
       signature,
       webhookSecret
     );
-    console.log(`Webhookイベント受信: ${event.id}, タイプ: ${event.type}`);
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : '不明なエラー';
-    console.error(`Webhook検証エラー: ${errorMessage}`);
-    return new NextResponse(`Webhook検証エラー: ${errorMessage}`, { status: 400 });
-  }
-  
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        console.log(`チェックアウト完了イベント: ${session.id}, モード: ${session.mode}`);
-        console.log('セッションメタデータ:', session.metadata);
-        
-        // セッションモードがサブスクリプションの場合
-        if (session.mode === 'subscription' && session.subscription) {
-          console.log(`サブスクリプションID: ${session.subscription}, ユーザーメタデータ:`, session.metadata);
-          await handleCompletedSubscriptionCheckout(session);
-        }
-        
-        // 単発決済（レッスン予約）の場合
-        else if (session.mode === 'payment') {
-          console.log('単発レッスン決済を検出:', session.id);
-          
-          // メタデータからスロット情報を取得
-          const slotId = session.metadata?.slotId;
-          const studentId = session.metadata?.studentId;
-          const notes = session.metadata?.notes || '';
-          
-          if (!slotId || !studentId) {
-            console.error('必要なメタデータがありません:', session.metadata);
-            throw new Error('決済セッションに必要なメタデータがありません');
-          }
-          
-          // スロットの存在確認と可用性チェック
-          const slot = await prisma.lessonSlot.findUnique({
-            where: { id: slotId }
-          });
-          
-          if (!slot) {
-            console.error('スロットが見つかりません:', slotId);
-            throw new Error('関連するレッスンスロットが見つかりません');
-          }
-          
-          if (!slot.isAvailable) {
-            console.error('スロットは既に予約されています:', slotId);
-            throw new Error('このスロットは既に予約されています');
-          }
 
-          // トランザクションで予約を作成
-          const reservation = await prisma.$transaction(async (tx) => {
-            // 予約を作成
-            const newReservation = await tx.reservation.create({
-              data: {
-                studentId,
-                slotId,
-                status: ReservationStatus.CONFIRMED,
-                paymentId: session.payment_intent as string,
-                notes
-              }
-            });
-
-            // スロットの可用性を更新
-            await tx.lessonSlot.update({
-              where: { id: slotId },
-              data: { isAvailable: false }
-            });
-
-            return newReservation;
-          });
-
-          console.log('予約が確定しました:', reservation.id);
-        }
-        break;
-      }
+    // イベントタイプに応じた処理
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
       
-      case 'customer.subscription.created': 
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription;
-        console.log(`サブスクリプション更新イベント: ${subscription.id}, ステータス: ${subscription.status}`);
-        await handleSubscriptionChange(subscription);
-        break;
-      }
+      // 非同期で処理を開始
+      processCheckoutSession(session).catch(error => {
+        console.error('Error processing checkout session:', error);
+      });
       
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
-        console.log(`サブスクリプション削除イベント: ${subscription.id}`);
-        await handleSubscriptionCancellation(subscription);
-        break;
-      }
-
-      case 'payment_intent.succeeded': {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log(`支払い成功: ${paymentIntent.id}`);
-        
-        // 予約の支払いIDを更新
-        if (paymentIntent.metadata?.reservationId) {
-          await prisma.reservation.update({
-            where: { id: paymentIntent.metadata.reservationId },
-            data: { paymentId: paymentIntent.id }
-          });
-        }
-        break;
-      }
-
-      case 'payment_intent.payment_failed': {
-        const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log(`支払い失敗: ${paymentIntent.id}`);
-        
-        // 予約をキャンセル（レコードを削除）
-        if (paymentIntent.metadata?.reservationId) {
-          await prisma.$transaction(async (tx) => {
-            // 予約を取得
-            const reservation = await tx.reservation.findUnique({
-              where: { id: paymentIntent.metadata.reservationId },
-              include: { slot: true }
-            });
-
-            if (reservation) {
-              // 予約を削除
-              await tx.reservation.delete({
-                where: { id: reservation.id }
-              });
-
-              // スロットを再度利用可能に
-              await tx.lessonSlot.update({
-                where: { id: reservation.slotId },
-                data: { isAvailable: true }
-              });
-            }
-          });
-        }
-        break;
-      }
-
-      default:
-        console.log(`未処理のイベントタイプ: ${event.type}`);
+      // 即座にレスポンスを返す
+      await monitorWebhookPerformance(event.type, startTime);
+      return NextResponse.json({ received: true });
     }
-    
-    console.log(`イベント処理完了: ${event.type}`);
-    return new NextResponse(JSON.stringify({ received: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+
+    await monitorWebhookPerformance(event.type, startTime);
+    return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Webhook処理エラー詳細:', error);
-    return new NextResponse(
-      JSON.stringify({ 
-        error: 'Webhook処理エラー',
-        details: error instanceof Error ? error.message : '不明なエラー'
-      }), 
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
+    console.error('Webhook error:', error);
+    return NextResponse.json(
+      { error: 'Webhook handler failed' },
+      { status: 500 }
     );
   }
 }
 
+// チェックアウトセッションの処理
+async function processCheckoutSession(session: Stripe.Checkout.Session) {
+  return processWithRetry(async () => {
+    await prisma.$transaction(async (tx) => {
+      // Paymentレコードを更新
+      const payment = await tx.payment.update({
+        where: {
+          stripeSessionId: session.id,
+        },
+        data: {
+          stripePaymentId: session.payment_intent as string,
+          status: PaymentStatus.SUCCEEDED,
+        },
+      });
+
+      // 予約ステータスを更新
+      await tx.reservation.update({
+        where: {
+          id: payment.reservationId,
+        },
+        data: {
+          status: ReservationStatus.CONFIRMED,
+        },
+      });
+
+      // レッスンスロットの予約状態を更新
+      const reservation = await tx.reservation.findUnique({
+        where: { id: payment.reservationId },
+        select: { slotId: true },
+      });
+
+      if (reservation) {
+        await tx.lessonSlot.update({
+          where: { id: reservation.slotId },
+          data: { isAvailable: false },
+        });
+      }
+    });
+  });
+}
+
 // ユーザーIDを取得する関数
 async function findUserByCustomerId(customerId: string): Promise<string | null> {
-  try {
+  return processWithRetry(async () => {
     const { data, error } = await supabaseAdmin
       .from('stripe_customers')
       .select('user_id')
@@ -217,10 +146,7 @@ async function findUserByCustomerId(customerId: string): Promise<string | null> 
     }
 
     return data.user_id;
-  } catch (error) {
-    console.error('顧客ID検索エラー:', error);
-    return null;
-  }
+  });
 }
 
 // チェックアウト完了時の処理

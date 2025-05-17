@@ -210,6 +210,8 @@ export type StripeCheckoutSession = Stripe.Checkout.Session & {
 // 決済セッションの作成
 export async function createCheckoutSession({
   priceId,
+  slotId,
+  reservationId,
   successUrl,
   cancelUrl,
   customerId,
@@ -217,7 +219,9 @@ export async function createCheckoutSession({
   mode = 'payment',
   clientReferenceId,
 }: {
-  priceId: string;
+  priceId?: string;
+  slotId?: string;
+  reservationId?: string;
   successUrl: string;
   cancelUrl: string;
   customerId?: string;
@@ -225,24 +229,31 @@ export async function createCheckoutSession({
   mode?: 'payment' | 'subscription';
   clientReferenceId?: string;
 }): Promise<Stripe.Checkout.Session> {
-  console.log('Stripeセッション作成開始:', { priceId, mode });
-  
-  return safeStripeCall(
-    async () => {
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [{ price: priceId, quantity: 1 }],
-        mode: mode,
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        ...(customerId ? { customer: customerId } : {}),
-        ...(metadata ? { metadata } : {}),
-        ...(clientReferenceId ? { client_reference_id: clientReferenceId } : {}),
-      });
-      
-      console.log('Stripeセッション作成成功:', { sessionId: session.id });
-      return session;
-    },
+  // 予約用のメタデータを構築
+  const reservationMetadata = {
+    ...metadata,
+    ...(slotId && { slotId }),
+    ...(reservationId && { reservationId }),
+  };
+
+  // 予約用のクライアントリファレンスIDを構築
+  const reservationClientReferenceId = clientReferenceId || 
+    (slotId && reservationId ? `${slotId}:${reservationId}` : undefined);
+
+  return await safeStripeCall(
+    () => stripe.checkout.sessions.create({
+      mode,
+      payment_method_types: ['card'],
+      line_items: priceId ? [{
+        price: priceId,
+        quantity: 1,
+      }] : undefined,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      customer: customerId,
+      metadata: reservationMetadata,
+      client_reference_id: reservationClientReferenceId,
+    }),
     'チェックアウトセッションの作成に失敗しました'
   );
 }
