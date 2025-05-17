@@ -10,8 +10,8 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription
-} from '../../ui/dialog';
-import { Button } from '../../ui/button';
+} from '@ui/dialog';
+import { Button } from '@ui/button';
 import { LessonSlot } from './ReservationTable';
 import { Loader2 } from 'lucide-react';
 
