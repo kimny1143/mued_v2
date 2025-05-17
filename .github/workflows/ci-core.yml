@@ -24,12 +24,15 @@ jobs:
 
       - name: Run type check
         run: npm run type-check
+        continue-on-error: false
 
       - name: Run linting
         run: npm run lint
+        continue-on-error: false
 
       - name: Run unit tests
         run: npm run test
+        continue-on-error: false
 
       - name: Run E2E tests
         run: npm run test:e2e
@@ -38,6 +41,7 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        continue-on-error: false
 
       - name: Upload test coverage
         uses: actions/upload-artifact@v4

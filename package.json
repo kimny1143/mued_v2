@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx}\"",
+    "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:ci": "vitest run --coverage",
     "test:api": "vitest run app/api/**/*.test.ts",
