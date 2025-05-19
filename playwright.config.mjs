@@ -25,12 +25,14 @@ export default defineConfig({
   retries: isCI ? 2 : 0,
   workers: isCI ? 1 : undefined,
   reporter: 'html',
+  globalSetup: './tests/e2e/global-setup.ts',
   
   use: {
     baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
+    storageState: './tests/e2e/.auth.json',
   },
 
   /* テストごとのタイムアウト */
