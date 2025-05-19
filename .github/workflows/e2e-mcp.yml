@@ -1,0 +1,34 @@
+name: E2E + MCP
+on: [push, pull_request]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_MCP_TOKEN: ${{ secrets.PLAYWRIGHT_MCP_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install deps
+        run: npm ci
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Start MCP server
+        run: npm run mcp &
+        env:
+          PLAYWRIGHT_MCP_TOKEN: ${{ secrets.PLAYWRIGHT_MCP_TOKEN }}
+      - name: Wait for MCP server
+        run: |
+          timeout=30
+          while ! curl -s http://localhost:3333/mcp/health > /dev/null; do
+            if [ $timeout -le 0 ]; then
+              echo "MCP server failed to start"
+              exit 1
+            fi
+            sleep 1
+            timeout=$((timeout-1))
+          done
+      - name: Run tests
+        run: npm run test:e2e 

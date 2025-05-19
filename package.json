@@ -3,7 +3,7 @@
   "name": "mued-project",
   "description": "A React Learning Management System project using Next.js App Router with Shadcn UI library",
   "scripts": {
-    "dev": "next dev --port 3000 --hostname 0.0.0.0",
+    "dev": "npm run kill-port && npm run kill-mcp-port && next dev --port 3000 --hostname 0.0.0.0",
     "build": "npx prisma generate && next build",
     "export": "next export",
     "build:static": "bash scripts/vercel-deploy-prep.sh && npx prisma generate && next build && next export",
@@ -28,7 +28,13 @@
     "test:e2e:debug": "playwright test --debug",
     "test:stripe-webhook": "npx tsx scripts/test-stripe-webhook.ts",
     "check:supabase-permissions": "npx tsx scripts/check-supabase-permissions.ts",
-    "add-dynamic-flags": "node scripts/add-dynamic-flag.js"
+    "add-dynamic-flags": "node scripts/add-dynamic-flag.js",
+    "mcp": "mcp-server-playwright --port 3333",
+    "kill-port": "lsof -ti:3000 | xargs kill -9 || true",
+    "kill-mcp-port": "lsof -ti:3333 | xargs kill -9 || true",
+    "dev:clean": "npm run kill-port && npm run dev",
+    "start:clean": "npm run kill-port && npm run start",
+    "mcp:clean": "npm run kill-mcp-port && npm run mcp"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.0",
@@ -80,7 +86,8 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^3.2.6",
-    "@playwright/test": "^1.42.1",
+    "@playwright/mcp": "^0.0.26",
+    "@playwright/test": "^1.52.0",
     "@storybook/addon-essentials": "^8.6.12",
     "@storybook/addon-onboarding": "^8.6.12",
     "@storybook/blocks": "^8.6.12",
@@ -106,13 +113,14 @@
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "jsdom": "^26.1.0",
-    "playwright": "^1.42.1",
+    "playwright": "^1.52.0",
     "postcss": "^8.5.3",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.13",
     "storybook": "^8.6.12",
     "tailwindcss": "^3.4.16",
     "typescript": "^5.5.2",
-    "vitest": "^3.1.2"
+    "vitest": "^3.1.2",
+    "dotenv": "^16.4.5"
   }
 }
