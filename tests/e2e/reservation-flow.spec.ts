@@ -2,12 +2,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('予約フロー', () => {
   test.beforeEach(async ({ page }) => {
-    // テストユーザーでログイン
-    await page.goto('/login');
-    await page.fill('input[name="email"]', 'test@example.com');
-    await page.fill('input[name="password"]', 'password123');
-    await page.click('button[type="submit"]');
-    await expect(page).toHaveURL('/dashboard');
+    // 既にログイン済みなのでダッシュボードへ直接遷移
+    await page.goto('/dashboard');
+    await expect(page).toHaveURL(/dashboard/);
   });
 
   test('予約→決済→枠消失のフロー', async ({ page }) => {

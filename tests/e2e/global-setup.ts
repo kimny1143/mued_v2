@@ -1,5 +1,7 @@
 import { request, FullConfig } from '@playwright/test';
 import fs from 'fs';
+import { spawn } from 'child_process';
+import net from 'net';
 
 /**
  * Playwright globalSetup
@@ -7,6 +9,15 @@ import fs from 'fs';
  * storageState(.auth.json) に保存する。
  * これで各テストはログイン済みの状態から開始出来る。
  */
+
+type StorageState = {
+  cookies: unknown[];
+  origins: {
+    origin: string;
+    localStorage: { name: string; value: string }[];
+  }[];
+};
+
 export default async function globalSetup(config: FullConfig) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -96,7 +107,7 @@ export default async function globalSetup(config: FullConfig) {
 
   const storageStatePath = 'tests/e2e/.auth.json';
 
-  const storageState: any = {
+  const storageState: StorageState = {
     cookies: [],
     origins: [
       {
@@ -113,9 +124,33 @@ export default async function globalSetup(config: FullConfig) {
         ],
       },
     ],
-  } as unknown;
+  };
 
   fs.writeFileSync(storageStatePath, JSON.stringify(storageState, null, 2));
 
   console.log('[globalSetup] storageState saved to', storageStatePath);
+
+  // --- MCP サーバーを起動（ポートが空いていれば） ---
+  await new Promise<void>((resolve) => {
+    const client = net.createConnection({ port: 3333 }, () => {
+      // 既に起動中
+      client.end();
+      resolve();
+    });
+    client.on('error', () => {
+      // ポート空き -> 起動
+      console.log('[globalSetup] start MCP server');
+      const proc = spawn('npm', ['run', 'mcp'], { stdio: 'inherit' });
+      // 簡易ポーリングで起動待ち
+      const check = setInterval(() => {
+        const c = net.createConnection({ port: 3333 }, () => {
+          clearInterval(check);
+          c.end();
+          console.log('[globalSetup] MCP ready');
+          resolve();
+        });
+        c.on('error', () => {});
+      }, 1000);
+    });
+  });
 } 
