@@ -20,21 +20,37 @@ export default async function globalSetup(config: FullConfig) {
     return;
   }
 
-  // Supabase REST endpoint でパスワード認証
   const ctx = await request.newContext();
-  const tokenRes = await ctx.post(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
-    headers: {
-      apikey: anonKey,
-      'Content-Type': 'application/json',
-    },
-    data: {
-      email,
-      password,
-    },
-  });
+
+  async function login() {
+    return ctx.post(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+      headers: { apikey: anonKey, 'Content-Type': 'application/json' },
+      data: { email, password },
+    });
+  }
+
+  // 1) ログイン試行
+  let tokenRes = await login();
+
+  // 2) 失敗したらサインアップしてもう一度ログイン
+  if (!tokenRes.ok()) {
+    console.warn('[globalSetup] login failed. Try sign-up…');
+    const signUpRes = await ctx.post(`${supabaseUrl}/auth/v1/signup`, {
+      headers: { apikey: anonKey, 'Content-Type': 'application/json' },
+      data: { email, password },
+    });
+
+    if (!signUpRes.ok()) {
+      console.error('[globalSetup] sign-up failed:', await signUpRes.text());
+    } else {
+      console.log('[globalSetup] sign-up success');
+    }
+
+    tokenRes = await login();
+  }
 
   if (!tokenRes.ok()) {
-    console.error('[globalSetup] トークン取得失敗:', await tokenRes.text());
+    console.error('[globalSetup] 再ログイン失敗:', await tokenRes.text());
     return;
   }
 
