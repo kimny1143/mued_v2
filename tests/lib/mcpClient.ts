@@ -22,7 +22,7 @@ export async function execMcp(
   const r = await request.post('http://localhost:3333/mcp/execute', {
     headers: {
       'Content-Type': 'application/json',
-      Accept: 'application/json, text/event-stream',
+      accept: 'application/json, text/event-stream',
       Authorization: `Bearer ${process.env.PLAYWRIGHT_MCP_TOKEN}`,
     },
     data: { instructions, tools: ['browser', 'screenshot'] },
