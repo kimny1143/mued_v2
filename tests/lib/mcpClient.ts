@@ -14,7 +14,7 @@ interface McpResponse {
 export async function execMcp(
   request: APIRequestContext,
   instructions: string
-): Promise<McpResponse> {
+) {
   const r = await request.post('http://localhost:3333/mcp/execute', {
     headers: {
       'Content-Type': 'application/json',
@@ -22,5 +22,14 @@ export async function execMcp(
     },
     data: { instructions, tools: ['browser', 'screenshot'] },
   });
-  return (await r.json()) as McpResponse;
+
+  const text = await r.text();
+  try {
+    const json = JSON.parse(text);
+    console.log('[execMcp] response json:', json);
+    return json;
+  } catch {
+    console.warn('[execMcp] non-json response:', text);
+    return { ok: r.ok(), httpStatus: r.status(), raw: text };
+  }
 } 
