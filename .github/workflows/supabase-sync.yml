@@ -11,8 +11,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,8 +35,8 @@ jobs:
         with:
           version: latest
 
-      - name: Link Supabase project (if not cached)
-        run: supabase link --project-ref $SUPABASE_PROJECT_ID --debug
+      - name: Link Supabase project
+        run: supabase link --project-ref $NEXT_PUBLIC_SUPABASE_URL --debug
 
       - name: Push migrations to Supabase
         run: supabase db push --linked --debug

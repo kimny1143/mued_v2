@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabaseServer } from './supabase-server';
 
 /**
  * 現在のセッションユーザーの認証情報を取得
@@ -6,7 +6,7 @@ import { supabase } from './supabase';
  */
 export async function auth() {
   try {
-    const { data, error } = await supabase.auth.getSession();
+    const { data, error } = await supabaseServer.auth.getSession();
     
     if (error) {
       console.error('認証情報取得エラー:', error);

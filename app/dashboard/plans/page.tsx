@@ -1,12 +1,14 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { Button } from "@ui/button";
 import { Card } from "@ui/card";
 import { CheckIcon } from "lucide-react";
 import { products, StripeProduct } from "@/app/stripe-config";
 import { useUser } from "@/lib/hooks/use-user";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { Session, User } from "@supabase/supabase-js";
 import { redirectToCheckout } from "@/lib/client/stripe-client";
 

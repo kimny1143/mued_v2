@@ -3,152 +3,137 @@ import Stripe from 'stripe';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
+import { ReservationStatus, PaymentStatus } from '@prisma/client';
 
-export const dynamic = 'force-dynamic';
+// エッジ関数として実行
+export const runtime = 'edge';
 
 // Stripeクライアントの初期化
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16' as any // 型エラー回避
+  apiVersion: '2025-03-31.basil' as const
 });
 
-// 予約ステータス列挙型
-enum ReservationStatus {
-  CONFIRMED = 'CONFIRMED',
-  COMPLETED = 'COMPLETED'
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+
+// リトライロジック
+async function processWithRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`Attempt ${i + 1} failed:`, error);
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
+    }
+  }
+  
+  throw lastError;
+}
+
+// パフォーマンスモニタリング
+async function monitorWebhookPerformance(
+  eventType: string,
+  startTime: number
+) {
+  const duration = Date.now() - startTime;
+  console.log(`Webhook ${eventType} processed in ${duration}ms`);
 }
 
 export async function POST(req: Request) {
-  const body = await req.text();
-  const signature = headers().get('Stripe-Signature');
-
-  if (!signature) {
-    console.error('署名がありません');
-    return new NextResponse('署名が必要です', { status: 400 });
-  }
-
-  // Webhookシークレット
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const startTime = Date.now();
   
-  if (!webhookSecret) {
-    console.error('Webhook秘密鍵が設定されていません');
-    return new NextResponse('設定エラー', { status: 500 });
-  }
-
-  let event: Stripe.Event;
-
   try {
-    // イベントを検証
-    event = stripe.webhooks.constructEvent(
+    const body = await req.text();
+    const signature = headers().get('stripe-signature');
+
+    if (!signature) {
+      return NextResponse.json(
+        { error: 'Stripe signature is missing' },
+        { status: 400 }
+      );
+    }
+
+    // Webhookイベントの検証
+    const event = stripe.webhooks.constructEvent(
       body,
       signature,
       webhookSecret
     );
-    console.log(`Webhookイベント受信: ${event.id}, タイプ: ${event.type}`);
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : '不明なエラー';
-    console.error(`Webhook検証エラー: ${errorMessage}`);
-    return new NextResponse(`Webhook検証エラー: ${errorMessage}`, { status: 400 });
-  }
-  
-  try {
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        console.log(`チェックアウト完了イベント: ${session.id}, モード: ${session.mode}`);
-        console.log('セッションメタデータ:', session.metadata);
-        
-        // セッションモードがサブスクリプションの場合
-        if (session.mode === 'subscription' && session.subscription) {
-          console.log(`サブスクリプションID: ${session.subscription}, ユーザーメタデータ:`, session.metadata);
-          await handleCompletedSubscriptionCheckout(session);
-        }
-        
-        // 単発決済（レッスン予約）の場合
-        else if (session.mode === 'payment') {
-          console.log('単発レッスン決済を検出:', session.id);
-          
-          // メタデータからスロット情報を取得
-          const slotId = session.metadata?.slotId;
-          const studentId = session.metadata?.studentId;
-          const notes = session.metadata?.notes || '';
-          
-          if (!slotId || !studentId) {
-            console.error('必要なメタデータがありません:', session.metadata);
-            throw new Error('決済セッションに必要なメタデータがありません');
-          }
-          
-          // スロットの存在確認と可用性チェック
-          const slot = await prisma.lessonSlot.findUnique({
-            where: { id: slotId }
-          });
-          
-          if (!slot) {
-            console.error('スロットが見つかりません:', slotId);
-            throw new Error('関連するレッスンスロットが見つかりません');
-          }
-          
-          if (!slot.isAvailable) {
-            console.error('スロットは既に予約されています:', slotId);
-            throw new Error('このスロットは既に予約されています');
-          }
-          
-          // トランザクションで予約作成とスロット更新を実行
-          const [reservation, _] = await prisma.$transaction([
-            // 1. 予約レコードを作成（CONFIRMED状態）
-            prisma.reservation.create({
-              data: {
-                slotId: slotId,
-                studentId: studentId,
-                status: ReservationStatus.CONFIRMED,
-                paymentId: session.id,
-                notes: notes
-              }
-            }),
-            
-            // 2. スロットを利用不可に更新
-            prisma.lessonSlot.update({
-              where: { id: slotId },
-              data: { isAvailable: false }
-            })
-          ]);
-          
-          console.log('予約が完了しました:', {
-            reservationId: reservation.id,
-            slotId: slotId,
-            studentId: studentId,
-            paymentId: session.id
-          });
-        }
-        break;
-      }
+
+    // イベントタイプに応じた処理
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object as Stripe.Checkout.Session;
       
-      case 'customer.subscription.created': 
-      case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription;
-        console.log(`サブスクリプション更新イベント: ${subscription.id}, ステータス: ${subscription.status}`);
-        await handleSubscriptionChange(subscription);
-        break;
-      }
+      // 非同期で処理を開始
+      processCheckoutSession(session).catch(error => {
+        console.error('Error processing checkout session:', error);
+      });
       
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
-        console.log(`サブスクリプション削除イベント: ${subscription.id}`);
-        await handleSubscriptionCancellation(subscription);
-        break;
-      }
+      // 即座にレスポンスを返す
+      await monitorWebhookPerformance(event.type, startTime);
+      return NextResponse.json({ received: true });
     }
-    
-    console.log(`イベント処理完了: ${event.type}`);
-    return NextResponse.json({ received: true, success: true, event: event.type });
+
+    await monitorWebhookPerformance(event.type, startTime);
+    return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Webhook処理エラー詳細:', error);
-    return new NextResponse('Webhook処理エラー', { status: 500 });
+    console.error('Webhook error:', error);
+    return NextResponse.json(
+      { error: 'Webhook handler failed' },
+      { status: 500 }
+    );
   }
+}
+
+// チェックアウトセッションの処理
+async function processCheckoutSession(session: Stripe.Checkout.Session) {
+  return processWithRetry(async () => {
+    await prisma.$transaction(async (tx) => {
+      // Paymentレコードを更新
+      const payment = await tx.payment.update({
+        where: {
+          stripeSessionId: session.id,
+        },
+        data: {
+          stripePaymentId: session.payment_intent as string,
+          status: PaymentStatus.SUCCEEDED,
+        },
+      });
+
+      // 予約ステータスを更新
+      await tx.reservation.update({
+        where: {
+          id: payment.reservationId,
+        },
+        data: {
+          status: ReservationStatus.CONFIRMED,
+        },
+      });
+
+      // レッスンスロットの予約状態を更新
+      const reservation = await tx.reservation.findUnique({
+        where: { id: payment.reservationId },
+        select: { slotId: true },
+      });
+
+      if (reservation) {
+        await tx.lessonSlot.update({
+          where: { id: reservation.slotId },
+          data: { isAvailable: false },
+        });
+      }
+    });
+  });
 }
 
 // ユーザーIDを取得する関数
 async function findUserByCustomerId(customerId: string): Promise<string | null> {
-  try {
+  return processWithRetry(async () => {
     const { data, error } = await supabaseAdmin
       .from('stripe_customers')
       .select('user_id')
@@ -161,133 +146,31 @@ async function findUserByCustomerId(customerId: string): Promise<string | null> 
     }
 
     return data.user_id;
-  } catch (error) {
-    console.error('顧客ID検索エラー:', error);
-    return null;
-  }
+  });
 }
 
 // チェックアウト完了時の処理
 async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Session) {
-  if (!session.customer || !session.subscription) {
-    console.error('必須データがありません', { customer: session.customer, subscription: session.subscription });
-    return;
+  if (!session.subscription || !session.metadata?.userId) {
+    throw new Error('サブスクリプション情報が不完全です');
   }
 
-  console.log('チェックアウト完了処理開始:', {
-    sessionId: session.id,
-    customerId: session.customer,
-    subscriptionId: session.subscription
+  // サブスクリプション情報を取得
+  const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+  
+  // ユーザーのサブスクリプション情報を更新
+  await prisma.stripeUserSubscription.create({
+    data: {
+      userId: session.metadata.userId,
+      subscriptionId: subscription.id,
+      customerId: subscription.customer as string,
+      status: subscription.status,
+      currentPeriodStart: BigInt(subscription.current_period_start),
+      currentPeriodEnd: BigInt(subscription.current_period_end),
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      priceId: subscription.items.data[0].price.id
+    }
   });
-
-  // メタデータからユーザーIDを取得
-  let userId = session.metadata?.userId;
-
-  // メタデータにない場合は顧客IDから検索
-  if (!userId) {
-    const foundUserId = await findUserByCustomerId(session.customer as string);
-    if (foundUserId) {
-      userId = foundUserId;
-    }
-  }
-
-  if (!userId) {
-    console.error('ユーザーIDが見つかりません', { sessionId: session.id, customerId: session.customer });
-    
-    // ユーザーが見つからない場合は顧客レコードを作成
-    if (typeof session.customer === 'string') {
-      const customer = await stripe.customers.retrieve(session.customer);
-      
-      if (customer && !customer.deleted) {
-        // 顧客のメールアドレスからユーザーを検索
-        const { data: userData } = await supabaseAdmin
-          .from('users')
-          .select('id')
-          .eq('email', customer.email)
-          .maybeSingle();
-          
-        if (userData) {
-          userId = userData.id;
-          
-          // 顧客マッピングを作成
-          const { error: mappingError } = await supabaseAdmin
-            .from('stripe_customers')
-            .insert({
-              user_id: userId,
-              customer_id: session.customer
-            });
-            
-          if (mappingError) {
-            console.error('顧客マッピング作成エラー:', mappingError);
-          } else {
-            console.log('顧客マッピングを作成しました', { userId, customerId: session.customer });
-          }
-        }
-      }
-    }
-    
-    if (!userId) {
-      throw new Error('サブスクリプションに関連付けるユーザーが見つかりません');
-    }
-  }
-
-  console.log(`サブスクリプション処理: ユーザーID=${userId}`);
-
-  // サブスクリプションデータを取得
-  const subscriptionData = await stripe.subscriptions.retrieve(session.subscription as string, {
-    expand: ['items.data.price']
-  });
-
-  console.log('サブスクリプションデータ:', {
-    id: subscriptionData.id,
-    status: subscriptionData.status,
-    items: subscriptionData.items.data.map(item => ({
-      priceId: item.price.id,
-      productId: item.price.product,
-      amount: item.price.unit_amount,
-      interval: item.price.recurring?.interval
-    }))
-  });
-
-  // データベース挿入処理の詳細デバッグ
-  try {
-    // 現在のサブスクリプション情報をデータベースに保存/更新
-    const subscriptionRecord = {
-      userId: userId,
-      customerId: session.customer as string,
-      subscriptionId: subscriptionData.id,
-      priceId: subscriptionData.items.data[0]?.price.id,
-      status: subscriptionData.status,
-      currentPeriodStart: subscriptionData.current_period_start || Math.floor(Date.now() / 1000),
-      currentPeriodEnd: subscriptionData.current_period_end || (Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60),
-      cancelAtPeriodEnd: subscriptionData.cancel_at_period_end,
-      updatedAt: new Date().toISOString(),
-    };
-    
-    console.log('保存するサブスクリプションデータ:', subscriptionRecord);
-
-    // supabaseAdminを使用して権限問題を解決
-    const { data, error } = await supabaseAdmin
-      .from('stripe_user_subscriptions')
-      .upsert(subscriptionRecord, {
-        onConflict: 'userId',
-        ignoreDuplicates: false
-      })
-      .select('*')
-      .single();
-
-    if (error) {
-      console.error('サブスクリプションデータ保存エラー:', error);
-      throw error;
-    }
-
-    console.log('サブスクリプションデータを保存しました:', data);
-    
-    return data;
-  } catch (error) {
-    console.error('サブスクリプションデータ更新中のエラー:', error);
-    throw error;
-  }
 }
 
 // サブスクリプション変更時の処理

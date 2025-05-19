@@ -71,7 +71,7 @@ export const ReservationMobileView: React.FC<ReservationMobileViewProps> = ({
                       {format(slot.startTime, 'HH:mm', { locale: ja })} - 
                       {format(slot.endTime, 'HH:mm', { locale: ja })}
                     </span>
-                    {slot.available ? (
+                    {slot.isAvailable ? (
                       <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
                         空き枠あり
                       </Badge>
@@ -86,13 +86,13 @@ export const ReservationMobileView: React.FC<ReservationMobileViewProps> = ({
                     <span>{slot.mentorName}</span>
                   </div>
                   <div className="text-gray-800 mt-1 font-medium">
-                    ¥{slot.price.toLocaleString()}
+                    {slot.price ? `¥${slot.price.toLocaleString()}` : '価格未設定'}
                   </div>
                 </div>
                 <Button
                   variant="default"
                   size="sm"
-                  disabled={!slot.available}
+                  disabled={!slot.isAvailable}
                   onClick={() => handleReserveClick(slot)}
                   className="flex items-center"
                 >

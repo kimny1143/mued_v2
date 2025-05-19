@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { Button } from "@ui/button";
 import { Card } from "@ui/card";
 import { PlayCircleIcon, ClockIcon, CheckCircleIcon } from "lucide-react";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 interface Subscription {
   price_id: string | null;
@@ -32,7 +32,7 @@ export function SubscriptionStatus() {
   useEffect(() => {
     async function fetchSubscription() {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseBrowser
           .from('stripe_user_subscriptions')
           .select('price_id, subscription_status, current_period_end')
           .maybeSingle();

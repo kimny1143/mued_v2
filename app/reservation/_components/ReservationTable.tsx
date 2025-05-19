@@ -11,9 +11,9 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from '../../ui/table';
-import { Button } from '../../ui/button';
-import { Badge } from '../../ui/badge';
+} from '@ui/table';
+import { Button } from '@ui/button';
+import { Badge } from '@ui/badge';
 import { ReservationModal } from './ReservationModal';
 
 export type Teacher = {

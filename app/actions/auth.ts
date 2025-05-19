@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { getBaseUrl } from '@/lib/utils';
 
 // Google認証へのリダイレクト
@@ -18,18 +18,8 @@ export async function signInWithGoogle() {
     console.log(`認証コールバックURL: ${redirectUrl}`);
     console.log(`環境情報: VERCEL_ENV=${process.env.VERCEL_ENV || 'local'}, VERCEL_URL=${process.env.VERCEL_URL || 'なし'}`);
 
-    // Supabaseサーバークライアント初期化
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        auth: {
-          persistSession: false,
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-        }
-      }
-    );
+    // Supabaseサーバークライアント初期化 (PKCE + Cookie 保存)
+    const supabase = createSupabaseServerClient();
 
     // OAuth認証URLの生成 - Implicit Grantフロー
     const { data, error } = await supabase.auth.signInWithOAuth({
@@ -95,12 +85,20 @@ export async function signInWithGoogle() {
 
 // ログアウト処理
 export async function signOut() {
-  const supabase = createClient(
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      auth: {
-        persistSession: false,
+      cookies: {
+        get(name: string) {
+          return cookies().get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          cookies().set({ name, value, ...options });
+        },
+        remove(name: string, options: CookieOptions) {
+          cookies().set({ name, value: '', ...options });
+        }
       }
     }
   );
@@ -121,4 +119,26 @@ export async function signOut() {
     success: true, 
     redirectUrl: '/' 
   };
+}
+
+// cookie ユーティリティ
+function createSupabaseServerClient() {
+  const cookieStore = cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove(name: string, options: CookieOptions) {
+          cookieStore.set({ name, value: '', ...options });
+        }
+      }
+    }
+  );
 } 

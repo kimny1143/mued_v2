@@ -1,9 +1,11 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser as supabase } from '@/lib/supabase-browser';
 import { signInWithGoogle } from '@/app/actions/auth';
 import { getBaseUrl } from '@/lib/utils';
 

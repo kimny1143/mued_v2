@@ -1,10 +1,12 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import React, { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { FileIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 export default function MaterialsPage() {
   const [loading, setLoading] = useState(true);
@@ -13,7 +15,7 @@ export default function MaterialsPage() {
   // 認証チェック
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseBrowser.auth.getSession();
       if (!data.session) {
         router.push('/login');
       }

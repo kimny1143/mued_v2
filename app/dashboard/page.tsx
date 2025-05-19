@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { useUser } from "@/lib/hooks/use-user";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
@@ -17,7 +17,7 @@ export default function DashboardPage() {
   useEffect(() => {
     // 初期セッションチェック
     const getSession = async () => {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseBrowser.auth.getSession();
       if (!data.session) {
         // ログインしていない場合はログインページへリダイレクト
         router.push('/login');

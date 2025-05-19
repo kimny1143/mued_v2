@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { ChatMessage, ChatInput } from "@/app/components/chat";
 import { chatMessagesApi } from "@/lib/apiClient";

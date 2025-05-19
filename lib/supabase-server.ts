@@ -14,14 +14,16 @@ function getSiteUrl() {
 }
 
 // Supabase環境変数
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// 環境変数チェック
+// 環境変数チェック（存在しなければビルドを失敗させる）
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error("Supabase環境変数が設定されていません");
-  console.error("URL:", supabaseUrl ? "設定済み" : "未設定");
-  console.error("ANON_KEY:", supabaseAnonKey ? "設定済み" : "未設定");
+  throw new Error(
+    '❌ Supabase 環境変数が不足しています: ' +
+      `NEXT_PUBLIC_SUPABASE_URL=${supabaseUrl ?? 'undefined'} ` +
+      `NEXT_PUBLIC_SUPABASE_ANON_KEY=${supabaseAnonKey ? '(set)' : 'undefined'}`
+  );
 }
 
 // 現在の環境に合わせたサイトURL
@@ -29,7 +31,7 @@ const siteUrl = getSiteUrl();
 console.log(`Supabase初期化 - サイトURL: ${siteUrl}`);
 
 // Supabaseクライアント設定
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabaseServer = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -54,7 +56,7 @@ if (process.env.NODE_ENV !== 'production') {
 // Supabaseの認証状態が変わったときのハンドラーを設定
 if (typeof window !== 'undefined') {
   // クライアント側でのみ実行
-  supabase.auth.onAuthStateChange(async (event, session) => {
+  supabaseServer.auth.onAuthStateChange(async (event, session) => {
     if (event === 'INITIAL_SESSION') {
       console.log(`認証状態初期化: ${session ? '認証済み' : '未認証'}`);
     } else if (event === 'SIGNED_IN' && session) {
@@ -70,3 +72,5 @@ if (typeof window !== 'undefined') {
 if (!supabaseAnonKey) {
   console.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY missing!');
 }
+
+export { supabaseServer as supabase };

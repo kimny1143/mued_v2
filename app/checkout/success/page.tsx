@@ -1,12 +1,14 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState, Suspense } from 'react';
 import { CheckCircle } from 'lucide-react';
 import { Button } from '@ui/button';
 import { Card } from '@ui/card';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 // useSearchParamsを使用するコンテンツコンポーネント
 function CheckoutSuccessContent() {
@@ -27,7 +29,7 @@ function CheckoutSuccessContent() {
         console.log('セッションID確認中:', sessionId);
         
         // セッション情報を取得
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        const { data: sessionData, error: sessionError } = await supabaseBrowser.auth.getSession();
         
         if (sessionError || !sessionData.session?.user) {
           console.error('認証エラー:', sessionError);
@@ -38,7 +40,7 @@ function CheckoutSuccessContent() {
         console.log('ユーザーID:', userId);
         
         // サブスクリプション情報を取得
-        const { data: subData, error: subError } = await supabase
+        const { data: subData, error: subError } = await supabaseBrowser
           .from('stripe_user_subscriptions')
           .select('*')
           .eq('userId', userId)

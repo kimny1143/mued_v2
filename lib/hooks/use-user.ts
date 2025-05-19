@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Session } from '@supabase/supabase-js';
 import { products } from '@/app/stripe-config';
 import { useSubscription } from './use-subscription';
@@ -40,7 +40,7 @@ export function useUser() {
     // ログイン状態を取得
     const getSession = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await supabaseBrowser.auth.getSession();
         if (error) throw error;
         return data.session;
       } catch (err) {
@@ -152,7 +152,7 @@ export function useUser() {
     fetchUserData();
 
     // 認証状態変更のリスナー
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: authListener } = supabaseBrowser.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         fetchUserData();
       } else {

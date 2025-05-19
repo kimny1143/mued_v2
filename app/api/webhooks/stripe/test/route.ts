@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseServer } from '@/lib/supabase-server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getAdminSupabaseClient } from '@/lib/use-admin-supabase-client';
 
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     // 通常のクライアントでの試行
     results.push("通常のSupabaseクライアントでデータベースアクセスを試行します...");
     
-    const { data: normalData, error: normalError } = await supabase
+    const { data: normalData, error: normalError } = await supabaseServer
       .from('stripe_user_subscriptions')
       .select('*')
       .limit(1);

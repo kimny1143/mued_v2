@@ -28,7 +28,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: frontend
           name: frontend-coverage
-          fail_ci_if_error: false
+          fail_ci_if_error: true
           verbose: true
           directory: ./coverage
           
@@ -57,7 +57,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: ai-service
           name: ai-service-coverage
-          fail_ci_if_error: false
+          fail_ci_if_error: true
           verbose: true
           directory: ./ai-service
           files: ./ai-service/coverage.xml 

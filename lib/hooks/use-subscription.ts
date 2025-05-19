@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../supabase';
+import { supabaseServer } from '../supabase-server';
 
 /**
  * サブスクリプションデータの型定義
@@ -62,7 +62,7 @@ export function useSubscription() {
       console.log('APIからサブスクリプション情報を取得します...');
       
       // Supabaseから認証トークンを取得
-      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: sessionData } = await supabaseServer.auth.getSession();
       const token = sessionData?.session?.access_token;
       
       if (!token) {
@@ -100,7 +100,7 @@ export function useSubscription() {
         // 401エラーの場合は認証セッションをリフレッシュしてリトライ
         if (response.status === 401 && retryCount < MAX_RETRIES) {
           console.log(`認証エラーが発生しました。セッションをリフレッシュして再試行します (${retryCount + 1}/${MAX_RETRIES})`);
-          await supabase.auth.refreshSession(); // セッションリフレッシュ
+          await supabaseServer.auth.refreshSession(); // セッションリフレッシュ
           setRetryCount(prev => prev + 1);
           globalErrorCount++;
           
@@ -133,7 +133,7 @@ export function useSubscription() {
           // グローバルエラー回数が上限以下の場合のみリトライ
           if (globalErrorCount < MAX_GLOBAL_ERRORS) {
             // セッションリフレッシュ
-            const { error: refreshError } = await supabase.auth.refreshSession();
+            const { error: refreshError } = await supabaseServer.auth.refreshSession();
             
             if (refreshError) {
               console.error('セッションリフレッシュエラー:', refreshError);
