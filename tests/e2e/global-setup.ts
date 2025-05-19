@@ -8,17 +8,12 @@ import fs from 'fs';
  * これで各テストはログイン済みの状態から開始出来る。
  */
 export default async function globalSetup(config: FullConfig) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const email = process.env.E2E_USER_EMAIL;
-  const password = process.env.E2E_USER_PASSWORD;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const email = process.env.E2E_USER_EMAIL!;
+  const password = process.env.E2E_USER_PASSWORD!;
   const baseURL = process.env.E2E_REMOTE_URL || 'http://localhost:3000';
-
-  if (!supabaseUrl || !anonKey || !email || !password) {
-    console.error('[globalSetup] 必要な環境変数が不足しています');
-    console.error({ supabaseUrl, anonKeyExists: !!anonKey, email, passwordExists: !!password });
-    return;
-  }
 
   const ctx = await request.newContext();
 
@@ -40,7 +35,27 @@ export default async function globalSetup(config: FullConfig) {
       data: { email, password },
     });
 
-    if (!signUpRes.ok()) {
+    if (!signUpRes.ok() && serviceRoleKey) {
+      console.warn('[globalSetup] signup 無効ドメイン? admin API で直接ユーザー作成を試みます…');
+      const adminRes = await ctx.post(`${supabaseUrl}/auth/v1/admin/users`, {
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json',
+        },
+        data: {
+          email,
+          password,
+          email_confirm: true,
+        },
+      });
+
+      if (!adminRes.ok()) {
+        console.error('[globalSetup] admin user create failed:', await adminRes.text());
+      } else {
+        console.log('[globalSetup] admin user create success');
+      }
+    } else if (!signUpRes.ok()) {
       console.error('[globalSetup] sign-up failed:', await signUpRes.text());
     } else {
       console.log('[globalSetup] sign-up success');
