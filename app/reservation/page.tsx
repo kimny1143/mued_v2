@@ -55,11 +55,27 @@ export const ReservationPage: React.FC = () => {
   const fetchLessonSlots = useCallback(async () => {
     try {
       setError(null);
-      
-      console.log('API通信開始 - 認証トークン:', user ? '有効' : 'なし');
+
+      // Supabaseのアクセストークンを取得（Authorizationヘッダー用）
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      // APIの必須クエリパラメータ（期間指定）を生成
+      const fromDate = new Date();
+      const toDate = new Date();
+      toDate.setDate(toDate.getDate() + 30); // デフォルトで30日先まで取得
+
+      const queryString = new URLSearchParams({
+        from: fromDate.toISOString(),
+        to: toDate.toISOString(),
+      }).toString();
+
+      console.log('API通信開始 - 認証トークン:', token ? 'あり' : 'なし');
       
       // APIからレッスンスロット一覧を取得
-      const response = await fetch('/api/lesson-slots');
+      const response = await fetch(`/api/lesson-slots?${queryString}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       
       if (!response.ok) {
         const errorResponse = await response.json();
@@ -117,7 +133,7 @@ export const ReservationPage: React.FC = () => {
       setError(error as Error);
       return {};
     }
-  }, [user]);
+  }, []);
 
   // 予約を作成する関数
   const createReservation = useCallback(async (slotId: string) => {
@@ -130,10 +146,14 @@ export const ReservationPage: React.FC = () => {
       setIsProcessing(true);
       setError(null);
       
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
       const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ slotId }),
       });
