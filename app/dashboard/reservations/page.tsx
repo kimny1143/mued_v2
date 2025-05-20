@@ -25,7 +25,7 @@ export default function ReservationsPage() {
     data: reservationsData,
     isLoading: isLoadingReservations,
     error: reservationsError
-  } = useReservations();
+  } = useReservations({ includeAll: true });
 
   // React Queryを使用してレッスンスロットを取得
   const { 
