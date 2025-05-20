@@ -221,8 +221,6 @@ export const ReservationPage: React.FC = () => {
     queryKey: ['lessonSlots'],
     queryFn: fetchLessonSlots,
     staleTime: 1000 * 60 * 5, // 5分間キャッシュを有効にする
-    // ユーザーが認証されている場合のみクエリを実行
-    enabled: !!user,
   });
   
   // 予約作成のミューテーション
@@ -247,19 +245,7 @@ export const ReservationPage: React.FC = () => {
 
   // 認証状態チェック
   if (loading) {
-    return <div className="flex justify-center items-center h-64">認証情報を確認中...</div>;
-  }
-
-  // 未ログインの場合はログインページにリダイレクト
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-center">レッスンを予約するにはログインが必要です。</p>
-        <Button onClick={() => router.push('/login')}>
-          ログインページへ
-        </Button>
-      </div>
-    );
+    return <div className="flex justify-center items-center h-64">読み込み中...</div>;
   }
 
   const handleBooking = (slot: LessonSlot) => {
@@ -357,9 +343,9 @@ export const ReservationPage: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Button
                           onClick={() => handleBooking(lesson)}
-                          disabled={!lesson.isAvailable}
+                          disabled={!lesson.isAvailable || !user}
                         >
-                          予約する
+                          {user ? '予約する' : 'ログインして予約'}
                         </Button>
                       </td>
                     </tr>
@@ -413,10 +399,10 @@ export const ReservationPage: React.FC = () => {
                     </div>
                     <Button
                       onClick={() => handleBooking(lesson)}
-                      disabled={!lesson.isAvailable}
+                      disabled={!lesson.isAvailable || !user}
                       size="sm"
                     >
-                      予約する
+                      {user ? '予約する' : 'ログイン'}
                     </Button>
                   </div>
                 </Card>
@@ -432,13 +418,15 @@ export const ReservationPage: React.FC = () => {
       </div>
 
       {/* Reservation Modal */}
-      <ReservationModal
-        slot={selectedSlot}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onConfirm={handleConfirmBooking}
-        isLoading={isProcessing}
-      />
+      {user && (
+        <ReservationModal
+          slot={selectedSlot}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onConfirm={handleConfirmBooking}
+          isLoading={isProcessing}
+        />
+      )}
       <Toaster />
     </div>
   );

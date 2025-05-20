@@ -88,11 +88,6 @@ type _LessonSlotWhereInput = {
 // レッスンスロット一覧を取得
 export async function GET(request: NextRequest) {
   try {
-    const sessionInfo = await getSessionFromRequest(request);
-    if (!sessionInfo) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const from = searchParams.get('from');
     const to = searchParams.get('to');
