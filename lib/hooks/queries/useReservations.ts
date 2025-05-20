@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ReservationStatus } from '@prisma/client';
 import { useSupabaseChannel } from '../useSupabaseChannel';
 import { useUser } from '../use-user';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export interface LessonSlot {
   id: string;
@@ -59,18 +60,20 @@ export function useReservations(options?: UseReservationsOptions) {
       if (options?.take) params.append('take', options.take.toString());
       if (options?.skip) params.append('skip', options.skip.toString());
 
-      try {
-        const response = await fetch(`/api/my-reservations?${params.toString()}`);
-        if (!response.ok) {
-          // MVP: エラーでも空配列を返す
-          console.warn('my-reservations API error:', response.status);
-          return [];
-        }
-        return response.json();
-      } catch (err) {
-        console.error('my-reservations fetch failed:', err);
+      // アクセストークン取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      const response = await fetch(`/api/my-reservations?${params}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        console.warn('my-reservations API error:', response.status);
         return [];
       }
+      return response.json();
     },
     initialData: [],
   });
