@@ -52,8 +52,9 @@ export function useReservations(options?: UseReservationsOptions) {
   });
 
   return useQuery<Reservation[]>({
+    // token が取れるまでは実行しない
     queryKey: ['reservations', options],
-    enabled: !!user, // 未ログインならフェッチしない
+    enabled: !!user && !!supabaseBrowser.auth.getSession().data.session?.access_token,
     queryFn: async () => {
       const params = new URLSearchParams();
       if (options?.status) params.append('status', options.status);
@@ -64,8 +65,10 @@ export function useReservations(options?: UseReservationsOptions) {
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData.session?.access_token ?? null;
 
+      if (!token) return [];
+
       const response = await fetch(`/api/my-reservations?${params}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: { Authorization: `Bearer ${token}` },
         credentials: 'include',
       });
 
