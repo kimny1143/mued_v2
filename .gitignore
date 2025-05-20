@@ -19,6 +19,7 @@ yarn.lock
 .env
 .env.local
 .env.development.local
+.env.test
 .env.test.local
 .env.production.local
 .env.heroku
@@ -87,3 +88,7 @@ docker-compose.override.yml
 #migrations
 supabase/migrations/*
 */migrations/*
+
+#playwright
+test-results/*
+playwright-report/*

@@ -1,4 +1,5 @@
 import { supabaseServer } from './supabase-server';
+import { supabaseAdmin } from './supabase-admin';
 import { createClient } from '@supabase/supabase-js';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -92,23 +93,38 @@ export async function getSessionFromRequest(request: Request): Promise<{
     
     // ヘッダーから認証トークンを取得
     const authHeader = request.headers.get('Authorization');
-    let token = null;
+    let token: string | null = null;
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.split(' ')[1];
       console.log("Authorizationヘッダーからトークン検出:", 
         token ? `有効なトークン (${token.substring(0, 10)}...)` : "空のトークン");
-    } else {
-      console.log("有効なAuthorizationヘッダーなし:", authHeader ? 
-        `不正な形式: ${authHeader.substring(0, 15)}...` : 
-        "ヘッダーなし");
+    }
+    
+    // Authorization ヘッダーが無ければ Cookie から取得（sb-access-token）
+    if (!token) {
+      const cookieHeader = request.headers.get('cookie') || '';
+      // Supabase v2 cookie key: sb-<projectRef>-access-token
+      // projectRef 付き  or  なし の両方を許可
+      const match = cookieHeader.match(/sb-(?:[^=]+-)?access-token=([^;]+)/);
+      if (match && match[1]) {
+        token = decodeURIComponent(match[1]);
+        console.log("Cookie からアクセストークン取得:", token.substring(0, 10) + '...');
+      } else {
+        console.log("Cookie に sb-access-token が見つかりませんでした");
+      }
+    }
+    
+    if (!token) {
+      console.log("有効なトークンがヘッダーにも Cookie にも見つかりませんでした");
     }
     
     // 1. Authorizationヘッダーがあればそこからトークンを使ってセッション検証
     if (token) {
       try {
         console.log(`トークン認証開始 (${token.substring(0, 10)}...)`);
-        const { data, error } = await supabaseServer.auth.getUser(token);
+        // サービスロール権限を使用してJWTを検証し、ユーザー情報を取得
+        const { data, error } = await supabaseAdmin.auth.getUser(token);
         
         if (error) {
           console.error("トークン認証エラー:", error);

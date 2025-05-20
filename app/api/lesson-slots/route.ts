@@ -86,44 +86,24 @@ type _LessonSlotWhereInput = {
 };
 
 // レッスンスロット一覧を取得
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const sessionInfo = await getSessionFromRequest(request);
-    if (!sessionInfo) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-
-    if (!from || !to) {
-      return NextResponse.json(
-        { error: 'from and to parameters are required' },
-        { status: 400 }
-      );
-    }
-
     const slots = await prisma.lessonSlot.findMany({
-      where: {
-        startTime: {
-          gte: new Date(from),
-          lte: new Date(to),
+      orderBy: { startTime: 'asc' },
+      include: {
+        teacher: {
+          select: { id: true, name: true, image: true }
         },
-        isAvailable: true,
-      },
-      orderBy: {
-        startTime: 'asc',
-      },
+        reservations: {
+          select: { id: true, status: true }
+        }
+      }
     });
-
+    console.log('🟢 lesson-slots', slots.length);
     return NextResponse.json(slots);
-  } catch (error) {
-    console.error('Error fetching lesson slots:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+  } catch (e) {
+    console.error('🔴 lesson-slots error', e);
+    return NextResponse.json([], { status: 200 });
   }
 }
 

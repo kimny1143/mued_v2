@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { getBaseUrl } from './utils';
 
 /**
  * 環境に応じたベースURLを取得
@@ -27,7 +28,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // 現在の環境に合わせたサイトURL
-const siteUrl = getSiteUrl();
+const siteUrl = getBaseUrl();
 console.log(`Supabase初期化 - サイトURL: ${siteUrl}`);
 
 // Supabaseクライアント設定

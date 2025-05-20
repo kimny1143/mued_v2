@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { User } from '@supabase/supabase-js';
 import { Toaster } from 'sonner';
+import { Reservation as MyReservation } from '@/lib/hooks/queries/useReservations';
 
 // 通貨フォーマット関数（コンポーネントの外でも問題ない純関数）
 function formatCurrency(amount: number, currency = 'usd'): string {
@@ -43,6 +44,7 @@ export const ReservationPage: React.FC = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
   const [selectedSlot, setSelectedSlot] = useState<LessonSlot | null>(null);
@@ -55,11 +57,28 @@ export const ReservationPage: React.FC = () => {
   const fetchLessonSlots = useCallback(async () => {
     try {
       setError(null);
-      
-      console.log('API通信開始 - 認証トークン:', user ? '有効' : 'なし');
+
+      // Supabaseのアクセストークンを取得（Authorizationヘッダー用）
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      // APIの必須クエリパラメータ（期間指定）を生成
+      const fromDate = new Date();
+      const toDate = new Date();
+      toDate.setDate(toDate.getDate() + 30); // デフォルトで30日先まで取得
+
+      const queryString = new URLSearchParams({
+        from: fromDate.toISOString(),
+        to: toDate.toISOString(),
+      }).toString();
+
+      console.log('API通信開始 - 認証トークン:', token ? 'あり' : 'なし');
       
       // APIからレッスンスロット一覧を取得
-      const response = await fetch('/api/lesson-slots');
+      const response = await fetch(`/api/lesson-slots?${queryString}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
+      });
       
       if (!response.ok) {
         const errorResponse = await response.json();
@@ -117,7 +136,7 @@ export const ReservationPage: React.FC = () => {
       setError(error as Error);
       return {};
     }
-  }, [user]);
+  }, []);
 
   // 予約を作成する関数
   const createReservation = useCallback(async (slotId: string) => {
@@ -130,11 +149,15 @@ export const ReservationPage: React.FC = () => {
       setIsProcessing(true);
       setError(null);
       
+      const token = accessToken;
+
       const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({ slotId }),
       });
       
@@ -145,9 +168,10 @@ export const ReservationPage: React.FC = () => {
       }
       
       // 予約成功
-      if (data.checkoutUrl) {
+      const redirectUrl = data.checkoutUrl || data.url;
+      if (redirectUrl) {
         // Stripeのチェックアウトページに遷移
-        window.location.href = data.checkoutUrl;
+        window.location.href = redirectUrl;
         return data;
       } else {
         // 予約は作成されたがチェックアウトURLがない場合
@@ -166,7 +190,7 @@ export const ReservationPage: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [user, fetchLessonSlots]);
+  }, [user, fetchLessonSlots, accessToken]);
 
   // Supabase認証状態を確認
   useEffect(() => {
@@ -177,6 +201,7 @@ export const ReservationPage: React.FC = () => {
         console.log("認証セッション:", data.session ? "あり" : "なし", data.session?.user?.email);
         
         setUser(data.session?.user || null);
+        setAccessToken(data.session?.access_token ?? null);
         setLoading(false);
         
         if (!data.session) {
@@ -198,8 +223,6 @@ export const ReservationPage: React.FC = () => {
     queryKey: ['lessonSlots'],
     queryFn: fetchLessonSlots,
     staleTime: 1000 * 60 * 5, // 5分間キャッシュを有効にする
-    // ユーザーが認証されている場合のみクエリを実行
-    enabled: !!user,
   });
   
   // 予約作成のミューテーション
@@ -211,10 +234,9 @@ export const ReservationPage: React.FC = () => {
       setIsModalOpen(false);
       
       // 新しいリダイレクト処理
-      if (data?.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else if (data?.redirectUrl) {
-        router.push(data.redirectUrl);
+      const redirectUrl = data?.checkoutUrl || data?.url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
       }
     },
     onError: (error: Error) => {
@@ -222,21 +244,19 @@ export const ReservationPage: React.FC = () => {
     },
   });
 
+  // 予約一覧
+  const { data = [] as MyReservation[] } = useQuery({
+    queryKey: ['reservations', 'all'],
+    queryFn: async () => {
+      const res = await fetch('/api/my-reservations?all=true');
+      if (!res.ok) return [] as MyReservation[];
+      return res.json() as Promise<MyReservation[]>;
+    }
+  });
+
   // 認証状態チェック
   if (loading) {
-    return <div className="flex justify-center items-center h-64">認証情報を確認中...</div>;
-  }
-
-  // 未ログインの場合はログインページにリダイレクト
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-center">レッスンを予約するにはログインが必要です。</p>
-        <Button onClick={() => router.push('/login')}>
-          ログインページへ
-        </Button>
-      </div>
-    );
+    return <div className="flex justify-center items-center h-64">読み込み中...</div>;
   }
 
   const handleBooking = (slot: LessonSlot) => {
@@ -315,7 +335,7 @@ export const ReservationPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lesson.teacher ? lesson.teacher.name : lesson.mentorName}
+                        {lesson.teacher?.name || lesson.mentorName || '講師未登録'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
@@ -334,9 +354,9 @@ export const ReservationPage: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Button
                           onClick={() => handleBooking(lesson)}
-                          disabled={!lesson.isAvailable}
+                          disabled={!lesson.isAvailable || !user}
                         >
-                          予約する
+                          {user ? '予約する' : 'ログインして予約'}
                         </Button>
                       </td>
                     </tr>
@@ -382,7 +402,7 @@ export const ReservationPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm font-medium">
-                        {lesson.teacher ? lesson.teacher.name : lesson.mentorName}
+                        {lesson.teacher?.name || lesson.mentorName || '講師未登録'}
                       </div>
                       <div className="text-sm text-gray-500">
                         {formatCurrency(lesson.price || 5000, lesson.currency || 'usd')}
@@ -390,10 +410,10 @@ export const ReservationPage: React.FC = () => {
                     </div>
                     <Button
                       onClick={() => handleBooking(lesson)}
-                      disabled={!lesson.isAvailable}
+                      disabled={!lesson.isAvailable || !user}
                       size="sm"
                     >
-                      予約する
+                      {user ? '予約する' : 'ログイン'}
                     </Button>
                   </div>
                 </Card>
@@ -409,13 +429,42 @@ export const ReservationPage: React.FC = () => {
       </div>
 
       {/* Reservation Modal */}
-      <ReservationModal
-        slot={selectedSlot}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onConfirm={handleConfirmBooking}
-        isLoading={isProcessing}
-      />
+      {user && (
+        <ReservationModal
+          slot={selectedSlot}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onConfirm={handleConfirmBooking}
+          isLoading={isProcessing}
+        />
+      )}
+
+      {/* 予約済み一覧 */}
+      {user && (
+        <section className="mb-8">
+          <h2 className="text-xl font-bold mb-2">あなたの予約一覧</h2>
+          {data.length === 0 ? (
+            <p className="text-gray-500">まだ予約はありません</p>
+          ) : (
+            <ul className="space-y-2">
+              {data.map((res: MyReservation) => (
+                <li key={res.id} className="border p-3 rounded-md bg-white shadow-sm">
+                  <div className="flex justify-between">
+                    <div>
+                      <p className="font-medium">{new Date(res.lessonSlot.startTime).toLocaleString('ja-JP')}</p>
+                      <p className="text-sm text-gray-600">{res.lessonSlot.teacher?.name || '講師'}</p>
+                    </div>
+                    <span className="text-sm px-2 py-1 rounded-full bg-gray-100">
+                      {res.status}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
       <Toaster />
     </div>
   );

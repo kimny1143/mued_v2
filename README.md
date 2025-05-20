@@ -235,3 +235,13 @@ vercel --env-file .vercel/tmp/env.txt
 ## ライセンス
 
 © 2024 株式会社グラスワークス All Rights Reserved.
+
+## E2E / MCP の動かし方
+```bash
+# MCP サーバー起動（別ターミナル）
+npm run mcp
+# Next.js dev サーバー起動
+npm run dev
+# テスト実行
+npm run test:e2e
+```

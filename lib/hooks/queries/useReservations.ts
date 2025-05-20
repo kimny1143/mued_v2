@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ReservationStatus } from '@prisma/client';
 import { useSupabaseChannel } from '../useSupabaseChannel';
 import { useUser } from '../use-user';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export interface LessonSlot {
   id: string;
@@ -33,6 +34,7 @@ export interface UseReservationsOptions {
   status?: ReservationStatus;
   take?: number;
   skip?: number;
+  includeAll?: boolean;
 }
 
 export function useReservations(options?: UseReservationsOptions) {
@@ -43,7 +45,7 @@ export function useReservations(options?: UseReservationsOptions) {
   useSupabaseChannel('reservations', {
     table: 'reservations',
     event: '*', // INSERT, UPDATE, DELETE すべてのイベントを監視
-    filter: user ? `student_id=eq.${user.id}` : undefined,
+    filter: options?.includeAll ? undefined : user ? `student_id=eq.${user.id}` : undefined,
     onEvent: () => {
       // キャッシュを無効化して再取得をトリガー
       queryClient.invalidateQueries({ queryKey: ['reservations'] });
@@ -51,18 +53,43 @@ export function useReservations(options?: UseReservationsOptions) {
   });
 
   return useQuery<Reservation[]>({
+    // token が取れるまでは実行しない
     queryKey: ['reservations', options],
+    enabled: options?.includeAll ? true : !!user,
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (options?.status) params.append('status', options.status);
-      if (options?.take) params.append('take', options.take.toString());
-      if (options?.skip) params.append('skip', options.skip.toString());
+      if (options?.includeAll) {
+        params.append('all', 'true');
+      } else {
+        if (options?.status) params.append('status', options.status);
+        if (options?.take) params.append('take', options.take.toString());
+        if (options?.skip) params.append('skip', options.skip.toString());
+      }
 
-      const response = await fetch(`/api/my-reservations?${params.toString()}`);
+      // includeAll モードかどうかでアクセストークンの取得を判定
+      let token: string | null = null;
+      if (!options?.includeAll) {
+        const { data: sessionData } = await supabaseBrowser.auth.getSession();
+        token = sessionData.session?.access_token ?? null;
+        // トークンが取得できない場合は includeAll にフォールバック
+        if (!token) {
+          params.set('all', 'true');
+        }
+      }
+
+      const url = `/api/my-reservations?${params.toString()}`;
+
+      const response = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
+      });
+
       if (!response.ok) {
-        throw new Error('予約の取得に失敗しました');
+        console.warn('my-reservations API error:', response.status);
+        return [];
       }
       return response.json();
     },
+    initialData: [],
   });
 } 

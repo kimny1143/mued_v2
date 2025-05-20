@@ -1,36 +1,37 @@
 import Stripe from 'stripe';
 
-// Stripeインスタンスの初期化
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const useMock = process.env.STRIPE_MOCK === 'true';
+const apiKey = useMock ? 'sk_test_mock' : process.env.STRIPE_SECRET_KEY;
 
-// 環境変数が設定されているか確認
-if (!stripeSecretKey) {
-  console.error('STRIPE_SECRET_KEY環境変数が設定されていません。');
+if (!apiKey) {
+  throw new Error('STRIPE_SECRET_KEY is not set');
 }
 
-// API接続の設定とタイムアウト設定の追加
-export const stripe = new Stripe(stripeSecretKey || 'dummy_key_for_development', {
-  // @ts-expect-error: Stripeの型定義の問題を一時的に回避（2023-10-16は有効なAPIバージョン）
-  apiVersion: '2023-10-16',
+export const stripe = new Stripe(apiKey, {
+  // @ts-expect-error: stripe-mock は古い API バージョンを使用
+  apiVersion: '2022-11-15',
+  ...(useMock && {
+    host: 'localhost',
+    port: 12111,
+    protocol: 'http',
+  }),
   typescript: true,
   appInfo: {
-    name: 'MUED LMS',
-    version: '1.0.0',
+    name: 'mued-lms',
+    version: '0.1.0',
   },
   maxNetworkRetries: 5,  // ネットワーク接続の再試行回数をさらに増やす
   timeout: 60000, // タイムアウトを60秒に延長
   telemetry: false, // テレメトリを無効化
-  host: 'api.stripe.com', // 明示的にホストを指定
-  protocol: 'https', // 明示的にプロトコルを指定
 });
 
-// 環境に関する情報をログに記録
-console.log('Stripe初期化完了:', {
-  env: process.env.NODE_ENV,
+// デバッグ用ログ
+console.log('Stripe クライアント初期化:', {
+  isMock: useMock,
   vercel: process.env.VERCEL,
   vercelEnv: process.env.VERCEL_ENV,
-  hasKey: !!stripeSecretKey,
-  keyPrefix: stripeSecretKey ? stripeSecretKey.substring(0, 7) : 'なし',
+  hasKey: !!apiKey,
+  keyPrefix: apiKey ? apiKey.substring(0, 7) : 'なし',
 });
 
 // Stripeエラーのラッパー関数（再利用可能）
