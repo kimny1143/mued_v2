@@ -75,6 +75,7 @@ export const ReservationPage: React.FC = () => {
       // APIからレッスンスロット一覧を取得
       const response = await fetch(`/api/lesson-slots?${queryString}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
       });
       
       if (!response.ok) {
@@ -155,6 +156,7 @@ export const ReservationPage: React.FC = () => {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
+        credentials: 'include',
         body: JSON.stringify({ slotId }),
       });
       
