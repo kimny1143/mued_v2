@@ -9,8 +9,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")       // 6543 / 本番 / serverless
+  directUrl  = env("DIRECT_DATABASE_URL") // 5432 / マイグレーション用
 }
 
 // Supabase Auth互換のユーザー認証モデル
