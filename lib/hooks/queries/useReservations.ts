@@ -54,7 +54,7 @@ export function useReservations(options?: UseReservationsOptions) {
   return useQuery<Reservation[]>({
     // token が取れるまでは実行しない
     queryKey: ['reservations', options],
-    enabled: !!user && !!supabaseBrowser.auth.getSession().data.session?.access_token,
+    enabled: !!user,
     queryFn: async () => {
       const params = new URLSearchParams();
       if (options?.status) params.append('status', options.status);
