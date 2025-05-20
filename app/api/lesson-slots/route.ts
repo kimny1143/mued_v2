@@ -112,7 +112,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(slots);
   } catch (error) {
-    return NextResponse.json({ error:'Internal Server Error'}, {status:500});
+    console.error('Lesson slot API error:', error);
+    // MVP: エラーでも空配列で返して画面を壊さない
+    return NextResponse.json([], { status: 200 });
   }
 }
 
