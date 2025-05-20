@@ -91,9 +91,15 @@ export async function GET() {
     const slots = await prisma.lessonSlot.findMany({
       orderBy: { startTime: 'asc' },
     });
+
+    console.log('🟢 lesson-slots count', slots.length);
+    if (slots.length) {
+      console.log('🟢 first slot', slots[0]);
+    }
+
     return NextResponse.json(slots);
   } catch (e) {
-    console.error(e);
+    console.error('🔴 lesson-slots error', e);
     return NextResponse.json([], { status: 200 });
   }
 }
