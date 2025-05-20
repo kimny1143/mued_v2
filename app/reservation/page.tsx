@@ -1,4 +1,3 @@
-
 // app/reservation/page.tsx
 'use client';
 
@@ -6,6 +5,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useMediaQuery } from 'react-responsive';
+import { format } from 'date-fns';
 //import { ja } from 'date-fns/locale';
 //import { Clock, ChevronRight } from 'lucide-react';
 import { Button } from '@ui/button';
@@ -18,7 +18,10 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { User } from '@supabase/supabase-js';
 import { Toaster } from 'sonner';
-import { Reservation as MyReservation } from '@/lib/hooks/queries/useReservations';
+import { 
+  useReservations,
+  Reservation as MyReservation 
+} from '@/lib/hooks/queries/useReservations';
 
 // 通貨フォーマット関数（コンポーネントの外でも問題ない純関数）
 function formatCurrency(amount: number, currency = 'usd'): string {
@@ -232,6 +235,7 @@ export const ReservationPage: React.FC = () => {
     onSuccess: (data) => {
       toast.success('レッスンの予約が完了しました');
       queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
       setIsModalOpen(false);
       
       // 新しいリダイレクト処理
@@ -245,15 +249,8 @@ export const ReservationPage: React.FC = () => {
     },
   });
 
-  // 予約一覧
-  const { data = [] as MyReservation[] } = useQuery({
-    queryKey: ['reservations', 'all'],
-    queryFn: async () => {
-      const res = await fetch('/api/my-reservations?all=true');
-      if (!res.ok) return [] as MyReservation[];
-      return res.json() as Promise<MyReservation[]>;
-    }
-  });
+  // 予約一覧（リアルタイム対応）
+  const { data: reservations = [] } = useReservations();
 
   // 認証状態チェック
   if (loading) {
@@ -444,11 +441,11 @@ export const ReservationPage: React.FC = () => {
       {user && (
         <section className="mb-8">
           <h2 className="text-xl font-bold mb-2">あなたの予約一覧</h2>
-          {data.length === 0 ? (
+          {reservations.length === 0 ? (
             <p className="text-gray-500">まだ予約はありません</p>
           ) : (
             <ul className="space-y-2">
-              {data.map((res: MyReservation) => (
+              {reservations.map((res: MyReservation) => (
                 <li key={res.id} className="border p-3 rounded-md bg-white shadow-sm">
                   <div className="flex justify-between">
                     <div>
