@@ -66,10 +66,15 @@ export default function ReservationsPage() {
   // 予約作成のミューテーション
   const createReservationMutation = useMutation({
     mutationFn: async (slotId: string) => {
+      // Supabase セッションからアクセストークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
       const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ slotId }),
       });
@@ -79,8 +84,9 @@ export default function ReservationsPage() {
       return response.json();
     },
     onSuccess: (data) => {
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+      const redirectUrl = data.checkoutUrl || data.url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
       } else {
         queryClient.invalidateQueries({ queryKey: ['reservations', 'lessonSlots'] });
         toast.success('予約が完了しました');

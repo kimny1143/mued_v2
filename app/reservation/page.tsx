@@ -167,9 +167,10 @@ export const ReservationPage: React.FC = () => {
       }
       
       // 予約成功
-      if (data.checkoutUrl) {
+      const redirectUrl = data.checkoutUrl || data.url;
+      if (redirectUrl) {
         // Stripeのチェックアウトページに遷移
-        window.location.href = data.checkoutUrl;
+        window.location.href = redirectUrl;
         return data;
       } else {
         // 予約は作成されたがチェックアウトURLがない場合
@@ -232,10 +233,9 @@ export const ReservationPage: React.FC = () => {
       setIsModalOpen(false);
       
       // 新しいリダイレクト処理
-      if (data?.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else if (data?.redirectUrl) {
-        router.push(data.redirectUrl);
+      const redirectUrl = data?.checkoutUrl || data?.url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
       }
     },
     onError: (error: Error) => {

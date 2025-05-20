@@ -191,9 +191,12 @@ export async function POST(request: NextRequest) {
       };
     });
 
+    // Stripe 価格IDが環境変数に無い場合のフォールバック
+    const lessonPriceId = process.env.NEXT_PUBLIC_LESSON_PRICE_ID ?? 'price_1RPE4rRYtspYtD2zW8Lni2Gf';
+
     // チェックアウトセッションを作成
     const checkoutSession = await createCheckoutSession({
-      priceId: process.env.NEXT_PUBLIC_LESSON_PRICE_ID,
+      priceId: lessonPriceId,
       slotId: data.slotId,
       reservationId: result.reservation.id,
       successUrl: `${getBaseUrl()}/reservation/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -206,7 +209,12 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // フロントエンド側（dashboard / reservation 両ページ）でのプロパティ名の差異に対応
+    // - 旧実装: checkoutUrl を期待
+    // - 新実装: url を期待
+    // どちらでも利用出来るよう両方を返す
     return NextResponse.json({
+      checkoutUrl: checkoutSession.url,
       url: checkoutSession.url,
       reservationId: result.reservation.id
     });
