@@ -18,10 +18,37 @@ import { useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { User } from '@supabase/supabase-js';
 import { Toaster } from 'sonner';
-import { 
-  useReservations,
-  Reservation as MyReservation 
-} from '@/lib/hooks/queries/useReservations';
+import type { ReservationStatus } from '@prisma/client';
+
+// シンプルで明確な型定義
+type TeacherInfo = {
+  id: string;
+  name: string;
+  image: string | null;
+}
+
+type LessonSlotData = {
+  id: string;
+  startTime: string;
+  endTime: string;
+  teacher: TeacherInfo;
+}
+
+type Payment = {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+} | null;
+
+type Reservation = {
+  id: string;
+  status: ReservationStatus;
+  lessonSlot: LessonSlotData;
+  payment: Payment;
+  createdAt: string;
+  updatedAt: string;
+}
 
 // 通貨フォーマット関数（コンポーネントの外でも問題ない純関数）
 function formatCurrency(amount: number, currency = 'usd'): string {
@@ -57,14 +84,9 @@ export const ReservationPage: React.FC = () => {
   const [error, setError] = useState<Error | null>(null);
   const isSmallScreen = useMediaQuery({ maxWidth: 1024 });
   
-  // 直接予約一覧データを取得用の状態
-  const [directReservations, setDirectReservations] = useState<MyReservation[]>([]);
-  
-  // 予約一覧（リアルタイム対応 - キャッシュ無効化）
-  const { data: reservations = [] } = useReservations({
-    includeAll: true,
-  });
-  
+  // 予約一覧を保持する単純なステート
+  const [myReservations, setMyReservations] = useState<Reservation[]>([]);
+
   // APIからレッスンスロットを取得する関数
   const fetchLessonSlots = useCallback(async () => {
     try {
@@ -214,6 +236,32 @@ export const ReservationPage: React.FC = () => {
         
         setUser(data.session?.user || null);
         setAccessToken(data.session?.access_token ?? null);
+        
+        // ユーザー情報を取得したら、予約データもフェッチ
+        if (data.session?.access_token) {
+          console.log("認証トークンあり - 予約データをフェッチします");
+          try {
+            const response = await fetch('/api/my-reservations?all=true', {
+              headers: { 
+                Authorization: `Bearer ${data.session.access_token}` 
+              },
+              credentials: 'include'
+            });
+            
+            console.log("予約API応答:", response.status);
+            
+            if (response.ok) {
+              const reservations = await response.json();
+              console.log(`予約データ取得: ${reservations.length}件`);
+              setMyReservations(reservations);
+            } else {
+              console.error("予約API エラー:", response.status);
+            }
+          } catch (fetchError) {
+            console.error("予約データフェッチエラー:", fetchError);
+          }
+        }
+        
         setLoading(false);
         
         if (!data.session) {
@@ -243,7 +291,18 @@ export const ReservationPage: React.FC = () => {
     onSuccess: (data) => {
       toast.success('レッスンの予約が完了しました');
       queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
-      queryClient.invalidateQueries({ queryKey: ['reservations'] });
+      
+      // 予約作成に成功したら、予約一覧も更新
+      if (accessToken) {
+        fetch('/api/my-reservations?all=true', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          credentials: 'include'
+        })
+        .then(r => r.json())
+        .then(setMyReservations)
+        .catch(console.error);
+      }
+      
       setIsModalOpen(false);
       
       // 新しいリダイレクト処理
@@ -257,41 +316,10 @@ export const ReservationPage: React.FC = () => {
     },
   });
 
-  // ユーザー情報のデバッグ用
-  console.log('Reservation Page - ユーザー情報:', user ? `ID: ${user.id}` : 'ログインなし');
-
-  // ユーザー情報が確定した後に予約一覧を取得（React Queryのrefetchを強制）
-  useEffect(() => {
-    if (user) {
-      console.log('ユーザー情報確定 - 予約データを確認します:', user.id);
-      // 強制的にrefetch
-      queryClient.invalidateQueries({ queryKey: ['reservations'] });
-    }
-  }, [user, queryClient]);
-
-  // 直接APIを使って予約データを取得
-  useEffect(() => {
-    if (user && accessToken) {
-      console.log('直接APIを呼び出します...');
-      fetch('/api/my-reservations?all=true', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        credentials: 'include'
-      })
-      .then(r => {
-        console.log('予約API応答:', r.status);
-        return r.json();
-      })
-      .then(data => {
-        console.log('直接取得した予約:', data.length);
-        setDirectReservations(data);
-      })
-      .catch(e => console.error('予約取得エラー:', e));
-    }
-  }, [user, accessToken]);
-
-  // デバッグ用
-  console.log('React Queryから取得した予約データ:', reservations.length);
-  console.log('直接取得した予約データ:', directReservations.length);
+  // 認証状態チェック
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">読み込み中...</div>;
+  }
 
   const handleBooking = (slot: LessonSlot) => {
     setSelectedSlot(slot);
@@ -304,8 +332,7 @@ export const ReservationPage: React.FC = () => {
     }
   };
 
-  // 認証状態チェック
-  if (loading) {
+  if (isLoadingSlots) {
     return <div className="flex justify-center items-center h-64">読み込み中...</div>;
   }
 
@@ -478,11 +505,11 @@ export const ReservationPage: React.FC = () => {
       {user && (
         <section className="mb-8">
           <h2 className="text-xl font-bold mb-2">あなたの予約一覧</h2>
-          {directReservations.length === 0 ? (
+          {myReservations.length === 0 ? (
             <p className="text-gray-500">まだ予約はありません</p>
           ) : (
             <ul className="space-y-2">
-              {directReservations.map((res: MyReservation) => (
+              {myReservations.map((res) => (
                 <li key={res.id} className="border p-3 rounded-md bg-white shadow-sm">
                   <div className="flex justify-between">
                     <div>
