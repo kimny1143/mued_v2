@@ -52,17 +52,26 @@ export function useReservations(options?: UseReservationsOptions) {
 
   return useQuery<Reservation[]>({
     queryKey: ['reservations', options],
+    enabled: !!user, // 未ログインならフェッチしない
     queryFn: async () => {
       const params = new URLSearchParams();
       if (options?.status) params.append('status', options.status);
       if (options?.take) params.append('take', options.take.toString());
       if (options?.skip) params.append('skip', options.skip.toString());
 
-      const response = await fetch(`/api/my-reservations?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('予約の取得に失敗しました');
+      try {
+        const response = await fetch(`/api/my-reservations?${params.toString()}`);
+        if (!response.ok) {
+          // MVP: エラーでも空配列を返す
+          console.warn('my-reservations API error:', response.status);
+          return [];
+        }
+        return response.json();
+      } catch (err) {
+        console.error('my-reservations fetch failed:', err);
+        return [];
       }
-      return response.json();
     },
+    initialData: [],
   });
 } 
