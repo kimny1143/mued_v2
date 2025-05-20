@@ -17,7 +17,7 @@ import { ReservationSkeleton } from './_components/ReservationSkeleton';
 export default function ReservationsPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingSlotId, setProcessingSlotId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // React Queryを使用して予約データを取得
@@ -118,13 +118,12 @@ export default function ReservationsPage() {
 
   // レッスン予約ハンドラー
   const handleReserveLesson = async (slotId: string) => {
+    if (processingSlotId) return;        // 連打防止
+    setProcessingSlotId(slotId);         // どのボタンが進行中か記録
     try {
-      setIsProcessing(true);
       await createReservationMutation.mutateAsync(slotId);
-    } catch (error) {
-      console.error('予約エラー:', error);
     } finally {
-      setIsProcessing(false);
+      setProcessingSlotId(null);         // 完了したらリセット
     }
   };
 
@@ -190,7 +189,7 @@ export default function ReservationsPage() {
                 key={slot.id}
                 slot={slot}
                 onReserve={handleReserveLesson}
-                isProcessing={isProcessing}
+                isProcessing={processingSlotId === slot.id}
               />
             ))}
           </div>
