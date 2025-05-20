@@ -89,36 +89,30 @@ type _LessonSlotWhereInput = {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
+    let from = searchParams.get('from');
+    let to   = searchParams.get('to');
 
+    // クエリが無ければデフォルト期間をセット
     if (!from || !to) {
-      return NextResponse.json(
-        { error: 'from and to parameters are required' },
-        { status: 400 }
-      );
+      const now = new Date();
+      const later = new Date();
+      later.setDate(later.getDate() + 30);
+
+      from = now.toISOString();
+      to   = later.toISOString();
     }
 
     const slots = await prisma.lessonSlot.findMany({
       where: {
-        startTime: {
-          gte: new Date(from),
-          lte: new Date(to),
-        },
+        startTime: { gte: new Date(from), lte: new Date(to) },
         isAvailable: true,
       },
-      orderBy: {
-        startTime: 'asc',
-      },
+      orderBy: { startTime: 'asc' },
     });
 
     return NextResponse.json(slots);
   } catch (error) {
-    console.error('Error fetching lesson slots:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error:'Internal Server Error'}, {status:500});
   }
 }
 
