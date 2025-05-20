@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     // キャッシュキーの生成
     const cacheKey = generateCacheKey(sessionInfo.user.id, status, take, skip);
 
+    console.log('my-reservations API: user', sessionInfo.user.id);
     // 予約情報の取得
     const reservations = await prisma.reservation.findMany({
       where: {
@@ -55,6 +56,7 @@ export async function GET(request: NextRequest) {
       skip,
     });
 
+    console.log('my-reservations API: found', reservations.length);
     // レスポンスデータの整形
     const formattedReservations = reservations.map(reservation => ({
       id: reservation.id,
