@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/app/components/ui/button';
 import { supabaseBrowser } from '@/lib/supabase-browser';
@@ -21,11 +21,13 @@ export default function ReservationsPage() {
   const queryClient = useQueryClient();
 
   // React Queryを使用して予約データを取得
+  const reservationsOptions = useMemo(() => ({ includeAll: true }), []);
+
   const { 
     data: reservationsData,
     isLoading: isLoadingReservations,
     error: reservationsError
-  } = useReservations({ includeAll: true });
+  } = useReservations(reservationsOptions);
 
   // React Queryを使用してレッスンスロットを取得
   const { 
