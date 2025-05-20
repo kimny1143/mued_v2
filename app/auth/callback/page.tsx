@@ -27,7 +27,7 @@ function CallbackContent() {
         console.log('認証コールバック - VERCEL_URL:', process.env.VERCEL_URL || 'undefined');
         
         // ホスト名の不一致を検出（現在のホストがlocalhostだが、環境はVercelの場合）
-        if (currentHost.includes('localhost') && 
+        if (currentHost.includes('') && 
             baseUrl !== 'http://localhost:3000' && 
             !baseUrl.includes('localhost')) {
           console.log('ホスト名の不一致を検出: Vercel URLへリダイレクト');

@@ -19,16 +19,36 @@ export async function GET(request: NextRequest) {
     
     // 「全表示モード」を最初にチェック
     if (searchParams.get('all') === 'true') {
-      // 認証チェックをスキップして全データ返却
-      const allReservations = await prisma.reservation.findMany({
-        include: { 
-          slot: { // lessonSlot ではなく slot
-            include: { teacher: true } 
-          }
-        }
+      const all = await prisma.reservation.findMany({
+        include: {
+          slot: { include: { teacher: true } },
+          payment: true,
+        },
+        orderBy: { createdAt: 'desc' },
       });
-      console.log('全データモード: 件数', allReservations.length);
-      return NextResponse.json(allReservations);
+
+      const formatted = all.map(r => ({
+        id: r.id,
+        status: r.status,
+        lessonSlot: {
+          id: r.slot.id,
+          startTime: r.slot.startTime,
+          endTime: r.slot.endTime,
+          teacher: r.slot.teacher,
+        },
+        payment: r.payment
+          ? {
+              id: r.payment.id,
+              amount: r.payment.amount,
+              currency: r.payment.currency,
+              status: r.payment.status,
+            }
+          : null,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+      }));
+
+      return NextResponse.json(formatted);
     }
 
     // 以下、通常の認証付きクエリ処理
