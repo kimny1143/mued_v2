@@ -249,8 +249,16 @@ export const ReservationPage: React.FC = () => {
     },
   });
 
-  // 予約一覧（リアルタイム対応）
-  const { data: reservations = [] } = useReservations({ includeAll: true });
+  // ユーザー情報のデバッグ用
+  console.log('Reservation Page - ユーザー情報:', user ? `ID: ${user.id}` : 'ログインなし');
+
+  // 予約一覧（リアルタイム対応 - キャッシュ無効化）
+  const { data: reservations = [] } = useReservations({
+    includeAll: true,
+  });
+  
+  // デバッグ用
+  console.log('取得した予約データ:', reservations.length);
 
   // 認証状態チェック
   if (loading) {

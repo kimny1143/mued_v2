@@ -42,6 +42,13 @@ export function useReservations(options?: UseReservationsOptions) {
   const queryClient = useQueryClient();
   const { user } = useUser();
 
+  // デバッグログ
+  console.log('useReservations - 開始', { 
+    options, 
+    userExists: !!user, 
+    userId: user?.id
+  });
+
   // リアルタイム更新の設定
   useSupabaseChannel('reservations', {
     table: 'reservations',
@@ -58,6 +65,8 @@ export function useReservations(options?: UseReservationsOptions) {
     queryKey: ['reservations', options],
     enabled: options?.includeAll ? true : !!user,
     queryFn: async () => {
+      console.log('useReservations - queryFn実行開始', { options });
+
       const params = new URLSearchParams();
       if (options?.includeAll) {
         params.append('all', 'true');
@@ -68,22 +77,37 @@ export function useReservations(options?: UseReservationsOptions) {
       }
 
       const url = `/api/my-reservations?${params.toString()}`;
+      console.log('API呼び出しURL:', url);
 
       // セッションからアクセストークンを取得
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData.session?.access_token ?? null;
+      console.log('認証トークン:', token ? 'あり' : 'なし');
 
-      const response = await fetch(url, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        credentials: 'include',
-      });
+      try {
+        console.log('fetchリクエスト開始:', url);
+        const response = await fetch(url, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          credentials: 'include',
+          cache: 'no-store', // キャッシュを無効化
+        });
 
-      if (!response.ok) {
-        console.warn('my-reservations API error:', response.status);
-        return [];
+        console.log('APIレスポンス:', response.status, response.statusText);
+
+        if (!response.ok) {
+          console.warn('my-reservations API error:', response.status);
+          return [];
+        }
+        
+        const data = await response.json();
+        console.log('取得データ数:', data.length);
+        return data;
+      } catch (error) {
+        console.error('API呼び出しエラー:', error);
+        throw error;
       }
-      return response.json();
     },
     initialData: [],
+    staleTime: 1000, // 1秒後に古いと見なす（テスト用に短く）
   });
 }
