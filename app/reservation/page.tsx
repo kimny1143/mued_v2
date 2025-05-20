@@ -324,7 +324,7 @@ export const ReservationPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lesson.teacher ? lesson.teacher.name : lesson.mentorName}
+                        {lesson.teacher?.name || lesson.mentorName || '講師未登録'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
@@ -391,7 +391,7 @@ export const ReservationPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-sm font-medium">
-                        {lesson.teacher ? lesson.teacher.name : lesson.mentorName}
+                        {lesson.teacher?.name || lesson.mentorName || '講師未登録'}
                       </div>
                       <div className="text-sm text-gray-500">
                         {formatCurrency(lesson.price || 5000, lesson.currency || 'usd')}

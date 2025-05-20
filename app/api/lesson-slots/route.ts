@@ -90,13 +90,16 @@ export async function GET() {
   try {
     const slots = await prisma.lessonSlot.findMany({
       orderBy: { startTime: 'asc' },
+      include: {
+        teacher: {
+          select: { id: true, name: true, image: true }
+        },
+        reservations: {
+          select: { id: true, status: true }
+        }
+      }
     });
-
-    console.log('🟢 lesson-slots count', slots.length);
-    if (slots.length) {
-      console.log('🟢 first slot', slots[0]);
-    }
-
+    console.log('🟢 lesson-slots', slots.length);
     return NextResponse.json(slots);
   } catch (e) {
     console.error('🔴 lesson-slots error', e);
