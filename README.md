@@ -1,6 +1,6 @@
 # MUED プロジェクト
 
-[![プロジェクトステージ](https://img.shields.io/badge/現在の実装ステージ-Phase%200%20%2F%20Vite%20モノリス-blue)](https://github.com/kimny1143/mued_lms_fgm)
+[![プロジェクトステージ](https://img.shields.io/badge/現在の実装ステージ-Phase%200%20%2F%20MVP-blue)](https://github.com/kimny1143/mued_lms_fgm)
 
 株式会社グラスワークスが運営する音楽レッスン管理ツール（LMS：学習管理システム）のプロジェクトリポジトリへようこそ！
 
@@ -17,19 +17,20 @@ MUEDは以下の特徴を持つ音楽教育プラットフォームです：
 
 ## 技術スタック
 
-### Phase 0 (MVP - 現段階)
-- **フロントエンド**: Vite + React18 + TypeScript + Tailwind CSS
+### 現在のスタック (Phase 0 / MVP)
+- **フロントエンド**: Next.js 14 (App Router) + React 18 + TypeScript + Tailwind CSS
 - **認証**: Supabase Auth + Google OAuth
 - **データベース**: PostgreSQL (Prisma ORM)
+- **状態管理**: React Query + Zustand
+- **リアルタイム機能**: Supabase Realtime
 - **AI サービス**: Python/FastAPI (別サービス)
 - **支払い処理**: Stripe
-- **デプロイ**: Vercel (フロントエンド), Heroku (APIサービス)
+- **デプロイ**: Vercel (フロントエンド), Heroku (AIサービス)
 - **テスト**: Vitest + React Testing Library + Playwright (E2E)
 
-### Phase 1 (将来計画)
-- **フロントエンド**: Next.js 14 (App Router) + React18
+### 将来計画 (Phase 1)
 - **アーキテクチャ**: マイクロサービス (Web/AI/Payment/Scheduling)
-- **リアルタイム機能**: Supabase Realtime
+- **バックエンド機能強化**: 専用のスケジューリングサービスと支払いサービスの実装
 
 ## 開発環境セットアップ
 
@@ -57,19 +58,42 @@ npm run build
 `.env`ファイルを作成し、以下の環境変数を設定してください：
 
 ```env
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 POSTGRES_PASSWORD=your_postgres_password
-METABASE_DB_PASSWORD=your_metabase_db_password
 STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 ```
 
-### 開発ガイドライン
+## プロジェクト構造
 
-- コミットメッセージは[Conventional Commits](https://www.conventionalcommits.org/)に従ってください
-- プルリクエストは必ずレビューを受けてからマージしてください
-- テストカバレッジは80%以上を維持してください
+```
+/
+├─ app/                  # Next.js App Routerベースのフロントエンド
+│   ├─ api/              # APIルート (Next.js API Routes)
+│   ├─ components/       # 再利用可能なUIコンポーネント
+│   ├─ landing-sections/ # ランディングページ関連コンポーネント
+│   ├─ dashboard/        # ダッシュボード関連ページ
+│   ├─ auth/             # 認証関連ページ
+│   ├─ reservation/      # 予約関連ページ
+│   └─ checkout/         # 決済関連ページ
+├─ lib/                  # ユーティリティ関数とAPIクライアント
+│   ├─ hooks/            # カスタムReactフック
+│   ├─ client/           # APIクライアント実装
+│   ├─ supabase-*.ts     # Supabase関連ユーティリティ
+│   ├─ stripe.ts         # Stripe統合ユーティリティ
+│   └─ googleCalendar.ts # Google Calendar統合
+├─ prisma/               # DBスキーマと移行ファイル
+│   ├─ schema.prisma     # Prismaスキーマ定義
+│   └─ migrations/       # データベース移行ファイル
+├─ ai-service/           # Python/FastAPI AIサービス
+│   ├─ app/              # FastAPIアプリケーション
+│   ├─ tests/            # AIサービステスト
+│   └─ openapi/          # OpenAPI仕様
+├─ tests/                # フロントエンドテスト (Vitest / Playwright)
+├─ public/               # 静的ファイル
+└─ scripts/              # ユーティリティスクリプト
+```
 
 ## テストポリシー
 
@@ -87,45 +111,21 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 - **実行時間**: 4-5分以内
 - **タグ**: `@core`タグ付きテストのみ実行
 
-#### 3. パフォーマンステスト（CI Nightly）
-- **実行タイミング**: 毎日深夜
-- **対象**: 負荷テスト（k6）、セキュリティスキャン（ZAP）
-- **実行時間**: 制限なし
-- **通知**: Slackチャンネルへ結果を通知
-
 ### テスト環境
 
 - **テストDB**: Prisma Test DB（並列実行対応）
 - **ブラウザ**: Playwright（Chromium, Firefox, WebKit）
 - **モック**: MSW（APIモック）、Vitest（ユニットテスト）
 
-### 品質ゲート
-
-1. **型チェック**: エラーなし
-2. **Lint**: エラーなし
-3. **ユニットテスト**: 全テスト成功、カバレッジ80%以上
-4. **E2Eテスト**: クリティカルパス成功
-5. **セキュリティ**: ZAPスキャン合格
-
-## プロジェクト構造
-
+### E2E / MCP の動かし方
+```bash
+# MCP サーバー起動（別ターミナル）
+npm run mcp
+# Next.js dev サーバー起動
+npm run dev
+# テスト実行
+npm run test:e2e
 ```
-/
-├─ src/                 # Vite＋React のモノリス
-│   ├─ components/      # 再利用可能なUIコンポーネント
-│   ├─ contexts/        # Reactコンテキスト
-│   ├─ lib/             # ユーティリティ関数
-│   ├─ screens/         # ページコンポーネント
-│   └─ routes/          # ルーティング
-├─ ai-service/          # Python/FastAPI AI サービス
-├─ prisma/              # DB スキーマと移行ファイル
-└─ tests/               # テスト (Vitest / Playwright)
-```
-
-## ディレクトリ戦略
-- **Phase 0 (MVP)**: Vite モノリス (/src)
-- **Phase 1 PoC**: Next.js (apps/web) ※別ブランチで進行
-- **AI/Payment Stub**: 現行ディレクトリを維持
 
 ## Metabaseダッシュボード（社内用）
 
@@ -137,22 +137,13 @@ STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 4. データソースとしてMUEDデータベースを接続（Supabase）
 5. ダッシュボードの作成・共有
 
-### ダッシュボード埋め込み設定
-
-Metabaseダッシュボードは他のアプリケーションに埋め込むことができます：
-
-1. Metabase管理画面から「設定」→「埋め込み」を選択
-2. 埋め込みを有効化し、許可されたドメインを設定
-3. ダッシュボードを選択し「・・・」メニューから「埋め込み」を選択
-4. 生成されたコードをアプリケーションに統合
-
 ## デプロイ環境
 
 ### フロントエンド (Vercel)
 - **本番環境**: https://mued-lms.vercel.app
 - **プレビュー環境**: PRごとに一意のURLが生成されます（PRコメントで通知）
 
-### APIサービス (Heroku)
+### AIサービス (Heroku)
 - **本番環境**: https://mued-api.herokuapp.com
 - **Swagger UI**: https://mued-api.herokuapp.com/docs
 
@@ -184,46 +175,6 @@ node scripts/check-env.js
 bash scripts/vercel-deploy-prep.sh
 ```
 
-#### Stripe価格IDの問題解決
-
-テスト環境では、以下の方法で対応しています：
-
-1. **動的価格生成**: 存在しない価格IDが指定された場合、自動的にその場で価格を生成します。
-2. **フォールバックメカニズム**: 特定のテスト価格IDには、デフォルトの金額とプラン設定を用意しています。
-
-```
-- price_test_starter: 月額$20のスターターサブスクリプション
-- price_test_premium: 月額$60のプレミアムサブスクリプション
-- price_test_basic: 月額$10のベーシックサブスクリプション
-- price_test_spot_lesson: $30の単発レッスン
-```
-
-### 環境変数の設定方法
-
-#### ローカル環境
-
-`.env.local`ファイルに以下の変数を設定します（改行なし）：
-
-```
-STRIPE_SECRET_KEY=sk_test_51RAPn...
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51RAPn...
-STRIPE_WEBHOOK_SECRET=whsec_...
-```
-
-#### Vercel環境
-
-Vercelダッシュボードの環境変数設定で、改行なしで環境変数を設定してください。
-
-または、Vercel CLIを使用する場合：
-
-```bash
-# 環境変数の前処理
-bash scripts/vercel-deploy-prep.sh
-
-# クリーンな環境変数でデプロイ
-vercel --env-file .vercel/tmp/env.txt
-```
-
 ### トラブルシューティング
 
 問題が発生した場合は、以下のログを確認してください：
@@ -232,16 +183,12 @@ vercel --env-file .vercel/tmp/env.txt
 2. **Vercel Function Logs**: サーバー側のエラーを確認
 3. **Stripeダッシュボードログ**: Stripe API呼び出しのエラーを確認
 
+## 開発ガイドライン
+
+- コミットメッセージは[Conventional Commits](https://www.conventionalcommits.org/)に従ってください
+- プルリクエストは必ずレビューを受けてからマージしてください
+- テストカバレッジは80%以上を維持してください
+
 ## ライセンス
 
 © 2024 株式会社グラスワークス All Rights Reserved.
-
-## E2E / MCP の動かし方
-```bash
-# MCP サーバー起動（別ターミナル）
-npm run mcp
-# Next.js dev サーバー起動
-npm run dev
-# テスト実行
-npm run test:e2e
-```
