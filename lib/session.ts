@@ -1,4 +1,5 @@
 import { supabaseServer } from './supabase-server';
+import { supabaseAdmin } from './supabase-admin';
 import { createClient } from '@supabase/supabase-js';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -108,7 +109,8 @@ export async function getSessionFromRequest(request: Request): Promise<{
     if (token) {
       try {
         console.log(`トークン認証開始 (${token.substring(0, 10)}...)`);
-        const { data, error } = await supabaseServer.auth.getUser(token);
+        // サービスロール権限を使用してJWTを検証し、ユーザー情報を取得
+        const { data, error } = await supabaseAdmin.auth.getUser(token);
         
         if (error) {
           console.error("トークン認証エラー:", error);
