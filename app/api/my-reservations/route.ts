@@ -77,6 +77,14 @@ export async function GET(request: NextRequest) {
       updatedAt: reservation.updatedAt,
     }));
 
+    if (searchParams.get('all') === 'true') {
+      // 認証チェックをスキップして全データ返却
+      const allReservations = await prisma.reservation.findMany({
+        include: { lessonSlot: { include: { teacher: true } } }
+      });
+      return NextResponse.json(allReservations);
+    }
+
     return NextResponse.json(formattedReservations, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
