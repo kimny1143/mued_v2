@@ -86,34 +86,14 @@ type _LessonSlotWhereInput = {
 };
 
 // レッスンスロット一覧を取得
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    let from = searchParams.get('from');
-    let to   = searchParams.get('to');
-
-    // クエリが無ければデフォルト期間をセット
-    if (!from || !to) {
-      const now = new Date();
-      const later = new Date();
-      later.setDate(later.getDate() + 30);
-
-      from = now.toISOString();
-      to   = later.toISOString();
-    }
-
     const slots = await prisma.lessonSlot.findMany({
-      where: {
-        startTime: { gte: new Date(from), lte: new Date(to) },
-        isAvailable: true,
-      },
       orderBy: { startTime: 'asc' },
     });
-
     return NextResponse.json(slots);
-  } catch (error) {
-    console.error('Lesson slot API error:', error);
-    // MVP: エラーでも空配列で返して画面を壊さない
+  } catch (e) {
+    console.error(e);
     return NextResponse.json([], { status: 200 });
   }
 }
