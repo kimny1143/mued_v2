@@ -15,12 +15,28 @@ function generateCacheKey(userId: string, status: ReservationStatus | null, take
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    
+    // 「全表示モード」を最初にチェック
+    if (searchParams.get('all') === 'true') {
+      // 認証チェックをスキップして全データ返却
+      const allReservations = await prisma.reservation.findMany({
+        include: { 
+          slot: { // lessonSlot ではなく slot
+            include: { teacher: true } 
+          }
+        }
+      });
+      console.log('全データモード: 件数', allReservations.length);
+      return NextResponse.json(allReservations);
+    }
+
+    // 以下、通常の認証付きクエリ処理
     const sessionInfo = await getSessionFromRequest(request);
     if (!sessionInfo) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') as ReservationStatus | null;
     const take = Number(searchParams.get('take') ?? 20);
     const skip = Number(searchParams.get('skip') ?? 0);
@@ -76,14 +92,6 @@ export async function GET(request: NextRequest) {
       createdAt: reservation.createdAt,
       updatedAt: reservation.updatedAt,
     }));
-
-    if (searchParams.get('all') === 'true') {
-      // 認証チェックをスキップして全データ返却
-      const allReservations = await prisma.reservation.findMany({
-        include: { lessonSlot: { include: { teacher: true } } }
-      });
-      return NextResponse.json(allReservations);
-    }
 
     return NextResponse.json(formattedReservations, {
       headers: {

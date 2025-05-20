@@ -245,24 +245,13 @@ export const ReservationPage: React.FC = () => {
   });
 
   // 予約一覧
-  const {
-    data: reservationsData = [],
-    isLoading: isLoadingReservations,
-    error: reservationsError,
-  } = useQuery({
-    queryKey: ['myReservations'],
-    enabled: !!accessToken, // トークンが無い場合は取得しない
+  const { data = [] as MyReservation[] } = useQuery({
+    queryKey: ['reservations', 'all'],
     queryFn: async () => {
-      const res = await fetch('/api/my-reservations', {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        console.warn('my-reservations fetch error', res.status);
-        return [];
-      }
+      const res = await fetch('/api/my-reservations?all=true');
+      if (!res.ok) return [] as MyReservation[];
       return res.json() as Promise<MyReservation[]>;
-    },
+    }
   });
 
   // 認証状態チェック
@@ -296,11 +285,6 @@ export const ReservationPage: React.FC = () => {
         </Button>
       </div>
     );
-  }
-
-  // 予約もローディング中の場合
-  if (isLoadingReservations) {
-    return <div className="flex justify-center items-center h-64">予約読み込み中...</div>;
   }
 
   return (
@@ -459,11 +443,11 @@ export const ReservationPage: React.FC = () => {
       {user && (
         <section className="mb-8">
           <h2 className="text-xl font-bold mb-2">あなたの予約一覧</h2>
-          {reservationsData.length === 0 ? (
+          {data.length === 0 ? (
             <p className="text-gray-500">まだ予約はありません</p>
           ) : (
             <ul className="space-y-2">
-              {reservationsData.map((res) => (
+              {data.map((res: MyReservation) => (
                 <li key={res.id} className="border p-3 rounded-md bg-white shadow-sm">
                   <div className="flex justify-between">
                     <div>
