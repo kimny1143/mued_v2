@@ -43,6 +43,7 @@ export const ReservationPage: React.FC = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
   const [selectedSlot, setSelectedSlot] = useState<LessonSlot | null>(null);
@@ -147,8 +148,7 @@ export const ReservationPage: React.FC = () => {
       setIsProcessing(true);
       setError(null);
       
-      const { data: sessionData } = await supabaseBrowser.auth.getSession();
-      const token = sessionData.session?.access_token ?? null;
+      const token = accessToken;
 
       const response = await fetch('/api/reservations', {
         method: 'POST',
@@ -188,7 +188,7 @@ export const ReservationPage: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [user, fetchLessonSlots]);
+  }, [user, fetchLessonSlots, accessToken]);
 
   // Supabase認証状態を確認
   useEffect(() => {
@@ -199,6 +199,7 @@ export const ReservationPage: React.FC = () => {
         console.log("認証セッション:", data.session ? "あり" : "なし", data.session?.user?.email);
         
         setUser(data.session?.user || null);
+        setAccessToken(data.session?.access_token ?? null);
         setLoading(false);
         
         if (!data.session) {
