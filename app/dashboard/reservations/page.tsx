@@ -148,8 +148,13 @@ export default function ReservationsPage() {
     );
   }
 
-  // データがない場合
-  if (!reservationsData?.length && !slotsData?.length) {
+  // データが完全に取得済みで、どちらも 0 件の場合のみ空メッセージ
+  if (
+    reservationsData &&
+    slotsData &&
+    reservationsData.length === 0 &&
+    slotsData.length === 0
+  ) {
     return (
       <div className="p-4 text-center">
         <p className="text-gray-500">予約可能なレッスン枠がありません</p>
