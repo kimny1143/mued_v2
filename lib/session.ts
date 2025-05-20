@@ -104,7 +104,8 @@ export async function getSessionFromRequest(request: Request): Promise<{
     // Authorization ヘッダーが無ければ Cookie から取得（sb-access-token）
     if (!token) {
       const cookieHeader = request.headers.get('cookie') || '';
-      const match = cookieHeader.match(/sb-access-token=([^;]+)/);
+      // Supabase v2 cookie key: sb-<projectRef>-access-token
+      const match = cookieHeader.match(/sb-[^=]+?-access-token=([^;]+)/);
       if (match && match[1]) {
         token = decodeURIComponent(match[1]);
         console.log("Cookie からアクセストークン取得:", token.substring(0, 10) + '...');
