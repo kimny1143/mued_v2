@@ -250,7 +250,7 @@ export const ReservationPage: React.FC = () => {
   });
 
   // 予約一覧（リアルタイム対応）
-  const { data: reservations = [] } = useReservations();
+  const { data: reservations = [] } = useReservations({ includeAll: true });
 
   // 認証状態チェック
   if (loading) {
