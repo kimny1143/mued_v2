@@ -1,6 +1,7 @@
 // app/debug/reservations/page.tsx (Client Component)
 'use client'
 import { useEffect, useState } from 'react'
+import { supabaseBrowser } from '@/lib/supabase-browser'
 
 // APIレスポンスの型定義
 type TeacherInfo = {
@@ -35,12 +36,27 @@ type Reservation = {
 export default function DebugReservations() {
   const [rows, setRows] = useState<Reservation[]>([])
   const [error, setError] = useState<string>()
+
   useEffect(() => {
-    fetch('/api/my-reservations', { credentials: 'include' })
-      .then(r => r.json())
-      .then(setRows)
-      .catch(e => setError(String(e)))
+    (async () => {
+      // セッションから access_token を取得
+      const { data } = await supabaseBrowser.auth.getSession()
+      const token = data.session?.access_token
+
+      const res = await fetch('/api/my-reservations', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
+      })
+
+      if (!res.ok) {
+        const { error } = await res.json()
+        setError(error ?? `HTTP ${res.status}`)
+        return
+      }
+      setRows(await res.json())
+    })().catch(e => setError(String(e)))
   }, [])
+
   if (error) return <pre>{error}</pre>
   return <pre>{JSON.stringify(rows, null, 2)}</pre>
 }

@@ -1,3 +1,4 @@
+// lib/hooks/queries/useReservations.ts
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ReservationStatus } from '@prisma/client';
 import { useSupabaseChannel } from '../useSupabaseChannel';
@@ -66,18 +67,11 @@ export function useReservations(options?: UseReservationsOptions) {
         if (options?.skip) params.append('skip', options.skip.toString());
       }
 
-      // includeAll モードかどうかでアクセストークンの取得を判定
-      let token: string | null = null;
-      if (!options?.includeAll) {
-        const { data: sessionData } = await supabaseBrowser.auth.getSession();
-        token = sessionData.session?.access_token ?? null;
-        // トークンが取得できない場合は includeAll にフォールバック
-        if (!token) {
-          params.set('all', 'true');
-        }
-      }
-
       const url = `/api/my-reservations?${params.toString()}`;
+
+      // セッションからアクセストークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
 
       const response = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -92,4 +86,4 @@ export function useReservations(options?: UseReservationsOptions) {
     },
     initialData: [],
   });
-} 
+}
