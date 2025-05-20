@@ -57,6 +57,14 @@ export const ReservationPage: React.FC = () => {
   const [error, setError] = useState<Error | null>(null);
   const isSmallScreen = useMediaQuery({ maxWidth: 1024 });
   
+  // 直接予約一覧データを取得用の状態
+  const [directReservations, setDirectReservations] = useState<MyReservation[]>([]);
+  
+  // 予約一覧（リアルタイム対応 - キャッシュ無効化）
+  const { data: reservations = [] } = useReservations({
+    includeAll: true,
+  });
+  
   // APIからレッスンスロットを取得する関数
   const fetchLessonSlots = useCallback(async () => {
     try {
@@ -252,18 +260,38 @@ export const ReservationPage: React.FC = () => {
   // ユーザー情報のデバッグ用
   console.log('Reservation Page - ユーザー情報:', user ? `ID: ${user.id}` : 'ログインなし');
 
-  // 予約一覧（リアルタイム対応 - キャッシュ無効化）
-  const { data: reservations = [] } = useReservations({
-    includeAll: true,
-  });
-  
-  // デバッグ用
-  console.log('取得した予約データ:', reservations.length);
+  // ユーザー情報が確定した後に予約一覧を取得（React Queryのrefetchを強制）
+  useEffect(() => {
+    if (user) {
+      console.log('ユーザー情報確定 - 予約データを確認します:', user.id);
+      // 強制的にrefetch
+      queryClient.invalidateQueries({ queryKey: ['reservations'] });
+    }
+  }, [user, queryClient]);
 
-  // 認証状態チェック
-  if (loading) {
-    return <div className="flex justify-center items-center h-64">読み込み中...</div>;
-  }
+  // 直接APIを使って予約データを取得
+  useEffect(() => {
+    if (user && accessToken) {
+      console.log('直接APIを呼び出します...');
+      fetch('/api/my-reservations?all=true', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        credentials: 'include'
+      })
+      .then(r => {
+        console.log('予約API応答:', r.status);
+        return r.json();
+      })
+      .then(data => {
+        console.log('直接取得した予約:', data.length);
+        setDirectReservations(data);
+      })
+      .catch(e => console.error('予約取得エラー:', e));
+    }
+  }, [user, accessToken]);
+
+  // デバッグ用
+  console.log('React Queryから取得した予約データ:', reservations.length);
+  console.log('直接取得した予約データ:', directReservations.length);
 
   const handleBooking = (slot: LessonSlot) => {
     setSelectedSlot(slot);
@@ -276,7 +304,8 @@ export const ReservationPage: React.FC = () => {
     }
   };
 
-  if (isLoadingSlots) {
+  // 認証状態チェック
+  if (loading) {
     return <div className="flex justify-center items-center h-64">読み込み中...</div>;
   }
 
@@ -449,11 +478,11 @@ export const ReservationPage: React.FC = () => {
       {user && (
         <section className="mb-8">
           <h2 className="text-xl font-bold mb-2">あなたの予約一覧</h2>
-          {reservations.length === 0 ? (
+          {directReservations.length === 0 ? (
             <p className="text-gray-500">まだ予約はありません</p>
           ) : (
             <ul className="space-y-2">
-              {reservations.map((res: MyReservation) => (
+              {directReservations.map((res: MyReservation) => (
                 <li key={res.id} className="border p-3 rounded-md bg-white shadow-sm">
                   <div className="flex justify-between">
                     <div>
