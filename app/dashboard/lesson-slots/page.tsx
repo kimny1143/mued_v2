@@ -247,9 +247,26 @@ export default function LessonSlotsPage() {
     e.preventDefault();
     
     try {
-      // バリデーション
-      if (!selectedDate || !formData.startTime || !formData.endTime) {
-        setError('すべての項目を入力してください');
+      // バリデーション - 必須項目のみチェックするよう修正（maxHoursは任意項目）
+      if (!selectedDate) {
+        setError('日付を選択してください');
+        return;
+      }
+      
+      if (!formData.startTime || !formData.endTime) {
+        setError('開始時間と終了時間を入力してください');
+        return;
+      }
+
+      // hourlyRateは必須（デフォルト値があるが念のためチェック）
+      if (!formData.hourlyRate) {
+        setError('時間単価を入力してください');
+        return;
+      }
+      
+      // minHoursは必須（デフォルト値があるが念のためチェック）
+      if (!formData.minHours) {
+        setError('最小予約時間を入力してください');
         return;
       }
       
@@ -296,6 +313,7 @@ export default function LessonSlotsPage() {
           endTime: endTime.toISOString(),
           hourlyRate: formData.hourlyRate,
           minHours: formData.minHours,
+          // maxHoursは空でもOK、その場合はnullを送信
           maxHours: formData.maxHours || null,
           isAvailable: true,
         }),
@@ -434,13 +452,24 @@ export default function LessonSlotsPage() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="date-picker" className="mb-2 block">日付を選択</Label>
-                <Calendar 
-                  mode="single"
-                  selected={selectedDate} 
-                  onSelect={(date: Date | undefined) => setSelectedDate(date)} 
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                />
+                <div className="border rounded-md p-2 bg-white">
+                  <Calendar 
+                    mode="single"
+                    selected={selectedDate} 
+                    onSelect={(date: Date | undefined) => {
+                      setSelectedDate(date);
+                      console.log('日付選択:', date); // 選択時のログ追加
+                    }}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                    className="[&_.rdp-day_button:hover]:bg-blue-100 [&_.rdp-day_focus]:bg-blue-200 [&_.rdp-day_selected]:bg-blue-600"
+                  />
+                  {selectedDate && (
+                    <p className="mt-2 text-sm text-green-600 font-medium">
+                      選択日: {format(selectedDate, 'yyyy年MM月dd日')}
+                    </p>
+                  )}
+                </div>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
