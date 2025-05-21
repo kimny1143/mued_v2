@@ -98,7 +98,11 @@ model LessonSlot {
   teacher     User         @relation("TeacherSlots", fields: [teacherId], references: [id])
   startTime   DateTime     // 開始時間
   endTime     DateTime     // 終了時間
-  isAvailable Boolean      @default(true) // 予約可能かどうか
+  hourlyRate  Int          @default(6000)  // 時間単価（デフォルト: 6000円）
+  currency    String       @default("JPY") // 通貨
+  minHours    Int          @default(1)     // 最小予約時間（単位：時間）
+  maxHours    Int?         // 最大予約時間（nullの場合は制限なし）
+  isAvailable Boolean      @default(true)  // 予約可能かどうか
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   reservations Reservation[]
@@ -110,17 +114,21 @@ model LessonSlot {
 }
 
 model Reservation {
-  id          String      @id @default(cuid())
-  slotId      String      // LessonSlot.id を参照 (String CUID or UUID)
-  slot        LessonSlot  @relation(fields: [slotId], references: [id])
-  studentId   String      // User.id を参照 (String UUID)
-  student     User        @relation("StudentReservations", fields: [studentId], references: [id])
-  status      ReservationStatus @default(PENDING) // 予約ステータス
-  payment     Payment?    @relation(fields: [paymentId], references: [id])
-  paymentId   String?     @unique // Payment.id を参照
-  notes       String?     @db.Text // 備考・メモ
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id              String           @id @default(cuid())
+  slotId          String           // LessonSlot.id を参照
+  slot            LessonSlot       @relation(fields: [slotId], references: [id])
+  studentId       String           // User.id を参照
+  student         User             @relation("StudentReservations", fields: [studentId], references: [id])
+  status          ReservationStatus @default(PENDING)
+  payment         Payment?         @relation(fields: [paymentId], references: [id])
+  paymentId       String?          @unique // Payment.id を参照
+  bookedStartTime DateTime         // 予約開始時間
+  bookedEndTime   DateTime         // 予約終了時間
+  hoursBooked     Int              @default(1) // 予約時間数
+  totalAmount     Int              // 合計金額（hourlyRate × hoursBooked）
+  notes           String?          @db.Text // 備考・メモ
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   
   @@index([slotId])
   @@index([studentId])
@@ -136,16 +144,16 @@ enum ReservationStatus {
 }
 
 model Payment {
-  id                String   @id @default(cuid())
-  stripeSessionId   String   @unique
-  stripePaymentId   String?  @unique
+  id                String      @id @default(cuid())
+  stripeSessionId   String      @unique
+  stripePaymentId   String?     @unique
   amount            Int
-  currency          String   @default("JPY")
+  currency          String      @default("JPY")
   status            PaymentStatus @default(PENDING)
   reservation       Reservation?
   userId            String
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   @@index([userId])
   @@map("payments")

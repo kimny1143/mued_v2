@@ -23,7 +23,7 @@ import { Badge } from '@/app/components/ui/badge';
 import { toast } from 'sonner';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Toaster } from 'sonner';
-import { DatePicker } from '@/app/components/ui/date-picker';
+import { Calendar } from '@/app/components/ui/calendar';
 import { TimeSelect } from '@/app/components/ui/time-select';
 import {
   CalendarIcon,
@@ -85,9 +85,18 @@ export default function LessonSlotsPage() {
   const [slots, setSlots] = useState<LessonSlot[]>([]);
   const [userRole, setUserRole] = useState<string>('');
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    startTime: string;
+    endTime: string;
+    hourlyRate: string;
+    minHours: string;
+    maxHours: string;
+  }>({
     startTime: '',
     endTime: '',
+    hourlyRate: '5000', // デフォルト5000円
+    minHours: '1',      // デフォルト1時間
+    maxHours: '',       // 空白は制限なし
   });
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
@@ -259,6 +268,9 @@ export default function LessonSlotsPage() {
         body: JSON.stringify({
           startTime: startTime.toISOString(),
           endTime: endTime.toISOString(),
+          hourlyRate: formData.hourlyRate,
+          minHours: formData.minHours,
+          maxHours: formData.maxHours || null,
           isAvailable: true,
         }),
       });
@@ -278,6 +290,9 @@ export default function LessonSlotsPage() {
       setFormData({
         startTime: '',
         endTime: '',
+        hourlyRate: '5000',
+        minHours: '1',
+        maxHours: '',
       });
       setSelectedDate(undefined);
       
@@ -383,65 +398,110 @@ export default function LessonSlotsPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Lesson Slot</DialogTitle>
+            <DialogTitle>レッスンスロットの作成</DialogTitle>
             <DialogDescription>
-              Register available time for lessons. Students can book these time slots.
+              レッスン可能な日時を設定してください。
             </DialogDescription>
           </DialogHeader>
           
-          <form onSubmit={handleCreateSlot}>
-            {error && (
-              <div className="p-4 mb-4 border rounded-md bg-red-50 border-red-200 text-red-800">
-                <div className="flex items-center">
-                  <AlertCircle className="h-4 w-4 mr-2" />
-                  <span className="font-medium">エラー</span>
-                </div>
-                <div className="text-sm mt-1">{error}</div>
+          <form onSubmit={handleCreateSlot} className="space-y-4">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="date-picker" className="mb-2 block">日付を選択</Label>
+                <Calendar 
+                  mode="single"
+                  selected={selectedDate} 
+                  onSelect={(date: Date | undefined) => setSelectedDate(date)} 
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                />
               </div>
-            )}
-            
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="startDate" className="text-right">
-                  Date
-                </Label>
-                <div className="col-span-3">
-                  <DatePicker
-                    date={selectedDate}
-                    setDate={setSelectedDate}
-                    placeholder="Select date"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="startTime" className="text-right">
-                  Start Time
-                </Label>
-                <div className="col-span-3">
-                  <TimeSelect
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="start-time" className="mb-2 block">開始時間</Label>
+                  <Input
+                    id="start-time"
+                    type="time"
                     value={formData.startTime}
-                    onChange={(value) => handleTimeChange('startTime', value)}
-                    placeholder="Select start time"
+                    onChange={(e) => handleTimeChange('startTime', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="end-time" className="mb-2 block">終了時間</Label>
+                  <Input
+                    id="end-time"
+                    type="time"
+                    value={formData.endTime}
+                    onChange={(e) => handleTimeChange('endTime', e.target.value)}
+                    required
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="endTime" className="text-right">
-                  End Time
-                </Label>
-                <div className="col-span-3">
-                  <TimeSelect
-                    value={formData.endTime}
-                    onChange={(value) => handleTimeChange('endTime', value)}
-                    placeholder="Select end time"
+              
+              <div>
+                <Label htmlFor="hourly-rate" className="mb-2 block">時間単価（円）</Label>
+                <Input
+                  id="hourly-rate"
+                  type="number"
+                  min="3000"
+                  max="10000"
+                  step="500"
+                  value={formData.hourlyRate}
+                  onChange={(e) => handleTimeChange('hourlyRate', e.target.value)}
+                  placeholder="5000"
+                />
+                <p className="text-sm text-gray-500 mt-1">推奨：6,000円・最小：3,000円・最大：10,000円</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="min-hours" className="mb-2 block">最小予約時間</Label>
+                  <Input
+                    id="min-hours"
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={formData.minHours}
+                    onChange={(e) => handleTimeChange('minHours', e.target.value)}
+                    placeholder="1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="max-hours" className="mb-2 block">最大予約時間（空白=制限なし）</Label>
+                  <Input
+                    id="max-hours"
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={formData.maxHours}
+                    onChange={(e) => handleTimeChange('maxHours', e.target.value)}
+                    placeholder="制限なし"
                   />
                 </div>
               </div>
             </div>
             
+            {error && (
+              <div className="bg-red-50 p-3 rounded-md text-red-900 text-sm">
+                {error}
+              </div>
+            )}
+            
             <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>
+                キャンセル
+              </Button>
               <Button type="submit" disabled={slotLoading}>
-                {slotLoading ? 'Creating...' : 'Create'}
+                {slotLoading ? (
+                  <>
+                    <Loader2Icon className="h-4 w-4 mr-2 animate-spin" />
+                    作成中...
+                  </>
+                ) : '作成する'}
               </Button>
             </DialogFooter>
           </form>

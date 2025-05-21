@@ -21,7 +21,7 @@ export async function signInWithGoogle() {
     // Supabaseサーバークライアント初期化
     const supabase = createSupabaseServerClient();
 
-    // OAuth認証URLの生成 - Implicit Grantフロー明示的指定
+    // OAuth認証URLの生成 - クエリパラメータでアクセスタイプを指定
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -30,7 +30,6 @@ export async function signInWithGoogle() {
           access_type: 'offline',
           prompt: 'consent',
         },
-        flowType: 'implicit',  // 明示的にImplicitフローを指定
       },
     });
 

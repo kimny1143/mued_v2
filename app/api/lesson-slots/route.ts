@@ -247,6 +247,10 @@ export async function POST(request: NextRequest) {
         teacherId: sessionInfo.user.id,
         startTime,
         endTime,
+        hourlyRate: data.hourlyRate ? parseInt(data.hourlyRate, 10) : 5000, // デフォルトは5000円
+        currency: data.currency || 'JPY',
+        minHours: data.minHours ? parseInt(data.minHours, 10) : 1,
+        maxHours: data.maxHours ? parseInt(data.maxHours, 10) : null,
         isAvailable: data.isAvailable ?? true,
       },
     }));

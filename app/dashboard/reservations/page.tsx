@@ -173,7 +173,7 @@ export const ReservationPage: React.FC = () => {
   }, []);
 
   // 予約を作成する関数
-  const createReservation = useCallback(async (slotId: string) => {
+  const createReservation = useCallback(async (slotId: string, hoursBooked: number = 1) => {
     if (!user) {
       setError(new Error('ログインが必要です。'));
       return;
@@ -192,7 +192,10 @@ export const ReservationPage: React.FC = () => {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         credentials: 'include',
-        body: JSON.stringify({ slotId }),
+        body: JSON.stringify({ 
+          slotId,
+          hoursBooked
+        }),
       });
       
       const data = await response.json();

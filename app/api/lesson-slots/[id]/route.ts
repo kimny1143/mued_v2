@@ -9,6 +9,10 @@ type LessonSlotUpdateData = {
   startTime?: Date;
   endTime?: Date;
   isAvailable?: boolean;
+  hourlyRate?: number;
+  currency?: string;
+  minHours?: number;
+  maxHours?: number | null;
 };
 
 // 特定のレッスンスロットを取得
@@ -96,6 +100,10 @@ export async function PUT(
     if (data.startTime) updateData.startTime = new Date(data.startTime);
     if (data.endTime) updateData.endTime = new Date(data.endTime);
     if (data.isAvailable !== undefined) updateData.isAvailable = Boolean(data.isAvailable);
+    if (data.hourlyRate !== undefined) updateData.hourlyRate = parseInt(data.hourlyRate, 10);
+    if (data.currency) updateData.currency = data.currency;
+    if (data.minHours !== undefined) updateData.minHours = parseInt(data.minHours, 10);
+    if (data.maxHours !== undefined) updateData.maxHours = data.maxHours !== null ? parseInt(data.maxHours, 10) : null;
     
     // 開始時間と終了時間の両方が指定された場合、時間の妥当性を検証
     if (updateData.startTime && updateData.endTime) {
