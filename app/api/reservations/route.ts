@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { Prisma } from '@prisma/client';
 import { createCheckoutSession } from '@/lib/stripe';
-import { getBaseUrl } from '@/lib/utils';
+import { getBaseUrl, calculateTotalReservedMinutes, calculateSlotTotalMinutes } from '@/lib/utils';
 import Stripe from 'stripe';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -153,6 +153,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'レッスン枠IDが必要です' }, { status: 400 });
     }
     
+    // 予約時間の指定が不完全な場合はエラー
+    if ((bookedStartTime && !bookedEndTime) || (!bookedStartTime && bookedEndTime)) {
+      return NextResponse.json(
+        { error: '予約開始時間と終了時間の両方を指定してください' },
+        { status: 400 }
+      );
+    }
+    
     // ユーザーのロールを取得
     const role = session.role || 'student'; // デフォルトはstudent
     
@@ -178,6 +186,17 @@ export async function POST(request: NextRequest) {
               id: true,
               name: true,
               email: true
+            }
+          },
+          reservations: {
+            where: {
+              status: { in: ['PENDING', 'CONFIRMED'] }
+            },
+            select: {
+              id: true,
+              bookedStartTime: true,
+              bookedEndTime: true,
+              status: true
             }
           }
         }
@@ -212,9 +231,39 @@ export async function POST(request: NextRequest) {
         }
       }
       
+      // 予約時間の整合性チェック
+      const slotStartTime = new Date(slot.startTime);
+      const slotEndTime = new Date(slot.endTime);
+      
+      if (reservationStartTime < slotStartTime || reservationEndTime > slotEndTime) {
+        throw new Error('予約時間がレッスン枠の範囲外です');
+      }
+      
+      // 予約時間の重複チェック
+      const existingReservations = slot.reservations || [];
+      const hasOverlap = existingReservations.some(reservation => {
+        const existingStart = new Date(reservation.bookedStartTime);
+        const existingEnd = new Date(reservation.bookedEndTime);
+        
+        // 時間帯の重複チェック
+        return (
+          (reservationStartTime < existingEnd && reservationEndTime > existingStart) ||
+          (existingStart < reservationEndTime && existingEnd > reservationStartTime)
+        );
+      });
+      
+      if (hasOverlap) {
+        throw new Error('選択された時間帯は既に予約されています');
+      }
+      
       // フォーマット済みの時間文字列を作成（エラー表示用）
       const startTimeFormatted = format(reservationStartTime, 'M月d日(EEE) HH:mm', { locale: ja });
       const endTimeFormatted = format(reservationEndTime, 'HH:mm', { locale: ja });
+      
+      // 実際の予約時間数を計算（時間単位で切り上げ）
+      const actualHoursBooked = Math.ceil(
+        (reservationEndTime.getTime() - reservationStartTime.getTime()) / (60 * 60 * 1000)
+      );
       
       // 予約を作成
       const reservation = await tx.reservation.create({
@@ -224,14 +273,14 @@ export async function POST(request: NextRequest) {
           status: 'PENDING', // 支払い前はPENDING
           bookedStartTime: reservationStartTime,
           bookedEndTime: reservationEndTime,
-          hoursBooked: hoursBooked,
-          totalAmount: hourlyRate * hoursBooked, // 合計金額を計算して保存
+          hoursBooked: actualHoursBooked,
+          totalAmount: hourlyRate * actualHoursBooked, // 合計金額を計算して保存
           notes: `${format(reservationStartTime, 'M月d日(EEE)', { locale: ja })}のレッスン`
         },
       });
       
       // 合計金額計算（時間単価 × 予約時間）
-      const baseAmount = hourlyRate * hoursBooked;
+      const baseAmount = hourlyRate * actualHoursBooked;
       
       // 消費税を追加（10%）
       const taxAmount = Math.floor(baseAmount * 0.1);
@@ -256,7 +305,7 @@ export async function POST(request: NextRequest) {
               currency: currency.toLowerCase(),
               product_data: {
                 name: `${slot.teacher.name}先生のレッスン予約`,
-                description: `${startTimeFormatted}～${endTimeFormatted}（${hoursBooked}時間）`,
+                description: `${startTimeFormatted}～${endTimeFormatted}（${actualHoursBooked}時間）`,
               },
               unit_amount: totalAmount,
             },
@@ -273,7 +322,7 @@ export async function POST(request: NextRequest) {
           slotId: slot.id,
           teacherId: slot.teacherId,
           hourlyRate: String(hourlyRate),    // 時間単価
-          hoursBooked: String(hoursBooked),  // 予約時間数
+          hoursBooked: String(actualHoursBooked),  // 予約時間数
           baseAmount: String(baseAmount),    // 基本料金（時間単価×時間）
           taxAmount: String(taxAmount),      // 消費税額
           totalAmount: String(totalAmount),  // 消費税込み合計金額
@@ -302,6 +351,29 @@ export async function POST(request: NextRequest) {
           paymentId: payment.id,
         }
       });
+      
+      // スロットの全予約状況をチェックし、空きがなければisAvailableを更新
+      // 現在の予約を含めて、このスロットの全予約を取得
+      const slotReservations = await tx.reservation.findMany({
+        where: { 
+          slotId: slot.id,
+          status: { in: ['PENDING', 'CONFIRMED'] }
+        }
+      });
+      
+      // スロット全体の予約時間と空き時間を計算
+      const totalReservedMinutes = calculateTotalReservedMinutes(slotReservations);
+      const slotTotalMinutes = calculateSlotTotalMinutes(slot);
+      
+      // 予約可能時間がほぼなくなったらスロット全体を予約不可に
+      // 30分未満の空きは予約不可とみなす
+      if (totalReservedMinutes >= slotTotalMinutes - 30) {
+        console.log(`スロット ${slot.id} の予約状況: ${totalReservedMinutes}/${slotTotalMinutes} 分 - 予約不可に設定`);
+        await tx.lessonSlot.update({
+          where: { id: slot.id },
+          data: { isAvailable: false }
+        });
+      }
 
       return {
         reservationId: reservation.id,

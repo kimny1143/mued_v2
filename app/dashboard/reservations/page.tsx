@@ -10,9 +10,9 @@ import { format } from 'date-fns';
 //import { Clock, ChevronRight } from 'lucide-react';
 import { Button } from '@ui/button';
 import { Card } from '@ui/card';
-import { ReservationModal } from '@/app/dashboard/reservations/_components/ReservationModal';
+import { ReservationModal, TimeSlot } from '@/app/dashboard/reservations/_components/ReservationModal';
 import { LessonSlotCard } from '@/app/dashboard/reservations/_components/LessonSlotCard';
-import { LessonSlot } from '@/app/dashboard/reservations/_components/ReservationTable';
+import { LessonSlot, convertToLessonSlotType } from '@/app/dashboard/reservations/_components/ReservationTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -20,6 +20,7 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { User } from '@supabase/supabase-js';
 import { Toaster } from 'sonner';
 import type { ReservationStatus } from '@prisma/client';
+import { generateAvailableTimeSlots } from '@/lib/utils';
 
 // シンプルで明確な型定義
 type TeacherInfo = {
@@ -49,14 +50,6 @@ type Reservation = {
   payment: Payment;
   createdAt: string;
   updatedAt: string;
-}
-
-// 時間帯選択のための型定義
-interface TimeSlot {
-  startTime: Date;
-  endTime: Date;
-  hours: number;
-  label: string;
 }
 
 // リクエストデータの型定義
@@ -96,8 +89,8 @@ export const ReservationPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   
   const [selectedSlot, setSelectedSlot] = useState<LessonSlot | null>(null);
-  // 選択された時間帯情報
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<TimeSlot[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -192,7 +185,11 @@ export const ReservationPage: React.FC = () => {
   }, []);
 
   // 予約を作成する関数
-  const createReservation = useCallback(async (slotId: string, hoursBooked: number = 1, selectedTimeSlot?: TimeSlot | null) => {
+  const createReservation = useCallback(async (data: {
+    slotId: string;
+    hoursBooked?: number;
+    timeSlot?: TimeSlot | null;
+  }) => {
     if (!user) {
       setError(new Error('ログインが必要です。'));
       return;
@@ -200,152 +197,109 @@ export const ReservationPage: React.FC = () => {
     
     try {
       setIsProcessing(true);
-      setError(null);
       
-      const token = accessToken;
-
-      // APIに送信するデータを構築
-      const requestData: ReservationRequestData = { 
-        slotId,
-        hoursBooked
+      // 選択された時間帯がある場合は、その時間を使用
+      const requestData: ReservationRequestData = {
+        slotId: data.slotId,
+        hoursBooked: data.hoursBooked || 1,
       };
       
-      // 選択された時間帯がある場合は、開始・終了時間も送信
-      if (selectedTimeSlot) {
-        requestData.bookedStartTime = selectedTimeSlot.startTime.toISOString();
-        requestData.bookedEndTime = selectedTimeSlot.endTime.toISOString();
+      // 選択された時間帯があれば追加
+      if (data.timeSlot) {
+        requestData.bookedStartTime = data.timeSlot.startTime.toISOString();
+        requestData.bookedEndTime = data.timeSlot.endTime.toISOString();
       }
+      
+      // トークンを取得してヘッダーに含める
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
 
+      // APIを呼び出して予約を作成
       const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token && { Authorization: `Bearer ${token}` })
         },
-        credentials: 'include',
         body: JSON.stringify(requestData),
+        credentials: 'include',
       });
-      
-      const data = await response.json();
-      
+
+      const result = await response.json();
+
+      // エラーレスポンスの場合
       if (!response.ok) {
-        throw new Error(data.error || 'レッスン予約に失敗しました');
+        console.error('予約APIエラー:', result);
+        throw new Error(result.error || '予約の作成に失敗しました');
       }
+
+      console.log('予約作成成功:', result);
       
-      // 予約成功
-      const redirectUrl = data.checkoutUrl || data.url;
-      if (redirectUrl) {
-        // Stripeのチェックアウトページに遷移
-        window.location.href = redirectUrl;
-        return data;
+      // 支払いページにリダイレクト
+      if (result.checkoutUrl) {
+        // StripeのチェックアウトURLに遷移
+        window.location.href = result.checkoutUrl;
       } else {
-        // 予約は作成されたがチェックアウトURLがない場合
-        // レッスンスロット一覧を再取得して最新の状態を表示
-        await fetchLessonSlots();
+        // リダイレクト先がない場合は成功通知のみ
+        toast.success('予約が完了しました！');
         setIsModalOpen(false);
-        toast.success('レッスンの予約が完了しました！');
-        return data;
+        
+        // レッスンスロット一覧を再読み込み
+        queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '予約処理中にエラーが発生しました';
-      setError(new Error(errorMessage));
-      console.error('予約エラー:', error);
-      toast.error(errorMessage);
-      throw error;
+      console.error('予約処理エラー:', error);
+      toast.error(`予約に失敗しました: ${(error as Error).message}`);
     } finally {
       setIsProcessing(false);
     }
-  }, [user, fetchLessonSlots, accessToken]);
+  }, [user, queryClient]);
 
-  // 予約作成のミューテーション
+  // 予約の作成をmutationとして定義
   const reserveMutation = useMutation({
-    // 明示的に引数の型を定義
-    mutationFn: async ({ 
-      slotId, 
-      hoursBooked,
-      timeSlot
-    }: { 
-      slotId: string; 
-      hoursBooked?: number;
-      timeSlot?: TimeSlot | null;
-    }) => {
-      return createReservation(slotId, hoursBooked, timeSlot);
+    mutationFn: createReservation,
+    onSuccess: () => {
+      // 成功時の処理は不要（createReservation内でリダイレクト）
     },
-    onSuccess: (data) => {
-      toast.success('レッスンの予約が完了しました');
-      queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
-      
-      // 予約作成に成功したら、予約一覧も更新（シンプルに再取得）
-      fetchMyReservations();
-      
-      setIsModalOpen(false);
-      
-      // 新しいリダイレクト処理
-      const redirectUrl = data?.checkoutUrl || data?.url;
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-      }
-    },
-    onError: (error: Error) => {
-      toast.error(`予約エラー: ${error.message}`);
-    },
+    onError: (error) => {
+      toast.error(`予約処理エラー: ${error.message}`);
+    }
   });
 
-  // シンプルな予約一覧取得関数
-  const fetchMyReservations = useCallback(async () => {
-    if (!accessToken) return;
-    
-    try {
-      console.log("予約一覧を取得します");
-      const response = await fetch('/api/my-reservations?all=true', {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`予約データ取得成功: ${data.length}件`);
-        setMyReservations(data);
-      } else {
-        console.error("予約データ取得エラー:", response.status);
-      }
-    } catch (err) {
-      console.error("予約データ取得例外:", err);
-    }
-  }, [accessToken]);
-
-  // 認証完了時に予約を取得
-  useEffect(() => {
-    if (accessToken) {
-      fetchMyReservations();
-    }
-  }, [accessToken, fetchMyReservations]);
-
+  // ユーザー情報の取得
   useEffect(() => {
     const getUser = async () => {
       try {
-        const { data, error } = await supabaseBrowser.auth.getSession();
-        if (error) console.error("認証エラー:", error);
-        console.log("認証セッション:", data.session ? "あり" : "なし", data.session?.user?.email);
+        // Supabaseからセッションを取得
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
         
-        setUser(data.session?.user || null);
-        setAccessToken(data.session?.access_token ?? null);
-        
-        // 注: 予約データの取得は別のuseEffectで行います
-        
-        setLoading(false);
-        
-        if (!data.session) {
-          // ログインページにリダイレクトする前にエラーログ
-          console.log("未認証状態 - ログインが必要です");
-          router.push('/login');
+        if (session) {
+          setUser(session.user);
+          setAccessToken(session.access_token);
+          
+          // ログイン中のユーザーの予約一覧を取得
+          try {
+            const response = await fetch('/api/my-reservations', {
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              setMyReservations(data);
+            }
+          } catch (reservationError) {
+            console.error('予約一覧取得エラー:', reservationError);
+          }
         }
-      } catch (err) {
-        console.error("セッション取得エラー:", err);
+      } catch (error) {
+        console.error('認証エラー:', error);
+      } finally {
         setLoading(false);
       }
     };
-    
+
     getUser();
   }, [router]);
   
@@ -361,8 +315,9 @@ export const ReservationPage: React.FC = () => {
     return <div className="flex justify-center items-center h-64">読み込み中...</div>;
   }
 
+  // レッスンスロットを選択し、予約モーダルを開く
   const handleBooking = (slot: LessonSlot, hoursBooked?: number, timeSlot?: TimeSlot) => {
-    // スロットに予約時間を設定し、startTimeとendTimeを確実にDate型に変換
+    // スロットをDateに変換
     const updatedSlot = {
       ...slot,
       startTime: new Date(slot.startTime),
@@ -371,18 +326,41 @@ export const ReservationPage: React.FC = () => {
     };
     
     setSelectedSlot(updatedSlot);
-    setSelectedTimeSlot(timeSlot || null);
+    
+    // 利用可能な時間帯を生成
+    if (!timeSlot) {
+      // 時間枠を自動生成
+      const slotForUtil = convertToLessonSlotType(updatedSlot);
+      const availableSlots = generateAvailableTimeSlots(slotForUtil);
+      setAvailableTimeSlots(availableSlots);
+      
+      // 最初の時間帯を選択
+      if (availableSlots.length > 0) {
+        setSelectedTimeSlot(availableSlots[0]);
+      } else {
+        setSelectedTimeSlot(null);
+      }
+    } else {
+      // すでに選択されている時間枠がある場合
+      setSelectedTimeSlot(timeSlot);
+      setAvailableTimeSlots([timeSlot]);
+    }
+    
     setIsModalOpen(true);
   };
   
+  // 時間帯が選択されたときのハンドラー
+  const handleTimeSlotSelect = (timeSlot: TimeSlot) => {
+    setSelectedTimeSlot(timeSlot);
+  };
+  
+  // 予約確定ボタンが押されたときの処理
   const handleConfirmBooking = async () => {
-    if (selectedSlot) {
-      // 選択されたスロットから時間数を取得
-      const hoursBooked = selectedSlot.hoursBooked || 1;
-      // 時間数と時間帯を明示的に指定して予約APIを呼び出す
-      await reserveMutation.mutateAsync({ 
-        slotId: selectedSlot.id, 
-        hoursBooked,
+    if (selectedSlot && selectedTimeSlot) {
+      // 選択された時間帯と枠数を使って予約APIを呼び出す
+      await reserveMutation.mutateAsync({
+        slotId: selectedSlot.id,
+        hoursBooked: selectedTimeSlot.hours,
         timeSlot: selectedTimeSlot
       });
     }
@@ -525,8 +503,8 @@ export const ReservationPage: React.FC = () => {
         )}
       </div>
 
-      {/* Reservation Modal - 選択された時間帯情報を渡す */}
-      {user && (
+      {/* Reservation Modal - 利用可能な時間帯情報を渡す */}
+      {user && selectedSlot && (
         <ReservationModal
           slot={selectedSlot}
           isOpen={isModalOpen}
@@ -534,6 +512,8 @@ export const ReservationPage: React.FC = () => {
           onConfirm={handleConfirmBooking}
           isLoading={isProcessing}
           selectedTimeSlot={selectedTimeSlot}
+          availableTimeSlots={availableTimeSlots}
+          onTimeSlotSelect={handleTimeSlotSelect}
         />
       )}
 
@@ -549,12 +529,24 @@ export const ReservationPage: React.FC = () => {
                 <li key={res.id} className="border p-3 rounded-md bg-white shadow-sm">
                   <div className="flex justify-between">
                     <div>
-                      <p className="font-medium">{new Date(res.lessonSlot.startTime).toLocaleString('ja-JP')}</p>
-                      <p className="text-sm text-gray-600">{res.lessonSlot.teacher?.name || '講師'}</p>
+                      <p className="font-medium">{format(new Date(res.lessonSlot.startTime), 'yyyy年M月d日')}</p>
+                      <p className="text-sm text-gray-600">
+                        {format(new Date(res.lessonSlot.startTime), 'HH:mm')} - 
+                        {format(new Date(res.lessonSlot.endTime), 'HH:mm')}
+                      </p>
+                      <p className="text-sm">{res.lessonSlot.teacher.name} 先生</p>
                     </div>
-                    <span className="text-sm px-2 py-1 rounded-full bg-gray-100">
-                      {res.status}
-                    </span>
+                    <div>
+                      <span
+                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          res.status === 'CONFIRMED'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                      >
+                        {res.status === 'CONFIRMED' ? '確定済み' : res.status === 'COMPLETED' ? '完了' : '未確定'}
+                      </span>
+                    </div>
                   </div>
                 </li>
               ))}
@@ -563,12 +555,11 @@ export const ReservationPage: React.FC = () => {
         </section>
       )}
 
-      <Toaster />
+      <Toaster position="bottom-center" />
     </div>
   );
 };
 
-// App Routerのページエクスポート
 export default function ReservationPageWrapper() {
   return <ReservationPage />;
 } 

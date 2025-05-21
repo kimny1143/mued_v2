@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { stripe } from '@/lib/stripe';
 import { Prisma } from '@prisma/client';
+import { generateHourlySlots } from '@/lib/utils';
 
 // 予約ステータスの列挙型（現在は未使用だがAPIの拡張で使用予定）
 enum _ReservationStatus {
@@ -86,21 +87,70 @@ type _LessonSlotWhereInput = {
 };
 
 // レッスンスロット一覧を取得
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // URLパラメータを取得
+    const { searchParams } = new URL(request.url);
+    const fromDate = searchParams.get('from');
+    const toDate = searchParams.get('to');
+    
+    // 日付範囲のフィルタリング
+    const dateFilter: Prisma.LessonSlotWhereInput = {};
+    if (fromDate) {
+      dateFilter.startTime = {
+        gte: new Date(fromDate)
+      };
+    }
+    if (toDate) {
+      if (dateFilter.startTime) {
+        // すでにgteが設定されている場合
+        dateFilter.startTime = {
+          ...dateFilter.startTime as Prisma.DateTimeFilter,
+          lte: new Date(toDate)
+        };
+      } else {
+        // 初めて設定する場合
+        dateFilter.startTime = {
+          lte: new Date(toDate)
+        };
+      }
+    }
+    
+    // レッスンスロットを取得
     const slots = await prisma.lessonSlot.findMany({
+      where: dateFilter,
       orderBy: { startTime: 'asc' },
       include: {
         teacher: {
           select: { id: true, name: true, image: true }
         },
         reservations: {
-          select: { id: true, status: true }
+          where: { 
+            status: { in: ['PENDING', 'CONFIRMED'] } 
+          },
+          select: {
+            id: true,
+            bookedStartTime: true,
+            bookedEndTime: true,
+            status: true
+          }
         }
       }
     });
-    console.log('🟢 lesson-slots', slots.length);
-    return NextResponse.json(slots);
+    
+    // 各スロットの予約済み時間帯情報を整形して返す
+    const enhancedSlots = slots.map(slot => {
+      // 時間単位の予約状況を計算
+      const hourlySlots = generateHourlySlots(slot);
+      
+      return {
+        ...slot,
+        hourlySlots
+      };
+    });
+    
+    console.log('🟢 lesson-slots', enhancedSlots.length);
+    return NextResponse.json(enhancedSlots);
   } catch (e) {
     console.error('🔴 lesson-slots error', e);
     return NextResponse.json([], { status: 200 });

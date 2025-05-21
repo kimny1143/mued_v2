@@ -15,6 +15,7 @@ import {
 import { Button } from '@ui/button';
 import { Badge } from '@ui/badge';
 import { ReservationModal } from './ReservationModal';
+import { ReservationType, LessonSlotType } from '@/lib/utils';
 
 export type Teacher = {
   id: string;
@@ -35,6 +36,12 @@ export type LessonSlot = {
   currency?: string;       // 通貨コード（usd、jpyなど）
   priceId?: string;        // Stripe価格ID
   reservations?: Reservation[];
+  hourlySlots?: {          // 1時間単位の予約状況
+    startTime: Date;
+    endTime: Date;
+    isReserved: boolean;
+    reservationId?: string;
+  }[];
   createdAt?: string | Date;
   updatedAt?: string | Date;
   hourlyRate?: number;     // 時間単価
@@ -47,11 +54,36 @@ export type Reservation = {
   id: string;
   slotId: string;
   studentId: string;
-  status: 'CONFIRMED' | 'COMPLETED';
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED';
   paymentId?: string;
+  bookedStartTime?: string | Date; // 追加：予約開始時間
+  bookedEndTime?: string | Date;   // 追加：予約終了時間
   createdAt: string | Date;
   updatedAt?: string | Date;
 };
+
+// LessonSlotType型への変換関数
+export function convertToLessonSlotType(slot: LessonSlot): LessonSlotType {
+  return {
+    id: slot.id,
+    startTime: slot.startTime,
+    endTime: slot.endTime,
+    teacherId: slot.teacherId,
+    isAvailable: slot.isAvailable,
+    reservations: slot.reservations?.map(convertToReservationType) || [],
+    hourlyRate: slot.hourlyRate
+  };
+}
+
+// ReservationType型への変換関数
+export function convertToReservationType(reservation: Reservation): ReservationType {
+  return {
+    id: reservation.id,
+    bookedStartTime: reservation.bookedStartTime || reservation.createdAt,
+    bookedEndTime: reservation.bookedEndTime || reservation.createdAt,
+    status: reservation.status
+  };
+}
 
 interface ReservationTableProps {
   lessonSlots: LessonSlot[];
