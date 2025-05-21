@@ -139,7 +139,9 @@ export async function POST(request: NextRequest) {
     
     // リクエストボディからデータを取得
     const data = await request.json();
-    const { slotId, duration = 60, bookedStartTime, bookedEndTime, notes } = data;
+    // durationだけを変数として宣言し、他は定数のまま
+    const { slotId, bookedStartTime, bookedEndTime, notes } = data;
+    let duration = data.duration || 60; // デフォルト60分
     
     // 処理のログ出力
     console.log(`予約リクエスト: slotId=${slotId}, duration=${duration}分, 時間帯=${bookedStartTime ? `${new Date(bookedStartTime).toLocaleTimeString()}~${new Date(bookedEndTime).toLocaleTimeString()}` : '未指定'}`);
@@ -149,7 +151,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'レッスン枠IDが必要です' }, { status: 400 });
     }
     
-    // 予約時間の制約チェック（60〜90分）
+    // 予約時間の基本制約チェック（60〜90分）
     if (duration < 60 || duration > 90) {
       return NextResponse.json(
         { error: 'レッスン時間は60分〜90分の間で設定してください' },
@@ -210,6 +212,12 @@ export async function POST(request: NextRequest) {
         throw new Error('指定されたレッスン枠が見つからないか、既に予約されています');
       }
 
+      // スロット固有の時間制約を取得（デフォルト値を設定）
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const extendedSlot = slot as any;
+      const slotMinDuration = extendedSlot.minDuration || 60; // デフォルト60分
+      const slotMaxDuration = extendedSlot.maxDuration || 90; // デフォルト90分
+      
       // 固定料金で計算（hourlyRateをそのまま使用）
       const fixedAmount = slot.hourlyRate || 5000;
       const currency = slot.currency || 'jpy';
@@ -223,14 +231,26 @@ export async function POST(request: NextRequest) {
         reservationStartTime = new Date(bookedStartTime);
         reservationEndTime = new Date(bookedEndTime);
         
-        // 予約時間が指定された範囲内かチェック（60-90分）
+        // 予約時間が指定された範囲内かチェック（スロット固有の制約を適用）
         const durationInMinutes = Math.round((reservationEndTime.getTime() - reservationStartTime.getTime()) / (1000 * 60));
-        if (durationInMinutes < 60 || durationInMinutes > 90) {
-          throw new Error(`予約時間は60分〜90分の間で設定してください（現在: ${durationInMinutes}分）`);
+        if (durationInMinutes < slotMinDuration || durationInMinutes > slotMaxDuration) {
+          throw new Error(`このメンターのレッスン時間は${slotMinDuration}分〜${slotMaxDuration}分の間で設定してください（現在: ${durationInMinutes}分）`);
         }
       } else {
         // 選択がない場合は、開始時間からduration分の枠を予約
         reservationStartTime = new Date(slot.startTime);
+        
+        // 予約時間がスロットの最小時間制約を満たしているか検証
+        if (duration < slotMinDuration) {
+          duration = slotMinDuration; // 最小時間に調整
+        }
+        
+        // 予約時間がスロットの最大時間制約を超えていないか検証
+        if (duration > slotMaxDuration) {
+          duration = slotMaxDuration; // 最大時間に調整
+        }
+        
+        // 調整された時間で終了時間を設定
         reservationEndTime = new Date(reservationStartTime);
         reservationEndTime.setMinutes(reservationEndTime.getMinutes() + duration);
         
@@ -269,7 +289,7 @@ export async function POST(request: NextRequest) {
       // 実際のduration（分）を計算
       const durationInMinutes = Math.round((reservationEndTime.getTime() - reservationStartTime.getTime()) / (1000 * 60));
       
-      // 予約データの作成準備
+      // 予約データの作成準備（固定料金方式）
       const reservationData = {
         slotId: slot.id,
         studentId: session.user.id,
@@ -277,7 +297,8 @@ export async function POST(request: NextRequest) {
         bookedStartTime: reservationStartTime,
         bookedEndTime: reservationEndTime,
         hoursBooked: Math.ceil(durationInMinutes / 60),
-        totalAmount: fixedAmount,
+        durationMinutes: durationInMinutes, // 分単位の予約時間を明示的に保存
+        totalAmount: fixedAmount, // 時間に関わらず固定料金
         notes: typeof notes === 'string' ? notes : null
       };
       
@@ -299,12 +320,12 @@ export async function POST(request: NextRequest) {
       });
       
       try {
-        // 決済セッション作成
+        // 決済セッション作成（固定料金を反映）
         const checkoutSession = await createCheckoutSessionForReservation(
           session.user.id,
           session.user.email,
           reservation.id,
-          fixedAmount,
+          fixedAmount, // 固定料金
           currency,
           {
             teacher: slot.teacher.name || '名前未設定',
@@ -318,7 +339,7 @@ export async function POST(request: NextRequest) {
         await tx.payment.create({
           data: {
             stripeSessionId: checkoutSession.id,
-            amount: fixedAmount,
+            amount: fixedAmount, // 固定料金
             currency: currency,
             status: 'PENDING',
             userId: session.user.id,
@@ -332,7 +353,12 @@ export async function POST(request: NextRequest) {
         return {
           success: true,
           reservation,
-          checkoutUrl: checkoutSession.url
+          checkoutUrl: checkoutSession.url,
+          pricing: {
+            fixedAmount,
+            currency,
+            durationInMinutes
+          }
         };
       } catch (error) {
         console.error('Stripe決済セッション作成エラー:', error);
