@@ -39,17 +39,46 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
       });
       
       if (reservation) {
-        reservationData = {
-          id: reservation.id,
-          status: reservation.status,
-          paymentId: reservation.paymentId,
-          slot: {
-            id: reservation.slot.id,
-            startTime: reservation.slot.startTime.toISOString(),
-            endTime: reservation.slot.endTime.toISOString(),
-            teacherName: reservation.slot.teacher?.name || '不明な講師'
-          }
-        };
+        // 予約ステータスがPENDINGの場合、CONFIRMEDに更新
+        if (reservation.status === 'PENDING') {
+          console.log(`予約ID:${reservationId}のステータスをCONFIRMEDに更新します`);
+          
+          // 予約ステータスを更新
+          await prisma.reservation.update({
+            where: { id: reservationId },
+            data: { 
+              status: 'CONFIRMED',
+              // 決済IDも保存しておく（あれば）
+              ...(sessionId && { paymentId: sessionId })
+            }
+          });
+          
+          // 更新後のステータスをセット
+          reservationData = {
+            id: reservation.id,
+            status: 'CONFIRMED', // 更新されたステータス
+            paymentId: sessionId || reservation.paymentId,
+            slot: {
+              id: reservation.slot.id,
+              startTime: reservation.slot.startTime.toISOString(),
+              endTime: reservation.slot.endTime.toISOString(),
+              teacherName: reservation.slot.teacher?.name || '不明な講師'
+            }
+          };
+        } else {
+          // すでに更新済みの場合はそのまま表示
+          reservationData = {
+            id: reservation.id,
+            status: reservation.status,
+            paymentId: reservation.paymentId,
+            slot: {
+              id: reservation.slot.id,
+              startTime: reservation.slot.startTime.toISOString(),
+              endTime: reservation.slot.endTime.toISOString(),
+              teacherName: reservation.slot.teacher?.name || '不明な講師'
+            }
+          };
+        }
       }
     }
 
@@ -151,6 +180,17 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
                       <div className="text-sm text-gray-500">決済ステータス</div>
                       <div className="font-medium">
                         {sessionData?.paymentStatus === 'paid' ? '決済完了' : '処理中'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start">
+                    <div className="h-5 w-5 mr-3" />
+                    <div>
+                      <div className="text-sm text-gray-500">予約ステータス</div>
+                      <div className="font-medium">
+                        {reservationData.status === 'CONFIRMED' ? '予約確定' : 
+                         reservationData.status === 'PENDING' ? '処理中' : reservationData.status}
                       </div>
                     </div>
                   </div>

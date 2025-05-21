@@ -199,13 +199,14 @@ export async function POST(request: NextRequest) {
       priceId: lessonPriceId,
       slotId: data.slotId,
       reservationId: result.reservation.id,
-      successUrl: `${getBaseUrl()}/reservation/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: `${getBaseUrl()}/reservation/cancel?session_id={CHECKOUT_SESSION_ID}`,
+      successUrl: `${getBaseUrl()}/dashboard/reservations/success?session_id={CHECKOUT_SESSION_ID}&reservation_id=${result.reservation.id}`,
+      cancelUrl: `${getBaseUrl()}/dashboard/reservations?canceled=true`,
       metadata: {
         teacherId: result.slot.teacher.id,
         studentId: sessionInfo.user.id,
         startTime: result.slot.startTime.toISOString(),
         endTime: result.slot.endTime.toISOString(),
+        reservationId: result.reservation.id
       }
     });
 
