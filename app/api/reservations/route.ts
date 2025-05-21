@@ -242,6 +242,14 @@ export async function POST(request: NextRequest) {
         throw new Error('レッスン価格IDが設定されていません。システム管理者に連絡してください。');
       }
 
+      // ベースURLの取得
+      const baseUrl = getBaseUrl();
+      console.log(`使用するベースURL: ${baseUrl}`);
+
+      // リダイレクトURLを構築
+      const successUrl = `${baseUrl}/dashboard/reservations?success=true`;
+      const cancelUrl = `${baseUrl}/dashboard/reservations?canceled=true`;
+
       // Stripe チェックアウトセッションを作成
       const checkoutSession = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -253,8 +261,8 @@ export async function POST(request: NextRequest) {
           },
         ],
         mode: 'payment',
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/reservations?success=true`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/reservations?canceled=true`,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
         client_reference_id: reservation.id, // 予約IDを参照として渡す
         metadata: {
           reservationId: reservation.id,
