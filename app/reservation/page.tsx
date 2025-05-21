@@ -226,7 +226,59 @@ export const ReservationPage: React.FC = () => {
     }
   }, [user, fetchLessonSlots, accessToken]);
 
-  // Supabase認証状態を確認
+  // 予約作成のミューテーション
+  const reserveMutation = useMutation({
+    mutationFn: createReservation,
+    onSuccess: (data) => {
+      toast.success('レッスンの予約が完了しました');
+      queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
+      
+      // 予約作成に成功したら、予約一覧も更新（シンプルに再取得）
+      fetchMyReservations();
+      
+      setIsModalOpen(false);
+      
+      // 新しいリダイレクト処理
+      const redirectUrl = data?.checkoutUrl || data?.url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`予約エラー: ${error.message}`);
+    },
+  });
+
+  // シンプルな予約一覧取得関数
+  const fetchMyReservations = useCallback(async () => {
+    if (!accessToken) return;
+    
+    try {
+      console.log("予約一覧を取得します");
+      const response = await fetch('/api/my-reservations?all=true', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log(`予約データ取得成功: ${data.length}件`);
+        setMyReservations(data);
+      } else {
+        console.error("予約データ取得エラー:", response.status);
+      }
+    } catch (err) {
+      console.error("予約データ取得例外:", err);
+    }
+  }, [accessToken]);
+
+  // 認証完了時に予約を取得
+  useEffect(() => {
+    if (accessToken) {
+      fetchMyReservations();
+    }
+  }, [accessToken, fetchMyReservations]);
+
   useEffect(() => {
     const getUser = async () => {
       try {
@@ -237,30 +289,7 @@ export const ReservationPage: React.FC = () => {
         setUser(data.session?.user || null);
         setAccessToken(data.session?.access_token ?? null);
         
-        // ユーザー情報を取得したら、予約データもフェッチ
-        if (data.session?.access_token) {
-          console.log("認証トークンあり - 予約データをフェッチします");
-          try {
-            const response = await fetch('/api/my-reservations?all=true', {
-              headers: { 
-                Authorization: `Bearer ${data.session.access_token}` 
-              },
-              credentials: 'include'
-            });
-            
-            console.log("予約API応答:", response.status);
-            
-            if (response.ok) {
-              const reservations = await response.json();
-              console.log(`予約データ取得: ${reservations.length}件`);
-              setMyReservations(reservations);
-            } else {
-              console.error("予約API エラー:", response.status);
-            }
-          } catch (fetchError) {
-            console.error("予約データフェッチエラー:", fetchError);
-          }
-        }
+        // 注: 予約データの取得は別のuseEffectで行います
         
         setLoading(false);
         
@@ -285,37 +314,6 @@ export const ReservationPage: React.FC = () => {
     staleTime: 1000 * 60 * 5, // 5分間キャッシュを有効にする
   });
   
-  // 予約作成のミューテーション
-  const reserveMutation = useMutation({
-    mutationFn: createReservation,
-    onSuccess: (data) => {
-      toast.success('レッスンの予約が完了しました');
-      queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
-      
-      // 予約作成に成功したら、予約一覧も更新
-      if (accessToken) {
-        fetch('/api/my-reservations?all=true', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          credentials: 'include'
-        })
-        .then(r => r.json())
-        .then(setMyReservations)
-        .catch(console.error);
-      }
-      
-      setIsModalOpen(false);
-      
-      // 新しいリダイレクト処理
-      const redirectUrl = data?.checkoutUrl || data?.url;
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-      }
-    },
-    onError: (error: Error) => {
-      toast.error(`予約エラー: ${error.message}`);
-    },
-  });
-
   // 認証状態チェック
   if (loading) {
     return <div className="flex justify-center items-center h-64">読み込み中...</div>;
