@@ -147,28 +147,38 @@ export async function POST(request: NextRequest) {
       sessionValid: !!sessionInfo.session,
     });
     
-    // ロール文字列を安全に取得
-    const userRole = sessionInfo.role || '';
+    // ロール文字列を取得して処理
+    const userRoleRaw = sessionInfo.role || '';
+    const userRole = typeof userRoleRaw === 'string' ? userRoleRaw.toLowerCase() : '';
     
-    // 権限チェックをより堅牢に（緩い比較で大文字小文字の違いなども許容）
-    const isMentor = 
-      typeof userRole === 'string' && 
-      (userRole.toLowerCase().includes('mentor') || 
-       userRole.toLowerCase() === 'mentor');
-       
-    const isAdmin = 
-      typeof userRole === 'string' && 
-      (userRole.toLowerCase().includes('admin') || 
-       userRole.toLowerCase() === 'admin');
+    console.log("API受信ロール詳細:", {
+      originalRole: userRoleRaw,
+      normalizedRole: userRole,
+      roleType: typeof userRoleRaw
+    });
+    
+    // ロール判定ロジックを改善（より柔軟に）
+    // 1. 直接roleNameで判定（新方式）
+    const isMentorByName = userRole === 'mentor';
+    const isAdminByName = userRole === 'admin' || userRole === 'administrator';
+    
+    // 2. "含む"でも緩やかに判定（UUID対応）
+    const isMentorByPattern = userRole.includes('mentor');
+    const isAdminByPattern = userRole.includes('admin');
+    
+    // いずれかの条件が満たされればロールとみなす
+    const isMentor = isMentorByName || isMentorByPattern;
+    const isAdmin = isAdminByName || isAdminByPattern;
     
     // ロール確認のログを詳細に出力
-    console.log("ロール確認詳細:", {
-      originalRole: userRole,
-      isMentor,
-      isAdmin,
-      roleType: typeof userRole,
-      roleLength: typeof userRole === 'string' ? userRole.length : 'not a string',
-      lowerCased: typeof userRole === 'string' ? userRole.toLowerCase() : 'not a string'
+    console.log("ロール判定詳細:", {
+      userRole,
+      isMentorByName,
+      isAdminByName,
+      isMentorByPattern,
+      isAdminByPattern,
+      finalIsMentor: isMentor,
+      finalIsAdmin: isAdmin
     });
     
     // メンターまたは管理者の権限チェック

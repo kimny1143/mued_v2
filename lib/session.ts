@@ -59,9 +59,20 @@ export async function getAuthenticatedUser(): Promise<{user: User, role: string}
   
   console.log("ユーザーデータ取得結果:", userData);
   
+  // role.nameを優先的に使用し、なければroleIdにフォールバック
+  const roleName = userData.role ? 
+    (Array.isArray(userData.role) ? userData.role[0]?.name : userData.role.name) : 
+    undefined;
+  
+  console.log("ロール名抽出:", {
+    roleRaw: userData.role,
+    isArray: Array.isArray(userData.role),
+    extracted: roleName
+  });
+  
   return {
     user: sessionData.session.user,
-    role: userData.roleId || 'student' // roleIdを使用
+    role: (roleName || userData.roleId || 'student').toLowerCase()
   };
 }
 
@@ -158,12 +169,23 @@ export async function getSessionFromRequest(request: Request): Promise<{
             
             console.log("ユーザーデータ取得結果:", userData);
             
-            // ロール確認（大文字・小文字やトリム）
-            const rawRole = userData?.roleId || 'student';
+            // ロール確認（role.nameを優先的に使用）
+            const roleName = userData?.role ? 
+              (Array.isArray(userData.role) ? userData.role[0]?.name : userData.role.name) : 
+              undefined;
+            
+            console.log("API認証用ロール名抽出:", {
+              roleRaw: userData?.role,
+              isArray: userData?.role ? Array.isArray(userData.role) : false,
+              extracted: roleName
+            });
+            
+            const rawRole = roleName || userData?.roleId || 'student';
             const normalizedRole = typeof rawRole === 'string' ? 
               rawRole.trim().toLowerCase() : rawRole;
             
             console.log("ロール正規化:", {
+              roleName,
               raw: rawRole,
               normalized: normalizedRole,
               type: typeof normalizedRole
@@ -236,12 +258,23 @@ export async function getSessionFromRequest(request: Request): Promise<{
         
         console.log("ユーザーデータ取得結果:", userData);
         
-        // ロール確認（大文字・小文字やトリム）
-        const rawRole = userData?.roleId || 'student';
+        // ロール確認（role.nameを優先的に使用）
+        const roleName = userData?.role ? 
+          (Array.isArray(userData.role) ? userData.role[0]?.name : userData.role.name) : 
+          undefined;
+        
+        console.log("標準セッション用ロール名抽出:", {
+          roleRaw: userData?.role,
+          isArray: userData?.role ? Array.isArray(userData.role) : false,
+          extracted: roleName
+        });
+        
+        const rawRole = roleName || userData?.roleId || 'student';
         const normalizedRole = typeof rawRole === 'string' ? 
           rawRole.trim().toLowerCase() : rawRole;
         
         console.log("ロール正規化:", {
+          roleName,
           raw: rawRole,
           normalized: normalizedRole,
           type: typeof normalizedRole
