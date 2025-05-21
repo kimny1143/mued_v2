@@ -3,13 +3,7 @@
 import React, { useState } from 'react';
 import { Calendar, CalendarChangeHandler, CalendarSelected, CalendarClassNames } from '@demark-pro/react-booking-calendar';
 import '@demark-pro/react-booking-calendar/dist/react-booking-calendar.css';
-
-// メンター情報の型
-interface Mentor {
-  id: string;
-  name: string;
-  image?: string | null;
-}
+import { Mentor } from './MentorList';
 
 // 予約情報の型
 interface ReservationInfo {
@@ -118,12 +112,12 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                   {mentor.image ? (
                     <img
                       src={mentor.image}
-                      alt={mentor.name}
+                      alt={mentor.name || '名前なし'}
                       className="w-8 h-8 rounded-full"
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                      {mentor.name.charAt(0)}
+                      {mentor.name ? mentor.name.charAt(0) : '?'}
                     </div>
                   )}
                   <span>{mentor.name}</span>

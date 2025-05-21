@@ -116,32 +116,32 @@ MUEDプラットフォーム上で、現在の予約システムを「メンタ�
  ✅ TailwindCSSとの互換性確認
 
 [日程: 2日目]
-□ APIエンドポイント設計
- - メンター情報取得APIの拡張設計
- - レッスンスロット取得APIに絞り込み機能追加
- - 予約作成APIの仕様調整（固定時間対応）
-□ データモデル設計書作成
- - LessonSlotモデルの拡張設計
- - Reservationモデルの調整設計
+✅ APIエンドポイント設計
+ ✅ メンター情報取得APIの拡張設計
+ ✅ レッスンスロット取得APIに絞り込み機能追加
+ ✅ 予約作成APIの仕様調整（固定時間対応）
+✅ データモデル設計書作成
+ ✅ LessonSlotモデルの拡張設計
+ ✅ Reservationモデルの調整設計
 
 [日程: 3日目]
-□ APIエンドポイント実装
- - GET /api/mentors の実装・拡張
- - GET /api/lesson-slots/{mentorId} の実装
- - POST /api/reservations の修正実装
-□ データマイグレーション計画策定
- - 既存データとの互換性確保
- - マイグレーションスクリプト作成
+✅ APIエンドポイント実装
+ ✅ GET /api/mentors の実装・拡張
+ ✅ GET /api/lesson-slots/{mentorId} の実装
+ ✅ POST /api/reservations の修正実装
+✅ データマイグレーション計画策定
+ ✅ 既存データとの互換性確保
+ ✅ マイグレーションスクリプト作成
 ```
 
 ### フェーズ2：メンター単位カレンダー実装
 
 ```plaintext
 [日程: 4日目]
-□ メンター選択コンポーネント実装
- - MentorList.tsx の作成
- - MentorCard.tsx の作成
- - メンター選択状態管理の実装
+✅ メンター選択コンポーネント実装
+ ✅ MentorList.tsx の作成
+ ✅ MentorCard.tsx の作成
+ ✅ メンター選択状態管理の実装
 
 [日程: 5-6日目]
 □ カレンダーコンポーネント実装
