@@ -146,6 +146,9 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     const { slotId, hoursBooked = 1, bookedStartTime, bookedEndTime } = data;
     
+    // 処理のログ出力
+    console.log(`予約リクエスト: slotId=${slotId}, hoursBooked=${hoursBooked}, 時間帯=${bookedStartTime ? `${new Date(bookedStartTime).toLocaleTimeString()}~${new Date(bookedEndTime).toLocaleTimeString()}` : '未指定'}`);
+    
     if (!slotId) {
       return NextResponse.json({ error: 'レッスン枠IDが必要です' }, { status: 400 });
     }
@@ -230,20 +233,22 @@ export async function POST(request: NextRequest) {
       // 合計金額計算
       const totalAmount = hourlyRate * hoursBooked;
 
+      // 環境変数でStripe価格IDを取得
+      const lessonPriceId = process.env.NEXT_PUBLIC_LESSON_FLEXIBLE_PRICE_ID;
+      
+      // 価格IDが設定されていない場合はエラー
+      if (!lessonPriceId) {
+        console.error('レッスン価格ID(NEXT_PUBLIC_LESSON_FLEXIBLE_PRICE_ID)が設定されていません');
+        throw new Error('レッスン価格IDが設定されていません。システム管理者に連絡してください。');
+      }
+
       // Stripe チェックアウトセッションを作成
       const checkoutSession = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
           {
-            price_data: {
-              currency: currency.toLowerCase(),
-              product_data: {
-                name: `${reservation.hoursBooked}時間のレッスン予約`,
-                description: `${slot.teacher.name}先生とのレッスン（${startTimeFormatted}〜${endTimeFormatted}）`,
-              },
-              // 日本円の場合は分割しない（そのままの金額を使用）
-              unit_amount: currency.toLowerCase() === 'jpy' ? hourlyRate : hourlyRate * 100,
-            },
+            // 登録済みの価格IDを使用
+            price: lessonPriceId,
             quantity: reservation.hoursBooked,
           },
         ],
@@ -256,6 +261,12 @@ export async function POST(request: NextRequest) {
           studentId: session.user.id,
           slotId: slot.id,
           teacherId: slot.teacherId,
+          hourlyRate: String(hourlyRate),    // 時間単価
+          hoursBooked: String(hoursBooked),  // 予約時間数
+          totalAmount: String(totalAmount),  // 合計金額
+          startTime: reservationStartTime.toISOString(),
+          endTime: reservationEndTime.toISOString(),
+          reservationNote: `${slot.teacher.name}先生とのレッスン（${startTimeFormatted}〜${endTimeFormatted}）`,
         },
       });
 
@@ -286,12 +297,51 @@ export async function POST(request: NextRequest) {
     });
 
     // 成功レスポンス
+    console.log(`レッスン予約成功: reservationId=${result.reservationId}, チェックアウトURL=${result.checkoutUrl}`);
     return NextResponse.json(result);
   } catch (error) {
     console.error('予約作成エラー:', error);
-    return NextResponse.json(
-      { error: `予約の作成に失敗しました: ${(error as Error).message}` },
-      { status: 500 }
-    );
+    
+    // エラーの種類に応じたメッセージを生成
+    let errorMessage = '予約の作成に失敗しました';
+    let statusCode = 500;
+    
+    // Stripeエラーの場合
+    if (error instanceof Stripe.errors.StripeError) {
+      switch (error.type) {
+        case 'StripeCardError':
+          errorMessage = `決済カードエラー: ${error.message}`;
+          statusCode = 400;
+          break;
+        case 'StripeRateLimitError':
+          errorMessage = 'APIリクエスト制限に達しました。しばらく待ってから再試行してください';
+          statusCode = 429;
+          break;
+        case 'StripeInvalidRequestError':
+          errorMessage = `無効なリクエスト: ${error.message}`;
+          statusCode = 400;
+          break;
+        case 'StripeAPIError':
+          errorMessage = 'Stripe APIエラー。しばらく待ってから再試行してください';
+          statusCode = 503;
+          break;
+        case 'StripeConnectionError':
+          errorMessage = 'Stripe接続エラー。インターネット接続を確認してください';
+          statusCode = 503;
+          break;
+        case 'StripeAuthenticationError':
+          errorMessage = '認証エラー。システム管理者に連絡してください';
+          statusCode = 401;
+          break;
+        default:
+          errorMessage = `決済処理エラー: ${error.message}`;
+          statusCode = 500;
+      }
+    } else {
+      // その他のエラー
+      errorMessage = `予約処理エラー: ${(error as Error).message}`;
+    }
+    
+    return NextResponse.json({ error: errorMessage }, { status: statusCode });
   }
 } 
