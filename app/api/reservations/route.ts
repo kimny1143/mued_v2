@@ -230,17 +230,14 @@ export async function POST(request: NextRequest) {
         },
       });
       
-      // 合計金額計算
-      const totalAmount = hourlyRate * hoursBooked;
-
-      // 環境変数でStripe価格IDを取得
-      const lessonPriceId = process.env.NEXT_PUBLIC_LESSON_FLEXIBLE_PRICE_ID;
+      // 合計金額計算（時間単価 × 予約時間）
+      const baseAmount = hourlyRate * hoursBooked;
       
-      // 価格IDが設定されていない場合はエラー
-      if (!lessonPriceId) {
-        console.error('レッスン価格ID(NEXT_PUBLIC_LESSON_FLEXIBLE_PRICE_ID)が設定されていません');
-        throw new Error('レッスン価格IDが設定されていません。システム管理者に連絡してください。');
-      }
+      // 消費税を追加（10%）
+      const taxAmount = Math.floor(baseAmount * 0.1);
+      
+      // 最終合計金額
+      const totalAmount = baseAmount + taxAmount;
 
       // ベースURLの取得
       const baseUrl = getBaseUrl();
@@ -255,9 +252,15 @@ export async function POST(request: NextRequest) {
         payment_method_types: ['card'],
         line_items: [
           {
-            // 登録済みの価格IDを使用
-            price: lessonPriceId,
-            quantity: reservation.hoursBooked,
+            price_data: {
+              currency: currency.toLowerCase(),
+              product_data: {
+                name: `${slot.teacher.name}先生のレッスン予約`,
+                description: `${startTimeFormatted}～${endTimeFormatted}（${hoursBooked}時間）`,
+              },
+              unit_amount: totalAmount,
+            },
+            quantity: 1, // 常に1を指定（Stripeの要件）
           },
         ],
         mode: 'payment',
@@ -271,7 +274,9 @@ export async function POST(request: NextRequest) {
           teacherId: slot.teacherId,
           hourlyRate: String(hourlyRate),    // 時間単価
           hoursBooked: String(hoursBooked),  // 予約時間数
-          totalAmount: String(totalAmount),  // 合計金額
+          baseAmount: String(baseAmount),    // 基本料金（時間単価×時間）
+          taxAmount: String(taxAmount),      // 消費税額
+          totalAmount: String(totalAmount),  // 消費税込み合計金額
           startTime: reservationStartTime.toISOString(),
           endTime: reservationEndTime.toISOString(),
           reservationNote: `${slot.teacher.name}先生とのレッスン（${startTimeFormatted}〜${endTimeFormatted}）`,
