@@ -27,8 +27,8 @@ interface ReservationModalProps {
 function formatCurrency(amount: number, currency = 'usd'): string {
   if (!amount) return '0';
   
-  // 単位を修正（センット -> 実際の通貨単位）
-  const actualAmount = amount / 100;
+  // 日本円の場合は分割しない、その他の通貨は100で割る（セント→ドル等）
+  const actualAmount = currency.toLowerCase() === 'jpy' ? amount : amount / 100;
   
   // 通貨シンボルの設定
   const currencySymbols: Record<string, string> = {
@@ -73,6 +73,11 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
 
   // slotがnullの場合は何も表示しない
   if (!slot) return null;
+  
+  // 予約時間と料金の計算
+  const hoursBooked = slot.hoursBooked || 1; // デフォルト1時間
+  const hourlyRate = slot.hourlyRate || (slot.price || 5000);
+  const totalAmount = hourlyRate * hoursBooked;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -95,13 +100,23 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
             </span>
           </div>
           <div className="grid grid-cols-5 items-center gap-4">
+            <span className="col-span-1 font-medium text-sm">予約時間:</span>
+            <span className="col-span-4 text-sm font-bold">{hoursBooked}時間</span>
+          </div>
+          <div className="grid grid-cols-5 items-center gap-4">
             <span className="col-span-1 font-medium text-sm">メンター:</span>
             <span className="col-span-4 text-sm">{slot.teacher ? slot.teacher.name : slot.mentorName}</span>
           </div>
           <div className="grid grid-cols-5 items-center gap-4">
-            <span className="col-span-1 font-medium text-sm">料金:</span>
+            <span className="col-span-1 font-medium text-sm">時間単価:</span>
+            <span className="col-span-4 text-sm">
+              {formatCurrency(hourlyRate, slot.currency || 'jpy')} / 時間
+            </span>
+          </div>
+          <div className="grid grid-cols-5 items-center gap-4">
+            <span className="col-span-1 font-medium text-sm">合計金額:</span>
             <span className="col-span-4 text-sm font-bold">
-              {formatCurrency(slot.price || 5000, slot.currency || 'usd')}
+              {formatCurrency(totalAmount, slot.currency || 'jpy')}
             </span>
           </div>
         </div>

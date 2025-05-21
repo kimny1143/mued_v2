@@ -274,18 +274,19 @@ export async function POST(request: NextRequest) {
       minute: '2-digit'
     });
 
-    // Stripe チェックアウトセッションを作成（動的価格設定）
+    // Stripe チェックアウトセッションを作成
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
-            currency: currency,
+            currency: currency.toLowerCase(),
             product_data: {
               name: `${reservation.hoursBooked}時間のレッスン予約`,
               description: `${slot.teacher.name}先生とのレッスン（${startTimeFormatted}〜${endTimeFormatted}）`,
             },
-            unit_amount: hourlyRate,
+            // 日本円の場合は分割しない（そのままの金額を使用）
+            unit_amount: currency.toLowerCase() === 'jpy' ? hourlyRate : hourlyRate * 100,
           },
           quantity: reservation.hoursBooked,
         },
@@ -301,6 +302,7 @@ export async function POST(request: NextRequest) {
         bookedStartTime: reservation.bookedStartTime.toISOString(),
         bookedEndTime: reservation.bookedEndTime.toISOString(),
         hoursBooked: String(reservation.hoursBooked),
+        hourlyRate: String(hourlyRate),
       },
     });
 

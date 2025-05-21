@@ -37,6 +37,10 @@ export type LessonSlot = {
   reservations?: Reservation[];
   createdAt?: string | Date;
   updatedAt?: string | Date;
+  hourlyRate?: number;     // 時間単価
+  minHours?: number;       // 最小予約時間
+  maxHours?: number;       // 最大予約時間
+  hoursBooked?: number;    // 予約時間数（ユーザーが選択）
 };
 
 export type Reservation = {
@@ -58,8 +62,8 @@ interface ReservationTableProps {
 function formatCurrency(amount: number, currency = 'usd'): string {
   if (!amount) return '0';
   
-  // 単位を修正（センント -> 実際の通貨単位）
-  const actualAmount = amount / 100;
+  // 日本円の場合は分割しない、その他の通貨は100で割る
+  const actualAmount = currency.toLowerCase() === 'jpy' ? amount : amount / 100;
   
   // 通貨シンボルの設定
   const currencySymbols: Record<string, string> = {

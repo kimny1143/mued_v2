@@ -54,8 +54,8 @@ type Reservation = {
 function formatCurrency(amount: number, currency = 'usd'): string {
   if (!amount) return '0';
   
-  // 単位を修正（セント -> 実際の通貨単位）
-  const actualAmount = amount / 100;
+  // 日本円の場合は分割しない、その他の通貨は100で割る
+  const actualAmount = currency.toLowerCase() === 'jpy' ? amount : amount / 100;
   
   // 通貨シンボルの設定
   const currencySymbols: Record<string, string> = {
@@ -231,7 +231,10 @@ export const ReservationPage: React.FC = () => {
 
   // 予約作成のミューテーション
   const reserveMutation = useMutation({
-    mutationFn: createReservation,
+    // 明示的に引数の型を定義
+    mutationFn: async ({ slotId, hoursBooked }: { slotId: string; hoursBooked?: number }) => {
+      return createReservation(slotId, hoursBooked);
+    },
     onSuccess: (data) => {
       toast.success('レッスンの予約が完了しました');
       queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
@@ -329,7 +332,10 @@ export const ReservationPage: React.FC = () => {
   
   const handleConfirmBooking = async () => {
     if (selectedSlot) {
-      await reserveMutation.mutateAsync(selectedSlot.id);
+      // 選択されたスロットから時間数を取得（LessonSlotCardで選択された値）
+      const hoursBooked = selectedSlot.hoursBooked || 1;
+      // 時間数を明示的に指定して予約APIを呼び出す
+      await reserveMutation.mutateAsync({ slotId: selectedSlot.id, hoursBooked });
     }
   };
 
