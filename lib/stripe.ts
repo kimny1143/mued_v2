@@ -339,4 +339,63 @@ export async function getCheckoutSession(sessionId: string): Promise<Stripe.Chec
   return stripe.checkout.sessions.retrieve(sessionId, {
     expand: ['payment_intent', 'subscription', 'customer'],
   });
+}
+
+// 予約用の決済セッション作成関数
+export async function createCheckoutSessionForReservation(
+  userId: string | null | undefined,
+  userEmail: string | null | undefined,
+  reservationId: string,
+  amount: number,
+  currency: string | null | undefined,
+  details: {
+    teacher: string;
+    date: string;
+    time: string;
+    duration: string;
+  }
+): Promise<Stripe.Checkout.Session> {
+  // ベースURLの取得
+  const baseUrl = process.env.NEXT_PUBLIC_URL || 
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
+  // リダイレクトURL
+  const successUrl = `${baseUrl}/dashboard/reservations?success=true`;
+  const cancelUrl = `${baseUrl}/dashboard/reservations?canceled=true`;
+
+  // nullやundefinedの値のフォールバック
+  const safeUserId = userId || 'unknown-user';
+  const safeUserEmail = userEmail || 'unknown@example.com';
+  const safeCurrency = (currency || 'jpy').toLowerCase();
+
+  return await safeStripeCall(
+    () => stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: safeCurrency,
+          product_data: {
+            name: `${details.teacher}先生のレッスン予約`,
+            description: `${details.date} ${details.time}（${details.duration}）`,
+          },
+          unit_amount: amount,
+        },
+        quantity: 1,
+      }],
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      client_reference_id: reservationId,
+      customer_email: safeUserEmail,
+      metadata: {
+        userId: safeUserId,
+        reservationId,
+        teacher: details.teacher,
+        date: details.date,
+        time: details.time,
+        duration: details.duration
+      },
+    }),
+    '予約用決済セッション作成エラー'
+  );
 } 

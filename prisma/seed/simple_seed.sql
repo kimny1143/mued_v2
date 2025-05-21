@@ -52,6 +52,43 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- ---- 1.5 新しいカラムがなければ追加 ----
+
+-- Lesson Slots & Reservations テーブルの拡張
+DO $$
+BEGIN
+    -- minDurationカラムの追加 (存在しなければ)
+    IF NOT EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_name = 'lesson_slots' 
+        AND column_name = 'minDuration'
+    ) THEN
+        ALTER TABLE public.lesson_slots ADD COLUMN "minDuration" INT DEFAULT 60;
+        RAISE NOTICE 'minDurationカラムを追加しました';
+    END IF;
+    
+    -- maxDurationカラムの追加 (存在しなければ)
+    IF NOT EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_name = 'lesson_slots' 
+        AND column_name = 'maxDuration'
+    ) THEN
+        ALTER TABLE public.lesson_slots ADD COLUMN "maxDuration" INT DEFAULT 90;
+        RAISE NOTICE 'maxDurationカラムを追加しました';
+    END IF;
+    
+    -- durationMinutesカラムの追加 (存在しなければ)
+    IF NOT EXISTS (
+        SELECT FROM information_schema.columns 
+        WHERE table_name = 'reservations' 
+        AND column_name = 'durationMinutes'
+    ) THEN
+        ALTER TABLE public.reservations ADD COLUMN "durationMinutes" INT DEFAULT 60;
+        RAISE NOTICE 'durationMinutesカラムを追加しました';
+    END IF;
+END $$;
+
+
 -- ---- 2. 基本ロールのみをUUID形式で作成 ----
 
 -- トランザクション開始

@@ -102,6 +102,8 @@ model LessonSlot {
   currency    String       @default("JPY") // 通貨
   minHours    Int          @default(1)     // 最小予約時間（単位：時間）
   maxHours    Int?         // 最大予約時間（nullの場合は制限なし）
+  minDuration Int          @default(60)    // 最小予約時間（単位：分）
+  maxDuration Int          @default(90)    // 最大予約時間（単位：分）
   isAvailable Boolean      @default(true)  // 予約可能かどうか
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -124,7 +126,8 @@ model Reservation {
   paymentId       String?          @unique // Payment.id を参照
   bookedStartTime DateTime         // 予約開始時間
   bookedEndTime   DateTime         // 予約終了時間
-  hoursBooked     Int              @default(1) // 予約時間数
+  hoursBooked     Int              @default(1) // 予約時間数（時間単位）
+  durationMinutes Int              @default(60) // 予約時間数（分単位）
   totalAmount     Int              // 合計金額（hourlyRate × hoursBooked）
   notes           String?          @db.Text // 備考・メモ
   createdAt       DateTime         @default(now())

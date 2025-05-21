@@ -6,8 +6,8 @@ export const revalidate = 0;
 import { prisma } from '../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
-import { Prisma } from '@prisma/client';
-import { createCheckoutSession } from '@/lib/stripe';
+import { Prisma, ReservationStatus } from '@prisma/client';
+import { createCheckoutSessionForReservation } from '@/lib/stripe';
 import { getBaseUrl, calculateTotalReservedMinutes, calculateSlotTotalMinutes } from '@/lib/utils';
 import Stripe from 'stripe';
 import { format } from 'date-fns';
@@ -17,12 +17,6 @@ import { ja } from 'date-fns/locale';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-03-31.basil',
 });
-
-// 予約ステータスの列挙型
-enum ReservationStatus {
-  CONFIRMED = 'CONFIRMED',
-  COMPLETED = 'COMPLETED'
-}
 
 // Prismaクエリ実行のラッパー関数（エラーハンドリング強化）
 async function executePrismaQuery<T>(queryFn: () => Promise<T>): Promise<T> {
@@ -135,22 +129,32 @@ export async function GET(request: NextRequest) {
 
 // 新しい予約のための決済セッションを作成
 export async function POST(request: NextRequest) {
-  const session = await getSessionFromRequest(request);
-  
-  if (!session || !session.user) {
-    return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
-  }
-
   try {
+    // セッション情報を取得
+    const session = await getSessionFromRequest(request);
+    
+    if (!session || !session.user) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+    
     // リクエストボディからデータを取得
     const data = await request.json();
-    const { slotId, hoursBooked = 1, bookedStartTime, bookedEndTime } = data;
+    const { slotId, duration = 60, bookedStartTime, bookedEndTime, notes } = data;
     
     // 処理のログ出力
-    console.log(`予約リクエスト: slotId=${slotId}, hoursBooked=${hoursBooked}, 時間帯=${bookedStartTime ? `${new Date(bookedStartTime).toLocaleTimeString()}~${new Date(bookedEndTime).toLocaleTimeString()}` : '未指定'}`);
+    console.log(`予約リクエスト: slotId=${slotId}, duration=${duration}分, 時間帯=${bookedStartTime ? `${new Date(bookedStartTime).toLocaleTimeString()}~${new Date(bookedEndTime).toLocaleTimeString()}` : '未指定'}`);
     
+    // 必須項目の検証
     if (!slotId) {
       return NextResponse.json({ error: 'レッスン枠IDが必要です' }, { status: 400 });
+    }
+    
+    // 予約時間の制約チェック（60〜90分）
+    if (duration < 60 || duration > 90) {
+      return NextResponse.json(
+        { error: 'レッスン時間は60分〜90分の間で設定してください' },
+        { status: 400 }
+      );
     }
     
     // 予約時間の指定が不完全な場合はエラー
@@ -206,11 +210,11 @@ export async function POST(request: NextRequest) {
         throw new Error('指定されたレッスン枠が見つからないか、既に予約されています');
       }
 
-      // 正しい料金計算のために時間単価を取得（hourlyRateがなければ5000円をデフォルトとする）
-      const hourlyRate = slot.hourlyRate || 5000;
+      // 固定料金で計算（hourlyRateをそのまま使用）
+      const fixedAmount = slot.hourlyRate || 5000;
       const currency = slot.currency || 'jpy';
       
-      // 予約時間の計算
+      // 予約時間の計算（固定時間）
       let reservationStartTime: Date;
       let reservationEndTime: Date;
       
@@ -218,11 +222,17 @@ export async function POST(request: NextRequest) {
         // ユーザーが選択した正確な時間帯を使用
         reservationStartTime = new Date(bookedStartTime);
         reservationEndTime = new Date(bookedEndTime);
+        
+        // 予約時間が指定された範囲内かチェック（60-90分）
+        const durationInMinutes = Math.round((reservationEndTime.getTime() - reservationStartTime.getTime()) / (1000 * 60));
+        if (durationInMinutes < 60 || durationInMinutes > 90) {
+          throw new Error(`予約時間は60分〜90分の間で設定してください（現在: ${durationInMinutes}分）`);
+        }
       } else {
-        // 選択がない場合は、開始時間から指定された時間数分の枠を予約
+        // 選択がない場合は、開始時間からduration分の枠を予約
         reservationStartTime = new Date(slot.startTime);
         reservationEndTime = new Date(reservationStartTime);
-        reservationEndTime.setHours(reservationEndTime.getHours() + hoursBooked);
+        reservationEndTime.setMinutes(reservationEndTime.getMinutes() + duration);
         
         // 予約終了時間がスロット終了時間を超えないようにする
         const slotEndTime = new Date(slot.endTime);
@@ -253,180 +263,95 @@ export async function POST(request: NextRequest) {
       });
       
       if (hasOverlap) {
-        throw new Error('選択された時間帯は既に予約されています');
-      }
-      
-      // フォーマット済みの時間文字列を作成（エラー表示用）
-      const startTimeFormatted = format(reservationStartTime, 'M月d日(EEE) HH:mm', { locale: ja });
-      const endTimeFormatted = format(reservationEndTime, 'HH:mm', { locale: ja });
-      
-      // 実際の予約時間数を計算（時間単位で切り上げ）
-      const actualHoursBooked = Math.ceil(
-        (reservationEndTime.getTime() - reservationStartTime.getTime()) / (60 * 60 * 1000)
-      );
-      
-      // 予約を作成
-      const reservation = await tx.reservation.create({
-        data: {
-          studentId: session.user.id,
-          slotId: slot.id,
-          status: 'PENDING', // 支払い前はPENDING
-          bookedStartTime: reservationStartTime,
-          bookedEndTime: reservationEndTime,
-          hoursBooked: actualHoursBooked,
-          totalAmount: hourlyRate * actualHoursBooked, // 合計金額を計算して保存
-          notes: `${format(reservationStartTime, 'M月d日(EEE)', { locale: ja })}のレッスン`
-        },
-      });
-      
-      // 合計金額計算（時間単価 × 予約時間）
-      const baseAmount = hourlyRate * actualHoursBooked;
-      
-      // 消費税を追加（10%）
-      const taxAmount = Math.floor(baseAmount * 0.1);
-      
-      // 最終合計金額
-      const totalAmount = baseAmount + taxAmount;
-
-      // ベースURLの取得
-      const baseUrl = getBaseUrl();
-      console.log(`使用するベースURL: ${baseUrl}`);
-
-      // リダイレクトURLを構築
-      const successUrl = `${baseUrl}/dashboard/reservations?success=true`;
-      const cancelUrl = `${baseUrl}/dashboard/reservations?canceled=true`;
-
-      // Stripe チェックアウトセッションを作成
-      const checkoutSession = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
-        line_items: [
-          {
-            price_data: {
-              currency: currency.toLowerCase(),
-              product_data: {
-                name: `${slot.teacher.name}先生のレッスン予約`,
-                description: `${startTimeFormatted}～${endTimeFormatted}（${actualHoursBooked}時間）`,
-              },
-              unit_amount: totalAmount,
-            },
-            quantity: 1, // 常に1を指定（Stripeの要件）
-          },
-        ],
-        mode: 'payment',
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        client_reference_id: reservation.id, // 予約IDを参照として渡す
-        metadata: {
-          reservationId: reservation.id,
-          studentId: session.user.id,
-          slotId: slot.id,
-          teacherId: slot.teacherId,
-          hourlyRate: String(hourlyRate),    // 時間単価
-          hoursBooked: String(actualHoursBooked),  // 予約時間数
-          baseAmount: String(baseAmount),    // 基本料金（時間単価×時間）
-          taxAmount: String(taxAmount),      // 消費税額
-          totalAmount: String(totalAmount),  // 消費税込み合計金額
-          startTime: reservationStartTime.toISOString(),
-          endTime: reservationEndTime.toISOString(),
-          reservationNote: `${slot.teacher.name}先生とのレッスン（${startTimeFormatted}〜${endTimeFormatted}）`,
-        },
-      });
-
-      // 予約にStripeのセッションIDを関連付ける
-      // Payment レコードを作成して予約と関連付ける
-      const payment = await tx.payment.create({
-        data: {
-          stripeSessionId: checkoutSession.id,
-          amount: totalAmount,
-          currency: currency,
-          status: 'PENDING',
-          userId: session.user.id,
-        }
-      });
-      
-      // 作成したPaymentを予約に関連付ける
-      await tx.reservation.update({
-        where: { id: reservation.id },
-        data: {
-          paymentId: payment.id,
-        }
-      });
-      
-      // スロットの全予約状況をチェックし、空きがなければisAvailableを更新
-      // 現在の予約を含めて、このスロットの全予約を取得
-      const slotReservations = await tx.reservation.findMany({
-        where: { 
-          slotId: slot.id,
-          status: { in: ['PENDING', 'CONFIRMED'] }
-        }
-      });
-      
-      // スロット全体の予約時間と空き時間を計算
-      const totalReservedMinutes = calculateTotalReservedMinutes(slotReservations);
-      const slotTotalMinutes = calculateSlotTotalMinutes(slot);
-      
-      // 予約可能時間がほぼなくなったらスロット全体を予約不可に
-      // 30分未満の空きは予約不可とみなす
-      if (totalReservedMinutes >= slotTotalMinutes - 30) {
-        console.log(`スロット ${slot.id} の予約状況: ${totalReservedMinutes}/${slotTotalMinutes} 分 - 予約不可に設定`);
-        await tx.lessonSlot.update({
-          where: { id: slot.id },
-          data: { isAvailable: false }
-        });
+        throw new Error('選択した時間帯は既に予約されています。別の時間を選択してください。');
       }
 
-      return {
-        reservationId: reservation.id,
-        checkoutUrl: checkoutSession.url,
+      // 実際のduration（分）を計算
+      const durationInMinutes = Math.round((reservationEndTime.getTime() - reservationStartTime.getTime()) / (1000 * 60));
+      
+      // 予約データの作成準備
+      const reservationData = {
+        slotId: slot.id,
+        studentId: session.user.id,
+        status: 'PENDING' as const,
+        bookedStartTime: reservationStartTime,
+        bookedEndTime: reservationEndTime,
+        hoursBooked: Math.ceil(durationInMinutes / 60),
+        totalAmount: fixedAmount,
+        notes: typeof notes === 'string' ? notes : null
       };
+      
+      // 予約レコードを作成
+      const reservation = await tx.reservation.create({
+        data: reservationData
+      });
+      
+      // 日付と時間をフォーマット
+      const formattedDate = format(reservationStartTime, 'yyyy年MM月dd日', { locale: ja });
+      const formattedTimeRange = `${format(reservationStartTime, 'HH:mm', { locale: ja })} - ${format(reservationEndTime, 'HH:mm', { locale: ja })}`;
+      const formattedDuration = `${durationInMinutes}分`;
+      
+      // セッション情報・リクエスト情報をログ出力（デバッグ用）
+      console.log('セッション情報:', {
+        userId: session.user.id,
+        userEmail: session.user.email,
+        role: session.role
+      });
+      
+      try {
+        // 決済セッション作成
+        const checkoutSession = await createCheckoutSessionForReservation(
+          session.user.id,
+          session.user.email,
+          reservation.id,
+          fixedAmount,
+          currency,
+          {
+            teacher: slot.teacher.name || '名前未設定',
+            date: formattedDate,
+            time: formattedTimeRange,
+            duration: formattedDuration
+          }
+        );
+        
+        // payment レコード作成（決済情報の保存）
+        await tx.payment.create({
+          data: {
+            stripeSessionId: checkoutSession.id,
+            amount: fixedAmount,
+            currency: currency,
+            status: 'PENDING',
+            userId: session.user.id,
+            reservation: {
+              connect: { id: reservation.id }
+            }
+          }
+        });
+        
+        // 決済セッションURLとともに結果を返す
+        return {
+          success: true,
+          reservation,
+          checkoutUrl: checkoutSession.url
+        };
+      } catch (error) {
+        console.error('Stripe決済セッション作成エラー:', error);
+        // エラーが発生した場合も、予約自体は作成されたものを返す
+        return {
+          success: true,
+          reservation,
+          checkoutUrl: null,
+          error: 'Stripe決済セッションの作成に失敗しました。管理者にお問い合わせください。'
+        };
+      }
     });
-
-    // 成功レスポンス
-    console.log(`レッスン予約成功: reservationId=${result.reservationId}, チェックアウトURL=${result.checkoutUrl}`);
+    
     return NextResponse.json(result);
   } catch (error) {
     console.error('予約作成エラー:', error);
-    
-    // エラーの種類に応じたメッセージを生成
-    let errorMessage = '予約の作成に失敗しました';
-    let statusCode = 500;
-    
-    // Stripeエラーの場合
-    if (error instanceof Stripe.errors.StripeError) {
-      switch (error.type) {
-        case 'StripeCardError':
-          errorMessage = `決済カードエラー: ${error.message}`;
-          statusCode = 400;
-          break;
-        case 'StripeRateLimitError':
-          errorMessage = 'APIリクエスト制限に達しました。しばらく待ってから再試行してください';
-          statusCode = 429;
-          break;
-        case 'StripeInvalidRequestError':
-          errorMessage = `無効なリクエスト: ${error.message}`;
-          statusCode = 400;
-          break;
-        case 'StripeAPIError':
-          errorMessage = 'Stripe APIエラー。しばらく待ってから再試行してください';
-          statusCode = 503;
-          break;
-        case 'StripeConnectionError':
-          errorMessage = 'Stripe接続エラー。インターネット接続を確認してください';
-          statusCode = 503;
-          break;
-        case 'StripeAuthenticationError':
-          errorMessage = '認証エラー。システム管理者に連絡してください';
-          statusCode = 401;
-          break;
-        default:
-          errorMessage = `決済処理エラー: ${error.message}`;
-          statusCode = 500;
-      }
-    } else {
-      // その他のエラー
-      errorMessage = `予約処理エラー: ${(error as Error).message}`;
-    }
-    
-    return NextResponse.json({ error: errorMessage }, { status: statusCode });
+    return NextResponse.json(
+      { error: '予約の作成中にエラーが発生しました', details: String(error) },
+      { status: 500 }
+    );
   }
 } 

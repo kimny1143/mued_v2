@@ -93,32 +93,89 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const fromDate = searchParams.get('from');
     const toDate = searchParams.get('to');
+    const teacherId = searchParams.get('teacherId');
+    const minDuration = searchParams.get('minDuration') ? parseInt(searchParams.get('minDuration')!) : null;
+    const maxDuration = searchParams.get('maxDuration') ? parseInt(searchParams.get('maxDuration')!) : null;
+    const availableOnly = searchParams.get('availableOnly') !== 'false'; // デフォルトはtrue
+    
+    console.log('レッスンスロット取得API呼び出し:', {
+      fromDate,
+      toDate,
+      teacherId,
+      minDuration,
+      maxDuration,
+      availableOnly
+    });
+    
+    // フィルタリング条件を構築
+    const filter: Prisma.LessonSlotWhereInput = {};
     
     // 日付範囲のフィルタリング
-    const dateFilter: Prisma.LessonSlotWhereInput = {};
     if (fromDate) {
-      dateFilter.startTime = {
+      filter.startTime = {
         gte: new Date(fromDate)
       };
     }
     if (toDate) {
-      if (dateFilter.startTime) {
+      if (filter.startTime) {
         // すでにgteが設定されている場合
-        dateFilter.startTime = {
-          ...dateFilter.startTime as Prisma.DateTimeFilter,
+        filter.startTime = {
+          ...filter.startTime as Prisma.DateTimeFilter,
           lte: new Date(toDate)
         };
       } else {
         // 初めて設定する場合
-        dateFilter.startTime = {
+        filter.startTime = {
           lte: new Date(toDate)
         };
       }
     }
     
+    // メンターIDでフィルタリング
+    if (teacherId) {
+      filter.teacherId = teacherId;
+    }
+    
+    // 時間の制約でフィルタリング（分単位を優先、ない場合は時間単位で互換性維持）
+    if (minDuration !== null) {
+      // 分単位フィールドを優先
+      filter.minDuration = {
+        lte: minDuration
+      };
+      
+      // 互換性のために時間単位フィールドも設定（古いレコード対応）
+      filter.minHours = {
+        lte: Math.ceil(minDuration / 60) // 分を時間に変換（切り上げ）
+      };
+    }
+    
+    if (maxDuration !== null) {
+      // 分単位フィールドを優先
+      filter.maxDuration = {
+        gte: maxDuration
+      };
+      
+      // 互換性のために時間単位フィールドも設定
+      if (filter.maxHours) {
+        filter.maxHours = {
+          ...filter.maxHours as Prisma.IntNullableFilter,
+          gte: Math.floor(maxDuration / 60) // 分を時間に変換（切り捨て）
+        };
+      } else {
+        filter.maxHours = {
+          gte: Math.floor(maxDuration / 60)
+        };
+      }
+    }
+    
+    // 利用可能なスロットのみを取得
+    if (availableOnly) {
+      filter.isAvailable = true;
+    }
+    
     // レッスンスロットを取得
-    const slots = await prisma.lessonSlot.findMany({
-      where: dateFilter,
+    const slots = await executePrismaQuery(() => prisma.lessonSlot.findMany({
+      where: filter,
       orderBy: { startTime: 'asc' },
       include: {
         teacher: {
@@ -136,7 +193,7 @@ export async function GET(request: NextRequest) {
           }
         }
       }
-    });
+    }));
     
     // 各スロットの予約済み時間帯情報を整形して返す
     const enhancedSlots = slots.map(slot => {
@@ -145,15 +202,31 @@ export async function GET(request: NextRequest) {
       
       return {
         ...slot,
-        hourlySlots
+        hourlySlots,
+        // 分単位の予約時間制約を明示的に含める
+        durationConstraints: {
+          minDuration: slot.minDuration || 60,
+          maxDuration: slot.maxDuration || 90,
+          minHours: slot.minHours,
+          maxHours: slot.maxHours
+        }
       };
     });
     
     console.log('🟢 lesson-slots', enhancedSlots.length);
-    return NextResponse.json(enhancedSlots);
+    return NextResponse.json(enhancedSlots, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (e) {
     console.error('🔴 lesson-slots error', e);
-    return NextResponse.json([], { status: 200 });
+    return NextResponse.json(
+      { error: 'レッスンスロットの取得中にエラーが発生しました', details: String(e) },
+      { status: 500 }
+    );
   }
 }
 
