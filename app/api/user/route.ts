@@ -6,6 +6,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 interface UserData {
   id: string;
   roleId?: string;
+  roleName?: string;
   name: string | null;
   email: string | null;
   image: string | null;
@@ -321,6 +322,9 @@ export async function GET(req: NextRequest) {
         // ロール情報があれば設定
         if (typedUser.role) {
           userData.role = typedUser.role;
+          // ロール名を別途保存 (重要: フロントエンドでの判定に使用)
+          userData.roleName = typedUser.role.name.toLowerCase();
+          console.log('DBから取得したロール名:', userData.roleName);
         }
         
         console.log('DBから取得したroleId:', userData.roleId);
@@ -350,6 +354,8 @@ export async function GET(req: NextRequest) {
     // ユーザーデータにDBから取得したロール情報も含める
     return NextResponse.json({
       ...userData,
+      // roleIdがUUID形式になっている場合に備えて、デフォルトのroleName値を設定
+      roleName: userData.roleName || (userData.role?.name?.toLowerCase() || 'student'),
       dbAccessSuccessful // DBアクセスの成功/失敗状態も返す
     });
   } catch (err) {
