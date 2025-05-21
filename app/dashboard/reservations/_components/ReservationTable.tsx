@@ -137,7 +137,7 @@ export const ReservationTable: React.FC<ReservationTableProps> = ({
                   </Badge>
                 )}
               </TableCell>
-              <TableCell className="text-right">{formatCurrency(slot.price || 5000, slot.currency || 'usd')}</TableCell>
+              <TableCell className="text-right">{formatCurrency(slot.hourlyRate || 5000, slot.currency || 'jpy')}</TableCell>
               <TableCell className="text-right">
                 <Button
                   variant="default"

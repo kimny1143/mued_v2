@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { format, differenceInHours } from 'date-fns';
+import React, { useState, useMemo } from 'react';
+import { format, addHours, differenceInHours } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { CalendarIcon, ClockIcon, Loader2Icon } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
@@ -18,8 +18,8 @@ import { Label } from '@/app/components/ui/label';
 
 interface LessonSlot {
   id: string;
-  startTime: Date;
-  endTime: Date;
+  startTime: string | Date;
+  endTime: string | Date;
   hourlyRate?: number;
   currency?: string;
   minHours?: number;
@@ -27,16 +27,24 @@ interface LessonSlot {
   teacher?: {
     id: string;
     name: string;
-    image: string | null;
+    image?: string | null;
   };
   mentorName?: string;
   price?: number;
   isAvailable: boolean;
 }
 
+// 予約時間帯の型定義
+interface TimeSlot {
+  startTime: Date;
+  endTime: Date;
+  hours: number;
+  label: string;
+}
+
 interface LessonSlotCardProps {
   slot: LessonSlot;
-  onReserve: (slotId: string, hoursBooked?: number) => void;
+  onReserve: (slotId: string, hoursBooked?: number, selectedTimeSlot?: TimeSlot) => void;
   isProcessing?: boolean;
 }
 
@@ -48,8 +56,14 @@ export const LessonSlotCard: React.FC<LessonSlotCardProps> = ({
   // 予約時間設定
   const [hoursBooked, setHoursBooked] = useState<number>(slot.minHours || 1);
   
+  // 選択した時間帯
+  const [selectedTimeSlotIndex, setSelectedTimeSlotIndex] = useState<number>(0);
+  
   // 利用可能な時間枠を計算
-  const maxAvailableHours = slot.maxHours || differenceInHours(new Date(slot.endTime), new Date(slot.startTime));
+  const maxAvailableHours = slot.maxHours || differenceInHours(
+    new Date(slot.endTime), 
+    new Date(slot.startTime)
+  );
   const minRequiredHours = slot.minHours || 1;
   
   // 選択可能な時間数の配列を作成
@@ -64,6 +78,44 @@ export const LessonSlotCard: React.FC<LessonSlotCardProps> = ({
   
   // 合計金額
   const totalAmount = hourlyRate * hoursBooked;
+  
+  // 利用可能な時間帯の選択肢を生成
+  const availableTimeSlots = useMemo(() => {
+    const startTime = new Date(slot.startTime);
+    const endTime = new Date(slot.endTime);
+    const totalSlotHours = differenceInHours(endTime, startTime);
+    
+    // 選択した時間数に応じた時間帯の選択肢を生成
+    const slots: TimeSlot[] = [];
+    
+    for (let i = 0; i <= totalSlotHours - hoursBooked; i++) {
+      const slotStart = new Date(startTime);
+      slotStart.setHours(startTime.getHours() + i);
+      
+      const slotEnd = new Date(slotStart);
+      slotEnd.setHours(slotStart.getHours() + hoursBooked);
+      
+      // スロット終了時間がレッスン終了時間を超えないことを確認
+      if (slotEnd <= endTime) {
+        slots.push({
+          startTime: slotStart,
+          endTime: slotEnd,
+          hours: hoursBooked,
+          label: `${format(slotStart, 'HH:mm', { locale: ja })} - ${format(slotEnd, 'HH:mm', { locale: ja })}`
+        });
+      }
+    }
+    
+    return slots;
+  }, [slot.startTime, slot.endTime, hoursBooked]);
+  
+  // 時間数が変更されたら、時間帯の選択をリセット
+  React.useEffect(() => {
+    setSelectedTimeSlotIndex(0);
+  }, [hoursBooked]);
+  
+  // 現在選択中の時間帯
+  const selectedTimeSlot = availableTimeSlots[selectedTimeSlotIndex];
   
   return (
     <Card className="p-4">
@@ -112,6 +164,31 @@ export const LessonSlotCard: React.FC<LessonSlotCardProps> = ({
             </Select>
           </div>
           
+          {/* 時間帯選択 */}
+          {availableTimeSlots.length > 0 && (
+            <div className="w-full mt-2">
+              <Label htmlFor={`timeslot-${slot.id}`} className="text-sm mb-1 block">
+                時間帯
+              </Label>
+              <Select
+                value={selectedTimeSlotIndex.toString()}
+                onValueChange={(value) => setSelectedTimeSlotIndex(parseInt(value, 10))}
+                disabled={isProcessing}
+              >
+                <SelectTrigger id={`timeslot-${slot.id}`} className="w-full">
+                  <SelectValue placeholder="時間帯を選択" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTimeSlots.map((timeSlot, index) => (
+                    <SelectItem key={index} value={index.toString()}>
+                      {timeSlot.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
           <div className="text-sm font-medium mt-1">
             合計: ¥{totalAmount.toLocaleString()}
           </div>
@@ -120,8 +197,12 @@ export const LessonSlotCard: React.FC<LessonSlotCardProps> = ({
             variant="default"
             size="sm"
             className="mt-2 w-full"
-            onClick={() => onReserve(slot.id, hoursBooked)}
-            disabled={isProcessing || !slot.isAvailable}
+            onClick={() => onReserve(
+              slot.id, 
+              hoursBooked,
+              selectedTimeSlot // 選択した時間帯情報を送信
+            )}
+            disabled={isProcessing || !slot.isAvailable || !selectedTimeSlot}
           >
             {isProcessing ? (
               <>

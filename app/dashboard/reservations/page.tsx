@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { Button } from '@ui/button';
 import { Card } from '@ui/card';
 import { ReservationModal } from '@/app/dashboard/reservations/_components/ReservationModal';
+import { LessonSlotCard } from '@/app/dashboard/reservations/_components/LessonSlotCard';
 import { LessonSlot } from '@/app/dashboard/reservations/_components/ReservationTable';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -50,6 +51,22 @@ type Reservation = {
   updatedAt: string;
 }
 
+// 時間帯選択のための型定義
+interface TimeSlot {
+  startTime: Date;
+  endTime: Date;
+  hours: number;
+  label: string;
+}
+
+// リクエストデータの型定義
+interface ReservationRequestData {
+  slotId: string;
+  hoursBooked: number;
+  bookedStartTime?: string;
+  bookedEndTime?: string;
+}
+
 // 通貨フォーマット関数（コンポーネントの外でも問題ない純関数）
 function formatCurrency(amount: number, currency = 'usd'): string {
   if (!amount) return '0';
@@ -79,6 +96,8 @@ export const ReservationPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   
   const [selectedSlot, setSelectedSlot] = useState<LessonSlot | null>(null);
+  // 選択された時間帯情報
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -173,7 +192,7 @@ export const ReservationPage: React.FC = () => {
   }, []);
 
   // 予約を作成する関数
-  const createReservation = useCallback(async (slotId: string, hoursBooked: number = 1) => {
+  const createReservation = useCallback(async (slotId: string, hoursBooked: number = 1, selectedTimeSlot?: TimeSlot | null) => {
     if (!user) {
       setError(new Error('ログインが必要です。'));
       return;
@@ -185,6 +204,18 @@ export const ReservationPage: React.FC = () => {
       
       const token = accessToken;
 
+      // APIに送信するデータを構築
+      const requestData: ReservationRequestData = { 
+        slotId,
+        hoursBooked
+      };
+      
+      // 選択された時間帯がある場合は、開始・終了時間も送信
+      if (selectedTimeSlot) {
+        requestData.bookedStartTime = selectedTimeSlot.startTime.toISOString();
+        requestData.bookedEndTime = selectedTimeSlot.endTime.toISOString();
+      }
+
       const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: {
@@ -192,10 +223,7 @@ export const ReservationPage: React.FC = () => {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         credentials: 'include',
-        body: JSON.stringify({ 
-          slotId,
-          hoursBooked
-        }),
+        body: JSON.stringify(requestData),
       });
       
       const data = await response.json();
@@ -232,8 +260,16 @@ export const ReservationPage: React.FC = () => {
   // 予約作成のミューテーション
   const reserveMutation = useMutation({
     // 明示的に引数の型を定義
-    mutationFn: async ({ slotId, hoursBooked }: { slotId: string; hoursBooked?: number }) => {
-      return createReservation(slotId, hoursBooked);
+    mutationFn: async ({ 
+      slotId, 
+      hoursBooked,
+      timeSlot
+    }: { 
+      slotId: string; 
+      hoursBooked?: number;
+      timeSlot?: TimeSlot | null;
+    }) => {
+      return createReservation(slotId, hoursBooked, timeSlot);
     },
     onSuccess: (data) => {
       toast.success('レッスンの予約が完了しました');
@@ -325,17 +361,30 @@ export const ReservationPage: React.FC = () => {
     return <div className="flex justify-center items-center h-64">読み込み中...</div>;
   }
 
-  const handleBooking = (slot: LessonSlot) => {
-    setSelectedSlot(slot);
+  const handleBooking = (slot: LessonSlot, hoursBooked?: number, timeSlot?: TimeSlot) => {
+    // スロットに予約時間を設定し、startTimeとendTimeを確実にDate型に変換
+    const updatedSlot = {
+      ...slot,
+      startTime: new Date(slot.startTime),
+      endTime: new Date(slot.endTime),
+      hoursBooked: hoursBooked || slot.hoursBooked || 1
+    };
+    
+    setSelectedSlot(updatedSlot);
+    setSelectedTimeSlot(timeSlot || null);
     setIsModalOpen(true);
   };
   
   const handleConfirmBooking = async () => {
     if (selectedSlot) {
-      // 選択されたスロットから時間数を取得（LessonSlotCardで選択された値）
+      // 選択されたスロットから時間数を取得
       const hoursBooked = selectedSlot.hoursBooked || 1;
-      // 時間数を明示的に指定して予約APIを呼び出す
-      await reserveMutation.mutateAsync({ slotId: selectedSlot.id, hoursBooked });
+      // 時間数と時間帯を明示的に指定して予約APIを呼び出す
+      await reserveMutation.mutateAsync({ 
+        slotId: selectedSlot.id, 
+        hoursBooked,
+        timeSlot: selectedTimeSlot
+      });
     }
   };
 
@@ -418,7 +467,7 @@ export const ReservationPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatCurrency(lesson.price || 5000, lesson.currency || 'usd')}
+                        {formatCurrency(lesson.hourlyRate || 5000, lesson.currency || 'jpy')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Button
@@ -453,39 +502,18 @@ export const ReservationPage: React.FC = () => {
             </h3>
             <div className="space-y-3">
               {slots.map((lesson) => (
-                <Card key={lesson.id} className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-medium text-gray-900">
-                      {format(new Date(lesson.startTime), 'HH:mm')} - {format(new Date(lesson.endTime), 'HH:mm')}
-                    </div>
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        lesson.isAvailable
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {lesson.isAvailable ? '予約可能' : '予約済み'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium">
-                        {lesson.teacher?.name || lesson.mentorName || '講師未登録'}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {formatCurrency(lesson.price || 5000, lesson.currency || 'usd')}
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => handleBooking(lesson)}
-                      disabled={!lesson.isAvailable || !user}
-                      size="sm"
-                    >
-                      {user ? '予約する' : 'ログイン'}
-                    </Button>
-                  </div>
-                </Card>
+                <LessonSlotCard 
+                  key={lesson.id}
+                  slot={{
+                    ...lesson,
+                    startTime: new Date(lesson.startTime),
+                    endTime: new Date(lesson.endTime),
+                  }}
+                  onReserve={(slotId, hoursBooked, timeSlot) => 
+                    handleBooking({...lesson, id: slotId}, hoursBooked, timeSlot)
+                  }
+                  isProcessing={isProcessing}
+                />
               ))}
             </div>
           </div>
@@ -497,7 +525,7 @@ export const ReservationPage: React.FC = () => {
         )}
       </div>
 
-      {/* Reservation Modal */}
+      {/* Reservation Modal - 選択された時間帯情報を渡す */}
       {user && (
         <ReservationModal
           slot={selectedSlot}
@@ -505,6 +533,7 @@ export const ReservationPage: React.FC = () => {
           onClose={() => setIsModalOpen(false)}
           onConfirm={handleConfirmBooking}
           isLoading={isProcessing}
+          selectedTimeSlot={selectedTimeSlot}
         />
       )}
 

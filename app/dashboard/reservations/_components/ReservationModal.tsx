@@ -15,10 +15,19 @@ import { Button } from '@ui/button';
 import { LessonSlot } from './ReservationTable';
 import { Loader2 } from 'lucide-react';
 
+// TimeSlot型定義を追加
+interface TimeSlot {
+  startTime: Date;
+  endTime: Date;
+  hours: number;
+  label: string;
+}
+
 interface ReservationModalProps {
   isOpen: boolean;
   onClose: () => void;
   slot: LessonSlot | null;
+  selectedTimeSlot?: TimeSlot | null; // 選択された時間帯
   onConfirm: () => Promise<void>;
   isLoading?: boolean;
 }
@@ -48,6 +57,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
   isOpen,
   onClose,
   slot,
+  selectedTimeSlot,
   onConfirm,
   isLoading = false,
 }) => {
@@ -94,14 +104,22 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
             <span className="col-span-4 text-sm">{formatDate(new Date(slot.startTime))}</span>
           </div>
           <div className="grid grid-cols-5 items-center gap-4">
-            <span className="col-span-1 font-medium text-sm">時間:</span>
+            <span className="col-span-1 font-medium text-sm">時間枠:</span>
             <span className="col-span-4 text-sm">
               {formatTime(new Date(slot.startTime))} - {formatTime(new Date(slot.endTime))}
             </span>
           </div>
           <div className="grid grid-cols-5 items-center gap-4">
             <span className="col-span-1 font-medium text-sm">予約時間:</span>
-            <span className="col-span-4 text-sm font-bold">{hoursBooked}時間</span>
+            <span className="col-span-4 text-sm font-bold">
+              {selectedTimeSlot ? (
+                // 選択された時間帯がある場合はそれを表示
+                <>{selectedTimeSlot.label} ({hoursBooked}時間)</>
+              ) : (
+                // 旧来の表示
+                <>{hoursBooked}時間</>
+              )}
+            </span>
           </div>
           <div className="grid grid-cols-5 items-center gap-4">
             <span className="col-span-1 font-medium text-sm">メンター:</span>
