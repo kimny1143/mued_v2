@@ -482,12 +482,20 @@ export default function LessonSlotsPage() {
                                 {format(new Date(slot.startTime), 'HH:mm')} - {format(new Date(slot.endTime), 'HH:mm')}
                               </div>
                               <div className="flex items-center gap-2 mb-3">
-                                <Badge variant={slot.isAvailable ? "outline" : "secondary"}>
-                                  {slot.isAvailable ? '予約可能' : '予約済み'}
-                                </Badge>
+                                {slot.reservations && slot.reservations.length > 0 ? (
+                                  // 予約がある場合
+                                  <Badge variant="secondary">
+                                    予約済み
+                                  </Badge>
+                                ) : (
+                                  // 予約がない場合
+                                  <Badge variant={slot.isAvailable ? "outline" : "secondary"}>
+                                    {slot.isAvailable ? '予約可能' : '非公開'}
+                                  </Badge>
+                                )}
                                 {slot.reservations && slot.reservations.length > 0 && (
                                   <Badge variant="default">
-                                    予約あり
+                                    予約数: {slot.reservations.length}
                                   </Badge>
                                 )}
                               </div>
@@ -537,6 +545,9 @@ export default function LessonSlotsPage() {
                               <div className="flex items-center gap-2 mb-3">
                                 <Badge variant="secondary">
                                   予約済み
+                                </Badge>
+                                <Badge variant={slot.isAvailable ? "outline" : "destructive"}>
+                                  {slot.isAvailable ? '公開中' : '非公開'}
                                 </Badge>
                               </div>
                               {/* 予約者情報 */}
