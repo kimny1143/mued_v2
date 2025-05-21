@@ -132,11 +132,37 @@ export default function LessonSlotsPage() {
           }
           
           const userData = await response.json();
-          const role = userData?.roleId || 'student';
-          setUserRole(role);
+          console.log('API応答からのユーザーデータ:', userData);
+          
+          // ロール判定用の変数 - 新しいroleName属性を優先的に使用
+          const roleName = userData.roleName?.toLowerCase() || '';
+          const roleId = userData.roleId || '';
+          
+          console.log('取得したロール情報:', { roleName, roleId });
+          
+          // ユーザーロールを判定する
+          let determinedRole = 'student'; // デフォルトは学生
+          
+          // 1. roleName（文字列名）でロール判定
+          if (roleName === 'mentor') {
+            determinedRole = 'mentor';
+          } else if (roleName === 'administrator' || roleName === 'admin') {
+            determinedRole = 'admin';
+          } 
+          // 2. roleNameがない場合はroleIdで判定（旧式）
+          else if (roleId === 'mentor') {
+            determinedRole = 'mentor';
+          } else if (roleId === 'admin') {
+            determinedRole = 'admin';
+          }
+          
+          console.log('判定されたユーザーロール:', determinedRole);
+          
+          // 状態に保存
+          setUserRole(determinedRole);
           
           // メンターまたは管理者でない場合はダッシュボードにリダイレクト
-          if (role !== 'mentor' && role !== 'admin') {
+          if (determinedRole !== 'mentor' && determinedRole !== 'admin') {
             toast.error('メンター専用のページです');
             router.push('/dashboard');
             return;
