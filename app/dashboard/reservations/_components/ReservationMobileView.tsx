@@ -6,8 +6,8 @@ import { ja } from 'date-fns/locale';
 import { CalendarIcon, ChevronRightIcon, UserIcon } from 'lucide-react';
 import { Button } from '@ui/button';
 import { Badge } from '@ui/badge';
-import { LessonSlot } from './ReservationTable';
-import { ReservationModal } from './ReservationModal';
+import { LessonSlot } from '@/app/dashboard/reservations/_components/ReservationTable';
+import { ReservationModal } from '@/app/dashboard/reservations/_components/ReservationModal';
 
 interface ReservationMobileViewProps {
   lessonSlots: LessonSlot[];
