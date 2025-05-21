@@ -2,6 +2,95 @@ import { supabaseServer } from './supabase-server';
 import { supabaseAdmin } from './supabase-admin';
 import { createClient } from '@supabase/supabase-js';
 import type { Session, User } from '@supabase/supabase-js';
+import { prisma } from './prisma'; // Prismaクライアントをインポート
+
+// 一般的なロール定義（固定値）
+const ROLE_NAMES = {
+  STUDENT: 'student',
+  MENTOR: 'mentor',
+  ADMIN: 'admin'
+};
+
+// roleIdからロール名を決定する関数
+async function getRoleNameById(roleId: string): Promise<string | undefined> {
+  try {
+    // UUIDとして有効なroleIdか判断
+    const isUuid = roleId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    
+    // UUIDならDBから名前を取得
+    if (isUuid) {
+      try {
+        const role = await prisma.role.findUnique({
+          where: { id: roleId }
+        });
+        
+        if (role?.name) {
+          return role.name.toLowerCase();
+        }
+      } catch (dbError) {
+        console.error('ロール取得DBエラー:', dbError);
+        // DBエラーの場合はフォールバックとして文字列判定に進む
+      }
+    }
+    
+    // 文字列IDとして判定（ゆるやかに）
+    const roleLower = roleId.toLowerCase();
+    
+    if (roleLower.includes('admin')) {
+      return ROLE_NAMES.ADMIN;
+    }
+    if (roleLower.includes('mentor')) {
+      return ROLE_NAMES.MENTOR;
+    }
+    if (roleLower.includes('student')) {
+      return ROLE_NAMES.STUDENT;
+    }
+    
+    return undefined;
+  } catch (e) {
+    console.error('ロール名取得エラー:', e);
+    return undefined;
+  }
+}
+
+// ロール名を安全に抽出する関数（改善版）
+function extractRoleName(roleData: unknown): string | undefined {
+  try {
+    if (!roleData) return undefined;
+    
+    // 文字列の場合はそのまま返す
+    if (typeof roleData === 'string') {
+      return roleData.toLowerCase();
+    }
+    
+    // オブジェクトの場合は直接nameプロパティにアクセス
+    if (typeof roleData === 'object' && roleData !== null && !Array.isArray(roleData) && 'name' in roleData) {
+      const name = (roleData as Record<string, unknown>).name;
+      return typeof name === 'string' ? name.toLowerCase() : undefined;
+    }
+    
+    // 配列の場合の処理
+    if (Array.isArray(roleData) && roleData.length > 0) {
+      // 配列の最初の要素が文字列の場合
+      if (typeof roleData[0] === 'string') {
+        return roleData[0].toLowerCase();
+      }
+      
+      // 配列の最初の要素がオブジェクトでnameプロパティがある場合
+      if (typeof roleData[0] === 'object' && roleData[0] !== null && 
+          roleData[0] !== undefined && 'name' in roleData[0]) {
+        const firstItem = roleData[0] as Record<string, unknown>;
+        const name = firstItem.name;
+        return typeof name === 'string' ? name.toLowerCase() : undefined;
+      }
+    }
+    
+    return undefined;
+  } catch (e) {
+    console.error('ロール名抽出エラー:', e);
+    return undefined;
+  }
+}
 
 /**
  * セッション情報を取得（サーバーサイド用）
@@ -43,7 +132,7 @@ export async function getAuthenticatedUser(): Promise<{user: User, role: string}
   // ユーザー情報＋ロールをusersテーブルから取得
   const { data: userData, error: userError } = await supabaseServer
     .from('users')
-    .select('roleId, role:roles(name)')
+    .select('roleId, role:roles!users_roleId_fkey(name)')
     .eq('id', sessionData.session.user.id)
     .single();
     
@@ -59,20 +148,30 @@ export async function getAuthenticatedUser(): Promise<{user: User, role: string}
   
   console.log("ユーザーデータ取得結果:", userData);
   
-  // role.nameを優先的に使用し、なければroleIdにフォールバック
-  const roleName = userData.role ? 
-    (Array.isArray(userData.role) ? userData.role[0]?.name : userData.role.name) : 
-    undefined;
+  // role.nameを優先的に使用し、なければroleIdからロール名を取得
+  const roleName = extractRoleName(userData.role);
+  let finalRole = roleName;
+  
+  // role.nameが取得できなかった場合はroleIdから決定
+  if (!finalRole && userData.roleId) {
+    finalRole = await getRoleNameById(userData.roleId);
+  }
+  
+  // それでも取得できなければデフォルト値
+  if (!finalRole) {
+    finalRole = 'student';
+  }
   
   console.log("ロール名抽出:", {
     roleRaw: userData.role,
-    isArray: Array.isArray(userData.role),
-    extracted: roleName
+    roleId: userData.roleId,
+    extracted: roleName,
+    final: finalRole
   });
   
   return {
     user: sessionData.session.user,
-    role: (roleName || userData.roleId || 'student').toLowerCase()
+    role: finalRole.toLowerCase()
   };
 }
 
@@ -159,7 +258,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
 
             const { data: userData, error: userError } = await supabaseWithAuth
               .from('users')
-              .select('roleId, role:roles(name)')
+              .select('roleId, role:roles!users_roleId_fkey(name)')
               .eq('id', data.user.id)
               .single();
               
@@ -170,9 +269,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
             console.log("ユーザーデータ取得結果:", userData);
             
             // ロール確認（role.nameを優先的に使用）
-            const roleName = userData?.role ? 
-              (Array.isArray(userData.role) ? userData.role[0]?.name : userData.role.name) : 
-              undefined;
+            const roleName = extractRoleName(userData?.role);
             
             console.log("API認証用ロール名抽出:", {
               roleRaw: userData?.role,
@@ -248,7 +345,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
       try {
         const { data: userData, error: userError } = await supabaseServer
           .from('users')
-          .select('roleId, role:roles(name)')
+          .select('roleId, role:roles!users_roleId_fkey(name)')
           .eq('id', session.user.id)
           .single();
           
@@ -259,9 +356,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
         console.log("ユーザーデータ取得結果:", userData);
         
         // ロール確認（role.nameを優先的に使用）
-        const roleName = userData?.role ? 
-          (Array.isArray(userData.role) ? userData.role[0]?.name : userData.role.name) : 
-          undefined;
+        const roleName = extractRoleName(userData?.role);
         
         console.log("標準セッション用ロール名抽出:", {
           roleRaw: userData?.role,
