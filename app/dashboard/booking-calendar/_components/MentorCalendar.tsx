@@ -1,22 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Calendar, CalendarChangeHandler, CalendarSelected, CalendarClassNames } from '@demark-pro/react-booking-calendar';
+import React, { useState, useEffect } from 'react';
+import { Calendar, CalendarChangeHandler, CalendarSelected } from '@demark-pro/react-booking-calendar';
 import '@demark-pro/react-booking-calendar/dist/react-booking-calendar.css';
 import { Mentor } from './MentorList';
-
-// 予約情報の型
-interface ReservationInfo {
-  startDate: Date;
-  endDate: Date;
-  mentorId: string;
-}
+import { CalendarNavigation } from './CalendarNavigation';
+import { TimeSlotDisplay, TimeSlot } from './TimeSlotDisplay';
+import { startOfMonth, endOfMonth, isSameDay, addDays } from 'date-fns';
+import { fetchMentorAvailability, convertToReservedDates, getDefaultDateRange } from '../_lib/calendarUtils';
+import { AlertCircle } from 'lucide-react';
 
 interface MentorCalendarProps {
   mentors: Mentor[];
   selectedMentorId?: string;
   onMentorSelect?: (mentorId: string) => void;
   onDateSelect?: (selectedDates: Date[]) => void;
+  onTimeSlotSelect?: (slot: TimeSlot) => void;
 }
 
 export const MentorCalendar: React.FC<MentorCalendarProps> = ({
@@ -24,39 +23,67 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   selectedMentorId,
   onMentorSelect,
   onDateSelect,
+  onTimeSlotSelect,
 }) => {
-  // 予約済み日時の例（実際にはAPIから取得します）
-  const [reservations] = useState<ReservationInfo[]>([
-    {
-      startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2日後
-      endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),   // 3日後
-      mentorId: mentors[0]?.id || '',
-    },
-    {
-      startDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5日後
-      endDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),   // 6日後
-      mentorId: mentors[0]?.id || '',
-    },
-  ]);
-
+  // 現在表示中の日付
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  
+  // 表示モード (月/週)
+  const [view, setView] = useState<'month' | 'week'>('month');
+  
+  // 予約時間枠
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  
   // 選択された日付
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  
+  // 選択された時間枠
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
+  
+  // レッスン時間 (60分 or 90分)
+  const [lessonDuration, setLessonDuration] = useState<60 | 90>(60);
+  
+  // データ取得中のローディング状態
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  // エラーメッセージ
+  const [error, setError] = useState<string | null>(null);
 
-  // 現在選択中のメンターIDを管理
+  // 現在選択中のメンターID
   const [currentMentorId, setCurrentMentorId] = useState<string | undefined>(
     selectedMentorId || mentors[0]?.id
   );
 
-  // 選択されたメンターの予約情報をフィルタリング
-  const filteredReservations = reservations.filter(
-    (res) => res.mentorId === currentMentorId
-  );
+  // カレンダー表示範囲が変更されたときに時間枠を再取得
+  useEffect(() => {
+    if (!currentMentorId) return;
+    
+    const fetchTimeSlots = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const dateRange = getDefaultDateRange(currentDate);
+        const slots = await fetchMentorAvailability(
+          currentMentorId,
+          dateRange.from,
+          dateRange.to
+        );
+        
+        setTimeSlots(slots);
+      } catch (err) {
+        console.error('時間枠取得エラー:', err);
+        setError('予約可能な時間枠の取得に失敗しました。');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchTimeSlots();
+  }, [currentMentorId, currentDate]);
 
   // カレンダーコンポーネントに渡す予約済み日時
-  const reserved = filteredReservations.map((res) => ({
-    startDate: res.startDate,
-    endDate: res.endDate,
-  }));
+  const reserved = convertToReservedDates(timeSlots);
 
   // 日付選択時の処理
   const handleDateChange: CalendarChangeHandler = (dates) => {
@@ -65,6 +92,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       .filter((d): d is Date => d instanceof Date);
     
     setSelectedDates(validDates);
+    setSelectedTimeSlot(null);
     
     if (onDateSelect) {
       onDateSelect(validDates);
@@ -75,24 +103,45 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   const handleMentorChange = (mentorId: string) => {
     setCurrentMentorId(mentorId);
     setSelectedDates([]);
+    setSelectedTimeSlot(null);
     
     if (onMentorSelect) {
       onMentorSelect(mentorId);
     }
   };
 
-  // カレンダーのカスタムクラス名
-  const calendarClassNames: CalendarClassNames = {
-    CalendarContainer: 'bg-white',
-    MonthContent: 'text-lg font-medium mb-2',
-    WeekContent: 'text-sm',
-    DayContent: 'text-center w-full h-full',
-    DaySelection: 'bg-primary text-primary-foreground rounded-md',
-    DayReservation: 'bg-red-100 line-through text-gray-400',
+  // 日付ナビゲーションの処理
+  const handleDateNavigation = (date: Date) => {
+    setCurrentDate(date);
   };
+
+  // 時間枠選択の処理
+  const handleTimeSlotSelect = (slot: TimeSlot) => {
+    setSelectedTimeSlot(slot);
+    
+    if (onTimeSlotSelect) {
+      onTimeSlotSelect(slot);
+    }
+  };
+
+  // レッスン時間変更の処理
+  const handleLessonDurationChange = (duration: 60 | 90) => {
+    setLessonDuration(duration);
+    setSelectedTimeSlot(null);
+  };
+
+  // 選択された日付のみを取得
+  const selectedDate = selectedDates.length > 0 ? selectedDates[0] : null;
 
   return (
     <div className="flex flex-col space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-300 text-red-700 p-4 rounded-lg flex items-center mb-4">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          <p>{error}</p>
+        </div>
+      )}
+      
       <div className="flex flex-col md:flex-row items-start gap-4">
         {/* メンター選択セクション */}
         <div className="w-full md:w-1/4 bg-white rounded-lg shadow p-4">
@@ -129,32 +178,47 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
 
         {/* カレンダーセクション */}
         <div className="w-full md:w-3/4 bg-white rounded-lg shadow p-4">
-          <h3 className="text-lg font-semibold mb-4">空き時間を選択</h3>
-          <Calendar
-            selected={selectedDates}
-            reserved={reserved}
-            onChange={handleDateChange}
-            classNames={calendarClassNames}
+          <CalendarNavigation
+            currentDate={currentDate}
+            onDateChange={handleDateNavigation}
+            view={view}
+            onViewChange={setView}
           />
+          
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <Calendar
+              selected={selectedDates}
+              reserved={reserved}
+              onChange={handleDateChange}
+              initialDate={currentDate}
+              classNames={{
+                CalendarContainer: 'bg-white',
+                MonthContent: 'text-lg font-medium mb-2',
+                WeekContent: 'text-sm',
+                DayContent: 'text-center w-full h-full',
+                DaySelection: 'bg-primary text-primary-foreground rounded-md',
+                DayReservation: 'bg-red-100 line-through text-gray-400',
+              }}
+            />
+          )}
         </div>
       </div>
       
-      {/* 選択された日付の表示 */}
-      {selectedDates.length > 0 && (
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg shadow">
-          <h4 className="font-medium mb-2">選択された日時:</h4>
-          <ul className="list-disc list-inside">
-            {selectedDates.map((date, index) => (
-              <li key={index} className="text-sm">
-                {date.toLocaleDateString('ja-JP', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  weekday: 'short',
-                })}
-              </li>
-            ))}
-          </ul>
+      {/* 時間枠表示セクション */}
+      {selectedDate && (
+        <div className="mt-4">
+          <TimeSlotDisplay
+            selectedDate={selectedDate}
+            timeSlots={timeSlots}
+            onTimeSlotSelect={handleTimeSlotSelect}
+            selectedSlot={selectedTimeSlot}
+            lessonDuration={lessonDuration}
+            onLessonDurationChange={handleLessonDurationChange}
+          />
         </div>
       )}
     </div>
