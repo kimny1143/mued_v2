@@ -42,9 +42,6 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   // 選択された時間枠
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
   
-  // レッスン時間 (60分 or 90分)
-  const [lessonDuration, setLessonDuration] = useState<60 | 90>(60);
-  
   // データ取得中のローディング状態
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
@@ -72,6 +69,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
           dateRange.to
         );
         
+        // 取得したデータをログ出力して確認
+        console.log('取得したスロット:', slots);
         setTimeSlots(slots);
       } catch (err) {
         console.error('時間枠取得エラー:', err);
@@ -142,12 +141,6 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     }
   };
 
-  // レッスン時間変更の処理
-  const handleLessonDurationChange = (duration: 60 | 90) => {
-    setLessonDuration(duration);
-    setSelectedTimeSlot(null);
-  };
-
   // 選択された日付のみを取得
   const selectedDate = selectedDates.length > 0 ? selectedDates[0] : null;
 
@@ -186,6 +179,13 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     return date.getDate() === today.getDate() && 
            date.getMonth() === today.getMonth() && 
            date.getFullYear() === today.getFullYear();
+  };
+
+  // 特定の日付の予約可能時間枠があるかチェック
+  const hasAvailableSlotsOnDate = (date: Date) => {
+    return timeSlots.some(
+      slot => isSameDay(new Date(slot.startTime), date) && slot.isAvailable
+    );
   };
 
   return (
@@ -261,9 +261,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                 <div className="grid grid-cols-7 gap-1 mt-2">
                   {weekDates.map((date, index) => {
                     const isSelected = selectedDates.some(d => isSameDay(d, date));
-                    const hasAvailableSlots = timeSlots.some(
-                      slot => isSameDay(slot.startTime, date) && slot.isAvailable
-                    );
+                    const hasAvailableSlots = hasAvailableSlotsOnDate(date);
                     
                     return (
                       <div 
@@ -302,8 +300,6 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                       timeSlots={timeSlots}
                       onTimeSlotSelect={handleTimeSlotSelect}
                       selectedSlot={selectedTimeSlot}
-                      lessonDuration={lessonDuration}
-                      onLessonDurationChange={handleLessonDurationChange}
                       showDateHeading={true}
                     />
                   </div>
@@ -344,8 +340,6 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                   timeSlots={timeSlots}
                   onTimeSlotSelect={handleTimeSlotSelect}
                   selectedSlot={selectedTimeSlot}
-                  lessonDuration={lessonDuration}
-                  onLessonDurationChange={handleLessonDurationChange}
                   showDateHeading={false}
                 />
               </div>

@@ -18,8 +18,6 @@ interface TimeSlotDisplayProps {
   timeSlots: TimeSlot[];
   onTimeSlotSelect: (slot: TimeSlot) => void;
   selectedSlot?: TimeSlot | null;
-  lessonDuration: 60 | 90;
-  onLessonDurationChange: (duration: 60 | 90) => void;
   showDateHeading?: boolean;
 }
 
@@ -28,8 +26,6 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
   timeSlots,
   onTimeSlotSelect,
   selectedSlot,
-  lessonDuration,
-  onLessonDurationChange,
   showDateHeading = true,
 }) => {
   // 選択された日付に対応する時間枠のみをフィルタリング
@@ -44,28 +40,6 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
   const formattedDate = selectedDate
     ? format(selectedDate, 'yyyy年MM月dd日 (EEEE)', { locale: ja })
     : '';
-
-  // 60分授業の場合と90分授業の場合でフィルタリングロジックを分ける
-  const getAvailableSlots = (duration: 60 | 90) => {
-    if (duration === 60) {
-      // 60分枠はそのまま表示
-      return filteredTimeSlots;
-    } else {
-      // 90分枠は、連続する2つの60分枠が必要（簡易的な実装）
-      return filteredTimeSlots.filter((slot, index) => {
-        if (index === filteredTimeSlots.length - 1) return false;
-        
-        const nextSlot = filteredTimeSlots[index + 1];
-        const slotEnd = new Date(slot.endTime);
-        const nextStart = new Date(nextSlot.startTime);
-        
-        // 連続した時間枠かどうかチェック
-        return slotEnd.getTime() === nextStart.getTime();
-      });
-    }
-  };
-
-  const availableSlots = getAvailableSlots(lessonDuration);
 
   if (!selectedDate) {
     return (
@@ -82,43 +56,16 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
         <h3 className="text-lg font-medium mb-2" id="timeslot-heading">{formattedDate}</h3>
       )}
       
-      <div className="flex flex-wrap gap-2 mb-4" role="radiogroup" aria-labelledby="duration-heading">
-        <span id="duration-heading" className="sr-only">レッスン時間を選択</span>
-        <Button
-          variant={lessonDuration === 60 ? "default" : "outline"}
-          size="sm"
-          onClick={() => onLessonDurationChange(60)}
-          aria-pressed={lessonDuration === 60}
-          className="flex-1 sm:flex-none min-w-[110px]"
-        >
-          60分レッスン
-        </Button>
-        <Button
-          variant={lessonDuration === 90 ? "default" : "outline"}
-          size="sm"
-          onClick={() => onLessonDurationChange(90)}
-          aria-pressed={lessonDuration === 90}
-          className="flex-1 sm:flex-none min-w-[110px]"
-        >
-          90分レッスン
-        </Button>
-      </div>
-      
       <div aria-labelledby={showDateHeading ? "timeslot-heading" : undefined} role="region">
-        {availableSlots.length > 0 ? (
+        {filteredTimeSlots.length > 0 ? (
           <div 
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2"
             role="radiogroup"
             aria-label="予約可能な時間枠"
           >
-            {availableSlots.map((slot) => {
+            {filteredTimeSlots.map((slot) => {
               const startTime = format(slot.startTime, 'HH:mm');
-              const endTime = format(
-                lessonDuration === 90
-                  ? addMinutes(slot.startTime, 90)
-                  : slot.endTime,
-                'HH:mm'
-              );
+              const endTime = format(slot.endTime, 'HH:mm');
               
               const isSelected = selectedSlot && selectedSlot.id === slot.id;
               const timeLabel = `${startTime}から${endTime}まで`;
@@ -151,9 +98,7 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
         ) : (
           <div className="text-center p-4 bg-gray-50 rounded-lg" aria-live="polite">
             <p className="text-gray-500">
-              {lessonDuration === 90
-                ? '選択された日に90分の空き時間がありません。60分レッスンをお試しください。'
-                : '選択された日に空き時間がありません。別の日をお試しください。'}
+              選択された日に空き時間がありません。別の日をお試しください。
             </p>
           </div>
         )}

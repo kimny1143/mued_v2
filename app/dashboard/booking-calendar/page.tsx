@@ -54,6 +54,11 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
       return true;
     });
     
+    console.log('利用可能なスロット数:', availableSlots.length);
+    if (availableSlots.length > 0) {
+      console.log('サンプルスロット:', availableSlots[0]);
+    }
+    
     // メンターIDでグループ化
     availableSlots.forEach(slot => {
       const mentorId = slot.teacherId;
@@ -149,6 +154,15 @@ export default function BookingCalendarPage() {
         
         const data: LessonSlot[] = await response.json();
         console.log(`取得したレッスンスロット: ${data.length}件`);
+        if (data.length > 0) {
+          console.log('最初のスロット例:', {
+            id: data[0].id,
+            teacherId: data[0].teacherId,
+            startTime: data[0].startTime,
+            endTime: data[0].endTime,
+            teacherName: data[0].teacher?.name
+          });
+        }
         
         // メンター形式に変換
         const convertedMentors = convertLessonSlotsToMentors(data);
@@ -331,20 +345,6 @@ export default function BookingCalendarPage() {
                     />
                   </div>
                 </div>
-                
-                {/* 選択完了ボタン - 日付と時間が選択された場合のみ表示 */}
-                {selectedDates.length > 0 && selectedTimeSlot && (
-                  <div className="mt-4 flex justify-end">
-                    <Button 
-                      size="lg" 
-                      onClick={() => setStep('confirmation')}
-                      className="w-full md:w-auto"
-                    >
-                      予約内容を確認する
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -390,22 +390,12 @@ export default function BookingCalendarPage() {
                     </div>
                     
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-4 bg-gray-50 rounded-md">
-                      <div className="font-medium w-32">レッスン時間:</div>
+                      <div className="font-medium w-32">開始時間:</div>
                       <div className="flex-1">
                         {selectedTimeSlot.startTime.toLocaleTimeString('ja-JP', {
                           hour: '2-digit',
                           minute: '2-digit',
-                        })} 〜 {
-                          lessonDuration === 60 
-                            ? selectedTimeSlot.endTime.toLocaleTimeString('ja-JP', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
-                            : new Date(selectedTimeSlot.startTime.getTime() + 90 * 60000).toLocaleTimeString('ja-JP', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })
-                        }
+                        })}
                       </div>
                     </div>
                     
@@ -428,6 +418,13 @@ export default function BookingCalendarPage() {
                             90分
                           </button>
                         </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          レッスン終了時間: {
+                            lessonDuration === 60 
+                              ? selectedTimeSlot.endTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+                              : new Date(selectedTimeSlot.startTime.getTime() + 90 * 60000).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+                          }
+                        </p>
                       </div>
                     </div>
                   </div>
