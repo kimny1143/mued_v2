@@ -20,6 +20,7 @@ interface TimeSlotDisplayProps {
   selectedSlot?: TimeSlot | null;
   lessonDuration: 60 | 90;
   onLessonDurationChange: (duration: 60 | 90) => void;
+  showDateHeading?: boolean;
 }
 
 export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
@@ -29,6 +30,7 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
   selectedSlot,
   lessonDuration,
   onLessonDurationChange,
+  showDateHeading = true,
 }) => {
   // 選択された日付に対応する時間枠のみをフィルタリング
   const filteredTimeSlots = selectedDate
@@ -76,7 +78,9 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow p-4">
-      <h3 className="text-lg font-medium mb-2" id="timeslot-heading">{formattedDate}</h3>
+      {showDateHeading && (
+        <h3 className="text-lg font-medium mb-2" id="timeslot-heading">{formattedDate}</h3>
+      )}
       
       <div className="flex flex-wrap gap-2 mb-4" role="radiogroup" aria-labelledby="duration-heading">
         <span id="duration-heading" className="sr-only">レッスン時間を選択</span>
@@ -100,7 +104,7 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
         </Button>
       </div>
       
-      <div aria-labelledby="timeslot-heading" role="region">
+      <div aria-labelledby={showDateHeading ? "timeslot-heading" : undefined} role="region">
         {availableSlots.length > 0 ? (
           <div 
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2"

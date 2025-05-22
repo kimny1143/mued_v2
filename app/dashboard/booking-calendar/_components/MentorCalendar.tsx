@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, CalendarChangeHandler, CalendarSelected } from '@demark-pro/react-booking-calendar';
+import { Calendar, CalendarChangeHandler, CalendarSelected, CalendarReserved } from '@demark-pro/react-booking-calendar';
 import '@demark-pro/react-booking-calendar/dist/react-booking-calendar.css';
 import { Mentor } from './MentorList';
 import { CalendarNavigation } from './CalendarNavigation';
 import { TimeSlotDisplay, TimeSlot } from './TimeSlotDisplay';
-import { startOfMonth, endOfMonth, isSameDay, addDays } from 'date-fns';
+import { startOfMonth, endOfMonth, isSameDay, addDays, format } from 'date-fns';
 import { fetchMentorAvailability, convertToReservedDates, getDefaultDateRange } from '../_lib/calendarUtils';
 import { AlertCircle } from 'lucide-react';
 
@@ -28,8 +28,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   // 現在表示中の日付
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   
-  // 表示モード (月/週)
-  const [view, setView] = useState<'month' | 'week'>('month');
+  // 表示モード (月/週/日)
+  const [view, setView] = useState<'month' | 'week' | 'day'>('month');
   
   // 予約時間枠
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
@@ -98,14 +98,19 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       onDateSelect(validDates);
     }
     
-    // モバイルでは自動的に時間枠表示にスクロール
-    if (validDates.length > 0 && window.innerWidth < 768) {
-      setTimeout(() => {
-        const timeSlotElement = document.getElementById('time-slot-section');
-        if (timeSlotElement) {
-          timeSlotElement.scrollIntoView({ behavior: 'smooth' });
-        }
-      }, 100);
+    // 日付が選択されたら自動的に日表示に切り替え
+    if (validDates.length > 0) {
+      setView('day');
+      
+      // モバイルでは自動的に時間枠表示にスクロール
+      if (window.innerWidth < 768) {
+        setTimeout(() => {
+          const timeSlotElement = document.getElementById('time-slot-section');
+          if (timeSlotElement) {
+            timeSlotElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 100);
+      }
     }
   };
 
@@ -152,126 +157,84 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         </div>
       )}
       
-      <div className="flex flex-col md:flex-row gap-4">
-        {/* モバイルでメンター選択の折りたたみセクション */}
-        <div className="md:hidden w-full bg-white rounded-lg shadow">
-          <details className="w-full">
-            <summary className="p-4 cursor-pointer font-semibold flex items-center justify-between">
-              メンターを選択
-              <span className="text-sm text-gray-500">
-                {mentors.find(m => m.id === currentMentorId)?.name || '選択してください'}
-              </span>
-            </summary>
-            <div className="p-4 pt-0 border-t space-y-2">
-              {mentors.map((mentor) => (
-                <div
-                  key={mentor.id}
-                  className={`p-3 rounded-md cursor-pointer transition-colors ${
-                    currentMentorId === mentor.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-gray-100 hover:bg-gray-200'
-                  }`}
-                  onClick={() => handleMentorChange(mentor.id)}
-                >
-                  <div className="flex items-center gap-2">
-                    {mentor.image ? (
-                      <img
-                        src={mentor.image}
-                        alt={mentor.name || '名前なし'}
-                        className="w-8 h-8 rounded-full"
-                      />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                        {mentor.name ? mentor.name.charAt(0) : '?'}
-                      </div>
-                    )}
-                    <span>{mentor.name}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </details>
-        </div>
-        
-        {/* デスクトップ表示のメンター選択サイドバー */}
-        <div className="hidden md:block md:w-1/4 lg:w-1/5 bg-white rounded-lg shadow p-4">
-          <h3 className="text-lg font-semibold mb-4" id="mentor-selector-heading">メンターを選択</h3>
-          <div className="space-y-2" role="radiogroup" aria-labelledby="mentor-selector-heading">
-            {mentors.map((mentor) => (
-              <div
-                key={mentor.id}
-                className={`p-3 rounded-md cursor-pointer transition-colors ${
-                  currentMentorId === mentor.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-gray-100 hover:bg-gray-200'
-                }`}
-                onClick={() => handleMentorChange(mentor.id)}
-                role="radio"
-                aria-checked={currentMentorId === mentor.id}
-                tabIndex={currentMentorId === mentor.id ? 0 : -1}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    handleMentorChange(mentor.id);
-                    e.preventDefault();
-                  }
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  {mentor.image ? (
-                    <img
-                      src={mentor.image}
-                      alt={mentor.name || '名前なし'}
-                      className="w-8 h-8 rounded-full"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                      {mentor.name ? mentor.name.charAt(0) : '?'}
-                    </div>
-                  )}
-                  <span>{mentor.name}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* カレンダーセクション */}
-        <div className="w-full md:w-3/4 lg:w-4/5 bg-white rounded-lg shadow p-4">
-          <CalendarNavigation
-            currentDate={currentDate}
-            onDateChange={handleDateNavigation}
-            view={view}
-            onViewChange={setView}
-          />
-          
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64" aria-live="polite" aria-busy="true">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <span className="sr-only">読み込み中...</span>
-            </div>
-          ) : (
-            <div className="calendar-container touch-manipulation">
-              <Calendar
-                selected={selectedDates}
-                reserved={reserved}
-                onChange={handleDateChange}
-                initialDate={currentDate}
-                classNames={{
-                  CalendarContainer: 'bg-white',
-                  MonthContent: 'text-lg font-medium mb-2',
-                  WeekContent: 'text-sm',
-                  DayContent: 'text-center w-full h-full min-h-[40px] sm:min-h-[inherit]',
-                  DaySelection: 'bg-primary text-primary-foreground rounded-md',
-                  DayReservation: 'bg-red-100 line-through text-gray-400',
-                }}
+      <div className="bg-white rounded-lg shadow p-4">
+        {/* メンター情報表示 */}
+        {currentMentorId && (
+          <div className="mb-4 flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+            {mentors.find(m => m.id === currentMentorId)?.image ? (
+              <img
+                src={mentors.find(m => m.id === currentMentorId)?.image || ''}
+                alt={mentors.find(m => m.id === currentMentorId)?.name || ''}
+                className="w-10 h-10 rounded-full"
               />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                {mentors.find(m => m.id === currentMentorId)?.name?.charAt(0) || '?'}
+              </div>
+            )}
+            <div>
+              <div className="font-medium">{mentors.find(m => m.id === currentMentorId)?.name}</div>
+              <div className="text-sm text-gray-500">
+                レッスン数: {mentors.find(m => m.id === currentMentorId)?.availableSlotsCount || 0}回
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+        
+        <CalendarNavigation
+          currentDate={currentDate}
+          onDateChange={handleDateNavigation}
+          view={view}
+          onViewChange={setView}
+        />
+        
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64" aria-live="polite" aria-busy="true">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="sr-only">読み込み中...</span>
+          </div>
+        ) : (
+          <>
+            {/* 日表示モードの場合 */}
+            {view === 'day' && selectedDate ? (
+              <div className="mt-4 p-2">
+                <h3 className="text-lg font-medium mb-4">
+                  {format(selectedDate, 'yyyy年MM月dd日 (EEEE)')}
+                </h3>
+                <TimeSlotDisplay
+                  selectedDate={selectedDate}
+                  timeSlots={timeSlots}
+                  onTimeSlotSelect={handleTimeSlotSelect}
+                  selectedSlot={selectedTimeSlot}
+                  lessonDuration={lessonDuration}
+                  onLessonDurationChange={handleLessonDurationChange}
+                  showDateHeading={false}
+                />
+              </div>
+            ) : (
+              <div className="calendar-container touch-manipulation">
+                <Calendar
+                  selected={selectedDates}
+                  reserved={reserved}
+                  onChange={handleDateChange}
+                  initialDate={currentDate}
+                  classNames={{
+                    CalendarContainer: 'bg-white',
+                    MonthContent: 'text-lg font-medium mb-2',
+                    WeekContent: 'text-sm',
+                    DayContent: 'text-center w-full h-full min-h-[40px] sm:min-h-[inherit]',
+                    DaySelection: 'bg-primary text-primary-foreground rounded-md',
+                    DayReservation: 'bg-red-100 line-through text-gray-400',
+                  }}
+                />
+              </div>
+            )}
+          </>
+        )}
       </div>
       
-      {/* 時間枠表示セクション */}
-      {selectedDate && (
+      {/* 時間枠表示セクション - 日表示モード以外のときのみ表示 */}
+      {selectedDate && view !== 'day' && (
         <div className="mt-4" id="time-slot-section">
           <TimeSlotDisplay
             selectedDate={selectedDate}
@@ -280,6 +243,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
             selectedSlot={selectedTimeSlot}
             lessonDuration={lessonDuration}
             onLessonDurationChange={handleLessonDurationChange}
+            showDateHeading={true}
           />
         </div>
       )}

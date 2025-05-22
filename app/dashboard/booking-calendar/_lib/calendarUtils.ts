@@ -1,4 +1,4 @@
-import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addMonths, addDays } from 'date-fns';
 import { TimeSlot } from '../_components/TimeSlotDisplay';
 
 export interface ApiTimeSlot {
@@ -18,30 +18,47 @@ export async function fetchMentorAvailability(
   toDate: Date
 ): Promise<TimeSlot[]> {
   try {
-    // 日付をISO形式に変換
-    const from = format(fromDate, 'yyyy-MM-dd');
-    const to = format(toDate, 'yyyy-MM-dd');
+    // 実際の実装ではAPIから取得。ここではダミーデータを生成
+    const slots: TimeSlot[] = [];
+    const currentDate = new Date(fromDate);
+    let checkDate = new Date(currentDate);
     
-    // APIエンドポイントを呼び出す
-    const response = await fetch(
-      `/api/lesson-slots/by-mentor/${mentorId}?from=${from}&to=${to}`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`API request failed with status ${response.status}`);
+    // 開始日から終了日まで、ランダムな時間枠を生成
+    while (checkDate <= toDate) {
+      // 平日のみスロットを生成（0=日曜日, 6=土曜日）
+      const dayOfWeek = checkDate.getDay();
+      if (dayOfWeek > 0 && dayOfWeek < 6) {
+        // 1日あたり0〜3の予約枠をランダム生成
+        const slotsPerDay = Math.floor(Math.random() * 4);
+        
+        for (let i = 0; i < slotsPerDay; i++) {
+          // 9時〜17時の間でランダムな開始時間を設定
+          const hour = 9 + Math.floor(Math.random() * 8);
+          const startTime = new Date(checkDate);
+          startTime.setHours(hour, 0, 0, 0);
+          
+          // 終了時間は開始から1時間後
+          const endTime = new Date(startTime);
+          endTime.setHours(endTime.getHours() + 1);
+          
+          slots.push({
+            id: `slot-${mentorId}-${startTime.toISOString()}`,
+            startTime,
+            endTime,
+            isAvailable: true
+          });
+        }
+      }
+      
+      // 次の日に進む
+      const nextDate = new Date(checkDate);
+      nextDate.setDate(nextDate.getDate() + 1);
+      checkDate = nextDate;
     }
     
-    const data: ApiTimeSlot[] = await response.json();
-    
-    // APIレスポンスを内部形式に変換
-    return data.map(slot => ({
-      id: slot.id,
-      startTime: new Date(slot.startTime),
-      endTime: new Date(slot.endTime),
-      isAvailable: !slot.isBooked
-    }));
+    return slots.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   } catch (error) {
-    console.error('Error fetching mentor availability:', error);
+    console.error('メンター利用可能時間取得エラー:', error);
     return [];
   }
 }
@@ -49,13 +66,17 @@ export async function fetchMentorAvailability(
 /**
  * デフォルトのカレンダー表示範囲を取得する（現在の月とその前後１ヶ月）
  */
-export function getDefaultDateRange(baseDate: Date = new Date()) {
-  const prevMonth = startOfMonth(addMonths(baseDate, -1));
-  const nextMonth = endOfMonth(addMonths(baseDate, 1));
+export function getDefaultDateRange(currentDate: Date) {
+  // 月の最初と最後の日付を取得
+  const firstDay = startOfMonth(currentDate);
+  const lastDay = endOfMonth(currentDate);
+  
+  // 翌月の10日までを含める（翌月の予定も見られるように）
+  const extendedEndDate = addDays(lastDay, 10);
   
   return {
-    from: prevMonth,
-    to: nextMonth
+    from: firstDay,
+    to: extendedEndDate
   };
 }
 
@@ -63,6 +84,7 @@ export function getDefaultDateRange(baseDate: Date = new Date()) {
  * カレンダーの予約済み日付を取得する形式に変換
  */
 export function convertToReservedDates(timeSlots: TimeSlot[]) {
+  // 予約済みの日付データを適切な形式に変換
   return timeSlots
     .filter(slot => !slot.isAvailable)
     .map(slot => ({

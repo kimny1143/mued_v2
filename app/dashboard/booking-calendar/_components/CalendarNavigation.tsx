@@ -9,8 +9,8 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-reac
 interface CalendarNavigationProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
-  onViewChange?: (view: 'month' | 'week') => void;
-  view?: 'month' | 'week';
+  onViewChange?: (view: 'month' | 'week' | 'day') => void;
+  view?: 'month' | 'week' | 'day';
 }
 
 export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
@@ -77,6 +77,16 @@ export const CalendarNavigation: React.FC<CalendarNavigationProps> = ({
               aria-label="週表示"
             >
               週表示
+            </Button>
+            <Button 
+              variant={view === 'day' ? 'default' : 'ghost'} 
+              size="sm"
+              className="rounded-none border-0"
+              onClick={() => onViewChange('day')}
+              aria-pressed={view === 'day'}
+              aria-label="日表示"
+            >
+              日表示
             </Button>
           </div>
         )}

@@ -5,7 +5,7 @@ import { MentorCalendar } from './_components/MentorCalendar';
 import { MentorList } from './_components/MentorList';
 import type { Mentor } from './_components/MentorList';
 import { Button } from '@/app/components/ui/button';
-import { CalendarClock, ArrowRight, ArrowLeft } from 'lucide-react';
+import { CalendarClock, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { TimeSlot } from './_components/TimeSlotDisplay';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
@@ -95,6 +95,9 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
   }
 }
 
+// 予約ステップの定義
+type BookingStep = 'mentor-selection' | 'calendar' | 'confirmation';
+
 export default function BookingCalendarPage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,7 +106,7 @@ export default function BookingCalendarPage() {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
   const [lessonDuration, setLessonDuration] = useState<60 | 90>(60);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<'calendar' | 'confirmation'>('calendar');
+  const [step, setStep] = useState<BookingStep>('mentor-selection');
   const confirmationRef = useRef<HTMLDivElement>(null);
 
   // APIからメンターデータを取得
@@ -153,7 +156,6 @@ export default function BookingCalendarPage() {
         
         if (convertedMentors.length > 0) {
           setMentors(convertedMentors);
-          setSelectedMentorId(convertedMentors[0].id);
         } else {
           console.log('利用可能なメンターがありません');
         }
@@ -173,6 +175,8 @@ export default function BookingCalendarPage() {
     setSelectedMentorId(mentorId);
     setSelectedDates([]);
     setSelectedTimeSlot(null);
+    // メンター選択後、カレンダーステップに進む
+    setStep('calendar');
   };
 
   const handleDateSelect = (dates: Date[]) => {
@@ -181,6 +185,9 @@ export default function BookingCalendarPage() {
 
   const handleTimeSlotSelect = (slot: TimeSlot) => {
     setSelectedTimeSlot(slot);
+    
+    // 時間枠選択後、自動的に確認ステップに進む
+    setStep('confirmation');
     
     // モバイルでは時間枠選択後、自動的に確認画面にスクロール
     if (window.innerWidth < 768) {
@@ -199,6 +206,10 @@ export default function BookingCalendarPage() {
   const handleBackToCalendar = () => {
     setStep('calendar');
   };
+  
+  const handleBackToMentorSelection = () => {
+    setStep('mentor-selection');
+  };
 
   const handleProceedToPayment = () => {
     // TODO: 決済処理へ進む
@@ -213,6 +224,53 @@ export default function BookingCalendarPage() {
     return lessonDuration === 60 ? 5000 : 7500;
   };
 
+  // 現在のステップに基づいてステップインジケーターを表示
+  const renderStepIndicator = () => {
+    return (
+      <div className="flex items-center justify-between mb-6 bg-white rounded-lg shadow p-4">
+        <div className="hidden md:flex w-full justify-between">
+          <div className={`flex flex-col items-center ${step === 'mentor-selection' ? 'text-primary font-medium' : 'text-gray-500'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${step === 'mentor-selection' ? 'bg-primary text-white' : step === 'calendar' || step === 'confirmation' ? 'bg-green-100 text-green-600' : 'bg-gray-100'}`}>
+              {step === 'calendar' || step === 'confirmation' ? <Check className="h-4 w-4" /> : '1'}
+            </div>
+            <span className="text-sm">メンター選択</span>
+          </div>
+          
+          <div className="w-full mx-4 mt-4 border-t border-gray-200" />
+          
+          <div className={`flex flex-col items-center ${step === 'calendar' ? 'text-primary font-medium' : step === 'confirmation' ? 'text-green-600' : 'text-gray-500'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${step === 'calendar' ? 'bg-primary text-white' : step === 'confirmation' ? 'bg-green-100 text-green-600' : 'bg-gray-100'}`}>
+              {step === 'confirmation' ? <Check className="h-4 w-4" /> : '2'}
+            </div>
+            <span className="text-sm">日時選択</span>
+          </div>
+          
+          <div className="w-full mx-4 mt-4 border-t border-gray-200" />
+          
+          <div className={`flex flex-col items-center ${step === 'confirmation' ? 'text-primary font-medium' : 'text-gray-500'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${step === 'confirmation' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
+              3
+            </div>
+            <span className="text-sm">確認・決済</span>
+          </div>
+        </div>
+        
+        {/* モバイル用のシンプルなステップ表示 */}
+        <div className="flex md:hidden w-full items-center justify-between">
+          <div className={`text-sm ${step === 'mentor-selection' ? 'text-primary font-medium' : step === 'calendar' || step === 'confirmation' ? 'text-green-600' : 'text-gray-500'}`}>
+            1. メンター
+          </div>
+          <div className={`text-sm ${step === 'calendar' ? 'text-primary font-medium' : step === 'confirmation' ? 'text-green-600' : 'text-gray-500'}`}>
+            2. 日時
+          </div>
+          <div className={`text-sm ${step === 'confirmation' ? 'text-primary font-medium' : 'text-gray-500'}`}>
+            3. 確認
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto py-6 px-4 sm:px-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-2">
@@ -223,18 +281,22 @@ export default function BookingCalendarPage() {
         
         {/* ステップ表示 - モバイル用 */}
         <div className="flex items-center md:hidden">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleBackToCalendar}
-            disabled={step === 'calendar'}
-            className="text-sm"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            カレンダーに戻る
-          </Button>
+          {step !== 'mentor-selection' && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={step === 'confirmation' ? handleBackToCalendar : handleBackToMentorSelection}
+              className="text-sm"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              {step === 'confirmation' ? 'カレンダーに戻る' : 'メンター選択に戻る'}
+            </Button>
+          )}
         </div>
       </div>
+      
+      {/* ステップインジケーター */}
+      {renderStepIndicator()}
       
       {error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg" role="alert">
@@ -249,19 +311,21 @@ export default function BookingCalendarPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* メンター選択リスト */}
-          <div className={`md:col-span-1 ${step === 'confirmation' ? 'hidden md:block' : ''}`}>
-            <MentorList
-              mentors={mentors}
-              selectedMentorId={selectedMentorId}
-              onMentorSelect={handleMentorSelect}
-              isLoading={isLoading}
-            />
-          </div>
+          {/* メンター選択リスト - メンター選択ステップのみ表示 */}
+          {step === 'mentor-selection' && (
+            <div className="md:col-span-3">
+              <MentorList
+                mentors={mentors}
+                selectedMentorId={selectedMentorId}
+                onMentorSelect={handleMentorSelect}
+                isLoading={isLoading}
+              />
+            </div>
+          )}
           
-          {/* カレンダー表示 */}
-          <div className={`md:col-span-2 ${step === 'confirmation' ? 'hidden md:block' : ''}`}>
-            {selectedMentorId && (
+          {/* カレンダー表示 - カレンダーステップのみ表示 */}
+          {step === 'calendar' && selectedMentorId && (
+            <div className="md:col-span-3">
               <div className="bg-white rounded-lg shadow">
                 <div className="p-4 border-b">
                   <h2 className="text-lg font-semibold">予約可能な日時を選択</h2>
@@ -282,106 +346,142 @@ export default function BookingCalendarPage() {
                   />
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* 予約確認セクション */}
-      {selectedDates.length > 0 && selectedTimeSlot && (
-        <div 
-          className={`mt-8 bg-white rounded-lg shadow p-4 ${step === 'confirmation' ? 'block' : 'md:block'}`}
-          ref={confirmationRef}
-          id="confirmation-section"
-          aria-live="polite"
-        >
-          <h2 className="text-xl font-semibold mb-4" id="confirmation-heading">予約を確定する</h2>
-          <div className="mb-4 space-y-2">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-gray-50 rounded-md">
-              <div className="font-medium w-24">メンター:</div>
-              <div className="flex-1">{selectedMentor?.name}</div>
             </div>
-            
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-gray-50 rounded-md">
-              <div className="font-medium w-24">レッスン日:</div>
-              <div className="flex-1">
-                {selectedDates[0]?.toLocaleDateString('ja-JP', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  weekday: 'short',
-                })}
-              </div>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 bg-gray-50 rounded-md">
-              <div className="font-medium w-24">レッスン時間:</div>
-              <div className="flex-1">
-                {selectedTimeSlot.startTime.toLocaleTimeString('ja-JP', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })} 〜 {
-                  lessonDuration === 60 
-                    ? selectedTimeSlot.endTime.toLocaleTimeString('ja-JP', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : new Date(selectedTimeSlot.startTime.getTime() + 90 * 60000).toLocaleTimeString('ja-JP', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                }
-              </div>
-            </div>
-          </div>
+          )}
           
-          <div className="flex flex-col sm:flex-row gap-4 mt-6">
-            <div className="flex-1">
-              <h3 className="font-medium mb-2">レッスン時間</h3>
-              <div className="flex gap-2">
-                <button 
-                  className={`border ${lessonDuration === 60 ? 'border-primary bg-primary text-primary-foreground' : 'border-gray-300 hover:border-primary'} px-4 py-2 rounded-md`}
-                  onClick={() => handleLessonDurationChange(60)}
-                  aria-pressed={lessonDuration === 60}
+          {/* 予約確認セクション - 確認ステップのみ表示 */}
+          {step === 'confirmation' && selectedDates.length > 0 && selectedTimeSlot && (
+            <div 
+              className="md:col-span-3 bg-white rounded-lg shadow p-6"
+              ref={confirmationRef}
+              id="confirmation-section"
+              aria-live="polite"
+            >
+              <h2 className="text-xl font-semibold mb-6" id="confirmation-heading">予約内容の確認</h2>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-4">レッスン詳細</h3>
+                  <div className="mb-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-4 bg-gray-50 rounded-md">
+                      <div className="font-medium w-32">メンター:</div>
+                      <div className="flex-1 flex items-center gap-2">
+                        {selectedMentor?.image ? (
+                          <img src={selectedMentor.image} alt={selectedMentor.name || '名前なし'} className="w-8 h-8 rounded-full" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            {selectedMentor?.name?.charAt(0) || '?'}
+                          </div>
+                        )}
+                        {selectedMentor?.name}
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-4 bg-gray-50 rounded-md">
+                      <div className="font-medium w-32">レッスン日:</div>
+                      <div className="flex-1">
+                        {selectedDates[0]?.toLocaleDateString('ja-JP', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          weekday: 'short',
+                        })}
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-4 bg-gray-50 rounded-md">
+                      <div className="font-medium w-32">レッスン時間:</div>
+                      <div className="flex-1">
+                        {selectedTimeSlot.startTime.toLocaleTimeString('ja-JP', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })} 〜 {
+                          lessonDuration === 60 
+                            ? selectedTimeSlot.endTime.toLocaleTimeString('ja-JP', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : new Date(selectedTimeSlot.startTime.getTime() + 90 * 60000).toLocaleTimeString('ja-JP', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                        }
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-4 bg-gray-50 rounded-md">
+                      <div className="font-medium w-32">レッスン時間:</div>
+                      <div className="flex-1">
+                        <div className="flex gap-2">
+                          <button 
+                            className={`border ${lessonDuration === 60 ? 'border-primary bg-primary text-primary-foreground' : 'border-gray-300 hover:border-primary'} px-4 py-2 rounded-md`}
+                            onClick={() => handleLessonDurationChange(60)}
+                            aria-pressed={lessonDuration === 60}
+                          >
+                            60分
+                          </button>
+                          <button 
+                            className={`border ${lessonDuration === 90 ? 'border-primary bg-primary text-primary-foreground' : 'border-gray-300 hover:border-primary'} px-4 py-2 rounded-md`}
+                            onClick={() => handleLessonDurationChange(90)}
+                            aria-pressed={lessonDuration === 90}
+                          >
+                            90分
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-lg font-medium mb-4">料金詳細</h3>
+                  <div className="p-4 bg-gray-50 rounded-md">
+                    <div className="flex justify-between items-center mb-2">
+                      <span>{lessonDuration}分レッスン</span>
+                      <span>¥{calculatePrice().toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm text-gray-500 mb-2">
+                      <span>消費税（10%）</span>
+                      <span>¥{(calculatePrice() * 0.1).toLocaleString()}</span>
+                    </div>
+                    <div className="border-t border-gray-300 my-2"></div>
+                    <div className="flex justify-between items-center font-bold mt-2">
+                      <span>合計</span>
+                      <span>¥{calculatePrice().toLocaleString()}</span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">（税込）</p>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium mb-2">お支払い方法</h3>
+                    <div className="p-4 bg-gray-50 rounded-md">
+                      <p className="text-sm">クレジットカード（Visa、Mastercard、JCB、American Express）</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={handleBackToCalendar}
+                  className="order-2 sm:order-1"
                 >
-                  60分
-                </button>
-                <button 
-                  className={`border ${lessonDuration === 90 ? 'border-primary bg-primary text-primary-foreground' : 'border-gray-300 hover:border-primary'} px-4 py-2 rounded-md`}
-                  onClick={() => handleLessonDurationChange(90)}
-                  aria-pressed={lessonDuration === 90}
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  日時を変更
+                </Button>
+                
+                <Button 
+                  className="w-full sm:flex-1 order-1 sm:order-2"
+                  size="lg"
+                  onClick={handleProceedToPayment}
                 >
-                  90分
-                </button>
+                  予約・決済に進む
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </div>
-            
-            <div className="flex-1">
-              <h3 className="font-medium mb-2">料金</h3>
-              <p className="text-xl">¥{calculatePrice().toLocaleString()}</p>
-              <p className="text-sm text-gray-500">（税込）</p>
-            </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-2 mt-6">
-            <Button 
-              variant="outline" 
-              onClick={handleBackToCalendar}
-              className="order-2 sm:order-1"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              予約内容を変更
-            </Button>
-            
-            <Button 
-              className="w-full sm:flex-1 order-1 sm:order-2"
-              size="lg"
-              onClick={handleProceedToPayment}
-            >
-              予約・決済に進む
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
+          )}
         </div>
       )}
     </div>
