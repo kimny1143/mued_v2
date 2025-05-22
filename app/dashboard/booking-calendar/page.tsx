@@ -8,6 +8,65 @@ import { Button } from '@/app/components/ui/button';
 import { CalendarClock, ArrowRight, ArrowLeft } from 'lucide-react';
 import { TimeSlot } from './_components/TimeSlotDisplay';
 
+// レッスンスロットの型定義
+interface LessonSlot {
+  id: string;
+  teacherId: string;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  hourlyRate?: number;
+  currency?: string;
+  teacher: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+  };
+  reservations: Array<{
+    id: string;
+    status: string;
+    bookedStartTime?: string;
+    bookedEndTime?: string;
+  }>;
+}
+
+// レッスンスロットをメンター形式に変換する関数
+function convertLessonSlotsToMentors(data: Record<string, LessonSlot[]>): Mentor[] {
+  try {
+    // APIレスポンス形式によって適宜調整が必要
+    // この例では、by-mentorエンドポイントが既にメンターIDでグループ化していると仮定
+    return Object.entries(data).map(([mentorId, slots]) => {
+      // 最初のスロットからメンター情報を取得
+      const firstSlot = slots[0] || {};
+      const teacher = firstSlot.teacher || {};
+      
+      return {
+        id: mentorId,
+        name: teacher.name || '名前なし',
+        email: teacher.email || '',
+        image: teacher.image || null,
+        // 仮の追加情報
+        bio: `${teacher.name || '講師'}は経験豊富なインストラクターです。`,
+        specialties: ['ピアノ', 'ギター'].slice(0, Math.floor(Math.random() * 3) + 1),
+        rating: {
+          avgRating: 4.5,
+          totalReviews: 10
+        },
+        availableSlots: slots.map(slot => ({
+          ...slot,
+          startTime: new Date(slot.startTime),
+          endTime: new Date(slot.endTime)
+        })),
+        availableSlotsCount: slots.length
+      };
+    });
+  } catch (error) {
+    console.error('データ変換エラー:', error);
+    return [];
+  }
+}
+
 export default function BookingCalendarPage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,8 +91,11 @@ export default function BookingCalendarPage() {
         const fromDate = now.toISOString().split('T')[0];
         const toDate = nextMonth.toISOString().split('T')[0];
         
+        console.log('APIリクエスト開始:', fromDate, 'から', toDate);
+        
+        // 既存APIを使用するよう変更
         const response = await fetch(
-          `/api/mentors?withAvailability=true&withDetails=true&from=${fromDate}&to=${toDate}`
+          `/api/lesson-slots/by-mentor?from=${fromDate}&to=${toDate}`
         );
         
         if (!response.ok) {
@@ -41,10 +103,17 @@ export default function BookingCalendarPage() {
         }
         
         const data = await response.json();
+        console.log('レッスンスロットAPI応答:', data);
         
-        if (Array.isArray(data) && data.length > 0) {
-          setMentors(data);
-          setSelectedMentorId(data[0].id);
+        // データ変換処理を追加
+        const convertedMentors = convertLessonSlotsToMentors(data);
+        console.log('変換後のメンターデータ:', convertedMentors);
+        
+        if (convertedMentors.length > 0) {
+          setMentors(convertedMentors);
+          setSelectedMentorId(convertedMentors[0].id);
+        } else {
+          console.log('利用可能なメンターがありません');
         }
         
       } catch (err) {
