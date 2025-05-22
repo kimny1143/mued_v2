@@ -6,9 +6,11 @@ import '@demark-pro/react-booking-calendar/dist/react-booking-calendar.css';
 import { Mentor } from './MentorList';
 import { CalendarNavigation } from './CalendarNavigation';
 import { TimeSlotDisplay, TimeSlot } from './TimeSlotDisplay';
-import { startOfMonth, endOfMonth, isSameDay, addDays, format } from 'date-fns';
+import { startOfMonth, endOfMonth, isSameDay, addDays, format, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, isSameMonth, getDay } from 'date-fns';
+import { ja } from 'date-fns/locale';
 import { fetchMentorAvailability, convertToReservedDates, getDefaultDateRange } from '../_lib/calendarUtils';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/app/components/ui/button';
 
 interface MentorCalendarProps {
   mentors: Mentor[];
@@ -101,6 +103,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     // 日付が選択されたら自動的に日表示に切り替え
     if (validDates.length > 0) {
       setView('day');
+      setCurrentDate(validDates[0]);
       
       // モバイルでは自動的に時間枠表示にスクロール
       if (window.innerWidth < 768) {
@@ -147,6 +150,43 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
 
   // 選択された日付のみを取得
   const selectedDate = selectedDates.length > 0 ? selectedDates[0] : null;
+
+  // 週表示用の日付範囲を取得
+  const getWeekDates = (date: Date) => {
+    const start = startOfWeek(date, { weekStartsOn: 1 }); // 月曜始まり
+    const end = endOfWeek(date, { weekStartsOn: 1 });
+    return eachDayOfInterval({ start, end });
+  };
+
+  // 週表示の日付配列
+  const weekDates = getWeekDates(currentDate);
+
+  // 日付表示の前後移動
+  const goToPreviousDay = () => {
+    const prevDay = new Date(currentDate);
+    prevDay.setDate(prevDay.getDate() - 1);
+    setCurrentDate(prevDay);
+  };
+
+  const goToNextDay = () => {
+    const nextDay = new Date(currentDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    setCurrentDate(nextDay);
+  };
+
+  // 選択された日付の曜日名を取得
+  const getWeekdayName = (date: Date) => {
+    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+    return weekdays[date.getDay()];
+  };
+
+  // 日付が今日かどうかをチェック
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() && 
+           date.getMonth() === today.getMonth() && 
+           date.getFullYear() === today.getFullYear();
+  };
 
   return (
     <div className="flex flex-col space-y-4">
@@ -195,23 +235,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
           </div>
         ) : (
           <>
-            {/* 日表示モードの場合 */}
-            {view === 'day' && selectedDate ? (
-              <div className="mt-4 p-2">
-                <h3 className="text-lg font-medium mb-4">
-                  {format(selectedDate, 'yyyy年MM月dd日 (EEEE)')}
-                </h3>
-                <TimeSlotDisplay
-                  selectedDate={selectedDate}
-                  timeSlots={timeSlots}
-                  onTimeSlotSelect={handleTimeSlotSelect}
-                  selectedSlot={selectedTimeSlot}
-                  lessonDuration={lessonDuration}
-                  onLessonDurationChange={handleLessonDurationChange}
-                  showDateHeading={false}
-                />
-              </div>
-            ) : (
+            {/* 月表示モード */}
+            {view === 'month' && (
               <div className="calendar-container touch-manipulation">
                 <Calendar
                   selected={selectedDates}
@@ -229,24 +254,105 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                 />
               </div>
             )}
+            
+            {/* 週表示モード */}
+            {view === 'week' && (
+              <div className="mt-4">
+                <div className="grid grid-cols-7 gap-1 mt-2">
+                  {weekDates.map((date, index) => {
+                    const isSelected = selectedDates.some(d => isSameDay(d, date));
+                    const hasAvailableSlots = timeSlots.some(
+                      slot => isSameDay(slot.startTime, date) && slot.isAvailable
+                    );
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className={`
+                          flex flex-col items-center p-2 rounded-md cursor-pointer
+                          ${isSelected ? 'bg-primary text-primary-foreground' : ''}
+                          ${!hasAvailableSlots ? 'opacity-50' : 'hover:bg-gray-100'}
+                          ${isToday(date) ? 'border border-primary' : ''}
+                        `}
+                        onClick={() => {
+                          if (hasAvailableSlots) {
+                            handleDateChange([date]);
+                          }
+                        }}
+                      >
+                        <div className={`text-sm ${!isSameMonth(date, currentDate) ? 'text-gray-400' : ''}`}>
+                          {format(date, 'M/d')}
+                        </div>
+                        <div className="text-xs mt-1">
+                          {getWeekdayName(date)}
+                        </div>
+                        {hasAvailableSlots && (
+                          <div className="mt-1 h-1 w-1 rounded-full bg-primary"></div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* 選択された日付の時間枠表示 */}
+                {selectedDate && (
+                  <div className="mt-4">
+                    <TimeSlotDisplay
+                      selectedDate={selectedDate}
+                      timeSlots={timeSlots}
+                      onTimeSlotSelect={handleTimeSlotSelect}
+                      selectedSlot={selectedTimeSlot}
+                      lessonDuration={lessonDuration}
+                      onLessonDurationChange={handleLessonDurationChange}
+                      showDateHeading={true}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* 日表示モード */}
+            {view === 'day' && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={goToPreviousDay}
+                    className="p-1 h-8 w-8"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <h3 className="text-lg font-medium">
+                    {format(currentDate, 'yyyy年MM月dd日')} ({getWeekdayName(currentDate)})
+                    {isToday(currentDate) && <span className="ml-2 text-sm text-primary">今日</span>}
+                  </h3>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={goToNextDay}
+                    className="p-1 h-8 w-8"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <TimeSlotDisplay
+                  selectedDate={currentDate}
+                  timeSlots={timeSlots}
+                  onTimeSlotSelect={handleTimeSlotSelect}
+                  selectedSlot={selectedTimeSlot}
+                  lessonDuration={lessonDuration}
+                  onLessonDurationChange={handleLessonDurationChange}
+                  showDateHeading={false}
+                />
+              </div>
+            )}
           </>
         )}
       </div>
-      
-      {/* 時間枠表示セクション - 日表示モード以外のときのみ表示 */}
-      {selectedDate && view !== 'day' && (
-        <div className="mt-4" id="time-slot-section">
-          <TimeSlotDisplay
-            selectedDate={selectedDate}
-            timeSlots={timeSlots}
-            onTimeSlotSelect={handleTimeSlotSelect}
-            selectedSlot={selectedTimeSlot}
-            lessonDuration={lessonDuration}
-            onLessonDurationChange={handleLessonDurationChange}
-            showDateHeading={true}
-          />
-        </div>
-      )}
     </div>
   );
 };

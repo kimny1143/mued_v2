@@ -96,7 +96,7 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
 }
 
 // 予約ステップの定義
-type BookingStep = 'mentor-selection' | 'calendar' | 'confirmation';
+type BookingStep = 'selection' | 'confirmation';
 
 export default function BookingCalendarPage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
@@ -106,7 +106,7 @@ export default function BookingCalendarPage() {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
   const [lessonDuration, setLessonDuration] = useState<60 | 90>(60);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<BookingStep>('mentor-selection');
+  const [step, setStep] = useState<BookingStep>('selection');
   const confirmationRef = useRef<HTMLDivElement>(null);
 
   // APIからメンターデータを取得
@@ -156,6 +156,9 @@ export default function BookingCalendarPage() {
         
         if (convertedMentors.length > 0) {
           setMentors(convertedMentors);
+          if (!selectedMentorId) {
+            setSelectedMentorId(convertedMentors[0].id);
+          }
         } else {
           console.log('利用可能なメンターがありません');
         }
@@ -169,14 +172,12 @@ export default function BookingCalendarPage() {
     };
 
     fetchMentors();
-  }, []);
+  }, [selectedMentorId]);
 
   const handleMentorSelect = (mentorId: string) => {
     setSelectedMentorId(mentorId);
     setSelectedDates([]);
     setSelectedTimeSlot(null);
-    // メンター選択後、カレンダーステップに進む
-    setStep('calendar');
   };
 
   const handleDateSelect = (dates: Date[]) => {
@@ -203,12 +204,8 @@ export default function BookingCalendarPage() {
     setLessonDuration(duration);
   };
 
-  const handleBackToCalendar = () => {
-    setStep('calendar');
-  };
-  
-  const handleBackToMentorSelection = () => {
-    setStep('mentor-selection');
+  const handleBackToSelection = () => {
+    setStep('selection');
   };
 
   const handleProceedToPayment = () => {
@@ -229,42 +226,30 @@ export default function BookingCalendarPage() {
     return (
       <div className="flex items-center justify-between mb-6 bg-white rounded-lg shadow p-4">
         <div className="hidden md:flex w-full justify-between">
-          <div className={`flex flex-col items-center ${step === 'mentor-selection' ? 'text-primary font-medium' : 'text-gray-500'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${step === 'mentor-selection' ? 'bg-primary text-white' : step === 'calendar' || step === 'confirmation' ? 'bg-green-100 text-green-600' : 'bg-gray-100'}`}>
-              {step === 'calendar' || step === 'confirmation' ? <Check className="h-4 w-4" /> : '1'}
+          <div className={`flex flex-col items-center ${step === 'selection' ? 'text-primary font-medium' : 'text-green-600'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${step === 'selection' ? 'bg-primary text-white' : 'bg-green-100 text-green-600'}`}>
+              {step === 'confirmation' ? <Check className="h-4 w-4" /> : '1'}
             </div>
-            <span className="text-sm">メンター選択</span>
-          </div>
-          
-          <div className="w-full mx-4 mt-4 border-t border-gray-200" />
-          
-          <div className={`flex flex-col items-center ${step === 'calendar' ? 'text-primary font-medium' : step === 'confirmation' ? 'text-green-600' : 'text-gray-500'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${step === 'calendar' ? 'bg-primary text-white' : step === 'confirmation' ? 'bg-green-100 text-green-600' : 'bg-gray-100'}`}>
-              {step === 'confirmation' ? <Check className="h-4 w-4" /> : '2'}
-            </div>
-            <span className="text-sm">日時選択</span>
+            <span className="text-sm">メンター・日時選択</span>
           </div>
           
           <div className="w-full mx-4 mt-4 border-t border-gray-200" />
           
           <div className={`flex flex-col items-center ${step === 'confirmation' ? 'text-primary font-medium' : 'text-gray-500'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${step === 'confirmation' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
-              3
+              2
             </div>
-            <span className="text-sm">確認・決済</span>
+            <span className="text-sm">予約確認・決済</span>
           </div>
         </div>
         
         {/* モバイル用のシンプルなステップ表示 */}
         <div className="flex md:hidden w-full items-center justify-between">
-          <div className={`text-sm ${step === 'mentor-selection' ? 'text-primary font-medium' : step === 'calendar' || step === 'confirmation' ? 'text-green-600' : 'text-gray-500'}`}>
-            1. メンター
-          </div>
-          <div className={`text-sm ${step === 'calendar' ? 'text-primary font-medium' : step === 'confirmation' ? 'text-green-600' : 'text-gray-500'}`}>
-            2. 日時
+          <div className={`text-sm ${step === 'selection' ? 'text-primary font-medium' : 'text-green-600'}`}>
+            1. 選択
           </div>
           <div className={`text-sm ${step === 'confirmation' ? 'text-primary font-medium' : 'text-gray-500'}`}>
-            3. 確認
+            2. 確認・決済
           </div>
         </div>
       </div>
@@ -281,15 +266,15 @@ export default function BookingCalendarPage() {
         
         {/* ステップ表示 - モバイル用 */}
         <div className="flex items-center md:hidden">
-          {step !== 'mentor-selection' && (
+          {step === 'confirmation' && (
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={step === 'confirmation' ? handleBackToCalendar : handleBackToMentorSelection}
+              onClick={handleBackToSelection}
               className="text-sm"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
-              {step === 'confirmation' ? 'カレンダーに戻る' : 'メンター選択に戻る'}
+              選択に戻る
             </Button>
           )}
         </div>
@@ -310,49 +295,64 @@ export default function BookingCalendarPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* メンター選択リスト - メンター選択ステップのみ表示 */}
-          {step === 'mentor-selection' && (
-            <div className="md:col-span-3">
-              <MentorList
-                mentors={mentors}
-                selectedMentorId={selectedMentorId}
-                onMentorSelect={handleMentorSelect}
-                isLoading={isLoading}
-              />
-            </div>
-          )}
-          
-          {/* カレンダー表示 - カレンダーステップのみ表示 */}
-          {step === 'calendar' && selectedMentorId && (
-            <div className="md:col-span-3">
-              <div className="bg-white rounded-lg shadow">
-                <div className="p-4 border-b">
-                  <h2 className="text-lg font-semibold">予約可能な日時を選択</h2>
-                  {selectedMentor && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      {selectedMentor.name} のレッスン可能時間
-                    </p>
-                  )}
+        <>
+          {/* メンター選択とカレンダー表示エリア */}
+          {step === 'selection' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* メンター選択リスト - 左側 */}
+              <div className="md:col-span-1">
+                <MentorList
+                  mentors={mentors}
+                  selectedMentorId={selectedMentorId}
+                  onMentorSelect={handleMentorSelect}
+                  isLoading={isLoading}
+                />
+              </div>
+              
+              {/* カレンダー表示 - 右側 */}
+              <div className="md:col-span-2">
+                <div className="bg-white rounded-lg shadow">
+                  <div className="p-4 border-b">
+                    <h2 className="text-lg font-semibold">予約可能な日時を選択</h2>
+                    {selectedMentor && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        {selectedMentor.name} のレッスン可能時間
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="p-4">
+                    <MentorCalendar
+                      mentors={mentors}
+                      selectedMentorId={selectedMentorId}
+                      onMentorSelect={handleMentorSelect}
+                      onDateSelect={handleDateSelect}
+                      onTimeSlotSelect={handleTimeSlotSelect}
+                    />
+                  </div>
                 </div>
                 
-                <div className="p-4">
-                  <MentorCalendar
-                    mentors={mentors}
-                    selectedMentorId={selectedMentorId}
-                    onMentorSelect={handleMentorSelect}
-                    onDateSelect={handleDateSelect}
-                    onTimeSlotSelect={handleTimeSlotSelect}
-                  />
-                </div>
+                {/* 選択完了ボタン - 日付と時間が選択された場合のみ表示 */}
+                {selectedDates.length > 0 && selectedTimeSlot && (
+                  <div className="mt-4 flex justify-end">
+                    <Button 
+                      size="lg" 
+                      onClick={() => setStep('confirmation')}
+                      className="w-full md:w-auto"
+                    >
+                      予約内容を確認する
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
           
-          {/* 予約確認セクション - 確認ステップのみ表示 */}
+          {/* 予約確認セクション */}
           {step === 'confirmation' && selectedDates.length > 0 && selectedTimeSlot && (
             <div 
-              className="md:col-span-3 bg-white rounded-lg shadow p-6"
+              className="bg-white rounded-lg shadow p-6"
               ref={confirmationRef}
               id="confirmation-section"
               aria-live="polite"
@@ -464,7 +464,7 @@ export default function BookingCalendarPage() {
               <div className="flex flex-col sm:flex-row gap-4 mt-8 pt-4 border-t">
                 <Button 
                   variant="outline" 
-                  onClick={handleBackToCalendar}
+                  onClick={handleBackToSelection}
                   className="order-2 sm:order-1"
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" />
@@ -482,7 +482,7 @@ export default function BookingCalendarPage() {
               </div>
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );
