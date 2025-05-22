@@ -9,84 +9,82 @@ export interface ApiTimeSlot {
   isBooked: boolean;
 }
 
+// レッスンスロットの型定義を追加
+export interface LessonSlot {
+  id?: string;
+  startTime: string | Date;
+  endTime: string | Date;
+  isAvailable?: boolean;
+}
+
 /**
  * メンターの利用可能時間枠を取得する
+ * @param mentorId メンターのID
+ * @param fromDate 開始日
+ * @param toDate 終了日
+ * @param availableSlots メンターの利用可能スロット（オプション）
  */
 export async function fetchMentorAvailability(
   mentorId: string,
   fromDate: Date,
-  toDate: Date
+  toDate: Date,
+  availableSlots?: LessonSlot[]
 ): Promise<TimeSlot[]> {
   try {
     console.log('メンター時間枠取得開始:', { mentorId, fromDate: fromDate.toISOString(), toDate: toDate.toISOString() });
     
-    // 実際の実装ではAPIから取得。ここではダミーデータを生成
-    const slots: TimeSlot[] = [];
-    const currentDate = new Date(fromDate);
-    let checkDate = new Date(currentDate);
-    
-    // 開始日から終了日まで、ランダムな時間枠を生成
-    while (checkDate <= toDate) {
-      // 平日のみスロットを生成（0=日曜日, 6=土曜日）
-      const dayOfWeek = checkDate.getDay();
-      if (dayOfWeek > 0 && dayOfWeek < 6) {
-        // 1日あたり0〜3の予約枠をランダム生成
-        const slotsPerDay = Math.floor(Math.random() * 4);
-        console.log(`${format(checkDate, 'yyyy/MM/dd')}のスロット数: ${slotsPerDay}`);
+    // availableSlotsが渡されている場合は、それを使用
+    if (availableSlots && availableSlots.length > 0) {
+      console.log(`渡されたスロット数: ${availableSlots.length}`);
+      
+      // 日付範囲でフィルタリング
+      const filteredSlots = availableSlots.filter(slot => {
+        const slotStart = new Date(slot.startTime);
+        return slotStart >= fromDate && slotStart <= toDate;
+      });
+      
+      console.log(`日付範囲内のスロット数: ${filteredSlots.length}`);
+      
+      // TimeSlot形式に変換
+      const slots: TimeSlot[] = filteredSlots.map(slot => ({
+        id: slot.id || `slot-${mentorId}-${slot.startTime}`,
+        startTime: new Date(slot.startTime),
+        endTime: new Date(slot.endTime),
+        isAvailable: slot.isAvailable !== false // デフォルトはtrue
+      }));
+      
+      const sortedSlots = slots.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+      
+      // 最初と最後のスロットをログ出力
+      if (sortedSlots.length > 0) {
+        console.log('最初のスロット:', {
+          date: format(sortedSlots[0].startTime, 'yyyy/MM/dd'),
+          start: format(sortedSlots[0].startTime, 'HH:mm'),
+          end: format(sortedSlots[0].endTime, 'HH:mm')
+        });
         
-        for (let i = 0; i < slotsPerDay; i++) {
-          // 9時〜17時の間でランダムな開始時間を設定
-          const hour = 9 + Math.floor(Math.random() * 8);
-          const startTime = new Date(checkDate);
-          startTime.setHours(hour, 0, 0, 0);
-          
-          // 終了時間は開始から1時間後
-          const endTime = new Date(startTime);
-          endTime.setHours(endTime.getHours() + 1);
-          
-          slots.push({
-            id: `slot-${mentorId}-${startTime.toISOString()}`,
-            startTime,
-            endTime,
-            isAvailable: true
-          });
-        }
+        console.log('最後のスロット:', {
+          date: format(sortedSlots[sortedSlots.length - 1].startTime, 'yyyy/MM/dd'),
+          start: format(sortedSlots[sortedSlots.length - 1].startTime, 'HH:mm'),
+          end: format(sortedSlots[sortedSlots.length - 1].endTime, 'HH:mm')
+        });
+        
+        // 日付ごとのスロット数を集計
+        const dateCountMap = new Map<string, number>();
+        sortedSlots.forEach(slot => {
+          const dateKey = format(slot.startTime, 'yyyy/MM/dd');
+          dateCountMap.set(dateKey, (dateCountMap.get(dateKey) || 0) + 1);
+        });
+        
+        console.log('日付ごとのスロット数:', Object.fromEntries(dateCountMap));
       }
       
-      // 次の日に進む
-      const nextDate = new Date(checkDate);
-      nextDate.setDate(nextDate.getDate() + 1);
-      checkDate = nextDate;
+      return sortedSlots;
     }
     
-    const sortedSlots = slots.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
-    console.log(`生成したスロット総数: ${sortedSlots.length}`);
-    
-    // 最初と最後のスロットをログ出力
-    if (sortedSlots.length > 0) {
-      console.log('最初のスロット:', {
-        date: format(sortedSlots[0].startTime, 'yyyy/MM/dd'),
-        start: format(sortedSlots[0].startTime, 'HH:mm'),
-        end: format(sortedSlots[0].endTime, 'HH:mm')
-      });
-      
-      console.log('最後のスロット:', {
-        date: format(sortedSlots[sortedSlots.length - 1].startTime, 'yyyy/MM/dd'),
-        start: format(sortedSlots[sortedSlots.length - 1].startTime, 'HH:mm'),
-        end: format(sortedSlots[sortedSlots.length - 1].endTime, 'HH:mm')
-      });
-      
-      // 日付ごとのスロット数を集計
-      const dateCountMap = new Map<string, number>();
-      sortedSlots.forEach(slot => {
-        const dateKey = format(slot.startTime, 'yyyy/MM/dd');
-        dateCountMap.set(dateKey, (dateCountMap.get(dateKey) || 0) + 1);
-      });
-      
-      console.log('日付ごとのスロット数:', Object.fromEntries(dateCountMap));
-    }
-    
-    return sortedSlots;
+    // availableSlotsが渡されていない場合のフォールバック
+    console.warn('利用可能スロットが渡されていません。空の配列を返します。');
+    return [];
   } catch (error) {
     console.error('メンター利用可能時間取得エラー:', error);
     return [];

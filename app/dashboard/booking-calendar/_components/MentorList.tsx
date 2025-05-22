@@ -10,12 +10,20 @@ export interface Mentor {
   id: string;
   name: string | null;
   image: string | null;
+  email?: string | null;
+  bio?: string;
   specialties?: string[];
   rating?: {
     avgRating: number;
     totalReviews: number;
   };
   availableSlotsCount?: number;
+  availableSlots?: Array<{
+    id?: string;
+    startTime: string | Date;
+    endTime: string | Date;
+    isAvailable?: boolean;
+  }>;
 }
 
 interface MentorListProps {

@@ -66,10 +66,24 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       
       try {
         const dateRange = getDefaultDateRange(currentDate);
+        
+        // 現在選択されているメンターを取得
+        const selectedMentor = mentors.find(m => m.id === currentMentorId);
+        
+        if (!selectedMentor) {
+          console.error('選択されたメンターが見つかりません:', currentMentorId);
+          setTimeSlots([]);
+          return;
+        }
+        
+        console.log('選択されたメンター:', selectedMentor.name, 'スロット数:', selectedMentor.availableSlots?.length);
+        
+        // メンターのavailableSlotsを渡してfetchMentorAvailabilityを呼び出す
         const slots = await fetchMentorAvailability(
           currentMentorId,
           dateRange.from,
-          dateRange.to
+          dateRange.to,
+          selectedMentor.availableSlots
         );
         
         // 取得したデータをログ出力して確認
@@ -101,7 +115,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     };
     
     fetchTimeSlots();
-  }, [currentMentorId, currentDate]);
+  }, [currentMentorId, currentDate, mentors]);
 
   // カレンダーコンポーネントに渡す予約済み日時
   const reserved = convertToReservedDates(timeSlots);
@@ -112,6 +126,14 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       .filter(slot => slot.isAvailable)
       .map(slot => startOfDay(new Date(slot.startTime)).getTime())
   )).map(timestamp => new Date(timestamp));
+  
+  // react-booking-calendar用の選択可能な日付を作成
+  const selectableDates = availableDays;
+  
+  // デバッグ情報を出力
+  if (DEBUG && availableDays.length > 0) {
+    console.log('利用可能な日付:', availableDays.map(d => format(d, 'yyyy/MM/dd')));
+  }
   
   // カスタムスタイルクラス
   const customDayClass = (date: Date) => {
@@ -286,14 +308,37 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                   selected={selectedDates}
                   reserved={reserved}
                   onChange={handleDateChange}
-                  initialDate={currentDate}
                   classNames={{
                     CalendarContainer: 'bg-white',
-                    MonthContent: 'text-lg font-medium mb-2',
-                    WeekContent: 'text-sm',
                     DayContent: 'text-center w-full h-full min-h-[40px] sm:min-h-[inherit]',
                     DaySelection: 'bg-primary text-primary-foreground rounded-md',
                     DayReservation: 'bg-red-100 line-through text-gray-400',
+                  }}
+                  components={{
+                    DayContent: ({ date }) => {
+                      const hasSlots = availableDays.some(d => isSameDay(d, date));
+                      const isSelected = selectedDates.some(d => isSameDay(d, date));
+                      const isDisabled = !hasSlots;
+                      
+                      return (
+                        <div 
+                          className={`w-full h-full flex flex-col items-center justify-center ${
+                            hasSlots ? 'font-medium cursor-pointer hover:bg-gray-50' : 'text-gray-400 cursor-not-allowed'
+                          } ${isSelected ? 'bg-primary text-white rounded-md' : ''}`}
+                          onClick={(e) => {
+                            if (isDisabled) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }
+                          }}
+                        >
+                          <span>{date.getDate()}</span>
+                          {hasSlots && !isSelected && (
+                            <div className="mt-1 h-1 w-1 rounded-full bg-green-500"></div>
+                          )}
+                        </div>
+                      );
+                    }
                   }}
                 />
               </div>
