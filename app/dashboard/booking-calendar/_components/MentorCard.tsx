@@ -25,6 +25,22 @@ export const MentorCard: React.FC<MentorCardProps> = ({
   isSelected, 
   onSelect 
 }) => {
+  // 評価を星の表示用に変換
+  const ratingStars = mentor.rating ? Math.round(mentor.rating.avgRating) : 0;
+  
+  // アクセシビリティ用の説明テキストを生成
+  const mentorDescription = `${mentor.name || '名前なし'}${
+    mentor.rating ? ` 評価${mentor.rating.avgRating}、レビュー数${mentor.rating.totalReviews}件` : ''
+  }${
+    mentor.specialties && mentor.specialties.length > 0 
+      ? `、専門分野: ${mentor.specialties.join('、')}` 
+      : ''
+  }${
+    mentor.availableSlotsCount !== undefined 
+      ? `、${mentor.availableSlotsCount}枠の空きあり` 
+      : ''
+  }`;
+
   return (
     <div
       className={`p-4 rounded-lg cursor-pointer transition-colors ${
@@ -33,13 +49,20 @@ export const MentorCard: React.FC<MentorCardProps> = ({
           : 'bg-white border border-gray-200 hover:border-primary/50'
       }`}
       onClick={() => onSelect(mentor.id)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onSelect(mentor.id);
+          e.preventDefault();
+        }
+      }}
+      aria-label={mentorDescription}
     >
       <div className="flex items-start gap-3">
-        <div className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+        <div className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden flex-shrink-0">
           {mentor.image ? (
             <Image 
               src={mentor.image} 
-              alt={mentor.name || '名前なし'} 
+              alt=""
               fill 
               className="object-cover"
             />
@@ -50,17 +73,19 @@ export const MentorCard: React.FC<MentorCardProps> = ({
           )}
         </div>
         
-        <div className="flex-1">
-          <h3 className="text-lg font-medium">{mentor.name || '名前なし'}</h3>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base sm:text-lg font-medium truncate">
+            {mentor.name || '名前なし'}
+          </h3>
           
           {mentor.rating && (
             <div className="flex items-center mt-1">
-              <div className="flex">
+              <div className="flex" aria-hidden="true">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <svg 
                     key={star} 
-                    className={`w-4 h-4 ${
-                      star <= Math.round(mentor.rating?.avgRating || 0)
+                    className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                      star <= ratingStars
                         ? 'text-yellow-400'
                         : 'text-gray-300'
                     }`} 
@@ -71,24 +96,30 @@ export const MentorCard: React.FC<MentorCardProps> = ({
                   </svg>
                 ))}
               </div>
-              <span className="ml-1 text-sm text-gray-600">
+              <span className="ml-1 text-xs sm:text-sm text-gray-600">
                 ({mentor.rating.totalReviews}件)
+              </span>
+              <span className="sr-only">
+                評価{mentor.rating.avgRating}、{mentor.rating.totalReviews}件のレビュー
               </span>
             </div>
           )}
           
           {mentor.specialties && mentor.specialties.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2">
-              {mentor.specialties.map((specialty, index) => (
-                <Badge key={index} variant="outline" className="text-xs">
+            <div className="flex flex-wrap gap-1 mt-2 max-w-full overflow-hidden">
+              {mentor.specialties.slice(0, 3).map((specialty, index) => (
+                <Badge key={index} variant="outline" className="text-xs whitespace-nowrap">
                   {specialty}
                 </Badge>
               ))}
+              {mentor.specialties.length > 3 && (
+                <span className="text-xs text-gray-500">他{mentor.specialties.length - 3}つ</span>
+              )}
             </div>
           )}
           
           {mentor.availableSlotsCount !== undefined && (
-            <p className="text-sm mt-2">
+            <p className="text-xs sm:text-sm mt-2 truncate">
               <span className="font-medium text-green-600">
                 {mentor.availableSlotsCount}
               </span> 
