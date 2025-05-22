@@ -4,10 +4,10 @@ import { parseISO, isValid, isBefore } from 'date-fns';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { mentorId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { mentorId } = params;
+    const { id: mentorId } = params;
     const searchParams = request.nextUrl.searchParams;
     
     // クエリパラメータから日付範囲を取得
