@@ -50,6 +50,7 @@ const dashboardNavItems: NavItem[] = [
   { icon: FolderIcon, label: "Materials", path: "/dashboard/materials" },
   { icon: BookOpenIcon, label: "My Lessons", path: "/dashboard/my-lessons" },
   { icon: CalendarIcon, label: "Reservations", path: "/dashboard/reservations" },
+  { icon: CalendarIcon, label: "Booking", path: "/dashboard/booking-calendar" },
   { icon: DumbbellIcon, label: "Exercises", path: "/dashboard/exercises" },
   { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" },
   { icon: SettingsIcon, label: "Settings", path: "/dashboard/settings" }
