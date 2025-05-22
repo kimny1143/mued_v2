@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { addMinutes, format } from 'date-fns';
+import { addMinutes, format, isSameDay } from 'date-fns';
 import { Button } from '@/app/components/ui/button';
 import { ja } from 'date-fns/locale';
 import { Clock } from 'lucide-react';
@@ -31,11 +31,17 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
   // 選択された日付に対応する時間枠のみをフィルタリング
   const filteredTimeSlots = selectedDate
     ? timeSlots.filter(
-        slot =>
-          slot.startTime.toDateString() === selectedDate.toDateString() &&
-          slot.isAvailable
+        slot => {
+          const slotStartTime = new Date(slot.startTime);
+          return isSameDay(slotStartTime, selectedDate) && slot.isAvailable;
+        }
       )
     : [];
+
+  console.log(`${selectedDate?.toDateString()} のスロット数: ${filteredTimeSlots.length}件`);
+  if (filteredTimeSlots.length > 0) {
+    console.log('例:', filteredTimeSlots.map(slot => format(new Date(slot.startTime), 'HH:mm')));
+  }
 
   const formattedDate = selectedDate
     ? format(selectedDate, 'yyyy年MM月dd日 (EEEE)', { locale: ja })
@@ -64,8 +70,8 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
             aria-label="予約可能な時間枠"
           >
             {filteredTimeSlots.map((slot) => {
-              const startTime = format(slot.startTime, 'HH:mm');
-              const endTime = format(slot.endTime, 'HH:mm');
+              const startTime = format(new Date(slot.startTime), 'HH:mm');
+              const endTime = format(new Date(slot.endTime), 'HH:mm');
               
               const isSelected = selectedSlot && selectedSlot.id === slot.id;
               const timeLabel = `${startTime}から${endTime}まで`;

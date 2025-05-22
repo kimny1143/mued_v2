@@ -1,4 +1,4 @@
-import { format, startOfMonth, endOfMonth, addMonths, addDays } from 'date-fns';
+import { format, startOfMonth, endOfMonth, addMonths, addDays, isSameDay } from 'date-fns';
 import { TimeSlot } from '../_components/TimeSlotDisplay';
 
 export interface ApiTimeSlot {
@@ -18,6 +18,8 @@ export async function fetchMentorAvailability(
   toDate: Date
 ): Promise<TimeSlot[]> {
   try {
+    console.log('メンター時間枠取得開始:', { mentorId, fromDate: fromDate.toISOString(), toDate: toDate.toISOString() });
+    
     // 実際の実装ではAPIから取得。ここではダミーデータを生成
     const slots: TimeSlot[] = [];
     const currentDate = new Date(fromDate);
@@ -30,6 +32,7 @@ export async function fetchMentorAvailability(
       if (dayOfWeek > 0 && dayOfWeek < 6) {
         // 1日あたり0〜3の予約枠をランダム生成
         const slotsPerDay = Math.floor(Math.random() * 4);
+        console.log(`${format(checkDate, 'yyyy/MM/dd')}のスロット数: ${slotsPerDay}`);
         
         for (let i = 0; i < slotsPerDay; i++) {
           // 9時〜17時の間でランダムな開始時間を設定
@@ -56,7 +59,34 @@ export async function fetchMentorAvailability(
       checkDate = nextDate;
     }
     
-    return slots.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+    const sortedSlots = slots.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+    console.log(`生成したスロット総数: ${sortedSlots.length}`);
+    
+    // 最初と最後のスロットをログ出力
+    if (sortedSlots.length > 0) {
+      console.log('最初のスロット:', {
+        date: format(sortedSlots[0].startTime, 'yyyy/MM/dd'),
+        start: format(sortedSlots[0].startTime, 'HH:mm'),
+        end: format(sortedSlots[0].endTime, 'HH:mm')
+      });
+      
+      console.log('最後のスロット:', {
+        date: format(sortedSlots[sortedSlots.length - 1].startTime, 'yyyy/MM/dd'),
+        start: format(sortedSlots[sortedSlots.length - 1].startTime, 'HH:mm'),
+        end: format(sortedSlots[sortedSlots.length - 1].endTime, 'HH:mm')
+      });
+      
+      // 日付ごとのスロット数を集計
+      const dateCountMap = new Map<string, number>();
+      sortedSlots.forEach(slot => {
+        const dateKey = format(slot.startTime, 'yyyy/MM/dd');
+        dateCountMap.set(dateKey, (dateCountMap.get(dateKey) || 0) + 1);
+      });
+      
+      console.log('日付ごとのスロット数:', Object.fromEntries(dateCountMap));
+    }
+    
+    return sortedSlots;
   } catch (error) {
     console.error('メンター利用可能時間取得エラー:', error);
     return [];
@@ -85,12 +115,27 @@ export function getDefaultDateRange(currentDate: Date) {
  */
 export function convertToReservedDates(timeSlots: TimeSlot[]) {
   // 予約済みの日付データを適切な形式に変換
-  return timeSlots
+  const reserved = timeSlots
     .filter(slot => !slot.isAvailable)
     .map(slot => ({
-      startDate: slot.startTime,
-      endDate: slot.endTime
+      startDate: new Date(slot.startTime),
+      endDate: new Date(slot.endTime)
     }));
+  
+  console.log(`予約済みスロット数: ${reserved.length}`);
+  return reserved;
+}
+
+/**
+ * 特定の日付に予約可能な時間枠があるかチェック
+ */
+export function hasAvailableSlotsOnDate(timeSlots: TimeSlot[], date: Date): boolean {
+  const result = timeSlots.some(slot => {
+    const slotDate = new Date(slot.startTime);
+    return isSameDay(slotDate, date) && slot.isAvailable;
+  });
+  
+  return result;
 }
 
 /**

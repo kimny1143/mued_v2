@@ -6,11 +6,14 @@ import '@demark-pro/react-booking-calendar/dist/react-booking-calendar.css';
 import { Mentor } from './MentorList';
 import { CalendarNavigation } from './CalendarNavigation';
 import { TimeSlotDisplay, TimeSlot } from './TimeSlotDisplay';
-import { startOfMonth, endOfMonth, isSameDay, addDays, format, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, isSameMonth, getDay } from 'date-fns';
+import { startOfMonth, endOfMonth, isSameDay, addDays, format, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, isSameMonth, getDay, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { fetchMentorAvailability, convertToReservedDates, getDefaultDateRange } from '../_lib/calendarUtils';
+import { fetchMentorAvailability, convertToReservedDates, getDefaultDateRange, hasAvailableSlotsOnDate } from '../_lib/calendarUtils';
 import { AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
+
+// デバッグモード
+const DEBUG = true;
 
 interface MentorCalendarProps {
   mentors: Mentor[];
@@ -70,7 +73,24 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         );
         
         // 取得したデータをログ出力して確認
-        console.log('取得したスロット:', slots);
+        if (DEBUG) {
+          console.log(`取得したスロット: ${slots.length}件`);
+          
+          // 日付ごとのスロット数をカウント
+          const dateMap = new Map<string, number>();
+          slots.forEach(slot => {
+            const dateKey = new Date(slot.startTime).toDateString();
+            dateMap.set(dateKey, (dateMap.get(dateKey) || 0) + 1);
+          });
+          
+          console.log('日付ごとのスロット数:', Object.fromEntries([...dateMap.entries()]));
+          
+          // 今日のスロット
+          const today = new Date();
+          const todaySlots = slots.filter(slot => isSameDay(new Date(slot.startTime), today));
+          console.log(`今日(${today.toDateString()})のスロット: ${todaySlots.length}件`);
+        }
+        
         setTimeSlots(slots);
       } catch (err) {
         console.error('時間枠取得エラー:', err);
@@ -85,12 +105,30 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
 
   // カレンダーコンポーネントに渡す予約済み日時
   const reserved = convertToReservedDates(timeSlots);
+  
+  // 予約可能な日付リスト（月表示で色付けするため）
+  const availableDays = Array.from(new Set(
+    timeSlots
+      .filter(slot => slot.isAvailable)
+      .map(slot => startOfDay(new Date(slot.startTime)).getTime())
+  )).map(timestamp => new Date(timestamp));
+  
+  // カスタムスタイルクラス
+  const customDayClass = (date: Date) => {
+    // 予約可能な日付かチェック
+    if (availableDays.some(d => isSameDay(d, date))) {
+      return 'bg-green-50 font-medium border border-green-200';
+    }
+    return '';
+  };
 
   // 日付選択時の処理
   const handleDateChange: CalendarChangeHandler = (dates) => {
     // Calendarの選択値からDate型のみを抽出
     const validDates = dates
       .filter((d): d is Date => d instanceof Date);
+    
+    if (DEBUG) console.log('選択された日付:', validDates.map(d => d.toDateString()));
     
     setSelectedDates(validDates);
     setSelectedTimeSlot(null);
@@ -181,19 +219,25 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
            date.getFullYear() === today.getFullYear();
   };
 
-  // 特定の日付の予約可能時間枠があるかチェック
-  const hasAvailableSlotsOnDate = (date: Date) => {
-    return timeSlots.some(
-      slot => isSameDay(new Date(slot.startTime), date) && slot.isAvailable
-    );
-  };
-
   return (
     <div className="flex flex-col space-y-4">
       {error && (
         <div className="bg-red-50 border border-red-300 text-red-700 p-4 rounded-lg flex items-center mb-4" role="alert">
           <AlertCircle className="h-4 w-4 mr-2" aria-hidden="true" />
           <p>{error}</p>
+        </div>
+      )}
+      
+      {DEBUG && (
+        <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-4">
+          <h3 className="text-sm font-medium mb-1">デバッグ情報</h3>
+          <div className="text-xs space-y-1">
+            <p>総スロット数: {timeSlots.length}</p>
+            <p>日付ごとの予約可能日: {availableDays.length}日</p>
+            {availableDays.length > 0 && (
+              <p>例: {availableDays.slice(0, 3).map(d => d.toDateString()).join(', ')}...</p>
+            )}
+          </div>
         </div>
       )}
       
@@ -261,7 +305,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                 <div className="grid grid-cols-7 gap-1 mt-2">
                   {weekDates.map((date, index) => {
                     const isSelected = selectedDates.some(d => isSameDay(d, date));
-                    const hasAvailableSlots = hasAvailableSlotsOnDate(date);
+                    const hasAvailableSlots = hasAvailableSlotsOnDate(timeSlots, date);
                     
                     return (
                       <div 
@@ -271,6 +315,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                           ${isSelected ? 'bg-primary text-primary-foreground' : ''}
                           ${!hasAvailableSlots ? 'opacity-50' : 'hover:bg-gray-100'}
                           ${isToday(date) ? 'border border-primary' : ''}
+                          ${hasAvailableSlots && !isSelected ? 'border border-green-300 bg-green-50' : ''}
                         `}
                         onClick={() => {
                           if (hasAvailableSlots) {
@@ -323,6 +368,9 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                   <h3 className="text-lg font-medium">
                     {format(currentDate, 'yyyy年MM月dd日')} ({getWeekdayName(currentDate)})
                     {isToday(currentDate) && <span className="ml-2 text-sm text-primary">今日</span>}
+                    {DEBUG && hasAvailableSlotsOnDate(timeSlots, currentDate) && (
+                      <span className="ml-2 text-xs text-green-600">(予約可)</span>
+                    )}
                   </h3>
                   
                   <Button 
