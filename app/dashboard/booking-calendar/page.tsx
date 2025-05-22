@@ -7,20 +7,21 @@ import type { Mentor } from './_components/MentorList';
 import { Button } from '@/app/components/ui/button';
 import { CalendarClock, ArrowRight, ArrowLeft } from 'lucide-react';
 import { TimeSlot } from './_components/TimeSlotDisplay';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 // レッスンスロットの型定義
 interface LessonSlot {
   id: string;
   teacherId: string;
-  startTime: string;
-  endTime: string;
+  startTime: string | Date;
+  endTime: string | Date;
   isAvailable: boolean;
   hourlyRate?: number;
   currency?: string;
   teacher: {
     id: string;
     name: string | null;
-    email: string | null;
+    email?: string | null;
     image: string | null;
   };
   reservations: Array<{
@@ -32,20 +33,47 @@ interface LessonSlot {
 }
 
 // レッスンスロットをメンター形式に変換する関数
-function convertLessonSlotsToMentors(data: Record<string, LessonSlot[]>): Mentor[] {
+function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
   try {
-    // APIレスポンス形式によって適宜調整が必要
-    // この例では、by-mentorエンドポイントが既にメンターIDでグループ化していると仮定
-    return Object.entries(data).map(([mentorId, slots]) => {
+    // メンターIDでグループ化
+    const mentorMap: Record<string, LessonSlot[]> = {};
+    
+    // 利用可能なスロットのみをフィルタリング
+    const availableSlots = lessonSlots.filter(slot => {
+      // isAvailableフラグがfalseなら確実に予約不可
+      if (!slot.isAvailable) return false;
+      
+      // 予約がある場合は、状態によって判断
+      if (slot.reservations && slot.reservations.length > 0) {
+        // すでに確定済みの予約がある場合は予約不可
+        if (slot.reservations.some(res => res.status === 'CONFIRMED')) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+    
+    // メンターIDでグループ化
+    availableSlots.forEach(slot => {
+      const mentorId = slot.teacherId;
+      if (!mentorMap[mentorId]) {
+        mentorMap[mentorId] = [];
+      }
+      mentorMap[mentorId].push(slot);
+    });
+    
+    // メンター情報を構築
+    return Object.entries(mentorMap).map(([mentorId, slots]) => {
       // 最初のスロットからメンター情報を取得
-      const firstSlot = slots[0] || {};
-      const teacher = firstSlot.teacher || {};
+      const firstSlot = slots[0];
+      const teacher = firstSlot.teacher;
       
       return {
         id: mentorId,
         name: teacher.name || '名前なし',
         email: teacher.email || '',
-        image: teacher.image || null,
+        image: teacher.image,
         // 仮の追加情報
         bio: `${teacher.name || '講師'}は経験豊富なインストラクターです。`,
         specialties: ['ピアノ', 'ギター'].slice(0, Math.floor(Math.random() * 3) + 1),
@@ -83,29 +111,43 @@ export default function BookingCalendarPage() {
     const fetchMentors = async () => {
       try {
         setIsLoading(true);
-        const now = new Date();
-        const nextMonth = new Date(now);
-        nextMonth.setMonth(now.getMonth() + 1);
         
-        // 日付範囲を指定してAPIを呼び出し
-        const fromDate = now.toISOString().split('T')[0];
-        const toDate = nextMonth.toISOString().split('T')[0];
+        // 認証トークンを取得
+        const { data: sessionData } = await supabaseBrowser.auth.getSession();
+        const token = sessionData.session?.access_token ?? null;
         
-        console.log('APIリクエスト開始:', fromDate, 'から', toDate);
+        // 日付範囲を指定
+        const fromDate = new Date();
+        const toDate = new Date();
+        toDate.setDate(toDate.getDate() + 30); // 30日先まで取得
         
-        // 既存APIを使用するよう変更
-        const response = await fetch(
-          `/api/lesson-slots/by-mentor?from=${fromDate}&to=${toDate}`
-        );
+        // クエリパラメータの構築
+        const queryString = new URLSearchParams({
+          from: fromDate.toISOString(),
+          to: toDate.toISOString(),
+        }).toString();
+        
+        console.log('APIリクエスト開始:', queryString);
+        
+        // 既存のAPIを使用
+        const response = await fetch(`/api/lesson-slots?${queryString}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          credentials: 'include',
+        });
         
         if (!response.ok) {
-          throw new Error(`API error: ${response.status}`);
+          const errorResponse = await response.json();
+          console.error('APIエラーレスポンス:', errorResponse);
+          throw new Error(
+            errorResponse.error || 
+            `API通信エラー: ${response.status} ${response.statusText}`
+          );
         }
         
-        const data = await response.json();
-        console.log('レッスンスロットAPI応答:', data);
+        const data: LessonSlot[] = await response.json();
+        console.log(`取得したレッスンスロット: ${data.length}件`);
         
-        // データ変換処理を追加
+        // メンター形式に変換
         const convertedMentors = convertLessonSlotsToMentors(data);
         console.log('変換後のメンターデータ:', convertedMentors);
         
