@@ -26,8 +26,28 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 }) => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
   const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
+  const [selectedStartTime, setSelectedStartTime] = useState<Date | null>(null);
+  const [selectedEndTime, setSelectedEndTime] = useState<Date | null>(null);
+  const [lessonDuration, setLessonDuration] = useState<60 | 90>(60); // デフォルト60分
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // モーダルが閉じられるときにstateをリセット
+  const resetModalState = () => {
+    setSelectedTimeSlot(null);
+    setSelectedMentor(null);
+    setSelectedStartTime(null);
+    setSelectedEndTime(null);
+    setLessonDuration(60);
+    setError(null);
+  };
+
+  // モーダルが開閉されるときにstateをリセット
+  React.useEffect(() => {
+    if (!isOpen) {
+      resetModalState();
+    }
+  }, [isOpen]);
 
   // 選択された日付の全メンターの空き時間を取得
   const getMentorSlotsForDate = (mentor: Mentor, date: Date) => {
@@ -56,15 +76,63 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     getMentorSlotsForDate(mentor, selectedDate).length > 0
   ) : [];
 
+  // スロット範囲内で選択可能な開始時間を生成（30分刻み）
+  const generateStartTimeOptions = (slot: TimeSlot) => {
+    const options: Array<{ time: Date; label: string }> = [];
+    const slotStart = new Date(slot.startTime);
+    const slotEnd = new Date(slot.endTime);
+    
+    // 選択されたレッスン時間分だけ余裕を持たせる
+    const maxStartTime = new Date(slotEnd.getTime() - lessonDuration * 60 * 1000);
+    
+    let currentTime = new Date(slotStart);
+    
+    while (currentTime <= maxStartTime) {
+      options.push({
+        time: new Date(currentTime),
+        label: format(currentTime, 'HH:mm')
+      });
+      
+      // 30分追加
+      currentTime = new Date(currentTime.getTime() + 30 * 60 * 1000);
+    }
+    
+    return options;
+  };
+
+  // 開始時間とレッスン時間から終了時間を計算
+  const calculateEndTime = (startTime: Date, duration: number) => {
+    return new Date(startTime.getTime() + duration * 60 * 1000);
+  };
+
   const handleTimeSlotSelect = (slot: TimeSlot, mentor: Mentor) => {
     setSelectedTimeSlot(slot);
     setSelectedMentor(mentor);
+    setSelectedStartTime(null); // 時間スロット変更時にリセット
+    setSelectedEndTime(null);
     setError(null);
   };
 
+  // 開始時間選択時の処理
+  const handleStartTimeSelect = (startTime: Date) => {
+    setSelectedStartTime(startTime);
+    const endTime = calculateEndTime(startTime, lessonDuration);
+    setSelectedEndTime(endTime);
+    setError(null);
+  };
+
+  // レッスン時間変更時の処理
+  const handleDurationChange = (duration: 60 | 90) => {
+    setLessonDuration(duration);
+    if (selectedStartTime) {
+      const endTime = calculateEndTime(selectedStartTime, duration);
+      setSelectedEndTime(endTime);
+    }
+  };
+
   const handleBooking = async () => {
-    if (!selectedTimeSlot || !selectedMentor || !selectedDate) {
-      setError('予約情報が不完全です。');
+    if (!selectedTimeSlot || !selectedMentor || !selectedDate || !selectedStartTime || !selectedEndTime) {
+      setError('予約情報が不完全です。メンター、時間帯、開始時間をすべて選択してください。');
       return;
     }
 
@@ -83,13 +151,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       // 予約作成とStripe決済セッション作成を一度に実行
       const reservationData = {
         slotId: selectedTimeSlot.id,
-        bookedStartTime: selectedTimeSlot.startTime.toISOString(),
-        bookedEndTime: selectedTimeSlot.endTime.toISOString(),
-        notes: `メンター: ${selectedMentor.name}とのレッスン予約`
+        bookedStartTime: selectedStartTime.toISOString(),
+        bookedEndTime: selectedEndTime.toISOString(),
+        notes: `メンター: ${selectedMentor.name}とのレッスン予約（${lessonDuration}分）`
       };
 
-      console.log('=== モーダル予約データ送信 ===');
+      console.log('=== モーダル予約データ送信（時間選択版） ===');
       console.log('予約データ:', reservationData);
+      console.log('レッスン時間:', lessonDuration, '分');
+      console.log('開始時間:', selectedStartTime);
+      console.log('終了時間:', selectedEndTime);
 
       const response = await fetch('/api/reservations', {
         method: 'POST',
@@ -133,7 +204,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   };
 
   const calculateTotalPrice = () => {
-    return selectedTimeSlot ? selectedTimeSlot.hourlyRate || 0 : 0;
+    if (!selectedTimeSlot || !selectedStartTime || !selectedEndTime) return 0;
+    
+    // 時間ベースで料金計算（時間単価 × レッスン時間（分） / 60）
+    const hourlyRate = selectedTimeSlot.hourlyRate || 5000;
+    const actualMinutes = (selectedEndTime.getTime() - selectedStartTime.getTime()) / (1000 * 60);
+    return Math.round(hourlyRate * actualMinutes / 60);
   };
 
   if (!isOpen) return null;
@@ -200,19 +276,86 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                         <User className="h-5 w-5 text-primary" />
                       </div>
                     )}
-                    <div>
+                    <div className="flex-1">
                       <div className="font-medium text-gray-900">{selectedMentor.name}</div>
                       <div className="text-sm text-gray-600">
-                        {format(new Date(selectedTimeSlot.startTime), 'HH:mm')} - 
-                        {format(new Date(selectedTimeSlot.endTime), 'HH:mm')} 
-                        ({Math.round((new Date(selectedTimeSlot.endTime).getTime() - new Date(selectedTimeSlot.startTime).getTime()) / (1000 * 60))}分)
+                        スロット時間: {format(new Date(selectedTimeSlot.startTime), 'HH:mm')} - 
+                        {format(new Date(selectedTimeSlot.endTime), 'HH:mm')}
                       </div>
+                      {selectedStartTime && selectedEndTime && (
+                        <div className="text-sm font-medium text-primary">
+                          予約時間: {format(selectedStartTime, 'HH:mm')} - 
+                          {format(selectedEndTime, 'HH:mm')} ({lessonDuration}分)
+                        </div>
+                      )}
                     </div>
                     <div className="ml-auto text-right">
                       <div className="font-medium text-primary">
-                        {formatPrice(selectedTimeSlot.hourlyRate || 0)}
+                        {formatPrice(calculateTotalPrice())}
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* レッスン時間選択 */}
+              {selectedTimeSlot && selectedMentor && (
+                <div className="mb-6 p-4 border border-gray-200 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-3">レッスン時間を選択</h4>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <button
+                      onClick={() => handleDurationChange(60)}
+                      className={`p-3 text-center border rounded-lg transition-all ${
+                        lessonDuration === 60
+                          ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="font-medium">60分レッスン</div>
+                      <div className="text-sm text-gray-600">
+                        {formatPrice(Math.round((selectedTimeSlot.hourlyRate || 5000) * 60 / 60))}
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => handleDurationChange(90)}
+                      className={`p-3 text-center border rounded-lg transition-all ${
+                        lessonDuration === 90
+                          ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="font-medium">90分レッスン</div>
+                      <div className="text-sm text-gray-600">
+                        {formatPrice(Math.round((selectedTimeSlot.hourlyRate || 5000) * 90 / 60))}
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* 開始時間選択 */}
+                  <div>
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">開始時間を選択</h5>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                      {generateStartTimeOptions(selectedTimeSlot).map((option, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleStartTimeSelect(option.time)}
+                          className={`p-2 text-sm border rounded transition-all ${
+                            selectedStartTime && selectedStartTime.getTime() === option.time.getTime()
+                              ? 'border-primary bg-primary text-white'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    {selectedStartTime && selectedEndTime && (
+                      <div className="mt-3 p-3 bg-green-50 rounded-lg">
+                        <p className="text-sm text-green-800">
+                          <strong>選択された時間:</strong> {format(selectedStartTime, 'HH:mm')} - {format(selectedEndTime, 'HH:mm')} ({lessonDuration}分)
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -271,12 +414,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                     {format(new Date(slot.endTime), 'HH:mm')}
                                   </div>
                                   <div className="text-sm text-gray-600">
-                                    {Math.round((new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime()) / (1000 * 60))}分
+                                    空き時間: {Math.round((new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime()) / (1000 * 60))}分
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="font-medium text-primary">
-                                    {formatPrice(slot.hourlyRate || 0)}
+                                  <div className="text-sm font-medium text-primary">
+                                    {selectedTimeSlot?.id === slot.id ? '選択中' : '選択'}
                                   </div>
                                 </div>
                               </div>
@@ -335,7 +478,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 </Button>
                 <Button
                   onClick={handleBooking}
-                  disabled={!selectedTimeSlot || !selectedMentor || isProcessing}
+                  disabled={!selectedTimeSlot || !selectedMentor || !selectedStartTime || !selectedEndTime || isProcessing}
                   className="flex-1"
                 >
                   {isProcessing ? (
