@@ -125,6 +125,22 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
     setIsModalOpen(true);
   };
 
+  // 空白エリアクリック（新規作成）
+  const handleEmptyAreaClick = (date: Date) => {
+    setSelectedDate(date);
+    setSelectedSlot(null);
+    setModalMode('create');
+    setIsModalOpen(true);
+  };
+
+  // スロットタグクリック（編集）
+  const handleSlotTagClick = (slot: MentorLessonSlot, e: React.MouseEvent) => {
+    e.stopPropagation(); // 親要素のクリックを停止
+    setSelectedSlot(slot);
+    setModalMode('edit');
+    setIsModalOpen(true);
+  };
+
   // モーダルを閉じる処理
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -220,9 +236,9 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                   const pendingSlots = daySlots.filter(s => getSlotStatus(s) === 'pending').length;
                   
                   return (
-                    <button
+                    <div
                       key={index}
-                      onClick={() => handleDateClick(date)}
+                      onClick={() => handleEmptyAreaClick(date)}
                       className={`
                         aspect-square p-2 text-center rounded-lg transition-all duration-200 relative min-h-[60px] flex flex-col justify-between
                         ${!isCurrentMonth ? 'text-gray-300 bg-gray-50' : ''}
@@ -291,7 +307,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                           </div>
                         </div>
                       )}
-                    </button>
+                    </div>
                   );
                 });
               })()}
