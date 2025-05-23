@@ -47,6 +47,8 @@ type Reservation = {
   id: string;
   status: ReservationStatus;
   lessonSlot: LessonSlotData;
+  bookedStartTime: string;
+  bookedEndTime: string;
   payment: Payment;
   createdAt: string;
   updatedAt: string;
@@ -540,8 +542,8 @@ export const ReservationPage: React.FC = () => {
                     <div>
                       <p className="font-medium">{format(new Date(res.lessonSlot.startTime), 'yyyy年M月d日')}</p>
                       <p className="text-sm text-gray-600">
-                        {format(new Date(res.lessonSlot.startTime), 'HH:mm')} - 
-                        {format(new Date(res.lessonSlot.endTime), 'HH:mm')}
+                        {format(new Date(res.bookedStartTime), 'HH:mm')} - 
+                        {format(new Date(res.bookedEndTime), 'HH:mm')}
                       </p>
                       <p className="text-sm">{res.lessonSlot.teacher.name} 先生</p>
                     </div>

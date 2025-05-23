@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
           endTime: r.slot.endTime,
           teacher: r.slot.teacher,
         },
+        bookedStartTime: r.bookedStartTime,
+        bookedEndTime: r.bookedEndTime,
         payment: r.payment
           ? {
               id: r.payment.id,
@@ -112,6 +114,8 @@ export async function GET(request: NextRequest) {
         endTime: reservation.slot.endTime,
         teacher: reservation.slot.teacher,
       },
+      bookedStartTime: reservation.bookedStartTime,
+      bookedEndTime: reservation.bookedEndTime,
       payment: reservation.payment ? {
         id: reservation.payment.id,
         amount: reservation.payment.amount,
