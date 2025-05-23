@@ -18,7 +18,7 @@ const LandingPage = () => {
       setScrollY(window.scrollY);
     };
     
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
     
@@ -228,11 +228,11 @@ const LandingPage = () => {
 
   // ナビゲーション関数
   const handleLogin = () => {
-    router.push('/auth/signin');
+    router.push('/login');
   };
 
   const handleSignUp = () => {
-    router.push('/auth/signup');
+    router.push('/signup');
   };
 
   const handleGoToDashboard = () => {
@@ -259,7 +259,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-2 animate-pulse">
+              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-2">
                 <Music className="w-6 h-6 text-black" />
               </div>
               <span className="font-bold text-2xl">MUED</span>
@@ -355,16 +355,16 @@ const LandingPage = () => {
           <div className="text-center space-y-8">
             <h1 className="text-5xl lg:text-7xl font-bold animate-fade-in">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-blue-500 to-purple-500 animate-gradient">
-                音楽を学ぶ
+              Learn Anytime, Anywhere
               </span>
               <br />
               <span className="text-white">
-                新しいスタイル
+                with MUED
               </span>
             </h1>
             <p className="text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed animate-fade-in-delay">
               AIがあなたの音楽ジャーニーをパーソナライズ。
-              まるでプレイリストを聴くように、自然に上達。
+              自然に寄り添い、自然に上達。
             </p>
             
             {/* 波形ビジュアライザー */}
@@ -586,10 +586,10 @@ const LandingPage = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 to-purple-600/20 animate-gradient"></div>
         </div>
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-3xl p-12 relative overflow-hidden transform hover:scale-105 transition-transform duration-300">
+          <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-3xl p-12 relative overflow-hidden transition-transform duration-300">
             <div className="absolute inset-0 bg-black/20"></div>
             <div className="relative">
-              <h2 className="text-4xl lg:text-5xl font-bold mb-6 animate-pulse">
+              <h2 className="text-4xl lg:text-5xl font-bold mb-6">
                 今すぐ音楽の旅を始めよう
               </h2>
               <p className="text-xl mb-8 text-green-100">
@@ -614,7 +614,7 @@ const LandingPage = () => {
           <div className="grid md:grid-cols-5 gap-8">
             <div className="md:col-span-2">
               <div className="flex items-center mb-4">
-                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-2 animate-pulse">
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-2">
                   <Music className="w-6 h-6 text-black" />
                 </div>
                 <span className="font-bold text-2xl">MUED</span>
