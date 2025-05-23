@@ -10,7 +10,7 @@ import { BookingModal } from './BookingModal';
 import { startOfMonth, endOfMonth, isSameDay, addDays, format, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, isSameMonth, getDay, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { fetchMentorAvailability, convertToReservedDates, getDefaultDateRange, hasAvailableSlotsOnDate } from '../_lib/calendarUtils';
-import { AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 
 // デバッグモード
@@ -42,6 +42,10 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
 }) => {
   // 現在表示中の日付
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  
+  // ビュー管理
+  const [currentView, setCurrentView] = useState<'month' | 'day' | 'week'>('month');
+  const [selectedDateForDay, setSelectedDateForDay] = useState<Date | null>(null);
   
   // 統合された予約時間枠（全メンター）
   const [allTimeSlots, setAllTimeSlots] = useState<ExtendedTimeSlot[]>([]);
@@ -192,7 +196,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     console.log('利用可能な日付:', availableDays.map(d => format(d, 'yyyy/MM/dd')));
   }
 
-  // 日付選択時の処理（モーダル版）
+  // 日付選択時の処理（ビュー切り替え対応）
   const handleDateClick = (date: Date) => {
     // その日に利用可能な時間帯があるかチェック
     const hasSlots = allTimeSlots.some(slot => 
@@ -200,14 +204,36 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     );
     
     if (hasSlots) {
-      setModalSelectedDate(date);
+      // 日表示に切り替え
+      setCurrentView('day');
+      setSelectedDateForDay(date);
       setSelectedDates([date]);
-      setIsModalOpen(true);
       
       if (onDateSelect) {
         onDateSelect([date]);
       }
     }
+  };
+
+  // ビュー切り替え処理
+  const handleViewChange = (view: 'month' | 'day' | 'week') => {
+    if (view === 'week') {
+      // 週表示は月表示として扱う
+      setCurrentView('month');
+    } else {
+      setCurrentView(view);
+    }
+    
+    if (view === 'month' || view === 'week') {
+      setSelectedDateForDay(null);
+      setSelectedDates([]);
+    }
+  };
+
+  // 日表示で日付を変更する処理
+  const handleDayNavigation = (date: Date) => {
+    setSelectedDateForDay(date);
+    setCurrentDate(date);
   };
 
   // モーダルを閉じる処理
@@ -246,6 +272,14 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     return date.getDate() === today.getDate() && 
            date.getMonth() === today.getMonth() && 
            date.getFullYear() === today.getFullYear();
+  };
+
+  // 価格フォーマット関数
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('ja-JP', {
+      style: 'currency',
+      currency: 'JPY',
+    }).format(price);
   };
 
   return (
@@ -299,7 +333,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
           currentDate={currentDate}
           onDateChange={handleDateNavigation}
           view={'month'}
-          onViewChange={() => {}}
+          onViewChange={handleViewChange}
         />
         
         {propsIsLoading ? (
@@ -309,238 +343,388 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
           </div>
         ) : (
           <>
-            {/* メイン月表示カレンダー */}
-            <div className="mt-4">
-              <h4 className="font-semibold mb-4 text-gray-900 text-center">予約可能日カレンダー</h4>
-              {availableDays.length > 0 ? (
-                <div className="grid grid-cols-7 gap-2">
-                  {/* 曜日ヘッダー */}
-                  {['月', '火', '水', '木', '金', '土', '日'].map((day, index) => (
-                    <div key={index} className="text-center text-xs font-medium text-gray-500 py-2">
-                      {day}
-                    </div>
-                  ))}
-                  
-                  {/* 月の日付を表示 */}
-                  {(() => {
-                    const monthStart = startOfMonth(currentDate);
-                    const monthEnd = endOfMonth(currentDate);
-                    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-                    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-                    const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-                    
-                    return calendarDays.map((date, index) => {
-                      const daySlots = allTimeSlots.filter(slot => 
-                        isSameDay(new Date(slot.startTime), date) && slot.isAvailable
-                      );
-                      const isCurrentMonth = isSameMonth(date, currentDate);
-                      const isAvailable = availableDays.some(d => isSameDay(d, date));
-                      const todayMark = isToday(date);
-                      const isSelected = selectedDates.some(d => isSameDay(d, date));
+            {currentView === 'month' ? (
+              // 月表示
+              <>
+                {/* メイン月表示カレンダー */}
+                <div className="mt-4">
+                  <h4 className="font-semibold mb-4 text-gray-900 text-center">予約可能日カレンダー</h4>
+                  {availableDays.length > 0 ? (
+                    <div className="grid grid-cols-7 gap-2">
+                      {/* 曜日ヘッダー */}
+                      {['月', '火', '水', '木', '金', '土', '日'].map((day, index) => (
+                        <div key={index} className="text-center text-xs font-medium text-gray-500 py-2">
+                          {day}
+                        </div>
+                      ))}
                       
-                      // 予約状況の分析
-                      const extSlots = daySlots as ExtendedTimeSlot[];
-                      const statusCounts = {
-                        available: extSlots.filter(s => s.bookingStatus === 'available').length,
-                        partial: extSlots.filter(s => s.bookingStatus === 'partial').length,
-                        full: extSlots.filter(s => s.bookingStatus === 'full').length,
-                        unavailable: extSlots.filter(s => s.bookingStatus === 'unavailable').length,
-                      };
-                      
-                      const totalReservations = extSlots.reduce((sum, s) => sum + (s.reservationCount || 0), 0);
-                      const totalAvailableTime = extSlots.reduce((sum, s) => sum + (s.availableTime || 0), 0);
-                      
-                      // 日付全体の予約状況を判定
-                      let dayStatus: 'available' | 'partial' | 'full' | 'unavailable' = 'available';
-                      if (!isAvailable) {
-                        dayStatus = 'unavailable';
-                      } else if (statusCounts.full > 0 && statusCounts.available === 0) {
-                        dayStatus = 'full';
-                      } else if (statusCounts.partial > 0 || statusCounts.full > 0) {
-                        dayStatus = 'partial';
-                      }
-                      
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => isAvailable ? handleDateClick(date) : undefined}
-                          disabled={!isAvailable}
-                          className={`
-                            aspect-square p-1 text-center rounded-lg transition-all duration-200 relative min-h-[70px] flex flex-col justify-between
-                            ${!isCurrentMonth ? 'text-gray-300 bg-gray-50' : ''}
-                            ${isCurrentMonth && !isAvailable ? 'text-gray-400 bg-gray-50' : ''}
-                            ${isAvailable && !isSelected && dayStatus === 'available' ? 'bg-green-50 border-2 border-green-200 text-green-800 hover:bg-green-100 hover:border-green-400' : ''}
-                            ${isAvailable && !isSelected && dayStatus === 'partial' ? 'bg-yellow-50 border-2 border-yellow-300 text-yellow-800 hover:bg-yellow-100 hover:border-yellow-400' : ''}
-                            ${isAvailable && !isSelected && dayStatus === 'full' ? 'bg-orange-50 border-2 border-orange-300 text-orange-800 hover:bg-orange-100 hover:border-orange-400' : ''}
-                            ${isSelected ? 'bg-primary text-primary-foreground border-2 border-primary' : ''}
-                            ${todayMark && !isSelected ? 'ring-2 ring-blue-500 ring-offset-1 font-bold' : ''}
-                            ${todayMark && isSelected ? 'bg-primary text-primary-foreground border-2 border-primary font-bold' : ''}
-                          `}
-                        >
-                          <div className="text-sm font-medium">
-                            {format(date, 'd')}
-                          </div>
+                      {/* 月の日付を表示 */}
+                      {(() => {
+                        const monthStart = startOfMonth(currentDate);
+                        const monthEnd = endOfMonth(currentDate);
+                        const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+                        const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+                        const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+                        
+                        return calendarDays.map((date, index) => {
+                          const daySlots = allTimeSlots.filter(slot => 
+                            isSameDay(new Date(slot.startTime), date) && slot.isAvailable
+                          );
+                          const isCurrentMonth = isSameMonth(date, currentDate);
+                          const isAvailable = availableDays.some(d => isSameDay(d, date));
+                          const todayMark = isToday(date);
+                          const isSelected = selectedDates.some(d => isSameDay(d, date));
                           
-                          {/* メンタースロット情報表示（予約状況付き） */}
-                          {isAvailable && daySlots.length > 0 && (
-                            <div className="flex flex-col gap-0.5 w-full mt-1 px-1">
-                              {/* 最初の2つのスロットを表示 */}
-                              {daySlots.slice(0, 2).map((slot, slotIndex) => {
-                                const extSlot = slot as ExtendedTimeSlot;
-                                const slotMentor = mentors.find(m => 
-                                  m.availableSlots?.some(s => s.id === slot.id)
-                                );
-                                
-                                return (
-                                  <div key={slotIndex} className="text-[8px] leading-tight text-center">
-                                    <div className="font-medium truncate">
-                                      {slotMentor?.name || '講師'}
+                          // 予約状況の分析
+                          const extSlots = daySlots as ExtendedTimeSlot[];
+                          const statusCounts = {
+                            available: extSlots.filter(s => s.bookingStatus === 'available').length,
+                            partial: extSlots.filter(s => s.bookingStatus === 'partial').length,
+                            full: extSlots.filter(s => s.bookingStatus === 'full').length,
+                            unavailable: extSlots.filter(s => s.bookingStatus === 'unavailable').length,
+                          };
+                          
+                          const totalReservations = extSlots.reduce((sum, s) => sum + (s.reservationCount || 0), 0);
+                          const totalAvailableTime = extSlots.reduce((sum, s) => sum + (s.availableTime || 0), 0);
+                          
+                          // 日付全体の予約状況を判定
+                          let dayStatus: 'available' | 'partial' | 'full' | 'unavailable' = 'available';
+                          if (!isAvailable) {
+                            dayStatus = 'unavailable';
+                          } else if (statusCounts.full > 0 && statusCounts.available === 0) {
+                            dayStatus = 'full';
+                          } else if (statusCounts.partial > 0 || statusCounts.full > 0) {
+                            dayStatus = 'partial';
+                          }
+                          
+                          return (
+                            <button
+                              key={index}
+                              onClick={() => isAvailable ? handleDateClick(date) : undefined}
+                              disabled={!isAvailable}
+                              className={`
+                                aspect-square p-1 text-center rounded-lg transition-all duration-200 relative min-h-[70px] flex flex-col justify-between
+                                ${!isCurrentMonth ? 'text-gray-300 bg-gray-50' : ''}
+                                ${isCurrentMonth && !isAvailable ? 'text-gray-400 bg-gray-50' : ''}
+                                ${isAvailable && !isSelected && dayStatus === 'available' ? 'bg-green-50 border-2 border-green-200 text-green-800 hover:bg-green-100 hover:border-green-400' : ''}
+                                ${isAvailable && !isSelected && dayStatus === 'partial' ? 'bg-yellow-50 border-2 border-yellow-300 text-yellow-800 hover:bg-yellow-100 hover:border-yellow-400' : ''}
+                                ${isAvailable && !isSelected && dayStatus === 'full' ? 'bg-orange-50 border-2 border-orange-300 text-orange-800 hover:bg-orange-100 hover:border-orange-400' : ''}
+                                ${isSelected ? 'bg-primary text-primary-foreground border-2 border-primary' : ''}
+                                ${todayMark && !isSelected ? 'ring-2 ring-blue-500 ring-offset-1 font-bold' : ''}
+                                ${todayMark && isSelected ? 'bg-primary text-primary-foreground border-2 border-primary font-bold' : ''}
+                              `}
+                            >
+                              <div className="text-sm font-medium">
+                                {format(date, 'd')}
+                              </div>
+                              
+                              {/* メンタースロット情報表示（シンプル版） */}
+                              {isAvailable && daySlots.length > 0 && (
+                                <div className="flex flex-col gap-0.5 w-full mt-1 px-1">
+                                  {/* メンター名タグ（最大2つ） */}
+                                  {Array.from(new Set(daySlots.slice(0, 2).map(slot => {
+                                    const extSlot = slot as ExtendedTimeSlot;
+                                    const slotMentor = mentors.find(m => 
+                                      m.availableSlots?.some(s => s.id === slot.id)
+                                    );
+                                    return slotMentor?.name;
+                                  }))).filter(Boolean).map((mentorName, nameIndex) => (
+                                    <div key={nameIndex} className="text-[7px] leading-tight text-center">
+                                      <div className="font-medium truncate bg-white/50 rounded px-1 py-0.5">
+                                        {mentorName}
+                                      </div>
                                     </div>
-                                    <div className="text-[7px] opacity-80">
-                                      {format(new Date(slot.startTime), 'HH:mm')}-
-                                      {format(new Date(slot.endTime), 'HH:mm')}
+                                  ))}
+                                  
+                                  {/* スロット数表示 */}
+                                  <div className="text-[7px] text-center font-medium opacity-80">
+                                    {daySlots.length}スロット
+                                  </div>
+                                  
+                                  {/* 簡潔な予約状況 */}
+                                  {totalReservations > 0 && (
+                                    <div className="text-[6px] text-center opacity-70 font-medium">
+                                      {totalReservations}予約
                                     </div>
-                                    {/* 予約状況インジケーター */}
-                                    {extSlot.reservationCount > 0 && (
-                                      <div className="text-[6px] font-bold opacity-90">
-                                        予約{extSlot.reservationCount}件
+                                  )}
+                                  
+                                  {/* 状態インジケーター（小さなドット） */}
+                                  <div className="flex gap-0.5 justify-center mt-1">
+                                    {daySlots.slice(0, 3).map((_, dotIndex) => {
+                                      const dotSlot = extSlots[dotIndex];
+                                      let dotColor = 'bg-green-500'; // デフォルト: 利用可能
+                                      
+                                      if (dotSlot?.bookingStatus === 'partial') {
+                                        dotColor = 'bg-yellow-500';
+                                      } else if (dotSlot?.bookingStatus === 'full') {
+                                        dotColor = 'bg-orange-500';
+                                      } else if (dotSlot?.bookingStatus === 'unavailable') {
+                                        dotColor = 'bg-gray-400';
+                                      }
+                                      
+                                      return (
+                                        <div 
+                                          key={dotIndex} 
+                                          className={`w-1 h-1 rounded-full ${
+                                            isSelected ? 'bg-white' : dotColor
+                                          }`}
+                                        />
+                                      );
+                                    })}
+                                    {daySlots.length > 3 && (
+                                      <div className={`text-[6px] font-bold ${
+                                        isSelected ? 'text-white' : 'text-gray-600'
+                                      }`}>
+                                        +
                                       </div>
                                     )}
                                   </div>
-                                );
-                              })}
-                              
-                              {/* 3つ以上ある場合の追加表示 */}
-                              {daySlots.length > 2 && (
-                                <div className="text-[7px] text-center opacity-70 font-medium">
-                                  +{daySlots.length - 2}件
                                 </div>
                               )}
                               
-                              {/* 予約統計表示 */}
-                              {totalReservations > 0 && (
-                                <div className="text-[6px] text-center opacity-80 font-medium">
-                                  計{totalReservations}予約
-                                </div>
+                              {/* 今日のマーク */}
+                              {todayMark && (
+                                <div className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
+                                  isSelected ? 'bg-white' : 'bg-blue-500'
+                                }`} />
                               )}
                               
-                              {/* 状態インジケーター（小さなドット） */}
-                              <div className="flex gap-0.5 justify-center mt-0.5">
-                                {daySlots.slice(0, 3).map((_, dotIndex) => {
-                                  const dotSlot = extSlots[dotIndex];
-                                  let dotColor = 'bg-green-500'; // デフォルト: 利用可能
-                                  
-                                  if (dotSlot?.bookingStatus === 'partial') {
-                                    dotColor = 'bg-yellow-500';
-                                  } else if (dotSlot?.bookingStatus === 'full') {
-                                    dotColor = 'bg-orange-500';
-                                  } else if (dotSlot?.bookingStatus === 'unavailable') {
-                                    dotColor = 'bg-gray-400';
-                                  }
-                                  
-                                  return (
-                                    <div 
-                                      key={dotIndex} 
-                                      className={`w-0.5 h-0.5 rounded-full ${
-                                        isSelected ? 'bg-white' : dotColor
-                                      }`}
-                                    />
-                                  );
-                                })}
-                                {daySlots.length > 3 && (
-                                  <div className={`text-[6px] font-bold ${
-                                    isSelected ? 'text-white' : 'text-gray-600'
-                                  }`}>
-                                    +
-                                  </div>
+                              {/* 選択中のマーク */}
+                              {isSelected && (
+                                <div className="absolute inset-0 border-2 border-primary rounded-lg pointer-events-none" />
+                              )}
+                            </button>
+                          );
+                        });
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                      <div className="text-gray-400 mb-2">📅</div>
+                      <p className="text-gray-500 font-medium">利用可能な日付がありません</p>
+                      <p className="text-xs text-gray-400 mt-1">他のメンターを選択してください</p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* 凡例 */}
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <h5 className="text-sm font-medium text-gray-700 mb-2">予約状況の見方</h5>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-green-50 border-2 border-green-200 rounded"></div>
+                      <span>完全に空き</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-yellow-50 border-2 border-yellow-300 rounded"></div>
+                      <span>部分的に予約済み</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-orange-50 border-2 border-orange-300 rounded"></div>
+                      <span>ほぼ満席</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-gray-50 border-2 border-gray-300 rounded"></div>
+                      <span>利用不可</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-4 text-xs text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <span>今日</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-primary border-2 border-primary rounded"></div>
+                      <span>選択中</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-0.5">
+                        <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                        <div className="w-1 h-1 bg-yellow-500 rounded-full"></div>
+                        <div className="w-1 h-1 bg-orange-500 rounded-full"></div>
+                      </div>
+                      <span>スロット状況</span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              // 日表示
+              <div className="mt-4">
+                {/* 日表示ヘッダー */}
+                <div className="flex items-center justify-between mb-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleViewChange('month')}
+                    className="flex items-center gap-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    月表示に戻る
+                  </Button>
+                  <h4 className="text-xl font-semibold text-gray-900">
+                    {selectedDateForDay && format(selectedDateForDay, 'yyyy年M月d日 (EEEE)', { locale: ja })}
+                  </h4>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const prevDay = new Date(selectedDateForDay!);
+                        prevDay.setDate(prevDay.getDate() - 1);
+                        handleDayNavigation(prevDay);
+                      }}
+                      disabled={!selectedDateForDay}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        const nextDay = new Date(selectedDateForDay!);
+                        nextDay.setDate(nextDay.getDate() + 1);
+                        handleDayNavigation(nextDay);
+                      }}
+                      disabled={!selectedDateForDay}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* 日表示メインコンテンツ */}
+                {selectedDateForDay && (() => {
+                  const daySlots = allTimeSlots.filter(slot => 
+                    isSameDay(new Date(slot.startTime), selectedDateForDay) && slot.isAvailable
+                  );
+                  
+                  // メンター別にスロットをグループ化
+                  const slotsByMentor = daySlots.reduce((acc, slot) => {
+                    const mentorId = (slot as ExtendedTimeSlot).mentorId;
+                    if (!acc[mentorId]) {
+                      acc[mentorId] = [];
+                    }
+                    acc[mentorId].push(slot as ExtendedTimeSlot);
+                    return acc;
+                  }, {} as Record<string, ExtendedTimeSlot[]>);
+
+                  return Object.keys(slotsByMentor).length > 0 ? (
+                    <div className="space-y-6">
+                      {Object.entries(slotsByMentor).map(([mentorId, mentorSlots]) => {
+                        const mentor = mentors.find(m => m.id === mentorId);
+                        
+                        return (
+                          <div key={mentorId} className="border border-gray-200 rounded-lg p-4">
+                            {/* メンター情報ヘッダー */}
+                            <div className="flex items-center gap-3 mb-4">
+                              {mentor?.image ? (
+                                <img
+                                  src={mentor.image}
+                                  alt={mentor.name || ''}
+                                  className="w-12 h-12 rounded-full"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <User className="h-6 w-6 text-primary" />
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <h5 className="font-medium text-gray-900">{mentor?.name}</h5>
+                                {mentor?.specialties && mentor.specialties.length > 0 && (
+                                  <p className="text-sm text-gray-600">
+                                    {mentor.specialties.join('、')}
+                                  </p>
                                 )}
                               </div>
+                              <div className="text-sm text-gray-500">
+                                {mentorSlots.length}スロット
+                              </div>
                             </div>
-                          )}
-                          
-                          {/* 今日のマーク */}
-                          {todayMark && (
-                            <div className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
-                              isSelected ? 'bg-white' : 'bg-blue-500'
-                            }`} />
-                          )}
-                          
-                          {/* 選択中のマーク */}
-                          {isSelected && (
-                            <div className="absolute inset-0 border-2 border-primary rounded-lg pointer-events-none" />
-                          )}
-                        </button>
-                      );
-                    });
-                  })()}
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                  <div className="text-gray-400 mb-2">📅</div>
-                  <p className="text-gray-500 font-medium">利用可能な日付がありません</p>
-                  <p className="text-xs text-gray-400 mt-1">他のメンターを選択してください</p>
-                </div>
-              )}
-            </div>
-            
-            {/* 凡例 */}
-            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <h5 className="text-sm font-medium text-gray-700 mb-2">予約状況の見方</h5>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-50 border-2 border-green-200 rounded"></div>
-                  <span>完全に空き</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-yellow-50 border-2 border-yellow-300 rounded"></div>
-                  <span>部分的に予約済み</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-orange-50 border-2 border-orange-300 rounded"></div>
-                  <span>ほぼ満席</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-gray-50 border-2 border-gray-300 rounded"></div>
-                  <span>利用不可</span>
-                </div>
+                            
+                            {/* 時間軸表示 */}
+                            <div className="space-y-3">
+                              {mentorSlots
+                                .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+                                .map((slot) => (
+                                  <div
+                                    key={slot.id}
+                                    className={`p-4 border rounded-lg transition-all cursor-pointer ${
+                                      slot.bookingStatus === 'available' 
+                                        ? 'border-green-200 bg-green-50 hover:bg-green-100'
+                                        : slot.bookingStatus === 'partial'
+                                        ? 'border-yellow-200 bg-yellow-50 hover:bg-yellow-100'
+                                        : slot.bookingStatus === 'full'
+                                        ? 'border-orange-200 bg-orange-50'
+                                        : 'border-gray-200 bg-gray-50'
+                                    }`}
+                                    onClick={() => {
+                                      if (slot.bookingStatus === 'available' || slot.bookingStatus === 'partial') {
+                                        setModalSelectedDate(selectedDateForDay);
+                                        setIsModalOpen(true);
+                                      }
+                                    }}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-4">
+                                        <div className="text-lg font-medium">
+                                          {format(new Date(slot.startTime), 'HH:mm')} - 
+                                          {format(new Date(slot.endTime), 'HH:mm')}
+                                        </div>
+                                        <div className={`px-2 py-1 rounded text-xs font-medium ${
+                                          slot.bookingStatus === 'available' 
+                                            ? 'bg-green-100 text-green-800'
+                                            : slot.bookingStatus === 'partial'
+                                            ? 'bg-yellow-100 text-yellow-800'
+                                            : slot.bookingStatus === 'full'
+                                            ? 'bg-orange-100 text-orange-800'
+                                            : 'bg-gray-100 text-gray-800'
+                                        }`}>
+                                          {slot.bookingStatus === 'available' && '完全に空き'}
+                                          {slot.bookingStatus === 'partial' && `${slot.availableTime}分空き`}
+                                          {slot.bookingStatus === 'full' && 'ほぼ満席'}
+                                          {slot.bookingStatus === 'unavailable' && '利用不可'}
+                                        </div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-lg font-medium text-primary">
+                                          {formatPrice(slot.hourlyRate || 5000)}
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                          /時間
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    {/* 予約情報 */}
+                                    {slot.reservationCount > 0 && (
+                                      <div className="mt-3 pt-3 border-t border-gray-200">
+                                        <div className="text-sm text-gray-600">
+                                          <strong>既存の予約:</strong> {slot.reservationCount}件
+                                          {slot.bookedTime > 0 && (
+                                            <span className="ml-2">
+                                              ({slot.bookedTime}分予約済み)
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                      <div className="text-gray-400 mb-2">📅</div>
+                      <p className="text-gray-500 font-medium">この日には利用可能なスロットがありません</p>
+                      <p className="text-xs text-gray-400 mt-1">別の日を選択してください</p>
+                    </div>
+                  );
+                })()}
               </div>
-              <div className="flex flex-wrap gap-4 text-xs text-gray-600">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  <span>今日</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-primary border-2 border-primary rounded"></div>
-                  <span>選択中</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-0.5">
-                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                    <div className="w-1 h-1 bg-yellow-500 rounded-full"></div>
-                    <div className="w-1 h-1 bg-orange-500 rounded-full"></div>
-                  </div>
-                  <span>スロット状況</span>
-                </div>
-              </div>
-            </div>
-            
-            {/* React Booking Calendar（参考用・非表示） */}
-            <div className="hidden">
-              <Calendar
-                selected={selectedDates}
-                reserved={reserved}
-                onChange={() => {}}
-                classNames={{
-                  CalendarContainer: 'bg-white',
-                  DayContent: 'text-center w-full h-full min-h-[50px] sm:min-h-[60px] flex flex-col items-center justify-center relative',
-                  DaySelection: 'bg-primary text-primary-foreground rounded-md',
-                  DayReservation: 'bg-red-100 text-red-700 line-through',
-                }}
-              />
-            </div>
-            
-            {/* 旧フォールバック表示（削除予定） */}
-            <div className="hidden mt-4 p-4 bg-gray-50 rounded-lg"></div>
+            )}
           </>
         )}
       </div>

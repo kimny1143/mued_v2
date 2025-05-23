@@ -180,7 +180,14 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
         availableSlots: slots.map(slot => ({
           ...slot,
           startTime: new Date(slot.startTime),
-          endTime: new Date(slot.endTime)
+          endTime: new Date(slot.endTime),
+          // 予約情報の型を適切に変換
+          reservations: slot.reservations?.map(res => ({
+            id: res.id,
+            status: res.status as 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED',
+            bookedStartTime: res.bookedStartTime,
+            bookedEndTime: res.bookedEndTime
+          })) || []
         })),
         availableSlotsCount: slots.length
       };
