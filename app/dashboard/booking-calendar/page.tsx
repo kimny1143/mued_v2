@@ -233,6 +233,15 @@ export default function BookingCalendarPage() {
     }
 
     try {
+      // Supabaseセッションからアクセストークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      if (!token) {
+        alert('ログインが必要です。再度ログインしてください。');
+        return;
+      }
+
       // 予約作成とStripe決済セッション作成を一度に実行
       const reservationData = {
         slotId: selectedTimeSlot.id,
@@ -242,13 +251,16 @@ export default function BookingCalendarPage() {
       };
 
       console.log('予約・決済データ:', reservationData);
+      console.log('認証トークン:', token ? 'あり' : 'なし');
 
       const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(reservationData),
+        credentials: 'include',
       });
 
       if (!response.ok) {
