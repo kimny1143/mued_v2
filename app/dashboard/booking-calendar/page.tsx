@@ -233,20 +233,17 @@ export default function BookingCalendarPage() {
     }
 
     try {
-      // 予約データの準備
+      // 予約作成とStripe決済セッション作成を一度に実行
       const reservationData = {
         slotId: selectedTimeSlot.id,
-        mentorId: selectedMentor.id,
-        startTime: selectedTimeSlot.startTime.toISOString(),
-        endTime: selectedTimeSlot.endTime.toISOString(),
-        hourlyRate: selectedTimeSlot.hourlyRate || 5000,
-        amount: calculatePrice()
+        bookedStartTime: selectedTimeSlot.startTime.toISOString(),
+        bookedEndTime: selectedTimeSlot.endTime.toISOString(),
+        notes: `メンター: ${selectedMentor.name}とのレッスン予約`
       };
 
-      console.log('決済データ:', reservationData);
+      console.log('予約・決済データ:', reservationData);
 
-      // Stripe決済セッション作成APIを呼び出し
-      const response = await fetch('/api/create-payment-session', {
+      const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -255,20 +252,24 @@ export default function BookingCalendarPage() {
       });
 
       if (!response.ok) {
-        throw new Error('決済セッションの作成に失敗しました');
+        const errorData = await response.json();
+        throw new Error(errorData.error || '予約の作成に失敗しました');
       }
 
-      const { sessionId, checkoutUrl } = await response.json();
-      
-      if (checkoutUrl) {
+      const result = await response.json();
+      console.log('予約・決済結果:', result);
+
+      if (result.checkoutUrl) {
         // Stripe決済ページにリダイレクト
-        window.location.href = checkoutUrl;
+        window.location.href = result.checkoutUrl;
+      } else if (result.error) {
+        throw new Error(result.error);
       } else {
         throw new Error('決済URLの取得に失敗しました');
       }
     } catch (error) {
       console.error('決済処理エラー:', error);
-      alert('決済処理でエラーが発生しました。もう一度お試しください。');
+      alert(`決済処理でエラーが発生しました: ${error instanceof Error ? error.message : '不明なエラー'}`);
     }
   };
 
