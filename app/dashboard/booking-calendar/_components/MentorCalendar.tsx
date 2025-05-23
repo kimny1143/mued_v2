@@ -56,9 +56,41 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     selectedMentorId || mentors[0]?.id
   );
 
+  // コンポーネント初期化時のデバッグ
+  console.log('🔵 MentorCalendar コンポーネント初期化');
+  console.log('mentors props:', mentors);
+  console.log('mentors.length:', mentors?.length);
+  console.log('selectedMentorId props:', selectedMentorId);
+  console.log('currentMentorId state:', currentMentorId);
+  
+  if (mentors && mentors.length > 0) {
+    console.log('最初のメンター:', mentors[0]);
+    console.log('最初のメンターのavailableSlots:', mentors[0].availableSlots);
+  }
+
+  // currentMentorIdが変更されたときのデバッグ
+  useEffect(() => {
+    console.log('🟡 currentMentorId変更:', currentMentorId);
+    console.log('mentors配列:', mentors);
+    console.log('mentors.length:', mentors?.length);
+    
+    if (selectedMentorId && selectedMentorId !== currentMentorId) {
+      console.log('🟠 selectedMentorIdとcurrentMentorIdが不一致、更新:', selectedMentorId);
+      setCurrentMentorId(selectedMentorId);
+    }
+  }, [selectedMentorId, mentors]);
+
   // カレンダー表示範囲が変更されたときに時間枠を再取得
   useEffect(() => {
-    if (!currentMentorId) return;
+    console.log('🔴 useEffect実行開始');
+    console.log('currentMentorId:', currentMentorId);
+    console.log('mentors:', mentors);
+    console.log('mentors.length:', mentors?.length);
+    
+    if (!currentMentorId) {
+      console.log('🔴 currentMentorIdがnull/undefinedのため終了');
+      return;
+    }
     
     const fetchTimeSlots = async () => {
       setIsLoading(true);
@@ -70,6 +102,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         
         if (!selectedMentor) {
           console.error('選択されたメンターが見つかりません:', currentMentorId);
+          console.log('利用可能なメンターIDs:', mentors.map(m => m.id));
           setTimeSlots([]);
           return;
         }

@@ -9,6 +9,9 @@ import { CalendarClock, ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { TimeSlot } from './_components/TimeSlotDisplay';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
+// デバッグモード
+const DEBUG = true;
+
 // レッスンスロットの型定義
 interface LessonSlot {
   id: string;
@@ -169,8 +172,14 @@ export default function BookingCalendarPage() {
         console.log('変換後のメンターデータ:', convertedMentors);
         
         if (convertedMentors.length > 0) {
+          console.log('🟢 page.tsx: mentorsを設定');
+          console.log('🟢 page.tsx: 最初のメンターID:', convertedMentors[0].id);
+          console.log('🟢 page.tsx: 現在のselectedMentorId:', selectedMentorId);
+          
           setMentors(convertedMentors);
+          
           if (!selectedMentorId) {
+            console.log('🟢 page.tsx: selectedMentorIdを設定:', convertedMentors[0].id);
             setSelectedMentorId(convertedMentors[0].id);
           }
         } else {
@@ -234,6 +243,14 @@ export default function BookingCalendarPage() {
     // 60分: 5,000円、90分: 7,500円
     return lessonDuration === 60 ? 5000 : 7500;
   };
+
+  // MentorCalendarコンポーネントをレンダリング前のデバッグ
+  if (DEBUG && mentors.length > 0) {
+    console.log('🔴 page.tsx: MentorCalendarをレンダリング');
+    console.log('🔴 page.tsx: mentors:', mentors);
+    console.log('🔴 page.tsx: selectedMentorId:', selectedMentorId);
+    console.log('🔴 page.tsx: mentors.length:', mentors?.length);
+  }
 
   // 現在のステップに基づいてステップインジケーターを表示
   const renderStepIndicator = () => {
