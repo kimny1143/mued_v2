@@ -402,13 +402,13 @@ export default function DashboardLayout({
         {/* サイドバー */}
         <aside
           className={`
-            fixed inset-y-0 left-0 z-40 bg-white border-r pt-16 transition-all duration-300 ease-in-out
+            fixed inset-y-0 left-0 z-40 bg-white border-r pt-16 transition-all duration-300 ease-in-out flex flex-col
             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
             lg:translate-x-0 
             ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
           `}
         >
-          <div className="flex items-center justify-end lg:px-4 py-2 border-b">
+          <div className="flex items-center justify-end lg:px-4 py-2 border-b flex-shrink-0">
             <Button 
               variant="ghost" 
               size="sm"
@@ -430,7 +430,7 @@ export default function DashboardLayout({
               )}
             </Button>
           </div>
-          <div className="h-full overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             {/* ユーザー情報セクション */}
             <div className={`border-b px-4 py-4 ${isSidebarCollapsed ? 'text-center' : ''}`}>
               <div className="flex items-center justify-center mb-2">
