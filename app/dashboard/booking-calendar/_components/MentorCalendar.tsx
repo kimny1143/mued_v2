@@ -689,9 +689,10 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                               const endPosition = (endHour - 8) + (endMinute / 60);
                               const duration = endPosition - startPosition;
                               
-                              // 左端からのオフセット（80px時間軸 + メンター列）
-                              const leftOffset = 80 + (mentorIndex * (100 / availableMentors.length));
-                              const width = 100 / availableMentors.length;
+                              // CSS Gridに合わせた正しい位置計算
+                              const mentorColumnWidth = `calc((100% - 80px) / ${availableMentors.length})`;
+                              const leftPosition = `calc(80px + (${mentorIndex} * (100% - 80px) / ${availableMentors.length}))`;
+                              const slotWidth = `calc((100% - 80px) / ${availableMentors.length} - 2px)`;
                               
                               return (
                                 <div key={slot.id} className="relative">
@@ -709,8 +710,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                     style={{
                                       top: `${startPosition * 60}px`,
                                       height: `${duration * 60 - 2}px`,
-                                      left: `${leftOffset}%`,
-                                      width: `${width - 0.5}%`
+                                      left: leftPosition,
+                                      width: slotWidth
                                     }}
                                     onClick={() => {
                                       if (slot.bookingStatus === 'available' || slot.bookingStatus === 'partial') {
@@ -790,8 +791,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                             style={{
                                               top: `${resStartPos * 60 + 2}px`,
                                               height: `${resDuration * 60 - 4}px`,
-                                              left: `${leftOffset + 0.2}%`,
-                                              width: `${width - 0.9}%`,
+                                              left: leftPosition,
+                                              width: slotWidth,
                                               zIndex: 10
                                             }}
                                           >
