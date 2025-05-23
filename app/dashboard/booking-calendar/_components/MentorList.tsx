@@ -23,6 +23,7 @@ export interface Mentor {
     startTime: string | Date;
     endTime: string | Date;
     isAvailable?: boolean;
+    hourlyRate?: number;
   }>;
 }
 

@@ -123,7 +123,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
             id: slot.id || `slot-${currentMentorId}-${slot.startTime}`,
             startTime: slot.startTime instanceof Date ? slot.startTime : new Date(slot.startTime),
             endTime: slot.endTime instanceof Date ? slot.endTime : new Date(slot.endTime),
-            isAvailable: slot.isAvailable !== false // デフォルトはtrue
+            isAvailable: slot.isAvailable !== false, // デフォルトはtrue
+            hourlyRate: slot.hourlyRate || 5000 // hourlyRateを追加
           }));
           
           console.log('変換後のtimeSlots:', timeSlots);

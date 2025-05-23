@@ -112,7 +112,6 @@ export default function BookingCalendarPage() {
   const [selectedMentorId, setSelectedMentorId] = useState<string | undefined>();
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
-  const [lessonDuration, setLessonDuration] = useState<60 | 90>(60);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<BookingStep>('selection');
   const confirmationRef = useRef<HTMLDivElement>(null);
@@ -223,17 +222,54 @@ export default function BookingCalendarPage() {
     }
   };
   
-  const handleLessonDurationChange = (duration: 60 | 90) => {
-    setLessonDuration(duration);
-  };
-
   const handleBackToSelection = () => {
     setStep('selection');
   };
 
-  const handleProceedToPayment = () => {
-    // TODO: 決済処理へ進む
-    alert('決済処理へ進みます');
+  const handleProceedToPayment = async () => {
+    if (!selectedTimeSlot || !selectedMentor || selectedDates.length === 0) {
+      alert('予約情報が不完全です。もう一度お試しください。');
+      return;
+    }
+
+    try {
+      // 予約データの準備
+      const reservationData = {
+        slotId: selectedTimeSlot.id,
+        mentorId: selectedMentor.id,
+        startTime: selectedTimeSlot.startTime.toISOString(),
+        endTime: selectedTimeSlot.endTime.toISOString(),
+        hourlyRate: selectedTimeSlot.hourlyRate || 5000,
+        amount: calculatePrice()
+      };
+
+      console.log('決済データ:', reservationData);
+
+      // Stripe決済セッション作成APIを呼び出し
+      const response = await fetch('/api/create-payment-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reservationData),
+      });
+
+      if (!response.ok) {
+        throw new Error('決済セッションの作成に失敗しました');
+      }
+
+      const { sessionId, checkoutUrl } = await response.json();
+      
+      if (checkoutUrl) {
+        // Stripe決済ページにリダイレクト
+        window.location.href = checkoutUrl;
+      } else {
+        throw new Error('決済URLの取得に失敗しました');
+      }
+    } catch (error) {
+      console.error('決済処理エラー:', error);
+      alert('決済処理でエラーが発生しました。もう一度お試しください。');
+    }
   };
 
   const selectedMentor = mentors.find(m => m.id === selectedMentorId);
@@ -241,7 +277,7 @@ export default function BookingCalendarPage() {
   // 予約情報からレッスン料金を計算
   const calculatePrice = () => {
     // 60分: 5,000円、90分: 7,500円
-    return lessonDuration === 60 ? 5000 : 7500;
+    return selectedTimeSlot ? selectedTimeSlot.hourlyRate || 0 : 0;
   };
 
   // MentorCalendarコンポーネントをレンダリング前のデバッグ
@@ -415,35 +451,6 @@ export default function BookingCalendarPage() {
                         })}
                       </div>
                     </div>
-                    
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-4 bg-gray-50 rounded-md">
-                      <div className="font-medium w-32">レッスン時間:</div>
-                      <div className="flex-1">
-                        <div className="flex gap-2">
-                          <button 
-                            className={`border ${lessonDuration === 60 ? 'border-primary bg-primary text-primary-foreground' : 'border-gray-300 hover:border-primary'} px-4 py-2 rounded-md`}
-                            onClick={() => handleLessonDurationChange(60)}
-                            aria-pressed={lessonDuration === 60}
-                          >
-                            60分
-                          </button>
-                          <button 
-                            className={`border ${lessonDuration === 90 ? 'border-primary bg-primary text-primary-foreground' : 'border-gray-300 hover:border-primary'} px-4 py-2 rounded-md`}
-                            onClick={() => handleLessonDurationChange(90)}
-                            aria-pressed={lessonDuration === 90}
-                          >
-                            90分
-                          </button>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          レッスン終了時間: {
-                            lessonDuration === 60 
-                              ? selectedTimeSlot.endTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
-                              : new Date(selectedTimeSlot.startTime.getTime() + 90 * 60000).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
-                          }
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 </div>
                 
@@ -451,7 +458,7 @@ export default function BookingCalendarPage() {
                   <h3 className="text-lg font-medium mb-4">料金詳細</h3>
                   <div className="p-4 bg-gray-50 rounded-md">
                     <div className="flex justify-between items-center mb-2">
-                      <span>{lessonDuration}分レッスン</span>
+                      <span>レッスン時間:</span>
                       <span>¥{calculatePrice().toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm text-gray-500 mb-2">

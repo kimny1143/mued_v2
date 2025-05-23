@@ -11,6 +11,7 @@ export interface TimeSlot {
   startTime: Date;
   endTime: Date;
   isAvailable: boolean;
+  hourlyRate?: number;
 }
 
 interface TimeSlotDisplayProps {
@@ -19,6 +20,31 @@ interface TimeSlotDisplayProps {
   onTimeSlotSelect: (slot: TimeSlot) => void;
   selectedSlot?: TimeSlot | null;
   showDateHeading?: boolean;
+}
+
+// スロットの時間範囲内で30分単位の開始時間選択肢を生成
+function generateTimeOptions(slot: TimeSlot): Array<{startTime: Date, label: string}> {
+  const options: Array<{startTime: Date, label: string}> = [];
+  const startTime = new Date(slot.startTime);
+  const endTime = new Date(slot.endTime);
+  
+  // 最低1時間は確保する（開始時間は終了時間の1時間前まで）
+  const maxStartTime = new Date(endTime.getTime() - 60 * 60 * 1000);
+  
+  let currentTime = new Date(startTime);
+  
+  while (currentTime <= maxStartTime) {
+    const label = format(currentTime, 'HH:mm');
+    options.push({
+      startTime: new Date(currentTime),
+      label: label
+    });
+    
+    // 30分追加
+    currentTime = addMinutes(currentTime, 30);
+  }
+  
+  return options;
 }
 
 export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
@@ -59,45 +85,72 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
   return (
     <div className="bg-white rounded-lg shadow p-4">
       {showDateHeading && (
-        <h3 className="text-lg font-medium mb-2" id="timeslot-heading">{formattedDate}</h3>
+        <h3 className="text-lg font-medium mb-4" id="timeslot-heading">{formattedDate}</h3>
       )}
       
       <div aria-labelledby={showDateHeading ? "timeslot-heading" : undefined} role="region">
         {filteredTimeSlots.length > 0 ? (
-          <div 
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2"
-            role="radiogroup"
-            aria-label="予約可能な時間枠"
-          >
+          <div className="space-y-4">
             {filteredTimeSlots.map((slot) => {
-              const startTime = format(new Date(slot.startTime), 'HH:mm');
-              const endTime = format(new Date(slot.endTime), 'HH:mm');
-              
-              const isSelected = selectedSlot && selectedSlot.id === slot.id;
-              const timeLabel = `${startTime}から${endTime}まで`;
+              const timeOptions = generateTimeOptions(slot);
+              const slotEndTime = format(new Date(slot.endTime), 'HH:mm');
+              const hourlyRate = slot.hourlyRate || 5000; // デフォルト料金
               
               return (
-                <Button
-                  key={slot.id}
-                  variant={isSelected ? "default" : "outline"}
-                  className={`h-auto py-3 ${isSelected ? "bg-primary text-primary-foreground" : "hover:bg-primary/10"}`}
-                  onClick={() => onTimeSlotSelect(slot)}
-                  role="radio"
-                  aria-checked={isSelected ? true : false}
-                  aria-label={timeLabel}
-                  tabIndex={isSelected ? 0 : -1}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      onTimeSlotSelect(slot);
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  <div className="text-center">
-                    <div className="font-medium">{startTime}</div>
-                    <div className="text-xs">〜 {endTime}</div>
+                <div key={slot.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-medium text-gray-900">
+                      空き時間: {format(new Date(slot.startTime), 'HH:mm')} 〜 {slotEndTime}
+                    </h4>
+                    <div className="text-sm text-gray-600">
+                      ¥{hourlyRate.toLocaleString()}/時間
+                    </div>
                   </div>
-                </Button>
+                  
+                  <div className="mb-3">
+                    <p className="text-sm text-gray-600 mb-2">開始時間を選択してください：</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                      {timeOptions.map((option, index) => {
+                        const isSelected = selectedSlot && 
+                          selectedSlot.id === slot.id && 
+                          selectedSlot.startTime.getTime() === option.startTime.getTime();
+                        
+                        return (
+                          <Button
+                            key={index}
+                            variant={isSelected ? "default" : "outline"}
+                            size="sm"
+                            className={`h-auto py-2 ${isSelected ? "bg-primary text-primary-foreground" : "hover:bg-primary/10"}`}
+                            onClick={() => {
+                              // 選択された開始時間でTimeSlotオブジェクトを更新
+                              const updatedSlot: TimeSlot = {
+                                ...slot,
+                                startTime: option.startTime,
+                                // 終了時間は元のスロットの終了時間のまま（講師の裁量）
+                              };
+                              onTimeSlotSelect(updatedSlot);
+                            }}
+                            aria-label={`${option.label}から開始`}
+                          >
+                            {option.label}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  {selectedSlot && selectedSlot.id === slot.id && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <strong>選択済み:</strong> {format(selectedSlot.startTime, 'HH:mm')}開始 
+                        （終了時間は講師と相談して決定）
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        料金: ¥{hourlyRate.toLocaleString()}/時間
+                      </p>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -109,15 +162,6 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
           </div>
         )}
       </div>
-      
-      {/* モバイル向け固定予約ボタン - 時間枠が選択された場合 */}
-      {selectedSlot && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t shadow-lg md:hidden z-10">
-          <Button className="w-full" size="lg">
-            予約に進む
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
