@@ -96,6 +96,11 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
               const slotEndTime = format(new Date(slot.endTime), 'HH:mm');
               const hourlyRate = slot.hourlyRate || 5000; // デフォルト料金
               
+              // デバッグ用に追加
+              console.log('slot.startTime文字列:', slot.startTime);
+              console.log('Dateオブジェクト:', new Date(slot.startTime));
+              console.log('表示時刻:', format(new Date(slot.startTime), 'HH:mm'));
+
               return (
                 <div key={slot.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-3">

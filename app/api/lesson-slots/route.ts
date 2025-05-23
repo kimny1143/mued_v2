@@ -335,6 +335,11 @@ export async function POST(request: NextRequest) {
     
     const data = await request.json();
     
+    // デバッグ用に追加
+    console.log('受信したstartTime:', data.startTime);
+    console.log('Dateオブジェクト変換後:', new Date(data.startTime));
+    console.log('UTC ISO:', new Date(data.startTime).toISOString());
+    
     // 入力検証
     if (!data.startTime || !data.endTime) {
       return NextResponse.json(
