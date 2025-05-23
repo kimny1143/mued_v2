@@ -866,38 +866,30 @@ export default function LessonSlotsPage() {
                     </Badge>
                   </div>
                   
-                  {/* 既存スロットをタグ表示 */}
-                  <div className="space-y-2 mb-3">
+                  {/* 既存スロットを小さなタグ表示 */}
+                  <div className="flex flex-wrap gap-2 mb-3">
                     {dateSlots.map((slot) => (
                       <div
                         key={slot.id}
-                        className="group cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 rounded-md cursor-pointer transition-colors border border-blue-200 group"
                         onClick={(e) => handleEditSlot(slot, e)}
                       >
-                        <div className="flex items-center justify-between p-2 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors border border-blue-200">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-3 w-3 text-blue-600" />
-                            <span className="text-sm font-medium text-blue-800">
-                              {format(new Date(slot.startTime), 'HH:mm')} - {format(new Date(slot.endTime), 'HH:mm')}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-1">
-                            {/* 予約状況バッジ */}
-                            {slot.reservations && slot.reservations.length > 0 ? (
-                              <Badge variant="secondary" className="text-xs">
-                                予約{slot.reservations.length}
-                              </Badge>
-                            ) : (
-                              <Badge variant={slot.isAvailable ? "outline" : "secondary"} className="text-xs">
-                                {slot.isAvailable ? '空き' : '非公開'}
-                              </Badge>
-                            )}
-                            
-                            {/* 編集アイコン */}
-                            <Edit className="h-3 w-3 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        </div>
+                        <Clock className="h-3 w-3 text-blue-600" />
+                        <span className="text-xs font-medium text-blue-800">
+                          {format(new Date(slot.startTime), 'HH:mm')}-{format(new Date(slot.endTime), 'HH:mm')}
+                        </span>
+                        
+                        {/* 予約状況インジケーター */}
+                        {slot.reservations && slot.reservations.length > 0 ? (
+                          <div className="w-2 h-2 bg-orange-500 rounded-full" title={`${slot.reservations.length}件の予約`} />
+                        ) : slot.isAvailable ? (
+                          <div className="w-2 h-2 bg-green-500 rounded-full" title="予約可能" />
+                        ) : (
+                          <div className="w-2 h-2 bg-gray-400 rounded-full" title="非公開" />
+                        )}
+                        
+                        {/* 編集アイコン（ホバー時のみ表示） */}
+                        <Edit className="h-3 w-3 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
                     ))}
                   </div>
