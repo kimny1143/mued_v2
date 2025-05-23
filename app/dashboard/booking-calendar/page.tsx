@@ -106,7 +106,6 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
 export default function BookingCalendarPage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedMentorId, setSelectedMentorId] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
 
   // APIからメンターデータを取得
@@ -154,15 +153,7 @@ export default function BookingCalendarPage() {
         
         if (convertedMentors.length > 0) {
           console.log('🟢 page.tsx: mentorsを設定');
-          console.log('🟢 page.tsx: 最初のメンターID:', convertedMentors[0].id);
-          console.log('🟢 page.tsx: 現在のselectedMentorId:', selectedMentorId);
-          
           setMentors(convertedMentors);
-          
-          if (!selectedMentorId) {
-            console.log('🟢 page.tsx: selectedMentorIdを設定:', convertedMentors[0].id);
-            setSelectedMentorId(convertedMentors[0].id);
-          }
         } else {
           console.log('利用可能なメンターがありません');
         }
@@ -176,17 +167,12 @@ export default function BookingCalendarPage() {
     };
 
     fetchMentors();
-  }, [selectedMentorId]);
-
-  const handleMentorSelect = (mentorId: string) => {
-    setSelectedMentorId(mentorId);
-  };
+  }, []);
 
   // MentorCalendarコンポーネントをレンダリング前のデバッグ
   if (DEBUG && mentors.length > 0) {
     console.log('🔴 page.tsx: MentorCalendarをレンダリング');
     console.log('🔴 page.tsx: mentors:', mentors);
-    console.log('🔴 page.tsx: selectedMentorId:', selectedMentorId);
     console.log('🔴 page.tsx: mentors.length:', mentors?.length);
   }
 
@@ -196,6 +182,9 @@ export default function BookingCalendarPage() {
         <div className="flex items-center">
           <CalendarClock className="h-6 w-6 mr-2 text-primary" aria-hidden="true" />
           <h1 className="text-2xl font-bold">メンターレッスン予約</h1>
+        </div>
+        <div className="text-sm text-gray-600">
+          {mentors.length}人のメンターが利用可能
         </div>
       </div>
       
@@ -211,42 +200,21 @@ export default function BookingCalendarPage() {
           </Button>
         </div>
       ) : (
-        <>
-          {/* メンター選択とカレンダー表示エリア */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* メンター選択リスト - 左側 */}
-            <div className="md:col-span-1">
-              <MentorList
-                mentors={mentors}
-                selectedMentorId={selectedMentorId}
-                onMentorSelect={handleMentorSelect}
-                isLoading={isLoading}
-              />
-            </div>
-            
-            {/* カレンダー表示 - 右側 */}
-            <div className="md:col-span-2">
-              <div className="bg-white rounded-lg shadow">
-                <div className="p-4 border-b">
-                  <h2 className="text-lg font-semibold">予約可能な日時を選択</h2>
-                  {selectedMentorId && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      {mentors.find(m => m.id === selectedMentorId)?.name} のレッスン可能時間
-                    </p>
-                  )}
-                </div>
-                
-                <div className="p-4">
-                  <MentorCalendar
-                    mentors={mentors}
-                    selectedMentorId={selectedMentorId}
-                    onMentorSelect={handleMentorSelect}
-                  />
-                </div>
-              </div>
-            </div>
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold">予約可能な日時を選択</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              カレンダー上で気になる日付をクリックして、その日のレッスン一覧を確認できます
+            </p>
           </div>
-        </>
+          
+          <div className="p-6">
+            <MentorCalendar
+              mentors={mentors}
+              isLoading={isLoading}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
