@@ -16,6 +16,17 @@ import { Button } from '@/app/components/ui/button';
 // デバッグモード
 const DEBUG = true;
 
+// 予約状況情報を含む拡張TimeSlot型
+interface ExtendedTimeSlot extends TimeSlot {
+  mentorId: string;
+  mentorName: string | null;
+  bookingStatus: 'available' | 'partial' | 'full' | 'unavailable';
+  reservationCount: number;
+  bookedTime: number;
+  availableTime: number;
+  bookingRate: number;
+}
+
 interface MentorCalendarProps {
   mentors: Mentor[];
   isLoading?: boolean;
@@ -33,7 +44,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   
   // 統合された予約時間枠（全メンター）
-  const [allTimeSlots, setAllTimeSlots] = useState<TimeSlot[]>([]);
+  const [allTimeSlots, setAllTimeSlots] = useState<ExtendedTimeSlot[]>([]);
   
   // 選択された日付
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -60,7 +71,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
 
   // 全メンターの時間枠を統合して取得
   useEffect(() => {
-    console.log('🔴 useEffect実行開始（全メンター統合）');
+    console.log('🔴 useEffect実行開始（全メンター統合 + 予約状況分析）');
     console.log('mentors:', mentors);
     console.log('mentors.length:', mentors?.length);
     
@@ -72,29 +83,91 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     
     try {
       // 全メンターの空き時間を統合
-      const allSlots: TimeSlot[] = [];
+      const allSlots: ExtendedTimeSlot[] = [];
       
       mentors.forEach(mentor => {
         if (mentor.availableSlots && mentor.availableSlots.length > 0) {
           const mentorSlots = mentor.availableSlots
             .filter(slot => slot.id) // idが存在するもののみ
-            .map(slot => ({
-              id: slot.id!,
-              startTime: slot.startTime instanceof Date ? slot.startTime : new Date(slot.startTime),
-              endTime: slot.endTime instanceof Date ? slot.endTime : new Date(slot.endTime),
-              isAvailable: slot.isAvailable !== false, // デフォルトはtrue
-              hourlyRate: slot.hourlyRate || 5000,
-              // メンター情報も保持（後でメンター名を表示するため）
-              mentorId: mentor.id,
-              mentorName: mentor.name
-            } as TimeSlot & { mentorId: string; mentorName: string | null }));
+            .map(slot => {
+              // 予約状況の分析
+              const slotStart = new Date(slot.startTime).getTime();
+              const slotEnd = new Date(slot.endTime).getTime();
+              const slotDuration = slotEnd - slotStart;
+              
+              let bookedTime = 0;
+              let reservationCount = 0;
+              
+              if (slot.reservations && slot.reservations.length > 0) {
+                const activeReservations = slot.reservations.filter(
+                  res => res.status === 'CONFIRMED' || res.status === 'PENDING'
+                );
+                
+                reservationCount = activeReservations.length;
+                
+                // 予約済み時間を計算
+                activeReservations.forEach(reservation => {
+                  if (reservation.bookedStartTime && reservation.bookedEndTime) {
+                    const bookStart = new Date(reservation.bookedStartTime).getTime();
+                    const bookEnd = new Date(reservation.bookedEndTime).getTime();
+                    
+                    const effectiveStart = Math.max(bookStart, slotStart);
+                    const effectiveEnd = Math.min(bookEnd, slotEnd);
+                    
+                    if (effectiveStart < effectiveEnd) {
+                      bookedTime += effectiveEnd - effectiveStart;
+                    }
+                  }
+                });
+              }
+              
+              const availableTime = slotDuration - bookedTime;
+              const bookingRate = bookedTime / slotDuration;
+              
+              // 予約状況のカテゴリ判定
+              let bookingStatus: 'available' | 'partial' | 'full' | 'unavailable';
+              if (!slot.isAvailable) {
+                bookingStatus = 'unavailable';
+              } else if (bookingRate === 0) {
+                bookingStatus = 'available';
+              } else if (bookingRate >= 0.9) {
+                bookingStatus = 'full';
+              } else {
+                bookingStatus = 'partial';
+              }
+              
+              return {
+                id: slot.id!,
+                startTime: slot.startTime instanceof Date ? slot.startTime : new Date(slot.startTime),
+                endTime: slot.endTime instanceof Date ? slot.endTime : new Date(slot.endTime),
+                isAvailable: slot.isAvailable !== false,
+                hourlyRate: slot.hourlyRate || 5000,
+                // メンター情報も保持
+                mentorId: mentor.id,
+                mentorName: mentor.name,
+                // 予約状況情報を追加
+                bookingStatus,
+                reservationCount,
+                bookedTime: Math.round(bookedTime / (60 * 1000)), // 分単位
+                availableTime: Math.round(availableTime / (60 * 1000)), // 分単位
+                bookingRate: Math.round(bookingRate * 100) // パーセント
+              } as ExtendedTimeSlot;
+            });
           
           allSlots.push(...mentorSlots);
         }
       });
       
-      console.log('統合後の全timeSlots:', allSlots);
-      console.log('統合後の全timeSlots数:', allSlots.length);
+      console.log('📊 統合後の全timeSlots（予約状況付き）:', allSlots);
+      console.log('📊 統合後の全timeSlots数:', allSlots.length);
+      
+      // 予約状況の統計
+      const statusCounts = allSlots.reduce((acc, slot) => {
+        acc[slot.bookingStatus] = (acc[slot.bookingStatus] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      console.log('📈 予約状況統計:', statusCounts);
       
       setAllTimeSlots(allSlots);
       
@@ -265,6 +338,28 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                       const todayMark = isToday(date);
                       const isSelected = selectedDates.some(d => isSameDay(d, date));
                       
+                      // 予約状況の分析
+                      const extSlots = daySlots as ExtendedTimeSlot[];
+                      const statusCounts = {
+                        available: extSlots.filter(s => s.bookingStatus === 'available').length,
+                        partial: extSlots.filter(s => s.bookingStatus === 'partial').length,
+                        full: extSlots.filter(s => s.bookingStatus === 'full').length,
+                        unavailable: extSlots.filter(s => s.bookingStatus === 'unavailable').length,
+                      };
+                      
+                      const totalReservations = extSlots.reduce((sum, s) => sum + (s.reservationCount || 0), 0);
+                      const totalAvailableTime = extSlots.reduce((sum, s) => sum + (s.availableTime || 0), 0);
+                      
+                      // 日付全体の予約状況を判定
+                      let dayStatus: 'available' | 'partial' | 'full' | 'unavailable' = 'available';
+                      if (!isAvailable) {
+                        dayStatus = 'unavailable';
+                      } else if (statusCounts.full > 0 && statusCounts.available === 0) {
+                        dayStatus = 'full';
+                      } else if (statusCounts.partial > 0 || statusCounts.full > 0) {
+                        dayStatus = 'partial';
+                      }
+                      
                       return (
                         <button
                           key={index}
@@ -274,9 +369,11 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                             aspect-square p-1 text-center rounded-lg transition-all duration-200 relative min-h-[70px] flex flex-col justify-between
                             ${!isCurrentMonth ? 'text-gray-300 bg-gray-50' : ''}
                             ${isCurrentMonth && !isAvailable ? 'text-gray-400 bg-gray-50' : ''}
-                            ${isAvailable && !isSelected ? 'bg-green-50 border-2 border-green-200 text-green-800 hover:bg-green-100 hover:border-green-400' : ''}
+                            ${isAvailable && !isSelected && dayStatus === 'available' ? 'bg-green-50 border-2 border-green-200 text-green-800 hover:bg-green-100 hover:border-green-400' : ''}
+                            ${isAvailable && !isSelected && dayStatus === 'partial' ? 'bg-yellow-50 border-2 border-yellow-300 text-yellow-800 hover:bg-yellow-100 hover:border-yellow-400' : ''}
+                            ${isAvailable && !isSelected && dayStatus === 'full' ? 'bg-orange-50 border-2 border-orange-300 text-orange-800 hover:bg-orange-100 hover:border-orange-400' : ''}
                             ${isSelected ? 'bg-primary text-primary-foreground border-2 border-primary' : ''}
-                            ${todayMark && !isSelected ? 'bg-blue-50 border-2 border-blue-400 text-blue-900 font-bold' : ''}
+                            ${todayMark && !isSelected ? 'ring-2 ring-blue-500 ring-offset-1 font-bold' : ''}
                             ${todayMark && isSelected ? 'bg-primary text-primary-foreground border-2 border-primary font-bold' : ''}
                           `}
                         >
@@ -284,12 +381,12 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                             {format(date, 'd')}
                           </div>
                           
-                          {/* メンタースロット情報表示 */}
+                          {/* メンタースロット情報表示（予約状況付き） */}
                           {isAvailable && daySlots.length > 0 && (
                             <div className="flex flex-col gap-0.5 w-full mt-1 px-1">
                               {/* 最初の2つのスロットを表示 */}
                               {daySlots.slice(0, 2).map((slot, slotIndex) => {
-                                // スロットに対応するメンターを見つける
+                                const extSlot = slot as ExtendedTimeSlot;
                                 const slotMentor = mentors.find(m => 
                                   m.availableSlots?.some(s => s.id === slot.id)
                                 );
@@ -303,6 +400,12 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                       {format(new Date(slot.startTime), 'HH:mm')}-
                                       {format(new Date(slot.endTime), 'HH:mm')}
                                     </div>
+                                    {/* 予約状況インジケーター */}
+                                    {extSlot.reservationCount > 0 && (
+                                      <div className="text-[6px] font-bold opacity-90">
+                                        予約{extSlot.reservationCount}件
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -314,19 +417,39 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                 </div>
                               )}
                               
+                              {/* 予約統計表示 */}
+                              {totalReservations > 0 && (
+                                <div className="text-[6px] text-center opacity-80 font-medium">
+                                  計{totalReservations}予約
+                                </div>
+                              )}
+                              
                               {/* 状態インジケーター（小さなドット） */}
                               <div className="flex gap-0.5 justify-center mt-0.5">
-                                {daySlots.slice(0, 4).map((_, dotIndex) => (
-                                  <div 
-                                    key={dotIndex} 
-                                    className={`w-0.5 h-0.5 rounded-full ${
-                                      isSelected ? 'bg-white' : 'bg-green-500'
-                                    }`}
-                                  />
-                                ))}
-                                {daySlots.length > 4 && (
+                                {daySlots.slice(0, 3).map((_, dotIndex) => {
+                                  const dotSlot = extSlots[dotIndex];
+                                  let dotColor = 'bg-green-500'; // デフォルト: 利用可能
+                                  
+                                  if (dotSlot?.bookingStatus === 'partial') {
+                                    dotColor = 'bg-yellow-500';
+                                  } else if (dotSlot?.bookingStatus === 'full') {
+                                    dotColor = 'bg-orange-500';
+                                  } else if (dotSlot?.bookingStatus === 'unavailable') {
+                                    dotColor = 'bg-gray-400';
+                                  }
+                                  
+                                  return (
+                                    <div 
+                                      key={dotIndex} 
+                                      className={`w-0.5 h-0.5 rounded-full ${
+                                        isSelected ? 'bg-white' : dotColor
+                                      }`}
+                                    />
+                                  );
+                                })}
+                                {daySlots.length > 3 && (
                                   <div className={`text-[6px] font-bold ${
-                                    isSelected ? 'text-white' : 'text-green-600'
+                                    isSelected ? 'text-white' : 'text-gray-600'
                                   }`}>
                                     +
                                   </div>
@@ -362,14 +485,28 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
             
             {/* 凡例 */}
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <h5 className="text-sm font-medium text-gray-700 mb-2">凡例</h5>
-              <div className="flex flex-wrap gap-4 text-xs">
+              <h5 className="text-sm font-medium text-gray-700 mb-2">予約状況の見方</h5>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mb-3">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-green-50 border-2 border-green-200 rounded"></div>
-                  <span>予約可能</span>
+                  <span>完全に空き</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-50 border-2 border-blue-400 rounded"></div>
+                  <div className="w-4 h-4 bg-yellow-50 border-2 border-yellow-300 rounded"></div>
+                  <span>部分的に予約済み</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-orange-50 border-2 border-orange-300 rounded"></div>
+                  <span>ほぼ満席</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-gray-50 border-2 border-gray-300 rounded"></div>
+                  <span>利用不可</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-4 text-xs text-gray-600">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                   <span>今日</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -379,10 +516,10 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                 <div className="flex items-center gap-2">
                   <div className="flex gap-0.5">
                     <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                    <div className="w-1 h-1 bg-yellow-500 rounded-full"></div>
+                    <div className="w-1 h-1 bg-orange-500 rounded-full"></div>
                   </div>
-                  <span>時間帯数</span>
+                  <span>スロット状況</span>
                 </div>
               </div>
             </div>

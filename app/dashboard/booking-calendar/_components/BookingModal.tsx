@@ -76,7 +76,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     getMentorSlotsForDate(mentor, selectedDate).length > 0
   ) : [];
 
-  // スロット範囲内で選択可能な開始時間を生成（30分刻み）
+  // スロット範囲内で選択可能な開始時間を生成（15分刻み）
   const generateStartTimeOptions = (slot: TimeSlot) => {
     const options: Array<{ time: Date; label: string }> = [];
     const slotStart = new Date(slot.startTime);
@@ -93,8 +93,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         label: format(currentTime, 'HH:mm')
       });
       
-      // 30分追加
-      currentTime = new Date(currentTime.getTime() + 30 * 60 * 1000);
+      // 15分追加
+      currentTime = new Date(currentTime.getTime() + 15 * 60 * 1000);
     }
     
     return options;
@@ -333,8 +333,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
                   {/* 開始時間選択 */}
                   <div>
-                    <h5 className="text-sm font-medium text-gray-700 mb-2">開始時間を選択</h5>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">開始時間を選択（15分刻み）</h5>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-32 overflow-y-auto">
                       {generateStartTimeOptions(selectedTimeSlot).map((option, index) => (
                         <button
                           key={index}

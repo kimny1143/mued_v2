@@ -24,6 +24,17 @@ export interface Mentor {
     endTime: string | Date;
     isAvailable?: boolean;
     hourlyRate?: number;
+    reservations?: Array<{
+      id: string;
+      status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+      bookedStartTime?: string;
+      bookedEndTime?: string;
+      student?: {
+        id: string;
+        name: string | null;
+        email: string;
+      };
+    }>;
   }>;
 }
 

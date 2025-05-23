@@ -35,32 +35,120 @@ interface LessonSlot {
   }>;
 }
 
+// 予約情報の型定義
+interface Reservation {
+  id: string;
+  slotId: string;
+  studentId: string;
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  bookedStartTime: string;
+  bookedEndTime: string;
+  createdAt: string;
+  student: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+  slot: {
+    id: string;
+    teacherId: string;
+    teacher: {
+      id: string;
+      name: string | null;
+    };
+  };
+}
+
 // レッスンスロットをメンター形式に変換する関数
 function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
   try {
     // メンターIDでグループ化
     const mentorMap: Record<string, LessonSlot[]> = {};
     
-    // 利用可能なスロットのみをフィルタリング
+    // スロットの利用可能性を詳細チェック
     const availableSlots = lessonSlots.filter(slot => {
-      // isAvailableフラグがfalseなら確実に予約不可
+      // 基本的なisAvailableフラグをチェック
       if (!slot.isAvailable) return false;
       
-      // 予約がある場合は、状態によって判断
+      // 予約情報がある場合の詳細チェック
       if (slot.reservations && slot.reservations.length > 0) {
-        // すでに確定済みの予約がある場合は予約不可
-        if (slot.reservations.some(res => res.status === 'CONFIRMED')) {
-          return false;
+        const slotStart = new Date(slot.startTime).getTime();
+        const slotEnd = new Date(slot.endTime).getTime();
+        
+        // 確定済みまたは保留中の予約を取得
+        const activeReservations = slot.reservations.filter(
+          res => res.status === 'CONFIRMED' || res.status === 'PENDING'
+        );
+        
+        // スロット全体が予約で埋まっているかチェック
+        let totalBookedTime = 0;
+        const bookedIntervals: Array<{start: number, end: number}> = [];
+        
+        activeReservations.forEach(reservation => {
+          if (reservation.bookedStartTime && reservation.bookedEndTime) {
+            const bookStart = new Date(reservation.bookedStartTime).getTime();
+            const bookEnd = new Date(reservation.bookedEndTime).getTime();
+            
+            // スロット範囲内の予約のみカウント
+            const effectiveStart = Math.max(bookStart, slotStart);
+            const effectiveEnd = Math.min(bookEnd, slotEnd);
+            
+            if (effectiveStart < effectiveEnd) {
+              bookedIntervals.push({start: effectiveStart, end: effectiveEnd});
+            }
+          }
+        });
+        
+        // 重複する時間帯をマージして実際の予約時間を計算
+        if (bookedIntervals.length > 0) {
+          bookedIntervals.sort((a, b) => a.start - b.start);
+          const mergedIntervals: Array<{start: number, end: number}> = [bookedIntervals[0]];
+          
+          for (let i = 1; i < bookedIntervals.length; i++) {
+            const current = bookedIntervals[i];
+            const lastMerged = mergedIntervals[mergedIntervals.length - 1];
+            
+            if (current.start <= lastMerged.end) {
+              // 重複している場合はマージ
+              lastMerged.end = Math.max(lastMerged.end, current.end);
+            } else {
+              // 重複していない場合は新しい区間として追加
+              mergedIntervals.push(current);
+            }
+          }
+          
+          // 実際の予約時間を計算
+          totalBookedTime = mergedIntervals.reduce(
+            (total, interval) => total + (interval.end - interval.start), 
+            0
+          );
         }
+        
+        const slotDuration = slotEnd - slotStart;
+        const availableTime = slotDuration - totalBookedTime;
+        
+        // 最低60分の空きがない場合は利用不可とする
+        const MIN_LESSON_TIME = 60 * 60 * 1000; // 60分をミリ秒に変換
+        
+        console.log(`📅 スロット空き状況分析:`, {
+          slotId: slot.id,
+          slotDuration: Math.round(slotDuration / (60 * 1000)) + '分',
+          totalBookedTime: Math.round(totalBookedTime / (60 * 1000)) + '分',
+          availableTime: Math.round(availableTime / (60 * 1000)) + '分',
+          isAvailable: availableTime >= MIN_LESSON_TIME
+        });
+        
+        return availableTime >= MIN_LESSON_TIME;
       }
       
-      return true;
+      return true; // 予約がない場合は利用可能
     });
     
-    console.log('利用可能なスロット数:', availableSlots.length);
-    if (availableSlots.length > 0) {
-      console.log('サンプルスロット:', availableSlots[0]);
-    }
+    console.log('📊 空き状況フィルタリング結果:', {
+      totalSlots: lessonSlots.length,
+      availableSlots: availableSlots.length,
+      filteredOut: lessonSlots.length - availableSlots.length
+    });
     
     // メンターIDでグループ化
     availableSlots.forEach(slot => {
@@ -98,15 +186,40 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
       };
     });
   } catch (error) {
-    console.error('データ変換エラー:', error);
+    console.error('❌ データ変換エラー:', error);
     return [];
   }
 }
 
 export default function BookingCalendarPage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // 予約情報とスロット情報を統合してスロットの実際の空き状況を計算
+  const calculateSlotAvailability = (lessonSlots: LessonSlot[], reservations: Reservation[]) => {
+    return lessonSlots.map(slot => {
+      // このスロットに関連する予約を取得
+      const slotReservations = reservations.filter(
+        res => res.slotId === slot.id && (res.status === 'CONFIRMED' || res.status === 'PENDING')
+      );
+      
+      // 予約情報をスロットのreservationsフィールドに統合
+      const updatedSlot = {
+        ...slot,
+        reservations: slotReservations.map(res => ({
+          id: res.id,
+          status: res.status,
+          bookedStartTime: res.bookedStartTime,
+          bookedEndTime: res.bookedEndTime,
+          student: res.student
+        }))
+      };
+      
+      return updatedSlot;
+    });
+  };
 
   // APIからメンターデータを取得
   useEffect(() => {
@@ -118,48 +231,61 @@ export default function BookingCalendarPage() {
         const { data: sessionData } = await supabaseBrowser.auth.getSession();
         const token = sessionData.session?.access_token ?? null;
         
-        console.log('APIリクエスト開始: 全ての利用可能スロットを取得');
+        console.log('🔥 APIリクエスト開始: スロットと予約情報を並行取得');
         
-        // 全ての利用可能なスロットを取得（日付フィルタリングなし）
-        const response = await fetch('/api/lesson-slots', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          credentials: 'include',
-        });
+        // スロット情報と予約情報を並行取得
+        const [slotsResponse, reservationsResponse] = await Promise.all([
+          fetch('/api/lesson-slots', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            credentials: 'include',
+          }),
+          fetch('/api/reservations', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            credentials: 'include',
+          })
+        ]);
         
-        if (!response.ok) {
-          const errorResponse = await response.json();
-          console.error('APIエラーレスポンス:', errorResponse);
-          throw new Error(
-            errorResponse.error || 
-            `API通信エラー: ${response.status} ${response.statusText}`
-          );
+        // スロット情報の処理
+        if (!slotsResponse.ok) {
+          const errorResponse = await slotsResponse.json();
+          throw new Error(errorResponse.error || `スロット取得エラー: ${slotsResponse.status}`);
         }
         
-        const data: LessonSlot[] = await response.json();
-        console.log(`取得したレッスンスロット: ${data.length}件`);
-        if (data.length > 0) {
-          console.log('最初のスロット例:', {
-            id: data[0].id,
-            teacherId: data[0].teacherId,
-            startTime: data[0].startTime,
-            endTime: data[0].endTime,
-            teacherName: data[0].teacher?.name
-          });
+        // 予約情報の処理
+        if (!reservationsResponse.ok) {
+          const errorResponse = await reservationsResponse.json();
+          console.warn('予約情報取得に失敗:', errorResponse);
+          // 予約情報の取得に失敗しても、スロット情報は表示する
         }
+        
+        const slotsData: LessonSlot[] = await slotsResponse.json();
+        const reservationsData: Reservation[] = reservationsResponse.ok 
+          ? await reservationsResponse.json() 
+          : [];
+        
+        console.log(`📊 取得結果:`);
+        console.log(`- レッスンスロット: ${slotsData.length}件`);
+        console.log(`- 予約情報: ${reservationsData.length}件`);
+        
+        // 予約情報を保存
+        setReservations(reservationsData);
+        
+        // スロット情報と予約情報を統合
+        const updatedSlots = calculateSlotAvailability(slotsData, reservationsData);
         
         // メンター形式に変換
-        const convertedMentors = convertLessonSlotsToMentors(data);
-        console.log('変換後のメンターデータ:', convertedMentors);
+        const convertedMentors = convertLessonSlotsToMentors(updatedSlots);
+        console.log('🎯 統合後のメンターデータ:', convertedMentors);
         
         if (convertedMentors.length > 0) {
-          console.log('🟢 page.tsx: mentorsを設定');
+          console.log('✅ mentorsを設定完了');
           setMentors(convertedMentors);
         } else {
-          console.log('利用可能なメンターがありません');
+          console.log('⚠️ 利用可能なメンターがありません');
         }
         
       } catch (err) {
-        console.error('メンター情報取得エラー:', err);
+        console.error('❌ データ取得エラー:', err);
         setError('メンター情報の取得に失敗しました。');
       } finally {
         setIsLoading(false);
