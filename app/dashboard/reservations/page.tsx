@@ -208,6 +208,15 @@ export const ReservationPage: React.FC = () => {
       if (data.timeSlot) {
         requestData.bookedStartTime = data.timeSlot.startTime.toISOString();
         requestData.bookedEndTime = data.timeSlot.endTime.toISOString();
+        
+        // デバッグ情報を追加
+        console.log('=== 予約データ送信デバッグ ===');
+        console.log('選択されたTimeSlot:', data.timeSlot);
+        console.log('startTime (Date):', data.timeSlot.startTime);
+        console.log('startTime (ISO):', data.timeSlot.startTime.toISOString());
+        console.log('endTime (Date):', data.timeSlot.endTime);
+        console.log('endTime (ISO):', data.timeSlot.endTime.toISOString());
+        console.log('送信予定データ:', requestData);
       }
       
       // トークンを取得してヘッダーに含める

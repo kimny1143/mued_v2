@@ -239,13 +239,15 @@ export default function BookingCalendarPage() {
         notes: `メンター: ${selectedMentor.name}とのレッスン予約`
       };
 
+      // デバッグ情報を追加
+      console.log('=== ブッキングカレンダー予約データ送信デバッグ ===');
+      console.log('選択されたTimeSlot:', selectedTimeSlot);
+      console.log('startTime (Date):', selectedTimeSlot.startTime);
+      console.log('startTime (ISO):', selectedTimeSlot.startTime.toISOString());
+      console.log('endTime (Date):', selectedTimeSlot.endTime);
+      console.log('endTime (ISO):', selectedTimeSlot.endTime.toISOString());
       console.log('予約・決済データ:', reservationData);
       console.log('認証トークン:', token ? 'あり' : 'なし');
-      console.log('環境変数確認:', {
-        NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
-        VERCEL_URL: process.env.VERCEL_URL,
-        現在のURL: window.location.origin
-      });
 
       const response = await fetch('/api/reservations', {
         method: 'POST',

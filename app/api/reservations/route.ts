@@ -228,20 +228,18 @@ export async function POST(request: NextRequest) {
       
       if (bookedStartTime && bookedEndTime) {
         // ユーザーが選択した正確な時間帯を使用
-        // フロントエンドからのISO文字列を日本時間として解釈
+        // フロントエンドからの時刻をそのまま使用（二重変換を防ぐ）
         reservationStartTime = new Date(bookedStartTime);
         reservationEndTime = new Date(bookedEndTime);
         
-        // タイムゾーンオフセットを調整（UTC → JST）
-        const jstOffset = 9 * 60 * 60 * 1000; // 9時間をミリ秒に変換
-        reservationStartTime = new Date(reservationStartTime.getTime() + jstOffset);
-        reservationEndTime = new Date(reservationEndTime.getTime() + jstOffset);
-        
-        console.log('タイムゾーン調整後の予約時間:', {
+        console.log('受信した予約時間（変換前）:', {
           originalStart: bookedStartTime,
-          adjustedStart: reservationStartTime.toISOString(),
           originalEnd: bookedEndTime,
-          adjustedEnd: reservationEndTime.toISOString(),
+        });
+        
+        console.log('Dateオブジェクト変換後:', {
+          reservationStart: reservationStartTime.toISOString(),
+          reservationEnd: reservationEndTime.toISOString(),
         });
         
         // 予約時間が指定された範囲内かチェック（スロット固有の制約を適用）
@@ -285,26 +283,20 @@ export async function POST(request: NextRequest) {
       // 予約時間の重複チェック
       const existingReservations = slot.reservations || [];
       const hasOverlap = existingReservations.some(reservation => {
-        // 既存予約の時刻もタイムゾーン調整
+        // 既存予約の時刻をそのまま使用（二重変換を防ぐ）
         const existingStart = new Date(reservation.bookedStartTime);
         const existingEnd = new Date(reservation.bookedEndTime);
         
-        const jstOffset = 9 * 60 * 60 * 1000; // 9時間をミリ秒に変換
-        const existingStartJST = new Date(existingStart.getTime() + jstOffset);
-        const existingEndJST = new Date(existingEnd.getTime() + jstOffset);
-        
         console.log('重複チェック - 既存予約:', {
           id: reservation.id,
-          originalStart: reservation.bookedStartTime,
-          adjustedStart: existingStartJST.toISOString(),
-          originalEnd: reservation.bookedEndTime,
-          adjustedEnd: existingEndJST.toISOString(),
+          existingStart: existingStart.toISOString(),
+          existingEnd: existingEnd.toISOString(),
         });
         
-        // 時間帯の重複チェック（調整後の時刻で比較）
+        // 時間帯の重複チェック
         return (
-          (reservationStartTime < existingEndJST && reservationEndTime > existingStartJST) ||
-          (existingStartJST < reservationEndTime && existingEndJST > reservationStartTime)
+          (reservationStartTime < existingEnd && reservationEndTime > existingStart) ||
+          (existingStart < reservationEndTime && existingEnd > reservationStartTime)
         );
       });
       
