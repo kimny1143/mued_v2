@@ -100,6 +100,17 @@ function LandingPageContent(): JSX.Element {
       <Container />
       <MainContentWrapper />
       <SoftwareCompanyWrapper />
+
+      {/* 新デザインプレビューボタン */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button 
+          onClick={() => router.push('/new-landing')}
+          className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 animate-bounce"
+        >
+          <span className="text-2xl">🎵</span>
+          <span className="font-semibold">新デザインプレビュー</span>
+        </button>
+      </div>
     </div>
   );
 }
