@@ -228,8 +228,21 @@ export async function POST(request: NextRequest) {
       
       if (bookedStartTime && bookedEndTime) {
         // ユーザーが選択した正確な時間帯を使用
+        // フロントエンドからのISO文字列を日本時間として解釈
         reservationStartTime = new Date(bookedStartTime);
         reservationEndTime = new Date(bookedEndTime);
+        
+        // タイムゾーンオフセットを調整（UTC → JST）
+        const jstOffset = 9 * 60 * 60 * 1000; // 9時間をミリ秒に変換
+        reservationStartTime = new Date(reservationStartTime.getTime() + jstOffset);
+        reservationEndTime = new Date(reservationEndTime.getTime() + jstOffset);
+        
+        console.log('タイムゾーン調整後の予約時間:', {
+          originalStart: bookedStartTime,
+          adjustedStart: reservationStartTime.toISOString(),
+          originalEnd: bookedEndTime,
+          adjustedEnd: reservationEndTime.toISOString(),
+        });
         
         // 予約時間が指定された範囲内かチェック（スロット固有の制約を適用）
         const durationInMinutes = Math.round((reservationEndTime.getTime() - reservationStartTime.getTime()) / (1000 * 60));
@@ -272,13 +285,26 @@ export async function POST(request: NextRequest) {
       // 予約時間の重複チェック
       const existingReservations = slot.reservations || [];
       const hasOverlap = existingReservations.some(reservation => {
+        // 既存予約の時刻もタイムゾーン調整
         const existingStart = new Date(reservation.bookedStartTime);
         const existingEnd = new Date(reservation.bookedEndTime);
         
-        // 時間帯の重複チェック
+        const jstOffset = 9 * 60 * 60 * 1000; // 9時間をミリ秒に変換
+        const existingStartJST = new Date(existingStart.getTime() + jstOffset);
+        const existingEndJST = new Date(existingEnd.getTime() + jstOffset);
+        
+        console.log('重複チェック - 既存予約:', {
+          id: reservation.id,
+          originalStart: reservation.bookedStartTime,
+          adjustedStart: existingStartJST.toISOString(),
+          originalEnd: reservation.bookedEndTime,
+          adjustedEnd: existingEndJST.toISOString(),
+        });
+        
+        // 時間帯の重複チェック（調整後の時刻で比較）
         return (
-          (reservationStartTime < existingEnd && reservationEndTime > existingStart) ||
-          (existingStart < reservationEndTime && existingEnd > reservationStartTime)
+          (reservationStartTime < existingEndJST && reservationEndTime > existingStartJST) ||
+          (existingStartJST < reservationEndTime && existingEndJST > reservationStartTime)
         );
       });
       

@@ -126,21 +126,10 @@ export default function BookingCalendarPage() {
         const { data: sessionData } = await supabaseBrowser.auth.getSession();
         const token = sessionData.session?.access_token ?? null;
         
-        // 日付範囲を指定
-        const fromDate = new Date();
-        const toDate = new Date();
-        toDate.setDate(toDate.getDate() + 30); // 30日先まで取得
+        console.log('APIリクエスト開始: 全ての利用可能スロットを取得');
         
-        // クエリパラメータの構築
-        const queryString = new URLSearchParams({
-          from: fromDate.toISOString(),
-          to: toDate.toISOString(),
-        }).toString();
-        
-        console.log('APIリクエスト開始:', queryString);
-        
-        // 既存のAPIを使用
-        const response = await fetch(`/api/lesson-slots?${queryString}`, {
+        // 全ての利用可能なスロットを取得（日付フィルタリングなし）
+        const response = await fetch('/api/lesson-slots', {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           credentials: 'include',
         });
@@ -255,7 +244,6 @@ export default function BookingCalendarPage() {
       console.log('環境変数確認:', {
         NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
         VERCEL_URL: process.env.VERCEL_URL,
-        VERCEL_ENV: process.env.VERCEL_ENV,
         現在のURL: window.location.origin
       });
 

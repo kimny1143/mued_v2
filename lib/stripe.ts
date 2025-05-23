@@ -355,9 +355,9 @@ export async function createCheckoutSessionForReservation(
     duration: string;
   }
 ): Promise<Stripe.Checkout.Session> {
-  // ベースURLの取得 - 環境変数NEXT_PUBLIC_SITE_URLを優先
+  // ベースURLの取得 - 本番環境を優先
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-    'https://dev.mued.jp' || // フォールバック用
+    'https://dev.mued.jp' || // 明示的にdev.mued.jpを指定
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
   console.log('Stripe決済用ベースURL:', baseUrl);

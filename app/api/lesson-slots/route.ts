@@ -91,45 +91,21 @@ export async function GET(request: NextRequest) {
   try {
     // URLパラメータを取得
     const { searchParams } = new URL(request.url);
-    const fromDate = searchParams.get('from');
-    const toDate = searchParams.get('to');
     const teacherId = searchParams.get('teacherId');
     const minDuration = searchParams.get('minDuration') ? parseInt(searchParams.get('minDuration')!) : null;
     const maxDuration = searchParams.get('maxDuration') ? parseInt(searchParams.get('maxDuration')!) : null;
     const availableOnly = searchParams.get('availableOnly') !== 'false'; // デフォルトはtrue
     
     console.log('レッスンスロット取得API呼び出し:', {
-      fromDate,
-      toDate,
       teacherId,
       minDuration,
       maxDuration,
-      availableOnly
+      availableOnly,
+      note: '全期間対象（日付フィルタリングなし）'
     });
     
     // フィルタリング条件を構築
     const filter: Prisma.LessonSlotWhereInput = {};
-    
-    // 日付範囲のフィルタリング
-    if (fromDate) {
-      filter.startTime = {
-        gte: new Date(fromDate)
-      };
-    }
-    if (toDate) {
-      if (filter.startTime) {
-        // すでにgteが設定されている場合
-        filter.startTime = {
-          ...filter.startTime as Prisma.DateTimeFilter,
-          lte: new Date(toDate)
-        };
-      } else {
-        // 初めて設定する場合
-        filter.startTime = {
-          lte: new Date(toDate)
-        };
-      }
-    }
     
     // メンターIDでフィルタリング
     if (teacherId) {
