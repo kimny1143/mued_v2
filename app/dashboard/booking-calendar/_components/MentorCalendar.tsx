@@ -33,9 +33,6 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   // 現在表示中の日付
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   
-  // 表示モード (月/週/日)
-  const [view, setView] = useState<'month' | 'week' | 'day'>('month');
-  
   // 予約時間枠
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   
@@ -216,7 +213,6 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     
     // 日付が選択されたら自動的に日表示に切り替え
     if (validDates.length > 0) {
-      setView('day');
       setCurrentDate(validDates[0]);
       
       // モバイルでは自動的に時間枠表示にスクロール
@@ -346,8 +342,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         <CalendarNavigation
           currentDate={currentDate}
           onDateChange={handleDateNavigation}
-          view={view}
-          onViewChange={setView}
+          view={'month'}
+          onViewChange={() => {}}
         />
         
         {isLoading ? (
@@ -357,143 +353,147 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
           </div>
         ) : (
           <>
-            {/* 月表示モード */}
-            {view === 'month' && (
-              <div className="calendar-container touch-manipulation">
-                {DEBUG && (
-                  <div className="bg-green-50 border border-green-200 p-3 rounded-lg mb-4">
-                    <h4 className="text-sm font-semibold mb-2 text-green-900">📅 月表示詳細</h4>
-                    <div className="text-xs space-y-1 text-green-800">
-                      <p>• 全timeSlots数: <span className="font-medium">{timeSlots.length}</span></p>
-                      <p>• 利用可能日数: <span className="font-medium">{availableDays.length}</span></p>
-                      {availableDays.length > 0 && (
-                        <p>• 利用可能日例: <span className="font-medium">{availableDays.slice(0, 3).map(d => format(d, 'MM/dd')).join(', ')}</span></p>
-                      )}
+            {/* メイン月表示カレンダー */}
+            <div className="mt-4">
+              <h4 className="font-semibold mb-4 text-gray-900 text-center">予約可能日カレンダー</h4>
+              {availableDays.length > 0 ? (
+                <div className="grid grid-cols-7 gap-2">
+                  {/* 曜日ヘッダー */}
+                  {['月', '火', '水', '木', '金', '土', '日'].map((day, index) => (
+                    <div key={index} className="text-center text-xs font-medium text-gray-500 py-2">
+                      {day}
                     </div>
-                  </div>
-                )}
-                <Calendar
-                  selected={selectedDates}
-                  reserved={reserved}
-                  onChange={handleDateChange}
-                  classNames={{
-                    CalendarContainer: 'bg-white',
-                    DayContent: 'text-center w-full h-full min-h-[40px] sm:min-h-[inherit]',
-                    DaySelection: 'bg-primary text-primary-foreground rounded-md',
-                    DayReservation: 'bg-red-100 line-through text-gray-400',
-                  }}
-                />
-                
-                {/* 簡易的な日付グリッド表示（フォールバック） */}
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium mb-3 text-gray-900">予約可能日</h4>
-                  {availableDays.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {availableDays.map((date, index) => {
-                        // その日の利用可能な時間帯を取得
-                        const daySlots = timeSlots.filter(slot => 
-                          isSameDay(new Date(slot.startTime), date) && slot.isAvailable
-                        );
-                        
-                        return (
-                          <button
-                            key={index}
-                            onClick={() => handleDateChange([date])}
-                            className="p-3 text-left bg-white border border-green-300 rounded-lg hover:bg-green-50 hover:border-green-400 transition-colors"
-                          >
-                            <div className="font-medium text-gray-900 mb-1">
-                              {format(date, 'M/d')}
-                            </div>
-                            <div className="text-xs text-gray-500 mb-2">
-                              {getWeekdayName(date)}曜日
-                            </div>
-                            {/* 時間帯表示 */}
-                            <div className="space-y-1">
-                              {daySlots.slice(0, 2).map((slot, slotIndex) => (
-                                <div key={slotIndex} className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded font-medium">
-                                  {format(new Date(slot.startTime), 'HH:mm')}-{format(new Date(slot.endTime), 'HH:mm')}
-                                </div>
-                              ))}
-                              {daySlots.length > 2 && (
-                                <div className="text-xs text-green-600 font-medium">
-                                  +他{daySlots.length - 2}枠
-                                </div>
-                              )}
-                              {daySlots.length === 0 && (
-                                <div className="text-xs text-gray-400">
-                                  時間帯なし
-                                </div>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">利用可能な日付がありません</p>
-                      <p className="text-xs text-gray-400 mt-1">他のメンターを選択してください</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* 週表示モード */}
-            {view === 'week' && (
-              <div className="mt-4">
-                <div className="grid grid-cols-7 gap-1 mt-2">
-                  {weekDates.map((date, index) => {
-                    const isSelected = selectedDates.some(d => isSameDay(d, date));
-                    const hasAvailableSlots = hasAvailableSlotsOnDate(timeSlots, date);
+                  ))}
+                  
+                  {/* 月の日付を表示 */}
+                  {(() => {
+                    const monthStart = startOfMonth(currentDate);
+                    const monthEnd = endOfMonth(currentDate);
+                    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+                    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+                    const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
                     
-                    return (
-                      <div 
-                        key={index} 
-                        className={`
-                          flex flex-col items-center p-2 rounded-md cursor-pointer
-                          ${isSelected ? 'bg-primary text-primary-foreground' : ''}
-                          ${!hasAvailableSlots ? 'opacity-50' : 'hover:bg-gray-100'}
-                          ${isToday(date) ? 'border border-primary' : ''}
-                          ${hasAvailableSlots && !isSelected ? 'border border-green-300 bg-green-50' : ''}
-                        `}
-                        onClick={() => {
-                          if (hasAvailableSlots) {
-                            handleDateChange([date]);
-                          }
-                        }}
-                      >
-                        <div className={`text-sm ${!isSameMonth(date, currentDate) ? 'text-gray-400' : ''}`}>
-                          {format(date, 'M/d')}
-                        </div>
-                        <div className="text-xs mt-1">
-                          {getWeekdayName(date)}
-                        </div>
-                        {hasAvailableSlots && (
-                          <div className="mt-1 h-1 w-1 rounded-full bg-primary"></div>
-                        )}
-                      </div>
-                    );
-                  })}
+                    return calendarDays.map((date, index) => {
+                      const daySlots = timeSlots.filter(slot => 
+                        isSameDay(new Date(slot.startTime), date) && slot.isAvailable
+                      );
+                      const isCurrentMonth = isSameMonth(date, currentDate);
+                      const isAvailable = availableDays.some(d => isSameDay(d, date));
+                      const todayMark = isToday(date);
+                      const isSelected = selectedDates.some(d => isSameDay(d, date));
+                      
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => isAvailable ? handleDateChange([date]) : undefined}
+                          disabled={!isAvailable}
+                          className={`
+                            aspect-square p-2 text-center rounded-lg transition-all duration-200 relative
+                            ${!isCurrentMonth ? 'text-gray-300 bg-gray-50' : ''}
+                            ${isCurrentMonth && !isAvailable ? 'text-gray-400 bg-gray-50' : ''}
+                            ${isAvailable && !isSelected ? 'bg-green-50 border-2 border-green-200 text-green-800 hover:bg-green-100 hover:border-green-400' : ''}
+                            ${isSelected ? 'bg-primary text-primary-foreground border-2 border-primary' : ''}
+                            ${todayMark && !isSelected ? 'bg-blue-50 border-2 border-blue-400 text-blue-900 font-bold' : ''}
+                            ${todayMark && isSelected ? 'bg-primary text-primary-foreground border-2 border-primary font-bold' : ''}
+                          `}
+                        >
+                          <div className="text-sm font-medium mb-1">
+                            {format(date, 'd')}
+                          </div>
+                          
+                          {/* 予約可能時間帯のドット表示 */}
+                          {isAvailable && daySlots.length > 0 && (
+                            <div className="flex gap-0.5 justify-center flex-wrap">
+                              {daySlots.slice(0, 4).map((_, slotIndex) => (
+                                <div 
+                                  key={slotIndex} 
+                                  className={`w-1 h-1 rounded-full ${
+                                    isSelected ? 'bg-white' : 'bg-green-500'
+                                  }`}
+                                />
+                              ))}
+                              {daySlots.length > 4 && (
+                                <div className={`text-[8px] font-bold ${
+                                  isSelected ? 'text-white' : 'text-green-600'
+                                }`}>
+                                  +
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* 今日のマーク */}
+                          {todayMark && (
+                            <div className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
+                              isSelected ? 'bg-white' : 'bg-blue-500'
+                            }`} />
+                          )}
+                          
+                          {/* 選択中のマーク */}
+                          {isSelected && (
+                            <div className="absolute inset-0 border-2 border-primary rounded-lg pointer-events-none" />
+                          )}
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
-                
-                {/* 選択された日付の時間枠表示 */}
-                {selectedDate && (
-                  <div className="mt-4">
-                    <TimeSlotDisplay
-                      selectedDate={selectedDate}
-                      timeSlots={timeSlots}
-                      onTimeSlotSelect={handleTimeSlotSelect}
-                      selectedSlot={selectedTimeSlot}
-                      showDateHeading={true}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                  <div className="text-gray-400 mb-2">📅</div>
+                  <p className="text-gray-500 font-medium">利用可能な日付がありません</p>
+                  <p className="text-xs text-gray-400 mt-1">他のメンターを選択してください</p>
+                </div>
+              )}
+            </div>
             
-            {/* 日表示モード */}
-            {view === 'day' && (
+            {/* 凡例 */}
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <h5 className="text-sm font-medium text-gray-700 mb-2">凡例</h5>
+              <div className="flex flex-wrap gap-4 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-50 border-2 border-green-200 rounded"></div>
+                  <span>予約可能</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-50 border-2 border-blue-400 rounded"></div>
+                  <span>今日</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-primary border-2 border-primary rounded"></div>
+                  <span>選択中</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-0.5">
+                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                    <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                  </div>
+                  <span>時間帯数</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* React Booking Calendar（参考用・非表示） */}
+            <div className="hidden">
+              <Calendar
+                selected={selectedDates}
+                reserved={reserved}
+                onChange={handleDateChange}
+                classNames={{
+                  CalendarContainer: 'bg-white',
+                  DayContent: 'text-center w-full h-full min-h-[50px] sm:min-h-[60px] flex flex-col items-center justify-center relative',
+                  DaySelection: 'bg-primary text-primary-foreground rounded-md',
+                  DayReservation: 'bg-red-100 text-red-700 line-through',
+                }}
+              />
+            </div>
+            
+            {/* 旧フォールバック表示（削除予定） */}
+            <div className="hidden mt-4 p-4 bg-gray-50 rounded-lg"></div>
+            
+            {/* 日付選択後の時間枠表示 */}
+            {selectedDate && (
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-4">
                   <Button 
@@ -508,9 +508,6 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                   <h3 className="text-lg font-medium">
                     {format(currentDate, 'yyyy年MM月dd日')} ({getWeekdayName(currentDate)})
                     {isToday(currentDate) && <span className="ml-2 text-sm text-primary">今日</span>}
-                    {DEBUG && hasAvailableSlotsOnDate(timeSlots, currentDate) && (
-                      <span className="ml-2 text-xs text-green-600">(予約可)</span>
-                    )}
                   </h3>
                   
                   <Button 
@@ -522,20 +519,6 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
-                
-                {DEBUG && (
-                  <div className="bg-purple-50 border border-purple-200 p-3 rounded-lg mb-4">
-                    <h4 className="text-sm font-semibold mb-2 text-purple-900">🕒 日表示詳細</h4>
-                    <div className="text-xs space-y-1 text-purple-800">
-                      <p>• 選択日: <span className="font-medium">{format(currentDate, 'yyyy/MM/dd')}</span></p>
-                      <p>• 全timeSlots数: <span className="font-medium">{timeSlots.length}</span></p>
-                      <p>• この日のスロット数: <span className="font-medium">{timeSlots.filter(slot => isSameDay(new Date(slot.startTime), currentDate)).length}</span></p>
-                      {timeSlots.length > 0 && (
-                        <p>• 最初のスロット: <span className="font-medium">{format(new Date(timeSlots[0].startTime), 'HH:mm')}</span></p>
-                      )}
-                    </div>
-                  </div>
-                )}
                 
                 <TimeSlotDisplay
                   selectedDate={currentDate}
