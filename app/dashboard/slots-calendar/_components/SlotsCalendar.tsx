@@ -235,36 +235,46 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                         {format(date, 'd')}
                       </div>
                       
-                      {/* スロット状態インジケーター */}
+                      {/* スロット情報表示 */}
                       {hasSlots && (
-                        <div className="flex flex-col gap-0.5 w-full">
-                          {availableSlots > 0 && (
-                            <div className="flex gap-0.5 justify-center">
-                              {Array.from({ length: Math.min(availableSlots, 3) }).map((_, i) => (
-                                <div key={i} className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                              ))}
-                              {availableSlots > 3 && (
-                                <span className="text-[8px] text-green-600 font-bold">+</span>
-                              )}
+                        <div className="flex flex-col gap-0.5 w-full mt-1">
+                          {/* 最初のスロットの時間帯を表示 */}
+                          <div className="text-[10px] font-medium text-center leading-tight">
+                            {format(new Date(daySlots[0].startTime), 'HH:mm')}-
+                            {format(new Date(daySlots[0].endTime), 'HH:mm')}
+                          </div>
+                          
+                          {/* 複数スロットがある場合の追加表示 */}
+                          {daySlots.length > 1 && (
+                            <div className="text-[8px] text-center text-gray-600 font-medium">
+                              +{daySlots.length - 1}件
                             </div>
                           )}
-                          {bookedSlots > 0 && (
-                            <div className="flex gap-0.5 justify-center">
-                              {Array.from({ length: Math.min(bookedSlots, 3) }).map((_, i) => (
-                                <div key={i} className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
-                              ))}
-                              {bookedSlots > 3 && (
-                                <span className="text-[8px] text-orange-600 font-bold">+</span>
-                              )}
-                            </div>
-                          )}
-                          {pendingSlots > 0 && (
-                            <div className="flex gap-0.5 justify-center">
-                              {Array.from({ length: Math.min(pendingSlots, 3) }).map((_, i) => (
-                                <div key={i} className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />
-                              ))}
-                            </div>
-                          )}
+                          
+                          {/* スロット状態インジケーター（ドット） */}
+                          <div className="flex flex-wrap gap-0.5 justify-center mt-0.5">
+                            {availableSlots > 0 && (
+                              <div className="flex gap-0.5">
+                                {Array.from({ length: Math.min(availableSlots, 2) }).map((_, i) => (
+                                  <div key={i} className="w-1 h-1 bg-green-500 rounded-full" />
+                                ))}
+                              </div>
+                            )}
+                            {bookedSlots > 0 && (
+                              <div className="flex gap-0.5">
+                                {Array.from({ length: Math.min(bookedSlots, 2) }).map((_, i) => (
+                                  <div key={i} className="w-1 h-1 bg-orange-500 rounded-full" />
+                                ))}
+                              </div>
+                            )}
+                            {pendingSlots > 0 && (
+                              <div className="flex gap-0.5">
+                                {Array.from({ length: Math.min(pendingSlots, 2) }).map((_, i) => (
+                                  <div key={i} className="w-1 h-1 bg-yellow-500 rounded-full" />
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                       
