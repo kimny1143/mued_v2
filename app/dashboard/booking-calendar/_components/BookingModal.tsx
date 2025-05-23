@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
 import { X, Clock, User, CreditCard, ArrowRight } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { TimeSlot } from './TimeSlotDisplay';
@@ -143,7 +144,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <h2 className="text-xl font-semibold text-gray-900">レッスン予約</h2>
                   {selectedDate && (
                     <p className="text-sm text-gray-600">
-                      {format(selectedDate, 'yyyy年M月d日 (EEEE)', { locale: require('date-fns/locale/ja') })}
+                      {format(selectedDate, 'yyyy年M月d日 (EEEE)', { locale: ja })}
                     </p>
                   )}
                 </div>
