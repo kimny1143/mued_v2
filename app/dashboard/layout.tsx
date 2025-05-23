@@ -16,12 +16,14 @@ import {
   XIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  CalendarIcon
+  CalendarIcon,
+  LogOutIcon
 } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { signOut } from "@/app/actions/auth";
 import { Button } from "@/app/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 //import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -371,20 +373,58 @@ export default function DashboardLayout({
                 <BellIcon className="h-6 w-6" />
                 <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
               </Button>
-              <Button 
-                variant="ghost"
-                size="sm"
-                className="w-10 h-10 p-0"
-              >
-                <UserCircleIcon className="h-6 w-6" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                className="hidden lg:flex items-center gap-2"
-                onClick={handleSignOut}
-              >
-                <span className="text-sm">Sign out</span>
-              </Button>
+              
+              {/* ユーザーメニュー */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="ghost"
+                    size="sm"
+                    className="w-10 h-10 p-0"
+                  >
+                    {user?.user_metadata?.avatar_url ? (
+                      <img 
+                        src={user.user_metadata.avatar_url} 
+                        alt="User avatar" 
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <UserCircleIcon className="h-6 w-6" />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent 
+                  className="w-56 p-0"
+                  align="end"
+                >
+                  <div className="px-3 py-2 border-b">
+                    <p className="font-medium text-sm truncate">
+                      {user?.db_user?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email || 'ユーザー'}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {userRole === 'admin' ? '管理者' : 
+                       userRole === 'mentor' ? 'メンター' : 
+                       '生徒'}
+                    </p>
+                  </div>
+                  <div className="py-1">
+                    <Link 
+                      href="/dashboard/settings"
+                      className="flex items-center px-3 py-2 text-sm hover:bg-gray-100 transition-colors"
+                    >
+                      <SettingsIcon className="h-4 w-4 mr-2" />
+                      設定
+                    </Link>
+                    <button 
+                      onClick={handleSignOut}
+                      className="w-full flex items-center px-3 py-2 text-sm hover:bg-gray-100 transition-colors text-left"
+                    >
+                      <LogOutIcon className="h-4 w-4 mr-2" />
+                      サインアウト
+                    </button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>
