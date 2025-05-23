@@ -242,7 +242,7 @@ export default function BookingCalendarPage() {
         
         // スロット情報と予約情報を並行取得
         const [slotsResponse, reservationsResponse] = await Promise.all([
-          fetch('/api/lesson-slots', {
+          fetch('/api/lesson-slots?viewMode=all', {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             credentials: 'include',
           }),

@@ -218,7 +218,7 @@ export default function LessonSlotsPage() {
         throw new Error('認証トークンが取得できません');
       }
       
-      const response = await fetch('/api/lesson-slots', {
+      const response = await fetch('/api/lesson-slots?viewMode=own', {
         headers: {
           'Authorization': `Bearer ${token}` // 認証トークンをヘッダーに追加
         }

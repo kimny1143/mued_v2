@@ -104,23 +104,29 @@ export async function GET(request: NextRequest) {
 
     // URLパラメータを取得
     const { searchParams } = new URL(request.url);
+    const viewMode = searchParams.get('viewMode') || 'own'; // デフォルトは自分のスロットのみ
     const minDuration = searchParams.get('minDuration') ? parseInt(searchParams.get('minDuration')!) : null;
     const maxDuration = searchParams.get('maxDuration') ? parseInt(searchParams.get('maxDuration')!) : null;
     const availableOnly = searchParams.get('availableOnly') !== 'false'; // デフォルトはtrue
     
     console.log('レッスンスロット取得API呼び出し:', {
-      userId: sessionInfo.user.id, // 🔐 認証ユーザーのIDを使用
+      userId: sessionInfo.user.id,
+      viewMode, // 🆕 表示モード
       minDuration,
       maxDuration,
       availableOnly,
-      note: '認証ユーザーのスロットのみ取得'
+      note: viewMode === 'own' ? '認証ユーザーのスロットのみ取得' : '全メンターのスロット取得'
     });
     
     // フィルタリング条件を構築
-    const filter: Prisma.LessonSlotWhereInput = {
-      // 🔐 必ず認証ユーザーのスロットのみにフィルタリング
-      teacherId: sessionInfo.user.id
-    };
+    const filter: Prisma.LessonSlotWhereInput = {};
+    
+    // 🆕 viewModeに基づいてteacherIdフィルターを設定
+    if (viewMode === 'own') {
+      // 自分のスロットのみ（メンター視点）
+      filter.teacherId = sessionInfo.user.id;
+    }
+    // viewMode === 'all' の場合はteacherIdフィルターなし（全メンターのスロット）
     
     // 時間の制約でフィルタリング（分単位を優先、ない場合は時間単位で互換性維持）
     if (minDuration !== null) {
@@ -198,7 +204,7 @@ export async function GET(request: NextRequest) {
       };
     });
     
-    console.log(`🟢 lesson-slots (認証ユーザー専用): ${enhancedSlots.length}件`);
+    console.log(`🟢 lesson-slots (${viewMode}モード): ${enhancedSlots.length}件`);
     return NextResponse.json(enhancedSlots, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',

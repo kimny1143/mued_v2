@@ -65,7 +65,7 @@ export default function SlotsCalendarPage() {
         console.log('APIリクエスト開始: 自分のレッスンスロットを取得');
         
         // 自分が作成したスロットのみを取得
-        const response = await fetch('/api/lesson-slots', {
+        const response = await fetch('/api/lesson-slots?viewMode=own', {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           credentials: 'include',
         });
