@@ -5,7 +5,7 @@ import { MentorCalendar } from './_components/MentorCalendar';
 import { MentorList } from './_components/MentorList';
 import type { Mentor } from './_components/MentorList';
 import { Button } from '@/app/components/ui/button';
-import { CalendarClock, ArrowRight, ArrowLeft, Check } from 'lucide-react';
+import { CalendarClock, ArrowRight, ArrowLeft } from 'lucide-react';
 import { TimeSlot } from './_components/TimeSlotDisplay';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
@@ -303,41 +303,6 @@ export default function BookingCalendarPage() {
     console.log('🔴 page.tsx: mentors.length:', mentors?.length);
   }
 
-  // 現在のステップに基づいてステップインジケーターを表示
-  const renderStepIndicator = () => {
-    return (
-      <div className="flex items-center justify-between mb-6 bg-white rounded-lg shadow p-4">
-        <div className="hidden md:flex w-full justify-between">
-          <div className={`flex flex-col items-center ${step === 'selection' ? 'text-primary font-medium' : 'text-green-600'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${step === 'selection' ? 'bg-primary text-white' : 'bg-green-100 text-green-600'}`}>
-              {step === 'confirmation' ? <Check className="h-4 w-4" /> : '1'}
-            </div>
-            <span className="text-sm">メンター・日時選択</span>
-          </div>
-          
-          <div className="w-full mx-4 mt-4 border-t border-gray-200" />
-          
-          <div className={`flex flex-col items-center ${step === 'confirmation' ? 'text-primary font-medium' : 'text-gray-500'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${step === 'confirmation' ? 'bg-primary text-white' : 'bg-gray-100'}`}>
-              2
-            </div>
-            <span className="text-sm">予約確認・決済</span>
-          </div>
-        </div>
-        
-        {/* モバイル用のシンプルなステップ表示 */}
-        <div className="flex md:hidden w-full items-center justify-between">
-          <div className={`text-sm ${step === 'selection' ? 'text-primary font-medium' : 'text-green-600'}`}>
-            1. 選択
-          </div>
-          <div className={`text-sm ${step === 'confirmation' ? 'text-primary font-medium' : 'text-gray-500'}`}>
-            2. 確認・決済
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="container mx-auto py-6 px-4 sm:px-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-2">
@@ -361,9 +326,6 @@ export default function BookingCalendarPage() {
           )}
         </div>
       </div>
-      
-      {/* ステップインジケーター */}
-      {renderStepIndicator()}
       
       {error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg" role="alert">

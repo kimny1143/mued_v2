@@ -306,13 +306,14 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       )}
       
       {DEBUG && (
-        <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg mb-4">
-          <h3 className="text-sm font-medium mb-1">デバッグ情報</h3>
-          <div className="text-xs space-y-1">
-            <p>総スロット数: {timeSlots.length}</p>
-            <p>日付ごとの予約可能日: {availableDays.length}日</p>
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
+          <h3 className="text-sm font-semibold mb-2 text-blue-900">📊 カレンダー情報</h3>
+          <div className="text-xs space-y-1 text-blue-800">
+            <p>• 総スロット数: <span className="font-medium">{timeSlots.length}</span></p>
+            <p>• 予約可能日: <span className="font-medium">{availableDays.length}日</span></p>
+            <p>• 選択中メンター: <span className="font-medium">{mentors.find(m => m.id === currentMentorId)?.name || '未選択'}</span></p>
             {availableDays.length > 0 && (
-              <p>例: {availableDays.slice(0, 3).map(d => d.toDateString()).join(', ')}...</p>
+              <p>• 近日の予約可能日: <span className="font-medium">{availableDays.slice(0, 3).map(d => format(d, 'M/d')).join(', ')}</span></p>
             )}
           </div>
         </div>
@@ -360,13 +361,13 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
             {view === 'month' && (
               <div className="calendar-container touch-manipulation">
                 {DEBUG && (
-                  <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
-                    <h4 className="text-sm font-medium mb-1">カレンダー表示 デバッグ</h4>
-                    <div className="text-xs space-y-1">
-                      <p>全timeSlots数: {timeSlots.length}</p>
-                      <p>利用可能日数: {availableDays.length}</p>
+                  <div className="bg-green-50 border border-green-200 p-3 rounded-lg mb-4">
+                    <h4 className="text-sm font-semibold mb-2 text-green-900">📅 月表示詳細</h4>
+                    <div className="text-xs space-y-1 text-green-800">
+                      <p>• 全timeSlots数: <span className="font-medium">{timeSlots.length}</span></p>
+                      <p>• 利用可能日数: <span className="font-medium">{availableDays.length}</span></p>
                       {availableDays.length > 0 && (
-                        <p>利用可能日例: {availableDays.slice(0, 3).map(d => format(d, 'MM/dd')).join(', ')}</p>
+                        <p>• 利用可能日例: <span className="font-medium">{availableDays.slice(0, 3).map(d => format(d, 'MM/dd')).join(', ')}</span></p>
                       )}
                     </div>
                   </div>
@@ -385,22 +386,54 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                 
                 {/* 簡易的な日付グリッド表示（フォールバック） */}
                 <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium mb-2">予約可能日</h4>
+                  <h4 className="font-medium mb-3 text-gray-900">予約可能日</h4>
                   {availableDays.length > 0 ? (
-                    <div className="grid grid-cols-7 gap-2">
-                      {availableDays.map((date, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleDateChange([date])}
-                          className="p-2 text-center bg-white border border-green-300 rounded hover:bg-green-50"
-                        >
-                          <div className="text-sm font-medium">{format(date, 'M/d')}</div>
-                          <div className="text-xs text-gray-500">{getWeekdayName(date)}</div>
-                        </button>
-                      ))}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {availableDays.map((date, index) => {
+                        // その日の利用可能な時間帯を取得
+                        const daySlots = timeSlots.filter(slot => 
+                          isSameDay(new Date(slot.startTime), date) && slot.isAvailable
+                        );
+                        
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => handleDateChange([date])}
+                            className="p-3 text-left bg-white border border-green-300 rounded-lg hover:bg-green-50 hover:border-green-400 transition-colors"
+                          >
+                            <div className="font-medium text-gray-900 mb-1">
+                              {format(date, 'M/d')}
+                            </div>
+                            <div className="text-xs text-gray-500 mb-2">
+                              {getWeekdayName(date)}曜日
+                            </div>
+                            {/* 時間帯表示 */}
+                            <div className="space-y-1">
+                              {daySlots.slice(0, 2).map((slot, slotIndex) => (
+                                <div key={slotIndex} className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded font-medium">
+                                  {format(new Date(slot.startTime), 'HH:mm')}-{format(new Date(slot.endTime), 'HH:mm')}
+                                </div>
+                              ))}
+                              {daySlots.length > 2 && (
+                                <div className="text-xs text-green-600 font-medium">
+                                  +他{daySlots.length - 2}枠
+                                </div>
+                              )}
+                              {daySlots.length === 0 && (
+                                <div className="text-xs text-gray-400">
+                                  時間帯なし
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-sm">利用可能な日付がありません</p>
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">利用可能な日付がありません</p>
+                      <p className="text-xs text-gray-400 mt-1">他のメンターを選択してください</p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -491,16 +524,14 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                 </div>
                 
                 {DEBUG && (
-                  <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg mb-4">
-                    <h4 className="text-sm font-medium mb-1">TimeSlotDisplay デバッグ</h4>
-                    <div className="text-xs space-y-1">
-                      <p>選択日: {format(currentDate, 'yyyy/MM/dd')}</p>
-                      <p>全timeSlots数: {timeSlots.length}</p>
-                      <p>この日のスロット数: {timeSlots.filter(slot => isSameDay(new Date(slot.startTime), currentDate)).length}</p>
+                  <div className="bg-purple-50 border border-purple-200 p-3 rounded-lg mb-4">
+                    <h4 className="text-sm font-semibold mb-2 text-purple-900">🕒 日表示詳細</h4>
+                    <div className="text-xs space-y-1 text-purple-800">
+                      <p>• 選択日: <span className="font-medium">{format(currentDate, 'yyyy/MM/dd')}</span></p>
+                      <p>• 全timeSlots数: <span className="font-medium">{timeSlots.length}</span></p>
+                      <p>• この日のスロット数: <span className="font-medium">{timeSlots.filter(slot => isSameDay(new Date(slot.startTime), currentDate)).length}</span></p>
                       {timeSlots.length > 0 && (
-                        <p>timeSlots例: {timeSlots.slice(0, 2).map(slot => 
-                          `${format(new Date(slot.startTime), 'MM/dd HH:mm')}`
-                        ).join(', ')}</p>
+                        <p>• 最初のスロット: <span className="font-medium">{format(new Date(timeSlots[0].startTime), 'HH:mm')}</span></p>
                       )}
                     </div>
                   </div>

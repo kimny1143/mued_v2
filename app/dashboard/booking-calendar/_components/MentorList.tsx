@@ -87,14 +87,14 @@ export const MentorList: React.FC<MentorListProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden h-full flex flex-col">
-      <div className="p-4 border-b" aria-label="メンター検索">
-        <h3 className="text-lg font-semibold mb-3" id="mentor-list-heading">メンターを選択</h3>
+      <div className="p-5 border-b" aria-label="メンター検索">
+        <h3 className="text-xl font-semibold mb-4 text-gray-900" id="mentor-list-heading">メンターを選択</h3>
         <div className="relative">
           <Input
             placeholder="メンターを検索..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="pl-9 pr-9 w-full"
+            className="pl-10 pr-10 w-full h-11"
             aria-label="メンターを名前または専門分野で検索"
             ref={searchInputRef}
           />
@@ -109,14 +109,14 @@ export const MentorList: React.FC<MentorListProps> = ({
             </button>
           )}
         </div>
-        <div className="flex items-center justify-between mt-3">
-          <p className="text-sm text-gray-500" aria-live="polite">
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-gray-600 font-medium" aria-live="polite">
             {filteredMentors.length} 人のメンター
           </p>
           <Button 
             variant="outline" 
             size="sm" 
-            className="text-xs"
+            className="text-xs px-3"
             onClick={() => setShowFilters(!showFilters)}
             aria-expanded={showFilters}
             aria-controls="filter-panel"
@@ -159,18 +159,21 @@ export const MentorList: React.FC<MentorListProps> = ({
         )}
       </div>
       
-      <div className="overflow-auto flex-1 h-0 min-h-[200px] max-h-[calc(100vh-220px)] scrollbar-thin" role="listbox" aria-labelledby="mentor-list-heading">
+      <div className="overflow-auto flex-1 h-0 min-h-[250px] max-h-[calc(100vh-280px)] scrollbar-thin" role="listbox" aria-labelledby="mentor-list-heading">
         {isLoading ? (
-          <div className="p-4 text-center" aria-live="polite" aria-busy="true">
+          <div className="p-6 text-center" aria-live="polite" aria-busy="true">
             <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-500">メンター情報を読み込み中...</p>
+            <p className="mt-3 text-sm text-gray-500">メンター情報を読み込み中...</p>
           </div>
         ) : filteredMentors.length === 0 ? (
-          <div className="p-4 text-center text-gray-500" aria-live="polite">
-            メンターが見つかりませんでした
+          <div className="p-6 text-center text-gray-500" aria-live="polite">
+            <p className="text-sm">メンターが見つかりませんでした</p>
+            {searchTerm && (
+              <p className="text-xs mt-1">検索条件を変更してお試しください</p>
+            )}
           </div>
         ) : (
-          <div className="p-3 space-y-3">
+          <div className="p-4 space-y-3">
             {filteredMentors.map((mentor, index) => (
               <div
                 key={mentor.id}
