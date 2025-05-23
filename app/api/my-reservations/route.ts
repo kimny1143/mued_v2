@@ -16,9 +16,14 @@ function generateCacheKey(userId: string, status: ReservationStatus | null, take
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    console.log('my-reservations API - リクエスト受信', { 
+      params: Object.fromEntries(searchParams.entries()),
+      url: request.url
+    });
     
     // 「全表示モード」を最初にチェック
     if (searchParams.get('all') === 'true') {
+      console.log('my-reservations API - 全表示モード');
       const all = await prisma.reservation.findMany({
         include: {
           slot: { include: { teacher: true } },
@@ -48,12 +53,16 @@ export async function GET(request: NextRequest) {
         updatedAt: r.updatedAt,
       }));
 
+      console.log(`my-reservations API - 全表示結果: ${formatted.length}件`);
       return NextResponse.json(formatted);
     }
 
     // 以下、通常の認証付きクエリ処理
     const sessionInfo = await getSessionFromRequest(request);
+    console.log('my-reservations API - 認証情報:', sessionInfo ? `ユーザーID: ${sessionInfo.user.id}` : 'なし');
+    
     if (!sessionInfo) {
+      console.warn('my-reservations API - 認証エラー: 401');
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 

@@ -18,10 +18,10 @@ export async function signInWithGoogle() {
     console.log(`認証コールバックURL: ${redirectUrl}`);
     console.log(`環境情報: VERCEL_ENV=${process.env.VERCEL_ENV || 'local'}, VERCEL_URL=${process.env.VERCEL_URL || 'なし'}`);
 
-    // Supabaseサーバークライアント初期化 (PKCE + Cookie 保存)
+    // Supabaseサーバークライアント初期化
     const supabase = createSupabaseServerClient();
 
-    // OAuth認証URLの生成 - Implicit Grantフロー
+    // OAuth認証URLの生成 - クエリパラメータでアクセスタイプを指定
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -30,7 +30,6 @@ export async function signInWithGoogle() {
           access_type: 'offline',
           prompt: 'consent',
         },
-        // Implicit Grantフローはデフォルトで使用される
       },
     });
 
@@ -42,23 +41,22 @@ export async function signInWithGoogle() {
 
     // 認証URLが取得できた場合はリダイレクトURLを返す（クライアント側でリダイレクト実行）
     if (data?.url) {
-      // URL内のリダイレクト先パラメータを確認
-      const authUrl = new URL(data.url);
-      const encodedRedirect = authUrl.searchParams.get('redirect_to');
       console.log('認証URL生成成功:', data.url.substring(0, 50) + '...');
-      console.log('エンコードされたリダイレクト:', encodedRedirect);
       
-      // リダイレクト先がlocalhostだがVercel環境の場合、URLを修正
-      if (encodedRedirect && encodedRedirect.includes('localhost') && baseUrl.includes('vercel.app')) {
-        // VercelのURLに置換したリダイレクトURL
-        const correctedRedirect = encodedRedirect.replace('http://localhost:3000', baseUrl);
-        console.log('リダイレクト先修正:', correctedRedirect);
-        
-        authUrl.searchParams.set('redirect_to', correctedRedirect);
-        return { 
-          success: true, 
-          redirectUrl: authUrl.toString() 
-        };
+      // 追加のデバッグ情報
+      try {
+        // URLオブジェクトのパラメータを確認
+        const parsedUrl = new URL(data.url);
+        console.log('認証URLパラメータ:');
+        parsedUrl.searchParams.forEach((value, key) => {
+          if (key !== 'access_token' && key !== 'refresh_token') {
+            console.log(`- ${key}: ${value}`);
+          } else {
+            console.log(`- ${key}: [存在]`);
+          }
+        });
+      } catch (e) {
+        console.error('URL解析エラー:', e);
       }
       
       return { 
@@ -85,23 +83,7 @@ export async function signInWithGoogle() {
 
 // ログアウト処理
 export async function signOut() {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookies().get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          cookies().set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          cookies().set({ name, value: '', ...options });
-        }
-      }
-    }
-  );
+  const supabase = createSupabaseServerClient();
 
   const { error } = await supabase.auth.signOut();
   

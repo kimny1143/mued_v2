@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { prisma } from '@/lib/prisma'; // Prismaクライアントをインポート
 
 // ユーザーデータの型定義
 interface UserData {
   id: string;
   roleId?: string;
+  roleName?: string;
   name: string | null;
   email: string | null;
   image: string | null;
@@ -321,6 +323,9 @@ export async function GET(req: NextRequest) {
         // ロール情報があれば設定
         if (typedUser.role) {
           userData.role = typedUser.role;
+          // ロール名を別途保存 (重要: フロントエンドでの判定に使用)
+          userData.roleName = typedUser.role.name.toLowerCase();
+          console.log('DBから取得したロール名:', userData.roleName);
         }
         
         console.log('DBから取得したroleId:', userData.roleId);
@@ -347,9 +352,51 @@ export async function GET(req: NextRequest) {
     console.log(`ユーザー情報取得成功: ${userData.name || userData.email}`);
     console.log('最終ユーザーデータ:', userData);
     
+    // Supabaseアクセスが失敗した場合、Prismaを使って直接取得を試みる
+    if (!dbAccessSuccessful) {
+      try {
+        console.log('Supabaseアクセス失敗: Prismaを使用した直接DBアクセスを試みます...');
+        
+        // Prismaを使ってユーザー情報とロールを取得
+        const dbUser = await prisma.user.findUnique({
+          where: { id: userId },
+          include: { role: true }
+        });
+        
+        if (dbUser && dbUser.role) {
+          console.log('Prismaによるユーザー情報取得成功:', dbUser.email);
+          console.log('取得したロール情報:', dbUser.role);
+          
+          // 取得したロール情報を設定
+          userData.roleId = dbUser.roleId;
+          userData.roleName = dbUser.role.name.toLowerCase();
+          dbAccessSuccessful = true;
+          
+          console.log('Prismaから設定したロール名:', userData.roleName);
+        } else {
+          console.error('Prismaからのユーザー取得に失敗しました');
+          return NextResponse.json({
+            error: 'データベースからユーザー情報を取得できませんでした',
+            userId,
+            status: 'DATABASE_ERROR'
+          }, { status: 500 });
+        }
+      } catch (prismaError) {
+        console.error('Prismaアクセスエラー:', prismaError);
+        // データベースアクセスできない場合はエラーを返す
+        return NextResponse.json({
+          error: 'データベース接続エラー',
+          details: String(prismaError),
+          userId
+        }, { status: 500 });
+      }
+    }
+    
     // ユーザーデータにDBから取得したロール情報も含める
     return NextResponse.json({
       ...userData,
+      // roleIdがUUID形式になっている場合に備えて、デフォルトのroleName値を設定
+      roleName: userData.roleName || (userData.role?.name?.toLowerCase() || 'student'),
       dbAccessSuccessful // DBアクセスの成功/失敗状態も返す
     });
   } catch (err) {

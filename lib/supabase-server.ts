@@ -36,7 +36,8 @@ export const supabaseServer = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: false,
+    flowType: 'implicit'
   },
   global: {
     // こちらがリダイレクトURLのベースとなるURL
@@ -52,6 +53,7 @@ if (process.env.NODE_ENV !== 'production') {
   console.log(`- サイトURL: ${siteUrl}`);
   console.log(`- 環境: ${process.env.NODE_ENV || 'development'}`);
   console.log(`- Vercel URL: ${process.env.VERCEL_URL || 'なし'}`);
+  console.log(`- 認証フロー: implicit`);
 }
 
 // Supabaseの認証状態が変わったときのハンドラーを設定

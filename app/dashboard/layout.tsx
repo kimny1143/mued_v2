@@ -37,6 +37,7 @@ interface NavItem {
 interface ExtendedUser extends SupabaseUser {
   db_user?: {
     roleId?: string;
+    roleName?: string;
     name?: string;
     email?: string;
     image?: string;
@@ -49,6 +50,7 @@ const dashboardNavItems: NavItem[] = [
   { icon: FolderIcon, label: "Materials", path: "/dashboard/materials" },
   { icon: BookOpenIcon, label: "My Lessons", path: "/dashboard/my-lessons" },
   { icon: CalendarIcon, label: "Reservations", path: "/dashboard/reservations" },
+  { icon: CalendarIcon, label: "Booking", path: "/dashboard/booking-calendar" },
   { icon: DumbbellIcon, label: "Exercises", path: "/dashboard/exercises" },
   { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" },
   { icon: SettingsIcon, label: "Settings", path: "/dashboard/settings" }
@@ -181,10 +183,28 @@ export default function DashboardLayout({
             console.log("API応答の生データ:", JSON.stringify(userData));
             console.log("API応答からのroleId:", userData.roleId);
             console.log("roleIdのタイプ:", typeof userData.roleId);
+            console.log("API応答からのroleName:", userData.roleName);
             console.log("DBアクセス成功状態:", userData.dbAccessSuccessful);
             
-            // DBから返されたroleIdを確実に検査して設定
-            if (userData.roleId) {
+            // 新しい roleName を優先的に使用 (UUIDではなく実際のロール名)
+            if (userData.roleName) {
+              const roleName = userData.roleName.toLowerCase();
+              console.log("APIから取得したロール名:", roleName);
+              
+              // ロール名で設定（roleIdはUUID形式のため、roleNameを使用）
+              if (roleName === 'mentor') {
+                setUserRole('mentor');
+                console.log("メンターロールを設定しました");
+              } else if (roleName === 'admin' || roleName === 'administrator') {
+                setUserRole('admin');
+                console.log("管理者ロールを設定しました");
+              } else {
+                setUserRole('student');
+                console.log("生徒ロールを設定しました");
+              }
+            }
+            // roleNameがない場合は従来のロジックにフォールバック
+            else if (userData.roleId) {
               // ここが重要: roleIdが文字列として正確に一致するか確認
               const dbRole = userData.roleId.toLowerCase();
               console.log("DBから取得した正確なロール:", dbRole);
@@ -443,7 +463,7 @@ export default function DashboardLayout({
                         ID: {user?.id?.substring(0, 8)}...
                       </p>
                       <p className="text-xxs text-gray-400 truncate">
-                        <span className="font-bold">Role:</span> {userRole || 'unknown'} (<span className="text-red-500">{user?.db_user?.roleId || 'no-role'}</span>)
+                        <span className="font-bold">Role:</span> {userRole || 'unknown'} (<span className="text-red-500">{user?.db_user?.roleName || user?.db_user?.roleId || 'no-role'}</span>)
                       </p>
                       <details className="text-xxs text-gray-400 text-left mt-1">
                         <summary className="cursor-pointer">開発者情報</summary>
@@ -453,6 +473,7 @@ export default function DashboardLayout({
                           <p>Full ID: {user?.id}</p>
                           <p>DB Info: {user?.db_user ? 'あり' : 'なし'}</p>
                           <p className="text-red-500">DB RoleId: {user?.db_user?.roleId}</p>
+                          <p className="text-green-500">DB RoleName: {user?.db_user?.roleName}</p>
                         </div>
                       </details>
                     </>
