@@ -162,40 +162,36 @@ const LandingPage = () => {
       price: "¥0",
       period: "/月",
       features: [
-        "月2回の体験レッスン",
         "基本教材アクセス",
         "コミュニティフォーラム",
-        "限定的なAI機能"
+        "限定的なAI機能",
+        "体験レッスン1回"
       ],
       recommended: false,
       gradient: "from-gray-700 to-gray-800"
     },
     {
-      name: "Premium",
-      price: "¥6,600",
+      name: "Basic",
+      price: "¥3,300",
       period: "/月",
       features: [
-        "無制限レッスン",
+        "月1回のレッスン",
         "全教材・楽譜アクセス",
         "AI個別カリキュラム",
         "優先マッチング",
-        "録画レッスン無制限",
-        "グループセッション"
+        "録画レッスン無制限"
       ],
       recommended: true,
       gradient: "from-green-600 to-green-700"
     },
     {
       name: "Studio",
-      price: "¥11,000",
+      price: "¥6,600",
       period: "/月",
       features: [
+        "月2回のレッスン",
         "Premiumの全機能",
         "専属メンター制度",
-        "プロ仕様の音響設定",
-        "発表会・ライブ参加権",
-        "24/7 VIPサポート",
-        "楽器レンタル割引"
       ],
       recommended: false,
       gradient: "from-purple-600 to-purple-700"
@@ -232,7 +228,7 @@ const LandingPage = () => {
   };
 
   const handleSignUp = () => {
-    router.push('/signup');
+    router.push('/login');
   };
 
   const handleGoToDashboard = () => {
@@ -260,7 +256,7 @@ const LandingPage = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-2">
-                <Music className="w-6 h-6 text-black" />
+                <img src="/gw_crow_black2x.png" alt="MUED Logo" className="w-8 h-6" />
               </div>
               <span className="font-bold text-2xl">MUED</span>
             </div>
@@ -362,7 +358,7 @@ const LandingPage = () => {
                 with MUED
               </span>
             </h1>
-            <p className="text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed animate-fade-in-delay">
+            <p className="text-l lg:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed animate-fade-in-delay">
               AIがあなたの音楽ジャーニーをパーソナライズ。
               自然に寄り添い、自然に上達。
             </p>
@@ -373,7 +369,10 @@ const LandingPage = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-delay-2">
-              <button className="bg-green-500 text-black px-8 py-4 rounded-full text-lg font-bold hover:bg-green-400 transition transform hover:scale-105 flex items-center justify-center group">
+              <button 
+                onClick={handleSignUp}
+                className="bg-green-500 text-black px-8 py-4 rounded-full text-lg font-bold hover:bg-green-400 transition transform hover:scale-105 flex items-center justify-center group"
+              >
                 <Play className="mr-2 w-5 h-5" />
                 無料で始める
               </button>
@@ -435,7 +434,7 @@ const LandingPage = () => {
                   </div>
                   <h3 className="text-xl font-semibold mb-2">{instrument.name}</h3>
                   <p className="text-gray-400 text-sm mb-2">{instrument.description}</p>
-                  <p className="text-gray-500 text-xs">プロ講師 50人+</p>
+                  <p className="text-gray-500 text-xs">プロ講師 多数+</p>
                   {selectedInstrument === index && (
                     <div className="absolute top-2 right-2">
                       <Check className="w-5 h-5 text-green-400" />
@@ -470,7 +469,7 @@ const LandingPage = () => {
                   opacity: 0
                 }}
               >
-                <div className="mb-4 transform group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
+                <div className="mb-4">
                   {feature.icon}
                 </div>
                 <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
@@ -505,7 +504,7 @@ const LandingPage = () => {
               >
                 <div className={`bg-gradient-to-br ${plan.gradient} p-8`}>
                   {plan.recommended && (
-                    <div className="absolute top-4 right-4 bg-green-500 text-black px-3 py-1 rounded-full text-xs font-bold animate-pulse">
+                    <div className="absolute top-4 right-4 bg-green-500 text-black px-3 py-1 rounded-full text-xs font-bold">
                       MOST POPULAR
                     </div>
                   )}
@@ -540,46 +539,6 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 3D Testimonials Section */}
-      <section id="testimonials" className="py-20 relative bg-gradient-to-b from-black to-gray-900/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-4xl lg:text-5xl font-bold">
-              ユーザーの声
-            </h2>
-            <p className="text-xl text-gray-400">
-              音楽学習の新しい体験
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <div 
-                key={index} 
-                className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-lg rounded-2xl p-8 border border-gray-800 transform transition-all duration-300 hover:scale-105 hover:rotate-1"
-                style={{
-                  animation: `floatAnimation ${3 + index}s ease-in-out infinite`
-                }}
-              >
-                <div className="flex items-center mb-4">
-                  <div className="text-4xl mr-4 animate-bounce">{testimonial.avatar}</div>
-                  <div>
-                    <p className="font-semibold">{testimonial.name}</p>
-                    <p className="text-sm text-gray-400">{testimonial.role}</p>
-                  </div>
-                </div>
-                <div className="flex mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 text-green-400 fill-current animate-pulse" />
-                  ))}
-                </div>
-                <p className="text-gray-300 italic">"{testimonial.content}"</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Interactive CTA Section */}
       <section className="py-20 relative overflow-hidden">
         <div className="absolute inset-0">
@@ -595,7 +554,9 @@ const LandingPage = () => {
               <p className="text-xl mb-8 text-green-100">
                 14日間無料トライアル・クレジットカード不要
               </p>
-              <button className="bg-black text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-gray-900 transition transform hover:scale-110 inline-flex items-center group shadow-2xl">
+              <button
+                onClick={handleSignUp}
+                className="bg-black text-white px-8 py-4 rounded-full text-lg font-bold hover:bg-gray-900 transition transform hover:scale-110 inline-flex items-center group shadow-2xl">
                 <Play className="mr-2 w-5 h-5 animate-spin-slow" />
                 無料で始める
                 <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-2 transition-transform" />
@@ -615,7 +576,7 @@ const LandingPage = () => {
             <div className="md:col-span-2">
               <div className="flex items-center mb-4">
                 <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-2">
-                  <Music className="w-6 h-6 text-black" />
+                  <img src="/gw_crow_black2x.png" alt="MUED Logo" className="w-8 h-6" />
                 </div>
                 <span className="font-bold text-2xl">MUED</span>
               </div>
@@ -708,7 +669,7 @@ const LandingPage = () => {
         }
         
         .animate-spin-slow {
-          animation: spin-slow 20s linear infinite;
+          animation: spin-slow 10s linear infinite;
         }
         
         .animate-gradient {
