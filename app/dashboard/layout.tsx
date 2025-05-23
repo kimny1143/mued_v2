@@ -61,6 +61,7 @@ const dashboardNavItems: NavItem[] = [
 // メンター/管理者向けのナビゲーション項目
 const mentorNavItems: NavItem[] = [
   { icon: CalendarIcon, label: "Lesson Slots", path: "/dashboard/lesson-slots" },
+  { icon: CalendarIcon, label: "Slots Calendar", path: "/dashboard/slots-calendar" },
 ];
 
 export default function DashboardLayout({
