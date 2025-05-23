@@ -6,6 +6,7 @@ import '@demark-pro/react-booking-calendar/dist/react-booking-calendar.css';
 import { Mentor } from './MentorList';
 import { CalendarNavigation } from './CalendarNavigation';
 import { TimeSlotDisplay, TimeSlot } from './TimeSlotDisplay';
+import { BookingModal } from './BookingModal';
 import { startOfMonth, endOfMonth, isSameDay, addDays, format, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, isSameMonth, getDay, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { fetchMentorAvailability, convertToReservedDates, getDefaultDateRange, hasAvailableSlotsOnDate } from '../_lib/calendarUtils';
@@ -52,6 +53,10 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   const [currentMentorId, setCurrentMentorId] = useState<string | undefined>(
     selectedMentorId || mentors[0]?.id
   );
+
+  // モーダル関連のstate
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalSelectedDate, setModalSelectedDate] = useState<Date | null>(null);
 
   // コンポーネント初期化時のデバッグ
   console.log('🔵 MentorCalendar コンポーネント初期化');
@@ -196,7 +201,25 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     return '';
   };
 
-  // 日付選択時の処理
+  // 日付選択時の処理（モーダル版）
+  const handleDateClick = (date: Date) => {
+    // その日に利用可能な時間帯があるかチェック
+    const hasSlots = timeSlots.some(slot => 
+      isSameDay(new Date(slot.startTime), date) && slot.isAvailable
+    );
+    
+    if (hasSlots) {
+      setModalSelectedDate(date);
+      setSelectedDates([date]);
+      setIsModalOpen(true);
+      
+      if (onDateSelect) {
+        onDateSelect([date]);
+      }
+    }
+  };
+
+  // 従来の日付選択処理（react-booking-calendar用）
   const handleDateChange: CalendarChangeHandler = (dates) => {
     // Calendarの選択値からDate型のみを抽出
     const validDates = dates
@@ -204,27 +227,25 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     
     if (DEBUG) console.log('選択された日付:', validDates.map(d => d.toDateString()));
     
-    setSelectedDates(validDates);
-    setSelectedTimeSlot(null);
-    
-    if (onDateSelect) {
-      onDateSelect(validDates);
-    }
-    
-    // 日付が選択されたら自動的に日表示に切り替え
     if (validDates.length > 0) {
-      setCurrentDate(validDates[0]);
-      
-      // モバイルでは自動的に時間枠表示にスクロール
-      if (window.innerWidth < 768) {
-        setTimeout(() => {
-          const timeSlotElement = document.getElementById('time-slot-section');
-          if (timeSlotElement) {
-            timeSlotElement.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
-      }
+      handleDateClick(validDates[0]);
     }
+  };
+
+  // モーダルを閉じる処理
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setModalSelectedDate(null);
+  };
+
+  // 予約完了時の処理
+  const handleBookingComplete = () => {
+    setIsModalOpen(false);
+    setModalSelectedDate(null);
+    setSelectedDates([]);
+    
+    // 必要に応じて時間枠データを再取得
+    // fetchTimeSlots();
   };
 
   // メンター選択時の処理
@@ -385,7 +406,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                       return (
                         <button
                           key={index}
-                          onClick={() => isAvailable ? handleDateChange([date]) : undefined}
+                          onClick={() => isAvailable ? handleDateClick(date) : undefined}
                           disabled={!isAvailable}
                           className={`
                             aspect-square p-2 text-center rounded-lg transition-all duration-200 relative
@@ -491,47 +512,19 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
             
             {/* 旧フォールバック表示（削除予定） */}
             <div className="hidden mt-4 p-4 bg-gray-50 rounded-lg"></div>
-            
-            {/* 日付選択後の時間枠表示 */}
-            {selectedDate && (
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={goToPreviousDay}
-                    className="p-1 h-8 w-8"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  
-                  <h3 className="text-lg font-medium">
-                    {format(currentDate, 'yyyy年MM月dd日')} ({getWeekdayName(currentDate)})
-                    {isToday(currentDate) && <span className="ml-2 text-sm text-primary">今日</span>}
-                  </h3>
-                  
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={goToNextDay}
-                    className="p-1 h-8 w-8"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <TimeSlotDisplay
-                  selectedDate={currentDate}
-                  timeSlots={timeSlots}
-                  onTimeSlotSelect={handleTimeSlotSelect}
-                  selectedSlot={selectedTimeSlot}
-                  showDateHeading={false}
-                />
-              </div>
-            )}
           </>
         )}
       </div>
+      
+      {/* 予約モーダル */}
+      <BookingModal
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        selectedDate={modalSelectedDate}
+        timeSlots={timeSlots}
+        mentor={mentors.find(m => m.id === currentMentorId) || null}
+        onBookingComplete={handleBookingComplete}
+      />
     </div>
   );
 };
