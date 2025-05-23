@@ -592,7 +592,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                   </div>
                 </div>
 
-                {/* 日表示メインコンテンツ */}
+                {/* Google Calendar風タイムライン表示 */}
                 {selectedDateForDay && (() => {
                   const daySlots = allTimeSlots.filter(slot => 
                     isSameDay(new Date(slot.startTime), selectedDateForDay) && slot.isAvailable
@@ -608,112 +608,153 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                     return acc;
                   }, {} as Record<string, ExtendedTimeSlot[]>);
 
-                  return Object.keys(slotsByMentor).length > 0 ? (
-                    <div className="space-y-6">
-                      {Object.entries(slotsByMentor).map(([mentorId, mentorSlots]) => {
-                        const mentor = mentors.find(m => m.id === mentorId);
-                        
-                        return (
-                          <div key={mentorId} className="border border-gray-200 rounded-lg p-4">
-                            {/* メンター情報ヘッダー */}
-                            <div className="flex items-center gap-3 mb-4">
-                              {mentor?.image ? (
-                                <img
-                                  src={mentor.image}
-                                  alt={mentor.name || ''}
-                                  className="w-12 h-12 rounded-full"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                  <User className="h-6 w-6 text-primary" />
-                                </div>
-                              )}
-                              <div className="flex-1">
-                                <h5 className="font-medium text-gray-900">{mentor?.name}</h5>
-                                {mentor?.specialties && mentor.specialties.length > 0 && (
-                                  <p className="text-sm text-gray-600">
-                                    {mentor.specialties.join('、')}
-                                  </p>
+                  // この日にスロットがあるメンターのみを取得
+                  const availableMentors = mentors.filter(mentor => 
+                    slotsByMentor[mentor.id] && slotsByMentor[mentor.id].length > 0
+                  );
+
+                  // 時間軸の生成（8:00-22:00、1時間刻み）
+                  const timeSlots = [];
+                  for (let hour = 8; hour <= 22; hour++) {
+                    timeSlots.push(hour);
+                  }
+
+                  // 指定した時間にメンターのスロットがあるかチェック
+                  const getSlotForMentorAtTime = (mentorId: string, hour: number) => {
+                    const mentorSlots = slotsByMentor[mentorId] || [];
+                    return mentorSlots.find(slot => {
+                      const slotStart = new Date(slot.startTime);
+                      const slotEnd = new Date(slot.endTime);
+                      const hourStart = new Date(selectedDateForDay);
+                      hourStart.setHours(hour, 0, 0, 0);
+                      const hourEnd = new Date(selectedDateForDay);
+                      hourEnd.setHours(hour + 1, 0, 0, 0);
+                      
+                      // スロットがこの時間帯と重複しているかチェック
+                      return (slotStart < hourEnd && slotEnd > hourStart);
+                    });
+                  };
+
+                  return availableMentors.length > 0 ? (
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      {/* メンターヘッダー */}
+                      <div className="bg-gray-50 border-b border-gray-200">
+                        <div className="grid" style={{ gridTemplateColumns: '80px repeat(' + availableMentors.length + ', 1fr)' }}>
+                          {/* 時間軸ヘッダー */}
+                          <div className="p-3 border-r border-gray-200 text-center text-sm font-medium text-gray-600">
+                            時間
+                          </div>
+                          
+                          {/* メンターヘッダー */}
+                          {availableMentors.map((mentor) => (
+                            <div key={mentor.id} className="p-3 text-center border-r border-gray-200 last:border-r-0">
+                              <div className="flex flex-col items-center gap-2">
+                                {mentor.image ? (
+                                  <img
+                                    src={mentor.image}
+                                    alt={mentor.name || ''}
+                                    className="w-10 h-10 rounded-full"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <User className="h-5 w-5 text-primary" />
+                                  </div>
                                 )}
+                                <div className="text-sm font-medium text-gray-900 truncate w-full">
+                                  {mentor.name}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {(slotsByMentor[mentor.id] || []).length}スロット
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-500">
-                                {mentorSlots.length}スロット
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* タイムライングリッド */}
+                      <div className="divide-y divide-gray-200">
+                        {timeSlots.map((hour) => (
+                          <div 
+                            key={hour}
+                            className="grid min-h-[60px]"
+                            style={{ gridTemplateColumns: '80px repeat(' + availableMentors.length + ', 1fr)' }}
+                          >
+                            {/* 時間軸 */}
+                            <div className="p-3 border-r border-gray-200 flex items-center justify-center bg-gray-50">
+                              <div className="text-sm font-medium text-gray-600">
+                                {hour.toString().padStart(2, '0')}:00
                               </div>
                             </div>
                             
-                            {/* 時間軸表示 */}
-                            <div className="space-y-3">
-                              {mentorSlots
-                                .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
-                                .map((slot) => (
-                                  <div
-                                    key={slot.id}
-                                    className={`p-4 border rounded-lg transition-all cursor-pointer ${
+                            {/* 各メンターの時間帯セル */}
+                            {availableMentors.map((mentor) => {
+                              const slot = getSlotForMentorAtTime(mentor.id, hour);
+                              
+                              return (
+                                <div 
+                                  key={`${mentor.id}-${hour}`}
+                                  className={`p-2 border-r border-gray-200 last:border-r-0 transition-all cursor-pointer hover:bg-gray-50 ${
+                                    slot ? (
                                       slot.bookingStatus === 'available' 
-                                        ? 'border-green-200 bg-green-50 hover:bg-green-100'
+                                        ? 'bg-green-50 hover:bg-green-100'
                                         : slot.bookingStatus === 'partial'
-                                        ? 'border-yellow-200 bg-yellow-50 hover:bg-yellow-100'
+                                        ? 'bg-yellow-50 hover:bg-yellow-100'
                                         : slot.bookingStatus === 'full'
-                                        ? 'border-orange-200 bg-orange-50'
-                                        : 'border-gray-200 bg-gray-50'
-                                    }`}
-                                    onClick={() => {
-                                      if (slot.bookingStatus === 'available' || slot.bookingStatus === 'partial') {
-                                        setModalSelectedDate(selectedDateForDay);
-                                        setIsModalOpen(true);
-                                      }
-                                    }}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-4">
-                                        <div className="text-lg font-medium">
-                                          {format(new Date(slot.startTime), 'HH:mm')} - 
-                                          {format(new Date(slot.endTime), 'HH:mm')}
-                                        </div>
-                                        <div className={`px-2 py-1 rounded text-xs font-medium ${
-                                          slot.bookingStatus === 'available' 
-                                            ? 'bg-green-100 text-green-800'
-                                            : slot.bookingStatus === 'partial'
-                                            ? 'bg-yellow-100 text-yellow-800'
-                                            : slot.bookingStatus === 'full'
-                                            ? 'bg-orange-100 text-orange-800'
-                                            : 'bg-gray-100 text-gray-800'
-                                        }`}>
-                                          {slot.bookingStatus === 'available' && '完全に空き'}
-                                          {slot.bookingStatus === 'partial' && `${slot.availableTime}分空き`}
-                                          {slot.bookingStatus === 'full' && 'ほぼ満席'}
-                                          {slot.bookingStatus === 'unavailable' && '利用不可'}
-                                        </div>
+                                        ? 'bg-orange-50'
+                                        : 'bg-gray-50'
+                                    ) : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (slot && (slot.bookingStatus === 'available' || slot.bookingStatus === 'partial')) {
+                                      setModalSelectedDate(selectedDateForDay);
+                                      setIsModalOpen(true);
+                                    }
+                                  }}
+                                >
+                                  {slot && (
+                                    <div className="space-y-1">
+                                      {/* スロット時間範囲 */}
+                                      <div className="text-xs font-medium text-gray-900">
+                                        {format(new Date(slot.startTime), 'HH:mm')}-
+                                        {format(new Date(slot.endTime), 'HH:mm')}
                                       </div>
-                                      <div className="text-right">
-                                        <div className="text-lg font-medium text-primary">
-                                          {formatPrice(slot.hourlyRate || 5000)}
-                                        </div>
-                                        <div className="text-sm text-gray-600">
-                                          /時間
-                                        </div>
+                                      
+                                      {/* 予約状況バッジ */}
+                                      <div className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                                        slot.bookingStatus === 'available' 
+                                          ? 'bg-green-100 text-green-800'
+                                          : slot.bookingStatus === 'partial'
+                                          ? 'bg-yellow-100 text-yellow-800'
+                                          : slot.bookingStatus === 'full'
+                                          ? 'bg-orange-100 text-orange-800'
+                                          : 'bg-gray-100 text-gray-800'
+                                      }`}>
+                                        {slot.bookingStatus === 'available' && '空き'}
+                                        {slot.bookingStatus === 'partial' && `${slot.availableTime}分空き`}
+                                        {slot.bookingStatus === 'full' && '満席'}
+                                        {slot.bookingStatus === 'unavailable' && '不可'}
                                       </div>
+                                      
+                                      {/* 料金表示 */}
+                                      <div className="text-xs text-gray-600">
+                                        {formatPrice(slot.hourlyRate || 5000)}
+                                      </div>
+                                      
+                                      {/* 予約数表示 */}
+                                      {slot.reservationCount > 0 && (
+                                        <div className="text-xs text-gray-500">
+                                          {slot.reservationCount}件予約
+                                        </div>
+                                      )}
                                     </div>
-                                    
-                                    {/* 予約情報 */}
-                                    {slot.reservationCount > 0 && (
-                                      <div className="mt-3 pt-3 border-t border-gray-200">
-                                        <div className="text-sm text-gray-600">
-                                          <strong>既存の予約:</strong> {slot.reservationCount}件
-                                          {slot.bookedTime > 0 && (
-                                            <span className="ml-2">
-                                              ({slot.bookedTime}分予約済み)
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                            </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center py-12 bg-gray-50 rounded-lg">
