@@ -175,10 +175,10 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       
       setAllTimeSlots(allSlots);
       
-    } catch (err) {
+      } catch (err) {
       console.error('時間枠統合エラー:', err);
-      setError('予約可能な時間枠の取得に失敗しました。');
-    }
+        setError('予約可能な時間枠の取得に失敗しました。');
+      }
   }, [mentors]);
 
   // カレンダーコンポーネントに渡す予約済み日時
@@ -208,8 +208,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       setCurrentView('day');
       setSelectedDateForDay(date);
       setSelectedDates([date]);
-      
-      if (onDateSelect) {
+    
+    if (onDateSelect) {
         onDateSelect([date]);
       }
     }
@@ -445,9 +445,9 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                   {totalReservations > 0 && (
                                     <div className="text-[6px] text-center opacity-70 font-medium">
                                       {totalReservations}予約
-                                    </div>
-                                  )}
-                                  
+              </div>
+            )}
+            
                                   {/* 状態インジケーター（小さなドット） */}
                                   <div className="flex gap-0.5 justify-center mt-1">
                                     {daySlots.slice(0, 3).map((_, dotIndex) => {
@@ -461,9 +461,9 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                       } else if (dotSlot?.bookingStatus === 'unavailable') {
                                         dotColor = 'bg-gray-400';
                                       }
-                                      
-                                      return (
-                                        <div 
+                    
+                    return (
+                      <div 
                                           key={dotIndex} 
                                           className={`w-1 h-1 rounded-full ${
                                             isSelected ? 'bg-white' : dotColor
@@ -476,9 +476,9 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                         isSelected ? 'text-white' : 'text-gray-600'
                                       }`}>
                                         +
-                                      </div>
-                                    )}
-                                  </div>
+                        </div>
+                        )}
+                      </div>
                                 </div>
                               )}
                               
@@ -546,15 +546,15 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                       <span>スロット状況</span>
                     </div>
                   </div>
-                </div>
+              </div>
               </>
             ) : (
               // 日表示
               <div className="mt-4">
                 {/* 日表示ヘッダー */}
                 <div className="flex items-center justify-between mb-6">
-                  <Button
-                    variant="outline"
+                  <Button 
+                    variant="outline" 
                     onClick={() => handleViewChange('month')}
                     className="flex items-center gap-2"
                   >
@@ -577,21 +577,21 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="outline" 
-                      size="sm"
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
                       onClick={() => {
                         const nextDay = new Date(selectedDateForDay!);
                         nextDay.setDate(nextDay.getDate() + 1);
                         handleDayNavigation(nextDay);
                       }}
                       disabled={!selectedDateForDay}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                   </div>
                 </div>
-
+                
                 {/* Google Calendar風タイムライン表示 */}
                 {selectedDateForDay && (() => {
                   const daySlots = allTimeSlots.filter(slot => 

@@ -89,28 +89,38 @@ type _LessonSlotWhereInput = {
 // レッスンスロット一覧を取得
 export async function GET(request: NextRequest) {
   try {
+    // 🔐 認証チェックを追加
+    const sessionInfo = await getSessionFromRequest(request);
+    
+    if (!sessionInfo) {
+      console.error('認証情報なし - レッスンスロット取得失敗');
+      return NextResponse.json(
+        { error: '認証が必要です' },
+        { status: 401 }
+      );
+    }
+
+    console.log(`レッスンスロット取得 - ユーザー: ${sessionInfo.user.id} (${sessionInfo.user.email})`);
+
     // URLパラメータを取得
     const { searchParams } = new URL(request.url);
-    const teacherId = searchParams.get('teacherId');
     const minDuration = searchParams.get('minDuration') ? parseInt(searchParams.get('minDuration')!) : null;
     const maxDuration = searchParams.get('maxDuration') ? parseInt(searchParams.get('maxDuration')!) : null;
     const availableOnly = searchParams.get('availableOnly') !== 'false'; // デフォルトはtrue
     
     console.log('レッスンスロット取得API呼び出し:', {
-      teacherId,
+      userId: sessionInfo.user.id, // 🔐 認証ユーザーのIDを使用
       minDuration,
       maxDuration,
       availableOnly,
-      note: '全期間対象（日付フィルタリングなし）'
+      note: '認証ユーザーのスロットのみ取得'
     });
     
     // フィルタリング条件を構築
-    const filter: Prisma.LessonSlotWhereInput = {};
-    
-    // メンターIDでフィルタリング
-    if (teacherId) {
-      filter.teacherId = teacherId;
-    }
+    const filter: Prisma.LessonSlotWhereInput = {
+      // 🔐 必ず認証ユーザーのスロットのみにフィルタリング
+      teacherId: sessionInfo.user.id
+    };
     
     // 時間の制約でフィルタリング（分単位を優先、ない場合は時間単位で互換性維持）
     if (minDuration !== null) {
@@ -188,7 +198,7 @@ export async function GET(request: NextRequest) {
       };
     });
     
-    console.log('🟢 lesson-slots', enhancedSlots.length);
+    console.log(`🟢 lesson-slots (認証ユーザー専用): ${enhancedSlots.length}件`);
     return NextResponse.json(enhancedSlots, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',

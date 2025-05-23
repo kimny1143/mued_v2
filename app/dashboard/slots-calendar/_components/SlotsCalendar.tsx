@@ -238,12 +238,12 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                   return (
                     <div
                       key={index}
-                      onClick={() => handleEmptyAreaClick(date)}
+                      onClick={isCurrentMonth && !hasSlots ? () => handleEmptyAreaClick(date) : undefined}
                       className={`
                         aspect-square p-2 text-center rounded-lg transition-all duration-200 relative min-h-[60px] flex flex-col justify-between
                         ${!isCurrentMonth ? 'text-gray-300 bg-gray-50' : ''}
-                        ${isCurrentMonth && !hasSlots ? 'text-gray-600 bg-white hover:bg-gray-50 border border-dashed border-gray-300' : ''}
-                        ${hasSlots ? 'bg-blue-50 border-2 border-blue-200 hover:bg-blue-100 hover:border-blue-400' : ''}
+                        ${isCurrentMonth && !hasSlots ? 'text-gray-600 bg-white hover:bg-gray-50 border border-dashed border-gray-300 cursor-pointer' : ''}
+                        ${hasSlots ? 'bg-blue-50 border-2 border-blue-200' : ''}
                         ${todayMark ? 'font-bold ring-2 ring-primary ring-offset-1' : ''}
                       `}
                     >
@@ -253,44 +253,54 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                       
                       {/* スロット情報表示 */}
                       {hasSlots && (
-                        <div className="flex flex-col gap-0.5 w-full mt-1">
-                          {/* 最初のスロットの時間帯を表示 */}
-                          <div className="text-[10px] font-medium text-center leading-tight">
-                            {format(new Date(daySlots[0].startTime), 'HH:mm')}-
-                            {format(new Date(daySlots[0].endTime), 'HH:mm')}
-                          </div>
+                        <div className="flex flex-col gap-1 w-full mt-1">
+                          {/* スロットタグ表示（最大3個まで） */}
+                          {daySlots.slice(0, 3).map((slot, slotIndex) => {
+                            const slotStatus = getSlotStatus(slot);
+                            const statusColors = {
+                              available: 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200',
+                              booked: 'bg-orange-100 border-orange-300 text-orange-800 hover:bg-orange-200',
+                              pending: 'bg-yellow-100 border-yellow-300 text-yellow-800 hover:bg-yellow-200',
+                              disabled: 'bg-gray-100 border-gray-300 text-gray-600'
+                            };
+                            
+                            return (
+                              <div
+                                key={slot.id}
+                                onClick={(e) => handleSlotTagClick(slot, e)}
+                                className={`
+                                  text-[9px] px-1 py-0.5 rounded border cursor-pointer transition-colors
+                                  ${statusColors[slotStatus]}
+                                  font-medium leading-tight
+                                `}
+                                title={`${format(new Date(slot.startTime), 'HH:mm')}-${format(new Date(slot.endTime), 'HH:mm')} (クリックで編集)`}
+                              >
+                                {format(new Date(slot.startTime), 'HH:mm')}-{format(new Date(slot.endTime), 'HH:mm')}
+                              </div>
+                            );
+                          })}
                           
-                          {/* 複数スロットがある場合の追加表示 */}
-                          {daySlots.length > 1 && (
-                            <div className="text-[8px] text-center text-gray-600 font-medium">
-                              +{daySlots.length - 1}件
+                          {/* 4個以上ある場合の省略表示 */}
+                          {daySlots.length > 3 && (
+                            <div 
+                              onClick={() => handleDateClick(date)}
+                              className="text-[8px] text-center text-gray-600 font-medium cursor-pointer hover:text-blue-600"
+                              title="すべてのスロットを表示"
+                            >
+                              +{daySlots.length - 3}件
                             </div>
                           )}
                           
-                          {/* スロット状態インジケーター（ドット） */}
-                          <div className="flex flex-wrap gap-0.5 justify-center mt-0.5">
-                            {availableSlots > 0 && (
-                              <div className="flex gap-0.5">
-                                {Array.from({ length: Math.min(availableSlots, 2) }).map((_, i) => (
-                                  <div key={i} className="w-1 h-1 bg-green-500 rounded-full" />
-                                ))}
-                              </div>
-                            )}
-                            {bookedSlots > 0 && (
-                              <div className="flex gap-0.5">
-                                {Array.from({ length: Math.min(bookedSlots, 2) }).map((_, i) => (
-                                  <div key={i} className="w-1 h-1 bg-orange-500 rounded-full" />
-                                ))}
-                              </div>
-                            )}
-                            {pendingSlots > 0 && (
-                              <div className="flex gap-0.5">
-                                {Array.from({ length: Math.min(pendingSlots, 2) }).map((_, i) => (
-                                  <div key={i} className="w-1 h-1 bg-yellow-500 rounded-full" />
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                          {/* 空白エリアでの新規作成（スロットがある日でも下部で作成可能） */}
+                          {isCurrentMonth && (
+                            <div
+                              onClick={() => handleEmptyAreaClick(date)}
+                              className="text-[8px] text-center text-blue-600 hover:text-blue-800 cursor-pointer font-medium mt-1"
+                              title="新しいスロットを作成"
+                            >
+                              ＋追加
+                            </div>
+                          )}
                         </div>
                       )}
                       
@@ -316,23 +326,38 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
             {/* 凡例 */}
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <h5 className="text-sm font-medium text-gray-700 mb-3">凡例</h5>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <div className="px-2 py-1 bg-green-100 border border-green-300 text-green-800 rounded text-[9px] font-medium">
+                    10:00-12:00
+                  </div>
                   <span>利用可能</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <div className="px-2 py-1 bg-orange-100 border border-orange-300 text-orange-800 rounded text-[9px] font-medium">
+                    14:00-16:00
+                  </div>
                   <span>予約済み</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                  <div className="px-2 py-1 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded text-[9px] font-medium">
+                    16:00-18:00
+                  </div>
                   <span>保留中</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="px-2 py-1 bg-gray-100 border border-gray-300 text-gray-600 rounded text-[9px] font-medium">
+                    18:00-20:00
+                  </div>
+                  <span>無効</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-primary rounded-full"></div>
                   <span>今日</span>
                 </div>
+              </div>
+              <div className="mt-3 text-[10px] text-gray-600">
+                💡 <strong>操作方法:</strong> スロットタグをクリック→編集、空白エリアまたは「＋追加」をクリック→新規作成
               </div>
             </div>
           </>
