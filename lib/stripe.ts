@@ -355,13 +355,24 @@ export async function createCheckoutSessionForReservation(
     duration: string;
   }
 ): Promise<Stripe.Checkout.Session> {
-  // ベースURLの取得
-  const baseUrl = process.env.NEXT_PUBLIC_URL || 
+  // ベースURLの取得 - 環境変数NEXT_PUBLIC_SITE_URLを優先
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+    'https://dev.mued.jp' || // フォールバック用
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
+  console.log('Stripe決済用ベースURL:', baseUrl);
+  console.log('使用している環境変数:', {
+    NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    VERCEL_URL: process.env.VERCEL_URL,
+    VERCEL_ENV: process.env.VERCEL_ENV
+  });
 
   // リダイレクトURL
   const successUrl = `${baseUrl}/dashboard/reservations?success=true`;
   const cancelUrl = `${baseUrl}/dashboard/reservations?canceled=true`;
+
+  console.log('決済成功時URL:', successUrl);
+  console.log('決済キャンセル時URL:', cancelUrl);
 
   // nullやundefinedの値のフォールバック
   const safeUserId = userId || 'unknown-user';

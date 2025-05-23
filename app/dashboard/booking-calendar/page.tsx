@@ -252,6 +252,12 @@ export default function BookingCalendarPage() {
 
       console.log('予約・決済データ:', reservationData);
       console.log('認証トークン:', token ? 'あり' : 'なし');
+      console.log('環境変数確認:', {
+        NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+        VERCEL_URL: process.env.VERCEL_URL,
+        VERCEL_ENV: process.env.VERCEL_ENV,
+        現在のURL: window.location.origin
+      });
 
       const response = await fetch('/api/reservations', {
         method: 'POST',
@@ -265,7 +271,13 @@ export default function BookingCalendarPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || '予約の作成に失敗しました');
+        console.error('予約API詳細エラー:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData: errorData,
+          url: response.url
+        });
+        throw new Error(errorData.error || errorData.details || '予約の作成に失敗しました');
       }
 
       const result = await response.json();
