@@ -256,7 +256,7 @@ const LandingPage = () => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-2">
-                <img src="/gw_crow_black2x.png" alt="MUED Logo" className="w-8 h-6" />
+                <img src="/gw_crow_black2x.png" alt="MUED Logo" className="w-8 h-8.5" />
               </div>
               <span className="font-bold text-2xl">MUED</span>
             </div>
@@ -576,7 +576,7 @@ const LandingPage = () => {
             <div className="md:col-span-2">
               <div className="flex items-center mb-4">
                 <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-2">
-                  <img src="/gw_crow_black2x.png" alt="MUED Logo" className="w-8 h-6" />
+                  <img src="/gw_crow_black2x.png" alt="MUED Logo" className="w-9 h-8.5" />
                 </div>
                 <span className="font-bold text-2xl">MUED</span>
               </div>

@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { stripe } from '@/lib/stripe';
 import { Prisma } from '@prisma/client';
-import { generateHourlySlots } from '@/lib/utils';
+import { generateHourlySlots, formatToJstIsoString } from '@/lib/utils';
 
 // 予約ステータスの列挙型（現在は未使用だがAPIの拡張で使用予定）
 enum _ReservationStatus {
@@ -173,11 +173,12 @@ export async function GET(request: NextRequest) {
     
     // 各スロットの予約済み時間帯情報を整形して返す
     const enhancedSlots = slots.map(slot => {
-      // 時間単位の予約状況を計算
       const hourlySlots = generateHourlySlots(slot);
       
       return {
         ...slot,
+        startTime: formatToJstIsoString(slot.startTime),
+        endTime: formatToJstIsoString(slot.endTime),
         hourlySlots,
         // 分単位の予約時間制約を明示的に含める
         durationConstraints: {

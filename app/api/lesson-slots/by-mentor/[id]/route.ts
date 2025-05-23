@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { Prisma, ReservationStatus } from '@prisma/client';
-import { generateHourlySlots } from '@/lib/utils';
+import { generateHourlySlots, formatToJstIsoString } from '@/lib/utils';
 import { parseISO, isValid, isBefore } from 'date-fns';
 
 // スロットの拡張型定義（動的プロパティへの対応）
@@ -138,8 +138,8 @@ export async function GET(
     const formattedSlots = lessonSlots.map(slot => ({
       id: slot.id,
       mentorId: slot.teacherId,
-      startTime: slot.startTime.toISOString(),
-      endTime: slot.endTime.toISOString(),
+      startTime: formatToJstIsoString(slot.startTime),
+      endTime: formatToJstIsoString(slot.endTime),
       isBooked: Boolean(slot.reservations.length > 0 && slot.reservations.some(r => r.status !== 'CANCELED')),
     }));
     

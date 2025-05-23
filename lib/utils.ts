@@ -243,4 +243,16 @@ export function generateAvailableTimeSlots(
   }
   
   return availableSlots;
+}
+
+/**
+ * タイムゾーン関連のユーティリティ関数
+ */
+
+/**
+ * UTCの日時を日本時間のISO文字列で返す（API返却時用）
+ */
+export function formatToJstIsoString(date: Date): string {
+  const jstTime = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  return jstTime.toISOString();
 } 
