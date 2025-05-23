@@ -102,6 +102,24 @@ export default function LessonSlotsPage() {
   const [error, setError] = useState<string | null>(null);
   const [groupedSlots, setGroupedSlots] = useState<Record<string, LessonSlot[]>>({});
 
+  // 編集モード用の状態を追加
+  const [editingSlot, setEditingSlot] = useState<LessonSlot | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<{
+    startTime: string;
+    endTime: string;
+    hourlyRate: string;
+    minHours: string;
+    maxHours: string;
+  }>({
+    startTime: '',
+    endTime: '',
+    hourlyRate: '5000',
+    minHours: '1',
+    maxHours: '',
+  });
+
   // ユーザー情報とロールの取得
   useEffect(() => {
     async function getUserInfo() {
@@ -362,6 +380,119 @@ export default function LessonSlotsPage() {
     }));
   };
 
+  // 編集フォーム用のハンドラー
+  const handleEditTimeChange = (field: string, value: string) => {
+    setEditFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // スロット編集の開始
+  const handleEditSlot = (slot: LessonSlot, e: React.MouseEvent) => {
+    e.stopPropagation(); // 親要素のクリックイベントを停止
+    
+    // 編集フォームにデータを設定
+    const startTime = format(new Date(slot.startTime), 'HH:mm');
+    const endTime = format(new Date(slot.endTime), 'HH:mm');
+    
+    setEditingSlot(slot);
+    setEditFormData({
+      startTime,
+      endTime,
+      hourlyRate: '5000', // API से लौटाया गया डेटा में hourlyRate नहीं है, डिफ़ॉल्ट वैल्यू का उपयोग
+      minHours: '1',     // डिफ़ॉल्ट वैल्यू
+      maxHours: '',      // डिफ़ॉल्ट वैल्यू
+    });
+    setEditError(null); // エラーをクリア
+    setIsEditDialogOpen(true);
+  };
+
+  // 特定日付での新規スロット作成
+  const handleCreateSlotForDate = (dateStr: string) => {
+    // 日付文字列をDateオブジェクトに変換
+    const date = new Date(dateStr);
+    setSelectedDate(date);
+    setIsDialogOpen(true);
+  };
+
+  // スロット編集の処理
+  const handleUpdateSlot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingSlot) return;
+    
+    try {
+      // バリデーション
+      if (!editFormData.startTime || !editFormData.endTime) {
+        setEditError('開始時間と終了時間を入力してください');
+        return;
+      }
+
+      // 編集中のスロットの日付を取得
+      const slotDate = new Date(editingSlot.startTime);
+      const dateStr = format(slotDate, 'yyyy-MM-dd');
+      const startTime = new Date(`${dateStr}T${editFormData.startTime}:00`);
+      const endTime = new Date(`${dateStr}T${editFormData.endTime}:00`);
+      
+      // 開始時間が終了時間より前であることを確認
+      if (startTime >= endTime) {
+        setEditError('開始時間は終了時間より前である必要があります');
+        return;
+      }
+      
+      setEditError(null);
+      setSlotLoading(true);
+      
+      // 認証トークンを取得
+      const { data: sessionData, error: sessionError } = await supabaseBrowser.auth.getSession();
+      
+      if (sessionError || !sessionData.session?.access_token) {
+        throw new Error('認証情報の取得に失敗しました。');
+      }
+      
+      const token = sessionData.session.access_token;
+      
+      // APIリクエスト (PUTメソッドで更新)
+      const response = await fetch(`/api/lesson-slots/${editingSlot.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
+          hourlyRate: editFormData.hourlyRate,
+          minHours: editFormData.minHours,
+          maxHours: editFormData.maxHours || null,
+          isAvailable: editingSlot.isAvailable, // 既存の状態を保持
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `レッスンスロットの更新に失敗しました`);
+      }
+      
+      // 成功メッセージ
+      toast.success('レッスンスロットを更新しました');
+      
+      // ダイアログを閉じる
+      setIsEditDialogOpen(false);
+      setEditingSlot(null);
+      
+      // レッスンスロット再取得
+      await fetchLessonSlots();
+    } catch (err) {
+      console.error('レッスンスロット更新エラー:', err);
+      setEditError((err as Error).message);
+      toast.error((err as Error).message);
+    } finally {
+      setSlotLoading(false);
+    }
+  };
+
   async function book(slotId: string) {
     try {
       const { data: { session } } = await supabaseBrowser.auth.getSession();
@@ -563,6 +694,142 @@ export default function LessonSlotsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* 編集用ダイアログ */}
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        setIsEditDialogOpen(open);
+        if (!open) {
+          setEditingSlot(null);
+          setEditError(null);
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>レッスンスロットの編集</DialogTitle>
+            <DialogDescription>
+              {editingSlot && `${format(new Date(editingSlot.startTime), 'yyyy年MM月dd日')}のレッスンスロットを編集します。`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleUpdateSlot} className="space-y-4">
+            <div className="space-y-4">
+              {/* 日付表示（編集不可） */}
+              {editingSlot && (
+                <div>
+                  <Label className="mb-2 block">日付</Label>
+                  <div className="p-3 bg-gray-50 rounded-md border">
+                    <p className="text-sm font-medium text-gray-900">
+                      {format(new Date(editingSlot.startTime), 'yyyy年MM月dd日 (EEEE)', { locale: ja })}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-start-time" className="mb-2 block">開始時間</Label>
+                  <Input
+                    id="edit-start-time"
+                    type="time"
+                    value={editFormData.startTime}
+                    onChange={(e) => handleEditTimeChange('startTime', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-end-time" className="mb-2 block">終了時間</Label>
+                  <Input
+                    id="edit-end-time"
+                    type="time"
+                    value={editFormData.endTime}
+                    onChange={(e) => handleEditTimeChange('endTime', e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="edit-hourly-rate" className="mb-2 block">時間単価（円）</Label>
+                <Input
+                  id="edit-hourly-rate"
+                  type="number"
+                  min="3000"
+                  max="10000"
+                  step="500"
+                  value={editFormData.hourlyRate}
+                  onChange={(e) => handleEditTimeChange('hourlyRate', e.target.value)}
+                  placeholder="5000"
+                />
+                <p className="text-sm text-gray-500 mt-1">推奨：6,000円・最小：3,000円・最大：10,000円</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="edit-min-hours" className="mb-2 block">最小予約時間</Label>
+                  <Input
+                    id="edit-min-hours"
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={editFormData.minHours}
+                    onChange={(e) => handleEditTimeChange('minHours', e.target.value)}
+                    placeholder="1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-max-hours" className="mb-2 block">最大予約時間（空白=制限なし）</Label>
+                  <Input
+                    id="edit-max-hours"
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={editFormData.maxHours}
+                    onChange={(e) => handleEditTimeChange('maxHours', e.target.value)}
+                    placeholder="制限なし"
+                  />
+                </div>
+              </div>
+
+              {/* 予約情報の表示 */}
+              {editingSlot?.reservations && editingSlot.reservations.length > 0 && (
+                <div className="p-3 bg-yellow-50 rounded-md border border-yellow-200">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-yellow-800">予約情報</p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        このスロットには{editingSlot.reservations.length}件の予約があります。時間を変更する際はご注意ください。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {editError && (
+              <div className="bg-red-50 p-3 rounded-md text-red-900 text-sm">
+                {editError}
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setIsEditDialogOpen(false)}>
+                キャンセル
+              </Button>
+              <Button type="submit" disabled={slotLoading}>
+                {slotLoading ? (
+                  <>
+                    <Loader2Icon className="h-4 w-4 mr-2 animate-spin" />
+                    更新中...
+                  </>
+                ) : '更新する'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* タブコンテンツ */}
       <Tabs defaultValue="active">
         <TabsList className="mb-4">
@@ -582,51 +849,65 @@ export default function LessonSlotsPage() {
               </AlertDescription>
             </Alert>
           ) : (
-            <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {Object.entries(groupedSlots).map(([date, dateSlots]) => (
-                <div key={date}>
-                  <h3 className="text-lg font-medium mb-3">{date}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div 
+                  key={date}
+                  className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer bg-white"
+                  onClick={() => handleCreateSlotForDate(date)}
+                >
+                  {/* 日付ヘッダー */}
+                  <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                    <h3 className="font-medium text-gray-900">
+                      {format(new Date(date), 'MM月dd日 (EEE)', { locale: ja })}
+                    </h3>
+                    <Badge variant="outline" className="text-xs">
+                      {dateSlots.length}件
+                    </Badge>
+                  </div>
+                  
+                  {/* 既存スロットをタグ表示 */}
+                  <div className="space-y-2 mb-3">
                     {dateSlots.map((slot) => (
-                      <Card key={slot.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <div className="flex items-center text-sm text-gray-500 mb-2">
-                                <Clock className="h-4 w-4 mr-1" />
-                                {format(new Date(slot.startTime), 'HH:mm')} - {format(new Date(slot.endTime), 'HH:mm')}
-                              </div>
-                              <div className="flex items-center gap-2 mb-3">
-                                {slot.reservations && slot.reservations.length > 0 ? (
-                                  // 予約がある場合
-                                  <Badge variant="secondary">
-                                    予約済み
-                                  </Badge>
-                                ) : (
-                                  // 予約がない場合
-                                  <Badge variant={slot.isAvailable ? "outline" : "secondary"}>
-                                    {slot.isAvailable ? '予約可能' : '非公開'}
-                                  </Badge>
-                                )}
-                                {slot.reservations && slot.reservations.length > 0 && (
-                                  <Badge variant="default">
-                                    予約数: {slot.reservations.length}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex space-x-2">
-                              <Button variant="outline" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="outline" size="sm" className="text-red-600">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                      <div
+                        key={slot.id}
+                        className="group cursor-pointer"
+                        onClick={(e) => handleEditSlot(slot, e)}
+                      >
+                        <div className="flex items-center justify-between p-2 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors border border-blue-200">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-3 w-3 text-blue-600" />
+                            <span className="text-sm font-medium text-blue-800">
+                              {format(new Date(slot.startTime), 'HH:mm')} - {format(new Date(slot.endTime), 'HH:mm')}
+                            </span>
                           </div>
-                        </CardContent>
-                      </Card>
+                          
+                          <div className="flex items-center gap-1">
+                            {/* 予約状況バッジ */}
+                            {slot.reservations && slot.reservations.length > 0 ? (
+                              <Badge variant="secondary" className="text-xs">
+                                予約{slot.reservations.length}
+                              </Badge>
+                            ) : (
+                              <Badge variant={slot.isAvailable ? "outline" : "secondary"} className="text-xs">
+                                {slot.isAvailable ? '空き' : '非公開'}
+                              </Badge>
+                            )}
+                            
+                            {/* 編集アイコン */}
+                            <Edit className="h-3 w-3 text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </div>
+                      </div>
                     ))}
+                  </div>
+                  
+                  {/* 新規追加エリア */}
+                  <div className="pt-2 border-t border-gray-100">
+                    <div className="flex items-center justify-center p-2 bg-gray-50 hover:bg-gray-100 rounded-md transition-colors border border-dashed border-gray-300">
+                      <Plus className="h-4 w-4 text-gray-500 mr-1" />
+                      <span className="text-sm text-gray-600">スロットを追加</span>
+                    </div>
                   </div>
                 </div>
               ))}
