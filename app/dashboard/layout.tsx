@@ -17,7 +17,8 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CalendarIcon,
-  LogOutIcon
+  LogOutIcon,
+  CreditCard
 } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -471,6 +472,13 @@ export default function DashboardLayout({
                     >
                       <SettingsIcon className="h-4 w-4 mr-2" />
                       設定
+                    </Link>
+                    <Link 
+                      href="/dashboard/plans"
+                      className="flex items-center px-3 py-2 text-sm hover:bg-gray-100 transition-colors"
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      プラン管理
                     </Link>
                     <button 
                       onClick={handleSignOut}

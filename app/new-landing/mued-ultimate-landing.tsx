@@ -8,7 +8,7 @@ const LandingPage = () => {
   const [scrolled, setScrolled] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [selectedInstrument, setSelectedInstrument] = useState(null);
+  const [selectedInstrument, setSelectedInstrument] = useState<number | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const audioRef = useRef(null);
 

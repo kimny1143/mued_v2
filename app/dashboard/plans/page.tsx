@@ -4,15 +4,14 @@ export const dynamic = 'force-dynamic';
 
 import { Button } from "@ui/button";
 import { Card } from "@ui/card";
-import { CheckIcon } from "lucide-react";
-import { products, StripeProduct } from "@/app/stripe-config";
+import { CheckIcon, Star } from "lucide-react";
+import { getSubscriptionPlans, StripeProduct } from "@/app/stripe-config";
 import { useUser } from "@/lib/hooks/use-user";
 import { useEffect, useState } from "react";
-import { supabaseBrowser } from "@/lib/supabase-browser";
-import { Session, User } from "@supabase/supabase-js";
-import { redirectToCheckout } from "@/lib/client/stripe-client";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
+  const router = useRouter();
   const { user, loading, error, isAuthenticated, session, subscription } = useUser();
   const [debugLog, setDebugLog] = useState<string[]>([]);
   const [permissionError, setPermissionError] = useState<boolean>(false);
@@ -43,12 +42,10 @@ export default function Page() {
   // デバッグログを追加する関数
   const addDebugLog = (message: string, data?: unknown) => {
     const logEntry = `${new Date().toISOString()} - ${message} ${data ? JSON.stringify(data) : ''}`;
-    console.log(logEntry); // 通常のコンソールにも出力
+    console.log(logEntry);
     
     setDebugLog(prev => {
-      // 最新の20件だけ保持
       const newLogs = [...prev, logEntry].slice(-20);
-      // ローカルストレージに保存
       try {
         localStorage.setItem('stripe_debug_logs', JSON.stringify(newLogs));
       } catch (e) {
@@ -58,269 +55,228 @@ export default function Page() {
     });
   };
 
-  const handlePurchase = async (priceId: string, mode: 'payment' | 'subscription') => {
-    // 処理開始時のログ
-    addDebugLog('購入処理開始', { priceId, mode });
+  const handlePurchase = async (priceId: string, planName: string) => {
+    addDebugLog('購入処理開始', { priceId, planName });
     
     try {
-      // ユーザーIDの検証と、未ログイン時は処理を中止
+      // FREEプランの場合は特別処理
+      if (priceId === 'free') {
+        addDebugLog('FREEプラン選択');
+        // FREEプランの場合はダッシュボードにリダイレクト
+        router.push('/dashboard');
+        return;
+      }
+
+      // ユーザーIDの検証
       if (!user?.id && !permissionError) {
-        const errMsg = 'ユーザーIDがありません。ログインが必要です。';
+        const errMsg = 'ログインが必要です';
         addDebugLog('エラー', errMsg);
-        alert('ログインが必要です');
+        alert(errMsg);
         return;
       }
       
-      // 権限エラー発生時はテスト用IDを使用
       const userId = permissionError ? 'test-user-id' : user?.id;
       
       // 環境情報をログに記録
       addDebugLog('環境情報', {
         nodeEnv: process.env.NODE_ENV,
         vercel: process.env.NEXT_PUBLIC_VERCEL_ENV || '不明',
-        appUrl: process.env.NEXT_PUBLIC_APP_URL || window.location.origin,
-        stripeKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? 'あり' : 'なし',
         permissionError
       });
 
       // リダイレクトURL設定
       const successUrl = `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
       const cancelUrl = `${window.location.origin}/dashboard/plans`;
-      addDebugLog('リダイレクトURL', { successUrl, cancelUrl });
-
-      // クライアント側Stripeチェックアウトを試行
-      addDebugLog('クライアント側Stripeチェックアウト開始');
       
-      try {
-        await redirectToCheckout({
+      addDebugLog('新しいサブスクリプションAPI呼び出し開始');
+      
+      // 新しいサブスクリプションAPIを呼び出し
+      const response = await fetch('/api/subscription-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           priceId,
-          mode,
           successUrl,
           cancelUrl,
           userId: userId || 'anonymous'
-        });
-        
-        addDebugLog('チェックアウトリダイレクト成功');
-      } catch (clientError) {
-        addDebugLog('クライアント側Stripeエラー', clientError instanceof Error ? clientError.message : '不明なエラー');
-        
-        // クライアント側で失敗した場合、サーバー側APIにフォールバック
-        addDebugLog('サーバーサイドAPIにフォールバック');
-        
-        // APIリクエスト前のデータをログに記録
-        const requestInfo = {
-          origin: window.location.origin,
-          host: window.location.host,
-          priceId,
-          mode,
-          userId
-        };
-        addDebugLog('API呼び出し前', requestInfo);
+        }),
+        credentials: 'include',
+      });
 
-        // APIエンドポイントを呼び出し
-        addDebugLog('fetchリクエスト開始');
-        const response = await fetch('/api/checkout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            priceId,
-            mode,
-            successUrl,
-            cancelUrl,
-            userId: userId || 'anonymous'
-          }),
-          credentials: 'include', // クッキーを必ず送信
-        });
+      const responseInfo = {
+        status: response.status,
+        statusText: response.statusText,
+      };
+      addDebugLog('APIレスポンス受信', responseInfo);
 
-        // レスポンスのステータスとヘッダーをログに記録
-        const responseInfo = {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers),
-        };
-        addDebugLog('APIレスポンス受信', responseInfo);
-
-        if (!response.ok) {
-          // エラーレスポンスの詳細を取得
-          const errorText = await response.text();
-          let errorData;
-          try {
-            errorData = JSON.parse(errorText);
-          } catch (e) {
-            errorData = { error: errorText };
-          }
-          
-          addDebugLog('APIエラーレスポンス', errorData);
-          throw new Error(errorData.error || '決済処理中にエラーが発生しました');
-        }
-        
-        let data;
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
         try {
-          data = await response.json();
-          addDebugLog('APIレスポンスデータ', data);
+          errorData = JSON.parse(errorText);
         } catch (e) {
-          addDebugLog('レスポンス解析エラー', e instanceof Error ? e.message : '不明なエラー');
-          throw new Error('APIレスポンスの解析に失敗しました');
+          errorData = { error: errorText };
         }
         
-        if (!data.url) {
-          throw new Error('決済URLが返されませんでした');
-        }
-        
-        // 決済ページへのリダイレクト前にログ
-        addDebugLog('決済ページへリダイレクト', { url: data.url });
-        
-        // リダイレクト前に少し待機して、ログが確実に記録されるようにする
-        setTimeout(() => {
-          // 決済ページにリダイレクト
-          window.location.href = data.url;
-        }, 500);
+        addDebugLog('APIエラーレスポンス', errorData);
+        throw new Error(errorData.error || '決済処理中にエラーが発生しました');
       }
+      
+      const data = await response.json();
+      addDebugLog('APIレスポンスデータ', data);
+      
+      if (data.redirectUrl) {
+        // FREEプランの場合の処理
+        addDebugLog('FREEプランリダイレクト', { url: data.redirectUrl });
+        router.push(data.redirectUrl);
+      } else if (data.url) {
+        // 有料プランの場合の処理
+        addDebugLog('決済ページへリダイレクト', { url: data.url });
+        window.location.href = data.url;
+      } else {
+        throw new Error('決済URLが返されませんでした');
+      }
+
     } catch (error) {
-      // エラー詳細をログに記録
       const errorDetail = error instanceof Error ? error.message : '未知のエラー';
       addDebugLog('決済処理エラー', errorDetail);
-      
-      // スタックトレースがあれば記録
-      if (error instanceof Error && error.stack) {
-        addDebugLog('エラースタック', error.stack);
-      }
-      
-      // エラー情報を表示
       alert(`決済処理の開始に失敗しました。エラー: ${errorDetail}`);
     }
   };
 
-  // Filter subscription plans and sort them in the desired order
-  const subscriptionPlans = products
-    .filter((product: StripeProduct) => product.mode === 'subscription')
-    .sort((a: StripeProduct, b: StripeProduct) => {
-      const order = {
-        'Basic Subscription': 1,
-        'Starter Subscription': 2,
-        'Premium Subscription': 3
-      };
-      return order[a.name as keyof typeof order] - order[b.name as keyof typeof order];
-    });
-
-  const features = {
-    'Basic Subscription': [
-      'Limited course access',
-      'Email support',
-      'Learning resources',
-      'Basic tools',
-      'Progress tracking'
-    ],
-    'Starter Subscription': [
-      'Access to basic courses',
-      'Standard support',
-      'Community access',
-      'Basic learning tools',
-      'Monthly progress report'
-    ],
-    'Premium Subscription': [
-      'Unlimited access to all courses',
-      'Priority support',
-      'Live group sessions',
-      'Advanced learning tools',
-      'Progress tracking'
-    ]
-  };
+  // プランを取得（新しい設定から）
+  const subscriptionPlans = getSubscriptionPlans();
 
   return (
-    <>
-      {/* ページタイトル */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Choose Your Plan</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* ヘッダー */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold text-gray-900">料金プラン</h1>
+            <div className="text-sm text-gray-500">
+              あなたのペースで、あなたのスタイルで
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 権限エラー通知 */}
-      {permissionError && (
-        <div className="mb-4 p-4 border border-yellow-400 bg-yellow-50 rounded-md">
-          <h3 className="font-bold text-yellow-800">Supabase権限エラーが発生しています</h3>
-          <p className="text-sm text-yellow-700">
-            データベース権限の問題が検出されましたが、決済機能はテストモードで利用できます。
-          </p>
-        </div>
-      )}
+      {/* メインコンテンツ */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        {/* 権限エラー通知 */}
+        {permissionError && (
+          <div className="mb-6 p-4 border border-yellow-400 bg-yellow-50 rounded-lg">
+            <h3 className="font-bold text-yellow-800">Supabase権限エラーが発生しています</h3>
+            <p className="text-sm text-yellow-700">
+              データベース権限の問題が検出されましたが、決済機能はテストモードで利用できます。
+            </p>
+          </div>
+        )}
 
-      {/* デバッグパネル (開発環境のみ表示) */}
-      {process.env.NODE_ENV !== 'production' && debugLog.length > 0 && (
-        <div className="mb-8 p-4 border border-orange-300 bg-orange-50 rounded-md overflow-auto max-h-60">
-          <h3 className="font-bold mb-2">デバッグログ:</h3>
-          <ul className="text-xs font-mono">
-            {debugLog.map((log, i) => (
-              <li key={i} className="mb-1">{log}</li>
-            ))}
-          </ul>
-          <button 
-            className="mt-2 text-xs text-red-500"
-            onClick={() => {
-              localStorage.removeItem('stripe_debug_logs');
-              setDebugLog([]);
-            }}
-          >
-            ログをクリア
-          </button>
-        </div>
-      )}
+        {/* デバッグパネル (開発環境のみ表示) */}
+        {process.env.NODE_ENV !== 'production' && debugLog.length > 0 && (
+          <div className="mb-8 p-4 border border-orange-300 bg-orange-50 rounded-lg overflow-auto max-h-60">
+            <h3 className="font-bold mb-2">デバッグログ:</h3>
+            <ul className="text-xs font-mono">
+              {debugLog.map((log, i) => (
+                <li key={i} className="mb-1">{log}</li>
+              ))}
+            </ul>
+            <button 
+              className="mt-2 text-xs text-red-500 hover:underline"
+              onClick={() => {
+                localStorage.removeItem('stripe_debug_logs');
+                setDebugLog([]);
+              }}
+            >
+              ログをクリア
+            </button>
+          </div>
+        )}
 
-      <div className="text-center mb-12">
-        <p className="text-gray-600 text-lg">
-          Select the perfect subscription to enhance your musical journey
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {subscriptionPlans.map((product: StripeProduct) => {
-          const isStarterPlan = product.name === 'Starter Subscription';
-          return (
+        {/* プランカード */}
+        <div className="grid md:grid-cols-4 gap-8">
+          {subscriptionPlans.map((plan: StripeProduct, index) => (
             <Card 
-              key={product.id} 
-              className={`flex flex-col p-6 relative transform transition-all duration-300 hover:scale-105 hover:shadow-xl ${
-                isStarterPlan 
-                  ? 'border-2 border-blue-500 shadow-lg' 
-                  : 'hover:border-gray-300'
+              key={plan.id} 
+              className={`relative rounded-2xl overflow-hidden transform transition-all duration-500 hover:scale-105 ${
+                plan.recommended 
+                  ? 'border-2 border-green-500 scale-105 shadow-2xl shadow-green-500/20' 
+                  : 'border border-gray-200 hover:border-gray-300'
               }`}
             >
-              {isStarterPlan && (
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
-                  Recommended
+              {/* おすすめバッジ */}
+              {plan.recommended && (
+                <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center">
+                  <Star className="w-3 h-3 mr-1" />
+                  MOST POPULAR
                 </div>
               )}
-              <div className="mb-8">
-                <h3 className="text-xl font-bold mb-2">{product.name}</h3>
-                <p className="text-gray-600 mb-4">{product.description}</p>
-                <div className="text-3xl font-bold">
-                  {product.name === 'Premium Subscription' && '$60/mo'}
-                  {product.name === 'Starter Subscription' && '$20/mo'}
-                  {product.name === 'Basic Subscription' && '$10/mo'}
+
+              <div className={`p-8 ${plan.recommended ? 'bg-gradient-to-br from-green-600 to-green-700 text-white' : 'bg-white'}`}>
+                {/* プラン名と価格 */}
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                  <p className={`mb-4 ${plan.recommended ? 'text-green-100' : 'text-gray-600'}`}>
+                    {plan.description}
+                  </p>
+                  <div className="flex items-baseline">
+                    <span className="text-4xl font-bold">¥{plan.price.toLocaleString()}</span>
+                    <span className={`ml-2 ${plan.recommended ? 'text-green-200' : 'text-gray-400'}`}>
+                      {plan.price === 0 ? '' : '/月'}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex-grow">
-                <ul className="space-y-3 mb-8">
-                  {features[product.name as keyof typeof features].map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <CheckIcon className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                      <span>{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                {/* 機能リスト */}
+                <div className="mb-8">
+                  <ul className="space-y-4">
+                    {plan.features.map((feature, fIndex) => (
+                      <li key={fIndex} className="flex items-start">
+                        <CheckIcon className={`w-5 h-5 mr-3 flex-shrink-0 mt-0.5 ${
+                          plan.recommended ? 'text-green-200' : 'text-green-500'
+                        }`} />
+                        <span className={plan.recommended ? 'text-green-100' : 'text-gray-700'}>
+                          {feature}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
-              <Button
-                className={`w-full ${isStarterPlan ? 'bg-blue-500 hover:bg-blue-600' : ''}`}
-                onClick={() => handlePurchase(product.priceId, product.mode)}
-              >
-                Get Started
-              </Button>
+                {/* CTA ボタン */}
+                <Button
+                  className={`w-full py-3 rounded-full font-semibold transition transform hover:scale-105 ${
+                    plan.recommended 
+                      ? 'bg-white text-green-600 hover:bg-gray-100 shadow-lg' 
+                      : plan.price === 0
+                        ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                  }`}
+                  onClick={() => handlePurchase(plan.priceId, plan.name)}
+                >
+                  {plan.price === 0 ? '無料で始める' : 'プランを選択'}
+                </Button>
+              </div>
             </Card>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* フッター情報 */}
+        <div className="text-center mt-12">
+          <p className="text-gray-500">
+            すべてのプランに14日間の無料トライアル付き。いつでもキャンセル可能。
+          </p>
+          <div className="mt-4 flex justify-center space-x-6 text-sm text-gray-400">
+            <span>✓ セキュアな決済</span>
+            <span>✓ 即座にアクセス</span>
+            <span>✓ サポート対応</span>
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
