@@ -108,7 +108,7 @@ const LandingPage = () => {
     {
       icon: <Headphones className="w-8 h-8 text-green-400" />,
       title: "リアルタイムセッション",
-      description: "高音質オンラインレッスンで、どこからでも学習",
+      description: "AIだけではありません。高音質オンラインレッスンで、どこからでも学習",
       delay: 300
     },
     {
@@ -127,21 +127,21 @@ const LandingPage = () => {
 
   const instruments = [
     { 
-      name: "ピアノ", 
+      name: "作曲", 
       icon: <Piano className="w-12 h-12" />, 
       color: "from-purple-500 to-pink-500",
       sound: "🎹",
-      description: "88鍵の可能性"
+      description: "音楽の可能性"
     },
     { 
-      name: "ギター", 
+      name: "作詞", 
       icon: <Music className="w-12 h-12" />, 
       color: "from-blue-500 to-cyan-500",
       sound: "🎸",
       description: "6弦の魔法"
     },
     { 
-      name: "ボーカル", 
+      name: "編曲", 
       icon: <Mic2 className="w-12 h-12" />, 
       color: "from-green-500 to-emerald-500",
       sound: "🎤",
@@ -158,69 +158,63 @@ const LandingPage = () => {
 
   const plans = [
     {
-      name: "Free",
+      name: "FREE",
       price: "¥0",
       period: "/月",
       features: [
         "基本教材アクセス",
-        "コミュニティフォーラム",
-        "限定的なAI機能",
-        "体験レッスン1回"
+        "AI教材：月3本まで",
+        "体験レッスン1回",
+        "広告表示"
       ],
       recommended: false,
       gradient: "from-gray-700 to-gray-800"
     },
     {
-      name: "Basic",
-      price: "¥3,300",
+      name: "Starter",
+      price: "¥500",
       period: "/月",
       features: [
-        "月1回のレッスン",
-        "全教材・楽譜アクセス",
-        "AI個別カリキュラム",
-        "優先マッチング",
-        "録画レッスン無制限"
+        "広告表示なし",
+        "レッスン予約枠：1件/月",
+        "教材アクセス",
+        "AI教材：月3本まで",
+        "AIカリキュラム",
+      ],
+      recommended: false,
+      gradient: "from-green-600 to-green-700"
+    },
+    {
+      name: "PRO",
+      price: "¥2,480",
+      period: "/月",
+      features: [
+        "広告表示なし",
+        "レッスン予約枠：5件/月",
+        "録画レッスン無制限",
+        "教材アクセス無制限",
+        "AI教材：月5本まで",
+        "AIカリキュラム",
+        "チャットサポート",
       ],
       recommended: true,
       gradient: "from-green-600 to-green-700"
     },
     {
-      name: "Studio",
-      price: "¥6,600",
+      name: "Premium",
+      price: "¥5,980",
       period: "/月",
       features: [
-        "月2回のレッスン",
-        "Premiumの全機能",
-        "専属メンター制度",
+        "Basicの全機能",
+        "AI教材無制限",
+        "メンターマッチング優先",
+        "グループ／個別レッスン枠：無制限",
       ],
       recommended: false,
       gradient: "from-purple-600 to-purple-700"
     }
   ];
 
-  const testimonials = [
-    {
-      name: "田中 さやか",
-      role: "ピアノ学習者",
-      content: "まるでSpotifyで音楽を聴くように、自然に音楽学習が日常に溶け込みました。",
-      rating: 5,
-      avatar: "🎹"
-    },
-    {
-      name: "山田 健太",
-      role: "ギター講師",
-      content: "生徒の進捗をプレイリストのように管理できて、レッスンの質が格段に上がりました。",
-      rating: 5,
-      avatar: "🎸"
-    },
-    {
-      name: "佐藤 美咲",
-      role: "ボーカリスト",
-      content: "AIが選んでくれる練習曲が本当に的確。自分だけのプレイリストで成長を実感！",
-      rating: 5,
-      avatar: "🎤"
-    }
-  ];
 
   // ナビゲーション関数
   const handleLogin = () => {
@@ -405,10 +399,10 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold">
-              あなたの楽器を選ぼう
+              さあ、作りましょう
             </h2>
             <p className="text-xl text-gray-400">
-              どんな楽器でも、プロの講師がマンツーマンでサポート
+              現役のクリエイターがマンツーマンでサポート。
             </p>
           </div>
           
@@ -485,20 +479,20 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold">
-              シンプルな料金プラン
+              料金プラン
             </h2>
             <p className="text-xl text-gray-400">
               あなたのペースで、あなたのスタイルで
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-4 gap-8">
             {plans.map((plan, index) => (
               <div 
                 key={index} 
                 className={`relative rounded-2xl overflow-hidden transform transition-all duration-500 hover:scale-105 ${
                   plan.recommended 
-                    ? 'border-2 border-green-500 scale-105 shadow-2xl shadow-green-500/20' 
+                    ? 'border-2 border-green-100 scale-105 shadow-2xl shadow-green-500/20' 
                     : 'border border-gray-800 hover:border-gray-600'
                 }`}
               >
