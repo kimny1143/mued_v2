@@ -47,8 +47,28 @@ export default function PaymentSuccessPage() {
   const fetchReservationDetails = async (sessionId: string) => {
     try {
       console.log('🔍 予約詳細取得開始:', sessionId);
-      console.log('🌐 フェッチURL:', `/api/checkout-session/${sessionId}`);
+      console.log('🌐 ベースURL:', window.location.origin);
+      console.log('🌐 完全フェッチURL:', `${window.location.origin}/api/checkout-session/${sessionId}`);
+      console.log('🌐 相対フェッチURL:', `/api/checkout-session/${sessionId}`);
       
+      // まずテストエンドポイントを呼び出してAPIルーティングを確認
+      console.log('🧪 テストエンドポイント呼び出し中...');
+      try {
+        const testResponse = await fetch('/api/checkout-session/test');
+        console.log('🧪 テストレスポンス状態:', {
+          ok: testResponse.ok,
+          status: testResponse.status,
+          contentType: testResponse.headers.get('content-type')
+        });
+        if (testResponse.ok) {
+          const testData = await testResponse.json();
+          console.log('🧪 テストデータ:', testData);
+        }
+      } catch (testError) {
+        console.error('🧪 テストエンドポイントエラー:', testError);
+      }
+      
+      console.log('📡 実際のAPIエンドポイント呼び出し中...');
       const response = await fetch(`/api/checkout-session/${sessionId}`);
       
       console.log('📡 レスポンス状態:', {

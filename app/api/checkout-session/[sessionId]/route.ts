@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 
+// ルート関数の実行を強制的に動的にする
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { sessionId: string } }
 ) {
-  console.log('🔵 checkout-session API呼び出し:', { sessionId: params.sessionId });
+  console.log('🚀 ===== checkout-session API開始 =====');
+  console.log('🔵 URL:', request.url);
+  console.log('🔵 Method:', request.method);
+  console.log('🔵 Headers:', Object.fromEntries(request.headers.entries()));
+  console.log('🔵 Params:', params);
+  console.log('🔵 SessionId:', params.sessionId);
   
   try {
     const { sessionId } = params;
@@ -19,11 +28,18 @@ export async function GET(
     }
 
     console.log('🔍 Stripeセッション取得開始:', sessionId);
+    console.log('🔑 Stripe設定確認:', {
+      hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
+      keyPrefix: process.env.STRIPE_SECRET_KEY?.substring(0, 7) || 'なし',
+      stripeMockMode: process.env.STRIPE_MOCK
+    });
 
     // Stripe決済セッションの詳細を取得
+    console.log('📡 stripe.checkout.sessions.retrieve 呼び出し中...');
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['payment_intent'],
     });
+    console.log('✅ Stripe API呼び出し成功');
 
     console.log('📊 Stripeセッション取得成功:', {
       id: session.id,
@@ -52,25 +68,34 @@ export async function GET(
     };
 
     console.log('📤 APIレスポンス:', responseData);
-
-    return NextResponse.json(responseData);
+    
+    const response = NextResponse.json(responseData);
+    console.log('✅ NextResponse.json作成完了');
+    console.log('🚀 ===== checkout-session API終了（成功） =====');
+    
+    return response;
   } catch (error) {
+    console.error('🚨 ===== checkout-session API エラー =====');
     console.error('❌ Stripe セッション取得エラー:', error);
     
     // Stripeエラーの詳細情報をログ出力
     if (error instanceof Error) {
       console.error('エラー詳細:', {
+        name: error.name,
         message: error.message,
         stack: error.stack
       });
     }
     
-    return NextResponse.json(
+    const errorResponse = NextResponse.json(
       { 
         error: 'セッション詳細の取得に失敗しました',
         details: error instanceof Error ? error.message : '不明なエラー'
       },
       { status: 500 }
     );
+    
+    console.log('🚀 ===== checkout-session API終了（エラー） =====');
+    return errorResponse;
   }
 } 
