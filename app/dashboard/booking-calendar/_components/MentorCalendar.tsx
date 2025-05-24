@@ -62,6 +62,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   // モーダル関連のstate
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalSelectedDate, setModalSelectedDate] = useState<Date | null>(null);
+  const [modalSelectedSlot, setModalSelectedSlot] = useState<ExtendedTimeSlot | null>(null);
+  const [modalSelectedMentor, setModalSelectedMentor] = useState<Mentor | null>(null);
 
   // コンポーネント初期化時のデバッグ
   console.log('🔵 MentorCalendar コンポーネント初期化（新設計）');
@@ -240,12 +242,16 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   const handleModalClose = () => {
     setIsModalOpen(false);
     setModalSelectedDate(null);
+    setModalSelectedSlot(null);
+    setModalSelectedMentor(null);
   };
 
   // 予約完了時の処理
   const handleBookingComplete = () => {
     setIsModalOpen(false);
     setModalSelectedDate(null);
+    setModalSelectedSlot(null);
+    setModalSelectedMentor(null);
     setSelectedDates([]);
     
     // 必要に応じて時間枠データを再取得
@@ -715,7 +721,10 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                     }}
                                     onClick={() => {
                                       if (slot.bookingStatus === 'available' || slot.bookingStatus === 'partial') {
+                                        const selectedMentor = mentors.find(m => m.id === (slot as ExtendedTimeSlot).mentorId);
                                         setModalSelectedDate(selectedDateForDay);
+                                        setModalSelectedSlot(slot as ExtendedTimeSlot);
+                                        setModalSelectedMentor(selectedMentor || null);
                                         setIsModalOpen(true);
                                       }
                                     }}
@@ -843,6 +852,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         onClose={handleModalClose}
         selectedDate={modalSelectedDate}
         mentors={mentors}
+        preSelectedSlot={modalSelectedSlot}
+        preSelectedMentor={modalSelectedMentor}
         onBookingComplete={handleBookingComplete}
       />
     </div>

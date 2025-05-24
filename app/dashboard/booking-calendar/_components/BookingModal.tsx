@@ -9,11 +9,24 @@ import { TimeSlot } from './TimeSlotDisplay';
 import { Mentor } from './MentorList';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
+// 拡張TimeSlot型を再定義（MentorCalendarから共通利用）
+interface ExtendedTimeSlot extends TimeSlot {
+  mentorId: string;
+  mentorName: string | null;
+  bookingStatus: 'available' | 'partial' | 'full' | 'unavailable';
+  reservationCount: number;
+  bookedTime: number;
+  availableTime: number;
+  bookingRate: number;
+}
+
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedDate: Date | null;
   mentors: Mentor[];
+  preSelectedSlot?: ExtendedTimeSlot | null;
+  preSelectedMentor?: Mentor | null;
   onBookingComplete: () => void;
 }
 
@@ -22,10 +35,12 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   onClose,
   selectedDate,
   mentors,
+  preSelectedSlot,
+  preSelectedMentor,
   onBookingComplete,
 }) => {
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
-  const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(preSelectedSlot || null);
+  const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(preSelectedMentor || null);
   const [selectedStartTime, setSelectedStartTime] = useState<Date | null>(null);
   const [selectedEndTime, setSelectedEndTime] = useState<Date | null>(null);
   const [lessonDuration, setLessonDuration] = useState<60 | 90>(60); // デフォルト60分
@@ -46,51 +61,76 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   React.useEffect(() => {
     if (!isOpen) {
       resetModalState();
+    } else {
+      // モーダルが開かれた時に事前選択されたスロットとメンターをセット
+      if (preSelectedSlot && preSelectedMentor) {
+        setSelectedTimeSlot(preSelectedSlot);
+        setSelectedMentor(preSelectedMentor);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, preSelectedSlot, preSelectedMentor]);
 
-  // 選択された日付の全メンターの空き時間を取得
-  const getMentorSlotsForDate = (mentor: Mentor, date: Date) => {
-    if (!mentor.availableSlots) return [];
-    
-    return mentor.availableSlots
-      .filter(slot => slot.id) // idが存在するもののみ
-      .filter(slot => {
-        const slotDate = new Date(slot.startTime);
-        return slotDate.toDateString() === date.toDateString() && slot.isAvailable;
-      })
-      .map(slot => ({
-        id: slot.id!,
-        startTime: new Date(slot.startTime),
-        endTime: new Date(slot.endTime),
-        isAvailable: slot.isAvailable ?? true,
-        hourlyRate: slot.hourlyRate
-      } as TimeSlot))
-      .sort((a, b) => 
-        a.startTime.getTime() - b.startTime.getTime()
-      );
-  };
 
-  // 選択された日付に空きがあるメンターのみを取得
-  const availableMentors = selectedDate ? mentors.filter(mentor => 
-    getMentorSlotsForDate(mentor, selectedDate).length > 0
-  ) : [];
 
-  // スロット範囲内で選択可能な開始時間を生成（15分刻み）
+
+
+  // スロット範囲内で選択可能な開始時間を生成（15分刻み）- 予約済み時間帯を除外
   const generateStartTimeOptions = (slot: TimeSlot) => {
-    const options: Array<{ time: Date; label: string }> = [];
+    const options: Array<{ time: Date; label: string; isAvailable: boolean }> = [];
     const slotStart = new Date(slot.startTime);
     const slotEnd = new Date(slot.endTime);
     
     // 選択されたレッスン時間分だけ余裕を持たせる
     const maxStartTime = new Date(slotEnd.getTime() - lessonDuration * 60 * 1000);
     
+    // 現在のスロットの予約情報を取得
+    let bookedIntervals: Array<{start: number, end: number}> = [];
+    
+    if (selectedMentor?.availableSlots) {
+      const currentSlot = selectedMentor.availableSlots.find(s => s.id === slot.id);
+      if (currentSlot?.reservations) {
+        bookedIntervals = currentSlot.reservations
+          .filter(res => res.status === 'CONFIRMED' || res.status === 'PENDING')
+          .filter(res => res.bookedStartTime && res.bookedEndTime)
+          .map(res => ({
+            start: new Date(res.bookedStartTime!).getTime(),
+            end: new Date(res.bookedEndTime!).getTime()
+          }))
+          .sort((a, b) => a.start - b.start);
+        
+        // 重複する予約時間帯をマージ
+        const mergedIntervals: Array<{start: number, end: number}> = [];
+        for (const interval of bookedIntervals) {
+          if (mergedIntervals.length === 0 || mergedIntervals[mergedIntervals.length - 1].end < interval.start) {
+            mergedIntervals.push(interval);
+          } else {
+            mergedIntervals[mergedIntervals.length - 1].end = Math.max(mergedIntervals[mergedIntervals.length - 1].end, interval.end);
+          }
+        }
+        bookedIntervals = mergedIntervals;
+      }
+    }
+    
     let currentTime = new Date(slotStart);
     
     while (currentTime <= maxStartTime) {
+      const proposedStartTime = currentTime.getTime();
+      const proposedEndTime = proposedStartTime + lessonDuration * 60 * 1000;
+      
+      // この開始時間から終了時間までの間に予約済み時間帯と重複があるかチェック
+      let isAvailable = true;
+      for (const bookedInterval of bookedIntervals) {
+        // 提案されたレッスン時間と予約済み時間が重複するかチェック
+        if (proposedStartTime < bookedInterval.end && proposedEndTime > bookedInterval.start) {
+          isAvailable = false;
+          break;
+        }
+      }
+      
       options.push({
         time: new Date(currentTime),
-        label: format(currentTime, 'HH:mm')
+        label: format(currentTime, 'HH:mm'),
+        isAvailable
       });
       
       // 15分追加
@@ -105,13 +145,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     return new Date(startTime.getTime() + duration * 60 * 1000);
   };
 
-  const handleTimeSlotSelect = (slot: TimeSlot, mentor: Mentor) => {
-    setSelectedTimeSlot(slot);
-    setSelectedMentor(mentor);
-    setSelectedStartTime(null); // 時間スロット変更時にリセット
-    setSelectedEndTime(null);
-    setError(null);
-  };
+
 
   // 開始時間選択時の処理
   const handleStartTimeSelect = (startTime: Date) => {
@@ -334,21 +368,48 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   {/* 開始時間選択 */}
                   <div>
                     <h5 className="text-sm font-medium text-gray-700 mb-2">開始時間を選択（15分刻み）</h5>
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-32 overflow-y-auto">
-                      {generateStartTimeOptions(selectedTimeSlot).map((option, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleStartTimeSelect(option.time)}
-                          className={`p-2 text-sm border rounded transition-all ${
-                            selectedStartTime && selectedStartTime.getTime() === option.time.getTime()
-                              ? 'border-primary bg-primary text-white'
-                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
+                    {(() => {
+                      const timeOptions = generateStartTimeOptions(selectedTimeSlot);
+                      const availableOptions = timeOptions.filter(opt => opt.isAvailable);
+                      
+                      if (availableOptions.length === 0) {
+                        return (
+                          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p className="text-sm text-yellow-800">
+                              <strong>この時間帯では{lessonDuration}分レッスンの空きがありません。</strong>
+                            </p>
+                            <p className="text-xs text-yellow-700 mt-1">
+                              他のレッスン時間（60分/90分）を試すか、別のスロットを選択してください。
+                            </p>
+                          </div>
+                        );
+                      }
+                      
+                      return (
+                        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 max-h-32 overflow-y-auto">
+                          {timeOptions.map((option, index) => (
+                            <button
+                              key={index}
+                              onClick={() => option.isAvailable ? handleStartTimeSelect(option.time) : undefined}
+                              disabled={!option.isAvailable}
+                              className={`p-2 text-sm border rounded transition-all ${
+                                selectedStartTime && selectedStartTime.getTime() === option.time.getTime()
+                                  ? 'border-primary bg-primary text-white'
+                                  : !option.isAvailable
+                                  ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                              }`}
+                              title={!option.isAvailable ? '予約済みのため選択できません' : ''}
+                            >
+                              {option.label}
+                              {!option.isAvailable && (
+                                <span className="text-xs block leading-none opacity-75">予約済</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                     {selectedStartTime && selectedEndTime && (
                       <div className="mt-3 p-3 bg-green-50 rounded-lg">
                         <p className="text-sm text-green-800">
@@ -360,84 +421,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                 </div>
               )}
 
-              {/* メンター別の空き時間一覧 */}
-              <div className="space-y-6">
-                <h4 className="font-medium text-gray-900">利用可能なレッスン</h4>
-                {availableMentors.length > 0 ? (
-                  availableMentors.map((mentor) => {
-                    const mentorSlots = getMentorSlotsForDate(mentor, selectedDate!);
-                    
-                    return (
-                      <div key={mentor.id} className="border border-gray-200 rounded-lg p-4">
-                        {/* メンター情報ヘッダー */}
-                        <div className="flex items-center gap-3 mb-4">
-                          {mentor.image ? (
-                            <img
-                              src={mentor.image}
-                              alt={mentor.name || ''}
-                              className="w-12 h-12 rounded-full"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                              <User className="h-6 w-6 text-primary" />
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <h5 className="font-medium text-gray-900">{mentor.name}</h5>
-                            {mentor.specialties && mentor.specialties.length > 0 && (
-                              <p className="text-sm text-gray-600">
-                                {mentor.specialties.join('、')}
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {mentorSlots.length}件の空き
-                          </div>
-                        </div>
-                        
-                        {/* 時間帯選択 */}
-                        <div className="grid gap-2 md:grid-cols-2">
-                          {mentorSlots.map((slot) => (
-                            <button
-                              key={slot.id}
-                              onClick={() => handleTimeSlotSelect(slot, mentor)}
-                              className={`p-3 text-left border rounded-lg transition-all ${
-                                selectedTimeSlot?.id === slot.id
-                                  ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="font-medium">
-                                    {format(new Date(slot.startTime), 'HH:mm')} - 
-                                    {format(new Date(slot.endTime), 'HH:mm')}
-                                  </div>
-                                  <div className="text-sm text-gray-600">
-                                    空き時間: {Math.round((new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime()) / (1000 * 60))}分
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-sm font-medium text-primary">
-                                    {selectedTimeSlot?.id === slot.id ? '選択中' : '選択'}
-                                  </div>
-                                </div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    <Clock className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <h5 className="font-medium text-gray-900 mb-2">利用可能なレッスンがありません</h5>
-                    <p className="text-sm">この日程では、どのメンターも空きがありません。</p>
-                    <p className="text-sm">別の日程をご検討ください。</p>
-                  </div>
-                )}
-              </div>
+              {/* 事前選択されていない場合のメッセージ */}
+              {!selectedTimeSlot && (
+                <div className="text-center py-12 text-gray-500">
+                  <Clock className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <h5 className="font-medium text-gray-900 mb-2">スロットが選択されていません</h5>
+                  <p className="text-sm">カレンダーからレッスンスロットを選択してください。</p>
+                </div>
+              )}
 
               {/* 料金詳細 */}
               {selectedTimeSlot && (
