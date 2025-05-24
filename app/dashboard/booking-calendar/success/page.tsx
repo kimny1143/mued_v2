@@ -13,11 +13,18 @@ interface ReservationDetails {
   currency: string;
   customerEmail?: string;
   metadata: {
-    slotId: string;
-    mentorId: string;
-    startTime: string;
-    endTime: string;
-    hourlyRate: string;
+    reservationId?: string;
+    userId?: string;
+    teacher?: string;
+    date?: string;
+    time?: string;
+    duration?: string;
+    // 旧フィールドもサポート（後方互換性）
+    slotId?: string;
+    mentorId?: string;
+    startTime?: string;
+    endTime?: string;
+    hourlyRate?: string;
   };
 }
 
@@ -39,15 +46,38 @@ export default function PaymentSuccessPage() {
 
   const fetchReservationDetails = async (sessionId: string) => {
     try {
+      console.log('🔍 予約詳細取得開始:', sessionId);
+      console.log('🌐 フェッチURL:', `/api/checkout-session/${sessionId}`);
+      
       const response = await fetch(`/api/checkout-session/${sessionId}`);
+      
+      console.log('📡 レスポンス状態:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers.get('content-type')
+      });
+      
       if (!response.ok) {
-        throw new Error('予約詳細の取得に失敗しました');
+        const errorText = await response.text();
+        console.error('❌ API エラーレスポンス:', errorText);
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
       }
+      
+      // Content-Typeをチェック
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const htmlText = await response.text();
+        console.error('❌ JSONでないレスポンス:', htmlText.substring(0, 200));
+        throw new Error('APIからHTMLレスポンスが返されました。APIエンドポイントに問題があります。');
+      }
+      
       const details = await response.json();
+      console.log('✅ 予約詳細取得成功:', details);
       setReservationDetails(details);
     } catch (err) {
-      console.error('予約詳細取得エラー:', err);
-      setError('予約詳細の取得に失敗しました');
+      console.error('❌ 予約詳細取得エラー:', err);
+      setError(err instanceof Error ? err.message : '予約詳細の取得に失敗しました');
     } finally {
       setIsLoading(false);
     }
@@ -79,8 +109,37 @@ export default function PaymentSuccessPage() {
     );
   }
 
-  const startTime = new Date(reservationDetails.metadata.startTime);
-  const endTime = new Date(reservationDetails.metadata.endTime);
+  // metadataから時間情報を取得（旧フィールドと新フィールドをサポート）
+  const getTimeInfo = () => {
+    const metadata = reservationDetails.metadata;
+    
+    // 新しいフォーマット（teacher, date, time, duration）の場合
+    if (metadata.teacher && metadata.date && metadata.time) {
+      return {
+        teacher: metadata.teacher,
+        dateString: metadata.date,
+        timeString: metadata.time,
+        duration: metadata.duration || '60分',
+        isNewFormat: true
+      };
+    }
+    
+    // 旧フォーマット（startTime, endTime）の場合
+    if (metadata.startTime && metadata.endTime) {
+      const startTime = new Date(metadata.startTime);
+      const endTime = new Date(metadata.endTime);
+      return {
+        startTime,
+        endTime,
+        isNewFormat: false
+      };
+    }
+    
+    // どちらの形式でもない場合
+    return null;
+  };
+  
+  const timeInfo = getTimeInfo();
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -102,14 +161,42 @@ export default function PaymentSuccessPage() {
               <div className="flex justify-between">
                 <span className="text-gray-600">レッスン開始:</span>
                 <span className="font-medium">
-                  {startTime.toLocaleDateString('ja-JP', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    weekday: 'short',
-                  })} {startTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                  {timeInfo ? (
+                    timeInfo.isNewFormat ? (
+                      `${timeInfo.dateString} ${timeInfo.timeString}`
+                    ) : (
+                      timeInfo.startTime && timeInfo.startTime.toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        weekday: 'short',
+                      }) + ' ' + timeInfo.startTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+                    )
+                  ) : (
+                    '詳細情報なし'
+                  )}
                 </span>
               </div>
+              {timeInfo && !timeInfo.isNewFormat && timeInfo.endTime && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">レッスン終了:</span>
+                  <span className="font-medium">
+                    {timeInfo.endTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              )}
+              {timeInfo && timeInfo.isNewFormat && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">レッスン時間:</span>
+                  <span className="font-medium">{timeInfo.duration}</span>
+                </div>
+              )}
+              {timeInfo && timeInfo.isNewFormat && (
+                <div className="flex justify-between">
+                  <span className="text-gray-600">講師:</span>
+                  <span className="font-medium">{timeInfo.teacher}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-600">料金:</span>
                 <span className="font-medium">
