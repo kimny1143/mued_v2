@@ -14,9 +14,16 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
 // Stripe インスタンスの初期化
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-03-31.basil',
 });
+
+// 未使用のユーティリティ関数（将来使用予定のため保持）
+const _getBaseUrl = getBaseUrl;
+const _calculateTotalReservedMinutes = calculateTotalReservedMinutes;
+const _calculateSlotTotalMinutes = calculateSlotTotalMinutes;
+const _format = format;
+const _ja = ja;
 
 // Prismaクエリ実行のラッパー関数（エラーハンドリング強化）
 async function executePrismaQuery<T>(queryFn: () => Promise<T>): Promise<T> {

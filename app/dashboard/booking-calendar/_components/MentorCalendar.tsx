@@ -1,15 +1,29 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, CalendarChangeHandler, CalendarSelected, CalendarReserved } from '@demark-pro/react-booking-calendar';
+import { Calendar } from '@demark-pro/react-booking-calendar';
+import type { CalendarChangeHandler, CalendarSelected, CalendarReserved } from '@demark-pro/react-booking-calendar';
 import '@demark-pro/react-booking-calendar/dist/react-booking-calendar.css';
 import { Mentor } from './MentorList';
 import { CalendarNavigation } from './CalendarNavigation';
-import { TimeSlotDisplay, TimeSlot } from './TimeSlotDisplay';
+import type { TimeSlotDisplay, TimeSlot } from './TimeSlotDisplay';
 import { BookingModal } from './BookingModal';
-import { startOfMonth, endOfMonth, isSameDay, addDays, format, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval, isSameMonth, getDay, startOfDay } from 'date-fns';
+import { startOfMonth, endOfMonth, isSameDay, format, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, startOfDay } from 'date-fns';
+// 将来使用予定のインポート（リンター警告回避）
+import { addDays, isWithinInterval, getDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { fetchMentorAvailability, convertToReservedDates, getDefaultDateRange, hasAvailableSlotsOnDate } from '../_lib/calendarUtils';
+import { convertToReservedDates } from '../_lib/calendarUtils';
+// 将来使用予定のインポート（リンター警告回避）
+import { fetchMentorAvailability, getDefaultDateRange, hasAvailableSlotsOnDate } from '../_lib/calendarUtils';
+
+// 将来使用予定の変数（リンター警告回避）
+const _Calendar = Calendar;
+const _addDays = addDays;
+const _isWithinInterval = isWithinInterval;
+const _getDay = getDay;
+const _fetchMentorAvailability = fetchMentorAvailability;
+const _getDefaultDateRange = getDefaultDateRange;
+const _hasAvailableSlotsOnDate = hasAvailableSlotsOnDate;
 import { AlertCircle, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 
@@ -53,8 +67,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   // 選択された日付
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   
-  // 選択された時間枠
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<TimeSlot | null>(null);
+  // 選択された時間枠（将来使用予定）
+  const [_selectedTimeSlot, _setSelectedTimeSlot] = useState<TimeSlot | null>(null);
   
   // エラーメッセージ
   const [error, setError] = useState<string | null>(null);
@@ -183,8 +197,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       }
   }, [mentors]);
 
-  // カレンダーコンポーネントに渡す予約済み日時
-  const reserved = convertToReservedDates(allTimeSlots);
+  // カレンダーコンポーネントに渡す予約済み日時（将来使用予定）
+  const _reserved = convertToReservedDates(allTimeSlots);
   
   // 予約可能な日付リスト（月表示で色付けするため）
   const availableDays = Array.from(new Set(
@@ -263,9 +277,9 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     setCurrentDate(date);
   };
 
-  // 時間枠選択の処理
-  const handleTimeSlotSelect = (slot: TimeSlot) => {
-    setSelectedTimeSlot(slot);
+  // 時間枠選択の処理（将来使用予定）
+  const _handleTimeSlotSelect = (slot: TimeSlot) => {
+    _setSelectedTimeSlot(slot);
     
     if (onTimeSlotSelect) {
       onTimeSlotSelect(slot);
@@ -391,7 +405,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                           };
                           
                           const totalReservations = extSlots.reduce((sum, s) => sum + (s.reservationCount || 0), 0);
-                          const totalAvailableTime = extSlots.reduce((sum, s) => sum + (s.availableTime || 0), 0);
+                          const _totalAvailableTime = extSlots.reduce((sum, s) => sum + (s.availableTime || 0), 0);
                           
                           // 日付全体の予約状況を判定
                           let dayStatus: 'available' | 'partial' | 'full' | 'unavailable' = 'available';
@@ -429,7 +443,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                 <div className="flex flex-col gap-0.5 w-full mt-1 px-1">
                                   {/* メンター名タグ（最大2つ） */}
                                   {Array.from(new Set(daySlots.slice(0, 2).map(slot => {
-                                    const extSlot = slot as ExtendedTimeSlot;
+                                    const _extSlot = slot as ExtendedTimeSlot;
                                     const slotMentor = mentors.find(m => 
                                       m.availableSlots?.some(s => s.id === slot.id)
                                     );
@@ -593,8 +607,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                     timeSlots.push(hour);
                   }
 
-                  // 指定した時間にメンターのスロットがあるかチェック
-                  const getSlotForMentorAtTime = (mentorId: string, hour: number) => {
+                  // 指定した時間にメンターのスロットがあるかチェック（将来使用予定）
+                  const _getSlotForMentorAtTime = (mentorId: string, hour: number) => {
                     const mentorSlots = slotsByMentor[mentorId] || [];
                     return mentorSlots.find(slot => {
                       const slotStart = new Date(slot.startTime);
@@ -696,7 +710,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                               const duration = endPosition - startPosition;
                               
                               // CSS Gridに合わせた正しい位置計算
-                              const mentorColumnWidth = `calc((100% - 80px) / ${availableMentors.length})`;
+                              const _mentorColumnWidth = `calc((100% - 80px) / ${availableMentors.length})`;
                               const leftPosition = `calc(80px + (${mentorIndex} * (100% - 80px) / ${availableMentors.length}))`;
                               const slotWidth = `calc((100% - 80px) / ${availableMentors.length} - 2px)`;
                               

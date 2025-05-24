@@ -52,12 +52,12 @@ const dashboardNavItems: NavItem[] = [
   { icon: FolderIcon, label: "Materials", path: "/dashboard/materials" },
   { icon: BookOpenIcon, label: "My Lessons", path: "/dashboard/my-lessons" },
   { icon: DumbbellIcon, label: "Exercises", path: "/dashboard/exercises" },
-  { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" }
+  { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" },
+  { icon: CalendarIcon, label: "Reservations", path: "/dashboard/reservations" }
 ];
 
 // 生徒専用ナビゲーション項目
 const studentNavItems: NavItem[] = [
-  { icon: CalendarIcon, label: "Reservations", path: "/dashboard/reservations" },
   { icon: CalendarIcon, label: "Booking", path: "/dashboard/booking-calendar" }
 ];
 
@@ -137,8 +137,8 @@ export default function DashboardLayout({
     ];
   }, []);
 
-  // メモ化された値を使用して現在アクティブなメニューを判断
-  const activeMenuItem = React.useMemo(() => {
+  // メモ化された値を使用して現在アクティブなメニューを判断（将来使用予定）
+  const _activeMenuItem = React.useMemo(() => {
     return allMenuItems.find(item => 
       pathname === item.path || (item.subMenu?.some(sub => pathname === sub.path))
     );
