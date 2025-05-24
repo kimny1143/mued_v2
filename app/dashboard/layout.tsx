@@ -26,6 +26,7 @@ import { Button } from "@/app/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 //import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { isDebugMode, isVerboseDebugMode, debugLog, verboseDebugLog } from "@/lib/debug";
 
 // TypeScript型定義
 interface NavItem {
@@ -189,7 +190,7 @@ export default function DashboardLayout({
     
     const getUser = async () => {
       try {
-        console.log("認証情報取得開始...");
+        debugLog("認証情報取得開始...");
         const { data } = await supabaseBrowser.auth.getSession();
         
         // コンポーネントがアンマウントされていたら何もしない
@@ -197,13 +198,13 @@ export default function DashboardLayout({
         
         if (data.session?.user) {
           // ユーザーID検証用の明示的なログ
-          console.log("==================================================");
-          console.log("現在のログインユーザーID:", data.session.user.id);
-          console.log("このIDをSupabaseの「usersテーブル」のIDと比較してください");
-          console.log("==================================================");
+          debugLog("==================================================");
+          debugLog("現在のログインユーザーID:", data.session.user.id);
+          debugLog("このIDをSupabaseの「usersテーブル」のIDと比較してください");
+          debugLog("==================================================");
           
-          console.log("認証済みユーザー検出:", data.session.user.email);
-          console.log("ユーザーID:", data.session.user.id);
+          debugLog("認証済みユーザー検出:", data.session.user.email);
+          debugLog("ユーザーID:", data.session.user.id);
           
           // 認証情報からユーザーデータを設定
           const authUser = data.session.user;
@@ -211,7 +212,7 @@ export default function DashboardLayout({
           
           // まずはメタデータから仮のロール値を設定
           const userMeta = authUser.user_metadata || {};
-          console.log("ユーザーメタデータ:", userMeta);
+          debugLog("ユーザーメタデータ:", userMeta);
           
           // 仮のロール設定（後でAPIから取得した正確な値で上書き）
           const tempRole = userMeta.role || 'student';
@@ -220,7 +221,7 @@ export default function DashboardLayout({
           // 代わりに専用APIを使用してユーザー情報を取得
           try {
             // APIからユーザー情報を取得（サーバサイドでadmin権限で実行）
-            console.log("APIからユーザー情報を取得中...");
+            debugLog("APIからユーザー情報を取得中...");
             const response = await fetch(`/api/user?userId=${authUser.id}`, {
               // キャッシュバスティング（開発時のキャッシュ問題回避）
               cache: process.env.NODE_ENV === 'development' ? 'no-cache' : 'default',
@@ -237,69 +238,69 @@ export default function DashboardLayout({
             }
             
             const userData = await response.json();
-            console.log("API成功 - ユーザーデータ:", userData);
-            console.log("API応答の生データ:", JSON.stringify(userData));
-            console.log("API応答からのroleId:", userData.roleId);
-            console.log("roleIdのタイプ:", typeof userData.roleId);
-            console.log("API応答からのroleName:", userData.roleName);
-            console.log("DBアクセス成功状態:", userData.dbAccessSuccessful);
+            debugLog("API成功 - ユーザーデータ:", userData);
+            verboseDebugLog("API応答の生データ:", JSON.stringify(userData));
+            verboseDebugLog("API応答からのroleId:", userData.roleId);
+            verboseDebugLog("roleIdのタイプ:", typeof userData.roleId);
+            debugLog("API応答からのroleName:", userData.roleName);
+            debugLog("DBアクセス成功状態:", userData.dbAccessSuccessful);
             
             // 新しい roleName を優先的に使用 (UUIDではなく実際のロール名)
             if (userData.roleName) {
               const roleName = userData.roleName.toLowerCase();
-              console.log("APIから取得したロール名:", roleName);
+              debugLog("APIから取得したロール名:", roleName);
               
               // ロール名で設定（roleIdはUUID形式のため、roleNameを使用）
               if (roleName === 'mentor') {
                 setUserRole('mentor');
-                console.log("メンターロールを設定しました");
+                debugLog("メンターロールを設定しました");
               } else if (roleName === 'admin' || roleName === 'administrator') {
                 setUserRole('admin');
-                console.log("管理者ロールを設定しました");
+                debugLog("管理者ロールを設定しました");
               } else {
                 setUserRole('student');
-                console.log("生徒ロールを設定しました");
+                debugLog("生徒ロールを設定しました");
               }
             }
             // roleNameがない場合は従来のロジックにフォールバック
             else if (userData.roleId) {
               // ここが重要: roleIdが文字列として正確に一致するか確認
               const dbRole = userData.roleId.toLowerCase();
-              console.log("DBから取得した正確なロール:", dbRole);
+              debugLog("DBから取得した正確なロール:", dbRole);
               
               // ロールの設定（正確な値）- 強制的にチェックして設定
               if (dbRole === 'mentor') {
                 setUserRole('mentor');
-                console.log("メンターロールを設定しました");
+                debugLog("メンターロールを設定しました");
               } else if (dbRole === 'admin') {
                 setUserRole('admin');
-                console.log("管理者ロールを設定しました");
+                debugLog("管理者ロールを設定しました");
               } else {
                 setUserRole('student');
-                console.log("生徒ロールを設定しました");
+                debugLog("生徒ロールを設定しました");
               }
             } else {
-              console.log("DBデータにロール情報がありません。メタデータから確認します");
+              debugLog("DBデータにロール情報がありません。メタデータから確認します");
               
               // メタデータからrole情報を確認
               const metaRole = authUser.user_metadata?.role;
               if (metaRole) {
-                console.log("メタデータからロール検出:", metaRole);
+                debugLog("メタデータからロール検出:", metaRole);
                 const metaRoleStr = String(metaRole).toLowerCase();
                 
                 if (metaRoleStr === 'mentor') {
                   setUserRole('mentor');
-                  console.log("メタデータからメンターロールを設定しました");
+                  debugLog("メタデータからメンターロールを設定しました");
                 } else if (metaRoleStr === 'admin') {
                   setUserRole('admin');
-                  console.log("メタデータから管理者ロールを設定しました");
+                  debugLog("メタデータから管理者ロールを設定しました");
                 } else {
                   setUserRole('student');
-                  console.log("メタデータから生徒ロールを設定しました");
+                  debugLog("メタデータから生徒ロールを設定しました");
                 }
               } else {
                 // フォールバック - デフォルトロール
-                console.log("ロール情報が見つかりません。デフォルトのstudentロールを使用");
+                debugLog("ロール情報が見つかりません。デフォルトのstudentロールを使用");
                 setUserRole('student');
               }
             }
@@ -311,13 +312,13 @@ export default function DashboardLayout({
             });
           } catch (err) {
             console.error("ユーザー情報API呼び出しエラー:", err);
-            console.log("メタデータのロールを使用:", tempRole);
+            debugLog("メタデータのロールを使用:", tempRole);
             
             // エラー発生時もUser情報はセット（メタデータのみ）
             setUser(authUser);
           }
         } else {
-          console.log("認証されていないユーザー - ログインページへリダイレクト");
+          debugLog("認証されていないユーザー - ログインページへリダイレクト");
           setUser(null);
           router.push('/login');
         }
@@ -364,22 +365,22 @@ export default function DashboardLayout({
   // サインアウト処理
   const handleSignOut = async () => {
     try {
-      console.log("サインアウト処理を開始します");
+      debugLog("サインアウト処理を開始します");
       
       // 明示的にローカルセッションをクリア
       const { error: localSignOutError } = await supabaseBrowser.auth.signOut();
       if (localSignOutError) {
         console.error("ローカルセッションクリアエラー:", localSignOutError);
       } else {
-        console.log("ローカルセッションクリア成功");
+        debugLog("ローカルセッションクリア成功");
       }
       
       // Server Actionを使用したサインアウト
       const result = await signOut();
-      console.log("サーバーサインアウト結果:", result);
+      debugLog("サーバーサインアウト結果:", result);
       
       // 強制的にリダイレクト（結果に関わらず）
-      console.log("ランディングページにリダイレクトします");
+      debugLog("ランディングページにリダイレクトします");
       router.replace('/');
     } catch (error) {
       console.error("Sign out failed:", error);
@@ -552,8 +553,8 @@ export default function DashboardLayout({
                      userRole === 'mentor' ? 'メンター' : 
                      '生徒'}
                   </p>
-                  {/* デバッグ情報 - 開発環境でなくても表示 */}
-                  {(process.env.NODE_ENV !== 'production' || true) && (
+                  {/* デバッグ情報 - デバッグモードでのみ表示 */}
+                  {isDebugMode() && (
                     <>
                       <p className="text-xxs text-gray-400 mt-1 truncate">
                         ID: {user?.id?.substring(0, 8)}...
@@ -561,17 +562,19 @@ export default function DashboardLayout({
                       <p className="text-xxs text-gray-400 truncate">
                         <span className="font-bold">Role:</span> {userRole || 'unknown'} (<span className="text-red-500">{user?.db_user?.roleName || user?.db_user?.roleId || 'no-role'}</span>)
                       </p>
-                      <details className="text-xxs text-gray-400 text-left mt-1">
-                        <summary className="cursor-pointer">開発者情報</summary>
-                        <div className="text-left p-1 bg-gray-50 rounded text-[9px] mt-1">
-                          <p>Auth Type: {user?.app_metadata?.provider || 'unknown'}</p>
-                          <p>Email: {user?.email}</p>
-                          <p>Full ID: {user?.id}</p>
-                          <p>DB Info: {user?.db_user ? 'あり' : 'なし'}</p>
-                          <p className="text-red-500">DB RoleId: {user?.db_user?.roleId}</p>
-                          <p className="text-green-500">DB RoleName: {user?.db_user?.roleName}</p>
-                        </div>
-                      </details>
+                      {isVerboseDebugMode() && (
+                        <details className="text-xxs text-gray-400 text-left mt-1">
+                          <summary className="cursor-pointer">開発者情報</summary>
+                          <div className="text-left p-1 bg-gray-50 rounded text-[9px] mt-1">
+                            <p>Auth Type: {user?.app_metadata?.provider || 'unknown'}</p>
+                            <p>Email: {user?.email}</p>
+                            <p>Full ID: {user?.id}</p>
+                            <p>DB Info: {user?.db_user ? 'あり' : 'なし'}</p>
+                            <p className="text-red-500">DB RoleId: {user?.db_user?.roleId}</p>
+                            <p className="text-green-500">DB RoleName: {user?.db_user?.roleName}</p>
+                          </div>
+                        </details>
+                      )}
                     </>
                   )}
                 </div>

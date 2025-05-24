@@ -26,9 +26,10 @@ const _getDefaultDateRange = getDefaultDateRange;
 const _hasAvailableSlotsOnDate = hasAvailableSlotsOnDate;
 import { AlertCircle, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
+import { isDebugMode, debugLog, verboseDebugLog } from '@/lib/debug';
 
-// デバッグモード
-const DEBUG = true;
+// デバッグモード（環境変数ベース）
+const DEBUG = isDebugMode();
 
 // 予約状況情報を含む拡張TimeSlot型
 interface ExtendedTimeSlot extends TimeSlot {
@@ -80,23 +81,23 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   const [modalSelectedMentor, setModalSelectedMentor] = useState<Mentor | null>(null);
 
   // コンポーネント初期化時のデバッグ
-  console.log('🔵 MentorCalendar コンポーネント初期化（新設計）');
-  console.log('mentors props:', mentors);
-  console.log('mentors.length:', mentors?.length);
+  debugLog('🔵 MentorCalendar コンポーネント初期化（新設計）');
+  debugLog('mentors props:', mentors);
+  debugLog('mentors.length:', mentors?.length);
   
   if (mentors && mentors.length > 0) {
-    console.log('最初のメンター:', mentors[0]);
-    console.log('最初のメンターのavailableSlots:', mentors[0].availableSlots);
+    verboseDebugLog('最初のメンター:', mentors[0]);
+    verboseDebugLog('最初のメンターのavailableSlots:', mentors[0].availableSlots);
   }
 
   // 全メンターの時間枠を統合して取得
   useEffect(() => {
-    console.log('🔴 useEffect実行開始（全メンター統合 + 予約状況分析）');
-    console.log('mentors:', mentors);
-    console.log('mentors.length:', mentors?.length);
+    debugLog('🔴 useEffect実行開始（全メンター統合 + 予約状況分析）');
+    verboseDebugLog('mentors:', mentors);
+    debugLog('mentors.length:', mentors?.length);
     
     if (!mentors || mentors.length === 0) {
-      console.log('🔴 mentorsが空のため終了');
+      debugLog('🔴 mentorsが空のため終了');
       setAllTimeSlots([]);
       return;
     }
@@ -178,8 +179,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         }
       });
       
-      console.log('📊 統合後の全timeSlots（予約状況付き）:', allSlots);
-      console.log('📊 統合後の全timeSlots数:', allSlots.length);
+      debugLog('📊 統合後の全timeSlots（予約状況付き）:', allSlots);
+      debugLog('📊 統合後の全timeSlots数:', allSlots.length);
       
       // 予約状況の統計
       const statusCounts = allSlots.reduce((acc, slot) => {
@@ -187,7 +188,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         return acc;
       }, {} as Record<string, number>);
       
-      console.log('📈 予約状況統計:', statusCounts);
+      verboseDebugLog('📈 予約状況統計:', statusCounts);
       
       setAllTimeSlots(allSlots);
       
@@ -209,8 +210,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   
   // デバッグ情報を出力
   if (DEBUG && availableDays.length > 0) {
-    console.log('利用可能な日付:', availableDays.map(d => format(d, 'yyyy/MM/dd')));
-    }
+    debugLog('利用可能な日付:', availableDays.map(d => format(d, 'yyyy/MM/dd')));
+  }
 
   // 日付選択時の処理（ビュー切り替え対応）
   const handleDateClick = (date: Date) => {
