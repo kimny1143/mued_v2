@@ -46,22 +46,29 @@ interface ExtendedUser extends SupabaseUser {
   };
 }
 
-// ナビゲーション項目
+// 共通ナビゲーション項目（全ユーザー）
 const dashboardNavItems: NavItem[] = [
   { icon: HomeIcon, label: "Dashboard", path: "/dashboard" },
   { icon: FolderIcon, label: "Materials", path: "/dashboard/materials" },
   { icon: BookOpenIcon, label: "My Lessons", path: "/dashboard/my-lessons" },
-  { icon: CalendarIcon, label: "Reservations", path: "/dashboard/reservations" },
-  { icon: CalendarIcon, label: "Booking", path: "/dashboard/booking-calendar" },
   { icon: DumbbellIcon, label: "Exercises", path: "/dashboard/exercises" },
-  { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" },
-  { icon: SettingsIcon, label: "Settings", path: "/dashboard/settings" }
+  { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" }
 ];
 
-// メンター/管理者向けのナビゲーション項目
+// 生徒専用ナビゲーション項目
+const studentNavItems: NavItem[] = [
+  { icon: CalendarIcon, label: "Reservations", path: "/dashboard/reservations" },
+  { icon: CalendarIcon, label: "Booking", path: "/dashboard/booking-calendar" }
+];
+
+// メンター専用ナビゲーション項目
 const mentorNavItems: NavItem[] = [
-  { icon: CalendarIcon, label: "Lesson Slots", path: "/dashboard/lesson-slots" },
-  { icon: CalendarIcon, label: "Slots Calendar", path: "/dashboard/slots-calendar" },
+  { icon: CalendarIcon, label: "Slots Calendar", path: "/dashboard/slots-calendar" }
+];
+
+// 共通メニュー（最下部に表示）
+const commonNavItems: NavItem[] = [
+  { icon: SettingsIcon, label: "Settings", path: "/dashboard/settings" }
 ];
 
 export default function DashboardLayout({
@@ -82,17 +89,65 @@ export default function DashboardLayout({
   const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({});
   const [userRole, setUserRole] = useState<string>('');
   
+  // ユーザーロールに応じたメニュー項目を計算（メモ化）
+  const visibleMenuItems = React.useMemo(() => {
+    const menus = [];
+    
+    // 共通メニュー（全ユーザー）
+    menus.push({
+      items: dashboardNavItems,
+      label: null // セクションタイトルなし
+    });
+    
+    // ロール別メニュー
+    if (userRole === 'student') {
+      // 生徒: 生徒専用メニューを追加
+      menus.push({
+        items: studentNavItems,
+        label: '予約管理'
+      });
+    } else if (userRole === 'mentor') {
+      // メンター: メンター専用メニューを追加
+      menus.push({
+        items: mentorNavItems,
+        label: 'メンターメニュー'
+      });
+    } else if (userRole === 'admin') {
+      // 管理者: すべてのメニューを表示
+      menus.push({
+        items: studentNavItems,
+        label: '生徒メニュー'
+      });
+      menus.push({
+        items: mentorNavItems,
+        label: 'メンターメニュー'
+      });
+    }
+    
+    return menus;
+  }, [userRole]);
+
+  // 全メニュー項目を統合（アクティブメニュー判定用）
+  const allMenuItems = React.useMemo(() => {
+    return [
+      ...dashboardNavItems,
+      ...studentNavItems,
+      ...mentorNavItems,
+      ...commonNavItems
+    ];
+  }, []);
+
   // メモ化された値を使用して現在アクティブなメニューを判断
   const activeMenuItem = React.useMemo(() => {
-    return dashboardNavItems.find(item => 
+    return allMenuItems.find(item => 
       pathname === item.path || (item.subMenu?.some(sub => pathname === sub.path))
     );
-  }, [pathname]);
+  }, [pathname, allMenuItems]);
   
   // 初期レンダリング後にアクティブなメニューを展開
   useEffect(() => {
     // パスが変わった時に、そのパスを含むメニュー項目があれば展開
-    const menuToExpand = dashboardNavItems.find(item => 
+    const menuToExpand = allMenuItems.find(item => 
       item.subMenu?.some(sub => pathname === sub.path)
     );
     
@@ -108,7 +163,7 @@ export default function DashboardLayout({
         };
       });
     }
-  }, [pathname]);
+  }, [pathname, allMenuItems]);
   
   // 展開されたメニューの切り替え
   const toggleSubmenu = (label: string) => {
@@ -525,90 +580,97 @@ export default function DashboardLayout({
             
             <nav className="px-4 py-4">
               <ul className="space-y-2">
-                {dashboardNavItems.map(({ icon: Icon, label, path, subMenu }) => {
-                  const isActive = isMenuActive(path, subMenu);
-                  const hasSubmenu = subMenu && subMenu.length > 0;
-                  
-                  return (
-                    <li key={label}>
-                      {hasSubmenu ? (
-                        <>
-                          <Button
-                            variant={isActive ? "secondary" : "ghost"}
-                            className={`w-full h-10 ${isSidebarCollapsed ? 'px-2 justify-center' : 'px-4 flex justify-between'}`}
-                            onClick={() => toggleSubmenu(label)}
-                          >
-                            <div className="flex items-center">
-                              <Icon className="h-5 w-5 flex-shrink-0" />
-                              {!isSidebarCollapsed && <span className="text-sm ml-2">{label}</span>}
-                            </div>
-                            {!isSidebarCollapsed && (
-                              <span className="flex-shrink-0">
-                                {expandedMenus[label] ? 
-                                <ChevronLeftIcon className="h-4 w-4" /> : 
-                                <ChevronRightIcon className="h-4 w-4" />}
-                              </span>
-                            )}
-                          </Button>
-                          {expandedMenus[label] && !isSidebarCollapsed && (
-                            <ul className="pl-6 mt-1 space-y-1">
-                              {subMenu.map(subItem => (
-                                <li key={subItem.path}>
-                                  <Button
-                                    variant={pathname === subItem.path ? "secondary" : "ghost"}
-                                    className="w-full px-4 py-2"
-                                    onClick={() => router.push(subItem.path)}
-                                  >
-                                    <span className="text-sm">{subItem.label}</span>
-                                  </Button>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </>
-                      ) : (
-                        <Button
-                          variant={isActive ? "secondary" : "ghost"}
-                          className={`w-full h-10 ${isSidebarCollapsed ? 'px-2 justify-center' : 'px-4 flex justify-start'}`}
-                          onClick={() => router.push(path)}
-                        >
-                          <div className="flex items-center">
-                            <Icon className="h-5 w-5 flex-shrink-0" />
-                            {!isSidebarCollapsed && <span className="text-sm ml-2">{label}</span>}
-                          </div>
-                        </Button>
-                      )}
-                    </li>
-                  );
-                })}
-                
-                {/* メンター/管理者向けメニューを表示（ユーザーロールで制御） */}
-                {(userRole === 'mentor' || userRole === 'admin') && (
-                  <>
-                    <li className="pt-2">
-                      <div className={`px-3 py-1 text-xs font-medium text-gray-400 ${isSidebarCollapsed ? 'text-center' : 'text-left'}`}>
-                        {!isSidebarCollapsed && 'メンターメニュー'}
-                      </div>
-                    </li>
-                    {mentorNavItems.map(({ icon: Icon, label, path, subMenu }) => {
+                {/* ロール別メニューを動的に表示 */}
+                {visibleMenuItems.map((menuSection, sectionIndex) => (
+                  <React.Fragment key={sectionIndex}>
+                    {/* セクションタイトル（最初のセクション以外で表示） */}
+                    {menuSection.label && (
+                      <li className="pt-2">
+                        <div className={`px-3 py-1 text-xs font-medium text-gray-400 ${isSidebarCollapsed ? 'text-center' : 'text-left'}`}>
+                          {!isSidebarCollapsed && menuSection.label}
+                        </div>
+                      </li>
+                    )}
+                    
+                    {/* メニュー項目 */}
+                    {menuSection.items.map(({ icon: Icon, label, path, subMenu }) => {
                       const isActive = isMenuActive(path, subMenu);
+                      const hasSubmenu = subMenu && subMenu.length > 0;
+                      
                       return (
                         <li key={label}>
-                          <Button
-                            variant={isActive ? "secondary" : "ghost"}
-                            className={`w-full h-10 ${isSidebarCollapsed ? 'px-2 justify-center' : 'px-4 flex justify-start'}`}
-                            onClick={() => router.push(path)}
-                          >
-                            <div className="flex items-center">
-                              <Icon className="h-5 w-5 flex-shrink-0" />
-                              {!isSidebarCollapsed && <span className="text-sm ml-2">{label}</span>}
-                            </div>
-                          </Button>
+                          {hasSubmenu ? (
+                            <>
+                              <Button
+                                variant={isActive ? "secondary" : "ghost"}
+                                className={`w-full h-10 ${isSidebarCollapsed ? 'px-2 justify-center' : 'px-4 flex justify-between'}`}
+                                onClick={() => toggleSubmenu(label)}
+                              >
+                                <div className="flex items-center">
+                                  <Icon className="h-5 w-5 flex-shrink-0" />
+                                  {!isSidebarCollapsed && <span className="text-sm ml-2">{label}</span>}
+                                </div>
+                                {!isSidebarCollapsed && (
+                                  <span className="flex-shrink-0">
+                                    {expandedMenus[label] ? 
+                                    <ChevronLeftIcon className="h-4 w-4" /> : 
+                                    <ChevronRightIcon className="h-4 w-4" />}
+                                  </span>
+                                )}
+                              </Button>
+                              {expandedMenus[label] && !isSidebarCollapsed && (
+                                <ul className="pl-6 mt-1 space-y-1">
+                                  {subMenu.map(subItem => (
+                                    <li key={subItem.path}>
+                                      <Button
+                                        variant={pathname === subItem.path ? "secondary" : "ghost"}
+                                        className="w-full px-4 py-2"
+                                        onClick={() => router.push(subItem.path)}
+                                      >
+                                        <span className="text-sm">{subItem.label}</span>
+                                      </Button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </>
+                          ) : (
+                            <Button
+                              variant={isActive ? "secondary" : "ghost"}
+                              className={`w-full h-10 ${isSidebarCollapsed ? 'px-2 justify-center' : 'px-4 flex justify-start'}`}
+                              onClick={() => router.push(path)}
+                            >
+                              <div className="flex items-center">
+                                <Icon className="h-5 w-5 flex-shrink-0" />
+                                {!isSidebarCollapsed && <span className="text-sm ml-2">{label}</span>}
+                              </div>
+                            </Button>
+                          )}
                         </li>
                       );
                     })}
-                  </>
-                )}
+                  </React.Fragment>
+                ))}
+                
+                {/* 共通メニュー（Settingsなど）を最下部に表示 */}
+                <li className="pt-4 border-t border-gray-200">
+                  {commonNavItems.map(({ icon: Icon, label, path, subMenu }) => {
+                    const isActive = isMenuActive(path, subMenu);
+                    return (
+                      <Button
+                        key={label}
+                        variant={isActive ? "secondary" : "ghost"}
+                        className={`w-full h-10 ${isSidebarCollapsed ? 'px-2 justify-center' : 'px-4 flex justify-start'}`}
+                        onClick={() => router.push(path)}
+                      >
+                        <div className="flex items-center">
+                          <Icon className="h-5 w-5 flex-shrink-0" />
+                          {!isSidebarCollapsed && <span className="text-sm ml-2">{label}</span>}
+                        </div>
+                      </Button>
+                    );
+                  })}
+                </li>
               </ul>
             </nav>
           </div>
