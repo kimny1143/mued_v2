@@ -94,6 +94,12 @@ export default function PaymentSuccessPage() {
       
       const details = await response.json();
       console.log('✅ 予約詳細取得成功:', details);
+      console.log('🔍 メタデータ詳細:', details.metadata);
+      console.log('⏰ 時間データ形式チェック:', {
+        hasTeacherDateTime: !!(details.metadata.teacher && details.metadata.date && details.metadata.time),
+        hasStartEndTime: !!(details.metadata.startTime && details.metadata.endTime),
+        metadata: details.metadata
+      });
       setReservationDetails(details);
     } catch (err) {
       console.error('❌ 予約詳細取得エラー:', err);
@@ -135,6 +141,7 @@ export default function PaymentSuccessPage() {
     
     // 新しいフォーマット（teacher, date, time, duration）の場合
     if (metadata.teacher && metadata.date && metadata.time) {
+      // 新フォーマットは既にサーバー側でJST変換されているのでそのまま使用
       return {
         teacher: metadata.teacher,
         dateString: metadata.date,

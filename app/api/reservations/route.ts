@@ -325,10 +325,38 @@ export async function POST(request: NextRequest) {
         data: reservationData
       });
       
-      // 日付と時間をフォーマット
-      const formattedDate = format(reservationStartTime, 'yyyy年MM月dd日', { locale: ja });
-      const formattedTimeRange = `${format(reservationStartTime, 'HH:mm', { locale: ja })} - ${format(reservationEndTime, 'HH:mm', { locale: ja })}`;
+      // 日付と時間をフォーマット（JST時間で表示）
+      const formattedDate = reservationStartTime.toLocaleDateString('ja-JP', {
+        timeZone: 'Asia/Tokyo',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      const startTimeJST = reservationStartTime.toLocaleTimeString('ja-JP', {
+        timeZone: 'Asia/Tokyo',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      
+      const endTimeJST = reservationEndTime.toLocaleTimeString('ja-JP', {
+        timeZone: 'Asia/Tokyo',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      
+      const formattedTimeRange = `${startTimeJST} - ${endTimeJST}`;
       const formattedDuration = `${durationInMinutes}分`;
+      
+      console.log('📅 JST変換結果:', {
+        originalStart: reservationStartTime.toISOString(),
+        originalEnd: reservationEndTime.toISOString(),
+        formattedDate,
+        formattedTimeRange,
+        note: 'Stripe決済ページと成功ページで日本時間が表示されます'
+      });
       
       // セッション情報・リクエスト情報をログ出力（デバッグ用）
       console.log('セッション情報:', {
