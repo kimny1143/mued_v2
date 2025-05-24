@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle, ArrowRight, Home, CreditCard } from 'lucide-react';
 import { Button } from '@ui/button';
@@ -14,7 +14,8 @@ interface CheckoutSession {
   metadata: Record<string, string>;
 }
 
-export default function CheckoutSuccessPage() {
+// useSearchParamsを使用するコンポーネントを分離
+function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
@@ -217,5 +218,26 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ローディング用のコンポーネント
+function CheckoutSuccessLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+        <p className="text-gray-600">ページを読み込み中...</p>
+      </div>
+    </div>
+  );
+}
+
+// メインのページコンポーネント
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<CheckoutSuccessLoading />}>
+      <CheckoutSuccessContent />
+    </Suspense>
   );
 } 
