@@ -56,12 +56,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // レスポンス用のデータを構築（金額をセントから円に変換）
+    // レスポンス用のデータを構築（通貨に応じた金額変換）
+    const currencyLower = (session.currency || 'jpy').toLowerCase();
+    
+    // JPYは最小単位が円（1円）なので変換不要、USD/EURなどは最小単位がセント（1/100）
+    const formatAmount = (amount: number | null, currency: string): number => {
+      if (!amount) return 0;
+      
+      // 0桁通貨（最小単位が基本単位と同じ）
+      const zeroDecimalCurrencies = ['jpy', 'krw', 'clp', 'pyg', 'rwf', 'vnd', 'xaf', 'xof', 'xpf'];
+      
+      if (zeroDecimalCurrencies.includes(currency.toLowerCase())) {
+        return Math.round(amount); // JPYなど: そのまま
+      } else {
+        return Math.round(amount / 100); // USD/EURなど: セントから基本単位に変換
+      }
+    };
+    
     const responseData = {
       sessionId: session.id,
       status: session.payment_status,
-      amount: session.amount_total ? Math.round(session.amount_total / 100) : 0, // セントから円に変換
-      currency: session.currency || 'jpy',
+      amount: formatAmount(session.amount_total, currencyLower),
+      currency: currencyLower,
       customerEmail: session.customer_details?.email,
       metadata: session.metadata || {},
     };

@@ -148,10 +148,32 @@ export default function PaymentSuccessPage() {
     if (metadata.startTime && metadata.endTime) {
       const startTime = new Date(metadata.startTime);
       const endTime = new Date(metadata.endTime);
+      
+      // JST（日本時間）での表示用に時間をフォーマット
+      const formatToJST = (date: Date) => {
+        return date.toLocaleDateString('ja-JP', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          weekday: 'short',
+          timeZone: 'Asia/Tokyo'
+        });
+      };
+      
+      const formatTimeJST = (date: Date) => {
+        return date.toLocaleTimeString('ja-JP', {
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'Asia/Tokyo'
+        });
+      };
+      
       return {
         startTime,
         endTime,
-        isNewFormat: false
+        startTimeJST: formatToJST(startTime) + ' ' + formatTimeJST(startTime),
+        endTimeJST: formatTimeJST(endTime),
+        isNewFormat: false as const
       };
     }
     
@@ -175,33 +197,24 @@ export default function PaymentSuccessPage() {
             <h2 className="text-xl font-semibold mb-4">予約詳細</h2>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600">予約ID:</span>
-                <span className="font-medium">{reservationDetails.sessionId}</span>
-              </div>
-              <div className="flex justify-between">
                 <span className="text-gray-600">レッスン開始:</span>
                 <span className="font-medium">
                   {timeInfo ? (
                     timeInfo.isNewFormat ? (
                       `${timeInfo.dateString} ${timeInfo.timeString}`
                     ) : (
-                      timeInfo.startTime && timeInfo.startTime.toLocaleDateString('ja-JP', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        weekday: 'short',
-                      }) + ' ' + timeInfo.startTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
+                      timeInfo.startTimeJST || '時間情報なし'
                     )
                   ) : (
                     '詳細情報なし'
                   )}
                 </span>
               </div>
-              {timeInfo && !timeInfo.isNewFormat && timeInfo.endTime && (
+              {timeInfo && !timeInfo.isNewFormat && timeInfo.endTimeJST && (
                 <div className="flex justify-between">
                   <span className="text-gray-600">レッスン終了:</span>
                   <span className="font-medium">
-                    {timeInfo.endTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                    {timeInfo.endTimeJST}
                   </span>
                 </div>
               )}
