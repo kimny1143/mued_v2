@@ -353,6 +353,10 @@ export async function createCheckoutSessionForReservation(
     date: string;
     time: string;
     duration: string;
+  },
+  customUrls?: {
+    successUrl?: string;
+    cancelUrl?: string;
   }
 ): Promise<Stripe.Checkout.Session> {
   // ベースURLの取得 - 本番環境を優先
@@ -367,9 +371,9 @@ export async function createCheckoutSessionForReservation(
     VERCEL_ENV: process.env.VERCEL_ENV
   });
 
-  // リダイレクトURL
-  const successUrl = `${baseUrl}/dashboard/reservations?success=true`;
-  const cancelUrl = `${baseUrl}/dashboard/reservations?canceled=true`;
+  // リダイレクトURL（カスタムURLが指定されていればそれを使用、なければデフォルト）
+  const successUrl = customUrls?.successUrl || `${baseUrl}/dashboard/reservations/success?reservation_id=${reservationId}`;
+  const cancelUrl = customUrls?.cancelUrl || `${baseUrl}/dashboard/reservations?canceled=true`;
 
   console.log('決済成功時URL:', successUrl);
   console.log('決済キャンセル時URL:', cancelUrl);

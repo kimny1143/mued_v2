@@ -338,7 +338,12 @@ export async function POST(request: NextRequest) {
       });
       
       try {
-        // 決済セッション作成（固定料金を反映）
+        // ベースURLの取得
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+          'https://dev.mued.jp' || 
+          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+
+        // 決済セッション作成（booking-calendar用URLを指定）
         const checkoutSession = await createCheckoutSessionForReservation(
           session.user.id,
           session.user.email,
@@ -350,6 +355,10 @@ export async function POST(request: NextRequest) {
             date: formattedDate,
             time: formattedTimeRange,
             duration: formattedDuration
+          },
+          {
+            successUrl: `${baseUrl}/dashboard/booking-calendar/success?session_id={CHECKOUT_SESSION_ID}&reservation_id=${reservation.id}`,
+            cancelUrl: `${baseUrl}/dashboard/booking-calendar?canceled=true`
           }
         );
         
