@@ -48,8 +48,10 @@ export default function PaymentSuccessPage() {
     try {
       console.log('🔍 予約詳細取得開始:', sessionId);
       console.log('🌐 ベースURL:', window.location.origin);
-      console.log('🌐 完全フェッチURL:', `${window.location.origin}/api/checkout-session/${sessionId}`);
-      console.log('🌐 相対フェッチURL:', `/api/checkout-session/${sessionId}`);
+      
+      // クエリパラメータ形式に変更
+      const apiUrl = `/api/checkout-session?sessionId=${sessionId}`;
+      console.log('🌐 新しいAPIエンドポイント:', apiUrl);
       
       // まずテストエンドポイントを呼び出してAPIルーティングを確認
       console.log('🧪 テストエンドポイント呼び出し中...');
@@ -58,18 +60,16 @@ export default function PaymentSuccessPage() {
         console.log('🧪 テストレスポンス状態:', {
           ok: testResponse.ok,
           status: testResponse.status,
-          contentType: testResponse.headers.get('content-type')
+          statusText: testResponse.statusText
         });
-        if (testResponse.ok) {
-          const testData = await testResponse.json();
-          console.log('🧪 テストデータ:', testData);
-        }
-      } catch (testError) {
-        console.error('🧪 テストエンドポイントエラー:', testError);
+        const testData = await testResponse.json();
+        console.log('🧪 テストデータ:', testData);
+      } catch (testErr) {
+        console.error('🧪 テストエンドポイントエラー:', testErr);
       }
       
       console.log('📡 実際のAPIエンドポイント呼び出し中...');
-      const response = await fetch(`/api/checkout-session/${sessionId}`);
+      const response = await fetch(apiUrl);
       
       console.log('📡 レスポンス状態:', {
         ok: response.ok,
@@ -78,18 +78,18 @@ export default function PaymentSuccessPage() {
         contentType: response.headers.get('content-type')
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ API エラーレスポンス:', errorText);
-        throw new Error(`API Error: ${response.status} - ${errorText}`);
-      }
-      
-      // Content-Typeをチェック
+      // レスポンスがJSONかどうかを確認
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        const htmlText = await response.text();
-        console.error('❌ JSONでないレスポンス:', htmlText.substring(0, 200));
+        const textResponse = await response.text();
+        console.error('❌ JSONでないレスポンス:', textResponse.substring(0, 100) + '...');
         throw new Error('APIからHTMLレスポンスが返されました。APIエンドポイントに問題があります。');
+      }
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ APIエラーレスポンス:', errorData);
+        throw new Error(errorData.error || '予約詳細の取得に失敗しました');
       }
       
       const details = await response.json();
