@@ -1,12 +1,14 @@
 "use client";
 
+import { useState } from 'react';
 import { useUser } from '@/lib/hooks/use-user';
 import { getPlanByPriceId } from '@/app/stripe-config';
 import { Crown, Star, Zap, CreditCard, ExternalLink } from 'lucide-react';
-import { redirectToBillingPortal } from '@/lib/billing-utils';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export function PlanTag() {
   const { subscription, loading } = useUser();
+  const [isLoading, setIsLoading] = useState(false);
 
   if (loading) {
     return (
@@ -52,27 +54,76 @@ export function PlanTag() {
   const { icon, className } = getPlanStyle();
 
   // Billingポータルへのリダイレクト処理
-  const handlePlanClick = () => {
+  const handlePlanClick = async () => {
     console.log('プランタグクリック - Billingポータルにリダイレクト');
     
     // FREEプランの場合は特別なメッセージを表示
     if (planName === 'FREE') {
       const shouldUpgrade = confirm('現在FREEプランをご利用中です。\nプランをアップグレードしますか？');
       if (!shouldUpgrade) return;
+      
+      // FREEプランの場合はランディングページにリダイレクト
+      window.location.href = '/new-landing';
+      return;
     }
     
-    redirectToBillingPortal();
+    try {
+      setIsLoading(true);
+
+      // 認証トークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      if (!token) {
+        throw new Error('認証トークンが見つかりません。再度ログインしてください。');
+      }
+
+      // Billing Portal Sessionを作成
+      const response = await fetch('/api/billing-portal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Billing Portal Sessionの作成に失敗しました');
+      }
+
+      // 新しいタブでBilling Portalを開く
+      window.open(data.url, '_blank');
+
+    } catch (error) {
+      console.error('Billing Portal エラー:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Billing Portalの開始に失敗しました';
+      alert(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <button 
       onClick={handlePlanClick}
-      className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg cursor-pointer group active:scale-95 ${className}`}
+      disabled={isLoading}
+      className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg cursor-pointer group active:scale-95 ${className} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
       title={`${planName}プラン - クリックしてプラン管理・変更`}
     >
-      {icon}
-      <span>{planName}プラン</span>
-      <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+      {isLoading ? (
+        <>
+          <div className="animate-spin rounded-full h-2.5 w-2.5 border-b border-current"></div>
+          <span>処理中...</span>
+        </>
+      ) : (
+        <>
+          {icon}
+          <span>{planName}プラン</span>
+          <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+        </>
+      )}
     </button>
   );
 } 
