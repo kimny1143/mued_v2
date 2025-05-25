@@ -29,7 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/pop
 import Link from "next/link";
 import { isDebugMode, isVerboseDebugMode, debugLog, verboseDebugLog } from "@/lib/debug";
 import { PlanTag } from "@/app/components/PlanTag";
-import { performCompleteSignOut, validateAuthState, forceRedirectToHome } from "@/lib/auth-utils";
+import { vercelSafeSignOut, safeRedirectToHome } from "@/lib/vercel-auth-fix";
 
 // TypeScript型定義
 interface NavItem {
@@ -370,60 +370,26 @@ export default function DashboardLayout({
     try {
       debugLog("サインアウト処理を開始します");
       
-      // 1. まず認証状態をチェック
-      const hasValidSession = await validateAuthState();
-      debugLog("認証状態チェック結果:", hasValidSession);
-      
-      // 2. 状態をクリア（エラーが発生する前に）
+      // 状態をクリア
       setUser(null);
       setUserRole('');
       
-      // 3. セッションが存在する場合のみSupabaseサインアウトを実行
-      if (hasValidSession) {
-        try {
-          const { error: clientSignOutError } = await supabaseBrowser.auth.signOut({
-            scope: 'local'
-          });
-          
-          if (clientSignOutError) {
-            // AuthSessionMissingErrorは無視（既にサインアウト済み）
-            if (clientSignOutError.message.includes('Auth session missing')) {
-              debugLog("セッションは既にクリア済みです");
-            } else {
-              console.error("クライアントセッションクリアエラー:", clientSignOutError);
-            }
-          } else {
-            debugLog("クライアントセッションクリア成功");
-          }
-        } catch (sessionError) {
-          // セッション関連エラーは無視して続行
-          debugLog("セッションエラー（無視）:", sessionError);
-        }
-      } else {
-        debugLog("有効なセッションが存在しないため、Supabaseサインアウトをスキップ");
-      }
+      // Vercel対応のサインアウト処理を実行
+      const result = await vercelSafeSignOut();
+      debugLog("Vercelサインアウト結果:", result);
       
-      // 4. 完全なサインアウト処理を実行
+      // サーバーアクションでサーバー側もクリア
       try {
-        await performCompleteSignOut();
-        debugLog("完全サインアウト処理成功");
-      } catch (completeSignOutError) {
-        console.error("完全サインアウト処理エラー:", completeSignOutError);
-        // エラーでも続行
-      }
-      
-      // 5. サーバーアクションでサーバー側もクリア
-      try {
-        const result = await signOut();
-        debugLog("サーバーサインアウト結果:", result);
+        const serverResult = await signOut();
+        debugLog("サーバーサインアウト結果:", serverResult);
       } catch (serverError) {
         console.error("サーバーサインアウトエラー:", serverError);
         // サーバーエラーでも続行
       }
       
-      // 6. 強制的にホームページにリダイレクト
+      // ホームページにリダイレクト
       debugLog("ホームページにリダイレクトします");
-      forceRedirectToHome();
+      safeRedirectToHome();
       
     } catch (error) {
       console.error("サインアウト処理エラー:", error);
@@ -431,7 +397,7 @@ export default function DashboardLayout({
       // エラー時も状態をクリアしてリダイレクト
       setUser(null);
       setUserRole('');
-      forceRedirectToHome();
+      safeRedirectToHome();
     }
   };
 

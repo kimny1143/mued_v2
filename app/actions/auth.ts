@@ -21,15 +21,11 @@ export async function signInWithGoogle() {
     // Supabaseサーバークライアント初期化
     const supabase = createSupabaseServerClient();
 
-    // OAuth認証URLの生成 - クエリパラメータでアクセスタイプを指定
+    // OAuth認証URLの生成 - PKCEフローを使用
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
       },
     });
 

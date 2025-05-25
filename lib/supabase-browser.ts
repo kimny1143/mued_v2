@@ -11,17 +11,9 @@ export const supabaseBrowser = createBrowserClient(
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: false,
-      flowType: 'implicit',
-      // Vercel環境での認証問題を解決するための設定
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-      storageKey: 'supabase.auth.token',
+      detectSessionInUrl: true, // PKCEフローのために有効化
+      flowType: 'pkce', // PKCEフローを使用
       debug: process.env.NODE_ENV === 'development'
-    },
-    global: {
-      headers: {
-        'X-Client-Info': 'supabase-js-web'
-      }
     }
   }
 );
