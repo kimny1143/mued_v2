@@ -31,9 +31,9 @@ export function SubscriptionStatus() {
         // use-userフックからサブスクリプション情報を取得
         if (userSubscription) {
           setSubscription({
-            price_id: userSubscription.price_id,
-            subscription_status: userSubscription.subscription_status,
-            current_period_end: userSubscription.current_period_end
+            price_id: userSubscription.priceId ?? null,
+            subscription_status: userSubscription.status,
+            current_period_end: userSubscription.currentPeriodEnd ?? null
           });
         } else {
           // フォールバック: 直接データベースから取得

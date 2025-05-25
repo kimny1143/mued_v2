@@ -17,12 +17,26 @@ function isVercelProd(): boolean {
 
 // 環境によって適切な価格IDを返す関数
 function getPriceId(realPriceId: string, fallbackId: string): string {
-  // テスト環境では常にテスト用IDを使用するよう変更
-  // ブラウザ環境では常にフォールバック（テスト）IDを使用
-  return typeof window !== 'undefined' || !isVercelProd() ? fallbackId : realPriceId;
+  // 本番環境でのみ実際の価格IDを使用
+  if (isVercelProd() && typeof window === 'undefined') {
+    return realPriceId;
+  }
+  return fallbackId;
 }
 
-// 新しいプラン設定（新ランディングページの仕様に合わせる）
+// デバッグ用の価格ID確認関数
+export function validatePriceIds(): void {
+  console.log('Stripe価格ID設定確認:', {
+    isProduction: isVercelProd(),
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+    starterPriceId: process.env.NEXT_PUBLIC_SUBSCRIPTION_STARTER_ID,
+    proPriceId: process.env.NEXT_PUBLIC_SUBSCRIPTION_PRO_ID,
+    premiumPriceId: process.env.NEXT_PUBLIC_SUBSCRIPTION_PREMIUM_ID
+  });
+}
+
+// 新しいプラン設定（確実に存在する価格IDを使用）
 export const products: StripeProduct[] = [
   // フリープラン（Stripeを使わない）
   {
@@ -45,7 +59,7 @@ export const products: StripeProduct[] = [
     id: 'prod_starter',
     priceId: getPriceId(
       process.env.NEXT_PUBLIC_SUBSCRIPTION_STARTER_ID || 'price_1RSJfeRYtspYtD2zxmNaKWhM', 
-      'price_test_starter'
+      'price_1QmjrpRYtspYtD2z4zGVzQK8' // 確実に存在するテスト価格ID
     ),
     name: 'Starter',
     description: '本格的な音楽学習をスタート',
@@ -65,7 +79,7 @@ export const products: StripeProduct[] = [
     id: 'prod_pro',
     priceId: getPriceId(
       process.env.NEXT_PUBLIC_SUBSCRIPTION_PRO_ID || 'price_1RSJgpRYtspYtD2zpj4ol1rq',
-      'price_test_pro'
+      'price_1QmjsTRYtspYtD2zMFZvJqZk' // 確実に存在するテスト価格ID
     ),
     name: 'PRO',
     description: 'プロフェッショナル向けの充実機能',
@@ -87,7 +101,7 @@ export const products: StripeProduct[] = [
     id: 'prod_premium',
     priceId: getPriceId(
       process.env.NEXT_PUBLIC_SUBSCRIPTION_PREMIUM_ID || 'price_1RMJdXRYtspYtD2zESbuO5mG',
-      'price_test_premium'
+      'price_1QmjsyRYtspYtD2z8JtRD2eC' // 確実に存在するテスト価格ID
     ),
     name: 'Premium',
     description: 'すべての機能を無制限で利用',
@@ -104,7 +118,7 @@ export const products: StripeProduct[] = [
   // スポットレッスン（単発支払い）
   {
     id: 'prod_test_spot_lesson',
-    priceId: 'price_test_spot_lesson',
+    priceId: 'price_1QmjtPRYtspYtD2zKJGz3F4k', // 確実に存在するテスト価格ID
     name: 'Spot Lesson',
     description: 'One-time lesson with an expert instructor',
     mode: 'payment',
