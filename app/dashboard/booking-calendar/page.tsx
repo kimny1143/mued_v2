@@ -201,6 +201,7 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
 export default function BookingCalendarPage() {
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [myReservations, setMyReservations] = useState<Reservation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -240,13 +241,17 @@ export default function BookingCalendarPage() {
         
         console.log('🔥 APIリクエスト開始: スロットと予約情報を並行取得');
         
-        // スロット情報と予約情報を並行取得
-        const [slotsResponse, reservationsResponse] = await Promise.all([
+        // スロット情報、全予約情報、自分の予約情報を並行取得
+        const [slotsResponse, reservationsResponse, myReservationsResponse] = await Promise.all([
           fetch('/api/lesson-slots?viewMode=all', {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             credentials: 'include',
           }),
           fetch('/api/reservations', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            credentials: 'include',
+          }),
+          fetch('/api/my-reservations', {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             credentials: 'include',
           })
@@ -265,17 +270,28 @@ export default function BookingCalendarPage() {
           // 予約情報の取得に失敗しても、スロット情報は表示する
         }
         
+        // 自分の予約情報の処理
+        if (!myReservationsResponse.ok) {
+          const errorResponse = await myReservationsResponse.json();
+          console.warn('自分の予約情報取得に失敗:', errorResponse);
+        }
+        
         const slotsData: LessonSlot[] = await slotsResponse.json();
         const reservationsData: Reservation[] = reservationsResponse.ok 
           ? await reservationsResponse.json() 
           : [];
+        const myReservationsData: Reservation[] = myReservationsResponse.ok 
+          ? await myReservationsResponse.json() 
+          : [];
         
         console.log(`📊 取得結果:`);
         console.log(`- レッスンスロット: ${slotsData.length}件`);
-        console.log(`- 予約情報: ${reservationsData.length}件`);
+        console.log(`- 全予約情報: ${reservationsData.length}件`);
+        console.log(`- 自分の予約情報: ${myReservationsData.length}件`);
         
         // 予約情報を保存
         setReservations(reservationsData);
+        setMyReservations(myReservationsData);
         
         // スロット情報と予約情報を統合
         const updatedSlots = calculateSlotAvailability(slotsData, reservationsData);
@@ -345,7 +361,79 @@ export default function BookingCalendarPage() {
             <MentorCalendar
               mentors={mentors}
               isLoading={isLoading}
+              myReservations={myReservations}
             />
+          </div>
+        </div>
+      )}
+      
+      {/* 自分の予約情報セクション */}
+      {myReservations.length > 0 && (
+        <div className="bg-white rounded-lg shadow mt-6">
+          <div className="p-6 border-b">
+            <h2 className="text-lg font-semibold">あなたの予約</h2>
+            <p className="text-sm text-gray-600 mt-1">
+              現在の予約状況を確認できます
+            </p>
+          </div>
+          
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {myReservations.map((reservation) => (
+                <div key={reservation.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900">
+                        {reservation.slot?.teacher?.name || '講師名不明'}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {reservation.bookedStartTime && new Date(reservation.bookedStartTime).toLocaleDateString('ja-JP', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          weekday: 'short'
+                        })}
+                      </p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      reservation.status === 'CONFIRMED' 
+                        ? 'bg-green-100 text-green-800' 
+                        : reservation.status === 'PENDING'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : reservation.status === 'COMPLETED'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {reservation.status === 'CONFIRMED' ? '確定' :
+                       reservation.status === 'PENDING' ? '保留中' :
+                       reservation.status === 'COMPLETED' ? '完了' :
+                       reservation.status === 'CANCELLED' ? 'キャンセル' : reservation.status}
+                    </span>
+                  </div>
+                  
+                  {reservation.bookedStartTime && reservation.bookedEndTime && (
+                    <div className="text-sm text-gray-600 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span>🕐</span>
+                        <span>
+                          {new Date(reservation.bookedStartTime).toLocaleTimeString('ja-JP', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })} - {new Date(reservation.bookedEndTime).toLocaleTimeString('ja-JP', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="text-xs text-gray-500">
+                    予約ID: {reservation.id.slice(0, 8)}...
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

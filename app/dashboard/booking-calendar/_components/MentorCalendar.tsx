@@ -47,6 +47,23 @@ interface MentorCalendarProps {
   isLoading?: boolean;
   onDateSelect?: (selectedDates: Date[]) => void;
   onTimeSlotSelect?: (slot: TimeSlot) => void;
+  myReservations?: Array<{
+    id: string;
+    slotId: string;
+    studentId: string;
+    status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+    bookedStartTime: string;
+    bookedEndTime: string;
+    createdAt: string;
+    slot?: {
+      id: string;
+      teacherId: string;
+      teacher?: {
+        id: string;
+        name: string | null;
+      };
+    };
+  }>;
 }
 
 export const MentorCalendar: React.FC<MentorCalendarProps> = ({
@@ -54,6 +71,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   isLoading: propsIsLoading = false,
   onDateSelect,
   onTimeSlotSelect,
+  myReservations = [],
 }) => {
   // 現在表示中の日付
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -327,25 +345,55 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       )}
       
       <div className="bg-white rounded-lg shadow p-4">
-        {/* メンター情報表示 */}
+        {/* 全メンター情報表示 */}
         {mentors.length > 0 && (
-          <div className="mb-4 flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-            {mentors[0].image ? (
-              <img
-                src={mentors[0].image || ''}
-                alt={mentors[0].name || ''}
-                className="w-10 h-10 rounded-full"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
-                {mentors[0].name?.charAt(0) || '?'}
-              </div>
-            )}
-            <div>
-              <div className="font-medium">{mentors[0].name}</div>
+          <div className="mb-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">利用可能なメンター</h3>
               <div className="text-sm text-gray-500">
-                レッスン数: {mentors[0].availableSlotsCount || 0}回
+                {mentors.length}人のメンターが利用可能
               </div>
+            </div>
+            
+            {/* メンター一覧 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {mentors.map((mentor) => (
+                <div key={mentor.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  {mentor.image ? (
+                    <img
+                      src={mentor.image}
+                      alt={mentor.name || ''}
+                      className="w-10 h-10 rounded-full flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium flex-shrink-0">
+                      {mentor.name?.charAt(0) || '?'}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 truncate">{mentor.name}</div>
+                    <div className="text-sm text-gray-500">
+                      {mentor.availableSlotsCount || 0}スロット利用可能
+                    </div>
+                    {mentor.specialties && mentor.specialties.length > 0 && (
+                      <div className="text-xs text-gray-400 mt-1">
+                        {mentor.specialties.slice(0, 2).join(', ')}
+                        {mentor.specialties.length > 2 && '...'}
+                      </div>
+                    )}
+                  </div>
+                  {mentor.rating && (
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-sm font-medium text-yellow-600">
+                        ★{mentor.rating.avgRating}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        ({mentor.rating.totalReviews}件)
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
