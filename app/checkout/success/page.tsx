@@ -61,7 +61,7 @@ function CheckoutSuccessContent() {
   };
 
   const handleGoToDashboard = () => {
-    router.push('/dashboard');
+      router.push('/dashboard');
   };
 
   const handleGoToPlans = () => {
@@ -151,7 +151,7 @@ function CheckoutSuccessContent() {
                   <span className="text-gray-600">ステータス:</span>
                   <span className={`font-semibold ${
                     isPaymentSuccessful ? 'text-green-600' : 'text-yellow-600'
-                  }`}>
+              }`}>
                     {isPaymentSuccessful ? '完了' : '処理中'}
                   </span>
                 </div>
@@ -162,8 +162,8 @@ function CheckoutSuccessContent() {
                   </div>
                 )}
               </div>
-            </div>
-            
+          </div>
+          
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="font-semibold text-gray-900 mb-3">次のステップ</h3>
               <ul className="space-y-2 text-sm text-gray-600">

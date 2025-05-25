@@ -75,7 +75,7 @@ export default function Page() {
         router.push('/dashboard');
         return;
       }
-
+      
       // 認証状態の詳細チェック
       if (!isAuthenticated || !user || !session) {
         addDebugLog('認証エラー', { 
@@ -89,7 +89,7 @@ export default function Page() {
         window.location.href = loginUrl;
         return;
       }
-
+      
       // 環境情報をログに記録
       addDebugLog('環境情報', {
         nodeEnv: process.env.NODE_ENV,
@@ -104,7 +104,7 @@ export default function Page() {
       const cancelUrl = `${baseUrl}/dashboard/plans`;
       
       addDebugLog('新しいサブスクリプションAPI呼び出し開始', {
-        successUrl,
+          successUrl,
         cancelUrl
       });
 
@@ -118,40 +118,40 @@ export default function Page() {
       }
 
       addDebugLog('認証トークン取得成功', { tokenLength: authToken.length });
-      
+
       // 新しいサブスクリプションAPIを呼び出し（認証トークン付き）
       const response = await fetch('/api/subscription-checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`, // 認証トークンを明示的に送信
-        },
-        body: JSON.stringify({
-          priceId,
-          successUrl,
-          cancelUrl,
+          },
+          body: JSON.stringify({
+            priceId,
+            successUrl,
+            cancelUrl,
           userId: user.id
-        }),
+          }),
         credentials: 'include',
-      });
+        });
 
-      const responseInfo = {
-        status: response.status,
-        statusText: response.statusText,
+        const responseInfo = {
+          status: response.status,
+          statusText: response.statusText,
         ok: response.ok
-      };
-      addDebugLog('APIレスポンス受信', responseInfo);
+        };
+        addDebugLog('APIレスポンス受信', responseInfo);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch (e) {
-          errorData = { error: errorText };
-        }
-        
-        addDebugLog('APIエラーレスポンス', errorData);
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch (e) {
+            errorData = { error: errorText };
+          }
+          
+          addDebugLog('APIエラーレスポンス', errorData);
         
         // 具体的なエラーメッセージを表示
         const errorMessage = errorData.error || `HTTP ${response.status}: 決済処理中にエラーが発生しました`;
@@ -159,7 +159,7 @@ export default function Page() {
       }
       
       const data = await response.json();
-      addDebugLog('APIレスポンスデータ', data);
+          addDebugLog('APIレスポンスデータ', data);
       
       if (data.redirectUrl) {
         // FREEプランの場合の処理
@@ -173,7 +173,7 @@ export default function Page() {
         });
         
         // Stripeの決済ページにリダイレクト
-        window.location.href = data.url;
+          window.location.href = data.url;
       } else {
         throw new Error('決済URLが返されませんでした。APIレスポンスを確認してください。');
       }
@@ -225,37 +225,37 @@ export default function Page() {
 
       {/* メインコンテンツ */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        
-        {/* 権限エラー通知 */}
-        {permissionError && (
-          <div className="mb-6 p-4 border border-yellow-400 bg-yellow-50 rounded-lg">
-            <h3 className="font-bold text-yellow-800">Supabase権限エラーが発生しています</h3>
-            <p className="text-sm text-yellow-700">
-              データベース権限の問題が検出されましたが、決済機能はテストモードで利用できます。
-            </p>
-          </div>
-        )}
 
-        {/* デバッグパネル (開発環境のみ表示) */}
-        {process.env.NODE_ENV !== 'production' && debugLog.length > 0 && (
+      {/* 権限エラー通知 */}
+      {permissionError && (
+          <div className="mb-6 p-4 border border-yellow-400 bg-yellow-50 rounded-lg">
+          <h3 className="font-bold text-yellow-800">Supabase権限エラーが発生しています</h3>
+          <p className="text-sm text-yellow-700">
+            データベース権限の問題が検出されましたが、決済機能はテストモードで利用できます。
+          </p>
+        </div>
+      )}
+
+      {/* デバッグパネル (開発環境のみ表示) */}
+      {process.env.NODE_ENV !== 'production' && debugLog.length > 0 && (
           <div className="mb-8 p-4 border border-orange-300 bg-orange-50 rounded-lg overflow-auto max-h-60">
-            <h3 className="font-bold mb-2">デバッグログ:</h3>
-            <ul className="text-xs font-mono">
-              {debugLog.map((log, i) => (
-                <li key={i} className="mb-1">{log}</li>
-              ))}
-            </ul>
-            <button 
+          <h3 className="font-bold mb-2">デバッグログ:</h3>
+          <ul className="text-xs font-mono">
+            {debugLog.map((log, i) => (
+              <li key={i} className="mb-1">{log}</li>
+            ))}
+          </ul>
+          <button 
               className="mt-2 text-xs text-red-500 hover:underline"
-              onClick={() => {
-                localStorage.removeItem('stripe_debug_logs');
-                setDebugLog([]);
-              }}
-            >
-              ログをクリア
-            </button>
-          </div>
-        )}
+            onClick={() => {
+              localStorage.removeItem('stripe_debug_logs');
+              setDebugLog([]);
+            }}
+          >
+            ログをクリア
+          </button>
+        </div>
+      )}
 
         {/* プランカード */}
         <div className="grid md:grid-cols-4 gap-8">
@@ -288,8 +288,8 @@ export default function Page() {
                     <span className={`ml-2 ${plan.recommended ? 'text-green-200' : 'text-gray-400'}`}>
                       {plan.price === 0 ? '' : '/月'}
                     </span>
-                  </div>
                 </div>
+              </div>
 
                 {/* 機能リスト */}
                 <div className="mb-8">
@@ -302,13 +302,13 @@ export default function Page() {
                         <span className={plan.recommended ? 'text-green-100' : 'text-gray-700'}>
                           {feature}
                         </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
                 {/* CTA ボタン */}
-                <Button
+              <Button
                   className={`w-full py-3 rounded-full font-semibold transition transform hover:scale-105 ${
                     plan.recommended 
                       ? 'bg-white text-green-600 hover:bg-gray-100 shadow-lg' 
@@ -329,7 +329,7 @@ export default function Page() {
                   ) : (
                     plan.price === 0 ? '無料で始める' : 'プランを選択'
                   )}
-                </Button>
+              </Button>
               </div>
             </Card>
           ))}

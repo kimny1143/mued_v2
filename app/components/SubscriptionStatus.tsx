@@ -85,9 +85,9 @@ export function SubscriptionStatus() {
             </div>
             {planPrice > 0 && (
               <div className="text-white/80 text-sm">/月</div>
-            )}
-          </div>
-        </div>
+        )}
+      </div>
+    </div>
       </div>
 
       {/* 詳細情報 */}

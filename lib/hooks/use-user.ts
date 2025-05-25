@@ -40,7 +40,7 @@ export function useUser() {
     if (initCount > 1) {
       console.log('認証初期化は既に実行中です。スキップします。');
       return;
-    }
+      }
 
     let isMounted = true;
 
@@ -60,9 +60,9 @@ export function useUser() {
           }
           return;
         }
-
-        console.log('現在のセッション状態:', currentSession ? '認証済み' : '未認証');
         
+        console.log('現在のセッション状態:', currentSession ? '認証済み' : '未認証');
+          
         if (isMounted) {
           setSession(currentSession);
           setIsAuthenticated(!!currentSession);
@@ -72,14 +72,14 @@ export function useUser() {
             
             // ユーザー情報を設定
             const userData: User = {
-              id: currentSession.user.id,
-              email: currentSession.user.email || '',
+          id: currentSession.user.id,
+          email: currentSession.user.email || '',
               name: currentSession.user.user_metadata?.name || 
-                    currentSession.user.user_metadata?.full_name || 
+                currentSession.user.user_metadata?.full_name || 
                     currentSession.user.email?.split('@')[0],
               roleId: 'student' // デフォルト値
-            };
-            
+        };
+        
             // データベースからユーザー詳細を取得（認証トークン付き）
             try {
               console.log('データベースからユーザー詳細を取得開始...');
@@ -100,8 +100,8 @@ export function useUser() {
             } catch (dbError) {
               console.warn('データベースアクセスエラー:', dbError);
               // データベースエラーでもデフォルト値で続行
-            }
-            
+        }
+        
             setUser(userData);
           } else {
             setUser(null);
@@ -114,8 +114,8 @@ export function useUser() {
         }
       } finally {
         if (isMounted) {
-          setLoading(false);
-        }
+        setLoading(false);
+      }
       }
     };
 
@@ -139,8 +139,8 @@ export function useUser() {
             roleId: 'student'
           };
           setUser(userData);
-        } else {
-          setUser(null);
+      } else {
+        setUser(null);
         }
       }
     );

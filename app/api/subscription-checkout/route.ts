@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSubscriptionCheckoutSession } from '@/lib/stripe';
+import { createOrUpdateSubscriptionCheckout, getOrCreateStripeCustomer } from '@/lib/stripe';
 import { getSessionFromRequest } from '@/lib/session';
 import { getPlanByPriceId, validatePriceIds } from '@/app/stripe-config';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import type { Stripe } from 'stripe';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,6 +51,7 @@ export async function POST(req: NextRequest) {
     // セッション取得を試行（複数の方法でフォールバック）
     let sessionUserId: string | null = null;
     let userEmail: string | null = null;
+    let userName: string | null = null;
 
     try {
       // 方法1: getSessionFromRequestを使用
@@ -56,6 +59,9 @@ export async function POST(req: NextRequest) {
       if (sessionInfo?.user) {
         sessionUserId = sessionInfo.user.id;
         userEmail = sessionInfo.user.email || null;
+        // user.nameは存在しない可能性があるため、user_metadataから取得
+        const userMetadata = sessionInfo.user as { user_metadata?: { name?: string } };
+        userName = userMetadata.user_metadata?.name || null;
         console.log('セッション取得成功（getSessionFromRequest）:', sessionUserId);
       }
     } catch (sessionErr) {
@@ -67,18 +73,17 @@ export async function POST(req: NextRequest) {
       console.log('フォールバック: リクエストのuserIdを使用:', userId);
       sessionUserId = userId;
       
-      // userIdからメールアドレスを取得する場合の処理
-      // NOTE: 本来はセキュリティ上推奨されないが、開発段階での一時的対応
+      // userIdからユーザー情報を取得
       try {
-        // Supabaseから直接ユーザー情報を取得
-        const { data: userData } = await supabaseBrowser
+        const { data: userData } = await supabaseAdmin
           .from('users')
-          .select('email')
+          .select('email, name')
           .eq('id', userId)
           .single();
         
-        if (userData?.email) {
+        if (userData) {
           userEmail = userData.email;
+          userName = userData.name;
         }
       } catch (userErr) {
         console.warn('ユーザー情報取得失敗:', userErr);
@@ -86,7 +91,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 最終的に認証情報が取得できない場合はエラー
-    if (!sessionUserId) {
+    if (!sessionUserId || !userEmail) {
       console.error('セッション取得失敗: 認証が必要です');
       return NextResponse.json({ 
         error: 'Authentication required',
@@ -94,20 +99,70 @@ export async function POST(req: NextRequest) {
       }, { status: 401 });
     }
 
-    // Stripe決済セッションを作成
+    // Stripe顧客IDを取得または作成
+    let stripeCustomerId: string | undefined;
+    
     try {
-      const checkoutSession = await createSubscriptionCheckoutSession({
+      // データベースから既存のStripe顧客IDを確認
+      const { data: customerData } = await supabaseAdmin
+        .from('stripe_customers')
+        .select('customerId')
+        .eq('userId', sessionUserId)
+        .maybeSingle();
+      
+      if (customerData?.customerId) {
+        stripeCustomerId = customerData.customerId;
+        console.log('既存のStripe顧客ID取得:', stripeCustomerId);
+      } else {
+        // Stripe顧客を作成
+        stripeCustomerId = await getOrCreateStripeCustomer(
+          sessionUserId,
+          userEmail,
+          userName || undefined
+        );
+        
+        // データベースに保存
+        await supabaseAdmin
+          .from('stripe_customers')
+          .insert({
+            userId: sessionUserId,
+            customerId: stripeCustomerId,
+          });
+          
+        console.log('新規Stripe顧客作成:', stripeCustomerId);
+      }
+    } catch (customerError) {
+      console.warn('Stripe顧客ID取得/作成エラー:', customerError);
+      // エラーが発生してもcustomerIdなしで続行
+    }
+
+    // Stripe決済セッションを作成（既存サブスクリプションを考慮）
+    try {
+      const checkoutResult = await createOrUpdateSubscriptionCheckout({
         priceId,
         successUrl: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/plans`,
+        customerId: stripeCustomerId,
+        userId: sessionUserId,
         metadata: {
           userId: sessionUserId,
-          userEmail: userEmail || 'unknown@example.com',
+          userEmail: userEmail,
           planName: plan.name,
           planDescription: plan.description
         }
       });
 
+      // プラン変更の場合は直接URLを返す
+      if ('url' in checkoutResult && !('id' in checkoutResult)) {
+        console.log('プラン変更完了 - リダイレクト');
+        return NextResponse.json({
+          url: checkoutResult.url,
+          isUpgrade: true
+        });
+      }
+
+      const checkoutSession = checkoutResult as Stripe.Checkout.Session;
+      
       if (!checkoutSession || !checkoutSession.url) {
         throw new Error('Stripe checkout session URL not generated');
       }

@@ -334,6 +334,133 @@ export async function createSubscriptionCheckoutSession({
   return session;
 }
 
+// 既存のサブスクリプションを考慮したチェックアウトセッション作成
+export async function createOrUpdateSubscriptionCheckout({
+  priceId,
+  successUrl,
+  cancelUrl,
+  customerId,
+  userId,
+  metadata,
+  trialDays,
+}: {
+  priceId: string;
+  successUrl: string;
+  cancelUrl: string;
+  customerId?: string;
+  userId?: string;
+  metadata?: Record<string, string>;
+  trialDays?: number;
+}): Promise<Stripe.Checkout.Session | { url: string }> {
+  try {
+    // 既存の顧客IDがある場合、アクティブなサブスクリプションを確認
+    if (customerId) {
+      console.log('既存顧客のサブスクリプションを確認:', customerId);
+      
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: 'active',
+        limit: 1,
+      });
+
+      if (subscriptions.data.length > 0) {
+        const existingSubscription = subscriptions.data[0];
+        console.log('既存のサブスクリプションを発見:', existingSubscription.id);
+        
+        // 同じ価格IDの場合はリダイレクトのみ
+        if (existingSubscription.items.data[0].price.id === priceId) {
+          console.log('同じプランへの変更要求 - リダイレクトのみ実行');
+          return { url: successUrl };
+        }
+        
+        // 異なる価格IDの場合はプラン変更
+        console.log('プラン変更を実行:', priceId);
+        
+        // サブスクリプションアイテムを更新
+        const updatedSubscription = await stripe.subscriptions.update(existingSubscription.id, {
+          items: [{
+            id: existingSubscription.items.data[0].id,
+            price: priceId,
+          }],
+          proration_behavior: 'create_prorations', // 日割り計算を行う
+          metadata: {
+            ...existingSubscription.metadata,
+            ...metadata,
+            updated_at: new Date().toISOString(),
+          },
+        });
+
+        console.log('サブスクリプション更新成功:', updatedSubscription.id);
+        
+        // プラン変更が完了したので成功URLにリダイレクト
+        return { url: successUrl.replace('{CHECKOUT_SESSION_ID}', 'upgrade_' + updatedSubscription.id) };
+      }
+    }
+
+    // 新規サブスクリプションの場合は通常のチェックアウトセッション作成
+    console.log('新規サブスクリプションのチェックアウトセッション作成');
+    return await createSubscriptionCheckoutSession({
+      priceId,
+      successUrl,
+      cancelUrl,
+      customerId,
+      metadata: {
+        ...metadata,
+        userId: userId || 'unknown',
+      },
+      trialDays,
+    });
+    
+  } catch (error) {
+    console.error('サブスクリプション処理エラー:', error);
+    // エラーが発生した場合は通常のチェックアウトセッション作成にフォールバック
+    return await createSubscriptionCheckoutSession({
+      priceId,
+      successUrl,
+      cancelUrl,
+      customerId,
+      metadata,
+      trialDays,
+    });
+  }
+}
+
+// 顧客IDを取得または作成する関数
+export async function getOrCreateStripeCustomer(
+  userId: string,
+  email: string,
+  name?: string
+): Promise<string> {
+  try {
+    // まず既存の顧客を検索
+    const customers = await stripe.customers.list({
+      email,
+      limit: 1,
+    });
+
+    if (customers.data.length > 0) {
+      console.log('既存のStripe顧客を発見:', customers.data[0].id);
+      return customers.data[0].id;
+    }
+
+    // 新規顧客を作成
+    const customer = await stripe.customers.create({
+      email,
+      name: name || email,
+      metadata: {
+        userId,
+      },
+    });
+
+    console.log('新規Stripe顧客を作成:', customer.id);
+    return customer.id;
+    
+  } catch (error) {
+    console.error('Stripe顧客の取得/作成エラー:', error);
+    throw error;
+  }
+}
+
 // 決済セッションの取得
 export async function getCheckoutSession(sessionId: string): Promise<Stripe.Checkout.Session> {
   return stripe.checkout.sessions.retrieve(sessionId, {
