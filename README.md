@@ -192,3 +192,4 @@ bash scripts/vercel-deploy-prep.sh
 ## ライセンス
 
 © 2024 株式会社グラスワークス All Rights Reserved.
+// Test auto deploy fix
