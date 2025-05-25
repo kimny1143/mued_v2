@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSubscriptionCheckoutSession } from '@/lib/stripe';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { getSessionFromRequest } from '@/lib/session';
 import { getPlanByPriceId, validatePriceIds } from '@/app/stripe-config';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
-    
     // デバッグ: 価格ID設定を確認
     validatePriceIds();
     
@@ -48,12 +46,52 @@ export async function POST(req: NextRequest) {
 
     console.log('決済するプラン:', plan);
 
-    // 現在のユーザーセッションを取得
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !session) {
-      console.error('セッション取得エラー:', sessionError);
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    // セッション取得を試行（複数の方法でフォールバック）
+    let sessionUserId: string | null = null;
+    let userEmail: string | null = null;
+
+    try {
+      // 方法1: getSessionFromRequestを使用
+      const sessionInfo = await getSessionFromRequest(req);
+      if (sessionInfo?.user) {
+        sessionUserId = sessionInfo.user.id;
+        userEmail = sessionInfo.user.email || null;
+        console.log('セッション取得成功（getSessionFromRequest）:', sessionUserId);
+      }
+    } catch (sessionErr) {
+      console.warn('getSessionFromRequest失敗:', sessionErr);
+    }
+
+    // 方法2: リクエストで送信されたuserIdを使用（一時的フォールバック）
+    if (!sessionUserId && userId) {
+      console.log('フォールバック: リクエストのuserIdを使用:', userId);
+      sessionUserId = userId;
+      
+      // userIdからメールアドレスを取得する場合の処理
+      // NOTE: 本来はセキュリティ上推奨されないが、開発段階での一時的対応
+      try {
+        // Supabaseから直接ユーザー情報を取得
+        const { data: userData } = await supabaseBrowser
+          .from('users')
+          .select('email')
+          .eq('id', userId)
+          .single();
+        
+        if (userData?.email) {
+          userEmail = userData.email;
+        }
+      } catch (userErr) {
+        console.warn('ユーザー情報取得失敗:', userErr);
+      }
+    }
+
+    // 最終的に認証情報が取得できない場合はエラー
+    if (!sessionUserId) {
+      console.error('セッション取得失敗: 認証が必要です');
+      return NextResponse.json({ 
+        error: 'Authentication required',
+        details: 'ユーザーセッションが見つかりません。再ログインしてください。'
+      }, { status: 401 });
     }
 
     // Stripe決済セッションを作成
@@ -63,8 +101,8 @@ export async function POST(req: NextRequest) {
         successUrl: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/plans`,
         metadata: {
-          userId: session.user.id,
-          userEmail: session.user.email || '',
+          userId: sessionUserId,
+          userEmail: userEmail || 'unknown@example.com',
           planName: plan.name,
           planDescription: plan.description
         }

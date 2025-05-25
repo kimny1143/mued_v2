@@ -3,8 +3,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Session } from '@supabase/supabase-js';
-import { products } from '@/app/stripe-config';
-import { useSubscription } from './use-subscription';
+import { useSubscriptionSimple } from './use-subscription-simple';
+import { getPlanByPriceId } from '@/app/stripe-config';
 
 type User = {
   id: string;
@@ -12,12 +12,6 @@ type User = {
   name?: string;
   plan?: string;
   roleId?: string;
-};
-
-type SubscriptionStatus = {
-  price_id: string | null;
-  subscription_status: string;
-  current_period_end: number | null;
 };
 
 export function useUser() {
@@ -28,13 +22,12 @@ export function useUser() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const initializeCountRef = useRef(0);
   
-  // サブスクリプション情報を取得
+  // シンプルなサブスクリプション情報を取得
   const { 
     subscription, 
     loading: subscriptionLoading, 
-    error: subscriptionError,
-    refreshSubscription
-  } = useSubscription();
+    error: subscriptionError
+  } = useSubscriptionSimple();
 
   // 認証状態の初期化（重複実行を防ぐ）
   useEffect(() => {
@@ -146,13 +139,6 @@ export function useUser() {
             roleId: 'student'
           };
           setUser(userData);
-          
-          // サブスクリプション情報を再取得
-          setTimeout(() => {
-            if (refreshSubscription) {
-              refreshSubscription();
-            }
-          }, 1000);
         } else {
           setUser(null);
         }
@@ -169,10 +155,10 @@ export function useUser() {
     };
   }, []); // 依存配列を空にして1回だけ実行
 
-  // プラン情報の計算
+  // プラン情報の計算（サブスクリプション情報から）
   const currentPlan = subscription?.priceId 
-    ? products.find(p => p.priceId === subscription.priceId)?.name || 'Unknown'
-    : 'Free';
+    ? getPlanByPriceId(subscription.priceId)?.name || 'Unknown'
+    : 'FREE';
 
   // ユーザー情報にプランを追加
   const userWithPlan = user ? { ...user, plan: currentPlan } : null;
@@ -190,11 +176,6 @@ export function useUser() {
         setSession(session);
         setIsAuthenticated(!!session);
       });
-      
-      // サブスクリプション情報も再取得
-      if (refreshSubscription) {
-        refreshSubscription();
-      }
     }
   };
 } 

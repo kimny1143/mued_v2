@@ -5,10 +5,11 @@ export const dynamic = 'force-dynamic';
 import { Button } from "@ui/button";
 import { Card } from "@ui/card";
 import { CheckIcon, Star } from "lucide-react";
-import { getSubscriptionPlans, StripeProduct } from "@/app/stripe-config";
+import { getSubscriptionPlans, StripeProduct, getPlanByPriceId } from "@/app/stripe-config";
 import { useUser } from "@/lib/hooks/use-user";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 export default function Page() {
   const router = useRouter();
@@ -31,8 +32,8 @@ export default function Page() {
 
   // Supabaseの権限エラーを検出
   useEffect(() => {
-    if (error && typeof error === 'object' && 'message' in error) {
-      const errorMessage = String(error.message);
+    if (error && typeof error === 'string') {
+      const errorMessage = error;
       if (errorMessage.includes('permission denied') || errorMessage.includes('42501')) {
         setPermissionError(true);
         addDebugLog('Supabase権限エラーを検出', errorMessage);
@@ -106,12 +107,24 @@ export default function Page() {
         successUrl,
         cancelUrl
       });
+
+      // 認証トークンを取得
+      const { data: { session: currentSession } } = await supabaseBrowser.auth.getSession();
+      const authToken = currentSession?.access_token;
+
+      if (!authToken) {
+        addDebugLog('認証トークン取得失敗');
+        throw new Error('認証トークンが取得できませんでした。再ログインしてください。');
+      }
+
+      addDebugLog('認証トークン取得成功', { tokenLength: authToken.length });
       
-      // 新しいサブスクリプションAPIを呼び出し
+      // 新しいサブスクリプションAPIを呼び出し（認証トークン付き）
       const response = await fetch('/api/subscription-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`, // 認証トークンを明示的に送信
         },
         body: JSON.stringify({
           priceId,
@@ -190,6 +203,11 @@ export default function Page() {
 
   // プランを取得（新しい設定から）
   const subscriptionPlans = getSubscriptionPlans();
+
+  // プラン情報の計算（サブスクリプション情報から）
+  const currentPlan = subscription?.priceId 
+    ? getPlanByPriceId(subscription.priceId)?.name || 'Unknown'
+    : 'FREE';
 
   return (
     <div className="min-h-screen bg-gray-50">
