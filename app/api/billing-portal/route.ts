@@ -9,7 +9,19 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: NextRequest) {
+// CORS対応のためのOPTIONSメソッド
+export async function OPTIONS(req: Request) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
+export async function POST(req: Request) {
   try {
     console.log('🔄 Billing Portal Session作成開始');
 

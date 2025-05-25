@@ -75,11 +75,20 @@ export default function Page() {
         setIsLoading(true);
         addDebugLog('Billing Portal Session作成開始');
 
+        // 認証トークンを取得
+        const { data: sessionData } = await supabaseBrowser.auth.getSession();
+        const token = sessionData?.session?.access_token;
+
+        if (!token) {
+          throw new Error('認証トークンが見つかりません。再度ログインしてください。');
+        }
+
         // Billing Portal Sessionを作成
         const response = await fetch('/api/billing-portal', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`, // 認証トークンを追加
           },
         });
 
@@ -118,10 +127,19 @@ export default function Page() {
     try {
       console.log('サブスクリプション処理開始:', { priceId, userId: user.id });
 
+      // 認証トークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      if (!token) {
+        throw new Error('認証トークンが見つかりません。再度ログインしてください。');
+      }
+
       const response = await fetch('/api/subscription-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // 認証トークンを追加
         },
         body: JSON.stringify({
           priceId,
