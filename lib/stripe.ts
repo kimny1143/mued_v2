@@ -391,7 +391,7 @@ export async function createOrUpdateSubscriptionCheckout({
 
         // 通貨が異なる場合（USD→JPY移行）の処理
         if (currentCurrency !== 'jpy') {
-          console.log('🔄 通貨移行処理: USD→JPY');
+          console.log('🔄 通貨移行処理: USD→JPY - 新しい顧客を作成');
           
           // 既存のサブスクリプションをキャンセル
           await stripe.subscriptions.update(existingSub.id, {
@@ -401,28 +401,53 @@ export async function createOrUpdateSubscriptionCheckout({
               migration_reason: 'currency_change_usd_to_jpy',
               old_price_id: currentPriceId,
               new_price_id: priceId,
+              migration_date: new Date().toISOString(),
             }
           });
 
           console.log('✅ 既存USDサブスクリプションを期間終了時にキャンセル設定');
 
-          // 新しいJPYサブスクリプションを即座に開始
+          // 既存顧客の情報を取得
+          const existingCustomer = await stripe.customers.retrieve(customerId);
+          
+          if (existingCustomer.deleted) {
+            throw new Error('Customer has been deleted');
+          }
+          
+          // 新しい顧客を作成（通貨混在を回避）
+          const newCustomer = await stripe.customers.create({
+            email: existingCustomer.email || undefined,
+            name: existingCustomer.name || undefined,
+            metadata: {
+              ...existingCustomer.metadata,
+              migration_from: customerId,
+              migration_reason: 'currency_unification_usd_to_jpy',
+              migration_date: new Date().toISOString(),
+            },
+          });
+
+          console.log('🆕 新しいJPY専用顧客を作成:', newCustomer.id);
+
+          // 新しい顧客でJPYサブスクリプションを作成
           const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: [{ price: priceId, quantity: 1 }],
             mode: 'subscription',
             success_url: successUrl,
             cancel_url: cancelUrl,
-            customer: customerId,
+            customer: newCustomer.id, // 新しい顧客IDを使用
             metadata: {
               ...metadata,
               migration_type: 'usd_to_jpy',
               old_subscription_id: existingSub.id,
+              old_customer_id: customerId,
+              new_customer_id: newCustomer.id,
             },
             subscription_data: {
               metadata: {
                 migration_from: existingSub.id,
                 migration_reason: 'currency_unification',
+                old_customer_id: customerId,
               },
               ...(trialDays ? { trial_period_days: trialDays } : {}),
             },
@@ -441,7 +466,6 @@ export async function createOrUpdateSubscriptionCheckout({
         });
 
         // Billing Portalへのリダイレクト用の特別なセッションを作成
-        // 注意: これは実際のCheckout Sessionではないが、互換性のため同じ形式で返す
         return {
           id: `portal_${portalSession.id}`,
           url: portalSession.url,
@@ -450,7 +474,60 @@ export async function createOrUpdateSubscriptionCheckout({
       }
     } catch (error) {
       console.error('既存サブスクリプション確認エラー:', error);
-      // エラーが発生した場合は新規作成を続行
+      
+      // 通貨混在エラーの場合は、新しい顧客を作成して回避
+      if (error instanceof Error && error.message.includes('cannot combine currencies')) {
+        console.log('🚨 通貨混在エラー検出 - 新しい顧客を作成して回避');
+        
+        try {
+          // 既存顧客の情報を取得
+          const existingCustomer = await stripe.customers.retrieve(customerId);
+          
+          if (existingCustomer.deleted) {
+            throw new Error('Customer has been deleted');
+          }
+          
+          // 新しい顧客を作成（通貨混在を回避）
+          const newCustomer = await stripe.customers.create({
+            email: existingCustomer.email || undefined,
+            name: existingCustomer.name || undefined,
+            metadata: {
+              ...existingCustomer.metadata,
+              migration_from: customerId,
+              migration_reason: 'currency_unification_usd_to_jpy',
+              migration_date: new Date().toISOString(),
+            },
+          });
+
+          console.log('🆕 通貨混在回避のため新しい顧客を作成:', newCustomer.id);
+
+          // 新しい顧客でサブスクリプションを作成
+          const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [{ price: priceId, quantity: 1 }],
+            mode: 'subscription',
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+            customer: newCustomer.id,
+            metadata: {
+              ...metadata,
+              migration_type: 'currency_conflict_resolution',
+              old_customer_id: customerId,
+              new_customer_id: newCustomer.id,
+            },
+            ...(trialDays ? { subscription_data: { trial_period_days: trialDays } } : {}),
+          });
+
+          return session;
+        } catch (migrationError) {
+          console.error('顧客移行処理エラー:', migrationError);
+          // 移行に失敗した場合は、顧客IDなしで新規作成
+          customerId = undefined;
+        }
+      } else {
+        // その他のエラーの場合は新規作成を続行
+        console.log('その他のエラーのため新規作成を続行');
+      }
     }
   }
 

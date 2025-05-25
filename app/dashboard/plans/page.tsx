@@ -114,8 +114,10 @@ export default function Page() {
       // 特定のエラーメッセージに対する処理
       if (errorMessage.includes('同じプラン')) {
         setError('既に同じプランに加入しています。');
-      } else if (errorMessage.includes('通貨')) {
-        setError('プラン変更処理中です。しばらくお待ちください。');
+      } else if (errorMessage.includes('通貨') || errorMessage.includes('currency')) {
+        setError('プラン変更処理中です。過去の決済情報を新しいシステムに移行しています。しばらくお待ちください。');
+      } else if (errorMessage.includes('combine currencies')) {
+        setError('決済システムの更新中です。もう一度お試しください。');
       }
     } finally {
       setIsLoading(false);

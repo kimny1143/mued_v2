@@ -131,6 +131,26 @@ export async function POST(req: NextRequest) {
 
     console.log('チェックアウトセッション作成成功:', session.id);
 
+    // 通貨移行で新しい顧客が作成された場合の処理
+    if (session.metadata?.new_customer_id && session.metadata.new_customer_id !== stripeCustomerId) {
+      console.log('🔄 新しい顧客IDをデータベースに更新:', session.metadata.new_customer_id);
+      
+      try {
+        // データベースの顧客IDを更新
+        await supabaseAdmin
+          .from('stripe_customers')
+          .upsert({
+            userId: sessionUserId,
+            customerId: session.metadata.new_customer_id,
+            updatedAt: new Date().toISOString(),
+          });
+        
+        console.log('✅ データベースの顧客ID更新完了');
+      } catch (dbError) {
+        console.warn('データベース更新エラー（処理は続行）:', dbError);
+      }
+    }
+
     // Billing Portalの場合は直接URLを返す
     if (session.id.startsWith('portal_')) {
       console.log('🔄 Billing Portalへリダイレクト:', session.url);
