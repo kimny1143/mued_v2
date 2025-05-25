@@ -228,8 +228,12 @@ export async function GET(req: NextRequest) {
         console.error('直接クエリ例外:', directErr);
       }
 
-      // 実際のクエリ実行
-      const { data: dbUser, error: usersError } = await supabaseAdmin
+      // 実際のクエリ実行 - 複数の外部キー制約がある場合の対応
+      let dbUser = null;
+      let usersError = null;
+      
+      // まず標準的なJOINを試行
+      const { data: standardJoin, error: standardError } = await supabaseAdmin
         .from('users')
         .select(`
           id, 
@@ -245,6 +249,34 @@ export async function GET(req: NextRequest) {
         `)
         .eq('id', userId)
         .single();
+        
+      if (standardError && standardError.code === 'PGRST201') {
+        // 複数の関係が見つかった場合、明示的な外部キーを使用
+        console.log('複数の関係が検出されました。明示的な外部キーを使用します...');
+        
+        const { data: explicitJoin, error: explicitError } = await supabaseAdmin
+          .from('users')
+          .select(`
+            id, 
+            name, 
+            email, 
+            roleId, 
+            image,
+            role:roles!users_roleId_fkey (
+              id,
+              name,
+              description
+            )
+          `)
+          .eq('id', userId)
+          .single();
+          
+        dbUser = explicitJoin;
+        usersError = explicitError;
+      } else {
+        dbUser = standardJoin;
+        usersError = standardError;
+      }
         
       if (usersError) {
         console.error('usersテーブルアクセスエラー:', usersError);

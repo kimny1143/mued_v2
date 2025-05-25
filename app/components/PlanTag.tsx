@@ -1,19 +1,63 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser } from '@/lib/hooks/use-user';
 import { getPlanByPriceId } from '@/app/stripe-config';
-import { Crown, Star, Zap, CreditCard, ExternalLink } from 'lucide-react';
+import { Crown, Star, Zap, CreditCard, ExternalLink, Shield, UserCheck } from 'lucide-react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { extractRoleFromApiResponse } from '@/lib/role-utils';
 
 export function PlanTag() {
   const { subscription, loading } = useUser();
   const [isLoading, setIsLoading] = useState(false);
+  const [userRole, setUserRole] = useState<string>('student');
+
+  // ユーザーロールを取得
+  useEffect(() => {
+    const getUserRole = async () => {
+      try {
+        const { data } = await supabaseBrowser.auth.getSession();
+        if (data.session?.user) {
+          const response = await fetch(`/api/user?userId=${data.session.user.id}`);
+          if (response.ok) {
+            const userData = await response.json();
+            
+            // 新しいロールユーティリティを使用
+            const finalRole = extractRoleFromApiResponse(userData);
+            setUserRole(finalRole);
+          }
+        }
+      } catch (error) {
+        console.error('ロール取得エラー:', error);
+      }
+    };
+
+    getUserRole();
+  }, []);
 
   if (loading) {
     return (
       <div className="bg-gray-100 text-gray-400 px-2 py-1 rounded-full text-xs animate-pulse">
         Loading...
+      </div>
+    );
+  }
+
+  // メンター・管理者の場合は専用の表示
+  if (userRole === 'mentor') {
+    return (
+      <div className="inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/25">
+        <UserCheck className="w-3 h-3" />
+        <span>メンター</span>
+      </div>
+    );
+  }
+
+  if (userRole === 'admin') {
+    return (
+      <div className="inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-red-500 to-red-600 text-white shadow-red-500/25">
+        <Shield className="w-3 h-3" />
+        <span>管理者</span>
       </div>
     );
   }

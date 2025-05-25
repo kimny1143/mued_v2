@@ -31,6 +31,7 @@ import { isDebugMode, isVerboseDebugMode, debugLog, verboseDebugLog } from "@/li
 import { PlanTag } from "@/app/components/PlanTag";
 import { vercelSafeSignOut, safeRedirectToHome } from "@/lib/vercel-auth-fix";
 import { handlePostLoginPlanRedirect } from "@/lib/billing-utils";
+import { extractRoleFromApiResponse, getRoleDisplayName, updateRoleCache } from "@/lib/role-utils";
 
 // TypeScript型定義
 interface NavItem {
@@ -68,6 +69,7 @@ const studentNavItems: NavItem[] = [
 
 // メンター専用ナビゲーション項目
 const mentorNavItems: NavItem[] = [
+  { icon: CalendarIcon, label: "Lesson Slots", path: "/dashboard/lesson-slots" },
   { icon: CalendarIcon, label: "Slots Calendar", path: "/dashboard/slots-calendar" }
 ];
 
@@ -216,6 +218,11 @@ export default function DashboardLayout({
             debugLog("プラン選択後のBillingポータルリダイレクトを実行しました");
           }
           
+          // ロールキャッシュを更新（バックグラウンドで実行）
+          updateRoleCache().catch(err => 
+            console.warn('ロールキャッシュ更新に失敗:', err)
+          );
+          
           // 認証情報からユーザーデータを設定
           const authUser = data.session.user;
           setUser(authUser);
@@ -255,69 +262,12 @@ export default function DashboardLayout({
             debugLog("API応答からのroleName:", userData.roleName);
             debugLog("DBアクセス成功状態:", userData.dbAccessSuccessful);
             
-            // ロール情報の処理を改善
-            let finalRole = 'student'; // デフォルト値
-            
-            // 1. roleName を最優先で使用
-            if (userData.roleName) {
-              const roleName = userData.roleName.toLowerCase().trim();
-              debugLog("APIから取得したロール名:", roleName);
-              
-              if (roleName === 'mentor') {
-                finalRole = 'mentor';
-              } else if (roleName === 'admin' || roleName === 'administrator') {
-                finalRole = 'admin';
-              } else {
-                finalRole = 'student';
-              }
-              debugLog(`roleNameから設定: ${finalRole}`);
-            }
-            // 2. roleNameがない場合はroleIdをチェック
-            else if (userData.roleId) {
-              const roleId = String(userData.roleId).toLowerCase().trim();
-              debugLog("APIから取得したroleId:", roleId);
-              
-              // UUIDかどうかをチェック
-              const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roleId);
-              
-              if (isUuid) {
-                // UUIDの場合は、role.nameが取得できていないので警告
-                debugLog("⚠️ roleIdがUUID形式です。role.nameの取得に失敗している可能性があります");
-                // UUIDの場合はデフォルトのstudentを使用
-                finalRole = 'student';
-              } else {
-                // 文字列の場合は直接判定
-                if (roleId === 'mentor') {
-                  finalRole = 'mentor';
-                } else if (roleId === 'admin') {
-                  finalRole = 'admin';
-                } else {
-                  finalRole = 'student';
-                }
-                debugLog(`roleIdから設定: ${finalRole}`);
-              }
-            }
-            // 3. どちらもない場合はメタデータから取得
-            else {
-              const metaRole = authUser.user_metadata?.role;
-              if (metaRole) {
-                const metaRoleStr = String(metaRole).toLowerCase().trim();
-                debugLog("メタデータからロール検出:", metaRoleStr);
-                
-                if (metaRoleStr === 'mentor') {
-                  finalRole = 'mentor';
-                } else if (metaRoleStr === 'admin') {
-                  finalRole = 'admin';
-                } else {
-                  finalRole = 'student';
-                }
-                debugLog(`メタデータから設定: ${finalRole}`);
-              }
-            }
+            // 新しいロールユーティリティを使用
+            const finalRole = extractRoleFromApiResponse(userData);
+            debugLog(`🎯 ロールユーティリティから取得: ${finalRole}`);
             
             // 最終的にロールを設定
             setUserRole(finalRole);
-            debugLog(`🎯 最終ロール設定: ${finalRole}`);
             
             // ユーザー情報を拡張（DBの情報を追加）
             setUser({
@@ -496,9 +446,7 @@ export default function DashboardLayout({
                           {user?.db_user?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email || 'ユーザー'}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
-                          {userRole === 'admin' ? '管理者' : 
-                           userRole === 'mentor' ? 'メンター' : 
-                           '生徒'}
+                          {getRoleDisplayName(userRole)}
                         </p>
                       </div>
                     </div>
@@ -507,9 +455,11 @@ export default function DashboardLayout({
                     <div className="flex justify-center">
                       <PlanTag />
                     </div>
-                    <p className="text-xxs text-gray-400 text-center mt-1">
-                      クリックでプラン管理
-                    </p>
+                    {userRole === 'student' && (
+                      <p className="text-xxs text-gray-400 text-center mt-1">
+                        クリックでプラン管理
+                      </p>
+                    )}
                     
                     {/* デバッグ情報 - デバッグモードでのみ表示 */}
                     {isDebugMode() && (
