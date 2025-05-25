@@ -71,18 +71,63 @@ export async function POST(req: Request) {
       webhookSecret
     );
 
+    console.log(`🔔 Webhook受信: ${event.type}`, { id: event.id });
+
     // イベントタイプに応じた処理
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
-      
-      // 非同期で処理を開始
-      processCheckoutSession(session).catch(error => {
-        console.error('Error processing checkout session:', error);
-      });
-      
-      // 即座にレスポンスを返す
-      await monitorWebhookPerformance(event.type, startTime);
-      return NextResponse.json({ received: true });
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        console.log('💳 チェックアウト完了:', { sessionId: session.id, mode: session.mode });
+        
+        if (session.mode === 'subscription') {
+          // サブスクリプション決済の場合
+          await handleCompletedSubscriptionCheckout(session);
+        } else {
+          // 単発決済の場合（レッスン予約など）
+          processCheckoutSession(session).catch(error => {
+            console.error('Error processing checkout session:', error);
+          });
+        }
+        break;
+      }
+
+      case 'customer.subscription.created': {
+        const createdSubscription = event.data.object as Stripe.Subscription;
+        console.log('🆕 サブスクリプション作成:', { subscriptionId: createdSubscription.id });
+        await handleSubscriptionChange(createdSubscription);
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const updatedSubscription = event.data.object as Stripe.Subscription;
+        console.log('🔄 サブスクリプション更新:', { subscriptionId: updatedSubscription.id });
+        await handleSubscriptionChange(updatedSubscription);
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const deletedSubscription = event.data.object as Stripe.Subscription;
+        console.log('🗑️ サブスクリプション削除:', { subscriptionId: deletedSubscription.id });
+        await handleSubscriptionCancellation(deletedSubscription);
+        break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice;
+        console.log('💰 請求書支払い成功:', { invoiceId: invoice.id });
+        // 必要に応じて追加処理
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const failedInvoice = event.data.object as Stripe.Invoice;
+        console.log('❌ 請求書支払い失敗:', { invoiceId: failedInvoice.id });
+        // 必要に応じて追加処理
+        break;
+      }
+
+      default:
+        console.log(`ℹ️ 未処理のイベント: ${event.type}`);
     }
 
     await monitorWebhookPerformance(event.type, startTime);
@@ -170,24 +215,35 @@ async function processCheckoutSession(session: Stripe.Checkout.Session) {
 // ユーザーIDを取得する関数
 async function findUserByCustomerId(customerId: string): Promise<string | null> {
   return processWithRetry(async () => {
+    console.log('🔍 顧客IDからユーザー検索:', { customerId });
+    
     const { data, error } = await supabaseAdmin
       .from('stripe_customers')
-      .select('user_id')
-      .eq('customer_id', customerId)
+      .select('userId')
+      .eq('customerId', customerId)
       .maybeSingle();
 
-    if (error || !data) {
-      console.error('ユーザー検索エラー:', error || 'ユーザーが見つかりません');
+    if (error) {
+      console.error('❌ ユーザー検索エラー:', error);
       return null;
     }
 
-    return data.user_id;
+    if (!data) {
+      console.warn('⚠️ 顧客IDに対応するユーザーが見つかりません:', customerId);
+      return null;
+    }
+
+    console.log('✅ ユーザー検索成功:', { customerId, userId: data.userId });
+    return data.userId;
   });
 }
 
 // チェックアウト完了時の処理
 async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Session) {
-  if (!session.subscription || !session.metadata?.userId) {
+  console.log('🔄 サブスクリプションチェックアウト処理開始:', { sessionId: session.id });
+  
+  if (!session.subscription) {
+    console.error('❌ サブスクリプションIDが見つかりません');
     throw new Error('サブスクリプション情報が不完全です');
   }
 
@@ -195,19 +251,53 @@ async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Sess
   const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
   const typedSubscription = subscription as unknown as StripeSubscriptionWithPeriods;
   
-  // ユーザーのサブスクリプション情報を更新
-  await prisma.stripeUserSubscription.create({
-    data: {
-      userId: session.metadata.userId,
-      subscriptionId: typedSubscription.id,
-      customerId: typedSubscription.customer as string,
-      status: typedSubscription.status,
-      currentPeriodStart: BigInt(typedSubscription.current_period_start),
-      currentPeriodEnd: BigInt(typedSubscription.current_period_end),
-      cancelAtPeriodEnd: typedSubscription.cancel_at_period_end,
-      priceId: typedSubscription.items.data[0].price.id
-    }
+  console.log('📋 サブスクリプション詳細:', {
+    subscriptionId: typedSubscription.id,
+    customerId: typedSubscription.customer,
+    status: typedSubscription.status,
+    priceId: typedSubscription.items.data[0]?.price.id
   });
+
+  // customer_idからuserIdを取得
+  const userId = await findUserByCustomerId(typedSubscription.customer as string);
+  
+  if (!userId) {
+    console.error('❌ 顧客IDに対応するユーザーが見つかりません:', typedSubscription.customer);
+    throw new Error('ユーザーが見つかりません');
+  }
+
+  console.log('👤 ユーザー特定完了:', { userId, customerId: typedSubscription.customer });
+
+  // サブスクリプション情報をSupabaseに保存
+  const subscriptionRecord = {
+    userId: userId,
+    customerId: typedSubscription.customer as string,
+    subscriptionId: typedSubscription.id,
+    priceId: typedSubscription.items.data[0]?.price.id,
+    status: typedSubscription.status,
+    currentPeriodStart: typedSubscription.current_period_start,
+    currentPeriodEnd: typedSubscription.current_period_end,
+    cancelAtPeriodEnd: typedSubscription.cancel_at_period_end,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  console.log('💾 Supabaseに保存するデータ:', subscriptionRecord);
+
+  const { data, error } = await supabaseAdmin
+    .from('stripe_user_subscriptions')
+    .upsert(subscriptionRecord, {
+      onConflict: 'userId',
+      ignoreDuplicates: false
+    })
+    .select();
+
+  if (error) {
+    console.error('❌ サブスクリプションデータ保存エラー:', error);
+    throw error;
+  }
+
+  console.log('✅ サブスクリプションデータ保存完了:', data);
 }
 
 // サブスクリプション変更時の処理

@@ -1,4 +1,5 @@
 import { env } from "process";
+import { stripe } from "@/lib/stripe";
 
 // Stripe価格IDの検証とデバッグ
 export function validatePriceIds() {
@@ -41,7 +42,112 @@ export interface StripeProduct {
   popular?: boolean;
 }
 
-// プラン設定（JPY統一、新しいランディングページに合わせて更新）
+// Stripeから価格を取得する関数
+async function getStripePrice(priceId: string): Promise<number> {
+  try {
+    const price = await stripe.prices.retrieve(priceId);
+    return price.unit_amount || 0;
+  } catch (error) {
+    console.error(`価格ID ${priceId} の取得エラー:`, error);
+    return 0;
+  }
+}
+
+// 動的価格取得付きプラン設定
+export async function getStripeProductsWithPrices(): Promise<StripeProduct[]> {
+  const baseProducts = [
+    {
+      id: 'prod_free',
+      priceId: 'free',
+      name: 'FREE',
+      description: '基本機能を無料で体験',
+      price: 0,
+      currency: 'jpy' as const,
+      mode: 'subscription' as const,
+      features: [
+        '基本的な学習コンテンツ',
+        'コミュニティアクセス',
+        '月1回のグループレッスン',
+        '基本的なプログレス追跡'
+      ],
+    },
+    {
+      id: 'prod_starter',
+      priceId: process.env.NEXT_PUBLIC_SUBSCRIPTION_STARTER_ID || '',
+      name: 'Starter',
+      description: '個人学習に最適なベーシックプラン',
+      price: 0, // 動的に取得
+      currency: 'jpy' as const,
+      mode: 'subscription' as const,
+      features: [
+        'すべての学習コンテンツ',
+        '月4回の個人レッスン',
+        'AI学習アシスタント',
+        '詳細なプログレス分析',
+        'メンターとのチャット',
+        '楽譜・音源ダウンロード'
+      ],
+    },
+    {
+      id: 'prod_pro',
+      priceId: process.env.NEXT_PUBLIC_SUBSCRIPTION_PRO_ID || '',
+      name: 'PRO',
+      description: '本格的な音楽学習を目指す方に',
+      price: 0, // 動的に取得
+      currency: 'jpy' as const,
+      mode: 'subscription' as const,
+      recommended: true,
+      popular: true,
+      features: [
+        'Starterプランの全機能',
+        '月8回の個人レッスン',
+        'AI作曲アシスタント',
+        'カスタム学習プラン',
+        '優先メンターマッチング',
+        'レコーディング機能',
+        '楽器レンタル割引'
+      ],
+    },
+    {
+      id: 'prod_premium',
+      priceId: process.env.NEXT_PUBLIC_SUBSCRIPTION_PREMIUM_ID || '',
+      name: 'Premium',
+      description: 'プロフェッショナル向けの最上位プラン',
+      price: 0, // 動的に取得
+      currency: 'jpy' as const,
+      mode: 'subscription' as const,
+      features: [
+        'PROプランの全機能',
+        '無制限の個人レッスン',
+        '専属メンター制度',
+        'マスタークラス参加権',
+        'プロデューサー紹介',
+        'レーベル審査サポート',
+        '楽器無料レンタル',
+        '24時間サポート'
+      ],
+    },
+  ];
+
+  // 各プランの実際の価格を取得
+  const productsWithPrices = await Promise.all(
+    baseProducts.map(async (product) => {
+      if (product.priceId === 'free') {
+        return product;
+      }
+      
+      const actualPrice = await getStripePrice(product.priceId);
+      return {
+        ...product,
+        price: actualPrice,
+      };
+    })
+  );
+
+  return productsWithPrices;
+}
+
+// 静的プラン設定（フォールバック用）
 export const stripeProducts: StripeProduct[] = [
   {
     id: 'prod_free',
@@ -63,7 +169,7 @@ export const stripeProducts: StripeProduct[] = [
     priceId: process.env.NEXT_PUBLIC_SUBSCRIPTION_STARTER_ID || '',
     name: 'Starter',
     description: '個人学習に最適なベーシックプラン',
-    price: 2980,
+    price: 500, // 実際のStripe価格
     currency: 'jpy',
     mode: 'subscription',
     features: [
@@ -80,7 +186,7 @@ export const stripeProducts: StripeProduct[] = [
     priceId: process.env.NEXT_PUBLIC_SUBSCRIPTION_PRO_ID || '',
     name: 'PRO',
     description: '本格的な音楽学習を目指す方に',
-    price: 5980,
+    price: 2480, // 実際のStripe価格
     currency: 'jpy',
     mode: 'subscription',
     recommended: true,
@@ -100,7 +206,7 @@ export const stripeProducts: StripeProduct[] = [
     priceId: process.env.NEXT_PUBLIC_SUBSCRIPTION_PREMIUM_ID || '',
     name: 'Premium',
     description: 'プロフェッショナル向けの最上位プラン',
-    price: 9980,
+    price: 4980, // 実際のStripe価格
     currency: 'jpy',
     mode: 'subscription',
     features: [

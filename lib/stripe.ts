@@ -554,28 +554,70 @@ export async function getOrCreateStripeCustomer(
   name?: string
 ): Promise<string> {
   try {
-    // まず既存の顧客を検索
+    // Supabaseから既存の顧客情報を検索
+    const { supabaseAdmin } = await import('@/lib/supabase-admin');
+    
+    const { data: existingCustomer, error: searchError } = await supabaseAdmin
+      .from('stripe_customers')
+      .select('customerId')
+      .eq('userId', userId)
+      .maybeSingle();
+
+    if (searchError) {
+      console.error('Supabase顧客検索エラー:', searchError);
+    }
+
+    if (existingCustomer) {
+      console.log('既存のStripe顧客をSupabaseから発見:', existingCustomer.customerId);
+      return existingCustomer.customerId;
+    }
+
+    // Stripeから既存の顧客を検索
     const customers = await stripe.customers.list({
       email,
       limit: 1,
     });
 
+    let customerId: string;
+
     if (customers.data.length > 0) {
       console.log('既存のStripe顧客を発見:', customers.data[0].id);
-      return customers.data[0].id;
+      customerId = customers.data[0].id;
+    } else {
+      // 新規顧客を作成
+      const customer = await stripe.customers.create({
+        email,
+        name: name || email,
+        metadata: {
+          userId,
+        },
+      });
+
+      console.log('新規Stripe顧客を作成:', customer.id);
+      customerId = customer.id;
     }
 
-    // 新規顧客を作成
-    const customer = await stripe.customers.create({
-      email,
-      name: name || email,
-      metadata: {
+    // Supabaseに顧客情報を保存
+    const { error: insertError } = await supabaseAdmin
+      .from('stripe_customers')
+      .upsert({
         userId,
-      },
-    });
+        customerId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }, {
+        onConflict: 'userId',
+        ignoreDuplicates: false
+      });
 
-    console.log('新規Stripe顧客を作成:', customer.id);
-    return customer.id;
+    if (insertError) {
+      console.error('Supabase顧客情報保存エラー:', insertError);
+      // エラーが発生してもStripe顧客IDは返す
+    } else {
+      console.log('✅ Supabaseに顧客情報を保存:', { userId, customerId });
+    }
+
+    return customerId;
     
   } catch (error) {
     console.error('Stripe顧客の取得/作成エラー:', error);
