@@ -69,7 +69,6 @@ const studentNavItems: NavItem[] = [
 
 // メンター専用ナビゲーション項目
 const mentorNavItems: NavItem[] = [
-  { icon: CalendarIcon, label: "Lesson Slots", path: "/dashboard/lesson-slots" },
   { icon: CalendarIcon, label: "Slots Calendar", path: "/dashboard/slots-calendar" }
 ];
 
