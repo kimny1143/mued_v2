@@ -55,13 +55,30 @@ export async function POST(req: Request) {
   console.log('🔔 Webhook受信開始');
   
   try {
+    // Protection Bypassトークンをヘッダーまたはクエリパラメータから取得
+    const url = new URL(req.url);
+    const bypassToken = headers().get('x-vercel-protection-bypass') || 
+                       url.searchParams.get('x-vercel-protection-bypass');
+    const expectedToken = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+    
+    // Vercel認証保護が有効な場合のみチェック
+    if (expectedToken && bypassToken !== expectedToken) {
+      console.error('❌ Protection bypass token が無効です');
+      return NextResponse.json(
+        { error: 'Invalid protection bypass token' },
+        { status: 401 }
+      );
+    }
+    
     const body = await req.text();
     const signature = headers().get('stripe-signature');
 
     console.log('📝 リクエスト情報:', {
       hasBody: !!body,
       bodyLength: body.length,
-      hasSignature: !!signature
+      hasSignature: !!signature,
+      hasProtectionBypass: !!bypassToken,
+      bypassMethod: headers().get('x-vercel-protection-bypass') ? 'header' : 'query'
     });
 
     if (!signature) {
