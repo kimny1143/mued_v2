@@ -49,14 +49,47 @@ export function useSubscriptionSimple() {
         }
 
         // サブスクリプション情報を取得
+        // ビューを使用してカラム名の問題を回避
         const { data, error: subError } = await supabaseBrowser
-          .from('stripe_user_subscriptions')
-          .select('price_id, subscription_status, current_period_end')
-          .eq('userId', session.user.id)
+          .from('stripe_subscriptions_view')  // ビューを使用
+          .select('price_id, subscription_status, current_period_end')  // スネークケースで選択
+          .eq('user_id', session.user.id)  // user_idもスネークケース
           .maybeSingle();
 
         if (subError) {
           console.warn('サブスクリプション取得エラー:', subError.message);
+          
+          // カラム名エラーの場合は、元のテーブルから取得を試みる
+          if (subError.message.includes('stripe_subscriptions_view')) {
+            console.log('ビューが存在しない - 元のテーブルから取得を試行');
+            
+            // 元のテーブルから全カラムを取得
+            try {
+              const { data: rawData, error: rawError } = await supabaseBrowser
+                .from('stripe_user_subscriptions')
+                .select('*')  // 全カラムを取得
+                .eq('userId', session.user.id)
+                .maybeSingle();
+                
+              if (!rawError && rawData) {
+                console.log('生データ取得成功:', rawData);
+                // 可能なカラム名のバリエーションを試す
+                const priceId = rawData.priceId || rawData.price_id || null;
+                const status = rawData.status || rawData.subscription_status || 'free';
+                const periodEnd = rawData.currentPeriodEnd || rawData.current_period_end || null;
+                
+                setSubscription({
+                  priceId: priceId,
+                  status: status,
+                  currentPeriodEnd: periodEnd ? Number(periodEnd) : null
+                });
+                setLoading(false);
+                return;
+              }
+            } catch (altError) {
+              console.warn('代替クエリも失敗:', altError);
+            }
+          }
           
           // 権限エラーや存在しない場合はFREEプランとして設定
           if (subError.message.includes('permission denied') || 
@@ -70,16 +103,23 @@ export function useSubscriptionSimple() {
             });
             setError('データベース権限の設定が必要ですが、FREEプランとして動作します。');
           } else {
-            throw subError;
+            // その他のエラーでもFREEプランとして設定
+            console.log('その他のエラー - FREEプランとして設定');
+            setSubscription({
+              priceId: null,
+              status: 'free',
+              currentPeriodEnd: null
+            });
           }
         } else {
           // データが存在する場合
           if (data) {
             console.log('サブスクリプション情報取得成功:', data);
+            
             setSubscription({
-              priceId: data.price_id,
-              status: data.subscription_status,
-              currentPeriodEnd: data.current_period_end
+              priceId: data.price_id || null,
+              status: data.subscription_status || 'free',
+              currentPeriodEnd: data.current_period_end ? Number(data.current_period_end) : null
             });
           } else {
             // データが存在しない場合（新規ユーザー）

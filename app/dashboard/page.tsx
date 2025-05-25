@@ -7,11 +7,13 @@ import { useUser } from "@/lib/hooks/use-user";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { SubscriptionStatus } from "@/app/components/SubscriptionStatus";
+import { Loader2 } from "lucide-react";
+import { runFullDiagnostic } from "@/lib/debug-helpers";
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const { user } = useUser();
+  const { user, loading: userLoading, error } = useUser();
 
   // 認証状態を確認（ページ保護用）
   useEffect(() => {
@@ -27,6 +29,16 @@ export default function DashboardPage() {
 
     getSession();
   }, [router]);
+
+  // 開発環境でのみデバッグ診断を実行
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
+      console.log('🔍 ダッシュボードロード時の診断を実行');
+      runFullDiagnostic().then(result => {
+        console.log('診断結果:', result);
+      });
+    }
+  }, []);
 
   if (loading) {
     return (
