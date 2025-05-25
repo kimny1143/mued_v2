@@ -247,31 +247,54 @@ async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Sess
     throw new Error('サブスクリプション情報が不完全です');
   }
 
+  // セッションのメタデータからuserIdを取得
+  const userId = session.metadata?.userId || session.client_reference_id;
+  
+  if (!userId) {
+    console.error('❌ セッションにユーザーIDが含まれていません');
+    throw new Error('ユーザーIDが見つかりません');
+  }
+
   // サブスクリプション情報を取得
   const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
   const typedSubscription = subscription as unknown as StripeSubscriptionWithPeriods;
   
+  const customerId = typedSubscription.customer as string;
+  
   console.log('📋 サブスクリプション詳細:', {
     subscriptionId: typedSubscription.id,
-    customerId: typedSubscription.customer,
+    customerId: customerId,
+    userId: userId,
     status: typedSubscription.status,
     priceId: typedSubscription.items.data[0]?.price.id
   });
 
-  // customer_idからuserIdを取得
-  const userId = await findUserByCustomerId(typedSubscription.customer as string);
-  
-  if (!userId) {
-    console.error('❌ 顧客IDに対応するユーザーが見つかりません:', typedSubscription.customer);
-    throw new Error('ユーザーが見つかりません');
+  // 1. まず顧客情報をstripe_customersテーブルに保存
+  console.log('👤 顧客情報を保存中...');
+  const { data: customerData, error: customerError } = await supabaseAdmin
+    .from('stripe_customers')
+    .upsert({
+      userId: userId,
+      customerId: customerId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }, {
+      onConflict: 'userId',
+      ignoreDuplicates: false
+    })
+    .select();
+
+  if (customerError) {
+    console.error('❌ 顧客情報保存エラー:', customerError);
+    throw customerError;
   }
 
-  console.log('👤 ユーザー特定完了:', { userId, customerId: typedSubscription.customer });
+  console.log('✅ 顧客情報保存完了:', customerData);
 
-  // サブスクリプション情報をSupabaseに保存
+  // 2. サブスクリプション情報をSupabaseに保存
   const subscriptionRecord = {
     userId: userId,
-    customerId: typedSubscription.customer as string,
+    customerId: customerId,
     subscriptionId: typedSubscription.id,
     priceId: typedSubscription.items.data[0]?.price.id,
     status: typedSubscription.status,
@@ -282,7 +305,7 @@ async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Sess
     updatedAt: new Date().toISOString(),
   };
 
-  console.log('💾 Supabaseに保存するデータ:', subscriptionRecord);
+  console.log('💾 Supabaseに保存するサブスクリプションデータ:', subscriptionRecord);
 
   const { data, error } = await supabaseAdmin
     .from('stripe_user_subscriptions')
