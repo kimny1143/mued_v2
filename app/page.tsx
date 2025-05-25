@@ -4,14 +4,9 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card } from "./components/ui/card";
-import { Container } from "./landing-sections/container";
-import { MainContentWrapper } from "./landing-sections/main-content-wrapper";
-import { SoftwareCompany } from "./landing-sections/software-company";
-import { SoftwareCompanyWrapper } from "./landing-sections/software-company-wrapper";
-import Image from "next/image";
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { User } from '@supabase/supabase-js';
+import LandingPage from './new-landing/mued-ultimate-landing';
 
 // useSearchParamsを使用するコンテンツコンポーネント
 function LandingPageContent(): JSX.Element {
@@ -91,28 +86,8 @@ function LandingPageContent(): JSX.Element {
     );
   }
 
-  // 未ログインの場合はランディングページを表示
-  return (
-    <div
-      className="flex flex-col w-full min-h-[900px] items-start px-0 sm:px-12 py-0 relative bg-white border-none rounded-none"
-    >
-      <SoftwareCompany />
-      <Container />
-      <MainContentWrapper />
-      <SoftwareCompanyWrapper />
-
-      {/* 新デザインプレビューボタン */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button 
-          onClick={() => router.push('/new-landing')}
-          className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 animate-bounce"
-        >
-          <span className="text-2xl">🎵</span>
-          <span className="font-semibold">新デザインプレビュー</span>
-        </button>
-      </div>
-    </div>
-  );
+  // 未ログインの場合は新しいランディングページを表示
+  return <LandingPage />;
 }
 
 // Suspenseでラップした親コンポーネント
