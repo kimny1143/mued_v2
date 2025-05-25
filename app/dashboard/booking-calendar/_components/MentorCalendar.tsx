@@ -113,6 +113,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     debugLog('🔴 useEffect実行開始（全メンター統合 + 予約状況分析）');
     verboseDebugLog('mentors:', mentors);
     debugLog('mentors.length:', mentors?.length);
+
     
     if (!mentors || mentors.length === 0) {
       debugLog('🔴 mentorsが空のため終了');
