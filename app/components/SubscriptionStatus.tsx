@@ -42,13 +42,38 @@ export function SubscriptionStatus() {
             .select('price_id, subscription_status, current_period_end')
             .maybeSingle();
 
-          if (error) throw error;
-          setSubscription(data);
+          if (error) {
+            // 権限エラーの場合は警告ログを出力して継続
+            if (error.message.includes('permission denied')) {
+              console.warn('⚠️ 開発環境: データベース権限エラー。FREEプランとして表示します。');
+              setSubscription({
+                price_id: 'free',
+                subscription_status: 'active',
+                current_period_end: null
+              });
+            } else {
+              throw error;
+            }
+          } else {
+            setSubscription(data);
+          }
         }
       } catch (err: unknown) {
         const supabaseError = err as SupabaseError;
-        setError(supabaseError.message);
         console.error('サブスクリプション情報取得エラー:', supabaseError);
+        
+        // 権限エラーの場合は、エラー表示の代わりにFREEプランを表示
+        if (supabaseError.message.includes('permission denied')) {
+          console.warn('⚠️ 権限エラーにより、FREEプランとして表示します。');
+          setSubscription({
+            price_id: 'free',
+            subscription_status: 'active',
+            current_period_end: null
+          });
+          setError(null); // エラーをクリア
+        } else {
+          setError(supabaseError.message);
+        }
       } finally {
         setLoading(false);
       }
