@@ -99,92 +99,54 @@ export async function POST(req: NextRequest) {
       }, { status: 401 });
     }
 
-    // Stripe顧客IDを取得または作成
-    let stripeCustomerId: string | undefined;
-    
+    // Stripe顧客を取得または作成
+    let stripeCustomerId: string;
     try {
-      // データベースから既存のStripe顧客IDを確認
-      const { data: customerData } = await supabaseAdmin
-        .from('stripe_customers')
-        .select('customerId')
-        .eq('userId', sessionUserId)
-        .maybeSingle();
-      
-      if (customerData?.customerId) {
-        stripeCustomerId = customerData.customerId;
-        console.log('既存のStripe顧客ID取得:', stripeCustomerId);
-      } else {
-        // Stripe顧客を作成
-        stripeCustomerId = await getOrCreateStripeCustomer(
-          sessionUserId,
-          userEmail,
-          userName || undefined
-        );
-        
-        // データベースに保存
-        await supabaseAdmin
-          .from('stripe_customers')
-          .insert({
-            userId: sessionUserId,
-            customerId: stripeCustomerId,
-          });
-          
-        console.log('新規Stripe顧客作成:', stripeCustomerId);
-      }
-    } catch (customerError) {
-      console.warn('Stripe顧客ID取得/作成エラー:', customerError);
-      // エラーが発生してもcustomerIdなしで続行
+      stripeCustomerId = await getOrCreateStripeCustomer(
+        sessionUserId,
+        userEmail,
+        userName || undefined
+      );
+      console.log('Stripe顧客情報:', stripeCustomerId);
+    } catch (error) {
+      console.error('Stripe顧客作成エラー:', error);
+      return NextResponse.json(
+        { error: 'Stripe顧客の作成に失敗しました' },
+        { status: 500 }
+      );
     }
 
-    // Stripe決済セッションを作成（既存サブスクリプションを考慮）
-    try {
-      const checkoutResult = await createOrUpdateSubscriptionCheckout({
-        priceId,
-        successUrl: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancelUrl: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/plans`,
-        customerId: stripeCustomerId,
+    // サブスクリプションチェックアウトセッションを作成
+    const session = await createOrUpdateSubscriptionCheckout({
+      priceId,
+      successUrl: successUrl || `${process.env.NEXT_PUBLIC_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: cancelUrl || `${process.env.NEXT_PUBLIC_URL}/dashboard/plans?canceled=true`,
+      customerId: stripeCustomerId,
+      metadata: {
         userId: sessionUserId,
-        metadata: {
-          userId: sessionUserId,
-          userEmail: userEmail,
-          planName: plan.name,
-          planDescription: plan.description
-        }
-      });
+        planName: plan.name,
+        environment: process.env.NODE_ENV || 'development',
+      },
+    });
 
-      // プラン変更の場合は直接URLを返す
-      if ('url' in checkoutResult && !('id' in checkoutResult)) {
-        console.log('プラン変更完了 - リダイレクト');
-        return NextResponse.json({
-          url: checkoutResult.url,
-          isUpgrade: true
-        });
-      }
+    console.log('チェックアウトセッション作成成功:', session.id);
 
-      const checkoutSession = checkoutResult as Stripe.Checkout.Session;
-      
-      if (!checkoutSession || !checkoutSession.url) {
-        throw new Error('Stripe checkout session URL not generated');
-      }
-
-      console.log('Stripe決済セッション作成成功:', checkoutSession.id);
-
+    // Billing Portalの場合は直接URLを返す
+    if (session.id.startsWith('portal_')) {
+      console.log('🔄 Billing Portalへリダイレクト:', session.url);
       return NextResponse.json({
-        sessionId: checkoutSession.id,
-        url: checkoutSession.url
+        sessionId: session.id,
+        url: session.url,
+        type: 'billing_portal'
       });
-
-    } catch (stripeError) {
-      console.error('Stripe決済セッション作成エラー:', stripeError);
-      
-      // Stripeエラーの詳細を返す
-      const errorMessage = stripeError instanceof Error ? stripeError.message : 'Stripe checkout session creation failed';
-      
-      return NextResponse.json({ 
-        error: errorMessage,
-        details: 'Stripe決済セッションの作成に失敗しました。価格IDが正しく設定されているか確認してください。'
-      }, { status: 500 });
     }
+
+    // 通常のCheckout Sessionの場合
+    return NextResponse.json({
+      sessionId: session.id,
+      url: session.url,
+      type: 'checkout_session'
+    });
 
   } catch (error) {
     console.error('サブスクリプション決済API エラー:', error);

@@ -340,7 +340,6 @@ export async function createOrUpdateSubscriptionCheckout({
   successUrl,
   cancelUrl,
   customerId,
-  userId,
   metadata,
   trialDays,
 }: {
@@ -348,81 +347,127 @@ export async function createOrUpdateSubscriptionCheckout({
   successUrl: string;
   cancelUrl: string;
   customerId?: string;
-  userId?: string;
   metadata?: Record<string, string>;
   trialDays?: number;
-}): Promise<Stripe.Checkout.Session | { url: string }> {
-  try {
-    // 既存の顧客IDがある場合、アクティブなサブスクリプションを確認
-    if (customerId) {
-      console.log('既存顧客のサブスクリプションを確認:', customerId);
-      
+}): Promise<Stripe.Checkout.Session> {
+  console.log('🔍 サブスクリプション処理開始:', { priceId, customerId });
+
+  // 既存のサブスクリプションをチェック
+  if (customerId) {
+    try {
       const subscriptions = await stripe.subscriptions.list({
         customer: customerId,
         status: 'active',
-        limit: 1,
+        limit: 10,
+      });
+
+      console.log('既存サブスクリプション確認:', {
+        count: subscriptions.data.length,
+        subscriptions: subscriptions.data.map(sub => ({
+          id: sub.id,
+          status: sub.status,
+          currency: sub.currency,
+          priceId: sub.items.data[0]?.price.id
+        }))
       });
 
       if (subscriptions.data.length > 0) {
-        const existingSubscription = subscriptions.data[0];
-        console.log('既存のサブスクリプションを発見:', existingSubscription.id);
-        
-        // 同じ価格IDの場合はリダイレクトのみ
-        if (existingSubscription.items.data[0].price.id === priceId) {
-          console.log('同じプランへの変更要求 - リダイレクトのみ実行');
-          return { url: successUrl };
-        }
-        
-        // 異なる価格IDの場合はプラン変更
-        console.log('プラン変更を実行:', priceId);
-        
-        // サブスクリプションアイテムを更新
-        const updatedSubscription = await stripe.subscriptions.update(existingSubscription.id, {
-          items: [{
-            id: existingSubscription.items.data[0].id,
-            price: priceId,
-          }],
-          proration_behavior: 'create_prorations', // 日割り計算を行う
-          metadata: {
-            ...existingSubscription.metadata,
-            ...metadata,
-            updated_at: new Date().toISOString(),
-          },
+        const existingSub = subscriptions.data[0];
+        const currentPriceId = existingSub.items.data[0]?.price.id;
+        const currentCurrency = existingSub.currency;
+
+        console.log('既存サブスクリプション詳細:', {
+          id: existingSub.id,
+          currentPriceId,
+          currentCurrency,
+          newPriceId: priceId
         });
 
-        console.log('サブスクリプション更新成功:', updatedSubscription.id);
-        
-        // プラン変更が完了したので成功URLにリダイレクト
-        return { url: successUrl.replace('{CHECKOUT_SESSION_ID}', 'upgrade_' + updatedSubscription.id) };
-      }
-    }
+        // 同じ価格IDの場合は何もしない
+        if (currentPriceId === priceId) {
+          console.log('⚠️ 同じプランのため処理をスキップ');
+          throw new Error('既に同じプランに加入しています');
+        }
 
-    // 新規サブスクリプションの場合は通常のチェックアウトセッション作成
-    console.log('新規サブスクリプションのチェックアウトセッション作成');
-    return await createSubscriptionCheckoutSession({
-      priceId,
-      successUrl,
-      cancelUrl,
-      customerId,
-      metadata: {
-        ...metadata,
-        userId: userId || 'unknown',
-      },
-      trialDays,
-    });
-    
-  } catch (error) {
-    console.error('サブスクリプション処理エラー:', error);
-    // エラーが発生した場合は通常のチェックアウトセッション作成にフォールバック
-    return await createSubscriptionCheckoutSession({
-      priceId,
-      successUrl,
-      cancelUrl,
-      customerId,
-      metadata,
-      trialDays,
-    });
+        // 通貨が異なる場合（USD→JPY移行）の処理
+        if (currentCurrency !== 'jpy') {
+          console.log('🔄 通貨移行処理: USD→JPY');
+          
+          // 既存のサブスクリプションをキャンセル
+          await stripe.subscriptions.update(existingSub.id, {
+            cancel_at_period_end: true,
+            metadata: {
+              ...existingSub.metadata,
+              migration_reason: 'currency_change_usd_to_jpy',
+              old_price_id: currentPriceId,
+              new_price_id: priceId,
+            }
+          });
+
+          console.log('✅ 既存USDサブスクリプションを期間終了時にキャンセル設定');
+
+          // 新しいJPYサブスクリプションを即座に開始
+          const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [{ price: priceId, quantity: 1 }],
+            mode: 'subscription',
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+            customer: customerId,
+            metadata: {
+              ...metadata,
+              migration_type: 'usd_to_jpy',
+              old_subscription_id: existingSub.id,
+            },
+            subscription_data: {
+              metadata: {
+                migration_from: existingSub.id,
+                migration_reason: 'currency_unification',
+              },
+              ...(trialDays ? { trial_period_days: trialDays } : {}),
+            },
+          });
+
+          return session;
+        }
+
+        // 同じ通貨（JPY）内でのプラン変更
+        console.log('🔄 JPY内でのプラン変更処理');
+        
+        // Stripe Billing Portalを使用してプラン変更
+        const portalSession = await stripe.billingPortal.sessions.create({
+          customer: customerId,
+          return_url: successUrl,
+        });
+
+        // Billing Portalへのリダイレクト用の特別なセッションを作成
+        // 注意: これは実際のCheckout Sessionではないが、互換性のため同じ形式で返す
+        return {
+          id: `portal_${portalSession.id}`,
+          url: portalSession.url,
+          // その他の必要なプロパティはダミー値
+        } as Stripe.Checkout.Session;
+      }
+    } catch (error) {
+      console.error('既存サブスクリプション確認エラー:', error);
+      // エラーが発生した場合は新規作成を続行
+    }
   }
+
+  // 新規サブスクリプション作成
+  console.log('🆕 新規サブスクリプション作成');
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: [{ price: priceId, quantity: 1 }],
+    mode: 'subscription',
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+    ...(customerId ? { customer: customerId } : {}),
+    ...(metadata ? { metadata } : {}),
+    ...(trialDays ? { subscription_data: { trial_period_days: trialDays } } : {}),
+  });
+
+  return session;
 }
 
 // 顧客IDを取得または作成する関数

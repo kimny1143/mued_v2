@@ -17,6 +17,8 @@ export default function Page() {
   const [debugLog, setDebugLog] = useState<string[]>([]);
   const [permissionError, setPermissionError] = useState<boolean>(false);
   const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errorMessage, setError] = useState<string | null>(null);
 
   // ローカルストレージからデバッグログを読み込む
   useEffect(() => {
@@ -57,147 +59,66 @@ export default function Page() {
     });
   };
 
-  const handlePurchase = async (priceId: string, planName: string) => {
-    addDebugLog('購入処理開始', { priceId, planName });
-    
-    // 既に処理中の場合は重複実行を防ぐ
-    if (processingPlan) {
-      addDebugLog('重複実行防止', { 処理中プラン: processingPlan });
+  const handleSubscribe = async (priceId: string) => {
+    if (!user) {
+      console.log('未認証ユーザー - ログインページへリダイレクト');
+      router.push('/auth/login');
       return;
     }
-    
-    setProcessingPlan(planName);
-    
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      // FREEプランの場合は特別処理
-      if (priceId === 'free') {
-        addDebugLog('FREEプラン選択');
-        router.push('/dashboard');
-        return;
-      }
-      
-      // 認証状態の詳細チェック
-      if (!isAuthenticated || !user || !session) {
-        addDebugLog('認証エラー', { 
-          isAuthenticated, 
-          hasUser: !!user, 
-          hasSession: !!session 
-        });
-        
-        // ログインページにリダイレクト
-        const loginUrl = `/auth/signin?callbackUrl=${encodeURIComponent(window.location.href)}`;
-        window.location.href = loginUrl;
-        return;
-      }
-      
-      // 環境情報をログに記録
-      addDebugLog('環境情報', {
-        nodeEnv: process.env.NODE_ENV,
-        vercel: process.env.NEXT_PUBLIC_VERCEL_ENV || '不明',
-        userId: user.id,
-        userEmail: user.email
-      });
+      console.log('サブスクリプション処理開始:', { priceId, userId: user.id });
 
-      // リダイレクトURL設定
-      const baseUrl = window.location.origin;
-      const successUrl = `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${baseUrl}/dashboard/plans`;
-      
-      addDebugLog('新しいサブスクリプションAPI呼び出し開始', {
-          successUrl,
-        cancelUrl
-      });
-
-      // 認証トークンを取得
-      const { data: { session: currentSession } } = await supabaseBrowser.auth.getSession();
-      const authToken = currentSession?.access_token;
-
-      if (!authToken) {
-        addDebugLog('認証トークン取得失敗');
-        throw new Error('認証トークンが取得できませんでした。再ログインしてください。');
-      }
-
-      addDebugLog('認証トークン取得成功', { tokenLength: authToken.length });
-
-      // 新しいサブスクリプションAPIを呼び出し（認証トークン付き）
       const response = await fetch('/api/subscription-checkout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`, // 認証トークンを明示的に送信
-          },
-          body: JSON.stringify({
-            priceId,
-            successUrl,
-            cancelUrl,
-          userId: user.id
-          }),
-        credentials: 'include',
-        });
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          priceId,
+          userId: user.id,
+          successUrl: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/dashboard/plans?canceled=true`,
+        }),
+      });
 
-        const responseInfo = {
-          status: response.status,
-          statusText: response.statusText,
-        ok: response.ok
-        };
-        addDebugLog('APIレスポンス受信', responseInfo);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorData;
-          try {
-            errorData = JSON.parse(errorText);
-          } catch (e) {
-            errorData = { error: errorText };
-          }
-          
-          addDebugLog('APIエラーレスポンス', errorData);
-        
-        // 具体的なエラーメッセージを表示
-        const errorMessage = errorData.error || `HTTP ${response.status}: 決済処理中にエラーが発生しました`;
-        throw new Error(errorMessage);
-      }
-      
       const data = await response.json();
-          addDebugLog('APIレスポンスデータ', data);
-      
-      if (data.redirectUrl) {
-        // FREEプランの場合の処理
-        addDebugLog('FREEプランリダイレクト', { url: data.redirectUrl });
-        router.push(data.redirectUrl);
-      } else if (data.url) {
-        // 有料プランの場合の処理
-        addDebugLog('決済ページへリダイレクト', { 
-          url: data.url,
-          sessionId: data.sessionId 
-        });
-        
-        // Stripeの決済ページにリダイレクト
-          window.location.href = data.url;
-      } else {
-        throw new Error('決済URLが返されませんでした。APIレスポンスを確認してください。');
+      console.log('API レスポンス:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'サブスクリプション処理に失敗しました');
       }
 
-    } catch (error) {
-      const errorDetail = error instanceof Error ? error.message : '未知のエラー';
-      addDebugLog('決済処理エラー', errorDetail);
-      
-      // より詳細なエラーメッセージを表示
-      let userMessage = '申し訳ございません。決済処理の開始に失敗しました。';
-      
-      if (errorDetail.includes('Price ID')) {
-        userMessage += '\n価格設定に問題があります。管理者にお問い合わせください。';
-      } else if (errorDetail.includes('Authentication')) {
-        userMessage += '\n認証に問題があります。再度ログインしてお試しください。';
-      } else if (errorDetail.includes('Network')) {
-        userMessage += '\nネットワークエラーが発生しました。接続を確認してお試しください。';
+      if (data.url) {
+        console.log('リダイレクト先:', data.url);
+        
+        // Billing Portalまたは通常のCheckout Sessionへリダイレクト
+        if (data.type === 'billing_portal') {
+          console.log('🔄 Billing Portalへリダイレクト');
+        } else {
+          console.log('💳 Checkout Sessionへリダイレクト');
+        }
+        
+        window.location.href = data.url;
       } else {
-        userMessage += `\n詳細: ${errorDetail}`;
+        throw new Error('リダイレクトURLが取得できませんでした');
       }
+    } catch (err) {
+      console.error('サブスクリプション処理エラー:', err);
+      const errorMessage = err instanceof Error ? err.message : 'サブスクリプション処理に失敗しました';
+      setError(errorMessage);
       
-      alert(userMessage);
+      // 特定のエラーメッセージに対する処理
+      if (errorMessage.includes('同じプラン')) {
+        setError('既に同じプランに加入しています。');
+      } else if (errorMessage.includes('通貨')) {
+        setError('プラン変更処理中です。しばらくお待ちください。');
+      }
     } finally {
-      setProcessingPlan(null);
+      setIsLoading(false);
     }
   };
 
@@ -225,37 +146,61 @@ export default function Page() {
 
       {/* メインコンテンツ */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-
-      {/* 権限エラー通知 */}
-      {permissionError && (
-          <div className="mb-6 p-4 border border-yellow-400 bg-yellow-50 rounded-lg">
-          <h3 className="font-bold text-yellow-800">Supabase権限エラーが発生しています</h3>
-          <p className="text-sm text-yellow-700">
-            データベース権限の問題が検出されましたが、決済機能はテストモードで利用できます。
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            プランを選択
+          </h1>
+          <p className="text-xl text-gray-600">
+            あなたに最適なプランを見つけて、音楽学習を始めましょう
           </p>
         </div>
-      )}
 
-      {/* デバッグパネル (開発環境のみ表示) */}
-      {process.env.NODE_ENV !== 'production' && debugLog.length > 0 && (
+        {/* エラーメッセージ表示 */}
+        {errorMessage && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-800">{errorMessage}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 権限エラー通知 */}
+        {permissionError && (
+          <div className="mb-6 p-4 border border-yellow-400 bg-yellow-50 rounded-lg">
+            <h3 className="font-bold text-yellow-800">Supabase権限エラーが発生しています</h3>
+            <p className="text-sm text-yellow-700">
+              データベース権限の問題が検出されましたが、決済機能はテストモードで利用できます。
+            </p>
+          </div>
+        )}
+
+        {/* デバッグパネル (開発環境のみ表示) */}
+        {process.env.NODE_ENV !== 'production' && debugLog.length > 0 && (
           <div className="mb-8 p-4 border border-orange-300 bg-orange-50 rounded-lg overflow-auto max-h-60">
-          <h3 className="font-bold mb-2">デバッグログ:</h3>
-          <ul className="text-xs font-mono">
-            {debugLog.map((log, i) => (
-              <li key={i} className="mb-1">{log}</li>
-            ))}
-          </ul>
-          <button 
+            <h3 className="font-bold mb-2">デバッグログ:</h3>
+            <ul className="text-xs font-mono">
+              {debugLog.map((log, i) => (
+                <li key={i} className="mb-1">{log}</li>
+              ))}
+            </ul>
+            <button 
               className="mt-2 text-xs text-red-500 hover:underline"
-            onClick={() => {
-              localStorage.removeItem('stripe_debug_logs');
-              setDebugLog([]);
-            }}
-          >
-            ログをクリア
-          </button>
-        </div>
-      )}
+              onClick={() => {
+                localStorage.removeItem('stripe_debug_logs');
+                setDebugLog([]);
+              }}
+            >
+              ログをクリア
+            </button>
+          </div>
+        )}
 
         {/* プランカード */}
         <div className="grid md:grid-cols-4 gap-8">
@@ -288,8 +233,8 @@ export default function Page() {
                     <span className={`ml-2 ${plan.recommended ? 'text-green-200' : 'text-gray-400'}`}>
                       {plan.price === 0 ? '' : '/月'}
                     </span>
+                  </div>
                 </div>
-              </div>
 
                 {/* 機能リスト */}
                 <div className="mb-8">
@@ -302,13 +247,13 @@ export default function Page() {
                         <span className={plan.recommended ? 'text-green-100' : 'text-gray-700'}>
                           {feature}
                         </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
                 {/* CTA ボタン */}
-              <Button
+                <Button
                   className={`w-full py-3 rounded-full font-semibold transition transform hover:scale-105 ${
                     plan.recommended 
                       ? 'bg-white text-green-600 hover:bg-gray-100 shadow-lg' 
@@ -316,7 +261,7 @@ export default function Page() {
                         ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                         : 'bg-green-500 text-white hover:bg-green-600'
                   } ${processingPlan === plan.name ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  onClick={() => handlePurchase(plan.priceId, plan.name)}
+                  onClick={() => handleSubscribe(plan.priceId)}
                   disabled={processingPlan !== null}
                 >
                   {processingPlan === plan.name ? (
@@ -329,7 +274,7 @@ export default function Page() {
                   ) : (
                     plan.price === 0 ? '無料で始める' : 'プランを選択'
                   )}
-              </Button>
+                </Button>
               </div>
             </Card>
           ))}
