@@ -60,7 +60,7 @@ export default function Page() {
   };
 
   // Billing Portalを開く関数（確認ダイアログ付き）
-  const openBillingPortal = () => {
+  const openBillingPortal = async () => {
     const confirmed = confirm(
       '🔄 プラン管理ページに移動します\n\n' +
       '・プランの変更\n' +
@@ -71,9 +71,37 @@ export default function Page() {
     );
     
     if (confirmed) {
-      // 環境変数からBilling Portal URLを取得
-      const billingPortalUrl = process.env.NEXT_PUBLIC_STRIPE_BILLING_PORTAL_URL || 'https://billing.stripe.com/p/login/test_5kQ8wR56iei04nF5SH7EQ00';
-      window.open(billingPortalUrl, '_blank');
+      try {
+        setIsLoading(true);
+        addDebugLog('Billing Portal Session作成開始');
+
+        // Billing Portal Sessionを作成
+        const response = await fetch('/api/billing-portal', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Billing Portal Sessionの作成に失敗しました');
+        }
+
+        addDebugLog('Billing Portal Session作成成功', { sessionId: data.sessionId });
+
+        // 新しいタブでBilling Portalを開く
+        window.open(data.url, '_blank');
+
+      } catch (error) {
+        console.error('Billing Portal エラー:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Billing Portalの開始に失敗しました';
+        setError(errorMessage);
+        addDebugLog('Billing Portal エラー', { error: errorMessage });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
