@@ -144,3 +144,10 @@ export function getPlansForComparison(): StripeProduct[] {
     formattedPrice: formatJPYPrice(plan.price)
   }));
 }
+
+// 既存のコードとの互換性のため
+export function getSubscriptionPlans(): StripeProduct[] {
+  // 環境変数の設定を確認
+  validatePriceIds();
+  return stripeProducts;
+}
