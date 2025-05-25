@@ -52,12 +52,20 @@ async function monitorWebhookPerformance(
 
 export async function POST(req: Request) {
   const startTime = Date.now();
+  console.log('🔔 Webhook受信開始');
   
   try {
     const body = await req.text();
     const signature = headers().get('stripe-signature');
 
+    console.log('📝 リクエスト情報:', {
+      hasBody: !!body,
+      bodyLength: body.length,
+      hasSignature: !!signature
+    });
+
     if (!signature) {
+      console.error('❌ Stripe署名がありません');
       return NextResponse.json(
         { error: 'Stripe signature is missing' },
         { status: 400 }
@@ -65,75 +73,99 @@ export async function POST(req: Request) {
     }
 
     // Webhookイベントの検証
-    const event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      webhookSecret
-    );
-
-    console.log(`🔔 Webhook受信: ${event.type}`, { id: event.id });
-
-    // イベントタイプに応じた処理
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as Stripe.Checkout.Session;
-        console.log('💳 チェックアウト完了:', { sessionId: session.id, mode: session.mode });
-        
-        if (session.mode === 'subscription') {
-          // サブスクリプション決済の場合
-          await handleCompletedSubscriptionCheckout(session);
-        } else {
-          // 単発決済の場合（レッスン予約など）
-          processCheckoutSession(session).catch(error => {
-            console.error('Error processing checkout session:', error);
-          });
-        }
-        break;
-      }
-
-      case 'customer.subscription.created': {
-        const createdSubscription = event.data.object as Stripe.Subscription;
-        console.log('🆕 サブスクリプション作成:', { subscriptionId: createdSubscription.id });
-        await handleSubscriptionChange(createdSubscription);
-        break;
-      }
-
-      case 'customer.subscription.updated': {
-        const updatedSubscription = event.data.object as Stripe.Subscription;
-        console.log('🔄 サブスクリプション更新:', { subscriptionId: updatedSubscription.id });
-        await handleSubscriptionChange(updatedSubscription);
-        break;
-      }
-
-      case 'customer.subscription.deleted': {
-        const deletedSubscription = event.data.object as Stripe.Subscription;
-        console.log('🗑️ サブスクリプション削除:', { subscriptionId: deletedSubscription.id });
-        await handleSubscriptionCancellation(deletedSubscription);
-        break;
-      }
-
-      case 'invoice.payment_succeeded': {
-        const invoice = event.data.object as Stripe.Invoice;
-        console.log('💰 請求書支払い成功:', { invoiceId: invoice.id });
-        // 必要に応じて追加処理
-        break;
-      }
-
-      case 'invoice.payment_failed': {
-        const failedInvoice = event.data.object as Stripe.Invoice;
-        console.log('❌ 請求書支払い失敗:', { invoiceId: failedInvoice.id });
-        // 必要に応じて追加処理
-        break;
-      }
-
-      default:
-        console.log(`ℹ️ 未処理のイベント: ${event.type}`);
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        body,
+        signature,
+        webhookSecret
+      );
+      console.log(`✅ 署名検証成功: ${event.type} (${event.id})`);
+    } catch (err) {
+      console.error('❌ 署名検証エラー:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      return NextResponse.json(
+        { error: `Webhook signature verification failed: ${errorMessage}` },
+        { status: 400 }
+      );
     }
 
-    await monitorWebhookPerformance(event.type, startTime);
-    return NextResponse.json({ received: true });
+    console.log(`🔔 Webhook処理開始: ${event.type}`, { id: event.id });
+
+    // イベントタイプに応じた処理
+    try {
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object as Stripe.Checkout.Session;
+          console.log('💳 チェックアウト完了:', { sessionId: session.id, mode: session.mode });
+          
+          if (session.mode === 'subscription') {
+            // サブスクリプション決済の場合
+            await handleCompletedSubscriptionCheckout(session);
+          } else {
+            // 単発決済の場合（レッスン予約など）
+            processCheckoutSession(session).catch(error => {
+              console.error('Error processing checkout session:', error);
+            });
+          }
+          break;
+        }
+
+        case 'customer.subscription.created': {
+          const createdSubscription = event.data.object as Stripe.Subscription;
+          console.log('🆕 サブスクリプション作成:', { subscriptionId: createdSubscription.id });
+          await handleSubscriptionChange(createdSubscription);
+          break;
+        }
+
+        case 'customer.subscription.updated': {
+          const updatedSubscription = event.data.object as Stripe.Subscription;
+          console.log('🔄 サブスクリプション更新:', { subscriptionId: updatedSubscription.id });
+          await handleSubscriptionChange(updatedSubscription);
+          break;
+        }
+
+        case 'customer.subscription.deleted': {
+          const deletedSubscription = event.data.object as Stripe.Subscription;
+          console.log('🗑️ サブスクリプション削除:', { subscriptionId: deletedSubscription.id });
+          await handleSubscriptionCancellation(deletedSubscription);
+          break;
+        }
+
+        case 'invoice.payment_succeeded': {
+          const invoice = event.data.object as Stripe.Invoice;
+          console.log('💰 請求書支払い成功:', { invoiceId: invoice.id });
+          // 必要に応じて追加処理
+          break;
+        }
+
+        case 'invoice.payment_failed': {
+          const failedInvoice = event.data.object as Stripe.Invoice;
+          console.log('❌ 請求書支払い失敗:', { invoiceId: failedInvoice.id });
+          // 必要に応じて追加処理
+          break;
+        }
+
+        default:
+          console.log(`ℹ️ 未処理のイベント: ${event.type}`);
+      }
+
+      await monitorWebhookPerformance(event.type, startTime);
+      console.log(`✅ Webhook処理完了: ${event.type}`);
+      return NextResponse.json({ received: true });
+      
+    } catch (eventError) {
+      console.error(`❌ イベント処理エラー (${event.type}):`, eventError);
+      const errorMessage = eventError instanceof Error ? eventError.message : String(eventError);
+      // エラーでも200を返してStripeに再送信を防ぐ
+      return NextResponse.json({ 
+        received: true, 
+        error: errorMessage
+      });
+    }
+    
   } catch (error) {
-    console.error('Webhook error:', error);
+    console.error('❌ Webhook全体エラー:', error);
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }
@@ -212,19 +244,21 @@ async function processCheckoutSession(session: Stripe.Checkout.Session) {
   });
 }
 
-// ユーザーIDを取得する関数
+// ユーザーIDを取得する関数（シンプル化）
 async function findUserByCustomerId(customerId: string): Promise<string | null> {
-  return processWithRetry(async () => {
+  try {
     console.log('🔍 顧客IDからユーザー検索:', { customerId });
     
+    // シンプルなクエリを使用（リレーションなし）
     const { data, error } = await supabaseAdmin
       .from('stripe_customers')
       .select('userId')
       .eq('customerId', customerId)
-      .maybeSingle();
+      .single();
 
     if (error) {
       console.error('❌ ユーザー検索エラー:', error);
+      // エラーがあってもnullを返して処理を続行
       return null;
     }
 
@@ -235,7 +269,10 @@ async function findUserByCustomerId(customerId: string): Promise<string | null> 
 
     console.log('✅ ユーザー検索成功:', { customerId, userId: data.userId });
     return data.userId;
-  });
+  } catch (error) {
+    console.error('❌ findUserByCustomerId エラー:', error);
+    return null;
+  }
 }
 
 // チェックアウト完了時の処理
