@@ -470,19 +470,69 @@ export default function DashboardLayout({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent 
-                  className="w-56 p-0"
+                  className="w-64 p-0"
                   align="end"
                 >
-                  <div className="px-3 py-2 border-b">
-                    <p className="font-medium text-sm truncate">
-                      {user?.db_user?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email || 'ユーザー'}
+                  {/* ユーザー情報セクション */}
+                  <div className="px-4 py-3 border-b">
+                    <div className="flex items-center gap-3 mb-3">
+                      {user?.user_metadata?.avatar_url ? (
+                        <img 
+                          src={user.user_metadata.avatar_url} 
+                          alt="User avatar" 
+                          className="w-12 h-12 rounded-full bg-gray-200"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                          <UserCircleIcon className="h-10 w-10 text-gray-500" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">
+                          {user?.db_user?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email || 'ユーザー'}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {userRole === 'admin' ? '管理者' : 
+                           userRole === 'mentor' ? 'メンター' : 
+                           '生徒'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* プランタグ */}
+                    <div className="flex justify-center">
+                      <PlanTag />
+                    </div>
+                    <p className="text-xxs text-gray-400 text-center mt-1">
+                      クリックでプラン管理
                     </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {userRole === 'admin' ? '管理者' : 
-                       userRole === 'mentor' ? 'メンター' : 
-                       '生徒'}
-                    </p>
+                    
+                    {/* デバッグ情報 - デバッグモードでのみ表示 */}
+                    {isDebugMode() && (
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <p className="text-xxs text-gray-400 truncate">
+                          ID: {user?.id?.substring(0, 8)}...
+                        </p>
+                        <p className="text-xxs text-gray-400 truncate">
+                          <span className="font-bold">Role:</span> {userRole || 'unknown'} (<span className="text-red-500">{user?.db_user?.roleName || user?.db_user?.roleId || 'no-role'}</span>)
+                        </p>
+                        {isVerboseDebugMode() && (
+                          <details className="text-xxs text-gray-400 text-left mt-1">
+                            <summary className="cursor-pointer">開発者情報</summary>
+                            <div className="text-left p-1 bg-gray-50 rounded text-[9px] mt-1">
+                              <p>Auth Type: {user?.app_metadata?.provider || 'unknown'}</p>
+                              <p>Email: {user?.email}</p>
+                              <p>Full ID: {user?.id}</p>
+                              <p>DB Info: {user?.db_user ? 'あり' : 'なし'}</p>
+                              <p className="text-red-500">DB RoleId: {user?.db_user?.roleId}</p>
+                              <p className="text-green-500">DB RoleName: {user?.db_user?.roleName}</p>
+                            </div>
+                          </details>
+                        )}
+                      </div>
+                    )}
                   </div>
+                  
                   <div className="py-1">
                     <Link 
                       href="/dashboard/settings"
@@ -548,66 +598,6 @@ export default function DashboardLayout({
             </Button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            {/* ユーザー情報セクション */}
-            <div className={`border-b px-4 py-4 ${isSidebarCollapsed ? 'text-center' : ''}`}>
-              <div className="flex items-center justify-center mb-2">
-                {user?.user_metadata?.avatar_url ? (
-                  <img 
-                    src={user.user_metadata.avatar_url} 
-                    alt="User avatar" 
-                    className="w-12 h-12 rounded-full bg-gray-200"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                    <UserCircleIcon className="h-10 w-10 text-gray-500" />
-                  </div>
-                )}
-              </div>
-              {!isSidebarCollapsed && (
-                <div className="text-center">
-                  <p className="font-medium text-sm truncate">
-                    {user?.db_user?.name || user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email || 'ユーザー'}
-                  </p>
-                  <p className="text-xs text-gray-500 font-bold truncate">
-                    {userRole === 'admin' ? '管理者' : 
-                     userRole === 'mentor' ? 'メンター' : 
-                     '生徒'}
-                  </p>
-                  {/* プランタグ */}
-                  <div className="mt-2">
-                    <PlanTag />
-                    <p className="text-xxs text-gray-400 mt-1">
-                      クリックでプラン管理
-                    </p>
-                  </div>
-                  {/* デバッグ情報 - デバッグモードでのみ表示 */}
-                  {isDebugMode() && (
-                    <>
-                      <p className="text-xxs text-gray-400 mt-1 truncate">
-                        ID: {user?.id?.substring(0, 8)}...
-                      </p>
-                      <p className="text-xxs text-gray-400 truncate">
-                        <span className="font-bold">Role:</span> {userRole || 'unknown'} (<span className="text-red-500">{user?.db_user?.roleName || user?.db_user?.roleId || 'no-role'}</span>)
-                      </p>
-                      {isVerboseDebugMode() && (
-                        <details className="text-xxs text-gray-400 text-left mt-1">
-                          <summary className="cursor-pointer">開発者情報</summary>
-                          <div className="text-left p-1 bg-gray-50 rounded text-[9px] mt-1">
-                            <p>Auth Type: {user?.app_metadata?.provider || 'unknown'}</p>
-                            <p>Email: {user?.email}</p>
-                            <p>Full ID: {user?.id}</p>
-                            <p>DB Info: {user?.db_user ? 'あり' : 'なし'}</p>
-                            <p className="text-red-500">DB RoleId: {user?.db_user?.roleId}</p>
-                            <p className="text-green-500">DB RoleName: {user?.db_user?.roleName}</p>
-                          </div>
-                        </details>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-            
             <nav className="px-4 py-4">
               <ul className="space-y-2">
                 {/* ロール別メニューを動的に表示 */}
