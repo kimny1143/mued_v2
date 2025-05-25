@@ -576,6 +576,9 @@ export default function DashboardLayout({
                   {/* プランタグ */}
                   <div className="mt-2">
                     <PlanTag />
+                    <p className="text-xxs text-gray-400 mt-1">
+                      クリックでプラン管理
+                    </p>
                   </div>
                   {/* デバッグ情報 - デバッグモードでのみ表示 */}
                   {isDebugMode() && (
