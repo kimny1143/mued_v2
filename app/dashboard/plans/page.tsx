@@ -59,11 +59,22 @@ export default function Page() {
     });
   };
 
-  // Billing Portalを開く関数
+  // Billing Portalを開く関数（確認ダイアログ付き）
   const openBillingPortal = () => {
-    // 環境変数からBilling Portal URLを取得
-    const billingPortalUrl = process.env.NEXT_PUBLIC_STRIPE_BILLING_PORTAL_URL || 'https://billing.stripe.com/p/login/test_5kQ8wR56iei04nF5SH7EQ00';
-    window.open(billingPortalUrl, '_blank');
+    const confirmed = confirm(
+      '🔄 プラン管理ページに移動します\n\n' +
+      '・プランの変更\n' +
+      '・支払い方法の更新\n' +
+      '・請求履歴の確認\n' +
+      '・サブスクリプションのキャンセル\n\n' +
+      'これらの操作が可能です。続行しますか？'
+    );
+    
+    if (confirmed) {
+      // 環境変数からBilling Portal URLを取得
+      const billingPortalUrl = process.env.NEXT_PUBLIC_STRIPE_BILLING_PORTAL_URL || 'https://billing.stripe.com/p/login/test_5kQ8wR56iei04nF5SH7EQ00';
+      window.open(billingPortalUrl, '_blank');
+    }
   };
 
   const handleSubscribe = async (priceId: string) => {
@@ -261,15 +272,17 @@ export default function Page() {
                 <li key={i} className="mb-1">{log}</li>
               ))}
             </ul>
-            <button 
-              className="mt-2 text-xs text-red-500 hover:underline"
-              onClick={() => {
-                localStorage.removeItem('stripe_debug_logs');
-                setDebugLog([]);
-              }}
-            >
-              ログをクリア
-            </button>
+            <div className="mt-3 flex space-x-2">
+              <button 
+                className="text-xs text-red-500 hover:underline"
+                onClick={() => {
+                  localStorage.removeItem('stripe_debug_logs');
+                  setDebugLog([]);
+                }}
+              >
+                ログをクリア
+              </button>
+            </div>
           </div>
         )}
 

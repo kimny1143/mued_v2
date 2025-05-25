@@ -11,8 +11,8 @@ interface StripeSubscriptionWithPeriods extends Stripe.Subscription {
   current_period_end: number;
 }
 
-// エッジ関数として実行
-export const runtime = 'edge';
+// Node.jsランタイムを使用（edgeではなく）
+export const runtime = 'nodejs';
 
 // Stripeクライアントの初期化
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
