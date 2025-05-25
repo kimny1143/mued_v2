@@ -30,6 +30,7 @@ import Link from "next/link";
 import { isDebugMode, isVerboseDebugMode, debugLog, verboseDebugLog } from "@/lib/debug";
 import { PlanTag } from "@/app/components/PlanTag";
 import { vercelSafeSignOut, safeRedirectToHome } from "@/lib/vercel-auth-fix";
+import { handlePostLoginPlanRedirect } from "@/lib/billing-utils";
 
 // TypeScript型定義
 interface NavItem {
@@ -208,6 +209,12 @@ export default function DashboardLayout({
           
           debugLog("認証済みユーザー検出:", data.session.user.email);
           debugLog("ユーザーID:", data.session.user.id);
+          
+          // プラン選択後のログインをチェック
+          const redirected = handlePostLoginPlanRedirect();
+          if (redirected) {
+            debugLog("プラン選択後のBillingポータルリダイレクトを実行しました");
+          }
           
           // 認証情報からユーザーデータを設定
           const authUser = data.session.user;

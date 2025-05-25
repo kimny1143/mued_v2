@@ -6,6 +6,7 @@ import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { getBaseUrl } from '@/lib/utils';
+import { handlePostLoginPlanRedirect } from '@/lib/billing-utils';
 
 // useSearchParamsを使用するコンテンツコンポーネント
 function CallbackContent() {
@@ -48,6 +49,15 @@ function CallbackContent() {
         
         if (session) {
           console.log('認証成功:', session.user.email);
+          
+          // プラン選択後のログイン処理
+          const redirected = handlePostLoginPlanRedirect();
+          if (redirected) {
+            console.log('プラン選択後のBillingポータルリダイレクトを実行');
+            return;
+          }
+          
+          // 通常のログイン（プラン選択なし）
           router.push('/dashboard');
         } else {
           console.error('セッションが見つかりません');

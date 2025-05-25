@@ -262,7 +262,13 @@ const LandingPage = () => {
     // 認証されていない場合はログインページへ
     if (!user) {
       // プラン情報をローカルストレージに保存してログイン後に使用
-      localStorage.setItem('selectedPlan', JSON.stringify(selectedPlan));
+      const planData = {
+        ...selectedPlan,
+        selectedAt: new Date().toISOString(),
+        source: 'landing-page'
+      };
+      localStorage.setItem('selectedPlan', JSON.stringify(planData));
+      console.log('プラン選択情報を保存:', planData);
       router.push('/login');
       return;
     }
