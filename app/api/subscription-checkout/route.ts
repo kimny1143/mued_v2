@@ -151,6 +151,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // プラン更新完了の場合は成功メッセージを返す
+    if (session.id.startsWith('updated_')) {
+      console.log('✅ プラン更新完了:', session.id);
+      return NextResponse.json({
+        sessionId: session.id,
+        url: session.url,
+        type: 'plan_updated',
+        message: 'プランが正常に更新されました',
+        metadata: session.metadata
+      });
+    }
+
     // Billing Portalの場合は直接URLを返す
     if (session.id.startsWith('portal_')) {
       console.log('🔄 Billing Portalへリダイレクト:', session.url);

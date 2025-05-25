@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { Button } from "@ui/button";
 import { Card } from "@ui/card";
-import { CheckIcon, Star } from "lucide-react";
+import { CheckIcon, Star, Settings, ExternalLink } from "lucide-react";
 import { getSubscriptionPlans, StripeProduct, getPlanByPriceId } from "@/app/stripe-config";
 import { useUser } from "@/lib/hooks/use-user";
 import { useEffect, useState } from "react";
@@ -59,6 +59,13 @@ export default function Page() {
     });
   };
 
+  // Billing Portalを開く関数
+  const openBillingPortal = () => {
+    // 環境変数からBilling Portal URLを取得
+    const billingPortalUrl = process.env.NEXT_PUBLIC_STRIPE_BILLING_PORTAL_URL || 'https://billing.stripe.com/p/login/test_5kQ8wR56iei04nF5SH7EQ00';
+    window.open(billingPortalUrl, '_blank');
+  };
+
   const handleSubscribe = async (priceId: string) => {
     if (!user) {
       console.log('未認証ユーザー - ログインページへリダイレクト');
@@ -90,6 +97,19 @@ export default function Page() {
 
       if (!response.ok) {
         throw new Error(data.error || 'サブスクリプション処理に失敗しました');
+      }
+
+      // プラン更新完了の場合
+      if (data.type === 'plan_updated') {
+        console.log('✅ プラン更新完了:', data.message);
+        setError(null);
+        
+        // 成功メッセージを表示
+        alert(`${data.message}\n\nページを更新してプラン変更を確認してください。`);
+        
+        // ページをリロードして最新のサブスクリプション情報を取得
+        window.location.reload();
+        return;
       }
 
       if (data.url) {
@@ -132,6 +152,10 @@ export default function Page() {
     ? getPlanByPriceId(subscription.priceId)?.name || 'Unknown'
     : 'FREE';
 
+  // 既存サブスクリプションがあるかチェック（FREEプランは除外）
+  const hasActiveSubscription = subscription && subscription.status === 'active' && subscription.priceId !== 'free';
+  const isFreePlan = !subscription || subscription.priceId === 'free' || currentPlan === 'FREE';
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ヘッダー */}
@@ -148,12 +172,57 @@ export default function Page() {
 
       {/* メインコンテンツ */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        {/* 有料プランユーザー向けの管理パネル */}
+        {hasActiveSubscription && (
+          <div className="mb-12 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                  現在のプラン: {currentPlan}
+                </h2>
+                <p className="text-gray-600">
+                  プランの変更、支払い方法の更新、キャンセルなどはカスタマーポータルで管理できます
+                </p>
+              </div>
+              <Button
+                onClick={openBillingPortal}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2"
+              >
+                <Settings className="w-5 h-5" />
+                <span>プラン管理</span>
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* FREEプランユーザー向けの案内 */}
+        {isFreePlan && (
+          <div className="mb-12 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                現在のプラン: FREE
+              </h2>
+              <p className="text-gray-600 mb-4">
+                有料プランにアップグレードして、より多くの機能をお楽しみください
+              </p>
+              <div className="text-sm text-green-700">
+                ✨ 有料プランでは個人レッスン、AI機能、専門サポートなどが利用できます
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            プランを選択
+            {hasActiveSubscription ? 'プラン一覧' : 'プランを選択'}
           </h1>
           <p className="text-xl text-gray-600">
-            あなたに最適なプランを見つけて、音楽学習を始めましょう
+            {hasActiveSubscription 
+              ? '他のプランとの比較をご確認ください' 
+              : 'あなたに最適なプランを見つけて、音楽学習を始めましょう'
+            }
           </p>
         </div>
 
@@ -206,80 +275,169 @@ export default function Page() {
 
         {/* プランカード */}
         <div className="grid md:grid-cols-4 gap-8">
-          {subscriptionPlans.map((plan: StripeProduct, index) => (
-            <Card 
-              key={plan.id} 
-              className={`relative rounded-2xl overflow-hidden transform transition-all duration-500 hover:scale-105 ${
-                plan.recommended 
-                  ? 'border-2 border-green-500 scale-105 shadow-2xl shadow-green-500/20' 
-                  : 'border border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              {/* おすすめバッジ */}
-              {plan.recommended && (
-                <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center">
-                  <Star className="w-3 h-3 mr-1" />
-                  MOST POPULAR
-                </div>
-              )}
-
-              <div className={`p-8 ${plan.recommended ? 'bg-gradient-to-br from-green-600 to-green-700 text-white' : 'bg-white'}`}>
-                {/* プラン名と価格 */}
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
-                  <p className={`mb-4 ${plan.recommended ? 'text-green-100' : 'text-gray-600'}`}>
-                    {plan.description}
-                  </p>
-                  <div className="flex items-baseline">
-                    <span className="text-4xl font-bold">¥{plan.price.toLocaleString()}</span>
-                    <span className={`ml-2 ${plan.recommended ? 'text-green-200' : 'text-gray-400'}`}>
-                      {plan.price === 0 ? '' : '/月'}
-                    </span>
+          {subscriptionPlans.map((plan: StripeProduct, index) => {
+            const isCurrentPlan = hasActiveSubscription && subscription?.priceId === plan.priceId;
+            
+            return (
+              <Card 
+                key={plan.id} 
+                className={`relative rounded-2xl overflow-hidden transform transition-all duration-500 hover:scale-105 ${
+                  plan.recommended 
+                    ? 'border-2 border-green-500 scale-105 shadow-2xl shadow-green-500/20' 
+                    : isCurrentPlan
+                      ? 'border-2 border-blue-500 shadow-xl shadow-blue-500/20'
+                      : 'border border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                {/* おすすめバッジ */}
+                {plan.recommended && (
+                  <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center">
+                    <Star className="w-3 h-3 mr-1" />
+                    MOST POPULAR
                   </div>
-                </div>
+                )}
 
-                {/* 機能リスト */}
-                <div className="mb-8">
-                  <ul className="space-y-4">
-                    {plan.features.map((feature, fIndex) => (
-                      <li key={fIndex} className="flex items-start">
-                        <CheckIcon className={`w-5 h-5 mr-3 flex-shrink-0 mt-0.5 ${
-                          plan.recommended ? 'text-green-200' : 'text-green-500'
-                        }`} />
-                        <span className={plan.recommended ? 'text-green-100' : 'text-gray-700'}>
-                          {feature}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {/* 現在のプランバッジ */}
+                {isCurrentPlan && (
+                  <div className="absolute top-4 left-4 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                    現在のプラン
+                  </div>
+                )}
 
-                {/* CTA ボタン */}
-                <Button
-                  className={`w-full py-3 rounded-full font-semibold transition transform hover:scale-105 ${
-                    plan.recommended 
-                      ? 'bg-white text-green-600 hover:bg-gray-100 shadow-lg' 
-                      : plan.price === 0
-                        ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                        : 'bg-green-500 text-white hover:bg-green-600'
-                  } ${processingPlan === plan.name ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  onClick={() => handleSubscribe(plan.priceId)}
-                  disabled={processingPlan !== null}
-                >
-                  {processingPlan === plan.name ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
-                      処理中...
+                <div className={`p-8 ${
+                  plan.recommended 
+                    ? 'bg-gradient-to-br from-green-600 to-green-700 text-white' 
+                    : isCurrentPlan
+                      ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white'
+                      : 'bg-white'
+                }`}>
+                  {/* プラン名と価格 */}
+                  <div className="mb-6">
+                    <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                    <p className={`mb-4 ${
+                      plan.recommended 
+                        ? 'text-green-100' 
+                        : isCurrentPlan 
+                          ? 'text-blue-100'
+                          : 'text-gray-600'
+                    }`}>
+                      {plan.description}
+                    </p>
+                    <div className="flex items-baseline">
+                      <span className="text-4xl font-bold">¥{plan.price.toLocaleString()}</span>
+                      <span className={`ml-2 ${
+                        plan.recommended 
+                          ? 'text-green-200' 
+                          : isCurrentPlan 
+                            ? 'text-blue-200'
+                            : 'text-gray-400'
+                      }`}>
+                        {plan.price === 0 ? '' : '/月'}
+                      </span>
                     </div>
-                  ) : processingPlan ? (
-                    plan.price === 0 ? '無料で始める' : 'プランを選択'
+                  </div>
+
+                  {/* 機能リスト */}
+                  <div className="mb-8">
+                    <ul className="space-y-4">
+                      {plan.features.map((feature, fIndex) => (
+                        <li key={fIndex} className="flex items-start">
+                          <CheckIcon className={`w-5 h-5 mr-3 flex-shrink-0 mt-0.5 ${
+                            plan.recommended 
+                              ? 'text-green-200' 
+                              : isCurrentPlan 
+                                ? 'text-blue-200'
+                                : 'text-green-500'
+                          }`} />
+                          <span className={
+                            plan.recommended 
+                              ? 'text-green-100' 
+                              : isCurrentPlan 
+                                ? 'text-blue-100'
+                                : 'text-gray-700'
+                          }>
+                            {feature}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* CTA ボタン */}
+                  {isCurrentPlan ? (
+                    // 現在のプランの場合
+                    plan.priceId === 'free' ? (
+                      <Button
+                        className="w-full py-3 rounded-full font-semibold bg-gray-100 text-gray-600 cursor-default"
+                        disabled
+                      >
+                        現在のプラン
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={openBillingPortal}
+                        className="w-full py-3 rounded-full font-semibold transition transform hover:scale-105 bg-white text-blue-600 hover:bg-gray-100 shadow-lg flex items-center justify-center space-x-2"
+                      >
+                        <Settings className="w-4 h-4" />
+                        <span>プラン管理</span>
+                      </Button>
+                    )
+                  ) : hasActiveSubscription ? (
+                    // 有料プランユーザーが他のプランを見ている場合
+                    plan.priceId === 'free' ? (
+                      <Button
+                        className="w-full py-3 rounded-full font-semibold bg-gray-100 text-gray-600 cursor-not-allowed"
+                        disabled
+                      >
+                        ダウングレード不可
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={openBillingPortal}
+                        className={`w-full py-3 rounded-full font-semibold transition transform hover:scale-105 ${
+                          plan.recommended 
+                            ? 'bg-white text-green-600 hover:bg-gray-100 shadow-lg' 
+                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                        }`}
+                      >
+                        このプランに変更
+                      </Button>
+                    )
                   ) : (
-                    plan.price === 0 ? '無料で始める' : 'プランを選択'
+                    // 新規ユーザーまたはFREEプランユーザーの場合
+                    <Button
+                      className={`w-full py-3 rounded-full font-semibold transition transform hover:scale-105 ${
+                        plan.recommended 
+                          ? 'bg-white text-green-600 hover:bg-gray-100 shadow-lg' 
+                          : plan.price === 0
+                            ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                            : 'bg-green-500 text-white hover:bg-green-600'
+                      } ${processingPlan === plan.name ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      onClick={() => {
+                        if (plan.priceId === 'free') {
+                          // FREEプランの場合は特別な処理（例：ダッシュボードへリダイレクト）
+                          alert('FREEプランは既にご利用いただけます！ダッシュボードで機能をお試しください。');
+                          router.push('/dashboard');
+                        } else {
+                          handleSubscribe(plan.priceId);
+                        }
+                      }}
+                      disabled={processingPlan !== null}
+                    >
+                      {processingPlan === plan.name ? (
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                          処理中...
+                        </div>
+                      ) : (
+                        plan.price === 0 ? '無料で始める' : 'プランを選択'
+                      )}
+                    </Button>
                   )}
-                </Button>
-              </div>
-            </Card>
-          ))}
+                </div>
+              </Card>
+            );
+          })}
         </div>
 
         {/* フッター情報 */}
