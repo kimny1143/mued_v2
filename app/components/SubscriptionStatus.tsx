@@ -45,12 +45,13 @@ export function SubscriptionStatus() {
           if (error) {
             // 権限エラーの場合は警告ログを出力して継続
             if (error.message.includes('permission denied')) {
-              console.warn('⚠️ 開発環境: データベース権限エラー。FREEプランとして表示します。');
+              console.warn('⚠️ 開発環境: データベース権限エラー。暫定的にFREEプランを表示します。');
               setSubscription({
                 price_id: 'free',
                 subscription_status: 'active',
                 current_period_end: null
               });
+              setError('データベース権限の設定が必要です。管理者に問い合わせるか、Supabase設定を確認してください。');
             } else {
               throw error;
             }
@@ -62,15 +63,16 @@ export function SubscriptionStatus() {
         const supabaseError = err as SupabaseError;
         console.error('サブスクリプション情報取得エラー:', supabaseError);
         
-        // 権限エラーの場合は、エラー表示の代わりにFREEプランを表示
+        // 権限エラーの場合の処理を改善
         if (supabaseError.message.includes('permission denied')) {
-          console.warn('⚠️ 権限エラーにより、FREEプランとして表示します。');
+          console.warn('⚠️ データベース権限エラーが発生しました。');
+          setError('データベース権限の設定が必要です。管理者に問い合わせるか、Supabase設定を確認してください。');
+          // 権限エラーでもUIが表示されるよう、暫定的にFREEプランを設定
           setSubscription({
             price_id: 'free',
             subscription_status: 'active',
             current_period_end: null
           });
-          setError(null); // エラーをクリア
         } else {
           setError(supabaseError.message);
         }
@@ -97,20 +99,78 @@ export function SubscriptionStatus() {
   }
 
   if (error) {
+    const isPermissionError = error.includes('permission denied') || error.includes('データベース権限');
+    
     return (
-      <Card className="p-6 bg-red-50 border-red-200">
-        <div className="flex items-center space-x-2 text-red-600">
+      <Card className="p-6 bg-yellow-50 border-yellow-200">
+        <div className="flex items-center space-x-2 text-yellow-600 mb-4">
           <Settings className="w-5 h-5" />
-          <span className="font-medium">エラー</span>
+          <span className="font-medium">
+            {isPermissionError ? '設定が必要です' : 'エラー'}
+          </span>
         </div>
-        <p className="text-red-700 text-sm mt-2">
-          サブスクリプション情報の読み込みに失敗しました: {error}
-        </p>
-        <Link href="/dashboard/plans">
-          <Button className="mt-3 bg-red-600 hover:bg-red-700 text-white">
-            プランページへ
-          </Button>
-        </Link>
+        
+        {isPermissionError ? (
+          <div className="space-y-4">
+            <p className="text-yellow-700 text-sm">
+              データベースの権限設定が完了していません。以下の手順で解決できます：
+            </p>
+            <div className="bg-yellow-100 p-4 rounded-lg">
+              <h4 className="font-semibold text-yellow-800 mb-2">解決方法:</h4>
+              <ol className="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
+                <li>Supabaseダッシュボードにアクセス</li>
+                <li>SQL Editorを開く</li>
+                <li>RLS修正スクリプトを実行</li>
+                <li>ページを更新</li>
+              </ol>
+            </div>
+            <div className="flex space-x-3">
+              <Link href="/dashboard/plans">
+                <Button className="bg-yellow-600 hover:bg-yellow-700 text-white">
+                  プランを確認
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.reload()}
+                className="border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+              >
+                ページを更新
+              </Button>
+            </div>
+            
+            {/* 暫定的な情報表示 */}
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg border-t">
+              <p className="text-sm text-gray-600 mb-2">
+                <strong>暫定表示:</strong> 現在はFREEプランとして表示されています
+              </p>
+              <div className="flex items-center space-x-2">
+                <CreditCard className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium">FREEプラン（暫定）</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p className="text-red-700 text-sm mb-4">
+              サブスクリプション情報の読み込みに失敗しました: {error}
+            </p>
+            <div className="flex space-x-3">
+              <Link href="/dashboard/plans">
+                <Button className="bg-red-600 hover:bg-red-700 text-white">
+                  プランページへ
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.reload()}
+                className="border-red-300 text-red-700 hover:bg-red-100"
+              >
+                再試行
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
     );
   }

@@ -15,6 +15,7 @@ export default function Page() {
   const { user, loading, error, isAuthenticated, session, subscription } = useUser();
   const [debugLog, setDebugLog] = useState<string[]>([]);
   const [permissionError, setPermissionError] = useState<boolean>(false);
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
 
   // ローカルストレージからデバッグログを読み込む
   useEffect(() => {
@@ -58,37 +59,53 @@ export default function Page() {
   const handlePurchase = async (priceId: string, planName: string) => {
     addDebugLog('購入処理開始', { priceId, planName });
     
+    // 既に処理中の場合は重複実行を防ぐ
+    if (processingPlan) {
+      addDebugLog('重複実行防止', { 処理中プラン: processingPlan });
+      return;
+    }
+    
+    setProcessingPlan(planName);
+    
     try {
       // FREEプランの場合は特別処理
       if (priceId === 'free') {
         addDebugLog('FREEプラン選択');
-        // FREEプランの場合はダッシュボードにリダイレクト
         router.push('/dashboard');
         return;
       }
 
-      // ユーザーIDの検証
-      if (!user?.id && !permissionError) {
-        const errMsg = 'ログインが必要です';
-        addDebugLog('エラー', errMsg);
-        alert(errMsg);
+      // 認証状態の詳細チェック
+      if (!isAuthenticated || !user || !session) {
+        addDebugLog('認証エラー', { 
+          isAuthenticated, 
+          hasUser: !!user, 
+          hasSession: !!session 
+        });
+        
+        // ログインページにリダイレクト
+        const loginUrl = `/auth/signin?callbackUrl=${encodeURIComponent(window.location.href)}`;
+        window.location.href = loginUrl;
         return;
       }
-      
-      const userId = permissionError ? 'test-user-id' : user?.id;
-      
+
       // 環境情報をログに記録
       addDebugLog('環境情報', {
         nodeEnv: process.env.NODE_ENV,
         vercel: process.env.NEXT_PUBLIC_VERCEL_ENV || '不明',
-        permissionError
+        userId: user.id,
+        userEmail: user.email
       });
 
       // リダイレクトURL設定
-      const successUrl = `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${window.location.origin}/dashboard/plans`;
+      const baseUrl = window.location.origin;
+      const successUrl = `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${baseUrl}/dashboard/plans`;
       
-      addDebugLog('新しいサブスクリプションAPI呼び出し開始');
+      addDebugLog('新しいサブスクリプションAPI呼び出し開始', {
+        successUrl,
+        cancelUrl
+      });
       
       // 新しいサブスクリプションAPIを呼び出し
       const response = await fetch('/api/subscription-checkout', {
@@ -100,7 +117,7 @@ export default function Page() {
           priceId,
           successUrl,
           cancelUrl,
-          userId: userId || 'anonymous'
+          userId: user.id
         }),
         credentials: 'include',
       });
@@ -108,6 +125,7 @@ export default function Page() {
       const responseInfo = {
         status: response.status,
         statusText: response.statusText,
+        ok: response.ok
       };
       addDebugLog('APIレスポンス受信', responseInfo);
 
@@ -121,7 +139,10 @@ export default function Page() {
         }
         
         addDebugLog('APIエラーレスポンス', errorData);
-        throw new Error(errorData.error || '決済処理中にエラーが発生しました');
+        
+        // 具体的なエラーメッセージを表示
+        const errorMessage = errorData.error || `HTTP ${response.status}: 決済処理中にエラーが発生しました`;
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
@@ -133,16 +154,37 @@ export default function Page() {
         router.push(data.redirectUrl);
       } else if (data.url) {
         // 有料プランの場合の処理
-        addDebugLog('決済ページへリダイレクト', { url: data.url });
+        addDebugLog('決済ページへリダイレクト', { 
+          url: data.url,
+          sessionId: data.sessionId 
+        });
+        
+        // Stripeの決済ページにリダイレクト
         window.location.href = data.url;
       } else {
-        throw new Error('決済URLが返されませんでした');
+        throw new Error('決済URLが返されませんでした。APIレスポンスを確認してください。');
       }
 
     } catch (error) {
       const errorDetail = error instanceof Error ? error.message : '未知のエラー';
       addDebugLog('決済処理エラー', errorDetail);
-      alert(`決済処理の開始に失敗しました。エラー: ${errorDetail}`);
+      
+      // より詳細なエラーメッセージを表示
+      let userMessage = '申し訳ございません。決済処理の開始に失敗しました。';
+      
+      if (errorDetail.includes('Price ID')) {
+        userMessage += '\n価格設定に問題があります。管理者にお問い合わせください。';
+      } else if (errorDetail.includes('Authentication')) {
+        userMessage += '\n認証に問題があります。再度ログインしてお試しください。';
+      } else if (errorDetail.includes('Network')) {
+        userMessage += '\nネットワークエラーが発生しました。接続を確認してお試しください。';
+      } else {
+        userMessage += `\n詳細: ${errorDetail}`;
+      }
+      
+      alert(userMessage);
+    } finally {
+      setProcessingPlan(null);
     }
   };
 
@@ -255,10 +297,20 @@ export default function Page() {
                       : plan.price === 0
                         ? 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                         : 'bg-green-500 text-white hover:bg-green-600'
-                  }`}
+                  } ${processingPlan === plan.name ? 'opacity-50 cursor-not-allowed' : ''}`}
                   onClick={() => handlePurchase(plan.priceId, plan.name)}
+                  disabled={processingPlan !== null}
                 >
-                  {plan.price === 0 ? '無料で始める' : 'プランを選択'}
+                  {processingPlan === plan.name ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                      処理中...
+                    </div>
+                  ) : processingPlan ? (
+                    plan.price === 0 ? '無料で始める' : 'プランを選択'
+                  ) : (
+                    plan.price === 0 ? '無料で始める' : 'プランを選択'
+                  )}
                 </Button>
               </div>
             </Card>
