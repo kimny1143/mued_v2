@@ -83,24 +83,78 @@ export async function signInWithGoogle() {
 
 // ログアウト処理
 export async function signOut() {
-  const supabase = createSupabaseServerClient();
+  try {
+    const supabase = createSupabaseServerClient();
 
-  const { error } = await supabase.auth.signOut();
-  
-  if (error) {
-    console.error('ログアウトエラー:', error);
+    // サーバー側のセッションをクリア
+    const { error } = await supabase.auth.signOut({
+      scope: 'global' // グローバルセッションをクリア
+    });
+    
+    if (error) {
+      console.error('サーバーログアウトエラー:', error);
+      // エラーでも成功として扱う（クライアント側でも処理するため）
+    }
+
+    // Cookieを明示的にクリア
+    const cookieStore = cookies();
+    try {
+      // Supabase関連のCookieをすべてクリア
+      const cookieNames = [
+        'sb-access-token',
+        'sb-refresh-token', 
+        'supabase-auth-token',
+        'supabase.auth.token',
+        // Vercel環境での追加Cookie
+        'sb-zyesgfkhaqpbcbkhsutw-auth-token',
+        'sb-zyesgfkhaqpbcbkhsutw-auth-token.0',
+        'sb-zyesgfkhaqpbcbkhsutw-auth-token.1'
+      ];
+      
+      cookieNames.forEach(name => {
+        // 複数のパスとドメインで削除を試行
+        const cookieOptions = [
+          { path: '/', domain: undefined },
+          { path: '/', domain: '.vercel.app' },
+          { path: '/', domain: '.mued.jp' },
+          { path: '/', domain: '.dev.mued.jp' }
+        ];
+        
+        cookieOptions.forEach(options => {
+          try {
+            cookieStore.set({
+              name,
+              value: '',
+              expires: new Date(0),
+              path: options.path,
+              domain: options.domain,
+              httpOnly: false,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax'
+            });
+          } catch (individualCookieError) {
+            // 個別のCookie削除エラーは無視
+          }
+        });
+      });
+      
+      console.log('サーバー側Cookie削除完了');
+    } catch (cookieError) {
+      console.error('Cookie削除エラー:', cookieError);
+    }
+
+    return { 
+      success: true, 
+      redirectUrl: '/' 
+    };
+  } catch (err) {
+    console.error('サインアウト処理エラー:', err);
     return { 
       success: false, 
-      error: error.message, 
-      redirectUrl: null 
+      error: 'サインアウト処理中にエラーが発生しました', 
+      redirectUrl: '/' 
     };
   }
-
-  // リダイレクト先を返す（クライアント側でリダイレクト実行）
-  return { 
-    success: true, 
-    redirectUrl: '/' 
-  };
 }
 
 // cookie ユーティリティ
