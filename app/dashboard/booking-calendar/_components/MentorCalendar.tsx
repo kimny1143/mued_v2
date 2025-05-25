@@ -440,6 +440,16 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                           const daySlots = allTimeSlots.filter(slot => 
                             isSameDay(new Date(slot.startTime), date) && slot.isAvailable
                           );
+                          
+                          // デバッグ: 特定の日付でメンター情報を確認
+                          if (DEBUG && format(date, 'd') === '15' && isSameMonth(date, currentDate)) {
+                            debugLog(`🔍 ${format(date, 'yyyy/MM/dd')}のスロット詳細:`, daySlots.map(slot => ({
+                              id: slot.id,
+                              mentorId: (slot as ExtendedTimeSlot).mentorId,
+                              mentorName: (slot as ExtendedTimeSlot).mentorName,
+                              time: `${format(new Date(slot.startTime), 'HH:mm')}-${format(new Date(slot.endTime), 'HH:mm')}`
+                            })));
+                          }
                           const isCurrentMonth = isSameMonth(date, currentDate);
                           const isAvailable = availableDays.some(d => isSameDay(d, date));
                           const todayMark = isToday(date);
@@ -493,11 +503,9 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                 <div className="flex flex-col gap-0.5 w-full mt-1 px-1">
                                   {/* メンター名タグ（最大2つ） */}
                                   {Array.from(new Set(daySlots.slice(0, 2).map(slot => {
-                                    const _extSlot = slot as ExtendedTimeSlot;
-                                    const slotMentor = mentors.find(m => 
-                                      m.availableSlots?.some(s => s.id === slot.id)
-                                    );
-                                    return slotMentor?.name;
+                                    const extSlot = slot as ExtendedTimeSlot;
+                                    // ExtendedTimeSlotのmentorNameを直接使用
+                                    return extSlot.mentorName;
                                   }))).filter(Boolean).map((mentorName, nameIndex) => (
                                     <div key={nameIndex} className="text-[7px] leading-tight text-center">
                                       <div className="font-medium truncate bg-white/50 rounded px-1 py-0.5">
@@ -650,6 +658,18 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                   const availableMentors = mentors.filter(mentor => 
                     slotsByMentor[mentor.id] && slotsByMentor[mentor.id].length > 0
                   );
+                  
+                  // デバッグ情報を追加
+                  debugLog('🔍 日表示デバッグ情報:');
+                  debugLog('- 選択された日:', format(selectedDateForDay, 'yyyy/MM/dd'));
+                  debugLog('- その日の全スロット数:', daySlots.length);
+                  debugLog('- メンター別スロット:', Object.keys(slotsByMentor).map(mentorId => ({
+                    mentorId,
+                    mentorName: mentors.find(m => m.id === mentorId)?.name,
+                    slotCount: slotsByMentor[mentorId].length
+                  })));
+                  debugLog('- 利用可能メンター数:', availableMentors.length);
+                  debugLog('- 利用可能メンター:', availableMentors.map(m => ({ id: m.id, name: m.name })));
 
                   // 時間軸の生成（8:00-22:00、1時間刻み）
                   const timeSlots = [];
