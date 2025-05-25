@@ -6,7 +6,6 @@ import { supabaseBrowser } from "@/lib/supabase-browser";
 import { useUser } from "@/lib/hooks/use-user";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
-import { SubscriptionStatus } from "@/app/components/SubscriptionStatus";
 import { Loader2 } from "lucide-react";
 import { runFullDiagnostic } from "@/lib/debug-helpers";
 
@@ -66,12 +65,6 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-500">No upcoming lessons</p>
           </Card>
         </div>
-      </section>
-
-      {/* Subscription Status */}
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Your Subscription</h2>
-        <SubscriptionStatus />
       </section>
 
       {/* Recent Activity */}

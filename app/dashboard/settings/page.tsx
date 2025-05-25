@@ -9,6 +9,7 @@ import { Separator } from "@ui/separator";
 import { UserCircleIcon } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { User } from "@supabase/supabase-js";
+import { SubscriptionStatus } from "@/app/components/SubscriptionStatus";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -41,6 +42,12 @@ export default function SettingsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      
+      {/* Subscription Status */}
+      <Card className="mb-6 p-6">
+        <h2 className="text-xl font-semibold mb-4">Subscription</h2>
+        <SubscriptionStatus />
+      </Card>
       
       {/* Profile Settings */}
       <Card className="mb-6 p-6">

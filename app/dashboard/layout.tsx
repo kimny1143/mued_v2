@@ -28,6 +28,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/pop
 //import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { isDebugMode, isVerboseDebugMode, debugLog, verboseDebugLog } from "@/lib/debug";
+import { PlanTag } from "@/app/components/PlanTag";
 
 // TypeScript型定義
 interface NavItem {
@@ -473,13 +474,7 @@ export default function DashboardLayout({
                       <SettingsIcon className="h-4 w-4 mr-2" />
                       設定
                     </Link>
-                    <Link 
-                      href="/dashboard/plans"
-                      className="flex items-center px-3 py-2 text-sm hover:bg-gray-100 transition-colors"
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      プラン管理
-                    </Link>
+
                     <button 
                       onClick={handleSignOut}
                       className="w-full flex items-center px-3 py-2 text-sm hover:bg-gray-100 transition-colors text-left"
@@ -561,6 +556,10 @@ export default function DashboardLayout({
                      userRole === 'mentor' ? 'メンター' : 
                      '生徒'}
                   </p>
+                  {/* プランタグ */}
+                  <div className="mt-2">
+                    <PlanTag />
+                  </div>
                   {/* デバッグ情報 - デバッグモードでのみ表示 */}
                   {isDebugMode() && (
                     <>

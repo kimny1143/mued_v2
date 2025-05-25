@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronRight, Music, Calendar, Users, Brain, BookOpen, CreditCard, Star, Check, Menu, X, Play, Sparkles, Headphones, Radio, Mic2, Piano, Pause, SkipForward, Volume2, Heart } from 'lucide-react';
+import { getSubscriptionPlans } from '@/app/stripe-config';
+import { supabaseBrowser } from '@/lib/supabase-browser';
+import { User } from '@supabase/supabase-js';
 
 const LandingPage = () => {
   const router = useRouter();
@@ -10,6 +13,9 @@ const LandingPage = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [selectedInstrument, setSelectedInstrument] = useState<number | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isLoading, setIsLoading] = useState(false);
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const audioRef = useRef(null);
 
   useEffect(() => {
@@ -28,6 +34,26 @@ const LandingPage = () => {
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
+  // ユーザー認証状態を確認
+  useEffect(() => {
+    const getUser = async () => {
+      const { data } = await supabaseBrowser.auth.getSession();
+      setUser(data.session?.user || null);
+    };
+    
+    getUser();
+    
+    const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -215,6 +241,77 @@ const LandingPage = () => {
     }
   ];
 
+
+  // プラン選択と決済処理
+  const handlePlanSelect = async (planName: string) => {
+    // 実際のStripe設定からプランを取得
+    const subscriptionPlans = getSubscriptionPlans();
+    const selectedPlan = subscriptionPlans.find(plan => plan.name === planName);
+    
+    if (!selectedPlan) {
+      console.error('プランが見つかりません:', planName);
+      return;
+    }
+
+    // FREEプランの場合は直接ログインページへ
+    if (selectedPlan.priceId === 'free') {
+      router.push('/login');
+      return;
+    }
+
+    // 認証されていない場合はログインページへ
+    if (!user) {
+      // プラン情報をローカルストレージに保存してログイン後に使用
+      localStorage.setItem('selectedPlan', JSON.stringify(selectedPlan));
+      router.push('/login');
+      return;
+    }
+
+    // 認証済みユーザーの場合は直接決済処理
+    setIsLoading(true);
+    setProcessingPlan(planName);
+
+    try {
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      if (!token) {
+        throw new Error('認証トークンが見つかりません。再度ログインしてください。');
+      }
+
+      const response = await fetch('/api/subscription-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          priceId: selectedPlan.priceId,
+          userId: user.id,
+          successUrl: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/new-landing?canceled=true`,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'サブスクリプション処理に失敗しました');
+      }
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('リダイレクトURLが取得できませんでした');
+      }
+    } catch (err) {
+      console.error('サブスクリプション処理エラー:', err);
+      alert(err instanceof Error ? err.message : 'サブスクリプション処理に失敗しました');
+    } finally {
+      setIsLoading(false);
+      setProcessingPlan(null);
+    }
+  };
 
   // ナビゲーション関数
   const handleLogin = () => {
@@ -515,12 +612,23 @@ const LandingPage = () => {
                       </li>
                     ))}
                   </ul>
-                  <button className={`w-full py-3 rounded-full font-semibold transition transform hover:scale-105 ${
-                    plan.recommended 
-                      ? 'bg-green-500 text-black hover:bg-green-400 shadow-lg' 
-                      : 'bg-white/10 text-white hover:bg-white/20'
-                  }`}>
-                    {plan.name === 'Free' ? '無料で始める' : 'プランを選択'}
+                  <button 
+                    className={`w-full py-3 rounded-full font-semibold transition transform hover:scale-105 ${
+                      plan.recommended 
+                        ? 'bg-green-500 text-black hover:bg-green-400 shadow-lg' 
+                        : 'bg-white/10 text-white hover:bg-white/20'
+                    } ${processingPlan === plan.name ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => handlePlanSelect(plan.name)}
+                    disabled={processingPlan !== null}
+                  >
+                    {processingPlan === plan.name ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                        処理中...
+                      </div>
+                    ) : (
+                      plan.name === 'FREE' ? '無料で始める' : 'プランを選択'
+                    )}
                   </button>
                 </div>
               </div>
