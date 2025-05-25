@@ -54,12 +54,31 @@ export async function POST(req: Request) {
   const startTime = Date.now();
   console.log('🔔 Webhook受信開始');
   
+  // リクエストヘッダーの詳細情報をログ出力
+  const headersList = headers();
+  const headersObject: Record<string, string> = {};
+  headersList.forEach((value, key) => {
+    if (!key.toLowerCase().includes('auth') && !key.toLowerCase().includes('secret')) {
+      headersObject[key] = value;
+    }
+  });
+  
+  console.log('📋 リクエストヘッダー:', headersObject);
+  console.log('🌐 リクエストURL:', req.url);
+  
   try {
     // Protection Bypassトークンをヘッダーまたはクエリパラメータから取得
     const url = new URL(req.url);
-    const bypassToken = headers().get('x-vercel-protection-bypass') || 
+    const bypassToken = headersList.get('x-vercel-protection-bypass') || 
                        url.searchParams.get('x-vercel-protection-bypass');
     const expectedToken = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+    
+    console.log('🔐 Protection Bypass 情報:', {
+      hasToken: !!bypassToken,
+      hasExpectedToken: !!expectedToken,
+      tokenMatches: bypassToken === expectedToken,
+      source: headersList.get('x-vercel-protection-bypass') ? 'header' : url.searchParams.get('x-vercel-protection-bypass') ? 'query' : 'none'
+    });
     
     // Vercel認証保護が有効な場合のみチェック
     if (expectedToken && bypassToken !== expectedToken) {
@@ -71,14 +90,14 @@ export async function POST(req: Request) {
     }
     
     const body = await req.text();
-    const signature = headers().get('stripe-signature');
+    const signature = headersList.get('stripe-signature');
 
     console.log('📝 リクエスト情報:', {
       hasBody: !!body,
       bodyLength: body.length,
       hasSignature: !!signature,
       hasProtectionBypass: !!bypassToken,
-      bypassMethod: headers().get('x-vercel-protection-bypass') ? 'header' : 'query'
+      bypassMethod: headersList.get('x-vercel-protection-bypass') ? 'header' : 'query'
     });
 
     if (!signature) {
@@ -325,25 +344,55 @@ async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Sess
 
   // 1. まず顧客情報をstripe_customersテーブルに保存
   console.log('👤 顧客情報を保存中...');
-  const { data: customerData, error: customerError } = await supabaseAdmin
+  
+  // 既存の顧客レコードを確認
+  const { data: existingCustomer, error: customerSelectError } = await supabaseAdmin
     .from('stripe_customers')
-    .upsert({
-      userId: userId,
-      customerId: customerId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }, {
-      onConflict: 'userId',
-      ignoreDuplicates: false
-    })
-    .select();
+    .select('id')
+    .eq('userId', userId)
+    .single();
 
-  if (customerError) {
-    console.error('❌ 顧客情報保存エラー:', customerError);
-    throw customerError;
+  if (customerSelectError && customerSelectError.code !== 'PGRST116') {
+    console.error('❌ 顧客情報検索エラー:', customerSelectError);
+    throw customerSelectError;
   }
 
-  console.log('✅ 顧客情報保存完了:', customerData);
+  if (existingCustomer) {
+    // 既存レコードがある場合は更新
+    const { data: customerUpdateData, error: customerUpdateError } = await supabaseAdmin
+      .from('stripe_customers')
+      .update({
+        customerId: customerId,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('userId', userId)
+      .select();
+
+    if (customerUpdateError) {
+      console.error('❌ 顧客情報更新エラー:', customerUpdateError);
+      throw customerUpdateError;
+    }
+
+    console.log('✅ 顧客情報更新完了:', customerUpdateData);
+  } else {
+    // 新規レコードの場合は挿入
+    const { data: customerInsertData, error: customerInsertError } = await supabaseAdmin
+      .from('stripe_customers')
+      .insert({
+        userId: userId,
+        customerId: customerId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .select();
+
+    if (customerInsertError) {
+      console.error('❌ 顧客情報挿入エラー:', customerInsertError);
+      throw customerInsertError;
+    }
+
+    console.log('✅ 顧客情報挿入完了:', customerInsertData);
+  }
 
   // 2. サブスクリプション情報をSupabaseに保存
   const subscriptionRecord = {
@@ -361,20 +410,55 @@ async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Sess
 
   console.log('💾 Supabaseに保存するサブスクリプションデータ:', subscriptionRecord);
 
-  const { data, error } = await supabaseAdmin
+  // 既存のサブスクリプションレコードを確認
+  const { data: existingSubscription, error: subscriptionSelectError } = await supabaseAdmin
     .from('stripe_user_subscriptions')
-    .upsert(subscriptionRecord, {
-      onConflict: 'userId',
-      ignoreDuplicates: false
-    })
-    .select();
+    .select('id')
+    .eq('subscriptionId', typedSubscription.id)
+    .single();
 
-  if (error) {
-    console.error('❌ サブスクリプションデータ保存エラー:', error);
-    throw error;
+  if (subscriptionSelectError && subscriptionSelectError.code !== 'PGRST116') {
+    console.error('❌ サブスクリプション検索エラー:', subscriptionSelectError);
+    throw subscriptionSelectError;
   }
 
-  console.log('✅ サブスクリプションデータ保存完了:', data);
+  if (existingSubscription) {
+    // 既存レコードがある場合は更新
+    const { data: subscriptionUpdateData, error: subscriptionUpdateError } = await supabaseAdmin
+      .from('stripe_user_subscriptions')
+      .update({
+        userId: userId,
+        customerId: customerId,
+        priceId: typedSubscription.items.data[0]?.price.id,
+        status: typedSubscription.status,
+        currentPeriodStart: typedSubscription.current_period_start,
+        currentPeriodEnd: typedSubscription.current_period_end,
+        cancelAtPeriodEnd: typedSubscription.cancel_at_period_end,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('subscriptionId', typedSubscription.id)
+      .select();
+
+    if (subscriptionUpdateError) {
+      console.error('❌ サブスクリプションデータ更新エラー:', subscriptionUpdateError);
+      throw subscriptionUpdateError;
+    }
+
+    console.log('✅ サブスクリプションデータ更新完了:', subscriptionUpdateData);
+  } else {
+    // 新規レコードの場合は挿入
+    const { data: subscriptionInsertData, error: subscriptionInsertError } = await supabaseAdmin
+      .from('stripe_user_subscriptions')
+      .insert(subscriptionRecord)
+      .select();
+
+    if (subscriptionInsertError) {
+      console.error('❌ サブスクリプションデータ挿入エラー:', subscriptionInsertError);
+      throw subscriptionInsertError;
+    }
+
+    console.log('✅ サブスクリプションデータ挿入完了:', subscriptionInsertData);
+  }
 }
 
 // サブスクリプション変更時の処理
@@ -409,21 +493,65 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
   
   console.log('更新するサブスクリプションデータ:', subscriptionRecord);
 
-  // supabaseAdminを使用して権限問題を解決
-  const { data, error } = await supabaseAdmin
-    .from('stripe_user_subscriptions')
-    .upsert(subscriptionRecord, {
-      onConflict: 'userId',
-      ignoreDuplicates: false
-    })
-    .select();
+  try {
+    // まず既存のレコードを確認
+    const { data: existingData, error: selectError } = await supabaseAdmin
+      .from('stripe_user_subscriptions')
+      .select('id')
+      .eq('subscriptionId', typedSubscription.id)
+      .single();
 
-  if (error) {
-    console.error('サブスクリプションデータ更新エラー:', error);
+    if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = レコードが見つからない
+      console.error('既存レコード検索エラー:', selectError);
+      throw selectError;
+    }
+
+    if (existingData) {
+      // 既存レコードがある場合は更新
+      console.log('既存のサブスクリプションレコードを更新:', existingData.id);
+      const { data: updateData, error: updateError } = await supabaseAdmin
+        .from('stripe_user_subscriptions')
+        .update({
+          userId: userId,
+          customerId: typedSubscription.customer as string,
+          priceId: typedSubscription.items.data[0]?.price.id,
+          status: typedSubscription.status,
+          currentPeriodStart: typedSubscription.current_period_start || Math.floor(Date.now() / 1000),
+          currentPeriodEnd: typedSubscription.current_period_end || (Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60),
+          cancelAtPeriodEnd: typedSubscription.cancel_at_period_end,
+          updatedAt: new Date().toISOString(),
+        })
+        .eq('subscriptionId', typedSubscription.id)
+        .select();
+
+      if (updateError) {
+        console.error('サブスクリプションデータ更新エラー:', updateError);
+        throw updateError;
+      }
+
+      console.log('✅ サブスクリプションデータ更新完了:', updateData);
+    } else {
+      // 新規レコードの場合は挿入（createdAtも追加）
+      console.log('新規サブスクリプションレコードを作成');
+      const { data: insertData, error: insertError } = await supabaseAdmin
+        .from('stripe_user_subscriptions')
+        .insert({
+          ...subscriptionRecord,
+          createdAt: new Date().toISOString(),
+        })
+        .select();
+
+      if (insertError) {
+        console.error('サブスクリプションデータ挿入エラー:', insertError);
+        throw insertError;
+      }
+
+      console.log('✅ サブスクリプションデータ挿入完了:', insertData);
+    }
+  } catch (error) {
+    console.error('サブスクリプション変更処理エラー:', error);
     throw error;
   }
-
-  console.log('サブスクリプションデータを更新しました:', data);
 }
 
 // サブスクリプションキャンセル時の処理
