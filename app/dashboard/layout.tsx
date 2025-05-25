@@ -255,65 +255,69 @@ export default function DashboardLayout({
             debugLog("API応答からのroleName:", userData.roleName);
             debugLog("DBアクセス成功状態:", userData.dbAccessSuccessful);
             
-            // 新しい roleName を優先的に使用 (UUIDではなく実際のロール名)
+            // ロール情報の処理を改善
+            let finalRole = 'student'; // デフォルト値
+            
+            // 1. roleName を最優先で使用
             if (userData.roleName) {
-              const roleName = userData.roleName.toLowerCase();
+              const roleName = userData.roleName.toLowerCase().trim();
               debugLog("APIから取得したロール名:", roleName);
               
-              // ロール名で設定（roleIdはUUID形式のため、roleNameを使用）
               if (roleName === 'mentor') {
-                setUserRole('mentor');
-                debugLog("メンターロールを設定しました");
+                finalRole = 'mentor';
               } else if (roleName === 'admin' || roleName === 'administrator') {
-                setUserRole('admin');
-                debugLog("管理者ロールを設定しました");
+                finalRole = 'admin';
               } else {
-                setUserRole('student');
-                debugLog("生徒ロールを設定しました");
+                finalRole = 'student';
+              }
+              debugLog(`roleNameから設定: ${finalRole}`);
+            }
+            // 2. roleNameがない場合はroleIdをチェック
+            else if (userData.roleId) {
+              const roleId = String(userData.roleId).toLowerCase().trim();
+              debugLog("APIから取得したroleId:", roleId);
+              
+              // UUIDかどうかをチェック
+              const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roleId);
+              
+              if (isUuid) {
+                // UUIDの場合は、role.nameが取得できていないので警告
+                debugLog("⚠️ roleIdがUUID形式です。role.nameの取得に失敗している可能性があります");
+                // UUIDの場合はデフォルトのstudentを使用
+                finalRole = 'student';
+              } else {
+                // 文字列の場合は直接判定
+                if (roleId === 'mentor') {
+                  finalRole = 'mentor';
+                } else if (roleId === 'admin') {
+                  finalRole = 'admin';
+                } else {
+                  finalRole = 'student';
+                }
+                debugLog(`roleIdから設定: ${finalRole}`);
               }
             }
-            // roleNameがない場合は従来のロジックにフォールバック
-            else if (userData.roleId) {
-              // ここが重要: roleIdが文字列として正確に一致するか確認
-              const dbRole = userData.roleId.toLowerCase();
-              debugLog("DBから取得した正確なロール:", dbRole);
-              
-              // ロールの設定（正確な値）- 強制的にチェックして設定
-              if (dbRole === 'mentor') {
-                setUserRole('mentor');
-                debugLog("メンターロールを設定しました");
-              } else if (dbRole === 'admin') {
-                setUserRole('admin');
-                debugLog("管理者ロールを設定しました");
-              } else {
-                setUserRole('student');
-                debugLog("生徒ロールを設定しました");
-              }
-            } else {
-              debugLog("DBデータにロール情報がありません。メタデータから確認します");
-              
-              // メタデータからrole情報を確認
+            // 3. どちらもない場合はメタデータから取得
+            else {
               const metaRole = authUser.user_metadata?.role;
               if (metaRole) {
-                debugLog("メタデータからロール検出:", metaRole);
-                const metaRoleStr = String(metaRole).toLowerCase();
+                const metaRoleStr = String(metaRole).toLowerCase().trim();
+                debugLog("メタデータからロール検出:", metaRoleStr);
                 
                 if (metaRoleStr === 'mentor') {
-                  setUserRole('mentor');
-                  debugLog("メタデータからメンターロールを設定しました");
+                  finalRole = 'mentor';
                 } else if (metaRoleStr === 'admin') {
-                  setUserRole('admin');
-                  debugLog("メタデータから管理者ロールを設定しました");
+                  finalRole = 'admin';
                 } else {
-                  setUserRole('student');
-                  debugLog("メタデータから生徒ロールを設定しました");
+                  finalRole = 'student';
                 }
-              } else {
-                // フォールバック - デフォルトロール
-                debugLog("ロール情報が見つかりません。デフォルトのstudentロールを使用");
-                setUserRole('student');
+                debugLog(`メタデータから設定: ${finalRole}`);
               }
             }
+            
+            // 最終的にロールを設定
+            setUserRole(finalRole);
+            debugLog(`🎯 最終ロール設定: ${finalRole}`);
             
             // ユーザー情報を拡張（DBの情報を追加）
             setUser({
