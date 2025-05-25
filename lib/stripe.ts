@@ -1,5 +1,10 @@
 import Stripe from 'stripe';
 
+// サーバーサイドでのみ実行されることを確認
+if (typeof window !== 'undefined') {
+  throw new Error('lib/stripe.ts はサーバーサイドでのみ使用してください。クライアントサイドではlib/client/stripe-client.tsを使用してください。');
+}
+
 const useMock = process.env.STRIPE_MOCK === 'true';
 const apiKey = useMock ? 'sk_test_mock' : process.env.STRIPE_SECRET_KEY;
 

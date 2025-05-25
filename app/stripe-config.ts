@@ -1,5 +1,4 @@
 import { env } from "process";
-import { stripe } from "@/lib/stripe";
 
 // Stripe価格IDの検証とデバッグ
 export function validatePriceIds() {
@@ -42,19 +41,22 @@ export interface StripeProduct {
   popular?: boolean;
 }
 
-// Stripeから価格を取得する関数
-async function getStripePrice(priceId: string): Promise<number> {
-  try {
-    const price = await stripe.prices.retrieve(priceId);
-    return price.unit_amount || 0;
-  } catch (error) {
-    console.error(`価格ID ${priceId} の取得エラー:`, error);
-    return 0;
-  }
-}
-
-// 動的価格取得付きプラン設定
+// 動的価格取得付きプラン設定（サーバーサイドでのみ使用）
 export async function getStripeProductsWithPrices(): Promise<StripeProduct[]> {
+  // サーバーサイドでのみStripeクライアントを動的インポート
+  const { stripe } = await import('@/lib/stripe');
+  
+  // Stripeから価格を取得する関数
+  async function getStripePrice(priceId: string): Promise<number> {
+    try {
+      const price = await stripe.prices.retrieve(priceId);
+      return price.unit_amount || 0;
+    } catch (error) {
+      console.error(`価格ID ${priceId} の取得エラー:`, error);
+      return 0;
+    }
+  }
+
   const baseProducts = [
     {
       id: 'prod_free',
@@ -253,7 +255,9 @@ export function getPlansForComparison(): StripeProduct[] {
 
 // 既存のコードとの互換性のため
 export function getSubscriptionPlans(): StripeProduct[] {
-  // 環境変数の設定を確認
-  validatePriceIds();
+  // サーバーサイドでのみ環境変数の設定を確認
+  if (typeof window === 'undefined') {
+    validatePriceIds();
+  }
   return stripeProducts;
 }
