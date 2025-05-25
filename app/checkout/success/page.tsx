@@ -61,11 +61,7 @@ function CheckoutSuccessContent() {
   };
 
   const handleGoToDashboard = () => {
-      router.push('/dashboard');
-  };
-
-  const handleGoToPlans = () => {
-    router.push('/dashboard/plans');
+    router.push('/dashboard');
   };
 
   if (loading) {
@@ -94,10 +90,10 @@ function CheckoutSuccessContent() {
               {error || '決済情報を取得できませんでした'}
             </p>
             <Button 
-              onClick={handleGoToPlans}
+              onClick={handleGoToDashboard}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              料金プランに戻る
+              ダッシュボードに戻る
             </Button>
           </div>
         </div>
@@ -196,7 +192,7 @@ function CheckoutSuccessContent() {
           </Button>
           
           <Button 
-            onClick={handleGoToPlans}
+            onClick={() => router.push('/new-landing')}
             variant="outline"
             className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 text-lg"
           >

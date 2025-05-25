@@ -145,7 +145,7 @@ export default function Page() {
           priceId,
           userId: user.id,
           successUrl: `${window.location.origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/dashboard/plans?canceled=true`,
+          cancelUrl: `${window.location.origin}/dashboard?canceled=true`,
         }),
       });
 

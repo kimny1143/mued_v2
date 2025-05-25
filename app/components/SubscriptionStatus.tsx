@@ -6,6 +6,7 @@ import { Card } from '@ui/card';
 import { Button } from '@ui/button';
 import { Crown, Zap, Star, Settings, CreditCard } from 'lucide-react';
 import Link from 'next/link';
+import { BillingPortalButton } from './BillingPortalButton';
 
 export function SubscriptionStatus() {
   const { user, subscription, loading, error } = useUser();
@@ -139,22 +140,14 @@ export function SubscriptionStatus() {
 
           {/* アクションボタン */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
-            <Link href="/dashboard/plans" className="flex-1">
-              <Button 
-                variant={planName === 'FREE' ? 'default' : 'outline'} 
-                className="w-full"
-              >
-                {planName === 'FREE' ? 'プランをアップグレード' : 'プランを変更'}
-              </Button>
-            </Link>
-            
-            {isActive && planName !== 'FREE' && (
-              <Link href="/dashboard/settings">
-                <Button variant="ghost" className="flex items-center space-x-2">
-                  <Settings className="w-4 h-4" />
-                  <span>管理</span>
+            {planName === 'FREE' ? (
+              <Link href="/new-landing" className="flex-1">
+                <Button variant="default" className="w-full">
+                  プランをアップグレード
                 </Button>
               </Link>
+            ) : (
+              <BillingPortalButton />
             )}
           </div>
         </div>

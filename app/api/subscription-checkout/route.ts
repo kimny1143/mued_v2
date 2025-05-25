@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
     const session = await createOrUpdateSubscriptionCheckout({
       priceId,
       successUrl: successUrl || `${process.env.NEXT_PUBLIC_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: cancelUrl || `${process.env.NEXT_PUBLIC_URL}/dashboard/plans?canceled=true`,
+      cancelUrl: cancelUrl || `${process.env.NEXT_PUBLIC_URL}/dashboard?canceled=true`,
       customerId: stripeCustomerId,
       metadata: {
         userId: sessionUserId,

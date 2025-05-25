@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     }
     
     // パスを追加
-    returnUrl = `${returnUrl}/dashboard/plans`;
+    returnUrl = `${returnUrl}/dashboard`;
     
     console.log('📍 Return URL:', returnUrl);
 
