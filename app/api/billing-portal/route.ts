@@ -81,17 +81,16 @@ export async function POST(req: Request) {
     
     console.log('📍 Return URL:', returnUrl);
 
-    // Billing Portal Sessionを作成
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: returnUrl,
-    });
-
-    console.log('✅ Billing Portal Session作成成功:', portalSession.id);
-
+    // 固定のCustomer Portal Login URLを使用
+    // Stripe Dashboard → Settings → Billing → Customer portal → Login links から取得したURL
+    const customerPortalLoginUrl = 'https://billing.stripe.com/p/login/test_5kQ8wR56iei04nF5SH7EQ00';
+    
+    console.log('✅ Customer Portal Login URL使用:', customerPortalLoginUrl);
+    
     return NextResponse.json({
-      url: portalSession.url,
-      sessionId: portalSession.id
+      url: customerPortalLoginUrl,
+      customerId: customerId,
+      type: 'customer_portal_login'
     });
 
   } catch (error) {
