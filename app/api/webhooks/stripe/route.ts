@@ -48,6 +48,40 @@ async function monitorWebhookPerformance(
 ) {
   const duration = Date.now() - startTime;
   console.log(`Webhook ${eventType} processed in ${duration}ms`);
+  
+  // パフォーマンス警告（5秒以上）
+  if (duration > 5000) {
+    console.warn(`⚠️ Webhook処理が遅延: ${eventType} took ${duration}ms`);
+  }
+}
+
+// リアルタイム通知の送信
+async function sendRealtimeNotification(
+  table: string,
+  eventType: 'INSERT' | 'UPDATE' | 'DELETE',
+  record: Record<string, unknown>,
+  oldRecord?: Record<string, unknown>
+) {
+  try {
+    // Supabaseのリアルタイム機能を使用して通知を送信
+    const response = await supabaseAdmin
+      .channel('webhook-notifications')
+      .send({
+        type: 'broadcast',
+        event: `${table}_${eventType.toLowerCase()}`,
+        payload: {
+          table,
+          eventType,
+          new: record,
+          old: oldRecord,
+          timestamp: new Date().toISOString(),
+        },
+      });
+
+    console.log(`✅ リアルタイム通知送信完了: ${table}_${eventType.toLowerCase()}`, response);
+  } catch (error) {
+    console.error('リアルタイム通知送信例外:', error);
+  }
 }
 
 export async function POST(req: Request) {
@@ -139,10 +173,8 @@ export async function POST(req: Request) {
             // サブスクリプション決済の場合
             await handleCompletedSubscriptionCheckout(session);
           } else {
-            // 単発決済の場合（レッスン予約など）
-            processCheckoutSession(session).catch(error => {
-              console.error('Error processing checkout session:', error);
-            });
+            // 単発決済の場合（レッスン予約など）- Phase 4で強化
+            await processCheckoutSessionEnhanced(session);
           }
           break;
         }
@@ -209,12 +241,14 @@ export async function POST(req: Request) {
   }
 }
 
-// チェックアウトセッションの処理
-async function processCheckoutSession(session: Stripe.Checkout.Session) {
+// Phase 4: 強化されたチェックアウトセッション処理
+async function processCheckoutSessionEnhanced(session: Stripe.Checkout.Session) {
   return processWithRetry(async () => {
+    console.log('🔄 Phase 4: 強化された決済処理開始', { sessionId: session.id });
+    
     await prisma.$transaction(async (tx) => {
       // Paymentレコードを更新
-      const payment = await tx.payment.update({
+      const payment = await tx.payments.update({
         where: {
           stripeSessionId: session.id,
         },
@@ -223,29 +257,55 @@ async function processCheckoutSession(session: Stripe.Checkout.Session) {
           status: PaymentStatus.SUCCEEDED,
         },
         include: {
-          reservation: {
-            include: { slot: true }
+          reservations: {
+            include: { 
+              lesson_slots: {
+                include: {
+                  users: {
+                    select: { id: true, name: true, email: true }
+                  }
+                }
+              }
+            }
           }
         }
       });
 
-      if (!payment.reservation) {
+      if (!payment.reservations) {
         throw new Error(`支払いに関連する予約が見つかりません: ${payment.id}`);
       }
 
+      const reservation = payment.reservations;
+      const oldStatus = reservation.status;
+
       // 予約ステータスを更新
-      await tx.reservation.update({
+      const updatedReservation = await tx.reservations.update({
         where: {
-          id: payment.reservation.id,
+          id: reservation.id,
         },
         data: {
           status: ReservationStatus.CONFIRMED,
         },
+        include: {
+          lesson_slots: {
+            include: {
+              users: {
+                select: { id: true, name: true, email: true }
+              }
+            }
+          }
+        }
       });
 
-      // メタデータから予約時間情報を取得
-      const reservation = payment.reservation;
-      
+      console.log('✅ 予約ステータス更新完了:', {
+        reservationId: updatedReservation.id,
+        oldStatus,
+        newStatus: updatedReservation.status,
+        studentId: updatedReservation.studentId,
+        mentorId: updatedReservation.lesson_slots.users.id
+      });
+
+      // レッスンスロットの更新方法を判断
       const bookedStartTime = session.metadata?.bookedStartTime 
         ? new Date(session.metadata.bookedStartTime)
         : reservation.bookedStartTime;
@@ -254,28 +314,48 @@ async function processCheckoutSession(session: Stripe.Checkout.Session) {
         ? new Date(session.metadata.bookedEndTime)
         : reservation.bookedEndTime;
       
-      const hoursBooked = session.metadata?.hoursBooked
-        ? parseInt(session.metadata.hoursBooked, 10)
-        : reservation.hoursBooked || 1;
-
-      // レッスンスロットの更新方法を判断
       // 完全予約かどうかを判断（スロットの時間全てを予約したか）
       const isFullSlotBooking = 
-        bookedStartTime.getTime() <= reservation.slot.startTime.getTime() &&
-        bookedEndTime.getTime() >= reservation.slot.endTime.getTime();
+        bookedStartTime.getTime() <= reservation.lesson_slots.startTime.getTime() &&
+        bookedEndTime.getTime() >= reservation.lesson_slots.endTime.getTime();
 
       // スロットが完全に予約された場合は利用不可にする
       if (isFullSlotBooking) {
-        await tx.lessonSlot.update({
+        await tx.lesson_slots.update({
           where: { id: reservation.slotId },
           data: { isAvailable: false },
         });
+        console.log('📅 レッスンスロット完全予約 - 利用不可に設定');
       } else {
-        // 部分予約の場合は他の時間帯を予約できるようにする
-        // この実装は追加の複雑さを避けるため、現状は何もしない
-        // 実際の実装では、スロットを分割するなどの高度な処理が必要
-        console.log(`部分予約が完了: ${reservation.id}, ${hoursBooked}時間`);
+        console.log('📅 部分予約完了 - スロットは引き続き利用可能');
       }
+
+      // Phase 4: リアルタイム通知の送信
+      await sendRealtimeNotification(
+        'reservations',
+        'UPDATE',
+        {
+          id: updatedReservation.id,
+          status: updatedReservation.status,
+          studentId: updatedReservation.studentId,
+          mentorId: updatedReservation.lesson_slots.users.id,
+          bookedStartTime: updatedReservation.bookedStartTime.toISOString(),
+          bookedEndTime: updatedReservation.bookedEndTime.toISOString(),
+          lessonSlot: {
+            users: {
+              name: updatedReservation.lesson_slots.users.name
+            }
+          }
+        },
+        {
+          id: reservation.id,
+          status: oldStatus,
+          studentId: reservation.studentId,
+          mentorId: reservation.lesson_slots.users.id,
+        }
+      );
+
+      console.log('🔔 Phase 4: 決済完了処理とリアルタイム通知送信完了');
     });
   });
 }

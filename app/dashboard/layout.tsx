@@ -32,6 +32,7 @@ import { PlanTag } from "@/app/components/PlanTag";
 import { vercelSafeSignOut, safeRedirectToHome } from "@/lib/vercel-auth-fix";
 import { handlePostLoginPlanRedirect } from "@/lib/billing-utils";
 import { extractRoleFromApiResponse, getRoleDisplayName, updateRoleCache } from "@/lib/role-utils";
+import { useReservationNotifications, useMentorApprovalNotifications, useStudentReservationNotifications } from '@/lib/hooks/useReservationNotifications';
 
 // TypeScript型定義
 interface NavItem {
@@ -69,7 +70,8 @@ const studentNavItems: NavItem[] = [
 
 // メンター専用ナビゲーション項目
 const mentorNavItems: NavItem[] = [
-  { icon: CalendarIcon, label: "Slots Calendar", path: "/dashboard/slots-calendar" }
+  { icon: CalendarIcon, label: "Slots Calendar", path: "/dashboard/slots-calendar" },
+  { icon: BellIcon, label: "Approval Requests", path: "/dashboard/mentor-approvals" }
 ];
 
 // 共通メニュー（最下部に表示）
@@ -95,6 +97,18 @@ export default function DashboardLayout({
   const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({});
   const [userRole, setUserRole] = useState<string>('');
   
+  // Phase 4: リアルタイム通知システムの統合
+  // ユーザーロールに応じた通知フックを使用
+  const { isEnabled: notificationsEnabled } = useReservationNotifications({
+    enabled: !!user,
+  });
+
+  // メンター専用通知
+  useMentorApprovalNotifications();
+  
+  // 生徒専用通知
+  useStudentReservationNotifications();
+
   // ユーザーロールに応じたメニュー項目を計算（メモ化）
   const visibleMenuItems = React.useMemo(() => {
     const menus = [];

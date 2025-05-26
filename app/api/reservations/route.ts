@@ -12,6 +12,7 @@ import { getBaseUrl, calculateTotalReservedMinutes, calculateSlotTotalMinutes } 
 import Stripe from 'stripe';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { randomUUID } from 'crypto';
 
 // Stripe インスタンスの初期化
 const _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -79,11 +80,11 @@ export async function GET(request: NextRequest) {
     const slotId = searchParams.get('slotId');
     
     // クエリ条件を構築
-    const where: Prisma.ReservationWhereInput = {};
+    const where: Prisma.reservationsWhereInput = {};
     
     // 教師（メンター）は自分の全予約を、生徒は自分の予約のみを見られる
     if (sessionInfo.role === 'mentor') {
-      where.slot = {
+      where.lesson_slots = {
         teacherId: sessionInfo.user.id,
       };
     } else if (sessionInfo.role === 'admin') {
@@ -102,20 +103,20 @@ export async function GET(request: NextRequest) {
     }
     
     // データベースから予約を取得（エラーハンドリング強化）
-    const reservations = await executePrismaQuery(() => prisma.reservation.findMany({
+    const reservations = await executePrismaQuery(() => prisma.reservations.findMany({
       where,
       include: {
-        slot: {
+        lesson_slots: {
           select: {
             startTime: true,
             endTime: true,
-            teacher: {
+            users: {
               select: { id: true, name: true, image: true },
             },
           },
         },
       },
-      orderBy: { slot: { startTime: 'asc' } },
+      orderBy: { lesson_slots: { startTime: 'asc' } },
     }));
     
     return NextResponse.json(reservations, {
@@ -188,13 +189,13 @@ export async function POST(request: NextRequest) {
     // トランザクション開始 - 予約作成から決済まで一貫して処理
     const result = await prisma.$transaction(async (tx) => {
       // レッスンスロットを取得（新しく追加したフィールドも含める）
-      const slot = await tx.lessonSlot.findUnique({
+      const slot = await tx.lesson_slots.findUnique({
         where: { 
           id: slotId,
           isAvailable: true // 利用可能なスロットのみを対象
         },
         include: {
-          teacher: {
+          users: {
             select: {
               id: true,
               name: true,
@@ -316,19 +317,21 @@ export async function POST(request: NextRequest) {
       
       // 予約データの作成準備（固定料金方式）
       const reservationData = {
+        id: randomUUID(),
         slotId: slot.id,
         studentId: session.user.id,
-        status: 'PENDING' as const,
+        status: 'PENDING_APPROVAL' as ReservationStatus, // メンター承認待ち状態で作成
         bookedStartTime: reservationStartTime,
         bookedEndTime: reservationEndTime,
         hoursBooked: Math.ceil(durationInMinutes / 60),
         durationMinutes: durationInMinutes, // 分単位の予約時間を明示的に保存
         totalAmount: fixedAmount, // 時間に関わらず固定料金
-        notes: typeof notes === 'string' ? notes : null
+        notes: typeof notes === 'string' ? notes : null,
+        updatedAt: new Date()
       };
       
       // 予約レコードを作成
-      const reservation = await tx.reservation.create({
+      const reservation = await tx.reservations.create({
         data: reservationData
       });
       
@@ -372,66 +375,25 @@ export async function POST(request: NextRequest) {
         role: session.role
       });
       
-      try {
-        // ベースURLの取得
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-          'https://dev.mued.jp' || 
-          (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-
-        // 決済セッション作成（booking-calendar用URLを指定）
-        const checkoutSession = await createCheckoutSessionForReservation(
-          session.user.id,
-          session.user.email,
-          reservation.id,
-          fixedAmount, // 固定料金
+      // 予約作成完了 - 決済はメンター承認後に実行
+      console.log('✅ 予約作成完了 - メンター承認待ち状態:', {
+        reservationId: reservation.id,
+        status: reservation.status,
+        teacher: slot.users.name,
+        student: session.user.email,
+        timeRange: formattedTimeRange
+      });
+      
+      return {
+        success: true,
+        reservation,
+        message: 'メンターの承認をお待ちください。承認後に決済手続きをご案内いたします。',
+        pricing: {
+          fixedAmount,
           currency,
-          {
-            teacher: slot.teacher.name || '名前未設定',
-            date: formattedDate,
-            time: formattedTimeRange,
-            duration: formattedDuration
-          },
-          {
-            successUrl: `${baseUrl}/dashboard/booking-calendar/success?session_id={CHECKOUT_SESSION_ID}&reservation_id=${reservation.id}`,
-            cancelUrl: `${baseUrl}/dashboard/booking-calendar?canceled=true`
-          }
-        );
-        
-        // payment レコード作成（決済情報の保存）
-        await tx.payment.create({
-          data: {
-            stripeSessionId: checkoutSession.id,
-            amount: fixedAmount, // 固定料金
-            currency: currency,
-            status: 'PENDING',
-            userId: session.user.id,
-            reservation: {
-              connect: { id: reservation.id }
-            }
-          }
-        });
-        
-        // 決済セッションURLとともに結果を返す
-        return {
-          success: true,
-          reservation,
-          checkoutUrl: checkoutSession.url,
-          pricing: {
-            fixedAmount,
-            currency,
-            durationInMinutes
-          }
-        };
-      } catch (error) {
-        console.error('Stripe決済セッション作成エラー:', error);
-        // エラーが発生した場合も、予約自体は作成されたものを返す
-        return {
-          success: true,
-          reservation,
-          checkoutUrl: null,
-          error: 'Stripe決済セッションの作成に失敗しました。管理者にお問い合わせください。'
-        };
-      }
+          durationInMinutes
+        }
+      };
     });
     
     return NextResponse.json(result);

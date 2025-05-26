@@ -13,6 +13,7 @@ import { Card } from '@ui/card';
 import { ReservationModal, TimeSlot } from '@/app/dashboard/reservations/_components/ReservationModal';
 import { LessonSlotCard } from '@/app/dashboard/reservations/_components/LessonSlotCard';
 import { LessonSlot, convertToLessonSlotType } from '@/app/dashboard/reservations/_components/ReservationTable';
+import { StudentPaymentPendingCard } from '@/app/dashboard/reservations/_components/StudentPaymentPendingCard';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -100,6 +101,44 @@ export const ReservationPage: React.FC = () => {
   
   // 予約一覧を保持する単純なステート
   const [myReservations, setMyReservations] = useState<Reservation[]>([]);
+
+  // 決済を開始する関数
+  const startPayment = useCallback(async (reservationId: string) => {
+    try {
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
+      const response = await fetch(`/api/reservations/${reservationId}/checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '決済の開始に失敗しました');
+      }
+
+      const result = await response.json();
+      
+      if (result.checkoutUrl) {
+        // Stripeのチェックアウトページにリダイレクト
+        window.location.href = result.checkoutUrl;
+      } else {
+        throw new Error('決済URLの取得に失敗しました');
+      }
+    } catch (error) {
+      console.error('決済開始エラー:', error);
+      throw error;
+    }
+  }, []);
 
   // APIからレッスンスロットを取得する関数
   const fetchLessonSlots = useCallback(async () => {
@@ -246,18 +285,15 @@ export const ReservationPage: React.FC = () => {
 
       console.log('予約作成成功:', result);
       
-      // 支払いページにリダイレクト
-      if (result.checkoutUrl) {
-        // StripeのチェックアウトURLに遷移
-        window.location.href = result.checkoutUrl;
-      } else {
-        // リダイレクト先がない場合は成功通知のみ
-        toast.success('予約が完了しました！');
-        setIsModalOpen(false);
-        
-        // レッスンスロット一覧を再読み込み
-        queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
-      }
+      // 新しいフロー: 予約申請完了メッセージを表示
+      toast.success('予約申請を送信しました！メンターの承認をお待ちください。');
+      setIsModalOpen(false);
+      
+      // レッスンスロット一覧を再読み込み
+      queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
+      
+      // 予約一覧も更新
+      queryClient.invalidateQueries({ queryKey: ['myReservations'] });
     } catch (error) {
       console.error('予約処理エラー:', error);
       toast.error(`予約に失敗しました: ${(error as Error).message}`);
@@ -531,37 +567,43 @@ export const ReservationPage: React.FC = () => {
       {/* 予約済み一覧 */}
       {user && (
         <section className="mb-8">
-          <h2 className="text-xl font-bold mb-2">あなたの予約一覧</h2>
+          <h2 className="text-xl font-bold mb-4">あなたの予約一覧</h2>
           {myReservations.length === 0 ? (
-            <p className="text-gray-500">まだ予約はありません</p>
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <p className="text-gray-500">まだ予約はありません</p>
+              <p className="text-sm text-gray-400 mt-1">上記から予約を申請してください</p>
+            </div>
           ) : (
-            <ul className="space-y-2">
-              {myReservations.map((res) => (
-                <li key={res.id} className="border p-3 rounded-md bg-white shadow-sm">
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="font-medium">{format(new Date(res.lessonSlot.startTime), 'yyyy年M月d日')}</p>
-                      <p className="text-sm text-gray-600">
-                        {format(new Date(res.bookedStartTime), 'HH:mm')} - 
-                        {format(new Date(res.bookedEndTime), 'HH:mm')}
-                      </p>
-                      <p className="text-sm">{res.lessonSlot.teacher.name} 先生</p>
-                    </div>
-                    <div>
-                      <span
-                        className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          res.status === 'CONFIRMED'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {res.status === 'CONFIRMED' ? '確定済み' : res.status === 'COMPLETED' ? '完了' : '未確定'}
-                      </span>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-4">
+              {myReservations.map((reservation) => {
+                // 予約データを新しいコンポーネント用の形式に変換
+                const transformedReservation = {
+                  id: reservation.id,
+                  status: reservation.status,
+                  bookedStartTime: reservation.bookedStartTime,
+                  bookedEndTime: reservation.bookedEndTime,
+                  totalAmount: reservation.payment?.amount || 0,
+                  notes: null, // 既存データにnotesがない場合
+                  durationMinutes: null, // 既存データにdurationMinutesがない場合
+                  createdAt: reservation.createdAt,
+                  approvedAt: null, // 既存データにapprovedAtがない場合
+                  teacher: {
+                    id: reservation.lessonSlot.teacher.id,
+                    name: reservation.lessonSlot.teacher.name,
+                    email: null // 既存データにemailがない場合
+                  }
+                };
+
+                return (
+                  <StudentPaymentPendingCard
+                    key={reservation.id}
+                    reservation={transformedReservation}
+                    onStartPayment={startPayment}
+                    isLoading={isProcessing}
+                  />
+                );
+              })}
+            </div>
           )}
         </section>
       )}

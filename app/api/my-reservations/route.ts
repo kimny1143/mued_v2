@@ -15,133 +15,77 @@ function generateCacheKey(userId: string, status: ReservationStatus | null, take
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    console.log('my-reservations API - リクエスト受信', { 
-      params: Object.fromEntries(searchParams.entries()),
-      url: request.url
-    });
+    const session = await getSessionFromRequest(request);
     
-    // 「全表示モード」を最初にチェック
-    if (searchParams.get('all') === 'true') {
-      console.log('my-reservations API - 全表示モード');
-      const all = await prisma.reservation.findMany({
-        include: {
-          slot: { include: { teacher: true } },
-          payment: true,
-        },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      const formatted = all.map(r => ({
-        id: r.id,
-        status: r.status,
-        lessonSlot: {
-          id: r.slot.id,
-          startTime: r.slot.startTime,
-          endTime: r.slot.endTime,
-          teacher: r.slot.teacher,
-        },
-        bookedStartTime: r.bookedStartTime,
-        bookedEndTime: r.bookedEndTime,
-        payment: r.payment
-          ? {
-              id: r.payment.id,
-              amount: r.payment.amount,
-              currency: r.payment.currency,
-              status: r.payment.status,
-            }
-          : null,
-        createdAt: r.createdAt,
-        updatedAt: r.updatedAt,
-      }));
-
-      console.log(`my-reservations API - 全表示結果: ${formatted.length}件`);
-      return NextResponse.json(formatted);
-    }
-
-    // 以下、通常の認証付きクエリ処理
-    const sessionInfo = await getSessionFromRequest(request);
-    console.log('my-reservations API - 認証情報:', sessionInfo ? `ユーザーID: ${sessionInfo.user.id}` : 'なし');
-    
-    if (!sessionInfo) {
-      console.warn('my-reservations API - 認証エラー: 401');
+    if (!session || !session.user) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
-
-    const status = searchParams.get('status') as ReservationStatus | null;
-    const take = Number(searchParams.get('take') ?? 20);
-    const skip = Number(searchParams.get('skip') ?? 0);
-
-    // キャッシュキーの生成
-    const cacheKey = generateCacheKey(sessionInfo.user.id, status, take, skip);
-
-    console.log('my-reservations API: user', sessionInfo.user.id);
-    // 予約情報の取得
-    const reservations = await prisma.reservation.findMany({
+    
+    // 生徒の予約一覧を取得
+    const reservations = await prisma.reservations.findMany({
       where: {
-        studentId: sessionInfo.user.id,
-        ...(status && { status }),
+        studentId: session.user.id,
       },
       include: {
-        slot: {
-          include: {
-            teacher: {
+        lesson_slots: {
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            users: {
               select: {
                 id: true,
                 name: true,
-                image: true,
+                email: true,
               },
             },
           },
         },
-        payment: true,
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            status: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
-      take,
-      skip,
     });
-
-    console.log('my-reservations API: found', reservations.length);
-    // レスポンスデータの整形
-    const formattedReservations = reservations.map(reservation => ({
+    
+    // フロントエンド用の形式に変換
+    const formattedReservations = reservations.map((reservation) => ({
       id: reservation.id,
       status: reservation.status,
       lessonSlot: {
-        id: reservation.slot.id,
-        startTime: reservation.slot.startTime,
-        endTime: reservation.slot.endTime,
-        teacher: reservation.slot.teacher,
+        id: reservation.lesson_slots.id,
+        startTime: reservation.lesson_slots.startTime.toISOString(),
+        endTime: reservation.lesson_slots.endTime.toISOString(),
+        teacher: {
+          id: reservation.lesson_slots.users.id,
+          name: reservation.lesson_slots.users.name,
+          image: null, // 画像情報がない場合
+        },
       },
-      bookedStartTime: reservation.bookedStartTime,
-      bookedEndTime: reservation.bookedEndTime,
-      payment: reservation.payment ? {
-        id: reservation.payment.id,
-        amount: reservation.payment.amount,
-        currency: reservation.payment.currency,
-        status: reservation.payment.status,
+      bookedStartTime: reservation.bookedStartTime.toISOString(),
+      bookedEndTime: reservation.bookedEndTime.toISOString(),
+      payment: reservation.payments ? {
+        id: reservation.payments.id,
+        amount: reservation.payments.amount,
+        currency: reservation.payments.currency,
+        status: reservation.payments.status,
       } : null,
-      createdAt: reservation.createdAt,
-      updatedAt: reservation.updatedAt,
+      createdAt: reservation.createdAt.toISOString(),
+      updatedAt: reservation.updatedAt.toISOString(),
     }));
-
-    return NextResponse.json(formattedReservations, {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'ETag': cacheKey,
-        'X-Cache-Key': cacheKey
-      }
-    });
+    
+    return NextResponse.json(formattedReservations);
   } catch (error) {
-    console.error("予約情報取得エラー:", error);
+    console.error('予約一覧取得エラー:', error);
     return NextResponse.json(
-      { 
-        error: '予約情報の取得中にエラーが発生しました', 
-        details: error instanceof Error ? error.message : String(error)
-      },
+      { error: '予約一覧の取得中にエラーが発生しました', details: String(error) },
       { status: 500 }
     );
   }
