@@ -375,7 +375,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         </div>
       )}
       
-      <div className="bg-white rounded-md sm:rounded-lg shadow-sm sm:shadow p-2 sm:p-4">
+      <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow p-2 sm:p-4">
         {/* 全メンター情報表示 - モバイル最適化 */}
         {mentors.length > 0 && (
           <div className="mb-4 space-y-3">

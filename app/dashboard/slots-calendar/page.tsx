@@ -126,8 +126,8 @@ export default function SlotsCalendarPage() {
   };
 
   return (
-    <div className="w-full py-6 px-2 sm:px-4 lg:container lg:mx-auto">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+    <div className="w-full py-6 px-0 sm:px-4 lg:container lg:mx-auto">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4 px-2 sm:px-0">
         <div className="flex items-center">
           <CalendarClock className="h-6 w-6 mr-2 text-primary" aria-hidden="true" />
           <div>
@@ -160,7 +160,7 @@ export default function SlotsCalendarPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-md sm:rounded-lg shadow-sm sm:shadow">
+        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow">
           <SlotsCalendar
             slots={slots}
             isLoading={isLoading}
