@@ -3,14 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import { CheckCircle, Clock, CreditCard } from 'lucide-react';
+import { CheckCircle, Clock, CreditCard, X } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 
 export default function SetupSuccessPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(true);
-  const [reservation, setReservation] = useState<any>(null);
+  const [reservation, setReservation] = useState<{
+    id: string;
+    status: string;
+    totalAmount: number;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

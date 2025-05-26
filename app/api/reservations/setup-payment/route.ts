@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
     console.log('=== Setup Intent Checkout Session作成開始 ===');
     console.log('予約データ:', reservationData);
 
-    // Stripe顧客を取得または作成
-    const customer = await getOrCreateStripeCustomer(
+    // Stripe顧客を取得または作成（文字列の顧客IDが返される）
+    const customerId = await getOrCreateStripeCustomer(
       session.user.id,
       session.user.email || ''
     );
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     // Setup Intent用のCheckout Sessionを作成
     const checkoutSession = await stripe.checkout.sessions.create({
-      customer: customer.id,
+      customer: customerId,
       mode: 'setup', // Setup Intentモード（決済情報保存のみ）
       payment_method_types: ['card'],
       success_url: `${baseUrl}/dashboard/booking-calendar/setup-success?session_id={CHECKOUT_SESSION_ID}`,

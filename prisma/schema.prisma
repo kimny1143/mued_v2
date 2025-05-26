@@ -89,6 +89,7 @@ model payments {
   currency        String        @default("JPY")
   status          PaymentStatus @default(PENDING)
   userId          String
+  metadata        String?       @db.Text
   createdAt       DateTime      @default(now())
   updatedAt       DateTime
   reservations    reservations?
