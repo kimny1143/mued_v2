@@ -1,0 +1,63 @@
+name: Payment Execution Scheduler
+
+on:
+  schedule:
+    # 5分間隔で実行（UTC時間）
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  execute-payments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Check Environment
+        run: |
+          echo "🕐 Executing payment scheduler at $(date)"
+          echo "🎯 Target URL: ${{ secrets.VERCEL_URL }}/api/cron/execute-payments"
+          
+      - name: Execute Payment Processing
+        id: payment_execution
+        run: |
+          echo "📡 Sending request to payment execution endpoint..."
+          
+          response=$(curl -s -w "%{http_code}" -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: GitHub-Actions-Payment-Scheduler" \
+            "${{ secrets.VERCEL_URL }}/api/cron/execute-payments")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n -1)
+          
+          echo "📊 HTTP Status: $http_code"
+          echo "📄 Response Body: $body"
+          
+          # レスポンスをGitHub Actions出力に設定
+          echo "status_code=$http_code" >> $GITHUB_OUTPUT
+          echo "response_body=$body" >> $GITHUB_OUTPUT
+          
+          if [ "$http_code" -ne 200 ]; then
+            echo "❌ Payment execution failed with status $http_code"
+            echo "💬 Response: $body"
+            exit 1
+          else
+            echo "✅ Payment execution completed successfully"
+          fi
+          
+      - name: Log Success Details
+        if: success()
+        run: |
+          echo "🎉 Payment scheduler executed successfully!"
+          echo "📈 Status Code: ${{ steps.payment_execution.outputs.status_code }}"
+          echo "📋 Response: ${{ steps.payment_execution.outputs.response_body }}"
+          echo "⏰ Completed at: $(date)"
+          
+      - name: Handle Failure
+        if: failure()
+        run: |
+          echo "🚨 Payment execution failed!"
+          echo "📊 Status: ${{ steps.payment_execution.outputs.status_code }}"
+          echo "📄 Response: ${{ steps.payment_execution.outputs.response_body }}"
+          echo "⏰ Failed at: $(date)"
