@@ -362,15 +362,15 @@ export default function BookingCalendarPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow">
-          <div className="p-3 sm:p-6 border-b">
+        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-4 sm:mx-0">
+          <div className="p-0 sm:p-6 border-b">
             <h2 className="text-base sm:text-lg font-semibold">予約可能な日時を選択</h2>
             <p className="text-xs sm:text-sm text-gray-600 mt-1">
               カレンダー上で気になる日付をクリックして、その日のレッスン一覧を確認できます
             </p>
           </div>
           
-          <div className="p-2 sm:p-6">
+          <div className="p-0 sm:p-6">
             <MentorCalendar
               mentors={mentors}
               isLoading={isLoading}

@@ -160,7 +160,7 @@ export default function SlotsCalendarPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow">
+        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-4 sm:mx-0">
           <SlotsCalendar
             slots={slots}
             isLoading={isLoading}

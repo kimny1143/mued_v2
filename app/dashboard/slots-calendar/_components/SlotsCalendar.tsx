@@ -174,7 +174,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
         </div>
       )}
       
-      <div className="p-2 sm:p-4">
+      <div className="p-0 sm:p-4">
         {/* ヘッダー - 月選択 */}
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <Button 
@@ -208,7 +208,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
         ) : (
           <>
             {/* カレンダーグリッド - モバイル対応強化 */}
-            <div className="grid grid-cols-7 gap-1 sm:gap-2">
+            <div className="grid grid-cols-7 gap-2">
               {/* 曜日ヘッダー */}
               {['月', '火', '水', '木', '金', '土', '日'].map((day, index) => (
                 <div key={index} className="text-center text-xs font-medium text-gray-500 py-1 sm:py-2">
@@ -241,14 +241,14 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                       onClick={isCurrentMonth ? () => handleEmptyAreaClick(date) : undefined}
                       className={`
                         aspect-square p-1 sm:p-2 text-center rounded-md sm:rounded-lg transition-all duration-200 relative 
-                        min-h-[70px] sm:min-h-[80px] flex flex-col justify-between
+                        min-h-[60px] flex flex-col justify-between
                         ${!isCurrentMonth ? 'text-gray-300 bg-gray-50' : ''}
                         ${isCurrentMonth && !hasSlots ? 'text-gray-600 bg-white hover:bg-gray-50 border border-dashed border-gray-300 cursor-pointer' : ''}
                         ${hasSlots ? 'bg-blue-50 border-2 border-blue-200 cursor-pointer' : ''}
                         ${todayMark ? 'font-bold ring-2 ring-primary ring-offset-1' : ''}
                       `}
                     >
-                      <div className="text-xs sm:text-sm font-medium">
+                      <div className="text-sm font-medium">
                         {format(date, 'd')}
                       </div>
                       
@@ -271,7 +271,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                 <div
                                   onClick={(e) => handleSlotTagClick(slot, e)}
                                   className={`
-                                    text-xxs sm:text-xs px-0.5 py-0 rounded text-center font-medium cursor-pointer transition-colors
+                                    text-xxs px-0.5 py-0 rounded text-center font-medium cursor-pointer transition-colors
                                     ${statusColors[slotStatus]}
                                     leading-tight max-w-full truncate mb-0.5
                                   `}

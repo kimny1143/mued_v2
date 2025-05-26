@@ -375,10 +375,10 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         </div>
       )}
       
-      <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow p-2 sm:p-4">
+      <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-4 sm:mx-0">
         {/* 全メンター情報表示 - モバイル最適化 */}
         {mentors.length > 0 && (
-          <div className="mb-4 space-y-3">
+          <div className="p-0 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900">利用可能なメンター</h3>
               <div className="text-xs sm:text-sm text-gray-500">

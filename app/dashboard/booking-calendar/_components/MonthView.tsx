@@ -126,7 +126,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
             onClick={() => isAvailable ? onDateClick(date) : undefined}
             disabled={!isAvailable}
             className={`
-              aspect-square p-1 text-center rounded-lg transition-all duration-200 relative min-h-[70px] flex flex-col justify-between
+              aspect-square p-1 text-center rounded-lg transition-all duration-200 relative min-h-[60px] flex flex-col justify-between
               ${!isCurrentMonth ? 'text-gray-300 bg-gray-50' : ''}
               ${isCurrentMonth && !isAvailable ? 'text-gray-400 bg-gray-50' : ''}
               ${isAvailable && !isSelected && dayStatus === 'available' ? 'bg-green-50 border-2 border-green-200 text-green-800 hover:bg-green-100 hover:border-green-400' : ''}
