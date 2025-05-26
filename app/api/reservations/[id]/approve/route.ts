@@ -78,20 +78,37 @@ export async function POST(
       
       // Setup完了済みの場合は自動決済実行
       let paymentResult = null;
+      
+      console.log('🔍 決済情報確認:', {
+        hasPayments: !!updatedReservation.payments,
+        paymentStatus: updatedReservation.payments ? (updatedReservation.payments as any).status : 'なし',
+        paymentId: updatedReservation.payments?.id
+      });
+      
       if (updatedReservation.payments && (updatedReservation.payments as any).status === 'SETUP_COMPLETED') {
         try {
+          console.log('💳 自動決済処理開始');
+          
           const stripe = new (await import('stripe')).default(process.env.STRIPE_SECRET_KEY!, {
             apiVersion: '2025-03-31.basil',
           });
           
           // Setup Intentから決済手段情報を取得
           const paymentMetadata = JSON.parse((updatedReservation.payments as any).metadata || '{}');
+          
+          console.log('📋 決済メタデータ:', {
+            setupIntentId: paymentMetadata.setupIntentId,
+            paymentMethodId: paymentMetadata.paymentMethodId,
+            customerId: paymentMetadata.customerId
+          });
           const paymentMethodId = paymentMetadata.paymentMethodId;
           const customerId = paymentMetadata.customerId;
           
           if (!paymentMethodId) {
             throw new Error('決済手段が見つかりません');
           }
+          
+          console.log('🔄 Payment Intent作成開始');
           
           // Payment Intentを作成して即座に実行
           const paymentIntent = await stripe.paymentIntents.create({
