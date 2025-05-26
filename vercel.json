@@ -33,11 +33,5 @@
         }
       ]
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/cron/execute-payments",
-      "schedule": "*/5 * * * *"
-    }
   ]
 } 
