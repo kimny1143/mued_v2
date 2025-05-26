@@ -81,16 +81,23 @@ export async function POST(req: Request) {
     
     console.log('📍 Return URL:', returnUrl);
 
-    // 固定のCustomer Portal Login URLを使用
-    // Stripe Dashboard → Settings → Billing → Customer portal → Login links から取得したURL
-    const customerPortalLoginUrl = 'https://billing.stripe.com/p/login/test_5kQ8wR56iei04nF5SH7EQ00';
+    // Billing Portal Sessionを作成（認証済みユーザー用）
+    // これにより、メールアドレス入力をスキップして直接ポータルにアクセス可能
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl,
+      // 設定を追加してプラン変更を有効化
+      configuration: undefined, // デフォルト設定を使用
+    });
     
-    console.log('✅ Customer Portal Login URL使用:', customerPortalLoginUrl);
+    console.log('✅ Billing Portal Session作成成功:', portalSession.id);
+    console.log('🔗 Portal URL:', portalSession.url);
     
     return NextResponse.json({
-      url: customerPortalLoginUrl,
+      url: portalSession.url,
+      sessionId: portalSession.id,
       customerId: customerId,
-      type: 'customer_portal_login'
+      type: 'billing_portal_session'
     });
 
   } catch (error) {
