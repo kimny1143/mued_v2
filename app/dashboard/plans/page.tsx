@@ -127,6 +127,39 @@ export default function Page() {
     try {
       console.log('サブスクリプション処理開始:', { priceId, userId: user.id });
 
+      // 既存サブスクリプションがある場合はBilling Portalに直接リダイレクト
+      if (hasActiveSubscription) {
+        console.log('🔄 既存サブスクリプションあり - Billing Portalにリダイレクト');
+        
+        // 認証トークンを取得
+        const { data: sessionData } = await supabaseBrowser.auth.getSession();
+        const token = sessionData?.session?.access_token;
+
+        if (!token) {
+          throw new Error('認証トークンが見つかりません。再度ログインしてください。');
+        }
+
+        // Billing Portal Sessionを作成
+        const billingResponse = await fetch('/api/billing-portal', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const billingData = await billingResponse.json();
+
+        if (billingResponse.ok) {
+          console.log('✅ Billing Portal Session作成成功');
+          window.location.href = billingData.url;
+          return;
+        } else {
+          console.warn('⚠️ Billing Portal作成失敗 - 通常のチェックアウトにフォールバック');
+          // フォールバックとして通常のチェックアウト処理を続行
+        }
+      }
+
       // 認証トークンを取得
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData?.session?.access_token;
