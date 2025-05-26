@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
     // リクエストボディからデータを取得
     const data = await request.json();
     // durationだけを変数として宣言し、他は定数のまま
-    const { slotId, bookedStartTime, bookedEndTime, notes } = data;
+    const { slotId, bookedStartTime, bookedEndTime, notes, totalAmount, createPaymentIntent } = data;
     let duration = data.duration || 60; // デフォルト60分
     
     // 処理のログ出力
@@ -330,70 +330,126 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date()
       };
       
-      // 予約レコードを作成
-      const reservation = await tx.reservations.create({
-        data: reservationData
-      });
-      
-      // 日付と時間をフォーマット（JST時間で表示）
-      const formattedDate = reservationStartTime.toLocaleDateString('ja-JP', {
-        timeZone: 'Asia/Tokyo',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      
-      const startTimeJST = reservationStartTime.toLocaleTimeString('ja-JP', {
-        timeZone: 'Asia/Tokyo',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
-      
-      const endTimeJST = reservationEndTime.toLocaleTimeString('ja-JP', {
-        timeZone: 'Asia/Tokyo',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      });
-      
-      const formattedTimeRange = `${startTimeJST} - ${endTimeJST}`;
-      const formattedDuration = `${durationInMinutes}分`;
-      
-      console.log('📅 JST変換結果:', {
-        originalStart: reservationStartTime.toISOString(),
-        originalEnd: reservationEndTime.toISOString(),
-        formattedDate,
-        formattedTimeRange,
-        note: 'Stripe決済ページと成功ページで日本時間が表示されます'
-      });
-      
-      // セッション情報・リクエスト情報をログ出力（デバッグ用）
-      console.log('セッション情報:', {
-        userId: session.user.id,
-        userEmail: session.user.email,
-        role: session.role
-      });
-      
-      // 予約作成完了 - 決済はメンター承認後に実行
-      console.log('✅ 予約作成完了 - メンター承認待ち状態:', {
-        reservationId: reservation.id,
-        status: reservation.status,
-        teacher: slot.users.name,
-        student: session.user.email,
-        timeRange: formattedTimeRange
-      });
-      
-      return {
-        success: true,
-        reservation,
-        message: 'メンターの承認をお待ちください。承認後に決済手続きをご案内いたします。',
-        pricing: {
-          fixedAmount,
-          currency,
-          durationInMinutes
+              // 日付と時間をフォーマット（JST時間で表示）
+        const formattedDate = reservationStartTime.toLocaleDateString('ja-JP', {
+          timeZone: 'Asia/Tokyo',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+        
+        const startTimeJST = reservationStartTime.toLocaleTimeString('ja-JP', {
+          timeZone: 'Asia/Tokyo',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+        
+        const endTimeJST = reservationEndTime.toLocaleTimeString('ja-JP', {
+          timeZone: 'Asia/Tokyo',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+        
+        const formattedTimeRange = `${startTimeJST} - ${endTimeJST}`;
+        const formattedDuration = `${durationInMinutes}分`;
+        
+        console.log('📅 JST変換結果:', {
+          originalStart: reservationStartTime.toISOString(),
+          originalEnd: reservationEndTime.toISOString(),
+          formattedDate,
+          formattedTimeRange,
+          note: 'Stripe決済ページと成功ページで日本時間が表示されます'
+        });
+        
+        // 予約レコードを作成
+        const reservation = await tx.reservations.create({
+          data: reservationData
+        });
+        
+        // 決済準備（Payment Intentを作成）
+        let paymentIntent = null;
+        if (createPaymentIntent && totalAmount) {
+          try {
+            // Stripe Payment Intentを作成（承認時に自動実行される）
+            paymentIntent = await _stripe.paymentIntents.create({
+              amount: Math.round(totalAmount), // JPYは最小単位が円
+              currency: 'jpy',
+              automatic_payment_methods: {
+                enabled: true,
+              },
+              capture_method: 'manual', // 手動キャプチャ（承認時に実行）
+              metadata: {
+                reservationId: reservation.id,
+                studentId: session.user.id,
+                teacherId: slot.users.id,
+                slotId: slot.id,
+              },
+              description: `${slot.users.name}先生のレッスン予約 - ${formattedDate} ${formattedTimeRange}`,
+            });
+            
+            // Payment レコードを作成
+            const payment = await tx.payments.create({
+              data: {
+                id: randomUUID(),
+                stripePaymentId: paymentIntent.id,
+                amount: totalAmount,
+                currency: 'jpy',
+                status: 'PENDING',
+                userId: session.user.id,
+                stripeSessionId: `pi_${randomUUID()}`, // 一時的なセッションID
+                updatedAt: new Date()
+              }
+            });
+            
+            // 予約にpaymentIdを関連付け
+            await tx.reservations.update({
+              where: { id: reservation.id },
+              data: { paymentId: payment.id }
+            });
+            
+            console.log('💳 決済準備完了:', {
+              paymentIntentId: paymentIntent.id,
+              amount: totalAmount,
+              status: 'PENDING'
+            });
+          } catch (paymentError) {
+            console.error('決済準備エラー:', paymentError);
+            // 決済準備に失敗しても予約は作成する（後で手動決済可能）
+          }
         }
-      };
+        
+        // セッション情報・リクエスト情報をログ出力（デバッグ用）
+        console.log('セッション情報:', {
+          userId: session.user.id,
+          userEmail: session.user.email,
+          role: session.role
+        });
+        
+        // 予約作成完了 - 決済はメンター承認後に実行
+        console.log('✅ 予約作成完了 - メンター承認待ち状態:', {
+          reservationId: reservation.id,
+          status: reservation.status,
+          teacher: slot.users.name,
+          student: session.user.email,
+          timeRange: formattedTimeRange,
+          paymentPrepared: !!paymentIntent
+        });
+        
+        return {
+          success: true,
+          reservation,
+          message: createPaymentIntent ? 
+            '予約リクエストと決済準備が完了しました。メンター承認後に自動で決済が実行されます。' :
+            'メンターの承認をお待ちください。承認後に決済手続きをご案内いたします。',
+          pricing: {
+            fixedAmount,
+            currency,
+            durationInMinutes
+          },
+          paymentPrepared: !!paymentIntent
+        };
     });
     
     return NextResponse.json(result);

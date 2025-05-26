@@ -160,9 +160,9 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>レッスン予約の確認</DialogTitle>
+          <DialogTitle>レッスン予約リクエストの確認</DialogTitle>
           <DialogDescription>
-            以下の内容でレッスンを予約します。決済後に予約が確定します。
+            以下の内容で予約リクエストを送信します。メンター承認後に決済手続きをご案内いたします。
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -244,7 +244,7 @@ export const ReservationModal: React.FC<ReservationModalProps> = ({
                 処理中...
               </>
             ) : (
-              '決済に進む'
+              '予約リクエストを送信'
             )}
           </Button>
         </DialogFooter>

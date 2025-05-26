@@ -46,6 +46,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   const [lessonDuration, setLessonDuration] = useState<60 | 90>(60); // デフォルト60分
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   // モーダルが閉じられるときにstateをリセット
   const resetModalState = () => {
@@ -55,6 +56,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     setSelectedEndTime(null);
     setLessonDuration(60);
     setError(null);
+    setIsSuccess(false);
   };
 
   // モーダルが開閉されるときにstateをリセット
@@ -187,14 +189,18 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         slotId: selectedTimeSlot.id,
         bookedStartTime: selectedStartTime.toISOString(),
         bookedEndTime: selectedEndTime.toISOString(),
-        notes: `メンター: ${selectedMentor.name}とのレッスン予約（${lessonDuration}分）`
+        notes: `メンター: ${selectedMentor.name}とのレッスン予約（${lessonDuration}分）`,
+        // 決済情報も含める
+        totalAmount: calculateTotalPrice(),
+        createPaymentIntent: true // 決済準備フラグ
       };
 
-      console.log('=== モーダル予約データ送信（時間選択版） ===');
+      console.log('=== モーダル予約データ送信（決済準備付き） ===');
       console.log('予約データ:', reservationData);
       console.log('レッスン時間:', lessonDuration, '分');
       console.log('開始時間:', selectedStartTime);
       console.log('終了時間:', selectedEndTime);
+      console.log('決済予定金額:', calculateTotalPrice());
 
       const response = await fetch('/api/reservations', {
         method: 'POST',
@@ -213,14 +219,20 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
       const result = await response.json();
 
-      if (result.checkoutUrl) {
+      // 新しいフロー: 予約リクエスト + 決済準備完了
+      if (result.success) {
         // 予約完了後の処理
         onBookingComplete();
         
-        // Stripe決済ページにリダイレクト
-        window.location.href = result.checkoutUrl;
+        // 成功状態を表示
+        setIsSuccess(true);
+        
+        // 3秒後にモーダルを閉じる
+        setTimeout(() => {
+          onClose();
+        }, 3000);
       } else {
-        throw new Error('決済URLの取得に失敗しました');
+        throw new Error(result.message || '予約リクエストの送信に失敗しました');
       }
     } catch (error) {
       console.error('予約処理エラー:', error);
@@ -267,10 +279,10 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                   <Clock className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">レッスン予約</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">レッスン予約リクエスト</h2>
                   {selectedDate && (
                     <p className="text-sm text-gray-600">
-                      {format(selectedDate, 'yyyy年M月d日 (EEEE)', { locale: ja })}
+                      {format(selectedDate, 'yyyy年M月d日 (EEEE)', { locale: ja })} - メンター承認後に決済
                     </p>
                   )}
                 </div>
@@ -287,6 +299,24 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
             {/* コンテンツ */}
             <div className="p-6 max-h-[calc(90vh-200px)] overflow-y-auto">
+              {/* 成功表示 */}
+              {isSuccess && (
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+                  <h3 className="font-medium text-green-900 mb-1">予約リクエストを送信しました！</h3>
+                  <p className="text-sm text-green-700">
+                    決済情報も準備完了しました。<br />
+                    メンターが承認すると自動で決済が実行されます。
+                  </p>
+                </div>
+              )}
+              
               {/* エラー表示 */}
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -432,8 +462,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
               {/* 料金詳細 */}
               {selectedTimeSlot && (
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-3">料金詳細</h4>
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-3">予約内容と料金</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>レッスン料金</span>
@@ -443,50 +473,54 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       <span>消費税（10%）</span>
                       <span>{formatPrice(calculateTotalPrice() * 0.1)}</span>
                     </div>
-                    <div className="border-t border-gray-300 pt-2">
+                    <div className="border-t border-blue-300 pt-2">
                       <div className="flex justify-between font-medium">
-                        <span>合計</span>
-                        <span className="text-primary">
+                        <span>合計金額</span>
+                        <span className="text-blue-700">
                           {formatPrice(calculateTotalPrice())}
                         </span>
                       </div>
                     </div>
+                  </div>
+                  <div className="mt-3 text-xs text-blue-700">
+                    ✨ メンター承認後に自動で決済が実行されます
                   </div>
                 </div>
               )}
             </div>
 
             {/* フッター */}
-            <div className="p-6 border-t bg-gray-50">
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={onClose}
-                  className="flex-1"
-                  disabled={isProcessing}
-                >
-                  キャンセル
-                </Button>
-                <Button
-                  onClick={handleBooking}
-                  disabled={!selectedTimeSlot || !selectedMentor || !selectedStartTime || !selectedEndTime || isProcessing}
-                  className="flex-1"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                      処理中...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      決済に進む
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </>
-                  )}
-                </Button>
+            {!isSuccess && (
+              <div className="p-6 border-t bg-gray-50">
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    className="flex-1"
+                    disabled={isProcessing}
+                  >
+                    キャンセル
+                  </Button>
+                  <Button
+                    onClick={handleBooking}
+                    disabled={!selectedTimeSlot || !selectedMentor || !selectedStartTime || !selectedEndTime || isProcessing}
+                    className="flex-1"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                        処理中...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        予約リクエストを送信
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
