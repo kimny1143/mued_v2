@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       const payment = await tx.payments.create({
         data: {
           id: randomUUID(),
-          stripePaymentId: '', // 後でPayment Intent作成時に更新
+          stripePaymentId: null, // Payment Intent作成時に更新（nullで初期化）
           stripeSessionId: sessionId,
           amount: reservationData.totalAmount,
           currency: 'jpy',
