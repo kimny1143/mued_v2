@@ -15,6 +15,16 @@ import type { ExtendedTimeSlot, MyReservation } from '../_types/calendar';
 // デバッグモード（環境変数ベース）
 const DEBUG = isDebugMode();
 
+// 他の予約情報の型定義
+interface OtherReservation {
+  id: string;
+  slotId: string;
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'APPROVED' | 'PENDING_APPROVAL';
+  bookedStartTime: string;
+  bookedEndTime: string;
+  studentId: string;
+}
+
 interface MentorCalendarProps {
   mentors: Mentor[];
   isLoading?: boolean;
@@ -56,6 +66,10 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   // 統合された予約時間枠（全メンター）
   const [allTimeSlots, setAllTimeSlots] = useState<ExtendedTimeSlot[]>([]);
   
+  // 他の予約情報（プライバシー保護のため時間のみ）
+  const [otherReservations, setOtherReservations] = useState<OtherReservation[]>([]);
+  const [isLoadingReservations, setIsLoadingReservations] = useState(false);
+  
   // 選択された日付
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   
@@ -77,6 +91,63 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     verboseDebugLog('最初のメンター:', mentors[0]);
     verboseDebugLog('最初のメンターのavailableSlots:', mentors[0].availableSlots);
   }
+
+  // 特定の日付の全ての予約情報を取得する関数
+  const fetchReservationsForDate = async (date: Date) => {
+    setIsLoadingReservations(true);
+    try {
+      const response = await fetch('/api/reservations', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('予約情報の取得に失敗しました');
+      }
+
+      const allReservations: Array<{
+        id: string;
+        slotId: string;
+        status: string;
+        bookedStartTime: string;
+        bookedEndTime: string;
+        studentId: string;
+      }> = await response.json();
+      
+      // 指定された日付の予約のみをフィルタリング
+      const dateReservations = allReservations.filter((reservation) => {
+        const reservationDate = new Date(reservation.bookedStartTime);
+        return (
+          reservationDate.getFullYear() === date.getFullYear() &&
+          reservationDate.getMonth() === date.getMonth() &&
+          reservationDate.getDate() === date.getDate()
+        );
+      });
+
+      // 自分の予約以外をフィルタリング（プライバシー保護）
+      const otherReservationsForDate = dateReservations.filter((reservation) => {
+        return !myReservations.some(myRes => myRes.id === reservation.id);
+      }).map((reservation) => ({
+        id: reservation.id,
+        slotId: reservation.slotId,
+        status: reservation.status as 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'APPROVED' | 'PENDING_APPROVAL',
+        bookedStartTime: reservation.bookedStartTime,
+        bookedEndTime: reservation.bookedEndTime,
+        studentId: reservation.studentId, // プライバシー保護のため表示には使用しない
+      }));
+
+      debugLog('📅 取得した他の予約情報:', otherReservationsForDate);
+      setOtherReservations(otherReservationsForDate);
+      
+    } catch (error) {
+      console.error('予約情報取得エラー:', error);
+      setOtherReservations([]);
+    } finally {
+      setIsLoadingReservations(false);
+    }
+  };
 
   // 全メンターの時間枠を統合して取得
   useEffect(() => {
@@ -186,6 +257,13 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     }
   }, [mentors]);
 
+  // 日表示に切り替わった時に予約情報を取得
+  useEffect(() => {
+    if (currentView === 'day' && selectedDateForDay) {
+      fetchReservationsForDate(selectedDateForDay);
+    }
+  }, [currentView, selectedDateForDay, myReservations]);
+
   // 予約可能な日付リスト（月表示で色付けするため）
   const availableDays = Array.from(new Set(
     allTimeSlots
@@ -217,6 +295,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     if (view === 'month' || view === 'week') {
       setSelectedDateForDay(null);
       setSelectedDates([]);
+      setOtherReservations([]); // 月表示に戻る時は他の予約情報をクリア
     }
   };
 
@@ -257,6 +336,11 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     setModalSelectedSlot(null);
     setModalSelectedMentor(null);
     setSelectedDates([]);
+    
+    // 予約完了後、日表示の場合は予約情報を再取得
+    if (currentView === 'day' && selectedDateForDay) {
+      fetchReservationsForDate(selectedDateForDay);
+    }
   };
 
   // 日付ナビゲーションの処理
@@ -280,6 +364,9 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
             <p>• 総スロット数: <span className="font-medium">{allTimeSlots.length}</span></p>
             <p>• 予約可能日: <span className="font-medium">{availableDays.length}日</span></p>
             <p>• 選択中メンター: <span className="font-medium">{mentors.length > 0 ? mentors[0].name : '未選択'}</span></p>
+            {currentView === 'day' && (
+              <p>• 他の予約数: <span className="font-medium">{otherReservations.length}件</span></p>
+            )}
           </div>
         </div>
       )}
@@ -445,6 +532,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                   selectedDate={selectedDateForDay}
                   allTimeSlots={allTimeSlots}
                   myReservations={myReservations}
+                  otherReservations={otherReservations}
+                  isLoadingReservations={isLoadingReservations}
                   mentors={mentors}
                   onBackToMonth={() => handleViewChange('month')}
                   onDayNavigation={handleDayNavigation}

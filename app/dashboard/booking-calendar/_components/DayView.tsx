@@ -32,10 +32,21 @@ interface MyReservation {
   createdAt: string;
 }
 
+interface OtherReservation {
+  id: string;
+  slotId: string;
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'APPROVED' | 'PENDING_APPROVAL';
+  bookedStartTime: string;
+  bookedEndTime: string;
+  studentId: string;
+}
+
 interface DayViewProps {
   selectedDate: Date;
   allTimeSlots: ExtendedTimeSlot[];
   myReservations: MyReservation[];
+  otherReservations: OtherReservation[];
+  isLoadingReservations: boolean;
   mentors: Mentor[];
   onBackToMonth: () => void;
   onDayNavigation: (date: Date) => void;
@@ -46,6 +57,8 @@ export const DayView: React.FC<DayViewProps> = ({
   selectedDate,
   allTimeSlots,
   myReservations,
+  otherReservations,
+  isLoadingReservations,
   mentors,
   onBackToMonth,
   onDayNavigation,
@@ -149,6 +162,9 @@ export const DayView: React.FC<DayViewProps> = ({
         </Button>
         <h4 className="text-xl font-semibold text-gray-900">
           {format(selectedDate, 'yyyy年M月d日 (EEEE)', { locale: ja })}
+          {isLoadingReservations && (
+            <span className="ml-2 text-sm text-gray-500">予約情報読み込み中...</span>
+          )}
         </h4>
         <div className="flex gap-2">
           <Button
@@ -392,74 +408,58 @@ export const DayView: React.FC<DayViewProps> = ({
                     })()}
                     
                     {/* 他の予約の重ね表示（プライバシー保護） */}
-                    {slot.reservationCount > 0 && (() => {
-                      // 予約情報を取得
-                      const baseSlot = mentors
-                        .find(m => m.id === mentor.id)
-                        ?.availableSlots
-                        ?.find(s => s.id === slot.id);
+                    {(() => {
+                      // このスロットに関連する他の予約を取得
+                      const otherReservationsInSlot = otherReservations.filter(res => 
+                        isSameDay(new Date(res.bookedStartTime), selectedDate) &&
+                        res.slotId === slot.id &&
+                        (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
+                      );
                       
-                      if (!baseSlot?.reservations) return null;
-                      
-                      return baseSlot.reservations
-                        .filter(res => res.status === 'CONFIRMED' || res.status === 'PENDING')
-                        .map((reservation, resIndex) => {
-                          if (!reservation.bookedStartTime || !reservation.bookedEndTime) return null;
-                          
-                          // 自分の予約は既に上で表示しているのでスキップ
-                          const isMyReservation = myReservations.some(myRes => 
-                            myRes.id === reservation.id ||
-                            (myRes.slotId === slot.id &&
-                             myRes.bookedStartTime && reservation.bookedStartTime &&
-                             isSameDay(new Date(myRes.bookedStartTime), new Date(reservation.bookedStartTime)) &&
-                             new Date(myRes.bookedStartTime).getTime() === new Date(reservation.bookedStartTime).getTime())
-                          );
-                          
-                          if (isMyReservation) return null;
-                          
-                          const resStart = new Date(reservation.bookedStartTime);
-                          const resEnd = new Date(reservation.bookedEndTime);
-                          
-                          // 予約時間の相対位置計算
-                          const resStartPos = (resStart.getHours() - 8) + (resStart.getMinutes() / 60);
-                          const resEndPos = (resEnd.getHours() - 8) + (resEnd.getMinutes() / 60);
-                          const resDuration = resEndPos - resStartPos;
-                          
-                          return (
-                            <div
-                              key={`other-reservation-${reservation.id}-${resIndex}`}
-                              className={`absolute rounded border-2 ${
-                                reservation.status === 'CONFIRMED' 
-                                  ? 'bg-red-200 border-red-400' 
-                                  : 'bg-orange-200 border-orange-400'
-                              }`}
-                              style={{
-                                top: `${resStartPos * 60 + 2}px`,
-                                height: `${resDuration * 60 - 4}px`,
-                                left: leftPosition,
-                                width: slotWidth,
-                                zIndex: 10
-                              }}
-                            >
-                              <div className="p-1 text-xs">
-                                <div className={`font-medium ${
-                                  reservation.status === 'CONFIRMED' 
-                                    ? 'text-red-800' 
-                                    : 'text-orange-800'
-                                }`}>
-                                  {format(resStart, 'HH:mm')}-{format(resEnd, 'HH:mm')}
-                                </div>
-                                <div className={`text-xs ${
-                                  reservation.status === 'CONFIRMED' 
-                                    ? 'text-red-700' 
-                                    : 'text-orange-700'
-                                }`}>
-                                  {reservation.status === 'CONFIRMED' ? '予約済み' : '保留中'}
-                                </div>
+                      return otherReservationsInSlot.map((otherReservation, otherResIndex) => {
+                        const resStart = new Date(otherReservation.bookedStartTime);
+                        const resEnd = new Date(otherReservation.bookedEndTime);
+                        
+                        // 予約時間の相対位置計算
+                        const resStartPos = (resStart.getHours() - 8) + (resStart.getMinutes() / 60);
+                        const resEndPos = (resEnd.getHours() - 8) + (resEnd.getMinutes() / 60);
+                        const resDuration = resEndPos - resStartPos;
+                        
+                        return (
+                          <div
+                            key={`other-reservation-${otherReservation.id}-${otherResIndex}`}
+                            className={`absolute rounded border-2 ${
+                              otherReservation.status === 'CONFIRMED' 
+                                ? 'bg-red-200 border-red-400' 
+                                : 'bg-orange-200 border-orange-400'
+                            }`}
+                            style={{
+                              top: `${resStartPos * 60 + 2}px`,
+                              height: `${resDuration * 60 - 4}px`,
+                              left: leftPosition,
+                              width: slotWidth,
+                              zIndex: 10
+                            }}
+                          >
+                            <div className="p-1 text-xs">
+                              <div className={`font-medium ${
+                                otherReservation.status === 'CONFIRMED' 
+                                  ? 'text-red-800' 
+                                  : 'text-orange-800'
+                              }`}>
+                                {format(resStart, 'HH:mm')}-{format(resEnd, 'HH:mm')}
+                              </div>
+                              <div className={`text-xs ${
+                                otherReservation.status === 'CONFIRMED' 
+                                  ? 'text-red-700' 
+                                  : 'text-orange-700'
+                              }`}>
+                                {otherReservation.status === 'CONFIRMED' ? '予約済み' : '保留中'}
                               </div>
                             </div>
-                          );
-                        });
+                          </div>
+                        );
+                      });
                     })()}
                   </div>
                 );
@@ -511,6 +511,7 @@ export const DayView: React.FC<DayViewProps> = ({
         
         <div className="text-[10px] text-gray-600 border-t pt-2 mt-3">
           💡 <strong>プライバシー保護:</strong> 他の生徒の予約は時間のみ表示され、個人情報は表示されません
+          <br />💡 <strong>予約状況:</strong> {otherReservations.length}件の他の予約が表示されています
         </div>
       </div>
     </div>
