@@ -498,31 +498,67 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                 {format(date, 'd')}
                               </div>
                               
-                              {/* メンタースロット情報表示（シンプル版） */}
+                              {/* スロットタグ表示（SlotsCalendar風） */}
                               {isAvailable && daySlots.length > 0 && (
-                                <div className="flex flex-col gap-0.5 w-full mt-1 px-1">
-                                  {/* メンター名タグ（最大2つ） */}
-                                  {Array.from(new Set(daySlots.slice(0, 2).map(slot => {
+                                <div className="flex flex-col gap-0.5 w-full mt-1">
+                                  {/* スロットタグ表示（最大3個まで） */}
+                                  {daySlots.slice(0, 3).map((slot, slotIndex) => {
                                     const extSlot = slot as ExtendedTimeSlot;
-                                    // ExtendedTimeSlotのmentorNameを直接使用
-                                    return extSlot.mentorName;
-                                  }))).filter(Boolean).map((mentorName, nameIndex) => (
-                                    <div key={nameIndex} className="text-[7px] leading-tight text-center">
-                                      <div className="font-medium truncate bg-white/50 rounded px-1 py-0.5">
-                                        {mentorName}
+                                    const statusColors = {
+                                      available: 'bg-green-100 border-green-300 text-green-800',
+                                      partial: 'bg-yellow-100 border-yellow-300 text-yellow-800',
+                                      full: 'bg-orange-100 border-orange-300 text-orange-800',
+                                      unavailable: 'bg-gray-100 border-gray-300 text-gray-600'
+                                    };
+                                    
+                                    return (
+                                      <div
+                                        key={`${extSlot.id}-${slotIndex}`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (extSlot.bookingStatus === 'available' || extSlot.bookingStatus === 'partial') {
+                                            const selectedMentor = mentors.find(m => m.id === extSlot.mentorId);
+                                            setModalSelectedDate(date);
+                                            setModalSelectedSlot(extSlot);
+                                            setModalSelectedMentor(selectedMentor || null);
+                                            setIsModalOpen(true);
+                                          }
+                                        }}
+                                        className={`
+                                          text-[8px] px-1 py-0.5 rounded border cursor-pointer transition-colors
+                                          ${statusColors[extSlot.bookingStatus]}
+                                          font-medium leading-tight max-w-full truncate
+                                          ${(extSlot.bookingStatus === 'available' || extSlot.bookingStatus === 'partial') ? 'hover:opacity-80' : 'cursor-default'}
+                                        `}
+                                        title={`${extSlot.mentorName} ${format(new Date(extSlot.startTime), 'HH:mm')}-${format(new Date(extSlot.endTime), 'HH:mm')} ${extSlot.bookingStatus === 'available' ? '(完全空き)' : extSlot.bookingStatus === 'partial' ? `(${extSlot.availableTime}分空き)` : extSlot.bookingStatus === 'full' ? '(満席)' : '(利用不可)'} - クリックで予約`}
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <span className="truncate">
+                                            {extSlot.mentorName?.substring(0, 3)}
+                                          </span>
+                                          <span className="ml-1">
+                                            {format(new Date(extSlot.startTime), 'HH:mm')}
+                                          </span>
+                                        </div>
                                       </div>
+                                    );
+                                  })}
+                                  
+                                  {/* 4個以上ある場合の省略表示 */}
+                                  {daySlots.length > 3 && (
+                                    <div 
+                                      onClick={() => handleDateClick(date)}
+                                      className="text-[8px] text-center text-gray-600 font-medium cursor-pointer hover:text-blue-600 bg-gray-50 rounded px-1 py-0.5 border border-gray-200"
+                                      title="すべてのスロットを表示"
+                                    >
+                                      +{daySlots.length - 3}件
                                     </div>
-                                  ))}
+                                  )}
                                   
-                                  {/* スロット数表示 */}
-                                  <div className="text-[7px] text-center font-medium opacity-80">
-                                    {daySlots.length}スロット
-                                  </div>
-                                  
-                                  {/* 簡潔な予約状況 */}
+                                  {/* 予約数サマリー（小さく表示） */}
                                   {totalReservations > 0 && (
-                                    <div className="text-[6px] text-center opacity-70 font-medium">
-                                      {totalReservations}予約
+                                    <div className="text-[6px] text-center text-gray-500 font-medium">
+                                      {totalReservations}予約済み
                                     </div>
                                   )}
                                 </div>
@@ -555,42 +591,62 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                 
                 {/* 凡例 */}
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <h5 className="text-sm font-medium text-gray-700 mb-2">予約状況の見方</h5>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-green-50 border-2 border-green-200 rounded"></div>
-                      <span>完全に空き</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-yellow-50 border-2 border-yellow-300 rounded"></div>
-                      <span>部分的に予約済み</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-orange-50 border-2 border-orange-300 rounded"></div>
-                      <span>ほぼ満席</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-gray-50 border-2 border-gray-300 rounded"></div>
-                      <span>利用不可</span>
+                  <h5 className="text-sm font-medium text-gray-700 mb-3">予約状況の見方</h5>
+                  
+                  {/* スロットタグの凡例 */}
+                  <div className="mb-4">
+                    <h6 className="text-xs font-medium text-gray-600 mb-2">スロットタグ</h6>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="px-2 py-1 bg-green-100 border border-green-300 text-green-800 rounded text-[8px] font-medium">
+                          田中 09:00
+                        </div>
+                        <span>完全空き</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="px-2 py-1 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded text-[8px] font-medium">
+                          佐藤 14:00
+                        </div>
+                        <span>部分予約</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="px-2 py-1 bg-orange-100 border border-orange-300 text-orange-800 rounded text-[8px] font-medium">
+                          鈴木 16:00
+                        </div>
+                        <span>満席</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="px-2 py-1 bg-gray-100 border border-gray-300 text-gray-600 rounded text-[8px] font-medium">
+                          山田 18:00
+                        </div>
+                        <span>利用不可</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-4 text-xs text-gray-600">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                      <span>今日</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-primary border-2 border-primary rounded"></div>
-                      <span>選択中</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-0.5">
-                        <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                        <div className="w-1 h-1 bg-yellow-500 rounded-full"></div>
-                        <div className="w-1 h-1 bg-orange-500 rounded-full"></div>
+                  
+                  {/* 日付の凡例 */}
+                  <div className="mb-3">
+                    <h6 className="text-xs font-medium text-gray-600 mb-2">日付表示</h6>
+                    <div className="flex flex-wrap gap-4 text-xs text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <span>今日</span>
                       </div>
-                      <span>スロット状況</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 bg-primary border-2 border-primary rounded"></div>
+                        <span>選択中</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="px-1 py-0.5 bg-gray-50 border border-gray-200 rounded text-[8px]">
+                          +2件
+                        </div>
+                        <span>追加スロット</span>
+                      </div>
                     </div>
+                  </div>
+                  
+                  <div className="text-[10px] text-gray-600 border-t pt-2">
+                    💡 <strong>操作方法:</strong> スロットタグをクリック→予約、日付をクリック→詳細表示
                   </div>
                 </div>
               </>
