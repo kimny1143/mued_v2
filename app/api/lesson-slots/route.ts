@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
     });
     
     // フィルタリング条件を構築
-    const filter: Prisma.LessonSlotWhereInput = {};
+    const filter: Prisma.lesson_slotsWhereInput = {};
     
     // 🆕 viewModeに基づいてteacherIdフィルターを設定
     if (viewMode === 'own') {
@@ -166,11 +166,11 @@ export async function GET(request: NextRequest) {
     }
     
     // レッスンスロットを取得
-    const slots = await executePrismaQuery(() => prisma.lessonSlot.findMany({
+    const slots = await executePrismaQuery(() => prisma.lesson_slots.findMany({
       where: filter,
       orderBy: { startTime: 'asc' },
       include: {
-        teacher: {
+        users: {
           select: { id: true, name: true, image: true }
         },
         reservations: {
@@ -254,15 +254,15 @@ export async function POST(request: NextRequest) {
       
       try {
         // ユーザーデータベースからロール情報を直接取得（二重チェック）
-        const userData = await prisma.user.findUnique({
+        const userData = await prisma.users.findUnique({
           where: { id: sessionInfo.user.id },
-          include: { role: true }
+          include: { roles: true }
         });
         
         console.log("🔍 DB直接取得のユーザー情報:", {
           found: !!userData,
           roleId: userData?.roleId,
-          roleName: userData?.role?.name
+          roleName: userData?.roles?.name
         });
       } catch (dbError) {
         console.error("🔴 DBからの直接ロール取得エラー:", dbError);
@@ -376,7 +376,7 @@ export async function POST(request: NextRequest) {
     }
     
     // スロットの重複をチェック
-    const overlappingSlot = await executePrismaQuery(() => prisma.lessonSlot.findFirst({
+    const overlappingSlot = await executePrismaQuery(() => prisma.lesson_slots.findFirst({
       where: {
         teacherId: sessionInfo.user.id,
         OR: [
@@ -404,8 +404,9 @@ export async function POST(request: NextRequest) {
     }
     
     // 新しいスロットを作成
-    const newSlot = await executePrismaQuery(() => prisma.lessonSlot.create({
+    const newSlot = await executePrismaQuery(() => prisma.lesson_slots.create({
       data: {
+        id: crypto.randomUUID(),
         teacherId: sessionInfo.user.id,
         startTime,
         endTime,
@@ -414,6 +415,8 @@ export async function POST(request: NextRequest) {
         minHours: data.minHours ? parseInt(data.minHours, 10) : 1,
         maxHours: data.maxHours ? parseInt(data.maxHours, 10) : null,
         isAvailable: data.isAvailable ?? true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     }));
     

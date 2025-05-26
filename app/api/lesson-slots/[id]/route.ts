@@ -23,19 +23,19 @@ export async function GET(
   try {
     const id = params.id;
     
-    const slot = await prisma.lessonSlot.findUnique({
+    const slot = await prisma.lesson_slots.findUnique({
       where: { id },
-      include: {
-        teacher: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
+              include: {
+          users: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            },
           },
+          reservations: true,
         },
-        reservations: true,
-      },
     });
     
     if (!slot) {
