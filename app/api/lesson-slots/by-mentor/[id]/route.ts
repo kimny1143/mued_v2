@@ -113,7 +113,7 @@ export async function GET(
     }
     
     // 指定されたメンターの予約可能枠を取得
-    const lessonSlots = await prisma.lessonSlot.findMany({
+    const lessonSlots = await prisma.lesson_slots.findMany({
       where: {
         teacherId: mentorId,
         startTime: {

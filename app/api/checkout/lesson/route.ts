@@ -25,10 +25,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Prisma でスロット取得 & 可用性チェック
-    const slot = await prisma.lessonSlot.findUnique({
+    const slot = await prisma.lesson_slots.findUnique({
       where: { id: lessonSlotId },
       include: {
-        teacher: true,
+        users: true,
         reservations: true,
       },
     });

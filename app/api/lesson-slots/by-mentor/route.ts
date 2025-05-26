@@ -5,13 +5,36 @@ export const revalidate = 0;
 
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma, LessonSlot, User, Reservation } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { parseISO, isValid, isBefore } from 'date-fns';
 
 // レッスンスロットと関連データの型定義
-interface SlotWithRelations extends LessonSlot {
-  teacher: Pick<User, 'id' | 'name' | 'email' | 'image'>;
-  reservations: Array<Pick<Reservation, 'id' | 'status' | 'bookedStartTime' | 'bookedEndTime'>>;
+interface SlotWithRelations {
+  id: string;
+  teacherId: string;
+  startTime: Date;
+  endTime: Date;
+  hourlyRate: number;
+  currency: string;
+  minHours: number;
+  maxHours: number | null;
+  isAvailable: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  minDuration: number | null;
+  maxDuration: number | null;
+  users: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+  };
+  reservations: Array<{
+    id: string;
+    status: string;
+    bookedStartTime: Date;
+    bookedEndTime: Date;
+  }>;
 }
 
 // Prismaクエリ実行のラッパー関数（エラーハンドリング強化）
@@ -82,7 +105,7 @@ export async function GET(request: NextRequest) {
     
     // メンター一覧を取得
     const mentors = await executePrismaQuery(() => 
-      prisma.user.findMany({
+      prisma.users.findMany({
         where: {
           roleId: 'mentor'
         },
@@ -99,7 +122,7 @@ export async function GET(request: NextRequest) {
     
     // メンター別のレッスンスロットを取得
     const lessonSlots = await executePrismaQuery(() => 
-      prisma.lessonSlot.findMany({
+      prisma.lesson_slots.findMany({
         where: {
           startTime: {
             gte: fromDate
@@ -110,7 +133,7 @@ export async function GET(request: NextRequest) {
           isAvailable: true
         },
         include: {
-          teacher: {
+          users: {
             select: {
               id: true,
               name: true,
@@ -145,11 +168,16 @@ export async function GET(request: NextRequest) {
       
       if (mentorSlots.length > 0) {
         // 予約可能なスロットがあるメンターのみ
-        acc[mentor.id] = mentorSlots;
+        // フロントエンドが期待するteacher形式に変換
+        const formattedSlots = mentorSlots.map(slot => ({
+          ...slot,
+          teacher: slot.users
+        }));
+        acc[mentor.id] = formattedSlots;
       }
       
       return acc;
-    }, {} as Record<string, SlotWithRelations[]>);
+    }, {} as Record<string, (SlotWithRelations & { teacher: { id: string; name: string | null; email: string | null; image: string | null; } })[]>);
     
     console.log(`利用可能なスロットがあるメンター数: ${Object.keys(slotsByMentor).length}`);
     

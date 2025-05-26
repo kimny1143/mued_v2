@@ -45,7 +45,13 @@ export async function GET(
       );
     }
     
-    return NextResponse.json(slot);
+    // フロントエンドが期待するteacher形式に変換
+    const formattedSlot = {
+      ...slot,
+      teacher: slot.users
+    };
+    
+    return NextResponse.json(formattedSlot);
   } catch (error) {
     console.error('Error fetching lesson slot:', error);
     return NextResponse.json(
@@ -65,7 +71,7 @@ export async function PUT(
     const sessionInfo = await getSessionFromRequest(request);
     
     // スロットが存在するか確認
-    const existingSlot = await prisma.lessonSlot.findUnique({
+    const existingSlot = await prisma.lesson_slots.findUnique({
       where: { id },
     });
     
@@ -120,7 +126,7 @@ export async function PUT(
       const startTime = updateData.startTime || existingSlot.startTime;
       const endTime = updateData.endTime || existingSlot.endTime;
       
-      const overlappingSlot = await prisma.lessonSlot.findFirst({
+      const overlappingSlot = await prisma.lesson_slots.findFirst({
         where: {
           id: { not: id },
           teacherId: existingSlot.teacherId,
@@ -150,7 +156,7 @@ export async function PUT(
     }
     
     // スロットを更新
-    const updatedSlot = await prisma.lessonSlot.update({
+    const updatedSlot = await prisma.lesson_slots.update({
       where: { id },
       data: updateData,
     });
@@ -175,7 +181,7 @@ export async function DELETE(
     const sessionInfo = await getSessionFromRequest(request);
     
     // スロットが存在するか確認
-    const existingSlot = await prisma.lessonSlot.findUnique({
+    const existingSlot = await prisma.lesson_slots.findUnique({
       where: { id },
       include: {
         reservations: true,
@@ -214,7 +220,7 @@ export async function DELETE(
     }
     
     // スロットを削除
-    await prisma.lessonSlot.delete({
+    await prisma.lesson_slots.delete({
       where: { id },
     });
     

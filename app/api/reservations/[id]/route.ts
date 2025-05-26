@@ -282,7 +282,7 @@ export async function DELETE(
       }),
       
       // 2. スロットを利用可能に更新
-      prisma.lessonSlot.update({
+              prisma.lesson_slots.update({
         where: { id: existingReservation.slotId },
         data: { isAvailable: true }
       })

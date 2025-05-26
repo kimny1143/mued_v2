@@ -193,6 +193,8 @@ export async function GET(request: NextRequest) {
       
       return {
         ...slot,
+        // フロントエンドが期待するteacher形式に変換
+        teacher: slot.users,
         hourlySlots,
         // 分単位の予約時間制約を明示的に含める
         durationConstraints: {
