@@ -115,11 +115,20 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        users: {
+          select: { id: true, name: true, email: true, image: true },
+        },
       },
       orderBy: { lesson_slots: { startTime: 'asc' } },
     }));
     
-    return NextResponse.json(reservations, {
+    // フロントエンドが期待する形式に変換
+    const formattedReservations = reservations.map(reservation => ({
+      ...reservation,
+      student: reservation.users, // usersをstudentとしてエイリアス
+    }));
+    
+    return NextResponse.json(formattedReservations, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
         'Pragma': 'no-cache',
