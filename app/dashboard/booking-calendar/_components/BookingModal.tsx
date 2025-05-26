@@ -49,20 +49,38 @@ const StripeCardInputForm: React.FC<{
   };
 
   const createPaymentMethod = async () => {
-    if (!stripe || !elements) return null;
+    if (!stripe || !elements) {
+      console.error('Stripe または Elements が初期化されていません');
+      return null;
+    }
 
     const cardElement = elements.getElement(CardElement);
-    if (!cardElement) return null;
+    if (!cardElement) {
+      console.error('CardElement が見つかりません');
+      return null;
+    }
+
+    console.log('💳 PaymentMethod作成開始...');
 
     const { error, paymentMethod } = await stripe.createPaymentMethod({
       type: 'card',
       card: cardElement,
+      billing_details: {
+        // 必要に応じて請求先情報を追加
+      },
     });
 
     if (error) {
+      console.error('💳 PaymentMethod作成エラー:', error);
       setCardError(error.message || 'カード情報の処理中にエラーが発生しました');
       return null;
     }
+
+    console.log('💳 PaymentMethod作成成功:', {
+      id: paymentMethod.id,
+      type: paymentMethod.type,
+      card: paymentMethod.card
+    });
 
     return paymentMethod;
   };
@@ -93,8 +111,14 @@ const StripeCardInputForm: React.FC<{
                 '::placeholder': {
                   color: '#aab7c4',
                 },
+                iconColor: '#424770',
+              },
+              invalid: {
+                color: '#e53e3e',
+                iconColor: '#e53e3e',
               },
             },
+            hidePostalCode: true, // 郵便番号フィールドを非表示（日本では不要）
           }}
         />
         {cardError && (

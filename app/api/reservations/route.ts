@@ -428,6 +428,11 @@ export async function POST(request: NextRequest) {
               confirmation_method: 'manual',
               confirm: true, // 即座に確認して決済手段を確定
               capture_method: 'manual', // 手動キャプチャ（承認時に実行）
+              // 自動決済方法の設定（リダイレクトを無効化）
+              automatic_payment_methods: {
+                enabled: true,
+                allow_redirects: 'never' // リダイレクト型決済を無効化
+              },
               metadata: {
                 reservationId: reservation.id,
                 studentId: session.user.id,
