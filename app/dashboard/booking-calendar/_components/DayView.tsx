@@ -64,6 +64,14 @@ export const DayView: React.FC<DayViewProps> = ({
   onDayNavigation,
   onSlotClick,
 }) => {
+  // デバッグログを追加
+  console.log('🔍 DayView デバッグ情報:');
+  console.log('- selectedDate:', selectedDate);
+  console.log('- allTimeSlots:', allTimeSlots);
+  console.log('- myReservations:', myReservations);
+  console.log('- otherReservations:', otherReservations);
+  console.log('- mentors:', mentors);
+
   // 価格フォーマット関数
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ja-JP', {
@@ -76,6 +84,8 @@ export const DayView: React.FC<DayViewProps> = ({
     isSameDay(new Date(slot.startTime), selectedDate) && slot.isAvailable
   );
   
+  console.log('🔍 daySlots (フィルタ後):', daySlots);
+  
   // メンター別にスロットをグループ化
   const slotsByMentor = daySlots.reduce((acc, slot) => {
     const mentorId = slot.mentorId;
@@ -86,10 +96,14 @@ export const DayView: React.FC<DayViewProps> = ({
     return acc;
   }, {} as Record<string, ExtendedTimeSlot[]>);
 
+  console.log('🔍 slotsByMentor:', slotsByMentor);
+
   // この日にスロットがあるメンターのみを取得
   const availableMentors = mentors.filter(mentor => 
     slotsByMentor[mentor.id] && slotsByMentor[mentor.id].length > 0
   );
+
+  console.log('🔍 availableMentors:', availableMentors);
 
   // 時間軸の生成（8:00-22:00、1時間刻み）
   const timeSlots = [];
@@ -353,9 +367,30 @@ export const DayView: React.FC<DayViewProps> = ({
                         (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
                       );
                       
+                      console.log(`🔍 スロット ${slot.id} の自分の予約チェック:`, {
+                        slotId: slot.id,
+                        selectedDate: selectedDate.toISOString(),
+                        myReservations: myReservations.map(res => ({
+                          id: res.id,
+                          slotId: res.slotId,
+                          status: res.status,
+                          bookedStartTime: res.bookedStartTime,
+                          bookedEndTime: res.bookedEndTime,
+                          isSameDay: isSameDay(new Date(res.bookedStartTime), selectedDate),
+                          slotMatch: res.slotId === slot.id
+                        })),
+                        myReservationsInSlot
+                      });
+                      
                       return myReservationsInSlot.map((myReservation, myResIndex) => {
                         const resStart = new Date(myReservation.bookedStartTime);
                         const resEnd = new Date(myReservation.bookedEndTime);
+                        
+                        console.log(`🔍 自分の予約を表示: ${myReservation.id}`, {
+                          resStart: resStart.toISOString(),
+                          resEnd: resEnd.toISOString(),
+                          status: myReservation.status
+                        });
                         
                         // 予約時間の相対位置計算
                         const resStartPos = (resStart.getHours() - 8) + (resStart.getMinutes() / 60);
