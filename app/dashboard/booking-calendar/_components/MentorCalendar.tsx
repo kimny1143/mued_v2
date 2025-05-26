@@ -96,7 +96,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   const fetchReservationsForDate = async (date: Date) => {
     setIsLoadingReservations(true);
     try {
-      const response = await fetch('/api/reservations', {
+      const response = await fetch('/api/reservations?includeAll=true', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -116,6 +116,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         studentId: string;
       }> = await response.json();
       
+      debugLog('📅 API応答:', allReservations);
+      
       // 指定された日付の予約のみをフィルタリング
       const dateReservations = allReservations.filter((reservation) => {
         const reservationDate = new Date(reservation.bookedStartTime);
@@ -125,6 +127,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
           reservationDate.getDate() === date.getDate()
         );
       });
+
+      debugLog('📅 日付フィルタ後:', dateReservations);
 
       // 自分の予約以外をフィルタリング（プライバシー保護）
       const otherReservationsForDate = dateReservations.filter((reservation) => {

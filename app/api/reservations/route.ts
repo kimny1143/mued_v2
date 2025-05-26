@@ -78,20 +78,27 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const slotId = searchParams.get('slotId');
+    const includeAll = searchParams.get('includeAll') === 'true'; // 全予約取得フラグ
     
     // クエリ条件を構築
     const where: Prisma.reservationsWhereInput = {};
     
-    // 教師（メンター）は自分の全予約を、生徒は自分の予約のみを見られる
-    if (sessionInfo.role === 'mentor') {
-      where.lesson_slots = {
-        teacherId: sessionInfo.user.id,
-      };
-    } else if (sessionInfo.role === 'admin') {
-      // 管理者は全ての予約を閲覧可能
+    // includeAllフラグが設定されている場合は、プライバシー保護された全予約を返す
+    if (includeAll) {
+      // 全ての予約を取得（プライバシー保護のため最小限の情報のみ）
+      console.log('🔍 全予約取得モード（プライバシー保護）');
     } else {
-      // 生徒は自分の予約のみ閲覧可能
-      where.studentId = sessionInfo.user.id;
+      // 通常モード：ロール別のアクセス制御
+      if (sessionInfo.role === 'mentor') {
+        where.lesson_slots = {
+          teacherId: sessionInfo.user.id,
+        };
+      } else if (sessionInfo.role === 'admin') {
+        // 管理者は全ての予約を閲覧可能
+      } else {
+        // 生徒は自分の予約のみ閲覧可能
+        where.studentId = sessionInfo.user.id;
+      }
     }
     
     if (status && Object.values(ReservationStatus).includes(status as ReservationStatus)) {
@@ -105,7 +112,18 @@ export async function GET(request: NextRequest) {
     // データベースから予約を取得（エラーハンドリング強化）
     const reservations = await executePrismaQuery(() => prisma.reservations.findMany({
       where,
-      include: {
+      include: includeAll ? {
+        // プライバシー保護モード：最小限の情報のみ
+        lesson_slots: {
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            teacherId: true,
+          },
+        },
+      } : {
+        // 通常モード：詳細情報を含む
         lesson_slots: {
           select: {
             startTime: true,
@@ -123,10 +141,31 @@ export async function GET(request: NextRequest) {
     }));
     
     // フロントエンドが期待する形式に変換
-    const formattedReservations = reservations.map(reservation => ({
-      ...reservation,
-      student: reservation.users, // usersをstudentとしてエイリアス
-    }));
+    const formattedReservations = reservations.map(reservation => {
+      if (includeAll) {
+        // プライバシー保護モード：最小限の情報のみ返す
+        return {
+          id: reservation.id,
+          slotId: reservation.slotId,
+          status: reservation.status,
+          bookedStartTime: reservation.bookedStartTime,
+          bookedEndTime: reservation.bookedEndTime,
+          studentId: reservation.studentId, // IDのみ（名前などは含まない）
+        };
+      } else {
+        // 通常モード：詳細情報を含む
+        // 型アサーションを使用してusersプロパティにアクセス
+        const reservationWithUsers = reservation as typeof reservation & {
+          users: { id: string; name: string | null; email: string | null; image: string | null; };
+        };
+        return {
+          ...reservation,
+          student: reservationWithUsers.users, // usersをstudentとしてエイリアス
+        };
+      }
+    });
+    
+    console.log(`📊 予約取得完了: ${formattedReservations.length}件 (includeAll: ${includeAll})`);
     
     return NextResponse.json(formattedReservations, {
       headers: {
