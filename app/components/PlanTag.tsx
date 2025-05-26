@@ -12,6 +12,11 @@ export function PlanTag() {
   const [isLoading, setIsLoading] = useState(false);
   const [userRole, setUserRole] = useState<string>('student');
 
+  // デバッグ用ログ
+  useEffect(() => {
+    console.log('PlanTag - サブスクリプション情報:', subscription);
+  }, [subscription]);
+
   // ユーザーロールを取得
   useEffect(() => {
     const getUserRole = async () => {
@@ -63,7 +68,8 @@ export function PlanTag() {
   }
 
   // プラン情報を取得
-  const currentPlan = subscription?.priceId 
+  // アクティブなサブスクリプションのみを有効なプランとして扱う
+  const currentPlan = (subscription?.priceId && subscription?.status === 'active')
     ? getPlanByPriceId(subscription.priceId)
     : getPlanByPriceId('free');
 

@@ -49,12 +49,12 @@ export function useSubscriptionSimple() {
         }
 
         // サブスクリプション情報を取得
-        // 複数のサブスクリプションがある場合はアクティブなものを優先
+        // アクティブなサブスクリプションのみを対象とする
         const { data, error: subError } = await supabaseBrowser
           .from('stripe_user_subscriptions')
           .select('priceId, status, currentPeriodEnd')
           .eq('userId', session.user.id)
-          .order('status', { ascending: false }) // activeが最初に来るようにソート
+          .eq('status', 'active') // アクティブなもののみ
           .order('currentPeriodEnd', { ascending: false }) // 期限が長いものを優先
           .limit(1)
           .maybeSingle();

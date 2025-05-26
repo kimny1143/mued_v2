@@ -41,7 +41,8 @@
     "check:user": "node scripts/check-current-user-customer.js",
     "fix:subscription": "node scripts/fix-subscription-sync.js",
     "investigate:stripe": "node scripts/investigate-stripe-subscriptions.js",
-    "fix:customer": "node scripts/fix-customer-mismatch.js"
+    "fix:customer": "node scripts/fix-customer-mismatch.js",
+    "debug:frontend": "node scripts/debug-frontend-subscription.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.0",
