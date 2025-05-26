@@ -1,16 +1,22 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { CalendarIcon, ClockIcon } from 'lucide-react';
 import { Card } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
-import { Reservation } from '@prisma/client';
+import { CancelReservationModal } from './CancelReservationModal';
+import { CancelReason } from '@/lib/types/reservation';
 
 interface ReservationCardProps {
-  reservation: Reservation & {
+  reservation: {
+    id: string;
+    status: string;
+    bookedStartTime: Date;
+    bookedEndTime: Date;
+    totalAmount: number;
     lessonSlot: {
       id: string;
       startTime: Date;
@@ -22,13 +28,33 @@ interface ReservationCardProps {
       };
     };
   };
-  onCancel: (id: string) => Promise<void>;
+  onCancel: (id: string, reason: CancelReason, notes?: string) => Promise<void>;
+  userRole: 'student' | 'mentor' | 'admin';
 }
 
 export const ReservationCard: React.FC<ReservationCardProps> = ({
   reservation,
   onCancel,
+  userRole,
 }) => {
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCancelClick = () => {
+    setIsCancelModalOpen(true);
+  };
+
+  const handleCancelConfirm = async (reason: CancelReason, notes?: string) => {
+    setIsLoading(true);
+    try {
+      await onCancel(reservation.id, reason, notes);
+      setIsCancelModalOpen(false);
+    } catch (error) {
+      console.error('キャンセル処理エラー:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <Card className="p-4">
       <div className="flex justify-between items-start">
@@ -54,14 +80,33 @@ export const ReservationCard: React.FC<ReservationCardProps> = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onCancel(reservation.id)}
+              onClick={handleCancelClick}
+              disabled={isLoading}
               className="text-red-600 hover:text-red-700 hover:bg-red-50"
             >
-              キャンセル
+              {isLoading ? '処理中...' : 'キャンセル'}
             </Button>
           )}
         </div>
       </div>
+
+      {/* キャンセルモーダル */}
+      <CancelReservationModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        onConfirm={handleCancelConfirm}
+        reservation={{
+          id: reservation.id,
+          bookedStartTime: reservation.bookedStartTime,
+          bookedEndTime: reservation.bookedEndTime,
+          totalAmount: reservation.totalAmount,
+          teacher: {
+            name: reservation.lessonSlot.teacher.name,
+          },
+        }}
+        userRole={userRole}
+        isLoading={isLoading}
+      />
     </Card>
   );
 }; 

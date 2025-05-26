@@ -22,6 +22,7 @@ import { User } from '@supabase/supabase-js';
 import { Toaster } from 'sonner';
 import type { ReservationStatus } from '@prisma/client';
 import { generateAvailableTimeSlots } from '@/lib/utils';
+import { CancelReason } from '@/lib/types/reservation';
 
 // シンプルで明確な型定義
 type TeacherInfo = {
@@ -312,6 +313,48 @@ export const ReservationPage: React.FC = () => {
       toast.error(`予約処理エラー: ${error.message}`);
     }
   });
+
+  // 予約キャンセル関数
+  const cancelReservation = useCallback(async (reservationId: string, reason: CancelReason, notes?: string) => {
+    try {
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
+      const response = await fetch(`/api/reservations/${reservationId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason, notes }),
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'キャンセル処理に失敗しました');
+      }
+
+      toast.success('レッスンをキャンセルしました');
+      
+      // 予約一覧を再読み込み
+      queryClient.invalidateQueries({ queryKey: ['myReservations'] });
+      
+      // レッスンスロット一覧も更新
+      queryClient.invalidateQueries({ queryKey: ['lessonSlots'] });
+      
+      return result;
+    } catch (error) {
+      console.error('キャンセル処理エラー:', error);
+      toast.error(`キャンセルに失敗しました: ${(error as Error).message}`);
+      throw error;
+    }
+  }, [queryClient]);
 
   // ユーザー情報の取得
   useEffect(() => {
