@@ -98,6 +98,55 @@
 - パフォーマンス監視とチューニング
 - ユーザーフィードバックの収集と改善
 
+## 認証ユーザー自動同期システム追加 ✅完了（2025/5/26）
+
+### 問題の背景
+DBリセット後、Googleログインを行ったユーザーが `auth.users` テーブルには作成されるものの、`public.users` テーブルに自動同期されない問題が発生していました。
+
+### 実装内容
+
+#### 追加ファイル
+- `prisma/auth_user_sync_trigger.sql` - 認証同期システム単体ファイル
+- `scripts/setup-auth-sync.sql` - 単独実行用スクリプト
+- `docs/supabase_reset_rebuild/auth_user_sync_setup.md` - セットアップガイド
+
+#### 実装機能
+1. **新規ユーザー作成トリガー** (`on_auth_user_created`)
+   - `auth.users` への INSERT 時に自動実行
+   - Googleメタデータから名前、メール、アバター画像を抽出
+   - デフォルトロール（student）を自動設定
+   - `public.users` テーブルに自動挿入
+
+2. **ユーザー情報更新トリガー** (`on_auth_user_updated`)
+   - `auth.users` の UPDATE 時に自動実行
+   - 更新されたメタデータを `public.users` に反映
+
+3. **既存ユーザー一括同期**
+   - 初回実行時に既存の `auth.users` データを `public.users` に同期
+   - 重複チェック機能付き
+
+4. **動作確認機能**
+   - `public.test_user_sync()` 関数でシステム状態を確認
+   - 詳細なログ出力とエラー検知
+
+#### メタデータ抽出ロジック
+以下の優先順位でユーザー名を抽出：
+1. `raw_user_meta_data->>'full_name'`
+2. `raw_user_meta_data->>'name'`
+3. `raw_user_meta_data->>'display_name'`
+4. メールアドレスの@より前の部分
+
+#### セットアップ手順
+1. 完全マイグレーション実行: `prisma/complete_init_migration.sql`
+2. または単独実行: `scripts/setup-auth-sync.sql`
+3. 動作確認: `SELECT * FROM public.test_user_sync();`
+
+#### 期待される効果
+- Googleログイン後の自動ユーザー作成
+- ユーザー情報の自動同期
+- 手動同期処理の不要化
+- ロール管理の自動化
+
 ## Phase 4実装前の重要な技術情報
 
 ### 1. 型エラー回避のための必須手順

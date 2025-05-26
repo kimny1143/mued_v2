@@ -99,15 +99,12 @@ export function PlanTag() {
 
   // Billingポータルへのリダイレクト処理
   const handlePlanClick = async () => {
-    console.log('プランタグクリック - Billingポータルにリダイレクト');
+    console.log('プランタグクリック - プラン管理ページにリダイレクト');
     
-    // FREEプランの場合は特別なメッセージを表示
+    // FREEプランの場合はプラン選択ページにリダイレクト
     if (planName === 'FREE') {
-      const shouldUpgrade = confirm('現在FREEプランをご利用中です。\nプランをアップグレードしますか？');
-      if (!shouldUpgrade) return;
-      
-      // FREEプランの場合はランディングページにリダイレクト
-      window.location.href = '/new-landing';
+      console.log('FREEプラン - プラン選択ページにリダイレクト');
+      window.location.href = '/dashboard/plans';
       return;
     }
     

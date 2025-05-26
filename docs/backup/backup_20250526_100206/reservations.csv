@@ -1,0 +1,3 @@
+id,slotId,studentId,status,paymentId,bookedStartTime,bookedEndTime,hoursBooked,totalAmount,notes,createdAt,updatedAt,durationMinutes
+cmb3v3pj30005jy047jg0l5uo,cmb3uzc2a0001l404k007z69k,a2c17a51-5e70-40e6-b830-5d5d8d3a204b,PENDING,cmb3v3q380006jy04obdfdj27,2025-05-27 01:00:00,2025-05-27 02:00:00,1,7000,メンター: Atsushi Kimuraとのレッスン予約（60分）,2025-05-25 16:17:35.487,2025-05-25 16:17:36.213,60
+cmb3v6irv0001i0040p0paxxg,cmb3v00d90001jy04o4qzixg1,a2c17a51-5e70-40e6-b830-5d5d8d3a204b,PENDING,cmb3v6jaq0002i004j8glbla7,2025-05-29 02:00:00,2025-05-29 03:00:00,1,7000,メンター: Atsushi Kimuraとのレッスン予約（60分）,2025-05-25 16:19:46.7,2025-05-25 16:19:47.378,60

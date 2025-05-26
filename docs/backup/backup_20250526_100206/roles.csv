@@ -1,0 +1,4 @@
+id,name,description
+3928c500-129f-4856-87b5-7d92e83b41c1,Administrator,管理者権限を持つロール
+127f103f-f296-447c-81d4-b4c2f12f826e,Mentor,講師権限を持つロール
+b4559df9-cbed-4fcf-b205-483bf30a623c,Student,生徒権限を持つロール
