@@ -64,9 +64,18 @@ export function useReservationNotifications(options: UseReservationNotifications
       case 'APPROVED':
         if (isStudentReservation) {
           toast({
-            title: '予約が承認されました！',
-            description: 'メンターが予約を承認しました。決済手続きを完了してください。',
+            title: '🎉 予約が承認されました！',
+            description: 'メンターが予約を承認しました。カレンダーで緑色のタグをご確認ください。決済手続きを完了してレッスンを確定させましょう。',
             variant: 'default',
+          });
+          
+          // 承認通知の詳細情報をコンソールに出力
+          console.log('🎵 予約承認通知:', {
+            reservationId: reservation.id,
+            studentId: reservation.studentId,
+            mentorId: reservation.mentorId,
+            status: 'APPROVED',
+            timestamp: new Date().toISOString()
           });
         }
         break;
@@ -195,10 +204,17 @@ export function useStudentReservationNotifications() {
     enabled: user?.roleId === 'student',
     onStatusChange: (reservation) => {
       if (reservation.status === 'APPROVED' && reservation.studentId === user?.id) {
-        // 決済ページへのリダイレクト案内
+        // 承認通知とカレンダー確認案内
         setTimeout(() => {
-          if (confirm('予約が承認されました。決済手続きを開始しますか？')) {
-            window.location.href = `/dashboard/booking-calendar?payment_pending=${reservation.id}`;
+          if (confirm('🎉 予約が承認されました！\n\nカレンダーで緑色のタグを確認できます。\n決済手続きを開始しますか？')) {
+            window.location.href = `/dashboard/booking-calendar?highlight_reservation=${reservation.id}`;
+          } else {
+            // 決済を後で行う場合の案内
+            setTimeout(() => {
+              if (confirm('承認済み予約はカレンダーで確認できます。\nカレンダーページに移動しますか？')) {
+                window.location.href = '/dashboard/booking-calendar';
+              }
+            }, 1000);
           }
         }, 2000);
       }
