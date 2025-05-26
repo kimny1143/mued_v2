@@ -18,10 +18,48 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    const { sessionId } = await request.json();
+    const { sessionId, reservationId } = await request.json();
     
     console.log('=== Setup完了処理開始 ===');
     console.log('セッションID:', sessionId);
+    console.log('予約ID:', reservationId);
+
+    // 予約の存在確認と権限チェック
+    const reservation = await prisma.reservations.findUnique({
+      where: { id: reservationId },
+      include: {
+        payments: true,
+        users: true,
+        lesson_slots: {
+          include: {
+            users: true
+          }
+        }
+      }
+    });
+
+    if (!reservation) {
+      return NextResponse.json(
+        { error: '予約が見つかりません' },
+        { status: 404 }
+      );
+    }
+
+    // 権限チェック（予約者本人のみ）
+    if (reservation.studentId !== session.user.id) {
+      return NextResponse.json(
+        { error: 'この予約にアクセスする権限がありません' },
+        { status: 403 }
+      );
+    }
+
+    // 既に決済情報が存在する場合はエラー
+    if (reservation.payments) {
+      return NextResponse.json(
+        { error: '既に決済情報が設定されています' },
+        { status: 400 }
+      );
+    }
 
     // Stripe Checkout Sessionを取得
     const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
@@ -35,101 +73,78 @@ export async function POST(request: NextRequest) {
     const setupIntent = checkoutSession.setup_intent as Stripe.SetupIntent;
     const paymentMethod = setupIntent.payment_method as Stripe.PaymentMethod;
 
-    // メタデータから予約データを取得
-    const reservationDataStr = checkoutSession.metadata?.reservationData;
-    if (!reservationDataStr) {
-      throw new Error('予約データが見つかりません');
+    // メタデータの検証
+    if (checkoutSession.metadata?.reservationId !== reservationId) {
+      return NextResponse.json(
+        { error: 'セッションと予約IDが一致しません' },
+        { status: 400 }
+      );
     }
 
-    const reservationData = JSON.parse(reservationDataStr);
-    
-    console.log('=== 予約データ復元 ===');
-    console.log('予約データ:', reservationData);
-    console.log('決済手段ID:', paymentMethod.id);
+    console.log('=== Setup Intent情報確認 ===');
+    console.log('Setup Intent ID:', setupIntent.id);
+    console.log('Payment Method ID:', paymentMethod.id);
+    console.log('Customer ID:', checkoutSession.customer);
 
-    // トランザクションで予約作成と決済情報保存
+    // トランザクションで決済情報を保存
     const result = await prisma.$transaction(async (tx) => {
-      // レッスンスロットを取得
-      const slot = await tx.lesson_slots.findUnique({
-        where: { 
-          id: reservationData.slotId,
-          isAvailable: true
-        },
-        include: {
-          users: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
-      });
-
-      if (!slot) {
-        throw new Error('指定されたレッスン枠が見つかりません');
-      }
-
-      // 予約を作成
-      const reservation = await tx.reservations.create({
-        data: {
-          id: randomUUID(),
-          slotId: reservationData.slotId,
-          studentId: session.user.id,
-          status: 'PENDING_APPROVAL', // メンター承認待ち
-          bookedStartTime: new Date(reservationData.bookedStartTime),
-          bookedEndTime: new Date(reservationData.bookedEndTime),
-          hoursBooked: Math.ceil(reservationData.duration / 60),
-          durationMinutes: reservationData.duration,
-          totalAmount: reservationData.totalAmount,
-          notes: reservationData.notes || null,
-          updatedAt: new Date()
-        }
-      });
-
-      // 決済情報を保存（Payment Intentは後で作成）
+      // 決済情報を作成
       const payment = await tx.payments.create({
         data: {
           id: randomUUID(),
-          stripePaymentId: null, // Payment Intent作成時に更新（nullで初期化）
+          stripePaymentId: null, // Payment Intent作成時に更新
           stripeSessionId: sessionId,
-          amount: reservationData.totalAmount,
+          amount: reservation.totalAmount,
           currency: 'jpy',
-          status: 'SETUP_COMPLETED' as any, // Setup完了状態
+          status: 'SETUP_COMPLETED' as PaymentStatus,
           userId: session.user.id,
           updatedAt: new Date()
-        } as any
+        }
       });
 
-      // Setup Intentと決済手段の情報をmetadataとして保存（型エラー回避のため別途更新）
+      // Setup Intentと決済手段の情報をmetadataとして保存
       await tx.$executeRaw`
         UPDATE payments 
         SET metadata = ${JSON.stringify({
           setupIntentId: setupIntent.id,
           paymentMethodId: paymentMethod.id,
-          customerId: checkoutSession.customer
+          customerId: checkoutSession.customer,
+          paymentMethodType: paymentMethod.type,
+          cardBrand: paymentMethod.card?.brand,
+          cardLast4: paymentMethod.card?.last4,
+          setupCompletedAt: new Date().toISOString()
         })}
         WHERE id = ${payment.id}
       `;
 
       // 予約にpaymentIdを関連付け
-      await tx.reservations.update({
-        where: { id: reservation.id },
-        data: { paymentId: payment.id }
+      const updatedReservation = await tx.reservations.update({
+        where: { id: reservationId },
+        data: { 
+          paymentId: payment.id,
+          updatedAt: new Date()
+        }
       });
 
-      return { reservation, payment };
+      return { payment, reservation: updatedReservation };
     });
 
-    console.log('=== 予約・決済情報保存完了 ===');
-    console.log('予約ID:', result.reservation.id);
+    console.log('=== Setup完了処理成功 ===');
     console.log('決済ID:', result.payment.id);
+    console.log('決済ステータス:', result.payment.status);
 
     return NextResponse.json({
       success: true,
-      reservation: result.reservation,
-      payment: result.payment,
-      message: '予約が作成され、決済情報が保存されました。メンター承認後に自動で決済が実行されます。'
+      payment: {
+        id: result.payment.id,
+        status: result.payment.status,
+        amount: result.payment.amount
+      },
+      reservation: {
+        id: result.reservation.id,
+        status: result.reservation.status
+      },
+      message: '決済情報が正常に保存されました。メンター承認後、レッスン開始2時間前に自動で決済が実行されます。'
     });
 
   } catch (error) {

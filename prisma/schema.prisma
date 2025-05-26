@@ -82,17 +82,21 @@ model messages {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model payments {
-  id              String        @id
-  stripeSessionId String        @unique
-  stripePaymentId String?       @unique
-  amount          Int
-  currency        String        @default("JPY")
-  status          PaymentStatus @default(PENDING)
-  userId          String
-  metadata        String?       @db.Text
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime
-  reservations    reservations?
+  id               String        @id
+  stripeSessionId  String        @unique
+  stripePaymentId  String?       @unique
+  amount           Int
+  currency         String        @default("JPY")
+  status           PaymentStatus @default(PENDING)
+  userId           String
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime
+  metadata         String?
+  chargeExecutedAt DateTime?     @map("chargeexecutedat") @db.Timestamp(6)
+  refundedAt       DateTime?     @map("refundedat") @db.Timestamp(6)
+  refundAmount     Int?          @map("refundamount")
+  refundReason     String?       @map("refundreason")
+  reservations     reservations?
 
   @@index([userId])
 }
@@ -128,6 +132,11 @@ model reservations {
   approvedBy      String?
   rejectedAt      DateTime?
   rejectionReason String?
+  canceledAt      DateTime?         @map("canceledat") @db.Timestamp(6)
+  canceledBy      String?           @map("canceledby") @db.VarChar(255)
+  cancelReason    String?           @map("cancelreason")
+  rescheduledFrom String?           @map("rescheduledfrom") @db.VarChar(255)
+  rescheduledTo   String?           @map("rescheduledto") @db.VarChar(255)
   payments        payments?         @relation(fields: [paymentId], references: [id])
   lesson_slots    lesson_slots      @relation(fields: [slotId], references: [id])
   users           users             @relation(fields: [studentId], references: [id])
