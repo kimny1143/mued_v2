@@ -35,7 +35,8 @@
     "dev:clean": "npm run kill-port && npm run dev",
     "start:clean": "npm run kill-port && npm run start",
     "mcp:clean": "npm run kill-mcp-port && npm run mcp",
-    "seed:e2e": "tsx scripts/seed-e2e.ts"
+    "seed:e2e": "tsx scripts/seed-e2e.ts",
+    "sync:stripe": "node scripts/sync-stripe-to-supabase.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.0",

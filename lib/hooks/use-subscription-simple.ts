@@ -49,11 +49,14 @@ export function useSubscriptionSimple() {
         }
 
         // サブスクリプション情報を取得
-        // ビューを使用してカラム名の問題を回避
+        // 複数のサブスクリプションがある場合はアクティブなものを優先
         const { data, error: subError } = await supabaseBrowser
-          .from('stripe_subscriptions_view')  // ビューを使用
-          .select('price_id, subscription_status, current_period_end')  // スネークケースで選択
-          .eq('user_id', session.user.id)  // user_idもスネークケース
+          .from('stripe_user_subscriptions')
+          .select('priceId, status, currentPeriodEnd')
+          .eq('userId', session.user.id)
+          .order('status', { ascending: false }) // activeが最初に来るようにソート
+          .order('currentPeriodEnd', { ascending: false }) // 期限が長いものを優先
+          .limit(1)
           .maybeSingle();
 
         if (subError) {
@@ -63,25 +66,23 @@ export function useSubscriptionSimple() {
           if (subError.message.includes('stripe_subscriptions_view')) {
             console.log('ビューが存在しない - 元のテーブルから取得を試行');
             
-            // 元のテーブルから全カラムを取得
+            // 複数レコードがある場合の代替クエリ
             try {
               const { data: rawData, error: rawError } = await supabaseBrowser
                 .from('stripe_user_subscriptions')
-                .select('*')  // 全カラムを取得
+                .select('priceId, status, currentPeriodEnd')
                 .eq('userId', session.user.id)
+                .eq('status', 'active') // アクティブなもののみ
+                .order('currentPeriodEnd', { ascending: false })
+                .limit(1)
                 .maybeSingle();
                 
               if (!rawError && rawData) {
-                console.log('生データ取得成功:', rawData);
-                // 可能なカラム名のバリエーションを試す
-                const priceId = rawData.priceId || rawData.price_id || null;
-                const status = rawData.status || rawData.subscription_status || 'free';
-                const periodEnd = rawData.currentPeriodEnd || rawData.current_period_end || null;
-                
+                console.log('アクティブサブスクリプション取得成功:', rawData);
                 setSubscription({
-                  priceId: priceId,
-                  status: status,
-                  currentPeriodEnd: periodEnd ? Number(periodEnd) : null
+                  priceId: rawData.priceId,
+                  status: rawData.status,
+                  currentPeriodEnd: rawData.currentPeriodEnd ? Number(rawData.currentPeriodEnd) : null
                 });
                 setLoading(false);
                 return;
@@ -117,9 +118,9 @@ export function useSubscriptionSimple() {
             console.log('サブスクリプション情報取得成功:', data);
             
             setSubscription({
-              priceId: data.price_id || null,
-              status: data.subscription_status || 'free',
-              currentPeriodEnd: data.current_period_end ? Number(data.current_period_end) : null
+              priceId: data.priceId || null,
+              status: data.status || 'free',
+              currentPeriodEnd: data.currentPeriodEnd ? Number(data.currentPeriodEnd) : null
             });
           } else {
             // データが存在しない場合（新規ユーザー）
