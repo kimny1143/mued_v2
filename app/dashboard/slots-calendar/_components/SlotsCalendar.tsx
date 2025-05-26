@@ -269,13 +269,13 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                 key={slot.id}
                                 onClick={(e) => handleSlotTagClick(slot, e)}
                                 className={`
-                                  text-[8px] px-1 py-0.5 rounded border cursor-pointer transition-colors
+                                  calendar-slot-tag cursor-pointer transition-colors
                                   ${statusColors[slotStatus]}
-                                  font-medium leading-tight max-w-full truncate
+                                  leading-tight max-w-full truncate
                                 `}
                                 title={`${format(new Date(slot.startTime), 'HH:mm')}-${format(new Date(slot.endTime), 'HH:mm')} (クリックで編集)`}
                               >
-                                {format(new Date(slot.startTime), 'HH:mm')}-{format(new Date(slot.endTime), 'HH:mm')}
+                                {format(new Date(slot.startTime), 'H:mm')}-{format(new Date(slot.endTime), 'H:mm')}
                               </div>
                             );
                           })}
@@ -284,7 +284,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                           {daySlots.length > 3 && (
                             <div 
                               onClick={() => handleDateClick(date)}
-                              className="text-[8px] text-center text-gray-600 font-medium cursor-pointer hover:text-blue-600"
+                              className="text-micro text-center text-gray-600 font-medium cursor-pointer hover:text-blue-600"
                               title="すべてのスロットを表示"
                             >
                               +{daySlots.length - 3}件
@@ -337,7 +337,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                   <span>今日</span>
                 </div>
               </div>
-              <div className="mt-3 text-[10px] text-gray-600">
+              <div className="mt-3 text-xxs text-gray-600">
                 💡 <strong>操作方法:</strong> スロットタグをクリック→編集、空白エリアをクリック→新規作成
               </div>
             </div>

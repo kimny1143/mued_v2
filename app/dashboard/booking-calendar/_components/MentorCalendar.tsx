@@ -525,19 +525,20 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                           }
                                         }}
                                         className={`
-                                          text-[8px] px-1 py-0.5 rounded border cursor-pointer transition-colors
-                                          ${statusColors[extSlot.bookingStatus]}
-                                          font-medium leading-tight max-w-full truncate
+                                          ${extSlot.bookingStatus === 'available' ? 'calendar-slot-tag-available' : 
+                                            extSlot.bookingStatus === 'partial' ? 'calendar-slot-tag-partial' :
+                                            extSlot.bookingStatus === 'full' ? 'calendar-slot-tag-full' : 'calendar-slot-tag-unavailable'}
+                                          cursor-pointer transition-colors leading-tight max-w-full truncate
                                           ${(extSlot.bookingStatus === 'available' || extSlot.bookingStatus === 'partial') ? 'hover:opacity-80' : 'cursor-default'}
                                         `}
                                         title={`${extSlot.mentorName} ${format(new Date(extSlot.startTime), 'HH:mm')}-${format(new Date(extSlot.endTime), 'HH:mm')} ${extSlot.bookingStatus === 'available' ? '(完全空き)' : extSlot.bookingStatus === 'partial' ? `(${extSlot.availableTime}分空き)` : extSlot.bookingStatus === 'full' ? '(満席)' : '(利用不可)'} - クリックで予約`}
                                       >
                                         <div className="flex items-center justify-between">
                                           <span className="truncate">
-                                            {extSlot.mentorName?.substring(0, 3)}
+                                            {extSlot.mentorName?.substring(0, 2)}
                                           </span>
                                           <span className="ml-1">
-                                            {format(new Date(extSlot.startTime), 'HH:mm')}
+                                            {format(new Date(extSlot.startTime), 'H:mm')}
                                           </span>
                                         </div>
                                       </div>
@@ -548,7 +549,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                   {daySlots.length > 3 && (
                                     <div 
                                       onClick={() => handleDateClick(date)}
-                                      className="text-[8px] text-center text-gray-600 font-medium cursor-pointer hover:text-blue-600 bg-gray-50 rounded px-1 py-0.5 border border-gray-200"
+                                      className="text-micro text-center text-gray-600 font-medium cursor-pointer hover:text-blue-600 bg-gray-50 rounded px-0.5 py-0 border border-gray-200"
                                       title="すべてのスロットを表示"
                                     >
                                       +{daySlots.length - 3}件
@@ -557,7 +558,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                                   
                                   {/* 予約数サマリー（小さく表示） */}
                                   {totalReservations > 0 && (
-                                    <div className="text-[6px] text-center text-gray-500 font-medium">
+                                    <div className="text-micro text-center text-gray-500 font-medium">
                                       {totalReservations}予約済み
                                     </div>
                                   )}
@@ -598,25 +599,25 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                     <h6 className="text-xs font-medium text-gray-600 mb-2">スロットタグ</h6>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                       <div className="flex items-center gap-2">
-                        <div className="px-2 py-1 bg-green-100 border border-green-300 text-green-800 rounded text-[8px] font-medium">
-                          田中 09:00
+                        <div className="calendar-slot-tag-available">
+                          田中 9:00
                         </div>
                         <span>完全空き</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="px-2 py-1 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded text-[8px] font-medium">
+                        <div className="calendar-slot-tag-partial">
                           佐藤 14:00
                         </div>
                         <span>部分予約</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="px-2 py-1 bg-orange-100 border border-orange-300 text-orange-800 rounded text-[8px] font-medium">
+                        <div className="calendar-slot-tag-full">
                           鈴木 16:00
                         </div>
                         <span>満席</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="px-2 py-1 bg-gray-100 border border-gray-300 text-gray-600 rounded text-[8px] font-medium">
+                        <div className="calendar-slot-tag-unavailable">
                           山田 18:00
                         </div>
                         <span>利用不可</span>
@@ -637,7 +638,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                         <span>選択中</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="px-1 py-0.5 bg-gray-50 border border-gray-200 rounded text-[8px]">
+                        <div className="text-micro px-0.5 py-0 bg-gray-50 border border-gray-200 rounded">
                           +2件
                         </div>
                         <span>追加スロット</span>
