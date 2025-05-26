@@ -175,13 +175,20 @@ export async function GET(request: NextRequest) {
         },
         reservations: {
           where: { 
-            status: { in: ['PENDING', 'CONFIRMED'] } 
+            status: { in: ['PENDING', 'CONFIRMED', 'APPROVED', 'PENDING_APPROVAL'] } 
           },
           select: {
             id: true,
             bookedStartTime: true,
             bookedEndTime: true,
-            status: true
+            status: true,
+            users: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
           }
         }
       }
@@ -195,6 +202,11 @@ export async function GET(request: NextRequest) {
         ...slot,
         // フロントエンドが期待するteacher形式に変換
         teacher: slot.users,
+        // 予約情報のusersをstudentとしてエイリアス
+        reservations: slot.reservations.map(reservation => ({
+          ...reservation,
+          student: reservation.users
+        })),
         hourlySlots,
         // 分単位の予約時間制約を明示的に含める
         durationConstraints: {

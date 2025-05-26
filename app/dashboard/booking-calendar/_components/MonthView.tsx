@@ -166,11 +166,11 @@ export const MonthView: React.FC<MonthViewProps> = ({
                       return (
                         <div
                           key={`my-reservation-${reservation.id}-${resIndex}`}
-                          className={`px-1 py-0.5 text-xs font-medium rounded border ${
+                          className={`px-0.5 py-0 text-xxs font-medium rounded border ${
                             statusColors[reservation.status as keyof typeof statusColors] || 'bg-gray-100 border-gray-400 text-gray-800'
-                          } mb-1`}
+                          } mb-0.5 truncate`}
                         >
-                          🎵 {timeString}
+                          🎵{timeString}
                         </div>
                       );
                     })}

@@ -300,12 +300,12 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                         return (
                                           <div
                                             key={`reservation-${reservation.id}-${resIndex}`}
-                                            className={`px-1 py-0.5 text-xs font-medium rounded border ${
+                                            className={`px-0.5 py-0 text-xxs font-medium rounded border ${
                                               reservationColors[reservation.status as keyof typeof reservationColors] || 'bg-gray-100 border-gray-400 text-gray-800'
-                                            }`}
+                                            } truncate`}
                                             title={`予約: ${reservation.student?.name || '生徒'} ${timeString}`}
                                           >
-                                            🎵 {timeString}
+                                            🎵{timeString}
                                           </div>
                                         );
                                       })}
