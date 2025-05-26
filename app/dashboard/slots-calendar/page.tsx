@@ -126,13 +126,13 @@ export default function SlotsCalendarPage() {
   };
 
   return (
-    <div className="container mx-auto py-6 px-4 sm:px-6">
+    <div className="w-full py-6 px-2 sm:px-4 lg:container lg:mx-auto">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <div className="flex items-center">
           <CalendarClock className="h-6 w-6 mr-2 text-primary" aria-hidden="true" />
           <div>
-            <h1 className="text-2xl font-bold">レッスンスロット管理</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <h1 className="text-xl sm:text-2xl font-bold">レッスンスロット管理</h1>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
               あなたのレッスン予定と予約状況を管理できます
             </p>
           </div>
@@ -140,10 +140,11 @@ export default function SlotsCalendarPage() {
         
         <Button 
           onClick={handleSlotCreate}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 text-sm"
         >
           <Plus className="h-4 w-4" />
-          新しいスロット作成
+          <span className="hidden sm:inline">新しいスロット作成</span>
+          <span className="sm:hidden">作成</span>
         </Button>
       </div>
       
@@ -159,7 +160,7 @@ export default function SlotsCalendarPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white rounded-md sm:rounded-lg shadow-sm sm:shadow">
           <SlotsCalendar
             slots={slots}
             isLoading={isLoading}

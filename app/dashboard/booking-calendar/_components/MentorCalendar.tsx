@@ -375,39 +375,39 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         </div>
       )}
       
-      <div className="bg-white rounded-lg shadow p-4">
-        {/* 全メンター情報表示 */}
+      <div className="bg-white rounded-md sm:rounded-lg shadow-sm sm:shadow p-2 sm:p-4">
+        {/* 全メンター情報表示 - モバイル最適化 */}
         {mentors.length > 0 && (
           <div className="mb-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">利用可能なメンター</h3>
-              <div className="text-sm text-gray-500">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">利用可能なメンター</h3>
+              <div className="text-xs sm:text-sm text-gray-500">
                 {mentors.length}人のメンターが利用可能
               </div>
             </div>
             
-            {/* メンター一覧 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* メンター一覧 - モバイル対応 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
               {mentors.map((mentor) => (
-                <div key={mentor.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div key={mentor.id} className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-gray-50 rounded-md sm:rounded-lg border border-gray-200">
                   {mentor.image ? (
                     <img
                       src={mentor.image}
                       alt={mentor.name || ''}
-                      className="w-10 h-10 rounded-full flex-shrink-0"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0"
                     />
                   ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium flex-shrink-0">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium flex-shrink-0 text-xs sm:text-sm">
                       {mentor.name?.charAt(0) || '?'}
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">{mentor.name}</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="font-medium text-gray-900 truncate text-sm sm:text-base">{mentor.name}</div>
+                    <div className="text-xs sm:text-sm text-gray-500">
                       {mentor.availableSlotsCount || 0}スロット利用可能
                     </div>
                     {mentor.specialties && mentor.specialties.length > 0 && (
-                      <div className="text-xs text-gray-400 mt-1">
+                      <div className="text-xs text-gray-400 mt-1 hidden sm:block">
                         {mentor.specialties.slice(0, 2).join(', ')}
                         {mentor.specialties.length > 2 && '...'}
                       </div>
@@ -415,7 +415,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                   </div>
                   {mentor.rating && (
                     <div className="text-right flex-shrink-0">
-                      <div className="text-sm font-medium text-yellow-600">
+                      <div className="text-xs sm:text-sm font-medium text-yellow-600">
                         ★{mentor.rating.avgRating}
                       </div>
                       <div className="text-xs text-gray-400">
@@ -445,7 +445,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
           <>
             {currentView === 'month' ? (
                 <div className="mt-4">
-                  <h4 className="font-semibold mb-4 text-gray-900 text-center">予約可能日カレンダー</h4>
+                  <h4 className="font-semibold mb-4 text-gray-900 text-center text-sm sm:text-base">予約可能日カレンダー</h4>
                 <MonthView
                   currentDate={currentDate}
                   allTimeSlots={allTimeSlots}
@@ -456,14 +456,14 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                   selectedDates={selectedDates}
                 />
                 
-                {/* 凡例 */}
+                {/* 凡例 - モバイル最適化 */}
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                   <h5 className="text-sm font-medium text-gray-700 mb-3">予約状況の見方</h5>
                   
                   {/* 生徒の予約表示の凡例 */}
                   <div className="mb-4">
                     <h6 className="text-xs font-medium text-gray-600 mb-2">あなたの予約</h6>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 text-xs">
                       <div className="flex items-center gap-2">
                         <div className="px-2 py-1 text-xs font-medium rounded border-2 bg-blue-100 border-blue-400 text-blue-800">
                           🎵 確定済み
@@ -494,28 +494,28 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                   {/* スロットタグの凡例 */}
                   <div className="mb-4">
                     <h6 className="text-xs font-medium text-gray-600 mb-2">予約可能スロット</h6>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-xs">
                       <div className="flex items-center gap-2">
                         <div className="calendar-slot-tag-available">
-                          田中 9:00
+                          9:00
                         </div>
                         <span>完全空き</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="calendar-slot-tag-partial">
-                          佐藤 14:00
+                          14:00
                         </div>
                         <span>部分予約</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="calendar-slot-tag-full">
-                          鈴木 16:00
+                          16:00
                         </div>
                         <span>満席</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="calendar-slot-tag-unavailable">
-                          山田 18:00
+                          18:00
                         </div>
                         <span>利用不可</span>
                       </div>
@@ -531,19 +531,17 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                 </div>
               </div>
             ) : (
-              selectedDateForDay && (
-                <DayView
-                  selectedDate={selectedDateForDay}
-                  allTimeSlots={allTimeSlots}
-                  myReservations={myReservations}
-                  otherReservations={otherReservations}
-                  isLoadingReservations={isLoadingReservations}
-                  mentors={mentors}
-                  onBackToMonth={() => handleViewChange('month')}
-                  onDayNavigation={handleDayNavigation}
-                  onSlotClick={handleDaySlotClick}
-                />
-              )
+              <DayView
+                selectedDate={selectedDateForDay!}
+                allTimeSlots={allTimeSlots}
+                myReservations={myReservations}
+                otherReservations={otherReservations}
+                mentors={mentors}
+                onSlotClick={handleDaySlotClick}
+                onBackToMonth={() => handleViewChange('month')}
+                onDayNavigation={handleDayNavigation}
+                isLoadingReservations={isLoadingReservations}
+              />
             )}
           </>
         )}

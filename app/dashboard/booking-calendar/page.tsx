@@ -339,11 +339,11 @@ export default function BookingCalendarPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 sm:px-6">
+    <div className="w-full py-6 px-2 sm:px-4 lg:container lg:mx-auto">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-2">
         <div className="flex items-center">
           <CalendarClock className="h-6 w-6 mr-2 text-primary" aria-hidden="true" />
-          <h1 className="text-2xl font-bold">メンターレッスン予約</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">メンターレッスン予約</h1>
         </div>
         <div className="text-sm text-gray-600">
           {mentors.length}人のメンターが利用可能
@@ -362,15 +362,15 @@ export default function BookingCalendarPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold">予約可能な日時を選択</h2>
-            <p className="text-sm text-gray-600 mt-1">
+        <div className="bg-white rounded-md sm:rounded-lg shadow-sm sm:shadow">
+          <div className="p-3 sm:p-6 border-b">
+            <h2 className="text-base sm:text-lg font-semibold">予約可能な日時を選択</h2>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
               カレンダー上で気になる日付をクリックして、その日のレッスン一覧を確認できます
             </p>
           </div>
           
-          <div className="p-6">
+          <div className="p-2 sm:p-6">
             <MentorCalendar
               mentors={mentors}
               isLoading={isLoading}

@@ -174,9 +174,9 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
         </div>
       )}
       
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="p-2 sm:p-4">
         {/* ヘッダー - 月選択 */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
           <Button 
             variant="outline" 
             size="sm" 
@@ -186,7 +186,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
             <ChevronLeft className="h-4 w-4" />
           </Button>
           
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-lg sm:text-xl font-semibold">
             {format(currentDate, 'yyyy年 MM月', { locale: ja })}
           </h2>
           
@@ -207,11 +207,11 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
           </div>
         ) : (
           <>
-            {/* カレンダーグリッド */}
-            <div className="grid grid-cols-7 gap-2">
+            {/* カレンダーグリッド - モバイル対応強化 */}
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {/* 曜日ヘッダー */}
               {['月', '火', '水', '木', '金', '土', '日'].map((day, index) => (
-                <div key={index} className="text-center text-xs font-medium text-gray-500 py-2">
+                <div key={index} className="text-center text-xs font-medium text-gray-500 py-1 sm:py-2">
                   {day}
                 </div>
               ))}
@@ -240,22 +240,23 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                       key={index}
                       onClick={isCurrentMonth ? () => handleEmptyAreaClick(date) : undefined}
                       className={`
-                        aspect-square p-2 text-center rounded-lg transition-all duration-200 relative min-h-[60px] flex flex-col justify-between
+                        aspect-square p-1 sm:p-2 text-center rounded-md sm:rounded-lg transition-all duration-200 relative 
+                        min-h-[70px] sm:min-h-[80px] flex flex-col justify-between
                         ${!isCurrentMonth ? 'text-gray-300 bg-gray-50' : ''}
                         ${isCurrentMonth && !hasSlots ? 'text-gray-600 bg-white hover:bg-gray-50 border border-dashed border-gray-300 cursor-pointer' : ''}
                         ${hasSlots ? 'bg-blue-50 border-2 border-blue-200 cursor-pointer' : ''}
                         ${todayMark ? 'font-bold ring-2 ring-primary ring-offset-1' : ''}
                       `}
                     >
-                      <div className="text-sm font-medium">
+                      <div className="text-xs sm:text-sm font-medium">
                         {format(date, 'd')}
                       </div>
                       
-                      {/* スロット情報表示 */}
+                      {/* スロット情報表示 - モバイル最適化 */}
                       {hasSlots && (
                         <div className="flex flex-col gap-0.5 w-full mt-1">
-                          {/* スロットタグ表示（最大3個まで） */}
-                          {daySlots.slice(0, 3).map((slot, slotIndex) => {
+                          {/* スロットタグ表示（モバイルでは最大2個まで） */}
+                          {daySlots.slice(0, typeof window !== 'undefined' && window.innerWidth < 640 ? 2 : 3).map((slot, slotIndex) => {
                             const slotStatus = getSlotStatus(slot);
                             const statusColors = {
                               available: 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200',
@@ -266,11 +267,11 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                             
                             return (
                               <div key={`slot-${slot.id}`} className="w-full">
-                                {/* スロット時間表示 */}
+                                {/* スロット時間表示 - モバイル対応 */}
                                 <div
                                   onClick={(e) => handleSlotTagClick(slot, e)}
                                   className={`
-                                    calendar-slot-tag cursor-pointer transition-colors
+                                    text-xxs sm:text-xs px-0.5 py-0 rounded text-center font-medium cursor-pointer transition-colors
                                     ${statusColors[slotStatus]}
                                     leading-tight max-w-full truncate mb-0.5
                                   `}
@@ -279,12 +280,12 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                   {format(new Date(slot.startTime), 'H:mm')}-{format(new Date(slot.endTime), 'H:mm')}
                                 </div>
                                 
-                                {/* 予約済み情報表示（生徒と同じ形式） */}
+                                {/* 予約済み情報表示（モバイル最適化） */}
                                 {slot.reservations && slot.reservations.length > 0 && (
                                   <div className="flex flex-col gap-0.5">
                                     {slot.reservations
                                       .filter(res => res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
-                                      .slice(0, 2) // 最大2件まで表示
+                                      .slice(0, 1) // モバイルでは1件まで表示
                                       .map((reservation, resIndex) => {
                                         const startTime = new Date(reservation.bookedStartTime || '');
                                         const timeString = format(startTime, 'HH:mm');
@@ -297,23 +298,23 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                           PENDING: 'bg-yellow-100 border-yellow-400 text-yellow-800'
                                         };
                                         
-                                        return (
-                                          <div
-                                            key={`reservation-${reservation.id}-${resIndex}`}
-                                            className={`px-0.5 py-0 text-xxs font-medium rounded border ${
-                                              reservationColors[reservation.status as keyof typeof reservationColors] || 'bg-gray-100 border-gray-400 text-gray-800'
-                                            } truncate`}
-                                            title={`予約: ${reservation.student?.name || '生徒'} ${timeString}`}
-                                          >
-                                            🎵{timeString}
-                                          </div>
-                                        );
+                                                                                  return (
+                                            <div
+                                              key={`reservation-${reservation.id}-${resIndex}`}
+                                              className={`px-0.5 py-0 text-xxs font-medium rounded border ${
+                                                reservationColors[reservation.status as keyof typeof reservationColors] || 'bg-gray-100 border-gray-400 text-gray-800'
+                                              } truncate text-center`}
+                                              title={`予約: ${reservation.student?.name || '生徒'} ${timeString}`}
+                                            >
+                                              🎵{timeString}
+                                            </div>
+                                          );
                                       })}
                                     
-                                    {/* 3件以上の予約がある場合の省略表示 */}
-                                    {slot.reservations.filter(res => res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL').length > 2 && (
-                                      <div className="text-micro text-center text-gray-600 font-medium">
-                                        +{slot.reservations.filter(res => res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL').length - 2}件
+                                    {/* 複数予約がある場合の省略表示 */}
+                                    {slot.reservations.filter(res => res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL').length > 1 && (
+                                      <div className="text-xxs text-center text-gray-600 font-medium">
+                                        +{slot.reservations.filter(res => res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL').length - 1}件
                                       </div>
                                     )}
                                   </div>
@@ -322,14 +323,14 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                             );
                           })}
                           
-                          {/* 4個以上ある場合の省略表示 */}
-                          {daySlots.length > 3 && (
+                          {/* 省略表示の調整 */}
+                          {daySlots.length > (typeof window !== 'undefined' && window.innerWidth < 640 ? 2 : 3) && (
                             <div 
                               onClick={() => handleDateClick(date)}
-                              className="text-micro text-center text-gray-600 font-medium cursor-pointer hover:text-blue-600"
+                              className="text-xxs text-center text-gray-600 font-medium cursor-pointer hover:text-blue-600"
                               title="すべてのスロットを表示"
                             >
-                              +{daySlots.length - 3}件
+                              +{daySlots.length - (typeof window !== 'undefined' && window.innerWidth < 640 ? 2 : 3)}件
                             </div>
                           )}
                         </div>
@@ -343,8 +344,8 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                       {/* スロットなしの日のプラスアイコン */}
                       {!hasSlots && isCurrentMonth && (
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                            <CalendarIcon className="w-3 h-3 text-primary" />
+                          <div className="w-4 h-4 sm:w-6 sm:h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                            <CalendarIcon className="w-2 h-2 sm:w-3 sm:h-3 text-primary" />
                           </div>
                         </div>
                       )}
@@ -354,14 +355,14 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
               })()}
             </div>
             
-            {/* 凡例 */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            {/* 凡例 - モバイル対応 */}
+            <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 rounded-lg">
               <h5 className="text-sm font-medium text-gray-700 mb-3">凡例</h5>
               
               {/* スロット状態の凡例 */}
               <div className="mb-4">
                 <h6 className="text-xs font-medium text-gray-600 mb-2">スロット状態</h6>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
                     <span>利用可能</span>
@@ -388,7 +389,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
               {/* 予約情報の凡例 */}
               <div className="mb-3">
                 <h6 className="text-xs font-medium text-gray-600 mb-2">予約情報</h6>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-xs">
                   <div className="flex items-center gap-2">
                     <div className="px-1 py-0.5 text-xs font-medium rounded border bg-blue-100 border-blue-400 text-blue-800">🎵</div>
                     <span>確定済み</span>
