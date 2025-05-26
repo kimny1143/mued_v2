@@ -1,16 +1,10 @@
 import { prisma } from '../../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
-import { Prisma } from '@prisma/client';
+import { Prisma, ReservationStatus } from '@prisma/client';
 import { stripe } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
-
-// 予約ステータスの列挙型
-enum ReservationStatus {
-  CONFIRMED = 'CONFIRMED',
-  COMPLETED = 'COMPLETED'
-}
 
 // 特定の予約を取得
 export async function GET(
@@ -31,9 +25,9 @@ export async function GET(
     const reservation = await prisma.reservations.findUnique({
       where: { id },
       include: {
-        slot: {
+        lesson_slots: {
           include: {
-            teacher: {
+            users: {
               select: {
                 id: true,
                 name: true,
@@ -43,7 +37,7 @@ export async function GET(
             },
           },
         },
-        student: {
+        users: {
           select: {
             id: true,
             name: true,
@@ -63,7 +57,7 @@ export async function GET(
     
     // 権限チェック：生徒本人、担当講師、管理者のみアクセス可能
     const isStudent = sessionInfo.user.id === reservation.studentId;
-    const isTeacher = sessionInfo.user.id === reservation.slot.teacherId;
+    const isTeacher = sessionInfo.user.id === reservation.lesson_slots.teacherId;
     const isAdmin = sessionInfo.role === 'admin';
     
     if (!isStudent && !isTeacher && !isAdmin) {
@@ -100,10 +94,10 @@ export async function PUT(
     }
     
     // 予約が存在するか確認
-    const existingReservation = await prisma.reservation.findUnique({
+    const existingReservation = await prisma.reservations.findUnique({
       where: { id },
       include: {
-        slot: true,
+        lesson_slots: true,
       },
     });
     
@@ -115,7 +109,7 @@ export async function PUT(
     }
     
     // 権限チェック
-    const isTeacher = sessionInfo.user.id === existingReservation.slot.teacherId;
+    const isTeacher = sessionInfo.user.id === existingReservation.lesson_slots.teacherId;
     const isAdmin = sessionInfo.role === 'admin';
     
     if (!isTeacher && !isAdmin) {
@@ -128,12 +122,12 @@ export async function PUT(
     const data = await request.json();
     
     // 更新可能なフィールドを検証
-    const updateData: Prisma.ReservationUpdateInput = {};
+    const updateData: Prisma.reservationsUpdateInput = {};
     
     // レッスン完了への状態更新のみ許可
-    if (data.status === ReservationStatus.COMPLETED && 
-        existingReservation.status === ReservationStatus.CONFIRMED) {
-      updateData.status = ReservationStatus.COMPLETED;
+    if (data.status === 'COMPLETED' && 
+        existingReservation.status === 'CONFIRMED') {
+      updateData.status = 'COMPLETED';
     } else {
       return NextResponse.json(
         { error: '確定済みの予約をCOMPLETEDに変更する操作のみ許可されています' },
@@ -155,13 +149,13 @@ export async function PUT(
     }
     
     // 予約を更新
-    const updatedReservation = await prisma.reservation.update({
+    const updatedReservation = await prisma.reservations.update({
       where: { id },
       data: updateData,
       include: {
-        slot: {
+        lesson_slots: {
           include: {
-            teacher: {
+            users: {
               select: {
                 id: true,
                 name: true,
@@ -170,7 +164,7 @@ export async function PUT(
             },
           },
         },
-        student: {
+        users: {
           select: {
             id: true,
             name: true,
@@ -207,10 +201,10 @@ export async function DELETE(
     }
     
     // 予約が存在するか確認
-    const existingReservation = await prisma.reservation.findUnique({
+    const existingReservation = await prisma.reservations.findUnique({
       where: { id },
       include: {
-        slot: true,
+        lesson_slots: true,
       },
     });
     
@@ -234,7 +228,7 @@ export async function DELETE(
     
     // 過去の予約はキャンセル不可（レッスン開始時間より後）
     const now = new Date();
-    if (new Date(existingReservation.slot.startTime) < now) {
+    if (new Date(existingReservation.lesson_slots.startTime) < now) {
       return NextResponse.json(
         { error: '過去のレッスンはキャンセルできません' },
         { status: 400 }
@@ -242,7 +236,7 @@ export async function DELETE(
     }
     
     // レッスン完了済みはキャンセル不可
-    if (existingReservation.status === ReservationStatus.COMPLETED) {
+    if (existingReservation.status === 'COMPLETED') {
       return NextResponse.json(
         { error: '完了済みのレッスンはキャンセルできません' },
         { status: 400 }
@@ -275,14 +269,14 @@ export async function DELETE(
     }
     
     // トランザクションで予約の削除とスロットの解放を実行
-    const [deletedReservation, updatedSlot] = await prisma.$transaction([
+    const [_deletedReservation, _updatedSlot] = await prisma.$transaction([
       // 1. 予約レコードを削除
-      prisma.reservation.delete({
+      prisma.reservations.delete({
         where: { id },
       }),
       
       // 2. スロットを利用可能に更新
-              prisma.lesson_slots.update({
+      prisma.lesson_slots.update({
         where: { id: existingReservation.slotId },
         data: { isAvailable: true }
       })
