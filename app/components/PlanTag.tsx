@@ -131,6 +131,13 @@ export function PlanTag() {
       const data = await response.json();
 
       if (!response.ok) {
+        // 顧客が見つからない場合の特別処理
+        if (data.action === 'redirect_to_plans') {
+          console.log('🔄 顧客レコードが見つからないため、プラン選択ページにリダイレクト');
+          window.location.href = '/dashboard/plans';
+          return;
+        }
+        
         throw new Error(data.error || 'Billing Portal Sessionの作成に失敗しました');
       }
 

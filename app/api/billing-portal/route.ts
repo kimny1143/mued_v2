@@ -46,8 +46,13 @@ export async function POST(req: Request) {
 
     if (customerError || !customerData) {
       console.error('❌ Stripe顧客が見つかりません:', customerError);
+      
+      // 顧客が見つからない場合は、プラン選択ページにリダイレクト
+      console.log('🔄 顧客レコードが見つからないため、プラン選択ページにリダイレクト');
       return NextResponse.json({ 
-        error: 'Stripe customer not found. Please subscribe to a plan first.' 
+        error: 'Stripe customer not found. Redirecting to plan selection.',
+        redirectUrl: '/dashboard/plans',
+        action: 'redirect_to_plans'
       }, { status: 404 });
     }
 
