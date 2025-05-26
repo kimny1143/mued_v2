@@ -100,12 +100,7 @@ export async function POST(
             currency: 'jpy',
             customer: customerId,
             payment_method: paymentMethodId,
-            confirmation_method: 'manual',
             confirm: true, // 即座に決済実行
-            automatic_payment_methods: {
-              enabled: true,
-              allow_redirects: 'never' // リダイレクト系決済を無効化
-            },
             metadata: {
               reservationId: reservationId,
               studentId: updatedReservation.studentId,
