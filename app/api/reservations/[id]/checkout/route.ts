@@ -22,12 +22,10 @@ export async function POST(
       where: { id: reservationId },
       include: {
         lesson_slots: {
-          select: {
+          include: {
             users: {
               select: { name: true }
-            },
-            hourlyRate: true,
-            currency: true
+            }
           }
         }
       }
@@ -101,7 +99,7 @@ export async function POST(
         session.user.email,
         reservation.id,
         reservation.totalAmount,
-        reservation.lesson_slots.currency || 'jpy',
+        'jpy', // 固定でJPYを使用
         {
           teacher: reservation.lesson_slots.users.name || '名前未設定',
           date: formattedDate,
@@ -122,7 +120,7 @@ export async function POST(
             id: randomUUID(),
             stripeSessionId: checkoutSession.id,
             amount: reservation.totalAmount,
-            currency: reservation.lesson_slots.currency || 'jpy',
+            currency: 'jpy',
             status: 'PENDING',
             userId: session.user.id,
             updatedAt: new Date()

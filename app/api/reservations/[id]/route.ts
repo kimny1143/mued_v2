@@ -28,7 +28,7 @@ export async function GET(
       );
     }
     
-    const reservation = await prisma.reservation.findUnique({
+    const reservation = await prisma.reservations.findUnique({
       where: { id },
       include: {
         slot: {
