@@ -99,14 +99,10 @@ export function PlanTag() {
 
   // Billingポータルへのリダイレクト処理
   const handlePlanClick = async () => {
-    console.log('プランタグクリック - プラン管理ページにリダイレクト');
+    console.log('プランタグクリック - Billing Portalにリダイレクト');
     
-    // FREEプランの場合はプラン選択ページにリダイレクト
-    if (planName === 'FREE') {
-      console.log('FREEプラン - プラン選択ページにリダイレクト');
-      window.location.href = '/dashboard/plans';
-      return;
-    }
+    // FREEプランの場合でもBilling Portalを試行（顧客レコードがあれば）
+    // 顧客レコードがない場合は自動的にプラン選択ページにリダイレクトされる
     
     try {
       setIsLoading(true);

@@ -128,8 +128,9 @@ export default function Page() {
       console.log('サブスクリプション処理開始:', { priceId, userId: user.id });
 
       // 既存サブスクリプションがある場合はBilling Portalに直接リダイレクト
-      if (hasActiveSubscription) {
-        console.log('🔄 既存サブスクリプションあり - Billing Portalにリダイレクト');
+      // ただし、FREEプランから有料プランへのアップグレードは新規チェックアウトを許可
+      if (hasActiveSubscription && subscription?.priceId !== 'free') {
+        console.log('🔄 既存有料サブスクリプションあり - Billing Portalにリダイレクト');
         
         // 認証トークンを取得
         const { data: sessionData } = await supabaseBrowser.auth.getSession();
@@ -243,7 +244,7 @@ export default function Page() {
     : 'FREE';
 
   // 既存サブスクリプションがあるかチェック（FREEプランは除外）
-  const hasActiveSubscription = subscription && subscription.status === 'active' && subscription.priceId !== 'free';
+  const hasActiveSubscription = subscription && subscription.status === 'active' && subscription.priceId !== 'free' && subscription.priceId !== null;
   const isFreePlan = !subscription || subscription.priceId === 'free' || currentPlan === 'FREE';
 
   return (
