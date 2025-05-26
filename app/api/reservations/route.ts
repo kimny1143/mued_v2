@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
     // リクエストボディからデータを取得
     const data = await request.json();
     // durationだけを変数として宣言し、他は定数のまま
-    const { slotId, bookedStartTime, bookedEndTime, notes, totalAmount, createPaymentIntent } = data;
+    const { slotId, bookedStartTime, bookedEndTime, notes, totalAmount, createPaymentIntent, paymentMethodId } = data;
     let duration = data.duration || 60; // デフォルト60分
     
     // 処理のログ出力
@@ -418,15 +418,15 @@ export async function POST(request: NextRequest) {
         
         // 決済準備（Payment Intentを作成）
         let paymentIntent = null;
-        if (createPaymentIntent && totalAmount) {
+        if (createPaymentIntent && totalAmount && paymentMethodId) {
           try {
             // Stripe Payment Intentを作成（承認時に自動実行される）
             paymentIntent = await _stripe.paymentIntents.create({
               amount: Math.round(totalAmount), // JPYは最小単位が円
               currency: 'jpy',
-              automatic_payment_methods: {
-                enabled: true,
-              },
+              payment_method: paymentMethodId, // 決済手段を設定
+              confirmation_method: 'manual',
+              confirm: true, // 即座に確認して決済手段を確定
               capture_method: 'manual', // 手動キャプチャ（承認時に実行）
               metadata: {
                 reservationId: reservation.id,
@@ -435,6 +435,13 @@ export async function POST(request: NextRequest) {
                 slotId: slot.id,
               },
               description: `${slot.users.name}先生のレッスン予約 - ${formattedDate} ${formattedTimeRange}`,
+            });
+            
+            console.log('💳 Payment Intent作成結果:', {
+              id: paymentIntent.id,
+              status: paymentIntent.status,
+              amount: paymentIntent.amount,
+              paymentMethod: paymentIntent.payment_method
             });
             
             // Payment レコードを作成
@@ -459,12 +466,14 @@ export async function POST(request: NextRequest) {
             
             console.log('💳 決済準備完了:', {
               paymentIntentId: paymentIntent.id,
+              paymentIntentStatus: paymentIntent.status,
               amount: totalAmount,
               status: 'PENDING'
             });
           } catch (paymentError) {
             console.error('決済準備エラー:', paymentError);
             // 決済準備に失敗しても予約は作成する（後で手動決済可能）
+            throw new Error(`決済準備に失敗しました: ${paymentError instanceof Error ? paymentError.message : String(paymentError)}`);
           }
         }
         
@@ -488,6 +497,7 @@ export async function POST(request: NextRequest) {
         return {
           success: true,
           reservation,
+          paymentIntentId: paymentIntent?.id,
           message: createPaymentIntent ? 
             '予約リクエストと決済準備が完了しました。メンター承認後に自動で決済が実行されます。' :
             'メンターの承認をお待ちください。承認後に決済手続きをご案内いたします。',
