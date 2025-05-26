@@ -76,23 +76,45 @@ export async function POST(
         }
       });
       
-      // 決済準備済みの場合は自動実行
+      // Setup完了済みの場合は自動決済実行
       let paymentResult = null;
-      if (updatedReservation.payments && updatedReservation.payments.stripePaymentId) {
+      if (updatedReservation.payments && updatedReservation.payments.status === 'SETUP_COMPLETED') {
         try {
-          // Stripe Payment Intentをキャプチャ（実際の決済実行）
           const stripe = new (await import('stripe')).default(process.env.STRIPE_SECRET_KEY!, {
             apiVersion: '2025-03-31.basil',
           });
           
-          const paymentIntent = await stripe.paymentIntents.capture(
-            updatedReservation.payments.stripePaymentId
-          );
+          // Setup Intentから決済手段情報を取得
+          const paymentMetadata = JSON.parse(updatedReservation.payments.metadata || '{}');
+          const paymentMethodId = paymentMetadata.paymentMethodId;
+          const customerId = paymentMetadata.customerId;
           
-          // Payment ステータスを更新
+          if (!paymentMethodId) {
+            throw new Error('決済手段が見つかりません');
+          }
+          
+          // Payment Intentを作成して即座に実行
+          const paymentIntent = await stripe.paymentIntents.create({
+            amount: updatedReservation.payments.amount,
+            currency: 'jpy',
+            customer: customerId,
+            payment_method: paymentMethodId,
+            confirmation_method: 'manual',
+            confirm: true, // 即座に決済実行
+            metadata: {
+              reservationId: reservationId,
+              studentId: updatedReservation.studentId,
+              teacherId: reservation.lesson_slots.teacherId,
+              slotId: updatedReservation.slotId,
+            },
+            description: `レッスン予約の決済 - 予約ID: ${reservationId}`,
+          });
+          
+          // Payment レコードを更新
           await tx.payments.update({
             where: { id: updatedReservation.payments.id },
             data: {
+              stripePaymentId: paymentIntent.id,
               status: 'SUCCEEDED',
               updatedAt: new Date()
             }
@@ -110,9 +132,9 @@ export async function POST(
             status: paymentIntent.status
           };
           
-          console.log('💳 自動決済実行完了:', paymentResult);
+          console.log('💳 Setup Intent自動決済実行完了:', paymentResult);
         } catch (paymentError) {
-          console.error('自動決済エラー:', paymentError);
+          console.error('Setup Intent自動決済エラー:', paymentError);
           // 決済エラーでも承認は完了させる（手動決済可能）
         }
       }

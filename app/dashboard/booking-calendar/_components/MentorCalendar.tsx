@@ -158,7 +158,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     debugLog('🔴 useEffect実行開始（全メンター統合 + 予約状況分析）');
     verboseDebugLog('mentors:', mentors);
     debugLog('mentors.length:', mentors?.length);
-
+    
     if (!mentors || mentors.length === 0) {
       debugLog('🔴 mentorsが空のため終了');
       setAllTimeSlots([]);
@@ -255,10 +255,10 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       
       setAllTimeSlots(allSlots);
       
-    } catch (err) {
+      } catch (err) {
       console.error('時間枠統合エラー:', err);
-      setError('予約可能な時間枠の取得に失敗しました。');
-    }
+        setError('予約可能な時間枠の取得に失敗しました。');
+      }
   }, [mentors]);
 
   // 日表示に切り替わった時に予約情報を取得
@@ -267,7 +267,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       fetchReservationsForDate(selectedDateForDay);
     }
   }, [currentView, selectedDateForDay, myReservations]);
-
+  
   // 予約可能な日付リスト（月表示で色付けするため）
   const availableDays = Array.from(new Set(
     allTimeSlots
@@ -277,13 +277,13 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
 
   // 日付選択時の処理（ビュー切り替え対応）
   const handleDateClick = (date: Date) => {
-    // 日表示に切り替え
-    setCurrentView('day');
-    setSelectedDateForDay(date);
-    setSelectedDates([date]);
+      // 日表示に切り替え
+      setCurrentView('day');
+      setSelectedDateForDay(date);
+      setSelectedDates([date]);
     
     if (onDateSelect) {
-      onDateSelect([date]);
+        onDateSelect([date]);
     }
   };
 
@@ -444,8 +444,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         ) : (
           <>
             {currentView === 'month' ? (
-              <div className="mt-4">
-                <h4 className="font-semibold mb-4 text-gray-900 text-center">予約可能日カレンダー</h4>
+                <div className="mt-4">
+                  <h4 className="font-semibold mb-4 text-gray-900 text-center">予約可能日カレンダー</h4>
                 <MonthView
                   currentDate={currentDate}
                   allTimeSlots={allTimeSlots}

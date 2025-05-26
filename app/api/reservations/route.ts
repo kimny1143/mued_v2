@@ -416,71 +416,7 @@ export async function POST(request: NextRequest) {
           data: reservationData
         });
         
-        // 決済準備（Payment Intentを作成）
-        let paymentIntent = null;
-        if (createPaymentIntent && totalAmount && paymentMethodId) {
-          try {
-            // Stripe Payment Intentを作成（承認時に自動実行される）
-            paymentIntent = await _stripe.paymentIntents.create({
-              amount: Math.round(totalAmount), // JPYは最小単位が円
-              currency: 'jpy',
-              payment_method: paymentMethodId, // 決済手段を設定
-              confirmation_method: 'manual',
-              confirm: true, // 即座に確認して決済手段を確定
-              capture_method: 'manual', // 手動キャプチャ（承認時に実行）
-              // 自動決済方法の設定（リダイレクトを無効化）
-              automatic_payment_methods: {
-                enabled: true,
-                allow_redirects: 'never' // リダイレクト型決済を無効化
-              },
-              metadata: {
-                reservationId: reservation.id,
-                studentId: session.user.id,
-                teacherId: slot.users.id,
-                slotId: slot.id,
-              },
-              description: `${slot.users.name}先生のレッスン予約 - ${formattedDate} ${formattedTimeRange}`,
-            });
-            
-            console.log('💳 Payment Intent作成結果:', {
-              id: paymentIntent.id,
-              status: paymentIntent.status,
-              amount: paymentIntent.amount,
-              paymentMethod: paymentIntent.payment_method
-            });
-            
-            // Payment レコードを作成
-            const payment = await tx.payments.create({
-              data: {
-                id: randomUUID(),
-                stripePaymentId: paymentIntent.id,
-                amount: totalAmount,
-                currency: 'jpy',
-                status: 'PENDING',
-                userId: session.user.id,
-                stripeSessionId: `pi_${randomUUID()}`, // 一時的なセッションID
-                updatedAt: new Date()
-              }
-            });
-            
-            // 予約にpaymentIdを関連付け
-            await tx.reservations.update({
-              where: { id: reservation.id },
-              data: { paymentId: payment.id }
-            });
-            
-            console.log('💳 決済準備完了:', {
-              paymentIntentId: paymentIntent.id,
-              paymentIntentStatus: paymentIntent.status,
-              amount: totalAmount,
-              status: 'PENDING'
-            });
-          } catch (paymentError) {
-            console.error('決済準備エラー:', paymentError);
-            // 決済準備に失敗しても予約は作成する（後で手動決済可能）
-            throw new Error(`決済準備に失敗しました: ${paymentError instanceof Error ? paymentError.message : String(paymentError)}`);
-          }
-        }
+        // 決済は後でCheckout Sessionで処理するため、ここでは予約のみ作成
         
         // セッション情報・リクエスト情報をログ出力（デバッグ用）
         console.log('セッション情報:', {
@@ -490,28 +426,23 @@ export async function POST(request: NextRequest) {
         });
         
         // 予約作成完了 - 決済はメンター承認後に実行
-        console.log('✅ 予約作成完了 - メンター承認待ち状態:', {
+        console.log('✅ 予約作成完了:', {
           reservationId: reservation.id,
           status: reservation.status,
           teacher: slot.users.name,
           student: session.user.email,
-          timeRange: formattedTimeRange,
-          paymentPrepared: !!paymentIntent
+          timeRange: formattedTimeRange
         });
         
         return {
           success: true,
           reservation,
-          paymentIntentId: paymentIntent?.id,
-          message: createPaymentIntent ? 
-            '予約リクエストと決済準備が完了しました。メンター承認後に自動で決済が実行されます。' :
-            'メンターの承認をお待ちください。承認後に決済手続きをご案内いたします。',
+          message: '予約が作成されました。決済ページで支払いを完了してください。',
           pricing: {
             fixedAmount,
             currency,
             durationInMinutes
-          },
-          paymentPrepared: !!paymentIntent
+          }
         };
     });
     
