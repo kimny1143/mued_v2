@@ -92,3 +92,6 @@ supabase/migrations/*
 #playwright
 test-results/*
 playwright-report/*
+
+# backup
+backup/
