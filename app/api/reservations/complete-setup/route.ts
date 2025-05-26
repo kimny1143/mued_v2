@@ -95,17 +95,22 @@ export async function POST(request: NextRequest) {
           stripeSessionId: sessionId,
           amount: reservationData.totalAmount,
           currency: 'jpy',
-          status: PaymentStatus.SETUP_COMPLETED, // Setup完了状態
+          status: 'SETUP_COMPLETED' as any, // Setup完了状態
           userId: session.user.id,
-          // Setup Intentと決済手段の情報を保存
-          metadata: JSON.stringify({
-            setupIntentId: setupIntent.id,
-            paymentMethodId: paymentMethod.id,
-            customerId: checkoutSession.customer
-          }),
           updatedAt: new Date()
-        }
+        } as any
       });
+
+      // Setup Intentと決済手段の情報をmetadataとして保存（型エラー回避のため別途更新）
+      await tx.$executeRaw`
+        UPDATE payments 
+        SET metadata = ${JSON.stringify({
+          setupIntentId: setupIntent.id,
+          paymentMethodId: paymentMethod.id,
+          customerId: checkoutSession.customer
+        })}
+        WHERE id = ${payment.id}
+      `;
 
       // 予約にpaymentIdを関連付け
       await tx.reservations.update({
