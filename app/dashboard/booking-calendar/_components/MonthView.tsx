@@ -152,41 +152,25 @@ export const MonthView: React.FC<MonthViewProps> = ({
                 return (
                   <div className="flex flex-col gap-0.5 w-full mt-1">
                     {myReservationsOnDate.slice(0, 2).map((reservation, resIndex) => {
+                      const startTime = new Date(reservation.bookedStartTime);
+                      const timeString = format(startTime, 'HH:mm');
+                      
+                      // ステータス別の色分け（コンパクト表示）
                       const statusColors = {
                         CONFIRMED: 'bg-blue-100 border-blue-400 text-blue-800',
                         APPROVED: 'bg-green-100 border-green-400 text-green-800',
-                        PENDING: 'bg-yellow-100 border-yellow-400 text-yellow-800',
-                        PENDING_APPROVAL: 'bg-orange-100 border-orange-400 text-orange-800'
-                      };
-                      
-                      const statusText = {
-                        CONFIRMED: '確定済み',
-                        APPROVED: '承認済み',
-                        PENDING: '保留中',
-                        PENDING_APPROVAL: '承認待ち'
+                        PENDING_APPROVAL: 'bg-orange-100 border-orange-400 text-orange-800',
+                        PENDING: 'bg-yellow-100 border-yellow-400 text-yellow-800'
                       };
                       
                       return (
                         <div
                           key={`my-reservation-${reservation.id}-${resIndex}`}
-                          className={`
-                            px-2 py-1 text-xs font-medium rounded border-2 
-                            ${statusColors[reservation.status as keyof typeof statusColors] || 'bg-gray-100 border-gray-300 text-gray-600'}
-                            cursor-default leading-tight max-w-full
-                          `}
-                          title={`あなたの予約: ${format(new Date(reservation.bookedStartTime), 'HH:mm')}-${format(new Date(reservation.bookedEndTime), 'HH:mm')} (${statusText[reservation.status as keyof typeof statusText] || reservation.status})`}
+                          className={`px-1 py-0.5 text-xs font-medium rounded border ${
+                            statusColors[reservation.status as keyof typeof statusColors] || 'bg-gray-100 border-gray-400 text-gray-800'
+                          } mb-1`}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="truncate">
-                              🎵 あなたの予約
-                            </span>
-                            <span className="ml-1">
-                              {format(new Date(reservation.bookedStartTime), 'H:mm')}
-                            </span>
-                          </div>
-                          <div className="text-center text-xs opacity-75">
-                            {statusText[reservation.status as keyof typeof statusText] || reservation.status}
-                          </div>
+                          🎵 {timeString}
                         </div>
                       );
                     })}

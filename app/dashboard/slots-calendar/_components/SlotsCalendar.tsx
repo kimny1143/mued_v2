@@ -265,17 +265,59 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                             };
                             
                             return (
-                              <div
-                                key={slot.id}
-                                onClick={(e) => handleSlotTagClick(slot, e)}
-                                className={`
-                                  calendar-slot-tag cursor-pointer transition-colors
-                                  ${statusColors[slotStatus]}
-                                  leading-tight max-w-full truncate
-                                `}
-                                title={`${format(new Date(slot.startTime), 'HH:mm')}-${format(new Date(slot.endTime), 'HH:mm')} (クリックで編集)`}
-                              >
-                                {format(new Date(slot.startTime), 'H:mm')}-{format(new Date(slot.endTime), 'H:mm')}
+                              <div key={`slot-${slot.id}`} className="w-full">
+                                {/* スロット時間表示 */}
+                                <div
+                                  onClick={(e) => handleSlotTagClick(slot, e)}
+                                  className={`
+                                    calendar-slot-tag cursor-pointer transition-colors
+                                    ${statusColors[slotStatus]}
+                                    leading-tight max-w-full truncate mb-0.5
+                                  `}
+                                  title={`${format(new Date(slot.startTime), 'HH:mm')}-${format(new Date(slot.endTime), 'HH:mm')} (クリックで編集)`}
+                                >
+                                  {format(new Date(slot.startTime), 'H:mm')}-{format(new Date(slot.endTime), 'H:mm')}
+                                </div>
+                                
+                                {/* 予約済み情報表示（生徒と同じ形式） */}
+                                {slot.reservations && slot.reservations.length > 0 && (
+                                  <div className="flex flex-col gap-0.5">
+                                    {slot.reservations
+                                      .filter(res => res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
+                                      .slice(0, 2) // 最大2件まで表示
+                                      .map((reservation, resIndex) => {
+                                        const startTime = new Date(reservation.bookedStartTime || '');
+                                        const timeString = format(startTime, 'HH:mm');
+                                        
+                                        // ステータス別の色分け（コンパクト表示）
+                                        const reservationColors = {
+                                          CONFIRMED: 'bg-blue-100 border-blue-400 text-blue-800',
+                                          APPROVED: 'bg-green-100 border-green-400 text-green-800',
+                                          PENDING_APPROVAL: 'bg-orange-100 border-orange-400 text-orange-800',
+                                          PENDING: 'bg-yellow-100 border-yellow-400 text-yellow-800'
+                                        };
+                                        
+                                        return (
+                                          <div
+                                            key={`reservation-${reservation.id}-${resIndex}`}
+                                            className={`px-1 py-0.5 text-xs font-medium rounded border ${
+                                              reservationColors[reservation.status as keyof typeof reservationColors] || 'bg-gray-100 border-gray-400 text-gray-800'
+                                            }`}
+                                            title={`予約: ${reservation.student?.name || '生徒'} ${timeString}`}
+                                          >
+                                            🎵 {timeString}
+                                          </div>
+                                        );
+                                      })}
+                                    
+                                    {/* 3件以上の予約がある場合の省略表示 */}
+                                    {slot.reservations.filter(res => res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL').length > 2 && (
+                                      <div className="text-micro text-center text-gray-600 font-medium">
+                                        +{slot.reservations.filter(res => res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL').length - 2}件
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -315,30 +357,60 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
             {/* 凡例 */}
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <h5 className="text-sm font-medium text-gray-700 mb-3">凡例</h5>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
-                  <span>利用可能</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded"></div>
-                  <span>予約済み</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-yellow-100 border border-yellow-300 rounded"></div>
-                  <span>保留中</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-gray-100 border border-gray-300 rounded"></div>
-                  <span>無効</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-primary rounded-full"></div>
-                  <span>今日</span>
+              
+              {/* スロット状態の凡例 */}
+              <div className="mb-4">
+                <h6 className="text-xs font-medium text-gray-600 mb-2">スロット状態</h6>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+                    <span>利用可能</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded"></div>
+                    <span>予約済み</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-yellow-100 border border-yellow-300 rounded"></div>
+                    <span>保留中</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-gray-100 border border-gray-300 rounded"></div>
+                    <span>無効</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-primary rounded-full"></div>
+                    <span>今日</span>
+                  </div>
                 </div>
               </div>
-              <div className="mt-3 text-xxs text-gray-600">
-                💡 <strong>操作方法:</strong> スロットタグをクリック→編集、空白エリアをクリック→新規作成
+              
+              {/* 予約情報の凡例 */}
+              <div className="mb-3">
+                <h6 className="text-xs font-medium text-gray-600 mb-2">予約情報</h6>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="px-1 py-0.5 text-xs font-medium rounded border bg-blue-100 border-blue-400 text-blue-800">🎵</div>
+                    <span>確定済み</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="px-1 py-0.5 text-xs font-medium rounded border bg-green-100 border-green-400 text-green-800">🎵</div>
+                    <span>承認済み</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="px-1 py-0.5 text-xs font-medium rounded border bg-orange-100 border-orange-400 text-orange-800">🎵</div>
+                    <span>承認待ち</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="px-1 py-0.5 text-xs font-medium rounded border bg-yellow-100 border-yellow-400 text-yellow-800">🎵</div>
+                    <span>保留中</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-xxs text-gray-600">
+                💡 <strong>操作方法:</strong> スロットタグをクリック→編集、空白エリアをクリック→新規作成<br/>
+                💡 <strong>予約表示:</strong> 🎵アイコン付きで生徒の予約時間を表示
               </div>
             </div>
           </>
