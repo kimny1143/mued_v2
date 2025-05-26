@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
-// Resendインスタンスの初期化
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Resendインスタンスの初期化（環境変数がない場合はnullに）
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // メール送信の標準的なオプション
 interface EmailOptions {
@@ -24,6 +24,12 @@ interface EmailOptions {
  */
 export async function sendEmail(options: EmailOptions) {
   try {
+    // Resend APIキーが設定されていない場合はスキップ
+    if (!resend) {
+      console.warn('RESEND_API_KEY not configured, skipping email send');
+      return { success: false, error: 'Email service not configured' };
+    }
+
     const result = await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'MUED LMS <noreply@muedlms.com>',
       ...options,
