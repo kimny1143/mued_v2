@@ -242,16 +242,12 @@ export default function BookingCalendarPage() {
         console.log('🔥 APIリクエスト開始: スロットと予約情報を並行取得');
         
         // スロット情報、全予約情報、自分の予約情報を並行取得
-        const [slotsResponse, reservationsResponse, myReservationsResponse] = await Promise.all([
+        const [slotsResponse, reservationsResponse] = await Promise.all([
           fetch('/api/lesson-slots?viewMode=all', {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             credentials: 'include',
           }),
           fetch('/api/reservations', {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            credentials: 'include',
-          }),
-          fetch('/api/my-reservations', {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
             credentials: 'include',
           })
@@ -270,31 +266,48 @@ export default function BookingCalendarPage() {
           // 予約情報の取得に失敗しても、スロット情報は表示する
         }
         
-        // 自分の予約情報の処理
-        if (!myReservationsResponse.ok) {
-          const errorResponse = await myReservationsResponse.json();
-          console.warn('自分の予約情報取得に失敗:', errorResponse);
-        }
-        
         const slotsData: LessonSlot[] = await slotsResponse.json();
-        const reservationsData: Reservation[] = reservationsResponse.ok 
+        const allReservationsData: any[] = reservationsResponse.ok 
           ? await reservationsResponse.json() 
-          : [];
-        const myReservationsData: Reservation[] = myReservationsResponse.ok 
-          ? await myReservationsResponse.json() 
           : [];
         
         console.log(`📊 取得結果:`);
         console.log(`- レッスンスロット: ${slotsData.length}件`);
-        console.log(`- 全予約情報: ${reservationsData.length}件`);
-        console.log(`- 自分の予約情報: ${myReservationsData.length}件`);
+        console.log(`- 全予約情報: ${allReservationsData.length}件`);
+        
+        // 自分の予約のみを抽出してMentorCalendarが期待する形式に変換
+        const { data: sessionData2 } = await supabaseBrowser.auth.getSession();
+        const currentUserId = sessionData2.session?.user?.id;
+        
+        const myReservationsFormatted = allReservationsData
+          .filter((res) => res.studentId === currentUserId)
+          .map((res) => ({
+            id: res.id,
+            slotId: res.slotId,
+            studentId: res.studentId,
+            status: res.status,
+            bookedStartTime: res.bookedStartTime,
+            bookedEndTime: res.bookedEndTime,
+            createdAt: res.createdAt,
+            slot: res.lesson_slots ? {
+              id: res.lesson_slots.id || res.slotId,
+              teacherId: res.lesson_slots.users?.id || '',
+              teacher: {
+                id: res.lesson_slots.users?.id || '',
+                name: res.lesson_slots.users?.name || null,
+              }
+            } : undefined
+          }));
+        
+        console.log(`- 自分の予約情報: ${myReservationsFormatted.length}件`);
+        console.log('🔍 自分の予約詳細:', myReservationsFormatted);
         
         // 予約情報を保存
-        setReservations(reservationsData);
-        setMyReservations(myReservationsData);
+        setReservations(allReservationsData);
+        setMyReservations(myReservationsFormatted);
         
         // スロット情報と予約情報を統合
-        const updatedSlots = calculateSlotAvailability(slotsData, reservationsData);
+        const updatedSlots = calculateSlotAvailability(slotsData, allReservationsData);
         
         // メンター形式に変換
         const convertedMentors = convertLessonSlotsToMentors(updatedSlots);
