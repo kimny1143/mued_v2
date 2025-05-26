@@ -103,52 +103,51 @@ export function PlanTag() {
 
   const { icon, className } = getPlanStyle();
 
-  // Billingポータルへのリダイレクト処理
+  // プラン管理へのリダイレクト処理
   const handlePlanClick = async () => {
-    console.log('プランタグクリック - Billing Portalにリダイレクト');
-    
-    // FREEプランの場合でもBilling Portalを試行（顧客レコードがあれば）
-    // 顧客レコードがない場合は自動的にプラン選択ページにリダイレクトされる
+    console.log('プランタグクリック - プラン管理にリダイレクト');
     
     try {
       setIsLoading(true);
 
-      // 認証トークンを取得
-      const { data: sessionData } = await supabaseBrowser.auth.getSession();
-      const token = sessionData?.session?.access_token;
-
-      if (!token) {
-        throw new Error('認証トークンが見つかりません。再度ログインしてください。');
-      }
-
-      // Billing Portal Sessionを作成
-      const response = await fetch('/api/billing-portal', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        // 顧客が見つからない場合の特別処理
-        if (data.action === 'redirect_to_plans') {
-          console.log('🔄 顧客レコードが見つからないため、プラン選択ページにリダイレクト');
-          window.location.href = '/dashboard/plans';
-          return;
-        }
+      // アクティブなサブスクリプションがある場合のみBilling Portalを使用
+      if (subscription?.status === 'active' && subscription?.priceId) {
+        console.log('🎯 アクティブサブスクリプションあり - Billing Portalにリダイレクト');
         
-        throw new Error(data.error || 'Billing Portal Sessionの作成に失敗しました');
-      }
+        // 認証トークンを取得
+        const { data: sessionData } = await supabaseBrowser.auth.getSession();
+        const token = sessionData?.session?.access_token;
 
-      // 新しいタブでBilling Portalを開く
-      window.open(data.url, '_blank');
+        if (!token) {
+          throw new Error('認証トークンが見つかりません。再度ログインしてください。');
+        }
+
+        // Billing Portal Sessionを作成
+        const response = await fetch('/api/billing-portal', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Billing Portal Sessionの作成に失敗しました');
+        }
+
+        // 新しいタブでBilling Portalを開く
+        window.open(data.url, '_blank');
+      } else {
+        // アクティブなサブスクリプションがない場合はプラン選択ページにリダイレクト
+        console.log('🔄 アクティブサブスクリプションなし - プラン選択ページにリダイレクト');
+        window.location.href = '/dashboard/plans';
+      }
 
     } catch (error) {
-      console.error('Billing Portal エラー:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Billing Portalの開始に失敗しました';
+      console.error('プラン管理エラー:', error);
+      const errorMessage = error instanceof Error ? error.message : 'プラン管理の開始に失敗しました';
       alert(errorMessage);
     } finally {
       setIsLoading(false);
@@ -160,7 +159,7 @@ export function PlanTag() {
       onClick={handlePlanClick}
       disabled={isLoading}
       className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg cursor-pointer group active:scale-95 ${className} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-      title={`${planName}プラン - クリックしてプラン管理・変更`}
+      title={subscription?.status === 'active' ? `${planName}プラン - クリックしてプラン管理・変更` : `${planName}プラン - クリックしてプラン選択`}
     >
       {isLoading ? (
         <>
