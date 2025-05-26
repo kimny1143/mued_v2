@@ -67,13 +67,13 @@ async function createAdditionalTestData() {
   try {
     // E2Eテスト用の特別なユーザーを作成（必要に応じて）
     const testUsers = await prisma.users.findMany({
-      where: {
+    where: {
         email: {
           in: ['test-student@example.com', 'test-mentor@example.com']
         }
-      }
-    });
-    
+    }
+  });
+  
     if (testUsers.length === 0) {
       // E2Eテスト専用ユーザーを作成
       await prisma.users.createMany({
@@ -124,8 +124,8 @@ async function createAdditionalTestData() {
          }
        ],
        skipDuplicates: true
-     });
-     
+  });
+  
      console.log('✅ E2Eテスト用レッスンスロットを作成しました');
      
    } catch (error) {

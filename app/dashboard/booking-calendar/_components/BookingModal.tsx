@@ -491,35 +491,35 @@ export const BookingModal: React.FC<BookingModalProps> = ({
 
             {/* フッター */}
             {!isSuccess && (
-              <div className="p-6 border-t bg-gray-50">
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={onClose}
-                    className="flex-1"
-                    disabled={isProcessing}
-                  >
-                    キャンセル
-                  </Button>
-                  <Button
-                    onClick={handleBooking}
-                    disabled={!selectedTimeSlot || !selectedMentor || !selectedStartTime || !selectedEndTime || isProcessing}
-                    className="flex-1"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                        処理中...
-                      </>
-                    ) : (
-                      <>
+            <div className="p-6 border-t bg-gray-50">
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={onClose}
+                  className="flex-1"
+                  disabled={isProcessing}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={handleBooking}
+                  disabled={!selectedTimeSlot || !selectedMentor || !selectedStartTime || !selectedEndTime || isProcessing}
+                  className="flex-1"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                      処理中...
+                    </>
+                  ) : (
+                    <>
                         <ArrowRight className="h-4 w-4 mr-2" />
                         予約リクエストを送信
-                      </>
-                    )}
-                  </Button>
-                </div>
+                    </>
+                  )}
+                </Button>
               </div>
+            </div>
             )}
           </div>
         </div>
