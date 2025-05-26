@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
+import { PaymentStatus } from '@prisma/client';
 import Stripe from 'stripe';
 import { randomUUID } from 'crypto';
 
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
           stripeSessionId: sessionId,
           amount: reservationData.totalAmount,
           currency: 'jpy',
-          status: 'SETUP_COMPLETED', // Setup完了状態
+          status: PaymentStatus.SETUP_COMPLETED, // Setup完了状態
           userId: session.user.id,
           // Setup Intentと決済手段の情報を保存
           metadata: JSON.stringify({

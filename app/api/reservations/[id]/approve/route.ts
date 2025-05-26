@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/session';
+import { PaymentStatus } from '@prisma/client';
 
 export async function POST(
   request: NextRequest,
@@ -78,7 +79,7 @@ export async function POST(
       
       // Setup完了済みの場合は自動決済実行
       let paymentResult = null;
-      if (updatedReservation.payments && updatedReservation.payments.status === 'SETUP_COMPLETED') {
+      if (updatedReservation.payments && updatedReservation.payments.status === PaymentStatus.SETUP_COMPLETED) {
         try {
           const stripe = new (await import('stripe')).default(process.env.STRIPE_SECRET_KEY!, {
             apiVersion: '2025-03-31.basil',
