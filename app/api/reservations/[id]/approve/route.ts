@@ -117,6 +117,10 @@ export async function POST(
             customer: customerId,
             payment_method: paymentMethodId,
             confirm: true, // 即座に決済実行
+            automatic_payment_methods: {
+              enabled: true,
+              allow_redirects: 'never' // リダイレクト系決済を無効化
+            },
             metadata: {
               reservationId: reservationId,
               studentId: updatedReservation.studentId,
