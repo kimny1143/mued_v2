@@ -28,6 +28,7 @@ export function useSubscriptionSimple() {
         if (sessionError) {
           console.error('セッション取得エラー:', sessionError);
           // セッションエラーでもFREEプランとして続行
+          console.log('サブスクリプション情報なし（セッションエラー） - FREEプランとして設定');
           setSubscription({
             priceId: null,
             status: 'free',
@@ -51,6 +52,11 @@ export function useSubscriptionSimple() {
         // APIエンドポイント経由でサブスクリプション情報を取得
         const token = session.access_token;
         
+        console.log('🔄 サブスクリプションAPI呼び出し開始...', {
+          userId: session.user.id,
+          email: session.user.email
+        });
+
         const response = await fetch('/api/user/subscription', {
           method: 'GET',
           headers: {
@@ -60,68 +66,50 @@ export function useSubscriptionSimple() {
           credentials: 'include'
         });
 
+        console.log('📡 サブスクリプションAPIレスポンス:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok
+        });
+
         if (!response.ok) {
-          console.warn('サブスクリプション取得API失敗:', response.status, response.statusText);
-          
-          // APIエラーでもFREEプランとして設定
-          setSubscription({
-            priceId: null,
-            status: 'free',
-            currentPeriodEnd: null
+          const errorText = await response.text();
+          console.error('❌ サブスクリプションAPI エラー:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
           });
-          setError('サブスクリプション情報の取得に失敗しましたが、FREEプランとして動作します。');
-          setLoading(false);
-          return;
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         const data = await response.json();
-        
-        if (data.error) {
-          console.warn('サブスクリプション取得エラー:', data.error);
-          
-          // エラーでもFREEプランとして設定
+        console.log('📋 サブスクリプションAPIデータ:', data);
+
+        if (data.subscription) {
+          console.log('✅ サブスクリプション情報を設定:', data.subscription);
+          setSubscription({
+            priceId: data.subscription.priceId,
+            status: data.subscription.status,
+            currentPeriodEnd: data.subscription.currentPeriodEnd
+          });
+        } else {
+          console.log('サブスクリプション情報なし（新規ユーザー） - FREEプランとして設定');
           setSubscription({
             priceId: null,
             status: 'free',
             currentPeriodEnd: null
           });
-          
-          if (data.error.includes('permission denied')) {
-            setError('データベース権限の設定が必要ですが、FREEプランとして動作します。');
-          } else {
-            setError('サブスクリプション情報の取得に失敗しましたが、FREEプランとして動作します。');
-          }
-        } else {
-          // データが存在する場合
-          if (data.subscription) {
-            console.log('サブスクリプション情報取得成功:', data.subscription);
-            
-            setSubscription({
-              priceId: data.subscription.priceId || null,
-              status: data.subscription.status || 'free',
-              currentPeriodEnd: data.subscription.currentPeriodEnd ? Number(data.subscription.currentPeriodEnd) : null
-            });
-          } else {
-            // データが存在しない場合（新規ユーザー）
-            console.log('サブスクリプション情報なし（新規ユーザー） - FREEプランとして設定');
-            setSubscription({
-              priceId: null,
-              status: 'free',
-              currentPeriodEnd: null
-            });
-          }
         }
       } catch (err) {
-        console.error('サブスクリプション取得エラー:', err);
-        
-        // エラーが発生してもFREEプランとして設定
+        console.error('🚨 サブスクリプション取得エラー:', err);
+        setError(err instanceof Error ? err.message : String(err));
+        // エラー時もFREEプランとして設定
+        console.log('エラー時FREEプランに設定');
         setSubscription({
           priceId: null,
           status: 'free',
           currentPeriodEnd: null
         });
-        
-        setError(err instanceof Error ? err.message : 'サブスクリプション情報の取得に失敗しました');
       } finally {
         setLoading(false);
       }
