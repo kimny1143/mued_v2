@@ -407,14 +407,7 @@ export default function SlotsCalendarPage() {
           </div>
         </div>
         
-        <Button 
-          onClick={() => {/* 新規スロット作成処理 */}}
-          className="flex items-center gap-2 text-sm"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="hidden sm:inline">新しいスロット作成</span>
-          <span className="sm:hidden">作成</span>
-        </Button>
+
       </div>
       
       {error ? (
