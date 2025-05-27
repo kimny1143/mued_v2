@@ -6,15 +6,19 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { CheckCircle, Clock, CreditCard, X } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 
+// caseConverter で定義されている型と同じ形式
+type ReservationResponse = {
+  id: string;
+  status: string;
+  totalAmount: number;
+  // 他の必要なフィールドも含まれる
+};
+
 export default function SetupSuccessPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(true);
-  const [reservation, setReservation] = useState<{
-    id: string;
-    status: string;
-    totalAmount: number;
-  } | null>(null);
+  const [reservation, setReservation] = useState<ReservationResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,7 +52,9 @@ export default function SetupSuccessPage() {
         const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error || 'Setup完了処理に失敗しました');
+          console.error('Setup完了処理APIエラー:', result);
+          const errorMessage = result.details || result.error || 'Setup完了処理に失敗しました';
+          throw new Error(errorMessage);
         }
 
         console.log('=== Setup完了処理成功 ===');
@@ -126,7 +132,7 @@ export default function SetupSuccessPage() {
             <div className="space-y-1 text-sm text-gray-600">
               <div>予約ID: {reservation.id}</div>
               <div>ステータス: {reservation.status}</div>
-              <div>金額: ¥{reservation.totalAmount}</div>
+              <div>金額: ¥{reservation.totalAmount.toLocaleString()}</div>
             </div>
           </div>
         )}

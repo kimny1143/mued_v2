@@ -4,6 +4,17 @@ import { prisma } from '@/lib/prisma';
 import { PaymentStatus } from '@prisma/client';
 import Stripe from 'stripe';
 import { randomUUID } from 'crypto';
+import { convertReservationToResponse } from '@/lib/caseConverter';
+
+interface ReservationMetadata {
+  slotId: string;
+  booked_start_time: string;
+  booked_end_time: string;
+  hours_booked?: number;
+  total_amount: number;
+  notes?: string;
+  duration_minutes?: number;
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-03-31.basil',
@@ -61,9 +72,22 @@ export async function POST(request: NextRequest) {
       
     } else if (checkoutSession.metadata?.reservationData) {
       // 新規予約の場合（setup-payment経由）
-      const reservationData = JSON.parse(checkoutSession.metadata.reservationData);
+      const reservationData: ReservationMetadata = JSON.parse(checkoutSession.metadata.reservationData);
       console.log('予約データ（新規）:', reservationData);
       
+      // 新規予約データの検証
+      if (!reservationData.slotId || !reservationData.total_amount) {
+        throw new Error('予約データが不完全です');
+      }
+
+      console.log('新規予約作成データ:', {
+        slotId: reservationData.slotId,
+        studentId: session.user.id,
+        totalAmount: reservationData.total_amount,
+        bookedStartTime: reservationData.booked_start_time,
+        bookedEndTime: reservationData.booked_end_time
+      });
+
       // 新規予約を作成
       reservation = await prisma.reservations.create({
         data: {
@@ -136,7 +160,7 @@ export async function POST(request: NextRequest) {
           stripe_session_id: sessionId,
           amount: reservation.total_amount,
           currency: 'jpy',
-          status: 'SETUP_COMPLETED' as PaymentStatus,
+          status: PaymentStatus.SETUP_COMPLETED,
           user_id: session.user.id,
           updated_at: new Date()
         }
@@ -225,9 +249,18 @@ export async function POST(request: NextRequest) {
       // メール送信エラーでも処理は継続
     }
 
+    // 予約データをフロントエンド形式に変換
+    const convertedReservation = convertReservationToResponse(result.reservation);
+
     console.log('=== Setup完了処理成功 ===');
     console.log('決済ID:', result.payment.id);
     console.log('決済ステータス:', result.payment.status);
+    console.log('予約情報（DB形式）:', {
+      id: result.reservation.id,
+      status: result.reservation.status,
+      total_amount: result.reservation.total_amount
+    });
+    console.log('予約情報（フロントエンド形式）:', convertedReservation);
 
     return NextResponse.json({
       success: true,
@@ -236,17 +269,19 @@ export async function POST(request: NextRequest) {
         status: result.payment.status,
         amount: result.payment.amount
       },
-      reservation: {
-        id: result.reservation.id,
-        status: result.reservation.status
-      },
+      reservation: convertedReservation,
       message: '決済情報が正常に保存されました。メンター承認後、レッスン開始2時間前に自動で決済が実行されます。'
     });
 
   } catch (error) {
     console.error('Setup完了処理エラー:', error);
+    console.error('エラースタック:', error instanceof Error ? error.stack : 'スタック情報なし');
     return NextResponse.json(
-      { error: 'Setup完了処理に失敗しました', details: String(error) },
+      { 
+        error: 'Setup完了処理に失敗しました', 
+        details: error instanceof Error ? error.message : String(error),
+        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
+      },
       { status: 500 }
     );
   }
