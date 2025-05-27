@@ -30,6 +30,7 @@ interface MentorCalendarProps {
   isLoading?: boolean;
   onDateSelect?: (selectedDates: Date[]) => void;
   onTimeSlotSelect?: (slot: TimeSlot) => void;
+  onRefreshData?: () => void;
   myReservations?: Array<{
     id: string;
     slotId: string;
@@ -54,6 +55,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
   isLoading: propsIsLoading = false,
   onDateSelect,
   onTimeSlotSelect,
+  onRefreshData,
   myReservations = [],
 }) => {
   // 現在表示中の日付
@@ -267,6 +269,75 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       fetchReservationsForDate(selectedDateForDay);
     }
   }, [currentView, selectedDateForDay, myReservations]);
+
+  // 日表示でのリアルタイム更新を設定
+  useEffect(() => {
+    let dayViewSubscription: ReturnType<typeof import('@/lib/supabase-browser').supabaseBrowser.channel> | null = null;
+
+    const setupDayViewRealtimeSubscription = async () => {
+      // 日表示でない場合はリアルタイム監視をスキップ
+      if (currentView !== 'day' || !selectedDateForDay) {
+        return;
+      }
+
+      try {
+        // 認証されたユーザーの情報を取得
+        const { data: sessionData } = await import('@/lib/supabase-browser').then(m => m.supabaseBrowser.auth.getSession());
+        if (!sessionData.session?.user?.id) {
+          console.log('認証されていないため、日表示リアルタイム監視をスキップ');
+          return;
+        }
+
+        const userId = sessionData.session.user.id;
+        console.log('🔴 日表示リアルタイム監視を開始:', userId, selectedDateForDay);
+
+        // reservationsテーブルの変更を監視（日表示専用）
+        dayViewSubscription = (await import('@/lib/supabase-browser')).supabaseBrowser
+          .channel(`day-view-reservations-${selectedDateForDay.toISOString().split('T')[0]}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'reservations',
+            },
+            (payload) => {
+              console.log('📝 日表示reservationsリアルタイム更新を受信:', payload);
+              
+              // 選択された日付の予約情報を再取得
+              setTimeout(() => {
+                console.log('🔄 日表示reservations変更によるデータ再取得');
+                if (selectedDateForDay) {
+                  fetchReservationsForDate(selectedDateForDay);
+                }
+              }, 500);
+            }
+          )
+          .subscribe((status) => {
+            console.log('日表示reservationsリアルタイム監視状態:', status);
+            
+            if (status === 'SUBSCRIBED') {
+              console.log('✅ 日表示reservationsリアルタイム監視が開始されました');
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              console.error('❌ 日表示reservationsリアルタイム監視でエラーが発生しました:', status);
+            }
+          });
+
+      } catch (error) {
+        console.error('日表示リアルタイム監視の設定エラー:', error);
+      }
+    };
+
+    setupDayViewRealtimeSubscription();
+
+    // クリーンアップ
+    return () => {
+      if (dayViewSubscription) {
+        console.log('日表示reservationsリアルタイム監視を停止');
+        import('@/lib/supabase-browser').then(m => m.supabaseBrowser.removeChannel(dayViewSubscription!));
+      }
+    };
+  }, [currentView, selectedDateForDay]);
   
   // 予約可能な日付リスト（月表示で色付けするため）
   const availableDays = Array.from(new Set(
@@ -344,6 +415,12 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
     // 予約完了後、日表示の場合は予約情報を再取得
     if (currentView === 'day' && selectedDateForDay) {
       fetchReservationsForDate(selectedDateForDay);
+    }
+    
+    // 親コンポーネントのデータも再取得
+    if (onRefreshData) {
+      console.log('🔄 予約完了後のデータ再取得を実行');
+      onRefreshData();
     }
   };
 

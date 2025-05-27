@@ -222,6 +222,14 @@ export default function BookingCalendarPage() {
   const [myReservations, setMyReservations] = useState<Reservation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<number>(Date.now()); // データ再取得のトリガー
+  const [realtimeStatus, setRealtimeStatus] = useState<{
+    lessonSlots: 'connecting' | 'connected' | 'disconnected' | 'error';
+    reservations: 'connecting' | 'connected' | 'disconnected' | 'error';
+  }>({
+    lessonSlots: 'disconnected',
+    reservations: 'disconnected'
+  });
 
   // 予約情報とスロット情報を統合してスロットの実際の空き状況を計算
   const calculateSlotAvailability = (lessonSlots: LessonSlot[], reservations: Reservation[]) => {
@@ -247,118 +255,262 @@ export default function BookingCalendarPage() {
     });
   };
 
+  // データ取得関数を分離（再利用可能にする）
+  const fetchMentorsData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // 認証トークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+      
+      console.log('🔥 APIリクエスト開始: スロットと予約情報を並行取得');
+      
+      // スロット情報、全予約情報、自分の予約情報を並行取得
+      const [slotsResponse, reservationsResponse] = await Promise.all([
+        fetch('/api/lesson-slots?viewMode=all', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          credentials: 'include',
+          cache: 'no-store', // キャッシュを無効化
+        }),
+        fetch('/api/reservations', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          credentials: 'include',
+          cache: 'no-store', // キャッシュを無効化
+        })
+      ]);
+      
+      // スロット情報の処理
+      if (!slotsResponse.ok) {
+        const errorResponse = await slotsResponse.json();
+        throw new Error(errorResponse.error || `スロット取得エラー: ${slotsResponse.status}`);
+      }
+      
+      // 予約情報の処理
+      if (!reservationsResponse.ok) {
+        const errorResponse = await reservationsResponse.json();
+        console.warn('予約情報取得に失敗:', errorResponse);
+        // 予約情報の取得に失敗しても、スロット情報は表示する
+      }
+      
+      const slotsData: LessonSlot[] = await slotsResponse.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const allReservationsData: any[] = reservationsResponse.ok 
+        ? await reservationsResponse.json() 
+        : [];
+      
+      console.log(`📊 取得結果:`);
+      console.log(`- レッスンスロット: ${slotsData.length}件`);
+      console.log(`- 全予約情報: ${allReservationsData.length}件`);
+      
+      // 自分の予約のみを抽出してMentorCalendarが期待する形式に変換
+      const { data: sessionData2 } = await supabaseBrowser.auth.getSession();
+      const currentUserId = sessionData2.session?.user?.id;
+      
+      const myReservationsFormatted = allReservationsData
+        .filter((res) => res.studentId === currentUserId)
+        .filter((res) => ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED', 'PENDING'].includes(res.status)) // アクティブな予約のみ
+        .map((res) => {
+          console.log('🔍 自分の予約をフォーマット:', {
+            id: res.id,
+            status: res.status,
+            bookedStartTime: res.bookedStartTime,
+            bookedEndTime: res.bookedEndTime
+          });
+          return {
+            id: res.id,
+            slotId: res.slotId,
+            studentId: res.studentId,
+            status: res.status,
+            bookedStartTime: res.bookedStartTime,
+            bookedEndTime: res.bookedEndTime,
+            createdAt: res.createdAt,
+            slot: res.lesson_slots ? {
+              id: res.lesson_slots.id || res.slotId,
+              teacherId: res.lesson_slots.users?.id || '',
+              teacher: {
+                id: res.lesson_slots.users?.id || '',
+                name: res.lesson_slots.users?.name || null,
+              }
+            } : undefined
+          };
+        });
+      
+      console.log(`- 自分の予約情報: ${myReservationsFormatted.length}件`);
+      console.log('🔍 自分の予約詳細:', myReservationsFormatted);
+      
+      // 予約情報を保存
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setReservations(allReservationsData as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setMyReservations(myReservationsFormatted as any);
+      
+      // スロット情報と予約情報を統合
+      const updatedSlots = calculateSlotAvailability(slotsData, allReservationsData);
+      
+      // メンター形式に変換
+      const convertedMentors = convertLessonSlotsToMentors(updatedSlots);
+      console.log('🎯 統合後のメンターデータ:', convertedMentors);
+      
+      if (convertedMentors.length > 0) {
+        console.log('✅ mentorsを設定完了');
+        setMentors(convertedMentors);
+      } else {
+        console.log('⚠️ 利用可能なメンターがありません');
+      }
+      
+    } catch (err) {
+      console.error('❌ データ取得エラー:', err);
+      setError('メンター情報の取得に失敗しました。');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 手動でデータを再取得する関数
+  const refreshData = () => {
+    console.log('🔄 手動データ再取得開始');
+    setLastRefresh(Date.now());
+  };
+
+  // URLパラメータをチェックして予約完了を検知
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const setupSuccess = urlParams.get('setup_success');
+    
+    if (success === 'true' || setupSuccess === 'true') {
+      console.log('🎉 予約完了を検知 - データを再取得します');
+      // URLパラメータをクリア
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+      // データを再取得
+      refreshData();
+    }
+  }, []);
+
   // APIからメンターデータを取得
   useEffect(() => {
-    const fetchMentors = async () => {
+    fetchMentorsData();
+  }, [lastRefresh]); // lastRefreshが変更されたときに再実行
+
+  // ページがフォーカスされたときにデータを更新
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('🔄 ページフォーカス時のデータ更新を実行');
+      refreshData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
+  // Supabaseリアルタイム更新を設定
+  useEffect(() => {
+    let lessonSlotsSubscription: ReturnType<typeof supabaseBrowser.channel> | null = null;
+    let reservationsSubscription: ReturnType<typeof supabaseBrowser.channel> | null = null;
+
+    const setupRealtimeSubscriptions = async () => {
       try {
-        setIsLoading(true);
-        
-        // 認証トークンを取得
+        // 認証されたユーザーの情報を取得
         const { data: sessionData } = await supabaseBrowser.auth.getSession();
-        const token = sessionData.session?.access_token ?? null;
-        
-        console.log('🔥 APIリクエスト開始: スロットと予約情報を並行取得');
-        
-        // スロット情報、全予約情報、自分の予約情報を並行取得
-        const [slotsResponse, reservationsResponse] = await Promise.all([
-          fetch('/api/lesson-slots?viewMode=all', {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            credentials: 'include',
-          }),
-          fetch('/api/reservations', {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            credentials: 'include',
-          })
-        ]);
-        
-        // スロット情報の処理
-        if (!slotsResponse.ok) {
-          const errorResponse = await slotsResponse.json();
-          throw new Error(errorResponse.error || `スロット取得エラー: ${slotsResponse.status}`);
+        if (!sessionData.session?.user?.id) {
+          console.log('認証されていないため、リアルタイム監視をスキップ');
+          return;
         }
-        
-        // 予約情報の処理
-        if (!reservationsResponse.ok) {
-          const errorResponse = await reservationsResponse.json();
-          console.warn('予約情報取得に失敗:', errorResponse);
-          // 予約情報の取得に失敗しても、スロット情報は表示する
-        }
-        
-        const slotsData: LessonSlot[] = await slotsResponse.json();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const allReservationsData: any[] = reservationsResponse.ok 
-          ? await reservationsResponse.json() 
-          : [];
-        
-        console.log(`📊 取得結果:`);
-        console.log(`- レッスンスロット: ${slotsData.length}件`);
-        console.log(`- 全予約情報: ${allReservationsData.length}件`);
-        
-        // 自分の予約のみを抽出してMentorCalendarが期待する形式に変換
-        const { data: sessionData2 } = await supabaseBrowser.auth.getSession();
-        const currentUserId = sessionData2.session?.user?.id;
-        
-                const myReservationsFormatted = allReservationsData
-          .filter((res) => res.studentId === currentUserId)
-          .filter((res) => ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED', 'PENDING'].includes(res.status)) // アクティブな予約のみ
-          .map((res) => {
-            console.log('🔍 自分の予約をフォーマット:', {
-              id: res.id,
-              status: res.status,
-              bookedStartTime: res.bookedStartTime,
-              bookedEndTime: res.bookedEndTime
-            });
-            return {
-              id: res.id,
-              slotId: res.slotId,
-              studentId: res.studentId,
-              status: res.status,
-              bookedStartTime: res.bookedStartTime,
-              bookedEndTime: res.bookedEndTime,
-              createdAt: res.createdAt,
-              slot: res.lesson_slots ? {
-                id: res.lesson_slots.id || res.slotId,
-                teacherId: res.lesson_slots.users?.id || '',
-                teacher: {
-                  id: res.lesson_slots.users?.id || '',
-                  name: res.lesson_slots.users?.name || null,
-                }
-              } : undefined
-            };
+
+        const userId = sessionData.session.user.id;
+        console.log('🔴 リアルタイム監視を開始:', userId);
+
+        // 接続開始時のステータス更新
+        setRealtimeStatus({
+          lessonSlots: 'connecting',
+          reservations: 'connecting'
+        });
+
+        // lesson_slotsテーブルの変更を監視
+        lessonSlotsSubscription = supabaseBrowser
+          .channel('lesson-slots-changes-booking')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'lesson_slots',
+            },
+            (payload) => {
+              console.log('📅 lesson_slotsリアルタイム更新を受信:', payload);
+              
+              // データ変更があった場合に自動的にリフレッシュ
+              setTimeout(() => {
+                console.log('🔄 lesson_slots変更によるデータ再取得');
+                refreshData();
+              }, 500);
+            }
+          )
+          .subscribe((status) => {
+            console.log('lesson_slotsリアルタイム監視状態:', status);
+            
+            if (status === 'SUBSCRIBED') {
+              console.log('✅ lesson_slotsリアルタイム監視が開始されました');
+              setRealtimeStatus(prev => ({ ...prev, lessonSlots: 'connected' }));
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              console.error('❌ lesson_slotsリアルタイム監視でエラーが発生しました:', status);
+              setRealtimeStatus(prev => ({ ...prev, lessonSlots: 'error' }));
+            }
           });
-        
-        console.log(`- 自分の予約情報: ${myReservationsFormatted.length}件`);
-        console.log('🔍 自分の予約詳細:', myReservationsFormatted);
-        
-        // 予約情報を保存
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setReservations(allReservationsData as any);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setMyReservations(myReservationsFormatted as any);
-        
-        // スロット情報と予約情報を統合
-        const updatedSlots = calculateSlotAvailability(slotsData, allReservationsData);
-        
-        // メンター形式に変換
-        const convertedMentors = convertLessonSlotsToMentors(updatedSlots);
-        console.log('🎯 統合後のメンターデータ:', convertedMentors);
-        
-        if (convertedMentors.length > 0) {
-          console.log('✅ mentorsを設定完了');
-          setMentors(convertedMentors);
-        } else {
-          console.log('⚠️ 利用可能なメンターがありません');
-        }
-        
-      } catch (err) {
-        console.error('❌ データ取得エラー:', err);
-        setError('メンター情報の取得に失敗しました。');
-      } finally {
-        setIsLoading(false);
+
+        // reservationsテーブルの変更を監視
+        reservationsSubscription = supabaseBrowser
+          .channel('reservations-changes-booking')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'reservations',
+            },
+            (payload) => {
+              console.log('📝 reservationsリアルタイム更新を受信:', payload);
+              
+              // データ変更があった場合に自動的にリフレッシュ
+              setTimeout(() => {
+                console.log('🔄 reservations変更によるデータ再取得');
+                refreshData();
+              }, 500);
+            }
+          )
+          .subscribe((status) => {
+            console.log('reservationsリアルタイム監視状態:', status);
+            
+            if (status === 'SUBSCRIBED') {
+              console.log('✅ reservationsリアルタイム監視が開始されました');
+              setRealtimeStatus(prev => ({ ...prev, reservations: 'connected' }));
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              console.error('❌ reservationsリアルタイム監視でエラーが発生しました:', status);
+              setRealtimeStatus(prev => ({ ...prev, reservations: 'error' }));
+            }
+          });
+
+      } catch (error) {
+        console.error('リアルタイム監視の設定エラー:', error);
       }
     };
 
-    fetchMentors();
+    setupRealtimeSubscriptions();
+
+    // クリーンアップ
+    return () => {
+      if (lessonSlotsSubscription) {
+        console.log('lesson_slotsリアルタイム監視を停止');
+        supabaseBrowser.removeChannel(lessonSlotsSubscription);
+      }
+      if (reservationsSubscription) {
+        console.log('reservationsリアルタイム監視を停止');
+        supabaseBrowser.removeChannel(reservationsSubscription);
+      }
+    };
   }, []);
 
   // MentorCalendarコンポーネントをレンダリング前のデバッグ
@@ -375,8 +527,39 @@ export default function BookingCalendarPage() {
           <CalendarClock className="h-6 w-6 mr-2 text-primary" aria-hidden="true" />
           <h1 className="text-xl sm:text-2xl font-bold">メンターレッスン予約</h1>
         </div>
-        <div className="text-sm text-gray-600">
-          {mentors.length}人のメンターが利用可能
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-gray-600">
+            {mentors.length}人のメンターが利用可能
+          </div>
+          <Button
+            onClick={refreshData}
+            variant="outline"
+            size="sm"
+            disabled={isLoading}
+            className="text-xs"
+          >
+            {isLoading ? '更新中...' : '🔄 更新'}
+          </Button>
+          
+          {/* リアルタイム接続状態表示 */}
+          <div className="flex items-center gap-1 text-xs">
+            <div className="flex items-center gap-1">
+              <div className={`w-2 h-2 rounded-full ${
+                realtimeStatus.lessonSlots === 'connected' ? 'bg-green-500' :
+                realtimeStatus.lessonSlots === 'connecting' ? 'bg-yellow-500' :
+                realtimeStatus.lessonSlots === 'error' ? 'bg-red-500' : 'bg-gray-400'
+              }`} />
+              <span className="text-gray-500">スロット</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className={`w-2 h-2 rounded-full ${
+                realtimeStatus.reservations === 'connected' ? 'bg-green-500' :
+                realtimeStatus.reservations === 'connecting' ? 'bg-yellow-500' :
+                realtimeStatus.reservations === 'error' ? 'bg-red-500' : 'bg-gray-400'
+              }`} />
+              <span className="text-gray-500">予約</span>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -384,7 +567,7 @@ export default function BookingCalendarPage() {
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg" role="alert">
           <p>{error}</p>
           <Button 
-            onClick={() => window.location.reload()}
+            onClick={refreshData}
             variant="outline" 
             className="mt-2"
           >
@@ -405,6 +588,7 @@ export default function BookingCalendarPage() {
               mentors={mentors}
               isLoading={isLoading}
               myReservations={myReservations}
+              onRefreshData={refreshData} // データ再取得関数を渡す
             />
           </div>
         </div>

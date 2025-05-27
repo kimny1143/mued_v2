@@ -74,7 +74,8 @@ export default function SetupSuccessPage() {
   }, [searchParams]);
 
   const handleGoToCalendar = () => {
-    router.push('/dashboard/booking-calendar');
+    // setup_success=trueパラメータを追加してデータ再取得をトリガー
+    router.push('/dashboard/booking-calendar?setup_success=true');
   };
 
   if (isProcessing) {
