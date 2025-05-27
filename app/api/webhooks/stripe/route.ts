@@ -374,8 +374,8 @@ async function findUserByCustomerId(customerId: string): Promise<string | null> 
     // シンプルなクエリを使用（リレーションなし）
     const { data, error } = await supabaseAdmin
       .from('stripe_customers')
-      .select('userId')
-      .eq('customerId', customerId)
+      .select('user_id')
+      .eq('customer_id', customerId)
       .single();
 
     if (error) {
@@ -389,8 +389,8 @@ async function findUserByCustomerId(customerId: string): Promise<string | null> 
       return null;
     }
 
-    console.log('✅ ユーザー検索成功:', { customerId, userId: data.userId });
-    return data.userId;
+    console.log('✅ ユーザー検索成功:', { customerId, userId: data.user_id });
+    return data.user_id;
   } catch (error) {
     console.error('❌ findUserByCustomerId エラー:', error);
     return null;
@@ -435,7 +435,7 @@ async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Sess
   const { data: existingCustomer, error: customerSelectError } = await supabaseAdmin
     .from('stripe_customers')
     .select('id')
-    .eq('userId', userId)
+    .eq('user_id', userId)
     .single();
 
   if (customerSelectError && customerSelectError.code !== 'PGRST116') {
@@ -465,10 +465,10 @@ async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Sess
     const { data: customerInsertData, error: customerInsertError } = await supabaseAdmin
       .from('stripe_customers')
       .insert({
-        userId: userId,
-        customerId: customerId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        user_id: userId,
+        customer_id: customerId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .select();
 
@@ -500,7 +500,7 @@ async function handleCompletedSubscriptionCheckout(session: Stripe.Checkout.Sess
   const { data: existingSubscription, error: subscriptionSelectError } = await supabaseAdmin
     .from('stripe_user_subscriptions')
     .select('id')
-    .eq('subscriptionId', typedSubscription.id)
+    .eq('subscription_id', typedSubscription.id)
     .single();
 
   if (subscriptionSelectError && subscriptionSelectError.code !== 'PGRST116') {

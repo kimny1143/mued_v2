@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       const { data: adminData, error: adminError } = await supabaseAdmin
         .from('stripe_user_subscriptions')
         .select('*')
-        .eq('userId', userId)
+        .eq('user_id', userId)
         .maybeSingle();
       
       if (adminError) {
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         const { data: normalData, error: normalError } = await supabaseServer
           .from('stripe_user_subscriptions')
           .select('*')
-          .eq('userId', userId)
+          .eq('user_id', userId)
           .maybeSingle();
         
         if (normalError) {
