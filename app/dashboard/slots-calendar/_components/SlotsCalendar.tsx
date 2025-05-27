@@ -48,6 +48,7 @@ interface SlotsCalendarProps {
   isLoading: boolean;
   onSlotUpdate: (updatedSlot: MentorLessonSlot) => void;
   onSlotDelete: (deletedSlotId: string) => void;
+  onReservationClick?: (reservation: MentorLessonSlot['reservations'][0], mode?: 'view' | 'cancel' | 'reschedule' | 'approve' | 'reject') => void;
 }
 
 export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
@@ -55,6 +56,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
   isLoading,
   onSlotUpdate,
   onSlotDelete,
+  onReservationClick,
 }) => {
   // 現在表示中の日付
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -301,10 +303,14 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                                                                   return (
                                             <div
                                               key={`reservation-${reservation.id}-${resIndex}`}
-                                              className={`px-0.5 py-0 text-xxs font-medium rounded border ${
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                onReservationClick?.(reservation, 'view');
+                                              }}
+                                              className={`px-0.5 py-0 text-xxs font-medium rounded border cursor-pointer hover:opacity-80 ${
                                                 reservationColors[reservation.status as keyof typeof reservationColors] || 'bg-gray-100 border-gray-400 text-gray-800'
                                               } truncate text-center`}
-                                              title={`予約: ${reservation.student?.name || '生徒'} ${timeString}`}
+                                              title={`予約: ${reservation.student?.name || '生徒'} ${timeString} (クリックで詳細)`}
                                             >
                                               🎵{timeString}
                                             </div>

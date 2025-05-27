@@ -5,6 +5,10 @@ import { SlotsCalendar } from './_components/SlotsCalendar';
 import { CalendarClock, Plus } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { ReservationStatus } from '@prisma/client';
+import { CancelReason } from '@/lib/types/reservation';
+import { ReservationManagementModal, type ReservationManagementModalProps } from './_components/ReservationManagementModal';
+import { toast } from 'sonner';
 
 // デバッグモード
 const DEBUG = true;
@@ -32,6 +36,8 @@ interface MentorLessonSlot {
     status: string;
     bookedStartTime?: string;
     bookedEndTime?: string;
+    totalAmount?: number;
+    notes?: string;
     student?: {
       id: string;
       name: string | null;
@@ -42,11 +48,56 @@ interface MentorLessonSlot {
   updatedAt: string;
 }
 
+type ModalMode = 'view' | 'cancel' | 'reschedule' | 'approve' | 'reject';
+
+// 予約データの型定義
+interface ReservationData {
+  id: string;
+  status: ReservationStatus;
+  bookedStartTime: Date;
+  bookedEndTime: Date;
+  totalAmount: number;
+  notes?: string;
+  teacher: { name: string; };
+  student?: { name: string; };
+}
+
 export default function SlotsCalendarPage() {
   const [slots, setSlots] = useState<MentorLessonSlot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [userRole, setUserRole] = useState<'student' | 'mentor' | 'admin'>('mentor');
+  
+  // 予約管理モーダル関連の状態
+  const [selectedReservation, setSelectedReservation] = useState<ReservationData | null>(null);
+  const [reservationModalMode, setReservationModalMode] = useState<ModalMode>('view');
+  const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
+  const [isReservationProcessing, setIsReservationProcessing] = useState(false);
+
+  // ユーザーロールを取得
+  useEffect(() => {
+    const getUserRole = async () => {
+      try {
+        const { data: sessionData } = await supabaseBrowser.auth.getSession();
+        const token = sessionData.session?.access_token ?? null;
+        
+        if (token) {
+          const response = await fetch('/api/user', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          if (response.ok) {
+            const userData = await response.json();
+            setUserRole(userData.role || 'mentor');
+          }
+        }
+      } catch (error) {
+        console.error('ユーザーロール取得エラー:', error);
+      }
+    };
+
+    getUserRole();
+  }, []);
 
   // APIから自分のスロットデータを取得
   useEffect(() => {
@@ -105,14 +156,207 @@ export default function SlotsCalendarPage() {
     fetchMySlots();
   }, []);
 
-  const handleSlotCreate = () => {
-    setIsCreateModalOpen(true);
+  // 予約クリック処理
+  const handleReservationClick = (reservation: MentorLessonSlot['reservations'][0], mode: ModalMode = 'view') => {
+    // スロット情報を取得（予約から逆引き）
+    const parentSlot = slots.find(slot => 
+      slot.reservations.some(res => res.id === reservation.id)
+    );
+    
+    // 予約データを適切な形式に変換
+    const reservationData: ReservationData = {
+      id: reservation.id,
+      status: reservation.status as ReservationStatus,
+      bookedStartTime: new Date(reservation.bookedStartTime || ''),
+      bookedEndTime: new Date(reservation.bookedEndTime || ''),
+      totalAmount: reservation.totalAmount || 0,
+      notes: reservation.notes,
+      teacher: { 
+        name: parentSlot?.teacher?.name || 'Unknown Teacher' 
+      },
+      student: reservation.student ? { 
+        name: reservation.student.name || 'Unknown Student' 
+      } : undefined,
+    };
+
+    setSelectedReservation(reservationData);
+    setReservationModalMode(mode);
+    setIsReservationModalOpen(true);
   };
 
-  const handleSlotCreated = () => {
-    setIsCreateModalOpen(false);
-    // スロット一覧を再取得
-    // fetchMySlots();
+  // 予約キャンセル処理
+  const handleReservationCancel = async (reason: CancelReason, notes?: string) => {
+    if (!selectedReservation) return;
+    
+    try {
+      setIsReservationProcessing(true);
+      
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
+      const response = await fetch(`/api/reservations/${selectedReservation.id}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason, notes }),
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'キャンセル処理に失敗しました');
+      }
+
+      toast.success('予約をキャンセルしました');
+      
+      // スロット一覧を再取得
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('キャンセル処理エラー:', error);
+      toast.error(`キャンセルに失敗しました: ${(error as Error).message}`);
+      throw error;
+    } finally {
+      setIsReservationProcessing(false);
+    }
+  };
+
+  // 予約承認処理
+  const handleReservationApprove = async () => {
+    if (!selectedReservation) return;
+    
+    try {
+      setIsReservationProcessing(true);
+      
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
+      const response = await fetch(`/api/reservations/${selectedReservation.id}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || '承認処理に失敗しました');
+      }
+
+      toast.success('予約を承認しました');
+      
+      // スロット一覧を再取得
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('承認処理エラー:', error);
+      toast.error(`承認に失敗しました: ${(error as Error).message}`);
+      throw error;
+    } finally {
+      setIsReservationProcessing(false);
+    }
+  };
+
+  // 予約拒否処理
+  const handleReservationReject = async (reason: string) => {
+    if (!selectedReservation) return;
+    
+    try {
+      setIsReservationProcessing(true);
+      
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
+      const response = await fetch(`/api/reservations/${selectedReservation.id}/reject`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || '拒否処理に失敗しました');
+      }
+
+      toast.success('予約を拒否しました');
+      
+      // スロット一覧を再取得
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('拒否処理エラー:', error);
+      toast.error(`拒否に失敗しました: ${(error as Error).message}`);
+      throw error;
+    } finally {
+      setIsReservationProcessing(false);
+    }
+  };
+
+  // リスケジュール処理
+  const handleReservationReschedule = async (newStartTime: Date, newEndTime: Date) => {
+    if (!selectedReservation) return;
+    
+    try {
+      setIsReservationProcessing(true);
+      
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
+      const response = await fetch(`/api/reservations/${selectedReservation.id}/reschedule`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          newStartTime: newStartTime.toISOString(),
+          newEndTime: newEndTime.toISOString()
+        }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || 'リスケジュール処理に失敗しました');
+      }
+
+      toast.success('予約をリスケジュールしました');
+      
+      // スロット一覧を再取得
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('リスケジュール処理エラー:', error);
+      toast.error(`リスケジュールに失敗しました: ${(error as Error).message}`);
+      throw error;
+    } finally {
+      setIsReservationProcessing(false);
+    }
   };
 
   const handleSlotUpdate = (updatedSlot: MentorLessonSlot) => {
@@ -139,7 +383,7 @@ export default function SlotsCalendarPage() {
         </div>
         
         <Button 
-          onClick={handleSlotCreate}
+          onClick={() => {/* 新規スロット作成処理 */}}
           className="flex items-center gap-2 text-sm"
         >
           <Plus className="h-4 w-4" />
@@ -166,8 +410,28 @@ export default function SlotsCalendarPage() {
             isLoading={isLoading}
             onSlotUpdate={handleSlotUpdate}
             onSlotDelete={handleSlotDelete}
+            onReservationClick={handleReservationClick}
           />
         </div>
+      )}
+      
+      {/* 予約管理モーダル */}
+      {selectedReservation && (
+        <ReservationManagementModal
+          isOpen={isReservationModalOpen}
+          onClose={() => {
+            setIsReservationModalOpen(false);
+            setSelectedReservation(null);
+          }}
+          mode={reservationModalMode}
+          reservation={selectedReservation}
+          userRole={userRole}
+          onCancel={handleReservationCancel}
+          onApprove={handleReservationApprove}
+          onReject={handleReservationReject}
+          onReschedule={handleReservationReschedule}
+          isLoading={isReservationProcessing}
+        />
       )}
       
       {DEBUG && slots.length > 0 && (
@@ -182,4 +446,4 @@ export default function SlotsCalendarPage() {
       )}
     </div>
   );
-} 
+}

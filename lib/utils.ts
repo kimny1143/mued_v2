@@ -69,12 +69,19 @@ export type LessonSlotType = {
 };
 
 // 時間単位の予約状況
-export type ReservationStatus = {
+//export type ReservationStatus = {
+//  startTime: Date;
+//  endTime: Date;
+//  isReserved: boolean;
+//  reservationId?: string;
+//};
+
+export type TimeSlotStatus = {
   startTime: Date;
   endTime: Date;
   isReserved: boolean;
   reservationId?: string;
-};
+}
 
 /**
  * 時間単位のスロットを生成する関数
@@ -82,10 +89,10 @@ export type ReservationStatus = {
 export function generateHourlySlots(
   slot: LessonSlotType, 
   existingReservations: ReservationType[] = []
-): ReservationStatus[] {
+): TimeSlotStatus[] {
   const startTime = new Date(slot.startTime);
   const endTime = new Date(slot.endTime);
-  const hourlySlots: ReservationStatus[] = [];
+  const hourlySlots: TimeSlotStatus[] = [];
   
   // スロットを1時間ごとに分割
   let currentSlotStart = new Date(startTime);
