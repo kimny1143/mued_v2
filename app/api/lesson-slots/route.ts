@@ -457,21 +457,16 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // convertLessonSlotRequestToDbを使用してキャメルケース→スネークケース変換
+    const convertedData = convertLessonSlotRequestToDb(data);
+    console.log('変換後のスロットデータ:', convertedData);
+
     // 新しいスロットを作成
     const newSlot = await executePrismaQuery(() => prisma.lesson_slots.create({
       data: {
         id: crypto.randomUUID(),
         teacher_id: sessionInfo.user.id,
-        start_time,
-        end_time,
-        hourly_rate: data.hourlyRate ? parseInt(data.hourlyRate, 10) : 5000, // デフォルトは5000円
-        currency: data.currency || 'JPY',
-        min_hours: data.minHours ? parseInt(data.minHours, 10) : 1,
-        max_hours: data.maxHours ? parseInt(data.maxHours, 10) : null,
-        // 分単位の制約も設定（時間単位から計算）
-        min_duration: data.minHours ? parseInt(data.minHours, 10) * 60 : 60, // 1時間 = 60分
-        max_duration: data.maxHours ? parseInt(data.maxHours, 10) * 60 : null,
-        is_available: data.isAvailable ?? true,
+        ...convertedData,
         created_at: new Date(),
         updated_at: new Date(),
       },

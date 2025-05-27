@@ -99,6 +99,9 @@ type LessonSlotRequestData = {
   currency?: string;
   minHours?: string | number;
   maxHours?: string | number | null;
+  minDuration?: string | number;
+  maxDuration?: string | number | null;
+  description?: string;
   isAvailable?: boolean;
 };
 
@@ -239,17 +242,29 @@ export function convertLessonSlotRequestToDb(data: LessonSlotRequestData): Recor
   if (data.endTime) result.end_time = new Date(data.endTime);
   if (data.hourlyRate !== undefined) result.hourly_rate = parseInt(String(data.hourlyRate), 10);
   if (data.currency) result.currency = data.currency;
+  if (data.description !== undefined) result.description = data.description;
+  if (data.isAvailable !== undefined) result.is_available = Boolean(data.isAvailable);
+  
+  // 時間ベースの設定（minHours/maxHours優先、フォールバックでminDuration/maxDuration）
   if (data.minHours !== undefined) {
     const minHours = parseInt(String(data.minHours), 10);
     result.min_hours = minHours;
     result.min_duration = minHours * 60; // 時間を分に変換
+  } else if (data.minDuration !== undefined) {
+    const minDuration = parseInt(String(data.minDuration), 10);
+    result.min_duration = minDuration;
+    result.min_hours = Math.ceil(minDuration / 60); // 分を時間に変換（切り上げ）
   }
+  
   if (data.maxHours !== undefined) {
     const maxHours = data.maxHours !== null ? parseInt(String(data.maxHours), 10) : null;
     result.max_hours = maxHours;
     result.max_duration = maxHours !== null ? maxHours * 60 : null; // 時間を分に変換
+  } else if (data.maxDuration !== undefined) {
+    const maxDuration = data.maxDuration !== null ? parseInt(String(data.maxDuration), 10) : null;
+    result.max_duration = maxDuration;
+    result.max_hours = maxDuration !== null ? Math.ceil(maxDuration / 60) : null; // 分を時間に変換（切り上げ）
   }
-  if (data.isAvailable !== undefined) result.is_available = Boolean(data.isAvailable);
   
   // 自動設定フィールド
   result.updated_at = new Date();
