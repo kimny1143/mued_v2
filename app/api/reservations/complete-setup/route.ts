@@ -68,16 +68,16 @@ export async function POST(request: NextRequest) {
       reservation = await prisma.reservations.create({
         data: {
           id: randomUUID(),
-          slotId: reservationData.slotId,
-          studentId: session.user.id,
+          slot_id: reservationData.slotId,
+          student_id: session.user.id,
           status: 'PENDING_APPROVAL',
-          bookedStartTime: new Date(reservationData.bookedStartTime),
-          bookedEndTime: new Date(reservationData.bookedEndTime),
-          hoursBooked: reservationData.hoursBooked || 1,
-          totalAmount: reservationData.totalAmount,
+          booked_start_time: new Date(reservationData.booked_start_time),
+          booked_end_time: new Date(reservationData.booked_end_time),
+          hours_booked: reservationData.hours_booked || 1,
+          total_amount: reservationData.total_amount,
           notes: reservationData.notes,
-          durationMinutes: reservationData.durationMinutes || 60,
-          updatedAt: new Date()
+          duration_minutes: reservationData.duration_minutes || 60,
+          updated_at: new Date()
         },
         include: {
           payments: true,
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 権限チェック（予約者本人のみ）
-    if (reservation.studentId !== session.user.id) {
+    if (reservation.student_id !== session.user.id) {
       return NextResponse.json(
         { error: 'この予約にアクセスする権限がありません' },
         { status: 403 }
@@ -132,13 +132,13 @@ export async function POST(request: NextRequest) {
       const payment = await tx.payments.create({
         data: {
           id: randomUUID(),
-          stripePaymentId: null, // Payment Intent作成時に更新
-          stripeSessionId: sessionId,
-          amount: reservation.totalAmount,
+          stripe_payment_id: null, // Payment Intent作成時に更新
+          stripe_session_id: sessionId,
+          amount: reservation.total_amount,
           currency: 'jpy',
           status: 'SETUP_COMPLETED' as PaymentStatus,
-          userId: session.user.id,
-          updatedAt: new Date()
+          user_id: session.user.id,
+          updated_at: new Date()
         }
       });
 
@@ -161,8 +161,8 @@ export async function POST(request: NextRequest) {
       const updatedReservation = await tx.reservations.update({
         where: { id: reservationId },
         data: { 
-          paymentId: payment.id,
-          updatedAt: new Date()
+          payment_id: payment.id,
+          updated_at: new Date()
         }
       });
 
@@ -178,13 +178,13 @@ export async function POST(request: NextRequest) {
         subject: 'カード情報登録完了 - MUED LMS',
         html: `
           <h2>カード情報登録完了のお知らせ</h2>
-          <p>${session.user.name || 'ユーザー'}様、</p>
+          <p>${session.user?.email || 'ユーザー'}様、</p>
           <p>レッスン予約のカード情報登録が完了しました。</p>
           <ul>
             <li>予約ID: ${reservationId}</li>
-            <li>講師: ${reservation.lesson_slots.users.name}</li>
-            <li>日時: ${reservation.bookedStartTime.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</li>
-            <li>料金: ¥${reservation.totalAmount.toLocaleString()}</li>
+            <li>講師: ${reservation.lesson_slots?.users?.name || '講師名未設定'}</li>
+            <li>日時: ${reservation.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</li>
+            <li>料金: ¥${reservation.total_amount.toLocaleString()}</li>
           </ul>
           <p>メンターの承認後、レッスン開始2時間前に自動決済が実行されます。</p>
           <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
@@ -206,13 +206,13 @@ export async function POST(request: NextRequest) {
         subject: 'カード情報登録完了 - MUED LMS',
         html: `
           <h2>カード情報登録完了のお知らせ</h2>
-          <p>${session.user.name || 'ユーザー'}様、</p>
+          <p>${session.user?.email || 'ユーザー'}様、</p>
           <p>レッスン予約のカード情報登録が完了しました。</p>
           <ul>
             <li>予約ID: ${reservationId}</li>
-            <li>講師: ${(reservation as any).lesson_slots?.users?.name || '講師名未設定'}</li>
-            <li>日時: ${reservation.bookedStartTime ? new Date(reservation.bookedStartTime).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '日時未設定'}</li>
-            <li>料金: ¥${reservation.totalAmount.toLocaleString()}</li>
+            <li>講師: ${reservation.lesson_slots?.users?.name || '講師名未設定'}</li>
+            <li>日時: ${reservation.booked_start_time ? new Date(reservation.booked_start_time).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '日時未設定'}</li>
+            <li>料金: ¥${reservation.total_amount.toLocaleString()}</li>
           </ul>
           <p>メンターの承認後、レッスン開始2時間前に自動決済が実行されます。</p>
           <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>

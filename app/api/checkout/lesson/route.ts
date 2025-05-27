@@ -37,12 +37,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'レッスン枠が見つかりません' }, { status: 404 });
     }
 
-    if (!slot.isAvailable || slot.reservations.length > 0) {
+    if (!slot.is_available || slot.reservations.length > 0) {
       return NextResponse.json({ error: 'このレッスン枠は予約できません' }, { status: 409 });
     }
 
     const baseUrl = getBaseUrl();
-    const lessonDate = new Date(slot.startTime).toLocaleString('ja-JP', {
+    const lessonDate = new Date(slot.start_time).toLocaleString('ja-JP', {
       year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
     });
 
@@ -57,11 +57,11 @@ export async function POST(req: NextRequest) {
       successUrl: `${baseUrl}/dashboard/lessons?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${baseUrl}/dashboard/lessons?cancelled=true`,
       metadata: {
-        slotId: slot.id,
+        slot_d: slot.id,
         studentId: sessionInfo.user.id,
-        teacherId: slot.teacherId,
-        startTime: slot.startTime.toISOString(),
-        endTime: slot.endTime.toISOString(),
+        teacherId: slot.teacher_id,
+        startTime: slot.start_time.toISOString(),
+        endTime: slot.end_time.toISOString(),
       },
       clientReferenceId: `${slot.id}:${sessionInfo.user.id}`,
     });

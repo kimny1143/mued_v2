@@ -168,17 +168,17 @@ export async function processReservationRefund(
     const payment = reservation.payments;
 
     // 既に返金済みかチェック
-    const paymentWithRefund = payment as unknown as { refundedAt?: Date; refundAmount?: number };
-    if (paymentWithRefund.refundedAt) {
+    const paymentWithRefund = payment as unknown as { refunded_at?: Date; refund_amount?: number };
+    if (paymentWithRefund.refunded_at) {
       return {
         success: false,
         error: '既に返金処理済みです',
-        refundAmount: paymentWithRefund.refundAmount || 0
+        refundAmount: paymentWithRefund.refund_amount || 0
       };
     }
 
     // Payment Intentが存在するかチェック
-    if (!payment.stripePaymentId) {
+    if (!payment.stripe_payment_id) {
       return {
         success: false,
         error: 'Stripe決済IDが見つかりません',
@@ -188,13 +188,13 @@ export async function processReservationRefund(
 
     // Stripe返金処理
     const refundResult = await processRefund(
-      payment.stripePaymentId,
+      payment.stripe_payment_id,
       refundAmount,
       'requested_by_customer',
       {
         reservation_id: reservationId,
-        student_id: reservation.studentId,
-        teacher_id: reservation.lesson_slots.teacherId,
+        student_id: reservation.student_id,
+        teacher_id: reservation.lesson_slots.teacher_id,
         refund_reason: refundReason,
         admin_user_id: adminUserId || 'system'
       }
@@ -210,10 +210,10 @@ export async function processReservationRefund(
       await tx.payments.update({
         where: { id: payment.id },
         data: {
-          refundedAt: new Date(),
-          refundAmount: refundResult.refundAmount,
-          refundReason: refundReason,
-          updatedAt: new Date()
+          refunded_at: new Date(),
+          refund_amount: refundResult.refundAmount,
+          refund_reason: refundReason,
+          updated_at: new Date()
         }
       });
 
@@ -223,10 +223,10 @@ export async function processReservationRefund(
           where: { id: reservationId },
           data: {
             status: 'CANCELED',
-            canceledAt: new Date(),
-            canceledBy: adminUserId || 'system',
-            cancelReason: 'ADMIN_REQUEST',
-            updatedAt: new Date()
+            canceled_at: new Date(),
+            canceled_by: adminUserId || 'system',
+            cancel_reason: 'ADMIN_REQUEST',
+            updated_at: new Date()
           }
         });
       }

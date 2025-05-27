@@ -49,7 +49,7 @@ export async function POST(
     }
 
     // 権限チェック（予約者本人のみ）
-    if (reservation.studentId !== session.user.id) {
+    if (reservation.student_id !== session.user.id) {
       return NextResponse.json(
         { error: 'この予約にアクセスする権限がありません' },
         { status: 403 }

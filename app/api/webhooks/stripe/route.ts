@@ -254,32 +254,34 @@ async function processCheckoutSessionEnhanced(session: Stripe.Checkout.Session) 
       // Paymentレコードを更新
       const payment = await tx.payments.update({
         where: {
-          stripeSessionId: session.id,
+          stripe_session_id: session.id,
         },
         data: {
-          stripePaymentId: session.payment_intent as string,
+          stripe_payment_id: session.payment_intent as string,
           status: PaymentStatus.SUCCEEDED,
         },
-        include: {
-          reservations: {
-            include: { 
-              lesson_slots: {
-                include: {
-                  users: {
-                    select: { id: true, name: true, email: true }
-                  }
-                }
+      });
+
+      // 関連する予約を別途取得
+      const reservation = await tx.reservations.findFirst({
+        where: {
+          payment_id: payment.id,
+        },
+        include: { 
+          lesson_slots: {
+            include: {
+              users: {
+                select: { id: true, name: true, email: true }
               }
             }
           }
         }
       });
 
-      if (!payment.reservations) {
+      if (!reservation) {
         throw new Error(`支払いに関連する予約が見つかりません: ${payment.id}`);
       }
 
-      const reservation = payment.reservations;
       const oldStatus = reservation.status;
 
       // 予約ステータスを更新
@@ -305,29 +307,29 @@ async function processCheckoutSessionEnhanced(session: Stripe.Checkout.Session) 
         reservationId: updatedReservation.id,
         oldStatus,
         newStatus: updatedReservation.status,
-        studentId: updatedReservation.studentId,
+        studentId: updatedReservation.student_id,
         mentorId: updatedReservation.lesson_slots.users.id
       });
 
       // レッスンスロットの更新方法を判断
       const bookedStartTime = session.metadata?.bookedStartTime 
         ? new Date(session.metadata.bookedStartTime)
-        : reservation.bookedStartTime;
+        : reservation.booked_start_time;
       
       const bookedEndTime = session.metadata?.bookedEndTime 
         ? new Date(session.metadata.bookedEndTime)
-        : reservation.bookedEndTime;
+        : reservation.booked_end_time;
       
       // 完全予約かどうかを判断（スロットの時間全てを予約したか）
       const isFullSlotBooking = 
-        bookedStartTime.getTime() <= reservation.lesson_slots.startTime.getTime() &&
-        bookedEndTime.getTime() >= reservation.lesson_slots.endTime.getTime();
+        bookedStartTime.getTime() <= reservation.lesson_slots.start_time.getTime() &&
+        bookedEndTime.getTime() >= reservation.lesson_slots.end_time.getTime();
 
       // スロットが完全に予約された場合は利用不可にする
       if (isFullSlotBooking) {
         await tx.lesson_slots.update({
-          where: { id: reservation.slotId },
-          data: { isAvailable: false },
+          where: { id: reservation.slot_id },
+          data: { is_available: false },
         });
         console.log('📅 レッスンスロット完全予約 - 利用不可に設定');
       } else {
@@ -341,10 +343,10 @@ async function processCheckoutSessionEnhanced(session: Stripe.Checkout.Session) 
         {
           id: updatedReservation.id,
           status: updatedReservation.status,
-          studentId: updatedReservation.studentId,
+          studentId: updatedReservation.student_id,
           mentorId: updatedReservation.lesson_slots.users.id,
-          bookedStartTime: updatedReservation.bookedStartTime.toISOString(),
-          bookedEndTime: updatedReservation.bookedEndTime.toISOString(),
+          bookedStartTime: updatedReservation.booked_start_time.toISOString(),
+          bookedEndTime: updatedReservation.booked_end_time.toISOString(),
           lessonSlot: {
             users: {
               name: updatedReservation.lesson_slots.users.name
@@ -354,7 +356,7 @@ async function processCheckoutSessionEnhanced(session: Stripe.Checkout.Session) 
         {
           id: reservation.id,
           status: oldStatus,
-          studentId: reservation.studentId,
+          studentId: reservation.student_id,
           mentorId: reservation.lesson_slots.users.id,
         }
       );

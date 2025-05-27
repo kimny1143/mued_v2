@@ -29,7 +29,7 @@ export async function POST(
       include: {
         lesson_slots: {
           select: {
-            teacherId: true,
+            teacher_id: true,
             users: {
               select: { name: true, email: true }
             }
@@ -46,7 +46,7 @@ export async function POST(
     }
     
     // メンターが自分のレッスン枠の予約のみ承認できることを確認
-    if (reservation.lesson_slots.teacherId !== session.user.id) {
+    if (reservation.lesson_slots.teacher_id !== session.user.id) {
       return NextResponse.json(
         { error: 'この予約を承認する権限がありません' },
         { status: 403 }
@@ -68,8 +68,8 @@ export async function POST(
         where: { id: reservationId },
         data: {
           status: 'APPROVED',
-          approvedAt: new Date(),
-          approvedBy: session.user.id
+          approved_at: new Date(),
+          approved_by: session.user.id
         },
         include: {
           payments: true
@@ -81,7 +81,7 @@ export async function POST(
       
       console.log('🔍 決済情報確認:', {
         hasPayments: !!updatedReservation.payments,
-        paymentStatus: updatedReservation.payments ? (updatedReservation.payments as any).status : 'なし',
+        paymentStatus: updatedReservation.payments ? (updatedReservation.payments as unknown as { status: string }).status : 'なし',
         paymentId: updatedReservation.payments?.id
       });
       
@@ -123,9 +123,9 @@ export async function POST(
             },
             metadata: {
               reservationId: reservationId,
-              studentId: updatedReservation.studentId,
-              teacherId: reservation.lesson_slots.teacherId,
-              slotId: updatedReservation.slotId,
+              studentId: updatedReservation.student_id,
+              teacherId: reservation.lesson_slots.teacher_id,
+              slotId: updatedReservation.slot_id,
             },
             description: `レッスン予約の決済 - 予約ID: ${reservationId}`,
           });
@@ -134,9 +134,9 @@ export async function POST(
           await tx.payments.update({
             where: { id: updatedReservation.payments.id },
             data: {
-              stripePaymentId: paymentIntent.id,
+              stripe_payment_id: paymentIntent.id,
               status: 'SUCCEEDED',
-              updatedAt: new Date()
+              updated_at: new Date()
             }
           });
           

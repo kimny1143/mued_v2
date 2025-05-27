@@ -25,8 +25,8 @@ interface SlotWithReservations {
   updatedAt: Date;
   reservations: {
     id: string;
-    bookedStartTime: Date;
-    bookedEndTime: Date;
+    booked_start_time: Date;
+    booked_end_time: Date;
     status: ReservationStatus;
   }[];
   // Prismaモデルに存在するが型定義に含まれていないminDuration, maxDurationの対応
@@ -115,8 +115,8 @@ export async function GET(
     // 指定されたメンターの予約可能枠を取得
     const lessonSlots = await prisma.lesson_slots.findMany({
       where: {
-        teacherId: mentorId,
-        startTime: {
+        teacher_id: mentorId,
+        start_time: {
           gte: fromDate,
           lte: toDate,
         },
@@ -130,17 +130,17 @@ export async function GET(
         },
       },
       orderBy: {
-        startTime: 'asc',
+        start_time: 'asc',
       },
     });
     
     // クライアントに返すデータ形式に変換
     const formattedSlots = lessonSlots.map(slot => ({
       id: slot.id,
-      mentorId: slot.teacherId,
-      startTime: slot.startTime.toISOString(),
-      endTime: slot.endTime.toISOString(),
-      isBooked: Boolean(slot.reservations.length > 0 && slot.reservations.some(r => r.status !== 'CANCELED')),
+      mentor_id: slot.teacher_id,
+      start_time: slot.start_time.toISOString(),
+      end_time: slot.end_time.toISOString(),
+      is_booked: Boolean(slot.reservations.length > 0 && slot.reservations.some(r => r.status !== 'CANCELED')),
     }));
     
     return NextResponse.json(formattedSlots);

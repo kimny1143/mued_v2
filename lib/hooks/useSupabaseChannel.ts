@@ -42,16 +42,15 @@ export function useSupabaseChannel<T extends Record<string, any>>(
     const newChannel = supabaseBrowser.channel(channelName);
 
     // PostgreSQL変更をサブスクライブ
-    // @ts-expect-error - Supabaseの型定義が不完全なためここでは無視
     newChannel
       .on(
-        'postgres_changes',
+        'postgres_changes' as any,
         {
           event,
           schema,
           table,
           filter,
-        },
+        } as any,
         (payload: RealtimePostgresChangesPayload<T>) => {
           // 常に最新のコールバックを使用
           if (optionsRef.current.onEvent) {
@@ -96,11 +95,11 @@ export function useChatMessages<T extends Record<string, any>>(
   const debouncedCallback = (payload: RealtimePostgresChangesPayload<T>) => {
     if (payload.eventType === 'INSERT' && payload.new) {
       const newMessage = payload.new as T;
-      // @ts-expect-error - メッセージにはidがあることを前提
-      const messageId = newMessage.id;
+      // 安全な型ガードでidプロパティの存在を確認
+      const messageId = (newMessage as unknown as { id?: string }).id;
       
       // 同じメッセージの重複処理を防止
-      if (messageId !== lastMessageIdRef.current) {
+      if (messageId && messageId !== lastMessageIdRef.current) {
         lastMessageIdRef.current = messageId;
         onNewMessage(newMessage);
       }

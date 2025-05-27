@@ -23,22 +23,24 @@ export async function GET(request: NextRequest) {
 
     // レッスン開始2時間前の時刻を計算
     const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
+    const twoHoursAndFiveMinutesFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000 + 5 * 60 * 1000);
     const now = new Date();
 
     console.log('検索条件:', {
       now: now.toISOString(),
-      twoHoursFromNow: twoHoursFromNow.toISOString()
+      twoHoursFromNow: twoHoursFromNow.toISOString(),
+      twoHoursAndFiveMinutesFromNow: twoHoursAndFiveMinutesFromNow.toISOString()
     });
 
     // 新フロー対象の予約のみを検索（旧フローは即座決済のため対象外）
     const reservations = await prisma.reservations.findMany({
       where: {
         status: 'APPROVED', // メンター承認済み
-        bookedStartTime: {
-          lte: twoHoursFromNow, // 2時間以内に開始
-          gte: new Date(Math.max(now.getTime(), new Date('2024-07-01T00:00:00Z').getTime())) // 現在時刻と新ポリシー適用日の遅い方
+        booked_start_time: {
+          gte: twoHoursFromNow,
+          lte: twoHoursAndFiveMinutesFromNow,
         },
-        paymentId: {
+        payment_id: {
           not: null // 決済情報が存在する
         }
       },
@@ -66,14 +68,14 @@ export async function GET(request: NextRequest) {
     const filteredReservations = [];
     for (const reservation of reservations) {
       // 新フロー対象かチェック
-      const useNewFlow = shouldUseNewPaymentFlowByLessonTime(reservation.bookedStartTime);
+      const useNewFlow = shouldUseNewPaymentFlowByLessonTime(reservation.booked_start_time);
       if (!useNewFlow) {
         console.log(`予約 ${reservation.id} は旧フロー対象のためスキップ`);
         continue;
       }
 
       // 実行タイミングに達しているかチェック
-      const timing = getPaymentExecutionTiming(reservation.bookedStartTime, true);
+      const timing = getPaymentExecutionTiming(reservation.booked_start_time, true);
       if (!timing.shouldExecuteImmediately) {
         console.log(`予約 ${reservation.id} はまだ実行タイミングではありません（${timing.hoursUntilExecution}時間後）`);
         continue;
@@ -120,6 +122,8 @@ export async function GET(request: NextRequest) {
           customerId
         });
 
+        console.log(`⏰ 決済実行対象: 予約ID ${reservation.id}, 開始時刻: ${reservation.booked_start_time}`);
+
         // Payment Intentを作成して即座に実行
         const paymentIntent = await stripe.paymentIntents.create({
           amount: reservation.payments.amount,
@@ -133,9 +137,9 @@ export async function GET(request: NextRequest) {
           },
           metadata: {
             reservationId: reservation.id,
-            studentId: reservation.studentId,
-            teacherId: reservation.lesson_slots.teacherId,
-            slotId: reservation.slotId,
+            studentId: reservation.student_id,
+            teacherId: reservation.lesson_slots.teacher_id,
+            slotId: reservation.slot_id,
             cronExecution: 'true',
             executedAt: new Date().toISOString()
           },
@@ -148,16 +152,33 @@ export async function GET(request: NextRequest) {
           amount: paymentIntent.amount
         });
 
+        console.log(`💳 決済実行中: 予約ID ${reservation.id}, 開始時刻: ${reservation.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`);
+
+        if (!reservation.payments || !reservation.payments.stripe_payment_id) {
+          console.error(`❌ 決済情報なし: 予約ID ${reservation.id}`);
+          continue;
+        }
+
+        const paymentIntentId = reservation.payments.stripe_payment_id;
+
+        if (!paymentIntentId) {
+          throw new Error('Payment Intent IDが見つかりません');
+        }
+
+        const chargeResult = await stripe.paymentIntents.confirm(paymentIntentId, {
+          payment_method: paymentMethodId,
+        });
+
         // データベースを更新
         await prisma.$transaction(async (tx) => {
           // 決済情報を更新（生のSQLを使用）
           await tx.$executeRaw`
             UPDATE payments 
             SET 
-              "stripePaymentId" = ${paymentIntent.id},
+              stripe_payment_id = ${paymentIntent.id},
               status = ${paymentIntent.status === 'succeeded' ? 'SUCCEEDED' : 'PENDING'}::"PaymentStatus",
-              chargeexecutedat = ${new Date()},
-              "updatedAt" = ${new Date()}
+              charge_executed_at = ${new Date()},
+              updated_at = ${new Date()}
             WHERE id = ${reservation.payments!.id}
           `;
 
@@ -167,7 +188,7 @@ export async function GET(request: NextRequest) {
               where: { id: reservation.id },
               data: { 
                 status: 'CONFIRMED',
-                updatedAt: new Date()
+                updated_at: new Date()
               }
             });
           }
@@ -200,7 +221,7 @@ export async function GET(request: NextRequest) {
           await prisma.payments.update({
             where: { id: reservation.payments!.id },
             data: {
-              updatedAt: new Date(),
+              updated_at: new Date(),
               // エラー情報をメタデータに追加
               metadata: JSON.stringify({
                 ...JSON.parse(reservation.payments!.metadata || '{}'),

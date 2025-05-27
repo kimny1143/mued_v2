@@ -111,15 +111,15 @@ export async function getReservationPaymentStatus(reservationId: string) {
   }
 
   const flowInfo = getReservationPaymentFlowType({
-    createdAt: reservation.createdAt,
-    bookedStartTime: reservation.bookedStartTime,
+    createdAt: reservation.created_at,
+    bookedStartTime: reservation.booked_start_time,
     payments: reservation.payments
   });
 
   return {
     reservation,
     flowInfo,
-    timing: getPaymentExecutionTiming(reservation.bookedStartTime, flowInfo.useNewFlow)
+    timing: getPaymentExecutionTiming(reservation.booked_start_time, flowInfo.useNewFlow)
   };
 }
 

@@ -124,37 +124,37 @@ export async function GET(request: NextRequest) {
     // 🆕 viewModeに基づいてteacherIdフィルターを設定
     if (viewMode === 'own') {
       // 自分のスロットのみ（メンター視点）
-      filter.teacherId = sessionInfo.user.id;
+      filter.teacher_id = sessionInfo.user.id;
     }
     // viewMode === 'all' の場合はteacherIdフィルターなし（全メンターのスロット）
     
     // 時間の制約でフィルタリング（分単位を優先、ない場合は時間単位で互換性維持）
     if (minDuration !== null) {
       // 分単位フィールドを優先
-      filter.minDuration = {
+      filter.min_duration = {
         lte: minDuration
       };
       
       // 互換性のために時間単位フィールドも設定（古いレコード対応）
-      filter.minHours = {
+      filter.min_hours = {
         lte: Math.ceil(minDuration / 60) // 分を時間に変換（切り上げ）
       };
     }
     
     if (maxDuration !== null) {
       // 分単位フィールドを優先
-      filter.maxDuration = {
+      filter.max_duration = {
         gte: maxDuration
       };
       
       // 互換性のために時間単位フィールドも設定
-      if (filter.maxHours) {
-        filter.maxHours = {
-          ...filter.maxHours as Prisma.IntNullableFilter,
+      if (filter.max_hours) {
+        filter.max_hours = {
+          ...filter.max_hours as Prisma.IntNullableFilter,
           gte: Math.floor(maxDuration / 60) // 分を時間に変換（切り捨て）
         };
       } else {
-        filter.maxHours = {
+        filter.max_hours = {
           gte: Math.floor(maxDuration / 60)
         };
       }
@@ -162,13 +162,13 @@ export async function GET(request: NextRequest) {
     
     // 利用可能なスロットのみを取得
     if (availableOnly) {
-      filter.isAvailable = true;
+      filter.is_available = true;
     }
     
     // レッスンスロットを取得
     const slots = await executePrismaQuery(() => prisma.lesson_slots.findMany({
       where: filter,
-      orderBy: { startTime: 'asc' },
+      orderBy: { start_time: 'asc' },
       include: {
         users: {
           select: { id: true, name: true, image: true }
@@ -179,8 +179,8 @@ export async function GET(request: NextRequest) {
           },
           select: {
             id: true,
-            bookedStartTime: true,
-            bookedEndTime: true,
+            booked_start_time: true,
+            booked_end_time: true,
             status: true,
             users: {
               select: {
@@ -196,7 +196,24 @@ export async function GET(request: NextRequest) {
     
     // 各スロットの予約済み時間帯情報を整形して返す
     const enhancedSlots = slots.map(slot => {
-      const hourlySlots = generateHourlySlots(slot);
+      // generateHourlySlots用にデータを変換
+      const slotForHourlyGeneration = {
+        id: slot.id,
+        startTime: slot.start_time,
+        endTime: slot.end_time,
+        teacherId: slot.teacher_id,
+        isAvailable: slot.is_available,
+        reservations: slot.reservations.map(reservation => ({
+          id: reservation.id,
+          bookedStartTime: reservation.booked_start_time,
+          bookedEndTime: reservation.booked_end_time,
+          status: reservation.status
+        })),
+        hourlyRate: slot.hourly_rate,
+        currency: slot.currency
+      };
+      
+      const hourlySlots = generateHourlySlots(slotForHourlyGeneration);
       
       return {
         ...slot,
@@ -210,10 +227,10 @@ export async function GET(request: NextRequest) {
         hourlySlots,
         // 分単位の予約時間制約を明示的に含める
         durationConstraints: {
-          minDuration: slot.minDuration || 60,
-          maxDuration: slot.maxDuration || 90,
-          minHours: slot.minHours,
-          maxHours: slot.maxHours
+          minDuration: slot.min_duration || 60,
+          maxDuration: slot.max_duration || 90,
+          minHours: slot.min_hours,
+          maxHours: slot.max_hours
         }
       };
     });
@@ -275,7 +292,7 @@ export async function POST(request: NextRequest) {
         
         console.log("🔍 DB直接取得のユーザー情報:", {
           found: !!userData,
-          roleId: userData?.roleId,
+          roleId: userData?.role_id,
           roleName: userData?.roles?.name
         });
       } catch (dbError) {
@@ -371,18 +388,18 @@ export async function POST(request: NextRequest) {
     console.log('UTC ISO:', new Date(data.startTime).toISOString());
     
     // 入力検証
-    if (!data.startTime || !data.endTime) {
+    if (!data.start_time || !data.end_time) {
       return NextResponse.json(
         { error: '開始時間と終了時間は必須です' },
         { status: 400 }
       );
     }
     
-    const startTime = new Date(data.startTime);
-    const endTime = new Date(data.endTime);
+    const start_time = new Date(data.start_time);
+    const end_time = new Date(data.end_time);
     
     // 開始時間が終了時間より前であることを確認
-    if (startTime >= endTime) {
+    if (start_time >= end_time) {
       return NextResponse.json(
         { error: '開始時間は終了時間より前である必要があります' },
         { status: 400 }
@@ -392,19 +409,19 @@ export async function POST(request: NextRequest) {
     // スロットの重複をチェック
     const overlappingSlot = await executePrismaQuery(() => prisma.lesson_slots.findFirst({
       where: {
-        teacherId: sessionInfo.user.id,
+        teacher_id: sessionInfo.user.id,
         OR: [
           {
-            startTime: { lte: startTime },
-            endTime: { gt: startTime },
+            start_time: { lte: start_time },
+            end_time: { gt: start_time },
           },
           {
-            startTime: { lt: endTime },
-            endTime: { gte: endTime },
+            start_time: { lt: end_time },
+            end_time: { gte: end_time },
           },
           {
-            startTime: { gte: startTime },
-            endTime: { lte: endTime },
+            start_time: { gte: start_time },
+            end_time: { lte: end_time },
           },
         ],
       },
@@ -421,16 +438,16 @@ export async function POST(request: NextRequest) {
     const newSlot = await executePrismaQuery(() => prisma.lesson_slots.create({
       data: {
         id: crypto.randomUUID(),
-        teacherId: sessionInfo.user.id,
-        startTime,
-        endTime,
-        hourlyRate: data.hourlyRate ? parseInt(data.hourlyRate, 10) : 5000, // デフォルトは5000円
+        teacher_id: sessionInfo.user.id,
+        start_time,
+        end_time,
+        hourly_rate: data.hourly_rate ? parseInt(data.hourly_rate, 10) : 5000, // デフォルトは5000円
         currency: data.currency || 'JPY',
-        minHours: data.minHours ? parseInt(data.minHours, 10) : 1,
-        maxHours: data.maxHours ? parseInt(data.maxHours, 10) : null,
-        isAvailable: data.isAvailable ?? true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        min_hours: data.min_hours ? parseInt(data.min_hours, 10) : 1,
+        max_hours: data.max_hours ? parseInt(data.max_hours, 10) : null,
+        is_available: data.is_available ?? true,
+        created_at: new Date(),
+        updated_at: new Date(),
       },
     }));
     

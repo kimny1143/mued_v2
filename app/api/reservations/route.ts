@@ -91,13 +91,13 @@ export async function GET(request: NextRequest) {
       // 通常モード：ロール別のアクセス制御
       if (sessionInfo.role === 'mentor') {
         where.lesson_slots = {
-          teacherId: sessionInfo.user.id,
+          teacher_id: sessionInfo.user.id,
         };
       } else if (sessionInfo.role === 'admin') {
         // 管理者は全ての予約を閲覧可能
       } else {
         // 生徒は自分の予約のみ閲覧可能
-        where.studentId = sessionInfo.user.id;
+        where.student_id = sessionInfo.user.id;
       }
     }
     
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
     }
     
     if (slotId) {
-      where.slotId = slotId;
+      where.slot_id = slotId;
     }
     
     // データベースから予約を取得（エラーハンドリング強化）
@@ -117,17 +117,17 @@ export async function GET(request: NextRequest) {
         lesson_slots: {
           select: {
             id: true,
-            startTime: true,
-            endTime: true,
-            teacherId: true,
+            start_time: true,
+            end_time: true,
+            teacher_id: true,
           },
         },
       } : {
         // 通常モード：詳細情報を含む
         lesson_slots: {
           select: {
-            startTime: true,
-            endTime: true,
+            start_time: true,
+            end_time: true,
             users: {
               select: { id: true, name: true, image: true },
             },
@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
           select: { id: true, name: true, email: true, image: true },
         },
       },
-      orderBy: { lesson_slots: { startTime: 'asc' } },
+      orderBy: { lesson_slots: { start_time: 'asc' } },
     }));
     
     // フロントエンドが期待する形式に変換
@@ -146,11 +146,11 @@ export async function GET(request: NextRequest) {
         // プライバシー保護モード：最小限の情報のみ返す
         return {
           id: reservation.id,
-          slotId: reservation.slotId,
+          slotId: reservation.slot_id,
           status: reservation.status,
-          bookedStartTime: reservation.bookedStartTime,
-          bookedEndTime: reservation.bookedEndTime,
-          studentId: reservation.studentId, // IDのみ（名前などは含まない）
+          bookedStartTime: reservation.booked_start_time,
+          bookedEndTime: reservation.booked_end_time,
+          studentId: reservation.student_id, // IDのみ（名前などは含まない）
         };
       } else {
         // 通常モード：詳細情報を含む
@@ -240,7 +240,7 @@ export async function POST(request: NextRequest) {
       const slot = await tx.lesson_slots.findUnique({
         where: { 
           id: slotId,
-          isAvailable: true // 利用可能なスロットのみを対象
+          is_available: true // 利用可能なスロットのみを対象
         },
         include: {
           users: {
@@ -256,8 +256,8 @@ export async function POST(request: NextRequest) {
             },
             select: {
               id: true,
-              bookedStartTime: true,
-              bookedEndTime: true,
+              booked_start_time: true,
+              booked_end_time: true,
               status: true
             }
           }
@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
       const slotMaxDuration = extendedSlot.maxDuration || 90; // デフォルト90分
       
       // 固定料金で計算（hourlyRateをそのまま使用）
-      const fixedAmount = slot.hourlyRate || 5000;
+      const fixedAmount = slot.hourly_rate || 5000;
       const currency = slot.currency || 'jpy';
       
       // 予約時間の計算（固定時間）
@@ -305,7 +305,7 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // 選択がない場合は、開始時間からduration分の枠を予約
-        reservationStartTime = new Date(slot.startTime);
+        reservationStartTime = new Date(slot.start_time);
         
         // 予約時間がスロットの最小時間制約を満たしているか検証
         if (duration < slotMinDuration) {
@@ -322,15 +322,15 @@ export async function POST(request: NextRequest) {
         reservationEndTime.setMinutes(reservationEndTime.getMinutes() + duration);
         
         // 予約終了時間がスロット終了時間を超えないようにする
-        const slotEndTime = new Date(slot.endTime);
+        const slotEndTime = new Date(slot.end_time);
         if (reservationEndTime > slotEndTime) {
           reservationEndTime = slotEndTime;
         }
       }
       
       // 予約時間の整合性チェック
-      const slotStartTime = new Date(slot.startTime);
-      const slotEndTime = new Date(slot.endTime);
+      const slotStartTime = new Date(slot.start_time);
+      const slotEndTime = new Date(slot.end_time);
       
       if (reservationStartTime < slotStartTime || reservationEndTime > slotEndTime) {
         throw new Error('予約時間がレッスン枠の範囲外です');
@@ -340,8 +340,8 @@ export async function POST(request: NextRequest) {
       const existingReservations = slot.reservations || [];
       const hasOverlap = existingReservations.some(reservation => {
         // 既存予約の時刻をそのまま使用（二重変換を防ぐ）
-        const existingStart = new Date(reservation.bookedStartTime);
-        const existingEnd = new Date(reservation.bookedEndTime);
+        const existingStart = new Date(reservation.booked_start_time);
+        const existingEnd = new Date(reservation.booked_end_time);
         
         console.log('重複チェック - 既存予約:', {
           id: reservation.id,
@@ -366,16 +366,16 @@ export async function POST(request: NextRequest) {
       // 予約データの作成準備（固定料金方式）
       const reservationData = {
         id: randomUUID(),
-        slotId: slot.id,
-        studentId: session.user.id,
+        slot_id: slot.id,
+        student_id: session.user.id,
         status: 'PENDING_APPROVAL' as ReservationStatus, // メンター承認待ち状態で作成
-        bookedStartTime: reservationStartTime,
-        bookedEndTime: reservationEndTime,
-        hoursBooked: Math.ceil(durationInMinutes / 60),
-        durationMinutes: durationInMinutes, // 分単位の予約時間を明示的に保存
-        totalAmount: fixedAmount, // 時間に関わらず固定料金
+        booked_start_time: reservationStartTime,
+        booked_end_time: reservationEndTime,
+        hours_booked: Math.ceil(durationInMinutes / 60),
+        duration_minutes: durationInMinutes, // 分単位の予約時間を明示的に保存
+        total_amount: fixedAmount, // 時間に関わらず固定料金
         notes: typeof notes === 'string' ? notes : null,
-        updatedAt: new Date()
+        updated_at: new Date()
       };
       
               // 日付と時間をフォーマット（JST時間で表示）

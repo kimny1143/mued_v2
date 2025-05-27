@@ -9,29 +9,29 @@ datasource db {
 }
 
 model Account {
-  id                String  @id
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-  users             users   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String  @id
+  user_id             String
+  type                String
+  provider            String
+  provider_account_id String
+  refresh_token       String?
+  access_token        String?
+  expires_at          Int?
+  token_type          String?
+  scope               String?
+  id_token            String?
+  session_state       String?
+  users               users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+  @@unique([provider, provider_account_id])
 }
 
 model Session {
-  id           String   @id
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  users        users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String   @id
+  session_token String   @unique
+  user_id       String
+  expires       DateTime
+  users         users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -45,105 +45,105 @@ model VerificationToken {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model lesson_slots {
   id           String         @id
-  teacherId    String
-  startTime    DateTime
-  endTime      DateTime
-  hourlyRate   Int            @default(6000)
+  teacher_id   String
+  start_time   DateTime
+  end_time     DateTime
+  hourly_rate  Int            @default(6000)
   currency     String         @default("JPY")
-  minHours     Int            @default(1)
-  maxHours     Int?
-  isAvailable  Boolean        @default(true)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime
-  minDuration  Int?           @default(60)
-  maxDuration  Int?           @default(90)
-  users        users          @relation(fields: [teacherId], references: [id])
+  min_hours    Int            @default(1)
+  max_hours    Int?
+  is_available Boolean        @default(true)
+  created_at   DateTime       @default(now())
+  updated_at   DateTime
+  min_duration Int?           @default(60)
+  max_duration Int?           @default(90)
+  users        users          @relation(fields: [teacher_id], references: [id])
   reservations reservations[]
 
-  @@index([startTime, endTime])
-  @@index([startTime, isAvailable])
-  @@index([teacherId])
+  @@index([start_time, end_time])
+  @@index([start_time, is_available])
+  @@index([teacher_id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model messages {
   id          String   @id
   content     String?
-  senderId    String
+  sender_id   String
   sender_type String?
   room_id     String?
   timestamp   DateTime @default(now()) @db.Timestamptz(6)
   file_urls   String[]
-  users       users    @relation(fields: [senderId], references: [id])
+  users       users    @relation(fields: [sender_id], references: [id], map: "messages_senderId_fkey")
 
   @@index([room_id])
-  @@index([senderId])
+  @@index([sender_id], map: "messages_senderId_idx")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model payments {
-  id               String        @id
-  stripeSessionId  String        @unique
-  stripePaymentId  String?       @unique
-  amount           Int
-  currency         String        @default("JPY")
-  status           PaymentStatus @default(PENDING)
-  userId           String
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime
-  metadata         String?
-  chargeExecutedAt DateTime?     @map("chargeexecutedat") @db.Timestamp(6)
-  refundedAt       DateTime?     @map("refundedat") @db.Timestamp(6)
-  refundAmount     Int?          @map("refundamount")
-  refundReason     String?       @map("refundreason")
-  reservations     reservations?
+  id                 String        @id
+  stripe_session_id  String        @unique
+  stripe_payment_id  String?       @unique
+  amount             Int
+  currency           String        @default("JPY")
+  status             PaymentStatus @default(PENDING)
+  user_id            String
+  created_at         DateTime      @default(now())
+  updated_at         DateTime
+  metadata           String?
+  charge_executed_at DateTime?     @db.Timestamp(6)
+  refunded_at        DateTime?     @db.Timestamp(6)
+  refund_amount      Int?
+  refund_reason      String?
+  reservations       reservations?
 
-  @@index([userId])
+  @@index([user_id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model permissions {
-  id        String   @id
-  name      String   @unique
-  roleId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime
-  roles     roles    @relation(fields: [roleId], references: [id])
+  id         String   @id
+  name       String   @unique
+  role_id    String
+  created_at DateTime @default(now())
+  updated_at DateTime
+  roles      roles    @relation(fields: [role_id], references: [id])
 
-  @@index([roleId])
+  @@index([role_id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model reservations {
-  id              String            @id
-  slotId          String
-  studentId       String
-  status          ReservationStatus @default(PENDING_APPROVAL)
-  paymentId       String?           @unique
-  bookedStartTime DateTime
-  bookedEndTime   DateTime
-  hoursBooked     Int               @default(1)
-  totalAmount     Int
-  notes           String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime
-  durationMinutes Int?              @default(60)
-  approvedAt      DateTime?
-  approvedBy      String?
-  rejectedAt      DateTime?
-  rejectionReason String?
-  canceledAt      DateTime?         @map("canceledat") @db.Timestamp(6)
-  canceledBy      String?           @map("canceledby") @db.VarChar(255)
-  cancelReason    String?           @map("cancelreason")
-  rescheduledFrom String?           @map("rescheduledfrom") @db.VarChar(255)
-  rescheduledTo   String?           @map("rescheduledto") @db.VarChar(255)
-  payments        payments?         @relation(fields: [paymentId], references: [id])
-  lesson_slots    lesson_slots      @relation(fields: [slotId], references: [id])
-  users           users             @relation(fields: [studentId], references: [id])
+  id                  String            @id
+  slot_id             String
+  student_id          String
+  status              ReservationStatus @default(PENDING_APPROVAL)
+  payment_id          String?           @unique
+  booked_start_time   DateTime
+  booked_end_time     DateTime
+  hours_booked        Int               @default(1)
+  total_amount        Int
+  notes               String?
+  created_at          DateTime          @default(now())
+  updated_at          DateTime
+  duration_minutes    Int?              @default(60)
+  approved_at         DateTime?
+  approved_by         String?
+  rejected_at         DateTime?
+  rejection_reason    String?
+  canceled_at         DateTime?         @db.Timestamp(6)
+  canceled_by         String?           @db.VarChar(255)
+  cancel_reason       String?
+  rescheduled_from    String?           @db.VarChar(255)
+  rescheduled_to      String?           @db.VarChar(255)
+  payments            payments?         @relation(fields: [payment_id], references: [id])
+  lesson_slots        lesson_slots      @relation(fields: [slot_id], references: [id])
+  users               users             @relation(fields: [student_id], references: [id])
 
-  @@index([slotId])
+  @@index([slot_id])
   @@index([status])
-  @@index([studentId])
+  @@index([student_id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -156,36 +156,36 @@ model roles {
 }
 
 model stripe_customers {
-  id         Int       @id @default(autoincrement())
-  userId     String    @unique
-  customerId String    @unique
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime
-  deletedAt  DateTime?
-  currency   String?   @default("jpy") @db.VarChar(3)
-  users      users     @relation(fields: [userId], references: [id])
+  id          Int       @id @default(autoincrement())
+  user_id     String    @unique
+  customer_id String    @unique
+  created_at  DateTime  @default(now())
+  updated_at  DateTime
+  deleted_at  DateTime?
+  currency    String?   @default("jpy") @db.VarChar(3)
+  users       users     @relation(fields: [user_id], references: [id])
 
   @@index([currency], map: "idx_stripe_customers_currency")
 }
 
 model stripe_user_subscriptions {
-  id                 Int       @id @default(autoincrement())
-  userId             String
-  customerId         String
-  subscriptionId     String    @unique
-  priceId            String?
-  status             String?
-  currentPeriodStart BigInt?
-  currentPeriodEnd   BigInt?
-  cancelAtPeriodEnd  Boolean?
-  paymentMethodBrand String?
-  paymentMethodLast4 String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime
-  deletedAt          DateTime?
-  users              users     @relation(fields: [userId], references: [id])
+  id                   Int       @id @default(autoincrement())
+  user_id              String
+  customer_id          String
+  subscription_id      String    @unique
+  price_id             String?
+  status               String?
+  current_period_start BigInt?
+  current_period_end   BigInt?
+  cancel_at_period_end Boolean?
+  payment_method_brand String?
+  payment_method_last4 String?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime
+  deleted_at           DateTime?
+  users                users     @relation(fields: [user_id], references: [id])
 
-  @@index([userId])
+  @@index([user_id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -193,9 +193,9 @@ model users {
   id                        String                      @id
   name                      String?
   email                     String?                     @unique
-  emailVerified             DateTime?
+  email_verified            DateTime?
   image                     String?
-  roleId                    String                      @default("student")
+  role_id                   String                      @default("student")
   Account                   Account[]
   Session                   Session[]
   lesson_slots              lesson_slots[]
@@ -203,9 +203,9 @@ model users {
   reservations              reservations[]
   stripe_customers          stripe_customers?
   stripe_user_subscriptions stripe_user_subscriptions[]
-  roles                     roles                       @relation(fields: [roleId], references: [id])
+  roles                     roles                       @relation(fields: [role_id], references: [id])
 
-  @@index([roleId])
+  @@index([role_id])
 }
 
 enum PaymentStatus {

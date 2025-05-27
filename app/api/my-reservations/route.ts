@@ -24,14 +24,14 @@ export async function GET(request: NextRequest) {
     // 生徒の予約一覧を取得
     const reservations = await prisma.reservations.findMany({
       where: {
-        studentId: session.user.id,
+        student_id: session.user.id,
       },
       include: {
         lesson_slots: {
           select: {
             id: true,
-            startTime: true,
-            endTime: true,
+            start_time: true,
+            end_time: true,
             users: {
               select: {
                 id: true,
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        created_at: 'desc',
       },
     });
     
@@ -61,24 +61,24 @@ export async function GET(request: NextRequest) {
       status: reservation.status,
       lessonSlot: {
         id: reservation.lesson_slots.id,
-        startTime: reservation.lesson_slots.startTime.toISOString(),
-        endTime: reservation.lesson_slots.endTime.toISOString(),
+        start_time: reservation.lesson_slots.start_time.toISOString(),
+        end_time: reservation.lesson_slots.end_time.toISOString(),
         teacher: {
           id: reservation.lesson_slots.users.id,
           name: reservation.lesson_slots.users.name,
           image: null, // 画像情報がない場合
         },
       },
-      bookedStartTime: reservation.bookedStartTime.toISOString(),
-      bookedEndTime: reservation.bookedEndTime.toISOString(),
+      bookedStartTime: reservation.booked_start_time.toISOString(),
+      bookedEndTime: reservation.booked_end_time.toISOString(),
       payment: reservation.payments ? {
         id: reservation.payments.id,
         amount: reservation.payments.amount,
         currency: reservation.payments.currency,
         status: reservation.payments.status,
       } : null,
-      createdAt: reservation.createdAt.toISOString(),
-      updatedAt: reservation.updatedAt.toISOString(),
+      createdAt: reservation.created_at.toISOString(),
+      updatedAt: reservation.updated_at.toISOString(),
     }));
     
     return NextResponse.json(formattedReservations);

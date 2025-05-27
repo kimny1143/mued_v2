@@ -1,7 +1,7 @@
 // クライアント環境かどうかをチェックする関数
 const isClient = typeof window !== 'undefined';
 
-import { openDB, IDBPDatabase } from 'idb';
+import { openDB } from 'idb';
 
 // ExerciseLogの型定義
 export interface OfflineExerciseLog {
@@ -107,8 +107,13 @@ export function useNetworkStatus() {
   };
 }
 
+// APIクライアントの型定義
+interface ApiClient {
+  post: (url: string, data: Record<string, unknown>) => Promise<unknown>;
+}
+
 // バックグラウンド同期処理（オプション）
-export async function syncExerciseLogs(apiClient: any) {
+export async function syncExerciseLogs(apiClient: ApiClient) {
   if (!isClient) return; // サーバー側では何もしない
   
   const unsyncedLogs = await offlineExerciseLogs.getUnsyncedLogs();

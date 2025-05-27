@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
-import Youtube from '@tiptap/extension-youtube';
+
 import { Button } from './ui/button';
 import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Youtube as YoutubeIcon } from 'lucide-react';
 
@@ -29,7 +29,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         priority: 1000, // 通常のLinkよりも優先度を高く
         onCreate() {
           // YouTubeリンクを検出するための正規表現
-          this.options.pattern = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+          this.options.pattern = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
         },
         parseHTML() {
           return [

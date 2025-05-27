@@ -11,18 +11,18 @@ import { parseISO, isValid, isBefore } from 'date-fns';
 // レッスンスロットと関連データの型定義
 interface SlotWithRelations {
   id: string;
-  teacherId: string;
-  startTime: Date;
-  endTime: Date;
-  hourlyRate: number;
+  teacher_id: string;
+  start_time: Date;
+  end_time: Date;
+  hourly_rate: number;
   currency: string;
-  minHours: number;
-  maxHours: number | null;
-  isAvailable: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  minDuration: number | null;
-  maxDuration: number | null;
+  min_hours: number;
+  max_hours: number | null;
+  is_available: boolean;
+  created_at: Date;
+  updated_at: Date;
+  min_duration: number | null;
+  max_duration: number | null;
   users: {
     id: string;
     name: string | null;
@@ -32,8 +32,8 @@ interface SlotWithRelations {
   reservations: Array<{
     id: string;
     status: string;
-    bookedStartTime: Date;
-    bookedEndTime: Date;
+    booked_start_time: Date;
+    booked_end_time: Date;
   }>;
 }
 
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     const mentors = await executePrismaQuery(() => 
       prisma.users.findMany({
         where: {
-          roleId: 'mentor'
+          role_id: 'mentor'
         },
         select: {
           id: true,
@@ -124,13 +124,13 @@ export async function GET(request: NextRequest) {
     const lessonSlots = await executePrismaQuery(() => 
       prisma.lesson_slots.findMany({
         where: {
-          startTime: {
+          start_time: {
             gte: fromDate
           },
-          endTime: {
+          end_time: {
             lte: toDate
           },
-          isAvailable: true
+          is_available: true
         },
         include: {
           users: {
@@ -148,13 +148,13 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               status: true,
-              bookedStartTime: true,
-              bookedEndTime: true
+              booked_start_time: true,
+              booked_end_time: true
             }
           }
         },
         orderBy: {
-          startTime: 'asc'
+          start_time: 'asc'
         }
       })
     );
@@ -164,7 +164,7 @@ export async function GET(request: NextRequest) {
     // メンターIDごとにレッスンスロットをグループ化
     const slotsByMentor = mentors.reduce((acc, mentor) => {
       // メンターのスロットをフィルタリング
-      const mentorSlots = lessonSlots.filter(slot => slot.teacherId === mentor.id);
+      const mentorSlots = lessonSlots.filter(slot => slot.teacher_id === mentor.id);
       
       if (mentorSlots.length > 0) {
         // 予約可能なスロットがあるメンターのみ

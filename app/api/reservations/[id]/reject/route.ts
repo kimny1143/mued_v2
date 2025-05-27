@@ -30,7 +30,7 @@ export async function POST(
       include: {
         lesson_slots: {
           select: {
-            teacherId: true,
+            teacher_id: true,
             users: {
               select: { name: true, email: true }
             }
@@ -47,7 +47,7 @@ export async function POST(
     }
     
     // メンターが自分のレッスン枠の予約のみ拒否できることを確認
-    if (reservation.lesson_slots.teacherId !== session.user.id) {
+    if (reservation.lesson_slots.teacher_id !== session.user.id) {
       return NextResponse.json(
         { error: 'この予約を拒否する権限がありません' },
         { status: 403 }
@@ -67,8 +67,8 @@ export async function POST(
       where: { id: reservationId },
       data: {
         status: 'REJECTED',
-        rejectedAt: new Date(),
-        rejectionReason: reason || '理由が指定されていません'
+        rejected_at: new Date(),
+        rejection_reason: reason || '理由が指定されていません'
       }
     });
     

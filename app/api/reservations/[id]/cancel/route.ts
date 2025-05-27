@@ -49,8 +49,8 @@ export async function POST(
     }
 
     // 権限チェック（生徒は自分の予約のみ、講師・管理者は関連する予約のみ）
-    const isStudent = sessionInfo.user.id === reservation.studentId;
-    const isTeacher = sessionInfo.user.id === reservation.lesson_slots.teacherId;
+    const isStudent = sessionInfo.user.id === reservation.student_id;
+    const isTeacher = sessionInfo.user.id === reservation.lesson_slots.teacher_id;
     const isAdmin = sessionInfo.role === 'admin';
 
     if (!isStudent && !isTeacher && !isAdmin) {
@@ -96,8 +96,8 @@ export async function POST(
     // 3. キャンセル可能時間チェック
     const policyResult = checkCancellationPolicy(
       userRole,
-      reservation.bookedStartTime,
-      reservation.totalAmount,
+      reservation.booked_start_time,
+      reservation.total_amount,
       reason
     );
 
@@ -118,11 +118,11 @@ export async function POST(
       if (policyResult.cancellationFee === 0) {
         refundInfo = {
           shouldRefund: true,
-          refundAmount: reservation.totalAmount,
+          refundAmount: reservation.total_amount,
           message: '全額返金対象です。管理者が返金処理を行います。'
         };
       } else {
-        const refundAmount = reservation.totalAmount - policyResult.cancellationFee;
+        const refundAmount = reservation.total_amount - policyResult.cancellationFee;
         refundInfo = {
           shouldRefund: refundAmount > 0,
           refundAmount: refundAmount,
@@ -141,7 +141,7 @@ export async function POST(
           status: 'CANCELED',
           // 型エラーを回避するため、rawクエリで更新
           notes: notes ? `${reservation.notes || ''}\n[キャンセル理由] ${notes}` : reservation.notes,
-          updatedAt: new Date()
+          updated_at: new Date()
         }
       });
 
@@ -157,10 +157,10 @@ export async function POST(
 
       // レッスンスロットを利用可能に戻す
       await tx.lesson_slots.update({
-        where: { id: reservation.slotId },
+        where: { id: reservation.slot_id },
         data: { 
-          isAvailable: true,
-          updatedAt: new Date()
+          is_available: true,
+          updated_at: new Date()
         }
       });
 
@@ -179,7 +179,7 @@ export async function POST(
           <p>以下のレッスンがキャンセルされました。</p>
           <ul>
             <li>講師: ${reservation.lesson_slots.users.name}</li>
-            <li>日時: ${reservation.bookedStartTime.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</li>
+            <li>日時: ${reservation.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</li>
             <li>キャンセル理由: ${reason}</li>
             ${notes ? `<li>備考: ${notes}</li>` : ''}
             ${refundInfo ? `<li>返金について: ${refundInfo.message}</li>` : ''}
@@ -199,7 +199,7 @@ export async function POST(
             <p>以下のレッスンが生徒によりキャンセルされました。</p>
             <ul>
               <li>生徒: ${reservation.users.name}</li>
-              <li>日時: ${reservation.bookedStartTime.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</li>
+              <li>日時: ${reservation.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</li>
               <li>キャンセル理由: ${reason}</li>
               ${notes ? `<li>備考: ${notes}</li>` : ''}
             </ul>

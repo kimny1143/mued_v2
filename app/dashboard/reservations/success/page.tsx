@@ -26,15 +26,15 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
   try {
     // 予約情報の取得
     if (reservationId) {
-      const reservation = await prisma.reservation.findUnique({
+      const reservation = await prisma.reservations.findUnique({
         where: { id: reservationId },
         include: {
-          slot: {
+          lesson_slots: {
             include: {
-              teacher: true
+              users: true
             }
           },
-          student: true
+          users: true
         }
       });
       
@@ -44,12 +44,12 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
           console.log(`予約ID:${reservationId}のステータスをCONFIRMEDに更新します`);
           
           // 予約ステータスを更新
-          await prisma.reservation.update({
+          await prisma.reservations.update({
             where: { id: reservationId },
             data: { 
               status: 'CONFIRMED',
               // 決済IDも保存しておく（あれば）
-              ...(sessionId && { paymentId: sessionId })
+              ...(sessionId && { payment_id: sessionId })
             }
           });
           
@@ -57,12 +57,12 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
           reservationData = {
             id: reservation.id,
             status: 'CONFIRMED', // 更新されたステータス
-            paymentId: sessionId || reservation.paymentId,
+            paymentId: sessionId || reservation.payment_id,
             slot: {
-              id: reservation.slot.id,
-              startTime: reservation.slot.startTime.toISOString(),
-              endTime: reservation.slot.endTime.toISOString(),
-              teacherName: reservation.slot.teacher?.name || '不明な講師'
+              id: reservation.lesson_slots.id,
+              startTime: reservation.lesson_slots.start_time.toISOString(),
+              endTime: reservation.lesson_slots.end_time.toISOString(),
+              teacherName: reservation.lesson_slots.users?.name || '不明な講師'
             }
           };
         } else {
@@ -70,12 +70,12 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
           reservationData = {
             id: reservation.id,
             status: reservation.status,
-            paymentId: reservation.paymentId,
+            paymentId: reservation.payment_id,
             slot: {
-              id: reservation.slot.id,
-              startTime: reservation.slot.startTime.toISOString(),
-              endTime: reservation.slot.endTime.toISOString(),
-              teacherName: reservation.slot.teacher?.name || '不明な講師'
+              id: reservation.lesson_slots.id,
+              startTime: reservation.lesson_slots.start_time.toISOString(),
+              endTime: reservation.lesson_slots.end_time.toISOString(),
+              teacherName: reservation.lesson_slots.users?.name || '不明な講師'
             }
           };
         }

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL } from '../app/config/api';
 
 // API結果の型定義
 interface ApiResult<T> {
@@ -8,9 +8,24 @@ interface ApiResult<T> {
   error: string | null;
 }
 
+// 具体的な型定義
+interface HealthResponse {
+  status: string;
+  timestamp: string;
+}
+
+interface MusicAnalysisResponse {
+  analysis: {
+    notes: string;
+    tempo: number;
+    instrument: string;
+  };
+  confidence: number;
+}
+
 interface ApiTestResults {
-  health: ApiResult<any>;
-  musicAnalysis: ApiResult<any>;
+  health: ApiResult<HealthResponse>;
+  musicAnalysis: ApiResult<MusicAnalysisResponse>;
 }
 
 // テスト用APIクライアント
@@ -23,7 +38,7 @@ const apiTestClient = {
   },
 
   // 音楽分析
-  analyzeMusicData: async (data: any) => {
+  analyzeMusicData: async (data: { notes: string; tempo: number; instrument: string }) => {
     const response = await axios.post(`${API_BASE_URL}/music/analyze`, data);
     return response.data;
   },

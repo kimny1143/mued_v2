@@ -390,18 +390,18 @@ export async function GET(req: NextRequest) {
         console.log('Supabaseアクセス失敗: Prismaを使用した直接DBアクセスを試みます...');
         
         // Prismaを使ってユーザー情報とロールを取得
-        const dbUser = await prisma.user.findUnique({
+        const dbUser = await prisma.users.findUnique({
           where: { id: userId },
-          include: { role: true }
+          include: { roles: true }
         });
         
-        if (dbUser && dbUser.role) {
+        if (dbUser && dbUser.roles) {
           console.log('Prismaによるユーザー情報取得成功:', dbUser.email);
-          console.log('取得したロール情報:', dbUser.role);
+          console.log('取得したロール情報:', dbUser.roles);
           
           // 取得したロール情報を設定
-          userData.roleId = dbUser.roleId;
-          userData.roleName = dbUser.role.name.toLowerCase();
+          userData.roleId = dbUser.role_id;
+          userData.roleName = dbUser.roles.name.toLowerCase();
           dbAccessSuccessful = true;
           
           console.log('Prismaから設定したロール名:', userData.roleName);

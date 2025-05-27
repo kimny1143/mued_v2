@@ -56,8 +56,8 @@ export async function GET(
     }
     
     // 権限チェック：生徒本人、担当講師、管理者のみアクセス可能
-    const isStudent = sessionInfo.user.id === reservation.studentId;
-    const isTeacher = sessionInfo.user.id === reservation.lesson_slots.teacherId;
+    const isStudent = sessionInfo.user.id === reservation.student_id;
+    const isTeacher = sessionInfo.user.id === reservation.lesson_slots.teacher_id;
     const isAdmin = sessionInfo.role === 'admin';
     
     if (!isStudent && !isTeacher && !isAdmin) {
@@ -109,7 +109,7 @@ export async function PUT(
     }
     
     // 権限チェック
-    const isTeacher = sessionInfo.user.id === existingReservation.lesson_slots.teacherId;
+    const isTeacher = sessionInfo.user.id === existingReservation.lesson_slots.teacher_id;
     const isAdmin = sessionInfo.role === 'admin';
     
     if (!isTeacher && !isAdmin) {
@@ -216,7 +216,7 @@ export async function DELETE(
     }
     
     // 権限チェック
-    const isStudent = sessionInfo.user.id === existingReservation.studentId;
+    const isStudent = sessionInfo.user.id === existingReservation.student_id;
     const isAdmin = sessionInfo.role === 'admin';
     
     if (!isStudent && !isAdmin) {
@@ -228,7 +228,7 @@ export async function DELETE(
     
     // 過去の予約はキャンセル不可（レッスン開始時間より後）
     const now = new Date();
-    if (new Date(existingReservation.lesson_slots.startTime) < now) {
+    if (new Date(existingReservation.lesson_slots.start_time) < now) {
       return NextResponse.json(
         { error: '過去のレッスンはキャンセルできません' },
         { status: 400 }
@@ -244,17 +244,17 @@ export async function DELETE(
     }
     
     // Stripeでの返金処理（必要な場合）
-    if (existingReservation.paymentId) {
+    if (existingReservation.payment_id) {
       try {
         // 支払いIDがpayment_intentの場合
-        if (existingReservation.paymentId.startsWith('pi_')) {
+        if (existingReservation.payment_id.startsWith('pi_')) {
           await stripe.refunds.create({
-            payment_intent: existingReservation.paymentId,
+            payment_intent: existingReservation.payment_id,
           });
         } 
         // 支払いIDがチェックアウトセッションの場合
-        else if (existingReservation.paymentId.startsWith('cs_')) {
-          const session = await stripe.checkout.sessions.retrieve(existingReservation.paymentId);
+        else if (existingReservation.payment_id.startsWith('cs_')) {
+          const session = await stripe.checkout.sessions.retrieve(existingReservation.payment_id);
           if (session.payment_intent) {
             await stripe.refunds.create({
               payment_intent: session.payment_intent as string,
@@ -277,8 +277,8 @@ export async function DELETE(
       
       // 2. スロットを利用可能に更新
       prisma.lesson_slots.update({
-        where: { id: existingReservation.slotId },
-        data: { isAvailable: true }
+        where: { id: existingReservation.slot_id },
+        data: { is_available: true }
       })
     ]);
     

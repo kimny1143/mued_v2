@@ -20,7 +20,7 @@ async function getRoleNameById(roleId: string): Promise<string | undefined> {
     // UUIDならDBから名前を取得
     if (isUuid) {
       try {
-        const role = await prisma.role.findUnique({
+        const role = await prisma.roles.findUnique({
           where: { id: roleId }
         });
         

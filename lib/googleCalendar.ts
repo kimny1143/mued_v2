@@ -1,6 +1,6 @@
 import { google, calendar_v3 } from 'googleapis';
 import { format, differenceInMilliseconds } from 'date-fns';
-import { PrismaClient, LessonSlot as PrismaLessonSlot } from '@prisma/client';
+import { PrismaClient, lesson_slots as PrismaLessonSlot } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -24,26 +24,26 @@ interface LessonSlot {
 const prismaToCustomLessonSlot = (slot: PrismaLessonSlot): LessonSlot => {
   return {
     id: slot.id,
-    teacherId: slot.teacherId,
+    teacherId: slot.teacher_id,
     title: slot.id, // Prismaにtitleフィールドがない場合はidなどで代用
-    startTime: slot.startTime,
-    endTime: slot.endTime,
+    startTime: slot.start_time,
+    endTime: slot.end_time,
     description: '', // Prismaにdescriptionフィールドがない場合は空文字で代用
     googleCalendarEventId: null,
     googleCalendarLink: null,
     lastSyncedAt: null,
-    updatedAt: slot.updatedAt,
-    createdAt: slot.createdAt,
-    isAvailable: slot.isAvailable
+    updatedAt: slot.updated_at,
+    createdAt: slot.created_at,
+    isAvailable: slot.is_available
   };
 };
 
 // OAuth2クライアント設定
-export const getOAuth2Client = async (userId: string) => {
+export const getOAuth2Client = async (user_id: string) => {
   // ユーザーのGoogle認証情報をDBから取得
   const account = await prisma.account.findFirst({
     where: {
-      userId,
+      user_id,
       provider: 'google',
     },
   });
@@ -220,11 +220,11 @@ export const deleteCalendarEvent = async (userId: string, googleCalendarEventId:
 // 差分同期処理（DBからGoogleカレンダーへ）
 export const syncLessonSlotsToCalendar = async (userId: string, teacherId: string) => {
   // メンターのレッスン枠を取得
-  const lessonSlots = await prisma.lessonSlot.findMany({
+  const lessonSlots = await prisma.lesson_slots.findMany({
     where: {
-      teacherId,
+      teacher_id: teacherId,
       // 最近更新されたレッスン枠のみを対象にする単純な条件に変更
-      updatedAt: {
+      updated_at: {
         gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // 過去24時間以内に更新
       }
     },
@@ -251,11 +251,11 @@ export const syncLessonSlotsToCalendar = async (userId: string, teacherId: strin
         const event = await createCalendarEvent(userId, slot);
         
         // Prismaのアップデートにはカスタムフィールドは含めない
-        await prisma.lessonSlot.update({
+        await prisma.lesson_slots.update({
           where: { id: slot.id },
           data: {
             // ここにPrismaが認識するフィールドのみを含める
-            updatedAt: new Date(),
+            updated_at: new Date(),
           },
         });
         
@@ -290,9 +290,9 @@ export const syncCalendarToLessonSlots = async (userId: string, teacherId: strin
   };
 
   // 既存のレッスン枠を取得
-  const existingSlots = await prisma.lessonSlot.findMany({
+  const existingSlots = await prisma.lesson_slots.findMany({
     where: {
-      teacherId,
+      teacher_id: teacherId,
     },
   });
 
@@ -323,23 +323,25 @@ export const syncCalendarToLessonSlots = async (userId: string, teacherId: strin
       if (existingSlot) {
         // すでに存在する場合は更新
         // Prismaのアップデートにはカスタムフィールドは含めない
-        await prisma.lessonSlot.update({
+        await prisma.lesson_slots.update({
           where: { id: existingSlot.id },
           data: {
-            startTime: lessonSlot.startTime,
-            endTime: lessonSlot.endTime,
-            updatedAt: new Date(),
+            start_time: lessonSlot.startTime,
+            end_time: lessonSlot.endTime,
+            updated_at: new Date(),
           },
         });
         results.updated++;
       } else {
         // 新規作成
-        await prisma.lessonSlot.create({
+        await prisma.lesson_slots.create({
           data: {
-            teacherId: teacherId,
-            startTime: lessonSlot.startTime,
-            endTime: lessonSlot.endTime,
-            isAvailable: true,
+            id: `slot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            teacher_id: teacherId,
+            start_time: lessonSlot.startTime,
+            end_time: lessonSlot.endTime,
+            is_available: true,
+            updated_at: new Date(),
           },
         });
         results.created++;
@@ -351,15 +353,15 @@ export const syncCalendarToLessonSlots = async (userId: string, teacherId: strin
   }
 
   // 残ったマップエントリ（カレンダーには存在しないがDBにある）は削除検討対象
-  for (const [slotId, slot] of existingSlotsMap.entries()) {
+  for (const [slotId] of existingSlotsMap.entries()) {
     // 予約がある場合は削除しない
-    const reservation = await prisma.reservation.findFirst({
-      where: { slotId: slotId },
+    const reservation = await prisma.reservations.findFirst({
+      where: { slot_id: slotId },
     });
 
     if (!reservation) {
       try {
-        await prisma.lessonSlot.delete({
+        await prisma.lesson_slots.delete({
           where: { id: slotId },
         });
         results.deleted++;

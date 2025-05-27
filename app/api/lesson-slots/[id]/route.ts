@@ -4,15 +4,15 @@ import { getSessionFromRequest } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
-// 更新データの型を定義
+// 更新データの型を定義（Prismaスキーマに合わせてスネークケース）
 type LessonSlotUpdateData = {
-  startTime?: Date;
-  endTime?: Date;
-  isAvailable?: boolean;
-  hourlyRate?: number;
+  start_time?: Date;
+  end_time?: Date;
+  is_available?: boolean;
+  hourly_rate?: number;
   currency?: string;
-  minHours?: number;
-  maxHours?: number | null;
+  min_hours?: number;
+  max_hours?: number | null;
 };
 
 // 特定のレッスンスロットを取得
@@ -91,7 +91,7 @@ export async function PUT(
     }
     
     // 権限チェック：講師本人またはアドミンのみ更新可能
-    if (sessionInfo.role !== 'admin' && sessionInfo.user.id !== existingSlot.teacherId) {
+    if (sessionInfo.role !== 'admin' && sessionInfo.user.id !== existingSlot.teacher_id) {
       return NextResponse.json(
         { error: 'このレッスン枠を更新する権限がありません' },
         { status: 403 }
@@ -103,17 +103,17 @@ export async function PUT(
     // 更新可能なフィールドを検証
     const updateData: LessonSlotUpdateData = {};
     
-    if (data.startTime) updateData.startTime = new Date(data.startTime);
-    if (data.endTime) updateData.endTime = new Date(data.endTime);
-    if (data.isAvailable !== undefined) updateData.isAvailable = Boolean(data.isAvailable);
-    if (data.hourlyRate !== undefined) updateData.hourlyRate = parseInt(data.hourlyRate, 10);
+    if (data.startTime) updateData.start_time = new Date(data.startTime);
+    if (data.endTime) updateData.end_time = new Date(data.endTime);
+    if (data.isAvailable !== undefined) updateData.is_available = Boolean(data.isAvailable);
+    if (data.hourlyRate !== undefined) updateData.hourly_rate = parseInt(data.hourlyRate, 10);
     if (data.currency) updateData.currency = data.currency;
-    if (data.minHours !== undefined) updateData.minHours = parseInt(data.minHours, 10);
-    if (data.maxHours !== undefined) updateData.maxHours = data.maxHours !== null ? parseInt(data.maxHours, 10) : null;
+    if (data.minHours !== undefined) updateData.min_hours = parseInt(data.minHours, 10);
+    if (data.maxHours !== undefined) updateData.max_hours = data.maxHours !== null ? parseInt(data.maxHours, 10) : null;
     
     // 開始時間と終了時間の両方が指定された場合、時間の妥当性を検証
-    if (updateData.startTime && updateData.endTime) {
-      if (updateData.startTime >= updateData.endTime) {
+    if (updateData.start_time && updateData.end_time) {
+      if (updateData.start_time >= updateData.end_time) {
         return NextResponse.json(
           { error: '開始時間は終了時間より前である必要があります' },
           { status: 400 }
@@ -122,26 +122,26 @@ export async function PUT(
     }
     
     // スロットの重複をチェック
-    if (updateData.startTime || updateData.endTime) {
-      const startTime = updateData.startTime || existingSlot.startTime;
-      const endTime = updateData.endTime || existingSlot.endTime;
+    if (updateData.start_time || updateData.end_time) {
+      const startTime = updateData.start_time || existingSlot.start_time;
+      const endTime = updateData.end_time || existingSlot.end_time;
       
       const overlappingSlot = await prisma.lesson_slots.findFirst({
         where: {
           id: { not: id },
-          teacherId: existingSlot.teacherId,
+          teacher_id: existingSlot.teacher_id,
           OR: [
             {
-              startTime: { lte: startTime },
-              endTime: { gt: startTime },
+              start_time: { lte: startTime },
+              end_time: { gt: startTime },
             },
             {
-              startTime: { lt: endTime },
-              endTime: { gte: endTime },
+              start_time: { lt: endTime },
+              end_time: { gte: endTime },
             },
             {
-              startTime: { gte: startTime },
-              endTime: { lte: endTime },
+              start_time: { gte: startTime },
+              end_time: { lte: endTime },
             },
           ],
         },
@@ -204,7 +204,7 @@ export async function DELETE(
     }
     
     // 権限チェック：講師本人またはアドミンのみ削除可能
-    if (sessionInfo.role !== 'admin' && sessionInfo.user.id !== existingSlot.teacherId) {
+    if (sessionInfo.role !== 'admin' && sessionInfo.user.id !== existingSlot.teacher_id) {
       return NextResponse.json(
         { error: 'このレッスン枠を削除する権限がありません' },
         { status: 403 }
