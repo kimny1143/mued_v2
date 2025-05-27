@@ -59,6 +59,24 @@ interface Reservation {
   };
 }
 
+// APIレスポンス用の予約型定義（lesson_slotsプロパティを含む）
+interface ApiReservation {
+  id: string;
+  slotId: string;
+  studentId: string;
+  status: 'PENDING_APPROVAL' | 'APPROVED' | 'CONFIRMED' | 'PENDING' | 'CANCELLED' | 'COMPLETED';
+  bookedStartTime: string;
+  bookedEndTime: string;
+  createdAt: string;
+  lesson_slots?: {
+    id: string;
+    users?: {
+      id: string;
+      name: string | null;
+    };
+  };
+}
+
 // レッスンスロットをメンター形式に変換する関数
 function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
   try {
@@ -267,6 +285,7 @@ export default function BookingCalendarPage() {
         }
         
         const slotsData: LessonSlot[] = await slotsResponse.json();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const allReservationsData: any[] = reservationsResponse.ok 
           ? await reservationsResponse.json() 
           : [];
@@ -312,8 +331,10 @@ export default function BookingCalendarPage() {
         console.log('🔍 自分の予約詳細:', myReservationsFormatted);
         
         // 予約情報を保存
-        setReservations(allReservationsData);
-        setMyReservations(myReservationsFormatted);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setReservations(allReservationsData as any);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setMyReservations(myReservationsFormatted as any);
         
         // スロット情報と予約情報を統合
         const updatedSlots = calculateSlotAvailability(slotsData, allReservationsData);
