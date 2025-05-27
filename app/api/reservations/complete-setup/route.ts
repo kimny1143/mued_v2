@@ -18,25 +18,89 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    const { sessionId, reservationId } = await request.json();
+    const { sessionId } = await request.json();
     
     console.log('=== Setup完了処理開始 ===');
     console.log('セッションID:', sessionId);
-    console.log('予約ID:', reservationId);
 
-    // 予約の存在確認と権限チェック
-    const reservation = await prisma.reservations.findUnique({
-      where: { id: reservationId },
-      include: {
-        payments: true,
-        users: true,
-        lesson_slots: {
-          include: {
-            users: true
+    // Stripe Checkout Sessionを取得してメタデータから予約IDを取得
+    const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['setup_intent', 'setup_intent.payment_method']
+    });
+
+    if (!checkoutSession.setup_intent) {
+      throw new Error('Setup Intentが見つかりません');
+    }
+
+    const setupIntent = checkoutSession.setup_intent as Stripe.SetupIntent;
+    const paymentMethod = setupIntent.payment_method as Stripe.PaymentMethod;
+
+    // メタデータから予約データを取得
+    let reservationId: string;
+    let reservation: {
+      id: string;
+      studentId: string;
+      totalAmount: number;
+      payments: any;
+    } | null;
+    
+    if (checkoutSession.metadata?.reservationId) {
+      // 既存の予約の場合（setup-payment経由）
+      reservationId = checkoutSession.metadata.reservationId;
+      console.log('予約ID（既存）:', reservationId);
+      
+      // 予約の存在確認
+      reservation = await prisma.reservations.findUnique({
+        where: { id: reservationId },
+        include: {
+          payments: true,
+          users: true,
+          lesson_slots: {
+            include: {
+              users: true
+            }
           }
         }
-      }
-    });
+      });
+      
+    } else if (checkoutSession.metadata?.reservationData) {
+      // 新規予約の場合（setup-payment経由）
+      const reservationData = JSON.parse(checkoutSession.metadata.reservationData);
+      console.log('予約データ（新規）:', reservationData);
+      
+      // 新規予約を作成
+      reservation = await prisma.reservations.create({
+        data: {
+          id: randomUUID(),
+          slotId: reservationData.slotId,
+          studentId: session.user.id,
+          status: 'PENDING_APPROVAL',
+          bookedStartTime: new Date(reservationData.bookedStartTime),
+          bookedEndTime: new Date(reservationData.bookedEndTime),
+          hoursBooked: reservationData.hoursBooked || 1,
+          totalAmount: reservationData.totalAmount,
+          notes: reservationData.notes,
+          durationMinutes: reservationData.durationMinutes || 60,
+          updatedAt: new Date()
+        },
+        include: {
+          payments: true,
+          users: true,
+          lesson_slots: {
+            include: {
+              users: true
+            }
+          }
+        }
+      });
+      
+      reservationId = reservation.id;
+      console.log('新規予約作成完了:', reservationId);
+    } else {
+      throw new Error('セッションメタデータに予約情報が見つかりません');
+    }
+
+    console.log('予約ID:', reservationId);
 
     if (!reservation) {
       return NextResponse.json(
@@ -57,26 +121,6 @@ export async function POST(request: NextRequest) {
     if (reservation.payments) {
       return NextResponse.json(
         { error: '既に決済情報が設定されています' },
-        { status: 400 }
-      );
-    }
-
-    // Stripe Checkout Sessionを取得
-    const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['setup_intent', 'setup_intent.payment_method']
-    });
-
-    if (!checkoutSession.setup_intent) {
-      throw new Error('Setup Intentが見つかりません');
-    }
-
-    const setupIntent = checkoutSession.setup_intent as Stripe.SetupIntent;
-    const paymentMethod = setupIntent.payment_method as Stripe.PaymentMethod;
-
-    // メタデータの検証
-    if (checkoutSession.metadata?.reservationId !== reservationId) {
-      return NextResponse.json(
-        { error: 'セッションと予約IDが一致しません' },
         { status: 400 }
       );
     }
