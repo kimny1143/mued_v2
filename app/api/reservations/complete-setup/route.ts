@@ -4,16 +4,16 @@ import { prisma } from '@/lib/prisma';
 import { PaymentStatus } from '@prisma/client';
 import Stripe from 'stripe';
 import { randomUUID } from 'crypto';
-import { convertReservationToResponse } from '@/lib/caseConverter';
+import { convertReservationToResponse, camelToSnakeKeys } from '@/lib/caseConverter';
 
+// フロントエンドから送信される形式（キャメルケース）
 interface ReservationMetadata {
   slotId: string;
-  booked_start_time: string;
-  booked_end_time: string;
-  hours_booked?: number;
-  total_amount: number;
+  bookedStartTime: string;
+  bookedEndTime: string;
+  totalAmount: number;
+  duration?: number;
   notes?: string;
-  duration_minutes?: number;
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -37,6 +37,15 @@ export async function POST(request: NextRequest) {
     // Stripe Checkout Sessionを取得してメタデータから予約IDを取得
     const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['setup_intent', 'setup_intent.payment_method']
+    });
+
+    console.log('=== Stripe セッション情報 ===');
+    console.log('チェックアウトセッション:', {
+      id: checkoutSession.id,
+      status: checkoutSession.status,
+      payment_status: checkoutSession.payment_status,
+      mode: checkoutSession.mode,
+      metadata: checkoutSession.metadata
     });
 
     if (!checkoutSession.setup_intent) {
@@ -72,21 +81,50 @@ export async function POST(request: NextRequest) {
       
     } else if (checkoutSession.metadata?.reservationData) {
       // 新規予約の場合（setup-payment経由）
-      const reservationData: ReservationMetadata = JSON.parse(checkoutSession.metadata.reservationData);
-      console.log('予約データ（新規）:', reservationData);
+      console.log('=== 新規予約処理開始 ===');
+      console.log('予約データJSON文字列:', checkoutSession.metadata.reservationData);
       
+      let reservationData: ReservationMetadata;
+      try {
+        reservationData = JSON.parse(checkoutSession.metadata.reservationData);
+        console.log('パース後の予約データ:', reservationData);
+      } catch (parseError) {
+        console.error('予約データのJSONパースエラー:', parseError);
+        throw new Error('予約データの形式が不正です');
+      }
+      
+      // フロントエンドのキャメルケースをスネークケースに変換
+      const convertedData = camelToSnakeKeys(reservationData as unknown as Record<string, unknown>);
+      console.log('変換後のデータ:', convertedData);
+
       // 新規予約データの検証
-      if (!reservationData.slotId || !reservationData.total_amount) {
+      console.log('予約データ検証:', {
+        slotId: reservationData.slotId,
+        totalAmount: reservationData.totalAmount,
+        hasSlotId: !!reservationData.slotId,
+        hasTotalAmount: !!reservationData.totalAmount
+      });
+      
+      if (!reservationData.slotId || !reservationData.totalAmount) {
+        console.error('予約データ検証失敗:', {
+          slotId: reservationData.slotId,
+          totalAmount: reservationData.totalAmount,
+          keys: Object.keys(reservationData)
+        });
         throw new Error('予約データが不完全です');
       }
 
       console.log('新規予約作成データ:', {
         slotId: reservationData.slotId,
         studentId: session.user.id,
-        totalAmount: reservationData.total_amount,
-        bookedStartTime: reservationData.booked_start_time,
-        bookedEndTime: reservationData.booked_end_time
+        totalAmount: reservationData.totalAmount,
+        bookedStartTime: reservationData.bookedStartTime,
+        bookedEndTime: reservationData.bookedEndTime
       });
+
+      // durationから時間数と分数を計算
+      const durationMinutes = reservationData.duration || 60;
+      const hoursBooked = Math.ceil(durationMinutes / 60);
 
       // 新規予約を作成
       reservation = await prisma.reservations.create({
@@ -95,12 +133,12 @@ export async function POST(request: NextRequest) {
           slot_id: reservationData.slotId,
           student_id: session.user.id,
           status: 'PENDING_APPROVAL',
-          booked_start_time: new Date(reservationData.booked_start_time),
-          booked_end_time: new Date(reservationData.booked_end_time),
-          hours_booked: reservationData.hours_booked || 1,
-          total_amount: reservationData.total_amount,
+          booked_start_time: new Date(reservationData.bookedStartTime),
+          booked_end_time: new Date(reservationData.bookedEndTime),
+          hours_booked: hoursBooked,
+          total_amount: reservationData.totalAmount,
           notes: reservationData.notes,
-          duration_minutes: reservationData.duration_minutes || 60,
+          duration_minutes: durationMinutes,
           updated_at: new Date()
         },
         include: {
