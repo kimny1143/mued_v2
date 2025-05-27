@@ -132,7 +132,7 @@ export async function getAuthenticatedUser(): Promise<{user: User, role: string}
   // ユーザー情報＋ロールをusersテーブルから取得
   const { data: userData, error: userError } = await supabaseServer
     .from('users')
-    .select('roleId, role:roles!users_roleId_fkey(name)')
+    .select('role_id')
     .eq('id', sessionData.session.user.id)
     .single();
     
@@ -148,24 +148,11 @@ export async function getAuthenticatedUser(): Promise<{user: User, role: string}
   
   console.log("ユーザーデータ取得結果:", userData);
   
-  // role.nameを優先的に使用し、なければroleIdからロール名を取得
-  const roleName = extractRoleName(userData.role);
-  let finalRole = roleName;
+  // role_idから直接ロールを取得
+  const finalRole = userData.role_id || 'student';
   
-  // role.nameが取得できなかった場合はroleIdから決定
-  if (!finalRole && userData.roleId) {
-    finalRole = await getRoleNameById(userData.roleId);
-  }
-  
-  // それでも取得できなければデフォルト値
-  if (!finalRole) {
-    finalRole = 'student';
-  }
-  
-  console.log("ロール名抽出:", {
-    roleRaw: userData.role,
-    roleId: userData.roleId,
-    extracted: roleName,
+  console.log("ロール取得:", {
+    roleId: userData.role_id,
     final: finalRole
   });
   
@@ -258,7 +245,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
 
             const { data: userData, error: userError } = await supabaseWithAuth
               .from('users')
-              .select('roleId, role:roles!users_roleId_fkey(name)')
+              .select('role_id')
               .eq('id', data.user.id)
               .single();
               
@@ -268,21 +255,17 @@ export async function getSessionFromRequest(request: Request): Promise<{
             
             console.log("ユーザーデータ取得結果:", userData);
             
-            // ロール確認（role.nameを優先的に使用）
-            const roleName = extractRoleName(userData?.role);
+            // ロール確認（role_idを使用）
+            const rawRole = userData?.role_id || 'student';
             
-            console.log("API認証用ロール名抽出:", {
-              roleRaw: userData?.role,
-              isArray: userData?.role ? Array.isArray(userData.role) : false,
-              extracted: roleName
+            console.log("API認証用ロール取得:", {
+              roleId: userData?.role_id,
+              rawRole
             });
-            
-            const rawRole = roleName || userData?.roleId || 'student';
             const normalizedRole = typeof rawRole === 'string' ? 
               rawRole.trim().toLowerCase() : rawRole;
             
             console.log("ロール正規化:", {
-              roleName,
               raw: rawRole,
               normalized: normalizedRole,
               type: typeof normalizedRole
@@ -345,7 +328,7 @@ export async function getSessionFromRequest(request: Request): Promise<{
       try {
         const { data: userData, error: userError } = await supabaseServer
           .from('users')
-          .select('roleId, role:roles!users_roleId_fkey(name)')
+          .select('role_id')
           .eq('id', session.user.id)
           .single();
           
@@ -355,21 +338,13 @@ export async function getSessionFromRequest(request: Request): Promise<{
         
         console.log("ユーザーデータ取得結果:", userData);
         
-        // ロール確認（role.nameを優先的に使用）
-        const roleName = extractRoleName(userData?.role);
-        
-        console.log("標準セッション用ロール名抽出:", {
-          roleRaw: userData?.role,
-          isArray: userData?.role ? Array.isArray(userData.role) : false,
-          extracted: roleName
-        });
-        
-        const rawRole = roleName || userData?.roleId || 'student';
+        // ロール確認（role_idを使用）
+        const rawRole = userData?.role_id || 'student';
         const normalizedRole = typeof rawRole === 'string' ? 
           rawRole.trim().toLowerCase() : rawRole;
         
-        console.log("ロール正規化:", {
-          roleName,
+        console.log("標準セッション用ロール取得:", {
+          roleId: userData?.role_id,
           raw: rawRole,
           normalized: normalizedRole,
           type: typeof normalizedRole
