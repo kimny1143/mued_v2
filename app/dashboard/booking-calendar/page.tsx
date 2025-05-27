@@ -304,12 +304,39 @@ export default function BookingCalendarPage() {
       console.log(`- レッスンスロット: ${slotsData.length}件`);
       console.log(`- 全予約情報: ${allReservationsData.length}件`);
       
-      // 自分の予約のみを抽出してMentorCalendarが期待する形式に変換
-      const { data: sessionData2 } = await supabaseBrowser.auth.getSession();
-      const currentUserId = sessionData2.session?.user?.id;
+      // session.tsを使用してより確実にユーザーIDを取得
+      const { getSessionFromRequest } = await import('@/lib/session');
+      
+      // 疑似リクエストオブジェクトを作成してsession.tsを使用
+      const mockRequest = new Request('http://localhost', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      
+      const sessionInfo = await getSessionFromRequest(mockRequest);
+      const currentUserId = sessionInfo?.user?.id;
+      
+      console.log('🔍 session.ts経由で取得したユーザーID:', currentUserId);
+      console.log('🔍 Supabase直接取得のユーザーID:', sessionData.session?.user?.id);
+      
+      // フォールバック: session.tsで取得できない場合はSupabase直接取得を使用
+      const finalUserId = currentUserId || sessionData.session?.user?.id;
+      
+      console.log('🔍 最終的に使用するユーザーID:', finalUserId);
+      console.log('🔍 全予約データの詳細:', allReservationsData.map(res => ({
+        id: res.id,
+        studentId: res.studentId,
+        status: res.status,
+        studentIdType: typeof res.studentId,
+        currentUserIdType: typeof finalUserId,
+        isMatch: res.studentId === finalUserId
+      })));
       
       const myReservationsFormatted = allReservationsData
-        .filter((res) => res.studentId === currentUserId)
+        .filter((res) => {
+          const isMyReservation = res.studentId === finalUserId;
+          console.log(`🔍 予約 ${res.id}: studentId=${res.studentId}, finalUserId=${finalUserId}, match=${isMyReservation}`);
+          return isMyReservation;
+        })
         .filter((res) => ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED', 'PENDING'].includes(res.status)) // アクティブな予約のみ
         .map((res) => {
           console.log('🔍 自分の予約をフォーマット:', {
@@ -326,12 +353,12 @@ export default function BookingCalendarPage() {
             bookedStartTime: res.bookedStartTime,
             bookedEndTime: res.bookedEndTime,
             createdAt: res.createdAt,
-            slot: res.lesson_slots ? {
-              id: res.lesson_slots.id || res.slotId,
-              teacherId: res.lesson_slots.users?.id || '',
+            slot: res.lessonSlots ? {
+              id: res.lessonSlots.id || res.slotId,
+              teacherId: res.lessonSlots.teacherId || res.lessonSlots.users?.id || '',
               teacher: {
-                id: res.lesson_slots.users?.id || '',
-                name: res.lesson_slots.users?.name || null,
+                id: res.lessonSlots.users?.id || '',
+                name: res.lessonSlots.users?.name || null,
               }
             } : undefined
           };

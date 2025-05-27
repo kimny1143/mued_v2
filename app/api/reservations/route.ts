@@ -13,6 +13,7 @@ import Stripe from 'stripe';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { randomUUID } from 'crypto';
+import { convertReservationToResponse } from '@/lib/caseConverter';
 
 // Stripe インスタンスの初期化
 const _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -143,24 +144,38 @@ export async function GET(request: NextRequest) {
     // フロントエンドが期待する形式に変換
     const formattedReservations = reservations.map(reservation => {
       if (includeAll) {
-        // プライバシー保護モード：最小限の情報のみ返す
+        // プライバシー保護モード：最小限の情報のみ返す（キャメルケース変換）
         return {
           id: reservation.id,
-          slotId: reservation.slot_id,
+          slotId: reservation.slot_id,           // slot_id → slotId
           status: reservation.status,
-          bookedStartTime: reservation.booked_start_time,
-          bookedEndTime: reservation.booked_end_time,
-          studentId: reservation.student_id, // IDのみ（名前などは含まない）
+          bookedStartTime: reservation.booked_start_time,  // booked_start_time → bookedStartTime
+          bookedEndTime: reservation.booked_end_time,      // booked_end_time → bookedEndTime
+          studentId: reservation.student_id,     // student_id → studentId
         };
       } else {
-        // 通常モード：詳細情報を含む
+        // 通常モード：詳細情報を含む（caseConverterを使用）
+        const convertedReservation = convertReservationToResponse(reservation);
+        
         // 型アサーションを使用してusersプロパティにアクセス
         const reservationWithUsers = reservation as typeof reservation & {
           users: { id: string; name: string | null; email: string | null; image: string | null; };
         };
+        
         return {
-          ...reservation,
+          ...convertedReservation,
           student: reservationWithUsers.users, // usersをstudentとしてエイリアス
+          // lesson_slotsの情報もキャメルケースに変換（型安全に）
+          lessonSlots: reservation.lesson_slots && 'users' in reservation.lesson_slots ? {
+            startTime: reservation.lesson_slots.start_time,
+            endTime: reservation.lesson_slots.end_time,
+            users: reservation.lesson_slots.users
+          } : reservation.lesson_slots ? {
+            id: reservation.lesson_slots.id,
+            teacherId: reservation.lesson_slots.teacher_id,
+            startTime: reservation.lesson_slots.start_time,
+            endTime: reservation.lesson_slots.end_time
+          } : undefined
         };
       }
     });
