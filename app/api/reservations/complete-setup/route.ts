@@ -173,6 +173,34 @@ export async function POST(request: NextRequest) {
       return { payment, reservation: updatedReservation };
     });
 
+    // メール通知送信
+    try {
+      const { sendEmail } = await import('@/lib/resend');
+      
+      await sendEmail({
+        to: session.user.email || '',
+        subject: 'カード情報登録完了 - MUED LMS',
+        html: `
+          <h2>カード情報登録完了のお知らせ</h2>
+          <p>${session.user.name || 'ユーザー'}様、</p>
+          <p>レッスン予約のカード情報登録が完了しました。</p>
+          <ul>
+            <li>予約ID: ${reservationId}</li>
+            <li>講師: ${reservation.lesson_slots.users.name}</li>
+            <li>日時: ${reservation.bookedStartTime.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</li>
+            <li>料金: ¥${reservation.totalAmount.toLocaleString()}</li>
+          </ul>
+          <p>メンターの承認後、レッスン開始2時間前に自動決済が実行されます。</p>
+          <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
+        `
+      });
+      
+      console.log('✅ カード登録完了メール送信成功');
+    } catch (emailError) {
+      console.error('❌ メール送信エラー:', emailError);
+      // メール送信エラーでも処理は継続
+    }
+
     console.log('=== Setup完了処理成功 ===');
     console.log('決済ID:', result.payment.id);
     console.log('決済ステータス:', result.payment.status);

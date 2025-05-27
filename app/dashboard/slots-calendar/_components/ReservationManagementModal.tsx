@@ -61,6 +61,7 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
   const [cancellationFee, setCancellationFee] = useState<number>(0);
   const [timeUntilDeadline, setTimeUntilDeadline] = useState<string>('');
   const [rejectReason, setRejectReason] = useState('');
+  const [isModalReady, setIsModalReady] = useState(false);
 
   // ユーザーロール別のキャンセル理由オプション
   const getCancelReasonOptions = () => {

@@ -416,6 +416,14 @@ export async function POST(request: NextRequest) {
           data: reservationData
         });
         
+        // 2時間以内の予約の場合は即座決済が必要な旨を通知
+        const { getPaymentExecutionTiming } = await import('@/lib/payment-flow');
+        const timing = getPaymentExecutionTiming(reservationStartTime);
+        
+        if (timing.shouldExecuteImmediately) {
+          console.log('⚠️ 2時間以内の予約: 承認後即座決済が必要');
+        }
+        
         // 決済は後でCheckout Sessionで処理するため、ここでは予約のみ作成
         
         // セッション情報・リクエスト情報をログ出力（デバッグ用）

@@ -279,26 +279,34 @@ export default function BookingCalendarPage() {
         const { data: sessionData2 } = await supabaseBrowser.auth.getSession();
         const currentUserId = sessionData2.session?.user?.id;
         
-        const myReservationsFormatted = allReservationsData
+                const myReservationsFormatted = allReservationsData
           .filter((res) => res.studentId === currentUserId)
           .filter((res) => ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED', 'PENDING'].includes(res.status)) // アクティブな予約のみ
-          .map((res) => ({
-            id: res.id,
-            slotId: res.slotId,
-            studentId: res.studentId,
-            status: res.status,
-            bookedStartTime: res.bookedStartTime,
-            bookedEndTime: res.bookedEndTime,
-            createdAt: res.createdAt,
-            slot: res.lesson_slots ? {
-              id: res.lesson_slots.id || res.slotId,
-              teacherId: res.lesson_slots.users?.id || '',
-              teacher: {
-                id: res.lesson_slots.users?.id || '',
-                name: res.lesson_slots.users?.name || null,
-              }
-            } : undefined
-          }));
+          .map((res) => {
+            console.log('🔍 自分の予約をフォーマット:', {
+              id: res.id,
+              status: res.status,
+              bookedStartTime: res.bookedStartTime,
+              bookedEndTime: res.bookedEndTime
+            });
+            return {
+              id: res.id,
+              slotId: res.slotId,
+              studentId: res.studentId,
+              status: res.status,
+              bookedStartTime: res.bookedStartTime,
+              bookedEndTime: res.bookedEndTime,
+              createdAt: res.createdAt,
+              slot: res.lesson_slots ? {
+                id: res.lesson_slots.id || res.slotId,
+                teacherId: res.lesson_slots.users?.id || '',
+                teacher: {
+                  id: res.lesson_slots.users?.id || '',
+                  name: res.lesson_slots.users?.name || null,
+                }
+              } : undefined
+            };
+          });
         
         console.log(`- 自分の予約情報: ${myReservationsFormatted.length}件`);
         console.log('🔍 自分の予約詳細:', myReservationsFormatted);
