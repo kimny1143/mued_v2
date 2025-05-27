@@ -9,6 +9,7 @@ import { getSessionFromRequest } from '@/lib/session';
 import { stripe } from '@/lib/stripe';
 import { Prisma } from '@prisma/client';
 import { generateHourlySlots } from '@/lib/utils';
+import { convertLessonSlotRequestToDb } from '@/lib/caseConverter';
 
 // 予約ステータスの列挙型（現在は未使用だがAPIの拡張で使用予定）
 enum _ReservationStatus {
@@ -194,7 +195,7 @@ export async function GET(request: NextRequest) {
       }
     }));
     
-    // 各スロットの予約済み時間帯情報を整形して返す
+    // 各スロットの予約済み時間帯情報を整形して返す（スネークケース→キャメルケース変換）
     const enhancedSlots = slots.map(slot => {
       // generateHourlySlots用にデータを変換
       const slotForHourlyGeneration = {
@@ -215,22 +216,36 @@ export async function GET(request: NextRequest) {
       
       const hourlySlots = generateHourlySlots(slotForHourlyGeneration);
       
+      // フロントエンドが期待するキャメルケース形式に変換
       return {
-        ...slot,
+        id: slot.id,
+        teacherId: slot.teacher_id,               // teacher_id → teacherId
+        startTime: slot.start_time,               // start_time → startTime
+        endTime: slot.end_time,                   // end_time → endTime
+        hourlyRate: slot.hourly_rate,             // hourly_rate → hourlyRate
+        currency: slot.currency,
+        minHours: slot.min_hours,                 // min_hours → minHours
+        maxHours: slot.max_hours,                 // max_hours → maxHours
+        isAvailable: slot.is_available,           // is_available → isAvailable
+        createdAt: slot.created_at,               // created_at → createdAt
+        updatedAt: slot.updated_at,               // updated_at → updatedAt
         // フロントエンドが期待するteacher形式に変換
         teacher: slot.users,
-        // 予約情報のusersをstudentとしてエイリアス
+        // 予約情報もキャメルケースに変換
         reservations: slot.reservations.map(reservation => ({
-          ...reservation,
-          student: reservation.users
+          id: reservation.id,
+          bookedStartTime: reservation.booked_start_time,  // booked_start_time → bookedStartTime
+          bookedEndTime: reservation.booked_end_time,      // booked_end_time → bookedEndTime
+          status: reservation.status,
+          student: reservation.users  // users → student
         })),
         hourlySlots,
         // 分単位の予約時間制約を明示的に含める
         durationConstraints: {
-          minDuration: slot.min_duration || 60,
-          maxDuration: slot.max_duration || 90,
-          minHours: slot.min_hours,
-          maxHours: slot.max_hours
+          minDuration: slot.min_duration || 60,   // min_duration → minDuration
+          maxDuration: slot.max_duration || 90,   // max_duration → maxDuration
+          minHours: slot.min_hours,               // min_hours → minHours
+          maxHours: slot.max_hours                // max_hours → maxHours
         }
       };
     });
@@ -464,7 +479,24 @@ export async function POST(request: NextRequest) {
     
     console.log(`レッスンスロット作成成功: ID ${newSlot.id}, 講師ID ${sessionInfo.user.id}`);
     
-    return NextResponse.json(newSlot, { 
+    // レスポンスもキャメルケース形式に変換
+    const responseSlot = {
+      id: newSlot.id,
+      teacherId: newSlot.teacher_id,           // teacher_id → teacherId
+      startTime: newSlot.start_time,           // start_time → startTime
+      endTime: newSlot.end_time,               // end_time → endTime
+      hourlyRate: newSlot.hourly_rate,         // hourly_rate → hourlyRate
+      currency: newSlot.currency,
+      minHours: newSlot.min_hours,             // min_hours → minHours
+      maxHours: newSlot.max_hours,             // max_hours → maxHours
+      minDuration: newSlot.min_duration,       // min_duration → minDuration
+      maxDuration: newSlot.max_duration,       // max_duration → maxDuration
+      isAvailable: newSlot.is_available,       // is_available → isAvailable
+      createdAt: newSlot.created_at,           // created_at → createdAt
+      updatedAt: newSlot.updated_at            // updated_at → updatedAt
+    };
+    
+    return NextResponse.json(responseSlot, { 
       status: 201,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',

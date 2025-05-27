@@ -1,6 +1,7 @@
 import { prisma } from '../../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
+import { convertLessonSlotRequestToDb } from '@/lib/caseConverter';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,10 +48,37 @@ export async function GET(
       );
     }
     
-    // フロントエンドが期待するteacher形式に変換
+    // フロントエンドが期待するキャメルケース形式に変換
     const formattedSlot = {
-      ...slot,
-      teacher: slot.users
+      id: slot.id,
+      teacherId: slot.teacher_id,               // teacher_id → teacherId
+      startTime: slot.start_time,               // start_time → startTime
+      endTime: slot.end_time,                   // end_time → endTime
+      hourlyRate: slot.hourly_rate,             // hourly_rate → hourlyRate
+      currency: slot.currency,
+      minHours: slot.min_hours,                 // min_hours → minHours
+      maxHours: slot.max_hours,                 // max_hours → maxHours
+      isAvailable: slot.is_available,           // is_available → isAvailable
+      createdAt: slot.created_at,               // created_at → createdAt
+      updatedAt: slot.updated_at,               // updated_at → updatedAt
+      minDuration: slot.min_duration,           // min_duration → minDuration
+      maxDuration: slot.max_duration,           // max_duration → maxDuration
+      teacher: slot.users,
+      reservations: slot.reservations.map(reservation => ({
+        id: reservation.id,
+        slotId: reservation.slot_id,            // slot_id → slotId
+        studentId: reservation.student_id,      // student_id → studentId
+        status: reservation.status,
+        paymentId: reservation.payment_id,      // payment_id → paymentId
+        bookedStartTime: reservation.booked_start_time,  // booked_start_time → bookedStartTime
+        bookedEndTime: reservation.booked_end_time,      // booked_end_time → bookedEndTime
+        hoursBooked: reservation.hours_booked,  // hours_booked → hoursBooked
+        totalAmount: reservation.total_amount,  // total_amount → totalAmount
+        notes: reservation.notes,
+        createdAt: reservation.created_at,      // created_at → createdAt
+        updatedAt: reservation.updated_at,      // updated_at → updatedAt
+        durationMinutes: reservation.duration_minutes  // duration_minutes → durationMinutes
+      }))
     };
     
     return NextResponse.json(formattedSlot);
@@ -102,22 +130,8 @@ export async function PUT(
     
     const data = await request.json();
     
-    // 更新可能なフィールドを検証
-    const updateData: LessonSlotUpdateData = {};
-    
-    if (data.startTime) updateData.start_time = new Date(data.startTime);
-    if (data.endTime) updateData.end_time = new Date(data.endTime);
-    if (data.isAvailable !== undefined) updateData.is_available = Boolean(data.isAvailable);
-    if (data.hourlyRate !== undefined) updateData.hourly_rate = parseInt(data.hourlyRate, 10);
-    if (data.currency) updateData.currency = data.currency;
-    if (data.minHours !== undefined) {
-      updateData.min_hours = parseInt(data.minHours, 10);
-      updateData.min_duration = parseInt(data.minHours, 10) * 60; // 時間を分に変換
-    }
-    if (data.maxHours !== undefined) {
-      updateData.max_hours = data.maxHours !== null ? parseInt(data.maxHours, 10) : null;
-      updateData.max_duration = data.maxHours !== null ? parseInt(data.maxHours, 10) * 60 : null; // 時間を分に変換
-    }
+    // ユーティリティ関数を使用してデータベース用に変換
+    const updateData = convertLessonSlotRequestToDb(data) as LessonSlotUpdateData;
     
     // 開始時間と終了時間の両方が指定された場合、時間の妥当性を検証
     if (updateData.start_time && updateData.end_time) {
@@ -169,7 +183,24 @@ export async function PUT(
       data: updateData,
     });
     
-    return NextResponse.json(updatedSlot);
+    // レスポンスもキャメルケース形式に変換
+    const responseSlot = {
+      id: updatedSlot.id,
+      teacherId: updatedSlot.teacher_id,           // teacher_id → teacherId
+      startTime: updatedSlot.start_time,           // start_time → startTime
+      endTime: updatedSlot.end_time,               // end_time → endTime
+      hourlyRate: updatedSlot.hourly_rate,         // hourly_rate → hourlyRate
+      currency: updatedSlot.currency,
+      minHours: updatedSlot.min_hours,             // min_hours → minHours
+      maxHours: updatedSlot.max_hours,             // max_hours → maxHours
+      minDuration: updatedSlot.min_duration,       // min_duration → minDuration
+      maxDuration: updatedSlot.max_duration,       // max_duration → maxDuration
+      isAvailable: updatedSlot.is_available,       // is_available → isAvailable
+      createdAt: updatedSlot.created_at,           // created_at → createdAt
+      updatedAt: updatedSlot.updated_at            // updated_at → updatedAt
+    };
+    
+    return NextResponse.json(responseSlot);
   } catch (error) {
     console.error('Error updating lesson slot:', error);
     return NextResponse.json(
