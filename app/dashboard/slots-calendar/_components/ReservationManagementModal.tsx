@@ -198,16 +198,19 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
             {mode === 'approve' && <Clock className="h-5 w-5 text-blue-500" />}
             {mode === 'reject' && <X className="h-5 w-5 text-red-500" />}
             {mode === 'cancel' && <AlertTriangle className="h-5 w-5 text-orange-500" />}
+            {mode === 'reschedule' && <Clock className="h-5 w-5 text-blue-500" />}
             {mode === 'view' && <Clock className="h-5 w-5 text-gray-500" />}
             {mode === 'approve' && 'レッスン承認'}
             {mode === 'reject' && 'レッスン拒否'}
             {mode === 'cancel' && 'レッスンキャンセル'}
+            {mode === 'reschedule' && 'レッスンリスケジュール'}
             {mode === 'view' && '予約詳細'}
           </DialogTitle>
           <DialogDescription>
             {mode === 'approve' && '以下のレッスン予約を承認しますか？'}
             {mode === 'reject' && '以下のレッスン予約を拒否しますか？'}
             {mode === 'cancel' && '以下のレッスンをキャンセルしますか？この操作は取り消せません。'}
+            {mode === 'reschedule' && 'レッスンの日時変更を行います。'}
             {mode === 'view' && '予約の詳細情報を確認できます。'}
           </DialogDescription>
         </DialogHeader>
@@ -279,6 +282,35 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
                 placeholder="予約を拒否する理由を入力してください..."
                 rows={3}
               />
+            </div>
+          )}
+
+          {/* リスケジュール日時選択 */}
+          {mode === 'reschedule' && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg border border-blue-200 bg-blue-50">
+                <div className="flex items-start gap-2">
+                  <Clock className="h-4 w-4 mt-0.5 text-blue-600" />
+                  <div className="text-sm">
+                    <p className="font-medium text-blue-900 mb-1">リスケジュール機能</p>
+                    <p className="text-blue-800">
+                      現在はシンプルなリスケジュール機能を提供しています。<br/>
+                      新しい日時の選択は、メンターのスロットカレンダーから行ってください。
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="reschedule-notes">リスケジュール理由・備考</Label>
+                <Textarea
+                  id="reschedule-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="リスケジュールの理由や希望日時を入力してください..."
+                  rows={3}
+                />
+              </div>
             </div>
           )}
 
@@ -383,16 +415,44 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
           {mode === 'view' && (
             <>
               {(userRole === 'mentor' || userRole === 'admin') && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => onModeChange?.('cancel')}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  キャンセル
-                </Button>
+                <>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => onModeChange?.('reschedule')}
+                    className="text-blue-600 hover:text-blue-700"
+                  >
+                    リスケジュール
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => onModeChange?.('cancel')}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    キャンセル
+                  </Button>
+                </>
               )}
               <Button onClick={onClose}>
                 閉じる
+              </Button>
+            </>
+          )}
+          
+          {mode === 'reschedule' && (
+            <>
+              <Button variant="outline" onClick={onClose} disabled={isLoading}>
+                戻る
+              </Button>
+              <Button
+                onClick={() => {
+                  // 簡易リスケジュール処理（現在は新しい予約作成を促す）
+                  onClose();
+                  alert('リスケジュールをご希望の場合は、まず現在の予約をキャンセルしてから、新しい日時で予約を作成してください。');
+                }}
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isLoading ? '処理中...' : 'リスケジュール手続きへ'}
               </Button>
             </>
           )}

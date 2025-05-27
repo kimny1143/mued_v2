@@ -145,13 +145,13 @@ export async function POST(
         }
       });
 
-      // キャンセル関連フィールドをrawクエリで更新
+      // キャンセル関連フィールドをrawクエリで更新（文字列として保存）
       await tx.$executeRaw`
         UPDATE reservations 
         SET 
           canceledat = NOW(),
           canceledby = ${sessionInfo.user.id},
-          cancelreason = ${reason}::"CancelReason"
+          cancelreason = ${reason}
         WHERE id = ${reservationId}
       `;
 
