@@ -74,7 +74,7 @@ export default function SlotsCalendarPage() {
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [isReservationProcessing, setIsReservationProcessing] = useState(false);
 
-  // スロットデータを取得する関数（再利用可能）
+  // スロットデータを取得する関数（RLSポリシー対応版）
   const fetchMySlots = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -87,10 +87,22 @@ export default function SlotsCalendarPage() {
         throw new Error('認証が必要です。ログインしてください。');
       }
       
-      console.log('APIリクエスト開始: 自分のレッスンスロットを取得');
+      // ユーザーロールを取得
+      const userMetadata = sessionData.session?.user?.user_metadata;
+      const currentUserRole = userMetadata?.role || 'student';
       
-      // 自分が作成したスロットのみを取得
-      const response = await fetch('/api/lesson-slots?viewMode=own', {
+      console.log(`APIリクエスト開始: レッスンスロットを取得 (ロール: ${currentUserRole})`);
+      
+      // ロールに応じてviewModeを設定
+      let viewMode = 'own'; // デフォルト（メンターの場合）
+      
+      if (currentUserRole === 'student') {
+        viewMode = 'available'; // 生徒の場合は利用可能なスロットを取得
+      } else if (currentUserRole === 'admin') {
+        viewMode = 'all'; // 管理者の場合はすべてのスロットを取得
+      }
+      
+      const response = await fetch(`/api/lesson-slots?viewMode=${viewMode}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         credentials: 'include',
       });
@@ -105,7 +117,7 @@ export default function SlotsCalendarPage() {
       }
       
       const data: MentorLessonSlot[] = await response.json();
-      console.log(`取得した自分のレッスンスロット: ${data.length}件`);
+      console.log(`取得したレッスンスロット: ${data.length}件 (${viewMode}モード)`);
       
       if (DEBUG && data.length > 0) {
         console.log('最初のスロット例:', {
@@ -113,12 +125,13 @@ export default function SlotsCalendarPage() {
           startTime: data[0].startTime,
           endTime: data[0].endTime,
           isAvailable: data[0].isAvailable,
-          reservations: data[0].reservations?.length || 0
+          reservations: data[0].reservations?.length || 0,
+          teacherName: data[0].teacher?.name
         });
       }
       
       setSlots(data);
-      setError(null); // エラーをクリア
+      setError(null);
       
     } catch (err) {
       console.error('スロット情報取得エラー:', err);
@@ -158,24 +171,39 @@ export default function SlotsCalendarPage() {
     fetchMySlots();
   }, [fetchMySlots]);
 
-  // リアルタイム更新を設定（Supabaseのリアルタイム機能）
+  // リアルタイム更新を設定（RLSポリシー対応版）
   useEffect(() => {
     let subscription: ReturnType<typeof supabaseBrowser.channel> | null = null;
 
     const setupRealtimeSubscription = async () => {
       try {
-        // lesson_slotsテーブルの変更を監視
+        // 認証されたユーザーの情報を取得
+        const { data: sessionData } = await supabaseBrowser.auth.getSession();
+        if (!sessionData.session?.user?.id) {
+          console.log('認証されていないため、リアルタイム監視をスキップ');
+          return;
+        }
+
+        const userId = sessionData.session.user.id;
+        const userMetadata = sessionData.session.user.user_metadata;
+        const userRole = userMetadata?.role || 'student';
+        
+        // ロールに応じたリアルタイム監視の設定
+        const channelName = `lesson-slots-changes-${userRole}`;
+        
         subscription = supabaseBrowser
-          .channel('lesson-slots-changes')
+          .channel(channelName)
           .on(
             'postgres_changes',
             {
               event: '*',
               schema: 'public',
-              table: 'lesson_slots'
+              table: 'lesson_slots',
+              // RLSポリシーによりアクセス可能なデータのみが配信される
+              // フィルターは不要（RLSが自動的に適用される）
             },
             (payload) => {
-              console.log('リアルタイム更新を受信:', payload);
+              console.log(`リアルタイム更新を受信 (${userRole}):`, payload);
               
               // データ変更があった場合に自動的にリフレッシュ
               setTimeout(() => {
@@ -183,7 +211,15 @@ export default function SlotsCalendarPage() {
               }, 500);
             }
           )
-          .subscribe();
+          .subscribe((status) => {
+            console.log(`リアルタイム監視状態 (${userRole}):`, status);
+            
+            if (status === 'SUBSCRIBED') {
+              console.log('✅ リアルタイム監視が開始されました');
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              console.error('❌ リアルタイム監視でエラーが発生しました:', status);
+            }
+          });
       } catch (error) {
         console.error('リアルタイム監視の設定エラー:', error);
       }
@@ -194,6 +230,7 @@ export default function SlotsCalendarPage() {
     // クリーンアップ
     return () => {
       if (subscription) {
+        console.log('リアルタイム監視を停止');
         supabaseBrowser.removeChannel(subscription);
       }
     };
