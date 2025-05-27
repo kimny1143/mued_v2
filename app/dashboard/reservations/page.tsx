@@ -89,6 +89,7 @@ export const ReservationPage: React.FC = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<'student' | 'mentor' | 'admin'>('student');
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   
@@ -367,6 +368,23 @@ export const ReservationPage: React.FC = () => {
           setUser(session.user);
           setAccessToken(session.access_token);
           
+          // ユーザーロールを取得
+          try {
+            const roleResponse = await fetch('/api/user', {
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            });
+            
+            if (roleResponse.ok) {
+              const userData = await roleResponse.json();
+              setUserRole(userData.role || 'student');
+            }
+          } catch (roleError) {
+            console.error('ユーザーロール取得エラー:', roleError);
+            setUserRole('student'); // デフォルトは生徒
+          }
+          
           // ログイン中のユーザーの予約一覧を取得
           try {
             const response = await fetch('/api/my-reservations', {
@@ -642,6 +660,8 @@ export const ReservationPage: React.FC = () => {
                     key={reservation.id}
                     reservation={transformedReservation}
                     onStartPayment={startPayment}
+                    onCancel={cancelReservation}
+                    userRole={userRole}
                     isLoading={isProcessing}
                   />
                 );

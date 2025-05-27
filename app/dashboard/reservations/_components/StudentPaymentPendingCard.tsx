@@ -6,8 +6,10 @@ import { ja } from 'date-fns/locale';
 import { Button } from '@ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
 import { Badge } from '@ui/badge';
-import { Clock, User, Calendar, DollarSign, CreditCard, AlertCircle } from 'lucide-react';
+import { Clock, User, Calendar, DollarSign, CreditCard, AlertCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { CancelReservationModal } from './CancelReservationModal';
+import { CancelReason } from '@/lib/types/reservation';
 
 interface Teacher {
   id: string;
@@ -31,15 +33,21 @@ interface Reservation {
 interface StudentPaymentPendingCardProps {
   reservation: Reservation;
   onStartPayment: (reservationId: string) => Promise<void>;
+  onCancel?: (reservationId: string, reason: CancelReason, notes?: string) => Promise<void>;
+  userRole?: 'student' | 'mentor' | 'admin';
   isLoading?: boolean;
 }
 
 export const StudentPaymentPendingCard: React.FC<StudentPaymentPendingCardProps> = ({
   reservation,
   onStartPayment,
+  onCancel,
+  userRole = 'student',
   isLoading = false
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
 
   const handleStartPayment = async () => {
     try {
@@ -50,6 +58,24 @@ export const StudentPaymentPendingCard: React.FC<StudentPaymentPendingCardProps>
       console.error('決済開始エラー:', error);
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleCancelClick = () => {
+    setIsCancelModalOpen(true);
+  };
+
+  const handleCancelConfirm = async (reason: CancelReason, notes?: string) => {
+    if (!onCancel) return;
+    
+    try {
+      setIsCanceling(true);
+      await onCancel(reservation.id, reason, notes);
+      setIsCancelModalOpen(false);
+    } catch (error) {
+      console.error('キャンセル処理エラー:', error);
+    } finally {
+      setIsCanceling(false);
     }
   };
 
@@ -179,9 +205,10 @@ export const StudentPaymentPendingCard: React.FC<StudentPaymentPendingCardProps>
           申請日時: {format(new Date(reservation.createdAt), 'yyyy年M月d日 HH:mm', { locale: ja })}
         </div>
 
-        {/* 決済ボタン */}
-        {reservation.status === 'APPROVED' && (
-          <div className="pt-4">
+        {/* アクションボタン */}
+        <div className="pt-4 space-y-3">
+          {/* 決済ボタン */}
+          {reservation.status === 'APPROVED' && (
             <Button
               onClick={handleStartPayment}
               disabled={isLoading || isProcessing}
@@ -191,7 +218,40 @@ export const StudentPaymentPendingCard: React.FC<StudentPaymentPendingCardProps>
               <CreditCard className="h-4 w-4 mr-2" />
               {isProcessing ? '決済ページを準備中...' : '決済手続きを開始する'}
             </Button>
-          </div>
+          )}
+
+          {/* キャンセルボタン */}
+          {onCancel && ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED'].includes(reservation.status) && (
+            <Button
+              variant="outline"
+              onClick={handleCancelClick}
+              disabled={isLoading || isProcessing || isCanceling}
+              className="w-full text-red-600 border-red-200 hover:bg-red-50"
+            >
+              <X className="h-4 w-4 mr-2" />
+              {isCanceling ? 'キャンセル中...' : 'レッスンをキャンセル'}
+            </Button>
+          )}
+        </div>
+
+        {/* キャンセルモーダル */}
+        {onCancel && (
+          <CancelReservationModal
+            isOpen={isCancelModalOpen}
+            onClose={() => setIsCancelModalOpen(false)}
+            onConfirm={handleCancelConfirm}
+            reservation={{
+              id: reservation.id,
+              bookedStartTime: new Date(reservation.bookedStartTime),
+              bookedEndTime: new Date(reservation.bookedEndTime),
+              totalAmount: reservation.totalAmount,
+              teacher: {
+                name: reservation.teacher.name || '名前未設定',
+              },
+            }}
+            userRole={userRole}
+            isLoading={isCanceling}
+          />
         )}
       </CardContent>
     </Card>
