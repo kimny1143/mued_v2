@@ -281,6 +281,7 @@ export default function BookingCalendarPage() {
         
         const myReservationsFormatted = allReservationsData
           .filter((res) => res.studentId === currentUserId)
+          .filter((res) => ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED', 'PENDING'].includes(res.status)) // アクティブな予約のみ
           .map((res) => ({
             id: res.id,
             slotId: res.slotId,

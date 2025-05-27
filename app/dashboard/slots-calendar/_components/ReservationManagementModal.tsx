@@ -50,12 +50,15 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
   reservation,
   userRole,
   onCancel,
+  onApprove,
+  onReject,
   isLoading = false,
 }) => {
   const [selectedReason, setSelectedReason] = useState<CancelReason | ''>('');
   const [notes, setNotes] = useState('');
   const [cancellationFee, setCancellationFee] = useState<number>(0);
   const [timeUntilDeadline, setTimeUntilDeadline] = useState<string>('');
+  const [rejectReason, setRejectReason] = useState('');
 
   // ユーザーロール別のキャンセル理由オプション
   const getCancelReasonOptions = () => {
@@ -155,6 +158,29 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
     }
   };
 
+  // 承認処理
+  const handleApprove = async () => {
+    try {
+      await onApprove?.();
+      onClose();
+    } catch (error) {
+      console.error('承認処理エラー:', error);
+    }
+  };
+
+  // 拒否処理
+  const handleReject = async () => {
+    if (!rejectReason.trim()) return;
+    
+    try {
+      await onReject?.(rejectReason);
+      onClose();
+      setRejectReason('');
+    } catch (error) {
+      console.error('拒否処理エラー:', error);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ja-JP', {
       style: 'currency',
@@ -167,11 +193,20 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-orange-500" />
-            レッスンキャンセル
+            {mode === 'approve' && <Clock className="h-5 w-5 text-blue-500" />}
+            {mode === 'reject' && <X className="h-5 w-5 text-red-500" />}
+            {mode === 'cancel' && <AlertTriangle className="h-5 w-5 text-orange-500" />}
+            {mode === 'view' && <Clock className="h-5 w-5 text-gray-500" />}
+            {mode === 'approve' && 'レッスン承認'}
+            {mode === 'reject' && 'レッスン拒否'}
+            {mode === 'cancel' && 'レッスンキャンセル'}
+            {mode === 'view' && '予約詳細'}
           </DialogTitle>
           <DialogDescription>
-            以下のレッスンをキャンセルしますか？この操作は取り消せません。
+            {mode === 'approve' && '以下のレッスン予約を承認しますか？'}
+            {mode === 'reject' && '以下のレッスン予約を拒否しますか？'}
+            {mode === 'cancel' && '以下のレッスンをキャンセルしますか？この操作は取り消せません。'}
+            {mode === 'view' && '予約の詳細情報を確認できます。'}
           </DialogDescription>
         </DialogHeader>
 
@@ -199,36 +234,71 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
           </div>
 
           {/* キャンセル理由選択 */}
-          <div className="space-y-2">
-            <Label htmlFor="cancel-reason">キャンセル理由 *</Label>
-            <Select value={selectedReason} onValueChange={handleReasonChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="理由を選択してください" />
-              </SelectTrigger>
-              <SelectContent>
-                {getCancelReasonOptions().map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {mode === 'cancel' && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="cancel-reason">キャンセル理由 *</Label>
+                <Select value={selectedReason} onValueChange={handleReasonChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="理由を選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getCancelReasonOptions().map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {/* 詳細メモ */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">詳細・備考（任意）</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="キャンセルの詳細や理由を入力してください..."
-              rows={3}
-            />
-          </div>
+              {/* 詳細メモ */}
+              <div className="space-y-2">
+                <Label htmlFor="notes">詳細・備考（任意）</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="キャンセルの詳細や理由を入力してください..."
+                  rows={3}
+                />
+              </div>
+            </>
+          )}
+
+          {/* 拒否理由入力 */}
+          {mode === 'reject' && (
+            <div className="space-y-2">
+              <Label htmlFor="reject-reason">拒否理由 *</Label>
+              <Textarea
+                id="reject-reason"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="予約を拒否する理由を入力してください..."
+                rows={3}
+              />
+            </div>
+          )}
+
+          {/* 承認確認メッセージ */}
+          {mode === 'approve' && (
+            <div className="p-4 rounded-lg border border-blue-200 bg-blue-50">
+              <div className="flex items-start gap-2">
+                <Clock className="h-4 w-4 mt-0.5 text-blue-600" />
+                <div className="text-sm">
+                  <p className="font-medium text-blue-900 mb-1">承認後の流れ</p>
+                  <ul className="list-disc list-inside space-y-1 text-blue-800">
+                    <li>生徒に承認通知が送信されます</li>
+                    <li>レッスン開始2時間前に自動決済が実行されます</li>
+                    <li>承認後のキャンセルには料金が発生する場合があります</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* キャンセル料情報 */}
-          {selectedReason && (
+          {mode === 'cancel' && selectedReason && (
             <div className={`p-4 rounded-lg border ${cancellationFee > 0 ? 'border-orange-200 bg-orange-50' : 'border-green-200 bg-green-50'}`}>
               <div className="flex items-start gap-2">
                 <DollarSign className="h-4 w-4 mt-0.5" />
@@ -257,31 +327,62 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
           )}
 
           {/* 注意事項 */}
-          <div className="p-4 rounded-lg border border-yellow-200 bg-yellow-50">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 mt-0.5 text-yellow-600" />
-              <div className="text-sm">
-                <ul className="list-disc list-inside space-y-1">
-                  <li>キャンセル後の予約復旧はできません</li>
-                  <li>返金処理は管理者が手動で行います（2-3営業日）</li>
-                  <li>キャンセル料が発生する場合があります</li>
-                </ul>
+          {mode === 'cancel' && (
+            <div className="p-4 rounded-lg border border-yellow-200 bg-yellow-50">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 mt-0.5 text-yellow-600" />
+                <div className="text-sm">
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>キャンセル後の予約復旧はできません</li>
+                    <li>返金処理は管理者が手動で行います（2-3営業日）</li>
+                    <li>キャンセル料が発生する場合があります</li>
+                  </ul>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             戻る
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleConfirm}
-            disabled={!selectedReason || isLoading}
-          >
-            {isLoading ? '処理中...' : 'キャンセル実行'}
-          </Button>
+          
+          {mode === 'cancel' && (
+            <Button
+              variant="destructive"
+              onClick={handleConfirm}
+              disabled={!selectedReason || isLoading}
+            >
+              {isLoading ? '処理中...' : 'キャンセル実行'}
+            </Button>
+          )}
+          
+          {mode === 'approve' && (
+            <Button
+              onClick={handleApprove}
+              disabled={isLoading}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isLoading ? '処理中...' : '承認する'}
+            </Button>
+          )}
+          
+          {mode === 'reject' && (
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={!rejectReason.trim() || isLoading}
+            >
+              {isLoading ? '処理中...' : '拒否する'}
+            </Button>
+          )}
+          
+          {mode === 'view' && (
+            <Button onClick={onClose}>
+              閉じる
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

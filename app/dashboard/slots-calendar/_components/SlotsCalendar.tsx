@@ -305,7 +305,11 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                               key={`reservation-${reservation.id}-${resIndex}`}
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                onReservationClick?.(reservation, 'view');
+                                                // ステータスに応じてモードを決定
+                                                const mode = reservation.status === 'PENDING_APPROVAL' ? 'approve' : 
+                                                           reservation.status === 'CONFIRMED' ? 'view' :
+                                                           reservation.status === 'APPROVED' ? 'view' : 'view';
+                                                onReservationClick?.(reservation, mode);
                                               }}
                                               className={`px-0.5 py-0 text-xxs font-medium rounded border cursor-pointer hover:opacity-80 ${
                                                 reservationColors[reservation.status as keyof typeof reservationColors] || 'bg-gray-100 border-gray-400 text-gray-800'
