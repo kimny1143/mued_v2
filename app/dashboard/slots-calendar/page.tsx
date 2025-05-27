@@ -372,7 +372,7 @@ export default function SlotsCalendarPage() {
 
       toast.success('予約をリスケジュールしました');
       
-      // スロット一覧を再取得
+    // スロット一覧を再取得
       window.location.reload();
       
     } catch (error) {
@@ -472,4 +472,4 @@ export default function SlotsCalendarPage() {
       )}
     </div>
   );
-}
+} 

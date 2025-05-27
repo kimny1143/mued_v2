@@ -72,7 +72,8 @@ export const ReservationPage: React.FC = () => {
         throw new Error('認証が必要です');
       }
 
-      const response = await fetch(`/api/reservations/${reservationId}/checkout`, {
+      // 🚨 古いAPIルートは廃止されました - Setup Intentフローを使用
+      const response = await fetch(`/api/reservations/${reservationId}/setup-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

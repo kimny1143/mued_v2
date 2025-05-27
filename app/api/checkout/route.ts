@@ -30,92 +30,23 @@ const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(req: NextRequest) {
-  try {
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session?.user) {
-      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  // 🚨 このAPIルートは廃止されました
+  // 新しいSetup Intentフローを使用してください
+  return NextResponse.json({
+    error: 'このAPIルートは廃止されました。新しいSetup Intentフローを使用してください。',
+    newEndpoints: {
+      newReservation: '/api/reservations/setup-payment',
+      existingReservation: '/api/reservations/[id]/setup-payment'
+    },
+    reason: 'Setup Intentによる段階的決済フローに移行しました',
+    migration: {
+      oldFlow: '即座決済（予約時点で決済実行）',
+      newFlow: 'Setup Intent（カード情報登録 → メンター承認 → 自動決済）',
+      benefits: [
+        'メンター承認前の誤課金を防止',
+        'キャンセル処理の簡素化',
+        'より安全な決済フロー'
+      ]
     }
-
-    const { reservationId } = await req.json();
-    if (!reservationId) {
-      return NextResponse.json({ error: '予約IDが必要です' }, { status: 400 });
-    }
-
-    // トランザクションで予約情報とレッスンスロットを取得
-    const reservation = await prisma.$transaction(async (tx) => {
-      const res = await tx.reservation.findUnique({
-        where: { id: reservationId },
-        include: {
-          slot: {
-            include: {
-              teacher: true,
-            },
-          },
-        },
-      });
-
-      if (!res) {
-        throw new Error('予約が見つかりません');
-      }
-
-      if (res.studentId !== session.user.id) {
-        throw new Error('この予約に対する権限がありません');
-      }
-
-      if (res.status !== ReservationStatus.PENDING) {
-        throw new Error('この予約は既に処理済みです');
-      }
-
-      return res;
-    });
-
-    // Stripe Checkout Sessionを作成
-    const checkoutSession = await stripeInstance.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'jpy',
-            product_data: {
-              name: 'レッスン予約',
-              description: `${reservation.slot.teacher.name}先生とのレッスン`,
-            },
-            unit_amount: 5000, // ¥5,000
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/reservations?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/reservations?canceled=true`,
-      metadata: {
-        reservationId: reservation.id,
-        studentId: session.user.id,
-        teacherId: reservation.slot.teacherId,
-        lessonSlotId: reservation.slotId,
-      },
-    });
-
-    // Paymentレコードを作成
-    await prisma.payment.create({
-      data: {
-        reservationId: reservation.id,
-        stripeSessionId: checkoutSession.id,
-        amount: 5000,
-        currency: 'jpy',
-        status: PaymentStatus.PENDING,
-        userId: session.user.id,
-      },
-    });
-
-    return NextResponse.json({ checkoutUrl: checkoutSession.url });
-  } catch (error) {
-    console.error('チェックアウトエラー:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'チェックアウト処理中にエラーが発生しました' },
-      { status: 500 }
-    );
-  }
+  }, { status: 410 }); // 410 Gone
 } 
