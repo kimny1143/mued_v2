@@ -137,10 +137,10 @@ export async function GET(
     // クライアントに返すデータ形式に変換
     const formattedSlots = lessonSlots.map(slot => ({
       id: slot.id,
-      mentor_id: slot.teacher_id,
-      start_time: slot.start_time.toISOString(),
-      end_time: slot.end_time.toISOString(),
-      is_booked: Boolean(slot.reservations.length > 0 && slot.reservations.some(r => r.status !== 'CANCELED')),
+      mentorId: slot.teacher_id,
+      startTime: slot.start_time.toISOString(),
+      endTime: slot.end_time.toISOString(),
+      isBooked: Boolean(slot.reservations.length > 0 && slot.reservations.some(r => r.status !== 'CANCELED')),
     }));
     
     return NextResponse.json(formattedSlots);
