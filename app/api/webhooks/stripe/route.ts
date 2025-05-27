@@ -172,6 +172,10 @@ export async function POST(req: Request) {
           if (session.mode === 'subscription') {
             // サブスクリプション決済の場合
             await handleCompletedSubscriptionCheckout(session);
+          } else if (session.mode === 'setup') {
+            // Setup Intent完了の場合（カード情報登録のみ）
+            console.log('🔧 Setup Intent完了 - 決済処理はスキップ');
+            console.log('ℹ️ カード情報登録が完了しました。実際の決済は後で実行されます。');
           } else {
             // 単発決済の場合（レッスン予約など）- Phase 4で強化
             await processCheckoutSessionEnhanced(session);
