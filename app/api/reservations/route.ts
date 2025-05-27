@@ -284,8 +284,11 @@ export async function POST(request: NextRequest) {
       }
 
       // スロット固有の時間制約を取得（デフォルト値を設定）
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const extendedSlot = slot as any;
+      interface ExtendedSlot {
+        minDuration?: number;
+        maxDuration?: number;
+      }
+      const extendedSlot = slot as typeof slot & ExtendedSlot;
       const slotMinDuration = extendedSlot.minDuration || 60; // デフォルト60分
       const slotMaxDuration = extendedSlot.maxDuration || 90; // デフォルト90分
       

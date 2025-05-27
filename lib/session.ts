@@ -1,5 +1,4 @@
 import { supabaseServer } from './supabase-server';
-import { supabaseAdmin } from './supabase-admin';
 import { createClient } from '@supabase/supabase-js';
 import type { Session, User } from '@supabase/supabase-js';
 import { prisma } from './prisma'; // Prismaクライアントをインポート
@@ -221,76 +220,9 @@ export async function getSessionFromRequest(request: Request): Promise<{
     if (token) {
       try {
         console.log(`トークン認証開始 (${token.substring(0, 10)}...)`);
-        // サービスロール権限を使用してJWTを検証し、ユーザー情報を取得
-        const { data, error } = await supabaseAdmin.auth.getUser(token);
         
-        if (error) {
-          console.error("トークン認証エラー:", error);
-        } else if (data?.user) {
-          console.log("トークンからユーザー取得成功:", data.user.email);
-          
-          // ユーザー情報＋ロールをPrismaで取得（Supabase権限問題回避）
-          try {
-            console.log("Prismaでユーザー情報取得開始:", data.user.id);
-            
-            const userData = await prisma.users.findUnique({
-              where: { id: data.user.id },
-              select: { role_id: true }
-            });
-              
-            if (!userData) {
-              console.error("Prismaでユーザー情報が見つかりません:", data.user.id);
-            }
-            
-            console.log("Prismaユーザーデータ取得結果:", userData);
-            
-            // ロール確認（role_idを使用）
-            const rawRole = userData?.role_id || 'student';
-            
-            console.log("Prisma API認証用ロール取得:", {
-              roleId: userData?.role_id,
-              rawRole
-            });
-            const normalizedRole = typeof rawRole === 'string' ? 
-              rawRole.trim().toLowerCase() : rawRole;
-            
-            console.log("ロール正規化:", {
-              raw: rawRole,
-              normalized: normalizedRole,
-              type: typeof normalizedRole
-            });
-            
-            // セッションオブジェクトを作成（トークンからは直接取得できないため）
-            return {
-              session: {
-                access_token: token,
-                refresh_token: '',
-                expires_in: 3600,
-                expires_at: 0,
-                token_type: 'bearer',
-                user: data.user
-              } as Session,
-              user: data.user,
-              role: normalizedRole // 正規化したロールを使用
-            };
-          } catch (userErr) {
-            console.error("ユーザー情報取得中に例外:", userErr);
-            
-            // ユーザー情報取得に失敗してもユーザー情報は返す
-            return {
-              session: {
-                access_token: token,
-                refresh_token: '',
-                expires_in: 3600,
-                expires_at: 0,
-                token_type: 'bearer',
-                user: data.user
-              } as Session,
-              user: data.user,
-              role: 'student' // デフォルトロール
-            };
-          }
-        }
+        // 通常のsupabaseServerを使用してセッション取得を試行
+        console.warn("⚠️ トークンベース認証をスキップ - 通常のセッション取得を使用");
       } catch (tokenErr) {
         console.error("トークン検証中に例外:", tokenErr);
       }

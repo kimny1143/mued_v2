@@ -304,74 +304,67 @@ export default function BookingCalendarPage() {
       console.log(`- レッスンスロット: ${slotsData.length}件`);
       console.log(`- 全予約情報: ${allReservationsData.length}件`);
       
-      // session.tsを使用してより確実にユーザーIDを取得
-      const { getSessionFromRequest } = await import('@/lib/session');
+      // Supabaseから直接ユーザーIDを取得（session.tsは使用しない）
+      const currentUserId = sessionData.session?.user?.id;
       
-      // 疑似リクエストオブジェクトを作成してsession.tsを使用
-      const mockRequest = new Request('http://localhost', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      console.log('🔍 Supabaseから取得したユーザーID:', currentUserId);
       
-      const sessionInfo = await getSessionFromRequest(mockRequest);
-      const currentUserId = sessionInfo?.user?.id;
-      
-      console.log('🔍 session.ts経由で取得したユーザーID:', currentUserId);
-      console.log('🔍 Supabase直接取得のユーザーID:', sessionData.session?.user?.id);
-      
-      // フォールバック: session.tsで取得できない場合はSupabase直接取得を使用
-      const finalUserId = currentUserId || sessionData.session?.user?.id;
-      
-      console.log('🔍 最終的に使用するユーザーID:', finalUserId);
-      console.log('🔍 全予約データの詳細:', allReservationsData.map(res => ({
-        id: res.id,
-        studentId: res.studentId,
-        status: res.status,
-        studentIdType: typeof res.studentId,
-        currentUserIdType: typeof finalUserId,
-        isMatch: res.studentId === finalUserId
-      })));
-      
-      const myReservationsFormatted = allReservationsData
-        .filter((res) => {
-          const isMyReservation = res.studentId === finalUserId;
-          console.log(`🔍 予約 ${res.id}: studentId=${res.studentId}, finalUserId=${finalUserId}, match=${isMyReservation}`);
-          return isMyReservation;
-        })
-        .filter((res) => ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED', 'PENDING'].includes(res.status)) // アクティブな予約のみ
-        .map((res) => {
-          console.log('🔍 自分の予約をフォーマット:', {
-            id: res.id,
-            status: res.status,
-            bookedStartTime: res.bookedStartTime,
-            bookedEndTime: res.bookedEndTime
+      if (!currentUserId) {
+        console.warn('⚠️ ユーザーIDが取得できませんでした');
+        setMyReservations([]);
+      } else {
+        console.log('🔍 全予約データの詳細:', allReservationsData.map(res => ({
+          id: res.id,
+          studentId: res.studentId,
+          status: res.status,
+          studentIdType: typeof res.studentId,
+          currentUserIdType: typeof currentUserId,
+          isMatch: res.studentId === currentUserId
+        })));
+        
+        const myReservationsFormatted = allReservationsData
+          .filter((res) => {
+            const isMyReservation = res.studentId === currentUserId;
+            console.log(`🔍 予約 ${res.id}: studentId=${res.studentId}, currentUserId=${currentUserId}, match=${isMyReservation}`);
+            return isMyReservation;
+          })
+          .filter((res) => ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED', 'PENDING'].includes(res.status)) // アクティブな予約のみ
+          .map((res) => {
+            console.log('🔍 自分の予約をフォーマット:', {
+              id: res.id,
+              status: res.status,
+              bookedStartTime: res.bookedStartTime,
+              bookedEndTime: res.bookedEndTime
+            });
+            return {
+              id: res.id,
+              slotId: res.slotId,
+              studentId: res.studentId,
+              status: res.status,
+              bookedStartTime: res.bookedStartTime,
+              bookedEndTime: res.bookedEndTime,
+              createdAt: res.createdAt,
+              slot: res.lessonSlots ? {
+                id: res.lessonSlots.id || res.slotId,
+                teacherId: res.lessonSlots.teacherId || res.lessonSlots.users?.id || '',
+                teacher: {
+                  id: res.lessonSlots.users?.id || '',
+                  name: res.lessonSlots.users?.name || null,
+                }
+              } : undefined
+            };
           });
-          return {
-            id: res.id,
-            slotId: res.slotId,
-            studentId: res.studentId,
-            status: res.status,
-            bookedStartTime: res.bookedStartTime,
-            bookedEndTime: res.bookedEndTime,
-            createdAt: res.createdAt,
-            slot: res.lessonSlots ? {
-              id: res.lessonSlots.id || res.slotId,
-              teacherId: res.lessonSlots.teacherId || res.lessonSlots.users?.id || '',
-              teacher: {
-                id: res.lessonSlots.users?.id || '',
-                name: res.lessonSlots.users?.name || null,
-              }
-            } : undefined
-          };
-        });
-      
-      console.log(`- 自分の予約情報: ${myReservationsFormatted.length}件`);
-      console.log('🔍 自分の予約詳細:', myReservationsFormatted);
+        
+        console.log(`- 自分の予約情報: ${myReservationsFormatted.length}件`);
+        console.log('🔍 自分の予約詳細:', myReservationsFormatted);
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setMyReservations(myReservationsFormatted as any);
+      }
       
       // 予約情報を保存
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setReservations(allReservationsData as any);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setMyReservations(myReservationsFormatted as any);
       
       // スロット情報と予約情報を統合
       const updatedSlots = calculateSlotAvailability(slotsData, allReservationsData);

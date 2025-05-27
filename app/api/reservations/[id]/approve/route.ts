@@ -3,6 +3,20 @@ import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/session';
 import { hasPermission, normalizeRoleName } from '@/lib/role-utils';
 
+// 決済関連の型定義
+interface PaymentRecord {
+  id: string;
+  amount: number;
+  status: string;
+  metadata?: string;
+}
+
+interface PaymentMetadata {
+  setupIntentId?: string;
+  paymentMethodId?: string;
+  customerId?: string;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -109,11 +123,11 @@ export async function POST(
       
       console.log('🔍 決済情報確認:', {
         hasPayments: !!updatedReservation.payments,
-        paymentStatus: updatedReservation.payments ? (updatedReservation.payments as unknown as { status: string }).status : 'なし',
+        paymentStatus: updatedReservation.payments ? (updatedReservation.payments as PaymentRecord).status : 'なし',
         paymentId: updatedReservation.payments?.id
       });
       
-      if (updatedReservation.payments && (updatedReservation.payments as any).status === 'SETUP_COMPLETED') {
+      if (updatedReservation.payments && (updatedReservation.payments as PaymentRecord).status === 'SETUP_COMPLETED') {
         try {
           console.log('💳 自動決済処理開始');
           
@@ -122,7 +136,7 @@ export async function POST(
           });
           
           // Setup Intentから決済手段情報を取得
-          const paymentMetadata = JSON.parse((updatedReservation.payments as any).metadata || '{}');
+          const paymentMetadata: PaymentMetadata = JSON.parse((updatedReservation.payments as PaymentRecord).metadata || '{}');
           
           console.log('📋 決済メタデータ:', {
             setupIntentId: paymentMetadata.setupIntentId,
