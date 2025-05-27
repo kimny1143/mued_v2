@@ -2,6 +2,7 @@ import { prisma } from '../../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { convertLessonSlotRequestToDb } from '@/lib/caseConverter';
+import { hasPermission, normalizeRoleName } from '@/lib/role-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -120,19 +121,20 @@ export async function PUT(
       );
     }
     
-    // 権限チェック：講師本人またはアドミンのみ更新可能（柔軟な判定）
-    const userRole = (sessionInfo.role || '').toLowerCase();
-    const isAdmin = userRole === 'admin' || userRole.includes('admin');
+    // 権限チェック：講師本人またはアドミンのみ更新可能（role-utilsを使用）
+    const normalizedRole = normalizeRoleName(sessionInfo.role);
+    const hasAdminPermission = hasPermission(sessionInfo.role || '', 'admin');
     const isOwner = sessionInfo.user.id === existingSlot.teacher_id;
     
-    console.log('🔍 スロット更新権限チェック:', {
-      userRole,
-      isAdmin,
+    console.log('🔍 スロット更新権限チェック (role-utils):', {
+      originalRole: sessionInfo.role,
+      normalizedRole,
+      hasAdminPermission,
       isOwner,
-      canUpdate: isAdmin || isOwner
+      canUpdate: hasAdminPermission || isOwner
     });
     
-    if (!isAdmin && !isOwner) {
+    if (!hasAdminPermission && !isOwner) {
       return NextResponse.json(
         { error: 'このレッスン枠を更新する権限がありません' },
         { status: 403 }
@@ -253,19 +255,20 @@ export async function DELETE(
       );
     }
     
-    // 権限チェック：講師本人またはアドミンのみ削除可能（柔軟な判定）
-    const userRole = (sessionInfo.role || '').toLowerCase();
-    const isAdmin = userRole === 'admin' || userRole.includes('admin');
+    // 権限チェック：講師本人またはアドミンのみ削除可能（role-utilsを使用）
+    const normalizedRole = normalizeRoleName(sessionInfo.role);
+    const hasAdminPermission = hasPermission(sessionInfo.role || '', 'admin');
     const isOwner = sessionInfo.user.id === existingSlot.teacher_id;
     
-    console.log('🔍 スロット削除権限チェック:', {
-      userRole,
-      isAdmin,
+    console.log('🔍 スロット削除権限チェック (role-utils):', {
+      originalRole: sessionInfo.role,
+      normalizedRole,
+      hasAdminPermission,
       isOwner,
-      canDelete: isAdmin || isOwner
+      canDelete: hasAdminPermission || isOwner
     });
     
-    if (!isAdmin && !isOwner) {
+    if (!hasAdminPermission && !isOwner) {
       return NextResponse.json(
         { error: 'このレッスン枠を削除する権限がありません' },
         { status: 403 }

@@ -1,4 +1,5 @@
 // ロール管理ユーティリティ
+// 現在のDBスキーマではrolesテーブルのidはシンプルなtext型（'admin', 'mentor', 'student'）
 export interface RoleInfo {
   id: string;
   name: string;
@@ -6,15 +7,26 @@ export interface RoleInfo {
   description?: string;
 }
 
-// 既知のロール情報（UUIDマッピング）
+// 既知のロール情報（シンプルIDマッピング）
 export const KNOWN_ROLES: Record<string, RoleInfo> = {
-  '127f103f-f296-447c-81d4-b4c2f12f826e': {
-    id: '127f103f-f296-447c-81d4-b4c2f12f826e',
+  'admin': {
+    id: 'admin',
+    name: 'admin',
+    displayName: '管理者',
+    description: 'システム管理者ロール'
+  },
+  'mentor': {
+    id: 'mentor',
     name: 'mentor',
     displayName: 'メンター',
     description: 'レッスンを提供するメンター'
   },
-  // 他のロールUUIDがあればここに追加
+  'student': {
+    id: 'student',
+    name: 'student',
+    displayName: '生徒',
+    description: '学習者ロール'
+  }
 };
 
 // ロール名の正規化
@@ -23,19 +35,17 @@ export function normalizeRoleName(role: string | undefined | null): string {
   
   const normalized = String(role).toLowerCase().trim();
   
-  // UUIDかどうかをチェック
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(normalized);
-  
-  if (isUuid) {
-    // 既知のUUIDから名前を取得
-    const knownRole = KNOWN_ROLES[normalized];
-    return knownRole ? knownRole.name : 'student';
+  // 既知のロールIDから直接取得
+  if (KNOWN_ROLES[normalized]) {
+    return KNOWN_ROLES[normalized].name;
   }
   
-  // 文字列の場合は直接判定
+  // 文字列の場合は直接判定（後方互換性のため）
   if (normalized === 'mentor') return 'mentor';
   if (normalized === 'admin' || normalized === 'administrator') return 'admin';
+  if (normalized === 'student') return 'student';
   
+  // デフォルトは生徒ロール
   return 'student';
 }
 
@@ -74,7 +84,7 @@ export function hasPermission(userRole: string, requiredRole: string): boolean {
 // APIレスポンスからロール情報を抽出
 export function extractRoleFromApiResponse(userData: {
   roleName?: string;
-  role?: { name?: string };
+  role?: { name?: string } | string;
   roleId?: string;
 }): string {
   // 1. roleName を最優先で使用
@@ -82,12 +92,16 @@ export function extractRoleFromApiResponse(userData: {
     return normalizeRoleName(userData.roleName);
   }
   
-  // 2. role.name を次に使用
-  if (userData.role?.name) {
-    return normalizeRoleName(userData.role.name);
+  // 2. role.name または role文字列を次に使用
+  if (userData.role) {
+    if (typeof userData.role === 'string') {
+      return normalizeRoleName(userData.role);
+    } else if (userData.role.name) {
+      return normalizeRoleName(userData.role.name);
+    }
   }
   
-  // 3. roleId を最後に使用
+  // 3. roleId を最後に使用（現在はシンプルID）
   if (userData.roleId) {
     return normalizeRoleName(userData.roleId);
   }
@@ -102,10 +116,11 @@ export async function updateRoleCache(): Promise<void> {
     if (response.ok) {
       const roles = await response.json();
       
-      // 既知のロール情報を更新
+      // 既知のロール情報を更新（シンプルID構造対応）
       roles.forEach((role: { id: string; name: string; description?: string }) => {
-        KNOWN_ROLES[role.id] = {
-          id: role.id,
+        const roleId = role.id.toLowerCase();
+        KNOWN_ROLES[roleId] = {
+          id: roleId,
           name: role.name.toLowerCase(),
           displayName: getRoleDisplayName(role.name),
           description: role.description

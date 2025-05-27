@@ -4,6 +4,7 @@ import { getSessionFromRequest } from '@/lib/session';
 import { CancelReservationRequest } from '@/lib/types/reservation';
 import { CancellationPolicy, checkCancellationPolicy } from '@/lib/cancellation-policy';
 import { sendEmail } from '@/lib/resend';
+import { hasPermission, normalizeRoleName } from '@/lib/role-utils';
 
 export async function POST(
   request: NextRequest,
@@ -49,20 +50,21 @@ export async function POST(
     }
 
     // 権限チェック（生徒は自分の予約のみ、講師・管理者は関連する予約のみ）
-    const userRole = (sessionInfo.role || '').toLowerCase();
+    const normalizedRole = normalizeRoleName(sessionInfo.role);
     const isStudent = sessionInfo.user.id === reservation.student_id;
     const isTeacher = sessionInfo.user.id === reservation.lesson_slots.teacher_id;
-    const isAdmin = userRole === 'admin' || userRole.includes('admin');
+    const hasAdminPermission = hasPermission(sessionInfo.role || '', 'admin');
     
-    console.log('🔍 キャンセル権限チェック:', {
-      userRole,
+    console.log('🔍 キャンセル権限チェック (role-utils):', {
+      originalRole: sessionInfo.role,
+      normalizedRole,
       isStudent,
       isTeacher,
-      isAdmin,
-      canCancel: isStudent || isTeacher || isAdmin
+      hasAdminPermission,
+      canCancel: isStudent || isTeacher || hasAdminPermission
     });
 
-    if (!isStudent && !isTeacher && !isAdmin) {
+    if (!isStudent && !isTeacher && !hasAdminPermission) {
       return NextResponse.json(
         { error: 'この予約をキャンセルする権限がありません' },
         { status: 403 }
@@ -86,7 +88,7 @@ export async function POST(
 
     // ユーザーロールの決定
     let roleForPolicy: 'student' | 'mentor' | 'admin';
-    if (isAdmin) {
+    if (hasAdminPermission) {
       roleForPolicy = 'admin';
     } else if (isTeacher) {
       roleForPolicy = 'mentor';

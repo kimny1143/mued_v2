@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/session';
+import { hasPermission, normalizeRoleName } from '@/lib/role-utils';
 
 export async function POST(
   request: NextRequest,
@@ -13,7 +14,7 @@ export async function POST(
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
     
-    // メンターロールのチェック（柔軟な判定）
+    // メンターロールのチェック（role-utilsを使用した統一的な判定）
     console.log('🔍 ロール判定詳細:', {
       sessionRole: session.role,
       roleType: typeof session.role,
@@ -21,26 +22,27 @@ export async function POST(
       userEmail: session.user.email
     });
     
-    const userRole = (session.role || '').toLowerCase();
-    const isMentor = userRole === 'mentor' || userRole.includes('mentor');
-    const isAdmin = userRole === 'admin' || userRole.includes('admin');
+    const normalizedRole = normalizeRoleName(session.role);
+    const canApproveMentor = hasPermission(session.role || '', 'mentor');
+    const canApproveAdmin = hasPermission(session.role || '', 'admin');
     
-    console.log('🔍 権限チェック結果:', {
-      userRole,
-      isMentor,
-      isAdmin,
-      canApprove: isMentor || isAdmin
+    console.log('🔍 権限チェック結果 (role-utils):', {
+      originalRole: session.role,
+      normalizedRole,
+      canApproveMentor,
+      canApproveAdmin,
+      canApprove: canApproveMentor || canApproveAdmin
     });
     
-    if (!isMentor && !isAdmin) {
+    if (!canApproveMentor && !canApproveAdmin) {
       return NextResponse.json(
         { 
           error: 'メンターのみが予約を承認できます',
           debug: {
             providedRole: session.role,
-            normalizedRole: userRole,
-            isMentor,
-            isAdmin
+            normalizedRole,
+            canApproveMentor,
+            canApproveAdmin
           }
         },
         { status: 403 }
