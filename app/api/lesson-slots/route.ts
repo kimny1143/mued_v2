@@ -466,6 +466,8 @@ export async function POST(request: NextRequest) {
       data: {
         id: crypto.randomUUID(),
         teacher_id: sessionInfo.user.id,
+        start_time,
+        end_time,
         ...convertedData,
         created_at: new Date(),
         updated_at: new Date(),
