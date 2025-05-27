@@ -35,35 +35,8 @@ export async function GET(request: NextRequest) {
     const userId = sessionInfo.user.id;
     console.log(`ユーザー ${userId} のサブスクリプション情報を検索中...`);
     
-    // テーブルが存在するか事前チェック
-    try {
-      console.log("テーブル存在チェック中");
-      const { error: tableCheckError } = await supabaseAdmin
-        .from('stripe_user_subscriptions')
-        .select('count()', { count: 'exact', head: true });
-      
-      // テーブルが存在しないか権限エラーの場合、早期リターン
-      if (tableCheckError) {
-        console.warn("サブスクリプションテーブルへのアクセスエラー:", tableCheckError);
-        
-        // 開発環境なので、エラーをそのまま返す代わりに空のサブスクリプションを返す
-        // これにより、フロントエンドでの無限リトライを防止
-        return NextResponse.json({
-          subscription: null,
-          message: "サブスクリプションテーブルへのアクセスが制限されています（開発環境）",
-          // エラー情報は含めるが、エラーとして扱わない（フロントエンドでのリトライを防ぐため）
-          details: {
-            errorType: "table_access",
-            isProduction: process.env.NODE_ENV === 'production',
-            error: tableCheckError.message,
-            hint: "この環境ではサブスクリプション機能が制限されています。実動環境では正常に動作します。"
-          }
-        });
-      }
-    } catch (err) {
-      console.warn("テーブルチェックエラー:", err);
-      // 開発環境の場合はエラーを無視して処理を続行
-    }
+    // テーブル存在チェックをスキップして直接データ取得を試行
+    // （テーブル存在チェックが不要なエラーを起こしているため）
     
     // まずsupabaseAdminを使用して権限エラーを回避
     try {
@@ -134,6 +107,17 @@ export async function GET(request: NextRequest) {
       }
       
       console.log("管理者権限でサブスクリプション取得結果:", adminData ? "データあり" : "データなし");
+      
+      // データが正常に取得できた場合
+      if (adminData) {
+        console.log("✅ サブスクリプションデータ取得成功:", {
+          id: adminData.id,
+          status: adminData.status,
+          price_id: adminData.price_id,
+          user_id: adminData.user_id
+        });
+      }
+      
       return NextResponse.json({ subscription: adminData });
       
     } catch (err) {
