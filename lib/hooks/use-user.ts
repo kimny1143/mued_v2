@@ -20,7 +20,7 @@ export function useUser() {
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const initializeCountRef = useRef(0);
+  const initialized = useRef(false);
   
   // シンプルなサブスクリプション情報を取得
   const { 
@@ -29,18 +29,15 @@ export function useUser() {
     error: subscriptionError
   } = useSubscriptionSimple();
 
-  // 認証状態の初期化（重複実行を防ぐ）
+  // 認証状態の初期化（1回のみ実行）
   useEffect(() => {
-    initializeCountRef.current += 1;
-    const initCount = initializeCountRef.current;
-    
-    console.log(`認証状態初期化開始 (${initCount}回目)`);
-    
-    // すでに処理中の場合はスキップ
-    if (initCount > 1) {
-      console.log('認証初期化は既に実行中です。スキップします。');
+    // 既に初期化済みの場合はスキップ
+    if (initialized.current) {
       return;
     }
+    
+    initialized.current = true;
+    console.log('認証状態初期化開始 (1回目)');
 
     let isMounted = true;
 
@@ -55,6 +52,7 @@ export function useUser() {
           console.error('セッション取得エラー:', sessionError);
           if (isMounted) {
             setError(sessionError.message);
+            setLoading(false);
           }
           return;
         }
@@ -169,7 +167,7 @@ export function useUser() {
       }
     };
 
-    // 認証状態の変更を監視（重複リスナーを防ぐ）
+    // 認証状態の変更を監視
     const { data: { subscription: authSubscription } } = supabaseBrowser.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log('認証状態変更:', event, newSession ? 'セッションあり' : 'セッションなし');
@@ -179,7 +177,8 @@ export function useUser() {
         setSession(newSession);
         setIsAuthenticated(!!newSession);
         
-        if (newSession?.user) {
+        if (newSession?.user && event === 'SIGNED_IN') {
+          // サインイン時のみユーザー情報を更新
           const userData: User = {
             id: newSession.user.id,
             email: newSession.user.email || '',
@@ -189,7 +188,7 @@ export function useUser() {
             roleId: 'student'
           };
           setUser(userData);
-        } else {
+        } else if (event === 'SIGNED_OUT') {
           setUser(null);
         }
       }

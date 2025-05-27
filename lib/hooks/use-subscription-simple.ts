@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 /**
@@ -15,9 +15,27 @@ export function useSubscriptionSimple() {
   const [subscription, setSubscription] = useState<SimpleSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const fetchingRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
 
   useEffect(() => {
     async function fetchSubscription() {
+      // 既に取得中の場合はスキップ
+      if (fetchingRef.current) {
+        console.log('サブスクリプション取得中 - スキップ');
+        return;
+      }
+
+      // 前回取得から5秒以内の場合はスキップ（重複防止）
+      const now = Date.now();
+      if (now - lastFetchTimeRef.current < 5000) {
+        console.log('サブスクリプション取得間隔制限 - スキップ');
+        return;
+      }
+
+      fetchingRef.current = true;
+      lastFetchTimeRef.current = now;
+
       try {
         setLoading(true);
         setError(null);
@@ -73,26 +91,34 @@ export function useSubscriptionSimple() {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ サブスクリプションAPI エラー:', {
-            status: response.status,
-            statusText: response.statusText,
-            body: errorText
+          console.error('サブスクリプションAPI失敗:', response.status, response.statusText);
+          
+          // APIエラーでもFREEプランとして続行
+          console.log('サブスクリプション情報なし（APIエラー） - FREEプランとして設定');
+          setSubscription({
+            priceId: null,
+            status: 'free',
+            currentPeriodEnd: null
           });
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          setLoading(false);
+          return;
         }
 
         const data = await response.json();
         console.log('📋 サブスクリプションAPIデータ:', data);
 
         if (data.subscription) {
-          console.log('✅ サブスクリプション情報を設定:', data.subscription);
-          setSubscription({
-            priceId: data.subscription.priceId,
+          // アクティブなサブスクリプションがある場合
+          const subData: SimpleSubscription = {
+            priceId: data.subscription.price_id || data.subscription.priceId,
             status: data.subscription.status,
-            currentPeriodEnd: data.subscription.currentPeriodEnd
-          });
+            currentPeriodEnd: data.subscription.current_period_end || data.subscription.currentPeriodEnd
+          };
+          
+          console.log('✅ アクティブなサブスクリプション:', subData);
+          setSubscription(subData);
         } else {
+          // サブスクリプションがない場合（正常なFREEユーザー）
           console.log('サブスクリプション情報なし（新規ユーザー） - FREEプランとして設定');
           setSubscription({
             priceId: null,
@@ -100,34 +126,26 @@ export function useSubscriptionSimple() {
             currentPeriodEnd: null
           });
         }
+
       } catch (err) {
-        console.error('🚨 サブスクリプション取得エラー:', err);
-        setError(err instanceof Error ? err.message : String(err));
-        // エラー時もFREEプランとして設定
-        console.log('エラー時FREEプランに設定');
+        console.error('サブスクリプション取得エラー:', err);
+        
+        // エラーが発生してもFREEプランとして続行
         setSubscription({
           priceId: null,
           status: 'free',
           currentPeriodEnd: null
         });
+        
+        setError(err instanceof Error ? err.message : 'サブスクリプション情報の取得に失敗しました');
       } finally {
         setLoading(false);
+        fetchingRef.current = false;
       }
     }
 
     fetchSubscription();
-  }, []);
+  }, []); // 依存配列を空にして1回だけ実行
 
-  return {
-    subscription,
-    loading,
-    error,
-    // 手動再取得用の関数
-    refetch: () => {
-      setLoading(true);
-      setError(null);
-      // useEffectが再実行される
-      window.location.reload();
-    }
-  };
+  return { subscription, loading, error };
 } 
