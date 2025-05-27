@@ -129,37 +129,38 @@ export async function getAuthenticatedUser(): Promise<{user: User, role: string}
     return null;
   }
   
-  // ユーザー情報＋ロールをusersテーブルから取得
-  const { data: userData, error: userError } = await supabaseServer
-    .from('users')
-    .select('role_id')
-    .eq('id', sessionData.session.user.id)
-    .single();
+  // ユーザー情報＋ロールをPrismaで取得（Supabase権限問題回避）
+  console.log("getAuthenticatedUser - Prismaでユーザー情報取得開始:", sessionData.session.user.id);
+  
+  try {
+    const userData = await prisma.users.findUnique({
+      where: { id: sessionData.session.user.id },
+      select: { role_id: true }
+    });
     
-  if (userError) {
-    console.error("ユーザー情報取得エラー:", userError);
+    if (!userData) {
+      console.error("getAuthenticatedUser - Prismaでユーザー情報が見つかりません:", sessionData.session.user.id);
+      return null;
+    }
+    
+    console.log("getAuthenticatedUser - Prismaユーザーデータ取得結果:", userData);
+    
+    // role_idから直接ロールを取得
+    const finalRole = userData.role_id || 'student';
+    
+    console.log("getAuthenticatedUser - Prismaロール取得:", {
+      roleId: userData.role_id,
+      final: finalRole
+    });
+    
+    return {
+      user: sessionData.session.user,
+      role: finalRole.toLowerCase()
+    };
+  } catch (prismaError) {
+    console.error("getAuthenticatedUser - Prisma取得エラー:", prismaError);
     return null;
   }
-  
-  if (!userData) {
-    console.log("ユーザー情報なし");
-    return null;
-  }
-  
-  console.log("ユーザーデータ取得結果:", userData);
-  
-  // role_idから直接ロールを取得
-  const finalRole = userData.role_id || 'student';
-  
-  console.log("ロール取得:", {
-    roleId: userData.role_id,
-    final: finalRole
-  });
-  
-  return {
-    user: sessionData.session.user,
-    role: finalRole.toLowerCase()
-  };
 }
 
 /**
@@ -228,37 +229,25 @@ export async function getSessionFromRequest(request: Request): Promise<{
         } else if (data?.user) {
           console.log("トークンからユーザー取得成功:", data.user.email);
           
-          // ユーザー情報＋ロールをusersテーブルから取得
+          // ユーザー情報＋ロールをPrismaで取得（Supabase権限問題回避）
           try {
-            // トークン付きの一時 Supabase クライアントを生成（RLS により anon key だけでは参照できない場合に対応）
-            const supabaseWithAuth = createClient(
-              process.env.NEXT_PUBLIC_SUPABASE_URL!,
-              process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-              {
-                global: {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                  },
-                },
-              }
-            );
-
-            const { data: userData, error: userError } = await supabaseWithAuth
-              .from('users')
-              .select('role_id')
-              .eq('id', data.user.id)
-              .single();
+            console.log("Prismaでユーザー情報取得開始:", data.user.id);
+            
+            const userData = await prisma.users.findUnique({
+              where: { id: data.user.id },
+              select: { role_id: true }
+            });
               
-            if (userError) {
-              console.error("ユーザー情報取得エラー:", userError);
+            if (!userData) {
+              console.error("Prismaでユーザー情報が見つかりません:", data.user.id);
             }
             
-            console.log("ユーザーデータ取得結果:", userData);
+            console.log("Prismaユーザーデータ取得結果:", userData);
             
             // ロール確認（role_idを使用）
             const rawRole = userData?.role_id || 'student';
             
-            console.log("API認証用ロール取得:", {
+            console.log("Prisma API認証用ロール取得:", {
               roleId: userData?.role_id,
               rawRole
             });
@@ -324,26 +313,27 @@ export async function getSessionFromRequest(request: Request): Promise<{
       
       console.log("セッション取得成功:", session.user.email);
       
-      // ユーザープロフィール＋ロールをusersテーブルから取得
+      // ユーザープロフィール＋ロールをPrismaで取得（Supabase権限問題回避）
       try {
-        const { data: userData, error: userError } = await supabaseServer
-          .from('users')
-          .select('role_id')
-          .eq('id', session.user.id)
-          .single();
+        console.log("標準セッション - Prismaでユーザー情報取得開始:", session.user.id);
+        
+        const userData = await prisma.users.findUnique({
+          where: { id: session.user.id },
+          select: { role_id: true }
+        });
           
-        if (userError) {
-          console.error("ユーザー情報取得エラー:", userError);
+        if (!userData) {
+          console.error("標準セッション - Prismaでユーザー情報が見つかりません:", session.user.id);
         }
         
-        console.log("ユーザーデータ取得結果:", userData);
+        console.log("標準セッション - Prismaユーザーデータ取得結果:", userData);
         
         // ロール確認（role_idを使用）
         const rawRole = userData?.role_id || 'student';
         const normalizedRole = typeof rawRole === 'string' ? 
           rawRole.trim().toLowerCase() : rawRole;
         
-        console.log("標準セッション用ロール取得:", {
+        console.log("標準セッション - Prismaロール取得:", {
           roleId: userData?.role_id,
           raw: rawRole,
           normalized: normalizedRole,
