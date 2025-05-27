@@ -40,6 +40,7 @@ export interface ReservationManagementModalProps {
   onReschedule?: (newStartTime: Date, newEndTime: Date) => Promise<void>;
   onApprove?: () => Promise<void>;
   onReject?: (reason: string) => Promise<void>;
+  onModeChange?: (newMode: ModalMode) => void;
   isLoading?: boolean;
 }
 
@@ -52,6 +53,7 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
   onCancel,
   onApprove,
   onReject,
+  onModeChange,
   isLoading = false,
 }) => {
   const [selectedReason, setSelectedReason] = useState<CancelReason | ''>('');
@@ -379,9 +381,20 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
           )}
           
           {mode === 'view' && (
-            <Button onClick={onClose}>
-              閉じる
-            </Button>
+            <>
+              {(userRole === 'mentor' || userRole === 'admin') && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => onModeChange?.('cancel')}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  キャンセル
+                </Button>
+              )}
+              <Button onClick={onClose}>
+                閉じる
+              </Button>
+            </>
           )}
         </DialogFooter>
       </DialogContent>

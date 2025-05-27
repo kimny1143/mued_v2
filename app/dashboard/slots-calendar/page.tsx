@@ -157,31 +157,56 @@ export default function SlotsCalendarPage() {
   }, []);
 
   // 予約クリック処理
-  const handleReservationClick = (reservation: MentorLessonSlot['reservations'][0], mode: ModalMode = 'view') => {
-    // スロット情報を取得（予約から逆引き）
-    const parentSlot = slots.find(slot => 
-      slot.reservations.some(res => res.id === reservation.id)
-    );
-    
-    // 予約データを適切な形式に変換
-    const reservationData: ReservationData = {
-      id: reservation.id,
-      status: reservation.status as ReservationStatus,
-      bookedStartTime: new Date(reservation.bookedStartTime || ''),
-      bookedEndTime: new Date(reservation.bookedEndTime || ''),
-      totalAmount: reservation.totalAmount || 0,
-      notes: reservation.notes,
-      teacher: { 
-        name: parentSlot?.teacher?.name || 'Unknown Teacher' 
-      },
-      student: reservation.student ? { 
-        name: reservation.student.name || 'Unknown Student' 
-      } : undefined,
-    };
+  const handleReservationClick = async (reservation: MentorLessonSlot['reservations'][0], mode: ModalMode = 'view') => {
+    try {
+      // スロット情報を取得（予約から逆引き）
+      const parentSlot = slots.find(slot => 
+        slot.reservations.some(res => res.id === reservation.id)
+      );
 
-    setSelectedReservation(reservationData);
-    setReservationModalMode(mode);
-    setIsReservationModalOpen(true);
+      // 予約の詳細情報をAPIから取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      const response = await fetch(`/api/reservations/${reservation.id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
+      });
+
+      let totalAmount = 0;
+      if (response.ok) {
+        const reservationDetail = await response.json();
+        totalAmount = reservationDetail.totalAmount || 0;
+      } else {
+        // APIエラーの場合はスロットの時間単価から計算
+        const duration = new Date(reservation.bookedEndTime || '').getTime() - new Date(reservation.bookedStartTime || '').getTime();
+        const hours = duration / (1000 * 60 * 60);
+        totalAmount = Math.round((parentSlot?.hourlyRate || 5000) * hours);
+      }
+      
+      // 予約データを適切な形式に変換
+      const reservationData: ReservationData = {
+        id: reservation.id,
+        status: reservation.status as ReservationStatus,
+        bookedStartTime: new Date(reservation.bookedStartTime || ''),
+        bookedEndTime: new Date(reservation.bookedEndTime || ''),
+        totalAmount: totalAmount,
+        notes: reservation.notes,
+        teacher: { 
+          name: parentSlot?.teacher?.name || 'Unknown Teacher' 
+        },
+        student: reservation.student ? { 
+          name: reservation.student.name || 'Unknown Student' 
+        } : undefined,
+      };
+
+      setSelectedReservation(reservationData);
+      setReservationModalMode(mode);
+      setIsReservationModalOpen(true);
+    } catch (error) {
+      console.error('予約詳細取得エラー:', error);
+      toast.error('予約詳細の取得に失敗しました');
+    }
   };
 
   // 予約キャンセル処理
@@ -430,6 +455,7 @@ export default function SlotsCalendarPage() {
           onApprove={handleReservationApprove}
           onReject={handleReservationReject}
           onReschedule={handleReservationReschedule}
+          onModeChange={(newMode) => setReservationModalMode(newMode)}
           isLoading={isReservationProcessing}
         />
       )}
