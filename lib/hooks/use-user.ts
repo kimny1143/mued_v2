@@ -1,18 +1,18 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Session } from '@supabase/supabase-js';
 import { useSubscriptionSimple } from './use-subscription-simple';
 import { getPlanByPriceId } from '@/app/stripe-config';
 
-type User = {
+export interface User {
   id: string;
   email: string;
   name?: string;
+  roleId: string;
   plan?: string;
-  roleId?: string;
-};
+}
 
 export function useUser() {
   const [user, setUser] = useState<User | null>(null);
@@ -40,14 +40,13 @@ export function useUser() {
     if (initCount > 1) {
       console.log('認証初期化は既に実行中です。スキップします。');
       return;
-      }
+    }
 
     let isMounted = true;
 
     const initializeAuth = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        console.log('認証状態を確認中...');
         
         // 現在のセッションを取得
         const { data: { session: currentSession }, error: sessionError } = await supabaseBrowser.auth.getSession();
@@ -55,55 +54,106 @@ export function useUser() {
         if (sessionError) {
           console.error('セッション取得エラー:', sessionError);
           if (isMounted) {
-            setError(`セッション取得に失敗しました: ${sessionError.message}`);
-            setLoading(false);
+            setError(sessionError.message);
           }
           return;
         }
         
-        console.log('現在のセッション状態:', currentSession ? '認証済み' : '未認証');
+        if (!isMounted) return;
+        
+        setSession(currentSession);
+        setIsAuthenticated(!!currentSession);
+        
+        if (currentSession?.user) {
+          console.log('ユーザー情報を設定:', currentSession.user.email);
           
-        if (isMounted) {
-          setSession(currentSession);
-          setIsAuthenticated(!!currentSession);
-          
-          if (currentSession?.user) {
-            console.log('ユーザー情報を設定:', currentSession.user.email);
+          // APIエンドポイント経由でユーザー詳細を取得
+          try {
+            console.log('APIからユーザー詳細を取得開始...');
             
-            // ユーザー情報を設定
+            const response = await fetch(`/api/user?userId=${currentSession.user.id}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
+              },
+              credentials: 'include'
+            });
+
+            if (!response.ok) {
+              console.warn('ユーザー詳細API失敗:', response.status, response.statusText);
+              
+              // APIエラーでもデフォルト値で続行
+              const userData: User = {
+                id: currentSession.user.id,
+                email: currentSession.user.email || '',
+                name: currentSession.user.user_metadata?.name || 
+                      currentSession.user.user_metadata?.full_name || 
+                      currentSession.user.email?.split('@')[0],
+                roleId: 'student' // デフォルト値
+              };
+              
+              if (isMounted) {
+                setUser(userData);
+              }
+              return;
+            }
+
+            const userDetails = await response.json();
+            
+            if (userDetails.error) {
+              console.warn('ユーザー詳細取得エラー:', userDetails.error);
+              
+              // エラーでもデフォルト値で続行
+              const userData: User = {
+                id: currentSession.user.id,
+                email: currentSession.user.email || '',
+                name: currentSession.user.user_metadata?.name || 
+                      currentSession.user.user_metadata?.full_name || 
+                      currentSession.user.email?.split('@')[0],
+                roleId: 'student' // デフォルト値
+              };
+              
+              if (isMounted) {
+                setUser(userData);
+              }
+            } else {
+              console.log('APIからユーザー詳細を取得成功:', userDetails);
+              
+              // APIから取得した情報でユーザーデータを構築
+              const userData: User = {
+                id: currentSession.user.id,
+                email: userDetails.email || currentSession.user.email || '',
+                name: userDetails.name || 
+                      currentSession.user.user_metadata?.name || 
+                      currentSession.user.user_metadata?.full_name || 
+                      currentSession.user.email?.split('@')[0],
+                roleId: userDetails.roleId || userDetails.roleName || 'student'
+              };
+              
+              if (isMounted) {
+                setUser(userData);
+              }
+            }
+          } catch (apiError) {
+            console.warn('APIアクセスエラー:', apiError);
+            
+            // APIエラーでもデフォルト値で続行
             const userData: User = {
-          id: currentSession.user.id,
-          email: currentSession.user.email || '',
+              id: currentSession.user.id,
+              email: currentSession.user.email || '',
               name: currentSession.user.user_metadata?.name || 
-                currentSession.user.user_metadata?.full_name || 
+                    currentSession.user.user_metadata?.full_name || 
                     currentSession.user.email?.split('@')[0],
               roleId: 'student' // デフォルト値
-        };
-        
-            // データベースからユーザー詳細を取得（認証トークン付き）
-            try {
-              console.log('データベースからユーザー詳細を取得開始...');
-              const { data: userDetails, error: userError } = await supabaseBrowser
-                .from('users')
-                .select('roleId, name')
-                .eq('id', currentSession.user.id)
-                .maybeSingle();
-                
-              if (!userError && userDetails) {
-                console.log('データベースからユーザー詳細を取得成功:', userDetails);
-                userData.roleId = userDetails.roleId || 'student';
-                userData.name = userDetails.name || userData.name;
-              } else if (userError) {
-                console.warn('ユーザー詳細取得エラー:', userError.message);
-                // エラーでもデフォルト値で続行
-              }
-            } catch (dbError) {
-              console.warn('データベースアクセスエラー:', dbError);
-              // データベースエラーでもデフォルト値で続行
-        }
-        
-            setUser(userData);
-          } else {
+            };
+            
+            if (isMounted) {
+              setUser(userData);
+            }
+          }
+        } else {
+          if (isMounted) {
             setUser(null);
           }
         }
@@ -114,8 +164,8 @@ export function useUser() {
         }
       } finally {
         if (isMounted) {
-        setLoading(false);
-      }
+          setLoading(false);
+        }
       }
     };
 
@@ -139,8 +189,8 @@ export function useUser() {
             roleId: 'student'
           };
           setUser(userData);
-      } else {
-        setUser(null);
+        } else {
+          setUser(null);
         }
       }
     );
@@ -169,13 +219,6 @@ export function useUser() {
     error: error || subscriptionError,
     session,
     isAuthenticated,
-    subscription,
-    refetchUser: () => {
-      // 認証状態を再取得
-      supabaseBrowser.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
-        setIsAuthenticated(!!session);
-      });
-    }
+    subscription
   };
 } 

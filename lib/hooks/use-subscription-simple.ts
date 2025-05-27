@@ -5,7 +5,7 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
  * シンプルなサブスクリプション情報取得フック
  * 新規ユーザー（サブスクリプションなし）は正常なFREEプランとして扱う
  */
-interface SimpleSubscription {
+export interface SimpleSubscription {
   priceId: string | null;
   status: string;
   currentPeriodEnd: number | null;
@@ -48,79 +48,58 @@ export function useSubscriptionSimple() {
           return;
         }
 
-        // サブスクリプション情報を取得
-        // アクティブなサブスクリプションのみを対象とする
-        const { data, error: subError } = await supabaseBrowser
-          .from('stripe_user_subscriptions')
-          .select('priceId, status, currentPeriodEnd')
-          .eq('userId', session.user.id)
-          .eq('status', 'active') // アクティブなもののみ
-          .order('currentPeriodEnd', { ascending: false }) // 期限が長いものを優先
-          .limit(1)
-          .maybeSingle();
+        // APIエンドポイント経由でサブスクリプション情報を取得
+        const token = session.access_token;
+        
+        const response = await fetch('/api/user/subscription', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          credentials: 'include'
+        });
 
-        if (subError) {
-          console.warn('サブスクリプション取得エラー:', subError.message);
+        if (!response.ok) {
+          console.warn('サブスクリプション取得API失敗:', response.status, response.statusText);
           
-          // カラム名エラーの場合は、元のテーブルから取得を試みる
-          if (subError.message.includes('stripe_subscriptions_view')) {
-            console.log('ビューが存在しない - 元のテーブルから取得を試行');
-            
-            // 複数レコードがある場合の代替クエリ
-            try {
-              const { data: rawData, error: rawError } = await supabaseBrowser
-                .from('stripe_user_subscriptions')
-                .select('priceId, status, currentPeriodEnd')
-                .eq('userId', session.user.id)
-                .eq('status', 'active') // アクティブなもののみ
-                .order('currentPeriodEnd', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-                
-              if (!rawError && rawData) {
-                console.log('アクティブサブスクリプション取得成功:', rawData);
-                setSubscription({
-                  priceId: rawData.priceId,
-                  status: rawData.status,
-                  currentPeriodEnd: rawData.currentPeriodEnd ? Number(rawData.currentPeriodEnd) : null
-                });
-                setLoading(false);
-                return;
-              }
-            } catch (altError) {
-              console.warn('代替クエリも失敗:', altError);
-            }
-          }
+          // APIエラーでもFREEプランとして設定
+          setSubscription({
+            priceId: null,
+            status: 'free',
+            currentPeriodEnd: null
+          });
+          setError('サブスクリプション情報の取得に失敗しましたが、FREEプランとして動作します。');
+          setLoading(false);
+          return;
+        }
+
+        const data = await response.json();
+        
+        if (data.error) {
+          console.warn('サブスクリプション取得エラー:', data.error);
           
-          // 権限エラーや存在しない場合はFREEプランとして設定
-          if (subError.message.includes('permission denied') || 
-              subError.code === '42501' ||
-              subError.code === 'PGRST116') {
-            console.log('権限エラー又はデータなし - FREEプランとして設定');
-            setSubscription({
-              priceId: null,
-              status: 'free',
-              currentPeriodEnd: null
-            });
+          // エラーでもFREEプランとして設定
+          setSubscription({
+            priceId: null,
+            status: 'free',
+            currentPeriodEnd: null
+          });
+          
+          if (data.error.includes('permission denied')) {
             setError('データベース権限の設定が必要ですが、FREEプランとして動作します。');
           } else {
-            // その他のエラーでもFREEプランとして設定
-            console.log('その他のエラー - FREEプランとして設定');
-            setSubscription({
-              priceId: null,
-              status: 'free',
-              currentPeriodEnd: null
-            });
+            setError('サブスクリプション情報の取得に失敗しましたが、FREEプランとして動作します。');
           }
         } else {
           // データが存在する場合
-          if (data) {
-            console.log('サブスクリプション情報取得成功:', data);
+          if (data.subscription) {
+            console.log('サブスクリプション情報取得成功:', data.subscription);
             
             setSubscription({
-              priceId: data.priceId || null,
-              status: data.status || 'free',
-              currentPeriodEnd: data.currentPeriodEnd ? Number(data.currentPeriodEnd) : null
+              priceId: data.subscription.priceId || null,
+              status: data.subscription.status || 'free',
+              currentPeriodEnd: data.subscription.currentPeriodEnd ? Number(data.subscription.currentPeriodEnd) : null
             });
           } else {
             // データが存在しない場合（新規ユーザー）
