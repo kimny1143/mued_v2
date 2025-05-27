@@ -8,10 +8,10 @@ export type UserRole = "student" | "mentor" | "admin" | "unknown";
 /**
  * useAuthorization
  * ------------------------------------
- * ログインユーザーの roleId を判定し、ロール別のブール値と
+ * ログインユーザーの role_id を判定し、ロール別のブール値と
  * 権限チェック関数を返すユーティリティフック。
  *
- * - 既存の `useUser()` フックをラップし、`roleId` が取得できない場合は
+ * - 既存の `useUser()` フックをラップし、`role_id` が取得できない場合は
  *   "unknown" を返す。
  * - フックはメモ化された値を返すため、再レンダリングコストを抑えられる。
  */
@@ -19,8 +19,8 @@ export function useAuthorization() {
   const { user, loading } = useUser();
 
   const role: UserRole = useMemo(() => {
-    if (loading || !user?.roleId) return "unknown";
-    switch (user.roleId.toLowerCase()) {
+    if (loading || !user?.role_id) return "unknown";
+    switch (user.role_id.toLowerCase()) {
       case "mentor":
         return "mentor";
       case "admin":
@@ -30,7 +30,7 @@ export function useAuthorization() {
       default:
         return "unknown";
     }
-  }, [user?.roleId, loading]);
+  }, [user?.role_id, loading]);
 
   const isStudent = role === "student";
   const isMentor = role === "mentor";

@@ -10,7 +10,7 @@ export interface User {
   id: string;
   email: string;
   name?: string;
-  roleId: string;
+  role_id: string;
   plan?: string;
 }
 
@@ -88,7 +88,7 @@ export function useUser() {
                 name: currentSession.user.user_metadata?.name || 
                       currentSession.user.user_metadata?.full_name || 
                       currentSession.user.email?.split('@')[0],
-                roleId: 'student' // デフォルト値
+                role_id: 'student' // デフォルト値
               };
               
               if (isMounted) {
@@ -109,7 +109,7 @@ export function useUser() {
                 name: currentSession.user.user_metadata?.name || 
                       currentSession.user.user_metadata?.full_name || 
                       currentSession.user.email?.split('@')[0],
-                roleId: 'student' // デフォルト値
+                role_id: 'student' // デフォルト値
               };
               
               if (isMounted) {
@@ -126,7 +126,7 @@ export function useUser() {
                       currentSession.user.user_metadata?.name || 
                       currentSession.user.user_metadata?.full_name || 
                       currentSession.user.email?.split('@')[0],
-                roleId: userDetails.roleId || userDetails.roleName || 'student'
+                role_id: userDetails.role_id || userDetails.roleId || userDetails.roleName || 'student'
               };
               
               if (isMounted) {
@@ -143,7 +143,7 @@ export function useUser() {
               name: currentSession.user.user_metadata?.name || 
                     currentSession.user.user_metadata?.full_name || 
                     currentSession.user.email?.split('@')[0],
-              roleId: 'student' // デフォルト値
+              role_id: 'student' // デフォルト値
             };
             
             if (isMounted) {
@@ -185,7 +185,7 @@ export function useUser() {
             name: newSession.user.user_metadata?.name || 
                   newSession.user.user_metadata?.full_name || 
                   newSession.user.email?.split('@')[0],
-            roleId: 'student'
+            role_id: 'student'
           };
           setUser(userData);
         } else if (event === 'SIGNED_OUT') {
