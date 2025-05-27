@@ -383,20 +383,28 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
     
     // デバッグ用に追加
-    console.log('受信したstartTime:', data.startTime);
-    console.log('Dateオブジェクト変換後:', new Date(data.startTime));
-    console.log('UTC ISO:', new Date(data.startTime).toISOString());
+    console.log('受信したデータ:', {
+      startTime: data.startTime,
+      endTime: data.endTime,
+      hourlyRate: data.hourlyRate,
+      minHours: data.minHours,
+      maxHours: data.maxHours
+    });
+    console.log('Dateオブジェクト変換後:', {
+      startTime: new Date(data.startTime),
+      endTime: new Date(data.endTime)
+    });
     
-    // 入力検証
-    if (!data.start_time || !data.end_time) {
+    // 入力検証 - フロントエンドはキャメルケース（startTime, endTime）で送信
+    if (!data.startTime || !data.endTime) {
       return NextResponse.json(
         { error: '開始時間と終了時間は必須です' },
         { status: 400 }
       );
     }
     
-    const start_time = new Date(data.start_time);
-    const end_time = new Date(data.end_time);
+    const start_time = new Date(data.startTime);
+    const end_time = new Date(data.endTime);
     
     // 開始時間が終了時間より前であることを確認
     if (start_time >= end_time) {
@@ -441,11 +449,14 @@ export async function POST(request: NextRequest) {
         teacher_id: sessionInfo.user.id,
         start_time,
         end_time,
-        hourly_rate: data.hourly_rate ? parseInt(data.hourly_rate, 10) : 5000, // デフォルトは5000円
+        hourly_rate: data.hourlyRate ? parseInt(data.hourlyRate, 10) : 5000, // デフォルトは5000円
         currency: data.currency || 'JPY',
-        min_hours: data.min_hours ? parseInt(data.min_hours, 10) : 1,
-        max_hours: data.max_hours ? parseInt(data.max_hours, 10) : null,
-        is_available: data.is_available ?? true,
+        min_hours: data.minHours ? parseInt(data.minHours, 10) : 1,
+        max_hours: data.maxHours ? parseInt(data.maxHours, 10) : null,
+        // 分単位の制約も設定（時間単位から計算）
+        min_duration: data.minHours ? parseInt(data.minHours, 10) * 60 : 60, // 1時間 = 60分
+        max_duration: data.maxHours ? parseInt(data.maxHours, 10) * 60 : null,
+        is_available: data.isAvailable ?? true,
         created_at: new Date(),
         updated_at: new Date(),
       },
