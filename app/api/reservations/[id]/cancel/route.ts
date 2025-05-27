@@ -49,9 +49,18 @@ export async function POST(
     }
 
     // 権限チェック（生徒は自分の予約のみ、講師・管理者は関連する予約のみ）
+    const userRole = (sessionInfo.role || '').toLowerCase();
     const isStudent = sessionInfo.user.id === reservation.student_id;
     const isTeacher = sessionInfo.user.id === reservation.lesson_slots.teacher_id;
-    const isAdmin = sessionInfo.role === 'admin';
+    const isAdmin = userRole === 'admin' || userRole.includes('admin');
+    
+    console.log('🔍 キャンセル権限チェック:', {
+      userRole,
+      isStudent,
+      isTeacher,
+      isAdmin,
+      canCancel: isStudent || isTeacher || isAdmin
+    });
 
     if (!isStudent && !isTeacher && !isAdmin) {
       return NextResponse.json(
@@ -76,17 +85,17 @@ export async function POST(
     }
 
     // ユーザーロールの決定
-    let userRole: 'student' | 'mentor' | 'admin';
+    let roleForPolicy: 'student' | 'mentor' | 'admin';
     if (isAdmin) {
-      userRole = 'admin';
+      roleForPolicy = 'admin';
     } else if (isTeacher) {
-      userRole = 'mentor';
+      roleForPolicy = 'mentor';
     } else {
-      userRole = 'student';
+      roleForPolicy = 'student';
     }
 
     // キャンセル理由の妥当性チェック
-    if (!CancellationPolicy.isValidCancelReason(reason, userRole)) {
+    if (!CancellationPolicy.isValidCancelReason(reason, roleForPolicy)) {
       return NextResponse.json(
         { error: '無効なキャンセル理由です' },
         { status: 400 }
@@ -95,7 +104,7 @@ export async function POST(
 
     // 3. キャンセル可能時間チェック
     const policyResult = checkCancellationPolicy(
-      userRole,
+      roleForPolicy,
       reservation.booked_start_time,
       reservation.total_amount,
       reason
@@ -189,7 +198,7 @@ export async function POST(
       });
 
       // 講師への通知（生徒がキャンセルした場合）
-      if (userRole === 'student') {
+      if (roleForPolicy === 'student') {
         await sendEmail({
           to: reservation.lesson_slots.users.email!,
           subject: 'レッスンキャンセルのお知らせ - MUED LMS',

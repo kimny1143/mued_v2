@@ -120,8 +120,19 @@ export async function PUT(
       );
     }
     
-    // 権限チェック：講師本人またはアドミンのみ更新可能
-    if (sessionInfo.role !== 'admin' && sessionInfo.user.id !== existingSlot.teacher_id) {
+    // 権限チェック：講師本人またはアドミンのみ更新可能（柔軟な判定）
+    const userRole = (sessionInfo.role || '').toLowerCase();
+    const isAdmin = userRole === 'admin' || userRole.includes('admin');
+    const isOwner = sessionInfo.user.id === existingSlot.teacher_id;
+    
+    console.log('🔍 スロット更新権限チェック:', {
+      userRole,
+      isAdmin,
+      isOwner,
+      canUpdate: isAdmin || isOwner
+    });
+    
+    if (!isAdmin && !isOwner) {
       return NextResponse.json(
         { error: 'このレッスン枠を更新する権限がありません' },
         { status: 403 }
@@ -242,8 +253,19 @@ export async function DELETE(
       );
     }
     
-    // 権限チェック：講師本人またはアドミンのみ削除可能
-    if (sessionInfo.role !== 'admin' && sessionInfo.user.id !== existingSlot.teacher_id) {
+    // 権限チェック：講師本人またはアドミンのみ削除可能（柔軟な判定）
+    const userRole = (sessionInfo.role || '').toLowerCase();
+    const isAdmin = userRole === 'admin' || userRole.includes('admin');
+    const isOwner = sessionInfo.user.id === existingSlot.teacher_id;
+    
+    console.log('🔍 スロット削除権限チェック:', {
+      userRole,
+      isAdmin,
+      isOwner,
+      canDelete: isAdmin || isOwner
+    });
+    
+    if (!isAdmin && !isOwner) {
       return NextResponse.json(
         { error: 'このレッスン枠を削除する権限がありません' },
         { status: 403 }
