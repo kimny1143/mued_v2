@@ -212,8 +212,8 @@ export const SlotModal: React.FC<SlotModalProps> = ({
       
       // 親コンポーネントに更新を通知
       if (currentMode === 'create') {
-        // 新規作成の場合は画面をリロードする必要があるかも
-        window.location.reload();
+        // 新規作成の場合もリアルタイムで更新
+        onSlotUpdate(savedSlot);
       } else {
         onSlotUpdate(savedSlot);
       }

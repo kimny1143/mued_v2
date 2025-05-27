@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { SlotsCalendar } from './_components/SlotsCalendar';
 import { CalendarClock, Plus } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
@@ -74,6 +74,60 @@ export default function SlotsCalendarPage() {
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [isReservationProcessing, setIsReservationProcessing] = useState(false);
 
+  // スロットデータを取得する関数（再利用可能）
+  const fetchMySlots = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      // 認証トークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+      
+      if (!token) {
+        throw new Error('認証が必要です。ログインしてください。');
+      }
+      
+      console.log('APIリクエスト開始: 自分のレッスンスロットを取得');
+      
+      // 自分が作成したスロットのみを取得
+      const response = await fetch('/api/lesson-slots?viewMode=own', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        console.error('APIエラーレスポンス:', errorResponse);
+        throw new Error(
+          errorResponse.error || 
+          `API通信エラー: ${response.status} ${response.statusText}`
+        );
+      }
+      
+      const data: MentorLessonSlot[] = await response.json();
+      console.log(`取得した自分のレッスンスロット: ${data.length}件`);
+      
+      if (DEBUG && data.length > 0) {
+        console.log('最初のスロット例:', {
+          id: data[0].id,
+          startTime: data[0].startTime,
+          endTime: data[0].endTime,
+          isAvailable: data[0].isAvailable,
+          reservations: data[0].reservations?.length || 0
+        });
+      }
+      
+      setSlots(data);
+      setError(null); // エラーをクリア
+      
+    } catch (err) {
+      console.error('スロット情報取得エラー:', err);
+      setError(err instanceof Error ? err.message : 'スロット情報の取得に失敗しました。');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // ユーザーロールを取得
   useEffect(() => {
     const getUserRole = async () => {
@@ -99,62 +153,51 @@ export default function SlotsCalendarPage() {
     getUserRole();
   }, []);
 
-  // APIから自分のスロットデータを取得
+  // 初回スロットデータ取得
   useEffect(() => {
-    const fetchMySlots = async () => {
+    fetchMySlots();
+  }, [fetchMySlots]);
+
+  // リアルタイム更新を設定（Supabaseのリアルタイム機能）
+  useEffect(() => {
+    let subscription: ReturnType<typeof supabaseBrowser.channel> | null = null;
+
+    const setupRealtimeSubscription = async () => {
       try {
-        setIsLoading(true);
-        
-        // 認証トークンを取得
-        const { data: sessionData } = await supabaseBrowser.auth.getSession();
-        const token = sessionData.session?.access_token ?? null;
-        
-        if (!token) {
-          throw new Error('認証が必要です。ログインしてください。');
-        }
-        
-        console.log('APIリクエスト開始: 自分のレッスンスロットを取得');
-        
-        // 自分が作成したスロットのみを取得
-        const response = await fetch('/api/lesson-slots?viewMode=own', {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          credentials: 'include',
-        });
-        
-        if (!response.ok) {
-          const errorResponse = await response.json();
-          console.error('APIエラーレスポンス:', errorResponse);
-          throw new Error(
-            errorResponse.error || 
-            `API通信エラー: ${response.status} ${response.statusText}`
-          );
-        }
-        
-        const data: MentorLessonSlot[] = await response.json();
-        console.log(`取得した自分のレッスンスロット: ${data.length}件`);
-        
-        if (DEBUG && data.length > 0) {
-          console.log('最初のスロット例:', {
-            id: data[0].id,
-            startTime: data[0].startTime,
-            endTime: data[0].endTime,
-            isAvailable: data[0].isAvailable,
-            reservations: data[0].reservations?.length || 0
-          });
-        }
-        
-        setSlots(data);
-        
-      } catch (err) {
-        console.error('スロット情報取得エラー:', err);
-        setError(err instanceof Error ? err.message : 'スロット情報の取得に失敗しました。');
-      } finally {
-        setIsLoading(false);
+        // lesson_slotsテーブルの変更を監視
+        subscription = supabaseBrowser
+          .channel('lesson-slots-changes')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'lesson_slots'
+            },
+            (payload) => {
+              console.log('リアルタイム更新を受信:', payload);
+              
+              // データ変更があった場合に自動的にリフレッシュ
+              setTimeout(() => {
+                fetchMySlots();
+              }, 500);
+            }
+          )
+          .subscribe();
+      } catch (error) {
+        console.error('リアルタイム監視の設定エラー:', error);
       }
     };
 
-    fetchMySlots();
-  }, []);
+    setupRealtimeSubscription();
+
+    // クリーンアップ
+    return () => {
+      if (subscription) {
+        supabaseBrowser.removeChannel(subscription);
+      }
+    };
+  }, [fetchMySlots]);
 
   // 予約クリック処理
   const handleReservationClick = async (reservation: MentorLessonSlot['reservations'][0], mode: ModalMode = 'view') => {
@@ -209,7 +252,7 @@ export default function SlotsCalendarPage() {
     }
   };
 
-  // 予約キャンセル処理
+  // 予約キャンセル処理（リアルタイム更新版）
   const handleReservationCancel = async (reason: CancelReason, notes?: string) => {
     if (!selectedReservation) return;
     
@@ -241,8 +284,12 @@ export default function SlotsCalendarPage() {
 
       toast.success('予約をキャンセルしました');
       
-      // スロット一覧を再取得
-      window.location.reload();
+      // モーダルを閉じる
+      setIsReservationModalOpen(false);
+      setSelectedReservation(null);
+      
+      // スロット一覧をリアルタイム更新
+      await fetchMySlots();
       
     } catch (error) {
       console.error('キャンセル処理エラー:', error);
@@ -253,7 +300,7 @@ export default function SlotsCalendarPage() {
     }
   };
 
-  // 予約承認処理
+  // 予約承認処理（リアルタイム更新版）
   const handleReservationApprove = async () => {
     if (!selectedReservation) return;
     
@@ -283,8 +330,12 @@ export default function SlotsCalendarPage() {
 
       toast.success('予約を承認しました');
       
-      // スロット一覧を再取得
-      window.location.reload();
+      // モーダルを閉じる
+      setIsReservationModalOpen(false);
+      setSelectedReservation(null);
+      
+      // スロット一覧をリアルタイム更新
+      await fetchMySlots();
       
     } catch (error) {
       console.error('承認処理エラー:', error);
@@ -295,7 +346,7 @@ export default function SlotsCalendarPage() {
     }
   };
 
-  // 予約拒否処理
+  // 予約拒否処理（リアルタイム更新版）
   const handleReservationReject = async (reason: string) => {
     if (!selectedReservation) return;
     
@@ -326,8 +377,12 @@ export default function SlotsCalendarPage() {
 
       toast.success('予約を拒否しました');
       
-      // スロット一覧を再取得
-      window.location.reload();
+      // モーダルを閉じる
+      setIsReservationModalOpen(false);
+      setSelectedReservation(null);
+      
+      // スロット一覧をリアルタイム更新
+      await fetchMySlots();
       
     } catch (error) {
       console.error('拒否処理エラー:', error);
@@ -338,7 +393,7 @@ export default function SlotsCalendarPage() {
     }
   };
 
-  // リスケジュール処理
+  // リスケジュール処理（リアルタイム更新版）
   const handleReservationReschedule = async (newStartTime: Date, newEndTime: Date) => {
     if (!selectedReservation) return;
     
@@ -372,8 +427,12 @@ export default function SlotsCalendarPage() {
 
       toast.success('予約をリスケジュールしました');
       
-    // スロット一覧を再取得
-      window.location.reload();
+      // モーダルを閉じる
+      setIsReservationModalOpen(false);
+      setSelectedReservation(null);
+      
+      // スロット一覧をリアルタイム更新
+      await fetchMySlots();
       
     } catch (error) {
       console.error('リスケジュール処理エラー:', error);
@@ -384,14 +443,48 @@ export default function SlotsCalendarPage() {
     }
   };
 
-  const handleSlotUpdate = (updatedSlot: MentorLessonSlot) => {
-    setSlots(prev => prev.map(slot => 
-      slot.id === updatedSlot.id ? updatedSlot : slot
-    ));
-  };
+  // スロット更新処理（最適化版）
+  const handleSlotUpdate = useCallback((updatedSlot: MentorLessonSlot) => {
+    setSlots(prev => {
+      const existingSlotIndex = prev.findIndex(slot => slot.id === updatedSlot.id);
+      
+      if (existingSlotIndex >= 0) {
+        // 既存スロットの更新
+        const newSlots = [...prev];
+        newSlots[existingSlotIndex] = updatedSlot;
+        return newSlots;
+      } else {
+        // 新規スロットの追加
+        return [...prev, updatedSlot];
+      }
+    });
+    
+    // 成功メッセージを表示
+    toast.success('スロットが正常に保存されました');
+    
+    // 更新が反映されない場合のフォールバック（短縮）
+    setTimeout(() => {
+      fetchMySlots();
+    }, 1000);
+  }, [fetchMySlots]);
 
-  const handleSlotDelete = (deletedSlotId: string) => {
+  // スロット削除処理（最適化版）
+  const handleSlotDelete = useCallback((deletedSlotId: string) => {
     setSlots(prev => prev.filter(slot => slot.id !== deletedSlotId));
+    
+    // 成功メッセージを表示
+    toast.success('スロットが正常に削除されました');
+    
+    // 削除が反映されない場合のフォールバック（短縮）
+    setTimeout(() => {
+      fetchMySlots();
+    }, 1000);
+  }, [fetchMySlots]);
+
+  // エラー時の再読み込み処理
+  const handleRetry = () => {
+    setError(null);
+    fetchMySlots();
   };
 
   return (
@@ -406,15 +499,13 @@ export default function SlotsCalendarPage() {
             </p>
           </div>
         </div>
-        
-
       </div>
       
       {error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg" role="alert">
           <p>{error}</p>
           <Button 
-            onClick={() => window.location.reload()}
+            onClick={handleRetry}
             variant="outline" 
             className="mt-2"
           >
