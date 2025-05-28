@@ -129,75 +129,109 @@ export async function POST(
       
       if (updatedReservation.payments && (updatedReservation.payments as PaymentRecord).status === 'SETUP_COMPLETED') {
         try {
-          console.log('💳 自動決済処理開始');
+          console.log('💳 決済タイミング判定開始');
           
-          const stripe = new (await import('stripe')).default(process.env.STRIPE_SECRET_KEY!, {
-            apiVersion: '2025-03-31.basil',
+          // 🔧 修正：2時間前判定を追加
+          const { getPaymentExecutionTiming } = await import('@/lib/payment-flow');
+          const timing = getPaymentExecutionTiming(updatedReservation.booked_start_time);
+          
+          console.log('⏰ 決済実行タイミング:', {
+            lessonStartTime: updatedReservation.booked_start_time,
+            executionTime: timing.executionTime,
+            shouldExecuteImmediately: timing.shouldExecuteImmediately,
+            hoursUntilExecution: timing.hoursUntilExecution,
+            isAutoExecution: timing.isAutoExecution
           });
           
-          // Setup Intentから決済手段情報を取得
-          const paymentMetadata: PaymentMetadata = JSON.parse((updatedReservation.payments as PaymentRecord).metadata || '{}');
-          
-          console.log('📋 決済メタデータ:', {
-            setupIntentId: paymentMetadata.setupIntentId,
-            paymentMethodId: paymentMetadata.paymentMethodId,
-            customerId: paymentMetadata.customerId
-          });
-          const paymentMethodId = paymentMetadata.paymentMethodId;
-          const customerId = paymentMetadata.customerId;
-          
-          if (!paymentMethodId) {
-            throw new Error('決済手段が見つかりません');
+          if (timing.shouldExecuteImmediately) {
+            console.log('🚀 2時間以内のため即座決済を実行');
+            
+            const stripe = new (await import('stripe')).default(process.env.STRIPE_SECRET_KEY!, {
+              apiVersion: '2025-03-31.basil',
+            });
+            
+            // Setup Intentから決済手段情報を取得
+            const paymentMetadata: PaymentMetadata = JSON.parse((updatedReservation.payments as PaymentRecord).metadata || '{}');
+            
+            console.log('📋 決済メタデータ:', {
+              setupIntentId: paymentMetadata.setupIntentId,
+              paymentMethodId: paymentMetadata.paymentMethodId,
+              customerId: paymentMetadata.customerId
+            });
+            const paymentMethodId = paymentMetadata.paymentMethodId;
+            const customerId = paymentMetadata.customerId;
+            
+            if (!paymentMethodId) {
+              throw new Error('決済手段が見つかりません');
+            }
+            
+            console.log('🔄 Payment Intent作成開始');
+            
+            // Payment Intentを作成して即座に実行
+            const paymentIntent = await stripe.paymentIntents.create({
+              amount: updatedReservation.payments.amount,
+              currency: 'jpy',
+              customer: customerId,
+              payment_method: paymentMethodId,
+              confirm: true, // 即座に決済実行
+              automatic_payment_methods: {
+                enabled: true,
+                allow_redirects: 'never' // リダイレクト系決済を無効化
+              },
+              metadata: {
+                reservationId: reservationId,
+                studentId: updatedReservation.student_id,
+                teacherId: reservation.lesson_slots.teacher_id,
+                slotId: updatedReservation.slot_id,
+                executionTrigger: 'mentor_approval_immediate'
+              },
+              description: `レッスン予約の即座決済 - 予約ID: ${reservationId}`,
+            });
+            
+            // Payment レコードを更新
+            await tx.payments.update({
+              where: { id: updatedReservation.payments.id },
+              data: {
+                stripe_payment_id: paymentIntent.id,
+                status: 'SUCCEEDED',
+                updated_at: new Date()
+              }
+            });
+            
+            // 予約ステータスを確定済みに更新
+            await tx.reservations.update({
+              where: { id: reservationId },
+              data: { status: 'CONFIRMED' }
+            });
+            
+            paymentResult = {
+              paymentIntentId: paymentIntent.id,
+              amount: paymentIntent.amount,
+              status: paymentIntent.status,
+              executionType: 'immediate'
+            };
+            
+            console.log('💳 即座決済実行完了:', paymentResult);
+          } else {
+            // 🔧 新機能：2時間以上前の場合はCronジョブに委ねる
+            console.log(`⏰ レッスン開始まで${timing.hoursUntilExecution}時間以上あるため、Cronジョブによる自動決済を待機`);
+            console.log(`📅 自動決済予定時刻: ${timing.executionTime.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`);
+            
+            paymentResult = {
+              executionType: 'scheduled',
+              scheduledExecutionTime: timing.executionTime,
+              hoursUntilExecution: timing.hoursUntilExecution,
+              message: `レッスン開始2時間前（${timing.executionTime.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}）に自動決済されます`
+            };
           }
           
-          console.log('🔄 Payment Intent作成開始');
-          
-          // Payment Intentを作成して即座に実行
-          const paymentIntent = await stripe.paymentIntents.create({
-            amount: updatedReservation.payments.amount,
-            currency: 'jpy',
-            customer: customerId,
-            payment_method: paymentMethodId,
-            confirm: true, // 即座に決済実行
-            automatic_payment_methods: {
-              enabled: true,
-              allow_redirects: 'never' // リダイレクト系決済を無効化
-            },
-            metadata: {
-              reservationId: reservationId,
-              studentId: updatedReservation.student_id,
-              teacherId: reservation.lesson_slots.teacher_id,
-              slotId: updatedReservation.slot_id,
-            },
-            description: `レッスン予約の決済 - 予約ID: ${reservationId}`,
-          });
-          
-          // Payment レコードを更新
-          await tx.payments.update({
-            where: { id: updatedReservation.payments.id },
-            data: {
-              stripe_payment_id: paymentIntent.id,
-              status: 'SUCCEEDED',
-              updated_at: new Date()
-            }
-          });
-          
-          // 予約ステータスを確定済みに更新
-          await tx.reservations.update({
-            where: { id: reservationId },
-            data: { status: 'CONFIRMED' }
-          });
-          
-          paymentResult = {
-            paymentIntentId: paymentIntent.id,
-            amount: paymentIntent.amount,
-            status: paymentIntent.status
-          };
-          
-          console.log('💳 Setup Intent自動決済実行完了:', paymentResult);
         } catch (paymentError) {
-          console.error('Setup Intent自動決済エラー:', paymentError);
+          console.error('決済処理エラー:', paymentError);
           // 決済エラーでも承認は完了させる（手動決済可能）
+          paymentResult = {
+            executionType: 'error',
+            error: String(paymentError)
+          };
         }
       }
       
@@ -215,9 +249,25 @@ export async function POST(
       autoPayment: !!result.paymentResult
     });
     
-    const message = result.paymentResult 
-      ? '予約を承認し、決済も自動で完了しました！'
-      : '予約を承認しました。生徒に決済手続きの案内が送信されます。';
+    // 🔧 修正：決済実行タイプに応じたメッセージ生成
+    let message: string;
+    if (result.paymentResult) {
+      switch (result.paymentResult.executionType) {
+        case 'immediate':
+          message = '予約を承認し、決済も自動で完了しました！';
+          break;
+        case 'scheduled':
+          message = `予約を承認しました。${result.paymentResult.message}`;
+          break;
+        case 'error':
+          message = '予約を承認しましたが、決済処理でエラーが発生しました。手動で決済を確認してください。';
+          break;
+        default:
+          message = '予約を承認しました。決済処理を確認中です。';
+      }
+    } else {
+      message = '予約を承認しました。生徒に決済手続きの案内が送信されます。';
+    }
     
     return NextResponse.json({
       success: true,

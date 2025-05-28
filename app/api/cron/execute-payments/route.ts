@@ -152,22 +152,7 @@ export async function GET(request: NextRequest) {
           amount: paymentIntent.amount
         });
 
-        console.log(`💳 決済実行中: 予約ID ${reservation.id}, 開始時刻: ${reservation.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`);
-
-        if (!reservation.payments || !reservation.payments.stripe_payment_id) {
-          console.error(`❌ 決済情報なし: 予約ID ${reservation.id}`);
-          continue;
-        }
-
-        const paymentIntentId = reservation.payments.stripe_payment_id;
-
-        if (!paymentIntentId) {
-          throw new Error('Payment Intent IDが見つかりません');
-        }
-
-        const chargeResult = await stripe.paymentIntents.confirm(paymentIntentId, {
-          payment_method: paymentMethodId,
-        });
+        console.log(`💳 決済実行完了: 予約ID ${reservation.id}, 開始時刻: ${reservation.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`);
 
         // データベースを更新
         await prisma.$transaction(async (tx) => {
