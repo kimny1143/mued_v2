@@ -221,8 +221,84 @@ export async function getSessionFromRequest(request: Request): Promise<{
       try {
         console.log(`トークン認証開始 (${token.substring(0, 10)}...)`);
         
-        // 通常のsupabaseServerを使用してセッション取得を試行
-        console.warn("⚠️ トークンベース認証をスキップ - 通常のセッション取得を使用");
+        // トークンを使用してSupabaseでユーザー情報を取得
+        const supabaseWithToken = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            global: {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          }
+        );
+        
+        const { data: userData, error: userError } = await supabaseWithToken.auth.getUser();
+        
+        if (userError) {
+          console.error("トークンからユーザー取得エラー:", userError);
+        } else if (userData?.user) {
+          console.log("トークンからユーザー取得成功:", userData.user.email);
+          
+          // ユーザー情報＋ロールをPrismaで取得（Supabase権限問題回避）
+          try {
+            console.log("トークン認証 - Prismaでユーザー情報取得開始:", userData.user.id);
+            
+            const userDataFromPrisma = await prisma.users.findUnique({
+              where: { id: userData.user.id },
+              select: { role_id: true }
+            });
+              
+            if (!userDataFromPrisma) {
+              console.error("トークン認証 - Prismaでユーザー情報が見つかりません:", userData.user.id);
+            }
+            
+            console.log("トークン認証 - Prismaユーザーデータ取得結果:", userDataFromPrisma);
+            
+            // ロール確認（role_idを使用）
+            const rawRole = userDataFromPrisma?.role_id || 'student';
+            const normalizedRole = typeof rawRole === 'string' ? 
+              rawRole.trim().toLowerCase() : rawRole;
+            
+            console.log("トークン認証 - Prismaロール取得:", {
+              roleId: userDataFromPrisma?.role_id,
+              raw: rawRole,
+              normalized: normalizedRole,
+              type: typeof normalizedRole
+            });
+            
+            // セッションオブジェクトを作成（トークンからは直接取得できないため）
+            return {
+              session: {
+                access_token: token,
+                refresh_token: '',
+                expires_in: 3600,
+                expires_at: 0,
+                token_type: 'bearer',
+                user: userData.user
+              } as Session,
+              user: userData.user,
+              role: normalizedRole // 正規化したロールを使用
+            };
+          } catch (userErr) {
+            console.error("トークン認証 - ユーザー情報取得中に例外:", userErr);
+            
+            // ユーザー情報取得に失敗してもユーザー情報は返す
+            return {
+              session: {
+                access_token: token,
+                refresh_token: '',
+                expires_in: 3600,
+                expires_at: 0,
+                token_type: 'bearer',
+                user: userData.user
+              } as Session,
+              user: userData.user,
+              role: 'student' // デフォルトロール
+            };
+          }
+        }
       } catch (tokenErr) {
         console.error("トークン検証中に例外:", tokenErr);
       }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { MentorCalendar } from './_components/MentorCalendar';
 import { MentorList } from './_components/MentorList';
-import type { Mentor } from './_components/MentorList';
+import type { Mentor, LessonSlot, Reservation } from '@/lib/types';
 import { Button } from '@/app/components/ui/button';
 import { CalendarClock, ArrowRight, ArrowLeft } from 'lucide-react';
 import { TimeSlot } from './_components/TimeSlotDisplay';
@@ -12,8 +12,8 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 // デバッグモード
 const DEBUG = true;
 
-// レッスンスロットの型定義
-interface LessonSlot {
+// APIレスポンス用の型定義（lesson_slotsプロパティを含む）
+interface ApiLessonSlot {
   id: string;
   teacherId: string;
   startTime: string | Date;
@@ -33,30 +33,6 @@ interface LessonSlot {
     bookedStartTime?: string;
     bookedEndTime?: string;
   }>;
-}
-
-// 予約情報の型定義
-interface Reservation {
-  id: string;
-  slotId: string;
-  studentId: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
-  bookedStartTime: string;
-  bookedEndTime: string;
-  createdAt: string;
-  student: {
-    id: string;
-    name: string | null;
-    email: string;
-  };
-  slot: {
-    id: string;
-    teacherId: string;
-    teacher: {
-      id: string;
-      name: string | null;
-    };
-  };
 }
 
 // APIレスポンス用の予約型定義（lesson_slotsプロパティを含む）
@@ -196,15 +172,22 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
           totalReviews: 10
         },
         availableSlots: slots.map(slot => ({
-          ...slot,
+          id: slot.id,
+          teacherId: slot.teacherId,
           startTime: new Date(slot.startTime),
           endTime: new Date(slot.endTime),
-          // 予約情報の型を適切に変換
+          isAvailable: slot.isAvailable,
+          hourlyRate: slot.hourlyRate,
+          currency: slot.currency,
+          teacher: slot.teacher,
           reservations: slot.reservations?.map(res => ({
             id: res.id,
-            status: res.status as 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED',
-            bookedStartTime: res.bookedStartTime,
-            bookedEndTime: res.bookedEndTime
+            slotId: slot.id,
+            studentId: '', // APIから取得する必要がある
+            status: res.status as Reservation['status'],
+            bookedStartTime: res.bookedStartTime || '',
+            bookedEndTime: res.bookedEndTime || '',
+            createdAt: '', // APIから取得する必要がある
           })) || []
         })),
         availableSlotsCount: slots.length
@@ -232,7 +215,7 @@ export default function BookingCalendarPage() {
   });
 
   // 予約情報とスロット情報を統合してスロットの実際の空き状況を計算
-  const calculateSlotAvailability = (lessonSlots: LessonSlot[], reservations: Reservation[]) => {
+  const calculateSlotAvailability = (lessonSlots: ApiLessonSlot[], reservations: Reservation[]) => {
     return lessonSlots.map(slot => {
       // このスロットに関連する予約を取得
       const slotReservations = reservations.filter(
@@ -294,7 +277,7 @@ export default function BookingCalendarPage() {
         // 予約情報の取得に失敗しても、スロット情報は表示する
       }
       
-      const slotsData: LessonSlot[] = await slotsResponse.json();
+      const slotsData: ApiLessonSlot[] = await slotsResponse.json();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const allReservationsData: any[] = reservationsResponse.ok 
         ? await reservationsResponse.json() 
@@ -340,10 +323,15 @@ export default function BookingCalendarPage() {
               id: res.id,
               slotId: res.slotId,
               studentId: res.studentId,
-              status: res.status,
+              status: res.status as Reservation['status'],
               bookedStartTime: res.bookedStartTime,
               bookedEndTime: res.bookedEndTime,
               createdAt: res.createdAt,
+              student: {
+                id: res.studentId,
+                name: res.student?.name || null,
+                email: res.student?.email || ''
+              },
               slot: res.lessonSlots ? {
                 id: res.lessonSlots.id || res.slotId,
                 teacherId: res.lessonSlots.teacherId || res.lessonSlots.users?.id || '',
@@ -358,16 +346,31 @@ export default function BookingCalendarPage() {
         console.log(`- 自分の予約情報: ${myReservationsFormatted.length}件`);
         console.log('🔍 自分の予約詳細:', myReservationsFormatted);
         
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setMyReservations(myReservationsFormatted as any);
+        setMyReservations(myReservationsFormatted);
       }
       
       // 予約情報を保存
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setReservations(allReservationsData as any);
       
-      // スロット情報と予約情報を統合
-      const updatedSlots = calculateSlotAvailability(slotsData, allReservationsData);
+      // スロット情報と予約情報を統合（型変換を簡素化）
+      const updatedSlots = slotsData.map(slot => ({
+        ...slot,
+        startTime: new Date(slot.startTime),
+        endTime: new Date(slot.endTime),
+        reservations: allReservationsData
+          .filter(res => res.slotId === slot.id)
+          .map(res => ({
+            id: res.id,
+            slotId: res.slotId,
+            studentId: res.studentId,
+            status: res.status,
+            bookedStartTime: res.bookedStartTime,
+            bookedEndTime: res.bookedEndTime,
+            createdAt: res.createdAt,
+            student: res.student
+          }))
+      }));
       
       // メンター形式に変換
       const convertedMentors = convertLessonSlotsToMentors(updatedSlots);

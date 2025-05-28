@@ -45,4 +45,72 @@ export interface SendMessageRequest {
   content: string;
   room_id: string;
   files?: File[];
+}
+
+// ユーザー関連の型定義
+export interface User {
+  id: string;
+  email: string;
+  name?: string | null;
+  image?: string | null;
+  role_id: string;
+  plan?: string;
+}
+
+// メンター関連の型定義
+export interface Mentor {
+  id: string;
+  name: string | null;
+  email?: string | null;
+  image: string | null;
+  bio?: string;
+  specialties?: string[];
+  rating?: {
+    avgRating: number;
+    totalReviews: number;
+  };
+  availableSlots?: LessonSlot[];
+  availableSlotsCount?: number;
+}
+
+// レッスンスロット関連の型定義
+export interface LessonSlot {
+  id: string;
+  teacherId: string;
+  startTime: Date;
+  endTime: Date;
+  isAvailable: boolean;
+  hourlyRate?: number;
+  currency?: string;
+  teacher: {
+    id: string;
+    name: string | null;
+    email?: string | null;
+    image: string | null;
+  };
+  reservations?: Reservation[];
+}
+
+// 予約関連の型定義
+export interface Reservation {
+  id: string;
+  slotId: string;
+  studentId: string;
+  status: 'PENDING_APPROVAL' | 'APPROVED' | 'CONFIRMED' | 'PENDING' | 'CANCELLED' | 'COMPLETED';
+  bookedStartTime: string;
+  bookedEndTime: string;
+  createdAt: string;
+  student?: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+  slot?: {
+    id: string;
+    teacherId: string;
+    teacher?: {
+      id: string;
+      name: string | null;
+    };
+  };
 } 

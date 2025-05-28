@@ -5,38 +5,7 @@ import { MentorCard } from './MentorCard';
 import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button'; 
 import { Search, SlidersHorizontal, X } from 'lucide-react';
-
-export interface Mentor {
-  id: string;
-  name: string | null;
-  image: string | null;
-  email?: string | null;
-  bio?: string;
-  specialties?: string[];
-  rating?: {
-    avgRating: number;
-    totalReviews: number;
-  };
-  availableSlotsCount?: number;
-  availableSlots?: Array<{
-    id?: string;
-    startTime: string | Date;
-    endTime: string | Date;
-    isAvailable?: boolean;
-    hourlyRate?: number;
-    reservations?: Array<{
-      id: string;
-      status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
-      bookedStartTime?: string;
-      bookedEndTime?: string;
-      student?: {
-        id: string;
-        name: string | null;
-        email: string;
-      };
-    }>;
-  }>;
-}
+import type { Mentor } from '@/lib/types';
 
 interface MentorListProps {
   mentors: Mentor[];
