@@ -361,7 +361,7 @@ const LandingPage = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-300 hover:text-white transition">機能</a>
-              <a href="#instruments" className="text-gray-300 hover:text-white transition">楽器</a>
+              <a href="#instruments" className="text-gray-300 hover:text-white transition">コース</a>
               <a href="#pricing" className="text-gray-300 hover:text-white transition">プラン</a>
               <span className="text-gray-500">|</span>
               <button 
@@ -399,7 +399,7 @@ const LandingPage = () => {
           <div className="md:hidden bg-black/95 backdrop-blur-lg border-t border-gray-800">
             <div className="px-4 py-2 space-y-1">
               <a href="#features" className="block py-2 text-gray-300 hover:text-white">機能</a>
-              <a href="#instruments" className="block py-2 text-gray-300 hover:text-white">楽器</a>
+              <a href="#instruments" className="block py-2 text-gray-300 hover:text-white">コース</a>
               <a href="#pricing" className="block py-2 text-gray-300 hover:text-white">プラン</a>
               <button 
                 onClick={handleLogin}
