@@ -59,6 +59,14 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   onCancel,
   userRole,
 }) => {
+  // デバッグ: プロパティの値を確認
+  console.log('=== MentorDayView デバッグ情報 ===');
+  console.log('selectedDate:', selectedDate);
+  console.log('userRole:', userRole);
+  console.log('onApprove関数:', onApprove);
+  console.log('onCancel関数:', onCancel);
+  console.log('slots数:', slots.length);
+  
   // 料金フォーマット関数
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('ja-JP', {
@@ -71,6 +79,21 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   const daySlots = slots.filter(slot => 
     isSameDay(new Date(slot.startTime), selectedDate)
   );
+  
+  console.log('daySlots数:', daySlots.length);
+  
+  // 予約の詳細情報もログ出力
+  daySlots.forEach((slot, index) => {
+    console.log(`スロット${index + 1}:`, slot.id);
+    slot.reservations?.forEach((reservation, resIndex) => {
+      console.log(`  予約${resIndex + 1}:`, {
+        id: reservation.id,
+        status: reservation.status,
+        studentName: reservation.student?.name
+      });
+    });
+  });
+  console.log('================================');
 
   // 時間軸の生成（8:00-22:00、1時間刻み）
   const timeSlots = [];
@@ -258,6 +281,19 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                               const resStart = new Date(reservation.bookedStartTime || '');
                               const resEnd = new Date(reservation.bookedEndTime || '');
                               
+                              // デバッグ: 各予約の条件をチェック
+                              console.log(`予約${reservation.id}の条件チェック:`, {
+                                status: reservation.status,
+                                userRole: userRole,
+                                isPendingApproval: reservation.status === 'PENDING_APPROVAL',
+                                isMentor: userRole === 'mentor',
+                                hasOnApprove: !!onApprove,
+                                hasOnCancel: !!onCancel,
+                                showApprovalButtons: reservation.status === 'PENDING_APPROVAL' && userRole === 'mentor' && onApprove && onCancel,
+                                isApprovedOrConfirmed: reservation.status === 'APPROVED' || reservation.status === 'CONFIRMED',
+                                showCancelButton: (reservation.status === 'APPROVED' || reservation.status === 'CONFIRMED') && userRole === 'mentor' && onCancel
+                              });
+                              
                               // ステータス別の色分け
                               const statusColors = {
                                 PENDING_APPROVAL: 'bg-orange-100 border-orange-300 text-orange-800',
@@ -289,6 +325,9 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
+                                              console.log('=== 承認ボタンクリック ===');
+                                              console.log('予約ID:', reservation.id);
+                                              console.log('onApprove関数:', onApprove);
                                               onApprove(reservation.id);
                                             }}
                                             className="p-1 rounded hover:bg-green-200 transition-colors"
@@ -299,6 +338,9 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
+                                              console.log('=== 拒否ボタンクリック ===');
+                                              console.log('予約ID:', reservation.id);
+                                              console.log('onCancel関数:', onCancel);
                                               onCancel(reservation.id, 'MENTOR_REJECTED');
                                             }}
                                             className="p-1 rounded hover:bg-red-200 transition-colors"
@@ -312,6 +354,9 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
+                                            console.log('=== キャンセルボタンクリック ===');
+                                            console.log('予約ID:', reservation.id);
+                                            console.log('onCancel関数:', onCancel);
                                             if (window.confirm('この予約をキャンセルしますか？')) {
                                               onCancel(reservation.id, 'MENTOR_CANCELLED');
                                             }
@@ -326,6 +371,9 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
+                                          console.log('=== 詳細ボタンクリック ===');
+                                          console.log('予約ID:', reservation.id);
+                                          console.log('onReservationClick関数:', onReservationClick);
                                           onReservationClick(reservation);
                                         }}
                                         className="p-1 rounded hover:bg-gray-200 transition-colors"
