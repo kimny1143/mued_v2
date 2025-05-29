@@ -198,17 +198,91 @@ export async function getSessionFromRequest(request: Request): Promise<{
         token ? `有効なトークン (${token.substring(0, 10)}...)` : "空のトークン");
     }
     
-    // Authorization ヘッダーが無ければ Cookie から取得（sb-access-token）
+    // Authorization ヘッダーが無ければ Cookie から取得（sb-auth-token）
     if (!token) {
       const cookieHeader = request.headers.get('cookie') || '';
-      // Supabase v2 cookie key: sb-<projectRef>-access-token
-      // projectRef 付き  or  なし の両方を許可
-      const match = cookieHeader.match(/sb-(?:[^=]+-)?access-token=([^;]+)/);
-      if (match && match[1]) {
-        token = decodeURIComponent(match[1]);
-        console.log("Cookie からアクセストークン取得:", token.substring(0, 10) + '...');
-      } else {
-        console.log("Cookie に sb-access-token が見つかりませんでした");
+      console.log("Cookie ヘッダー検索開始:", cookieHeader.substring(0, 200) + '...');
+      
+      // まず、標準的なSupabase auth-token.0 を試行
+      const authTokenMatch = cookieHeader.match(/sb-[^=]+-auth-token\.0=([^;]+)/);
+      
+      if (authTokenMatch && authTokenMatch[1]) {
+        try {
+          let decodedToken = decodeURIComponent(authTokenMatch[1]);
+          console.log("Cookie から auth-token.0 取得:", decodedToken.substring(0, 50) + '...');
+          
+          // base64-プレフィックスの処理（安全版）
+          if (decodedToken.startsWith('base64-')) {
+            try {
+              const base64Data = decodedToken.substring(7);
+              // base64データが有効かチェック
+              if (/^[A-Za-z0-9+/]+=*$/.test(base64Data)) {
+                decodedToken = atob(base64Data);
+                console.log("base64デコード成功");
+              } else {
+                console.log("無効なbase64データ、そのまま使用");
+                decodedToken = decodedToken.substring(7); // base64-のみ除去
+              }
+            } catch (base64Error) {
+              console.error("base64デコードエラー、プレフィックスのみ除去:", base64Error);
+              decodedToken = decodedToken.substring(7); // フォールバック
+            }
+          }
+          
+          // JSONパース試行
+          try {
+            const tokenObject = JSON.parse(decodedToken);
+            if (tokenObject && typeof tokenObject === 'object' && tokenObject.access_token) {
+              token = tokenObject.access_token;
+              console.log("Cookie からアクセストークン解析成功");
+            } else {
+              console.log("トークンオブジェクトが無効:", Object.keys(tokenObject || {}));
+            }
+          } catch (jsonError) {
+            console.error("JSON解析エラー:", jsonError);
+            // JSON解析失敗時は、デコードされた文字列をそのままトークンとして試行
+            if (decodedToken && decodedToken.length > 20) {
+              token = decodedToken;
+              console.log("デコード済み文字列をトークンとして使用");
+            }
+          }
+        } catch (parseError) {
+          console.error("Cookie token全体解析エラー:", parseError);
+        }
+      }
+      
+      // auth-token.0が取得できない場合の代替手段
+      if (!token) {
+        console.log("auth-token.0取得失敗、代替手段を試行");
+        
+        // 1. レガシーaccess-tokenを検索
+        const legacyMatch = cookieHeader.match(/sb-(?:[^=]+-)?access-token=([^;]+)/);
+        if (legacyMatch && legacyMatch[1]) {
+          token = decodeURIComponent(legacyMatch[1]);
+          console.log("レガシーaccess-token取得成功");
+        }
+        
+        // 2. より柔軟なauth-token検索
+        if (!token) {
+          const flexibleAuthMatch = cookieHeader.match(/sb-[^=]+-auth-token[^=]*=([^;]+)/);
+          if (flexibleAuthMatch && flexibleAuthMatch[1]) {
+            const rawToken = decodeURIComponent(flexibleAuthMatch[1]);
+            // 直接的にJWTパターンをチェック
+            if (rawToken.includes('.') && rawToken.split('.').length === 3) {
+              token = rawToken;
+              console.log("柔軟検索でJWT形式トークン取得");
+            }
+          }
+        }
+        
+        // 3. より単純なパターンでaccess_tokenキーワード検索
+        if (!token) {
+          const accessTokenKeywordMatch = cookieHeader.match(/access_token["\s]*:["\s]*([^"',;\s]+)/);
+          if (accessTokenKeywordMatch && accessTokenKeywordMatch[1]) {
+            token = accessTokenKeywordMatch[1];
+            console.log("キーワード検索でアクセストークン取得");
+          }
+        }
       }
     }
     

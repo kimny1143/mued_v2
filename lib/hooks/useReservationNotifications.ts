@@ -175,7 +175,7 @@ export function useMentorApprovalNotifications() {
   const { toast } = useToast();
 
   return useReservationNotifications({
-    enabled: user?.roleId === 'mentor',
+    enabled: user?.role_id === 'mentor',
     onStatusChange: (reservation) => {
       if (reservation.status === 'PENDING_APPROVAL' && reservation.mentorId === user?.id) {
         // メンター承認ページへのリンク付き通知
@@ -201,7 +201,7 @@ export function useStudentReservationNotifications() {
   const { user } = useUser();
 
   return useReservationNotifications({
-    enabled: user?.roleId === 'student',
+    enabled: user?.role_id === 'student',
     onStatusChange: (reservation) => {
       if (reservation.status === 'APPROVED' && reservation.studentId === user?.id) {
         // 承認通知とカレンダー確認案内

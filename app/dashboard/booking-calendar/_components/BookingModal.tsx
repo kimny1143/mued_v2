@@ -5,20 +5,9 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { X, Clock, User, CreditCard } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
-import { TimeSlot } from './TimeSlotDisplay';
 import { Mentor } from './MentorList';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-
-// 拡張TimeSlot型を再定義（MentorCalendarから共通利用）
-interface ExtendedTimeSlot extends TimeSlot {
-  mentorId: string;
-  mentorName: string | null;
-  bookingStatus: 'available' | 'partial' | 'full' | 'unavailable';
-  reservationCount: number;
-  bookedTime: number;
-  availableTime: number;
-  bookingRate: number;
-}
+import type { ExtendedTimeSlot, TimeSlot } from '../_types/calendar.js';
 
 interface BookingModalProps {
   isOpen: boolean;
