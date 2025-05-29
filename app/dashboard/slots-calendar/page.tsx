@@ -331,6 +331,86 @@ export default function SlotsCalendarPage() {
     handleReservationClick(reservation, 'view');
   };
 
+  // 日別表示での直接承認処理
+  const handleDayViewApprove = async (reservationId: string) => {
+    try {
+      setIsReservationProcessing(true);
+      
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
+      const response = await fetch(`/api/reservations/${reservationId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || '承認処理に失敗しました');
+      }
+
+      toast.success('予約を承認しました');
+      
+      // スロット一覧をリアルタイム更新
+      await fetchMySlots();
+      
+    } catch (error) {
+      console.error('承認処理エラー:', error);
+      toast.error(`承認に失敗しました: ${(error as Error).message}`);
+    } finally {
+      setIsReservationProcessing(false);
+    }
+  };
+
+  // 日別表示での直接キャンセル処理
+  const handleDayViewCancel = async (reservationId: string, reason: string = 'MENTOR_CANCELLED') => {
+    try {
+      setIsReservationProcessing(true);
+      
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
+      const response = await fetch(`/api/reservations/${reservationId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason, notes: 'メンターによりキャンセル' }),
+        credentials: 'include',
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'キャンセル処理に失敗しました');
+      }
+
+      toast.success('予約をキャンセルしました');
+      
+      // スロット一覧をリアルタイム更新
+      await fetchMySlots();
+      
+    } catch (error) {
+      console.error('キャンセル処理エラー:', error);
+      toast.error(`キャンセルに失敗しました: ${(error as Error).message}`);
+    } finally {
+      setIsReservationProcessing(false);
+    }
+  };
+
   // 予約キャンセル処理（リアルタイム更新版）
   const handleReservationCancel = async (reason: CancelReason, notes?: string) => {
     if (!selectedReservation) return;
@@ -611,6 +691,8 @@ export default function SlotsCalendarPage() {
                 onBackToMonth={handleBackToMonth}
                 onDayNavigation={handleDayNavigation}
                 onReservationClick={handleDayViewReservationClick}
+                onApprove={handleDayViewApprove}
+                onCancel={handleDayViewCancel}
                 userRole={userRole}
               />
             )

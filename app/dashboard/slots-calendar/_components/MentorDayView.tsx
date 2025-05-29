@@ -43,6 +43,8 @@ interface MentorDayViewProps {
   onBackToMonth: () => void;
   onDayNavigation: (date: Date) => void;
   onReservationClick: (reservation: MentorLessonSlot['reservations'][0]) => void;
+  onApprove?: (reservationId: string) => Promise<void>;
+  onCancel?: (reservationId: string, reason?: string) => Promise<void>;
   userRole: 'student' | 'mentor' | 'admin';
 }
 
@@ -53,6 +55,8 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   onBackToMonth,
   onDayNavigation,
   onReservationClick,
+  onApprove,
+  onCancel,
   userRole,
 }) => {
   // 料金フォーマット関数
@@ -266,9 +270,8 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                               return (
                                 <div
                                   key={reservation.id}
-                                  onClick={() => onReservationClick(reservation)}
                                   className={`
-                                    p-2 rounded border cursor-pointer hover:opacity-80 transition-opacity
+                                    p-2 rounded border transition-opacity
                                     ${statusColors[reservation.status as keyof typeof statusColors] || 'bg-gray-100 border-gray-300 text-gray-800'}
                                   `}
                                 >
@@ -280,12 +283,56 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                      {reservation.status === 'PENDING_APPROVAL' && userRole === 'mentor' && (
+                                      {/* ステータス別の操作ボタン */}
+                                      {reservation.status === 'PENDING_APPROVAL' && userRole === 'mentor' && onApprove && onCancel && (
                                         <>
-                                          <CheckCircle className="h-3 w-3 text-green-600" />
-                                          <XCircle className="h-3 w-3 text-red-600" />
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onApprove(reservation.id);
+                                            }}
+                                            className="p-1 rounded hover:bg-green-200 transition-colors"
+                                            title="承認"
+                                          >
+                                            <CheckCircle className="h-3 w-3 text-green-600" />
+                                          </button>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              onCancel(reservation.id, 'MENTOR_REJECTED');
+                                            }}
+                                            className="p-1 rounded hover:bg-red-200 transition-colors"
+                                            title="拒否"
+                                          >
+                                            <XCircle className="h-3 w-3 text-red-600" />
+                                          </button>
                                         </>
                                       )}
+                                      {(reservation.status === 'APPROVED' || reservation.status === 'CONFIRMED') && userRole === 'mentor' && onCancel && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (window.confirm('この予約をキャンセルしますか？')) {
+                                              onCancel(reservation.id, 'MENTOR_CANCELLED');
+                                            }
+                                          }}
+                                          className="p-1 rounded hover:bg-red-200 transition-colors"
+                                          title="キャンセル"
+                                        >
+                                          <XCircle className="h-3 w-3 text-red-600" />
+                                        </button>
+                                      )}
+                                      {/* 詳細表示ボタン（他のステータスや情報確認用） */}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onReservationClick(reservation);
+                                        }}
+                                        className="p-1 rounded hover:bg-gray-200 transition-colors"
+                                        title="詳細"
+                                      >
+                                        <User className="h-3 w-3 text-gray-600" />
+                                      </button>
                                     </div>
                                   </div>
                                   <div className="text-xs opacity-75 mt-1">
@@ -335,18 +382,22 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-600" />
-                <span>承認</span>
+                <span>承認（承認待ちの予約）</span>
               </div>
               <div className="flex items-center gap-2">
                 <XCircle className="h-4 w-4 text-red-600" />
-                <span>キャンセル</span>
+                <span>拒否・キャンセル</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 text-gray-600" />
+                <span>詳細表示</span>
               </div>
             </div>
           </div>
         </div>
         
         <div className="text-xs text-gray-600 border-t pt-2 mt-3">
-          💡 <strong>操作方法:</strong> 予約をクリックして管理メニューを開きます
+          💡 <strong>操作方法:</strong> 予約カード内のボタンで直接操作、グレーボタンで詳細表示
         </div>
       </div>
     </div>
