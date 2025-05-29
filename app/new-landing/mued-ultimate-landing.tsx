@@ -365,12 +365,6 @@ const LandingPage = () => {
               <a href="#pricing" className="text-gray-300 hover:text-white transition">プラン</a>
               <span className="text-gray-500">|</span>
               <button 
-                onClick={handleGoToOldDesign}
-                className="text-gray-300 hover:text-white transition text-sm"
-              >
-                旧デザイン
-              </button>
-              <button 
                 onClick={handleLogin}
                 className="text-gray-300 hover:text-white transition"
               >
