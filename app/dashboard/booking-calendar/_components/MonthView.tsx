@@ -134,7 +134,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
                       // ステータス別の色分け（コンパクト表示）- PENDING_APPROVALの色を追加
                       const statusColors = {
                         CONFIRMED: 'bg-blue-100 border-blue-400 text-blue-800',
-                        APPROVED: 'bg-green-100 border-green-400 text-green-800',
+                        APPROVED: 'bg-teal-100 border-teal-400 text-teal-800',
                         PENDING_APPROVAL: 'bg-orange-100 border-orange-400 text-orange-800',
                         PENDING: 'bg-yellow-100 border-yellow-400 text-yellow-800'
                       };

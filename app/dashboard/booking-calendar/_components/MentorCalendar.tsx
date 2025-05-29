@@ -175,11 +175,20 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
               let reservationCount = 0;
               
               if (slot.reservations && slot.reservations.length > 0) {
+                // アクティブな予約（スロットの空き状況に影響する全ての予約ステータス）を取得
                 const activeReservations = slot.reservations.filter(
-                  (res: Reservation) => res.status === 'CONFIRMED' || res.status === 'PENDING'
+                  (res: Reservation) => res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL'
                 );
                 
                 reservationCount = activeReservations.length;
+                
+                console.log(`🔍 スロット ${slot.id} の予約分析:`, {
+                  slotId: slot.id,
+                  totalReservations: slot.reservations.length,
+                  activeReservations: activeReservations.length,
+                  reservationStatuses: slot.reservations.map(r => r.status),
+                  activeStatuses: activeReservations.map(r => r.status)
+                });
                 
                 // 予約済み時間を計算
                 activeReservations.forEach((reservation: Reservation) => {
@@ -211,6 +220,15 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
               } else {
                 bookingStatus = 'partial';
               }
+              
+              console.log(`📊 スロット ${slot.id} の最終分析結果:`, {
+                slotId: slot.id,
+                slotDuration: Math.round(slotDuration / (60 * 1000)) + '分',
+                bookedTime: Math.round(bookedTime / (60 * 1000)) + '分',
+                availableTime: Math.round(availableTime / (60 * 1000)) + '分',
+                bookingRate: Math.round(bookingRate * 100) + '%',
+                決定されたステータス: bookingStatus
+              });
               
               return {
                 id: slot.id!,
@@ -539,14 +557,14 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                         <span>レッスン確定</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="px-2 py-1 text-xs font-medium rounded border-2 bg-green-100 border-green-400 text-green-800">
-                          🎵 承認済み
+                        <div className="px-2 py-1 text-xs font-medium rounded border-2 bg-teal-100 border-teal-400 text-teal-800">
+                          ✅ 承認済み
                         </div>
                         <span>決済待ち</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="px-2 py-1 text-xs font-medium rounded border-2 bg-orange-100 border-orange-400 text-orange-800">
-                          🎵 承認待ち
+                          ⏳ 承認待ち
                         </div>
                         <span>メンター確認中</span>
                       </div>

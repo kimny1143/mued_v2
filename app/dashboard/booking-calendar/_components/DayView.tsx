@@ -367,7 +367,7 @@ export const DayView: React.FC<DayViewProps> = ({
                         // 生徒自身の予約の色分け
                         const myReservationColors = {
                           CONFIRMED: 'bg-blue-200 border-blue-500 text-blue-900',
-                          APPROVED: 'bg-green-200 border-green-500 text-green-900',
+                          APPROVED: 'bg-teal-200 border-teal-500 text-teal-900',
                           PENDING_APPROVAL: 'bg-orange-200 border-orange-500 text-orange-900',
                           PENDING: 'bg-yellow-200 border-yellow-500 text-yellow-900'
                         };
@@ -485,7 +485,7 @@ export const DayView: React.FC<DayViewProps> = ({
                 <span>確定済み</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-6 bg-green-200 border-2 border-green-500 rounded text-green-900 text-xs flex items-center justify-center">✅</div>
+                <div className="w-4 h-6 bg-teal-200 border-2 border-teal-500 rounded text-teal-900 text-xs flex items-center justify-center">✅</div>
                 <span>承認済み（決済待ち）</span>
               </div>
               <div className="flex items-center gap-2">
