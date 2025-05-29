@@ -6,6 +6,7 @@ import { CalendarIcon, ClockIcon } from "lucide-react";
 import { format, isToday } from "date-fns";
 import { ja } from "date-fns/locale";
 import { TodayScheduleData, DashboardCardProps } from "./types";
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 // APIレスポンス用の型定義
 interface LessonSlot {
@@ -35,6 +36,7 @@ interface Reservation {
 export const TodayScheduleCard: React.FC<DashboardCardProps> = ({ userRole, userId }) => {
   const [scheduleData, setScheduleData] = useState<TodayScheduleData>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTodaySchedule = async () => {
@@ -42,42 +44,60 @@ export const TodayScheduleCard: React.FC<DashboardCardProps> = ({ userRole, user
 
       try {
         setLoading(true);
+        setError(null);
         
         if (userRole === 'mentor') {
           // 今日の日付を取得
           const today = format(new Date(), 'yyyy-MM-dd');
           console.log('メンター用スケジュール取得:', { userId, today });
           
-          // 既存のAPI呼び出し（lesson-slots）
-          const response = await fetch(`/api/lesson-slots?teacherId=${userId}&from=${today}&to=${today}`, {
-            cache: 'no-cache'
+          // 認証トークンを取得
+          const { data: sessionData } = await supabaseBrowser.auth.getSession();
+          const token = sessionData.session?.access_token ?? null;
+          
+          if (!token) {
+            throw new Error('認証が必要です。ログインしてください。');
+          }
+
+          const response = await fetch(`/api/lesson-slots?today=${today}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            credentials: 'include'
           });
           
-          if (response.ok) {
-            const slots: LessonSlot[] = await response.json();
-            console.log('取得したスロット:', slots);
-            
-            const totalSlots = slots.length;
-            const bookedSlots = slots.filter((slot: LessonSlot) => 
-              slot.reservations?.some((res: { status: string }) => res.status === 'CONFIRMED')
-            ).length;
-            const availableSlots = totalSlots - bookedSlots;
-            
-            setScheduleData({
-              totalSlots,
-              bookedSlots,
-              availableSlots
-            });
-          } else {
-            console.error('スロット取得エラー:', response.status);
-            setScheduleData({ totalSlots: 0, bookedSlots: 0, availableSlots: 0 });
+          if (!response.ok) {
+            throw new Error(`API通信エラー: ${response.status}`);
           }
-        } else if (userRole === 'student') {
-          console.log('生徒用スケジュール取得:', { userId });
+
+          const slots: LessonSlot[] = await response.json();
+          console.log('取得したスロット:', slots);
           
-          // 既存のAPI呼び出し（reservations）
-          const response = await fetch(`/api/reservations`, {
-            cache: 'no-cache'
+          const totalSlots = slots.length;
+          const bookedSlots = slots.filter((slot: LessonSlot) => 
+            slot.reservations?.some((res: { status: string }) => res.status === 'CONFIRMED')
+          ).length;
+          const availableSlots = totalSlots - bookedSlots;
+          
+          setScheduleData({
+            totalSlots,
+            bookedSlots,
+            availableSlots
+          });
+        } else if (userRole === 'student') {
+          // 今日の日付を取得
+          const today = format(new Date(), 'yyyy-MM-dd');
+          console.log('生徒用スケジュール取得:', { userId, today });
+          
+          // 認証トークンを取得
+          const { data: sessionData } = await supabaseBrowser.auth.getSession();
+          const token = sessionData.session?.access_token ?? null;
+          
+          if (!token) {
+            throw new Error('認証が必要です。ログインしてください。');
+          }
+
+          const response = await fetch(`/api/reservations?studentId=${userId}&date=${today}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            credentials: 'include'
           });
           
           if (response.ok) {
@@ -103,8 +123,9 @@ export const TodayScheduleCard: React.FC<DashboardCardProps> = ({ userRole, user
             setScheduleData({ upcomingReservations: [] });
           }
         }
-      } catch (error) {
-        console.error('今日の予定取得エラー:', error);
+      } catch (err) {
+        console.error('今日の予定取得エラー:', err);
+        setError(err instanceof Error ? err.message : '予定情報の取得に失敗しました');
         setScheduleData({ 
           totalSlots: 0, 
           bookedSlots: 0, 
@@ -126,7 +147,11 @@ export const TodayScheduleCard: React.FC<DashboardCardProps> = ({ userRole, user
           <CalendarIcon className="h-5 w-5 mr-2 text-blue-500" />
           <h3 className="font-semibold">今日の予定</h3>
         </div>
-        <p className="text-sm text-gray-500">読み込み中...</p>
+        {error ? (
+          <p className="text-sm text-red-500">{error}</p>
+        ) : (
+          <p className="text-sm text-gray-500">読み込み中...</p>
+        )}
       </Card>
     );
   }
