@@ -153,7 +153,7 @@ const LandingPage = () => {
 
   const instruments = [
     { 
-      name: "作曲", 
+      name: "作曲/編曲", 
       icon: <Piano className="w-12 h-12" />, 
       color: "from-purple-500 to-pink-500",
       sound: "🎹",
@@ -163,22 +163,22 @@ const LandingPage = () => {
       name: "作詞", 
       icon: <Music className="w-12 h-12" />, 
       color: "from-blue-500 to-cyan-500",
-      sound: "🎸",
-      description: "6弦の魔法"
+      sound: "📓",
+      description: "言葉の魔法"
     },
     { 
-      name: "編曲", 
+      name: "レコーディング", 
       icon: <Mic2 className="w-12 h-12" />, 
       color: "from-green-500 to-emerald-500",
-      sound: "🎤",
-      description: "声の力"
+      sound: "🎙️",
+      description: "瞬間を掴む力"
     },
     { 
-      name: "ドラム", 
+      name: "楽器レッスン", 
       icon: <Radio className="w-12 h-12" />, 
       color: "from-orange-500 to-red-500",
       sound: "🥁",
-      description: "リズムの鼓動"
+      description: "生楽器の魅力"
     },
   ];
 
