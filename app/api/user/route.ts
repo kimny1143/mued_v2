@@ -111,7 +111,7 @@ export async function GET(req: NextRequest) {
         userData.name = authUser.user.user_metadata?.name || 
                        authUser.user.user_metadata?.full_name || 
                        authUser.user.email?.split('@')[0] || null;
-        userData.email = authUser.user.email;
+        userData.email = authUser.user.email || null;
         userData.image = authUser.user.user_metadata?.avatar_url || null;
 
                  // メタデータからロール情報を一時取得（フォールバック用）
@@ -336,8 +336,14 @@ export async function GET(req: NextRequest) {
         dbAccessSuccessful = true;
         console.log('usersテーブルからユーザー情報取得成功:', dbUser);
         console.log('取得した生データ:', JSON.stringify(dbUser));
-        console.log('role_id直接アクセス:', dbUser.role_id);
-        console.log('role_idのタイプ:', typeof dbUser.role_id);
+        
+        // 型ガードでParserErrorでないことを確認してからアクセス
+        if (dbUser && typeof dbUser === 'object' && 'role_id' in dbUser) {
+          console.log('role_id直接アクセス:', dbUser.role_id);
+          console.log('role_idのタイプ:', typeof dbUser.role_id);
+        } else {
+          console.log('role_idにアクセスできません（ParserErrorまたは無効なオブジェクト）');
+        }
         
         // 型キャストで安全にアクセス
         const typedUser = dbUser as unknown as DbUserWithRole;
