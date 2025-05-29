@@ -81,23 +81,6 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* 既存の統計セクション */}
-      <section className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="p-6 bg-white">
-            <h3 className="font-semibold mb-2">Total Lessons</h3>
-            <p className="text-3xl font-bold">12</p>
-          </Card>
-          <Card className="p-6 bg-white">
-            <h3 className="font-semibold mb-2">Hours Learned</h3>
-            <p className="text-3xl font-bold">24</p>
-          </Card>
-          <Card className="p-6 bg-white">
-            <h3 className="font-semibold mb-2">Next Lesson</h3>
-            <p className="text-sm text-gray-500">No upcoming lessons</p>
-          </Card>
-        </div>
-      </section>
 
       {/* Recent Activity */}
       <section>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { AlertTriangle, X, Clock, DollarSign } from 'lucide-react';
@@ -30,7 +30,7 @@ export interface ReservationManagementModalProps {
     status: ReservationStatus;
     bookedStartTime: Date;
     bookedEndTime: Date;
-    totalAmount: number;
+    totalAmount: number | string;
     notes?: string;
     teacher: { name: string; };
     student?: { name: string; }; // メンター視点の場合
@@ -56,12 +56,35 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
   onModeChange,
   isLoading = false,
 }) => {
+  // デバッグ用ログ - 予約データの確認
+  useEffect(() => {
+    if (isOpen) {
+      console.log('=== ReservationManagementModal Debug ===');
+      console.log('Reservation data:', reservation);
+      console.log('totalAmount:', reservation.totalAmount);
+      console.log('totalAmount type:', typeof reservation.totalAmount);
+      console.log('totalAmount string representation:', String(reservation.totalAmount));
+      console.log('totalAmount JSON stringify:', JSON.stringify(reservation.totalAmount));
+      console.log('==========================================');
+    }
+  }, [isOpen, reservation]);
+
   const [selectedReason, setSelectedReason] = useState<CancelReason | ''>('');
   const [notes, setNotes] = useState('');
   const [cancellationFee, setCancellationFee] = useState<number>(0);
   const [timeUntilDeadline, setTimeUntilDeadline] = useState<string>('');
   const [rejectReason, setRejectReason] = useState('');
   const [isModalReady, setIsModalReady] = useState(false);
+
+  // totalAmountを安全に数値に変換するヘルパー関数
+  const getTotalAmountAsNumber = (): number => {
+    const amount = reservation.totalAmount;
+    if (typeof amount === 'string') {
+      const parsed = parseFloat(amount);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return typeof amount === 'number' ? amount : 0;
+  };
 
   // ユーザーロール別のキャンセル理由オプション
   const getCancelReasonOptions = () => {
@@ -93,6 +116,14 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
     const now = new Date();
     const lessonStart = new Date(reservation.bookedStartTime);
     const hoursUntilLesson = (lessonStart.getTime() - now.getTime()) / (1000 * 60 * 60);
+    
+    // totalAmountを数値に変換
+    const totalAmount = getTotalAmountAsNumber();
+    
+    if (isNaN(totalAmount)) {
+      console.warn('Invalid totalAmount in calculateCancellationFee:', reservation.totalAmount);
+      return 0;
+    }
 
     // 管理者と緊急事態は無料
     if (userRole === 'admin' || reason === CancelReason.EMERGENCY) {
@@ -101,12 +132,12 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
 
     // 生徒の場合：24時間前を過ぎていたら100%
     if (userRole === 'student' && hoursUntilLesson < 24) {
-      return reservation.totalAmount;
+      return totalAmount;
     }
 
     // 講師の場合：2時間前を過ぎていたら50%
     if (userRole === 'mentor' && hoursUntilLesson < 2) {
-      return Math.floor(reservation.totalAmount * 0.5);
+      return Math.floor(totalAmount * 0.5);
     }
 
     return 0;
@@ -184,11 +215,40 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string | null | undefined) => {
+    // デバッグ用ログ
+    console.log('formatCurrency called with:', { amount, type: typeof amount });
+    
+    // 値の検証と変換
+    let numericAmount: number = 0;
+    
+    if (amount === null || amount === undefined) {
+      console.warn('Amount is null or undefined:', amount);
+      return '¥0';
+    }
+    
+    if (typeof amount === 'string') {
+      numericAmount = parseFloat(amount);
+      if (isNaN(numericAmount)) {
+        console.warn('Could not parse string amount:', amount);
+        return '¥0';
+      }
+    } else if (typeof amount === 'number') {
+      numericAmount = amount;
+    } else {
+      console.warn('Invalid amount type:', typeof amount, amount);
+      return '¥0';
+    }
+    
+    if (isNaN(numericAmount) || !isFinite(numericAmount)) {
+      console.warn('Invalid numeric amount:', numericAmount);
+      return '¥0';
+    }
+    
     return new Intl.NumberFormat('ja-JP', {
       style: 'currency',
       currency: 'JPY',
-    }).format(amount);
+    }).format(numericAmount);
   };
 
   return (
@@ -348,7 +408,7 @@ export const ReservationManagementModal: React.FC<ReservationManagementModalProp
                     <div className="flex justify-between items-center text-sm">
                       <span>返金額:</span>
                       <span className="text-green-600">
-                        {formatCurrency(reservation.totalAmount - cancellationFee)}
+                        {formatCurrency(getTotalAmountAsNumber() - cancellationFee)}
                       </span>
                     </div>
                   )}
