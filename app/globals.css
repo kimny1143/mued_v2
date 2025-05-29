@@ -355,12 +355,12 @@
 
   .dashboard-header {
     @apply bg-white border-b border-gray-200 fixed w-full z-50 top-0 left-0;
-    height: 4rem;
+    height: 4rem; /* デスクトップ: 64px */
   }
 
   /* ダッシュボードメインコンテンツ */
   .dashboard-main {
-    @apply pt-16 w-full;
+    @apply pt-16 w-full; /* デスクトップ: 64px のパディング */
     min-height: calc(100vh - 4rem);
   }
 
@@ -509,27 +509,6 @@
   .dashboard-main > div {
     @apply p-2;
   }
-  
-  /* カレンダーコンテナの最適化 */
-  .calendar-container-mobile {
-    @apply -mx-2;
-  }
-  
-  /* ヘッダーとコンテンツ間のマージンをさらに縮小 */
-  .title-section-mobile {
-    @apply mb-2;
-  }
-  
-  /* アクションボタンエリアの最適化 */
-  .actions-mobile {
-    @apply flex-wrap gap-1;
-  }
-  
-  /* タイトルサイズをより控えめに */
-  .dashboard-title-mobile {
-    @apply text-base font-bold;
-    line-height: 1.3 !important;
-  }
 }
 
 /* iPhone SE等の超小型デバイス専用 */
@@ -541,16 +520,6 @@
   .dashboard-main > div {
     @apply p-1;
   }
-  
-  .dashboard-title-mobile {
-    @apply text-sm font-bold;
-    line-height: 1.2 !important;
-  }
-  
-  /* さらに厳しいスペース制約に対応 */
-  .title-section-mobile {
-    @apply mb-1;
-  }
 }
 
 /* ダッシュボードレイアウトの追加最適化 */
@@ -560,11 +529,11 @@
   }
 
   .dashboard-header {
-    @apply h-14; /* モバイルでヘッダー高さを縮小 */
+    height: 3.5rem; /* モバイル: 56px */
   }
   
-  /* サイドバーが開いているときのメインコンテンツ調整 */
   .dashboard-main {
-    @apply transition-transform duration-300;
+    @apply pt-14 transition-transform duration-300; /* モバイル: 56px のパディング */
+    min-height: calc(100vh - 3.5rem);
   }
 } 

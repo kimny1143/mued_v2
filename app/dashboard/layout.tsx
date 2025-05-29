@@ -79,7 +79,7 @@ const commonNavItems: NavItem[] = [
 
 export default function DashboardLayout({
   children,
-  title = "Welcome back!",
+  title = "",
   actions
 }: {
   children: React.ReactNode;
@@ -754,9 +754,9 @@ export default function DashboardLayout({
         <main className={`dashboard-main ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
           <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8">
             {/* タイトルとアクションのセクションを最適化 */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-6 title-section-mobile">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-3 sm:mb-6">
               {title && (
-                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold font-shantell text-gray-900 dashboard-title-mobile">
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold font-shantell text-gray-900">
                   {title}
                 </h1>
               )}

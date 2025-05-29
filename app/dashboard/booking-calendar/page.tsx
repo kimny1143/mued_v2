@@ -548,7 +548,7 @@ export default function BookingCalendarPage() {
     <DashboardLayout 
       title="メンターレッスン予約"
       actions={
-        <div className="flex items-center gap-2 actions-mobile">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="text-sm text-gray-600 hidden sm:block">
             {mentors.length}人のメンターが利用可能
           </div>
@@ -596,7 +596,7 @@ export default function BookingCalendarPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-8 sm:mx-0 calendar-container-mobile">
+        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-8 sm:mx-0">
           <div className="p-0 sm:p-6">
             <MentorCalendar
               mentors={mentors}
