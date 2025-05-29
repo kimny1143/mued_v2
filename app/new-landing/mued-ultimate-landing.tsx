@@ -684,7 +684,7 @@ const LandingPage = () => {
                 <Radio className="w-5 h-5 text-gray-500 hover:text-green-400 cursor-pointer transition" />
               </div>
               <p className="text-gray-500 text-sm mt-4">
-                © 2024 株式会社グラスワークス
+                © 2025 株式会社グラスワークス
               </p>
             </div>
             <div>
