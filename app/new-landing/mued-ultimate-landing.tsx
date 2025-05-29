@@ -100,8 +100,8 @@ const LandingPage = () => {
               <SkipForward className="w-5 h-5" />
             </button>
             <div className="hidden md:flex items-center space-x-3 ml-8">
-              <span className="text-sm text-gray-400">Now Learning:</span>
-              <span className="text-sm font-semibold">ピアノソナタ No.14</span>
+              <span className="text-sm text-gray-400">Now Playing:</span>
+              <span className="text-sm font-semibold">Songs you'll create</span>
             </div>
             <button className="text-gray-400 hover:text-red-500 transition ml-6">
               <Heart className="w-5 h-5" />
@@ -402,12 +402,6 @@ const LandingPage = () => {
               <a href="#instruments" className="block py-2 text-gray-300 hover:text-white">楽器</a>
               <a href="#pricing" className="block py-2 text-gray-300 hover:text-white">プラン</a>
               <button 
-                onClick={handleGoToOldDesign}
-                className="block py-2 text-gray-300 hover:text-white text-sm"
-              >
-                旧デザイン
-              </button>
-              <button 
                 onClick={handleLogin}
                 className="block py-2 text-gray-300 hover:text-white"
               >
@@ -456,7 +450,7 @@ const LandingPage = () => {
               </span>
             </h1>
             <p className="text-l lg:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed animate-fade-in-delay">
-              AIがあなたの音楽ジャーニーをパーソナライズ。
+              あなたの音楽ジャーニーをパーソナライズ。
               自然に寄り添い、自然に上達。
             </p>
             
@@ -473,9 +467,6 @@ const LandingPage = () => {
                 <Play className="mr-2 w-5 h-5" />
                 無料で始める
               </button>
-              <button className="border border-gray-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-white/10 transition backdrop-blur-sm">
-                デモを見る
-              </button>
             </div>
             
             {/* Feature badges */}
@@ -483,10 +474,6 @@ const LandingPage = () => {
               <div className="bg-white/10 backdrop-blur-lg rounded-full px-6 py-3 flex items-center space-x-2 hover:bg-white/20 transition cursor-pointer">
                 <Sparkles className="w-5 h-5 text-green-400" />
                 <span className="text-sm">AI搭載</span>
-              </div>
-              <div className="bg-white/10 backdrop-blur-lg rounded-full px-6 py-3 flex items-center space-x-2 hover:bg-white/20 transition cursor-pointer">
-                <Users className="w-5 h-5 text-green-400" />
-                <span className="text-sm">10万人+ の学習者</span>
               </div>
               <div className="bg-white/10 backdrop-blur-lg rounded-full px-6 py-3 flex items-center space-x-2 hover:bg-white/20 transition cursor-pointer">
                 <Star className="w-5 h-5 text-green-400" />
@@ -502,10 +489,10 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold">
-              さあ、作りましょう
+              様々なジャンルの講師
             </h2>
             <p className="text-xl text-gray-400">
-              現役のクリエイターがマンツーマンでサポート。
+              現役のクリエイターがマンツーマンでサポートします。
             </p>
           </div>
           

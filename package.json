@@ -4,6 +4,7 @@
   "description": "A React Learning Management System project using Next.js App Router with Shadcn UI library",
   "scripts": {
     "dev": "npm run kill-port && npm run kill-mcp-port && next dev --port 3000 --hostname 0.0.0.0",
+    "dev:secure": "npm run kill-port && npm run kill-mcp-port && next dev --port 3000 --hostname localhost",
     "build": "npx prisma generate && next build",
     "export": "next export",
     "build:static": "bash scripts/vercel-deploy-prep.sh && npx prisma generate && next build && next export",
@@ -70,6 +71,8 @@
     "@tiptap/pm": "^2.2.4",
     "@tiptap/react": "^2.2.4",
     "@tiptap/starter-kit": "^2.2.4",
+    "@vercel/speed-insights": "^1.2.0",
+    "autoprefixer": "^10.4.21",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -79,6 +82,7 @@
     "lucide-react": "^0.453.0",
     "next": "^14.2.3",
     "next-themes": "^0.4.6",
+    "postcss": "^8.5.3",
     "react": "^18.2.0",
     "react-day-picker": "^9.7.0",
     "react-dom": "^18.2.0",
@@ -91,8 +95,6 @@
     "swr": "^2.3.3",
     "tailwind-merge": "^2.5.4",
     "tailwindcss": "^3.4.16",
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.3",
     "uuid": "^11.1.0",
     "zod": "^3.24.3",
     "zustand": "^4.5.0"
