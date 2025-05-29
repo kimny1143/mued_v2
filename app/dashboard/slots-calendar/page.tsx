@@ -10,7 +10,7 @@ import { CancelReason } from '@/lib/types/reservation';
 import { ReservationManagementModal, type ReservationManagementModalProps } from './_components/ReservationManagementModal';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api-client';
-import { DailyReservationsModal } from './_components/DailyReservationsModal';
+import { MentorDayView } from './_components/MentorDayView';
 
 // デバッグモード
 const DEBUG = true;
@@ -76,18 +76,23 @@ export default function SlotsCalendarPage() {
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [isReservationProcessing, setIsReservationProcessing] = useState(false);
 
-  // 日付別予約一覧モーダル関連の状態
-  const [isDailyModalOpen, setIsDailyModalOpen] = useState(false);
-  const [selectedModalDate, setSelectedModalDate] = useState<Date>(new Date());
+  // 表示モード関連の状態
+  const [viewMode, setViewMode] = useState<'month' | 'day'>('month');
+  const [selectedDayViewDate, setSelectedDayViewDate] = useState<Date | null>(null);
 
   // スロットデータを取得する関数（RLSポリシー対応版）
   const fetchMySlots = useCallback(async () => {
+    const startTime = performance.now();
+    console.log('🔄 fetchMySlots開始');
+    
     try {
       setIsLoading(true);
       
+      const authStartTime = performance.now();
       // 認証トークンを取得
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData.session?.access_token ?? null;
+      console.log(`⏱️ fetchMySlots - 認証取得: ${(performance.now() - authStartTime).toFixed(2)}ms`);
       
       if (!token) {
         throw new Error('認証が必要です。ログインしてください。');
@@ -108,10 +113,12 @@ export default function SlotsCalendarPage() {
         viewMode = 'all'; // 管理者の場合はすべてのスロットを取得
       }
       
+      const apiStartTime = performance.now();
       const response = await fetch(`/api/lesson-slots?viewMode=${viewMode}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         credentials: 'include',
       });
+      console.log(`⏱️ fetchMySlots - API呼び出し: ${(performance.now() - apiStartTime).toFixed(2)}ms`);
       
       if (!response.ok) {
         const errorResponse = await response.json();
@@ -122,7 +129,9 @@ export default function SlotsCalendarPage() {
         );
       }
       
+      const parseStartTime = performance.now();
       const data: MentorLessonSlot[] = await response.json();
+      console.log(`⏱️ fetchMySlots - レスポンス解析: ${(performance.now() - parseStartTime).toFixed(2)}ms`);
       console.log(`取得したレッスンスロット: ${data.length}件 (${viewMode}モード)`);
       
       if (DEBUG && data.length > 0) {
@@ -138,6 +147,7 @@ export default function SlotsCalendarPage() {
       
       setSlots(data);
       setError(null);
+      console.log(`✅ fetchMySlots完了: ${(performance.now() - startTime).toFixed(2)}ms`);
       
     } catch (err) {
       console.error('スロット情報取得エラー:', err);
@@ -307,17 +317,162 @@ export default function SlotsCalendarPage() {
     }
   };
 
-  // 日付クリック処理 - 日付別予約一覧モーダルを開く
+  // 日付クリック処理 - 日別表示に切り替え
   const handleDateClick = (date: Date) => {
     console.log('日付クリック:', date);
-    setSelectedModalDate(date);
-    setIsDailyModalOpen(true);
+    setSelectedDayViewDate(date);
+    setViewMode('day');
   };
 
-  // 日付別予約モーダル更新コールバック
-  const handleDailyReservationsUpdate = () => {
-    // スロット一覧を更新
-    fetchMySlots();
+  // 月表示に戻る
+  const handleBackToMonth = () => {
+    setViewMode('month');
+    setSelectedDayViewDate(null);
+  };
+
+  // 日別表示での日付ナビゲーション
+  const handleDayNavigation = (date: Date) => {
+    setSelectedDayViewDate(date);
+  };
+
+  // 日別表示からの予約クリック処理
+  const handleDayViewReservationClick = (reservation: MentorLessonSlot['reservations'][0]) => {
+    // 既存のhandleReservationClickを利用
+    handleReservationClick(reservation, 'view');
+  };
+
+  // 日別表示での直接承認処理
+  const handleDayViewApprove = async (reservationId: string) => {
+    const startTime = performance.now();
+    console.log(`🚀 承認処理開始: ${reservationId}`);
+    
+    try {
+      setIsReservationProcessing(true);
+      
+      const authStartTime = performance.now();
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+      console.log(`⏱️ 認証取得: ${(performance.now() - authStartTime).toFixed(2)}ms`);
+
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
+      const apiStartTime = performance.now();
+      const response = await fetch(`/api/reservations/${reservationId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+      console.log(`⏱️ API呼び出し: ${(performance.now() - apiStartTime).toFixed(2)}ms`);
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.error || '承認処理に失敗しました');
+      }
+
+      toast.success('予約を承認しました');
+      
+      // 🚀 高速化: ローカル状態を直接更新
+      const localUpdateStartTime = performance.now();
+      setSlots(prevSlots => 
+        prevSlots.map(slot => ({
+          ...slot,
+          reservations: slot.reservations.map(reservation => 
+            reservation.id === reservationId 
+              ? { ...reservation, status: 'APPROVED' }
+              : reservation
+          )
+        }))
+      );
+      console.log(`⚡ ローカル状態更新: ${(performance.now() - localUpdateStartTime).toFixed(2)}ms`);
+      console.log(`✅ 承認処理完了: ${(performance.now() - startTime).toFixed(2)}ms`);
+      
+      // フォールバック: 2秒後に全データ同期（リアルタイム更新と競合回避）
+      setTimeout(async () => {
+        console.log('🔄 フォールバック同期開始');
+        const refreshStartTime = performance.now();
+        await fetchMySlots();
+        console.log(`🔄 フォールバック同期完了: ${(performance.now() - refreshStartTime).toFixed(2)}ms`);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('承認処理エラー:', error);
+      toast.error(`承認に失敗しました: ${(error as Error).message}`);
+    } finally {
+      setIsReservationProcessing(false);
+    }
+  };
+
+  // 日別表示での直接キャンセル処理
+  const handleDayViewCancel = async (reservationId: string, reason: string = 'MENTOR_CANCELLED') => {
+    const startTime = performance.now();
+    console.log(`🚀 キャンセル処理開始: ${reservationId}`);
+    
+    try {
+      setIsReservationProcessing(true);
+      
+      const authStartTime = performance.now();
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token ?? null;
+      console.log(`⏱️ 認証取得: ${(performance.now() - authStartTime).toFixed(2)}ms`);
+
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
+      const apiStartTime = performance.now();
+      const response = await fetch(`/api/reservations/${reservationId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason, notes: 'メンターによりキャンセル' }),
+        credentials: 'include',
+      });
+      console.log(`⏱️ API呼び出し: ${(performance.now() - apiStartTime).toFixed(2)}ms`);
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'キャンセル処理に失敗しました');
+      }
+
+      toast.success('予約をキャンセルしました');
+      
+      // 🚀 高速化: ローカル状態を直接更新
+      const localUpdateStartTime = performance.now();
+      setSlots(prevSlots => 
+        prevSlots.map(slot => ({
+          ...slot,
+          reservations: slot.reservations.map(reservation => 
+            reservation.id === reservationId 
+              ? { ...reservation, status: 'CANCELED' }
+              : reservation
+          )
+        }))
+      );
+      console.log(`⚡ ローカル状態更新: ${(performance.now() - localUpdateStartTime).toFixed(2)}ms`);
+      console.log(`✅ キャンセル処理完了: ${(performance.now() - startTime).toFixed(2)}ms`);
+      
+      // フォールバック: 2秒後に全データ同期（リアルタイム更新と競合回避）
+      setTimeout(async () => {
+        console.log('🔄 フォールバック同期開始');
+        const refreshStartTime = performance.now();
+        await fetchMySlots();
+        console.log(`🔄 フォールバック同期完了: ${(performance.now() - refreshStartTime).toFixed(2)}ms`);
+      }, 2000);
+      
+    } catch (error) {
+      console.error('キャンセル処理エラー:', error);
+      toast.error(`キャンセルに失敗しました: ${(error as Error).message}`);
+    } finally {
+      setIsReservationProcessing(false);
+    }
   };
 
   // 予約キャンセル処理（リアルタイム更新版）
@@ -582,14 +737,29 @@ export default function SlotsCalendarPage() {
         </div>
       ) : (
         <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-4 sm:mx-0">
-          <SlotsCalendar
-            slots={slots}
-            isLoading={isLoading}
-            onSlotUpdate={handleSlotUpdate}
-            onSlotDelete={handleSlotDelete}
-            onReservationClick={handleReservationClick}
-            onDateClick={handleDateClick}
-          />
+          {viewMode === 'month' ? (
+            <SlotsCalendar
+              slots={slots}
+              isLoading={isLoading}
+              onSlotUpdate={handleSlotUpdate}
+              onSlotDelete={handleSlotDelete}
+              onReservationClick={handleReservationClick}
+              onDateClick={handleDateClick}
+            />
+          ) : (
+            selectedDayViewDate && (
+              <MentorDayView
+                selectedDate={selectedDayViewDate}
+                slots={slots}
+                isLoading={isLoading}
+                onBackToMonth={handleBackToMonth}
+                onDayNavigation={handleDayNavigation}
+                onReservationClick={handleDayViewReservationClick}
+                onApprove={handleDayViewApprove}
+                userRole={userRole}
+              />
+            )
+          )}
         </div>
       )}
       
@@ -612,15 +782,6 @@ export default function SlotsCalendarPage() {
           isLoading={isReservationProcessing}
         />
       )}
-      
-      {/* 日付別予約一覧モーダル */}
-      <DailyReservationsModal
-        isOpen={isDailyModalOpen}
-        onClose={() => setIsDailyModalOpen(false)}
-        selectedDate={selectedModalDate}
-        userRole={userRole}
-        onReservationsUpdate={handleDailyReservationsUpdate}
-      />
       
       {DEBUG && slots.length > 0 && (
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">

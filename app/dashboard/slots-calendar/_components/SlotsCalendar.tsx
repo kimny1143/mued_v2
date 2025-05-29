@@ -10,6 +10,21 @@ import { SlotModal } from './SlotModal';
 // デバッグモード
 const DEBUG = true;
 
+// 時間表示設定 - 24時間対応
+const TIME_RANGE = {
+  START_HOUR: 0,  // 0:00から開始
+  END_HOUR: 23,   // 23:00まで表示
+};
+
+// 時間軸生成関数
+const generateTimeSlots = (startHour: number = TIME_RANGE.START_HOUR, endHour: number = TIME_RANGE.END_HOUR) => {
+  const timeSlots = [];
+  for (let hour = startHour; hour <= endHour; hour++) {
+    timeSlots.push(hour);
+  }
+  return timeSlots;
+};
+
 // メンタースロットの型定義
 interface MentorLessonSlot {
   id: string;
@@ -106,8 +121,16 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
     }
   };
 
-  // 空の日付エリアクリック処理 - 新規スロット作成
+  // 空の日付エリアクリック処理 - 新規スロット作成（削除予定）
   const handleEmptyAreaClick = (date: Date) => {
+    // 新しい実装では使用しない - 代わりにhandleDateClickを使用
+    // 日別表示で新規作成機能を提供
+    if (onDateClick) {
+      onDateClick(date);
+      return;
+    }
+    
+    // フォールバック処理（onDateClickが提供されていない場合のみ）
     const daySlots = getSlotsForDate(date);
     setSelectedDate(date);
     
@@ -241,7 +264,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                   return (
                     <div
                       key={index}
-                      onClick={isCurrentMonth ? () => handleEmptyAreaClick(date) : undefined}
+                      onClick={isCurrentMonth ? () => handleDateClick(date) : undefined}
                       className={`
                         aspect-square p-1 sm:p-2 text-center rounded-md sm:rounded-lg transition-all duration-200 relative 
                         min-h-[60px] flex flex-col justify-between
@@ -301,21 +324,18 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                           PENDING: 'bg-yellow-100 border-yellow-400 text-yellow-800'
                                         };
                                         
-                                                                                  return (
+                                        return (
                                             <div
                                               key={`reservation-${reservation.id}-${resIndex}`}
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                // ステータスに応じてモードを決定
-                                                const mode = reservation.status === 'PENDING_APPROVAL' ? 'approve' : 
-                                                           reservation.status === 'CONFIRMED' ? 'view' :
-                                                           reservation.status === 'APPROVED' ? 'view' : 'view';
-                                                onReservationClick?.(reservation, mode);
+                                                // 日付別予約一覧モーダルを開く
+                                                handleDateClick(date);
                                               }}
                                               className={`px-0.5 py-0 text-xxs font-medium rounded border cursor-pointer hover:opacity-80 ${
                                                 reservationColors[reservation.status as keyof typeof reservationColors] || 'bg-gray-100 border-gray-400 text-gray-800'
                                               } truncate text-center`}
-                                              title={`予約: ${reservation.student?.name || '生徒'} ${timeString} (クリックで詳細)`}
+                                              title={`予約: ${reservation.student?.name || '生徒'} ${timeString} (クリックで一覧表示)`}
                                             >
                                               🎵{timeString}
                                             </div>
@@ -421,7 +441,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
               </div>
               
               <div className="text-xxs text-gray-600">
-                💡 <strong>操作方法:</strong> スロットタグをクリック→編集、空白エリアをクリック→新規作成<br/>
+                💡 <strong>操作方法:</strong> 日付をクリック→日別タイムライン表示、スロットタグクリック→編集<br/>
                 💡 <strong>予約表示:</strong> 🎵アイコン付きで生徒の予約時間を表示
               </div>
             </div>

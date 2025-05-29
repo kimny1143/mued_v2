@@ -117,11 +117,11 @@ export const MonthView: React.FC<MonthViewProps> = ({
               {format(date, 'd')}
             </div>
             
-            {/* 生徒自身の予約を最優先で表示 */}
+            {/* 生徒自身の予約を最優先で表示 - PENDING_APPROVALを含むように修正 */}
             {(() => {
               const myReservationsOnDate = myReservations.filter(res => 
                 isSameDay(new Date(res.bookedStartTime), date) && 
-                (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED')
+                (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
               );
               
               if (myReservationsOnDate.length > 0) {
@@ -131,12 +131,20 @@ export const MonthView: React.FC<MonthViewProps> = ({
                       const startTime = new Date(reservation.bookedStartTime);
                       const timeString = format(startTime, 'HH:mm');
                       
-                      // ステータス別の色分け（コンパクト表示）
+                      // ステータス別の色分け（コンパクト表示）- PENDING_APPROVALの色を追加
                       const statusColors = {
                         CONFIRMED: 'bg-blue-100 border-blue-400 text-blue-800',
-                        APPROVED: 'bg-green-100 border-green-400 text-green-800',
+                        APPROVED: 'bg-teal-100 border-teal-400 text-teal-800',
                         PENDING_APPROVAL: 'bg-orange-100 border-orange-400 text-orange-800',
                         PENDING: 'bg-yellow-100 border-yellow-400 text-yellow-800'
+                      };
+                      
+                      // ステータス表示用のアイコンと文字
+                      const statusDisplay = {
+                        CONFIRMED: '🎵',
+                        APPROVED: '✅',
+                        PENDING_APPROVAL: '⏳',
+                        PENDING: '⏰'
                       };
                       
                       return (
@@ -145,8 +153,12 @@ export const MonthView: React.FC<MonthViewProps> = ({
                           className={`px-0.5 py-0 text-xxs font-medium rounded border ${
                             statusColors[reservation.status as keyof typeof statusColors] || 'bg-gray-100 border-gray-400 text-gray-800'
                           } mb-0.5 truncate`}
+                          title={`${reservation.status === 'PENDING_APPROVAL' ? 'メンター確認中' : 
+                                    reservation.status === 'APPROVED' ? '承認済み' :
+                                    reservation.status === 'CONFIRMED' ? '確定済み' : 
+                                    reservation.status === 'PENDING' ? '保留中' : reservation.status} - ${timeString}`}
                         >
-                          🎵{timeString}
+                          {statusDisplay[reservation.status as keyof typeof statusDisplay] || '📅'}{timeString}
                         </div>
                       );
                     })}
@@ -167,7 +179,7 @@ export const MonthView: React.FC<MonthViewProps> = ({
             {(() => {
               const myReservationsOnDate = myReservations.filter(res => 
                 isSameDay(new Date(res.bookedStartTime), date) && 
-                (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED')
+                (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
               );
               
               if (myReservationsOnDate.length > 0) return null;

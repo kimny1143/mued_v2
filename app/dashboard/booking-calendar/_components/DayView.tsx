@@ -72,9 +72,9 @@ export const DayView: React.FC<DayViewProps> = ({
 
   console.log('🔍 availableMentors:', availableMentors);
 
-  // 時間軸の生成（8:00-22:00、1時間刻み）
+  // 時間軸の生成（0:00-23:00、24時間表示）
   const timeSlots = [];
-  for (let hour = 8; hour <= 22; hour++) {
+  for (let hour = 0; hour <= 23; hour++) {
     timeSlots.push(hour);
   }
 
@@ -254,9 +254,9 @@ export const DayView: React.FC<DayViewProps> = ({
                 const endHour = slotEnd.getHours();
                 const endMinute = slotEnd.getMinutes();
                 
-                // 8:00を基準とした相対位置
-                const startPosition = (startHour - 8) + (startMinute / 60);
-                const endPosition = (endHour - 8) + (endMinute / 60);
+                // 0:00を基準とした相対位置（24時間表示対応）
+                const startPosition = startHour + (startMinute / 60);
+                const endPosition = endHour + (endMinute / 60);
                 const duration = endPosition - startPosition;
                 
                 // CSS Gridに合わせた正しい位置計算
@@ -359,15 +359,15 @@ export const DayView: React.FC<DayViewProps> = ({
                           status: myReservation.status
                         });
                         
-                        // 予約時間の相対位置計算
-                        const resStartPos = (resStart.getHours() - 8) + (resStart.getMinutes() / 60);
-                        const resEndPos = (resEnd.getHours() - 8) + (resEnd.getMinutes() / 60);
+                        // 予約時間の相対位置計算（24時間表示対応）
+                        const resStartPos = resStart.getHours() + (resStart.getMinutes() / 60);
+                        const resEndPos = resEnd.getHours() + (resEnd.getMinutes() / 60);
                         const resDuration = resEndPos - resStartPos;
                         
                         // 生徒自身の予約の色分け
                         const myReservationColors = {
                           CONFIRMED: 'bg-blue-200 border-blue-500 text-blue-900',
-                          APPROVED: 'bg-green-200 border-green-500 text-green-900',
+                          APPROVED: 'bg-teal-200 border-teal-500 text-teal-900',
                           PENDING_APPROVAL: 'bg-orange-200 border-orange-500 text-orange-900',
                           PENDING: 'bg-yellow-200 border-yellow-500 text-yellow-900'
                         };
@@ -423,8 +423,8 @@ export const DayView: React.FC<DayViewProps> = ({
                         const resEnd = new Date(otherReservation.bookedEndTime);
                         
                         // 予約時間の相対位置計算
-                        const resStartPos = (resStart.getHours() - 8) + (resStart.getMinutes() / 60);
-                        const resEndPos = (resEnd.getHours() - 8) + (resEnd.getMinutes() / 60);
+                        const resStartPos = resStart.getHours() + (resStart.getMinutes() / 60);
+                        const resEndPos = resEnd.getHours() + (resEnd.getMinutes() / 60);
                         const resDuration = resEndPos - resStartPos;
                         
                         return (
@@ -485,12 +485,16 @@ export const DayView: React.FC<DayViewProps> = ({
                 <span>確定済み</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-6 bg-green-200 border-2 border-green-500 rounded text-green-900 text-xs flex items-center justify-center">🎵</div>
+                <div className="w-4 h-6 bg-teal-200 border-2 border-teal-500 rounded text-teal-900 text-xs flex items-center justify-center">✅</div>
                 <span>承認済み（決済待ち）</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-6 bg-orange-200 border-2 border-orange-500 rounded text-orange-900 text-xs flex items-center justify-center">🎵</div>
-                <span>承認待ち</span>
+                <div className="w-4 h-6 bg-orange-200 border-2 border-orange-500 rounded text-orange-900 text-xs flex items-center justify-center">⏳</div>
+                <span>メンター確認中</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-6 bg-yellow-200 border-2 border-yellow-500 rounded text-yellow-900 text-xs flex items-center justify-center">⏰</div>
+                <span>保留中</span>
               </div>
             </div>
           </div>
@@ -514,6 +518,7 @@ export const DayView: React.FC<DayViewProps> = ({
         <div className="text-[10px] text-gray-600 border-t pt-2 mt-3">
           💡 <strong>プライバシー保護:</strong> 他の生徒の予約は時間のみ表示され、個人情報は表示されません
           <br />💡 <strong>予約状況:</strong> {otherReservations.length}件の他の予約が表示されています
+          <br />⏳ <strong>メンター確認中:</strong> 予約申請がメンターの承認待ち状態です
         </div>
       </div>
     </div>
