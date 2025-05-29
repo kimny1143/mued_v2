@@ -597,7 +597,7 @@ export default function BookingCalendarPage() {
         </div>
       ) : (
         <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow">
-          <div className="p-0 sm:p-6">
+          <div className="p-0">
             <MentorCalendar
               mentors={mentors}
               isLoading={isLoading}
