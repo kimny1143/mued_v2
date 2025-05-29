@@ -758,7 +758,7 @@ export default function DashboardLayout({
             pt-14 sm:pt-16
           `}
         >
-          <main className="p-4 sm:p-0 lg:p-0 max-w-full overflow-x-hidden">
+          <main className="p-4 sm:p-6 lg:p-8 max-w-full overflow-x-hidden">
             {(title || actions) && (
               <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 {title && (

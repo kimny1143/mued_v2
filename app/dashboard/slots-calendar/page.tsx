@@ -733,29 +733,31 @@ export default function SlotsCalendarPage() {
         </div>
       ) : (
         <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow">
-          {viewMode === 'month' ? (
-            <SlotsCalendar
-              slots={slots}
-              isLoading={isLoading}
-              onSlotUpdate={handleSlotUpdate}
-              onSlotDelete={handleSlotDelete}
-              onReservationClick={handleReservationClick}
-              onDateClick={handleDateClick}
-            />
-          ) : (
-            selectedDayViewDate && (
-              <MentorDayView
-                selectedDate={selectedDayViewDate}
+          <div className="sm:px-0 lg:px-0">
+            {viewMode === 'month' ? (
+              <SlotsCalendar
                 slots={slots}
                 isLoading={isLoading}
-                onBackToMonth={handleBackToMonth}
-                onDayNavigation={handleDayNavigation}
-                onReservationClick={handleDayViewReservationClick}
-                onApprove={handleDayViewApprove}
-                userRole={userRole}
+                onSlotUpdate={handleSlotUpdate}
+                onSlotDelete={handleSlotDelete}
+                onReservationClick={handleReservationClick}
+                onDateClick={handleDateClick}
               />
-            )
-          )}
+            ) : (
+              selectedDayViewDate && (
+                <MentorDayView
+                  selectedDate={selectedDayViewDate}
+                  slots={slots}
+                  isLoading={isLoading}
+                  onBackToMonth={handleBackToMonth}
+                  onDayNavigation={handleDayNavigation}
+                  onReservationClick={handleDayViewReservationClick}
+                  onApprove={handleDayViewApprove}
+                  userRole={userRole}
+                />
+              )
+            )}
+          </div>
         </div>
       )}
       
