@@ -79,7 +79,7 @@ const commonNavItems: NavItem[] = [
 
 export default function DashboardLayout({
   children,
-  title = "Welcome back!",
+  title = "",
   actions
 }: {
   children: React.ReactNode;
@@ -475,33 +475,33 @@ export default function DashboardLayout({
     <div className="dashboard-layout">
       {/* ヘッダー */}
       <header className="dashboard-header">
-        <div className="max-w-[1440px] mx-auto px-6">
-          <div className="flex justify-between h-16">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
+          <div className="flex justify-between h-14 sm:h-16">
             {/* Left section */}
-            <div className="flex items-center gap-8">
+            <div className="flex items-center gap-4 sm:gap-8">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="lg:hidden w-10 h-10 p-0"
+                className="lg:hidden w-8 h-8 sm:w-10 sm:h-10 p-0"
                 onClick={toggleSidebar}
               >
-                <MenuIcon className="h-6 w-6" />
+                <MenuIcon className="h-5 w-5 sm:h-6 sm:w-6" />
               </Button>
               <div className="flex items-center gap-2">
-                <img className="h-8 w-8" src="/logomark.svg" alt="MUED" />
-                <span className="text-2xl font-bold hidden lg:block font-shantell">MUED</span>
+                <img className="h-6 w-6 sm:h-8 sm:w-8" src="/logomark.svg" alt="MUED" />
+                <span className="text-xl sm:text-2xl font-bold hidden lg:block font-shantell">MUED</span>
               </div>
             </div>
 
             {/* Right section */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <Button 
                 variant="ghost" 
                 size="sm"
-                className="relative w-10 h-10 p-0"
+                className="relative w-8 h-8 sm:w-10 sm:h-10 p-0"
               >
-                <BellIcon className="h-6 w-6" />
-                <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
+                <BellIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+                <span className="absolute top-1 right-1 sm:top-2 sm:right-2 h-2 w-2 bg-red-500 rounded-full"></span>
               </Button>
               
               {/* ユーザーメニュー */}
@@ -510,16 +510,16 @@ export default function DashboardLayout({
                   <Button 
                     variant="ghost"
                     size="sm"
-                    className="w-10 h-10 p-0"
+                    className="w-8 h-8 sm:w-10 sm:h-10 p-0"
                   >
                     {user?.user_metadata?.avatar_url ? (
                       <img 
                         src={user.user_metadata.avatar_url} 
                         alt="User avatar" 
-                        className="w-8 h-8 rounded-full"
+                        className="w-6 h-6 sm:w-8 sm:h-8 rounded-full"
                       />
                     ) : (
-                      <UserCircleIcon className="h-6 w-6" />
+                      <UserCircleIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -623,7 +623,7 @@ export default function DashboardLayout({
         {/* サイドバー */}
         <aside
           className={`
-            fixed inset-y-0 left-0 z-40 bg-white border-r pt-16 transition-all duration-300 ease-in-out flex flex-col
+            fixed inset-y-0 left-0 z-40 bg-white border-r pt-14 sm:pt-16 transition-all duration-300 ease-in-out flex flex-col
             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
             lg:translate-x-0 
             ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
@@ -752,10 +752,19 @@ export default function DashboardLayout({
 
         {/* メインコンテンツ */}
         <main className={`dashboard-main ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
-          <div className="max-w-[1440px] mx-auto p-8">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
-              {title && <h1 className="text-2xl font-bold font-shantell">{title}</h1>}
-              {actions}
+          <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8">
+            {/* タイトルとアクションのセクションを最適化 */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-2 sm:mb-4">
+              {title && (
+                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold font-shantell text-gray-900">
+                  {title}
+                </h1>
+              )}
+              {actions && (
+                <div className="flex-shrink-0 w-full sm:w-auto">
+                  {actions}
+                </div>
+              )}
             </div>
             {children}
           </div>

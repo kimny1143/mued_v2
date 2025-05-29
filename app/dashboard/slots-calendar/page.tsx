@@ -11,6 +11,7 @@ import { ReservationManagementModal, type ReservationManagementModalProps } from
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api-client';
 import { MentorDayView } from './_components/MentorDayView';
+import DashboardLayout from '../layout';
 
 // デバッグモード
 const DEBUG = true;
@@ -711,19 +712,14 @@ export default function SlotsCalendarPage() {
   };
 
   return (
-    <div className="w-full py-6 px-0 sm:px-4 lg:container lg:mx-auto">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4 px-2 sm:px-0">
-        <div className="flex items-center">
-          <CalendarClock className="h-6 w-6 mr-2 text-primary" aria-hidden="true" />
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold">レッスンスロット管理</h1>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">
-              あなたのレッスン予定と予約状況を管理できます
-            </p>
-          </div>
+    <DashboardLayout 
+      title="レッスンスロット管理"
+      actions={
+        <div className="text-sm text-gray-600 hidden sm:block">
+          あなたのレッスン予定と予約状況を管理できます
         </div>
-      </div>
-      
+      }
+    >
       {error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg" role="alert">
           <p>{error}</p>
@@ -736,7 +732,7 @@ export default function SlotsCalendarPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-4 sm:mx-0">
+        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow">
           {viewMode === 'month' ? (
             <SlotsCalendar
               slots={slots}
@@ -793,6 +789,6 @@ export default function SlotsCalendarPage() {
           </div>
         </div>
       )}
-    </div>
+    </DashboardLayout>
   );
 } 

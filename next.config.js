@@ -28,6 +28,8 @@ const nextConfig = {
   },
   // 本番環境用セキュリティヘッダー
   async headers() {
+    const isDev = process.env.NODE_ENV === 'development';
+    
     return [
       {
         source: '/(.*)',
@@ -48,6 +50,13 @@ const nextConfig = {
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains',
           },
+          // 開発環境での追加セキュリティ
+          ...(isDev ? [
+            {
+              key: 'Content-Security-Policy',
+              value: "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; frame-ancestors 'self';"
+            }
+          ] : [])
         ],
       },
     ];

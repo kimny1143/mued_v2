@@ -65,6 +65,43 @@ STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 ```
 
+## 🔐 セキュリティについて
+
+### Next.js 14 開発環境セキュリティ対策
+
+このプロジェクトではNext.js 14を使用しており、開発サーバーでの情報漏洩脆弱性（CVE-2024-52906）に対する対策を実施しています。
+
+#### 開発時の注意点
+
+**推奨**: セキュアな開発サーバーの起動
+```bash
+npm run dev:secure  # localhost専用
+```
+
+**注意**: 外部アクセス可能な設定は避ける
+```bash
+npm run dev  # 0.0.0.0でバインド（チーム開発時のみ）
+```
+
+#### 適用済みセキュリティ対策
+
+- ✅ セキュリティヘッダーの強化（CSP, X-Frame-Options等）
+- ✅ 開発環境専用のContent Security Policy
+- ✅ localhost専用の開発スクリプト追加
+
+#### チーム開発でのベストプラクティス
+
+1. **ローカル開発**: 基本的に`npm run dev:secure`を使用
+2. **チーム共有時**: 必要な場合のみ`npm run dev`使用
+3. **機密情報**: 本番環境の機密データを開発環境で使用しない
+4. **ネットワーク**: 公共Wi-Fi等での開発時は特に注意
+
+詳細については [`docs/DEVELOPMENT_SECURITY.md`](docs/DEVELOPMENT_SECURITY.md) を参照してください。
+
+### 本番環境への影響
+
+この脆弱性は**開発サーバーのみ**に影響し、Vercel等の本番環境には影響しません。
+
 ## プロジェクト構造
 
 ```

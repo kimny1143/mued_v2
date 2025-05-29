@@ -355,12 +355,12 @@
 
   .dashboard-header {
     @apply bg-white border-b border-gray-200 fixed w-full z-50 top-0 left-0;
-    height: 4rem;
+    height: 4rem; /* デスクトップ: 64px */
   }
 
   /* ダッシュボードメインコンテンツ */
   .dashboard-main {
-    @apply pt-16 w-full;
+    @apply pt-16 w-full; /* デスクトップ: 64px のパディング */
     min-height: calc(100vh - 4rem);
   }
 
@@ -470,11 +470,6 @@
     min-height: 70px !important;
   }
 
-  /* メンターカード情報の簡略化 */
-  .mentor-card-mobile {
-    @apply p-2 gap-2;
-  }
-
   /* 凡例のモバイル最適化 */
   .legend-mobile {
     @apply grid-cols-1 gap-2;
@@ -499,23 +494,51 @@
   html {
     font-size: 15px;
   }
-}
-
-/* ダッシュボードレイアウト強化 */
-@media (max-width: 1023px) {
-  .dashboard-layout {
-    @apply flex flex-col;
+  
+  /* カレンダーページのスマホ最適化 */
+  .dashboard-main {
+    @apply pt-14;
   }
   
-  /* モバイル用ヘッダーの調整 */
-  .dashboard-header {
-    @apply z-50;
+  /* メインコンテンツエリアをより効率的に利用 */
+  .dashboard-main > div {
+    @apply px-2 py-3;
+  }
+  
+  /* タイトル部分のマージンをさらに縮小 */
+  .dashboard-main h1 {
+    @apply mb-1;
   }
 }
 
-/* モバイルレスポンシブ対応の強化 */
-@media (max-width: 768px) {
-  html {
-    font-size: 16px;
+/* iPhone SE等の超小型デバイス専用 */
+@media (max-width: 375px) {
+  .dashboard-main {
+    @apply pt-14;
+  }
+  
+  .dashboard-main > div {
+    @apply px-1 py-2;
+  }
+  
+  /* タイトルサイズをさらに控えめに */
+  .dashboard-main h1 {
+    @apply text-base mb-1;
+  }
+}
+
+/* ダッシュボードレイアウトの追加最適化 */
+@media (max-width: 1023px) {
+  .dashboard-layout {
+    @apply bg-white; /* モバイルではより軽量な背景 */
+  }
+
+  .dashboard-header {
+    height: 3.5rem; /* モバイル: 56px */
+  }
+  
+  .dashboard-main {
+    @apply pt-14 transition-transform duration-300; /* モバイル: 56px のパディング */
+    min-height: calc(100vh - 3.5rem);
   }
 } 

@@ -100,8 +100,8 @@ const LandingPage = () => {
               <SkipForward className="w-5 h-5" />
             </button>
             <div className="hidden md:flex items-center space-x-3 ml-8">
-              <span className="text-sm text-gray-400">Now Learning:</span>
-              <span className="text-sm font-semibold">ピアノソナタ No.14</span>
+              <span className="text-sm text-gray-400">Now Playing:</span>
+              <span className="text-sm font-semibold">Songs you'll create</span>
             </div>
             <button className="text-gray-400 hover:text-red-500 transition ml-6">
               <Heart className="w-5 h-5" />
@@ -153,7 +153,7 @@ const LandingPage = () => {
 
   const instruments = [
     { 
-      name: "作曲", 
+      name: "作曲/編曲", 
       icon: <Piano className="w-12 h-12" />, 
       color: "from-purple-500 to-pink-500",
       sound: "🎹",
@@ -163,22 +163,22 @@ const LandingPage = () => {
       name: "作詞", 
       icon: <Music className="w-12 h-12" />, 
       color: "from-blue-500 to-cyan-500",
-      sound: "🎸",
-      description: "6弦の魔法"
+      sound: "📓",
+      description: "言葉の魔法"
     },
     { 
-      name: "編曲", 
+      name: "レコーディング", 
       icon: <Mic2 className="w-12 h-12" />, 
       color: "from-green-500 to-emerald-500",
-      sound: "🎤",
-      description: "声の力"
+      sound: "🎙️",
+      description: "瞬間を掴む力"
     },
     { 
-      name: "ドラム", 
+      name: "楽器レッスン", 
       icon: <Radio className="w-12 h-12" />, 
       color: "from-orange-500 to-red-500",
       sound: "🥁",
-      description: "リズムの鼓動"
+      description: "生楽器の魅力"
     },
   ];
 
@@ -361,15 +361,9 @@ const LandingPage = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-300 hover:text-white transition">機能</a>
-              <a href="#instruments" className="text-gray-300 hover:text-white transition">楽器</a>
+              <a href="#instruments" className="text-gray-300 hover:text-white transition">コース</a>
               <a href="#pricing" className="text-gray-300 hover:text-white transition">プラン</a>
               <span className="text-gray-500">|</span>
-              <button 
-                onClick={handleGoToOldDesign}
-                className="text-gray-300 hover:text-white transition text-sm"
-              >
-                旧デザイン
-              </button>
               <button 
                 onClick={handleLogin}
                 className="text-gray-300 hover:text-white transition"
@@ -399,14 +393,8 @@ const LandingPage = () => {
           <div className="md:hidden bg-black/95 backdrop-blur-lg border-t border-gray-800">
             <div className="px-4 py-2 space-y-1">
               <a href="#features" className="block py-2 text-gray-300 hover:text-white">機能</a>
-              <a href="#instruments" className="block py-2 text-gray-300 hover:text-white">楽器</a>
+              <a href="#instruments" className="block py-2 text-gray-300 hover:text-white">コース</a>
               <a href="#pricing" className="block py-2 text-gray-300 hover:text-white">プラン</a>
-              <button 
-                onClick={handleGoToOldDesign}
-                className="block py-2 text-gray-300 hover:text-white text-sm"
-              >
-                旧デザイン
-              </button>
               <button 
                 onClick={handleLogin}
                 className="block py-2 text-gray-300 hover:text-white"
@@ -456,7 +444,7 @@ const LandingPage = () => {
               </span>
             </h1>
             <p className="text-l lg:text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed animate-fade-in-delay">
-              AIがあなたの音楽ジャーニーをパーソナライズ。
+              あなたの音楽ジャーニーをパーソナライズ。
               自然に寄り添い、自然に上達。
             </p>
             
@@ -473,9 +461,6 @@ const LandingPage = () => {
                 <Play className="mr-2 w-5 h-5" />
                 無料で始める
               </button>
-              <button className="border border-gray-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-white/10 transition backdrop-blur-sm">
-                デモを見る
-              </button>
             </div>
             
             {/* Feature badges */}
@@ -483,10 +468,6 @@ const LandingPage = () => {
               <div className="bg-white/10 backdrop-blur-lg rounded-full px-6 py-3 flex items-center space-x-2 hover:bg-white/20 transition cursor-pointer">
                 <Sparkles className="w-5 h-5 text-green-400" />
                 <span className="text-sm">AI搭載</span>
-              </div>
-              <div className="bg-white/10 backdrop-blur-lg rounded-full px-6 py-3 flex items-center space-x-2 hover:bg-white/20 transition cursor-pointer">
-                <Users className="w-5 h-5 text-green-400" />
-                <span className="text-sm">10万人+ の学習者</span>
               </div>
               <div className="bg-white/10 backdrop-blur-lg rounded-full px-6 py-3 flex items-center space-x-2 hover:bg-white/20 transition cursor-pointer">
                 <Star className="w-5 h-5 text-green-400" />
@@ -502,10 +483,10 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold">
-              さあ、作りましょう
+              様々なジャンルの講師
             </h2>
             <p className="text-xl text-gray-400">
-              現役のクリエイターがマンツーマンでサポート。
+              現役のクリエイターがマンツーマンでサポートします。
             </p>
           </div>
           
@@ -697,7 +678,7 @@ const LandingPage = () => {
                 <Radio className="w-5 h-5 text-gray-500 hover:text-green-400 cursor-pointer transition" />
               </div>
               <p className="text-gray-500 text-sm mt-4">
-                © 2024 株式会社グラスワークス
+                © 2025 株式会社グラスワークス
               </p>
             </div>
             <div>
