@@ -470,11 +470,6 @@
     min-height: 70px !important;
   }
 
-  /* メンターカード情報の簡略化 */
-  .mentor-card-mobile {
-    @apply p-2 gap-2;
-  }
-
   /* 凡例のモバイル最適化 */
   .legend-mobile {
     @apply grid-cols-1 gap-2;
@@ -507,7 +502,12 @@
   
   /* メインコンテンツエリアをより効率的に利用 */
   .dashboard-main > div {
-    @apply p-2;
+    @apply px-2 py-3;
+  }
+  
+  /* タイトル部分のマージンをさらに縮小 */
+  .dashboard-main h1 {
+    @apply mb-1;
   }
 }
 
@@ -518,7 +518,12 @@
   }
   
   .dashboard-main > div {
-    @apply p-1;
+    @apply px-1 py-2;
+  }
+  
+  /* タイトルサイズをさらに控えめに */
+  .dashboard-main h1 {
+    @apply text-base mb-1;
   }
 }
 
