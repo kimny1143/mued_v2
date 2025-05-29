@@ -301,21 +301,18 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                           PENDING: 'bg-yellow-100 border-yellow-400 text-yellow-800'
                                         };
                                         
-                                                                                  return (
+                                        return (
                                             <div
                                               key={`reservation-${reservation.id}-${resIndex}`}
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                // ステータスに応じてモードを決定
-                                                const mode = reservation.status === 'PENDING_APPROVAL' ? 'approve' : 
-                                                           reservation.status === 'CONFIRMED' ? 'view' :
-                                                           reservation.status === 'APPROVED' ? 'view' : 'view';
-                                                onReservationClick?.(reservation, mode);
+                                                // 日付別予約一覧モーダルを開く
+                                                handleDateClick(date);
                                               }}
                                               className={`px-0.5 py-0 text-xxs font-medium rounded border cursor-pointer hover:opacity-80 ${
                                                 reservationColors[reservation.status as keyof typeof reservationColors] || 'bg-gray-100 border-gray-400 text-gray-800'
                                               } truncate text-center`}
-                                              title={`予約: ${reservation.student?.name || '生徒'} ${timeString} (クリックで詳細)`}
+                                              title={`予約: ${reservation.student?.name || '生徒'} ${timeString} (クリックで一覧表示)`}
                                             >
                                               🎵{timeString}
                                             </div>

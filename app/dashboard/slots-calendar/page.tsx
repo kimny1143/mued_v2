@@ -10,7 +10,7 @@ import { CancelReason } from '@/lib/types/reservation';
 import { ReservationManagementModal, type ReservationManagementModalProps } from './_components/ReservationManagementModal';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api-client';
-import { DailyReservationsModal } from './_components/DailyReservationsModal';
+import { MentorDayView } from './_components/MentorDayView';
 
 // デバッグモード
 const DEBUG = true;
@@ -76,9 +76,9 @@ export default function SlotsCalendarPage() {
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [isReservationProcessing, setIsReservationProcessing] = useState(false);
 
-  // 日付別予約一覧モーダル関連の状態
-  const [isDailyModalOpen, setIsDailyModalOpen] = useState(false);
-  const [selectedModalDate, setSelectedModalDate] = useState<Date>(new Date());
+  // 表示モード関連の状態
+  const [viewMode, setViewMode] = useState<'month' | 'day'>('month');
+  const [selectedDayViewDate, setSelectedDayViewDate] = useState<Date | null>(null);
 
   // スロットデータを取得する関数（RLSポリシー対応版）
   const fetchMySlots = useCallback(async () => {
@@ -307,17 +307,28 @@ export default function SlotsCalendarPage() {
     }
   };
 
-  // 日付クリック処理 - 日付別予約一覧モーダルを開く
+  // 日付クリック処理 - 日別表示に切り替え
   const handleDateClick = (date: Date) => {
     console.log('日付クリック:', date);
-    setSelectedModalDate(date);
-    setIsDailyModalOpen(true);
+    setSelectedDayViewDate(date);
+    setViewMode('day');
   };
 
-  // 日付別予約モーダル更新コールバック
-  const handleDailyReservationsUpdate = () => {
-    // スロット一覧を更新
-    fetchMySlots();
+  // 月表示に戻る
+  const handleBackToMonth = () => {
+    setViewMode('month');
+    setSelectedDayViewDate(null);
+  };
+
+  // 日別表示での日付ナビゲーション
+  const handleDayNavigation = (date: Date) => {
+    setSelectedDayViewDate(date);
+  };
+
+  // 日別表示からの予約クリック処理
+  const handleDayViewReservationClick = (reservation: MentorLessonSlot['reservations'][0]) => {
+    // 既存のhandleReservationClickを利用
+    handleReservationClick(reservation, 'view');
   };
 
   // 予約キャンセル処理（リアルタイム更新版）
@@ -582,14 +593,28 @@ export default function SlotsCalendarPage() {
         </div>
       ) : (
         <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-4 sm:mx-0">
-          <SlotsCalendar
-            slots={slots}
-            isLoading={isLoading}
-            onSlotUpdate={handleSlotUpdate}
-            onSlotDelete={handleSlotDelete}
-            onReservationClick={handleReservationClick}
-            onDateClick={handleDateClick}
-          />
+          {viewMode === 'month' ? (
+            <SlotsCalendar
+              slots={slots}
+              isLoading={isLoading}
+              onSlotUpdate={handleSlotUpdate}
+              onSlotDelete={handleSlotDelete}
+              onReservationClick={handleReservationClick}
+              onDateClick={handleDateClick}
+            />
+          ) : (
+            selectedDayViewDate && (
+              <MentorDayView
+                selectedDate={selectedDayViewDate}
+                slots={slots}
+                isLoading={isLoading}
+                onBackToMonth={handleBackToMonth}
+                onDayNavigation={handleDayNavigation}
+                onReservationClick={handleDayViewReservationClick}
+                userRole={userRole}
+              />
+            )
+          )}
         </div>
       )}
       
@@ -612,15 +637,6 @@ export default function SlotsCalendarPage() {
           isLoading={isReservationProcessing}
         />
       )}
-      
-      {/* 日付別予約一覧モーダル */}
-      <DailyReservationsModal
-        isOpen={isDailyModalOpen}
-        onClose={() => setIsDailyModalOpen(false)}
-        selectedDate={selectedModalDate}
-        userRole={userRole}
-        onReservationsUpdate={handleDailyReservationsUpdate}
-      />
       
       {DEBUG && slots.length > 0 && (
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">

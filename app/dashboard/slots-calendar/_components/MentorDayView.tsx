@@ -1,0 +1,354 @@
+'use client';
+
+import React from 'react';
+import { format, isSameDay } from 'date-fns';
+import { ja } from 'date-fns/locale';
+import { Button } from '@/app/components/ui/button';
+import { ChevronLeft, ChevronRight, User, CheckCircle, XCircle } from 'lucide-react';
+
+// メンタースロットの型定義
+interface MentorLessonSlot {
+  id: string;
+  teacherId: string;
+  startTime: string | Date;
+  endTime: string | Date;
+  isAvailable: boolean;
+  hourlyRate?: number;
+  currency?: string;
+  teacher: {
+    id: string;
+    name: string | null;
+    email?: string | null;
+    image: string | null;
+  };
+  reservations: Array<{
+    id: string;
+    status: string;
+    bookedStartTime?: string;
+    bookedEndTime?: string;
+    totalAmount?: number;
+    notes?: string;
+    student?: {
+      id: string;
+      name: string | null;
+      email: string;
+    };
+  }>;
+}
+
+interface MentorDayViewProps {
+  selectedDate: Date;
+  slots: MentorLessonSlot[];
+  isLoading: boolean;
+  onBackToMonth: () => void;
+  onDayNavigation: (date: Date) => void;
+  onReservationClick: (reservation: MentorLessonSlot['reservations'][0]) => void;
+  userRole: 'student' | 'mentor' | 'admin';
+}
+
+export const MentorDayView: React.FC<MentorDayViewProps> = ({
+  selectedDate,
+  slots,
+  isLoading,
+  onBackToMonth,
+  onDayNavigation,
+  onReservationClick,
+  userRole,
+}) => {
+  // 料金フォーマット関数
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('ja-JP', {
+      style: 'currency',
+      currency: 'JPY',
+    }).format(price);
+  };
+
+  // その日のスロットをフィルタ
+  const daySlots = slots.filter(slot => 
+    isSameDay(new Date(slot.startTime), selectedDate)
+  );
+
+  // 時間軸の生成（8:00-22:00、1時間刻み）
+  const timeSlots = [];
+  for (let hour = 8; hour <= 22; hour++) {
+    timeSlots.push(hour);
+  }
+
+  if (daySlots.length === 0) {
+    return (
+      <div className="mt-4">
+        {/* 日表示ヘッダー */}
+        <div className="flex items-center justify-between mb-6">
+          <Button 
+            variant="outline" 
+            onClick={onBackToMonth}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            月表示に戻る
+          </Button>
+          <h4 className="text-lg sm:text-xl font-semibold text-gray-900">
+            {format(selectedDate, 'yyyy年M月d日 (EEEE)', { locale: ja })}
+          </h4>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const prevDay = new Date(selectedDate);
+                prevDay.setDate(prevDay.getDate() - 1);
+                onDayNavigation(prevDay);
+              }}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                const nextDay = new Date(selectedDate);
+                nextDay.setDate(nextDay.getDate() + 1);
+                onDayNavigation(nextDay);
+              }}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <div className="text-gray-400 mb-2">📅</div>
+          <p className="text-gray-500 font-medium">この日にはスロットがありません</p>
+          <p className="text-xs text-gray-400 mt-1">別の日を選択してください</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4">
+      {/* 日表示ヘッダー */}
+      <div className="flex items-center justify-between mb-6">
+        <Button 
+          variant="outline" 
+          onClick={onBackToMonth}
+          className="flex items-center gap-2"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          月表示に戻る
+        </Button>
+        <h4 className="text-lg sm:text-xl font-semibold text-gray-900">
+          {format(selectedDate, 'yyyy年M月d日 (EEEE)', { locale: ja })}
+          {isLoading && (
+            <span className="ml-2 text-sm text-gray-500">読み込み中...</span>
+          )}
+        </h4>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const prevDay = new Date(selectedDate);
+              prevDay.setDate(prevDay.getDate() - 1);
+              onDayNavigation(prevDay);
+            }}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              const nextDay = new Date(selectedDate);
+              nextDay.setDate(nextDay.getDate() + 1);
+              onDayNavigation(nextDay);
+            }}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      
+      {/* タイムライン表示 */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        {/* ヘッダー */}
+        <div className="bg-gray-50 border-b border-gray-200 p-4">
+          <div className="text-sm font-medium text-gray-700">
+            {daySlots.length}件のレッスンスロット
+          </div>
+        </div>
+
+        {/* タイムライングリッド */}
+        <div className="relative">
+          {/* 時間軸 */}
+          <div className="divide-y divide-gray-200">
+            {timeSlots.map((hour) => (
+              <div 
+                key={hour}
+                className="grid grid-cols-[80px_1fr] min-h-[60px] relative"
+              >
+                {/* 時間ラベル */}
+                <div className="p-3 border-r border-gray-200 flex items-center justify-center bg-gray-50">
+                  <div className="text-sm font-medium text-gray-600">
+                    {hour.toString().padStart(2, '0')}:00
+                  </div>
+                </div>
+                
+                {/* スロット表示エリア */}
+                <div className="relative p-2">
+                  {/* この時間帯のスロットを表示 */}
+                  {daySlots.map((slot, slotIndex) => {
+                    const slotStart = new Date(slot.startTime);
+                    const slotEnd = new Date(slot.endTime);
+                    const slotStartHour = slotStart.getHours();
+                    const slotEndHour = slotEnd.getHours();
+                    
+                    // この時間帯にスロットが重なっているかチェック
+                    if (slotStartHour <= hour && hour < slotEndHour) {
+                      // スロット内の位置計算
+                      const startPosition = slotStartHour === hour ? 
+                        (slotStart.getMinutes() / 60) * 60 : 0;
+                      const endPosition = slotEndHour === hour + 1 ? 
+                        (slotEnd.getMinutes() / 60) * 60 : 60;
+                      const duration = endPosition - startPosition;
+                      
+                      // このスロットが最初に表示される時間帯かどうか
+                      const isFirstDisplay = slotStartHour === hour;
+                      
+                      if (!isFirstDisplay) return null; // 最初の時間帯でのみ表示
+                      
+                      // スロット全体の高さを計算
+                      const totalDuration = (slotEnd.getTime() - slotStart.getTime()) / (1000 * 60);
+                      const totalHeight = totalDuration;
+                      
+                      return (
+                        <div
+                          key={slot.id}
+                          className="absolute left-2 right-2 bg-blue-100 border border-blue-300 rounded-lg overflow-hidden"
+                          style={{
+                            top: `${startPosition}px`,
+                            height: `${totalHeight}px`,
+                            zIndex: 10
+                          }}
+                        >
+                          {/* スロット基本情報 */}
+                          <div className="p-2 bg-blue-50 border-b border-blue-200">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <div className="font-semibold text-blue-900 text-sm">
+                                  {format(slotStart, 'HH:mm')}-{format(slotEnd, 'HH:mm')}
+                                </div>
+                                <div className="text-blue-700 text-xs">
+                                  {formatPrice(slot.hourlyRate || 5000)}
+                                </div>
+                              </div>
+                              <div className="text-xs text-blue-600">
+                                {slot.reservations?.length || 0}件予約
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* 予約一覧 */}
+                          <div className="p-1 space-y-1">
+                            {slot.reservations?.map((reservation, resIndex) => {
+                              const resStart = new Date(reservation.bookedStartTime || '');
+                              const resEnd = new Date(reservation.bookedEndTime || '');
+                              
+                              // ステータス別の色分け
+                              const statusColors = {
+                                PENDING_APPROVAL: 'bg-orange-100 border-orange-300 text-orange-800',
+                                APPROVED: 'bg-green-100 border-green-300 text-green-800',
+                                CONFIRMED: 'bg-blue-100 border-blue-300 text-blue-800',
+                                REJECTED: 'bg-red-100 border-red-300 text-red-800',
+                                CANCELED: 'bg-gray-100 border-gray-300 text-gray-600',
+                              };
+                              
+                              return (
+                                <div
+                                  key={reservation.id}
+                                  onClick={() => onReservationClick(reservation)}
+                                  className={`
+                                    p-2 rounded border cursor-pointer hover:opacity-80 transition-opacity
+                                    ${statusColors[reservation.status as keyof typeof statusColors] || 'bg-gray-100 border-gray-300 text-gray-800'}
+                                  `}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <User className="h-3 w-3" />
+                                      <span className="text-xs font-medium">
+                                        {reservation.student?.name || 'ユーザー'}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      {reservation.status === 'PENDING_APPROVAL' && userRole === 'mentor' && (
+                                        <>
+                                          <CheckCircle className="h-3 w-3 text-green-600" />
+                                          <XCircle className="h-3 w-3 text-red-600" />
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs opacity-75 mt-1">
+                                    {format(resStart, 'HH:mm')}-{format(resEnd, 'HH:mm')}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      {/* 日表示の凡例 */}
+      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+        <h5 className="text-sm font-medium text-gray-700 mb-3">タイムライン表示の見方</h5>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div>
+            <h6 className="text-xs font-medium text-gray-600 mb-2">予約ステータス</h6>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-orange-100 border border-orange-300 rounded"></div>
+                <span>承認待ち</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+                <span>承認済み</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
+                <span>確定済み</span>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h6 className="text-xs font-medium text-gray-600 mb-2">操作</h6>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span>承認</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <XCircle className="h-4 w-4 text-red-600" />
+                <span>キャンセル</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="text-xs text-gray-600 border-t pt-2 mt-3">
+          💡 <strong>操作方法:</strong> 予約をクリックして管理メニューを開きます
+        </div>
+      </div>
+    </div>
+  );
+}; 
