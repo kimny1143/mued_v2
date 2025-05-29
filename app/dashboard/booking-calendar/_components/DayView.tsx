@@ -72,9 +72,9 @@ export const DayView: React.FC<DayViewProps> = ({
 
   console.log('🔍 availableMentors:', availableMentors);
 
-  // 時間軸の生成（8:00-22:00、1時間刻み）
+  // 時間軸の生成（0:00-23:00、24時間表示）
   const timeSlots = [];
-  for (let hour = 8; hour <= 22; hour++) {
+  for (let hour = 0; hour <= 23; hour++) {
     timeSlots.push(hour);
   }
 
@@ -254,9 +254,9 @@ export const DayView: React.FC<DayViewProps> = ({
                 const endHour = slotEnd.getHours();
                 const endMinute = slotEnd.getMinutes();
                 
-                // 8:00を基準とした相対位置
-                const startPosition = (startHour - 8) + (startMinute / 60);
-                const endPosition = (endHour - 8) + (endMinute / 60);
+                // 0:00を基準とした相対位置（24時間表示対応）
+                const startPosition = startHour + (startMinute / 60);
+                const endPosition = endHour + (endMinute / 60);
                 const duration = endPosition - startPosition;
                 
                 // CSS Gridに合わせた正しい位置計算
@@ -359,9 +359,9 @@ export const DayView: React.FC<DayViewProps> = ({
                           status: myReservation.status
                         });
                         
-                        // 予約時間の相対位置計算
-                        const resStartPos = (resStart.getHours() - 8) + (resStart.getMinutes() / 60);
-                        const resEndPos = (resEnd.getHours() - 8) + (resEnd.getMinutes() / 60);
+                        // 予約時間の相対位置計算（24時間表示対応）
+                        const resStartPos = resStart.getHours() + (resStart.getMinutes() / 60);
+                        const resEndPos = resEnd.getHours() + (resEnd.getMinutes() / 60);
                         const resDuration = resEndPos - resStartPos;
                         
                         // 生徒自身の予約の色分け
@@ -423,8 +423,8 @@ export const DayView: React.FC<DayViewProps> = ({
                         const resEnd = new Date(otherReservation.bookedEndTime);
                         
                         // 予約時間の相対位置計算
-                        const resStartPos = (resStart.getHours() - 8) + (resStart.getMinutes() / 60);
-                        const resEndPos = (resEnd.getHours() - 8) + (resEnd.getMinutes() / 60);
+                        const resStartPos = resStart.getHours() + (resStart.getMinutes() / 60);
+                        const resEndPos = resEnd.getHours() + (resEnd.getMinutes() / 60);
                         const resDuration = resEndPos - resStartPos;
                         
                         return (

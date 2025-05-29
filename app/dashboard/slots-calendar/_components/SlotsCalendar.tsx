@@ -10,6 +10,21 @@ import { SlotModal } from './SlotModal';
 // デバッグモード
 const DEBUG = true;
 
+// 時間表示設定 - 24時間対応
+const TIME_RANGE = {
+  START_HOUR: 0,  // 0:00から開始
+  END_HOUR: 23,   // 23:00まで表示
+};
+
+// 時間軸生成関数
+const generateTimeSlots = (startHour: number = TIME_RANGE.START_HOUR, endHour: number = TIME_RANGE.END_HOUR) => {
+  const timeSlots = [];
+  for (let hour = startHour; hour <= endHour; hour++) {
+    timeSlots.push(hour);
+  }
+  return timeSlots;
+};
+
 // メンタースロットの型定義
 interface MentorLessonSlot {
   id: string;
