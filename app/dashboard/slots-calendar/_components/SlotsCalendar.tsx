@@ -106,8 +106,16 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
     }
   };
 
-  // 空の日付エリアクリック処理 - 新規スロット作成
+  // 空の日付エリアクリック処理 - 新規スロット作成（削除予定）
   const handleEmptyAreaClick = (date: Date) => {
+    // 新しい実装では使用しない - 代わりにhandleDateClickを使用
+    // 日別表示で新規作成機能を提供
+    if (onDateClick) {
+      onDateClick(date);
+      return;
+    }
+    
+    // フォールバック処理（onDateClickが提供されていない場合のみ）
     const daySlots = getSlotsForDate(date);
     setSelectedDate(date);
     
@@ -241,7 +249,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                   return (
                     <div
                       key={index}
-                      onClick={isCurrentMonth ? () => handleEmptyAreaClick(date) : undefined}
+                      onClick={isCurrentMonth ? () => handleDateClick(date) : undefined}
                       className={`
                         aspect-square p-1 sm:p-2 text-center rounded-md sm:rounded-lg transition-all duration-200 relative 
                         min-h-[60px] flex flex-col justify-between
@@ -418,7 +426,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
               </div>
               
               <div className="text-xxs text-gray-600">
-                💡 <strong>操作方法:</strong> スロットタグをクリック→編集、空白エリアをクリック→新規作成<br/>
+                💡 <strong>操作方法:</strong> 日付をクリック→日別タイムライン表示、スロットタグクリック→編集<br/>
                 💡 <strong>予約表示:</strong> 🎵アイコン付きで生徒の予約時間を表示
               </div>
             </div>
