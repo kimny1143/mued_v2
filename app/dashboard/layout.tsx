@@ -59,8 +59,7 @@ const dashboardNavItems: NavItem[] = [
   { icon: FolderIcon, label: "Materials", path: "/dashboard/materials" },
   { icon: BookOpenIcon, label: "My Lessons", path: "/dashboard/my-lessons" },
   { icon: DumbbellIcon, label: "Exercises", path: "/dashboard/exercises" },
-  { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" },
-  { icon: CalendarIcon, label: "Reservations", path: "/dashboard/reservations" }
+  { icon: MessageSquareIcon, label: "Messages", path: "/dashboard/messages" }
 ];
 
 // 生徒専用ナビゲーション項目
@@ -70,8 +69,7 @@ const studentNavItems: NavItem[] = [
 
 // メンター専用ナビゲーション項目
 const mentorNavItems: NavItem[] = [
-  { icon: CalendarIcon, label: "Slots Calendar", path: "/dashboard/slots-calendar" },
-  { icon: BellIcon, label: "Approval Requests", path: "/dashboard/mentor-approvals" }
+  { icon: CalendarIcon, label: "Slots Calendar", path: "/dashboard/slots-calendar" }
 ];
 
 // 共通メニュー（最下部に表示）
