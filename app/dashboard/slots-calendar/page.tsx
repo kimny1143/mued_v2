@@ -756,7 +756,6 @@ export default function SlotsCalendarPage() {
                 onDayNavigation={handleDayNavigation}
                 onReservationClick={handleDayViewReservationClick}
                 onApprove={handleDayViewApprove}
-                onCancel={handleDayViewCancel}
                 userRole={userRole}
               />
             )

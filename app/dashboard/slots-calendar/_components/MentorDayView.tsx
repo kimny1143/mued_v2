@@ -44,7 +44,6 @@ interface MentorDayViewProps {
   onDayNavigation: (date: Date) => void;
   onReservationClick: (reservation: MentorLessonSlot['reservations'][0]) => void;
   onApprove?: (reservationId: string) => Promise<void>;
-  onCancel?: (reservationId: string, reason?: string) => Promise<void>;
   userRole: 'student' | 'mentor' | 'admin';
 }
 
@@ -56,7 +55,6 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   onDayNavigation,
   onReservationClick,
   onApprove,
-  onCancel,
   userRole,
 }) => {
   // デバッグ: 基本情報のみ（パフォーマンス重視）
@@ -292,7 +290,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                                     </div>
                                     <div className="flex items-center gap-2 flex-shrink-0">
                                       {/* ステータス別の操作ボタン - PC対応の大きさに修正 */}
-                                      {reservation.status === 'PENDING_APPROVAL' && userRole === 'mentor' && onApprove && onCancel && (
+                                      {reservation.status === 'PENDING_APPROVAL' && userRole === 'mentor' && onApprove && (
                                         <>
                                           <button
                                             onClick={(e) => {
@@ -309,8 +307,8 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
-                                              console.log(`❌ 拒否: ${reservation.id}`);
-                                              onCancel(reservation.id, 'MENTOR_REJECTED');
+                                              console.log(`❌ 拒否詳細: ${reservation.id}`);
+                                              onReservationClick(reservation);
                                             }}
                                             className="px-2 py-1 rounded text-xs font-medium bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 transition-colors flex items-center gap-1"
                                             title="拒否"
@@ -320,14 +318,12 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                                           </button>
                                         </>
                                       )}
-                                      {(reservation.status === 'APPROVED' || reservation.status === 'CONFIRMED') && userRole === 'mentor' && onCancel && (
+                                      {(reservation.status === 'APPROVED' || reservation.status === 'CONFIRMED') && userRole === 'mentor' && (
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            console.log(`🗑️ キャンセル: ${reservation.id}`);
-                                            if (window.confirm('この予約をキャンセルしますか？')) {
-                                              onCancel(reservation.id, 'MENTOR_CANCELLED');
-                                            }
+                                            console.log(`🗑️ キャンセル詳細: ${reservation.id}`);
+                                            onReservationClick(reservation);
                                           }}
                                           className="px-2 py-1 rounded text-xs font-medium bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 transition-colors flex items-center gap-1"
                                           title="キャンセル"
