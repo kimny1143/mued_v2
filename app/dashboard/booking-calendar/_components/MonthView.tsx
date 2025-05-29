@@ -3,31 +3,7 @@
 import React from 'react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, startOfDay } from 'date-fns';
 import { Mentor } from './MentorList';
-
-interface ExtendedTimeSlot {
-  id: string;
-  startTime: Date;
-  endTime: Date;
-  isAvailable: boolean;
-  hourlyRate?: number;
-  mentorId: string;
-  mentorName: string | null;
-  bookingStatus: 'available' | 'partial' | 'full' | 'unavailable';
-  reservationCount: number;
-  bookedTime: number;
-  availableTime: number;
-  bookingRate: number;
-}
-
-interface MyReservation {
-  id: string;
-  slotId: string;
-  studentId: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'APPROVED' | 'PENDING_APPROVAL';
-  bookedStartTime: string;
-  bookedEndTime: string;
-  createdAt: string;
-}
+import type { ExtendedTimeSlot, MyReservation } from '../_types/calendar.js';
 
 interface MonthViewProps {
   currentDate: Date;

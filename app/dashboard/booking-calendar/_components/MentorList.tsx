@@ -7,6 +7,9 @@ import { Button } from '@/app/components/ui/button';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import type { Mentor } from '@/lib/types';
 
+// Mentor型を他のコンポーネントからも利用できるよう再エクスポート
+export type { Mentor } from '@/lib/types';
+
 interface MentorListProps {
   mentors: Mentor[];
   selectedMentorId?: string;

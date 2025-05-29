@@ -3,27 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { Mentor } from './MentorList';
 import { CalendarNavigation } from './CalendarNavigation';
-import type { TimeSlot } from './TimeSlotDisplay';
 import { BookingModal } from './BookingModal';
 import { MonthView } from './MonthView';
 import { DayView } from './DayView';
 import { startOfDay } from 'date-fns';
 import { AlertCircle } from 'lucide-react';
 import { isDebugMode, debugLog, verboseDebugLog } from '@/lib/debug';
-import type { ExtendedTimeSlot, MyReservation } from '../_types/calendar';
+import type { ExtendedTimeSlot, MyReservation, OtherReservation, TimeSlot } from '../_types/calendar.js';
+import type { LessonSlot, Reservation } from '@/lib/types';
 
 // デバッグモード（環境変数ベース）
 const DEBUG = isDebugMode();
-
-// 他の予約情報の型定義
-interface OtherReservation {
-  id: string;
-  slotId: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'APPROVED' | 'PENDING_APPROVAL';
-  bookedStartTime: string;
-  bookedEndTime: string;
-  studentId: string;
-}
 
 interface MentorCalendarProps {
   mentors: Mentor[];
@@ -174,8 +164,8 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
       mentors.forEach(mentor => {
         if (mentor.availableSlots && mentor.availableSlots.length > 0) {
           const mentorSlots = mentor.availableSlots
-            .filter(slot => slot.id) // idが存在するもののみ
-            .map(slot => {
+            .filter((slot: LessonSlot) => slot.id) // idが存在するもののみ
+            .map((slot: LessonSlot) => {
               // 予約状況の分析
               const slotStart = new Date(slot.startTime).getTime();
               const slotEnd = new Date(slot.endTime).getTime();
@@ -186,13 +176,13 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
               
               if (slot.reservations && slot.reservations.length > 0) {
                 const activeReservations = slot.reservations.filter(
-                  res => res.status === 'CONFIRMED' || res.status === 'PENDING'
+                  (res: Reservation) => res.status === 'CONFIRMED' || res.status === 'PENDING'
                 );
                 
                 reservationCount = activeReservations.length;
                 
                 // 予約済み時間を計算
-                activeReservations.forEach(reservation => {
+                activeReservations.forEach((reservation: Reservation) => {
                   if (reservation.bookedStartTime && reservation.bookedEndTime) {
                     const bookStart = new Date(reservation.bookedStartTime).getTime();
                     const bookEnd = new Date(reservation.bookedEndTime).getTime();
@@ -228,6 +218,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                 endTime: slot.endTime instanceof Date ? slot.endTime : new Date(slot.endTime),
                 isAvailable: slot.isAvailable !== false,
                 hourlyRate: slot.hourlyRate || 5000,
+                reservations: slot.reservations || [],
                 // メンター情報も保持
                 mentorId: mentor.id,
                 mentorName: mentor.name,

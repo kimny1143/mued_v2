@@ -8,9 +8,12 @@ import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { runFullDiagnostic } from "@/lib/debug-helpers";
+import { TodayScheduleCard } from "@/app/components/dashboard/TodayScheduleCard";
+import { ReservationStatusCard } from "@/app/components/dashboard/ReservationStatusCard";
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string>('');
   const router = useRouter();
   const { user, loading: userLoading, error } = useUser();
 
@@ -28,6 +31,27 @@ export default function DashboardPage() {
 
     getSession();
   }, [router]);
+
+  // ユーザーロールを取得
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user?.id) {
+        try {
+          const response = await fetch(`/api/user?userId=${user.id}`);
+          if (response.ok) {
+            const userData = await response.json();
+            setUserRole(userData.roleName || 'student');
+            console.log('取得したユーザーロール:', userData.roleName);
+          }
+        } catch (error) {
+          console.error('ロール取得エラー:', error);
+          setUserRole('student'); // デフォルト
+        }
+      }
+    };
+
+    fetchUserRole();
+  }, [user]);
 
   // 開発環境でのみデバッグ診断を実行
   useEffect(() => {
@@ -49,7 +73,15 @@ export default function DashboardPage() {
 
   return (
     <>
-      {/* Welcome section */}
+      {/* ロール別の予約状況セクション */}
+      <section className="mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <TodayScheduleCard userRole={userRole} userId={user?.id} />
+          <ReservationStatusCard userRole={userRole} userId={user?.id} />
+        </div>
+      </section>
+
+      {/* 既存の統計セクション */}
       <section className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="p-6 bg-white">

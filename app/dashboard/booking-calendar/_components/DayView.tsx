@@ -6,40 +6,7 @@ import { ja } from 'date-fns/locale';
 import { Button } from '@/app/components/ui/button';
 import { ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { Mentor } from './MentorList';
-
-interface ExtendedTimeSlot {
-  id: string;
-  startTime: Date;
-  endTime: Date;
-  isAvailable: boolean;
-  hourlyRate?: number;
-  mentorId: string;
-  mentorName: string | null;
-  bookingStatus: 'available' | 'partial' | 'full' | 'unavailable';
-  reservationCount: number;
-  bookedTime: number;
-  availableTime: number;
-  bookingRate: number;
-}
-
-interface MyReservation {
-  id: string;
-  slotId: string;
-  studentId: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'APPROVED' | 'PENDING_APPROVAL';
-  bookedStartTime: string;
-  bookedEndTime: string;
-  createdAt: string;
-}
-
-interface OtherReservation {
-  id: string;
-  slotId: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'APPROVED' | 'PENDING_APPROVAL';
-  bookedStartTime: string;
-  bookedEndTime: string;
-  studentId: string;
-}
+import type { ExtendedTimeSlot, MyReservation, OtherReservation } from '../_types/calendar.js';
 
 interface DayViewProps {
   selectedDate: Date;
