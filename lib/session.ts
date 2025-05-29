@@ -198,17 +198,55 @@ export async function getSessionFromRequest(request: Request): Promise<{
         token ? `有効なトークン (${token.substring(0, 10)}...)` : "空のトークン");
     }
     
-    // Authorization ヘッダーが無ければ Cookie から取得（sb-access-token）
+    // Authorization ヘッダーが無ければ Cookie から取得（sb-auth-token）
     if (!token) {
       const cookieHeader = request.headers.get('cookie') || '';
-      // Supabase v2 cookie key: sb-<projectRef>-access-token
-      // projectRef 付き  or  なし の両方を許可
-      const match = cookieHeader.match(/sb-(?:[^=]+-)?access-token=([^;]+)/);
-      if (match && match[1]) {
-        token = decodeURIComponent(match[1]);
-        console.log("Cookie からアクセストークン取得:", token.substring(0, 10) + '...');
+      console.log("Cookie ヘッダー検索開始:", cookieHeader.substring(0, 100) + '...');
+      
+      // Supabase v2の実際のcookieキーパターンに対応
+      // 1. sb-<projectRef>-auth-token.0 (base64パート)
+      // 2. sb-<projectRef>-auth-token.1 (残りのパート)
+      const authTokenMatch = cookieHeader.match(/sb-[^=]+-auth-token\.0=([^;]+)/);
+      
+      if (authTokenMatch && authTokenMatch[1]) {
+        try {
+          // Base64デコードしてJSONパース
+          const decodedToken = decodeURIComponent(authTokenMatch[1]);
+          console.log("Cookie から auth-token.0 取得:", decodedToken.substring(0, 20) + '...');
+          
+          // base64-でプレフィックスされている場合の処理
+          let tokenData = decodedToken;
+          if (tokenData.startsWith('base64-')) {
+            tokenData = atob(tokenData.substring(7)); // base64-を除去してデコード
+          }
+          
+          // JSONパースしてaccess_tokenを取得
+          const tokenObject = JSON.parse(tokenData);
+          if (tokenObject.access_token) {
+            token = tokenObject.access_token;
+            console.log("Cookie からアクセストークン解析成功:", token ? token.substring(0, 10) + '...' : 'null');
+          } else {
+            console.log("トークンオブジェクトにaccess_tokenが見つかりません:", Object.keys(tokenObject));
+          }
+        } catch (parseError) {
+          console.error("Cookie トークン解析エラー:", parseError);
+          
+          // フォールバック: 古い形式も試行
+          const legacyMatch = cookieHeader.match(/sb-(?:[^=]+-)?access-token=([^;]+)/);
+          if (legacyMatch && legacyMatch[1]) {
+            token = decodeURIComponent(legacyMatch[1]);
+            console.log("フォールバック: レガシーaccess-token取得:", token ? token.substring(0, 10) + '...' : 'null');
+          }
+        }
       } else {
-        console.log("Cookie に sb-access-token が見つかりませんでした");
+        console.log("Cookie に sb-*-auth-token.0 が見つかりませんでした");
+        
+        // 代替: access-tokenも検索
+        const accessTokenMatch = cookieHeader.match(/sb-(?:[^=]+-)?access-token=([^;]+)/);
+        if (accessTokenMatch && accessTokenMatch[1]) {
+          token = decodeURIComponent(accessTokenMatch[1]);
+          console.log("Cookie から代替access-token取得:", token ? token.substring(0, 10) + '...' : 'null');
+        }
       }
     }
     
