@@ -8,6 +8,7 @@ import { Button } from '@/app/components/ui/button';
 import { CalendarClock, ArrowRight, ArrowLeft } from 'lucide-react';
 import { TimeSlot } from './_components/TimeSlotDisplay';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import DashboardLayout from '../layout';
 
 // デバッグモード
 const DEBUG = true;
@@ -544,14 +545,11 @@ export default function BookingCalendarPage() {
   }
 
   return (
-    <div className="w-full py-6 px-0 sm:px-4 lg:container lg:mx-auto">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-2 px-2 sm:px-0">
-        <div className="flex items-center">
-          <CalendarClock className="h-6 w-6 mr-2 text-primary" aria-hidden="true" />
-          <h1 className="text-xl sm:text-2xl font-bold">メンターレッスン予約</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-sm text-gray-600">
+    <DashboardLayout 
+      title="メンターレッスン予約"
+      actions={
+        <div className="flex items-center gap-2 actions-mobile">
+          <div className="text-sm text-gray-600 hidden sm:block">
             {mentors.length}人のメンターが利用可能
           </div>
           <Button
@@ -572,7 +570,7 @@ export default function BookingCalendarPage() {
                 realtimeStatus.lessonSlots === 'connecting' ? 'bg-yellow-500' :
                 realtimeStatus.lessonSlots === 'error' ? 'bg-red-500' : 'bg-gray-400'
               }`} />
-              <span className="text-gray-500">スロット</span>
+              <span className="text-gray-500 hidden sm:inline">スロット</span>
             </div>
             <div className="flex items-center gap-1">
               <div className={`w-2 h-2 rounded-full ${
@@ -580,12 +578,12 @@ export default function BookingCalendarPage() {
                 realtimeStatus.reservations === 'connecting' ? 'bg-yellow-500' :
                 realtimeStatus.reservations === 'error' ? 'bg-red-500' : 'bg-gray-400'
               }`} />
-              <span className="text-gray-500">予約</span>
+              <span className="text-gray-500 hidden sm:inline">予約</span>
             </div>
           </div>
         </div>
-      </div>
-      
+      }
+    >
       {error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg" role="alert">
           <p>{error}</p>
@@ -598,14 +596,7 @@ export default function BookingCalendarPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-4 sm:mx-0">
-          <div className="p-0 sm:p-6 border-b">
-            <h2 className="text-base sm:text-lg font-semibold">予約可能な日時を選択</h2>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">
-              カレンダー上で気になる日付をクリックして、その日のレッスン一覧を確認できます
-            </p>
-          </div>
-          
+        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-8 sm:mx-0 calendar-container-mobile">
           <div className="p-0 sm:p-6">
             <MentorCalendar
               mentors={mentors}
@@ -616,6 +607,6 @@ export default function BookingCalendarPage() {
           </div>
         </div>
       )}
-    </div>
+    </DashboardLayout>
   );
 } 
