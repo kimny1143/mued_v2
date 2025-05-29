@@ -79,6 +79,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const slotId = searchParams.get('slotId');
+    const date = searchParams.get('date'); // 日付パラメータを追加
     const includeAll = searchParams.get('includeAll') === 'true'; // 全予約取得フラグ
     
     // クエリ条件を構築
@@ -108,6 +109,22 @@ export async function GET(request: NextRequest) {
     
     if (slotId) {
       where.slot_id = slotId;
+    }
+    
+    if (date) {
+      // 指定された日付の0:00〜23:59:59の範囲で予約を検索
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      where.booked_start_time = {
+        gte: startOfDay,
+        lte: endOfDay
+      };
+      
+      console.log(`🗓️ 日付フィルタ適用: ${date} (${startOfDay.toISOString()} 〜 ${endOfDay.toISOString()})`);
     }
     
     // データベースから予約を取得（エラーハンドリング強化）

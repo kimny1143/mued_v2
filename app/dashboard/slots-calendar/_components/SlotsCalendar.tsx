@@ -49,6 +49,7 @@ interface SlotsCalendarProps {
   onSlotUpdate: (updatedSlot: MentorLessonSlot) => void;
   onSlotDelete: (deletedSlotId: string) => void;
   onReservationClick?: (reservation: MentorLessonSlot['reservations'][0], mode?: 'view' | 'cancel' | 'reschedule' | 'approve' | 'reject') => void;
+  onDateClick?: (date: Date) => void;
 }
 
 export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
@@ -57,6 +58,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
   onSlotUpdate,
   onSlotDelete,
   onReservationClick,
+  onDateClick,
 }) => {
   // 現在表示中の日付
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -97,8 +99,15 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
     return 'available';
   };
 
-  // 日付をクリックしたときの処理
+  // 日付クリック処理 - 日付別予約一覧モーダルを開く
   const handleDateClick = (date: Date) => {
+    if (onDateClick) {
+      onDateClick(date);
+    }
+  };
+
+  // 空の日付エリアクリック処理 - 新規スロット作成
+  const handleEmptyAreaClick = (date: Date) => {
     const daySlots = getSlotsForDate(date);
     setSelectedDate(date);
     
@@ -124,14 +133,6 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
   const handleSlotClick = (slot: MentorLessonSlot, mode: 'view' | 'edit' = 'view') => {
     setSelectedSlot(slot);
     setModalMode(mode);
-    setIsModalOpen(true);
-  };
-
-  // 空白エリアクリック（新規作成）
-  const handleEmptyAreaClick = (date: Date) => {
-    setSelectedDate(date);
-    setSelectedSlot(null);
-    setModalMode('create');
     setIsModalOpen(true);
   };
 
