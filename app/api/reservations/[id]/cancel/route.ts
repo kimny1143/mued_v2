@@ -160,9 +160,9 @@ export async function POST(
       await tx.$executeRaw`
         UPDATE reservations 
         SET 
-          canceledat = NOW(),
-          canceledby = ${sessionInfo.user.id},
-          cancelreason = ${reason}
+          canceled_at = NOW(),
+          canceled_by = ${sessionInfo.user.id},
+          cancel_reason = ${reason}
         WHERE id = ${reservationId}
       `;
 
