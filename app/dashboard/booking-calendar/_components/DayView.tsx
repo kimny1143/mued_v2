@@ -485,12 +485,16 @@ export const DayView: React.FC<DayViewProps> = ({
                 <span>確定済み</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-6 bg-green-200 border-2 border-green-500 rounded text-green-900 text-xs flex items-center justify-center">🎵</div>
+                <div className="w-4 h-6 bg-green-200 border-2 border-green-500 rounded text-green-900 text-xs flex items-center justify-center">✅</div>
                 <span>承認済み（決済待ち）</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-6 bg-orange-200 border-2 border-orange-500 rounded text-orange-900 text-xs flex items-center justify-center">🎵</div>
-                <span>承認待ち</span>
+                <div className="w-4 h-6 bg-orange-200 border-2 border-orange-500 rounded text-orange-900 text-xs flex items-center justify-center">⏳</div>
+                <span>メンター確認中</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-6 bg-yellow-200 border-2 border-yellow-500 rounded text-yellow-900 text-xs flex items-center justify-center">⏰</div>
+                <span>保留中</span>
               </div>
             </div>
           </div>
@@ -514,6 +518,7 @@ export const DayView: React.FC<DayViewProps> = ({
         <div className="text-[10px] text-gray-600 border-t pt-2 mt-3">
           💡 <strong>プライバシー保護:</strong> 他の生徒の予約は時間のみ表示され、個人情報は表示されません
           <br />💡 <strong>予約状況:</strong> {otherReservations.length}件の他の予約が表示されています
+          <br />⏳ <strong>メンター確認中:</strong> 予約申請がメンターの承認待ち状態です
         </div>
       </div>
     </div>
