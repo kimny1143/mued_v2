@@ -256,13 +256,25 @@ export default function SlotsCalendarPage() {
       let totalAmount = 0;
       if (response.ok) {
         const reservationDetail = await response.json();
+        
+        // デバッグ用ログ
+        console.log('=== handleReservationClick API Debug ===');
+        console.log('API Response:', reservationDetail);
+        console.log('totalAmount from API:', reservationDetail.totalAmount);
+        console.log('total_amount from API:', reservationDetail.total_amount);
+        console.log('============================================');
+        
         totalAmount = reservationDetail.totalAmount || 0;
       } else {
+        console.warn('API request failed, calculating from slot data');
         // APIエラーの場合はスロットの時間単価から計算
         const duration = new Date(reservation.bookedEndTime || '').getTime() - new Date(reservation.bookedStartTime || '').getTime();
         const hours = duration / (1000 * 60 * 60);
         totalAmount = Math.round((parentSlot?.hourlyRate || 5000) * hours);
+        console.log('Calculated totalAmount from slot:', totalAmount);
       }
+      
+      console.log('Final totalAmount value:', totalAmount);
       
       // 予約データを適切な形式に変換
       const reservationData: ReservationData = {

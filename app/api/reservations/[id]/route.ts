@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/session';
 import { Prisma, ReservationStatus } from '@prisma/client';
 import { stripe } from '@/lib/stripe';
+import { convertReservationToResponse } from '@/lib/caseConverter';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,7 +68,16 @@ export async function GET(
       );
     }
     
-    return NextResponse.json(reservation);
+    // データをキャメルケースに変換して返す
+    const convertedReservation = convertReservationToResponse(reservation);
+    
+    // デバッグ用ログ
+    console.log('=== Reservation API Debug ===');
+    console.log('Original reservation total_amount:', reservation.total_amount);
+    console.log('Converted reservation totalAmount:', convertedReservation.totalAmount);
+    console.log('=============================');
+    
+    return NextResponse.json(convertedReservation);
   } catch (error) {
     console.error('Error fetching reservation:', error);
     return NextResponse.json(
@@ -174,7 +184,9 @@ export async function PUT(
       },
     });
     
-    return NextResponse.json(updatedReservation);
+    // データをキャメルケースに変換して返す
+    const convertedReservation = convertReservationToResponse(updatedReservation);
+    return NextResponse.json(convertedReservation);
   } catch (error) {
     console.error('Error updating reservation:', error);
     return NextResponse.json(
