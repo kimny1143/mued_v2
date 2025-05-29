@@ -82,12 +82,17 @@ export default function SlotsCalendarPage() {
 
   // スロットデータを取得する関数（RLSポリシー対応版）
   const fetchMySlots = useCallback(async () => {
+    const startTime = performance.now();
+    console.log('🔄 fetchMySlots開始');
+    
     try {
       setIsLoading(true);
       
+      const authStartTime = performance.now();
       // 認証トークンを取得
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData.session?.access_token ?? null;
+      console.log(`⏱️ fetchMySlots - 認証取得: ${(performance.now() - authStartTime).toFixed(2)}ms`);
       
       if (!token) {
         throw new Error('認証が必要です。ログインしてください。');
@@ -108,10 +113,12 @@ export default function SlotsCalendarPage() {
         viewMode = 'all'; // 管理者の場合はすべてのスロットを取得
       }
       
+      const apiStartTime = performance.now();
       const response = await fetch(`/api/lesson-slots?viewMode=${viewMode}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         credentials: 'include',
       });
+      console.log(`⏱️ fetchMySlots - API呼び出し: ${(performance.now() - apiStartTime).toFixed(2)}ms`);
       
       if (!response.ok) {
         const errorResponse = await response.json();
@@ -122,7 +129,9 @@ export default function SlotsCalendarPage() {
         );
       }
       
+      const parseStartTime = performance.now();
       const data: MentorLessonSlot[] = await response.json();
+      console.log(`⏱️ fetchMySlots - レスポンス解析: ${(performance.now() - parseStartTime).toFixed(2)}ms`);
       console.log(`取得したレッスンスロット: ${data.length}件 (${viewMode}モード)`);
       
       if (DEBUG && data.length > 0) {
@@ -138,6 +147,7 @@ export default function SlotsCalendarPage() {
       
       setSlots(data);
       setError(null);
+      console.log(`✅ fetchMySlots完了: ${(performance.now() - startTime).toFixed(2)}ms`);
       
     } catch (err) {
       console.error('スロット情報取得エラー:', err);
@@ -333,16 +343,22 @@ export default function SlotsCalendarPage() {
 
   // 日別表示での直接承認処理
   const handleDayViewApprove = async (reservationId: string) => {
+    const startTime = performance.now();
+    console.log(`🚀 承認処理開始: ${reservationId}`);
+    
     try {
       setIsReservationProcessing(true);
       
+      const authStartTime = performance.now();
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData.session?.access_token ?? null;
+      console.log(`⏱️ 認証取得: ${(performance.now() - authStartTime).toFixed(2)}ms`);
 
       if (!token) {
         throw new Error('認証が必要です');
       }
 
+      const apiStartTime = performance.now();
       const response = await fetch(`/api/reservations/${reservationId}/approve`, {
         method: 'POST',
         headers: {
@@ -351,6 +367,7 @@ export default function SlotsCalendarPage() {
         },
         credentials: 'include',
       });
+      console.log(`⏱️ API呼び出し: ${(performance.now() - apiStartTime).toFixed(2)}ms`);
 
       if (!response.ok) {
         const result = await response.json();
@@ -359,8 +376,28 @@ export default function SlotsCalendarPage() {
 
       toast.success('予約を承認しました');
       
-      // スロット一覧をリアルタイム更新
-      await fetchMySlots();
+      // 🚀 高速化: ローカル状態を直接更新
+      const localUpdateStartTime = performance.now();
+      setSlots(prevSlots => 
+        prevSlots.map(slot => ({
+          ...slot,
+          reservations: slot.reservations.map(reservation => 
+            reservation.id === reservationId 
+              ? { ...reservation, status: 'APPROVED' }
+              : reservation
+          )
+        }))
+      );
+      console.log(`⚡ ローカル状態更新: ${(performance.now() - localUpdateStartTime).toFixed(2)}ms`);
+      console.log(`✅ 承認処理完了: ${(performance.now() - startTime).toFixed(2)}ms`);
+      
+      // フォールバック: 2秒後に全データ同期（リアルタイム更新と競合回避）
+      setTimeout(async () => {
+        console.log('🔄 フォールバック同期開始');
+        const refreshStartTime = performance.now();
+        await fetchMySlots();
+        console.log(`🔄 フォールバック同期完了: ${(performance.now() - refreshStartTime).toFixed(2)}ms`);
+      }, 2000);
       
     } catch (error) {
       console.error('承認処理エラー:', error);
@@ -372,16 +409,22 @@ export default function SlotsCalendarPage() {
 
   // 日別表示での直接キャンセル処理
   const handleDayViewCancel = async (reservationId: string, reason: string = 'MENTOR_CANCELLED') => {
+    const startTime = performance.now();
+    console.log(`🚀 キャンセル処理開始: ${reservationId}`);
+    
     try {
       setIsReservationProcessing(true);
       
+      const authStartTime = performance.now();
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData.session?.access_token ?? null;
+      console.log(`⏱️ 認証取得: ${(performance.now() - authStartTime).toFixed(2)}ms`);
 
       if (!token) {
         throw new Error('認証が必要です');
       }
 
+      const apiStartTime = performance.now();
       const response = await fetch(`/api/reservations/${reservationId}/cancel`, {
         method: 'POST',
         headers: {
@@ -391,6 +434,7 @@ export default function SlotsCalendarPage() {
         body: JSON.stringify({ reason, notes: 'メンターによりキャンセル' }),
         credentials: 'include',
       });
+      console.log(`⏱️ API呼び出し: ${(performance.now() - apiStartTime).toFixed(2)}ms`);
 
       const result = await response.json();
 
@@ -400,8 +444,28 @@ export default function SlotsCalendarPage() {
 
       toast.success('予約をキャンセルしました');
       
-      // スロット一覧をリアルタイム更新
-      await fetchMySlots();
+      // 🚀 高速化: ローカル状態を直接更新
+      const localUpdateStartTime = performance.now();
+      setSlots(prevSlots => 
+        prevSlots.map(slot => ({
+          ...slot,
+          reservations: slot.reservations.map(reservation => 
+            reservation.id === reservationId 
+              ? { ...reservation, status: 'CANCELED' }
+              : reservation
+          )
+        }))
+      );
+      console.log(`⚡ ローカル状態更新: ${(performance.now() - localUpdateStartTime).toFixed(2)}ms`);
+      console.log(`✅ キャンセル処理完了: ${(performance.now() - startTime).toFixed(2)}ms`);
+      
+      // フォールバック: 2秒後に全データ同期（リアルタイム更新と競合回避）
+      setTimeout(async () => {
+        console.log('🔄 フォールバック同期開始');
+        const refreshStartTime = performance.now();
+        await fetchMySlots();
+        console.log(`🔄 フォールバック同期完了: ${(performance.now() - refreshStartTime).toFixed(2)}ms`);
+      }, 2000);
       
     } catch (error) {
       console.error('キャンセル処理エラー:', error);
