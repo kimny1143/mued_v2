@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Card } from "@/app/components/ui/card";
 import { CheckCircleIcon, AlertCircleIcon, ClockIcon } from "lucide-react";
 import { ReservationStatusData, DashboardCardProps } from "./types";
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { api, ApiError } from '@/lib/api-client';
 
 // APIレスポンス用の型定義
 interface Reservation {
@@ -28,24 +28,7 @@ export const ReservationStatusCard: React.FC<DashboardCardProps> = ({ userRole, 
         setError(null);
         console.log('予約状況取得開始:', { userRole, userId });
 
-        // 認証トークンを取得
-        const { data: sessionData } = await supabaseBrowser.auth.getSession();
-        const token = sessionData.session?.access_token ?? null;
-        
-        if (!token) {
-          throw new Error('認証が必要です。ログインしてください。');
-        }
-
-        const response = await fetch(`/api/reservations`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-          credentials: 'include'
-        });
-
-        if (!response.ok) {
-          throw new Error(`API通信エラー: ${response.status}`);
-        }
-
-        const reservations: Reservation[] = await response.json();
+        const reservations: Reservation[] = await api.get('/api/reservations') as Reservation[];
         console.log('取得した予約一覧:', reservations);
         
         // ステータス別に集計
@@ -60,7 +43,11 @@ export const ReservationStatusCard: React.FC<DashboardCardProps> = ({ userRole, 
         });
       } catch (err) {
         console.error('予約状況取得エラー:', err);
-        setError(err instanceof Error ? err.message : '予約状況の取得に失敗しました');
+        if (err instanceof ApiError) {
+          setError(`予約状況の取得に失敗しました (${err.status}): ${err.message}`);
+        } else {
+          setError(err instanceof Error ? err.message : '予約状況の取得に失敗しました');
+        }
         setStatusData({ pendingApproval: 0, approved: 0, confirmed: 0 });
       } finally {
         setLoading(false);

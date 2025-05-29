@@ -202,26 +202,37 @@ export default function DashboardLayout({
   
   // ユーザー情報を取得
   useEffect(() => {
-    // フラグを使って一度だけ実行するようにする
+    // 重複実行を防ぐフラグ
     let isMounted = true;
+    let initializationAttempts = 0;
+    const MAX_ATTEMPTS = 3;
     
     const getUser = async () => {
+      // 初期化試行回数をチェック
+      initializationAttempts++;
+      if (initializationAttempts > MAX_ATTEMPTS) {
+        console.warn('認証初期化の最大試行回数に達しました');
+        return;
+      }
+      
       try {
-        debugLog("認証情報取得開始...");
-        const { data } = await supabaseBrowser.auth.getSession();
+        debugLog(`認証状態初期化開始 (${initializationAttempts}回目)`);
+        debugLog("認証状態を確認中...");
+        
+        // セッションを強制的に更新（キャッシュ問題対策）
+        const { data, error: sessionError } = await supabaseBrowser.auth.getSession();
+        
+        if (sessionError) {
+          console.error('セッション取得エラー:', sessionError);
+          throw sessionError;
+        }
         
         // コンポーネントがアンマウントされていたら何もしない
         if (!isMounted) return;
         
         if (data.session?.user) {
-          // ユーザーID検証用の明示的なログ
-          debugLog("==================================================");
-          debugLog("現在のログインユーザーID:", data.session.user.id);
-          debugLog("このIDをSupabaseの「usersテーブル」のIDと比較してください");
-          debugLog("==================================================");
-          
-          debugLog("認証済みユーザー検出:", data.session.user.email);
-          debugLog("ユーザーID:", data.session.user.id);
+          debugLog("認証状態変更: INITIAL_SESSION セッションあり");
+          debugLog("ユーザー情報を設定:", data.session.user.email);
           
           // プラン選択後のログインをチェック
           const redirected = handlePostLoginPlanRedirect();
@@ -246,36 +257,41 @@ export default function DashboardLayout({
           const tempRole = userMeta.role || 'student';
           setUserRole(tempRole);
           
-          // 代わりに専用APIを使用してユーザー情報を取得
+          // APIからユーザー情報を取得（より堅牢なエラーハンドリング）
           try {
-            // APIからユーザー情報を取得（サーバサイドでadmin権限で実行）
-            debugLog("APIからユーザー情報を取得中...");
+            debugLog("APIからユーザー詳細を取得開始...");
+            
+            // 最新のセッションから確実にトークンを取得
+            const { data: latestSession } = await supabaseBrowser.auth.getSession();
+            const token = latestSession.session?.access_token;
+            
+            if (!token) {
+              throw new Error('認証トークンが取得できません');
+            }
+            
             const response = await fetch(`/api/user?userId=${authUser.id}`, {
-              // キャッシュバスティング（開発時のキャッシュ問題回避）
-              cache: process.env.NODE_ENV === 'development' ? 'no-cache' : 'default',
+              // 強制的にキャッシュを無効化
+              cache: 'no-store',
               headers: {
+                'Authorization': `Bearer ${token}`,
                 'pragma': 'no-cache',
-                'cache-control': 'no-cache'
+                'cache-control': 'no-cache, no-store, must-revalidate',
+                'expires': '0'
               }
             });
             
             if (!response.ok) {
               const errorText = await response.text();
               console.error(`APIエラー: ${response.status}`, errorText);
-              throw new Error(`APIエラー: ${response.status}`);
+              throw new Error(`APIエラー: ${response.status} - ${errorText}`);
             }
             
             const userData = await response.json();
-            debugLog("API成功 - ユーザーデータ:", userData);
-            verboseDebugLog("API応答の生データ:", JSON.stringify(userData));
-            verboseDebugLog("API応答からのroleId:", userData.roleId);
-            verboseDebugLog("roleIdのタイプ:", typeof userData.roleId);
-            debugLog("API応答からのroleName:", userData.roleName);
-            debugLog("DBアクセス成功状態:", userData.dbAccessSuccessful);
+            debugLog("APIからユーザー詳細を取得成功:", userData);
             
             // 新しいロールユーティリティを使用
             const finalRole = extractRoleFromApiResponse(userData);
-            debugLog(`🎯 ロールユーティリティから取得: ${finalRole}`);
+            debugLog(`🎯 最終ロール設定: ${finalRole}`);
             
             // 最終的にロールを設定
             setUserRole(finalRole);
@@ -303,22 +319,31 @@ export default function DashboardLayout({
         console.error("セッション取得エラー:", err);
         if (isMounted) {
           setLoading(false);
+          
+          // 認証エラーの場合はログインページへリダイレクト
+          if (err instanceof Error && err.message.includes('認証')) {
+            router.push('/login');
+          }
         }
       }
     };
     
     getUser();
     
-    // 認証状態の変更を監視
+    // 認証状態の変更を監視（重複防止）
     const { data: { subscription } } = supabaseBrowser.auth.onAuthStateChange(
       (event, session) => {
+        debugLog(`認証状態変更イベント: ${event}`);
+        
         // コンポーネントがマウントされていれば状態更新
         if (isMounted) {
-          setUser(session?.user || null);
-        }
-        // サインアウト時にリダイレクト
-        if (event === 'SIGNED_OUT') {
-          router.push('/login');
+          if (event === 'SIGNED_IN' && session?.user) {
+            setUser(session.user);
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null);
+            setUserRole('');
+            router.push('/login');
+          }
         }
       }
     );
@@ -327,7 +352,7 @@ export default function DashboardLayout({
       isMounted = false; // アンマウント時にフラグをfalseに
       subscription.unsubscribe();
     };
-  }, [router]); // 依存配列を最小限に
+  }, [router]); // routerのみを依存配列に含める（最小限の再実行）
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -346,11 +371,38 @@ export default function DashboardLayout({
       setUser(null);
       setUserRole('');
       
-      // Vercel対応のサインアウト処理を実行
+      // 1. Supabaseセッションを完全に無効化
+      const { error: signOutError } = await supabaseBrowser.auth.signOut({ 
+        scope: 'global' // 全デバイスからサインアウト
+      });
+      
+      if (signOutError) {
+        console.error('Supabaseサインアウトエラー:', signOutError);
+      }
+      
+      // 2. ローカルストレージとセッションストレージを完全にクリア
+      try {
+        localStorage.clear();
+        sessionStorage.clear();
+        debugLog("ローカルストレージをクリアしました");
+      } catch (storageError) {
+        console.error('ストレージクリアエラー:', storageError);
+      }
+      
+      // 3. Supabaseの内部キャッシュをクリア
+      try {
+        // Supabaseクライアントの内部状態をリセット
+        await supabaseBrowser.auth.refreshSession();
+      } catch (refreshError) {
+        // エラーは無視（既にサインアウト済みの場合）
+        debugLog('セッションリフレッシュエラー（予期された動作）:', refreshError);
+      }
+      
+      // 4. Vercel対応のサインアウト処理を実行
       const result = await vercelSafeSignOut();
       debugLog("Vercelサインアウト結果:", result);
       
-      // サーバーアクションでサーバー側もクリア
+      // 5. サーバーアクションでサーバー側もクリア
       try {
         const serverResult = await signOut();
         debugLog("サーバーサインアウト結果:", serverResult);
@@ -359,8 +411,31 @@ export default function DashboardLayout({
         // サーバーエラーでも続行
       }
       
-      // ホームページにリダイレクト
-      debugLog("ホームページにリダイレクトします");
+      // 6. iPhoneのWebKitキャッシュ対策 - 強制リロード
+      if (typeof window !== 'undefined') {
+        // Service Workerのキャッシュもクリア（PWA対応）
+        if ('serviceWorker' in navigator) {
+          try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+              await registration.unregister();
+            }
+          } catch (swError) {
+            console.warn('Service Worker クリアエラー:', swError);
+          }
+        }
+        
+        // キャッシュを無効化してページをリロード
+        const timestamp = new Date().getTime();
+        const cleanUrl = `${window.location.origin}/login?_t=${timestamp}&clear_cache=1`;
+        
+        debugLog("強制キャッシュクリア付きでログインページにリダイレクト:", cleanUrl);
+        window.location.replace(cleanUrl);
+        return; // この後の処理は不要
+      }
+      
+      // フォールバック: 通常のリダイレクト
+      debugLog("ログインページにリダイレクトします");
       safeRedirectToHome();
       
     } catch (error) {
@@ -369,7 +444,21 @@ export default function DashboardLayout({
       // エラー時も状態をクリアしてリダイレクト
       setUser(null);
       setUserRole('');
-      safeRedirectToHome();
+      
+      // 強制的にキャッシュをクリアしてリダイレクト
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+          const timestamp = new Date().getTime();
+          window.location.replace(`${window.location.origin}/login?_t=${timestamp}&error_recovery=1`);
+        } catch (fallbackError) {
+          console.error('フォールバックリダイレクトエラー:', fallbackError);
+          safeRedirectToHome();
+        }
+      } else {
+        safeRedirectToHome();
+      }
     }
   };
 

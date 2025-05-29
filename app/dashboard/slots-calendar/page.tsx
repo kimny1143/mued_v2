@@ -9,6 +9,7 @@ import { ReservationStatus } from '@prisma/client';
 import { CancelReason } from '@/lib/types/reservation';
 import { ReservationManagementModal, type ReservationManagementModalProps } from './_components/ReservationManagementModal';
 import { toast } from 'sonner';
+import { api, ApiError } from '@/lib/api-client';
 
 // デバッグモード
 const DEBUG = true;
@@ -244,18 +245,14 @@ export default function SlotsCalendarPage() {
         slot.reservations.some(res => res.id === reservation.id)
       );
 
-      // 予約の詳細情報をAPIから取得
-      const { data: sessionData } = await supabaseBrowser.auth.getSession();
-      const token = sessionData.session?.access_token ?? null;
-
-      const response = await fetch(`/api/reservations/${reservation.id}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        credentials: 'include',
-      });
-
       let totalAmount = 0;
-      if (response.ok) {
-        const reservationDetail = await response.json();
+      try {
+        // 予約の詳細情報をAPIから取得
+        const reservationDetail = await api.get(`/api/reservations/${reservation.id}`) as {
+          totalAmount?: number;
+          total_amount?: number;
+          [key: string]: unknown;
+        };
         
         // デバッグ用ログ
         console.log('=== handleReservationClick API Debug ===');
@@ -265,8 +262,12 @@ export default function SlotsCalendarPage() {
         console.log('============================================');
         
         totalAmount = reservationDetail.totalAmount || 0;
-      } else {
-        console.warn('API request failed, calculating from slot data');
+      } catch (error) {
+        if (error instanceof ApiError) {
+          console.warn(`API request failed (${error.status}), calculating from slot data`);
+        } else {
+          console.warn('API request failed, calculating from slot data');
+        }
         // APIエラーの場合はスロットの時間単価から計算
         const duration = new Date(reservation.bookedEndTime || '').getTime() - new Date(reservation.bookedStartTime || '').getTime();
         const hours = duration / (1000 * 60 * 60);
