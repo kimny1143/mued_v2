@@ -10,6 +10,7 @@ import { CancelReason } from '@/lib/types/reservation';
 import { ReservationManagementModal, type ReservationManagementModalProps } from './_components/ReservationManagementModal';
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api-client';
+import { DailyReservationsModal } from './_components/DailyReservationsModal';
 
 // デバッグモード
 const DEBUG = true;
@@ -74,6 +75,10 @@ export default function SlotsCalendarPage() {
   const [reservationModalMode, setReservationModalMode] = useState<ModalMode>('view');
   const [isReservationModalOpen, setIsReservationModalOpen] = useState(false);
   const [isReservationProcessing, setIsReservationProcessing] = useState(false);
+
+  // 日付別予約一覧モーダル関連の状態
+  const [isDailyModalOpen, setIsDailyModalOpen] = useState(false);
+  const [selectedModalDate, setSelectedModalDate] = useState<Date>(new Date());
 
   // スロットデータを取得する関数（RLSポリシー対応版）
   const fetchMySlots = useCallback(async () => {
@@ -300,6 +305,19 @@ export default function SlotsCalendarPage() {
       console.error('予約詳細取得エラー:', error);
       toast.error('予約詳細の取得に失敗しました');
     }
+  };
+
+  // 日付クリック処理 - 日付別予約一覧モーダルを開く
+  const handleDateClick = (date: Date) => {
+    console.log('日付クリック:', date);
+    setSelectedModalDate(date);
+    setIsDailyModalOpen(true);
+  };
+
+  // 日付別予約モーダル更新コールバック
+  const handleDailyReservationsUpdate = () => {
+    // スロット一覧を更新
+    fetchMySlots();
   };
 
   // 予約キャンセル処理（リアルタイム更新版）
@@ -570,6 +588,7 @@ export default function SlotsCalendarPage() {
             onSlotUpdate={handleSlotUpdate}
             onSlotDelete={handleSlotDelete}
             onReservationClick={handleReservationClick}
+            onDateClick={handleDateClick}
           />
         </div>
       )}
@@ -593,6 +612,15 @@ export default function SlotsCalendarPage() {
           isLoading={isReservationProcessing}
         />
       )}
+      
+      {/* 日付別予約一覧モーダル */}
+      <DailyReservationsModal
+        isOpen={isDailyModalOpen}
+        onClose={() => setIsDailyModalOpen(false)}
+        selectedDate={selectedModalDate}
+        userRole={userRole}
+        onReservationsUpdate={handleDailyReservationsUpdate}
+      />
       
       {DEBUG && slots.length > 0 && (
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
