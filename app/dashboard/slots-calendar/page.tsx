@@ -733,7 +733,7 @@ export default function SlotsCalendarPage() {
         </div>
       ) : (
         <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow">
-          <div className="sm:px-0 lg:px-0">
+          <div className="w-full sm:px-0 lg:px-0">
             {viewMode === 'month' ? (
               <SlotsCalendar
                 slots={slots}
