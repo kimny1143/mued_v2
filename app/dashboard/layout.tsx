@@ -751,24 +751,31 @@ export default function DashboardLayout({
         </aside>
 
         {/* メインコンテンツ */}
-        <main className={`dashboard-main ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
-          <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8">
-            {/* タイトルとアクションのセクションを最適化 */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-2 sm:mb-4">
-              {title && (
-                <h1 className="text-lg sm:text-xl lg:text-2xl font-bold font-shantell text-gray-900">
-                  {title}
-                </h1>
-              )}
-              {actions && (
-                <div className="flex-shrink-0 w-full sm:w-auto">
-                  {actions}
-                </div>
-              )}
-            </div>
+        <div 
+          className={`
+            flex-1 transition-all duration-300 ease-in-out 
+            ${isSidebarOpen ? 'lg:ml-64' : (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64')}
+            pt-14 sm:pt-16
+          `}
+        >
+          <main className="p-4 sm:p-6 lg:p-8 max-w-full overflow-x-hidden">
+            {(title || actions) && (
+              <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                {title && (
+                  <h1 className="text-lg sm:text-xl lg:text-2xl font-bold font-shantell text-gray-900">
+                    {title}
+                  </h1>
+                )}
+                {actions && (
+                  <div className="flex-shrink-0 w-full sm:w-auto">
+                    {actions}
+                  </div>
+                )}
+              </div>
+            )}
             {children}
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </div>
   );

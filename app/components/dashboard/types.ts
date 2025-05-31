@@ -1,14 +1,10 @@
 // ダッシュボード用の型定義
 export interface TodayScheduleData {
-  totalSlots?: number;
-  bookedSlots?: number;
-  availableSlots?: number;
   upcomingReservations?: Array<{
     id: string;
     startTime: string;
     endTime: string;
-    mentorName?: string;
-    studentName?: string;
+    actorName?: string;
     status: string;
   }>;
 }
