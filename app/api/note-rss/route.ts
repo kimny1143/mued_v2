@@ -1,5 +1,4 @@
 // app/api/note-rss/route.ts
-// 先にnpm install rss-parserが必要です
 import Parser from 'rss-parser';
 import { NextResponse } from 'next/server';
 
@@ -9,6 +8,31 @@ type CustomItem = Parser.Item & {
   'content:encodedSnippet'?: string;
   author?: string;
 };
+
+// マガジン設定
+const MAGAZINES = [
+  {
+    id: 'recording',
+    title: 'MUED公開教材〜録音〜',
+    description: 'レコーディングに関する教材をまとめたマガジン',
+    rssUrl: 'https://note.com/mued_glasswerks/m/m6c6d04036790/rss',
+    category: 'recording'
+  },
+  {
+    id: 'composition',
+    title: 'MUED公開教材〜作曲〜',
+    description: '作曲に関する教材をまとめたマガジン',
+    rssUrl: 'https://note.com/mued_glasswerks/m/me618d465f0ef/rss',
+    category: 'composition'
+  },
+  {
+    id: 'songwriting',
+    title: 'MUED公開教材〜作詞〜',
+    description: '作詞に関する教材をまとめたマガジン',
+    rssUrl: 'https://note.com/mued_glasswerks/m/m4f79b7131ae7/rss',
+    category: 'songwriting'
+  }
+];
 
 const parser = new Parser({
   customFields: {
@@ -53,15 +77,12 @@ function generateDescription(content: string, maxLength: number = 150): string {
   return plainText.substring(0, maxLength).trim() + '...';
 }
 
-export async function GET() {
+// 特定マガジンのRSSを取得
+async function fetchMagazineRSS(magazine: typeof MAGAZINES[0]) {
   try {
-    const rssUrl = 'https://note.com/mued_glasswerks/rss';
+    const feed: CustomFeed = await parser.parseURL(magazine.rssUrl);
     
-    console.log('RSSフィードを取得中:', rssUrl);
-    
-    const feed: CustomFeed = await parser.parseURL(rssUrl);
-    
-    const items = feed.items.slice(0, 12).map((item: CustomItem) => {
+    const items = feed.items.slice(0, 8).map((item: CustomItem) => {
       const content = item['content:encoded'] || item.contentSnippet || item.content || '';
       const description = generateDescription(content);
       const image = extractImage(content);
@@ -73,53 +94,127 @@ export async function GET() {
         pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
         image,
         contentSnippet: description,
-        author: item.creator || item.author || 'MUED Glasswerks'
+        author: item.creator || item.author || 'MUED Glasswerks',
+        magazine: magazine.id,
+        category: magazine.category
       };
     });
 
+    return {
+      success: true,
+      magazine,
+      items,
+      count: items.length
+    };
+  } catch (error) {
+    console.error(`マガジン ${magazine.id} の取得エラー:`, error);
+    return {
+      success: false,
+      magazine,
+      items: [],
+      count: 0,
+      error: error instanceof Error ? error.message : '不明なエラー'
+    };
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const magazineId = searchParams.get('magazine');
+
+    // 特定のマガジンのみ取得
+    if (magazineId) {
+      const magazine = MAGAZINES.find(m => m.id === magazineId);
+      if (!magazine) {
+        return NextResponse.json({
+          success: false,
+          error: 'マガジンが見つかりません',
+          magazines: MAGAZINES.map(m => ({ id: m.id, title: m.title }))
+        }, { status: 400 });
+      }
+
+      const result = await fetchMagazineRSS(magazine);
+      return NextResponse.json(result);
+    }
+
+    // 全マガジンの取得
+    console.log('全マガジンのRSSフィードを取得中...');
+    
+    const results = await Promise.allSettled(
+      MAGAZINES.map(magazine => fetchMagazineRSS(magazine))
+    );
+
+    const magazines = results.map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      } else {
+        return {
+          success: false,
+          magazine: MAGAZINES[index],
+          items: [],
+          count: 0,
+          error: result.reason?.message || '不明なエラー'
+        };
+      }
+    });
+
+    const totalItems = magazines.reduce((sum, mag) => sum + mag.count, 0);
+    const successCount = magazines.filter(mag => mag.success).length;
+
     return NextResponse.json({
       success: true,
-      channel: {
-        title: feed.title || 'MUED Glasswerks',
-        description: feed.description || '',
-        link: feed.link || 'https://note.com/mued_glasswerks'
-      },
-      items,
-      lastUpdated: new Date().toISOString(),
-      totalItems: items.length
+      magazines,
+      totalItems,
+      successCount,
+      totalMagazines: MAGAZINES.length,
+      lastUpdated: new Date().toISOString()
     });
 
   } catch (error) {
-    console.error('RSS取得エラー:', error);
+    console.error('API エラー:', error);
     
-    // フォールバック: 静的なダミーデータを返す
-    const fallbackItems = [
-      {
-        title: "音楽理論の基礎講座",
-        link: "https://note.com/mued_glasswerks",
-        description: "音楽理論の基礎について詳しく解説します。初心者の方にもわかりやすく説明しています。",
-        pubDate: new Date().toISOString(),
-        image: "https://images.pexels.com/photos/5561923/pexels-photo-5561923.jpeg",
-        contentSnippet: "音楽理論の基礎について...",
-        author: "MUED Glasswerks"
-      },
-      {
-        title: "DTM制作のコツ",
-        link: "https://note.com/mued_glasswerks",
-        description: "DAWを使った楽曲制作のポイントを解説。効率的な制作フローを身につけましょう。",
-        pubDate: new Date(Date.now() - 86400000).toISOString(),
-        image: "https://images.pexels.com/photos/164938/pexels-photo-164938.jpeg",
-        contentSnippet: "DAWを使った楽曲制作...",
-        author: "MUED Glasswerks"
-      }
-    ];
+    // フォールバック: サンプルデータを返す
+    const fallbackData = MAGAZINES.map(magazine => ({
+      success: false,
+      magazine,
+      items: [
+        {
+          title: `${magazine.title}のサンプル記事 - 基礎編`,
+          link: "https://note.com/mued_glasswerks",
+          description: `${magazine.description}のサンプル記事です。実際の教材では詳しい解説とともに実践的な内容をお届けします。`,
+          pubDate: new Date().toISOString(),
+          image: "https://images.pexels.com/photos/5561923/pexels-photo-5561923.jpeg",
+          contentSnippet: `${magazine.description}のサンプル...`,
+          author: "MUED Glasswerks",
+          magazine: magazine.id,
+          category: magazine.category
+        },
+        {
+          title: `${magazine.title}のサンプル記事 - 応用編`,
+          link: "https://note.com/mued_glasswerks",
+          description: `${magazine.description}の応用編です。より実践的な内容をカバーしています。`,
+          pubDate: new Date(Date.now() - 86400000).toISOString(),
+          image: "https://images.pexels.com/photos/164938/pexels-photo-164938.jpeg",
+          contentSnippet: `${magazine.description}の応用編...`,
+          author: "MUED Glasswerks",
+          magazine: magazine.id,
+          category: magazine.category
+        }
+      ],
+      count: 2,
+      error: 'RSSフィード取得失敗（サンプルデータ表示中）'
+    }));
 
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : '不明なエラー',
-      items: fallbackItems, // エラー時もコンテンツを表示
-      lastUpdated: new Date().toISOString(),
-      fallback: true
-    }, { status: 200 }); // 200で返してフロントエンドでエラー表示
+      magazines: fallbackData,
+      totalItems: fallbackData.length,
+      successCount: 0,
+      totalMagazines: MAGAZINES.length,
+      fallback: true,
+      lastUpdated: new Date().toISOString()
+    }, { status: 200 });
   }
 }
