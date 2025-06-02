@@ -491,7 +491,7 @@ export async function POST(request: NextRequest) {
       isAvailable: newSlot.is_available,       // is_available → isAvailable
       createdAt: newSlot.created_at,           // created_at → createdAt
       updatedAt: newSlot.updated_at,           // updated_at → updatedAt
-      description: '',                         // descriptionは現在DBに存在しないため空文字を返す
+      description: newSlot.description || '',  // descriptionフィールドを返す
       // 必要に応じてteacher情報も追加
       teacher: {
         id: sessionInfo.user.id,

@@ -57,6 +57,7 @@ model lesson_slots {
   updated_at   DateTime
   min_duration Int?           @default(60)
   max_duration Int?           @default(90)
+  description  String?        @db.Text
   users        users          @relation(fields: [teacher_id], references: [id])
   reservations reservations[]
 

@@ -25,6 +25,7 @@ type DbLessonSlot = {
   min_duration: number | null;
   max_duration: number | null;
   is_available: boolean;
+  description: string | null;
   created_at: Date;
   updated_at: Date;
   users?: { id: string; name: string | null; image: string | null };
@@ -69,6 +70,7 @@ type FrontendLessonSlot = {
   minDuration: number | null;
   maxDuration: number | null;
   isAvailable: boolean;
+  description: string | null;
   createdAt: Date;
   updatedAt: Date;
   teacher?: { id: string; name: string | null; image: string | null };
@@ -138,6 +140,7 @@ export function convertLessonSlotToResponse(slot: DbLessonSlot): FrontendLessonS
     minDuration: slot.min_duration,
     maxDuration: slot.max_duration,
     isAvailable: slot.is_available,
+    description: slot.description,
     createdAt: slot.created_at,
     updatedAt: slot.updated_at,
     // teacher情報が含まれている場合
@@ -242,9 +245,7 @@ export function convertLessonSlotRequestToDb(data: LessonSlotRequestData): Recor
   if (data.endTime) result.end_time = new Date(data.endTime);
   if (data.hourlyRate !== undefined) result.hourly_rate = parseInt(String(data.hourlyRate), 10);
   if (data.currency) result.currency = data.currency;
-  // descriptionフィールドは現在のデータベーススキーマに存在しないため、一時的にコメントアウト
-  // TODO: Prismaスキーマにdescriptionフィールドを追加後、このコメントを解除
-  // if (data.description !== undefined) result.description = data.description;
+  if (data.description !== undefined) result.description = data.description;
   if (data.isAvailable !== undefined) result.is_available = Boolean(data.isAvailable);
   
   // 時間ベースの設定（minHours/maxHours優先、フォールバックでminDuration/maxDuration）
