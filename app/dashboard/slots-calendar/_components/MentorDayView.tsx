@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { format, isSameDay } from 'date-fns';
+import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Button } from '@/app/components/ui/button';
 import { ChevronLeft, ChevronRight, User, CheckCircle, XCircle, Plus, Edit } from 'lucide-react';
@@ -285,7 +285,10 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
         })()}
         {isModalOpen ? (
           <>
-            {console.log('✅ Rendering SlotModal because isModalOpen is true (empty state)')}
+            {(() => {
+              console.log('✅ Rendering SlotModal because isModalOpen is true (empty state)');
+              return null;
+            })()}
             <SlotModal
               isOpen={isModalOpen}
               onClose={handleModalClose}
@@ -296,9 +299,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
               onSlotDelete={onSlotDelete || (() => { console.log('Empty onSlotDelete called'); })}
             />
           </>
-        ) : (
-          console.log('❌ Not rendering SlotModal because isModalOpen is false (empty state)') || null
-        )}
+        ) : null}
       </div>
     );
   }
@@ -432,7 +433,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                       return (
                         <div
                           key={slot.id}
-                          className="absolute left-2 right-2 bg-blue-100 border border-blue-300 rounded-lg overflow-hidden"
+                          className="absolute left-2 right-2 bg-blue-100 border border-blue-300 rounded-lg"
                           style={{
                             top: `${startPosition}px`,
                             height: `${totalHeight}px`,
@@ -460,7 +461,10 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                               <div className="flex items-center gap-2">
                                 <div className="text-xs text-blue-600">
                                   {slot.reservations?.length || 0}件予約
-                                  {console.log('🔍 スロット内の予約数:', slot.reservations?.length, 'データ:', slot.reservations)}
+                                  {(() => {
+                                    console.log('🔍 スロット内の予約数:', slot.reservations?.length, 'データ:', slot.reservations);
+                                    return null;
+                                  })()}
                                 </div>
                                 {userRole === 'mentor' && (
                                   <button
@@ -480,8 +484,11 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                           
                           {/* 予約一覧 */}
                           <div className="p-1 space-y-1 overflow-y-auto" style={{ maxHeight: `${Math.max(totalHeight - 60, 20)}px` }}>
-                            {console.log('🎯 予約をレンダリング開始:', slot.reservations, 'データ数:', slot.reservations?.length)}
-                            {slot.reservations?.map((reservation, resIndex) => {
+                            {(() => {
+                              console.log('🎯 予約をレンダリング開始:', slot.reservations, 'データ数:', slot.reservations?.length);
+                              return null;
+                            })()}
+                            {slot.reservations?.map((reservation) => {
                               // デバッグ: 予約データの構造を確認
                               console.log('🔍 予約データ:', {
                                 id: reservation.id,
@@ -600,8 +607,6 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                           </div>
                         </div>
                       );
-                    }
-                    return null;
                   })}
                 </div>
               </div>
@@ -671,7 +676,10 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
       })()}
       {isModalOpen ? (
         <>
-          {console.log('✅ Rendering SlotModal because isModalOpen is true')}
+          {(() => {
+            console.log('✅ Rendering SlotModal because isModalOpen is true');
+            return null;
+          })()}
           <SlotModal
             isOpen={isModalOpen}
             onClose={handleModalClose}
@@ -682,9 +690,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
             onSlotDelete={onSlotDelete || (() => { console.log('Empty onSlotDelete called'); })}
           />
         </>
-      ) : (
-        console.log('❌ Not rendering SlotModal because isModalOpen is false') || null
-      )}
+      ) : null}
     </div>
   );
 }; 

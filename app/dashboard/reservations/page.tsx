@@ -49,7 +49,7 @@ type Reservation = {
   updatedAt: string;
 }
 
-export const ReservationPage: React.FC = () => {
+const ReservationPage: React.FC = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);

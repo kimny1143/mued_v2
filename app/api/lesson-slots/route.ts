@@ -479,6 +479,11 @@ export async function POST(request: NextRequest) {
         created_at: new Date(),
         updated_at: new Date(),
       },
+      include: {
+        users: {
+          select: { id: true, name: true, email: true, image: true }
+        }
+      }
     }));
     
     console.log(`レッスンスロット作成成功: ID ${newSlot.id}, 講師ID ${sessionInfo.user.id}`);
@@ -499,13 +504,8 @@ export async function POST(request: NextRequest) {
       createdAt: newSlot.created_at,           // created_at → createdAt
       updatedAt: newSlot.updated_at,           // updated_at → updatedAt
       description: newSlot.description || '',  // descriptionフィールドを返す
-      // 必要に応じてteacher情報も追加
-      teacher: {
-        id: sessionInfo.user.id,
-        name: sessionInfo.user.name || null,
-        email: sessionInfo.user.email || null,
-        image: sessionInfo.user.image || null
-      },
+      // teacher情報をincludeから取得
+      teacher: newSlot.users,
       reservations: []  // 新規作成時は予約は空
     };
     
