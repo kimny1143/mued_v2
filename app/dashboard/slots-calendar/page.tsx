@@ -111,7 +111,12 @@ export default function SlotsCalendarPage() {
       // ロールに応じてviewModeを設定
       let viewMode = 'own'; // デフォルト（メンターの場合）
       
-      if (currentUserRole === 'student') {
+      // スロットカレンダーページでは常に自分のスロットを表示
+      // （メンターが自分のスロットを管理するためのページ）
+      if (window.location.pathname.includes('slots-calendar')) {
+        viewMode = 'own';
+        console.log('📍 スロットカレンダーページのため、viewMode=ownを強制');
+      } else if (currentUserRole === 'student') {
         viewMode = 'available'; // 生徒の場合は利用可能なスロットを取得
       } else if (currentUserRole === 'admin') {
         viewMode = 'all'; // 管理者の場合はすべてのスロットを取得

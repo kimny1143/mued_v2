@@ -103,13 +103,37 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   
   // デバッグ: PENDING_APPROVALの予約を確認
   useEffect(() => {
+    console.log('🔍 MentorDayView - 選択日:', selectedDate.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
+    console.log('🔍 MentorDayView - その日のスロット数:', daySlots.length);
+    
     if (daySlots.length > 0) {
-      const pendingApprovalReservations = daySlots.flatMap(slot => 
-        slot.reservations?.filter(res => res.status === 'PENDING_APPROVAL') || []
+      daySlots.forEach(slot => {
+        console.log('🔍 スロット詳細:', {
+          id: slot.id,
+          startTime: new Date(slot.startTime).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+          endTime: new Date(slot.endTime).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+          予約数: slot.reservations?.length || 0
+        });
+      });
+      
+      const allReservations = daySlots.flatMap(slot => slot.reservations || []);
+      console.log('🔍 MentorDayView - 全予約数:', allReservations.length);
+      console.log('🔍 MentorDayView - 予約ステータス内訳:', 
+        allReservations.reduce((acc, res) => {
+          acc[res.status] = (acc[res.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
       );
-      console.log('🔍 MentorDayView - PENDING_APPROVAL予約:', pendingApprovalReservations.length, pendingApprovalReservations);
+      
+      const pendingApprovalReservations = allReservations.filter(res => res.status === 'PENDING_APPROVAL');
+      console.log('🔍 MentorDayView - PENDING_APPROVAL予約:', pendingApprovalReservations.length);
+      if (pendingApprovalReservations.length > 0) {
+        console.log('🔍 PENDING_APPROVAL予約詳細:', pendingApprovalReservations);
+      }
+    } else {
+      console.log('⚠️ その日のスロットが見つかりません');
     }
-  }, [daySlots]);
+  }, [daySlots, selectedDate]);
   
   // 時間軸の生成（0:00-23:00、24時間表示）
   const timeSlots = [];
