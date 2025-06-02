@@ -19,25 +19,66 @@ interface BookingModalProps {
   onBookingComplete: () => void;
 }
 
+// 生徒の既存予約の型定義
+interface StudentReservation {
+  id: string;
+  bookedStartTime: string;
+  bookedEndTime: string;
+  status: string;
+  slotId: string;
+}
+
 // メインのBookingModalコンポーネント
 export const BookingModal: React.FC<BookingModalProps> = ({
   isOpen,
   onClose,
   selectedDate,
-  mentors,
+  mentors: _mentors,
   preSelectedSlot,
   preSelectedMentor,
-  onBookingComplete,
+  onBookingComplete: _onBookingComplete,
 }) => {
   const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<ExtendedTimeSlot | null>(null);
   const [selectedStartTime, setSelectedStartTime] = useState<Date | null>(null);
   const [selectedEndTime, setSelectedEndTime] = useState<Date | null>(null);
   const [duration, setDuration] = useState<number>(60);
-  const [notes, setNotes] = useState<string>('');
+  const [_notes, _setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<'booking' | 'confirmation'>('booking');
+  const [_step, setStep] = useState<'booking' | 'confirmation'>('booking');
+  const [studentReservations, setStudentReservations] = useState<StudentReservation[]>([]);
+
+  // 生徒の既存予約を取得する関数
+  const fetchStudentReservations = async () => {
+    try {
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      if (!sessionData.session) return;
+      
+      const token = sessionData.session.access_token;
+      
+      // 生徒の既存予約を取得（承認待ち・確定済みのみ）
+      const response = await fetch('/api/reservations', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        // 承認待ち・確定済みの予約のみフィルタリング
+        const activeReservations = data.filter((res: StudentReservation) => 
+          res.status === 'PENDING_APPROVAL' || 
+          res.status === 'APPROVED' || 
+          res.status === 'CONFIRMED'
+        );
+        setStudentReservations(activeReservations);
+        console.log('生徒の既存予約を取得:', activeReservations);
+      }
+    } catch (error) {
+      console.error('既存予約の取得エラー:', error);
+    }
+  };
 
   // 初期化処理
   useEffect(() => {
@@ -50,12 +91,14 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       }
       setStep('booking');
       setError(null);
+      // 生徒の既存予約を取得
+      fetchStudentReservations();
     }
   }, [isOpen, preSelectedSlot, preSelectedMentor]);
 
   // スロット範囲内で選択可能な開始時間を生成（15分刻み）- 予約済み時間帯を除外
   const generateStartTimeOptions = (slot: TimeSlot) => {
-    const options: Array<{ time: Date; label: string; isAvailable: boolean }> = [];
+    const options: Array<{ time: Date; label: string; isAvailable: boolean; unavailableReason?: string }> = [];
     const slotStart = new Date(slot.startTime);
     const slotEnd = new Date(slot.endTime);
     
@@ -63,32 +106,45 @@ export const BookingModal: React.FC<BookingModalProps> = ({
     const maxStartTime = new Date(slotEnd.getTime() - duration * 60 * 1000);
     
     // 現在のスロットの予約情報を取得
-    let bookedIntervals: Array<{start: number, end: number}> = [];
+    const bookedIntervals: Array<{start: number, end: number, type: 'mentor' | 'student', detail?: string}> = [];
     
+    // 現在のメンターの予約情報を追加
     if (selectedMentor?.availableSlots) {
       const currentSlot = selectedMentor.availableSlots.find(s => s.id === slot.id);
       if (currentSlot?.reservations) {
-        bookedIntervals = currentSlot.reservations
+        const mentorBookedIntervals = currentSlot.reservations
           .filter(res => res.status === 'CONFIRMED' || res.status === 'PENDING')
           .filter(res => res.bookedStartTime && res.bookedEndTime)
           .map(res => ({
             start: new Date(res.bookedStartTime!).getTime(),
-            end: new Date(res.bookedEndTime!).getTime()
-          }))
-          .sort((a, b) => a.start - b.start);
-        
-        // 重複する予約時間帯をマージ
-        const mergedIntervals: Array<{start: number, end: number}> = [];
-        for (const interval of bookedIntervals) {
-          if (mergedIntervals.length === 0 || mergedIntervals[mergedIntervals.length - 1].end < interval.start) {
-            mergedIntervals.push(interval);
-          } else {
-            mergedIntervals[mergedIntervals.length - 1].end = Math.max(mergedIntervals[mergedIntervals.length - 1].end, interval.end);
-          }
-        }
-        bookedIntervals = mergedIntervals;
+            end: new Date(res.bookedEndTime!).getTime(),
+            type: 'mentor' as const,
+            detail: '他の生徒が予約済み'
+          }));
+        bookedIntervals.push(...mentorBookedIntervals);
       }
     }
+    
+    // 生徒の既存予約（他のメンターとの予約）を追加
+    if (studentReservations.length > 0 && selectedDate) {
+      const selectedDateStr = selectedDate.toDateString();
+      
+      const studentBookedIntervals = studentReservations
+        .filter(res => {
+          const resDate = new Date(res.bookedStartTime);
+          return resDate.toDateString() === selectedDateStr;
+        })
+        .map(res => ({
+          start: new Date(res.bookedStartTime).getTime(),
+          end: new Date(res.bookedEndTime).getTime(),
+          type: 'student' as const,
+          detail: '他のメンターと予約済み'
+        }));
+      bookedIntervals.push(...studentBookedIntervals);
+    }
+    
+    // 予約時間帯をソートしてマージ
+    bookedIntervals.sort((a, b) => a.start - b.start);
     
     let currentTime = new Date(slotStart);
     
@@ -98,10 +154,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       
       // この開始時間から終了時間までの間に予約済み時間帯と重複があるかチェック
       let isAvailable = true;
+      let unavailableReason: string | undefined;
+      
       for (const bookedInterval of bookedIntervals) {
         // 提案されたレッスン時間と予約済み時間が重複するかチェック
         if (proposedStartTime < bookedInterval.end && proposedEndTime > bookedInterval.start) {
           isAvailable = false;
+          unavailableReason = bookedInterval.detail;
           break;
         }
       }
@@ -109,7 +168,8 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       options.push({
         time: new Date(currentTime),
         label: format(currentTime, 'HH:mm'),
-        isAvailable
+        isAvailable,
+        unavailableReason
       });
       
       // 15分追加
@@ -349,20 +409,45 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       }
                       
                       return (
-                        <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto">
-                          {availableOptions.map((option, index) => (
-                            <button
-                              key={index}
-                              onClick={() => handleStartTimeSelect(option.time)}
-                              className={`p-2 text-sm border rounded transition-all ${
-                                selectedStartTime && selectedStartTime.getTime() === option.time.getTime()
-                                  ? 'border-primary bg-primary text-white'
-                                  : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                              }`}
-                            >
-                              {format(option.time, 'HH:mm')}
-                            </button>
-                          ))}
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1">
+                            {timeOptions.map((option, index) => (
+                              <div key={index} className="relative">
+                                <button
+                                  onClick={() => option.isAvailable && handleStartTimeSelect(option.time)}
+                                  disabled={!option.isAvailable}
+                                  className={`w-full p-2 text-sm border rounded transition-all ${
+                                    selectedStartTime && selectedStartTime.getTime() === option.time.getTime()
+                                      ? 'border-primary bg-primary text-white'
+                                      : option.isAvailable
+                                      ? 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                      : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  }`}
+                                  title={!option.isAvailable ? option.unavailableReason : undefined}
+                                >
+                                  {format(option.time, 'HH:mm')}
+                                </button>
+                                {!option.isAvailable && option.unavailableReason?.includes('他のメンター') && (
+                                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full" 
+                                       title={option.unavailableReason} />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                          {/* 凡例 */}
+                          <div className="flex items-center gap-4 text-xs text-gray-600 mt-2">
+                            <div className="flex items-center gap-1">
+                              <div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded"></div>
+                              <span>予約済み</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="relative">
+                                <div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded"></div>
+                                <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                              </div>
+                              <span>他のメンターと予約済み</span>
+                            </div>
+                          </div>
                         </div>
                       );
                     })()}

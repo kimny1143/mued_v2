@@ -92,7 +92,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Always start with false for SSR
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // Always start collapsed
   const [isHydrated, setIsHydrated] = useState(false); // Track hydration status
   const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({});
   const [userRole, setUserRole] = useState<string>('');
@@ -167,16 +167,12 @@ export default function DashboardLayout({
   //   );
   // }, [pathname, allMenuItems]);
   
-  // Handle client-side hydration and load localStorage value
-  // This prevents SSR/CSR hydration mismatches by ensuring localStorage
-  // is only accessed after the component has mounted on the client
+  // Handle client-side hydration
+  // Always keep sidebar collapsed - remove localStorage loading
   useEffect(() => {
     setIsHydrated(true);
-    // Only load from localStorage after hydration
-    const saved = localStorage.getItem('sidebarCollapsed');
-    if (saved !== null) {
-      setIsSidebarCollapsed(saved === 'true');
-    }
+    // Force sidebar to be collapsed regardless of localStorage
+    setIsSidebarCollapsed(true);
   }, []);
 
   // 初期レンダリング後にアクティブなメニューを展開
@@ -376,12 +372,10 @@ export default function DashboardLayout({
   };
 
   const toggleSidebarCollapse = () => {
+    // 一時的に展開/縮小を許可するが、localStorage保存はしない
     const newState = !isSidebarCollapsed;
     setIsSidebarCollapsed(newState);
-    // ローカルストレージに保存
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('sidebarCollapsed', newState.toString());
-    }
+    // localStorage保存を削除 - 常に縮小状態を維持
   };
   
   // サインアウト処理
@@ -643,9 +637,9 @@ export default function DashboardLayout({
         )}
 
         {/* サイドバー - 確実に1つだけレンダリング */}
-        {/* SSR時のプレースホルダー */}
+        {/* SSR時のプレースホルダー - 最初から縮小状態 */}
         {!isHydrated && (
-          <div className="hidden lg:block fixed inset-y-0 left-0 w-64 bg-white border-r pt-14 sm:pt-16" />
+          <div className="hidden lg:block fixed inset-y-0 left-0 w-20 bg-white border-r pt-14 sm:pt-16" />
         )}
         
         {/* 実際のサイドバー（ハイドレーション後のみ） */}
@@ -786,7 +780,7 @@ export default function DashboardLayout({
         <div 
           className={`
             ${isHydrated ? 'lg:transition-all lg:duration-300 lg:ease-in-out' : ''} 
-            ${isHydrated ? (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64') : 'lg:ml-64'}
+            ${isHydrated ? (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64') : 'lg:ml-20'}
             pt-14 sm:pt-16
           `}
         >

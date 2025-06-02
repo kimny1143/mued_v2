@@ -105,6 +105,71 @@ export async function POST(
     
     // トランザクションで承認と決済処理を実行
     const result = await prisma.$transaction(async (tx) => {
+      // 承認前に生徒の重複予約をチェック
+      console.log('🔍 生徒の重複予約チェック開始');
+      
+      const conflictingReservations = await tx.reservations.findMany({
+        where: {
+          student_id: reservation.student_id,
+          id: { not: reservationId }, // 現在の予約は除外
+          status: { 
+            in: ['APPROVED', 'CONFIRMED'] // 既に承認済みの予約のみチェック
+          },
+          // 時間帯の重複を検索
+          OR: [
+            {
+              AND: [
+                { booked_start_time: { lt: reservation.booked_end_time } },
+                { booked_end_time: { gt: reservation.booked_start_time } }
+              ]
+            }
+          ]
+        },
+        include: {
+          lesson_slots: {
+            include: {
+              users: {
+                select: { name: true }
+              }
+            }
+          }
+        }
+      });
+      
+      if (conflictingReservations.length > 0) {
+        // 重複する予約の詳細情報を作成
+        const conflictDetails = conflictingReservations.map(r => {
+          const date = new Date(r.booked_start_time).toLocaleDateString('ja-JP', {
+            timeZone: 'Asia/Tokyo',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+          const startTime = new Date(r.booked_start_time).toLocaleTimeString('ja-JP', {
+            timeZone: 'Asia/Tokyo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+          const endTime = new Date(r.booked_end_time).toLocaleTimeString('ja-JP', {
+            timeZone: 'Asia/Tokyo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+          const teacherName = r.lesson_slots.users.name || '不明';
+          return `${date} ${startTime}-${endTime} (${teacherName}先生)`;
+        }).join(', ');
+        
+        console.log('❌ 生徒に重複予約が見つかりました:', conflictDetails);
+        
+        throw new Error(
+          `生徒に時間が重複する他の予約があるため承認できません。\n` +
+          `重複する予約: ${conflictDetails}`
+        );
+      }
+      
+      console.log('✅ 生徒の重複予約なし - 承認処理を続行');
       // 予約を承認状態に更新
       const updatedReservation = await tx.reservations.update({
         where: { id: reservationId },

@@ -328,8 +328,8 @@ export const SlotModal: React.FC<SlotModalProps> = ({
       
       {/* モーダル */}
       <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div className="flex items-center justify-center min-h-full p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+        <div className="flex items-center justify-center min-h-full p-4 py-8">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col">
             {/* ヘッダー */}
             <div className="flex items-center justify-between p-6 border-b">
               <div className="flex items-center gap-3">
@@ -386,7 +386,7 @@ export const SlotModal: React.FC<SlotModalProps> = ({
             </div>
 
             {/* コンテンツ */}
-            <div className="p-6 max-h-[calc(90vh-140px)] overflow-y-auto">
+            <div className="p-6 flex-1 overflow-y-auto">
               {/* エラー表示 */}
               {error && (
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -621,7 +621,7 @@ export const SlotModal: React.FC<SlotModalProps> = ({
             </div>
 
             {/* フッター */}
-            <div className="p-6 border-t bg-gray-50">
+            <div className="p-6 border-t bg-gray-50 flex-shrink-0">
               <div className="flex gap-3">
                 <Button
                   variant="outline"

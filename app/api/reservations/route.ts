@@ -394,6 +394,66 @@ export async function POST(request: NextRequest) {
       if (hasOverlap) {
         throw new Error('選択した時間帯は既に予約されています。別の時間を選択してください。');
       }
+      
+      // 生徒の既存予約との重複チェック
+      console.log('🔍 生徒の既存予約との重複チェック開始');
+      const studentExistingReservations = await tx.reservations.findMany({
+        where: {
+          student_id: session.user.id,
+          // 新規作成時はidはまだないため、この条件は不要
+          status: { 
+            in: ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED'] 
+          },
+          // 時間帯の重複を検索
+          OR: [
+            {
+              AND: [
+                { booked_start_time: { lt: reservationEndTime } },
+                { booked_end_time: { gt: reservationStartTime } }
+              ]
+            }
+          ]
+        },
+        include: {
+          lesson_slots: {
+            include: {
+              users: {
+                select: { name: true }
+              }
+            }
+          }
+        }
+      });
+      
+      if (studentExistingReservations.length > 0) {
+        // 重複する予約の詳細情報を作成
+        const conflictDetails = studentExistingReservations.map(r => {
+          const startTime = new Date(r.booked_start_time).toLocaleTimeString('ja-JP', {
+            timeZone: 'Asia/Tokyo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+          const endTime = new Date(r.booked_end_time).toLocaleTimeString('ja-JP', {
+            timeZone: 'Asia/Tokyo',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          });
+          const teacherName = r.lesson_slots.users.name || '不明';
+          return `${startTime}-${endTime} (${teacherName}先生)`;
+        }).join(', ');
+        
+        console.log('❌ 重複予約が見つかりました:', conflictDetails);
+        
+        throw new Error(
+          `選択した時間帯に既に他の予約があります。\n` +
+          `重複する予約: ${conflictDetails}\n` +
+          `別の時間帯を選択してください。`
+        );
+      }
+      
+      console.log('✅ 生徒の既存予約との重複なし');
 
       // 実際のduration（分）を計算
       const durationInMinutes = Math.round((reservationEndTime.getTime() - reservationStartTime.getTime()) / (1000 * 60));
