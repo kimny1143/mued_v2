@@ -57,14 +57,14 @@ export const DayView: React.FC<DayViewProps> = ({
     const dayEnd = new Date(selectedDate);
     dayEnd.setHours(23, 59, 59, 999);
     
-    // スロットがその日に重なっているかチェック
+    // より正確な重複判定（これが正しく動作している）
     return (
-      // スロットがその日に開始する
-      isSameDay(slotStart, selectedDate) ||
-      // スロットがその日に終了する
-      isSameDay(slotEnd, selectedDate) ||
-      // スロットがその日を完全に跨ぐ（前日から翌日まで）
-      (slotStart < dayStart && slotEnd > dayEnd)
+      // ケース1: スロット開始が選択日内
+      (slotStart >= dayStart && slotStart <= dayEnd) ||
+      // ケース2: スロット終了が選択日内
+      (slotEnd >= dayStart && slotEnd <= dayEnd) ||
+      // ケース3: スロットが選択日全体を含む
+      (slotStart <= dayStart && slotEnd >= dayEnd)
     );
   });
   

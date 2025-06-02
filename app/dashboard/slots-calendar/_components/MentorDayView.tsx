@@ -100,36 +100,47 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   const daySlots = slots.filter(slot => {
     const slotStart = new Date(slot.startTime);
     const slotEnd = new Date(slot.endTime);
+    
+    // 選択日の0:00と23:59:59を設定
     const dayStart = new Date(selectedDate);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(selectedDate);
     dayEnd.setHours(23, 59, 59, 999);
     
-    // デバッグ：深夜スロットを特定
-    if (slotStart.getHours() <= 4 || slotStart.getHours() >= 22) {
-      console.log('🌙 時間帯確認:', {
+    // デバッグ出力
+    const isOverlapping = (
+      // ケース1: スロット開始が選択日内
+      (slotStart >= dayStart && slotStart <= dayEnd) ||
+      // ケース2: スロット終了が選択日内
+      (slotEnd >= dayStart && slotEnd <= dayEnd) ||
+      // ケース3: スロットが選択日全体を含む
+      (slotStart <= dayStart && slotEnd >= dayEnd)
+    );
+    
+    // 特定のスロットのみ詳細デバッグ
+    if (slot.id === '4e5910f0-1120-472e-a676-cb6ada1cde57' || 
+        (slotStart.getHours() <= 5 || slotStart.getHours() >= 22)) {
+      console.log('📅 注目スロット詳細:', {
         slotId: slot.id,
-        開始: slotStart.toLocaleString('ja-JP'),
-        終了: slotEnd.toLocaleString('ja-JP'),
-        選択日: selectedDate.toLocaleDateString('ja-JP'),
-        予約: slot.reservations?.map(r => ({
+        スロット開始: slotStart.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+        スロット終了: slotEnd.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+        選択日: selectedDate.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+        選択日開始: dayStart.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+        選択日終了: dayEnd.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+        '開始が選択日内': slotStart >= dayStart && slotStart <= dayEnd,
+        '終了が選択日内': slotEnd >= dayStart && slotEnd <= dayEnd,
+        '選択日全体を含む': slotStart <= dayStart && slotEnd >= dayEnd,
+        表示する: isOverlapping,
+        予約数: slot.reservations?.length || 0,
+        予約詳細: slot.reservations?.map(r => ({
           id: r.id,
           status: r.status,
-          時間: `${new Date(r.bookedStartTime!).toLocaleTimeString('ja-JP')} - ${new Date(r.bookedEndTime!).toLocaleTimeString('ja-JP')}`
+          開始: new Date(r.bookedStartTime!).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
         }))
       });
     }
     
-    // スロットがその日に重なっているかチェック
-    // より包括的な条件に変更
-    return (
-      // スロットがその日に開始する
-      isSameDay(slotStart, selectedDate) ||
-      // スロットがその日に終了する  
-      isSameDay(slotEnd, selectedDate) ||
-      // スロットがその日を跨ぐ（開始が日の終了より前、終了が日の開始より後）
-      (slotStart <= dayEnd && slotEnd >= dayStart)
-    );
+    return isOverlapping;
   });
   
   // デバッグ: PENDING_APPROVALの予約を確認
@@ -380,63 +391,53 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                   {daySlots.map((slot, slotIndex) => {
                     const slotStart = new Date(slot.startTime);
                     const slotEnd = new Date(slot.endTime);
-                    const slotStartHour = slotStart.getHours();
-                    const slotEndHour = slotEnd.getHours();
                     
-                    // この時間帯にスロットが重なっているかチェック
-                    if (slotStartHour <= hour && hour < slotEndHour) {
-                      // スロット内の位置計算
-                      const startPosition = slotStartHour === hour ? 
-                        (slotStart.getMinutes() / 60) * 60 : 0;
-                      const endPosition = slotEndHour === hour + 1 ? 
-                        (slotEnd.getMinutes() / 60) * 60 : 60;
-                      const duration = endPosition - startPosition;
-                      
-                      // このスロットが最初に表示される時間帯かどうか
-                      const isFirstDisplay = slotStartHour === hour;
-                      
-                      if (!isFirstDisplay) return null; // 最初の時間帯でのみ表示
-                      
-                      console.log('🎯 スロットレンダリング:', {
-                        slotId: slot.id,
-                        hour,
-                        slotStartHour,
-                        slotEndHour,
-                        reservations: slot.reservations,
-                        reservationCount: slot.reservations?.length,
-                        startPosition,
-                        totalDuration: (slotEnd.getTime() - slotStart.getTime()) / (1000 * 60)
-                      });
-                      
-                      // スロット全体の高さを計算
-                      const totalDuration = (slotEnd.getTime() - slotStart.getTime()) / (1000 * 60);
-                      const totalHeight = totalDuration;
-                      
-                      console.log('📐 位置とサイズ計算:', {
-                        startPosition,
-                        totalHeight,
-                        totalDuration,
-                        分: slotStart.getMinutes()
-                      });
+                    // 選択日の開始と終了時刻を取得
+                    const dayStart = new Date(selectedDate);
+                    dayStart.setHours(0, 0, 0, 0);
+                    const dayEnd = new Date(selectedDate);
+                    dayEnd.setHours(23, 59, 59, 999);
+                    
+                    // スロットの実際の開始・終了時刻（選択日の範囲内に制限）
+                    const displayStart = slotStart < dayStart ? dayStart : slotStart;
+                    const displayEnd = slotEnd > dayEnd ? dayEnd : slotEnd;
+                    
+                    // 表示開始時刻の時間を取得
+                    const displayStartHour = displayStart.getHours();
+                    const displayStartMinute = displayStart.getMinutes();
+                    
+                    // このスロットが現在の時間帯（hour）で表示を開始するかチェック
+                    if (displayStartHour !== hour) return null;
+                    
+                    // 0:00を基準とした相対位置（ピクセル）
+                    const startPosition = displayStartMinute;
+                    
+                    // スロットの表示時間（分）
+                    const displayDurationMs = displayEnd.getTime() - displayStart.getTime();
+                    const displayDurationMinutes = displayDurationMs / (1000 * 60);
+                    const totalHeight = displayDurationMinutes;
+                    
+                    console.log('🎯 スロットレンダリング:', {
+                      slotId: slot.id,
+                      元のスロット時間: `${format(slotStart, 'HH:mm')}-${format(slotEnd, 'HH:mm')}`,
+                      表示時間: `${format(displayStart, 'HH:mm')}-${format(displayEnd, 'HH:mm')}`,
+                      hour,
+                      displayStartHour,
+                      startPosition,
+                      totalHeight,
+                      日付を跨ぐ: slotStart < dayStart || slotEnd > dayEnd,
+                      予約数: slot.reservations?.length
+                    });
                       
                       return (
                         <div
                           key={slot.id}
-                          className="absolute left-2 right-2 bg-blue-100 border border-blue-300 rounded-lg"
+                          className="absolute left-2 right-2 bg-blue-100 border border-blue-300 rounded-lg overflow-hidden"
                           style={{
                             top: `${startPosition}px`,
                             height: `${totalHeight}px`,
-                            zIndex: 10
-                          }}
-                          ref={(el) => {
-                            if (el) {
-                              console.log('📦 スロットDOM要素:', {
-                                slotId: slot.id,
-                                実際のtop: el.style.top,
-                                実際のheight: el.style.height,
-                                親要素の高さ: el.parentElement?.offsetHeight
-                              });
-                            }
+                            minHeight: '60px',
+                            zIndex: 10 + slotIndex // 重なり順を管理
                           }}
                         >
                           {/* スロット基本情報 */}
@@ -445,6 +446,12 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                               <div>
                                 <div className="font-semibold text-blue-900 text-sm">
                                   {format(slotStart, 'HH:mm')}-{format(slotEnd, 'HH:mm')}
+                                  {slotStart < dayStart && (
+                                    <span className="text-xs ml-1 text-blue-600">(前日から)</span>
+                                  )}
+                                  {slotEnd > dayEnd && (
+                                    <span className="text-xs ml-1 text-blue-600">(翌日まで)</span>
+                                  )}
                                 </div>
                                 <div className="text-blue-700 text-xs">
                                   {formatPrice(slot.hourlyRate || 5000)}
@@ -472,7 +479,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                           </div>
                           
                           {/* 予約一覧 */}
-                          <div className="p-1 space-y-1 min-h-0 overflow-visible">
+                          <div className="p-1 space-y-1 overflow-y-auto" style={{ maxHeight: `${Math.max(totalHeight - 60, 20)}px` }}>
                             {console.log('🎯 予約をレンダリング開始:', slot.reservations, 'データ数:', slot.reservations?.length)}
                             {slot.reservations?.map((reservation, resIndex) => {
                               // デバッグ: 予約データの構造を確認

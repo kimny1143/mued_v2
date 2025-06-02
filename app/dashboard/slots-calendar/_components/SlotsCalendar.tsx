@@ -104,34 +104,39 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
     return slots.filter(slot => {
       const slotStart = new Date(slot.startTime);
       const slotEnd = new Date(slot.endTime);
+      
+      // 検査日の0:00と23:59:59を設定
       const dayStart = new Date(date);
       dayStart.setHours(0, 0, 0, 0);
       const dayEnd = new Date(date);
       dayEnd.setHours(23, 59, 59, 999);
       
-      // デバッグ：0:30-1:30のスロットを特定
-      if (slotStart.getHours() === 0 && slotStart.getMinutes() === 30) {
-        console.log('🌙 深夜スロット発見:', {
+      // より正確な重複判定
+      const isOverlapping = (
+        // ケース1: スロット開始が検査日内
+        (slotStart >= dayStart && slotStart <= dayEnd) ||
+        // ケース2: スロット終了が検査日内
+        (slotEnd >= dayStart && slotEnd <= dayEnd) ||
+        // ケース3: スロットが検査日全体を含む
+        (slotStart <= dayStart && slotEnd >= dayEnd)
+      );
+      
+      // 特定のスロットのみ詳細デバッグ
+      if (slot.id === '4e5910f0-1120-472e-a676-cb6ada1cde57') {
+        console.log('🌙 22:30-5:30スロット確認:', {
           slotId: slot.id,
           開始: slotStart.toLocaleString('ja-JP'),
           終了: slotEnd.toLocaleString('ja-JP'),
           検査日: date.toLocaleDateString('ja-JP'),
-          開始日と同じ: isSameDay(slotStart, date),
-          終了日と同じ: isSameDay(slotEnd, date),
-          予約数: slot.reservations?.length || 0
+          表示判定: isOverlapping,
+          予約: slot.reservations?.map(r => ({
+            status: r.status,
+            開始: new Date(r.bookedStartTime!).toLocaleString('ja-JP')
+          })) || []
         });
       }
       
-      // スロットがその日に重なっているかチェック
-      // より包括的な条件に変更
-      return (
-        // スロットがその日に開始する
-        isSameDay(slotStart, date) ||
-        // スロットがその日に終了する
-        isSameDay(slotEnd, date) ||
-        // スロットがその日を跨ぐ（開始が日の開始より前、終了が日の開始より後）
-        (slotStart <= dayEnd && slotEnd >= dayStart)
-      );
+      return isOverlapping;
     });
   };
 
