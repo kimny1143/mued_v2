@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { format, isSameDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Button } from '@/app/components/ui/button';
-import { ChevronLeft, ChevronRight, User, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, User, CheckCircle, XCircle, Plus, Edit } from 'lucide-react';
 import { SlotModal } from './SlotModal';
 
 // メンタースロットの型定義
@@ -424,9 +424,23 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                                   {formatPrice(slot.hourlyRate || 5000)}
                                 </div>
                               </div>
-                              <div className="text-xs text-blue-600">
-                                {slot.reservations?.length || 0}件予約
-                                {console.log('🔍 スロット内の予約数:', slot.reservations?.length, 'データ:', slot.reservations)}
+                              <div className="flex items-center gap-2">
+                                <div className="text-xs text-blue-600">
+                                  {slot.reservations?.length || 0}件予約
+                                  {console.log('🔍 スロット内の予約数:', slot.reservations?.length, 'データ:', slot.reservations)}
+                                </div>
+                                {userRole === 'mentor' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditSlot(slot);
+                                    }}
+                                    className="p-1 rounded hover:bg-blue-200 transition-colors"
+                                    title="スロットを編集"
+                                  >
+                                    <Edit className="h-3 w-3 text-blue-700" />
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>

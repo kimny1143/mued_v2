@@ -101,9 +101,22 @@ export async function PUT(
     const id = params.id;
     const sessionInfo = await getSessionFromRequest(request);
     
-    // スロットが存在するか確認
+    // スロットが存在するか確認（予約情報も含めて取得）
     const existingSlot = await prisma.lesson_slots.findUnique({
       where: { id },
+      include: {
+        reservations: {
+          where: {
+            status: {
+              in: ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED']
+            }
+          },
+          orderBy: [
+            { booked_start_time: 'asc' },
+            { booked_end_time: 'asc' }
+          ]
+        }
+      }
     });
     
     if (!existingSlot) {
@@ -151,6 +164,33 @@ export async function PUT(
       if (updateData.start_time >= updateData.end_time) {
         return NextResponse.json(
           { error: '開始時間は終了時間より前である必要があります' },
+          { status: 400 }
+        );
+      }
+    }
+    
+    // 予約がある場合の時間変更制約をチェック
+    if (existingSlot.reservations.length > 0 && (updateData.start_time || updateData.end_time)) {
+      const newStartTime = updateData.start_time || existingSlot.start_time;
+      const newEndTime = updateData.end_time || existingSlot.end_time;
+      
+      // 最も早い予約開始時刻と最も遅い予約終了時刻を取得
+      const earliestBookingStart = existingSlot.reservations[0].booked_start_time;
+      const latestBookingEnd = existingSlot.reservations.reduce((latest, res) => {
+        return res.booked_end_time && res.booked_end_time > latest ? res.booked_end_time : latest;
+      }, existingSlot.reservations[0].booked_end_time!);
+      
+      // 新しいスロット時間が既存の予約を含むかチェック
+      if (newStartTime > earliestBookingStart) {
+        return NextResponse.json(
+          { error: `既存の予約（${new Date(earliestBookingStart).toLocaleString('ja-JP')}開始）があるため、開始時刻をそれより後に変更できません` },
+          { status: 400 }
+        );
+      }
+      
+      if (newEndTime < latestBookingEnd) {
+        return NextResponse.json(
+          { error: `既存の予約（${new Date(latestBookingEnd).toLocaleString('ja-JP')}終了）があるため、終了時刻をそれより前に変更できません` },
           { status: 400 }
         );
       }

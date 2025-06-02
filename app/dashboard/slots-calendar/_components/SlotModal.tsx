@@ -69,7 +69,9 @@ export const SlotModal: React.FC<SlotModalProps> = ({
   
   // フォームデータ
   const [formData, setFormData] = useState({
+    startDate: '',
     startTime: '',
+    endDate: '',
     endTime: '',
     hourlyRate: 5000,
     description: '',
@@ -90,7 +92,9 @@ export const SlotModal: React.FC<SlotModalProps> = ({
       const endTime = new Date(slot.endTime);
       
       setFormData({
+        startDate: format(startTime, 'yyyy-MM-dd'),
         startTime: format(startTime, 'HH:mm'),
+        endDate: format(endTime, 'yyyy-MM-dd'),
         endTime: format(endTime, 'HH:mm'),
         hourlyRate: slot.hourlyRate || 5000,
         description: slot.description || '',
@@ -101,7 +105,9 @@ export const SlotModal: React.FC<SlotModalProps> = ({
     } else if (selectedDate && currentMode === 'create') {
       // 新規作成時のデフォルト値
       setFormData({
+        startDate: format(selectedDate, 'yyyy-MM-dd'),
         startTime: '10:00',
+        endDate: format(selectedDate, 'yyyy-MM-dd'),
         endTime: '11:00',
         hourlyRate: 5000,
         description: '',
@@ -121,16 +127,17 @@ export const SlotModal: React.FC<SlotModalProps> = ({
   };
 
   const validateForm = () => {
-    if (!formData.startTime || !formData.endTime) {
-      setError('開始時間と終了時間を入力してください。');
+    if (!formData.startDate || !formData.startTime || !formData.endDate || !formData.endTime) {
+      setError('開始日時と終了日時を入力してください。');
       return false;
     }
     
-    const startTime = new Date(`2024-01-01T${formData.startTime}`);
-    const endTime = new Date(`2024-01-01T${formData.endTime}`);
+    // 日付と時刻を組み合わせて比較
+    const startDateTime = new Date(`${formData.startDate}T${formData.startTime}:00`);
+    const endDateTime = new Date(`${formData.endDate}T${formData.endTime}:00`);
     
-    if (endTime <= startTime) {
-      setError('終了時間は開始時間より後にしてください。');
+    if (endDateTime <= startDateTime) {
+      setError('終了日時は開始日時より後に設定してください。');
       return false;
     }
     
@@ -157,22 +164,15 @@ export const SlotModal: React.FC<SlotModalProps> = ({
         throw new Error('認証が必要です。ログインしてください。');
       }
 
-      const targetDate = selectedDate || new Date(slot!.startTime);
-      const startDateTime = new Date(targetDate);
-      const endDateTime = new Date(targetDate);
-      
-      // 時間を設定
-      const [startHour, startMin] = formData.startTime.split(':').map(Number);
-      const [endHour, endMin] = formData.endTime.split(':').map(Number);
-      
-      startDateTime.setHours(startHour, startMin, 0, 0);
-      endDateTime.setHours(endHour, endMin, 0, 0);
+      // 日付と時刻を組み合わせて DateTime を作成
+      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}:00`);
+      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}:00`);
 
       const slotData = {
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         hourlyRate: formData.hourlyRate,
-        description: formData.description,
+        description: formData.description || undefined, // 空文字列の場合はundefinedにする
         isAvailable: formData.isAvailable,
         minDuration: formData.minDuration,
         maxDuration: formData.maxDuration,
@@ -474,27 +474,77 @@ export const SlotModal: React.FC<SlotModalProps> = ({
               ) : (
                 /* 編集・作成モード */
                 <div className="space-y-6">
-                  {/* 時間設定 */}
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        開始時間
-                      </label>
-                      <Input
-                        type="time"
-                        value={formData.startTime}
-                        onChange={(e) => handleInputChange('startTime', e.target.value)}
-                      />
+                  {/* 予約がある場合の警告 */}
+                  {currentMode === 'edit' && slot && slot.reservations && slot.reservations.length > 0 && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-amber-900 mb-1">予約済みのため編集に制限があります</h4>
+                          <p className="text-sm text-amber-700">
+                            このスロットには{slot.reservations.length}件の予約があります。
+                            時間を変更する場合は、既存の予約時間を含む範囲でのみ変更可能です。
+                          </p>
+                          <div className="mt-2 space-y-1">
+                            {slot.reservations.map((res) => (
+                              <div key={res.id} className="text-xs text-amber-600">
+                                • {res.student?.name || '予約者'}: 
+                                {res.bookedStartTime && res.bookedEndTime && (
+                                  <> {format(new Date(res.bookedStartTime), 'HH:mm')} - {format(new Date(res.bookedEndTime), 'HH:mm')}</>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        終了時間
-                      </label>
-                      <Input
-                        type="time"
-                        value={formData.endTime}
-                        onChange={(e) => handleInputChange('endTime', e.target.value)}
-                      />
+                  )}
+                  
+                  {/* 日付・時間設定 */}
+                  <div className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          開始日
+                        </label>
+                        <Input
+                          type="date"
+                          value={formData.startDate}
+                          onChange={(e) => handleInputChange('startDate', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          開始時間
+                        </label>
+                        <Input
+                          type="time"
+                          value={formData.startTime}
+                          onChange={(e) => handleInputChange('startTime', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          終了日
+                        </label>
+                        <Input
+                          type="date"
+                          value={formData.endDate}
+                          onChange={(e) => handleInputChange('endDate', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          終了時間
+                        </label>
+                        <Input
+                          type="time"
+                          value={formData.endTime}
+                          onChange={(e) => handleInputChange('endTime', e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
 
