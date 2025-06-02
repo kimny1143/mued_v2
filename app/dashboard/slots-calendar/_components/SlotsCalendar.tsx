@@ -99,11 +99,26 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
            date.getFullYear() === today.getFullYear();
   };
 
-  // 特定の日のスロットを取得
+  // 特定の日のスロットを取得（日付を跨ぐスロットも含める）
   const getSlotsForDate = (date: Date) => {
-    return slots.filter(slot => 
-      isSameDay(new Date(slot.startTime), date)
-    );
+    return slots.filter(slot => {
+      const slotStart = new Date(slot.startTime);
+      const slotEnd = new Date(slot.endTime);
+      const dayStart = new Date(date);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(date);
+      dayEnd.setHours(23, 59, 59, 999);
+      
+      // スロットがその日に重なっているかチェック
+      return (
+        // スロットがその日に開始する
+        isSameDay(slotStart, date) ||
+        // スロットがその日に終了する
+        isSameDay(slotEnd, date) ||
+        // スロットがその日を完全に跨ぐ（前日から翌日まで）
+        (slotStart < dayStart && slotEnd > dayEnd)
+      );
+    });
   };
 
   // スロットの状態を判定

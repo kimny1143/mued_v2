@@ -47,9 +47,26 @@ export const DayView: React.FC<DayViewProps> = ({
     }).format(price);
   };
 
-  const daySlots = allTimeSlots.filter(slot => 
-    isSameDay(new Date(slot.startTime), selectedDate) && slot.isAvailable
-  );
+  const daySlots = allTimeSlots.filter(slot => {
+    if (!slot.isAvailable) return false;
+    
+    const slotStart = new Date(slot.startTime);
+    const slotEnd = new Date(slot.endTime);
+    const dayStart = new Date(selectedDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(selectedDate);
+    dayEnd.setHours(23, 59, 59, 999);
+    
+    // スロットがその日に重なっているかチェック
+    return (
+      // スロットがその日に開始する
+      isSameDay(slotStart, selectedDate) ||
+      // スロットがその日に終了する
+      isSameDay(slotEnd, selectedDate) ||
+      // スロットがその日を完全に跨ぐ（前日から翌日まで）
+      (slotStart < dayStart && slotEnd > dayEnd)
+    );
+  });
   
   console.log('🔍 daySlots (フィルタ後):', daySlots);
   
