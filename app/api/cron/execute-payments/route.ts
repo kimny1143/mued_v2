@@ -126,12 +126,12 @@ export async function GET(request: NextRequest) {
       }
 
       if (reservation.payments && reservation.payments.status === 'SETUP_COMPLETED') {
-        // 生のSQLで chargeexecutedat をチェック
-        const paymentWithExecutionTime = await prisma.$queryRaw<Array<{chargeexecutedat: Date | null}>>`
-          SELECT chargeexecutedat FROM payments WHERE id = ${reservation.payments.id}
+        // 生のSQLで charge_executed_at をチェック（アンダースコア区切り）
+        const paymentWithExecutionTime = await prisma.$queryRaw<Array<{charge_executed_at: Date | null}>>`
+          SELECT charge_executed_at FROM payments WHERE id = ${reservation.payments.id}
         `;
         
-        if (paymentWithExecutionTime.length > 0 && !paymentWithExecutionTime[0].chargeexecutedat) {
+        if (paymentWithExecutionTime.length > 0 && !paymentWithExecutionTime[0].charge_executed_at) {
           filteredReservations.push(reservation);
         }
       }
