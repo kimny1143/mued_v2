@@ -306,7 +306,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
       </div>
       
       {/* タイムライン表示 */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <div className="border border-gray-200 rounded-lg">
         {/* ヘッダー */}
         <div className="bg-gray-50 border-b border-gray-200 p-4">
           <div className="flex items-center justify-between">
@@ -334,7 +334,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
             {timeSlots.map((hour) => (
               <div 
                 key={hour}
-                className="grid grid-cols-[80px_1fr] h-[60px] relative"
+                className="grid grid-cols-[80px_1fr] h-[60px] relative overflow-visible"
               >
                 {/* 時間ラベル */}
                 <div className="p-3 border-r border-gray-200 flex items-center justify-center bg-gray-50">
@@ -344,7 +344,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                 </div>
                 
                 {/* スロット表示エリア */}
-                <div className="relative h-full">
+                <div className="relative h-full overflow-visible">
                   {/* この時間帯のスロットを表示 */}
                   {daySlots.map((slot, slotIndex) => {
                     const slotStart = new Date(slot.startTime);
