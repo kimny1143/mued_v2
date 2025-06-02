@@ -68,7 +68,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   onSlotDelete,
 }) => {
   // デバッグ: 基本情報のみ（パフォーマンス重視）
-  console.log(`📅 MentorDayView render: ${selectedDate.toDateString()}, slots: ${slots.length}, role: ${userRole}`);
+  console.log(`📅 MentorDayView render START: ${selectedDate.toDateString()}, slots: ${slots.length}, role: ${userRole}`);
 
   // モーダル関連のstate
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -127,6 +127,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   };
 
   if (daySlots.length === 0) {
+    console.log('📅 MentorDayView: No slots for this day, rendering empty state');
     return (
       <div className="mt-4">
         {/* 日表示ヘッダー */}
@@ -185,6 +186,35 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
             <p className="text-xs text-gray-400 mt-1">別の日を選択してください</p>
           )}
         </div>
+        
+        {/* スロット詳細/編集モーダル */}
+        {(() => {
+          console.log('🎯 Modal section render (empty state):', {
+            isModalOpen,
+            modalMode,
+            selectedSlot,
+            selectedDate,
+            hasOnSlotUpdate: !!onSlotUpdate,
+            hasOnSlotDelete: !!onSlotDelete
+          });
+          return null;
+        })()}
+        {isModalOpen ? (
+          <>
+            {console.log('✅ Rendering SlotModal because isModalOpen is true (empty state)')}
+            <SlotModal
+              isOpen={isModalOpen}
+              onClose={handleModalClose}
+              slot={selectedSlot}
+              selectedDate={selectedDate}
+              mode={modalMode}
+              onSlotUpdate={onSlotUpdate || (() => { console.log('Empty onSlotUpdate called'); })}
+              onSlotDelete={onSlotDelete || (() => { console.log('Empty onSlotDelete called'); })}
+            />
+          </>
+        ) : (
+          console.log('❌ Not rendering SlotModal because isModalOpen is false (empty state)') || null
+        )}
       </div>
     );
   }
