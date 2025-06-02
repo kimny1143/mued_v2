@@ -17,8 +17,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CalendarIcon,
-  LogOutIcon,
-  CreditCard
+  LogOutIcon
 } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -27,7 +26,7 @@ import { Button } from "@/app/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover";
 //import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { isDebugMode, isVerboseDebugMode, debugLog, verboseDebugLog } from "@/lib/debug";
+import { isDebugMode, isVerboseDebugMode, debugLog } from "@/lib/debug";
 import { PlanTag } from "@/app/components/PlanTag";
 import { vercelSafeSignOut, safeRedirectToHome } from "@/lib/vercel-auth-fix";
 import { handlePostLoginPlanRedirect } from "@/lib/billing-utils";
@@ -93,20 +92,17 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    // ローカルストレージから初期値を取得
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('sidebarCollapsed');
-      return saved === 'true';
-    }
-    return false;
-  });
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Always start with false for SSR
+  const [isHydrated, setIsHydrated] = useState(false); // Track hydration status
   const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({});
   const [userRole, setUserRole] = useState<string>('');
   
   // Phase 4: リアルタイム通知システムの統合
   // ユーザーロールに応じた通知フックを使用
-  const { isEnabled: notificationsEnabled } = useReservationNotifications({
+  // const { isEnabled: notificationsEnabled } = useReservationNotifications({
+  //   enabled: !!user,
+  // });
+  useReservationNotifications({
     enabled: !!user,
   });
 
@@ -165,12 +161,24 @@ export default function DashboardLayout({
   }, []);
 
   // メモ化された値を使用して現在アクティブなメニューを判断（将来使用予定）
-  const _activeMenuItem = React.useMemo(() => {
-    return allMenuItems.find(item => 
-      pathname === item.path || (item.subMenu?.some(sub => pathname === sub.path))
-    );
-  }, [pathname, allMenuItems]);
+  // const _activeMenuItem = React.useMemo(() => {
+  //   return allMenuItems.find(item => 
+  //     pathname === item.path || (item.subMenu?.some(sub => pathname === sub.path))
+  //   );
+  // }, [pathname, allMenuItems]);
   
+  // Handle client-side hydration and load localStorage value
+  // This prevents SSR/CSR hydration mismatches by ensuring localStorage
+  // is only accessed after the component has mounted on the client
+  useEffect(() => {
+    setIsHydrated(true);
+    // Only load from localStorage after hydration
+    const saved = localStorage.getItem('sidebarCollapsed');
+    if (saved !== null) {
+      setIsSidebarCollapsed(saved === 'true');
+    }
+  }, []);
+
   // 初期レンダリング後にアクティブなメニューを展開
   useEffect(() => {
     // パスが変わった時に、そのパスを含むメニュー項目があれば展開
@@ -486,7 +494,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="dashboard-layout">
+    <div className="dashboard-layout" data-sidebar-collapsed={isSidebarCollapsed.toString()}>
       {/* ヘッダー */}
       <header className="dashboard-header">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
@@ -634,16 +642,24 @@ export default function DashboardLayout({
           />
         )}
 
-        {/* サイドバー */}
-        <aside
-          className={`
-            fixed inset-y-0 left-0 z-40 bg-white border-r pt-14 sm:pt-16 flex flex-col
-            w-64 lg:transition-all lg:duration-300 lg:ease-in-out
-            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-            lg:translate-x-0 
-            ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
-          `}
-        >
+        {/* サイドバー - 確実に1つだけレンダリング */}
+        {/* SSR時のプレースホルダー */}
+        {!isHydrated && (
+          <div className="hidden lg:block fixed inset-y-0 left-0 w-64 bg-white border-r pt-14 sm:pt-16" />
+        )}
+        
+        {/* 実際のサイドバー（ハイドレーション後のみ） */}
+        {isHydrated && (
+          <aside
+            data-testid="dashboard-sidebar"
+            className={`
+              fixed inset-y-0 left-0 z-40 bg-white border-r pt-14 sm:pt-16 flex flex-col
+              w-64 lg:transition-all lg:duration-300 lg:ease-in-out
+              ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+              lg:translate-x-0 
+              ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
+            `}
+          >
           <div className="flex items-center justify-end lg:px-4 py-2 border-b flex-shrink-0">
             <Button 
               variant="ghost" 
@@ -764,12 +780,13 @@ export default function DashboardLayout({
             </nav>
           </div>
         </aside>
+        )}
 
         {/* メインコンテンツ */}
         <div 
           className={`
-            lg:transition-all lg:duration-300 lg:ease-in-out 
-            ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
+            ${isHydrated ? 'lg:transition-all lg:duration-300 lg:ease-in-out' : ''} 
+            ${isHydrated ? (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64') : 'lg:ml-64'}
             pt-14 sm:pt-16
           `}
         >
