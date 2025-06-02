@@ -334,7 +334,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
             {timeSlots.map((hour) => (
               <div 
                 key={hour}
-                className="grid grid-cols-[80px_1fr] min-h-[60px] relative"
+                className="grid grid-cols-[80px_1fr] h-[60px] relative"
               >
                 {/* 時間ラベル */}
                 <div className="p-3 border-r border-gray-200 flex items-center justify-center bg-gray-50">
@@ -344,7 +344,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                 </div>
                 
                 {/* スロット表示エリア */}
-                <div className="relative p-2">
+                <div className="relative h-full">
                   {/* この時間帯のスロットを表示 */}
                   {daySlots.map((slot, slotIndex) => {
                     const slotStart = new Date(slot.startTime);
@@ -372,12 +372,21 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                         slotStartHour,
                         slotEndHour,
                         reservations: slot.reservations,
-                        reservationCount: slot.reservations?.length
+                        reservationCount: slot.reservations?.length,
+                        startPosition,
+                        totalDuration: (slotEnd.getTime() - slotStart.getTime()) / (1000 * 60)
                       });
                       
                       // スロット全体の高さを計算
                       const totalDuration = (slotEnd.getTime() - slotStart.getTime()) / (1000 * 60);
                       const totalHeight = totalDuration;
+                      
+                      console.log('📐 位置とサイズ計算:', {
+                        startPosition,
+                        totalHeight,
+                        totalDuration,
+                        分: slotStart.getMinutes()
+                      });
                       
                       return (
                         <div
@@ -387,6 +396,16 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                             top: `${startPosition}px`,
                             height: `${totalHeight}px`,
                             zIndex: 10
+                          }}
+                          ref={(el) => {
+                            if (el) {
+                              console.log('📦 スロットDOM要素:', {
+                                slotId: slot.id,
+                                実際のtop: el.style.top,
+                                実際のheight: el.style.height,
+                                親要素の高さ: el.parentElement?.offsetHeight
+                              });
+                            }
                           }}
                         >
                           {/* スロット基本情報 */}
