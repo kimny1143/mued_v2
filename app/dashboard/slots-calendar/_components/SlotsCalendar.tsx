@@ -109,14 +109,28 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
       const dayEnd = new Date(date);
       dayEnd.setHours(23, 59, 59, 999);
       
+      // デバッグ：0:30-1:30のスロットを特定
+      if (slotStart.getHours() === 0 && slotStart.getMinutes() === 30) {
+        console.log('🌙 深夜スロット発見:', {
+          slotId: slot.id,
+          開始: slotStart.toLocaleString('ja-JP'),
+          終了: slotEnd.toLocaleString('ja-JP'),
+          検査日: date.toLocaleDateString('ja-JP'),
+          開始日と同じ: isSameDay(slotStart, date),
+          終了日と同じ: isSameDay(slotEnd, date),
+          予約数: slot.reservations?.length || 0
+        });
+      }
+      
       // スロットがその日に重なっているかチェック
+      // より包括的な条件に変更
       return (
         // スロットがその日に開始する
         isSameDay(slotStart, date) ||
         // スロットがその日に終了する
         isSameDay(slotEnd, date) ||
-        // スロットがその日を完全に跨ぐ（前日から翌日まで）
-        (slotStart < dayStart && slotEnd > dayEnd)
+        // スロットがその日を跨ぐ（開始が日の開始より前、終了が日の開始より後）
+        (slotStart <= dayEnd && slotEnd >= dayStart)
       );
     });
   };

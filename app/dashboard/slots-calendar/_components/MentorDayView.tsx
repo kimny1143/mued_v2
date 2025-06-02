@@ -105,14 +105,30 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
     const dayEnd = new Date(selectedDate);
     dayEnd.setHours(23, 59, 59, 999);
     
+    // デバッグ：深夜スロットを特定
+    if (slotStart.getHours() <= 4 || slotStart.getHours() >= 22) {
+      console.log('🌙 時間帯確認:', {
+        slotId: slot.id,
+        開始: slotStart.toLocaleString('ja-JP'),
+        終了: slotEnd.toLocaleString('ja-JP'),
+        選択日: selectedDate.toLocaleDateString('ja-JP'),
+        予約: slot.reservations?.map(r => ({
+          id: r.id,
+          status: r.status,
+          時間: `${new Date(r.bookedStartTime!).toLocaleTimeString('ja-JP')} - ${new Date(r.bookedEndTime!).toLocaleTimeString('ja-JP')}`
+        }))
+      });
+    }
+    
     // スロットがその日に重なっているかチェック
+    // より包括的な条件に変更
     return (
       // スロットがその日に開始する
       isSameDay(slotStart, selectedDate) ||
-      // スロットがその日に終了する
+      // スロットがその日に終了する  
       isSameDay(slotEnd, selectedDate) ||
-      // スロットがその日を完全に跨ぐ（前日から翌日まで）
-      (slotStart < dayStart && slotEnd > dayEnd)
+      // スロットがその日を跨ぐ（開始が日の終了より前、終了が日の開始より後）
+      (slotStart <= dayEnd && slotEnd >= dayStart)
     );
   });
   
@@ -150,14 +166,9 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
     }
   }, [daySlots, selectedDate]);
   
-  // 時間軸の生成（5:00-翌4:00、深夜レッスン対応）
+  // 時間軸の生成（0:00-23:00、24時間表示）
   const timeSlots = [];
-  // 5:00から23:00
-  for (let hour = 5; hour <= 23; hour++) {
-    timeSlots.push(hour);
-  }
-  // 0:00から4:00（翌日扱い）
-  for (let hour = 0; hour <= 4; hour++) {
+  for (let hour = 0; hour <= 23; hour++) {
     timeSlots.push(hour);
   }
 
