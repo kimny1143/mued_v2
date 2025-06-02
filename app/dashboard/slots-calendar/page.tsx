@@ -103,6 +103,9 @@ export default function SlotsCalendarPage() {
       const userMetadata = sessionData.session?.user?.user_metadata;
       const currentUserRole = userMetadata?.role || 'student';
       
+      console.log('📊 User metadata:', userMetadata);
+      console.log('📊 Current user role from metadata:', currentUserRole);
+      console.log('📊 State userRole:', userRole);
       console.log(`APIリクエスト開始: レッスンスロットを取得 (ロール: ${currentUserRole})`);
       
       // ロールに応じてviewModeを設定

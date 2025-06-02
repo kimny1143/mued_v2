@@ -484,26 +484,31 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
 
       {/* スロット詳細/編集モーダル */}
       {(() => {
-        console.log('🎯 Modal render check:', {
+        console.log('🎯 Modal section render:', {
           isModalOpen,
           modalMode,
           selectedSlot,
+          selectedDate,
           hasOnSlotUpdate: !!onSlotUpdate,
-          hasOnSlotDelete: !!onSlotDelete,
-          shouldRenderModal: !!(onSlotUpdate && onSlotDelete)
+          hasOnSlotDelete: !!onSlotDelete
         });
         return null;
       })()}
-      {isModalOpen && (
-        <SlotModal
-          isOpen={isModalOpen}
-          onClose={handleModalClose}
-          slot={selectedSlot}
-          selectedDate={selectedDate}
-          mode={modalMode}
-          onSlotUpdate={onSlotUpdate || (() => {})}
-          onSlotDelete={onSlotDelete || (() => {})}
-        />
+      {isModalOpen ? (
+        <>
+          {console.log('✅ Rendering SlotModal because isModalOpen is true')}
+          <SlotModal
+            isOpen={isModalOpen}
+            onClose={handleModalClose}
+            slot={selectedSlot}
+            selectedDate={selectedDate}
+            mode={modalMode}
+            onSlotUpdate={onSlotUpdate || (() => { console.log('Empty onSlotUpdate called'); })}
+            onSlotDelete={onSlotDelete || (() => { console.log('Empty onSlotDelete called'); })}
+          />
+        </>
+      ) : (
+        console.log('❌ Not rendering SlotModal because isModalOpen is false') || null
       )}
     </div>
   );
