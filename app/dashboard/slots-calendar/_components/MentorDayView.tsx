@@ -135,9 +135,14 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
     }
   }, [daySlots, selectedDate]);
   
-  // 時間軸の生成（0:00-23:00、24時間表示）
+  // 時間軸の生成（5:00-翌4:00、深夜レッスン対応）
   const timeSlots = [];
-  for (let hour = 0; hour <= 23; hour++) {
+  // 5:00から23:00
+  for (let hour = 5; hour <= 23; hour++) {
+    timeSlots.push(hour);
+  }
+  // 0:00から4:00（翌日扱い）
+  for (let hour = 0; hour <= 4; hour++) {
     timeSlots.push(hour);
   }
 
