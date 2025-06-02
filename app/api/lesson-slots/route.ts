@@ -490,7 +490,16 @@ export async function POST(request: NextRequest) {
       maxDuration: newSlot.max_duration,       // max_duration → maxDuration
       isAvailable: newSlot.is_available,       // is_available → isAvailable
       createdAt: newSlot.created_at,           // created_at → createdAt
-      updatedAt: newSlot.updated_at            // updated_at → updatedAt
+      updatedAt: newSlot.updated_at,           // updated_at → updatedAt
+      description: newSlot.description || '',  // descriptionフィールドを返す
+      // 必要に応じてteacher情報も追加
+      teacher: {
+        id: sessionInfo.user.id,
+        name: sessionInfo.user.name || null,
+        email: sessionInfo.user.email || null,
+        image: sessionInfo.user.image || null
+      },
+      reservations: []  // 新規作成時は予約は空
     };
     
     return NextResponse.json(responseSlot, { 

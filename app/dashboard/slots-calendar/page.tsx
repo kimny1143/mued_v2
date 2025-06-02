@@ -103,6 +103,9 @@ export default function SlotsCalendarPage() {
       const userMetadata = sessionData.session?.user?.user_metadata;
       const currentUserRole = userMetadata?.role || 'student';
       
+      console.log('📊 User metadata:', userMetadata);
+      console.log('📊 Current user role from metadata:', currentUserRole);
+      console.log('📊 State userRole:', userRole);
       console.log(`APIリクエスト開始: レッスンスロットを取得 (ロール: ${currentUserRole})`);
       
       // ロールに応じてviewModeを設定
@@ -714,6 +717,7 @@ export default function SlotsCalendarPage() {
   return (
     <DashboardLayout 
       title="レッスンスロット管理"
+      fullWidth={true}
       actions={
         <div className="text-sm text-gray-600 hidden sm:block">
           あなたのレッスン予定と予約状況を管理できます
@@ -732,32 +736,32 @@ export default function SlotsCalendarPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow">
-          <div className="w-full sm:px-0 lg:px-0">
-            {viewMode === 'month' ? (
-              <SlotsCalendar
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          {viewMode === 'month' ? (
+            <SlotsCalendar
+              slots={slots}
+              isLoading={isLoading}
+              onSlotUpdate={handleSlotUpdate}
+              onSlotDelete={handleSlotDelete}
+              onReservationClick={handleReservationClick}
+              onDateClick={handleDateClick}
+            />
+          ) : (
+            selectedDayViewDate && (
+              <MentorDayView
+                selectedDate={selectedDayViewDate}
                 slots={slots}
                 isLoading={isLoading}
+                onBackToMonth={handleBackToMonth}
+                onDayNavigation={handleDayNavigation}
+                onReservationClick={handleDayViewReservationClick}
+                onApprove={handleDayViewApprove}
+                userRole={userRole}
                 onSlotUpdate={handleSlotUpdate}
                 onSlotDelete={handleSlotDelete}
-                onReservationClick={handleReservationClick}
-                onDateClick={handleDateClick}
               />
-            ) : (
-              selectedDayViewDate && (
-                <MentorDayView
-                  selectedDate={selectedDayViewDate}
-                  slots={slots}
-                  isLoading={isLoading}
-                  onBackToMonth={handleBackToMonth}
-                  onDayNavigation={handleDayNavigation}
-                  onReservationClick={handleDayViewReservationClick}
-                  onApprove={handleDayViewApprove}
-                  userRole={userRole}
-                />
-              )
-            )}
-          </div>
+            )
+          )}
         </div>
       )}
       

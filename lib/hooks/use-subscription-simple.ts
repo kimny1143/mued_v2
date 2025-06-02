@@ -67,6 +67,19 @@ export function useSubscriptionSimple() {
           return;
         }
 
+        // ユーザーロールを確認（メンター・管理者はサブスクリプション不要）
+        const userRole = session.user.user_metadata?.role?.toLowerCase();
+        if (userRole === 'mentor' || userRole === 'admin') {
+          console.log(`🎯 ${userRole}ロールはサブスクリプション対象外 - スキップ`);
+          setSubscription({
+            priceId: null,
+            status: 'role_exempt', // ロール免除を示す特別なステータス
+            currentPeriodEnd: null
+          });
+          setLoading(false);
+          return;
+        }
+
         // APIエンドポイント経由でサブスクリプション情報を取得
         const token = session.access_token;
         

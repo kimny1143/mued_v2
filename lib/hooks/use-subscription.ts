@@ -72,6 +72,15 @@ export function useSubscription() {
         return;
       }
       
+      // ユーザーロールを確認（メンター・管理者はサブスクリプション不要）
+      const userRole = sessionData.session?.user?.user_metadata?.role?.toLowerCase();
+      if (userRole === 'mentor' || userRole === 'admin') {
+        console.log(`🎯 ${userRole}ロールはサブスクリプション対象外 - APIコールをスキップ`);
+        setSubscription(null); // メンター・管理者はサブスクリプション不要
+        setLoading(false);
+        return;
+      }
+      
       console.log('認証トークン取得成功:', token.substring(0, 10) + '...');
       
       // APIエンドポイントからデータを取得（認証ヘッダーを追加）

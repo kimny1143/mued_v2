@@ -547,6 +547,7 @@ export default function BookingCalendarPage() {
   return (
     <DashboardLayout 
       title="メンターレッスン予約"
+      fullWidth={true}
       actions={
         <div className="flex items-center gap-2 flex-wrap">
           <div className="text-sm text-gray-600 hidden sm:block">
@@ -596,16 +597,12 @@ export default function BookingCalendarPage() {
           </Button>
         </div>
       ) : (
-        <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow">
-          <div className="w-full p-0 sm:px-0 lg:px-0">
-            <MentorCalendar
-              mentors={mentors}
-              isLoading={isLoading}
-              myReservations={myReservations}
-              onRefreshData={refreshData} // データ再取得関数を渡す
-            />
-          </div>
-        </div>
+        <MentorCalendar
+          mentors={mentors}
+          isLoading={isLoading}
+          myReservations={myReservations}
+          onRefreshData={refreshData} // データ再取得関数を渡す
+        />
       )}
     </DashboardLayout>
   );

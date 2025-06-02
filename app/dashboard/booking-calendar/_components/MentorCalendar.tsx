@@ -461,10 +461,10 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         </div>
       )}
       
-      <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-4 sm:mx-0">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         {/* 全メンター情報表示 - モバイル最適化 */}
         {mentors.length > 0 && (
-          <div className="p-0 space-y-3">
+          <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900">利用可能なメンター</h3>
               <div className="text-xs sm:text-sm text-gray-500">
@@ -515,12 +515,14 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
           </div>
         )}
         
-        <CalendarNavigation
-          currentDate={currentDate}
-          onDateChange={handleDateNavigation}
-          view={'month'}
-          onViewChange={handleViewChange}
-        />
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
+          <CalendarNavigation
+            currentDate={currentDate}
+            onDateChange={handleDateNavigation}
+            view={'month'}
+            onViewChange={handleViewChange}
+          />
+        </div>
         
         {propsIsLoading ? (
           <div className="flex justify-center items-center h-64" aria-live="polite" aria-busy="true">
@@ -530,7 +532,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         ) : (
           <>
             {currentView === 'month' ? (
-                <div className="mt-4">
+                <div className="px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6">
                   <h4 className="font-semibold mb-4 text-gray-900 text-center text-sm sm:text-base">予約可能日カレンダー</h4>
                 <MonthView
                   currentDate={currentDate}

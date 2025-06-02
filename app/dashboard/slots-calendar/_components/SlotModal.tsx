@@ -61,6 +61,8 @@ export const SlotModal: React.FC<SlotModalProps> = ({
   onSlotUpdate,
   onSlotDelete,
 }) => {
+  console.log('🎨 SlotModal render:', { isOpen, mode, slot, selectedDate });
+  
   const [currentMode, setCurrentMode] = useState<'view' | 'edit' | 'create'>(mode);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -177,6 +179,12 @@ export const SlotModal: React.FC<SlotModalProps> = ({
         currency: 'JPY',
       };
 
+      console.log('📤 Sending slot data:', {
+        mode: currentMode,
+        slotData: slotData,
+        hasToken: !!token
+      });
+
       let response;
       
       if (currentMode === 'create') {
@@ -204,8 +212,27 @@ export const SlotModal: React.FC<SlotModalProps> = ({
       }
 
       if (!response || !response.ok) {
-        const errorData = await response?.json();
-        throw new Error(errorData?.error || 'スロットの保存に失敗しました');
+        let errorData;
+        try {
+          errorData = await response?.json();
+        } catch (jsonError) {
+          console.error('Error parsing error response:', jsonError);
+          errorData = { error: 'Unknown error', details: 'Failed to parse error response' };
+        }
+        
+        console.error('🚨 Slot save API error:', {
+          status: response?.status,
+          statusText: response?.statusText,
+          errorData: errorData,
+          details: errorData?.details
+        });
+        
+        // エラーメッセージに詳細を含める
+        const errorMessage = errorData?.details 
+          ? `${errorData.error}: ${errorData.details}`
+          : errorData?.error || 'スロットの保存に失敗しました';
+          
+        throw new Error(errorMessage);
       }
 
       const savedSlot = await response.json();
@@ -281,10 +308,15 @@ export const SlotModal: React.FC<SlotModalProps> = ({
     }).format(price);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log('🚫 SlotModal not rendering because isOpen is false');
+    return null;
+  }
 
   const displayDate = selectedDate || (slot ? new Date(slot.startTime) : new Date());
   const status = slot ? getSlotStatus(slot) : null;
+
+  console.log('✅ SlotModal rendering with:', { isOpen, currentMode, displayDate });
 
   return (
     <>
