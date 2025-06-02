@@ -250,7 +250,14 @@ export async function GET(request: NextRequest) {
       };
     });
     
+    // PENDING_APPROVALの予約を確認
+    const pendingApprovalCount = enhancedSlots.reduce((count, slot) => {
+      return count + slot.reservations.filter(res => res.status === 'PENDING_APPROVAL').length;
+    }, 0);
+    
     console.log(`🟢 lesson-slots (${viewMode}モード): ${enhancedSlots.length}件`);
+    console.log(`🔍 PENDING_APPROVAL予約: ${pendingApprovalCount}件`);
+    
     return NextResponse.json(enhancedSlots, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',

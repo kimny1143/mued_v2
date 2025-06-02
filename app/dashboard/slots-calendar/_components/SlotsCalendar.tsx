@@ -310,7 +310,19 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                 {slot.reservations && slot.reservations.length > 0 && (
                                   <div className="flex flex-col gap-0.5">
                                     {slot.reservations
-                                      .filter(res => res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
+                                      .filter(res => {
+                                        // デバッグログ追加
+                                        if (DEBUG || res.status === 'PENDING_APPROVAL') {
+                                          console.log('SlotsCalendar - Reservation:', {
+                                            id: res.id,
+                                            status: res.status,
+                                            slotId: slot.id,
+                                            date: format(new Date(slot.startTime), 'yyyy-MM-dd'),
+                                            studentName: res.student?.name
+                                          });
+                                        }
+                                        return res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL';
+                                      })
                                       .slice(0, 1) // モバイルでは1件まで表示
                                       .map((reservation, resIndex) => {
                                         const startTime = new Date(reservation.bookedStartTime || '');

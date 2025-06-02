@@ -147,6 +147,18 @@ export default function SlotsCalendarPage() {
           reservations: data[0].reservations?.length || 0,
           teacherName: data[0].teacher?.name
         });
+        
+        // PENDING_APPROVALの予約を確認
+        const pendingApprovalReservations = data.flatMap(slot => 
+          slot.reservations?.filter(res => res.status === 'PENDING_APPROVAL') || []
+        );
+        
+        if (pendingApprovalReservations.length > 0) {
+          console.log('🔍 PENDING_APPROVALの予約:', pendingApprovalReservations.length + '件');
+          console.log('PENDING_APPROVAL予約詳細:', pendingApprovalReservations);
+        } else {
+          console.log('⚠️ PENDING_APPROVALの予約が見つかりません');
+        }
       }
       
       setSlots(data);
@@ -259,6 +271,18 @@ export default function SlotsCalendarPage() {
   // 予約クリック処理
   const handleReservationClick = async (reservation: MentorLessonSlot['reservations'][0], mode: ModalMode = 'view') => {
     try {
+      // デバッグ: 予約情報を確認
+      if (DEBUG) {
+        console.log('=== handleReservationClick Debug ===');
+        console.log('Reservation:', {
+          id: reservation.id,
+          status: reservation.status,
+          bookedStartTime: reservation.bookedStartTime,
+          bookedEndTime: reservation.bookedEndTime
+        });
+        console.log('Mode:', mode);
+      }
+      
       // スロット情報を取得（予約から逆引き）
       const parentSlot = slots.find(slot => 
         slot.reservations.some(res => res.id === reservation.id)
@@ -341,6 +365,11 @@ export default function SlotsCalendarPage() {
 
   // 日別表示からの予約クリック処理
   const handleDayViewReservationClick = (reservation: MentorLessonSlot['reservations'][0]) => {
+    console.log('🔍 日別表示から予約クリック:', {
+      id: reservation.id,
+      status: reservation.status,
+      studentName: reservation.student?.name
+    });
     // 既存のhandleReservationClickを利用
     handleReservationClick(reservation, 'view');
   };

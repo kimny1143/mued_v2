@@ -69,6 +69,14 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
 }) => {
   // デバッグ: 基本情報のみ（パフォーマンス重視）
   console.log(`📅 MentorDayView render START: ${selectedDate.toDateString()}, slots: ${slots.length}, role: ${userRole}`);
+  
+  // PENDING_APPROVALの予約を確認
+  const pendingApprovalReservations = slots.flatMap(slot => 
+    slot.reservations?.filter(res => res.status === 'PENDING_APPROVAL') || []
+  );
+  if (pendingApprovalReservations.length > 0) {
+    console.log('🔍 MentorDayView - PENDING_APPROVAL予約:', pendingApprovalReservations.length + '件', pendingApprovalReservations);
+  }
 
   // モーダル関連のstate
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -92,6 +100,16 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   const daySlots = slots.filter(slot => 
     isSameDay(new Date(slot.startTime), selectedDate)
   );
+  
+  // デバッグ: PENDING_APPROVALの予約を確認
+  useEffect(() => {
+    if (daySlots.length > 0) {
+      const pendingApprovalReservations = daySlots.flatMap(slot => 
+        slot.reservations?.filter(res => res.status === 'PENDING_APPROVAL') || []
+      );
+      console.log('🔍 MentorDayView - PENDING_APPROVAL予約:', pendingApprovalReservations.length, pendingApprovalReservations);
+    }
+  }, [daySlots]);
   
   // 時間軸の生成（0:00-23:00、24時間表示）
   const timeSlots = [];
