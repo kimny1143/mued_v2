@@ -366,6 +366,15 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                       
                       if (!isFirstDisplay) return null; // 最初の時間帯でのみ表示
                       
+                      console.log('🎯 スロットレンダリング:', {
+                        slotId: slot.id,
+                        hour,
+                        slotStartHour,
+                        slotEndHour,
+                        reservations: slot.reservations,
+                        reservationCount: slot.reservations?.length
+                      });
+                      
                       // スロット全体の高さを計算
                       const totalDuration = (slotEnd.getTime() - slotStart.getTime()) / (1000 * 60);
                       const totalHeight = totalDuration;
@@ -400,6 +409,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                           
                           {/* 予約一覧 */}
                           <div className="p-1 space-y-1">
+                            {console.log('🎯 予約をレンダリング開始:', slot.reservations)}
                             {slot.reservations?.map((reservation, resIndex) => {
                               // デバッグ: 予約データの構造を確認
                               console.log('🔍 予約データ:', {
