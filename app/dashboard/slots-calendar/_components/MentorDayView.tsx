@@ -393,6 +393,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                               </div>
                               <div className="text-xs text-blue-600">
                                 {slot.reservations?.length || 0}件予約
+                                {console.log('🔍 スロット内の予約数:', slot.reservations?.length, 'データ:', slot.reservations)}
                               </div>
                             </div>
                           </div>
@@ -400,6 +401,16 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                           {/* 予約一覧 */}
                           <div className="p-1 space-y-1">
                             {slot.reservations?.map((reservation, resIndex) => {
+                              // デバッグ: 予約データの構造を確認
+                              console.log('🔍 予約データ:', {
+                                id: reservation.id,
+                                status: reservation.status,
+                                bookedStartTime: reservation.bookedStartTime,
+                                bookedEndTime: reservation.bookedEndTime,
+                                student: reservation.student,
+                                全データ: reservation
+                              });
+                              
                               const resStart = new Date(reservation.bookedStartTime || '');
                               const resEnd = new Date(reservation.bookedEndTime || '');
                               
