@@ -93,9 +93,9 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
     isSameDay(new Date(slot.startTime), selectedDate)
   );
   
-  // 時間軸の生成（8:00-22:00、1時間刻み）
+  // 時間軸の生成（0:00-23:00、24時間表示）
   const timeSlots = [];
-  for (let hour = 8; hour <= 22; hour++) {
+  for (let hour = 0; hour <= 23; hour++) {
     timeSlots.push(hour);
   }
 
