@@ -2,6 +2,9 @@
 import Parser from 'rss-parser';
 import { NextResponse } from 'next/server';
 
+// このルートは動的である必要があるため、明示的に指定
+export const dynamic = 'force-dynamic';
+
 type CustomFeed = Parser.Output<CustomItem>;
 type CustomItem = Parser.Item & {
   'content:encoded'?: string;
