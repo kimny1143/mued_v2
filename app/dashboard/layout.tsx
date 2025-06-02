@@ -93,7 +93,14 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    // ローカルストレージから初期値を取得
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebarCollapsed');
+      return saved === 'true';
+    }
+    return false;
+  });
   const [expandedMenus, setExpandedMenus] = useState<{ [key: string]: boolean }>({});
   const [userRole, setUserRole] = useState<string>('');
   
@@ -361,7 +368,12 @@ export default function DashboardLayout({
   };
 
   const toggleSidebarCollapse = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
+    const newState = !isSidebarCollapsed;
+    setIsSidebarCollapsed(newState);
+    // ローカルストレージに保存
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sidebarCollapsed', newState.toString());
+    }
   };
   
   // サインアウト処理
@@ -625,7 +637,8 @@ export default function DashboardLayout({
         {/* サイドバー */}
         <aside
           className={`
-            fixed inset-y-0 left-0 z-40 bg-white border-r pt-14 sm:pt-16 transition-all duration-300 ease-in-out flex flex-col
+            fixed inset-y-0 left-0 z-40 bg-white border-r pt-14 sm:pt-16 flex flex-col
+            w-64 lg:transition-all lg:duration-300 lg:ease-in-out
             ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
             lg:translate-x-0 
             ${isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64'}
@@ -755,8 +768,8 @@ export default function DashboardLayout({
         {/* メインコンテンツ */}
         <div 
           className={`
-            transition-all duration-300 ease-in-out 
-            ${isSidebarOpen ? 'lg:ml-64' : (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64')}
+            lg:transition-all lg:duration-300 lg:ease-in-out 
+            ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}
             pt-14 sm:pt-16
           `}
         >
