@@ -197,6 +197,42 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
     setIsModalOpen(true);
   };
 
+  // 時間を指定して新規スロット作成
+  const handleCreateSlotWithTime = (startTime: Date) => {
+    console.log('🔧 handleCreateSlotWithTime called with:', startTime);
+    
+    // 終了時間を1時間後に設定
+    const endTime = new Date(startTime);
+    endTime.setHours(startTime.getHours() + 1);
+    
+    // 仮のスロットオブジェクトを作成（SlotModalが期待する形式）
+    const tempSlot: MentorLessonSlot = {
+      id: 'temp-new',
+      teacherId: '',
+      startTime: startTime,
+      endTime: endTime,
+      isAvailable: true,
+      hourlyRate: 5000,
+      currency: 'JPY',
+      minDuration: 30,
+      maxDuration: 120,
+      description: '',
+      teacher: {
+        id: '',
+        name: null,
+        email: null,
+        image: null,
+      },
+      reservations: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    
+    setSelectedSlot(tempSlot);
+    setModalMode('create');
+    setIsModalOpen(true);
+  };
+
   // スロット編集ハンドラー
   const handleEditSlot = (slot: MentorLessonSlot) => {
     setSelectedSlot(slot);
@@ -387,7 +423,26 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                 </div>
                 
                 {/* スロット表示エリア */}
-                <div className="relative h-full overflow-visible">
+                <div 
+                  className={`relative h-full overflow-visible ${userRole === 'mentor' ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                  onClick={(e) => {
+                    // メンターのみ、かつ既存のスロットがない場所でクリック可能
+                    if (userRole === 'mentor' && e.target === e.currentTarget) {
+                      e.stopPropagation();
+                      
+                      // クリック位置から時間を計算
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const clickY = e.clientY - rect.top;
+                      // 60pxの高さを60分として計算し、15分単位に丸める
+                      const minutes = Math.round(clickY / 60 * 60 / 15) * 15;
+                      
+                      const clickTime = new Date(selectedDate);
+                      clickTime.setHours(hour, Math.min(minutes, 45), 0, 0); // 最大45分まで
+                      
+                      handleCreateSlotWithTime(clickTime);
+                    }
+                  }}
+                >
                   {/* この時間帯のスロットを表示 */}
                   {daySlots.map((slot, slotIndex) => {
                     const slotStart = new Date(slot.startTime);
@@ -438,7 +493,11 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                             top: `${startPosition}px`,
                             height: `${totalHeight}px`,
                             minHeight: '60px',
-                            zIndex: 10 + slotIndex // 重なり順を管理
+                            zIndex: 10 + slotIndex, // 重なり順を管理
+                            pointerEvents: 'auto' // クリックイベントを有効化
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation(); // 親要素のクリックイベントを防ぐ
                           }}
                         >
                           {/* スロット基本情報 */}
