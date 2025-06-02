@@ -396,7 +396,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                       return (
                         <div
                           key={slot.id}
-                          className="absolute left-2 right-2 bg-blue-100 border border-blue-300 rounded-lg overflow-hidden"
+                          className="absolute left-2 right-2 bg-blue-100 border border-blue-300 rounded-lg"
                           style={{
                             top: `${startPosition}px`,
                             height: `${totalHeight}px`,
@@ -432,8 +432,8 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                           </div>
                           
                           {/* 予約一覧 */}
-                          <div className="p-1 space-y-1">
-                            {console.log('🎯 予約をレンダリング開始:', slot.reservations)}
+                          <div className="p-1 space-y-1 min-h-0 overflow-visible">
+                            {console.log('🎯 予約をレンダリング開始:', slot.reservations, 'データ数:', slot.reservations?.length)}
                             {slot.reservations?.map((reservation, resIndex) => {
                               // デバッグ: 予約データの構造を確認
                               console.log('🔍 予約データ:', {
@@ -464,6 +464,17 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                                     p-3 rounded border transition-opacity min-h-[80px] flex flex-col gap-2
                                     ${statusColors[reservation.status as keyof typeof statusColors] || 'bg-gray-100 border-gray-300 text-gray-800'}
                                   `}
+                                  ref={(el) => {
+                                    if (el) {
+                                      console.log('📦 予約カードDOM:', {
+                                        reservationId: reservation.id,
+                                        status: reservation.status,
+                                        表示されている: el.offsetParent !== null,
+                                        高さ: el.offsetHeight,
+                                        幅: el.offsetWidth
+                                      });
+                                    }
+                                  }}
                                 >
                                   <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-2 flex-1">
