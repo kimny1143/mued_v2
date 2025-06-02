@@ -9,8 +9,8 @@
 ## 1. 依存パッケージのインストール
 
 ```bash
-# Playwright本体とMCPアドオンのインストール
-npm install --save-dev playwright @playwright/test @playwright/mcp
+# Playwright本体とMCPサーバーのインストール（既にpackage.jsonに含まれています）
+npm install --save-dev playwright @playwright/test @playwright/mcp mcp-server-playwright
 
 # ブラウザバイナリのインストール
 npx playwright install --with-deps
@@ -18,25 +18,32 @@ npx playwright install --with-deps
 
 ## 2. 環境変数の設定
 
-`.env.test`ファイルを作成し、以下の内容を追加：
+`.env.local`ファイルに以下の内容を追加（または`.env.mcp`を使用）：
 
 ```env
-PLAYWRIGHT_MCP_TOKEN=dev-local-<適当な長いランダム文字列>
+PLAYWRIGHT_MCP_TOKEN=dev-token-mued-lms
 ```
 
 ## 3. Cursor IDEの設定
 
-1. Cursorを起動し、`Cmd + ,`（Mac）または`Ctrl + ,`（Windows）で設定を開く
-2. 左メニューの「Features」→「MCP」を選択
-3. 「Add New Global MCP Server」をクリックし、以下の設定を追加：
+### グローバル設定との競合を避ける方法
 
+Cursor IDEにはすでにグローバルMCP設定（`~/.cursor/mcp.json`）があります：
 ```json
 {
-  "command": "npm",
-  "args": ["run", "mcp"],
-  "env": { "PLAYWRIGHT_BROWSERS_PATH": "./browsers" }
+  "mcpServers": {
+    "claude_code": {
+      "command": "/Users/kimny/.nvm/versions/node/v22.15.0/bin/claude",
+      "args": ["mcp", "serve"],
+      "env": {
+        "ANTHROPIC_MODEL": "claude-sonnet-4-20250514"
+      }
+    }
+  }
 }
 ```
+
+このプロジェクトでは、プロジェクトローカルの`.mcp.json`を使用してPlaywright MCPを設定しています。両方が共存できるよう、異なるサーバー名（`playwright-local`）を使用しています。
 
 ## 4. Claude デスクトップアプリの設定
 
@@ -61,7 +68,16 @@ PLAYWRIGHT_MCP_TOKEN=dev-local-<適当な長いランダム文字列>
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
-## 5. 動作確認
+## 5. プロジェクトの設定ファイル
+
+### 作成済みの設定ファイル
+
+1. **`.mcp.json`** - プロジェクト固有のMCP設定
+2. **`mcp-server.config.js`** - MCPサーバーの詳細設定
+3. **`playwright.config.mjs`** - Playwright設定（MCP統合済み）
+4. **`.env.mcp`** - MCP専用の環境変数
+
+## 6. 動作確認
 
 3つのターミナルで以下のコマンドを実行：
 
@@ -76,18 +92,47 @@ npm run dev
 npm run test:e2e
 ```
 
+または、ポートを使い分けてクリーンに起動：
+
+```bash
+# ポートをクリア
+npm run kill-port
+npm run kill-mcp-port
+
+# 各サーバーを起動
+npm run mcp:clean  # MCPサーバー（3333ポート）
+npm run dev:clean  # 開発サーバー（3000ポート）
+```
+
 ## トラブルシューティング
 
+### ポート競合エラー
+```bash
+# ポート3333が使用中の場合
+lsof -ti:3333 | xargs kill -9
+# または
+npm run kill-mcp-port
+
+# 別のポートを使用する場合
+MCP_SERVER_PORT=3334 npm run mcp
+```
+
 ### MCPサーバー接続エラー
-- ポート3333が使用中でないか確認
 - 環境変数`PLAYWRIGHT_MCP_TOKEN`が正しく設定されているか確認
+- MCPサーバーのヘルスチェック：`curl http://localhost:3333/health`
+- ログ確認：`tail -f logs/mcp/*.log`
 
 ### テスト実行エラー
-- `PLAYWRIGHT_DEBUG=1 npm run test:e2e`で詳細なログを確認
-- ブラウザが正しくインストールされているか確認
+- `DEBUG=true npm run test:e2e`で詳細なログを確認
+- ブラウザが正しくインストールされているか確認：`npx playwright install`
+- テストのタイムアウトを増やす（`playwright.config.mjs`で調整）
 
 ### Claude連携エラー
 - メニューバーから正しい設定画面を開いているか確認
 - 設定ファイルのパスが正しいか確認
-- トークンが一致しているか確認
-- 設定ファイルのJSON形式が正しいか確認 
+- トークンが`.env.mcp`と一致しているか確認
+- 設定ファイルのJSON形式が正しいか確認
+
+### Cursor IDEとの競合
+- グローバル設定（`~/.cursor/mcp.json`）とプロジェクト設定（`.mcp.json`）が異なるサーバー名を使用しているか確認
+- ポート番号が重複していないか確認 

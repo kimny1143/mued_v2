@@ -78,15 +78,16 @@ export default defineConfig({
 
   /* MCPサーバーの設定 */
   mcpServer: {
-    command: 'npx --no-install mcp-server-playwright --port 3333',
+    command: 'npx --no-install mcp-server-playwright --port 3333 --config mcp-server.config.js',
     url: 'http://localhost:3333',
     reuseExistingServer: true,
     stdout: 'pipe',
     stderr: 'pipe',
     timeout: 30 * 1000, // 30秒
     env: {
-      PLAYWRIGHT_MCP_TOKEN: process.env.PLAYWRIGHT_MCP_TOKEN,
+      PLAYWRIGHT_MCP_TOKEN: process.env.PLAYWRIGHT_MCP_TOKEN || 'dev-token',
       NODE_ENV: process.env.NODE_ENV || 'development',
+      DEBUG: process.env.DEBUG || 'false',
     },
   },
 }); 
