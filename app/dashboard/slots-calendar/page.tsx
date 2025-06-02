@@ -714,6 +714,7 @@ export default function SlotsCalendarPage() {
   return (
     <DashboardLayout 
       title="レッスンスロット管理"
+      fullWidth={true}
       actions={
         <div className="text-sm text-gray-600 hidden sm:block">
           あなたのレッスン予定と予約状況を管理できます

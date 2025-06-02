@@ -547,6 +547,7 @@ export default function BookingCalendarPage() {
   return (
     <DashboardLayout 
       title="メンターレッスン予約"
+      fullWidth={true}
       actions={
         <div className="flex items-center gap-2 flex-wrap">
           <div className="text-sm text-gray-600 hidden sm:block">

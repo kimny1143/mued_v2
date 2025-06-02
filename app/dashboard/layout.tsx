@@ -80,11 +80,13 @@ const commonNavItems: NavItem[] = [
 export default function DashboardLayout({
   children,
   title = "",
-  actions
+  actions,
+  fullWidth = false
 }: {
   children: React.ReactNode;
   title?: string;
   actions?: React.ReactNode;
+  fullWidth?: boolean;
 }) {
   const [user, setUser] = useState<ExtendedUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -758,7 +760,7 @@ export default function DashboardLayout({
             pt-14 sm:pt-16
           `}
         >
-          <main className="p-4 sm:p-6 lg:p-8 max-w-full overflow-x-hidden">
+          <main className={`${fullWidth ? 'p-2 sm:p-3 lg:p-4' : 'p-4 sm:p-6 lg:p-8'} max-w-full overflow-x-hidden`}>
             {(title || actions) && (
               <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 {title && (
