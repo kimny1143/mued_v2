@@ -85,6 +85,15 @@ export async function GET(request: NextRequest) {
         }
       }
     });
+    
+    console.log('🔍 検索結果:', {
+      reservationsFound: reservations.length,
+      reservationIds: reservations.map(r => ({
+        id: r.id,
+        startTime: r.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+        hasPayment: !!r.payments
+      }))
+    });
 
     // Setup完了済みで未実行の決済のみをフィルタリング
     // 新フロー対象かつ実行タイミングに達した予約のみを処理
@@ -92,18 +101,27 @@ export async function GET(request: NextRequest) {
     for (const reservation of reservations) {
       // 新フロー対象かチェック
       const useNewFlow = shouldUseNewPaymentFlowByLessonTime(reservation.booked_start_time);
+      console.log(`\n📌 予約 ${reservation.id} のフロー判定:`, {
+        lessonStartTime: reservation.booked_start_time.toISOString(),
+        lessonStartTimeJST: reservation.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+        useNewFlow: useNewFlow
+      });
+      
       if (!useNewFlow) {
-        console.log(`予約 ${reservation.id} は旧フロー対象のためスキップ`);
+        console.log(`  → 旧フロー対象のためスキップ`);
         continue;
       }
 
       // 実行タイミングに達しているかチェック
       const timing = getPaymentExecutionTiming(reservation.booked_start_time, true);
+      console.log(`  → タイミング計算結果:`, {
+        shouldExecuteImmediately: timing.shouldExecuteImmediately,
+        executionTime: timing.executionTime.toISOString(),
+        hoursUntilExecution: timing.hoursUntilExecution
+      });
+      
       if (!timing.shouldExecuteImmediately) {
-        console.log(`予約 ${reservation.id} はまだ実行タイミングではありません`);
-        console.log(`  レッスン開始時刻: ${reservation.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`);
-        console.log(`  実行予定時刻: ${timing.executionTime.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`);
-        console.log(`  実行まで: ${timing.hoursUntilExecution}時間`);
+        console.log(`  → まだ実行タイミングではありません`);
         continue;
       }
 

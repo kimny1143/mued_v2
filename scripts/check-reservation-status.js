@@ -8,7 +8,7 @@ async function checkReservationStatus() {
   try {
     // 最近の予約を取得
     const reservations = await prisma.reservations.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
       take: 10,
       include: {
         payments: true,
@@ -33,16 +33,16 @@ async function checkReservationStatus() {
       console.log(`学生: ${reservation.users.name} (${reservation.users.email})`);
       console.log(`メンター: ${reservation.lesson_slots.users.name}`);
       console.log(`ステータス: ${reservation.status}`);
-      console.log(`予約時間: ${reservation.bookedStartTime} - ${reservation.bookedEndTime}`);
-      console.log(`金額: ¥${reservation.totalAmount}`);
-      console.log(`承認日時: ${reservation.approvedAt || 'なし'}`);
-      console.log(`承認者: ${reservation.approvedBy || 'なし'}`);
+      console.log(`予約時間: ${reservation.booked_start_time} - ${reservation.booked_end_time}`);
+      console.log(`金額: ¥${reservation.total_amount}`);
+      console.log(`承認日時: ${reservation.approved_at || 'なし'}`);
+      console.log(`承認者: ${reservation.approved_by || 'なし'}`);
       
       if (reservation.payments) {
         console.log(`\n💳 決済情報:`);
         console.log(`  決済ID: ${reservation.payments.id}`);
-        console.log(`  Stripeセッション: ${reservation.payments.stripeSessionId}`);
-        console.log(`  StripeペイメントID: ${reservation.payments.stripePaymentId || 'なし'}`);
+        console.log(`  Stripeセッション: ${reservation.payments.stripe_session_id}`);
+        console.log(`  StripeペイメントID: ${reservation.payments.stripe_payment_id || 'なし'}`);
         console.log(`  決済ステータス: ${reservation.payments.status}`);
         console.log(`  金額: ¥${reservation.payments.amount}`);
         
