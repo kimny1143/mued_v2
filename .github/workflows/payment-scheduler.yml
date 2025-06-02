@@ -22,14 +22,17 @@ jobs:
         run: |
           echo "📡 Sending request to payment execution endpoint..."
           
-          response=$(curl -s -w "%{http_code}" -X GET \
+          # レスポンスを一時ファイルに保存
+          temp_file=$(mktemp)
+          
+          http_code=$(curl -s -w "%{http_code}" -o "$temp_file" -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -H "User-Agent: GitHub-Actions-Payment-Scheduler" \
             "${{ secrets.VERCEL_URL }}/api/cron/execute-payments")
           
-          http_code=$(echo "$response" | tail -n1)
-          body=$(echo "$response" | head -n -1)
+          body=$(cat "$temp_file")
+          rm -f "$temp_file"
           
           echo "📊 HTTP Status: $http_code"
           echo "📄 Response Body: $body"
@@ -38,7 +41,7 @@ jobs:
           echo "status_code=$http_code" >> $GITHUB_OUTPUT
           echo "response_body=$body" >> $GITHUB_OUTPUT
           
-          if [ "$http_code" -ne 200 ]; then
+          if [ "$http_code" != "200" ]; then
             echo "❌ Payment execution failed with status $http_code"
             echo "💬 Response: $body"
             exit 1
