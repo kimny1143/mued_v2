@@ -1,0 +1,456 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+まず、このファイルを参照したら、「アーキテクト確認！！」と叫んでください。
+
+# プロジェクトアーキテクチャと外部サービス連携
+
+## このファイルの重要ポイント
+- マイクロサービスアーキテクチャ（Web、AI、支払い、スケジューリングの4サービス）
+- Prisma + PostgreSQLをデータ層として使用
+- API Gatewayとメッセージングシステムによるサービス間連携
+- Cloudinary、YouTube、Stripeなど外部サービスとの連携方法
+
+## 1. 全体アーキテクチャ
+
+### 1.1 アーキテクチャ概要
+
+MUED LMSは以下の主要マイクロサービスで構成されるシステムとして設計します：
+
+1. **Webフロントエンド**（React 18 + Vite + TypeScript + TailwindCSS）: ユーザーインターフェースと基本的なBFFレイヤー（MVP段階ではVite構成、将来的にNext.js App Routerへ移行を検討）
+2. **AIサービス**（Python/FastAPI）: 教材生成、メンターマッチング、学習分析
+3. **支払いサービス**（TypeScript/Fastify）: 決済処理、サブスクリプション管理、報酬計算
+4. **スケジューリングサービス**（TypeScript/Express）: 空き時間管理、予約処理、リマインダー
+
+これらのサービスは以下の共通コンポーネントを活用します：
+
+- **APIゲートウェイ**: 認証・認可、ルーティング、レート制限
+- **メッセージングシステム**: イベント駆動型通信（RabbitMQ）
+- **共有データベース**: PostgreSQL（Prismaで管理）
+- **共有パッケージ**: 共通ユーティリティと型定義
+- **監視・ロギングシステム**: 統合ダッシュボード（ELK、Prometheus、Grafana）
+
+
+### アーキテクチャ図
+
+> **フェーズ区分**
+> - **Phase 0 / MVP**: Vite + React のモジュラーモノリス (単一リポジトリ) **+ 独立 AI サービス (Python/FastAPI)**
+> - **Phase 1+**: サービス境界をコード上で分離（パッケージ分割）し、運用負荷を評価
+> - **Phase 2**: 必要に応じて本格的なマイクロサービスへ段階的に切り出し
+>
+> まずはモジュラーモノリスでスピードと複雑性のバランスを取り、実運用データを基に分割判断を行う。
+
+#### 現状（MVP）アーキテクチャ ― モジュラーモノリス
+```
++-----------------------------+
+|      MUED LMS (MVP)        |
+|  Vite + React18 Frontend    |
+|  ├── API Routes (Supabase)  |
+|  ├── Stripe Integration     |
+|  ├── Auth Context (JWT)     |
+|  └── State Mgmt (Zustand)   |
++-----------------------------+
+         | (REST over HTTPS)
+         v
++-----------------------------+
+|    PostgreSQL (Supabase)    |
++-----------------------------+
+```
+
+#### 将来的なマイクロサービス化（参考）
+
+MUED LMSはマイクロサービスアーキテクチャを採用しており、以下の主要サービスで構成されています：
+
+```
+                              +----+
+                              |   API Gateway  |
+                              +-----+----+
+                                       |
+       +---+---+---+---+
+       |                    |         |                    |
++----v---+  +-----v----+  +-----v---+  +-----v---+
+|  Web Frontend  |  |  AI Service    |  | Payment Service |  | Scheduling Service  |
+| (React 18)     |  | (Python)       |  | (TypeScript)    |  | (TypeScript)        |
++----+---+  +-----+----+  +-----+---+  +-----+---+
+       |                    |                     |                    |
+       |                    |                     |                    |
+       +---+----+---+
+                                |
+                     +----v-----+
+                     |  Message Bus (RMQ)  |
+                     +----+-----+
+                                |
+                     +----v-----+
+                     |  PostgreSQL DB     |
+                     +----+
+```
+
+### ディレクトリ構成
+
+#### MVPフロントエンド構成（Vite + React）
+現時点（2024Q2）のMVPでは Vite を用いた単一リポジトリ構成でフロントエンドを実装している。主要ディレクトリは以下の通り。
+
+```text
+/
+├── src/
+│   ├── components/           # 汎用Reactコンポーネント
+│   │   └── ui/               # Shadcn UIベースの小規模UIパーツ
+│   ├── screens/              # 画面単位のコンポーネント（Routing単位）
+│   ├── contexts/             # React Context APIステート
+│   ├── lib/                  # ユーティリティ & 外部サービスクライアント
+│   ├── App.tsx               # アプリルート
+│   └── index.tsx             # エントリーポイント
+├── tailwind.config.js        # TailwindCSS 設定
+├── vite.config.ts            # Vite 設定（@vitejs/plugin-react, PostCSS）
+├── tsconfig*.json            # TypeScript 設定
+└── index.html                # ルートHTML（Vite dev server用）
+```
+
+> **将来的対応**: App Router や SSR/ISR が求められるフェーズでは Next.js へコードベースを移行し、`apps/web` 配下に再編成する計画。
+
+```
+/
+├── apps/                       # マイクロサービス
+│   ├── web/                    # Next.js フロントエンド
+│   │   ├── app/                # App Router
+│   │   │   ├── api/            # API Routes
+│   │   │   ├── (auth)/         # 認証関連ページ
+│   │   │   ├── (dashboard)/    # ダッシュボード関連ページ
+│   │   │   └── courses/        # コース関連ページ
+│   │   ├── components/         # 共通コンポーネント
+│   │   │   ├── ui/             # UIコンポーネント
+│   │   │   └── forms/          # フォームコンポーネント
+│   │   └── lib/                # ユーティリティ関数
+│   ├── ai-service/             # AIサービス（Python/FastAPI）
+│   │   ├── app/                # FastAPIアプリケーション
+│   │   ├── models/             # AIモデル
+│   │   └── services/           # ビジネスロジック
+│   ├── payment-service/        # 支払いサービス（TypeScript/Fastify）
+│   │   ├── src/                # ソースコード
+│   │   │   ├── controllers/    # コントローラー
+│   │   │   ├── services/       # サービス
+│   │   │   └── repositories/   # リポジトリ
+│   │   └── tests/              # テスト
+│   └── scheduling-service/     # スケジューリングサービス（TypeScript/Fastify）
+│       ├── src/                # ソースコード
+│       │   ├── controllers/    # コントローラー
+│   │   │   ├── services/       # サービス
+│   │   │   └── repositories/   # リポジトリ
+│   │   └── tests/              # テスト
+├── packages/                   # 共有パッケージ
+│   ├── eslint-config/          # ESLint設定
+│   ├── tsconfig/               # TypeScript設定
+│   └── ui/                     # 共有UIコンポーネント
+├── prisma/                     # Prismaスキーマと設定
+│   ├── schema.prisma           # データベーススキーマ
+│   └── migrations/             # マイグレーションファイル
+├── docs/                       # プロジェクトドキュメント
+│   ├── architecture/           # アーキテクチャドキュメント
+│   ├── api/                    # API仕様書
+│   └── implementation/         # 実装ガイドライン
+└── tests/                      # E2Eテスト
+    ├── e2e/                    # End-to-Endテスト
+    └── integration/            # 統合テスト
+```
+
+
+## 3. サービス間連携パターン
+
+### 3.1 同期通信パターン
+
+同期通信は主に直接の要求-応答パターンが必要な操作に使用します：
+
+1. **REST API**:
+   - サービス間の基本的なCRUD操作
+   - ステータス確認やデータ照会
+
+2. **JWT認証**:
+   - サービス間の通信にはJWTトークンを使用
+   - ヘッダー設定: `Authorization: Bearer {JWT_TOKEN}`
+
+### 3.2 非同期通信パターン
+
+非同期通信は緩やかな結合と耐障害性を確保するために使用します：
+
+1. **イベント発行/購読**:
+   - サービス間のイベント通知
+   - 対象：状態変更、プロセス完了通知
+
+2. **コマンドキュー**:
+   - 長時間実行ジョブの処理
+   - 対象：AIコンテンツ生成、一括処理など
+
+## 4. 各マイクロサービスの責務
+
+### 4.1 AIサービス
+
+- **コンテンツ生成エンジン**: PDF・テキストからの教材自動生成
+- **インテリジェントマッチングシステム**: 学生-メンター間の最適マッチング
+- **学習分析エンジン**: 学習パターンの分析とパーソナライズされた推奨
+
+### 4.2 支払いサービス
+
+- **決済処理エンジン**: Stripe決済セッションの生成・管理
+- **サブスクリプション管理システム**: サブスクリプションのライフサイクル管理
+- **報酬管理システム**: メンター報酬の計算と支払い処理
+- **イベント処理エンジン**: Webhookイベントの処理
+
+### 4.3 スケジューリングサービス
+
+- **空き時間管理システム**: メンターの空き時間スロットの管理
+- **予約管理システム**: レッスン予約のCRUD操作
+- **カレンダー同期エンジン**: 外部カレンダーとの同期
+- **リマインダーシステム**: 予約前リマインダー生成と通知
+
+## 5. サービス間の特定連携フロー
+
+### 5.1 Web→AIサービス連携
+
+1. **教材生成フロー**:
+   ```
+   Web → API Gateway → AIサービスAPI → 処理キュー → ワーカー → 結果保存 → 通知イベント → Web
+   ```
+
+2. **メンターマッチングフロー**:
+   ```
+   Web → API Gateway → AIサービスAPI → マッチングアルゴリズム → 結果返却 → Web
+   ```
+
+### 5.2 Web→支払いサービス連携
+
+1. **チェックアウトフロー**:
+   ```
+   Web → API Gateway → 支払いサービスAPI → Stripe API → セッション作成 → Web (リダイレクト) → Stripe処理
+   → Webhook → 支払いサービス → 支払い完了イベント → Web
+   ```
+
+### 5.3 Web→スケジューリングサービス連携
+
+1. **予約作成フロー**:
+   ```
+   Web → API Gateway → スケジューリングサービスAPI → 空き時間検証 → 予約作成 → 予約確認イベント → Web/通知
+   ```
+
+### 5.4 クロスサービス連携
+
+1. **レッスン完了とメンター報酬処理**:
+   ```
+   スケジューリングサービス → レッスン完了イベント → 支払いサービス → 報酬計算 → DB更新
+   ```
+
+## 6. 外部サービス連携
+
+### 6.1 Cloudinary
+
+#### 基本設定
+
+```typescript
+// lib/cloudinary.ts
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export async function uploadImage(file: File): Promise<string> {
+  // 実装詳細
+  return publicId;
+}
+
+export function generateImageUrl(publicId: string, options?: any): string {
+  // 変換パラメータを含むURLを生成
+  return url;
+}
+```
+
+### 6.2 YouTube
+
+#### 埋め込み実装
+
+```tsx
+// components/YouTubeEmbed.tsx
+interface YouTubeEmbedProps {
+  videoId: string;
+  title: string;
+  width?: number;
+  height?: number;
+}
+
+export const YouTubeEmbed: React.FC<YouTubeEmbedProps> = ({
+  videoId,
+  title,
+  width = 560,
+  height = 315
+}) => {
+  return (
+    <div className="aspect-w-16 aspect-h-9">
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}`}
+        title={title}
+        width={width}
+        height={height}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      ></iframe>
+    </div>
+  );
+};
+```
+
+### 6.3 Stripe
+
+#### 基本設定
+
+```typescript
+// lib/stripe.ts
+import Stripe from 'stripe';
+
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2022-11-15',
+});
+
+// app/api/checkout/route.ts
+import { stripe } from '@/lib/stripe';
+
+export async function POST(req: Request) {
+  const { courseId, priceId } = await req.json();
+  
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${process.env.NEXT_PUBLIC_URL}/courses/${courseId}?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_URL}/courses/${courseId}?canceled=true`,
+    });
+    
+    return Response.json({ sessionId: session.id });
+  } catch (error) {
+    return Response.json({ error: (error as Error).message }, { status: 500 });
+  }
+}
+```
+
+### 6.4 Supabase
+
+#### リアルタイム機能の実装
+
+```typescript
+// lib/supabase.ts
+import { createClient } from '@supabase/supabase-js';
+
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+// リアルタイムサブスクリプション例
+export function subscribeToMessages(roomId: string, callback: (message: any) => void) {
+  return supabase
+    .channel(`room:${roomId}`)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'messages',
+      filter: `room_id=eq.${roomId}`
+    }, callback)
+    .subscribe();
+}
+```
+
+## 7. 実装ロードマップ
+
+### 7.1 フェーズ1：基本構造と連携定義
+
+1. **共通基盤の整備**:
+   - APIゲートウェイの基本設定
+   - メッセージングシステムの導入
+   - 共通監視基盤の構築
+
+2. **サービス間インターフェース定義**:
+   - OpenAPI/Swagger仕様の作成
+   - イベントスキーマの定義
+   - 型定義の共有
+
+### 7.2 フェーズ2：マイクロサービス実装
+
+1. **各サービスの分離と実装**:
+   - AIサービスの独立実装
+   - 支払いサービスの分離
+   - スケジューリングサービスの構築
+
+2. **クライアントSDKの開発**:
+   - 各サービス用APIクライアントの実装
+   - 型安全な通信の確保
+
+### 7.3 フェーズ3：機能強化と拡張
+
+1. **高度な機能実装**:
+   - AIサービスの精度向上
+   - リアルタイム連携の強化
+   - レポーティング機能の追加
+
+2. **スケーリングと最適化**:
+   - パフォーマンス調整
+   - 負荷テストと対応
+   - 運用監視の強化
+
+
+### 7.4 デプロイメント環境
+
+1. **ホスティング構成**:
+   - **フロントエンド**: Vercel（静的サイト最適化を活用）
+   - **AIサービス**: Heroku（Pythonランタイム）
+   - **データベース**: Supabase（PostgreSQL）
+
+2. **現在の実装状況 (2024年Q2時点)**:
+   - フロントエンド: Vite + React18 (MVPフェーズ)
+   - AIサービス: Python/FastAPI（デプロイ済み）
+   - 外部サービス連携: Supabase, Cloudinary, Stripe
+
+3. **統合テスト重点ポイント**:
+   - フロントエンド(Vercel) → AIサービス(Heroku)間のAPI通信
+   - フロントエンド → Supabaseへの認証・データアクセス
+   - メディアアセット管理（Cloudinary連携）
+   - 決済フロー（Stripe連携）
+
+   
+
+## 8. クロスカッティング関心事
+
+### 8.1 認証・認可
+
+1. **JWT認証**:
+   - サービス間の認証に使用
+   - 適切な有効期限と権限管理
+
+2. **API Key認証**:
+   - 外部サービスとの連携に使用
+   - 権限の最小化と定期的なローテーション
+
+### 8.2 エラーハンドリング
+
+1. **統一エラーフォーマット**:
+   - 標準エラーコードの使用
+   - 詳細な診断情報の提供
+
+2. **リトライメカニズム**:
+   - 指数バックオフの実装
+   - サーキットブレーカーの導入
+
+### 8.3 監視とロギング
+
+1. **集中ログ管理**:
+   - ELKスタックによる収集
+   - 構造化ロギングの導入
+
+2. **パフォーマンスメトリクス**:
+   - Prometheusによる収集
+   - Grafanaダッシュボードによる可視化
+
+詳細な実装ガイドラインについては `003-implementation-guidelines.mdc` を、
+セキュリティとUI/UXに関しては `004-security-uxui-policy.mdc` を参照してください。

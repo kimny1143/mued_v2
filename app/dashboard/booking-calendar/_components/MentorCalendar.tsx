@@ -461,10 +461,10 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         </div>
       )}
       
-      <div className="bg-white rounded-none sm:rounded-lg shadow-none sm:shadow -mx-4 sm:mx-0">
+      <div className="bg-white rounded-lg shadow-sm">
         {/* 全メンター情報表示 - モバイル最適化 */}
         {mentors.length > 0 && (
-          <div className="p-0 space-y-3">
+          <div className="p-4 sm:p-6 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900">利用可能なメンター</h3>
               <div className="text-xs sm:text-sm text-gray-500">
@@ -530,7 +530,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
         ) : (
           <>
             {currentView === 'month' ? (
-                <div className="mt-4">
+                <div className="p-4 sm:p-6">
                   <h4 className="font-semibold mb-4 text-gray-900 text-center text-sm sm:text-base">予約可能日カレンダー</h4>
                 <MonthView
                   currentDate={currentDate}
@@ -543,7 +543,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
                 />
                 
                 {/* 凡例 - モバイル最適化 */}
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg mx-4 sm:mx-0">
                   <h5 className="text-sm font-medium text-gray-700 mb-3">予約状況の見方</h5>
                   
                   {/* 生徒の予約表示の凡例 */}
