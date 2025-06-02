@@ -613,7 +613,7 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      <div className="flex">
+      <div className="relative">
         {/* Mobile Sidebar Overlay */}
         {isSidebarOpen && (
           <div 
@@ -755,7 +755,7 @@ export default function DashboardLayout({
         {/* メインコンテンツ */}
         <div 
           className={`
-            flex-1 transition-all duration-300 ease-in-out 
+            transition-all duration-300 ease-in-out 
             ${isSidebarOpen ? 'lg:ml-64' : (isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64')}
             pt-14 sm:pt-16
           `}
