@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
       hasSession: !!sessionInfo,
       userId: sessionInfo?.user?.id || "なし",
       email: sessionInfo?.user?.email || "なし",
+      role: sessionInfo?.role || "なし",
     });
     
     if (!sessionInfo) {
@@ -30,6 +31,17 @@ export async function GET(request: NextRequest) {
         { error: '認証が必要です' },
         { status: 401 }
       );
+    }
+    
+    // ロールチェック：メンターと管理者はサブスクリプション不要
+    const userRole = sessionInfo.role?.toLowerCase();
+    if (userRole === 'mentor' || userRole === 'admin') {
+      console.log(`ロール ${userRole} はサブスクリプション対象外`);
+      return NextResponse.json({
+        subscription: null,
+        message: `${userRole}ロールはサブスクリプション対象外です`,
+        skipReason: 'role_not_applicable'
+      });
     }
     
     const userId = sessionInfo.user.id;
