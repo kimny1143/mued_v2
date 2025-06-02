@@ -7,8 +7,9 @@
 
 import { differenceInHours, differenceInMinutes, isAfter } from 'date-fns';
 
-// 新ポリシー適用開始日
-const NEW_POLICY_START_DATE = new Date('2025-06-03T00:00:00Z');
+// 新ポリシー適用開始日（JST 2025年6月3日 0:00）
+// UTC時刻では 2025-06-02T15:00:00Z になる
+const NEW_POLICY_START_DATE = new Date('2025-06-02T15:00:00Z');
 
 /**
  * 新しい決済フローを使用するかどうかを判定
