@@ -242,7 +242,9 @@ export function convertLessonSlotRequestToDb(data: LessonSlotRequestData): Recor
   if (data.endTime) result.end_time = new Date(data.endTime);
   if (data.hourlyRate !== undefined) result.hourly_rate = parseInt(String(data.hourlyRate), 10);
   if (data.currency) result.currency = data.currency;
-  if (data.description !== undefined) result.description = data.description;
+  // descriptionフィールドは現在のデータベーススキーマに存在しないため、一時的にコメントアウト
+  // TODO: Prismaスキーマにdescriptionフィールドを追加後、このコメントを解除
+  // if (data.description !== undefined) result.description = data.description;
   if (data.isAvailable !== undefined) result.is_available = Boolean(data.isAvailable);
   
   // 時間ベースの設定（minHours/maxHours優先、フォールバックでminDuration/maxDuration）
