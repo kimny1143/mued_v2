@@ -5,10 +5,10 @@
  * 旧ポリシー（即座決済）の互換性を確保
  */
 
-import { differenceInHours, isAfter } from 'date-fns';
+import { differenceInHours, differenceInMinutes, isAfter } from 'date-fns';
 
 // 新ポリシー適用開始日
-const NEW_POLICY_START_DATE = new Date('2024-07-01T00:00:00Z');
+const NEW_POLICY_START_DATE = new Date('2025-06-03T00:00:00Z');
 
 /**
  * 新しい決済フローを使用するかどうかを判定
@@ -50,11 +50,15 @@ export function getPaymentExecutionTiming(
   const now = new Date();
   const twoHoursBeforeLesson = new Date(lessonStartTime.getTime() - 2 * 60 * 60 * 1000);
   
-  // レッスン開始までの時間（時間単位）を計算
-  const hoursUntilLesson = differenceInHours(lessonStartTime, now);
+  // レッスン開始までの時間（分単位）を計算
+  const minutesUntilLesson = differenceInMinutes(lessonStartTime, now);
+  const hoursUntilLesson = minutesUntilLesson / 60;
   
   // 2時間前の時刻までの時間を計算
   const hoursUntilExecutionTime = differenceInHours(twoHoursBeforeLesson, now);
+  
+  // 2時間以内かどうかの判定（120分以内）
+  const shouldExecuteImmediately = minutesUntilLesson <= 120;
   
   // デバッグログ追加
   console.log('💰 決済タイミング計算:', {
@@ -64,13 +68,14 @@ export function getPaymentExecutionTiming(
     lessonStartTimeJST: lessonStartTime.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
     twoHoursBeforeLesson: twoHoursBeforeLesson.toISOString(),
     twoHoursBeforeLessonJST: twoHoursBeforeLesson.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
-    hoursUntilLesson: hoursUntilLesson,
+    minutesUntilLesson: minutesUntilLesson,
+    hoursUntilLesson: hoursUntilLesson.toFixed(2),
     hoursUntilExecutionTime: hoursUntilExecutionTime,
-    shouldExecuteImmediately: hoursUntilLesson <= 2
+    shouldExecuteImmediately: shouldExecuteImmediately
   });
 
   return {
-    shouldExecuteImmediately: hoursUntilLesson <= 2,  // レッスンまで2時間以内なら即座実行
+    shouldExecuteImmediately: shouldExecuteImmediately,  // レッスンまで120分以内なら即座実行
     executionTime: twoHoursBeforeLesson,
     hoursUntilExecution: Math.max(0, hoursUntilExecutionTime),
     isAutoExecution: true
