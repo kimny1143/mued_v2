@@ -133,19 +133,21 @@ export async function POST(
           
           // 🔧 修正：2時間前判定を追加
           const { getPaymentExecutionTiming } = await import('@/lib/payment-flow');
-          const { differenceInHours } = await import('date-fns');
+          const { differenceInMinutes } = await import('date-fns');
           const timing = getPaymentExecutionTiming(updatedReservation.booked_start_time);
           
-          // 安全チェック：実際の時間差を再計算
+          // 安全チェック：実際の時間差を再計算（分単位）
           const now = new Date();
-          const hoursUntilLesson = differenceInHours(updatedReservation.booked_start_time, now);
+          const minutesUntilLesson = differenceInMinutes(updatedReservation.booked_start_time, now);
+          const hoursUntilLesson = minutesUntilLesson / 60;
           
           console.log('⏰ 決済実行タイミング詳細:', {
             currentTimeUTC: now.toISOString(),
             currentTimeJST: now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
             lessonStartTimeUTC: updatedReservation.booked_start_time.toISOString(),
             lessonStartTimeJST: updatedReservation.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
-            hoursUntilLesson: hoursUntilLesson,
+            minutesUntilLesson: minutesUntilLesson,
+            hoursUntilLesson: hoursUntilLesson.toFixed(2),
             timingCalculation: {
               executionTime: timing.executionTime.toISOString(),
               shouldExecuteImmediately: timing.shouldExecuteImmediately,
@@ -161,17 +163,18 @@ export async function POST(
             console.log('⚠️ 即座決済は環境変数により無効化されています');
           }
           
-          // 安全チェック：2時間以内かつ、timing判定が正しいか確認
-          const shouldExecuteNow = hoursUntilLesson <= 2 && timing.shouldExecuteImmediately && immediatePaymentEnabled;
+          // 安全チェック：120分（2時間）以内かつ、timing判定が正しいか確認
+          const shouldExecuteNow = minutesUntilLesson <= 120 && timing.shouldExecuteImmediately && immediatePaymentEnabled;
           
-          if (hoursUntilLesson > 2 && timing.shouldExecuteImmediately) {
-            console.error('🚨 タイミング判定エラー検出: レッスンまで' + hoursUntilLesson + '時間あるのに即座決済フラグがtrue');
+          if (minutesUntilLesson > 120 && timing.shouldExecuteImmediately) {
+            console.error('🚨 タイミング判定エラー検出: レッスンまで' + minutesUntilLesson + '分（' + hoursUntilLesson.toFixed(2) + '時間）あるのに即座決済フラグがtrue');
           }
           
           if (shouldExecuteNow) {
             console.log('🚀 2時間以内のため即座決済を実行（検証済み）');
             console.log('✅ 決済実行条件:', {
-              hoursUntilLesson: hoursUntilLesson + '時間',
+              minutesUntilLesson: minutesUntilLesson + '分',
+              hoursUntilLesson: hoursUntilLesson.toFixed(2) + '時間',
               timingFlag: timing.shouldExecuteImmediately,
               envEnabled: immediatePaymentEnabled,
               result: '決済実行'

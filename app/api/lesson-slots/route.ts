@@ -250,7 +250,14 @@ export async function GET(request: NextRequest) {
       };
     });
     
+    // PENDING_APPROVALの予約を確認
+    const pendingApprovalCount = enhancedSlots.reduce((count, slot) => {
+      return count + slot.reservations.filter(res => res.status === 'PENDING_APPROVAL').length;
+    }, 0);
+    
     console.log(`🟢 lesson-slots (${viewMode}モード): ${enhancedSlots.length}件`);
+    console.log(`🔍 PENDING_APPROVAL予約: ${pendingApprovalCount}件`);
+    
     return NextResponse.json(enhancedSlots, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -472,6 +479,11 @@ export async function POST(request: NextRequest) {
         created_at: new Date(),
         updated_at: new Date(),
       },
+      include: {
+        users: {
+          select: { id: true, name: true, email: true, image: true }
+        }
+      }
     }));
     
     console.log(`レッスンスロット作成成功: ID ${newSlot.id}, 講師ID ${sessionInfo.user.id}`);
@@ -492,13 +504,8 @@ export async function POST(request: NextRequest) {
       createdAt: newSlot.created_at,           // created_at → createdAt
       updatedAt: newSlot.updated_at,           // updated_at → updatedAt
       description: newSlot.description || '',  // descriptionフィールドを返す
-      // 必要に応じてteacher情報も追加
-      teacher: {
-        id: sessionInfo.user.id,
-        name: sessionInfo.user.name || null,
-        email: sessionInfo.user.email || null,
-        image: sessionInfo.user.image || null
-      },
+      // teacher情報をincludeから取得
+      teacher: newSlot.users,
       reservations: []  // 新規作成時は予約は空
     };
     

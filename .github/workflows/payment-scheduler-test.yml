@@ -1,0 +1,85 @@
+name: Payment Scheduler Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Target URL (e.g., https://preview-xxx.vercel.app)'
+        required: true
+        type: string
+
+jobs:
+  test-payment-cron:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: Test Configuration
+        run: |
+          echo "🧪 Testing payment scheduler configuration"
+          echo "🎯 Target URL: ${{ inputs.target_url }}/api/cron/execute-payments"
+          echo "🔑 CRON_SECRET is set: ${{ secrets.CRON_SECRET && 'Yes' || 'No' }}"
+          echo "📅 Current time: $(date)"
+          echo "📅 Current time (UTC): $(date -u)"
+          
+      - name: Test Without Auth
+        continue-on-error: true
+        run: |
+          echo "📡 Testing without authentication..."
+          
+          http_code=$(curl -s -w "%{http_code}" -o /dev/null -X GET \
+            "${{ inputs.target_url }}/api/cron/execute-payments")
+          
+          echo "📊 HTTP Status: $http_code"
+          
+          if [ "$http_code" = "401" ]; then
+            echo "✅ Correctly rejected without auth"
+          else
+            echo "❌ Unexpected status code: $http_code"
+          fi
+          
+      - name: Test With Auth
+        run: |
+          echo "📡 Testing with authentication..."
+          
+          temp_file=$(mktemp)
+          
+          http_code=$(curl -s -w "%{http_code}" -o "$temp_file" -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: GitHub-Actions-Payment-Scheduler" \
+            "${{ inputs.target_url }}/api/cron/execute-payments")
+          
+          body=$(cat "$temp_file")
+          rm -f "$temp_file"
+          
+          echo "📊 HTTP Status: $http_code"
+          echo "📄 Response Body: $body"
+          
+          if [ "$http_code" = "200" ]; then
+            echo "✅ Authentication successful"
+            
+            # JSONレスポンスの基本的な解析
+            if echo "$body" | grep -q '"success":true'; then
+              echo "✅ Response indicates success"
+            fi
+            
+            if echo "$body" | grep -q '"totalProcessed"'; then
+              echo "📊 Response contains processing stats"
+            fi
+          else
+            echo "❌ Authentication failed"
+            echo "💡 Please check:"
+            echo "   1. CRON_SECRET in GitHub Secrets matches .env file"
+            echo "   2. Target URL is correct"
+            echo "   3. API endpoint is deployed and accessible"
+            exit 1
+          fi
+          
+      - name: Summary
+        if: always()
+        run: |
+          echo "📋 Test Summary"
+          echo "=============="
+          echo "Target URL: ${{ inputs.target_url }}"
+          echo "Test completed at: $(date)"

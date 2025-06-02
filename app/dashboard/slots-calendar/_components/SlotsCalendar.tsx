@@ -99,11 +99,45 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
            date.getFullYear() === today.getFullYear();
   };
 
-  // 特定の日のスロットを取得
+  // 特定の日のスロットを取得（日付を跨ぐスロットも含める）
   const getSlotsForDate = (date: Date) => {
-    return slots.filter(slot => 
-      isSameDay(new Date(slot.startTime), date)
-    );
+    return slots.filter(slot => {
+      const slotStart = new Date(slot.startTime);
+      const slotEnd = new Date(slot.endTime);
+      
+      // 検査日の0:00と23:59:59を設定
+      const dayStart = new Date(date);
+      dayStart.setHours(0, 0, 0, 0);
+      const dayEnd = new Date(date);
+      dayEnd.setHours(23, 59, 59, 999);
+      
+      // より正確な重複判定
+      const isOverlapping = (
+        // ケース1: スロット開始が検査日内
+        (slotStart >= dayStart && slotStart <= dayEnd) ||
+        // ケース2: スロット終了が検査日内
+        (slotEnd >= dayStart && slotEnd <= dayEnd) ||
+        // ケース3: スロットが検査日全体を含む
+        (slotStart <= dayStart && slotEnd >= dayEnd)
+      );
+      
+      // 特定のスロットのみ詳細デバッグ
+      if (slot.id === '4e5910f0-1120-472e-a676-cb6ada1cde57') {
+        console.log('🌙 22:30-5:30スロット確認:', {
+          slotId: slot.id,
+          開始: slotStart.toLocaleString('ja-JP'),
+          終了: slotEnd.toLocaleString('ja-JP'),
+          検査日: date.toLocaleDateString('ja-JP'),
+          表示判定: isOverlapping,
+          予約: slot.reservations?.map(r => ({
+            status: r.status,
+            開始: new Date(r.bookedStartTime!).toLocaleString('ja-JP')
+          })) || []
+        });
+      }
+      
+      return isOverlapping;
+    });
   };
 
   // スロットの状態を判定
@@ -310,7 +344,19 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                 {slot.reservations && slot.reservations.length > 0 && (
                                   <div className="flex flex-col gap-0.5">
                                     {slot.reservations
-                                      .filter(res => res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
+                                      .filter(res => {
+                                        // デバッグログ追加
+                                        if (DEBUG || res.status === 'PENDING_APPROVAL') {
+                                          console.log('SlotsCalendar - Reservation:', {
+                                            id: res.id,
+                                            status: res.status,
+                                            slotId: slot.id,
+                                            date: format(new Date(slot.startTime), 'yyyy-MM-dd'),
+                                            studentName: res.student?.name
+                                          });
+                                        }
+                                        return res.status === 'CONFIRMED' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL';
+                                      })
                                       .slice(0, 1) // モバイルでは1件まで表示
                                       .map((reservation, resIndex) => {
                                         const startTime = new Date(reservation.bookedStartTime || '');

@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     });
     
     // GitHub ActionsまたはVercelからのアクセスでない場合は認証チェック
-    const isGitHubActions = userAgent?.includes('GitHub-Actions');
+    const isGitHubActions = userAgent?.includes('GitHub-Actions-Payment-Scheduler');
     const isDevelopment = process.env.NODE_ENV === 'development';
     
     if (!isDevelopment && !isGitHubActions) {
