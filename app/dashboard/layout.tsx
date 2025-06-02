@@ -760,9 +760,9 @@ export default function DashboardLayout({
             pt-14 sm:pt-16
           `}
         >
-          <main className={`${fullWidth ? 'p-2 sm:p-3 lg:p-4' : 'p-4 sm:p-6 lg:p-8'} max-w-full overflow-x-hidden`}>
+          <main className={`${fullWidth ? 'p-0' : 'p-4 sm:p-6 lg:p-8'} max-w-full overflow-x-hidden`}>
             {(title || actions) && (
-              <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className={`${fullWidth ? 'px-4 sm:px-6 lg:px-8' : ''} mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
                 {title && (
                   <h1 className="text-lg sm:text-xl lg:text-2xl font-bold font-shantell text-gray-900">
                     {title}
