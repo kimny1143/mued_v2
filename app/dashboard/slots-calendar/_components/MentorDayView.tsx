@@ -96,6 +96,13 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
 
   // 新規スロット作成ハンドラー
   const handleCreateSlot = () => {
+    console.log('🔧 handleCreateSlot called');
+    console.log('Setting modal state:', { 
+      selectedSlot: null, 
+      modalMode: 'create', 
+      isModalOpen: true,
+      hasCallbacks: !!(onSlotUpdate && onSlotDelete)
+    });
     setSelectedSlot(null);
     setModalMode('create');
     setIsModalOpen(true);
@@ -471,15 +478,26 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
       </div>
 
       {/* スロット詳細/編集モーダル */}
-      {onSlotUpdate && onSlotDelete && (
+      {(() => {
+        console.log('🎯 Modal render check:', {
+          isModalOpen,
+          modalMode,
+          selectedSlot,
+          hasOnSlotUpdate: !!onSlotUpdate,
+          hasOnSlotDelete: !!onSlotDelete,
+          shouldRenderModal: !!(onSlotUpdate && onSlotDelete)
+        });
+        return null;
+      })()}
+      {isModalOpen && (
         <SlotModal
           isOpen={isModalOpen}
           onClose={handleModalClose}
           slot={selectedSlot}
           selectedDate={selectedDate}
           mode={modalMode}
-          onSlotUpdate={onSlotUpdate}
-          onSlotDelete={onSlotDelete}
+          onSlotUpdate={onSlotUpdate || (() => {})}
+          onSlotDelete={onSlotDelete || (() => {})}
         />
       )}
     </div>
