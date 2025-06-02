@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     });
     
     // 4. 時間範囲内の予約を分析
-    const timeAnalysis = approvedReservations.map(reservation => {
+    const timeAnalysis = await Promise.all(approvedReservations.map(async reservation => {
       const hoursUntilStart = (reservation.booked_start_time.getTime() - now.getTime()) / (1000 * 60 * 60);
       const isInRange = reservation.booked_start_time >= fiveMinutesAgo && 
                        reservation.booked_start_time <= twoHoursFromNow;
@@ -85,12 +85,9 @@ export async function GET(request: NextRequest) {
         paymentStatus: reservation.payments?.status || 'なし',
         paymentId: reservation.payment_id,
         isInCronRange: isInRange,
-        chargeExecutedAt: reservation.payments ? 
-          await prisma.$queryRaw<Array<{charge_executed_at: Date | null}>>`
-            SELECT charge_executed_at FROM payments WHERE id = ${reservation.payment_id}
-          `.then(res => res[0]?.charge_executed_at) : null
+        chargeExecutedAt: reservation.payments?.charge_executed_at || null
       };
-    });
+    }));
     
     // 5. Cron実行対象の予約を特定
     const cronTargets = timeAnalysis.filter(r => 
