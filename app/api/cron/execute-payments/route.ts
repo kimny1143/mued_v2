@@ -14,22 +14,45 @@ export async function GET(request: NextRequest) {
   try {
     console.log('=== 決済実行Cronジョブ開始 ===');
     console.log('実行時刻:', new Date().toISOString());
+    console.log('実行時刻(JST):', new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }));
 
-    // Vercel Cronジョブの認証チェック（本番環境のみ）
+    // Vercel Cronジョブの認証チェック
     const authHeader = request.headers.get('authorization');
-    if (process.env.NODE_ENV === 'production' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const userAgent = request.headers.get('user-agent');
+    
+    console.log('🔐 認証情報:', {
+      hasAuthHeader: !!authHeader,
+      userAgent: userAgent || 'なし',
+      environment: process.env.NODE_ENV,
+      hasCronSecret: !!process.env.CRON_SECRET
+    });
+    
+    // GitHub ActionsまたはVercelからのアクセスでない場合は認証チェック
+    const isGitHubActions = userAgent?.includes('GitHub-Actions');
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
+    if (!isDevelopment && !isGitHubActions) {
+      if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        console.error('❌ 認証エラー:', {
+          expected: `Bearer ${process.env.CRON_SECRET ? '[HIDDEN]' : 'NOT_SET'}`,
+          received: authHeader ? authHeader.replace(/Bearer .+/, 'Bearer [HIDDEN]') : 'なし'
+        });
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
-    // レッスン開始2時間前の時刻を計算
-    const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
-    const twoHoursAndFiveMinutesFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000 + 5 * 60 * 1000);
+    // 2時間以内に開始されるレッスンを検索
     const now = new Date();
+    const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
+    // 5分のバッファを考慮（Cronジョブの実行間隔）
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
     console.log('検索条件:', {
-      now: now.toISOString(),
-      twoHoursFromNow: twoHoursFromNow.toISOString(),
-      twoHoursAndFiveMinutesFromNow: twoHoursAndFiveMinutesFromNow.toISOString()
+      currentTime: now.toISOString(),
+      currentTimeJST: now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+      searchRangeStart: fiveMinutesAgo.toISOString(),
+      searchRangeEnd: twoHoursFromNow.toISOString(),
+      description: '5分前から2時間後までの予約を検索'
     });
 
     // 新フロー対象の予約のみを検索（旧フローは即座決済のため対象外）
@@ -37,8 +60,8 @@ export async function GET(request: NextRequest) {
       where: {
         status: 'APPROVED', // メンター承認済み
         booked_start_time: {
-          gte: twoHoursFromNow,
-          lte: twoHoursAndFiveMinutesFromNow,
+          gte: fiveMinutesAgo,  // 5分前以降（過去の見逃し分も含む）
+          lte: twoHoursFromNow, // 2時間後まで
         },
         payment_id: {
           not: null // 決済情報が存在する
@@ -77,7 +100,10 @@ export async function GET(request: NextRequest) {
       // 実行タイミングに達しているかチェック
       const timing = getPaymentExecutionTiming(reservation.booked_start_time, true);
       if (!timing.shouldExecuteImmediately) {
-        console.log(`予約 ${reservation.id} はまだ実行タイミングではありません（${timing.hoursUntilExecution}時間後）`);
+        console.log(`予約 ${reservation.id} はまだ実行タイミングではありません`);
+        console.log(`  レッスン開始時刻: ${reservation.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`);
+        console.log(`  実行予定時刻: ${timing.executionTime.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}`);
+        console.log(`  実行まで: ${timing.hoursUntilExecution}時間`);
         continue;
       }
 

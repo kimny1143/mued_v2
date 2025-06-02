@@ -133,18 +133,49 @@ export async function POST(
           
           // 🔧 修正：2時間前判定を追加
           const { getPaymentExecutionTiming } = await import('@/lib/payment-flow');
+          const { differenceInHours } = await import('date-fns');
           const timing = getPaymentExecutionTiming(updatedReservation.booked_start_time);
           
-          console.log('⏰ 決済実行タイミング:', {
-            lessonStartTime: updatedReservation.booked_start_time,
-            executionTime: timing.executionTime,
-            shouldExecuteImmediately: timing.shouldExecuteImmediately,
-            hoursUntilExecution: timing.hoursUntilExecution,
-            isAutoExecution: timing.isAutoExecution
+          // 安全チェック：実際の時間差を再計算
+          const now = new Date();
+          const hoursUntilLesson = differenceInHours(updatedReservation.booked_start_time, now);
+          
+          console.log('⏰ 決済実行タイミング詳細:', {
+            currentTimeUTC: now.toISOString(),
+            currentTimeJST: now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+            lessonStartTimeUTC: updatedReservation.booked_start_time.toISOString(),
+            lessonStartTimeJST: updatedReservation.booked_start_time.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+            hoursUntilLesson: hoursUntilLesson,
+            timingCalculation: {
+              executionTime: timing.executionTime.toISOString(),
+              shouldExecuteImmediately: timing.shouldExecuteImmediately,
+              hoursUntilExecution: timing.hoursUntilExecution,
+              isAutoExecution: timing.isAutoExecution
+            }
           });
           
-          if (timing.shouldExecuteImmediately) {
-            console.log('🚀 2時間以内のため即座決済を実行');
+          // 環境変数による制御（デフォルトは有効）
+          const immediatePaymentEnabled = process.env.ENABLE_IMMEDIATE_PAYMENT_ON_APPROVAL !== 'false';
+          
+          if (!immediatePaymentEnabled) {
+            console.log('⚠️ 即座決済は環境変数により無効化されています');
+          }
+          
+          // 安全チェック：2時間以内かつ、timing判定が正しいか確認
+          const shouldExecuteNow = hoursUntilLesson <= 2 && timing.shouldExecuteImmediately && immediatePaymentEnabled;
+          
+          if (hoursUntilLesson > 2 && timing.shouldExecuteImmediately) {
+            console.error('🚨 タイミング判定エラー検出: レッスンまで' + hoursUntilLesson + '時間あるのに即座決済フラグがtrue');
+          }
+          
+          if (shouldExecuteNow) {
+            console.log('🚀 2時間以内のため即座決済を実行（検証済み）');
+            console.log('✅ 決済実行条件:', {
+              hoursUntilLesson: hoursUntilLesson + '時間',
+              timingFlag: timing.shouldExecuteImmediately,
+              envEnabled: immediatePaymentEnabled,
+              result: '決済実行'
+            });
             
             const stripe = new (await import('stripe')).default(process.env.STRIPE_SECRET_KEY!, {
               apiVersion: '2025-03-31.basil',

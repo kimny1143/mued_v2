@@ -47,14 +47,32 @@ export function getPaymentExecutionTiming(
     };
   }
 
-  const twoHoursBeforeLesson = new Date(lessonStartTime.getTime() - 2 * 60 * 60 * 1000);
   const now = new Date();
-  const hoursUntilExecution = differenceInHours(twoHoursBeforeLesson, now);
+  const twoHoursBeforeLesson = new Date(lessonStartTime.getTime() - 2 * 60 * 60 * 1000);
+  
+  // レッスン開始までの時間（時間単位）を計算
+  const hoursUntilLesson = differenceInHours(lessonStartTime, now);
+  
+  // 2時間前の時刻までの時間を計算
+  const hoursUntilExecutionTime = differenceInHours(twoHoursBeforeLesson, now);
+  
+  // デバッグログ追加
+  console.log('💰 決済タイミング計算:', {
+    now: now.toISOString(),
+    nowJST: now.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+    lessonStartTime: lessonStartTime.toISOString(),
+    lessonStartTimeJST: lessonStartTime.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+    twoHoursBeforeLesson: twoHoursBeforeLesson.toISOString(),
+    twoHoursBeforeLessonJST: twoHoursBeforeLesson.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+    hoursUntilLesson: hoursUntilLesson,
+    hoursUntilExecutionTime: hoursUntilExecutionTime,
+    shouldExecuteImmediately: hoursUntilLesson <= 2
+  });
 
   return {
-    shouldExecuteImmediately: hoursUntilExecution <= 0,
+    shouldExecuteImmediately: hoursUntilLesson <= 2,  // レッスンまで2時間以内なら即座実行
     executionTime: twoHoursBeforeLesson,
-    hoursUntilExecution: Math.max(0, hoursUntilExecution),
+    hoursUntilExecution: Math.max(0, hoursUntilExecutionTime),
     isAutoExecution: true
   };
 }
