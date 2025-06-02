@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { format, isSameDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Button } from '@/app/components/ui/button';
-import { ChevronLeft, ChevronRight, User, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, User, CheckCircle, XCircle, Plus } from 'lucide-react';
+import { SlotModal } from './SlotModal';
 
 // メンタースロットの型定義
 interface MentorLessonSlot {
@@ -15,6 +16,9 @@ interface MentorLessonSlot {
   isAvailable: boolean;
   hourlyRate?: number;
   currency?: string;
+  minDuration?: number;
+  maxDuration?: number;
+  description?: string;
   teacher: {
     id: string;
     name: string | null;
@@ -34,6 +38,8 @@ interface MentorLessonSlot {
       email: string;
     };
   }>;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface MentorDayViewProps {
@@ -45,6 +51,8 @@ interface MentorDayViewProps {
   onReservationClick: (reservation: MentorLessonSlot['reservations'][0]) => void;
   onApprove?: (reservationId: string) => Promise<void>;
   userRole: 'student' | 'mentor' | 'admin';
+  onSlotUpdate?: (updatedSlot: MentorLessonSlot) => void;
+  onSlotDelete?: (deletedSlotId: string) => void;
 }
 
 export const MentorDayView: React.FC<MentorDayViewProps> = ({
@@ -56,9 +64,16 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   onReservationClick,
   onApprove,
   userRole,
+  onSlotUpdate,
+  onSlotDelete,
 }) => {
   // デバッグ: 基本情報のみ（パフォーマンス重視）
   console.log(`📅 MentorDayView: ${selectedDate.toDateString()}, slots: ${slots.length}, role: ${userRole}`);
+
+  // モーダル関連のstate
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<MentorLessonSlot | null>(null);
+  const [modalMode, setModalMode] = useState<'view' | 'edit' | 'create'>('view');
 
   // 料金フォーマット関数
   const formatPrice = (price: number) => {
@@ -78,6 +93,26 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   for (let hour = 8; hour <= 22; hour++) {
     timeSlots.push(hour);
   }
+
+  // 新規スロット作成ハンドラー
+  const handleCreateSlot = () => {
+    setSelectedSlot(null);
+    setModalMode('create');
+    setIsModalOpen(true);
+  };
+
+  // スロット編集ハンドラー
+  const handleEditSlot = (slot: MentorLessonSlot) => {
+    setSelectedSlot(slot);
+    setModalMode('edit');
+    setIsModalOpen(true);
+  };
+
+  // モーダルを閉じる処理
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedSlot(null);
+  };
 
   if (daySlots.length === 0) {
     return (
@@ -124,7 +159,19 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <div className="text-gray-400 mb-2">📅</div>
           <p className="text-gray-500 font-medium">この日にはスロットがありません</p>
-          <p className="text-xs text-gray-400 mt-1">別の日を選択してください</p>
+          {userRole === 'mentor' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCreateSlot}
+              className="mt-4 flex items-center gap-2 mx-auto"
+            >
+              <Plus className="h-4 w-4" />
+              新規スロット作成
+            </Button>
+          ) : (
+            <p className="text-xs text-gray-400 mt-1">別の日を選択してください</p>
+          )}
         </div>
       </div>
     );
@@ -178,8 +225,21 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         {/* ヘッダー */}
         <div className="bg-gray-50 border-b border-gray-200 p-4">
-          <div className="text-sm font-medium text-gray-700">
-            {daySlots.length}件のレッスンスロット
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-medium text-gray-700">
+              {daySlots.length}件のレッスンスロット
+            </div>
+            {userRole === 'mentor' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCreateSlot}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                新規スロット作成
+              </Button>
+            )}
           </div>
         </div>
 
@@ -409,6 +469,19 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
           💡 <strong>操作方法:</strong> 予約カード内のボタンで直接操作、グレーボタンで詳細表示
         </div>
       </div>
+
+      {/* スロット詳細/編集モーダル */}
+      {onSlotUpdate && onSlotDelete && (
+        <SlotModal
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          slot={selectedSlot}
+          selectedDate={selectedDate}
+          mode={modalMode}
+          onSlotUpdate={onSlotUpdate}
+          onSlotDelete={onSlotDelete}
+        />
+      )}
     </div>
   );
 }; 
