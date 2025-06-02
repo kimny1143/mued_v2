@@ -61,6 +61,8 @@ export const SlotModal: React.FC<SlotModalProps> = ({
   onSlotUpdate,
   onSlotDelete,
 }) => {
+  console.log('🎨 SlotModal render:', { isOpen, mode, slot, selectedDate });
+  
   const [currentMode, setCurrentMode] = useState<'view' | 'edit' | 'create'>(mode);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -281,10 +283,15 @@ export const SlotModal: React.FC<SlotModalProps> = ({
     }).format(price);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    console.log('🚫 SlotModal not rendering because isOpen is false');
+    return null;
+  }
 
   const displayDate = selectedDate || (slot ? new Date(slot.startTime) : new Date());
   const status = slot ? getSlotStatus(slot) : null;
+
+  console.log('✅ SlotModal rendering with:', { isOpen, currentMode, displayDate });
 
   return (
     <>

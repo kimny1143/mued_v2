@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, isSameDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Button } from '@/app/components/ui/button';
@@ -68,12 +68,17 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
   onSlotDelete,
 }) => {
   // デバッグ: 基本情報のみ（パフォーマンス重視）
-  console.log(`📅 MentorDayView: ${selectedDate.toDateString()}, slots: ${slots.length}, role: ${userRole}`);
+  console.log(`📅 MentorDayView render: ${selectedDate.toDateString()}, slots: ${slots.length}, role: ${userRole}`);
 
   // モーダル関連のstate
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<MentorLessonSlot | null>(null);
   const [modalMode, setModalMode] = useState<'view' | 'edit' | 'create'>('view');
+
+  // isModalOpenの変化を追跡
+  useEffect(() => {
+    console.log('🔍 isModalOpen changed to:', isModalOpen);
+  }, [isModalOpen]);
 
   // 料金フォーマット関数
   const formatPrice = (price: number) => {
