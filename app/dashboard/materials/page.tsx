@@ -4,9 +4,11 @@ export const dynamic = 'force-dynamic';
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import { FileIcon, ExternalLink, Calendar, User, BookOpen, Music, Mic, Edit } from "lucide-react";
+import { FileIcon, ExternalLink, Calendar, User, BookOpen, Music, Mic, Edit, ArrowUpDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { sortItems, type SortMethod } from "@/lib/utils/natural-sort";
 
 interface NoteMaterial {
   title: string;
@@ -50,6 +52,13 @@ export default function MaterialsPage() {
   const [selectedMagazine, setSelectedMagazine] = useState<string>('all');
   const [error, setError] = useState<string | null>(null);
   const [isFallback, setIsFallback] = useState(false);
+  const [sortMethod, setSortMethod] = useState<SortMethod>(() => {
+    // ローカルストレージから設定を読み込む
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('materials-sort-method') as SortMethod) || 'date-desc';
+    }
+    return 'date-desc';
+  });
   const router = useRouter();
 
   // マガジンアイコンマッピング
@@ -81,6 +90,13 @@ export default function MaterialsPage() {
 
     checkAuth();
   }, [router]);
+
+  // ソート設定をローカルストレージに保存
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('materials-sort-method', sortMethod);
+    }
+  }, [sortMethod]);
 
   // 全マガジン取得
   const fetchMagazines = async () => {
@@ -165,13 +181,20 @@ export default function MaterialsPage() {
           description: 'すべてのMUED公開教材',
           category: 'general'
         },
-        items: allItems.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()),
+        items: sortItems(allItems, sortMethod),
         count: allItems.length
       };
     }
     
     const magazineData = magazines.find(mag => mag.magazine.id === selectedMagazine);
-    return magazineData || { magazine: { id: '', title: '', description: '', category: 'general' }, items: [], count: 0 };
+    if (!magazineData) {
+      return { magazine: { id: '', title: '', description: '', category: 'general' }, items: [], count: 0 };
+    }
+    
+    return {
+      ...magazineData,
+      items: sortItems(magazineData.items, sortMethod)
+    };
   };
 
   const displayData = getDisplayData();
@@ -228,30 +251,51 @@ export default function MaterialsPage() {
         </div>
       )}
 
-      {/* マガジン選択タブ */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <Button
-          variant={selectedMagazine === 'all' ? 'default' : 'outline'}
-          onClick={() => setSelectedMagazine('all')}
-          className="flex items-center gap-2"
-        >
-          <BookOpen className="w-4 h-4" />
-          すべて ({magazines.reduce((sum, mag) => sum + mag.count, 0)})
-        </Button>
-        {magazines.map((mag) => {
-          const Icon = magazineIcons[mag.magazine.category as keyof typeof magazineIcons] || BookOpen;
-          return (
-            <Button
-              key={mag.magazine.id}
-              variant={selectedMagazine === mag.magazine.id ? 'default' : 'outline'}
-              onClick={() => setSelectedMagazine(mag.magazine.id)}
-              className="flex items-center gap-2"
-            >
-              <Icon className="w-4 h-4" />
-              {mag.magazine.title.replace('MUED公開教材〜', '').replace('〜', '')} ({mag.count})
-            </Button>
-          );
-        })}
+      {/* マガジン選択タブとソート */}
+      <div className="space-y-4 mb-6">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={selectedMagazine === 'all' ? 'default' : 'outline'}
+            onClick={() => setSelectedMagazine('all')}
+            className="flex items-center gap-2"
+          >
+            <BookOpen className="w-4 h-4" />
+            すべて ({magazines.reduce((sum, mag) => sum + mag.count, 0)})
+          </Button>
+          {magazines.map((mag) => {
+            const Icon = magazineIcons[mag.magazine.category as keyof typeof magazineIcons] || BookOpen;
+            return (
+              <Button
+                key={mag.magazine.id}
+                variant={selectedMagazine === mag.magazine.id ? 'default' : 'outline'}
+                onClick={() => setSelectedMagazine(mag.magazine.id)}
+                className="flex items-center gap-2"
+              >
+                <Icon className="w-4 h-4" />
+                {mag.magazine.title.replace('MUED公開教材〜', '').replace('〜', '')} ({mag.count})
+              </Button>
+            );
+          })}
+        </div>
+
+        {/* ソート選択 */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <ArrowUpDown className="w-4 h-4" />
+            <span>並び順：</span>
+          </div>
+          <Select value={sortMethod} onValueChange={(value) => setSortMethod(value as SortMethod)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="並び順を選択" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date-desc">新しい順</SelectItem>
+              <SelectItem value="date-asc">古い順</SelectItem>
+              <SelectItem value="title-asc">タイトル順（昇順）</SelectItem>
+              <SelectItem value="title-desc">タイトル順（降順）</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* 選択中のマガジン情報 */}
