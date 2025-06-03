@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import { FileIcon, ExternalLink, Calendar, User, BookOpen, Music, Mic, Edit, ArrowUpDown } from "lucide-react";
+import { FileIcon, ExternalLink, Calendar, User, BookOpen, Music, Mic, Edit, ArrowUpDown, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
@@ -20,6 +20,7 @@ interface NoteMaterial {
   author?: string;
   magazine: string;
   category: string;
+  readingTime?: number;
 }
 
 interface MagazineData {
@@ -357,9 +358,17 @@ export default function MaterialsPage() {
                 )}
 
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Calendar className="w-3 h-3" />
-                    <span>{formatDate(material.pubDate)}</span>
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      <span>{formatDate(material.pubDate)}</span>
+                    </div>
+                    {material.readingTime && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{material.readingTime}分</span>
+                      </div>
+                    )}
                   </div>
                   
                   <Button 

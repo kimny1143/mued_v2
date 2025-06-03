@@ -80,6 +80,30 @@ function generateDescription(content: string, maxLength: number = 150): string {
   return plainText.substring(0, maxLength).trim() + '...';
 }
 
+// 読了時間を抽出
+function extractReadingTime(content: string): number | undefined {
+  // パターン: （読了：約X分）または（読了：X分）
+  const patterns = [
+    /（読了：約(\d+)分）/,
+    /（読了：(\d+)分）/,
+    /\(読了：約(\d+)分\)/,
+    /\(読了：(\d+)分\)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = content.match(pattern);
+    if (match && match[1]) {
+      const minutes = parseInt(match[1], 10);
+      // 妥当性チェック: 1〜999分の範囲内
+      if (minutes > 0 && minutes < 1000) {
+        return minutes;
+      }
+    }
+  }
+  
+  return undefined;
+}
+
 // 特定マガジンのRSSを取得
 async function fetchMagazineRSS(magazine: typeof MAGAZINES[0]) {
   try {
@@ -89,6 +113,7 @@ async function fetchMagazineRSS(magazine: typeof MAGAZINES[0]) {
       const content = item['content:encoded'] || item.contentSnippet || item.content || '';
       const description = generateDescription(content);
       const image = extractImage(content);
+      const readingTime = extractReadingTime(content);
       
       return {
         title: item.title || 'タイトルなし',
@@ -99,7 +124,8 @@ async function fetchMagazineRSS(magazine: typeof MAGAZINES[0]) {
         contentSnippet: description,
         author: item.creator || item.author || 'MUED Glasswerks',
         magazine: magazine.id,
-        category: magazine.category
+        category: magazine.category,
+        readingTime
       };
     });
 
@@ -191,7 +217,8 @@ export async function GET(request: Request) {
           contentSnippet: `${magazine.description}のサンプル...`,
           author: "MUED Glasswerks",
           magazine: magazine.id,
-          category: magazine.category
+          category: magazine.category,
+          readingTime: 10
         },
         {
           title: `${magazine.title}のサンプル記事 - 応用編`,
@@ -202,7 +229,8 @@ export async function GET(request: Request) {
           contentSnippet: `${magazine.description}の応用編...`,
           author: "MUED Glasswerks",
           magazine: magazine.id,
-          category: magazine.category
+          category: magazine.category,
+          readingTime: 15
         }
       ],
       count: 2,
