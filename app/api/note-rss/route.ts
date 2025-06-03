@@ -85,7 +85,7 @@ async function fetchMagazineRSS(magazine: typeof MAGAZINES[0]) {
   try {
     const feed: CustomFeed = await parser.parseURL(magazine.rssUrl);
     
-    const items = feed.items.slice(0, 8).map((item: CustomItem) => {
+    const items = feed.items.slice(0, 20).map((item: CustomItem) => {
       const content = item['content:encoded'] || item.contentSnippet || item.content || '';
       const description = generateDescription(content);
       const image = extractImage(content);
