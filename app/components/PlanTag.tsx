@@ -1,52 +1,22 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useUser } from '@/lib/hooks/use-user';
-import { getPlanByPriceId } from '@/app/stripe-config';
 import { Crown, Star, Zap, CreditCard, ExternalLink, Shield, UserCheck } from 'lucide-react';
-import { supabaseBrowser } from '@/lib/supabase-browser';
-import { extractRoleFromApiResponse } from '@/lib/role-utils';
 
 export function PlanTag() {
-  const { subscription, loading } = useUser();
+  const { user, loading } = useUser();
   const [isLoading, setIsLoading] = useState(false);
-  const [userRole, setUserRole] = useState<string>('student');
 
-  // デバッグ用ログ
-  useEffect(() => {
-    console.log('PlanTag - サブスクリプション情報:', subscription);
-  }, [subscription]);
-
-  // ユーザーロールを取得
-  useEffect(() => {
-    const getUserRole = async () => {
-      try {
-        const { data } = await supabaseBrowser.auth.getSession();
-        if (data.session?.user) {
-          const response = await fetch(`/api/user?userId=${data.session.user.id}`);
-          if (response.ok) {
-            const userData = await response.json();
-            
-            // 新しいロールユーティリティを使用
-            const finalRole = extractRoleFromApiResponse(userData);
-            setUserRole(finalRole);
-          }
-        }
-      } catch (error) {
-        console.error('ロール取得エラー:', error);
-      }
-    };
-
-    getUserRole();
-  }, []);
-
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="bg-gray-100 text-gray-400 px-2 py-1 rounded-full text-xs animate-pulse">
         Loading...
       </div>
     );
   }
+
+  const userRole = user.role_id || 'student';
 
   // メンター・管理者の場合は専用の表示
   if (userRole === 'mentor') {
@@ -67,13 +37,8 @@ export function PlanTag() {
     );
   }
 
-  // プラン情報を取得
-  // アクティブなサブスクリプションのみを有効なプランとして扱う
-  const currentPlan = (subscription?.priceId && subscription?.status === 'active')
-    ? getPlanByPriceId(subscription.priceId)
-    : getPlanByPriceId('free');
-
-  const planName = currentPlan?.name || 'FREE';
+  // デフォルトはFREEプラン
+  const planName = user.plan || 'FREE';
 
   // プランのアイコンとスタイルを決定
   const getPlanStyle = () => {
@@ -105,50 +70,17 @@ export function PlanTag() {
 
   // プラン管理へのリダイレクト処理
   const handlePlanClick = async () => {
-    console.log('プランタグクリック - プラン管理にリダイレクト');
-    
     try {
       setIsLoading(true);
 
-      // アクティブなサブスクリプションがある場合のみBilling Portalを使用
-      if (subscription?.status === 'active' && subscription?.priceId) {
-        console.log('🎯 アクティブサブスクリプションあり - Billing Portalにリダイレクト');
-        
-        // 認証トークンを取得
-        const { data: sessionData } = await supabaseBrowser.auth.getSession();
-        const token = sessionData?.session?.access_token;
-
-        if (!token) {
-          throw new Error('認証トークンが見つかりません。再度ログインしてください。');
-        }
-
-        // Billing Portal Sessionを作成
-        const response = await fetch('/api/billing-portal', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Billing Portal Sessionの作成に失敗しました');
-        }
-
-        // 新しいタブでBilling Portalを開く
-        window.open(data.url, '_blank');
-      } else {
-        // アクティブなサブスクリプションがない場合はプラン選択ページにリダイレクト
-        console.log('🔄 アクティブサブスクリプションなし - プラン選択ページにリダイレクト');
+      // 学生の場合のみプラン管理を表示
+      if (userRole === 'student') {
         window.location.href = '/dashboard/plans';
       }
 
     } catch (error) {
       console.error('プラン管理エラー:', error);
-      const errorMessage = error instanceof Error ? error.message : 'プラン管理の開始に失敗しました';
-      alert(errorMessage);
+      alert('プラン管理の開始に失敗しました');
     } finally {
       setIsLoading(false);
     }
@@ -157,9 +89,9 @@ export function PlanTag() {
   return (
     <button 
       onClick={handlePlanClick}
-      disabled={isLoading}
+      disabled={isLoading || userRole !== 'student'}
       className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg cursor-pointer group active:scale-95 ${className} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-      title={subscription?.status === 'active' ? `${planName}プラン - クリックしてプラン管理・変更` : `${planName}プラン - クリックしてプラン選択`}
+      title={`${planName}プラン${userRole === 'student' ? ' - クリックしてプラン管理' : ''}`}
     >
       {isLoading ? (
         <>
@@ -170,9 +102,9 @@ export function PlanTag() {
         <>
           {icon}
           <span>{planName}プラン</span>
-          <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+          {userRole === 'student' && <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />}
         </>
       )}
     </button>
   );
-} 
+}
