@@ -7,7 +7,7 @@ import { Button } from "@ui/button";
 import { Card } from "@ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
 import { Badge } from "@ui/badge";
-import { Skeleton } from "@ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@ui/dialog";
 import { Label } from "@ui/label";
 import { Textarea } from "@ui/textarea";
@@ -24,12 +24,13 @@ import { useUser } from "@/lib/hooks/use-user";
 import { useStartSession, useEndSession, useSubmitFeedback } from "@/lib/hooks/mutations/useSessionMutations";
 import { format, isWithinInterval, subMinutes, addMinutes } from "date-fns";
 import { ja } from "date-fns/locale";
-import { toast } from "@ui/use-toast";
+import { useToast } from "@/app/components/ui/use-toast";
 import type { LessonSession } from "@/lib/hooks/queries/useSessions";
 
 export default function Page() {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<'scheduled' | 'in_progress' | 'completed'>('scheduled');
+  const { toast } = useToast();
   const [selectedSession, setSelectedSession] = useState<LessonSession | null>(null);
   const [endLessonDialog, setEndLessonDialog] = useState(false);
   const [feedbackDialog, setFeedbackDialog] = useState(false);
@@ -41,9 +42,9 @@ export default function Page() {
     userId: user?.id
   });
 
-  const { mutate: startSession, isLoading: isStarting } = useStartSession();
-  const { mutate: endSession, isLoading: isEnding } = useEndSession();
-  const { mutate: submitFeedback, isLoading: isSubmitting } = useSubmitFeedback();
+  const { startSession, isLoading: isStarting } = useStartSession();
+  const { endSession, isLoading: isEnding } = useEndSession();
+  const { submitFeedback, isLoading: isSubmitting } = useSubmitFeedback();
 
   const categorizedSessions = useMemo(() => {
     if (!sessions) return { scheduled: [], in_progress: [], completed: [] };
@@ -55,8 +56,8 @@ export default function Page() {
     };
   }, [sessions]);
 
-  const isStudent = user?.role === 'student';
-  const isMentor = user?.role === 'teacher';
+  const isStudent = user?.role_id === 'student';
+  const isMentor = user?.role_id === 'teacher';
 
   const handleStartLesson = useCallback(async (session: LessonSession) => {
     try {
@@ -73,14 +74,13 @@ export default function Page() {
         variant: "destructive",
       });
     }
-  }, [startSession, mutate]);
+  }, [startSession, mutate, toast]);
 
   const handleEndLesson = useCallback(async () => {
     if (!selectedSession) return;
     
     try {
-      await endSession({
-        id: selectedSession.id,
+      await endSession(selectedSession.id, {
         lesson_notes: lessonNotes,
         homework: homework,
       });
@@ -100,14 +100,13 @@ export default function Page() {
         variant: "destructive",
       });
     }
-  }, [selectedSession, lessonNotes, homework, endSession, mutate]);
+  }, [selectedSession, lessonNotes, homework, endSession, mutate, toast]);
 
   const handleSubmitFeedback = useCallback(async () => {
     if (!selectedSession) return;
     
     try {
-      await submitFeedback({
-        id: selectedSession.id,
+      await submitFeedback(selectedSession.id, {
         feedback: feedback,
         role: isStudent ? 'student' : 'mentor',
       });
@@ -126,7 +125,7 @@ export default function Page() {
         variant: "destructive",
       });
     }
-  }, [selectedSession, feedback, isStudent, submitFeedback, mutate]);
+  }, [selectedSession, feedback, isStudent, submitFeedback, mutate, toast]);
 
   const canStartLesson = (session: LessonSession) => {
     if (!isMentor) return false;
@@ -204,7 +203,7 @@ export default function Page() {
       </div>
 
       {/* タブ */}
-      <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)} className="mb-6">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'scheduled' | 'in_progress' | 'completed')} className="mb-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="scheduled">
             予定 ({categorizedSessions.scheduled.length})
@@ -228,7 +227,7 @@ export default function Page() {
                 </p>
               </Card>
             ) : (
-              categorizedSessions[activeTab].map((session: any) => (
+              categorizedSessions[activeTab].map((session) => (
                 <Card key={session.id} className="p-6">
                   <div className="space-y-4">
                     {/* ヘッダー */}
@@ -236,12 +235,12 @@ export default function Page() {
                       <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="text-lg font-semibold">
-                            {isStudent ? session.reservation.slot.teacher.full_name : session.reservation.student.full_name}
+                            {isStudent ? session.teacher.name : session.student.name}
                           </h3>
                           {getStatusBadge(session.status)}
                         </div>
                         <p className="text-sm text-gray-600">
-                          {session.reservation.slot.description || 'レッスン'}
+                          レッスン
                         </p>
                       </div>
                     </div>
@@ -255,7 +254,7 @@ export default function Page() {
                       <div className="flex items-center gap-1">
                         <UserIcon className="w-4 h-4" />
                         <span>
-                          {isStudent ? `メンター: ${session.reservation.slot.teacher.full_name}` : `生徒: ${session.reservation.student.full_name}`}
+                          {isStudent ? `メンター: ${session.teacher.name}` : `生徒: ${session.student.name}`}
                         </span>
                       </div>
                     </div>
