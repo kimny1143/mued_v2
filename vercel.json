@@ -34,6 +34,5 @@
       ]
     }
   ],
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./",
   "installCommand": "npm ci"
 } 
