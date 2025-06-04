@@ -7,9 +7,17 @@ import { ChatMessage, ChatInput } from "@/app/components/chat";
 import { chatMessagesApi } from "@/lib/apiClient";
 import { useChatMessages } from "@/lib/hooks/useSupabaseChannel";
 import { ChatMessage as ChatMessageType } from "@/lib/types";
-import { v4 as uuidv4 } from "uuid";
 import { useToast } from "@ui/use-toast";
 import React from "react";
+
+// UUIDの代替関数（バンドルサイズ削減のため）
+const generateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // フォールバック: タイムスタンプベースのID
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
 
 // ダミーの現在ユーザーID（本番では認証ユーザーから取得）
 const CURRENT_USER_ID = "current-user-id";
@@ -142,7 +150,7 @@ export default function Page() {
       shouldScrollRef.current = true;
 
       // メッセージをUIに表示（楽観的UI更新）
-      const tempId = uuidv4();
+      const tempId = generateId();
       const newMessage: ChatMessageType = {
         id: tempId,
         content,
