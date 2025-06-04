@@ -13,9 +13,22 @@ import { ReservationStatusCard } from "@/app/components/dashboard/ReservationSta
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<string>('');
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [roleLoading, setRoleLoading] = useState(true);
   const router = useRouter();
   const { user, loading: userLoading, error, isAuthenticated } = useUser();
+  
+  // デバッグ用ログ
+  useEffect(() => {
+    console.log('🎯 ダッシュボードページ状態:', {
+      loading,
+      userLoading,
+      roleLoading,
+      isAuthenticated,
+      userId: user?.id,
+      userRole
+    });
+  }, [loading, userLoading, roleLoading, isAuthenticated, user, userRole]);
 
   // 認証状態を確認（ページ保護用）
   useEffect(() => {
@@ -36,17 +49,28 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchUserRole = async () => {
       if (user?.id) {
+        console.log('📋 ユーザーロール取得開始:', user.id);
+        setRoleLoading(true);
         try {
           const response = await fetch(`/api/user?userId=${user.id}`);
           if (response.ok) {
             const userData = await response.json();
-            setUserRole(userData.roleName || 'student');
-            console.log('取得したユーザーロール:', userData.roleName);
+            const role = userData.roleName || userData.role_id || 'student';
+            setUserRole(role);
+            console.log('✅ 取得したユーザーロール:', role);
+          } else {
+            console.warn('ロール取得失敗:', response.status);
+            setUserRole('student'); // デフォルト
           }
         } catch (error) {
           console.error('ロール取得エラー:', error);
           setUserRole('student'); // デフォルト
+        } finally {
+          setRoleLoading(false);
         }
+      } else {
+        console.log('ユーザーIDがないためロール取得をスキップ');
+        setRoleLoading(false);
       }
     };
 
@@ -63,8 +87,9 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // 認証チェックとユーザー情報の両方が完了するまで待機
-  if (loading || userLoading) {
+  // すべての初期化が完了するまで待機
+  if (loading || userLoading || roleLoading) {
+    console.log('⏳ ローディング中:', { loading, userLoading, roleLoading });
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center space-y-2">
@@ -77,6 +102,7 @@ export default function DashboardPage() {
 
   // 認証状態を確認
   if (!isAuthenticated) {
+    console.warn('🚫 未認証状態でダッシュボードにアクセス');
     return (
       <div className="flex items-center justify-center h-screen">
         <p className="text-sm text-gray-600">認証を確認中...</p>
@@ -86,7 +112,7 @@ export default function DashboardPage() {
 
   // ユーザー情報が取得できていない場合の処理
   if (!user || !user.id) {
-    console.warn('ユーザー情報が未取得:', { user, isAuthenticated });
+    console.warn('❌ ユーザー情報が未取得:', { user, isAuthenticated });
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center space-y-2">
@@ -96,26 +122,18 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  // ロールが未取得の場合も待機
-  if (!userRole && userLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center space-y-2">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-sm text-gray-600">ユーザー情報を取得中...</p>
-        </div>
-      </div>
-    );
-  }
+  
+  // ロールが取得できていない場合はデフォルト値を使用
+  const finalUserRole = userRole || 'student';
+  console.log('🎨 最終的なユーザーロール:', finalUserRole);
 
   return (
     <>
       {/* ロール別の予約状況セクション */}
       <section className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <TodayScheduleCard userRole={userRole} userId={user.id} />
-          <ReservationStatusCard userRole={userRole} userId={user.id} />
+          <TodayScheduleCard userRole={finalUserRole} userId={user.id} />
+          <ReservationStatusCard userRole={finalUserRole} userId={user.id} />
         </div>
       </section>
 
