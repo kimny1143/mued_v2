@@ -112,8 +112,8 @@ export default function DashboardLayout({ children, userRole, userName, title, f
           path: "/dashboard/my-lessons" 
         },
         { 
-          icon: FolderIcon, 
-          label: "学習記録", 
+          icon: DumbbellIcon, 
+          label: "エクササイズ", 
           path: "/dashboard/exercises" 
         },
         ...commonItems.slice(1)
