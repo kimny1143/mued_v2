@@ -3,6 +3,9 @@ import { getServerSession } from '@/lib/server/auth';
 import { prisma } from '@/lib/prisma';
 import DashboardLayout from './DashboardLayout';
 
+// ダッシュボード全体を動的レンダリングに設定（認証チェックでcookiesを使用するため）
+export const dynamic = 'force-dynamic';
+
 export default async function Layout({
   children,
 }: {
