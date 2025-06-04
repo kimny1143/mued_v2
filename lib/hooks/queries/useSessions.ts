@@ -1,5 +1,4 @@
 import useSWR from 'swr';
-import { useSupabaseClient } from '@/lib/supabase-browser';
 
 export interface LessonSession {
   id: string;
@@ -55,8 +54,6 @@ interface UseSessionsOptions {
 }
 
 export function useSessions(options: UseSessionsOptions = {}) {
-  const supabase = useSupabaseClient();
-
   const queryParams = new URLSearchParams();
   if (options.userId) queryParams.set('user_id', options.userId);
   if (options.status) queryParams.set('status', options.status);
@@ -67,7 +64,7 @@ export function useSessions(options: UseSessionsOptions = {}) {
 
   const { data, error, mutate } = useSWR<SessionsResponse>(
     `/api/sessions?${queryParams.toString()}`,
-    async (url) => {
+    async (url: string) => {
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch sessions');
@@ -88,7 +85,7 @@ export function useSessions(options: UseSessionsOptions = {}) {
 export function useSession(sessionId: string | null) {
   const { data, error, mutate } = useSWR<LessonSession>(
     sessionId ? `/api/sessions/${sessionId}` : null,
-    async (url) => {
+    async (url: string) => {
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch session');
