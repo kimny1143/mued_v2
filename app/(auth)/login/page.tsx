@@ -29,6 +29,8 @@ function LoginContent() {
   
   // ハッシュフラグメントからのトークン処理（Implicit Flow対応）
   useEffect(() => {
+    const currentRouter = router; // ローカル変数にキャプチャ
+    
     async function processAccessToken() {
       // 既に処理中なら実行しない
       if (isProcessingHash) return;
@@ -75,7 +77,7 @@ function LoginContent() {
               
               if (isLocalRedirect) {
                 // 同一オリジンならルーターを使用
-                router.push('/dashboard');
+                currentRouter.push('/dashboard');
               } else {
                 // 異なるオリジンなら直接リダイレクト
                 window.location.href = dashboardUrl;
@@ -108,7 +110,7 @@ function LoginContent() {
                     // URLのハッシュ部分をクリア
                     window.history.replaceState({}, document.title, window.location.pathname);
                     
-                    router.push('/dashboard');
+                    currentRouter.push('/dashboard');
                     return;
                   }
                 }
@@ -131,10 +133,12 @@ function LoginContent() {
     }
     
     processAccessToken();
-  }, [router, isProcessingHash]);
+  }, [isProcessingHash]); // routerを依存配列から削除
   
   // ログイン済みならリダイレクト
   useEffect(() => {
+    const currentRouter = router; // ローカル変数にキャプチャ
+    
     // セッションチェックが既に実行されたかどうかのフラグ
     let hasChecked = false;
     let mounted = true;
@@ -165,7 +169,7 @@ function LoginContent() {
           
           if (isLocalRedirect) {
             // 同じオリジンならルーター使用
-            router.push('/dashboard');
+            currentRouter.push('/dashboard');
           } else {
             // 別オリジンならフルURLリダイレクト
             window.location.href = dashboardUrl;
