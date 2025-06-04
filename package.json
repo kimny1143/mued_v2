@@ -104,6 +104,7 @@
     "@chromatic-com/storybook": "^3.2.6",
     "@playwright/mcp": "^0.0.26",
     "@playwright/test": "^1.52.0",
+    "prisma": "^6.7.0",
     "@storybook/addon-essentials": "^8.6.12",
     "@storybook/addon-onboarding": "^8.6.12",
     "@storybook/blocks": "^8.6.12",
