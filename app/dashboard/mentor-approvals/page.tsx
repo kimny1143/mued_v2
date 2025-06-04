@@ -1,5 +1,8 @@
 'use client';
 
+// このページは動的である必要があります（認証チェックのため）
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';

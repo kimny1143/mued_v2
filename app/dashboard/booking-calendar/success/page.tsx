@@ -1,5 +1,8 @@
 'use client';
 
+// このページは動的である必要があります（認証チェックのため）
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/app/components/ui/button';

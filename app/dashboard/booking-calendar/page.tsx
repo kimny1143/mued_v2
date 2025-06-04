@@ -3,6 +3,9 @@ import { getServerSession } from '@/lib/server/auth';
 import { prisma } from '@/lib/prisma';
 import BookingCalendarClient from './BookingCalendarClient';
 
+// このページは動的である必要があります（認証チェックのため）
+export const dynamic = 'force-dynamic';
+
 export default async function BookingCalendarPage() {
   // サーバーサイドで認証チェック
   const session = await getServerSession();

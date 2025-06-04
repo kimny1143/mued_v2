@@ -3,6 +3,9 @@ import { getServerSession } from '@/lib/server/auth';
 import { prisma } from '@/lib/prisma';
 import SlotsCalendarClient from './SlotsCalendarClient';
 
+// このページは動的である必要があります（認証チェックのため）
+export const dynamic = 'force-dynamic';
+
 export default async function SlotsCalendarPage() {
   // サーバーサイドで認証チェック
   const session = await getServerSession();
