@@ -1,4 +1,5 @@
 import useSWR from 'swr';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export interface LessonSession {
   id: string;
@@ -63,13 +64,42 @@ export function useSessions(options: UseSessionsOptions = {}) {
   if (options.offset) queryParams.set('offset', options.offset.toString());
 
   const { data, error, mutate } = useSWR<SessionsResponse>(
-    `/api/sessions?${queryParams.toString()}`,
+    // userIdがない場合はnullを返してSWRの実行を防ぐ
+    options.userId ? `/api/sessions?${queryParams.toString()}` : null,
     async (url: string) => {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch sessions');
+      console.log('useSessions - API呼び出し開始:', url);
+      
+      // セッションからアクセストークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token;
+      
+      console.log('useSessions - 認証トークン:', token ? 'あり' : 'なし');
+      
+      if (!token) {
+        console.warn('useSessions - 認証トークンがありません');
+        throw new Error('Authentication required');
       }
-      return response.json();
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      console.log('useSessions - APIレスポンス:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('useSessions - APIエラー:', response.status, errorText);
+        throw new Error(`Failed to fetch sessions: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('useSessions - 取得データ:', data);
+      
+      return data;
     }
   );
 
