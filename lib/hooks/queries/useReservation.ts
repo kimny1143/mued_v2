@@ -35,6 +35,6 @@ export function useReservation(id: string) {
       return response.json();
     },
     enabled: !!id, // idが存在する場合のみクエリを実行
-    staleTime: 60 * 1000, // 1分間はキャッシュを新鮮と見なす
+    staleTime: 30 * 1000, // 30秒間はキャッシュを新鮮と見なす
   });
 } 
