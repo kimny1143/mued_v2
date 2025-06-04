@@ -2,136 +2,87 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase-browser";
 import { useUser } from "@/lib/hooks/use-user";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { runFullDiagnostic } from "@/lib/debug-helpers";
 import { TodayScheduleCard } from "@/app/components/dashboard/TodayScheduleCard";
 import { ReservationStatusCard } from "@/app/components/dashboard/ReservationStatusCard";
 
 export default function DashboardPage() {
-  const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [roleLoading, setRoleLoading] = useState(true);
   const router = useRouter();
-  const { user, loading: userLoading, error, isAuthenticated } = useUser();
-  
-  // デバッグ用ログ（初回のみ）
-  useEffect(() => {
-    console.log('🎯 ダッシュボードページ初期化:', {
-      isAuthenticated,
-      userId: user?.id,
-      userRole
-    });
-  }, []); // 空の依存配列で初回のみ実行
+  const { user, loading: userLoading, isAuthenticated } = useUser();
+  const [redirecting, setRedirecting] = useState(false);
 
   // 認証状態を確認（ページ保護用）
   useEffect(() => {
-    // 初期セッションチェック
-    const getSession = async () => {
-      const { data } = await supabaseBrowser.auth.getSession();
-      if (!data.session) {
-        // ログインしていない場合はログインページへリダイレクト
-        router.push('/login');
-      }
-      setLoading(false);
-    };
-
-    getSession();
-  }, [router]);
-
-  // ユーザーロールを取得
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      if (user?.id && userRole === null) { // すでにロールが設定されている場合はスキップ
-        console.log('📋 ユーザーロール取得開始:', user.id);
-        setRoleLoading(true);
-        try {
-          const response = await fetch(`/api/user?userId=${user.id}`);
-          if (response.ok) {
-            const userData = await response.json();
-            const role = userData.roleName || userData.role_id || 'student';
-            setUserRole(role);
-            console.log('✅ 取得したユーザーロール:', role);
-          } else {
-            console.warn('ロール取得失敗:', response.status);
-            setUserRole('student'); // デフォルト
-          }
-        } catch (error) {
-          console.error('ロール取得エラー:', error);
-          setUserRole('student'); // デフォルト
-        } finally {
-          setRoleLoading(false);
-        }
-      } else if (!user?.id) {
-        console.log('ユーザーIDがないためロール取得をスキップ');
-        setRoleLoading(false);
-      }
-    };
-
-    fetchUserRole();
-  }, [user?.id, userRole]); // user.idとuserRoleを依存配列に含める
-
-  // 開発環境でのみデバッグ診断を実行
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
-      console.log('🔍 ダッシュボードロード時の診断を実行');
-      runFullDiagnostic().then(result => {
-        console.log('診断結果:', result);
-      });
+    if (!userLoading && !isAuthenticated && !redirecting) {
+      setRedirecting(true);
+      router.push('/login');
     }
-  }, []);
+  }, [userLoading, isAuthenticated, router, redirecting]);
 
-  // すべての初期化が完了するまで待機
-  if (loading || userLoading || roleLoading) {
+  // スケルトンUIを表示（初期読み込み時）
+  if (userLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center space-y-2">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-sm text-gray-600">ダッシュボードを読み込み中...</p>
-        </div>
-      </div>
+      <>
+        {/* スケルトンUI - 実際のコンテンツと同じレイアウト */}
+        <section className="mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* TodayScheduleCard スケルトン */}
+            <Card className="p-6 animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </Card>
+            
+            {/* ReservationStatusCard スケルトン */}
+            <Card className="p-6 animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-full"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </Card>
+          </div>
+        </section>
+
+        {/* Recent Activity スケルトン */}
+        <section>
+          <div className="h-6 bg-gray-200 rounded w-40 mb-4 animate-pulse"></div>
+          <Card className="bg-white divide-y">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="p-4 animate-pulse">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-32"></div>
+                    <div className="h-3 bg-gray-200 rounded w-20"></div>
+                  </div>
+                  <div className="h-8 bg-gray-200 rounded w-24"></div>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </section>
+      </>
     );
   }
 
-  // 認証状態を確認
-  if (!isAuthenticated) {
-    console.warn('🚫 未認証状態でダッシュボードにアクセス');
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-sm text-gray-600">認証を確認中...</p>
-      </div>
-    );
-  }
-
-  // ユーザー情報が取得できていない場合の処理
-  if (!user || !user.id) {
-    console.warn('❌ ユーザー情報が未取得:', { user, isAuthenticated });
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center space-y-2">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-sm text-gray-600">ユーザー情報を取得中...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  // ロールが取得できていない場合はデフォルト値を使用
-  const finalUserRole = userRole || 'student';
+  // ユーザーロールはuseUserフックから直接取得
+  const userRole = user.role_id || 'student';
 
   return (
     <>
       {/* ロール別の予約状況セクション */}
       <section className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <TodayScheduleCard userRole={finalUserRole} userId={user.id} />
-          <ReservationStatusCard userRole={finalUserRole} userId={user.id} />
+          <TodayScheduleCard userRole={userRole} userId={user.id} />
+          <ReservationStatusCard userRole={userRole} userId={user.id} />
         </div>
       </section>
-
 
       {/* Recent Activity */}
       <section>
@@ -155,4 +106,4 @@ export default function DashboardPage() {
       </section>
     </>
   );
-} 
+}

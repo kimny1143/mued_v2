@@ -1,10 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Session } from '@supabase/supabase-js';
-import { useSubscriptionSimple } from './use-subscription-simple';
 import { getPlanByPriceId } from '@/app/stripe-config';
+import { 
+  initializeAuth, 
+  subscribeToAuthState, 
+  fetchUserDetails, 
+  fetchSubscription,
+  type SimpleSubscription 
+} from '@/lib/auth-singleton';
 
 export interface User {
   id: string;
@@ -20,190 +25,99 @@ export function useUser() {
   const [error, setError] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const initialized = useRef(false);
-  
-  // シンプルなサブスクリプション情報を取得
-  const { 
-    subscription, 
-    loading: subscriptionLoading, 
-    error: subscriptionError
-  } = useSubscriptionSimple();
+  const [subscription, setSubscription] = useState<SimpleSubscription | null>(null);
+  const dataFetchedRef = useRef(false);
 
-  // 認証状態の初期化
   useEffect(() => {
-    // 既に初期化済みの場合はスキップ
-    if (initialized.current) {
-      return;
-    }
-    
-    initialized.current = true;
-    console.log('認証状態初期化開始');
-
     let isMounted = true;
 
-    const initializeAuth = async () => {
-      try {
-        console.log('認証状態を確認中...');
-        
-        // 現在のセッションを取得
-        const { data: { session: currentSession }, error: sessionError } = await supabaseBrowser.auth.getSession();
-        
-        if (sessionError) {
-          console.error('セッション取得エラー:', sessionError);
-          if (isMounted) {
-            setError(sessionError.message);
-            setLoading(false);
-          }
-          return;
-        }
-        
-        if (!isMounted) return;
-        
-        setSession(currentSession);
-        setIsAuthenticated(!!currentSession);
-        
-        if (currentSession?.user) {
-          console.log('ユーザー情報を設定:', currentSession.user.email);
-          
-          // APIエンドポイント経由でユーザー詳細を取得
-          try {
-            console.log('APIからユーザー詳細を取得開始...');
-            
-            const response = await fetch(`/api/user?userId=${currentSession.user.id}`, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              credentials: 'include'
-            });
+    // シングルトン認証を初期化
+    initializeAuth().catch(err => {
+      console.error('認証初期化エラー:', err);
+      if (isMounted) {
+        setError(err.message);
+        setLoading(false);
+      }
+    });
 
-            if (!response.ok) {
-              console.warn('ユーザー詳細API失敗:', response.status, response.statusText);
-              
-              // APIエラーでもデフォルト値で続行
-              const userData: User = {
-                id: currentSession.user.id,
-                email: currentSession.user.email || '',
-                name: currentSession.user.user_metadata?.name || 
-                      currentSession.user.user_metadata?.full_name || 
-                      currentSession.user.email?.split('@')[0],
-                role_id: 'student' // デフォルト値
-              };
-              
-              if (isMounted) {
-                setUser(userData);
-              }
-              return;
-            }
+    // 認証状態を購読
+    const unsubscribe = subscribeToAuthState(async (authState) => {
+      if (!isMounted) return;
 
-            const userDetails = await response.json();
-            
-            if (userDetails.error) {
-              console.warn('ユーザー詳細取得エラー:', userDetails.error);
-              
-              // エラーでもデフォルト値で続行
-              const userData: User = {
-                id: currentSession.user.id,
-                email: currentSession.user.email || '',
-                name: currentSession.user.user_metadata?.name || 
-                      currentSession.user.user_metadata?.full_name || 
-                      currentSession.user.email?.split('@')[0],
-                role_id: 'student' // デフォルト値
-              };
-              
-              if (isMounted) {
-                setUser(userData);
-              }
-            } else {
-              console.log('APIからユーザー詳細を取得成功:', userDetails);
-              
-              // APIから取得した情報でユーザーデータを構築
-              const userData: User = {
-                id: currentSession.user.id,
-                email: userDetails.email || currentSession.user.email || '',
-                name: userDetails.name || 
-                      currentSession.user.user_metadata?.name || 
-                      currentSession.user.user_metadata?.full_name || 
-                      currentSession.user.email?.split('@')[0],
-                role_id: userDetails.role_id || userDetails.roleId || userDetails.roleName || 'student'
-              };
-              
-              if (isMounted) {
-                setUser(userData);
-              }
-            }
-          } catch (apiError) {
-            console.warn('APIアクセスエラー:', apiError);
-            
-            // APIエラーでもデフォルト値で続行
+      setSession(authState.session);
+      setIsAuthenticated(!!authState.session);
+      
+      if (authState.error) {
+        setError(authState.error.message);
+        setLoading(false);
+        return;
+      }
+
+      if (authState.session?.user && !dataFetchedRef.current) {
+        dataFetchedRef.current = true;
+        
+        try {
+          // ユーザー詳細とサブスクリプションを並列で取得
+          const [userDetails, subscriptionData] = await Promise.all([
+            fetchUserDetails(authState.session.user.id),
+            fetchSubscription(authState.session.user.id)
+          ]);
+
+          if (!isMounted) return;
+
+          if (userDetails) {
             const userData: User = {
-              id: currentSession.user.id,
-              email: currentSession.user.email || '',
-              name: currentSession.user.user_metadata?.name || 
-                    currentSession.user.user_metadata?.full_name || 
-                    currentSession.user.email?.split('@')[0],
-              role_id: 'student' // デフォルト値
+              id: userDetails.id,
+              email: userDetails.email,
+              name: userDetails.name,
+              role_id: userDetails.role_id
             };
+            setUser(userData);
             
-            if (isMounted) {
-              setUser(userData);
+            // ロールを確認してサブスクリプションを再取得（必要な場合）
+            if (userDetails.role_id === 'mentor' || userDetails.role_id === 'admin') {
+              const roleExemptSub = await fetchSubscription(authState.session.user.id, userDetails.role_id);
+              setSubscription(roleExemptSub);
+            } else {
+              setSubscription(subscriptionData);
             }
+          } else {
+            // デフォルト値を設定
+            const userData: User = {
+              id: authState.session.user.id,
+              email: authState.session.user.email || '',
+              name: authState.session.user.user_metadata?.name || 
+                    authState.session.user.user_metadata?.full_name || 
+                    authState.session.user.email?.split('@')[0],
+              role_id: 'student'
+            };
+            setUser(userData);
+            setSubscription(subscriptionData);
           }
-        } else {
+        } catch (err) {
+          console.error('データ取得エラー:', err);
           if (isMounted) {
-            setUser(null);
+            setError(err instanceof Error ? err.message : 'データ取得に失敗しました');
           }
         }
-      } catch (err) {
-        console.error('認証初期化エラー:', err);
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : '認証初期化に失敗しました');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+      } else if (!authState.session) {
+        setUser(null);
+        setSubscription(null);
+        dataFetchedRef.current = false;
       }
-    };
 
-    // 認証状態の変更を監視
-    const { data: { subscription: authSubscription } } = supabaseBrowser.auth.onAuthStateChange(
-      async (event, newSession) => {
-        console.log('認証状態変更:', event, newSession ? 'セッションあり' : 'セッションなし');
-        
-        if (!isMounted) return;
-        
-        setSession(newSession);
-        setIsAuthenticated(!!newSession);
-        
-        if (newSession?.user && event === 'SIGNED_IN') {
-          // サインイン時のみユーザー情報を更新
-          const userData: User = {
-            id: newSession.user.id,
-            email: newSession.user.email || '',
-            name: newSession.user.user_metadata?.name || 
-                  newSession.user.user_metadata?.full_name || 
-                  newSession.user.email?.split('@')[0],
-            role_id: 'student'
-          };
-          setUser(userData);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
+      if (authState.isInitialized && isMounted) {
+        setLoading(false);
       }
-    );
+    });
 
-    // 初期認証状態を確認
-    initializeAuth();
-
-    // クリーンアップ
     return () => {
       isMounted = false;
-      authSubscription?.unsubscribe();
+      unsubscribe();
     };
-  }, []); // 依存配列を空にして1回だけ実行
+  }, []);
 
-  // プラン情報の計算（サブスクリプション情報から）
+  // プラン情報の計算
   const currentPlan = subscription?.priceId 
     ? getPlanByPriceId(subscription.priceId)?.name || 'Unknown'
     : 'FREE';
@@ -213,10 +127,10 @@ export function useUser() {
 
   return {
     user: userWithPlan,
-    loading: loading || subscriptionLoading,
-    error: error || subscriptionError,
+    loading,
+    error,
     session,
     isAuthenticated,
     subscription
   };
-} 
+}
