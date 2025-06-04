@@ -2,110 +2,425 @@
 
 export const dynamic = 'force-dynamic';
 
+import { useState, useMemo, useCallback } from "react";
 import { Button } from "@ui/button";
 import { Card } from "@ui/card";
-import { PlayCircleIcon, ClockIcon, CheckCircleIcon } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
+import { Badge } from "@ui/badge";
+import { Skeleton } from "@ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@ui/dialog";
+import { Label } from "@ui/label";
+import { Textarea } from "@ui/textarea";
+import { 
+  PlayCircleIcon, 
+  CalendarIcon,
+  UserIcon,
+  BookOpenIcon,
+  MessageSquareIcon,
+  AlertCircleIcon
+} from "lucide-react";
+import { useSessions } from "@/lib/hooks/queries/useSessions";
+import { useUser } from "@/lib/hooks/use-user";
+import { useStartSession, useEndSession, useSubmitFeedback } from "@/lib/hooks/mutations/useSessionMutations";
+import { format, isWithinInterval, subMinutes, addMinutes } from "date-fns";
+import { ja } from "date-fns/locale";
+import { toast } from "@ui/use-toast";
+import type { LessonSession } from "@/lib/hooks/queries/useSessions";
 
 export default function Page() {
-  const lessons = [
-    {
-      title: "Introduction to Music Theory",
-      progress: 75,
-      duration: "45 min",
-      status: "In Progress",
-      lastAccessed: "2 days ago",
-      image: "https://images.pexels.com/photos/4087991/pexels-photo-4087991.jpeg"
-    },
-    {
-      title: "Basic Piano Techniques",
-      progress: 100,
-      duration: "60 min",
-      status: "Completed",
-      lastAccessed: "1 week ago",
-      image: "https://images.pexels.com/photos/1246437/pexels-photo-1246437.jpeg"
-    },
-    {
-      title: "Understanding Rhythm",
-      progress: 0,
-      duration: "30 min",
-      status: "Not Started",
-      lastAccessed: "-",
-      image: "https://images.pexels.com/photos/4088012/pexels-photo-4088012.jpeg"
+  const { user } = useUser();
+  const [activeTab, setActiveTab] = useState<'scheduled' | 'in_progress' | 'completed'>('scheduled');
+  const [selectedSession, setSelectedSession] = useState<LessonSession | null>(null);
+  const [endLessonDialog, setEndLessonDialog] = useState(false);
+  const [feedbackDialog, setFeedbackDialog] = useState(false);
+  const [lessonNotes, setLessonNotes] = useState('');
+  const [homework, setHomework] = useState('');
+  const [feedback, setFeedback] = useState('');
+  
+  const { sessions, isLoading, isError, mutate } = useSessions({
+    userId: user?.id
+  });
+
+  const { mutate: startSession, isLoading: isStarting } = useStartSession();
+  const { mutate: endSession, isLoading: isEnding } = useEndSession();
+  const { mutate: submitFeedback, isLoading: isSubmitting } = useSubmitFeedback();
+
+  const categorizedSessions = useMemo(() => {
+    if (!sessions) return { scheduled: [], in_progress: [], completed: [] };
+    
+    return {
+      scheduled: sessions.filter(s => s.status === 'SCHEDULED'),
+      in_progress: sessions.filter(s => s.status === 'IN_PROGRESS'),
+      completed: sessions.filter(s => s.status === 'COMPLETED')
+    };
+  }, [sessions]);
+
+  const isStudent = user?.role === 'student';
+  const isMentor = user?.role === 'teacher';
+
+  const handleStartLesson = useCallback(async (session: LessonSession) => {
+    try {
+      await startSession(session.id);
+      toast({
+        title: "レッスンを開始しました",
+        description: "レッスンが開始されました。",
+      });
+      mutate();
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "レッスンの開始に失敗しました。",
+        variant: "destructive",
+      });
     }
-  ];
+  }, [startSession, mutate]);
+
+  const handleEndLesson = useCallback(async () => {
+    if (!selectedSession) return;
+    
+    try {
+      await endSession({
+        id: selectedSession.id,
+        lesson_notes: lessonNotes,
+        homework: homework,
+      });
+      toast({
+        title: "レッスンを終了しました",
+        description: "レッスンが正常に終了しました。",
+      });
+      setEndLessonDialog(false);
+      setLessonNotes('');
+      setHomework('');
+      setSelectedSession(null);
+      mutate();
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "レッスンの終了に失敗しました。",
+        variant: "destructive",
+      });
+    }
+  }, [selectedSession, lessonNotes, homework, endSession, mutate]);
+
+  const handleSubmitFeedback = useCallback(async () => {
+    if (!selectedSession) return;
+    
+    try {
+      await submitFeedback({
+        id: selectedSession.id,
+        feedback: feedback,
+        role: isStudent ? 'student' : 'mentor',
+      });
+      toast({
+        title: "フィードバックを送信しました",
+        description: "フィードバックが正常に送信されました。",
+      });
+      setFeedbackDialog(false);
+      setFeedback('');
+      setSelectedSession(null);
+      mutate();
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "フィードバックの送信に失敗しました。",
+        variant: "destructive",
+      });
+    }
+  }, [selectedSession, feedback, isStudent, submitFeedback, mutate]);
+
+  const canStartLesson = (session: LessonSession) => {
+    if (!isMentor) return false;
+    if (session.status !== 'SCHEDULED') return false;
+    
+    const now = new Date();
+    const scheduledStart = new Date(session.scheduled_start);
+    const thirtyMinutesBefore = subMinutes(scheduledStart, 30);
+    const thirtyMinutesAfter = addMinutes(scheduledStart, 30);
+    
+    return isWithinInterval(now, { start: thirtyMinutesBefore, end: thirtyMinutesAfter });
+  };
+
+  const formatSessionTime = (start: string, end: string) => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    return `${format(startDate, 'M月d日 HH:mm', { locale: ja })} - ${format(endDate, 'HH:mm', { locale: ja })}`;
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'SCHEDULED':
+        return <Badge variant="outline" className="text-blue-600 border-blue-600">予定</Badge>;
+      case 'IN_PROGRESS':
+        return <Badge className="bg-green-600 text-white">進行中</Badge>;
+      case 'COMPLETED':
+        return <Badge variant="secondary">完了</Badge>;
+      default:
+        return null;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">マイレッスン</h1>
+        </div>
+        <div className="grid grid-cols-1 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="p-6">
+              <div className="space-y-4">
+                <Skeleton className="h-6 w-1/3" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-1/4" />
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">マイレッスン</h1>
+        </div>
+        <Card className="p-6">
+          <div className="flex items-center gap-2 text-red-600">
+            <AlertCircleIcon className="w-5 h-5" />
+            <p>レッスンの読み込みに失敗しました。</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <>
-      {/* ページタイトルとアクション */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
-        <h1 className="text-2xl font-bold">My Lessons</h1>
-        <Button className="bg-black text-white w-full sm:w-auto">
-          Start New Lesson
-        </Button>
+      {/* ページタイトル */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">マイレッスン</h1>
       </div>
 
-      {/* Lessons Grid */}
-      <div className="grid grid-cols-1 gap-4">
-        {lessons.map((lesson, index) => (
-          <Card key={index} className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-              {/* Lesson Image */}
-              <div className="w-full sm:w-48 h-48 sm:h-32 flex-shrink-0 overflow-hidden rounded-lg">
-                <img 
-                  src={lesson.image} 
-                  alt={lesson.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+      {/* タブ */}
+      <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)} className="mb-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="scheduled">
+            予定 ({categorizedSessions.scheduled.length})
+          </TabsTrigger>
+          <TabsTrigger value="in_progress">
+            進行中 ({categorizedSessions.in_progress.length})
+          </TabsTrigger>
+          <TabsTrigger value="completed">
+            完了 ({categorizedSessions.completed.length})
+          </TabsTrigger>
+        </TabsList>
 
-              {/* Lesson Content */}
-              <div className="flex-1">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
-                  <div className="space-y-2 w-full sm:w-auto">
-                    <h3 className="text-lg font-semibold">{lesson.title}</h3>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+        <TabsContent value={activeTab} className="mt-6">
+          <div className="grid grid-cols-1 gap-4">
+            {categorizedSessions[activeTab].length === 0 ? (
+              <Card className="p-6">
+                <p className="text-center text-gray-500">
+                  {activeTab === 'scheduled' && '予定されているレッスンはありません'}
+                  {activeTab === 'in_progress' && '進行中のレッスンはありません'}
+                  {activeTab === 'completed' && '完了したレッスンはありません'}
+                </p>
+              </Card>
+            ) : (
+              categorizedSessions[activeTab].map((session: any) => (
+                <Card key={session.id} className="p-6">
+                  <div className="space-y-4">
+                    {/* ヘッダー */}
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold">
+                            {isStudent ? session.reservation.slot.teacher.full_name : session.reservation.student.full_name}
+                          </h3>
+                          {getStatusBadge(session.status)}
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          {session.reservation.slot.description || 'レッスン'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* 詳細情報 */}
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
-                        <ClockIcon className="w-4 h-4" />
-                        <span>{lesson.duration}</span>
+                        <CalendarIcon className="w-4 h-4" />
+                        <span>{formatSessionTime(session.scheduled_start, session.scheduled_end)}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        {lesson.status === "Completed" ? (
-                          <CheckCircleIcon className="w-4 h-4 text-green-500" />
-                        ) : lesson.status === "In Progress" ? (
-                          <PlayCircleIcon className="w-4 h-4 text-blue-500" />
-                        ) : (
-                          <ClockIcon className="w-4 h-4 text-gray-500" />
+                        <UserIcon className="w-4 h-4" />
+                        <span>
+                          {isStudent ? `メンター: ${session.reservation.slot.teacher.full_name}` : `生徒: ${session.reservation.student.full_name}`}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* レッスンメモ・宿題 */}
+                    {session.status === 'COMPLETED' && (
+                      <div className="space-y-3 pt-3 border-t">
+                        {session.lesson_notes && (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1 text-sm font-medium">
+                              <BookOpenIcon className="w-4 h-4" />
+                              <span>レッスンメモ</span>
+                            </div>
+                            <p className="text-sm text-gray-600 pl-5">{session.lesson_notes}</p>
+                          </div>
                         )}
-                        <span>{lesson.status}</span>
+                        {session.homework && (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1 text-sm font-medium">
+                              <BookOpenIcon className="w-4 h-4" />
+                              <span>宿題</span>
+                            </div>
+                            <p className="text-sm text-gray-600 pl-5">{session.homework}</p>
+                          </div>
+                        )}
+                        {(session.student_feedback || session.mentor_feedback) && (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-1 text-sm font-medium">
+                              <MessageSquareIcon className="w-4 h-4" />
+                              <span>フィードバック</span>
+                            </div>
+                            {session.student_feedback && isStudent && (
+                              <p className="text-sm text-gray-600 pl-5">あなた: {session.student_feedback}</p>
+                            )}
+                            {session.mentor_feedback && isMentor && (
+                              <p className="text-sm text-gray-600 pl-5">あなた: {session.mentor_feedback}</p>
+                            )}
+                            {session.student_feedback && isMentor && (
+                              <p className="text-sm text-gray-600 pl-5">生徒: {session.student_feedback}</p>
+                            )}
+                            {session.mentor_feedback && isStudent && (
+                              <p className="text-sm text-gray-600 pl-5">メンター: {session.mentor_feedback}</p>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <div>Last accessed: {lesson.lastAccessed}</div>
+                    )}
+
+                    {/* アクションボタン */}
+                    <div className="flex gap-2 pt-2">
+                      {session.status === 'SCHEDULED' && canStartLesson(session) && (
+                        <Button 
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={() => handleStartLesson(session)}
+                          disabled={isStarting}
+                        >
+                          <PlayCircleIcon className="w-4 h-4 mr-2" />
+                          レッスンを開始
+                        </Button>
+                      )}
+                      {session.status === 'IN_PROGRESS' && isMentor && (
+                        <Button 
+                          className="bg-red-600 hover:bg-red-700 text-white"
+                          onClick={() => {
+                            setSelectedSession(session);
+                            setEndLessonDialog(true);
+                          }}
+                        >
+                          レッスンを終了
+                        </Button>
+                      )}
+                      {session.status === 'COMPLETED' && !session[isStudent ? 'student_feedback' : 'mentor_feedback'] && (
+                        <Button 
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedSession(session);
+                            setFeedbackDialog(true);
+                          }}
+                        >
+                          <MessageSquareIcon className="w-4 h-4 mr-2" />
+                          フィードバックを書く
+                        </Button>
+                      )}
                     </div>
                   </div>
-                  <Button 
-                    variant={lesson.status === "Completed" ? "outline" : "default"}
-                    className="w-full sm:w-auto"
-                  >
-                    {lesson.status === "Completed" ? "Review" : "Continue"}
-                  </Button>
-                </div>
-                {lesson.status === "In Progress" && (
-                  <div className="mt-4">
-                    <div className="h-2 bg-gray-200 rounded-full">
-                      <div 
-                        className="h-2 bg-blue-500 rounded-full"
-                        style={{ width: `${lesson.progress}%` }}
-                      ></div>
-                    </div>
-                    <div className="mt-1 text-sm text-gray-500 text-right">
-                      {lesson.progress}% Complete
-                    </div>
-                  </div>
-                )}
-              </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* レッスン終了ダイアログ */}
+      <Dialog open={endLessonDialog} onOpenChange={setEndLessonDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>レッスンを終了</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="lesson-notes">レッスンメモ（必須）</Label>
+              <Textarea
+                id="lesson-notes"
+                placeholder="今日のレッスンの内容をメモしてください..."
+                value={lessonNotes}
+                onChange={(e) => setLessonNotes(e.target.value)}
+                className="min-h-[100px]"
+              />
             </div>
-          </Card>
-        ))}
-      </div>
+            <div className="space-y-2">
+              <Label htmlFor="homework">宿題（任意）</Label>
+              <Textarea
+                id="homework"
+                placeholder="次回までの宿題や課題があれば記入してください..."
+                value={homework}
+                onChange={(e) => setHomework(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEndLessonDialog(false)}>
+              キャンセル
+            </Button>
+            <Button 
+              onClick={handleEndLesson} 
+              disabled={!lessonNotes.trim() || isEnding}
+            >
+              レッスンを終了
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* フィードバックダイアログ */}
+      <Dialog open={feedbackDialog} onOpenChange={setFeedbackDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>フィードバックを送信</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="feedback">フィードバック</Label>
+              <Textarea
+                id="feedback"
+                placeholder="レッスンの感想や改善点などを記入してください..."
+                value={feedback}
+                onChange={(e) => setFeedback(e.target.value)}
+                className="min-h-[120px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFeedbackDialog(false)}>
+              キャンセル
+            </Button>
+            <Button 
+              onClick={handleSubmitFeedback} 
+              disabled={!feedback.trim() || isSubmitting}
+            >
+              送信
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
