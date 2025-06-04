@@ -83,8 +83,8 @@ export default function DashboardLayout({ children, userRole, userName, title, f
         },
         { 
           icon: FolderIcon, 
-          label: "コンテンツ管理", 
-          path: "/dashboard/content" 
+          label: "教材管理", 
+          path: "/dashboard/materials" 
         },
         ...commonItems.slice(1)
       ];
@@ -130,6 +130,11 @@ export default function DashboardLayout({ children, userRole, userName, title, f
           icon: BookOpenIcon, 
           label: "マイレッスン", 
           path: "/dashboard/my-lessons" 
+        },
+        { 
+          icon: FolderIcon, 
+          label: "教材管理", 
+          path: "/dashboard/materials" 
         },
         { 
           icon: DumbbellIcon, 
