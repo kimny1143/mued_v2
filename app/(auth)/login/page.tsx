@@ -135,9 +135,14 @@ function LoginContent() {
   
   // ログイン済みならリダイレクト
   useEffect(() => {
+    // セッションチェックが既に実行されたかどうかのフラグ
+    let hasChecked = false;
+
     const checkSession = async () => {
-      // isProcessingHashフラグがtrueの場合は処理をスキップ
-      if (isProcessingHash) return;
+      // isProcessingHashフラグがtrueの場合、または既にチェック済みの場合は処理をスキップ
+      if (isProcessingHash || hasChecked) return;
+      
+      hasChecked = true; // チェック済みフラグを立てる
       
       try {
         const { data } = await supabase.auth.getSession();
@@ -170,7 +175,7 @@ function LoginContent() {
     // 初回のみセッションチェックを実行
     const initialCheck = setTimeout(checkSession, 500);
     return () => clearTimeout(initialCheck);
-  }, [router, isProcessingHash]);
+  }, [isProcessingHash]); // routerを依存配列から削除
   
   // Google認証でサインイン
   const handleGoogleSignIn = async () => {
