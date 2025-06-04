@@ -33,6 +33,6 @@ export default async function SlotsCalendarPage() {
   const userName = user.name || user.email || 'ユーザー';
 
   return (
-    <SlotsCalendarClient userRole={userRole} userName={userName} />
+    <SlotsCalendarClient userRole={userRole} />
   );
 }

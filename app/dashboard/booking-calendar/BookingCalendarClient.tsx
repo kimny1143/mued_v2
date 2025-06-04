@@ -8,7 +8,6 @@ import { Button } from '@/app/components/ui/button';
 import { CalendarClock, ArrowRight, ArrowLeft } from 'lucide-react';
 import { TimeSlot } from './_components/TimeSlotDisplay';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import DashboardLayout from '../DashboardLayout';
 
 // デバッグモード
 const DEBUG = true;
@@ -202,10 +201,9 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
 
 interface BookingCalendarClientProps {
   userRole: string;
-  userName: string;
 }
 
-export default function BookingCalendarClient({ userRole, userName }: BookingCalendarClientProps) {
+export default function BookingCalendarClient({ userRole }: BookingCalendarClientProps) {
   const [mentors, setMentors] = useState<Mentor[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [myReservations, setMyReservations] = useState<Reservation[]>([]);
@@ -550,48 +548,50 @@ export default function BookingCalendarClient({ userRole, userName }: BookingCal
   }
 
   return (
-    <DashboardLayout 
-      userRole={userRole}
-      userName={userName}
-      title="メンターレッスン予約"
-      fullWidth={true}
-      actions={
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="text-sm text-gray-600 hidden sm:block">
-            {mentors.length}人のメンターが利用可能
+    <>
+      {/* ページヘッダー */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">メンターレッスン予約</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              {mentors.length}人のメンターが利用可能
+            </p>
           </div>
-          <Button
-            onClick={refreshData}
-            variant="outline"
-            size="sm"
-            disabled={isLoading}
-            className="text-xs"
-          >
-            {isLoading ? '更新中...' : '🔄 更新'}
-          </Button>
-          
-          {/* リアルタイム接続状態表示 */}
-          <div className="flex items-center gap-1 text-xs">
-            <div className="flex items-center gap-1">
-              <div className={`w-2 h-2 rounded-full ${
-                realtimeStatus.lessonSlots === 'connected' ? 'bg-green-500' :
-                realtimeStatus.lessonSlots === 'connecting' ? 'bg-yellow-500' :
-                realtimeStatus.lessonSlots === 'error' ? 'bg-red-500' : 'bg-gray-400'
-              }`} />
-              <span className="text-gray-500 hidden sm:inline">スロット</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className={`w-2 h-2 rounded-full ${
-                realtimeStatus.reservations === 'connected' ? 'bg-green-500' :
-                realtimeStatus.reservations === 'connecting' ? 'bg-yellow-500' :
-                realtimeStatus.reservations === 'error' ? 'bg-red-500' : 'bg-gray-400'
-              }`} />
-              <span className="text-gray-500 hidden sm:inline">予約</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={refreshData}
+              variant="outline"
+              size="sm"
+              disabled={isLoading}
+              className="text-xs"
+            >
+              {isLoading ? '更新中...' : '🔄 更新'}
+            </Button>
+            
+            {/* リアルタイム接続状態表示 */}
+            <div className="flex items-center gap-1 text-xs">
+              <div className="flex items-center gap-1">
+                <div className={`w-2 h-2 rounded-full ${
+                  realtimeStatus.lessonSlots === 'connected' ? 'bg-green-500' :
+                  realtimeStatus.lessonSlots === 'connecting' ? 'bg-yellow-500' :
+                  realtimeStatus.lessonSlots === 'error' ? 'bg-red-500' : 'bg-gray-400'
+                }`} />
+                <span className="text-gray-500 hidden sm:inline">スロット</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className={`w-2 h-2 rounded-full ${
+                  realtimeStatus.reservations === 'connected' ? 'bg-green-500' :
+                  realtimeStatus.reservations === 'connecting' ? 'bg-yellow-500' :
+                  realtimeStatus.reservations === 'error' ? 'bg-red-500' : 'bg-gray-400'
+                }`} />
+                <span className="text-gray-500 hidden sm:inline">予約</span>
+              </div>
             </div>
           </div>
         </div>
-      }
-    >
+      </div>
+
       {error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg" role="alert">
           <p>{error}</p>
@@ -611,6 +611,6 @@ export default function BookingCalendarClient({ userRole, userName }: BookingCal
           onRefreshData={refreshData} // データ再取得関数を渡す
         />
       )}
-    </DashboardLayout>
+    </>
   );
 }

@@ -33,6 +33,6 @@ export default async function BookingCalendarPage() {
   const userName = user.name || user.email || 'ユーザー';
 
   return (
-    <BookingCalendarClient userRole={userRole} userName={userName} />
+    <BookingCalendarClient userRole={userRole} />
   );
 }

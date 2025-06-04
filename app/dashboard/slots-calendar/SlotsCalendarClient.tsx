@@ -11,7 +11,6 @@ import { ReservationManagementModal, type ReservationManagementModalProps } from
 import { toast } from 'sonner';
 import { api, ApiError } from '@/lib/api-client';
 import { MentorDayView } from './_components/MentorDayView';
-import DashboardLayout from '../DashboardLayout';
 
 // デバッグモード
 const DEBUG = true;
@@ -67,10 +66,9 @@ interface ReservationData {
 
 interface SlotsCalendarClientProps {
   userRole: string;
-  userName: string;
 }
 
-export default function SlotsCalendarClient({ userRole, userName }: SlotsCalendarClientProps) {
+export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientProps) {
   const [slots, setSlots] = useState<MentorLessonSlot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -746,17 +744,15 @@ export default function SlotsCalendarClient({ userRole, userName }: SlotsCalenda
   };
 
   return (
-    <DashboardLayout 
-      userRole={userRole}
-      userName={userName}
-      title="レッスンスロット管理"
-      fullWidth={true}
-      actions={
-        <div className="text-sm text-gray-600 hidden sm:block">
+    <>
+      {/* ページヘッダー */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">レッスンスロット管理</h1>
+        <p className="text-sm text-gray-600 mt-1">
           あなたのレッスン予定と予約状況を管理できます
-        </div>
-      }
-    >
+        </p>
+      </div>
+
       {error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg" role="alert">
           <p>{error}</p>
@@ -828,6 +824,6 @@ export default function SlotsCalendarClient({ userRole, userName }: SlotsCalenda
           </div>
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 } 
