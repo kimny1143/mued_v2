@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from '@tanstack/react-query';
-import { format, isToday, isFuture, startOfDay } from "date-fns";
+import { format, isToday, isFuture } from "date-fns";
 import { api, ApiError } from '@/lib/api-client';
 
 // APIレスポンス用の型定義
@@ -41,15 +41,18 @@ export interface UseTodayScheduleOptions {
 
 export function useTodaySchedule({ userId, userRole }: UseTodayScheduleOptions) {
   return useQuery<ScheduleItem[]>({
-    queryKey: ['reservations', { status: 'CONFIRMED', today: true }],
+    queryKey: ['reservations', userId, { status: 'CONFIRMED', today: true }],
     queryFn: async () => {
-      if (!userId) return [];
+      // userId が undefined の場合は早期リターン
+      if (!userId || userId === 'undefined') {
+        console.log('useTodaySchedule: userId が利用できません', { userId });
+        return [];
+      }
 
       try {
         const reservations = await api.get(`/api/reservations?status=CONFIRMED`) as Reservation[];
         console.log('取得した確定済み予約:', { userRole, userId, reservations });
         
-        const today = startOfDay(new Date());
         const filteredReservations = reservations.filter(res => {
           const lessonDate = new Date(res.bookedStartTime);
           return isToday(lessonDate) || isFuture(lessonDate);
@@ -74,8 +77,10 @@ export function useTodaySchedule({ userId, userRole }: UseTodayScheduleOptions) 
         throw err;
       }
     },
-    enabled: !!userId,
+    enabled: !!userId && userId !== 'undefined',
+    retry: false, // 認証エラーでリトライしない
     staleTime: 30 * 1000, // 30秒間はキャッシュを新鮮と見なす
+    refetchOnWindowFocus: false, // ウィンドウフォーカス時の再フェッチを無効化
     initialData: [],
   });
 }

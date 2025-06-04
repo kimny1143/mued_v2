@@ -15,7 +15,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string>('');
   const router = useRouter();
-  const { user, loading: userLoading, error } = useUser();
+  const { user, loading: userLoading, error, isAuthenticated } = useUser();
 
   // 認証状態を確認（ページ保護用）
   useEffect(() => {
@@ -63,10 +63,48 @@ export default function DashboardPage() {
     }
   }, []);
 
-  if (loading) {
+  // 認証チェックとユーザー情報の両方が完了するまで待機
+  if (loading || userLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-sm">Loading dashboard...</p>
+        <div className="flex flex-col items-center space-y-2">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <p className="text-sm text-gray-600">ダッシュボードを読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 認証状態を確認
+  if (!isAuthenticated) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-sm text-gray-600">認証を確認中...</p>
+      </div>
+    );
+  }
+
+  // ユーザー情報が取得できていない場合の処理
+  if (!user || !user.id) {
+    console.warn('ユーザー情報が未取得:', { user, isAuthenticated });
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center space-y-2">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <p className="text-sm text-gray-600">ユーザー情報を取得中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ロールが未取得の場合も待機
+  if (!userRole && userLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center space-y-2">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <p className="text-sm text-gray-600">ユーザー情報を取得中...</p>
+        </div>
       </div>
     );
   }
@@ -76,8 +114,8 @@ export default function DashboardPage() {
       {/* ロール別の予約状況セクション */}
       <section className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <TodayScheduleCard userRole={userRole} userId={user?.id} />
-          <ReservationStatusCard userRole={userRole} userId={user?.id} />
+          <TodayScheduleCard userRole={userRole} userId={user.id} />
+          <ReservationStatusCard userRole={userRole} userId={user.id} />
         </div>
       </section>
 

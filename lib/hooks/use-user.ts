@@ -5,6 +5,14 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Session } from '@supabase/supabase-js';
 import { useSubscriptionSimple } from './use-subscription-simple';
 import { getPlanByPriceId } from '@/app/stripe-config';
+import { 
+  isAuthInitialized, 
+  isAuthInitializing, 
+  setAuthInitializing, 
+  setAuthInitialized,
+  getInitializationPromise,
+  setInitializationPromise
+} from '@/lib/auth-initialization';
 
 export interface User {
   id: string;
@@ -29,15 +37,28 @@ export function useUser() {
     error: subscriptionError
   } = useSubscriptionSimple();
 
-  // 認証状態の初期化（1回のみ実行）
+  // 認証状態の初期化（グローバルに1回のみ実行）
   useEffect(() => {
     // 既に初期化済みの場合はスキップ
-    if (initialized.current) {
+    if (isAuthInitialized()) {
+      console.log('認証状態は既に初期化済み（グローバル）');
       return;
     }
     
-    initialized.current = true;
-    console.log('認証状態初期化開始 (1回目)');
+    // 初期化中の場合は、既存のPromiseを待つ
+    if (isAuthInitializing()) {
+      console.log('認証状態初期化中 - 既存の初期化を待機');
+      const existingPromise = getInitializationPromise();
+      if (existingPromise) {
+        existingPromise.then(() => {
+          console.log('既存の認証初期化完了を検知');
+        });
+      }
+      return;
+    }
+    
+    console.log('認証状態初期化開始（グローバル初回）');
+    setAuthInitializing(true);
 
     let isMounted = true;
 
@@ -193,8 +214,12 @@ export function useUser() {
       }
     );
 
-    // 初期認証状態を確認
-    initializeAuth();
+    // 初期化Promiseを設定して実行
+    const initPromise = initializeAuth().finally(() => {
+      setAuthInitializing(false);
+      setAuthInitialized(true);
+    });
+    setInitializationPromise(initPromise);
 
     // クリーンアップ
     return () => {

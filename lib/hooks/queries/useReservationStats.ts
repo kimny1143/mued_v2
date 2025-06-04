@@ -24,9 +24,13 @@ export interface UseReservationStatsOptions {
 
 export function useReservationStats({ userId, userRole }: UseReservationStatsOptions) {
   return useQuery<ReservationStats>({
-    queryKey: ['reservations', { stats: true }],
+    queryKey: ['reservations', userId, { stats: true }],
     queryFn: async () => {
-      if (!userId) return { pendingApproval: 0, approved: 0, confirmed: 0 };
+      // userId が undefined の場合は早期リターン
+      if (!userId || userId === 'undefined') {
+        console.log('useReservationStats: userId が利用できません', { userId });
+        return { pendingApproval: 0, approved: 0, confirmed: 0 };
+      }
 
       try {
         console.log('予約状況取得開始:', { userRole, userId });
@@ -51,8 +55,9 @@ export function useReservationStats({ userId, userRole }: UseReservationStatsOpt
         return { pendingApproval: 0, approved: 0, confirmed: 0 };
       }
     },
-    enabled: !!userId,
+    enabled: !!userId && userId !== 'undefined',
+    retry: false, // 認証エラーでリトライしない
     staleTime: 30 * 1000, // 30秒間はキャッシュを新鮮と見なす
-    initialData: { pendingApproval: 0, approved: 0, confirmed: 0 },
+    refetchOnWindowFocus: false, // ウィンドウフォーカス時の再フェッチを無効化
   });
 }
