@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
-  BellIcon, 
   UserCircleIcon, 
   HomeIcon, 
   BookOpenIcon, 
@@ -169,9 +168,9 @@ export default function DashboardLayout({ children, userRole, userName, title, f
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <Button
           variant="ghost"
-          size="icon"
+          size="sm"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="bg-white shadow-md"
+          className="bg-white shadow-md h-10 w-10 p-0"
         >
           {isMobileMenuOpen ? <XIcon /> : <MenuIcon />}
         </Button>
@@ -190,9 +189,9 @@ export default function DashboardLayout({ children, userRole, userName, title, f
           </Link>
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="hidden lg:flex"
+            className="hidden lg:flex h-8 w-8 p-0"
           >
             {isSidebarOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
           </Button>
