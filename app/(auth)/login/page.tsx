@@ -169,6 +169,21 @@ function LoginContent() {
   
   // ログイン済みならリダイレクト
   useEffect(() => {
+    // ログアウト直後のチェックを追加
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFromLogout = urlParams.get('from') === 'logout';
+    
+    if (isFromLogout) {
+      console.log('[ログアウト後のアクセス検出]');
+      // URLパラメータをクリア
+      window.history.replaceState({}, '', '/login');
+      // ログアウト直後は2秒間セッションチェックをスキップ
+      const skipDelay = setTimeout(() => {
+        console.log('[ログアウト後のスキップ期間終了]');
+      }, 2000);
+      return () => clearTimeout(skipDelay);
+    }
+    
     // リダイレクト中またはハッシュ処理中はスキップ
     if (shouldRedirect || isProcessingHash) return;
     
@@ -187,13 +202,35 @@ function LoginContent() {
       });
       
       try {
+        // セッションをリフレッシュして最新の状態を取得
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError) {
+          console.log('[セッションリフレッシュエラー]', refreshError);
+          // エラーの場合はセッションなしとして扱う
+          return;
+        }
+        
         const { data } = await supabase.auth.getSession();
         
         // コンポーネントがアンマウントされていたら処理を中断
         if (!mounted) return;
         
-        // セッションが存在し、かつエラーがなければリダイレクト
-        if (data.session) {
+        // セッションが存在し、かつ有効期限内であればリダイレクト
+        if (data.session && data.session.expires_at) {
+          const expiresAt = new Date(data.session.expires_at * 1000);
+          const now = new Date();
+          
+          if (expiresAt <= now) {
+            console.log('[セッション期限切れ]', {
+              expiresAt: expiresAt.toISOString(),
+              now: now.toISOString()
+            });
+            // セッションが期限切れの場合はクリア
+            await supabase.auth.signOut();
+            return;
+          }
+          
           console.log('[チェック] 既存セッション検出:', data.session.user.email);
           
           // 即座にリダイレクト状態に設定
