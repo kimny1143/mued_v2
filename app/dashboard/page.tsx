@@ -18,17 +18,14 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: userLoading, error, isAuthenticated } = useUser();
   
-  // デバッグ用ログ
+  // デバッグ用ログ（初回のみ）
   useEffect(() => {
-    console.log('🎯 ダッシュボードページ状態:', {
-      loading,
-      userLoading,
-      roleLoading,
+    console.log('🎯 ダッシュボードページ初期化:', {
       isAuthenticated,
       userId: user?.id,
       userRole
     });
-  }, [loading, userLoading, roleLoading, isAuthenticated, user, userRole]);
+  }, []); // 空の依存配列で初回のみ実行
 
   // 認証状態を確認（ページ保護用）
   useEffect(() => {
@@ -48,7 +45,7 @@ export default function DashboardPage() {
   // ユーザーロールを取得
   useEffect(() => {
     const fetchUserRole = async () => {
-      if (user?.id) {
+      if (user?.id && userRole === null) { // すでにロールが設定されている場合はスキップ
         console.log('📋 ユーザーロール取得開始:', user.id);
         setRoleLoading(true);
         try {
@@ -68,14 +65,14 @@ export default function DashboardPage() {
         } finally {
           setRoleLoading(false);
         }
-      } else {
+      } else if (!user?.id) {
         console.log('ユーザーIDがないためロール取得をスキップ');
         setRoleLoading(false);
       }
     };
 
     fetchUserRole();
-  }, [user]);
+  }, [user?.id, userRole]); // user.idとuserRoleを依存配列に含める
 
   // 開発環境でのみデバッグ診断を実行
   useEffect(() => {
@@ -89,7 +86,6 @@ export default function DashboardPage() {
 
   // すべての初期化が完了するまで待機
   if (loading || userLoading || roleLoading) {
-    console.log('⏳ ローディング中:', { loading, userLoading, roleLoading });
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="flex flex-col items-center space-y-2">
@@ -125,7 +121,6 @@ export default function DashboardPage() {
   
   // ロールが取得できていない場合はデフォルト値を使用
   const finalUserRole = userRole || 'student';
-  console.log('🎨 最終的なユーザーロール:', finalUserRole);
 
   return (
     <>

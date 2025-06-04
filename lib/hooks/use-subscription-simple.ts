@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import { isAuthInitialized } from '@/lib/auth-initialization';
 
 /**
  * シンプルなサブスクリプション情報取得フック
@@ -21,12 +20,6 @@ export function useSubscriptionSimple() {
 
   useEffect(() => {
     async function fetchSubscription() {
-      // 認証が初期化されていない場合はスキップ
-      if (!isAuthInitialized()) {
-        console.log('認証未初期化 - サブスクリプション取得をスキップ');
-        return;
-      }
-      
       // 既に取得中の場合はスキップ
       if (fetchingRef.current) {
         console.log('サブスクリプション取得中 - スキップ');
@@ -164,14 +157,6 @@ export function useSubscriptionSimple() {
       }
     }
 
-    // 認証が初期化されていない場合は、500ms後に再試行
-    if (!isAuthInitialized()) {
-      const timer = setTimeout(() => {
-        fetchSubscription();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-    
     fetchSubscription();
   }, []); // 依存配列を空にして1回だけ実行
 

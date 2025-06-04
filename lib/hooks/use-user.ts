@@ -5,15 +5,6 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Session } from '@supabase/supabase-js';
 import { useSubscriptionSimple } from './use-subscription-simple';
 import { getPlanByPriceId } from '@/app/stripe-config';
-import { 
-  isAuthInitialized, 
-  isAuthInitializing, 
-  setAuthInitializing, 
-  setAuthInitialized,
-  getInitializationPromise,
-  setInitializationPromise
-} from '@/lib/auth-initialization';
-import { getGlobalAuthState, setGlobalAuthState, subscribeToAuthState } from '@/lib/global-auth-state';
 
 export interface User {
   id: string;
@@ -30,7 +21,6 @@ export function useUser() {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const initialized = useRef(false);
-  const hasSetInitialState = useRef(false);
   
   // シンプルなサブスクリプション情報を取得
   const { 
@@ -39,38 +29,15 @@ export function useUser() {
     error: subscriptionError
   } = useSubscriptionSimple();
 
-  // グローバル認証状態を購読
-  useEffect(() => {
-    const unsubscribe = subscribeToAuthState((state) => {
-      if (state.initialized && !hasSetInitialState.current) {
-        hasSetInitialState.current = true;
-        console.log('グローバル認証状態を適用:', state);
-        setUser(state.user);
-        setSession(state.session);
-        setIsAuthenticated(state.isAuthenticated);
-        setLoading(false);
-      }
-    });
-    
-    return unsubscribe;
-  }, []);
-
-  // 認証状態の初期化（グローバルに1回のみ実行）
+  // 認証状態の初期化
   useEffect(() => {
     // 既に初期化済みの場合はスキップ
-    if (isAuthInitialized()) {
-      console.log('認証状態は既に初期化済み（グローバル）');
+    if (initialized.current) {
       return;
     }
     
-    // 初期化中の場合はスキップ
-    if (isAuthInitializing()) {
-      console.log('認証状態初期化中 - 既存の初期化を待機');
-      return;
-    }
-    
-    console.log('認証状態初期化開始（グローバル初回）');
-    setAuthInitializing(true);
+    initialized.current = true;
+    console.log('認証状態初期化開始');
 
     let isMounted = true;
 
@@ -125,13 +92,6 @@ export function useUser() {
               
               if (isMounted) {
                 setUser(userData);
-                // グローバル状態にも保存
-                setGlobalAuthState({
-                  user: userData,
-                  session: currentSession,
-                  isAuthenticated: true,
-                  initialized: true
-                });
               }
               return;
             }
@@ -153,13 +113,6 @@ export function useUser() {
               
               if (isMounted) {
                 setUser(userData);
-                // グローバル状態にも保存
-                setGlobalAuthState({
-                  user: userData,
-                  session: currentSession,
-                  isAuthenticated: true,
-                  initialized: true
-                });
               }
             } else {
               console.log('APIからユーザー詳細を取得成功:', userDetails);
@@ -177,13 +130,6 @@ export function useUser() {
               
               if (isMounted) {
                 setUser(userData);
-                // グローバル状態にも保存
-                setGlobalAuthState({
-                  user: userData,
-                  session: currentSession,
-                  isAuthenticated: true,
-                  initialized: true
-                });
               }
             }
           } catch (apiError) {
@@ -201,25 +147,11 @@ export function useUser() {
             
             if (isMounted) {
               setUser(userData);
-              // グローバル状態にも保存
-              setGlobalAuthState({
-                user: userData,
-                session: currentSession,
-                isAuthenticated: true,
-                initialized: true
-              });
             }
           }
         } else {
           if (isMounted) {
             setUser(null);
-            // グローバル状態にも保存
-            setGlobalAuthState({
-              user: null,
-              session: null,
-              isAuthenticated: false,
-              initialized: true
-            });
           }
         }
       } catch (err) {
@@ -261,12 +193,8 @@ export function useUser() {
       }
     );
 
-    // 初期化Promiseを設定して実行
-    const initPromise = initializeAuth().finally(() => {
-      setAuthInitializing(false);
-      setAuthInitialized(true);
-    });
-    setInitializationPromise(initPromise);
+    // 初期認証状態を確認
+    initializeAuth();
 
     // クリーンアップ
     return () => {
