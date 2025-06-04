@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { mutate } from 'swr';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 interface StartSessionResponse {
   success: boolean;
@@ -64,11 +65,21 @@ export function useStartSession() {
     setError(null);
 
     try {
+      // 認証トークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token;
+      
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
       const response = await fetch(`/api/sessions/${sessionId}/start`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -104,11 +115,21 @@ export function useEndSession() {
     setError(null);
 
     try {
+      // 認証トークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token;
+      
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
       const response = await fetch(`/api/sessions/${sessionId}/end`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
 
@@ -145,11 +166,28 @@ export function useSubmitFeedback() {
     setError(null);
 
     try {
+      // 認証トークンを取得
+      const { data: sessionData } = await supabaseBrowser.auth.getSession();
+      const token = sessionData.session?.access_token;
+      
+      if (!token) {
+        throw new Error('認証が必要です');
+      }
+
+      console.log('submitFeedback - フィードバック送信開始:', {
+        sessionId,
+        role: data.role,
+        hasRating: data.rating !== undefined,
+        tokenPresent: !!token
+      });
+
       const response = await fetch(`/api/sessions/${sessionId}/feedback`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
 
@@ -160,6 +198,13 @@ export function useSubmitFeedback() {
 
       const result = await response.json();
       
+      console.log('submitFeedback - フィードバック送信成功:', {
+        sessionId: result.feedback?.id,
+        hasStudentFeedback: !!result.feedback?.student_feedback,
+        hasMentorFeedback: !!result.feedback?.mentor_feedback,
+        rating: result.feedback?.rating
+      });
+      
       // キャッシュを更新
       await mutate(`/api/sessions/${sessionId}`);
       await mutate('/api/sessions');
@@ -167,6 +212,7 @@ export function useSubmitFeedback() {
       return result;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'エラーが発生しました';
+      console.error('submitFeedback - エラー:', errorMessage);
       setError(errorMessage);
       return null;
     } finally {
