@@ -2,27 +2,27 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@/lib/hooks/use-user";
 import { Card } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { TodayScheduleCard } from "@/app/components/dashboard/TodayScheduleCard";
 import { ReservationStatusCard } from "@/app/components/dashboard/ReservationStatusCard";
+import { useDashboardData } from "@/lib/hooks/use-dashboard-data";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, loading: userLoading, isAuthenticated } = useUser();
+  const { data, isLoading, error } = useDashboardData();
   const [redirecting, setRedirecting] = useState(false);
 
-  // 認証状態を確認（ページ保護用）
+  // 認証エラーの場合はリダイレクト
   useEffect(() => {
-    if (!userLoading && !isAuthenticated && !redirecting) {
+    if (error?.message === 'Unauthorized' && !redirecting) {
       setRedirecting(true);
       router.push('/login');
     }
-  }, [userLoading, isAuthenticated, router, redirecting]);
+  }, [error, router, redirecting]);
 
   // スケルトンUIを表示（初期読み込み時）
-  if (userLoading || !user) {
+  if (isLoading || !data) {
     return (
       <>
         {/* スケルトンUI - 実際のコンテンツと同じレイアウト */}
@@ -71,16 +71,26 @@ export default function DashboardPage() {
     );
   }
 
-  // ユーザーロールはuseUserフックから直接取得
-  const userRole = user.role_id || 'student';
+  // データから必要な情報を取得
+  const userRole = data.user.role_id || 'student';
+  const todaySchedule = data.dashboard.todaySchedule || [];
+  const reservationStats = data.dashboard.reservationStats || { pendingApproval: 0, approved: 0, confirmed: 0 };
 
   return (
     <>
       {/* ロール別の予約状況セクション */}
       <section className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <TodayScheduleCard userRole={userRole} userId={user.id} />
-          <ReservationStatusCard userRole={userRole} userId={user.id} />
+          <TodayScheduleCard 
+            userRole={userRole} 
+            userId={data.user.id}
+            initialData={todaySchedule}
+          />
+          <ReservationStatusCard 
+            userRole={userRole} 
+            userId={data.user.id}
+            initialData={reservationStats}
+          />
         </div>
       </section>
 
