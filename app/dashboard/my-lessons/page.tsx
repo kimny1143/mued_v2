@@ -57,7 +57,7 @@ export default function Page() {
   }, [sessions]);
 
   const isStudent = user?.role_id === 'student';
-  const isMentor = user?.role_id === 'teacher';
+  const isMentor = user?.role_id === 'teacher' || user?.role_id === 'mentor';
 
   const handleStartLesson = useCallback(async (session: LessonSession) => {
     try {
