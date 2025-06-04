@@ -19,6 +19,7 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessingHash, setIsProcessingHash] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
   
   // URLのエラーパラメータがあれば表示
   useEffect(() => {
@@ -75,6 +76,7 @@ function LoginContent() {
               const isLocalRedirect = window.location.origin === baseUrl || 
                                      (baseUrl.includes('localhost') && window.location.host.includes('localhost'));
               
+              setShouldRedirect(true);
               if (isLocalRedirect) {
                 // 同一オリジンならルーターを使用
                 currentRouter.push('/dashboard');
@@ -110,6 +112,7 @@ function LoginContent() {
                     // URLのハッシュ部分をクリア
                     window.history.replaceState({}, document.title, window.location.pathname);
                     
+                    setShouldRedirect(true);
                     currentRouter.push('/dashboard');
                     return;
                   }
@@ -144,8 +147,8 @@ function LoginContent() {
     let mounted = true;
 
     const checkSession = async () => {
-      // isProcessingHashフラグがtrueの場合、または既にチェック済みの場合は処理をスキップ
-      if (isProcessingHash || hasChecked || !mounted) return;
+      // isProcessingHashフラグがtrueの場合、または既にチェック済みの場合、またはリダイレクト中の場合は処理をスキップ
+      if (isProcessingHash || hasChecked || !mounted || shouldRedirect) return;
       
       hasChecked = true; // チェック済みフラグを立てる
       
@@ -167,6 +170,7 @@ function LoginContent() {
           const isLocalRedirect = window.location.origin === baseUrl || 
                               (baseUrl.includes('localhost') && window.location.host.includes('localhost'));
           
+          setShouldRedirect(true);
           if (isLocalRedirect) {
             // 同じオリジンならルーター使用
             currentRouter.push('/dashboard');
@@ -186,7 +190,7 @@ function LoginContent() {
       mounted = false;
       clearTimeout(initialCheck);
     };
-  }, [isProcessingHash]); // routerを依存配列から削除
+  }, [isProcessingHash, shouldRedirect]); // shouldRedirectを依存配列に追加
   
   // Google認証でサインイン
   const handleGoogleSignIn = async () => {
@@ -218,6 +222,18 @@ function LoginContent() {
     }
   };
   
+  // リダイレクト中の場合は、リダイレクト画面を表示
+  if (shouldRedirect) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">ダッシュボードへ移動中...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-6 shadow-md">
