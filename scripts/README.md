@@ -1,131 +1,151 @@
-# Scripts Directory 整理計画
+# Scripts Directory
 
-## 現在の状況
-scriptsフォルダに40以上のスクリプトが存在し、何を使うべきか分からない状態。
+MUED LMSプロジェクトの管理・メンテナンス用スクリプト集
 
-## 整理方針
-
-### 🟢 保持するスクリプト（DBリセット後の初期設定に必要）
-
-#### 1. 環境リセット・初期化
-- `reset-development-environment.js` - **メイン**: 完全環境リセット
-- `check-environment-safety.js` - 環境安全性チェック
-- `seed-test-db.ts` - テストデータ投入
-
-#### 2. 開発時デバッグ・確認
-- `check-current-user-customer.js` - ユーザー状況確認
-- `debug-frontend-subscription.js` - フロントエンド状況確認
-- `check-supabase-permissions.ts` - 権限確認
-
-#### 3. Stripe連携修正
-- `sync-stripe-to-supabase.js` - Stripe-Supabase同期
-- `fix-customer-mismatch.js` - 顧客データ不整合修正
-
-#### 4. 環境設定
-- `gen-env.ts` - 環境変数生成
-- `check-env.js` - 環境変数確認
-
-### 🔴 削除対象スクリプト（古い・重複・特定問題用）
-
-#### Webhook関連（古い問題解決済み）
-- `check-webhook-logs.js`
-- `trigger-stripe-webhook.js`
-- `test-webhook-direct.js`
-- `update-stripe-webhook-preview.js`
-- `update-stripe-webhook.js`
-- `test-new-webhook.js`
-- `webhook-reset.js`
-- `fix-webhook-supabase.js`
-- `debug-webhook-error.js`
-- `test-webhook-retry.js`
-- `test-webhook-endpoint.js`
-- `test-webhook.js`
-- `test-stripe-webhook.ts`
-
-#### 特定問題修正用（一時的）
-- `fix-subscription-sync.js` - 新しいリセットスクリプトに統合済み
-- `investigate-stripe-subscriptions.js` - デバッグ用、必要時のみ
-- `debug-customer-subscription.js` - 重複機能
-- `update-subscription-manually.js` - 手動修正用、不要
-- `fix-subscription-data.js` - 重複機能
-- `cleanup-stripe-data.js` - リセットスクリプトに統合済み
-
-#### SQL修正ファイル（一時的）
-- `fix-stripe-table-permissions.sql`
-- `fix-stripe-sync-permissions.sql`
-- `fix-test-customer-issue.sql`
-- `fix-billing-portal-issue.sql`
-
-#### その他不要
-- `setup-protection-bypass.js`
-- `create-free-plan.js`
-- `check-supabase-tables.js`
-- `check-stripe-prices.js`
-- `add-dynamic-flag.js`
-- `add-dynamic-flag.ts`
-- `setup_metabase.sh`
-
-### 🟡 アーカイブ対象（将来必要になる可能性）
-- `seed-e2e.ts` - E2Eテスト用
-- `sync-env-vars.sh` - 環境変数同期
-- `check-supabase-data.js` - データ確認用
-
-## 整理後のディレクトリ構造
+## 📁 ディレクトリ構造
 
 ```
 scripts/
 ├── README.md                           # このファイル
-├── reset-development-environment.js    # メインリセットスクリプト
+├── reset-development-environment.js    # 開発環境の完全リセット
 ├── check-environment-safety.js         # 環境安全性チェック
-├── seed-test-db.ts                     # テストデータ投入
-├── check-current-user-customer.js      # ユーザー状況確認
-├── debug-frontend-subscription.js      # フロントエンド確認
-├── check-supabase-permissions.ts       # 権限確認
-├── sync-stripe-to-supabase.js         # Stripe同期
-├── fix-customer-mismatch.js            # 顧客データ修正
-├── gen-env.ts                          # 環境変数生成
 ├── check-env.js                        # 環境変数確認
-└── archived/                           # アーカイブ
+├── gen-env.ts                          # 環境変数生成
+├── check-supabase-permissions.ts       # Supabase権限確認
+├── analyze-current-db-state.js         # データベース状態分析
+├── check-current-db-state.js           # 現在のDB状態確認
+├── sync-stripe-to-supabase.js          # Stripe-Supabase同期
+├── fix-customer-mismatch.js            # 顧客データ不整合修正
+├── check-current-user-customer.js      # ユーザー状況確認
+├── debug-frontend-subscription.js      # フロントエンド状況確認
+├── check-reservation-status.js         # 予約状況確認
+├── check-cron-targets.js               # Cronジョブターゲット確認
+├── seed-lesson-sessions-simple.js      # レッスンセッション作成
+└── archived/                           # アーカイブ済みスクリプト
+    ├── check-supabase-data.js
     ├── seed-e2e.ts
-    ├── sync-env-vars.sh
-    └── check-supabase-data.js
+    └── sync-env-vars.sh
 ```
 
-## 推奨使用フロー
+## 🚀 使い方
 
-### 1. 開発環境完全リセット
+### 環境管理
+
+#### 開発環境の完全リセット
 ```bash
-npm run reset:dev
+node scripts/reset-development-environment.js
 ```
+- Supabaseデータベースの完全リセット
+- Stripe顧客データのクリーンアップ
+- 初期データの投入
 
-### 2. 問題発生時のデバッグ
+#### 環境安全性チェック
 ```bash
-npm run check:user           # ユーザー状況確認
-npm run debug:frontend       # フロントエンド確認
-npm run check:env-safety     # 環境確認
+node scripts/check-environment-safety.js
 ```
+本番環境での実行を防ぐ安全性チェック
 
-### 3. 軽微な修正
+#### 環境変数の確認・生成
 ```bash
-npm run sync:stripe          # Stripe同期
-npm run fix:customer         # 顧客データ修正
+node scripts/check-env.js              # 環境変数の確認
+npx tsx scripts/gen-env.ts              # .env.localファイルの生成
 ```
 
-## package.json スクリプト整理後
+### データベース管理
+
+#### DB状態の確認
+```bash
+node scripts/analyze-current-db-state.js  # 詳細な分析
+node scripts/check-current-db-state.js    # 現在の状態確認
+```
+
+#### Supabase権限の確認
+```bash
+npx tsx scripts/check-supabase-permissions.ts
+```
+
+### Stripe連携
+
+#### Stripe-Supabase同期
+```bash
+node scripts/sync-stripe-to-supabase.js
+```
+Stripeの顧客・サブスクリプションデータをSupabaseに同期
+
+#### 顧客データ不整合の修正
+```bash
+node scripts/fix-customer-mismatch.js
+```
+
+### デバッグ・確認
+
+#### ユーザー状況確認
+```bash
+node scripts/check-current-user-customer.js <email>
+```
+特定ユーザーの状況を詳細に確認
+
+#### フロントエンド状況確認
+```bash
+node scripts/debug-frontend-subscription.js
+```
+フロントエンドで発生する問題のデバッグ
+
+#### 予約状況確認
+```bash
+node scripts/check-reservation-status.js
+```
+予約と決済の状況を確認
+
+#### Cronジョブ確認
+```bash
+node scripts/check-cron-targets.js
+```
+Cronジョブの実行対象を確認
+
+### レッスンセッション管理
+
+#### 既存予約のセッション作成
+```bash
+node scripts/seed-lesson-sessions-simple.js --dry-run  # ドライラン
+node scripts/seed-lesson-sessions-simple.js            # 本実行
+```
+既存の承認済み・確定済み予約にlesson_sessionsレコードを作成
+
+## 📝 package.jsonスクリプト
+
+以下のコマンドをpackage.jsonに追加することを推奨：
 
 ```json
 {
   "scripts": {
-    "reset:dev": "node scripts/reset-development-environment.js",
-    "check:env-safety": "node scripts/check-environment-safety.js",
-    "check:user": "node scripts/check-current-user-customer.js",
-    "debug:frontend": "node scripts/debug-frontend-subscription.js",
-    "sync:stripe": "node scripts/sync-stripe-to-supabase.js",
-    "fix:customer": "node scripts/fix-customer-mismatch.js",
-    "seed": "npx tsx scripts/seed-test-db.ts",
-    "gen-env": "npx tsx scripts/gen-env.ts",
-    "check-env": "node scripts/check-env.js",
-    "check:supabase-permissions": "npx tsx scripts/check-supabase-permissions.ts"
+    "dev:reset": "node scripts/reset-development-environment.js",
+    "dev:check-env": "node scripts/check-env.js",
+    "dev:check-user": "node scripts/check-current-user-customer.js",
+    "dev:check-db": "node scripts/check-current-db-state.js",
+    "dev:sync-stripe": "node scripts/sync-stripe-to-supabase.js",
+    "dev:debug-frontend": "node scripts/debug-frontend-subscription.js"
   }
 }
-``` 
+```
+
+## ⚠️ 注意事項
+
+1. **環境の確認**: スクリプト実行前に必ず環境を確認（production環境での実行は危険）
+2. **バックアップ**: 重要なデータ変更を行う前にバックアップを取る
+3. **ドライラン**: 可能な場合は`--dry-run`オプションで事前確認
+4. **権限**: 一部のスクリプトは管理者権限が必要
+
+## 🗂️ アーカイブ済みスクリプト
+
+`archived/`フォルダには、現在は使用していないが将来必要になる可能性があるスクリプトを保存：
+
+- `check-supabase-data.js` - Supabaseデータの確認
+- `seed-e2e.ts` - E2Eテスト用のシードデータ
+- `sync-env-vars.sh` - 環境変数の同期（シェルスクリプト）
+
+## 🔧 メンテナンス
+
+- 新しいスクリプトを追加する際は、明確な目的と使用方法をコメントに記載
+- 一時的なスクリプトは作業完了後に削除
+- 定期的にスクリプトの必要性を見直し、不要なものは削除またはアーカイブ

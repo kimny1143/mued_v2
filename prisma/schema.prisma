@@ -141,10 +141,42 @@ model reservations {
   payments            payments?         @relation(fields: [payment_id], references: [id])
   lesson_slots        lesson_slots      @relation(fields: [slot_id], references: [id])
   users               users             @relation(fields: [student_id], references: [id])
+  lesson_session      lesson_sessions?
 
   @@index([slot_id])
   @@index([status])
   @@index([student_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model lesson_sessions {
+  id               String        @id @default(uuid())
+  reservation_id   String        @unique
+  
+  // セッション時間管理
+  scheduled_start  DateTime      // 予定開始時刻（予約から自動設定）
+  scheduled_end    DateTime      // 予定終了時刻（予約から自動設定）
+  actual_start     DateTime?     // 実際の開始時刻
+  actual_end       DateTime?     // 実際の終了時刻
+  
+  // セッション内容
+  status           SessionStatus @default(SCHEDULED)
+  lesson_notes     String?       @db.Text // メンターのレッスンメモ
+  homework         String?       @db.Text // 宿題・次回までの課題
+  materials_used   Json?         // 使用した教材（URLリスト、記事IDなど）
+  
+  // フィードバック
+  student_feedback String?       @db.Text // 生徒からのフィードバック
+  mentor_feedback  String?       @db.Text // メンターからのフィードバック
+  rating          Int?          // 5段階評価（生徒→メンター）
+  
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+  
+  reservation      reservations  @relation(fields: [reservation_id], references: [id])
+  
+  @@index([status])
+  @@index([scheduled_start])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -224,4 +256,11 @@ enum ReservationStatus {
   REJECTED
   CANCELED
   COMPLETED
+}
+
+enum SessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  NO_SHOW
 }

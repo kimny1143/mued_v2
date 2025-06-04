@@ -182,6 +182,23 @@ export async function POST(
           payments: true
         }
       });
+
+      // レッスンセッションを自動作成
+      const lessonSession = await tx.lesson_sessions.create({
+        data: {
+          reservation_id: reservationId,
+          scheduled_start: reservation.booked_start_time,
+          scheduled_end: reservation.booked_end_time,
+          status: 'SCHEDULED'
+        }
+      });
+
+      console.log('📚 レッスンセッション作成完了:', {
+        sessionId: lessonSession.id,
+        reservationId: lessonSession.reservation_id,
+        scheduledStart: lessonSession.scheduled_start,
+        scheduledEnd: lessonSession.scheduled_end
+      });
       
       // Setup完了済みの場合は自動決済実行
       let paymentResult = null;
