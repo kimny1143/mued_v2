@@ -19,8 +19,9 @@ function LoginContent() {
   const [isProcessingHash, setIsProcessingHash] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false);
   
-  // ServiceWorkerの登録解除（キャッシュ問題対策）
+  // ServiceWorkerの登録解除とキャッシュクリア（キャッシュ問題対策）
   useEffect(() => {
+    // ServiceWorkerの登録解除
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then((registrations) => {
         registrations.forEach((registration) => {
@@ -29,6 +30,27 @@ function LoginContent() {
         });
       });
     }
+    
+    // キャッシュのクリア
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => {
+          caches.delete(name);
+          console.log('[Cache] 削除:', name);
+        });
+      });
+    }
+    
+    // 拡張機能の検出（デバッグ用）
+    const detectExtensions = () => {
+      const extensions = {
+        adblock: window.document.documentElement.getAttribute('data-adblockkey'),
+        react: (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__,
+        redux: (window as any).__REDUX_DEVTOOLS_EXTENSION__,
+      };
+      console.log('[拡張機能検出]', extensions);
+    };
+    detectExtensions();
   }, []);
   
   // URLのエラーパラメータがあれば表示
@@ -188,8 +210,29 @@ function LoginContent() {
             origin: window.location.origin
           });
           
-          // 強制的にリダイレクト
-          window.location.replace(dashboardUrl);
+          // 複数の方法でリダイレクトを試行
+          const performRedirect = () => {
+            try {
+              // Method 1: location.replace
+              window.location.replace(dashboardUrl);
+            } catch (e) {
+              console.error('[リダイレクトエラー] location.replace失敗:', e);
+              try {
+                // Method 2: location.href
+                window.location.href = dashboardUrl;
+              } catch (e2) {
+                console.error('[リダイレクトエラー] location.href失敗:', e2);
+                // Method 3: meta refresh
+                const meta = document.createElement('meta');
+                meta.httpEquiv = 'refresh';
+                meta.content = `0;url=${dashboardUrl}`;
+                document.head.appendChild(meta);
+              }
+            }
+          };
+          
+          // 遅延実行で拡張機能の干渉を回避
+          setTimeout(performRedirect, 100);
         }
       } catch (err) {
         console.error('[セッションチェックエラー]', err);
