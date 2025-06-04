@@ -101,13 +101,10 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
         throw new Error('認証が必要です。ログインしてください。');
       }
       
-      // ユーザーロールを取得
-      const userMetadata = sessionData.session?.user?.user_metadata;
-      const currentUserRole = userMetadata?.role || 'student';
+      // プロップスから渡されたユーザーロールを使用（Hydrationエラー回避）
+      const currentUserRole = userRole;
       
-      console.log('📊 User metadata:', userMetadata);
-      console.log('📊 Current user role from metadata:', currentUserRole);
-      console.log('📊 State userRole:', userRole);
+      console.log('📊 userRole from props:', userRole);
       console.log(`APIリクエスト開始: レッスンスロットを取得 (ロール: ${currentUserRole})`);
       
       // ロールに応じてviewModeを設定
@@ -178,25 +175,8 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userRole]);
 
-  // ユーザーロールを取得
-  useEffect(() => {
-    const getUserRole = async () => {
-      try {
-        const { data: sessionData } = await supabaseBrowser.auth.getSession();
-        const token = sessionData.session?.access_token ?? null;
-        
-        if (token) {
-          // userRoleはpropsから渡されるため削除
-        }
-      } catch (error) {
-        console.error('ユーザーロール取得エラー:', error);
-      }
-    };
-
-    getUserRole();
-  }, []);
 
   // 初回スロットデータ取得
   useEffect(() => {
@@ -216,9 +196,8 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
           return;
         }
 
-        // ユーザーIDは現在は使用していない
-        const userMetadata = sessionData.session.user.user_metadata;
-        const roleForChannel = userMetadata?.role || userRole || 'student';
+        // プロップスから渡されたユーザーロールを使用（Hydrationエラー回避）
+        const roleForChannel = userRole;
         
         // ロールに応じたリアルタイム監視の設定
         const channelName = `lesson-slots-changes-${roleForChannel}`;
@@ -266,7 +245,7 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
         supabaseBrowser.removeChannel(subscription);
       }
     };
-  }, [fetchMySlots]);
+  }, [fetchMySlots, userRole]);
 
   // 予約クリック処理
   const handleReservationClick = async (reservation: MentorLessonSlot['reservations'][0], mode: ModalMode = 'view') => {
