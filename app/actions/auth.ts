@@ -92,6 +92,14 @@ export async function signOut() {
       // エラーでも成功として扱う（クライアント側でも処理するため）
     }
 
+    // セッションが確実にクリアされているか確認
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session) {
+      console.warn('セッションがまだ残っています。強制的にクリアを試みます。');
+      // 再度サインアウトを試行
+      await supabase.auth.signOut({ scope: 'local' });
+    }
+
     // Cookieを明示的にクリア
     const cookieStore = cookies();
     try {

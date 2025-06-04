@@ -159,7 +159,11 @@ export default function DashboardLayout({ children, userRole, userName, title, f
   };
 
   const handleSignOut = async () => {
-    await signOut();
+    const result = await signOut();
+    if (result.success && typeof window !== 'undefined') {
+      // クライアント側でリダイレクト
+      window.location.href = '/login';
+    }
   };
 
   return (
