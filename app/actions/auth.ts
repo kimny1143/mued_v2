@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
 import { getBaseUrl } from '@/lib/utils';
 
 // Google認証へのリダイレクト
