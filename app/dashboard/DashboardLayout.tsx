@@ -66,7 +66,17 @@ export default function DashboardLayout({ children, userRole, userName, title, f
 
     if (userRole === 'admin') {
       return [
-        ...commonItems,
+        ...commonItems.slice(0, 1),
+        { 
+          icon: BookOpenIcon, 
+          label: "マイレッスン", 
+          path: "/dashboard/my-lessons" 
+        },
+        { 
+          icon: DumbbellIcon, 
+          label: "エクササイズ", 
+          path: "/dashboard/exercises" 
+        },
         { 
           icon: UserCircleIcon, 
           label: "ユーザー管理", 
@@ -76,7 +86,8 @@ export default function DashboardLayout({ children, userRole, userName, title, f
           icon: FolderIcon, 
           label: "コンテンツ管理", 
           path: "/dashboard/content" 
-        }
+        },
+        ...commonItems.slice(1)
       ];
     } else if (userRole === 'mentor') {
       return [
@@ -92,6 +103,16 @@ export default function DashboardLayout({ children, userRole, userName, title, f
         },
         { 
           icon: BookOpenIcon, 
+          label: "マイレッスン", 
+          path: "/dashboard/my-lessons" 
+        },
+        { 
+          icon: DumbbellIcon, 
+          label: "エクササイズ", 
+          path: "/dashboard/exercises" 
+        },
+        { 
+          icon: FolderIcon, 
           label: "教材管理", 
           path: "/dashboard/materials" 
         },
