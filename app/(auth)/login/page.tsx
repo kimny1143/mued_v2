@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -19,6 +17,41 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isProcessingHash, setIsProcessingHash] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+  
+  // ServiceWorkerの登録解除とキャッシュクリア（キャッシュ問題対策）
+  useEffect(() => {
+    // ServiceWorkerの登録解除
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          registration.unregister();
+          console.log('[ServiceWorker] 登録解除:', registration.scope);
+        });
+      });
+    }
+    
+    // キャッシュのクリア
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => {
+          caches.delete(name);
+          console.log('[Cache] 削除:', name);
+        });
+      });
+    }
+    
+    // 拡張機能の検出（デバッグ用）
+    const detectExtensions = () => {
+      const extensions = {
+        adblock: window.document.documentElement.getAttribute('data-adblockkey'),
+        react: (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__,
+        redux: (window as any).__REDUX_DEVTOOLS_EXTENSION__,
+      };
+      console.log('[拡張機能検出]', extensions);
+    };
+    detectExtensions();
+  }, []);
   
   // URLのエラーパラメータがあれば表示
   useEffect(() => {
@@ -29,6 +62,8 @@ function LoginContent() {
   
   // ハッシュフラグメントからのトークン処理（Implicit Flow対応）
   useEffect(() => {
+    const currentRouter = router; // ローカル変数にキャプチャ
+    
     async function processAccessToken() {
       // 既に処理中なら実行しない
       if (isProcessingHash) return;
@@ -73,13 +108,9 @@ function LoginContent() {
               const isLocalRedirect = window.location.origin === baseUrl || 
                                      (baseUrl.includes('localhost') && window.location.host.includes('localhost'));
               
-              if (isLocalRedirect) {
-                // 同一オリジンならルーターを使用
-                router.push('/dashboard');
-              } else {
-                // 異なるオリジンなら直接リダイレクト
-                window.location.href = dashboardUrl;
-              }
+              setShouldRedirect(true);
+              // window.location.replaceを使用して確実にリダイレクト
+              window.location.replace(dashboardUrl);
             } else {
               console.log('[セッション失敗] 見つかりませんでした');
               
@@ -108,7 +139,10 @@ function LoginContent() {
                     // URLのハッシュ部分をクリア
                     window.history.replaceState({}, document.title, window.location.pathname);
                     
-                    router.push('/dashboard');
+                    setShouldRedirect(true);
+                    // window.location.replaceを使用して確実にリダイレクト
+                    const baseUrl = getBaseUrl();
+                    window.location.replace(`${baseUrl}/dashboard`);
                     return;
                   }
                 }
@@ -131,46 +165,124 @@ function LoginContent() {
     }
     
     processAccessToken();
-  }, [router, isProcessingHash]);
+  }, [isProcessingHash]); // routerを依存配列から削除
   
   // ログイン済みならリダイレクト
   useEffect(() => {
+    // ログアウト直後のチェックを追加
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFromLogout = urlParams.get('from') === 'logout';
+    
+    if (isFromLogout) {
+      console.log('[ログアウト後のアクセス検出]');
+      // URLパラメータをクリア
+      window.history.replaceState({}, '', '/login');
+      // ログアウト直後は2秒間セッションチェックをスキップ
+      const skipDelay = setTimeout(() => {
+        console.log('[ログアウト後のスキップ期間終了]');
+      }, 2000);
+      return () => clearTimeout(skipDelay);
+    }
+    
+    // リダイレクト中またはハッシュ処理中はスキップ
+    if (shouldRedirect || isProcessingHash) return;
+    
+    const currentRouter = router; // ローカル変数にキャプチャ
+    let mounted = true;
+
     const checkSession = async () => {
-      // isProcessingHashフラグがtrueの場合は処理をスキップ
-      if (isProcessingHash) return;
+      // マウントされていない場合はスキップ
+      if (!mounted) return;
+      
+      console.log('[セッションチェック開始]', {
+        url: window.location.href,
+        shouldRedirect,
+        isProcessingHash,
+        mounted
+      });
       
       try {
+        // セッションをリフレッシュして最新の状態を取得
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError) {
+          console.log('[セッションリフレッシュエラー]', refreshError);
+          // エラーの場合はセッションなしとして扱う
+          return;
+        }
+        
         const { data } = await supabase.auth.getSession();
         
-        // セッションが存在し、かつエラーがなければリダイレクト
-        if (data.session) {
+        // コンポーネントがアンマウントされていたら処理を中断
+        if (!mounted) return;
+        
+        // セッションが存在し、かつ有効期限内であればリダイレクト
+        if (data.session && data.session.expires_at) {
+          const expiresAt = new Date(data.session.expires_at * 1000);
+          const now = new Date();
+          
+          if (expiresAt <= now) {
+            console.log('[セッション期限切れ]', {
+              expiresAt: expiresAt.toISOString(),
+              now: now.toISOString()
+            });
+            // セッションが期限切れの場合はクリア
+            await supabase.auth.signOut();
+            return;
+          }
+          
           console.log('[チェック] 既存セッション検出:', data.session.user.email);
+          
+          // 即座にリダイレクト状態に設定
+          setShouldRedirect(true);
           
           // ベースURLを取得
           const baseUrl = getBaseUrl();
           const dashboardUrl = `${baseUrl}/dashboard`;
           
-          // URLをチェックして適切にリダイレクト
-          const isLocalRedirect = window.location.origin === baseUrl || 
-                              (baseUrl.includes('localhost') && window.location.host.includes('localhost'));
+          console.log('[リダイレクト実行]', {
+            baseUrl,
+            dashboardUrl,
+            currentUrl: window.location.href,
+            origin: window.location.origin
+          });
           
-          if (isLocalRedirect) {
-            // 同じオリジンならルーター使用
-            router.push('/dashboard');
-          } else {
-            // 別オリジンならフルURLリダイレクト
-            window.location.href = dashboardUrl;
-          }
+          // 複数の方法でリダイレクトを試行
+          const performRedirect = () => {
+            try {
+              // Method 1: location.replace
+              window.location.replace(dashboardUrl);
+            } catch (e) {
+              console.error('[リダイレクトエラー] location.replace失敗:', e);
+              try {
+                // Method 2: location.href
+                window.location.href = dashboardUrl;
+              } catch (e2) {
+                console.error('[リダイレクトエラー] location.href失敗:', e2);
+                // Method 3: meta refresh
+                const meta = document.createElement('meta');
+                meta.httpEquiv = 'refresh';
+                meta.content = `0;url=${dashboardUrl}`;
+                document.head.appendChild(meta);
+              }
+            }
+          };
+          
+          // 遅延実行で拡張機能の干渉を回避
+          setTimeout(performRedirect, 100);
         }
       } catch (err) {
         console.error('[セッションチェックエラー]', err);
       }
     };
     
-    // 初回のみセッションチェックを実行
-    const initialCheck = setTimeout(checkSession, 500);
-    return () => clearTimeout(initialCheck);
-  }, [router, isProcessingHash]);
+    // 即座にセッションチェックを実行
+    checkSession();
+    
+    return () => {
+      mounted = false;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Google認証でサインイン
   const handleGoogleSignIn = async () => {
@@ -202,6 +314,18 @@ function LoginContent() {
     }
   };
   
+  // リダイレクト中の場合は、リダイレクト画面を表示
+  if (shouldRedirect) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">ダッシュボードへ移動中...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-6 shadow-md">
@@ -233,14 +357,7 @@ function LoginContent() {
             {isLoading ? 'ログイン中...' : 'Googleでログイン'}
           </button>
           
-          <div className="text-center text-sm">
-            <p className="text-gray-600">
-              アカウントをお持ちでない場合は
-              <Link href="/register" className="ml-1 font-medium text-indigo-600 hover:text-indigo-500">
-                新規登録
-              </Link>
-            </p>
-          </div>
+          {/* 新規登録リンクは一時的に削除（登録ページが存在しないため） */}
         </div>
       </div>
     </div>

@@ -108,6 +108,6 @@ export function useReservations(options?: UseReservationsOptions) {
       }
     },
     initialData: [],
-    staleTime: 1000, // 1秒後に古いと見なす（テスト用に短く）
+    staleTime: 30 * 1000, // 30秒間はキャッシュを新鮮と見なす
   });
 }

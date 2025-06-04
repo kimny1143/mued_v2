@@ -18,5 +18,5 @@ export interface ReservationStatusData {
 
 export interface DashboardCardProps {
   userRole: string;
-  userId?: string;
+  userId: string; // 必須に変更
 } 

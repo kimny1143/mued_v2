@@ -234,7 +234,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
         </div>
       )}
       
-      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="py-4 sm:py-6">
         {/* ヘッダー - 月選択 */}
         <div className="flex items-center justify-between mb-4 sm:mb-6">
           <Button 
