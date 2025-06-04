@@ -140,17 +140,15 @@ function LoginContent() {
   
   // ログイン済みならリダイレクト
   useEffect(() => {
-    const currentRouter = router; // ローカル変数にキャプチャ
+    // リダイレクト中またはハッシュ処理中はスキップ
+    if (shouldRedirect || isProcessingHash) return;
     
-    // セッションチェックが既に実行されたかどうかのフラグ
-    let hasChecked = false;
+    const currentRouter = router; // ローカル変数にキャプチャ
     let mounted = true;
 
     const checkSession = async () => {
-      // isProcessingHashフラグがtrueの場合、または既にチェック済みの場合、またはリダイレクト中の場合は処理をスキップ
-      if (isProcessingHash || hasChecked || !mounted || shouldRedirect) return;
-      
-      hasChecked = true; // チェック済みフラグを立てる
+      // マウントされていない場合はスキップ
+      if (!mounted) return;
       
       try {
         const { data } = await supabase.auth.getSession();
@@ -162,6 +160,9 @@ function LoginContent() {
         if (data.session) {
           console.log('[チェック] 既存セッション検出:', data.session.user.email);
           
+          // 即座にリダイレクト状態に設定
+          setShouldRedirect(true);
+          
           // ベースURLを取得
           const baseUrl = getBaseUrl();
           const dashboardUrl = `${baseUrl}/dashboard`;
@@ -170,7 +171,6 @@ function LoginContent() {
           const isLocalRedirect = window.location.origin === baseUrl || 
                               (baseUrl.includes('localhost') && window.location.host.includes('localhost'));
           
-          setShouldRedirect(true);
           if (isLocalRedirect) {
             // 同じオリジンならルーター使用
             currentRouter.push('/dashboard');
@@ -190,7 +190,7 @@ function LoginContent() {
       mounted = false;
       clearTimeout(initialCheck);
     };
-  }, [isProcessingHash, shouldRedirect]); // shouldRedirectを依存配列に追加
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Google認証でサインイン
   const handleGoogleSignIn = async () => {
@@ -265,14 +265,7 @@ function LoginContent() {
             {isLoading ? 'ログイン中...' : 'Googleでログイン'}
           </button>
           
-          <div className="text-center text-sm">
-            <p className="text-gray-600">
-              アカウントをお持ちでない場合は
-              <Link href="/register" className="ml-1 font-medium text-indigo-600 hover:text-indigo-500">
-                新規登録
-              </Link>
-            </p>
-          </div>
+          {/* 新規登録リンクは一時的に削除（登録ページが存在しないため） */}
         </div>
       </div>
     </div>
