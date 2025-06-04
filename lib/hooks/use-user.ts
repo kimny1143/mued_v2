@@ -13,6 +13,7 @@ import {
   getInitializationPromise,
   setInitializationPromise
 } from '@/lib/auth-initialization';
+import { getGlobalAuthState, setGlobalAuthState, subscribeToAuthState } from '@/lib/global-auth-state';
 
 export interface User {
   id: string;
@@ -29,6 +30,7 @@ export function useUser() {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const initialized = useRef(false);
+  const hasSetInitialState = useRef(false);
   
   // シンプルなサブスクリプション情報を取得
   const { 
@@ -36,6 +38,22 @@ export function useUser() {
     loading: subscriptionLoading, 
     error: subscriptionError
   } = useSubscriptionSimple();
+
+  // グローバル認証状態を購読
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthState((state) => {
+      if (state.initialized && !hasSetInitialState.current) {
+        hasSetInitialState.current = true;
+        console.log('グローバル認証状態を適用:', state);
+        setUser(state.user);
+        setSession(state.session);
+        setIsAuthenticated(state.isAuthenticated);
+        setLoading(false);
+      }
+    });
+    
+    return unsubscribe;
+  }, []);
 
   // 認証状態の初期化（グローバルに1回のみ実行）
   useEffect(() => {
@@ -45,15 +63,9 @@ export function useUser() {
       return;
     }
     
-    // 初期化中の場合は、既存のPromiseを待つ
+    // 初期化中の場合はスキップ
     if (isAuthInitializing()) {
       console.log('認証状態初期化中 - 既存の初期化を待機');
-      const existingPromise = getInitializationPromise();
-      if (existingPromise) {
-        existingPromise.then(() => {
-          console.log('既存の認証初期化完了を検知');
-        });
-      }
       return;
     }
     
@@ -113,6 +125,13 @@ export function useUser() {
               
               if (isMounted) {
                 setUser(userData);
+                // グローバル状態にも保存
+                setGlobalAuthState({
+                  user: userData,
+                  session: currentSession,
+                  isAuthenticated: true,
+                  initialized: true
+                });
               }
               return;
             }
@@ -134,6 +153,13 @@ export function useUser() {
               
               if (isMounted) {
                 setUser(userData);
+                // グローバル状態にも保存
+                setGlobalAuthState({
+                  user: userData,
+                  session: currentSession,
+                  isAuthenticated: true,
+                  initialized: true
+                });
               }
             } else {
               console.log('APIからユーザー詳細を取得成功:', userDetails);
@@ -151,6 +177,13 @@ export function useUser() {
               
               if (isMounted) {
                 setUser(userData);
+                // グローバル状態にも保存
+                setGlobalAuthState({
+                  user: userData,
+                  session: currentSession,
+                  isAuthenticated: true,
+                  initialized: true
+                });
               }
             }
           } catch (apiError) {
@@ -168,11 +201,25 @@ export function useUser() {
             
             if (isMounted) {
               setUser(userData);
+              // グローバル状態にも保存
+              setGlobalAuthState({
+                user: userData,
+                session: currentSession,
+                isAuthenticated: true,
+                initialized: true
+              });
             }
           }
         } else {
           if (isMounted) {
             setUser(null);
+            // グローバル状態にも保存
+            setGlobalAuthState({
+              user: null,
+              session: null,
+              isAuthenticated: false,
+              initialized: true
+            });
           }
         }
       } catch (err) {
