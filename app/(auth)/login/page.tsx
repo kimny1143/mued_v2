@@ -1,7 +1,5 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
-
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -89,8 +87,8 @@ function LoginContent() {
                                      (baseUrl.includes('localhost') && window.location.host.includes('localhost'));
               
               setShouldRedirect(true);
-              // window.location.hrefを使用して確実にリダイレクト
-              window.location.href = dashboardUrl;
+              // window.location.replaceを使用して確実にリダイレクト
+              window.location.replace(dashboardUrl);
             } else {
               console.log('[セッション失敗] 見つかりませんでした');
               
@@ -120,9 +118,9 @@ function LoginContent() {
                     window.history.replaceState({}, document.title, window.location.pathname);
                     
                     setShouldRedirect(true);
-                    // window.location.hrefを使用して確実にリダイレクト
+                    // window.location.replaceを使用して確実にリダイレクト
                     const baseUrl = getBaseUrl();
-                    window.location.href = `${baseUrl}/dashboard`;
+                    window.location.replace(`${baseUrl}/dashboard`);
                     return;
                   }
                 }
@@ -183,12 +181,15 @@ function LoginContent() {
           const baseUrl = getBaseUrl();
           const dashboardUrl = `${baseUrl}/dashboard`;
           
-          // URLをチェックして適切にリダイレクト
-          const isLocalRedirect = window.location.origin === baseUrl || 
-                              (baseUrl.includes('localhost') && window.location.host.includes('localhost'));
+          console.log('[リダイレクト実行]', {
+            baseUrl,
+            dashboardUrl,
+            currentUrl: window.location.href,
+            origin: window.location.origin
+          });
           
-          // window.location.hrefを使用して確実にリダイレクト
-          window.location.href = dashboardUrl;
+          // 強制的にリダイレクト
+          window.location.replace(dashboardUrl);
         }
       } catch (err) {
         console.error('[セッションチェックエラー]', err);
