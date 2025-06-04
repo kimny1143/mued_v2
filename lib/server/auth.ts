@@ -1,11 +1,8 @@
-import { cookies } from 'next/headers';
 import { supabaseServer } from '@/lib/supabase-server';
 import { cache } from 'react';
 
 export const getServerSession = cache(async () => {
   try {
-    const cookieStore = cookies();
-    
     const { data: { user }, error } = await supabaseServer.auth.getUser();
     
     if (error || !user) {

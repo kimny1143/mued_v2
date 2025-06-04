@@ -33,9 +33,12 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
   userRole: string;
   userName: string;
+  title?: string;
+  fullWidth?: boolean;
+  actions?: React.ReactNode;
 }
 
-export default function DashboardLayout({ children, userRole, userName }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, userRole, userName, title, fullWidth, actions }: DashboardLayoutProps) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -265,8 +268,18 @@ export default function DashboardLayout({ children, userRole, userName }: Dashbo
         transition-all duration-300
         ${isSidebarOpen ? 'lg:ml-64' : 'lg:ml-20'}
       `}>
-        <main className="p-6">
-          {children}
+        <main className={fullWidth ? "" : "p-6"}>
+          {title && (
+            <div className={`${fullWidth ? "px-6 pt-6" : ""} mb-6`}>
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold">{title}</h1>
+                {actions && <div>{actions}</div>}
+              </div>
+            </div>
+          )}
+          <div className={fullWidth ? "" : ""}>
+            {children}
+          </div>
         </main>
       </div>
     </div>
