@@ -109,8 +109,16 @@ export function extractRoleFromApiResponse(userData: {
   return 'student';
 }
 
+// キャッシュ更新の状態を管理
+let rolesCacheInitialized = false;
+
 // 動的にロール情報を取得してキャッシュを更新
 export async function updateRoleCache(): Promise<void> {
+  // すでに初期化済みならスキップ
+  if (rolesCacheInitialized) {
+    return;
+  }
+
   try {
     const response = await fetch('/api/roles');
     if (response.ok) {
@@ -127,6 +135,8 @@ export async function updateRoleCache(): Promise<void> {
         };
       });
       
+      // 初期化フラグを設定
+      rolesCacheInitialized = true;
       console.log('ロールキャッシュを更新しました:', Object.keys(KNOWN_ROLES));
     }
   } catch (error) {
