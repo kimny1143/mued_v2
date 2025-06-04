@@ -6,20 +6,40 @@ import { Card } from "@/app/components/ui/card";
 import { CalendarIcon, ClockIcon } from "lucide-react";
 import { format } from "date-fns";
 import { DashboardCardProps } from "./types";
+import { useTodaySchedule } from '@/lib/hooks/queries/useTodaySchedule';
 
-interface TodayScheduleCardProps extends DashboardCardProps {
-  initialData?: Array<{
-    id: string;
-    startTime: string;
-    endTime: string;
-    actorName: string;
-    status: string;
-  }>;
-}
+export const TodayScheduleCard: React.FC<DashboardCardProps> = ({ userRole, userId }) => {
+  const { data: upcomingReservations = [], isLoading, error } = useTodaySchedule({ userId, userRole });
 
-export const TodayScheduleCard: React.FC<TodayScheduleCardProps> = ({ userRole, userId, initialData = [] }) => {
   const cardHref = "/dashboard/my-lessons";
 
+  if (isLoading) {
+    return (
+      <Link href={cardHref} passHref>
+        <Card className="p-6 bg-white hover:shadow-lg transition-shadow cursor-pointer">
+          <div className="flex items-center mb-4">
+            <CalendarIcon className="h-5 w-5 mr-2 text-blue-500" />
+            <h3 className="font-semibold">今日の予定</h3>
+          </div>
+          <p className="text-sm text-gray-500">読み込み中...</p>
+        </Card>
+      </Link>
+    );
+  }
+
+  if (error) {
+    return (
+      <Link href={cardHref} passHref>
+        <Card className="p-6 bg-white hover:shadow-lg transition-shadow cursor-pointer">
+          <div className="flex items-center mb-4">
+            <CalendarIcon className="h-5 w-5 mr-2 text-blue-500" />
+            <h3 className="font-semibold">今日の予定</h3>
+          </div>
+          <p className="text-sm text-red-500">予定情報の取得に失敗しました</p>
+        </Card>
+      </Link>
+    );
+  }
 
   return (
     <Link href={cardHref} passHref>
@@ -30,8 +50,8 @@ export const TodayScheduleCard: React.FC<TodayScheduleCardProps> = ({ userRole, 
         </div>
         
         <div className="space-y-3">
-          {initialData && initialData.length > 0 ? (
-            initialData.map((reservation) => (
+          {upcomingReservations && upcomingReservations.length > 0 ? (
+            upcomingReservations.map((reservation) => (
               <div key={reservation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center">
                   <ClockIcon className="h-4 w-4 mr-2 text-gray-500" />
