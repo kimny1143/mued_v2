@@ -21,6 +21,18 @@ function LoginContent() {
   const [isProcessingHash, setIsProcessingHash] = useState(false);
   const [shouldRedirect, setShouldRedirect] = useState(false);
   
+  // ServiceWorkerの登録解除（キャッシュ問題対策）
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          registration.unregister();
+          console.log('[ServiceWorker] 登録解除:', registration.scope);
+        });
+      });
+    }
+  }, []);
+  
   // URLのエラーパラメータがあれば表示
   useEffect(() => {
     if (error) {
@@ -77,13 +89,8 @@ function LoginContent() {
                                      (baseUrl.includes('localhost') && window.location.host.includes('localhost'));
               
               setShouldRedirect(true);
-              if (isLocalRedirect) {
-                // 同一オリジンならルーターを使用
-                currentRouter.push('/dashboard');
-              } else {
-                // 異なるオリジンなら直接リダイレクト
-                window.location.href = dashboardUrl;
-              }
+              // window.location.hrefを使用して確実にリダイレクト
+              window.location.href = dashboardUrl;
             } else {
               console.log('[セッション失敗] 見つかりませんでした');
               
@@ -113,7 +120,9 @@ function LoginContent() {
                     window.history.replaceState({}, document.title, window.location.pathname);
                     
                     setShouldRedirect(true);
-                    currentRouter.push('/dashboard');
+                    // window.location.hrefを使用して確実にリダイレクト
+                    const baseUrl = getBaseUrl();
+                    window.location.href = `${baseUrl}/dashboard`;
                     return;
                   }
                 }
@@ -150,6 +159,13 @@ function LoginContent() {
       // マウントされていない場合はスキップ
       if (!mounted) return;
       
+      console.log('[セッションチェック開始]', {
+        url: window.location.href,
+        shouldRedirect,
+        isProcessingHash,
+        mounted
+      });
+      
       try {
         const { data } = await supabase.auth.getSession();
         
@@ -171,24 +187,19 @@ function LoginContent() {
           const isLocalRedirect = window.location.origin === baseUrl || 
                               (baseUrl.includes('localhost') && window.location.host.includes('localhost'));
           
-          if (isLocalRedirect) {
-            // 同じオリジンならルーター使用
-            currentRouter.push('/dashboard');
-          } else {
-            // 別オリジンならフルURLリダイレクト
-            window.location.href = dashboardUrl;
-          }
+          // window.location.hrefを使用して確実にリダイレクト
+          window.location.href = dashboardUrl;
         }
       } catch (err) {
         console.error('[セッションチェックエラー]', err);
       }
     };
     
-    // 初回のみセッションチェックを実行
-    const initialCheck = setTimeout(checkSession, 500);
+    // 即座にセッションチェックを実行
+    checkSession();
+    
     return () => {
       mounted = false;
-      clearTimeout(initialCheck);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   

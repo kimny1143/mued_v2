@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false, // 無限ループ問題の調査のため一時的に無効化
   images: {
     domains: ['images.unsplash.com', 'cloudinary.com', 'res.cloudinary.com'],
   },
