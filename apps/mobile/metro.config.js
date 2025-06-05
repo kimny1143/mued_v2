@@ -13,6 +13,11 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, 'node_modules'),
 ];
 
+// Add support for @mued/shared package
+config.resolver.extraNodeModules = {
+  '@mued/shared': path.resolve(workspaceRoot, 'packages/shared'),
+};
+
 // Enable PWA features
 config.transformer.minifierPath = require.resolve('metro-minify-terser');
 config.transformer.minifierConfig = {

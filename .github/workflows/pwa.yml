@@ -1,10 +1,10 @@
-name: Deploy Next.js to Vercel
+name: Deploy PWA to Vercel
 on:
   push:
     branches: [ "develop", "main" ]
     paths:
-      - 'apps/web/**'
-      - '.github/workflows/web.yml'
+      - 'apps/mobile/**'
+      - '.github/workflows/pwa.yml'
       - 'packages/shared/**'
 
 jobs:
@@ -25,18 +25,20 @@ jobs:
       - name: Build shared package
         run: npm run build:shared
         
-      - name: Build Next.js
+      - name: Build PWA
         run: |
-          cd apps/web
-          npm run build
+          cd apps/mobile
+          npm run build:web
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+          EXPO_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.EXPO_PUBLIC_VAPID_PUBLIC_KEY }}
       
-      - name: List build contents
+      - name: List dist contents
         run: |
-          echo "Listing build directory contents:"
-          ls -la apps/web/.next/
+          echo "Listing dist directory contents:"
+          ls -la apps/mobile/dist/
           
       - name: Check Vercel CLI
         run: |
@@ -45,7 +47,7 @@ jobs:
           
       - name: Deploy to Vercel
         run: |
-          cd apps/web
+          cd apps/mobile/dist
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
           else
@@ -53,4 +55,4 @@ jobs:
           fi
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PWA }}
