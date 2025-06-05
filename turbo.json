@@ -4,6 +4,7 @@
   "globalEnv": [
     "NODE_ENV",
     "NEXT_PUBLIC_*",
+    "EXPO_PUBLIC_*",
     "DATABASE_URL",
     "DIRECT_DATABASE_URL",
     "SUPABASE_SERVICE_ROLE_KEY",
@@ -35,6 +36,7 @@
       "env": [
         "NODE_ENV",
         "NEXT_PUBLIC_*",
+        "EXPO_PUBLIC_*",
         "DATABASE_URL",
         "DIRECT_DATABASE_URL",
         "SUPABASE_SERVICE_ROLE_KEY",
