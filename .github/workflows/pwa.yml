@@ -1,4 +1,4 @@
-name: Deploy PWA to Vercel
+name: PWA Build Check (Vercel handles deployment)
 on:
   push:
     branches: [ "develop", "main" ]
@@ -26,9 +26,7 @@ jobs:
         run: npm run build:shared
         
       - name: Build PWA
-        run: |
-          cd apps/mobile
-          npm run build:web
+        run: npm run build:mobile:web
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
@@ -40,19 +38,8 @@ jobs:
           echo "Listing dist directory contents:"
           ls -la apps/mobile/dist/
           
-      - name: Check Vercel CLI
+      # Vercel GitHub連携でデプロイされるため、ここでは成功確認のみ
+      - name: Build Success
         run: |
-          npm i -g vercel@latest
-          vercel --version
-          
-      - name: Deploy to Vercel
-        run: |
-          cd apps/mobile/dist
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
-          else
-            vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --yes
-          fi
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PWA }}
+          echo "✅ PWA build completed successfully!"
+          echo "Vercel will automatically deploy this via GitHub integration"

@@ -15,6 +15,7 @@
     "build": "turbo build",
     "build:web": "turbo build --filter=@mued/web",
     "build:mobile": "turbo build --filter=@mued/mobile",
+    "build:mobile:web": "cd apps/mobile && npm run build:web",
     "build:shared": "turbo build --filter=@mued/shared",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",

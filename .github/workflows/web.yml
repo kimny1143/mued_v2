@@ -1,4 +1,4 @@
-name: Deploy Next.js to Vercel
+name: Next.js Build Check (Vercel handles deployment)
 on:
   push:
     branches: [ "develop", "main" ]
@@ -38,19 +38,8 @@ jobs:
           echo "Listing build directory contents:"
           ls -la apps/web/.next/
           
-      - name: Check Vercel CLI
+      # Vercel GitHub連携でデプロイされるため、ここでは成功確認のみ
+      - name: Build Success
         run: |
-          npm i -g vercel@latest
-          vercel --version
-          
-      - name: Deploy to Vercel
-        run: |
-          cd apps/web
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --prod --yes
-          else
-            vercel deploy --token=${{ secrets.VERCEL_TOKEN }} --yes
-          fi
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          echo "✅ Next.js build completed successfully!"
+          echo "Vercel will automatically deploy this via GitHub integration"
