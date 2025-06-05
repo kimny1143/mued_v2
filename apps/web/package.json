@@ -20,6 +20,7 @@
     "kill-mcp-port": "lsof -ti:3333 | xargs kill -9 || true"
   },
   "dependencies": {
+    "@mued/shared": "file:../../packages/shared",
     "@auth/prisma-adapter": "^2.9.0",
     "@demark-pro/react-booking-calendar": "^4.0.3",
     "@hookform/resolvers": "^5.0.1",

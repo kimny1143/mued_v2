@@ -99,3 +99,51 @@ export interface CheckoutSessionResponse {
   sessionId: string;
   url: string;
 }
+
+// Chat
+export interface GetMessagesResponse {
+  messages: import('./models').ChatMessage[];
+  has_more: boolean;
+  next_cursor?: string;
+}
+
+export interface SendMessageRequest {
+  content: string;
+  room_id: string;
+  files?: File[];
+}
+
+// Cancellation & Reschedule
+export interface CancelReservationRequest {
+  reservationId: string;
+  reason: import('./models').CancelReason;
+  notes?: string;
+}
+
+export interface RescheduleReservationRequest {
+  reservationId: string;
+  newSlotId: string;
+  newStartTime: Date;
+  newEndTime: Date;
+  reason?: string;
+}
+
+export interface RefundRequest {
+  reservationId: string;
+  refundAmount: number;
+  reason: string;
+}
+
+export interface CancellationPolicyResult {
+  canCancel: boolean;
+  cancellationFee: number;
+  reason?: string;
+}
+
+// Notification
+export interface NotificationData {
+  type: 'cancellation' | 'reschedule' | 'refund' | 'payment_reminder';
+  reservationId: string;
+  userId: string;
+  metadata?: Record<string, string | number | boolean>;
+}
