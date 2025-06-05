@@ -31,8 +31,12 @@
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": ["warn", {
       "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_"
+      "varsIgnorePattern": "^_",
+      "ignoreRestSiblings": true
     }],
+    "@typescript-eslint/no-explicit-any": "warn",
+    "react-hooks/exhaustive-deps": "warn",
+    "prefer-const": "warn",
     "react/no-unescaped-entities": "off",
     "@next/next/no-img-element": "off"
   },
