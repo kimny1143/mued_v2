@@ -1,7 +1,7 @@
 name: Deploy PWA to Vercel
 on:
   push:
-    branches: [ "feature/pwa-migration" ]
+    branches: [ "develop", "main" ]
     paths:
       - 'apps/mobile/**'
       - '.github/workflows/web.yml'
