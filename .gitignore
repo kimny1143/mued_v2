@@ -100,3 +100,6 @@ playwright-report/*
 
 # backup
 backup/*
+
+#doc内機密情報
+docs/secret/*
