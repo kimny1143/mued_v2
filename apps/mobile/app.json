@@ -33,8 +33,7 @@
     },
     "plugins": [
       "expo-dev-client",
-      "expo-router",
-      "expo-notifications"
+      "expo-router"
     ],
     "scheme": "muedlms",
     "extra": {
