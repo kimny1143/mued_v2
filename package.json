@@ -17,7 +17,7 @@
     "build:mobile": "turbo build --filter=@mued/mobile",
     "build:shared": "turbo build --filter=@mued/shared",
     "lint": "turbo lint",
-    "type-check": "turbo type-check",
+    "typecheck": "turbo typecheck",
     "test": "turbo test",
     "test:e2e": "turbo test:e2e",
     "clean": "turbo clean && rm -rf node_modules",
@@ -25,6 +25,7 @@
     "postinstall": "turbo build --filter=@mued/shared"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.4",
     "@chromatic-com/storybook": "^3.2.6",
     "@playwright/mcp": "^0.0.26",
     "@playwright/test": "^1.52.0",
@@ -52,7 +53,9 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
+    "lint-staged": "^16.1.0",
     "playwright": "^1.52.0",
     "prettier": "^3.2.5",
     "prettier-plugin-tailwindcss": "^0.5.13",

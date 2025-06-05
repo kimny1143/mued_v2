@@ -1,0 +1,77 @@
+name: Mobile App Release
+
+on:
+  push:
+    tags:
+      - 'mobile-v*'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - ios
+          - android
+
+jobs:
+  build-and-submit:
+    name: Build and Submit to Stores
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared package
+        run: npm run build --workspace=@mued/shared
+
+      - name: Configure app version
+        run: |
+          cd apps/mobile
+          VERSION=${GITHUB_REF#refs/tags/mobile-v}
+          npm version $VERSION --no-git-tag-version
+
+      - name: Build for production
+        run: |
+          cd apps/mobile
+          PLATFORM=${{ github.event.inputs.platform || 'all' }}
+          eas build --profile production --platform $PLATFORM --non-interactive --auto-submit
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EXPO_APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.EXPO_APPLE_APP_SPECIFIC_PASSWORD }}
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Mobile Release ${{ github.ref }}
+          body: |
+            ## Changes in this release
+            - See commit history for changes
+            
+            ## Installation
+            - iOS: Available on App Store
+            - Android: Available on Google Play Store
+          draft: false
+          prerelease: false

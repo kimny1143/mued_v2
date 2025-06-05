@@ -4,25 +4,35 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "cache": true
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
     "lint": {
-      "outputs": []
+      "outputs": [],
+      "cache": true
     },
-    "type-check": {
-      "outputs": []
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": true
     },
     "test": {
       "outputs": ["coverage/**"],
-      "dependsOn": []
+      "dependsOn": ["build"],
+      "cache": false
     },
     "test:e2e": {
       "outputs": ["playwright-report/**", "test-results/**"],
-      "dependsOn": ["build"]
+      "dependsOn": ["build"],
+      "cache": false
+    },
+    "prisma:generate": {
+      "cache": false,
+      "outputs": []
     }
   }
 }
