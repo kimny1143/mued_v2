@@ -8,6 +8,8 @@ const urlsToCache = [
   '/favicon.ico',
   '/icon-192.png',
   '/icon-512.png',
+  '/robots.txt',
+  '/browserconfig.xml'
 ];
 
 // Install event - cache essential files

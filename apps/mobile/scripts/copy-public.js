@@ -10,7 +10,9 @@ const filesToCopy = [
   'service-worker.js',
   'register-sw.js',
   'icon-192.png',
-  'icon-512.png'
+  'icon-512.png',
+  'robots.txt',
+  'browserconfig.xml'
 ];
 
 // Ensure dist directory exists
