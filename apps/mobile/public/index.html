@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="description" content="MUED LMS - 音楽制作のための学習管理システム" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="MUED" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    
+    <!-- Additional PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="MUED LMS" />
+    <meta name="msapplication-TileColor" content="#3b82f6" />
+    <meta name="msapplication-TileImage" content="/icon-192.png" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <title>MUED LMS</title>
+    
+    <!-- The `react-native-web` recommended style reset -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+    <link rel="icon" href="/favicon.ico" />
+  </head>
+
+  <body>
+    <!-- Progressive Enhancement -->
+    <noscript>
+      <div style="padding: 20px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+        <h1>MUED LMS</h1>
+        <p>このアプリケーションを使用するにはJavaScriptを有効にしてください。</p>
+        <p>Please enable JavaScript to use this application.</p>
+      </div>
+    </noscript>
+    <!-- The root element for your Expo app. -->
+    <div id="root"></div>
+    
+    <!-- Register Service Worker -->
+    <script src="/register-sw.js"></script>
+  </body>
+</html>

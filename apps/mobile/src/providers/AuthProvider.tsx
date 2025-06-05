@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import SecureStore from '../utils/storage';
 import { User } from '@mued/shared/types';
 import { ApiClient } from '@mued/shared/api';
 import { AuthEndpoints, UsersEndpoints } from '@mued/shared/api/endpoints';
