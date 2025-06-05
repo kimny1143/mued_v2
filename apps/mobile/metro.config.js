@@ -22,4 +22,7 @@ config.transformer.minifierConfig = {
   },
 };
 
+// Add public assets
+config.transformer.publicPath = '/public';
+
 module.exports = config;
