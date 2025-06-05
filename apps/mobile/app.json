@@ -14,7 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.glasswerks.muedlms"
+      "bundleIdentifier": "com.glasswerks.muedlms",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,15 +32,16 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "expo-dev-client",
       "expo-router",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#ffffff"
-        }
-      ]
+      "expo-notifications"
     ],
-    "scheme": "muedlms"
+    "scheme": "muedlms",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ed057ad2-3c20-42d4-a79f-a0d4f61eb5bd"
+      }
+    }
   }
 }

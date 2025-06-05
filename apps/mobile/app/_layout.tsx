@@ -1,4 +1,4 @@
-import '../src/styles/global.css';
+// import '../src/styles/global.css'; // NativeWind v2では不要
 import { Slot } from 'expo-router';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
