@@ -1,9 +1,12 @@
 'use client';
 
-import React from 'react';
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, startOfDay } from 'date-fns';
-import { Mentor } from './MentorList';
+import React from 'react';
+
 import type { ExtendedTimeSlot, MyReservation } from '../_types/calendar.js';
+
+import { Mentor } from './MentorList';
+
 
 interface MonthViewProps {
   currentDate: Date;

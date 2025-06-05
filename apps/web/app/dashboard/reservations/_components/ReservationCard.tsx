@@ -1,14 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { CalendarIcon, ClockIcon } from 'lucide-react';
-import { Card } from '@/app/components/ui/card';
+import React, { useState } from 'react';
+
+
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
-import { CancelReservationModal } from './CancelReservationModal';
+import { Card } from '@/app/components/ui/card';
 import { CancelReason } from '@/lib/types/reservation';
+
+import { CancelReservationModal } from './CancelReservationModal';
 
 interface ReservationCardProps {
   reservation: {

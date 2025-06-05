@@ -1,15 +1,18 @@
 'use client';
 
-import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { Clock, User, Calendar, DollarSign, CreditCard, AlertCircle, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { toast } from 'sonner';
+
+
+import { CancelReason } from '@/lib/types/reservation';
+import { Badge } from '@ui/badge';
 import { Button } from '@ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card';
-import { Badge } from '@ui/badge';
-import { Clock, User, Calendar, DollarSign, CreditCard, AlertCircle, X } from 'lucide-react';
-import { toast } from 'sonner';
+
 import { CancelReservationModal } from './CancelReservationModal';
-import { CancelReason } from '@/lib/types/reservation';
 
 interface Teacher {
   id: string;

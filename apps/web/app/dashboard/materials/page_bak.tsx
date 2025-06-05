@@ -2,10 +2,11 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useEffect, useState } from "react";
-import { Button } from "@/app/components/ui/button";
 import { FileIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+
+import { Button } from "@/app/components/ui/button";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 
 export default function MaterialsPage() {

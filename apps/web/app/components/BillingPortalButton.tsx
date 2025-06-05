@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from 'react';
-import { Button } from '@ui/button';
 import { Settings, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { Button } from '@ui/button';
 
 export function BillingPortalButton() {
   const [isLoading, setIsLoading] = useState(false);

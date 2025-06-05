@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { prisma } from '@/lib/prisma';
+import { getSessionFromRequest } from '@/lib/session';
 import { createCheckoutSession } from '@/lib/stripe';
 import { getBaseUrl } from '@/lib/utils';
-import { getSessionFromRequest } from '@/lib/session';
-import { Prisma } from '@prisma/client';
 
 // 利用するStripe価格ID（単発レッスン）
 const LESSON_PRICE_ID: string | undefined = process.env.NEXT_PUBLIC_LESSON_PRICE_ID;

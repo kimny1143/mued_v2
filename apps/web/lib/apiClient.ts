@@ -1,7 +1,8 @@
 import axios from 'axios';
-import type { ChatMessage, GetMessagesResponse, SendMessageRequest } from './types';
-import { supabaseServer } from './supabase-server';
 import { v4 as uuidv4 } from 'uuid';
+
+import { supabaseServer } from './supabase-server';
+import type { ChatMessage, GetMessagesResponse, SendMessageRequest } from './types';
 
 // APIクライアントの設定
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';

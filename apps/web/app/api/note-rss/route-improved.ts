@@ -1,6 +1,6 @@
 // app/api/note-rss/route-improved.ts
-import Parser from 'rss-parser';
 import { NextResponse } from 'next/server';
+import Parser from 'rss-parser';
 
 // このルートは動的である必要があるため、明示的に指定
 export const dynamic = 'force-dynamic';

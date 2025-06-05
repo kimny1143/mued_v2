@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
 import { addMinutes, format, isSameDay } from 'date-fns';
-import { Button } from '@/app/components/ui/button';
 import { ja } from 'date-fns/locale';
 import { Clock } from 'lucide-react';
+import React from 'react';
+
+import { Button } from '@/app/components/ui/button';
 
 export interface TimeSlot {
   id: string;

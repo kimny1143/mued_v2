@@ -2,12 +2,13 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useEffect, useState } from "react";
-import { Button } from "@/app/components/ui/button";
 import { FileIcon, ExternalLink, Calendar, User, BookOpen, Music, Mic, Edit, ArrowUpDown, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase-browser";
+import React, { useEffect, useState } from "react";
+
+import { Button } from "@/app/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { sortItems, type SortMethod } from "@/lib/utils/natural-sort";
 
 interface NoteMaterial {

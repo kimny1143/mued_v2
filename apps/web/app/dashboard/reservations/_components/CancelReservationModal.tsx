@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { AlertTriangle, X, Clock, DollarSign } from 'lucide-react';
+import { AlertTriangle, Clock, DollarSign } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Button } from '@/app/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -12,10 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/app/components/ui/dialog';
-import { Button } from '@/app/components/ui/button';
-import { Textarea } from '@/app/components/ui/textarea';
 import { Label } from '@/app/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/app/components/ui/select';
+import { Textarea } from '@/app/components/ui/textarea';
 import { CancelReason } from '@/lib/types/reservation';
 
 interface CancelReservationModalProps {

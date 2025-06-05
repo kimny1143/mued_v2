@@ -3,12 +3,12 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
-import { prisma } from '@/lib/prisma';
-import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest } from '@/lib/session';
 import { Prisma, ReservationStatus } from '@prisma/client';
-import { generateHourlySlots } from '@/lib/utils';
 import { parseISO, isValid, isBefore } from 'date-fns';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { prisma } from '@/lib/prisma';
+
 
 // スロットの拡張型定義（動的プロパティへの対応）
 interface SlotWithReservations {

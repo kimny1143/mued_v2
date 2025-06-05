@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation';
-import { getServerSession } from '@/lib/server/auth';
+
+
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from '@/lib/server/auth';
+
 import SlotsCalendarClient from './SlotsCalendarClient';
 
 // このページは動的である必要があります（認証チェックのため）

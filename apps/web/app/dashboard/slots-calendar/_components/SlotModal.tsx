@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { X, Clock, Edit, Trash2, Users, DollarSign, Save, Plus, AlertTriangle } from 'lucide-react';
+import { X, Clock, Edit, Trash2, Save, Plus, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Textarea } from '@/app/components/ui/textarea';

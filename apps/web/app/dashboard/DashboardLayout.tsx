@@ -1,8 +1,5 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { 
   UserCircleIcon, 
   HomeIcon, 
@@ -18,8 +15,12 @@ import {
   CalendarIcon,
   LogOutIcon
 } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import React, { useState } from "react";
+
 import { signOut } from "@/app/actions/auth";
+import { Button } from "@/app/components/ui/button";
 
 interface NavItem {
   icon: React.ElementType;

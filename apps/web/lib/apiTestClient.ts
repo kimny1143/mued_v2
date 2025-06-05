@@ -1,4 +1,5 @@
 import axios from 'axios';
+
 import { API_BASE_URL } from '../app/config/api';
 
 // API結果の型定義

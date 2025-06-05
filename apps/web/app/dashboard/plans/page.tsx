@@ -2,14 +2,15 @@
 
 export const dynamic = 'force-dynamic';
 
-import { Button } from "@ui/button";
-import { Card } from "@ui/card";
 import { CheckIcon, Star, Settings, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
 import { getSubscriptionPlans, StripeProduct, getPlanByPriceId } from "@/app/stripe-config";
 import { useUser } from "@/lib/hooks/use-user";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { Button } from "@ui/button";
+import { Card } from "@ui/card";
 
 export default function Page() {
   const router = useRouter();

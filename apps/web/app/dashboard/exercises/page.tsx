@@ -2,13 +2,13 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
-import { Card } from "@ui/card";
-import { Button } from "@ui/button";
 import { PlayCircle, CheckCircle, Clock, XIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useState } from 'react';
+
 import { ExerciseLogForm } from "@/app/components/ExerciseLogForm";
+import { Button } from "@ui/button";
+import { Card } from "@ui/card";
 
 export default function ExercisePage() {
   const router = useRouter();

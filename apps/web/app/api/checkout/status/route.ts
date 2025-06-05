@@ -1,6 +1,7 @@
-import { stripe } from '../../../../lib/stripe';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+
+import { stripe } from '../../../../lib/stripe';
 
 // このAPIルートは常に動的に生成されるべき
 export const dynamic = 'force-dynamic';

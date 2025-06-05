@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from 'react';
+
 import { useToast, Toast as ToastType } from './use-toast';
 
 export function Toaster() {

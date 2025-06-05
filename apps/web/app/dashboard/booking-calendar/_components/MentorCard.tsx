@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import React from 'react';
+
 import { Badge } from '@/app/components/ui/badge';
 
 export interface MentorCardProps {

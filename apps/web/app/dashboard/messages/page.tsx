@@ -3,12 +3,13 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React from "react";
+
 import { ChatMessage, ChatInput } from "@/app/components/chat";
 import { chatMessagesApi } from "@/lib/apiClient";
 import { useChatMessages } from "@/lib/hooks/useSupabaseChannel";
 import { ChatMessage as ChatMessageType } from "@/lib/types";
 import { useToast } from "@ui/use-toast";
-import React from "react";
 
 // UUIDの代替関数（バンドルサイズ削減のため）
 const generateId = () => {
@@ -33,6 +34,7 @@ const MemoizedChatMessage = React.memo(
   ),
   (prev, next) => prev.message.id === next.message.id // IDが同じなら再レンダリングしない
 );
+MemoizedChatMessage.displayName = 'MemoizedChatMessage';
 
 // メッセージ入力も再レンダリングを最小化
 const MemoizedChatInput = React.memo(ChatInput);

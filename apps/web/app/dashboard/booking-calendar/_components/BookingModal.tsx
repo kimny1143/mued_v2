@@ -1,13 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { X, Clock, User, CreditCard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
 import { Button } from '@/app/components/ui/button';
-import { Mentor } from './MentorList';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+
 import type { ExtendedTimeSlot, TimeSlot } from '../_types/calendar.js';
+
+import { Mentor } from './MentorList';
+
 
 interface BookingModalProps {
   isOpen: boolean;

@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { supabaseBrowser } from '@/lib/supabase-browser';
 import type {
   RealtimeChannel,
   RealtimePostgresChangesPayload,
 } from '@supabase/supabase-js';
+import { useEffect, useRef } from 'react';
+
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 type PostgresChangeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
 

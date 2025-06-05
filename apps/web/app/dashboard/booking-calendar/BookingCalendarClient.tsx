@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { MentorCalendar } from './_components/MentorCalendar';
-import { MentorList } from './_components/MentorList';
-import type { Mentor, LessonSlot, Reservation } from '@/lib/types';
+import { useState, useEffect } from 'react';
+
 import { Button } from '@/app/components/ui/button';
-import { CalendarClock, ArrowRight, ArrowLeft } from 'lucide-react';
-import { TimeSlot } from './_components/TimeSlotDisplay';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import type { Mentor, LessonSlot, Reservation } from '@/lib/types';
+
+import { MentorCalendar } from './_components/MentorCalendar';
+
 
 // デバッグモード
 const DEBUG = true;

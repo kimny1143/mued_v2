@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import Link from '@tiptap/extension-link';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
+import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Youtube as YoutubeIcon } from 'lucide-react';
+import React, { useEffect } from 'react';
 
 import { Button } from './ui/button';
-import { Bold, Italic, Link as LinkIcon, List, ListOrdered, Youtube as YoutubeIcon } from 'lucide-react';
+
 
 interface RichTextEditorProps {
   content: string;

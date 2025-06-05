@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
+
 export const runtime = 'nodejs';
-import { supabaseAdmin } from '@/lib/supabase-admin';
-import { getSessionFromRequest } from '@/lib/session';
 import type { NextRequest } from 'next/server';
+
+import { getSessionFromRequest } from '@/lib/session';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { supabaseServer } from '@/lib/supabase-server';
 
 // このAPIルートは動的であることを明示的に宣言

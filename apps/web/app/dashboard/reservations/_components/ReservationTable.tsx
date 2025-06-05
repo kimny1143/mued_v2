@@ -1,9 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { CalendarIcon } from 'lucide-react';
+import React, { useState } from 'react';
+
+
+import { ReservationType, LessonSlotType } from '@/lib/utils';
+import { Badge } from '@ui/badge';
+import { Button } from '@ui/button';
 import { 
   Table, 
   TableBody, 
@@ -12,10 +17,8 @@ import {
   TableHeader, 
   TableRow 
 } from '@ui/table';
-import { Button } from '@ui/button';
-import { Badge } from '@ui/badge';
+
 import { ReservationModal } from './ReservationModal';
-import { ReservationType, LessonSlotType } from '@/lib/utils';
 
 export type Teacher = {
   id: string;

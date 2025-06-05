@@ -2,14 +2,15 @@
 
 export const dynamic = 'force-dynamic';
 
+import { User } from "@supabase/supabase-js";
+import { UserCircleIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+
+import { SubscriptionStatus } from "@/app/components/SubscriptionStatus";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 import { Button } from "@ui/button";
 import { Card } from "@ui/card";
 import { Separator } from "@ui/separator";
-import { UserCircleIcon } from "lucide-react";
-import { supabaseBrowser } from "@/lib/supabase-browser";
-import { User } from "@supabase/supabase-js";
-import { SubscriptionStatus } from "@/app/components/SubscriptionStatus";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);

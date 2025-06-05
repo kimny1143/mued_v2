@@ -1,16 +1,20 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Mentor } from './MentorList';
-import { CalendarNavigation } from './CalendarNavigation';
-import { BookingModal } from './BookingModal';
-import { MonthView } from './MonthView';
-import { DayView } from './DayView';
 import { startOfDay } from 'date-fns';
 import { AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
 import { isDebugMode, debugLog, verboseDebugLog } from '@/lib/debug';
-import type { ExtendedTimeSlot, MyReservation, OtherReservation, TimeSlot } from '../_types/calendar.js';
 import type { LessonSlot, Reservation } from '@/lib/types';
+
+import type { ExtendedTimeSlot, OtherReservation, TimeSlot } from '../_types/calendar.js';
+
+import { BookingModal } from './BookingModal';
+import { CalendarNavigation } from './CalendarNavigation';
+import { DayView } from './DayView';
+import { Mentor } from './MentorList';
+import { MonthView } from './MonthView';
+
 
 // デバッグモード（環境変数ベース）
 const DEBUG = isDebugMode();

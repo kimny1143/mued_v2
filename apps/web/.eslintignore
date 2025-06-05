@@ -1,0 +1,31 @@
+# ビルド出力
+.next
+out
+dist
+build
+
+# 依存関係
+node_modules
+
+# 設定ファイル
+next.config.js
+tailwind.config.js
+postcss.config.js
+
+# スクリプトファイル（Node.js用）
+scripts/
+
+# テスト関連
+coverage/
+playwright-report/
+
+# 型定義ファイル
+*.d.ts
+
+# ストーリーブック
+.storybook/
+storybook-static/
+
+# その他
+.vercel
+.turbo

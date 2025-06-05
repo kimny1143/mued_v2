@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+
 import { Card } from '@/app/components/ui/card';
 
 export const ReservationSkeleton: React.FC = () => (

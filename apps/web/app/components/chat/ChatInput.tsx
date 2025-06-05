@@ -1,8 +1,9 @@
+import { PaperclipIcon, Send } from 'lucide-react';
 import { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
+
+import { RichTextEditor } from '@/app/components/RichTextEditor';
 import { Button } from '@ui/button';
 import { Card } from '@ui/card';
-import { PaperclipIcon, Send } from 'lucide-react';
-import { RichTextEditor } from '@/app/components/RichTextEditor';
 
 interface ChatInputProps {
   onSendMessage: (content: string, files?: File[]) => void;

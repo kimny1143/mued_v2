@@ -3,19 +3,18 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
-import { Button } from '@ui/button';
-import { StudentPaymentPendingCard } from '@/app/dashboard/reservations/_components/StudentPaymentPendingCard';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
-import { supabaseBrowser } from '@/lib/supabase-browser';
-import { User } from '@supabase/supabase-js';
-import { Toaster } from 'sonner';
 import type { ReservationStatus } from '@prisma/client';
+import { User } from '@supabase/supabase-js';
+import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'sonner';
+import { Toaster } from 'sonner';
+
+import { StudentPaymentPendingCard } from '@/app/dashboard/reservations/_components/StudentPaymentPendingCard';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 import { CancelReason } from '@/lib/types/reservation';
+import { Button } from '@ui/button';
 
 // 予約データの型定義
 type TeacherInfo = {

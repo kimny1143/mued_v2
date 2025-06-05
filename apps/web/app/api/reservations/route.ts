@@ -3,17 +3,23 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
-import { prisma } from '../../../lib/prisma';
-import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest } from '@/lib/session';
+import { randomUUID } from 'crypto';
+
 import { Prisma, ReservationStatus } from '@prisma/client';
-import { createCheckoutSessionForReservation } from '@/lib/stripe';
-import { getBaseUrl, calculateTotalReservedMinutes, calculateSlotTotalMinutes } from '@/lib/utils';
-import Stripe from 'stripe';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { randomUUID } from 'crypto';
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
+
+
 import { convertReservationToResponse } from '@/lib/caseConverter';
+import { getSessionFromRequest } from '@/lib/session';
+import { getBaseUrl, calculateTotalReservedMinutes, calculateSlotTotalMinutes } from '@/lib/utils';
+
+import { prisma } from '../../../lib/prisma';
+
+
+
 
 // Stripe インスタンスの初期化
 const _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {

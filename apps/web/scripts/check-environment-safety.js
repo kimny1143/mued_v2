@@ -8,7 +8,7 @@ function checkEnvironmentSafety() {
 
   const checks = [];
   let isProduction = false;
-  let warnings = [];
+  const warnings = [];
 
   // 1. Stripe環境チェック
   const stripeKey = process.env.STRIPE_SECRET_KEY;

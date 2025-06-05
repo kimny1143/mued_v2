@@ -1,9 +1,12 @@
 // lib/hooks/queries/useReservations.ts
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ReservationStatus } from '@prisma/client';
-import { useSupabaseChannel } from '../useSupabaseChannel';
-import { useUser } from '../use-user';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+
 import { supabaseBrowser } from '@/lib/supabase-browser';
+
+import { useUser } from '../use-user';
+import { useSupabaseChannel } from '../useSupabaseChannel';
+
 
 export interface LessonSlot {
   id: string;

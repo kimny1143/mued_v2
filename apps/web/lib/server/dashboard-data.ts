@@ -1,6 +1,7 @@
-import { prisma } from '@/lib/prisma';
 import { isToday, isFuture } from 'date-fns';
 import { cache } from 'react';
+
+import { prisma } from '@/lib/prisma';
 
 export interface DashboardData {
   user: {

@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
+
 import { createCheckoutSession } from '../../lib/stripe';
 import type { StripeProduct } from '../stripe-config';
+
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 interface ProductCardProps {
   product: StripeProduct;

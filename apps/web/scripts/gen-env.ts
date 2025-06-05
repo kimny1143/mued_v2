@@ -2,9 +2,8 @@
 // 使用法: npx tsx scripts/gen-env.ts [環境名]
 // 例: npx tsx scripts/gen-env.ts production
 
-import fs from 'fs';
-import path from 'path';
 import { execSync } from 'child_process';
+import fs from 'fs';
 
 // 色の定義
 const GREEN = '\x1b[32m';

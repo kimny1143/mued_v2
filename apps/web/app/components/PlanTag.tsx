@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from 'react';
-import { useUser } from '@/lib/hooks/use-user';
 import { Crown, Star, Zap, CreditCard, ExternalLink, Shield, UserCheck } from 'lucide-react';
+import { useState } from 'react';
+
+import { useUser } from '@/lib/hooks/use-user';
 
 export function PlanTag() {
   const { user, loading } = useUser();

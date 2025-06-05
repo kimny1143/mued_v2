@@ -1,8 +1,11 @@
-import { prisma } from '../../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest } from '@/lib/session';
+
+
 import { convertLessonSlotRequestToDb } from '@/lib/caseConverter';
 import { hasPermission, normalizeRoleName } from '@/lib/role-utils';
+import { getSessionFromRequest } from '@/lib/session';
+
+import { prisma } from '../../../../lib/prisma';
 
 export const dynamic = 'force-dynamic';
 

@@ -1,5 +1,4 @@
 import { ChatMessage as ChatMessageType } from '@lib/types';
-import { useRef } from 'react';
 
 interface ChatMessageProps {
   message: ChatMessageType;

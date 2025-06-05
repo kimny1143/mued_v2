@@ -3,11 +3,13 @@
 // このページは動的である必要があります（認証チェックのため）
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Button } from '@/app/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
+import { Button } from '@/app/components/ui/button';
+
 
 interface ReservationDetails {
   sessionId: string;

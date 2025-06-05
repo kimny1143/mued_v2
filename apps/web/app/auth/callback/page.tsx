@@ -2,11 +2,11 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabaseBrowser } from '@/lib/supabase-browser';
-import { getBaseUrl } from '@/lib/utils';
+import { useEffect, Suspense } from 'react';
+
 import { handlePostLoginPlanRedirect } from '@/lib/billing-utils';
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 // useSearchParamsを使用するコンテンツコンポーネント
 function CallbackContent() {

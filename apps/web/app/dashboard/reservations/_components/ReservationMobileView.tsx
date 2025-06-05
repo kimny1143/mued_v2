@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { CalendarIcon, ChevronRightIcon, UserIcon } from 'lucide-react';
-import { Button } from '@ui/button';
-import { Badge } from '@ui/badge';
-import { LessonSlot } from '@/app/dashboard/reservations/_components/ReservationTable';
+import React, { useState } from 'react';
+
 import { ReservationModal } from '@/app/dashboard/reservations/_components/ReservationModal';
+import { LessonSlot } from '@/app/dashboard/reservations/_components/ReservationTable';
+import { Badge } from '@ui/badge';
+import { Button } from '@ui/button';
 
 interface ReservationMobileViewProps {
   lessonSlots: LessonSlot[];

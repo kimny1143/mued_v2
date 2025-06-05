@@ -1,9 +1,12 @@
-import { prisma } from '../../../../lib/prisma';
+import { Prisma } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest } from '@/lib/session';
-import { Prisma, ReservationStatus } from '@prisma/client';
-import { stripe } from '@/lib/stripe';
+
+
 import { convertReservationToResponse } from '@/lib/caseConverter';
+import { getSessionFromRequest } from '@/lib/session';
+import { stripe } from '@/lib/stripe';
+
+import { prisma } from '../../../../lib/prisma';
 
 export const dynamic = 'force-dynamic';
 

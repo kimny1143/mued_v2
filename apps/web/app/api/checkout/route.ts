@@ -1,12 +1,8 @@
-import { stripe, safeStripeCall } from '@/lib/stripe';
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
-import Stripe from 'stripe';
 import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { ReservationStatus, PaymentStatus } from '@prisma/client';
+import Stripe from 'stripe';
+
+
 
 // テスト価格情報の型定義
 type TestPriceInfo = {

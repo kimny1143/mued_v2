@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation';
-import { getServerSession } from '@/lib/server/auth';
+
+
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from '@/lib/server/auth';
+
 import DashboardLayout from './DashboardLayout';
 
 // ダッシュボード全体を動的レンダリングに設定（認証チェックでcookiesを使用するため）

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { ReservationStatus } from '@prisma/client';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { 
@@ -8,9 +8,12 @@ import {
   XCircle, 
   User, 
   Calendar,
-  AlertTriangle,
   MoreHorizontal
 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/app/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -19,11 +22,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/app/components/ui/dialog';
-import { Button } from '@/app/components/ui/button';
-import { ReservationStatus } from '@prisma/client';
-import { CancelReason } from '@/lib/types/reservation';
 import { api, ApiError } from '@/lib/api-client';
-import { toast } from 'sonner';
+import { CancelReason } from '@/lib/types/reservation';
+
 
 // 予約データの型定義
 interface DailyReservation {

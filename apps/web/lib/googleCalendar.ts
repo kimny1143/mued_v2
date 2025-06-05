@@ -1,6 +1,6 @@
-import { google, calendar_v3 } from 'googleapis';
-import { format, differenceInMilliseconds } from 'date-fns';
 import { PrismaClient, lesson_slots as PrismaLessonSlot } from '@prisma/client';
+import { format, differenceInMilliseconds } from 'date-fns';
+import { google, calendar_v3 } from 'googleapis';
 
 const prisma = new PrismaClient();
 

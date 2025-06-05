@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { prisma } from '@/lib/prisma';
-import { getSessionFromRequest } from '@/lib/session';
 import { hasPermission } from '@/lib/role-utils';
+import { getSessionFromRequest } from '@/lib/session';
 
 interface EndSessionBody {
   lesson_notes?: string;

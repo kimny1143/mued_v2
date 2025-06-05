@@ -1,8 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+
+import { generateAvailableTimeSlots } from '@/lib/utils';
+import { Button } from '@ui/button';
 import { 
   Dialog,
   DialogContent,
@@ -11,12 +15,11 @@ import {
   DialogFooter,
   DialogDescription
 } from '@ui/dialog';
-import { Button } from '@ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select';
 import { Label } from '@ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ui/select';
+
 import { LessonSlot, convertToLessonSlotType } from './ReservationTable';
-import { Loader2 } from 'lucide-react';
-import { generateAvailableTimeSlots } from '@/lib/utils';
+
 
 // TimeSlot型定義を追加
 export interface TimeSlot {

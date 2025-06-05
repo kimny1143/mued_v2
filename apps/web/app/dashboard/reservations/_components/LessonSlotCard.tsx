@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { format, addHours, differenceInHours } from 'date-fns';
+import { format, differenceInHours } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { CalendarIcon, ClockIcon, Loader2Icon } from 'lucide-react';
-import { Card } from '@/app/components/ui/card';
+import React, { useState, useMemo } from 'react';
+
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
+import { Card } from '@/app/components/ui/card';
+import { Label } from '@/app/components/ui/label';
 import { 
   Select, 
   SelectContent, 
@@ -14,7 +16,6 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/app/components/ui/select';
-import { Label } from '@/app/components/ui/label';
 
 interface LessonSlot {
   id: string;

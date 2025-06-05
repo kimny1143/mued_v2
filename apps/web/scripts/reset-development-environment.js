@@ -1,7 +1,10 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { createClient } = require('@supabase/supabase-js');
+
 const fs = require('fs');
 const path = require('path');
+
+const { createClient } = require('@supabase/supabase-js');
+
 const { checkEnvironmentSafety } = require('./check-environment-safety');
 
 const supabase = createClient(
@@ -22,7 +25,7 @@ async function resetDevelopmentEnvironment() {
   console.log('🔄 開発環境完全リセット開始...\n');
   
   const startTime = Date.now();
-  let errors = [];
+  const errors = [];
 
   try {
     // ========================================

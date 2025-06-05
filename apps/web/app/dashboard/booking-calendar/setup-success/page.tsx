@@ -3,11 +3,14 @@
 // このページは動的である必要があります（認証チェックのため）
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { supabaseBrowser } from '@/lib/supabase-browser';
 import { CheckCircle, Clock, CreditCard, X } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+
 import { Button } from '@/app/components/ui/button';
+import { supabaseBrowser } from '@/lib/supabase-browser';
+
+
 
 // caseConverter で定義されている型と同じ形式
 type ReservationResponse = {

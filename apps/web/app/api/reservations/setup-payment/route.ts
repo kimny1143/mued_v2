@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest } from '@/lib/session';
 import Stripe from 'stripe';
+
+import { getSessionFromRequest } from '@/lib/session';
 import { getOrCreateStripeCustomer } from '@/lib/stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {

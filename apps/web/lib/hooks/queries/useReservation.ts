@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
 import { ReservationStatus } from '@prisma/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface Reservation {
   id: string;

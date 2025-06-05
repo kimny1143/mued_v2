@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle, ArrowRight, Home, CreditCard } from 'lucide-react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+
 import { Button } from '@ui/button';
 
 interface CheckoutSession {

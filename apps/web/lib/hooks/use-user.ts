@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Session } from '@supabase/supabase-js';
+import { useState, useEffect } from 'react';
+
+import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export interface User {
   id: string;

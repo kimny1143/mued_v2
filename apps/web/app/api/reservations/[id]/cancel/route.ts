@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getSessionFromRequest } from '@/lib/session';
-import { CancelReservationRequest } from '@/lib/types/reservation';
+
 import { CancellationPolicy, checkCancellationPolicy } from '@/lib/cancellation-policy';
+import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/resend';
 import { hasPermission, normalizeRoleName } from '@/lib/role-utils';
+import { getSessionFromRequest } from '@/lib/session';
+import { CancelReservationRequest } from '@/lib/types/reservation';
 
 export async function POST(
   request: NextRequest,

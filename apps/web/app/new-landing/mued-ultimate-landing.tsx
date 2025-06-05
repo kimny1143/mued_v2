@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { User } from '@supabase/supabase-js';
+import { ChevronRight, Music, Calendar, Brain, BookOpen, Star, Check, Menu, X, Play, Sparkles, Headphones, Radio, Mic2, Piano, Pause, SkipForward, Volume2, Heart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { ChevronRight, Music, Calendar, Users, Brain, BookOpen, CreditCard, Star, Check, Menu, X, Play, Sparkles, Headphones, Radio, Mic2, Piano, Pause, SkipForward, Volume2, Heart } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+
 import { getSubscriptionPlans } from '@/app/stripe-config';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import { User } from '@supabase/supabase-js';
+
 
 const LandingPage = () => {
   const router = useRouter();

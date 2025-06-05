@@ -6,10 +6,11 @@
  * ts-node scripts/check-supabase-permissions.ts
  */
 
-import { createClient } from '@supabase/supabase-js';
-import * as dotenv from 'dotenv';
 import { resolve } from 'path';
+
+import { createClient } from '@supabase/supabase-js';
 import chalk from 'chalk';
+import * as dotenv from 'dotenv';
 
 // .env.localから環境変数をロード
 dotenv.config({ path: resolve(process.cwd(), '.env.local') });

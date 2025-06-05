@@ -1,16 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { SlotsCalendar } from './_components/SlotsCalendar';
-import { CalendarClock, Plus } from 'lucide-react';
-import { Button } from '@/app/components/ui/button';
-import { supabaseBrowser } from '@/lib/supabase-browser';
 import { ReservationStatus } from '@prisma/client';
-import { CancelReason } from '@/lib/types/reservation';
-import { ReservationManagementModal, type ReservationManagementModalProps } from './_components/ReservationManagementModal';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+
+
+import { Button } from '@/app/components/ui/button';
 import { api, ApiError } from '@/lib/api-client';
+import { supabaseBrowser } from '@/lib/supabase-browser';
+import { CancelReason } from '@/lib/types/reservation';
+
 import { MentorDayView } from './_components/MentorDayView';
+import { ReservationManagementModal } from './_components/ReservationManagementModal';
+import { SlotsCalendar } from './_components/SlotsCalendar';
+
+
+
 
 // デバッグモード
 const DEBUG = true;

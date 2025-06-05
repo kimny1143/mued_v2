@@ -1,7 +1,9 @@
 'use client';
 
-import { Navigation } from './Navigation';
 import { useUser } from '@/lib/hooks/use-user';
+
+import { Navigation } from './Navigation';
+
 
 export function NavigationWrapper() {
   const { isAuthenticated } = useUser();

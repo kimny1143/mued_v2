@@ -3,10 +3,11 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
-import { prisma } from '@/lib/prisma';
-import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { parseISO, isValid, isBefore } from 'date-fns';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { prisma } from '@/lib/prisma';
 
 // レッスンスロットと関連データの型定義
 interface SlotWithRelations {

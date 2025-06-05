@@ -1,8 +1,11 @@
 import { redirect } from 'next/navigation';
+
+
+import { Card } from "@/app/components/ui/card";
 import { getServerSession } from '@/lib/server/auth';
 import { getDashboardData } from '@/lib/server/dashboard-data';
+
 import DashboardClient from './DashboardClient';
-import { Card } from "@/app/components/ui/card";
 
 // Next.js 14のキャッシュ設定
 export const dynamic = 'force-dynamic'; // 動的レンダリングを強制

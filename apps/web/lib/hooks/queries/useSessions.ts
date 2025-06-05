@@ -1,4 +1,5 @@
 import useSWR from 'swr';
+
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 export interface LessonSession {

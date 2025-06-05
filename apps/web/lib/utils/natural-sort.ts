@@ -27,7 +27,7 @@ function extractNumbers(str: string): (string | number)[] {
     { regex: /(\d+)\./, prefix: '', suffix: '.' }
   ];
 
-  let result = str;
+  // const result = str; // 未使用変数のため削除
   const segments: (string | number)[] = [];
   let lastIndex = 0;
 

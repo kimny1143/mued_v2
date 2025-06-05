@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
+import { useState, useEffect } from 'react';
+
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 interface StripeTestClientProps {

@@ -3,8 +3,10 @@
  * 認証・サブスクリプション関連の問題を診断するためのユーティリティ
  */
 
-import { supabaseBrowser } from './supabase-browser';
 import { getPlanByPriceId } from '@/app/stripe-config';
+
+import { supabaseBrowser } from './supabase-browser';
+
 
 /**
  * 認証状態の詳細情報を取得

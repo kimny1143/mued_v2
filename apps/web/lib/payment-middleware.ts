@@ -8,7 +8,6 @@
 import { 
   shouldUseNewPaymentFlow, 
   getPaymentExecutionTiming,
-  getNextPaymentAction,
   getReservationPaymentFlowType,
   getTransitionPeriodHandling
 } from './payment-flow';

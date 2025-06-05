@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { mutate } from 'swr';
+
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 interface StartSessionResponse {

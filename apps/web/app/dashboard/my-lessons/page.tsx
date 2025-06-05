@@ -2,15 +2,8 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useMemo, useCallback } from "react";
-import { Button } from "@ui/button";
-import { Card } from "@ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
-import { Badge } from "@ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@ui/dialog";
-import { Label } from "@ui/label";
-import { Textarea } from "@ui/textarea";
+import { format, isWithinInterval, subMinutes, addMinutes } from "date-fns";
+import { ja } from "date-fns/locale";
 import { 
   PlayCircleIcon, 
   CalendarIcon,
@@ -19,13 +12,21 @@ import {
   MessageSquareIcon,
   AlertCircleIcon
 } from "lucide-react";
-import { useSessions } from "@/lib/hooks/queries/useSessions";
-import { useUser } from "@/lib/hooks/use-user";
-import { useStartSession, useEndSession, useSubmitFeedback } from "@/lib/hooks/mutations/useSessionMutations";
-import { format, isWithinInterval, subMinutes, addMinutes } from "date-fns";
-import { ja } from "date-fns/locale";
+import { useState, useMemo, useCallback } from "react";
+
 import { useToast } from "@/app/components/ui/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useStartSession, useEndSession, useSubmitFeedback } from "@/lib/hooks/mutations/useSessionMutations";
+import { useSessions } from "@/lib/hooks/queries/useSessions";
 import type { LessonSession } from "@/lib/hooks/queries/useSessions";
+import { useUser } from "@/lib/hooks/use-user";
+import { Badge } from "@ui/badge";
+import { Button } from "@ui/button";
+import { Card } from "@ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@ui/dialog";
+import { Label } from "@ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@ui/tabs";
+import { Textarea } from "@ui/textarea";
 
 export default function Page() {
   const { user } = useUser();

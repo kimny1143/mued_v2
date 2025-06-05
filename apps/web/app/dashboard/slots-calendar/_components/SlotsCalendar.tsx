@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, isSameDay, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, startOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { AlertCircle, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Users, Edit, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import React, { useState } from 'react';
+
 import { Button } from '@/app/components/ui/button';
+
 import { SlotModal } from './SlotModal';
+
+
 
 // デバッグモード
 const DEBUG = true;

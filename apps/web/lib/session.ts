@@ -1,7 +1,8 @@
-import { supabaseServer } from './supabase-server';
 import { createClient } from '@supabase/supabase-js';
 import type { Session, User } from '@supabase/supabase-js';
+
 import { prisma } from './prisma'; // Prismaクライアントをインポート
+import { supabaseServer } from './supabase-server';
 
 // 一般的なロール定義（固定値）
 const ROLE_NAMES = {

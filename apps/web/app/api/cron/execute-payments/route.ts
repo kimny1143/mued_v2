@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { shouldUseNewPaymentFlowByLessonTime, getPaymentExecutionTiming } from '@/lib/payment-flow';
 import Stripe from 'stripe';
+
+import { shouldUseNewPaymentFlowByLessonTime, getPaymentExecutionTiming } from '@/lib/payment-flow';
+import { prisma } from '@/lib/prisma';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-03-31.basil',

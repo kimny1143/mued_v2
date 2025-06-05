@@ -1,7 +1,8 @@
+import { ReservationStatus } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
+
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/session';
-import { ReservationStatus } from '@prisma/client';
 
 // キャッシュ設定
 export const dynamic = 'force-dynamic';

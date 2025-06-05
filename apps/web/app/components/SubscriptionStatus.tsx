@@ -1,11 +1,14 @@
 "use client";
 
-import { getPlanByPriceId } from '@/app/stripe-config';
-import { useUser } from '@/lib/hooks/use-user';
-import { Card } from '@ui/card';
-import { Button } from '@ui/button';
 import { Crown, Zap, Star, Settings, CreditCard } from 'lucide-react';
 import Link from 'next/link';
+
+
+import { getPlanByPriceId } from '@/app/stripe-config';
+import { useUser } from '@/lib/hooks/use-user';
+import { Button } from '@ui/button';
+import { Card } from '@ui/card';
+
 import { BillingPortalButton } from './BillingPortalButton';
 
 export function SubscriptionStatus() {

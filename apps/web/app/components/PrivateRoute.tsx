@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { supabaseBrowser } from '@/lib/supabase-browser';
 import { User } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+
+import { supabaseBrowser } from '@/lib/supabase-browser';
+
 
 export default function PrivateRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();

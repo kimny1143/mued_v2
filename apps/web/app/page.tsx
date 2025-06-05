@@ -2,11 +2,16 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { supabaseBrowser } from '@/lib/supabase-browser';
 import { User } from '@supabase/supabase-js';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+
+import { supabaseBrowser } from '@/lib/supabase-browser';
+
 import LandingPage from './new-landing/mued-ultimate-landing';
+
+
+
 
 // useSearchParamsを使用するコンテンツコンポーネント
 function LandingPageContent(): JSX.Element {

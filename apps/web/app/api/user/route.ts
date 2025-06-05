@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 export const runtime = 'nodejs';
-import { supabaseAdmin } from '@/lib/supabase-admin';
 import { prisma } from '@/lib/prisma'; // Prismaクライアントをインポート
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 // ユーザーデータの型定義
 interface UserData {
