@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
-import { Home, Calendar, User, Settings } from 'lucide-react-native';
+import { Home, Calendar, User, Settings } from '@/components/Icons';
 
 export default function TabsLayout() {
   return (

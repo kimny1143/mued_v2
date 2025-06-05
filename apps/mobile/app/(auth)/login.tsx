@@ -1,14 +1,15 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { makeRedirectUri } from 'expo-auth-session';
 import { supabase } from '@/services/supabase';
 import GoogleIcon from '@/components/GoogleIcon';
+import { SafeAreaView } from '@/components/SafeAreaView';
+import { maybeCompleteAuthSession, openAuthSessionAsync } from '@/utils/webBrowser';
+import { isWeb } from '@/utils/platform';
 
-WebBrowser.maybeCompleteAuthSession();
+maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +45,7 @@ export default function LoginScreen() {
 
       if (error) throw error;
 
-      const res = await WebBrowser.openAuthSessionAsync(
+      const res = await openAuthSessionAsync(
         data.url!,
         redirectUrl
       );
