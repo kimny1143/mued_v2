@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd ../.. && npm run build:web",
+  "buildCommand": "npm run build:web",
   "outputDirectory": "apps/web/.next",
-  "installCommand": "cd ../.. && npm ci",
+  "installCommand": "npm ci",
   "framework": "nextjs",
   "ignoreCommand": "npx turbo-ignore @mued/web",
   "git": {
