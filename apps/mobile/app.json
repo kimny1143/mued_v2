@@ -29,7 +29,15 @@
     },
     "web": {
       "bundler": "metro",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "pwa": {
+        "name": "MUED",
+        "short_name": "MUED",
+        "theme_color": "#ffffff",
+        "background_color": "#ffffff",
+        "display": "standalone",
+        "description": "Music Learning Dashboard"
+      }
     },
     "plugins": [
       "expo-dev-client",
