@@ -14,6 +14,11 @@ yarn.lock
 /out
 /.next
 /.nuxt
+apps/*/dist
+apps/*/.next
+packages/*/dist
+packages/*/lib
+.turbo
 
 # 環境変数
 .env
