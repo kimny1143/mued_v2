@@ -1,8 +1,11 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "build",
-  "framework": "create-react-app",
-  "installCommand": "npm install --ignore-scripts",
+  "framework": null,
+  "installCommand": "npm install",
   "devCommand": "npm start",
-  "ignoreCommand": "cd ../.. && git diff HEAD^ HEAD --quiet apps/mobile packages/shared package.json"
+  "ignoreCommand": "cd ../.. && git diff HEAD^ HEAD --quiet apps/mobile",
+  "settings": {
+    "nodeVersion": "18.x"
+  }
 }

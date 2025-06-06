@@ -1,0 +1,6 @@
+# Ignore parent directories
+../../turbo.json
+../../package.json
+../../package-lock.json
+../../node_modules
+../..
