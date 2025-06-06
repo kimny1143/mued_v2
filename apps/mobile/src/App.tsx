@@ -13,6 +13,7 @@ import { Calendar } from './pages/Calendar';
 import { Messages } from './pages/Messages';
 import { Profile } from './pages/Profile';
 import { Materials } from './pages/Materials';
+import { EnvDebug } from './pages/EnvDebug';
 import { InstallPWA } from './components/InstallPWA';
 import { PWAPrompt } from './components/PWAPrompt';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
