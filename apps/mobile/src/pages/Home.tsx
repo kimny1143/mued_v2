@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { SmartInstallButton } from '../components/SmartInstallButton';
 
 const Home: React.FC = () => {
   const { user, signOut, loading } = useAuth();
@@ -90,6 +91,8 @@ const Home: React.FC = () => {
           </div>
         </div>
       </main>
+      
+      <SmartInstallButton />
     </div>
   );
 };

@@ -8,6 +8,7 @@ import Landing from './pages/Landing';
 import PWADebug from './pages/PWADebug';
 import { InstallPWA } from './components/InstallPWA';
 import { PWAPrompt } from './components/PWAPrompt';
+import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import './App.css';
 
 // Protected Route component
@@ -65,6 +66,7 @@ function App() {
           <AppRoutes />
           <InstallPWA />
           <PWAPrompt />
+          <IOSInstallPrompt />
         </div>
       </AuthProvider>
     </Router>
