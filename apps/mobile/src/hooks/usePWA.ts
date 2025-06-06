@@ -11,18 +11,24 @@ export const usePWA = () => {
   const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
+    console.log('PWA Hook initialized');
+    
     // PWAがインストール済みかチェック
     const checkInstallation = () => {
       if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('PWA is running in standalone mode');
         setIsInstalled(true);
         return;
       }
       
       // iOS Safari
       if ((window.navigator as any).standalone) {
+        console.log('PWA is running in iOS standalone mode');
         setIsInstalled(true);
         return;
       }
+      
+      console.log('PWA is not installed');
     };
 
     checkInstallation();

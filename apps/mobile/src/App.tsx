@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import AuthCallback from './pages/AuthCallback';
 import { InstallPWA } from './components/InstallPWA';
+import { PWAPrompt } from './components/PWAPrompt';
 import './App.css';
 
 // Protected Route component
@@ -60,6 +61,7 @@ function App() {
         <div className="App">
           <AppRoutes />
           <InstallPWA />
+          <PWAPrompt />
         </div>
       </AuthProvider>
     </Router>
