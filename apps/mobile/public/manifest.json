@@ -1,42 +1,64 @@
 {
-  "name": "MUED LMS - 音楽学習管理システム",
-  "short_name": "MUED",
-  "description": "Music Learning Dashboard - 音楽制作のための学習管理システム",
+  "short_name": "MUED LMS",
+  "name": "MUED Learning Management System",
+  "description": "音楽レッスン用学習管理システム - Music lesson learning management system",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "theme_color": "#3b82f6",
+  "theme_color": "#1e40af",
   "background_color": "#ffffff",
+  "orientation": "portrait-primary",
   "categories": ["education", "music"],
-  "lang": "ja",
-  "dir": "ltr",
-  "icons": [
+  "prefer_related_applications": false,
+  "shortcuts": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "name": "予約カレンダー",
+      "short_name": "予約",
+      "description": "レッスンの予約を行う",
+      "url": "/dashboard/booking-calendar",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "name": "メッセージ",
+      "short_name": "メッセージ",
+      "description": "メッセージを確認する",
+      "url": "/dashboard/messages",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ],
-  "related_applications": [],
-  "prefer_related_applications": false
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": ["image/*", "audio/*", "video/*"]
+        }
+      ]
+    }
+  }
 }

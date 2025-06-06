@@ -1,52 +1,60 @@
 {
-  "name": "@mued/mobile",
-  "version": "1.0.0",
-  "main": "index.tsx",
-  "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
-    "build:web": "expo export --platform web --output-dir ./dist && node scripts/copy-public.js"
-  },
+  "name": "mobile",
+  "version": "0.1.0",
+  "private": true,
   "dependencies": {
-    "@mued/shared": "file:../../packages/shared",
     "@supabase/supabase-js": "^2.49.10",
-    "@tanstack/react-query": "^5.76.0",
-    "axios": "^1.9.0",
-    "date-fns": "^4.1.0",
-    "expo": "~53.0.0",
-    "expo-auth-session": "~6.2.0",
-    "expo-constants": "~17.1.0",
-    "expo-dev-client": "^5.2.0",
-    "expo-font": "~13.3.0",
-    "expo-linking": "~7.1.0",
-    "expo-notifications": "~0.31.0",
-    "expo-router": "~5.0.0",
-    "expo-secure-store": "~14.2.0",
-    "expo-splash-screen": "~0.30.0",
-    "expo-status-bar": "~2.0.0",
-    "expo-system-ui": "~5.0.0",
-    "expo-web-browser": "~14.1.0",
-    "lucide-react-native": "^0.513.0",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
-    "react-native": "0.76.6",
-    "react-native-gesture-handler": "~2.24.0",
-    "react-native-reanimated": "~3.17.0",
-    "react-native-safe-area-context": "5.4.0",
-    "react-native-screens": "~4.11.0",
-    "react-native-svg": "15.11.0",
-    "react-native-url-polyfill": "^2.0.0",
-    "react-native-web": "^0.20.0",
-    "zustand": "^4.5.0"
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^17.0.45",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
+    "@types/react-router-dom": "^5.3.3",
+    "cra-template-pwa-typescript": "2.0.0",
+    "lucide-react": "^0.513.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.1",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.9.5",
+    "web-vitals": "^2.1.4",
+    "workbox-background-sync": "^6.6.1",
+    "workbox-broadcast-update": "^6.6.0",
+    "workbox-cacheable-response": "^6.6.0",
+    "workbox-core": "^6.6.1",
+    "workbox-expiration": "^6.6.0",
+    "workbox-google-analytics": "^6.6.1",
+    "workbox-navigation-preload": "^6.6.0",
+    "workbox-precaching": "^6.6.0",
+    "workbox-range-requests": "^6.6.0",
+    "workbox-routing": "^6.6.1",
+    "workbox-strategies": "^6.6.1",
+    "workbox-streams": "^6.6.0"
   },
-  "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@types/react": "~19.0.0",
-    "babel-plugin-module-resolver": "^5.0.2",
-    "typescript": "~5.8.0",
-    "web-push": "^3.6.7"
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
   },
-  "private": true
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
 }
