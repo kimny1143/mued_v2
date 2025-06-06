@@ -12,6 +12,7 @@ const PWADebug: React.FC = () => {
   const [requirements, setRequirements] = useState<PWARequirement[]>([]);
   const [manifestData, setManifestData] = useState<any>(null);
   const [beforeInstallPromptEvent, setBeforeInstallPromptEvent] = useState<any>(null);
+  const [engagementScore, setEngagementScore] = useState(0);
 
   useEffect(() => {
     const checkPWA = async () => {
@@ -182,7 +183,23 @@ const PWADebug: React.FC = () => {
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Engagement tracking
+    const engagementInterval = setInterval(() => {
+      setEngagementScore(prev => prev + 1);
+    }, 1000);
+
+    // Track clicks
+    const handleClick = () => {
+      setEngagementScore(prev => prev + 5);
+    };
+    document.addEventListener('click', handleClick);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      clearInterval(engagementInterval);
+      document.removeEventListener('click', handleClick);
+    };
   }, []);
 
   const triggerInstall = async () => {
@@ -229,11 +246,73 @@ const PWADebug: React.FC = () => {
             border: 'none',
             borderRadius: '4px',
             cursor: beforeInstallPromptEvent ? 'pointer' : 'not-allowed',
+            marginRight: '10px',
           }}
         >
           {beforeInstallPromptEvent ? 'Trigger Install' : 'Install not available'}
         </button>
+        <button 
+          onClick={() => window.location.reload()}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#6B7280',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          Reload Page
+        </button>
       </div>
+
+      {!beforeInstallPromptEvent && (
+        <div style={{ 
+          marginBottom: '30px',
+          padding: '20px',
+          backgroundColor: '#FEF3C7',
+          borderRadius: '8px',
+          border: '1px solid #F59E0B',
+        }}>
+          <h3 style={{ marginTop: 0, color: '#92400E' }}>⚠️ beforeinstallprompt イベントが発火していません</h3>
+          
+          <div style={{ 
+            marginBottom: '15px',
+            padding: '10px',
+            backgroundColor: '#FFF',
+            borderRadius: '4px',
+          }}>
+            <strong>エンゲージメントスコア: {engagementScore}</strong>
+            <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+              (時間経過: +1/秒, クリック: +5/回)
+            </div>
+          </div>
+
+          <p style={{ color: '#92400E' }}>以下の方法を試してください：</p>
+          <ol style={{ color: '#92400E' }}>
+            <li><strong>ブラウザ設定をリセット：</strong>
+              <ul>
+                <li>Chrome: アドレスバーに <code>chrome://settings/content/appBanners</code> を入力</li>
+                <li>サイトのデータを削除して、インストール履歴をリセット</li>
+              </ul>
+            </li>
+            <li><strong>エンゲージメント要件：</strong>
+              <ul>
+                <li>ページを数回リロード</li>
+                <li>30秒以上サイトに滞在</li>
+                <li>複数のページを訪問（ログイン → ホーム等）</li>
+              </ul>
+            </li>
+            <li><strong>デバッグモード：</strong>
+              <ul>
+                <li>Chrome DevTools → Application → Manifest → "Add to homescreen" をクリック</li>
+              </ul>
+            </li>
+            <li><strong>別のブラウザ/プロファイルで試す</strong></li>
+          </ol>
+        </div>
+      )}
 
       <div style={{ marginBottom: '30px' }}>
         <h2>PWA Requirements Checklist</h2>
