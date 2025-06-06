@@ -2,10 +2,22 @@ import { NextResponse } from 'next/server';
 
 // CORS設定
 const ALLOWED_ORIGINS = [
+  // 開発環境
+  'http://localhost:3000', // PC版開発環境
   'http://localhost:3001', // モバイル版開発環境
-  'https://mued-pwa.vercel.app', // モバイル版本番環境（将来的なドメイン）
-  'https://mued-pwa-git-develop-glasswerks.vercel.app', // モバイル版プレビュー環境
-  'https://mued-pwa-git-main-glasswerks.vercel.app', // モバイル版メインブランチ
+  
+  // PC版（親プロジェクト）
+  'https://www.mued.jp', // PC版本番環境
+  'https://dev.mued.jp', // PC版プレビュー環境
+  'https://mued-lms-fgm.vercel.app', // PC版Vercelドメイン（本番）
+  'https://mued-lms-fgm-git-develop-glasswerks.vercel.app', // PC版Vercelドメイン（開発）
+  
+  // モバイル版（PWA）
+  'https://pwa.mued.jp', // モバイル版本番環境（将来）
+  'https://devpwa.mued.jp', // モバイル版プレビュー環境（将来）
+  'https://mued-pwa.vercel.app', // モバイル版Vercelドメイン（本番）
+  'https://mued-pwa-git-develop-glasswerks.vercel.app', // モバイル版Vercelドメイン（開発）
+  'https://mued-pwa-git-main-glasswerks.vercel.app', // モバイル版Vercelドメイン（メイン）
 ];
 
 export function corsHeaders(origin: string | null) {
