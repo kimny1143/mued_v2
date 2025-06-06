@@ -23,7 +23,7 @@
     "test:e2e": "turbo test:e2e",
     "clean": "turbo clean && rm -rf node_modules",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "postinstall": "cd packages/shared && npm install && cd ../.. && turbo build --filter=@mued/shared"
+    "postinstall": "turbo build --filter=@mued/shared"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.4",
