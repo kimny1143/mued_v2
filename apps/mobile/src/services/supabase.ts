@@ -2,8 +2,17 @@ import { createClient } from '@supabase/supabase-js';
 import 'react-native-url-polyfill/auto';
 import SecureStore from '../utils/storage';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('Supabase environment variables are missing:', {
+    url: supabaseUrl,
+    key: supabaseAnonKey ? 'present' : 'missing'
+  });
+  // デフォルト値を設定するか、エラーをthrow
+  throw new Error('Supabase configuration is missing');
+}
 
 const ExpoSecureStoreAdapter = {
   getItem: (key: string) => {
