@@ -1,14 +1,19 @@
 import React from 'react';
-import { View, Text } from 'react-native';
 
 export function SimpleApp() {
-  return React.createElement(
-    View,
-    { style: { flex: 1, backgroundColor: '#fff', padding: 20 } },
-    React.createElement(
-      Text,
-      { style: { fontSize: 20, color: '#000' } },
-      'Hello from SimpleApp'
-    )
+  // 最もシンプルなReact要素を返す
+  return React.createElement('div', 
+    { 
+      style: { 
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        backgroundColor: '#f0f0f0',
+        fontFamily: 'Arial, sans-serif'
+      } 
+    },
+    React.createElement('h1', { style: { color: '#333' } }, 'PWA is Working!'),
+    React.createElement('p', null, 'Environment: ' + (typeof process !== 'undefined' ? process.env.NODE_ENV : 'unknown'))
   );
 }
