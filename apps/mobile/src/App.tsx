@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import AuthCallback from './pages/AuthCallback';
+import Landing from './pages/Landing';
+import PWADebug from './pages/PWADebug';
 import { InstallPWA } from './components/InstallPWA';
 import { PWAPrompt } from './components/PWAPrompt';
 import './App.css';
@@ -41,6 +43,7 @@ const AppRoutes: React.FC = () => {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/pwa-debug" element={<PWADebug />} />
       <Route
         path="/"
         element={
