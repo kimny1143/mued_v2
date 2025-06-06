@@ -2,6 +2,8 @@
 
 このドキュメントは、各環境での環境変数の設定方法についてまとめたガイドです。
 
+**最終更新: 2025年1月**
+
 ## 必要な環境変数一覧
 
 プロジェクトで必要な環境変数を各サービスごとに整理しました。
@@ -21,25 +23,35 @@ DATABASE_URL=postgresql://postgres:your_password@your_supabase_host/postgres
 # Stripe設定
 STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
 
-# Google OAuth設定
+# Stripe価格ID
+NEXT_PUBLIC_LESSON_PRICE_ID=your_lesson_price_id
+NEXT_PUBLIC_LESSON_FLEXIBLE_PRICE_ID=your_flexible_price_id
+NEXT_PUBLIC_SUBSCRIPTION_STARTER_ID=your_starter_subscription_id
+NEXT_PUBLIC_SUBSCRIPTION_PRO_ID=your_pro_subscription_id
+NEXT_PUBLIC_SUBSCRIPTION_PREMIUM_ID=your_premium_subscription_id
+
+# Google OAuth設定（現在はSupabase Authで管理）
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 
-# NextAuth.js設定
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_nextauth_secret
-
 # Supabase管理設定
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_KEY=your_supabase_service_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Resend（メール送信）
+RESEND_API_KEY=your_resend_api_key
+
+# デバッグモード
+NEXT_PUBLIC_DEBUG=false
+NEXT_PUBLIC_DEBUG_VERBOSE=false
 ```
 
 ### AIサービス (Python/FastAPI) 用環境変数
 
 ```
 # AIサービス接続情報 (.env.heroku)
+NEXT_PUBLIC_AI_SERVICE_URL=https://your-ai-service.herokuapp.com
 AI_SERVICE_API_KEY=your_ai_service_api_key
 CORS_ORIGINS=http://localhost:3000,https://mued-lms.vercel.app
 ENVIRONMENT=development
@@ -54,7 +66,6 @@ STRIPE_SECRET_KEY=your_stripe_secret_key
 STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 SUPABASE_URL=your_supabase_url
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-SUPABASE_SERVICE_KEY=your_supabase_service_key
 ```
 
 ## 開発環境での設定

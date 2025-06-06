@@ -18,13 +18,15 @@ priority: 1
 # MUED LMS Core Rules
 
 ## このファイルの重要ポイント
-- Next.js 14 + React 18 + TypeScript + TailwindCSSを使用
+- Next.js 14 (App Router) + React 18 + TypeScript + TailwindCSSを使用
 - マイクロサービスアーキテクチャ (Next.js + Python AI サービス)
-- App Routerディレクトリ構造に準拠
+- App Routerディレクトリ構造に完全準拠
 - Prismaを使用したデータアクセス層とSupabaseのリアルタイム機能併用
 
 この文書は、MUED LMS プロジェクトにおけるタスク実行、品質管理、開発および緊急時対応の基本ルールを定義します。  
-本プロジェクトは、Next.js + React (TypeScript) を中心としたフロントエンド実装を行い、AIバックエンドと連携していく方針です。
+本プロジェクトは、Next.js 14 (App Router) + React 18 (TypeScript) を中心としたフロントエンド実装を行い、AIバックエンドと連携していく方針です。
+
+### 最終更新: 2025年1月
 
 ---
 ## 0. MUED LMSプロジェクト基本概要
