@@ -6,6 +6,11 @@ import Home from './pages/Home';
 import AuthCallback from './pages/AuthCallback';
 import Landing from './pages/Landing';
 import PWADebug from './pages/PWADebug';
+import { Reservations } from './pages/Reservations';
+import { ReservationDetail } from './pages/ReservationDetail';
+import { Calendar } from './pages/Calendar';
+import { Messages } from './pages/Messages';
+import { Profile } from './pages/Profile';
 import { InstallPWA } from './components/InstallPWA';
 import { PWAPrompt } from './components/PWAPrompt';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
@@ -50,6 +55,46 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <Home />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reservations"
+        element={
+          <ProtectedRoute>
+            <Reservations />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reservations/:id"
+        element={
+          <ProtectedRoute>
+            <ReservationDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/calendar"
+        element={
+          <ProtectedRoute>
+            <Calendar />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/messages"
+        element={
+          <ProtectedRoute>
+            <Messages />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />
