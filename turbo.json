@@ -5,6 +5,7 @@
     "NODE_ENV",
     "NEXT_PUBLIC_*",
     "EXPO_PUBLIC_*",
+    "REACT_APP_*",
     "DATABASE_URL",
     "DIRECT_DATABASE_URL",
     "SUPABASE_SERVICE_ROLE_KEY",
