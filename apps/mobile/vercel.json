@@ -4,5 +4,5 @@
   "framework": "create-react-app",
   "installCommand": "npm install",
   "devCommand": "npm start",
-  "ignoreCommand": "cd ../.. && git diff HEAD^ HEAD --quiet apps/mobile packages/shared"
+  "ignoreCommand": "cd ../.. && git diff HEAD^ HEAD --quiet apps/mobile packages/shared package.json"
 }
