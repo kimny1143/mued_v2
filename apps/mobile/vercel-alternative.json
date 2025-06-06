@@ -2,7 +2,7 @@
   "buildCommand": "npm run build:web",
   "outputDirectory": "dist",
   "framework": null,
-  "ignoreCommand": "git diff HEAD^ HEAD --quiet . ../packages/shared",
+  "ignoreCommand": "npx turbo-ignore @mued/mobile",
   "rewrites": [
     {
       "source": "/(.*)",
