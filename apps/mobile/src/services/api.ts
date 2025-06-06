@@ -8,10 +8,21 @@ import { supabase } from './supabase';
 const getApiBaseUrl = () => {
   // 環境変数が設定されている場合はそれを使用
   if (process.env.REACT_APP_API_URL) {
+    console.log('[ApiClient] Using API URL from env:', process.env.REACT_APP_API_URL);
     return process.env.REACT_APP_API_URL;
   }
   
-  // 環境変数が設定されていない場合はエラー
+  // 環境変数が設定されていない場合は開発環境のURLをフォールバック
+  const fallbackUrl = 'https://mued-lms-fgm-git-develop-glasswerks.vercel.app';
+  console.warn('[ApiClient] REACT_APP_API_URL is not set. Using fallback:', fallbackUrl);
+  console.warn('Please set REACT_APP_API_URL environment variable in Vercel project settings.');
+  
+  // 開発環境でのみフォールバックを許可
+  if (window.location.hostname === 'devpwa.mued.jp') {
+    return fallbackUrl;
+  }
+  
+  // 本番環境では必ずエラーにする
   const errorMessage = 'REACT_APP_API_URL is not set. Please set this environment variable in Vercel project settings or .env.local file.';
   console.error(errorMessage);
   throw new Error(errorMessage);
@@ -75,7 +86,18 @@ class ApiClient {
       console.log('[ApiClient] Data received:', data);
       return data;
     } catch (error) {
-      console.error('[ApiClient] Request failed:', error);
+      console.error('[ApiClient] Request failed:', {
+        url,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        type: error instanceof TypeError ? 'TypeError (Network/CORS issue)' : 'Other error',
+      });
+      
+      // より詳細なエラーメッセージを提供
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        throw new Error('ネットワークエラーまたはCORSエラーが発生しました。開発者ツールのConsoleとNetworkタブを確認してください。');
+      }
+      
       throw error;
     }
   }

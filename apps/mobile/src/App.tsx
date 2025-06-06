@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import AuthCallback from './pages/AuthCallback';
 import Landing from './pages/Landing';
 import PWADebug from './pages/PWADebug';
+import EnvDebug from './pages/EnvDebug';
 import { Reservations } from './pages/Reservations';
 import { ReservationDetail } from './pages/ReservationDetail';
 import { Calendar } from './pages/Calendar';
@@ -107,6 +108,7 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
+      <Route path="/env-debug" element={<EnvDebug />} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
