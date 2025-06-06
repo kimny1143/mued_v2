@@ -11,6 +11,7 @@ import { ReservationDetail } from './pages/ReservationDetail';
 import { Calendar } from './pages/Calendar';
 import { Messages } from './pages/Messages';
 import { Profile } from './pages/Profile';
+import { Materials } from './pages/Materials';
 import { InstallPWA } from './components/InstallPWA';
 import { PWAPrompt } from './components/PWAPrompt';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
@@ -95,6 +96,14 @@ const AppRoutes: React.FC = () => {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/materials"
+        element={
+          <ProtectedRoute>
+            <Materials />
           </ProtectedRoute>
         }
       />

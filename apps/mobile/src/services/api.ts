@@ -1,8 +1,16 @@
 import { supabase } from './supabase';
 
-// Vercelのmonorepoデプロイでは同一ドメインになるため、
-// 相対パスで/apiにアクセス可能
-const API_BASE_URL = '';
+// APIベースURLの設定
+// 開発環境: ''（proxy設定を使用）
+// 本番環境: window.location.originを使用して同一ドメインのAPIにアクセス
+const getApiBaseUrl = () => {
+  // 開発環境の判定
+  if (process.env.NODE_ENV === 'development') {
+    return '';
+  }
+  // 本番環境ではoriginを使用
+  return window.location.origin;
+};
 
 class ApiClient {
   private async getAuthToken(): Promise<string | null> {
@@ -15,12 +23,15 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const token = await this.getAuthToken();
-    const url = `/api${endpoint}`;
+    const baseUrl = getApiBaseUrl();
+    const url = `${baseUrl}/api${endpoint}`;
     
     console.log('[ApiClient] Request:', {
       url,
       method: options.method || 'GET',
       hasToken: !!token,
+      origin: window.location.origin,
+      env: process.env.NODE_ENV,
     });
     
     try {
