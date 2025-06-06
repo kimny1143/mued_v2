@@ -1,15 +1,19 @@
 import { supabase } from './supabase';
 
 // APIベースURLの設定
-// 開発環境: ''（proxy設定を使用）
-// 本番環境: window.location.originを使用して同一ドメインのAPIにアクセス
+// Vercelが環境ごとに適切な環境変数を設定:
+// - Production: https://www.mued.jp
+// - Preview: https://mued-lms-fgm-git-develop-glasswerks.vercel.app
+// - Development: Vercelのプレビュー環境を使用
 const getApiBaseUrl = () => {
-  // 開発環境の判定
-  if (process.env.NODE_ENV === 'development') {
-    return '';
+  // 環境変数が設定されている場合はそれを使用
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
   }
-  // 本番環境ではoriginを使用
-  return window.location.origin;
+  
+  // 環境変数が設定されていない場合はエラー
+  console.error('REACT_APP_API_URL is not set. API calls will fail.');
+  return '';
 };
 
 class ApiClient {
@@ -38,17 +42,27 @@ class ApiClient {
       const response = await fetch(url, {
         ...options,
         headers: {
+          'Accept': 'application/json',
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` }),
           ...options.headers,
         },
         credentials: 'include', // Cookieを含める
+        mode: 'cors', // CORS対応を明示
       });
 
       console.log('[ApiClient] Response:', {
         status: response.status,
         statusText: response.statusText,
+        contentType: response.headers.get('content-type'),
       });
+
+      // HTMLが返ってきた場合のエラー処理
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('text/html')) {
+        console.error('[ApiClient] Received HTML instead of JSON - API endpoint not found');
+        throw new Error('APIエンドポイントが見つかりません');
+      }
 
       if (!response.ok) {
         const errorText = await response.text();

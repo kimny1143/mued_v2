@@ -2,16 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/session';
+import { createCorsResponse, handleOptions } from '@/lib/cors';
 
 // このルートは動的である必要があります（認証ヘッダーを使用するため）
 export const dynamic = 'force-dynamic';
 
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request.headers.get('origin'));
+}
+
 export async function GET(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  
   try {
     const session = await getSessionFromRequest(request);
     
     if (!session || !session.user) {
-      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+      return createCorsResponse({ error: '認証が必要です' }, origin, 401);
     }
 
     const searchParams = request.nextUrl.searchParams;
@@ -129,7 +136,7 @@ export async function GET(request: NextRequest) {
       return baseSession;
     });
 
-    return NextResponse.json({
+    return createCorsResponse({
       sessions: formattedSessions,
       pagination: {
         total,
@@ -137,13 +144,14 @@ export async function GET(request: NextRequest) {
         offset,
         hasMore: offset + limit < total
       }
-    });
+    }, origin);
 
   } catch (error) {
     console.error('セッション一覧取得エラー:', error);
-    return NextResponse.json(
+    return createCorsResponse(
       { error: 'セッション一覧の取得中にエラーが発生しました' },
-      { status: 500 }
+      origin,
+      500
     );
   }
 }

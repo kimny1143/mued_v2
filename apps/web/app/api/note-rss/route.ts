@@ -1,6 +1,7 @@
 // app/api/note-rss/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Parser from 'rss-parser';
+import { createCorsResponse, handleOptions } from '@/lib/cors';
 
 // このルートは動的である必要があるため、明示的に指定
 export const dynamic = 'force-dynamic';
@@ -147,7 +148,13 @@ async function fetchMagazineRSS(magazine: typeof MAGAZINES[0]) {
   }
 }
 
-export async function GET(request: Request) {
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request.headers.get('origin'));
+}
+
+export async function GET(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  
   try {
     const { searchParams } = new URL(request.url);
     const magazineId = searchParams.get('magazine');
@@ -156,15 +163,15 @@ export async function GET(request: Request) {
     if (magazineId) {
       const magazine = MAGAZINES.find(m => m.id === magazineId);
       if (!magazine) {
-        return NextResponse.json({
+        return createCorsResponse({
           success: false,
           error: 'マガジンが見つかりません',
           magazines: MAGAZINES.map(m => ({ id: m.id, title: m.title }))
-        }, { status: 400 });
+        }, origin, 400);
       }
 
       const result = await fetchMagazineRSS(magazine);
-      return NextResponse.json(result);
+      return createCorsResponse(result, origin);
     }
 
     // 全マガジンの取得
@@ -191,14 +198,28 @@ export async function GET(request: Request) {
     const totalItems = magazines.reduce((sum, mag) => sum + mag.count, 0);
     const successCount = magazines.filter(mag => mag.success).length;
 
-    return NextResponse.json({
+    // モバイル版のためにすべてのアイテムをフラットな配列に変換
+    const allItems = magazines.flatMap(mag => 
+      mag.items.map(item => ({
+        ...item,
+        id: `${item.magazine}-${item.link}`,
+        category: item.category === 'recording' ? '録音' : 
+                  item.category === 'composition' ? '作曲' : 
+                  item.category === 'songwriting' ? '作詞' : item.category,
+        thumbnail: item.image,
+        readingTime: item.readingTime ? `${item.readingTime}分` : undefined
+      }))
+    );
+
+    return createCorsResponse({
       success: true,
       magazines,
+      items: allItems, // モバイル版用
       totalItems,
       successCount,
       totalMagazines: MAGAZINES.length,
       lastUpdated: new Date().toISOString()
-    });
+    }, origin);
 
   } catch (error) {
     console.error('API エラー:', error);
@@ -237,7 +258,7 @@ export async function GET(request: Request) {
       error: 'RSSフィード取得失敗（サンプルデータ表示中）'
     }));
 
-    return NextResponse.json({
+    return createCorsResponse({
       success: false,
       error: error instanceof Error ? error.message : '不明なエラー',
       magazines: fallbackData,
@@ -246,6 +267,6 @@ export async function GET(request: Request) {
       totalMagazines: MAGAZINES.length,
       fallback: true,
       lastUpdated: new Date().toISOString()
-    }, { status: 200 });
+    }, origin, 200);
   }
 }

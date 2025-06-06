@@ -21,7 +21,11 @@ export const Materials: React.FC = () => {
       setError(null);
       
       // note-rss APIを呼び出し
-      const baseUrl = process.env.NODE_ENV === 'development' ? '' : window.location.origin;
+      // 環境変数からAPIのベースURLを取得
+      const baseUrl = process.env.REACT_APP_API_URL || '';
+      if (!baseUrl) {
+        throw new Error('API URLが設定されていません');
+      }
       const response = await fetch(`${baseUrl}/api/note-rss`);
       if (!response.ok) {
         throw new Error('教材の取得に失敗しました');
