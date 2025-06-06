@@ -12,8 +12,9 @@ const getApiBaseUrl = () => {
   }
   
   // 環境変数が設定されていない場合はエラー
-  console.error('REACT_APP_API_URL is not set. API calls will fail.');
-  return '';
+  const errorMessage = 'REACT_APP_API_URL is not set. Please set this environment variable in Vercel project settings or .env.local file.';
+  console.error(errorMessage);
+  throw new Error(errorMessage);
 };
 
 class ApiClient {
