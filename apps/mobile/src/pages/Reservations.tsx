@@ -54,16 +54,22 @@ export const Reservations: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', paddingTop: '100px' }}>
-        <LoadingSpinner />
+      <div style={{ minHeight: '100vh', paddingBottom: '80px' }}>
+        <div style={{ paddingTop: '100px' }}>
+          <LoadingSpinner />
+        </div>
+        <BottomNavigation />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', paddingTop: '100px' }}>
-        <ErrorMessage message={error} onRetry={fetchReservations} />
+      <div style={{ minHeight: '100vh', paddingBottom: '80px' }}>
+        <div style={{ paddingTop: '100px' }}>
+          <ErrorMessage message={error} onRetry={fetchReservations} />
+        </div>
+        <BottomNavigation />
       </div>
     );
   }

@@ -1,7 +1,8 @@
 import { supabase } from './supabase';
 
-// Next.js API Routesを使用（web版と同じ）
-const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+// Vercelのmonorepoデプロイでは同一ドメインになるため、
+// 相対パスで/apiにアクセス可能
+const API_BASE_URL = '';
 
 class ApiClient {
   private async getAuthToken(): Promise<string | null> {
@@ -14,21 +15,43 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const token = await this.getAuthToken();
+    const url = `/api${endpoint}`;
     
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` }),
-        ...options.headers,
-      },
+    console.log('[ApiClient] Request:', {
+      url,
+      method: options.method || 'GET',
+      hasToken: !!token,
     });
+    
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+          ...options.headers,
+        },
+        credentials: 'include', // Cookieを含める
+      });
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      console.log('[ApiClient] Response:', {
+        status: response.status,
+        statusText: response.statusText,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[ApiClient] Error response:', errorText);
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('[ApiClient] Data received:', data);
+      return data;
+    } catch (error) {
+      console.error('[ApiClient] Request failed:', error);
+      throw error;
     }
-
-    return response.json();
   }
 
   // 予約関連

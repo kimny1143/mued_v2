@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, Clock, User, MapPin, MessageCircle, CreditCard } f
 import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 import { ErrorMessage } from '../components/ui/ErrorMessage';
 import { Card } from '../components/ui/Card';
+import { BottomNavigation } from '../components/ui/BottomNavigation';
 import { apiClient } from '../services/api';
 import { Reservation } from '../types';
 
@@ -57,19 +58,25 @@ export const ReservationDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', paddingTop: '100px' }}>
-        <LoadingSpinner />
+      <div style={{ minHeight: '100vh', paddingBottom: '80px' }}>
+        <div style={{ paddingTop: '100px' }}>
+          <LoadingSpinner />
+        </div>
+        <BottomNavigation />
       </div>
     );
   }
 
   if (error || !reservation) {
     return (
-      <div style={{ minHeight: '100vh', paddingTop: '100px' }}>
-        <ErrorMessage 
-          message={error || '予約が見つかりません'} 
-          onRetry={fetchReservation} 
-        />
+      <div style={{ minHeight: '100vh', paddingBottom: '80px' }}>
+        <div style={{ paddingTop: '100px' }}>
+          <ErrorMessage 
+            message={error || '予約が見つかりません'} 
+            onRetry={fetchReservation} 
+          />
+        </div>
+        <BottomNavigation />
       </div>
     );
   }
@@ -79,7 +86,7 @@ export const ReservationDetail: React.FC = () => {
   const lessonEndTime = reservation.lessonSlot ? new Date(reservation.lessonSlot.endTime) : null;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
+    <div style={{ minHeight: '100vh', paddingBottom: '80px', backgroundColor: '#f3f4f6' }}>
       {/* ヘッダー */}
       <header style={{
         position: 'sticky',
@@ -241,7 +248,7 @@ export const ReservationDetail: React.FC = () => {
         )}
 
         {/* アクションボタン */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
           {reservation.status === 'APPROVED' && reservation.paymentStatus === 'PENDING' && (
             <button
               style={{
@@ -283,6 +290,7 @@ export const ReservationDetail: React.FC = () => {
           )}
         </div>
       </div>
+      <BottomNavigation />
     </div>
   );
 };
