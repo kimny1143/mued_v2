@@ -4,8 +4,5 @@
   "framework": null,
   "installCommand": "npm install",
   "devCommand": "npm start",
-  "ignoreCommand": "cd ../.. && git diff HEAD^ HEAD --quiet apps/mobile",
-  "settings": {
-    "nodeVersion": "18.x"
-  }
+  "ignoreCommand": "cd ../.. && git diff HEAD^ HEAD --quiet apps/mobile"
 }
