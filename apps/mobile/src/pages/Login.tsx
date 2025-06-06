@@ -1,10 +1,8 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
   const { signIn, loading } = useAuth();
-  const navigate = useNavigate();
 
   const handleSignIn = async () => {
     try {

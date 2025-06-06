@@ -30,16 +30,7 @@
     <meta name="apple-mobile-web-app-title" content="MUED LMS">
     <meta name="mobile-web-app-capable" content="yes">
     
-    <!-- Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('%PUBLIC_URL%/service-worker.js')
-            .then(registration => console.log('SW registered:', registration))
-            .catch(error => console.log('SW registration failed:', error));
-        });
-      }
-    </script>
+    <!-- Service Worker registration is handled by React app -->
   </head>
   <body>
     <noscript>JavaScriptを有効にしてください。</noscript>
