@@ -1,5 +1,5 @@
 // MUED PWA Service Worker
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2-test';
 const CACHE_NAME = `mued-pwa-${CACHE_VERSION}`;
 const urlsToCache = [
   '/',
