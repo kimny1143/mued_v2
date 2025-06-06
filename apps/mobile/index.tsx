@@ -2,13 +2,12 @@ import { registerRootComponent } from 'expo';
 import { ExpoRoot } from 'expo-router';
 import React from 'react';
 import { View, Text } from 'react-native';
+import { SimpleApp } from './SimpleApp';
 
 console.log('=== MUED PWA Starting ===');
-console.log('Environment:', {
-  NODE_ENV: process.env.NODE_ENV,
-  EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
-  EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
-});
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('EXPO_PUBLIC_SUPABASE_URL:', process.env.EXPO_PUBLIC_SUPABASE_URL);
+console.log('EXPO_PUBLIC_API_URL:', process.env.EXPO_PUBLIC_API_URL);
 
 // デバッグ用のシンプルなコンポーネント
 function DebugApp() {
@@ -45,10 +44,11 @@ export function App() {
   try {
     console.log('App component rendering');
     
-    // 一時的にデバッグコンポーネントを返す
-    return <DebugApp />;
+    // 最もシンプルなコンポーネントを試す
+    return <SimpleApp />;
     
     // 元のコード（コメントアウト）
+    // return <DebugApp />;
     // const ctx = require.context('./app');
     // return <ExpoRoot context={ctx} />;
   } catch (error) {
