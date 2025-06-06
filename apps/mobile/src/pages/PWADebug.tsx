@@ -86,7 +86,7 @@ const PWADebug: React.FC = () => {
       }
 
       setDebugInfo(info);
-      checkRequirements(info, manifestData);
+      checkRequirements(info, info.manifestContent || manifestData);
     };
 
     const checkRequirements = (info: any, manifest: any) => {
@@ -152,10 +152,10 @@ const PWADebug: React.FC = () => {
       if (!manifest?.icons || !Array.isArray(manifest.icons)) return false;
       
       const has192 = manifest.icons.some((icon: any) => 
-        icon.sizes?.includes('192x192') && icon.purpose?.includes('any')
+        icon.sizes?.includes('192x192')
       );
       const has512 = manifest.icons.some((icon: any) => 
-        icon.sizes?.includes('512x512') && icon.purpose?.includes('any')
+        icon.sizes?.includes('512x512')
       );
       
       return has192 && has512;
