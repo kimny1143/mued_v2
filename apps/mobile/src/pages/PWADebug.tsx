@@ -13,6 +13,7 @@ const PWADebug: React.FC = () => {
   const [manifestData, setManifestData] = useState<any>(null);
   const [beforeInstallPromptEvent, setBeforeInstallPromptEvent] = useState<any>(null);
   const [engagementScore, setEngagementScore] = useState(0);
+  const [showManualInstall, setShowManualInstall] = useState(false);
 
   useEffect(() => {
     const checkPWA = async () => {
@@ -261,9 +262,24 @@ const PWADebug: React.FC = () => {
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
+            marginRight: '10px',
           }}
         >
           Reload Page
+        </button>
+        <button 
+          onClick={() => setShowManualInstall(!showManualInstall)}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            backgroundColor: '#10B981',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          {showManualInstall ? '閉じる' : '手動インストール方法'}
         </button>
       </div>
 
@@ -289,28 +305,95 @@ const PWADebug: React.FC = () => {
             </div>
           </div>
 
-          <p style={{ color: '#92400E' }}>以下の方法を試してください：</p>
+          <h4 style={{ color: '#92400E', marginTop: '20px' }}>🎯 最も簡単な方法：モバイルデバイスで確認</h4>
+          <div style={{ 
+            padding: '15px',
+            backgroundColor: '#DBEAFE',
+            borderRadius: '4px',
+            marginBottom: '20px',
+          }}>
+            <p style={{ marginTop: 0, color: '#1E40AF' }}><strong>スマートフォンでこのURLを開いてください：</strong></p>
+            <code style={{ 
+              display: 'block',
+              padding: '10px',
+              backgroundColor: '#FFF',
+              borderRadius: '4px',
+              marginBottom: '10px',
+              wordBreak: 'break-all',
+            }}>
+              https://mued-pwa-git-develop-glasswerks.vercel.app
+            </code>
+            <p style={{ marginBottom: 0, color: '#1E40AF', fontSize: '14px' }}>
+              モバイルブラウザ（Chrome/Safari）でアクセスすると、インストールプロンプトが表示されやすくなります。
+            </p>
+          </div>
+
+          <h4 style={{ color: '#92400E' }}>💻 PC Chromeでの手動インストール方法</h4>
           <ol style={{ color: '#92400E' }}>
-            <li><strong>ブラウザ設定をリセット：</strong>
-              <ul>
-                <li>Chrome: アドレスバーに <code>chrome://settings/content/appBanners</code> を入力</li>
-                <li>サイトのデータを削除して、インストール履歴をリセット</li>
-              </ul>
-            </li>
-            <li><strong>エンゲージメント要件：</strong>
-              <ul>
-                <li>ページを数回リロード</li>
-                <li>30秒以上サイトに滞在</li>
-                <li>複数のページを訪問（ログイン → ホーム等）</li>
-              </ul>
-            </li>
-            <li><strong>デバッグモード：</strong>
-              <ul>
-                <li>Chrome DevTools → Application → Manifest → "Add to homescreen" をクリック</li>
-              </ul>
-            </li>
-            <li><strong>別のブラウザ/プロファイルで試す</strong></li>
+            <li><strong>Chrome DevToolsを開く</strong>（F12キー または 右クリック→検証）</li>
+            <li><strong>「Application」タブ</strong>をクリック</li>
+            <li>左メニューの<strong>「Manifest」</strong>をクリック</li>
+            <li>右側に表示される<strong>「Install」ボタン</strong>をクリック</li>
           </ol>
+
+          <h4 style={{ color: '#92400E' }}>🔄 それでもダメな場合</h4>
+          <ol style={{ color: '#92400E' }}>
+            <li><strong>シークレットモード</strong>で試す（Ctrl+Shift+N）</li>
+            <li><strong>Microsoft Edge</strong>で試す（ChromeよりPWAインストールが積極的）</li>
+            <li><strong>アドレスバーの右端</strong>にインストールアイコン（⊕）が表示されているか確認</li>
+          </ol>
+        </div>
+      )}
+
+      {showManualInstall && (
+        <div style={{ 
+          marginBottom: '30px',
+          padding: '20px',
+          backgroundColor: '#F0FDF4',
+          borderRadius: '8px',
+          border: '1px solid #10B981',
+        }}>
+          <h3 style={{ marginTop: 0, color: '#065F46' }}>📱 デバイス別インストール方法</h3>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <h4 style={{ color: '#065F46' }}>iOS Safari</h4>
+            <ol style={{ color: '#065F46' }}>
+              <li>Safariで開く（Chrome不可）</li>
+              <li>下部の共有ボタン <span style={{ fontSize: '20px' }}>⬆️</span> をタップ</li>
+              <li>「ホーム画面に追加」を選択</li>
+              <li>名前を確認して「追加」をタップ</li>
+            </ol>
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <h4 style={{ color: '#065F46' }}>Android Chrome</h4>
+            <ol style={{ color: '#065F46' }}>
+              <li>メニュー（縦3点）をタップ</li>
+              <li>「ホーム画面に追加」または「アプリをインストール」を選択</li>
+              <li>プロンプトで「インストール」をタップ</li>
+            </ol>
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <h4 style={{ color: '#065F46' }}>PC Chrome/Edge</h4>
+            <ol style={{ color: '#065F46' }}>
+              <li>アドレスバー右端のインストールアイコンを探す</li>
+              <li>または、メニュー → 「〇〇をインストール」を選択</li>
+              <li>DevTools: F12 → Application → Manifest → Install</li>
+            </ol>
+          </div>
+
+          <div style={{ 
+            padding: '10px',
+            backgroundColor: '#FEFCE8',
+            borderRadius: '4px',
+            marginTop: '15px',
+          }}>
+            <p style={{ margin: 0, fontSize: '14px', color: '#713F12' }}>
+              💡 <strong>ヒント:</strong> インストールボタンが表示されない場合は、
+              シークレット/プライベートモードで試すか、ブラウザのキャッシュをクリアしてください。
+            </p>
+          </div>
         </div>
       )}
 
