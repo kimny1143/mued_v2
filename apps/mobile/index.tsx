@@ -12,10 +12,31 @@ console.log('Environment:', {
 
 // デバッグ用のシンプルなコンポーネント
 function DebugApp() {
+  const viewStyle = { 
+    flex: 1, 
+    justifyContent: 'center' as const, 
+    alignItems: 'center' as const, 
+    backgroundColor: '#f0f0f0' 
+  };
+  
+  const titleStyle = { 
+    fontSize: 24, 
+    fontWeight: 'bold' as const, 
+    marginBottom: 20,
+    color: '#000'
+  };
+  
+  const textStyle = {
+    fontSize: 16,
+    color: '#333'
+  };
+  
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0' }}>
-      <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 20 }}>MUED PWA Debug</Text>
-      <Text>If you see this, React is working!</Text>
+    <View style={viewStyle}>
+      <Text style={titleStyle}>MUED PWA Debug</Text>
+      <Text style={textStyle}>If you see this, React is working!</Text>
+      <Text style={textStyle}>SUPABASE_URL: {process.env.EXPO_PUBLIC_SUPABASE_URL || 'not set'}</Text>
+      <Text style={textStyle}>API_URL: {process.env.EXPO_PUBLIC_API_URL || 'not set'}</Text>
     </View>
   );
 }
