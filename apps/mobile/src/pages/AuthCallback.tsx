@@ -9,20 +9,40 @@ const AuthCallback: React.FC = () => {
     // Supabase認証のコールバック処理
     const handleAuthCallback = async () => {
       try {
-        // URLからセッション情報を取得
-        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('Auth callback started');
+        console.log('Current URL:', window.location.href);
         
-        if (error) {
-          console.error('Auth callback error:', error);
+        // URLのクエリパラメータから認証コードを取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        console.log('Auth code:', code);
+        
+        if (!code) {
+          console.error('No auth code found in URL');
           navigate('/login');
           return;
         }
-
-        if (session) {
-          // ログイン成功 - ホームページへリダイレクト
-          navigate('/');
+        
+        // Supabaseの認証コードをセッションに交換
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        
+        if (error) {
+          console.error('Auth exchange error:', error);
+          navigate('/login');
+          return;
+        }
+        
+        console.log('Auth exchange successful:', data);
+        
+        if (data.session) {
+          console.log('Session obtained, redirecting to home');
+          // 少し遅延を入れて、認証状態が確実に更新されるようにする
+          setTimeout(() => {
+            navigate('/');
+          }, 100);
         } else {
-          // セッションがない場合はログインページへ
+          console.error('No session in auth response');
           navigate('/login');
         }
       } catch (error) {
