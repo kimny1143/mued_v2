@@ -48,7 +48,11 @@ const ReservationNew: React.FC = () => {
       console.log('Reservation created:', reservation);
       
       // 予約詳細ページへ遷移
-      navigate(`/reservations/${reservation.id}`);
+      if (reservation && typeof reservation === 'object' && 'id' in reservation) {
+        navigate(`/reservations/${reservation.id}`);
+      } else {
+        throw new Error('予約の作成に失敗しました');
+      }
     } catch (err: any) {
       console.error('Failed to create reservation:', err);
       setError(err.message || '予約の作成に失敗しました');
