@@ -4,7 +4,7 @@ export interface Reservation {
   studentId: string;
   mentorId: string;
   lessonSlotId: string;
-  status: 'PENDING_APPROVAL' | 'APPROVED' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  status: 'PENDING' | 'PENDING_APPROVAL' | 'APPROVED' | 'CONFIRMED' | 'REJECTED' | 'CANCELED' | 'CANCELLED' | 'COMPLETED';
   paymentStatus: 'PENDING' | 'SETUP_COMPLETED' | 'PAID' | 'REFUNDED';
   studentMessage?: string;
   mentorMessage?: string;

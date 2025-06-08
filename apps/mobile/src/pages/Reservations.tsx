@@ -87,13 +87,13 @@ export const Reservations: React.FC = () => {
     const now = new Date();
     if (activeTab === 'upcoming') {
       return reservations.filter(r => {
-        if (r.status === 'CANCELLED' || r.status === 'COMPLETED') return false;
+        if (r.status === 'CANCELLED' || r.status === 'CANCELED' || r.status === 'COMPLETED') return false;
         const startTime = r.lessonSlot ? new Date(r.lessonSlot.startTime) : null;
         return startTime && startTime > now;
       });
     } else {
       return reservations.filter(r => {
-        if (r.status === 'CANCELLED') return true;
+        if (r.status === 'CANCELLED' || r.status === 'CANCELED') return true;
         if (r.status === 'COMPLETED') return true;
         const startTime = r.lessonSlot ? new Date(r.lessonSlot.startTime) : null;
         return startTime && startTime <= now;

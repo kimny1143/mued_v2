@@ -8,11 +8,14 @@ interface ReservationCardProps {
   onClick: () => void;
 }
 
-const statusColors = {
+const statusColors: Record<string, { bg: string; text: string; label: string }> = {
+  PENDING: { bg: '#fef3c7', text: '#92400e', label: '保留中' },
   PENDING_APPROVAL: { bg: '#fef3c7', text: '#92400e', label: '承認待ち' },
   APPROVED: { bg: '#dbeafe', text: '#1e40af', label: '承認済み' },
   CONFIRMED: { bg: '#d1fae5', text: '#065f46', label: '確定' },
-  CANCELLED: { bg: '#fee2e2', text: '#991b1b', label: 'キャンセル' },
+  REJECTED: { bg: '#fee2e2', text: '#991b1b', label: '却下' },
+  CANCELED: { bg: '#fee2e2', text: '#991b1b', label: 'キャンセル' },
+  CANCELLED: { bg: '#fee2e2', text: '#991b1b', label: 'キャンセル' }, // 後方互換性のため
   COMPLETED: { bg: '#e5e7eb', text: '#374151', label: '完了' },
 };
 
@@ -27,7 +30,11 @@ export const ReservationCard: React.FC<ReservationCardProps> = ({
   reservation, 
   onClick 
 }) => {
-  const statusInfo = statusColors[reservation.status];
+  const statusInfo = statusColors[reservation.status] || { 
+    bg: '#e5e7eb', 
+    text: '#374151', 
+    label: reservation.status 
+  };
   const lessonDate = reservation.lessonSlot ? new Date(reservation.lessonSlot.startTime) : null;
   const lessonEndTime = reservation.lessonSlot ? new Date(reservation.lessonSlot.endTime) : null;
 

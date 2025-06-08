@@ -8,11 +8,14 @@ import { BottomNavigation } from '../components/ui/BottomNavigation';
 import { apiClient } from '../services/api';
 import { Reservation } from '../types';
 
-const statusColors = {
+const statusColors: Record<string, { bg: string; text: string; label: string }> = {
+  PENDING: { bg: '#fef3c7', text: '#92400e', label: '保留中' },
   PENDING_APPROVAL: { bg: '#fef3c7', text: '#92400e', label: '承認待ち' },
   APPROVED: { bg: '#dbeafe', text: '#1e40af', label: '承認済み' },
   CONFIRMED: { bg: '#d1fae5', text: '#065f46', label: '確定' },
-  CANCELLED: { bg: '#fee2e2', text: '#991b1b', label: 'キャンセル' },
+  REJECTED: { bg: '#fee2e2', text: '#991b1b', label: '却下' },
+  CANCELED: { bg: '#fee2e2', text: '#991b1b', label: 'キャンセル' },
+  CANCELLED: { bg: '#fee2e2', text: '#991b1b', label: 'キャンセル' }, // 後方互換性のため
   COMPLETED: { bg: '#e5e7eb', text: '#374151', label: '完了' },
 };
 
