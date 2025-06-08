@@ -26,7 +26,27 @@ const AuthCallback: React.FC = () => {
         
         // Supabaseの認証コードをセッションに交換
         console.log('Attempting to exchange code for session...');
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        
+        let data, error;
+        try {
+          // タイムアウトを設定（10秒）
+          const timeoutPromise = new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('Exchange code timeout')), 10000);
+          });
+          
+          const exchangePromise = supabase.auth.exchangeCodeForSession(code);
+          
+          const result = await Promise.race([
+            exchangePromise,
+            timeoutPromise.then(() => ({ data: null, error: new Error('Timeout') }))
+          ]).catch(err => ({ data: null, error: err }));
+          
+          data = result.data;
+          error = result.error;
+        } catch (err) {
+          console.error('Exchange code error:', err);
+          error = err;
+        }
         
         console.log('Exchange result:', { data: !!data, error: !!error });
         

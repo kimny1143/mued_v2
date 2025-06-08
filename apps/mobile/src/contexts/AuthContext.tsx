@@ -44,20 +44,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // ロール情報を取得する関数
   const fetchUserRole = async (userId: string, baseUser: User): Promise<UserWithRole | null> => {
+    console.log('fetchUserRole called for userId:', userId);
+    
     try {
-      const response = await apiClient.getUser(userId);
+      // タイムアウトを設定（5秒）
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('User role fetch timeout')), 5000);
+      });
+      
+      const fetchPromise = apiClient.getUser(userId);
+      
+      console.log('Fetching user role from API...');
+      const response = await Promise.race([fetchPromise, timeoutPromise]);
+      
+      console.log('User role API response:', response);
       
       if (response) {
-        return {
+        const userWithRole = {
           ...baseUser,
           roleName: response.roleName || 'student',
           roleInfo: response.role,
         };
+        console.log('User with role created:', { roleName: userWithRole.roleName });
+        return userWithRole;
       }
-      return null;
+      
+      console.log('No response from user role API, returning base user');
+      return { ...baseUser, roleName: 'student' };
     } catch (error) {
       console.error('Failed to fetch user role:', error);
-      return null;
+      // エラー時でも基本的なユーザー情報を返す
+      return { ...baseUser, roleName: 'student' };
     }
   };
 
