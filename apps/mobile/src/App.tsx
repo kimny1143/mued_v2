@@ -39,7 +39,21 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const AppRoutes: React.FC = () => {
   const { user, loading } = useAuth();
 
-  if (loading) {
+  // 特定のルートはローディング中でもレンダリングする必要がある
+  const pathname = window.location.pathname;
+  const isAuthCallback = pathname === '/auth/callback';
+  const isPublicRoute = ['/login', '/pwa-debug', '/env-debug', '/api-test', '/landing'].includes(pathname);
+
+  console.log('AppRoutes render:', {
+    pathname,
+    isAuthCallback,
+    isPublicRoute,
+    loading,
+    user: !!user
+  });
+
+  if (loading && !isAuthCallback && !isPublicRoute) {
+    console.log('Showing loading screen');
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
@@ -50,6 +64,7 @@ const AppRoutes: React.FC = () => {
 
   return (
     <Routes>
+      <Route path="/landing" element={<Landing />} />
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/pwa-debug" element={<PWADebug />} />

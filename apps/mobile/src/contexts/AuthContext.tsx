@@ -62,8 +62,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   useEffect(() => {
+    console.log('AuthProvider useEffect started');
+    
     // Check active sessions and sets the user
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      console.log('getSession result:', { session: !!session, error });
+      
+      if (error) {
+        console.error('getSession error:', error);
+      }
+      
       setSession(session);
       if (session?.user) {
         const userWithRole = await fetchUserRole(session.user.id, session.user);
@@ -72,10 +80,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(null);
       }
       setLoading(false);
+      console.log('Initial loading set to false');
     });
 
     // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, { session: !!session });
+      
       setSession(session);
       if (session?.user) {
         const userWithRole = await fetchUserRole(session.user.id, session.user);
@@ -84,6 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(null);
       }
       setLoading(false);
+      console.log('Loading set to false after auth state change');
     });
 
     return () => subscription.unsubscribe();
