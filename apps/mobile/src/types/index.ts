@@ -9,6 +9,8 @@ export interface Reservation {
   studentMessage?: string;
   mentorMessage?: string;
   cancelReason?: string;
+  bookedStartTime?: string;
+  bookedEndTime?: string;
   createdAt: string;
   updatedAt: string;
   lessonSlot?: LessonSlot;
