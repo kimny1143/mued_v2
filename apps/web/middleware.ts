@@ -22,6 +22,14 @@ const allowedOrigins = [
 ];
 
 export function middleware(request: NextRequest) {
+  // デバッグログ
+  console.log('[Middleware] Request:', {
+    pathname: request.nextUrl.pathname,
+    method: request.method,
+    origin: request.headers.get('origin'),
+    referer: request.headers.get('referer'),
+  });
+
   // APIルートへのリクエストのみ処理
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const origin = request.headers.get('origin');

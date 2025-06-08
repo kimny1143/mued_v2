@@ -1,31 +1,18 @@
 import { supabase } from './supabase';
 
 // APIベースURLの設定
-// Vercelが環境ごとに適切な環境変数を設定:
-// - Production: https://www.mued.jp
-// - Preview: https://mued-lms-fgm-git-develop-glasswerks.vercel.app
-// - Development: Vercelのプレビュー環境を使用
+// Vercel rewritesを使用してプロキシする場合は相対パスを使用
+// これによりCORS問題を回避できる
 const getApiBaseUrl = () => {
-  // 環境変数が設定されている場合はそれを使用
-  if (process.env.REACT_APP_API_URL) {
-    console.log('[ApiClient] Using API URL from env:', process.env.REACT_APP_API_URL);
+  // 環境変数が明示的に設定されている場合はそれを使用（フルURL）
+  if (process.env.REACT_APP_API_URL && process.env.REACT_APP_API_URL.startsWith('http')) {
+    console.log('[ApiClient] Using full API URL from env:', process.env.REACT_APP_API_URL);
     return process.env.REACT_APP_API_URL;
   }
   
-  // 環境変数が設定されていない場合は開発環境のURLをフォールバック
-  const fallbackUrl = 'https://mued-lms-fgm-git-develop-glasswerks.vercel.app';
-  console.warn('[ApiClient] REACT_APP_API_URL is not set. Using fallback:', fallbackUrl);
-  console.warn('Please set REACT_APP_API_URL environment variable in Vercel project settings.');
-  
-  // 開発環境でのみフォールバックを許可
-  if (window.location.hostname === 'devpwa.mued.jp') {
-    return fallbackUrl;
-  }
-  
-  // 本番環境では必ずエラーにする
-  const errorMessage = 'REACT_APP_API_URL is not set. Please set this environment variable in Vercel project settings or .env.local file.';
-  console.error(errorMessage);
-  throw new Error(errorMessage);
+  // Vercel rewritesを使用する場合は相対パスを返す（空文字列）
+  console.log('[ApiClient] Using relative path for API (Vercel rewrites)');
+  return '';
 };
 
 class ApiClient {
@@ -40,7 +27,7 @@ class ApiClient {
   ): Promise<T> {
     const token = await this.getAuthToken();
     const baseUrl = getApiBaseUrl();
-    const url = `${baseUrl}/api${endpoint}`;
+    const url = baseUrl ? `${baseUrl}/api${endpoint}` : `/api${endpoint}`;
     
     console.log('[ApiClient] Request:', {
       url,
