@@ -45,9 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // ロール情報を取得する関数
   const fetchUserRole = async (userId: string, baseUser: User): Promise<UserWithRole | null> => {
     try {
-      const response = await apiClient.request(`/api/user?userId=${userId}`, {
-        method: 'GET',
-      });
+      const response = await apiClient.getUser(userId);
       
       if (response) {
         return {

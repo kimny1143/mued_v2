@@ -136,6 +136,10 @@ class ApiClient {
   async getUserSubscription() {
     return this.request<any>('/user/subscription');
   }
+
+  async getUser(userId: string) {
+    return this.request<any>(`/user?userId=${userId}`);
+  }
 }
 
 export const apiClient = new ApiClient();
