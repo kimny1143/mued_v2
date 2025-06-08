@@ -87,15 +87,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, { session: !!session });
       
-      setSession(session);
-      if (session?.user) {
-        const userWithRole = await fetchUserRole(session.user.id, session.user);
-        setUser(userWithRole || session.user);
-      } else {
+      if (event === 'SIGNED_IN' && session) {
+        console.log('Processing SIGNED_IN event...');
+        setSession(session);
+        
+        try {
+          const userWithRole = await fetchUserRole(session.user.id, session.user);
+          console.log('User with role fetched:', !!userWithRole);
+          setUser(userWithRole || session.user);
+        } catch (err) {
+          console.error('Error fetching user role:', err);
+          setUser(session.user);
+        }
+        
+        setLoading(false);
+        console.log('Loading set to false after SIGNED_IN');
+      } else if (event === 'SIGNED_OUT') {
+        console.log('Processing SIGNED_OUT event...');
+        setSession(null);
         setUser(null);
+        setLoading(false);
+        console.log('Loading set to false after SIGNED_OUT');
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        console.log('Processing TOKEN_REFRESHED event...');
+        setSession(session);
+        // トークンリフレッシュ時はloadingを変更しない
       }
-      setLoading(false);
-      console.log('Loading set to false after auth state change');
     });
 
     return () => subscription.unsubscribe();

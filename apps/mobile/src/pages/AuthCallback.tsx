@@ -25,17 +25,37 @@ const AuthCallback: React.FC = () => {
         }
         
         // Supabaseの認証コードをセッションに交換
+        console.log('Attempting to exchange code for session...');
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        
+        console.log('Exchange result:', { data: !!data, error: !!error });
         
         if (error) {
           console.error('Auth exchange error:', error);
+          console.error('Error details:', {
+            message: error.message,
+            status: error.status,
+            name: error.name
+          });
+          
+          // PKCEフローの場合は、getSessionで既存のセッションを確認
+          console.log('Checking for existing session...');
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          
+          if (sessionData?.session) {
+            console.log('Found existing session, redirecting to home');
+            navigate('/');
+            return;
+          }
+          
+          console.error('No existing session found');
           navigate('/login');
           return;
         }
         
         console.log('Auth exchange successful:', data);
         
-        if (data.session) {
+        if (data?.session) {
           console.log('Session obtained, redirecting to home');
           // 少し遅延を入れて、認証状態が確実に更新されるようにする
           setTimeout(() => {
