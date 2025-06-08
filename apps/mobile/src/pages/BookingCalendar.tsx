@@ -4,14 +4,20 @@ import { useAuth } from '../contexts/AuthContext';
 import { apiClient } from '../services/api';
 import { BottomNavigation } from '../components/ui/BottomNavigation';
 import { Card } from '../components/ui/Card';
-import { ChevronLeft, Calendar, Clock, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Clock, User } from 'lucide-react';
 
-interface Mentor {
+interface Teacher {
   id: string;
   name: string;
   email: string;
   image?: string;
-  bio?: string;
+}
+
+interface HourlySlot {
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+  price: number;
 }
 
 interface LessonSlot {
@@ -22,12 +28,15 @@ interface LessonSlot {
   isAvailable: boolean;
   hourlyRate: number;
   currency: string;
-  teacher?: Mentor;
-  hourlySlots?: Array<{
-    startTime: string;
-    endTime: string;
-    isAvailable: boolean;
-    price: number;
+  teacher?: Teacher;
+  hourlySlots?: HourlySlot[];
+}
+
+interface TimeSlot {
+  time: string;
+  slots: Array<{
+    slot: LessonSlot;
+    hourlySlot: HourlySlot;
   }>;
 }
 
@@ -35,89 +44,93 @@ const BookingCalendar: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [mentors, setMentors] = useState<Mentor[]>([]);
-  const [selectedMentor, setSelectedMentor] = useState<string | null>(null);
   const [slots, setSlots] = useState<LessonSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
 
-  // メンター一覧を取得
   useEffect(() => {
-    fetchMentorsAndSlots();
+    fetchSlots();
   }, []);
 
-  const fetchMentorsAndSlots = async () => {
+  const fetchSlots = async () => {
     try {
       setLoading(true);
-      // 利用可能なスロットを取得（メンター情報含む）
+      // 全メンターのスロットを取得
       const slotsData = await apiClient.getLessonSlots();
-      
-      // メンター情報を抽出（重複排除）
-      const uniqueMentors = Array.from(
-        new Map(
-          slotsData
-            .filter((slot: any) => slot.teacher)
-            .map((slot: any) => [slot.teacher.id, slot.teacher])
-        ).values()
-      );
-      
-      console.log('Fetched slots:', slotsData.length);
-      console.log('Unique mentors:', uniqueMentors);
-      
-      setMentors(uniqueMentors);
+      console.log('Fetched slots:', slotsData);
       setSlots(slotsData);
     } catch (error) {
-      console.error('Failed to fetch data:', error);
+      console.error('Failed to fetch slots:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchMentorSlots = async (mentorId: string) => {
-    try {
-      setLoading(true);
-      const slotsData = await apiClient.getLessonSlots(mentorId);
-      setSlots(slotsData);
-    } catch (error) {
-      console.error('Failed to fetch mentor slots:', error);
-    } finally {
-      setLoading(false);
+  // 時間帯を生成（8:00 - 22:00）
+  const generateTimeSlots = (): string[] => {
+    const times = [];
+    for (let hour = 8; hour < 22; hour++) {
+      times.push(`${hour.toString().padStart(2, '0')}:00`);
     }
+    return times;
   };
 
-  const handleMentorSelect = (mentorId: string) => {
-    setSelectedMentor(mentorId);
-    fetchMentorSlots(mentorId);
+  // 指定日時のスロットを取得
+  const getSlotsByDateTime = (date: Date, timeString: string): Array<{ slot: LessonSlot; hourlySlot: HourlySlot }> => {
+    const targetDateTime = new Date(date);
+    const [hours, minutes] = timeString.split(':').map(Number);
+    targetDateTime.setHours(hours, minutes, 0, 0);
+
+    const matchingSlots: Array<{ slot: LessonSlot; hourlySlot: HourlySlot }> = [];
+
+    slots.forEach(slot => {
+      if (slot.hourlySlots) {
+        slot.hourlySlots.forEach(hourlySlot => {
+          const slotStart = new Date(hourlySlot.startTime);
+          if (
+            slotStart.toDateString() === targetDateTime.toDateString() &&
+            slotStart.getHours() === targetDateTime.getHours()
+          ) {
+            matchingSlots.push({ slot, hourlySlot });
+          }
+        });
+      }
+    });
+
+    return matchingSlots;
   };
 
-  const handleSlotSelect = async (slot: LessonSlot, hourlySlot?: any) => {
-    if (!slot.isAvailable || !hourlySlot?.isAvailable) return;
-    
-    // 予約作成画面へ遷移
-    navigate('/reservations/new', { 
-      state: { 
+  const handleSlotSelect = (slot: LessonSlot, hourlySlot: HourlySlot) => {
+    if (!hourlySlot.isAvailable) return;
+
+    navigate('/reservations/new', {
+      state: {
         slotId: slot.id,
         mentor: slot.teacher,
-        slotTime: hourlySlot?.startTime || slot.startTime,
-        duration: 60, // 1時間固定
-        price: hourlySlot?.price || slot.hourlyRate
-      } 
+        slotTime: hourlySlot.startTime,
+        duration: 60,
+        price: hourlySlot.price
+      }
     });
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('ja-JP', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('ja-JP', { 
-      month: 'long', 
+  const formatDate = (date: Date): string => {
+    return date.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
       day: 'numeric',
-      weekday: 'short'
+      weekday: 'long'
     });
+  };
+
+  const formatTime = (timeString: string): string => {
+    return timeString;
+  };
+
+  const changeDate = (days: number) => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + days);
+    setSelectedDate(newDate);
   };
 
   if (loading) {
@@ -129,6 +142,8 @@ const BookingCalendar: React.FC = () => {
     );
   }
 
+  const timeSlots = generateTimeSlots();
+
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '80px', backgroundColor: '#f3f4f6' }}>
       {/* ヘッダー */}
@@ -136,253 +151,186 @@ const BookingCalendar: React.FC = () => {
         backgroundColor: '#1e40af',
         color: 'white',
         padding: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
       }}>
-        {selectedMentor && (
-          <button
-            onClick={() => {
-              setSelectedMentor(null);
-              setSlots([]);
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'white',
-              cursor: 'pointer',
-              padding: '4px',
-            }}
-          >
-            <ChevronLeft size={24} />
-          </button>
-        )}
-        <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>
-          {selectedMentor ? 'スロット選択' : 'メンター選択'}
+        <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold', textAlign: 'center' }}>
+          レッスン予約
         </h1>
       </header>
 
+      {/* 日付ナビゲーション */}
+      <div style={{
+        backgroundColor: 'white',
+        padding: '12px 16px',
+        borderBottom: '1px solid #e5e7eb',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+      }}>
+        <button
+          onClick={() => changeDate(-1)}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '8px',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <ChevronLeft size={20} />
+        </button>
+        
+        <div style={{ textAlign: 'center' }}>
+          <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>
+            {formatDate(selectedDate)}
+          </p>
+        </div>
+
+        <button
+          onClick={() => changeDate(1)}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '8px',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <ChevronRight size={20} />
+        </button>
+      </div>
+
+      {/* タイムスロット表示 */}
       <div style={{ padding: '16px' }}>
-        {!selectedMentor ? (
-          // メンター一覧
-          <div>
-            <h2 style={{ 
-              margin: '0 0 16px 0', 
-              fontSize: '18px', 
-              fontWeight: 'bold',
-              color: '#374151',
-            }}>
-              利用可能なメンター
-            </h2>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {mentors.map((mentor) => (
-                <Card
-                  key={mentor.id}
-                  onClick={() => handleMentorSelect(mentor.id)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {mentor.image ? (
-                      <img
-                        src={mentor.image}
-                        alt={mentor.name}
-                        style={{
-                          width: '48px',
-                          height: '48px',
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    ) : (
-                      <div style={{
-                        width: '48px',
-                        height: '48px',
-                        borderRadius: '50%',
-                        backgroundColor: '#e5e7eb',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
-                        <User size={24} color="#6b7280" />
-                      </div>
-                    )}
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ 
-                        margin: '0 0 4px 0', 
-                        fontSize: '16px', 
-                        fontWeight: 'bold',
-                        color: '#111827',
-                      }}>
-                        {mentor.name}
-                      </h3>
-                      {mentor.bio && (
-                        <p style={{ 
-                          margin: 0, 
-                          fontSize: '14px', 
-                          color: '#6b7280',
-                        }}>
-                          {mentor.bio}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        ) : (
-          // スロット一覧
-          <div>
-            <h2 style={{ 
-              margin: '0 0 16px 0', 
-              fontSize: '18px', 
-              fontWeight: 'bold',
-              color: '#374151',
-            }}>
-              {formatDate(selectedDate)}
-            </h2>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {slots
-                .filter(slot => {
-                  const slotDate = new Date(slot.startTime);
-                  return slotDate.toDateString() === selectedDate.toDateString();
-                })
-                .map((slot) => {
-                  // hourlySlots がある場合はそれを表示
-                  if (slot.hourlySlots && slot.hourlySlots.length > 0) {
-                    return slot.hourlySlots
-                      .filter(hourlySlot => {
-                        const hourlyDate = new Date(hourlySlot.startTime);
-                        return hourlyDate.toDateString() === selectedDate.toDateString();
-                      })
-                      .map((hourlySlot, index) => (
-                        <Card
-                          key={`${slot.id}-${index}`}
-                          onClick={() => handleSlotSelect(slot, hourlySlot)}
-                          style={{ 
-                            cursor: hourlySlot.isAvailable ? 'pointer' : 'default',
-                            opacity: hourlySlot.isAvailable ? 1 : 0.5,
-                          }}
-                        >
-                          <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'space-between' 
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <Clock size={16} color="#6b7280" />
-                              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                                {formatTime(hourlySlot.startTime)}
-                              </span>
-                              <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                                (60分)
-                              </span>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <p style={{ 
-                                margin: 0, 
-                                fontSize: '16px', 
-                                fontWeight: 'bold',
-                                color: '#1e40af',
-                              }}>
-                                ¥{hourlySlot.price.toLocaleString()}
-                              </p>
-                              <p style={{ 
-                                margin: 0, 
-                                fontSize: '12px', 
-                                color: hourlySlot.isAvailable ? '#10b981' : '#ef4444',
-                              }}>
-                                {hourlySlot.isAvailable ? '予約可能' : '予約済み'}
-                              </p>
-                            </div>
-                          </div>
-                        </Card>
-                      ));
-                  }
-                  
-                  // hourlySlots がない場合は通常のスロット表示
-                  return (
+        {timeSlots.map(timeSlot => {
+          const slotsAtTime = getSlotsByDateTime(selectedDate, timeSlot);
+          
+          return (
+            <div key={timeSlot} style={{ marginBottom: '16px' }}>
+              {/* 時間ラベル */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '8px',
+              }}>
+                <Clock size={16} color="#6b7280" />
+                <span style={{ fontSize: '14px', color: '#6b7280', fontWeight: 'bold' }}>
+                  {timeSlot}
+                </span>
+              </div>
+
+              {/* その時間のスロット */}
+              {slotsAtTime.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {slotsAtTime.map(({ slot, hourlySlot }, index) => (
                     <Card
-                      key={slot.id}
-                      onClick={() => handleSlotSelect(slot)}
-                      style={{ 
-                        cursor: slot.isAvailable ? 'pointer' : 'default',
-                        opacity: slot.isAvailable ? 1 : 0.5,
+                      key={`${slot.id}-${index}`}
+                      onClick={() => handleSlotSelect(slot, hourlySlot)}
+                      style={{
+                        cursor: hourlySlot.isAvailable ? 'pointer' : 'default',
+                        opacity: hourlySlot.isAvailable ? 1 : 0.6,
+                        borderLeft: `4px solid ${hourlySlot.isAvailable ? '#10b981' : '#ef4444'}`,
                       }}
                     >
-                      <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between' 
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Clock size={16} color="#6b7280" />
-                          <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                            {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                          </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          {/* メンター情報 */}
+                          {slot.teacher?.image ? (
+                            <img
+                              src={slot.teacher.image}
+                              alt={slot.teacher.name}
+                              style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                objectFit: 'cover',
+                              }}
+                            />
+                          ) : (
+                            <div style={{
+                              width: '40px',
+                              height: '40px',
+                              borderRadius: '50%',
+                              backgroundColor: '#e5e7eb',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}>
+                              <User size={20} color="#6b7280" />
+                            </div>
+                          )}
+                          <div>
+                            <p style={{
+                              margin: '0 0 4px 0',
+                              fontSize: '14px',
+                              fontWeight: 'bold',
+                              color: '#111827',
+                            }}>
+                              {slot.teacher?.name || 'メンター'}
+                            </p>
+                            <p style={{
+                              margin: 0,
+                              fontSize: '12px',
+                              color: '#6b7280',
+                            }}>
+                              60分レッスン
+                            </p>
+                          </div>
                         </div>
+                        
+                        {/* 価格と状態 */}
                         <div style={{ textAlign: 'right' }}>
-                          <p style={{ 
-                            margin: 0, 
-                            fontSize: '16px', 
+                          <p style={{
+                            margin: '0 0 4px 0',
+                            fontSize: '16px',
                             fontWeight: 'bold',
                             color: '#1e40af',
                           }}>
-                            ¥{slot.hourlyRate}/時間
+                            ¥{hourlySlot.price.toLocaleString()}
                           </p>
-                          <p style={{ 
-                            margin: 0, 
-                            fontSize: '12px', 
-                            color: slot.isAvailable ? '#10b981' : '#ef4444',
+                          <p style={{
+                            margin: 0,
+                            fontSize: '12px',
+                            color: hourlySlot.isAvailable ? '#10b981' : '#ef4444',
+                            fontWeight: 'bold',
                           }}>
-                            {slot.isAvailable ? '予約可能' : '予約済み'}
+                            {hourlySlot.isAvailable ? '予約可能' : '予約済み'}
                           </p>
                         </div>
                       </div>
                     </Card>
-                  );
-                })
-                .flat()}
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  padding: '16px',
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '8px',
+                  textAlign: 'center',
+                  color: '#9ca3af',
+                  fontSize: '14px',
+                }}>
+                  この時間帯に利用可能なメンターはいません
+                </div>
+              )}
             </div>
-
-            {/* 日付選択 */}
-            <div style={{ 
-              marginTop: '24px',
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '8px',
-            }}>
-              {[-1, 0, 1, 2, 3, 4, 5].map(offset => {
-                const date = new Date();
-                date.setDate(date.getDate() + offset);
-                const isSelected = date.toDateString() === selectedDate.toDateString();
-                
-                return (
-                  <button
-                    key={offset}
-                    onClick={() => setSelectedDate(date)}
-                    style={{
-                      padding: '8px 12px',
-                      border: 'none',
-                      borderRadius: '8px',
-                      backgroundColor: isSelected ? '#1e40af' : '#e5e7eb',
-                      color: isSelected ? 'white' : '#374151',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: isSelected ? 'bold' : 'normal',
-                    }}
-                  >
-                    {date.getDate()}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+          );
+        })}
       </div>
-      
+
       <BottomNavigation />
     </div>
   );

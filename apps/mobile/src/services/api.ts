@@ -116,10 +116,20 @@ class ApiClient {
   }
 
   // レッスンスロット関連
-  async getLessonSlots(mentorId?: string) {
+  async getLessonSlots(mentorId?: string, dateRange?: { from: string; to: string }) {
     if (mentorId) {
       // 特定のメンターのスロットを取得
-      return this.request<any[]>(`/lesson-slots/by-mentor/${mentorId}`);
+      if (!dateRange) {
+        // デフォルトで今日から7日間
+        const from = new Date();
+        const to = new Date();
+        to.setDate(to.getDate() + 7);
+        dateRange = {
+          from: from.toISOString().split('T')[0],
+          to: to.toISOString().split('T')[0]
+        };
+      }
+      return this.request<any[]>(`/lesson-slots/by-mentor/${mentorId}?from=${dateRange.from}&to=${dateRange.to}`);
     } else {
       // 全メンターのスロットを取得（生徒用）
       return this.request<any[]>('/lesson-slots?viewMode=all');
