@@ -1,6 +1,7 @@
-# Ignore parent directories
-../../turbo.json
-../../package.json
-../../package-lock.json
-../../node_modules
-../..
+# Vercel ignore patterns for mobile app
+.env*.local
+node_modules
+coverage
+build
+*.log
+.turbo
