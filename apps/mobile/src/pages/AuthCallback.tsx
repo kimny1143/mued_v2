@@ -12,6 +12,14 @@ const AuthCallback: React.FC = () => {
         console.log('Auth callback started');
         console.log('Current URL:', window.location.href);
         
+        // まず既存のセッションを確認
+        const { data: existingSession } = await supabase.auth.getSession();
+        if (existingSession?.session) {
+          console.log('Already have session, redirecting to home');
+          navigate('/');
+          return;
+        }
+        
         // URLのクエリパラメータから認証コードを取得
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
@@ -76,11 +84,9 @@ const AuthCallback: React.FC = () => {
         console.log('Auth exchange successful:', data);
         
         if (data?.session) {
-          console.log('Session obtained, redirecting to home');
-          // 少し遅延を入れて、認証状態が確実に更新されるようにする
-          setTimeout(() => {
-            navigate('/');
-          }, 100);
+          console.log('Session obtained, redirecting to home immediately');
+          // すぐにリダイレクト（AuthProviderが後で状態を更新する）
+          navigate('/');
         } else {
           console.error('No session in auth response');
           navigate('/login');

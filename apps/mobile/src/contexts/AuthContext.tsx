@@ -108,6 +108,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Processing SIGNED_IN event...');
         setSession(session);
         
+        // 認証コールバックページの場合は即座にリダイレクト
+        if (window.location.pathname === '/auth/callback') {
+          console.log('Currently on auth callback page, redirecting to home');
+          window.location.href = '/';
+          return;
+        }
+        
         try {
           const userWithRole = await fetchUserRole(session.user.id, session.user);
           console.log('User with role fetched:', !!userWithRole);
