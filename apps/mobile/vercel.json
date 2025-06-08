@@ -4,7 +4,7 @@
   "framework": null,
   "installCommand": "npm install",
   "devCommand": "npm start",
-  "ignoreCommand": "cd ../.. && git diff HEAD^ HEAD --quiet apps/mobile",
+  "ignoreCommand": "exit 1",
   "rewrites": [
     {
       "source": "/api/:path*",
