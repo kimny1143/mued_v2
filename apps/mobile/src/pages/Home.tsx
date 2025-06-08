@@ -33,8 +33,8 @@ const Home: React.FC = () => {
     { 
       icon: <Calendar size={24} />, 
       title: 'レッスン予約', 
-      description: 'レッスンの予約・管理',
-      path: '/reservations',
+      description: '新規レッスンを予約',
+      path: '/calendar',
       color: '#1e40af',
     },
     { 

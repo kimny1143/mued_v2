@@ -47,12 +47,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('fetchUserRole called for userId:', userId);
     
     try {
-      // タイムアウトを設定（5秒）
+      // タイムアウトを設定（10秒に延長）
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('User role fetch timeout')), 5000);
+        setTimeout(() => reject(new Error('User role fetch timeout')), 10000);
       });
       
-      const fetchPromise = apiClient.getUser(userId);
+      const fetchPromise = apiClient.getUser(userId).catch(err => {
+        console.error('API client error:', err);
+        throw err;
+      });
       
       console.log('Fetching user role from API...');
       const response = await Promise.race([fetchPromise, timeoutPromise]);

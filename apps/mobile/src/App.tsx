@@ -8,7 +8,8 @@ import Landing from './pages/Landing';
 import PWADebug from './pages/PWADebug';
 import { Reservations } from './pages/Reservations';
 import { ReservationDetail } from './pages/ReservationDetail';
-import { Calendar } from './pages/Calendar';
+import BookingCalendar from './pages/BookingCalendar';
+import ReservationNew from './pages/ReservationNew';
 import { Messages } from './pages/Messages';
 import { Profile } from './pages/Profile';
 import { Materials } from './pages/Materials';
@@ -96,7 +97,15 @@ const AppRoutes: React.FC = () => {
         path="/calendar"
         element={
           <ProtectedRoute>
-            <Calendar />
+            <BookingCalendar />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reservations/new"
+        element={
+          <ProtectedRoute>
+            <ReservationNew />
           </ProtectedRoute>
         }
       />
