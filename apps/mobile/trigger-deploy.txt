@@ -1,0 +1,2 @@
+Trigger mobile app deployment - CORS fix via rewrites
+Timestamp: 2024-01-15 01:30:00
