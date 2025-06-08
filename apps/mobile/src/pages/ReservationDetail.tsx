@@ -30,7 +30,54 @@ export const ReservationDetail: React.FC = () => {
       setLoading(true);
       setError(null);
       const data = await apiClient.getReservation(id);
-      setReservation(data);
+      
+      // APIレスポンスをフロントエンドの型に変換
+      const transformedData: Reservation = {
+        id: data.id,
+        studentId: data.studentId,
+        mentorId: data.lessonSlots?.teacher?.id || data.lessonSlots?.teacherId || '',
+        lessonSlotId: data.slotId || data.lessonSlotId || '',
+        status: data.status as 'PENDING_APPROVAL' | 'APPROVED' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED',
+        paymentStatus: (data.paymentId ? 'SETUP_COMPLETED' : 'PENDING') as 'PENDING' | 'SETUP_COMPLETED' | 'PAID' | 'REFUNDED',
+        studentMessage: data.notes || data.studentMessage,
+        mentorMessage: data.mentorMessage,
+        cancelReason: data.cancelReason,
+        bookedStartTime: data.bookedStartTime,
+        bookedEndTime: data.bookedEndTime,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+        lessonSlot: data.lessonSlots ? {
+          id: data.lessonSlots.id,
+          mentorId: data.lessonSlots.teacher_id || data.lessonSlots.teacherId || '',
+          startTime: data.lessonSlots.start_time || data.lessonSlots.startTime,
+          endTime: data.lessonSlots.end_time || data.lessonSlots.endTime,
+          isAvailable: data.lessonSlots.is_available !== undefined ? data.lessonSlots.is_available : true,
+          price: data.totalAmount || data.lessonSlots.hourly_rate || 0,
+          createdAt: data.lessonSlots.created_at || data.lessonSlots.createdAt,
+          updatedAt: data.lessonSlots.updated_at || data.lessonSlots.updatedAt,
+          mentor: data.lessonSlots.users ? {
+            id: data.lessonSlots.users.id,
+            email: data.lessonSlots.users.email || '',
+            fullName: data.lessonSlots.users.name,
+            role: 'MENTOR' as const,
+          } : undefined,
+        } : undefined,
+        student: data.users ? {
+          id: data.users.id,
+          email: data.users.email || '',
+          fullName: data.users.name,
+          role: 'STUDENT' as const,
+        } : undefined,
+        mentor: data.lessonSlots?.users ? {
+          id: data.lessonSlots.users.id,
+          email: data.lessonSlots.users.email || '',
+          fullName: data.lessonSlots.users.name,
+          role: 'MENTOR' as const,
+        } : undefined,
+      };
+      
+      console.log('Transformed reservation:', transformedData);
+      setReservation(transformedData);
     } catch (err) {
       setError('予約情報の取得に失敗しました');
       console.error(err);

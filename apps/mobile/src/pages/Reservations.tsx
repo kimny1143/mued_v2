@@ -33,13 +33,13 @@ export const Reservations: React.FC = () => {
           studentId: '', // APIレスポンスに含まれない
           mentorId: item.lessonSlot?.teacher?.id || '',
           lessonSlotId: item.lessonSlot?.id || '',
-          status: item.status,
-          paymentStatus: item.payment?.status === 'SUCCEEDED' ? 'PAID' : 
+          status: item.status as 'PENDING_APPROVAL' | 'APPROVED' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED',
+          paymentStatus: (item.payment?.status === 'SUCCEEDED' ? 'PAID' : 
                         item.payment?.status === 'SETUP_COMPLETED' ? 'SETUP_COMPLETED' : 
-                        item.payment?.status === 'CANCELED' ? 'REFUNDED' : 'PENDING',
-          studentMessage: item.studentMessage || null,
-          mentorMessage: item.mentorMessage || null,
-          cancelReason: item.cancelReason || null,
+                        item.payment?.status === 'CANCELED' ? 'REFUNDED' : 'PENDING') as 'PENDING' | 'SETUP_COMPLETED' | 'PAID' | 'REFUNDED',
+          studentMessage: item.studentMessage || undefined,
+          mentorMessage: item.mentorMessage || undefined,
+          cancelReason: item.cancelReason || undefined,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
           bookedStartTime: item.bookedStartTime,
