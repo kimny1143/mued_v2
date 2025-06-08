@@ -16,12 +16,19 @@ interface Mentor {
 
 interface LessonSlot {
   id: string;
-  mentorId: string;
-  slotTime: string;
-  duration: number;
+  teacherId: string;
+  startTime: string;
+  endTime: string;
   isAvailable: boolean;
-  price: number;
-  mentor?: Mentor;
+  hourlyRate: number;
+  currency: string;
+  teacher?: Mentor;
+  hourlySlots?: Array<{
+    startTime: string;
+    endTime: string;
+    isAvailable: boolean;
+    price: number;
+  }>;
 }
 
 const BookingCalendar: React.FC = () => {
@@ -48,10 +55,13 @@ const BookingCalendar: React.FC = () => {
       const uniqueMentors = Array.from(
         new Map(
           slotsData
-            .filter((slot: any) => slot.mentor)
-            .map((slot: any) => [slot.mentor.id, slot.mentor])
+            .filter((slot: any) => slot.teacher)
+            .map((slot: any) => [slot.teacher.id, slot.teacher])
         ).values()
       );
+      
+      console.log('Fetched slots:', slotsData.length);
+      console.log('Unique mentors:', uniqueMentors);
       
       setMentors(uniqueMentors);
       setSlots(slotsData);
@@ -79,17 +89,17 @@ const BookingCalendar: React.FC = () => {
     fetchMentorSlots(mentorId);
   };
 
-  const handleSlotSelect = async (slot: LessonSlot) => {
-    if (!slot.isAvailable) return;
+  const handleSlotSelect = async (slot: LessonSlot, hourlySlot?: any) => {
+    if (!slot.isAvailable || !hourlySlot?.isAvailable) return;
     
     // 予約作成画面へ遷移
     navigate('/reservations/new', { 
       state: { 
         slotId: slot.id,
-        mentor: slot.mentor,
-        slotTime: slot.slotTime,
-        duration: slot.duration,
-        price: slot.price
+        mentor: slot.teacher,
+        slotTime: hourlySlot?.startTime || slot.startTime,
+        duration: 60, // 1時間固定
+        price: hourlySlot?.price || slot.hourlyRate
       } 
     });
   };
@@ -236,53 +246,105 @@ const BookingCalendar: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {slots
                 .filter(slot => {
-                  const slotDate = new Date(slot.slotTime);
+                  const slotDate = new Date(slot.startTime);
                   return slotDate.toDateString() === selectedDate.toDateString();
                 })
-                .sort((a, b) => new Date(a.slotTime).getTime() - new Date(b.slotTime).getTime())
-                .map((slot) => (
-                  <Card
-                    key={slot.id}
-                    onClick={() => handleSlotSelect(slot)}
-                    style={{ 
-                      cursor: slot.isAvailable ? 'pointer' : 'default',
-                      opacity: slot.isAvailable ? 1 : 0.5,
-                    }}
-                  >
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'space-between' 
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Clock size={16} color="#6b7280" />
-                        <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
-                          {formatTime(slot.slotTime)}
-                        </span>
-                        <span style={{ fontSize: '14px', color: '#6b7280' }}>
-                          ({slot.duration}分)
-                        </span>
+                .map((slot) => {
+                  // hourlySlots がある場合はそれを表示
+                  if (slot.hourlySlots && slot.hourlySlots.length > 0) {
+                    return slot.hourlySlots
+                      .filter(hourlySlot => {
+                        const hourlyDate = new Date(hourlySlot.startTime);
+                        return hourlyDate.toDateString() === selectedDate.toDateString();
+                      })
+                      .map((hourlySlot, index) => (
+                        <Card
+                          key={`${slot.id}-${index}`}
+                          onClick={() => handleSlotSelect(slot, hourlySlot)}
+                          style={{ 
+                            cursor: hourlySlot.isAvailable ? 'pointer' : 'default',
+                            opacity: hourlySlot.isAvailable ? 1 : 0.5,
+                          }}
+                        >
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'space-between' 
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Clock size={16} color="#6b7280" />
+                              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                                {formatTime(hourlySlot.startTime)}
+                              </span>
+                              <span style={{ fontSize: '14px', color: '#6b7280' }}>
+                                (60分)
+                              </span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <p style={{ 
+                                margin: 0, 
+                                fontSize: '16px', 
+                                fontWeight: 'bold',
+                                color: '#1e40af',
+                              }}>
+                                ¥{hourlySlot.price.toLocaleString()}
+                              </p>
+                              <p style={{ 
+                                margin: 0, 
+                                fontSize: '12px', 
+                                color: hourlySlot.isAvailable ? '#10b981' : '#ef4444',
+                              }}>
+                                {hourlySlot.isAvailable ? '予約可能' : '予約済み'}
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      ));
+                  }
+                  
+                  // hourlySlots がない場合は通常のスロット表示
+                  return (
+                    <Card
+                      key={slot.id}
+                      onClick={() => handleSlotSelect(slot)}
+                      style={{ 
+                        cursor: slot.isAvailable ? 'pointer' : 'default',
+                        opacity: slot.isAvailable ? 1 : 0.5,
+                      }}
+                    >
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between' 
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Clock size={16} color="#6b7280" />
+                          <span style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                            {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ 
+                            margin: 0, 
+                            fontSize: '16px', 
+                            fontWeight: 'bold',
+                            color: '#1e40af',
+                          }}>
+                            ¥{slot.hourlyRate}/時間
+                          </p>
+                          <p style={{ 
+                            margin: 0, 
+                            fontSize: '12px', 
+                            color: slot.isAvailable ? '#10b981' : '#ef4444',
+                          }}>
+                            {slot.isAvailable ? '予約可能' : '予約済み'}
+                          </p>
+                        </div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <p style={{ 
-                          margin: 0, 
-                          fontSize: '16px', 
-                          fontWeight: 'bold',
-                          color: '#1e40af',
-                        }}>
-                          ¥{slot.price.toLocaleString()}
-                        </p>
-                        <p style={{ 
-                          margin: 0, 
-                          fontSize: '12px', 
-                          color: slot.isAvailable ? '#10b981' : '#ef4444',
-                        }}>
-                          {slot.isAvailable ? '予約可能' : '予約済み'}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })
+                .flat()}
             </div>
 
             {/* 日付選択 */}

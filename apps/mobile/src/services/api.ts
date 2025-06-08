@@ -117,10 +117,13 @@ class ApiClient {
 
   // レッスンスロット関連
   async getLessonSlots(mentorId?: string) {
-    const url = mentorId 
-      ? `/lesson-slots/by-mentor/${mentorId}`
-      : '/lesson-slots';
-    return this.request<any[]>(url);
+    if (mentorId) {
+      // 特定のメンターのスロットを取得
+      return this.request<any[]>(`/lesson-slots/by-mentor/${mentorId}`);
+    } else {
+      // 全メンターのスロットを取得（生徒用）
+      return this.request<any[]>('/lesson-slots?viewMode=all');
+    }
   }
 
   // セッション関連
