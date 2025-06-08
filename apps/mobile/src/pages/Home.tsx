@@ -4,10 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { SmartInstallButton } from '../components/SmartInstallButton';
 import { BottomNavigation } from '../components/ui/BottomNavigation';
 import { Card } from '../components/ui/Card';
-import { Calendar, MessageCircle, BookOpen, TrendingUp } from 'lucide-react';
+import { Calendar, MessageCircle, BookOpen, TrendingUp, LogOut, Settings } from 'lucide-react';
 
 const Home: React.FC = () => {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, isStudent, isMentor, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -28,7 +28,8 @@ const Home: React.FC = () => {
     );
   }
 
-  const features = [
+  // 学生用機能
+  const studentFeatures = [
     { 
       icon: <Calendar size={24} />, 
       title: 'レッスン予約', 
@@ -59,6 +60,40 @@ const Home: React.FC = () => {
     },
   ];
 
+  // メンター用機能
+  const mentorFeatures = [
+    { 
+      icon: <Calendar size={24} />, 
+      title: 'スロット管理', 
+      description: 'レッスンスロットの設定',
+      path: '/slots',
+      color: '#1e40af',
+    },
+    { 
+      icon: <MessageCircle size={24} />, 
+      title: '予約承認', 
+      description: '生徒からの予約を承認',
+      path: '/approvals',
+      color: '#10b981',
+    },
+    { 
+      icon: <BookOpen size={24} />, 
+      title: '教材管理', 
+      description: '教材の作成・編集',
+      path: '/materials',
+      color: '#f59e0b',
+    },
+    { 
+      icon: <TrendingUp size={24} />, 
+      title: '生徒管理', 
+      description: '生徒の進捗確認',
+      path: '/students',
+      color: '#ef4444',
+    },
+  ];
+
+  const features = isMentor ? mentorFeatures : studentFeatures;
+
   return (
     <div style={{ minHeight: '100vh', paddingBottom: '80px', backgroundColor: '#f3f4f6' }}>
       {/* ヘッダー */}
@@ -66,13 +101,60 @@ const Home: React.FC = () => {
         backgroundColor: '#1e40af',
         color: 'white',
         padding: '20px 16px',
+        position: 'relative',
       }}>
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          right: '16px',
+          display: 'flex',
+          gap: '8px',
+        }}>
+          <button
+            onClick={() => navigate('/settings')}
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+            }}
+          >
+            <Settings size={20} />
+          </button>
+          <button
+            onClick={handleSignOut}
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+            }}
+          >
+            <LogOut size={20} />
+          </button>
+        </div>
         <h1 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: 'bold' }}>
           こんにちは、{user?.user_metadata?.full_name || 'ユーザー'}さん
         </h1>
         <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>
-          今日も練習を頑張りましょう！
+          {isMentor ? '今日のレッスンの準備はいかがですか？' : '今日も練習を頑張りましょう！'}
         </p>
+        {user?.roleName && (
+          <p style={{ margin: '4px 0 0 0', fontSize: '12px', opacity: 0.8 }}>
+            ロール: {user.roleName === 'mentor' || user.roleName === 'teacher' ? 'メンター' : 
+                    user.roleName === 'admin' ? '管理者' : '学生'}
+          </p>
+        )}
       </header>
 
       {/* クイックアクセス */}

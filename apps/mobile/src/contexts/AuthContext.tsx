@@ -1,13 +1,26 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../services/supabase';
+import { apiClient } from '../services/api';
+
+interface UserWithRole extends User {
+  roleName?: string;
+  role?: {
+    id: string;
+    name: string;
+    description: string | null;
+  };
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: UserWithRole | null;
   session: Session | null;
   loading: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  isStudent: boolean;
+  isMentor: boolean;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,22 +38,53 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserWithRole | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ロール情報を取得する関数
+  const fetchUserRole = async (userId: string, baseUser: User): Promise<UserWithRole | null> => {
+    try {
+      const response = await apiClient.request(`/api/user?userId=${userId}`, {
+        method: 'GET',
+      });
+      
+      if (response) {
+        return {
+          ...baseUser,
+          roleName: response.roleName || 'student',
+          role: response.role,
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Failed to fetch user role:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        const userWithRole = await fetchUserRole(session.user.id, session.user);
+        setUser(userWithRole || session.user);
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
     // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        const userWithRole = await fetchUserRole(session.user.id, session.user);
+        setUser(userWithRole || session.user);
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
@@ -83,12 +127,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // ロールベースの権限チェック
+  const isStudent = user?.roleName === 'student' || !user?.roleName;
+  const isMentor = user?.roleName === 'mentor' || user?.roleName === 'teacher';
+  const isAdmin = user?.roleName === 'admin';
+
   const value = {
     user,
     session,
     loading,
     signIn,
     signOut,
+    isStudent,
+    isMentor,
+    isAdmin,
   };
 
   return (
