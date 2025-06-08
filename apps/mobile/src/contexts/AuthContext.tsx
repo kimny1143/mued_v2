@@ -5,7 +5,7 @@ import { apiClient } from '../services/api';
 
 interface UserWithRole extends User {
   roleName?: string;
-  role?: {
+  roleInfo?: {
     id: string;
     name: string;
     description: string | null;
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return {
           ...baseUser,
           roleName: response.roleName || 'student',
-          role: response.role,
+          roleInfo: response.role,
         };
       }
       return null;
