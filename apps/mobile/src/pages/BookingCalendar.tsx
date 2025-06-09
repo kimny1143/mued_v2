@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { apiClient } from '../services/api';
+import { useAllLessonSlots, useMyLessonSlots } from '../hooks/useLessonSlots';
 import { BottomNavigation } from '../components/ui/BottomNavigation';
 import { Card } from '../components/ui/Card';
 import { ChevronLeft, ChevronRight, Calendar, Clock, User, Plus, Edit2, Trash2 } from 'lucide-react';
@@ -16,8 +16,8 @@ interface Teacher {
 interface HourlySlot {
   startTime: string;
   endTime: string;
-  isAvailable: boolean;
-  price: number;
+  isReserved: boolean;
+  reservationId?: string;
 }
 
 interface LessonSlot {
@@ -43,37 +43,26 @@ interface TimeSlot {
 const BookingCalendar: React.FC = () => {
   const { user, isMentor } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [slots, setSlots] = useState<LessonSlot[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
-  const [mentorSlots, setMentorSlots] = useState<LessonSlot[]>([]);
 
-  useEffect(() => {
-    fetchSlots();
-  }, [isMentor, user]);
+  // React Queryを使用してデータ取得
+  const { 
+    data: allSlots = [], 
+    isLoading: isLoadingAllSlots,
+    error: allSlotsError 
+  } = useAllLessonSlots();
+  
+  const { 
+    data: mySlots = [], 
+    isLoading: isLoadingMySlots,
+    error: mySlotsError 
+  } = useMyLessonSlots();
 
-  const fetchSlots = async () => {
-    try {
-      setLoading(true);
-      
-      if (isMentor) {
-        // メンターの場合: 自分のスロットを取得
-        const mentorSlotsData = await apiClient.getMyLessonSlots();
-        console.log('Fetched mentor slots:', mentorSlotsData);
-        setMentorSlots(mentorSlotsData);
-      } else {
-        // 生徒の場合: 全メンターのスロットを取得
-        const slotsData = await apiClient.getLessonSlots();
-        console.log('Fetched all slots:', slotsData);
-        setSlots(slotsData);
-      }
-    } catch (error) {
-      console.error('Failed to fetch slots:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ロール別のデータとローディング状態
+  const loading = isMentor ? isLoadingMySlots : isLoadingAllSlots;
+  const slots = isMentor ? [] : allSlots;
+  const mentorSlots = isMentor ? mySlots : [];
 
   // 時間帯を生成（8:00 - 22:00）
   const generateTimeSlots = (): string[] => {
@@ -110,7 +99,7 @@ const BookingCalendar: React.FC = () => {
   };
 
   const handleSlotSelect = (slot: LessonSlot, hourlySlot: HourlySlot) => {
-    if (!hourlySlot.isAvailable) return;
+    if (hourlySlot.isReserved) return; // 予約済みの場合は選択不可
 
     navigate('/reservations/new', {
       state: {
@@ -118,7 +107,7 @@ const BookingCalendar: React.FC = () => {
         mentor: slot.teacher,
         slotTime: hourlySlot.startTime,
         duration: 60,
-        price: hourlySlot.price
+        price: slot.hourlyRate // slotのhourlyRateから価格を取得
       }
     });
   };
@@ -280,7 +269,7 @@ const BookingCalendar: React.FC = () => {
                           fontSize: '14px',
                           color: '#6b7280',
                         }}>
-                          ¥{slot.hourlyRate.toLocaleString()}/時間
+                          ¥{(slot.hourlyRate || 0).toLocaleString()}/時間
                         </p>
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
@@ -375,9 +364,9 @@ const BookingCalendar: React.FC = () => {
                         key={`${slot.id}-${index}`}
                         onClick={() => handleSlotSelect(slot, hourlySlot)}
                         style={{
-                          cursor: hourlySlot.isAvailable ? 'pointer' : 'default',
-                          opacity: hourlySlot.isAvailable ? 1 : 0.6,
-                          borderLeft: `4px solid ${hourlySlot.isAvailable ? '#10b981' : '#ef4444'}`,
+                          cursor: !hourlySlot.isReserved ? 'pointer' : 'default',
+                          opacity: !hourlySlot.isReserved ? 1 : 0.6,
+                          borderLeft: `4px solid ${!hourlySlot.isReserved ? '#10b981' : '#ef4444'}`,
                         }}
                       >
                         <div style={{
@@ -438,15 +427,15 @@ const BookingCalendar: React.FC = () => {
                               fontWeight: 'bold',
                               color: '#1e40af',
                             }}>
-                              ¥{hourlySlot.price.toLocaleString()}
+                              ¥{(slot.hourlyRate || 0).toLocaleString()}
                             </p>
                             <p style={{
                               margin: 0,
                               fontSize: '12px',
-                              color: hourlySlot.isAvailable ? '#10b981' : '#ef4444',
+                              color: !hourlySlot.isReserved ? '#10b981' : '#ef4444',
                               fontWeight: 'bold',
                             }}>
-                              {hourlySlot.isAvailable ? '予約可能' : '予約済み'}
+                              {!hourlySlot.isReserved ? '予約可能' : '予約済み'}
                             </p>
                           </div>
                         </div>

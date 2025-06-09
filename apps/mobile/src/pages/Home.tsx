@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { usePrefetch } from '../hooks/usePrefetch';
 import { SmartInstallButton } from '../components/SmartInstallButton';
 import { BottomNavigation } from '../components/ui/BottomNavigation';
 import { Card } from '../components/ui/Card';
@@ -9,6 +10,14 @@ import { Calendar, MessageCircle, BookOpen, TrendingUp, LogOut, Settings } from 
 const Home: React.FC = () => {
   const { user, signOut, loading, isStudent, isMentor, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const { prefetchAll } = usePrefetch();
+
+  // ホーム画面表示時に主要データをプリフェッチ
+  useEffect(() => {
+    if (user) {
+      prefetchAll();
+    }
+  }, [user]);
 
   const handleSignOut = async () => {
     try {

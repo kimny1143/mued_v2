@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { QueryProvider } from './providers/QueryProvider';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import AuthCallback from './pages/AuthCallback';
@@ -143,14 +144,16 @@ const AppRoutes: React.FC = () => {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <div className="App">
-          <AppRoutes />
-          <InstallPWA />
-          <PWAPrompt />
-          <IOSInstallPrompt />
-        </div>
-      </AuthProvider>
+      <QueryProvider>
+        <AuthProvider>
+          <div className="App">
+            <AppRoutes />
+            <InstallPWA />
+            <PWAPrompt />
+            <IOSInstallPrompt />
+          </div>
+        </AuthProvider>
+      </QueryProvider>
     </Router>
   );
 }
