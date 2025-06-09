@@ -1,4 +1,45 @@
 /** @type {import('next').NextConfig} */
+const withPWA = require('@ducanh2912/next-pwa').default({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true,
+  buildExcludes: [/middleware-manifest.json$/],
+  // モバイル専用のService Worker設定
+  sw: 'sw.js',
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/.*\.supabase\.co\/.*$/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'supabase-cache',
+        networkTimeoutSeconds: 10,
+      },
+    },
+    {
+      urlPattern: /\/_next\/static\/.*/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'next-static',
+        expiration: {
+          maxEntries: 64,
+          maxAgeSeconds: 24 * 60 * 60, // 24 hours
+        },
+      },
+    },
+    {
+      urlPattern: /\/_next\/image\?url=.*/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'next-image',
+        expiration: {
+          maxEntries: 64,
+          maxAgeSeconds: 24 * 60 * 60, // 24 hours
+        },
+      },
+    },
+  ],
+});
 
 const nextConfig = {
   reactStrictMode: false, // 無限ループ問題の調査のため一時的に無効化
@@ -85,4 +126,5 @@ const nextConfig = {
     ];
   },
 };
-module.exports = nextConfig; 
+
+module.exports = withPWA(nextConfig); 

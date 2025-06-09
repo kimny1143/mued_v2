@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { userAgent } from 'next/server'
 
 // CORS許可するオリジン
 const allowedOrigins = [
@@ -22,13 +23,43 @@ const allowedOrigins = [
 ];
 
 export function middleware(request: NextRequest) {
+  const { device } = userAgent(request);
+  const isMobile = device.type === 'mobile' || device.type === 'tablet';
+  const pathname = request.nextUrl.pathname;
+
   // デバッグログ
   console.log('[Middleware] Request:', {
     pathname: request.nextUrl.pathname,
     method: request.method,
     origin: request.headers.get('origin'),
     referer: request.headers.get('referer'),
+    isMobile,
+    deviceType: device.type,
   });
+
+  // モバイルデバイスの判定とルーティング
+  // APIルート、静的ファイル、/m/パスは除外
+  if (!pathname.startsWith('/api/') && 
+      !pathname.startsWith('/_next/') && 
+      !pathname.startsWith('/favicon.ico') &&
+      !pathname.startsWith('/m/') &&
+      !pathname.includes('/(shared)/')) {
+    
+    // モバイルデバイスからのアクセスで、かつ(mobile)パスでない場合
+    if (isMobile && pathname.startsWith('/dashboard')) {
+      const mobileUrl = new URL(request.url);
+      // /dashboard を /m/dashboard にリダイレクト
+      mobileUrl.pathname = pathname.replace('/dashboard', '/m/dashboard');
+      return NextResponse.redirect(mobileUrl);
+    }
+    
+    // デスクトップからのアクセスで、/m/パスにアクセスしようとした場合
+    if (!isMobile && pathname.startsWith('/m/')) {
+      const desktopUrl = new URL(request.url);
+      desktopUrl.pathname = pathname.replace('/m/', '/');
+      return NextResponse.redirect(desktopUrl);
+    }
+  }
 
   // APIルートへのリクエストのみ処理
   if (request.nextUrl.pathname.startsWith('/api/')) {

@@ -9,6 +9,8 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata = {
   title: 'MUED LMS',
   description: 'MUED Learning Management System',
+  manifest: '/manifest.json',
+  themeColor: '#1e40af',
 };
 
 export default function RootLayout({
