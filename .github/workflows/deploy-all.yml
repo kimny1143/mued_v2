@@ -1,4 +1,4 @@
-name: Deploy All Apps
+name: Deploy Web App
 
 on:
   push:
@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       web: ${{ steps.filter.outputs.web }}
-      mobile: ${{ steps.filter.outputs.mobile }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -23,20 +22,9 @@ jobs:
               - 'prisma/**'
               - 'package-lock.json'
               - 'turbo.json'
-            mobile:
-              - 'apps/mobile/**'
-              - 'packages/shared/**'
-              - 'package-lock.json'
-              - 'turbo.json'
 
   deploy-web:
     needs: detect-changes
     if: needs.detect-changes.outputs.web == 'true'
     uses: ./.github/workflows/deploy-web.yml
-    secrets: inherit
-
-  deploy-mobile:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.mobile == 'true'
-    uses: ./.github/workflows/deploy-mobile.yml
     secrets: inherit
