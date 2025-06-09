@@ -136,6 +136,32 @@ class ApiClient {
     }
   }
 
+  // メンター用: 自分のスロットを取得
+  async getMyLessonSlots() {
+    return this.request<any[]>('/lesson-slots?viewMode=own');
+  }
+
+  // メンター用: スロット作成
+  async createLessonSlot(data: {
+    startTime: string;
+    endTime: string;
+    hourlyRate: number;
+    minHours?: number;
+    maxHours?: number;
+  }) {
+    return this.request('/lesson-slots', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // メンター用: スロット削除
+  async deleteLessonSlot(id: string) {
+    return this.request(`/lesson-slots/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // セッション関連
   async getSessions() {
     return this.request<any[]>('/sessions');

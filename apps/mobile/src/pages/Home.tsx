@@ -66,14 +66,14 @@ const Home: React.FC = () => {
       icon: <Calendar size={24} />, 
       title: 'スロット管理', 
       description: 'レッスンスロットの設定',
-      path: '/slots',
+      path: '/calendar',
       color: '#1e40af',
     },
     { 
       icon: <MessageCircle size={24} />, 
       title: '予約承認', 
       description: '生徒からの予約を承認',
-      path: '/approvals',
+      path: '/reservations',
       color: '#10b981',
     },
     { 
