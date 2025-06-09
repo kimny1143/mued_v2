@@ -89,11 +89,26 @@ export async function middleware(request: NextRequest) {
       !pathname.includes('/(shared)/')) {
     
     // モバイルデバイスからのアクセスで、かつ(mobile)パスでない場合
-    if (isMobile && pathname.startsWith('/dashboard')) {
+    if (isMobile) {
       const mobileUrl = new URL(request.url);
-      // /dashboard を /m/dashboard にリダイレクト
-      mobileUrl.pathname = pathname.replace('/dashboard', '/m/dashboard');
-      return NextResponse.redirect(mobileUrl);
+      
+      // ログインページの場合、モバイル版にリダイレクト
+      if (pathname === '/login' || pathname === '/(auth)/login') {
+        mobileUrl.pathname = '/m/login';
+        return NextResponse.redirect(mobileUrl);
+      }
+      
+      // ダッシュボードパスの場合
+      if (pathname.startsWith('/dashboard')) {
+        mobileUrl.pathname = pathname.replace('/dashboard', '/m/dashboard');
+        return NextResponse.redirect(mobileUrl);
+      }
+      
+      // 認証コールバックの場合
+      if (pathname === '/auth/callback') {
+        mobileUrl.pathname = '/m/callback';
+        return NextResponse.redirect(mobileUrl);
+      }
     }
   }
 
