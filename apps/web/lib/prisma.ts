@@ -1,35 +1,60 @@
+// Prismaクライアントの開発環境での接続問題を解決するためのユーティリティ
+
 import { PrismaClient } from '@prisma/client';
 
-// 環境変数 (PrismaのログレベルはPrismaClient.logで設定)
-const isDev = process.env.NODE_ENV !== 'production';
+declare global {
+  var prisma: PrismaClient | undefined;
+}
 
-/**
- * PrismaClientのシングルトンインスタンスを作成する関数
- * サーバーレス環境での接続問題に対応するための設定を含む
- */
+// DATABASE_URLに既にpoolerが含まれているかチェック
+const isPgBouncer = process.env.DATABASE_URL?.includes('pooler.supabase.com');
+const isDevelopment = process.env.NODE_ENV === 'development';
+
+// 開発環境用の追加設定
+const getDevelopmentUrl = (url: string | undefined) => {
+  if (!url || !isDevelopment) return url;
+  
+  // 既にpgbouncerを使用している場合は、さらに制限を追加
+  if (isPgBouncer) {
+    // statement_cache_sizeを0に設定してprepared statementを無効化
+    return url.includes('?') 
+      ? `${url}&statement_cache_size=0` 
+      : `${url}?statement_cache_size=0`;
+  }
+  
+  // pgbouncerを使用していない場合は、pgbouncerモードを追加
+  return url.includes('?') 
+    ? `${url}&pgbouncer=true&connection_limit=1&statement_cache_size=0` 
+    : `${url}?pgbouncer=true&connection_limit=1&statement_cache_size=0`;
+};
+
 const prismaClientSingleton = () => {
   return new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    log: isDevelopment ? ['error', 'warn'] : ['error'],
+    errorFormat: 'minimal',
+    datasources: {
+      db: {
+        url: getDevelopmentUrl(process.env.DATABASE_URL),
+      },
+    },
   });
 };
 
-type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
+// グローバル変数を使用してシングルトンパターンを実装
+const prisma = global.prisma || prismaClientSingleton();
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClientSingleton | undefined;
-};
+if (isDevelopment) {
+  global.prisma = prisma;
+  
+  // 開発環境でのクリーンアップ処理
+  const cleanup = async () => {
+    await prisma.$disconnect();
+  };
+  
+  // プロセス終了時のクリーンアップ
+  process.on('beforeExit', cleanup);
+  process.on('SIGTERM', cleanup);
+  process.on('SIGINT', cleanup);
+}
 
-const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
-
-export { prisma };
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-
-// このファイルが開発環境でホットリロードされた際に
-// データベース接続をクリーンアップする
-// Vercelのようなサーバーレス環境では必要ない
-// if (process.env.NODE_ENV !== 'production') {
-//   process.on('beforeExit', async () => {
-//     await prisma.$disconnect();
-//   });
-// } 
+export { prisma }; 

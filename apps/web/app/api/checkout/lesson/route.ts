@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/session';
 import { createCheckoutSession } from '@/lib/stripe';
-import { getBaseUrl } from '@/lib/utils';
+import { getBaseUrl } from '@/lib/utils/url';
 
 // 利用するStripe価格ID（単発レッスン）
 const LESSON_PRICE_ID: string | undefined = process.env.NEXT_PUBLIC_LESSON_PRICE_ID;
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'このレッスン枠は予約できません' }, { status: 409 });
     }
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = getBaseUrl(req);
     const lessonDate = new Date(slot.start_time).toLocaleString('ja-JP', {
       year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
     });

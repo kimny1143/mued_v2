@@ -1,7 +1,0 @@
-# Vercel ignore patterns for mobile app
-.env*.local
-node_modules
-coverage
-build
-*.log
-.turbo

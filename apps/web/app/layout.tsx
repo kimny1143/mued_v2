@@ -10,6 +10,9 @@ export const metadata = {
   title: 'MUED LMS',
   description: 'MUED Learning Management System',
   manifest: '/manifest.json',
+};
+
+export const viewport = {
   themeColor: '#1e40af',
 };
 

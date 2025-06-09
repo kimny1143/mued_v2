@@ -1,49 +1,44 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { cache } from 'react';
+import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 
 export const getServerSession = cache(async () => {
   try {
-    const cookieStore = cookies();
-    
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) => {
-                cookieStore.set(name, value, options);
-              });
-            } catch (error) {
-              // The `set` method was called from a Server Component.
-              // This can be ignored if you have middleware refreshing
-              // user sessions.
-            }
-          },
-        },
-      }
-    );
+    // 通常のクライアントで認証状態を確認
+    const supabase = await createClient();
     
     const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error || !user) {
+      console.log('[getServerSession] No user found:', error?.message || 'No user');
       return null;
     }
     
+    // サービスロールクライアントでユーザー情報を取得（RLSを回避）
+    const serviceClient = createServiceClient();
+    const { data: userData, error: userError } = await serviceClient
+      .from('users')
+      .select('id, email, name, role_id')
+      .eq('id', user.id)
+      .single();
+    
+    if (userError || !userData) {
+      console.error('[getServerSession] Failed to fetch user data:', userError);
+      return null;
+    }
+    
+    console.log('[getServerSession] User found:', userData.email, 'Role:', userData.role_id);
+    
     return {
       user: {
-        id: user.id,
-        email: user.email || '',
-        name: user.user_metadata?.name || user.email?.split('@')[0] || ''
-      }
+        id: userData.id,
+        email: userData.email || '',
+        name: userData.name || userData.email?.split('@')[0] || ''
+      },
+      role: userData.role_id || 'student'
     };
   } catch (error) {
-    console.error('セッション取得エラー:', error);
+    console.error('[getServerSession] Error:', error);
     return null;
   }
 });

@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 
 import { getSessionFromRequest } from '@/lib/session';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getBaseUrl } from '@/lib/utils/url';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-03-31.basil' as const
@@ -60,25 +61,8 @@ export async function POST(req: Request) {
     const customerId = customerData.customerId;
     console.log('✅ Stripe顧客ID:', customerId);
 
-    // return_urlを安全に構築
-    let returnUrl: string;
-    
-    if (process.env.NEXT_PUBLIC_URL) {
-      // 環境変数が設定されている場合
-      returnUrl = process.env.NEXT_PUBLIC_URL;
-      // httpで始まっていない場合はhttps://を追加
-      if (!returnUrl.startsWith('http://') && !returnUrl.startsWith('https://')) {
-        returnUrl = `https://${returnUrl}`;
-      }
-    } else {
-      // 環境変数が設定されていない場合は、リクエストヘッダーから取得
-      const host = req.headers.get('host') || 'localhost:3000';
-      const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
-      returnUrl = `${protocol}://${host}`;
-    }
-    
-    // パスを追加
-    returnUrl = `${returnUrl}/dashboard`;
+    // return_urlを動的に生成
+    const returnUrl = `${getBaseUrl(req)}/dashboard`;
     
     console.log('📍 Return URL:', returnUrl);
 

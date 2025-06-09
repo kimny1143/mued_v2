@@ -3,17 +3,19 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-import { getBaseUrl } from '@/lib/utils';
+import { getSiteUrl } from '@/lib/utils/url';
 
 // Google認証へのリダイレクト
-export async function signInWithGoogle() {
+export async function signInWithGoogle(options?: { isMobile?: boolean }) {
   try {
     // 現在の環境用のベースURLを取得
-    const baseUrl = getBaseUrl();
+    const baseUrl = getSiteUrl();
     
     // コールバック用のフルURLを構築
-    // 明示的に /auth/callback に戻す
-    const redirectUrl = `${baseUrl}/auth/callback`;
+    // モバイルの場合は /m/callback、そうでなければ /auth/callback
+    const redirectUrl = options?.isMobile 
+      ? `${baseUrl}/m/callback`
+      : `${baseUrl}/auth/callback`;
     
     console.log(`認証処理開始: ${new Date().toISOString()}`);
     console.log(`認証コールバックURL: ${redirectUrl}`);

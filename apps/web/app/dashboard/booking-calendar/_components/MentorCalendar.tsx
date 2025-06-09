@@ -17,7 +17,7 @@ import { MonthView } from './MonthView';
 
 
 // デバッグモード（環境変数ベース）
-const DEBUG = isDebugMode();
+const DEBUG = true; // 一時的にデバッグ有効化
 
 interface MentorCalendarProps {
   mentors: Mentor[];

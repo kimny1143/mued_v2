@@ -1,47 +1,90 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { userAgent } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
 // CORS許可するオリジン
 const allowedOrigins = [
   // 開発環境
-  'http://localhost:3000', // PC版開発環境
-  'http://localhost:3001', // モバイル版開発環境
+  'http://localhost:3000',
   
-  // PC版（親プロジェクト）
-  'https://www.mued.jp', // PC版本番環境
-  'https://dev.mued.jp', // PC版プレビュー環境
-  'https://mued-lms-fgm.vercel.app', // PC版Vercelドメイン（本番）
-  'https://mued-lms-fgm-git-develop-glasswerks.vercel.app', // PC版Vercelドメイン（開発）
-  
-  // モバイル版（PWA）
-  'https://pwa.mued.jp', // モバイル版本番環境（将来）
-  'https://devpwa.mued.jp', // モバイル版プレビュー環境（将来）
-  'https://mued-pwa.vercel.app', // モバイル版Vercelドメイン（本番）
-  'https://mued-pwa-git-develop-glasswerks.vercel.app', // モバイル版Vercelドメイン（開発）
-  'https://mued-pwa-git-main-glasswerks.vercel.app', // モバイル版Vercelドメイン（メイン）
+  // 本番環境
+  'https://www.mued.jp',
+  'https://dev.mued.jp',
+  'https://mued-lms-fgm.vercel.app',
+  'https://mued-lms-fgm-git-develop-glasswerks.vercel.app',
 ];
 
-export function middleware(request: NextRequest) {
+// スキップすべきパス（パフォーマンス最適化）
+const skipPaths = [
+  '/pwa-192x192.png',
+  '/pwa-512x512.png',
+  '/logo.png',
+  '/favicon.ico',
+  '/manifest.json',
+  '/sw.js',
+  '/sw.js.map',
+  '/workbox-',
+  '/_next/',
+  '/api/',
+  '/.well-known/',
+];
+
+export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  
+  // パフォーマンス最適化: 静的ファイルやAPIは早期リターン
+  if (skipPaths.some(path => pathname.startsWith(path))) {
+    return NextResponse.next();
+  }
+
   const { device } = userAgent(request);
   const isMobile = device.type === 'mobile' || device.type === 'tablet';
-  const pathname = request.nextUrl.pathname;
 
-  // デバッグログ
-  console.log('[Middleware] Request:', {
-    pathname: request.nextUrl.pathname,
-    method: request.method,
-    origin: request.headers.get('origin'),
-    referer: request.headers.get('referer'),
-    isMobile,
-    deviceType: device.type,
-  });
+  // 開発環境での重要なルートのみログ出力
+  if (process.env.NODE_ENV === 'development' && 
+      (pathname.startsWith('/m/') || pathname.startsWith('/dashboard') || pathname === '/')) {
+    console.log('[Middleware] Request:', {
+      pathname,
+      method: request.method,
+      isMobile,
+    });
+  }
+
+  // レスポンスを作成
+  let response = NextResponse.next();
+
+  // Supabase セッションの更新（/m/パスでのみ実行、静的ファイル除外）
+  if (pathname.startsWith('/m/') && !pathname.startsWith('/m/login') && !pathname.startsWith('/m/(auth)')) {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value)
+              response.cookies.set(name, value, options)
+            })
+          },
+        },
+      }
+    )
+
+    // セッションの更新
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Middleware] Auth check for:', pathname, 'User:', user?.email || 'None');
+    }
+  }
 
   // モバイルデバイスの判定とルーティング
-  // APIルート、静的ファイル、/m/パスは除外
   if (!pathname.startsWith('/api/') && 
       !pathname.startsWith('/_next/') && 
-      !pathname.startsWith('/favicon.ico') &&
       !pathname.startsWith('/m/') &&
       !pathname.includes('/(shared)/')) {
     
@@ -52,22 +95,15 @@ export function middleware(request: NextRequest) {
       mobileUrl.pathname = pathname.replace('/dashboard', '/m/dashboard');
       return NextResponse.redirect(mobileUrl);
     }
-    
-    // デスクトップからのアクセスで、/m/パスにアクセスしようとした場合
-    if (!isMobile && pathname.startsWith('/m/')) {
-      const desktopUrl = new URL(request.url);
-      desktopUrl.pathname = pathname.replace('/m/', '/');
-      return NextResponse.redirect(desktopUrl);
-    }
   }
 
-  // APIルートへのリクエストのみ処理
+  // APIルートへのリクエストのみCORS処理
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const origin = request.headers.get('origin');
     
     // プリフライトリクエスト（OPTIONS）の処理
     if (request.method === 'OPTIONS') {
-      const response = new NextResponse(null, { status: 200 });
+      response = new NextResponse(null, { status: 200 });
       
       if (origin && allowedOrigins.includes(origin)) {
         response.headers.set('Access-Control-Allow-Origin', origin);
@@ -81,17 +117,13 @@ export function middleware(request: NextRequest) {
     }
     
     // 通常のリクエストの処理
-    const response = NextResponse.next();
-    
     if (origin && allowedOrigins.includes(origin)) {
       response.headers.set('Access-Control-Allow-Origin', origin);
       response.headers.set('Access-Control-Allow-Credentials', 'true');
     }
-    
-    return response;
   }
   
-  return NextResponse.next()
+  return response;
 }
 
 export const config = {
@@ -104,4 +136,4 @@ export const config = {
      */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
-} 
+}

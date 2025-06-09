@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 
 import { getSessionFromRequest } from '@/lib/session';
 import { getOrCreateStripeCustomer } from '@/lib/stripe';
+import { getBaseUrl } from '@/lib/utils/url';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-03-31.basil',
@@ -29,18 +30,24 @@ export async function POST(request: NextRequest) {
       session.user.email || ''
     );
 
-    // ベースURLの取得
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-      'https://dev.mued.jp' || 
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    // ベースURLの動的取得
+    const baseUrl = getBaseUrl(request);
+    
+    // リファラーヘッダーからモバイルパスを検出
+    const referer = request.headers.get('referer') || '';
+    const isMobilePath = referer.includes('/m/');
 
     // Setup Intent用のCheckout Sessionを作成
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'setup', // Setup Intentモード（決済情報保存のみ）
       payment_method_types: ['card'],
-      success_url: `${baseUrl}/dashboard/booking-calendar/setup-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/dashboard/booking-calendar?canceled=true`,
+      success_url: isMobilePath 
+        ? `${baseUrl}/m/dashboard/booking-calendar/setup-success?session_id={CHECKOUT_SESSION_ID}`
+        : `${baseUrl}/dashboard/booking-calendar/setup-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: isMobilePath
+        ? `${baseUrl}/m/dashboard/booking-calendar?canceled=true`
+        : `${baseUrl}/dashboard/booking-calendar?canceled=true`,
       metadata: {
         // 予約データをメタデータに保存
         reservationData: JSON.stringify(reservationData),

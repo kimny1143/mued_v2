@@ -8,21 +8,28 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * 環境に応じて正しいベースURLを取得する統一関数
  * クライアント・サーバー両方で動作する
+ * 
+ * @deprecated 新しい実装は lib/utils/url.ts の getBaseUrl(request) を使用してください
  */
 export function getBaseUrl(): string {
-  // クライアントサイドの場合、現在のURLを優先
+  // 明示的に設定されたサイトURLを最優先（ローカル開発・テスト用）
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+  
+  // 明示的に設定されたデプロイURL（Vercel環境でのオーバーライド用）
+  const deployUrl = process.env.NEXT_PUBLIC_DEPLOY_URL;
+  if (deployUrl) {
+    return deployUrl.startsWith('http') ? deployUrl : `https://${deployUrl}`;
+  }
+  
+  // クライアントサイドの場合、現在のURLを使用
   if (typeof window !== 'undefined') {
     // Vercelドメインやカスタムドメインの場合は現在のオリジンを使用
     if (window.location.host.includes('vercel.app') || 
         window.location.host.includes('mued.jp')) {
       return window.location.origin;
     }
-  }
-  
-  // 明示的に設定されたデプロイURLを最優先
-  const deployUrl = process.env.NEXT_PUBLIC_DEPLOY_URL;
-  if (deployUrl) {
-    return deployUrl.startsWith('http') ? deployUrl : `https://${deployUrl}`;
   }
   
   // Vercel環境変数をチェック
@@ -38,11 +45,6 @@ export function getBaseUrl(): string {
   // 本番環境向け固定URL
   if (process.env.VERCEL_ENV === 'production') {
     return 'https://mued-lms-fgm.vercel.app';
-  }
-  
-  // サイトURL設定
-  if (process.env.NEXT_PUBLIC_SITE_URL) {
-    return process.env.NEXT_PUBLIC_SITE_URL;
   }
   
   // ローカル開発環境のデフォルト

@@ -3,16 +3,12 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
-import { Prisma } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
-
-
+import { createServiceClient } from '@/lib/supabase/service';
 import { convertLessonSlotRequestToDb } from '@/lib/caseConverter';
 import { getSessionFromRequest } from '@/lib/session';
 import { stripe } from '@/lib/stripe';
 import { generateHourlySlots } from '@/lib/utils';
-
-import { prisma } from '../../../lib/prisma';
 
 // 予約ステータスの列挙型（現在は未使用だがAPIの拡張で使用予定）
 enum _ReservationStatus {
@@ -20,36 +16,19 @@ enum _ReservationStatus {
   COMPLETED = 'COMPLETED'
 }
 
-// Prismaクエリ実行のラッパー関数（エラーハンドリング強化）
-async function executePrismaQuery<T>(queryFn: () => Promise<T>): Promise<T> {
+// Supabaseクエリ実行のラッパー関数（エラーハンドリング強化）
+async function executeSupabaseQuery<T>(queryFn: () => Promise<{ data: T | null; error: any }>): Promise<T> {
   try {
-    return await queryFn();
+    const { data, error } = await queryFn();
+    
+    if (error) {
+      console.error('Supabaseクエリエラー:', error);
+      throw new Error(error.message || 'Database query failed');
+    }
+    
+    return data as T;
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientUnknownRequestError) {
-      console.error('Prisma UnknownRequestError 詳細:', error.message);
-    } else {
-      console.error('Prismaクエリエラー:', error);
-    }
-    
-    // PostgreSQL接続エラーの場合、再試行
-    if (error instanceof Prisma.PrismaClientInitializationError || 
-        error instanceof Prisma.PrismaClientKnownRequestError ||
-        error instanceof Prisma.PrismaClientUnknownRequestError) {
-      console.log('Prisma接続リセット試行...');
-      
-      // エラー後の再試行（最大3回）
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          // 少し待機してから再試行
-          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-          return await queryFn();
-        } catch (retryError) {
-          console.error(`再試行 ${attempt + 1}/3 失敗:`, retryError);
-          if (attempt === 2) throw retryError; // 最後の試行でもエラーなら投げる
-        }
-      }
-    }
-    
+    console.error('Supabaseクエリ実行エラー:', error);
     throw error;
   }
 }
@@ -80,16 +59,6 @@ async function _getSingleLessonPrice() {
   }
 }
 
-// WhereInputの型を定義（将来のクエリ拡張用）
-type _LessonSlotWhereInput = {
-  teacherId?: string;
-  startTime?: {
-    gte?: Date;
-    lte?: Date;
-  };
-  isAvailable?: boolean;
-};
-
 // レッスンスロット一覧を取得
 export async function GET(request: NextRequest) {
   try {
@@ -112,6 +81,8 @@ export async function GET(request: NextRequest) {
     const minDuration = searchParams.get('minDuration') ? parseInt(searchParams.get('minDuration')!) : null;
     const maxDuration = searchParams.get('maxDuration') ? parseInt(searchParams.get('maxDuration')!) : null;
     const availableOnly = searchParams.get('availableOnly') !== 'false'; // デフォルトはtrue
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
     
     console.log('レッスンスロット取得API呼び出し:', {
       userId: sessionInfo.user.id,
@@ -119,87 +90,103 @@ export async function GET(request: NextRequest) {
       minDuration,
       maxDuration,
       availableOnly,
+      startDate,
+      endDate,
       note: viewMode === 'own' ? '認証ユーザーのスロットのみ取得' : '全メンターのスロット取得'
     });
     
-    // フィルタリング条件を構築
-    const filter: Prisma.lesson_slotsWhereInput = {};
+    const supabase = createServiceClient();
     
+    // Supabaseクエリを構築
+    let query = supabase
+      .from('lesson_slots')
+      .select(`
+        *,
+        users!teacher_id(id, name, image),
+        reservations!inner(
+          id,
+          booked_start_time,
+          booked_end_time,
+          status,
+          users!student_id(id, name, email)
+        )
+      `)
+      .order('start_time', { ascending: true });
+
     // 🆕 viewModeに基づいてteacherIdフィルターを設定
     if (viewMode === 'own') {
       // 自分のスロットのみ（メンター視点）
-      filter.teacher_id = sessionInfo.user.id;
+      query = query.eq('teacher_id', sessionInfo.user.id);
     }
     // viewMode === 'all' の場合はteacherIdフィルターなし（全メンターのスロット）
     
-    // 時間の制約でフィルタリング（分単位を優先、ない場合は時間単位で互換性維持）
+    // 日付範囲でフィルタリング
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      query = query.gte('start_time', start.toISOString());
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      query = query.lte('start_time', end.toISOString());
+    }
+    
+    // 時間の制約でフィルタリング（分単位を優先）
     if (minDuration !== null) {
-      // 分単位フィールドを優先
-      filter.min_duration = {
-        lte: minDuration
-      };
-      
-      // 互換性のために時間単位フィールドも設定（古いレコード対応）
-      filter.min_hours = {
-        lte: Math.ceil(minDuration / 60) // 分を時間に変換（切り上げ）
-      };
+      query = query.lte('min_duration', minDuration);
     }
     
     if (maxDuration !== null) {
-      // 分単位フィールドを優先
-      filter.max_duration = {
-        gte: maxDuration
-      };
-      
-      // 互換性のために時間単位フィールドも設定
-      if (filter.max_hours) {
-        filter.max_hours = {
-          ...filter.max_hours as Prisma.IntNullableFilter,
-          gte: Math.floor(maxDuration / 60) // 分を時間に変換（切り捨て）
-        };
-      } else {
-        filter.max_hours = {
-          gte: Math.floor(maxDuration / 60)
-        };
-      }
+      query = query.gte('max_duration', maxDuration);
     }
     
     // 利用可能なスロットのみを取得
     if (availableOnly) {
-      filter.is_available = true;
+      query = query.eq('is_available', true);
     }
     
     // レッスンスロットを取得
-    const slots = await executePrismaQuery(() => prisma.lesson_slots.findMany({
-      where: filter,
-      orderBy: { start_time: 'asc' },
-      include: {
-        users: {
-          select: { id: true, name: true, image: true }
-        },
-        reservations: {
-          where: { 
-            status: { in: ['PENDING', 'CONFIRMED', 'APPROVED', 'PENDING_APPROVAL'] } 
-          },
-          select: {
-            id: true,
-            booked_start_time: true,
-            booked_end_time: true,
-            status: true,
-            users: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              }
-            }
-          }
+    const { data: slots, error } = await query;
+    
+    if (error) {
+      console.error('Supabaseスロット取得エラー:', error);
+      throw new Error(error.message);
+    }
+    
+    if (!slots) {
+      console.log('スロット取得結果: 空配列');
+      return NextResponse.json([], {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
-      }
+      });
+    }
+
+    // 予約情報を別途取得（inner joinでは予約がないスロットが除外されるため）
+    const { data: reservations } = await supabase
+      .from('reservations')
+      .select(`
+        id,
+        lesson_slot_id,
+        booked_start_time,
+        booked_end_time,
+        status,
+        users!student_id(id, name, email)
+      `)
+      .in('status', ['PENDING', 'CONFIRMED', 'APPROVED', 'PENDING_APPROVAL'])
+      .in('lesson_slot_id', slots.map(slot => slot.id));
+
+    // スロットと予約を結合
+    const slotsWithReservations = slots.map(slot => ({
+      ...slot,
+      reservations: reservations?.filter(r => r.lesson_slot_id === slot.id) || []
     }));
     
     // 各スロットの予約済み時間帯情報を整形して返す（スネークケース→キャメルケース変換）
-    const enhancedSlots = slots.map(slot => {
+    const enhancedSlots = slotsWithReservations.map(slot => {
       // generateHourlySlots用にデータを変換
       const slotForHourlyGeneration = {
         id: slot.id,
@@ -207,7 +194,7 @@ export async function GET(request: NextRequest) {
         endTime: slot.end_time,
         teacherId: slot.teacher_id,
         isAvailable: slot.is_available,
-        reservations: slot.reservations.map(reservation => ({
+        reservations: slot.reservations.map((reservation: any) => ({
           id: reservation.id,
           bookedStartTime: reservation.booked_start_time,
           bookedEndTime: reservation.booked_end_time,
@@ -217,7 +204,7 @@ export async function GET(request: NextRequest) {
         currency: slot.currency
       };
       
-      const hourlySlots = generateHourlySlots(slotForHourlyGeneration);
+      const hourlySlots = generateHourlySlots(slotForHourlyGeneration, slotForHourlyGeneration.reservations);
       
       // フロントエンドが期待するキャメルケース形式に変換
       return {
@@ -235,7 +222,7 @@ export async function GET(request: NextRequest) {
         // フロントエンドが期待するteacher形式に変換
         teacher: slot.users,
         // 予約情報もキャメルケースに変換
-        reservations: slot.reservations.map(reservation => ({
+        reservations: slot.reservations.map((reservation: any) => ({
           id: reservation.id,
           bookedStartTime: reservation.booked_start_time,  // booked_start_time → bookedStartTime
           bookedEndTime: reservation.booked_end_time,      // booked_end_time → bookedEndTime
@@ -255,7 +242,7 @@ export async function GET(request: NextRequest) {
     
     // PENDING_APPROVALの予約を確認
     const pendingApprovalCount = enhancedSlots.reduce((count, slot) => {
-      return count + slot.reservations.filter(res => res.status === 'PENDING_APPROVAL').length;
+      return count + slot.reservations.filter((res: any) => res.status === 'PENDING_APPROVAL').length;
     }, 0);
     
     console.log(`🟢 lesson-slots (${viewMode}モード): ${enhancedSlots.length}件`);
@@ -310,15 +297,18 @@ export async function POST(request: NextRequest) {
       
       try {
         // ユーザーデータベースからロール情報を直接取得（二重チェック）
-        const userData = await prisma.users.findUnique({
-          where: { id: sessionInfo.user.id },
-          include: { roles: true }
-        });
+        const supabase = createServiceClient();
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('id, role_id, roles(name)')
+          .eq('id', sessionInfo.user.id)
+          .single();
         
         console.log("🔍 DB直接取得のユーザー情報:", {
           found: !!userData,
           roleId: userData?.role_id,
-          roleName: userData?.roles?.name
+          roleName: (userData?.roles as any)?.name,
+          error: error?.message
         });
       } catch (dbError) {
         console.error("🔴 DBからの直接ロール取得エラー:", dbError);
@@ -440,25 +430,14 @@ export async function POST(request: NextRequest) {
     }
     
     // スロットの重複をチェック
-    const overlappingSlot = await executePrismaQuery(() => prisma.lesson_slots.findFirst({
-      where: {
-        teacher_id: sessionInfo.user.id,
-        OR: [
-          {
-            start_time: { lte: start_time },
-            end_time: { gt: start_time },
-          },
-          {
-            start_time: { lt: end_time },
-            end_time: { gte: end_time },
-          },
-          {
-            start_time: { gte: start_time },
-            end_time: { lte: end_time },
-          },
-        ],
-      },
-    }));
+    const supabase = createServiceClient();
+    const { data: overlappingSlot } = await supabase
+      .from('lesson_slots')
+      .select('id')
+      .eq('teacher_id', sessionInfo.user.id)
+      .or(`and(start_time.lte.${start_time.toISOString()},end_time.gt.${start_time.toISOString()}),and(start_time.lt.${end_time.toISOString()},end_time.gte.${end_time.toISOString()}),and(start_time.gte.${start_time.toISOString()},end_time.lte.${end_time.toISOString()})`)
+      .limit(1)
+      .single();
     
     if (overlappingSlot) {
       return NextResponse.json(
@@ -472,22 +451,28 @@ export async function POST(request: NextRequest) {
     console.log('変換後のスロットデータ:', convertedData);
 
     // 新しいスロットを作成
-    const newSlot = await executePrismaQuery(() => prisma.lesson_slots.create({
-      data: {
-        id: crypto.randomUUID(),
+    const newSlotId = crypto.randomUUID();
+    const { data: newSlot, error: createError } = await supabase
+      .from('lesson_slots')
+      .insert({
+        id: newSlotId,
         teacher_id: sessionInfo.user.id,
-        start_time,
-        end_time,
+        start_time: start_time.toISOString(),
+        end_time: end_time.toISOString(),
         ...convertedData,
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-      include: {
-        users: {
-          select: { id: true, name: true, email: true, image: true }
-        }
-      }
-    }));
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select(`
+        *,
+        users!teacher_id(id, name, email, image)
+      `)
+      .single();
+    
+    if (createError || !newSlot) {
+      console.error('スロット作成エラー:', createError);
+      throw new Error(createError?.message || 'Failed to create slot');
+    }
     
     console.log(`レッスンスロット作成成功: ID ${newSlot.id}, 講師ID ${sessionInfo.user.id}`);
     

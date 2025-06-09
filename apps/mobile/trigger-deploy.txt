@@ -1,3 +1,0 @@
-Trigger mobile app deployment - Force GitHub Actions
-Timestamp: 2025-06-08 21:15:00 JST
-Previous: 2024-01-15 01:30:00 - CORS fix via rewrites

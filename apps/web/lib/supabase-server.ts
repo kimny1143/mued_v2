@@ -1,19 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-import { getBaseUrl } from './utils';
-
-/**
- * 環境に応じたベースURLを取得
- */
-function getSiteUrl() {
-  // 環境変数で明示されていればそれを優先
-  if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL;
-
-  // フォールバック: 本番は本番 URL、開発は localhost
-  return process.env.NODE_ENV === 'production'
-    ? 'https://mued-lms.vercel.app'
-    : 'http://localhost:3000';
-}
+import { getSiteUrl } from './utils/url';
 
 // Supabase環境変数
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,7 +16,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // 現在の環境に合わせたサイトURL
-const siteUrl = getBaseUrl();
+const siteUrl = getSiteUrl();
 console.log(`Supabase初期化 - サイトURL: ${siteUrl}`);
 
 // Supabaseクライアント設定
@@ -38,7 +25,7 @@ export const supabaseServer = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
-    flowType: 'implicit'
+    flowType: 'pkce' // PKCEフローに統一
   },
   global: {
     // こちらがリダイレクトURLのベースとなるURL

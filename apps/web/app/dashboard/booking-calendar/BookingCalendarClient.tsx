@@ -55,7 +55,21 @@ interface ApiReservation {
 
 // レッスンスロットをメンター形式に変換する関数
 function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
+  console.log('🔄 convertLessonSlotsToMentors STARTED with', lessonSlots.length, 'slots');
   try {
+    // 入力検証
+    if (!Array.isArray(lessonSlots)) {
+      console.warn('convertLessonSlotsToMentors: lessonSlots が配列ではありません:', typeof lessonSlots);
+      return [];
+    }
+    
+    if (lessonSlots.length === 0) {
+      console.log('convertLessonSlotsToMentors: lessonSlots が空です');
+      return [];
+    }
+    
+    console.log('convertLessonSlotsToMentors: 変換開始、スロット数:', lessonSlots.length);
+    
     // メンターIDでグループ化
     const mentorMap: Record<string, LessonSlot[]> = {};
     
@@ -93,29 +107,41 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
           }
         });
         
-        // 重複する時間帯をマージして実際の予約時間を計算
+        // 重複する時間帯をマージして実際の予約時間を計算（簡略化版）
         if (bookedIntervals.length > 0) {
-          bookedIntervals.sort((a, b) => a.start - b.start);
-          const mergedIntervals: Array<{start: number, end: number}> = [bookedIntervals[0]];
-          
-          for (let i = 1; i < bookedIntervals.length; i++) {
-            const current = bookedIntervals[i];
-            const lastMerged = mergedIntervals[mergedIntervals.length - 1];
+          try {
+            bookedIntervals.sort((a, b) => a.start - b.start);
+            const mergedIntervals: Array<{start: number, end: number}> = [bookedIntervals[0]];
             
-            if (current.start <= lastMerged.end) {
-              // 重複している場合はマージ
-              lastMerged.end = Math.max(lastMerged.end, current.end);
-            } else {
-              // 重複していない場合は新しい区間として追加
-              mergedIntervals.push(current);
+            // 安全な上限を設定してループの暴走を防ぐ
+            const maxIterations = Math.min(bookedIntervals.length, 100);
+            
+            for (let i = 1; i < maxIterations; i++) {
+              const current = bookedIntervals[i];
+              const lastMerged = mergedIntervals[mergedIntervals.length - 1];
+              
+              if (current.start <= lastMerged.end) {
+                // 重複している場合はマージ
+                lastMerged.end = Math.max(lastMerged.end, current.end);
+              } else {
+                // 重複していない場合は新しい区間として追加
+                mergedIntervals.push(current);
+              }
             }
+            
+            // 実際の予約時間を計算
+            totalBookedTime = mergedIntervals.reduce(
+              (total, interval) => total + (interval.end - interval.start), 
+              0
+            );
+          } catch (mergeError) {
+            console.error('間隔マージエラー:', mergeError);
+            // フォールバック: 単純な合計
+            totalBookedTime = bookedIntervals.reduce(
+              (total, interval) => total + (interval.end - interval.start), 
+              0
+            );
           }
-          
-          // 実際の予約時間を計算
-          totalBookedTime = mergedIntervals.reduce(
-            (total, interval) => total + (interval.end - interval.start), 
-            0
-          );
         }
         
         const slotDuration = slotEnd - slotStart;
@@ -124,13 +150,6 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
         // 最低60分の空きがない場合は利用不可とする
         const MIN_LESSON_TIME = 60 * 60 * 1000; // 60分をミリ秒に変換
         
-        console.log(`📅 スロット空き状況分析:`, {
-          slotId: slot.id,
-          slotDuration: Math.round(slotDuration / (60 * 1000)) + '分',
-          totalBookedTime: Math.round(totalBookedTime / (60 * 1000)) + '分',
-          availableTime: Math.round(availableTime / (60 * 1000)) + '分',
-          isAvailable: availableTime >= MIN_LESSON_TIME
-        });
         
         return availableTime >= MIN_LESSON_TIME;
       }
@@ -138,11 +157,6 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
       return true; // 予約がない場合は利用可能
     });
     
-    console.log('📊 空き状況フィルタリング結果:', {
-      totalSlots: lessonSlots.length,
-      availableSlots: availableSlots.length,
-      filteredOut: lessonSlots.length - availableSlots.length
-    });
     
     // メンターIDでグループ化
     availableSlots.forEach(slot => {
@@ -154,7 +168,8 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
     });
     
     // メンター情報を構築
-    return Object.entries(mentorMap).map(([mentorId, slots]) => {
+    console.log('🔄 Building mentors from', Object.keys(mentorMap).length, 'mentor groups');
+    const mentorEntries = Object.entries(mentorMap).map(([mentorId, slots]) => {
       // 最初のスロットからメンター情報を取得
       const firstSlot = slots[0];
       const teacher = firstSlot.teacher;
@@ -193,6 +208,10 @@ function convertLessonSlotsToMentors(lessonSlots: LessonSlot[]): Mentor[] {
         availableSlotsCount: slots.length
       };
     });
+    
+    const result = mentorEntries;
+    console.log('🔄 convertLessonSlotsToMentors COMPLETED successfully with', result.length, 'mentors');
+    return result;
   } catch (error) {
     console.error('❌ データ変換エラー:', error);
     return [];
@@ -210,6 +229,7 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now()); // データ再取得のトリガー
+  const [debugInfo, setDebugInfo] = useState<any>(null); // デバッグ情報
   const [realtimeStatus, setRealtimeStatus] = useState<{
     lessonSlots: 'connecting' | 'connected' | 'disconnected' | 'error';
     reservations: 'connecting' | 'connected' | 'disconnected' | 'error';
@@ -244,17 +264,26 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
 
   // データ取得関数を分離（再利用可能にする）
   const fetchMentorsData = async () => {
+    console.log('🔥 fetchMentorsData STARTED');
+    const debugSteps: any[] = [];
+    
     try {
       setIsLoading(true);
       setError(null);
+      debugSteps.push({ step: 'start', timestamp: Date.now() });
       
       // 認証トークンを取得
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData.session?.access_token ?? null;
-      
-      console.log('🔥 APIリクエスト開始: スロットと予約情報を並行取得');
+      debugSteps.push({ 
+        step: 'auth', 
+        timestamp: Date.now(), 
+        hasToken: !!token,
+        userId: sessionData.session?.user?.id
+      });
       
       // スロット情報、全予約情報、自分の予約情報を並行取得
+      debugSteps.push({ step: 'fetching_apis', timestamp: Date.now() });
       const [slotsResponse, reservationsResponse] = await Promise.all([
         fetch('/api/lesson-slots?viewMode=all', {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -267,6 +296,13 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
           cache: 'no-store', // キャッシュを無効化
         })
       ]);
+      
+      debugSteps.push({ 
+        step: 'api_responses', 
+        timestamp: Date.now(),
+        slotsStatus: slotsResponse.status,
+        reservationsStatus: reservationsResponse.status
+      });
       
       // スロット情報の処理
       if (!slotsResponse.ok) {
@@ -282,47 +318,39 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
       }
       
       const slotsData: ApiLessonSlot[] = await slotsResponse.json();
+      debugSteps.push({ 
+        step: 'slots_parsed', 
+        timestamp: Date.now(),
+        slotsCount: slotsData.length
+      });
+      
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const allReservationsData: any[] = reservationsResponse.ok 
         ? await reservationsResponse.json() 
         : [];
+        
+      debugSteps.push({ 
+        step: 'reservations_parsed', 
+        timestamp: Date.now(),
+        reservationsCount: allReservationsData.length
+      });
       
-      console.log(`📊 取得結果:`);
-      console.log(`- レッスンスロット: ${slotsData.length}件`);
-      console.log(`- 全予約情報: ${allReservationsData.length}件`);
       
       // Supabaseから直接ユーザーIDを取得（session.tsは使用しない）
       const currentUserId = sessionData.session?.user?.id;
       
-      console.log('🔍 Supabaseから取得したユーザーID:', currentUserId);
       
       if (!currentUserId) {
-        console.warn('⚠️ ユーザーIDが取得できませんでした');
         setMyReservations([]);
       } else {
-        console.log('🔍 全予約データの詳細:', allReservationsData.map(res => ({
-          id: res.id,
-          studentId: res.studentId,
-          status: res.status,
-          studentIdType: typeof res.studentId,
-          currentUserIdType: typeof currentUserId,
-          isMatch: res.studentId === currentUserId
-        })));
         
         const myReservationsFormatted = allReservationsData
           .filter((res) => {
             const isMyReservation = res.studentId === currentUserId;
-            console.log(`🔍 予約 ${res.id}: studentId=${res.studentId}, currentUserId=${currentUserId}, match=${isMyReservation}`);
             return isMyReservation;
           })
           .filter((res) => ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED', 'PENDING'].includes(res.status)) // アクティブな予約のみ
           .map((res) => {
-            console.log('🔍 自分の予約をフォーマット:', {
-              id: res.id,
-              status: res.status,
-              bookedStartTime: res.bookedStartTime,
-              bookedEndTime: res.bookedEndTime
-            });
             return {
               id: res.id,
               slotId: res.slotId,
@@ -347,8 +375,6 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
             };
           });
         
-        console.log(`- 自分の予約情報: ${myReservationsFormatted.length}件`);
-        console.log('🔍 自分の予約詳細:', myReservationsFormatted);
         
         setMyReservations(myReservationsFormatted);
       }
@@ -377,27 +403,44 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
       }));
       
       // メンター形式に変換
+      debugSteps.push({ step: 'conversion_start', timestamp: Date.now() });
       const convertedMentors = convertLessonSlotsToMentors(updatedSlots);
-      console.log('🎯 統合後のメンターデータ:', convertedMentors);
+      debugSteps.push({ 
+        step: 'conversion_end', 
+        timestamp: Date.now(),
+        mentorsResult: convertedMentors.length
+      });
       
+      debugSteps.push({ 
+        step: 'conversion_complete', 
+        timestamp: Date.now(),
+        mentorsCount: convertedMentors.length
+      });
+
       if (convertedMentors.length > 0) {
-        console.log('✅ mentorsを設定完了');
         setMentors(convertedMentors);
       } else {
-        console.log('⚠️ 利用可能なメンターがありません');
+        console.warn('変換後のメンター数が0です');
       }
       
+      debugSteps.push({ step: 'success', timestamp: Date.now() });
+      
     } catch (err) {
-      console.error('❌ データ取得エラー:', err);
+      console.error('データ取得エラー:', err);
+      debugSteps.push({ 
+        step: 'error', 
+        timestamp: Date.now(), 
+        error: String(err) 
+      });
       setError('メンター情報の取得に失敗しました。');
     } finally {
+      setDebugInfo({ steps: debugSteps, totalTime: Date.now() - debugSteps[0]?.timestamp });
       setIsLoading(false);
     }
   };
 
   // 手動でデータを再取得する関数
   const refreshData = () => {
-    console.log('🔄 手動データ再取得開始');
     setLastRefresh(Date.now());
   };
 
@@ -408,7 +451,6 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
     const setupSuccess = urlParams.get('setup_success');
     
     if (success === 'true' || setupSuccess === 'true') {
-      console.log('🎉 予約完了を検知 - データを再取得します');
       // URLパラメータをクリア
       const newUrl = window.location.pathname;
       window.history.replaceState({}, '', newUrl);
@@ -419,13 +461,22 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
 
   // APIからメンターデータを取得
   useEffect(() => {
-    fetchMentorsData();
+    const timeoutId = setTimeout(() => {
+      console.error('fetchMentorsData がタイムアウトしました。強制的に読み込み状態を解除します。');
+      setIsLoading(false);
+      setError('データの読み込みがタイムアウトしました。ページを再読み込みしてください。');
+    }, 30000); // 30秒タイムアウト
+
+    fetchMentorsData().finally(() => {
+      clearTimeout(timeoutId);
+    });
+    
+    return () => clearTimeout(timeoutId);
   }, [lastRefresh]); // lastRefreshが変更されたときに再実行
 
   // ページがフォーカスされたときにデータを更新
   useEffect(() => {
     const handleFocus = () => {
-      console.log('🔄 ページフォーカス時のデータ更新を実行');
       refreshData();
     };
 
@@ -443,12 +494,10 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
         // 認証されたユーザーの情報を取得
         const { data: sessionData } = await supabaseBrowser.auth.getSession();
         if (!sessionData.session?.user?.id) {
-          console.log('認証されていないため、リアルタイム監視をスキップ');
           return;
         }
 
         const userId = sessionData.session.user.id;
-        console.log('🔴 リアルタイム監視を開始:', userId);
 
         // 接続開始時のステータス更新
         setRealtimeStatus({
@@ -467,23 +516,18 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
               table: 'lesson_slots',
             },
             (payload) => {
-              console.log('📅 lesson_slotsリアルタイム更新を受信:', payload);
               
               // データ変更があった場合に自動的にリフレッシュ
               setTimeout(() => {
-                console.log('🔄 lesson_slots変更によるデータ再取得');
                 refreshData();
               }, 500);
             }
           )
           .subscribe((status) => {
-            console.log('lesson_slotsリアルタイム監視状態:', status);
             
             if (status === 'SUBSCRIBED') {
-              console.log('✅ lesson_slotsリアルタイム監視が開始されました');
               setRealtimeStatus(prev => ({ ...prev, lessonSlots: 'connected' }));
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              console.error('❌ lesson_slotsリアルタイム監視でエラーが発生しました:', status);
               setRealtimeStatus(prev => ({ ...prev, lessonSlots: 'error' }));
             }
           });
@@ -499,29 +543,23 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
               table: 'reservations',
             },
             (payload) => {
-              console.log('📝 reservationsリアルタイム更新を受信:', payload);
               
               // データ変更があった場合に自動的にリフレッシュ
               setTimeout(() => {
-                console.log('🔄 reservations変更によるデータ再取得');
                 refreshData();
               }, 500);
             }
           )
           .subscribe((status) => {
-            console.log('reservationsリアルタイム監視状態:', status);
             
             if (status === 'SUBSCRIBED') {
-              console.log('✅ reservationsリアルタイム監視が開始されました');
               setRealtimeStatus(prev => ({ ...prev, reservations: 'connected' }));
             } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-              console.error('❌ reservationsリアルタイム監視でエラーが発生しました:', status);
               setRealtimeStatus(prev => ({ ...prev, reservations: 'error' }));
             }
           });
 
       } catch (error) {
-        console.error('リアルタイム監視の設定エラー:', error);
       }
     };
 
@@ -540,12 +578,6 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
     };
   }, []);
 
-  // MentorCalendarコンポーネントをレンダリング前のデバッグ
-  if (DEBUG && mentors.length > 0) {
-    console.log('🔴 page.tsx: MentorCalendarをレンダリング');
-    console.log('🔴 page.tsx: mentors:', mentors);
-    console.log('🔴 page.tsx: mentors.length:', mentors?.length);
-  }
 
   return (
     <>
@@ -592,6 +624,19 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
         </div>
       </div>
 
+      {/* デバッグ情報表示 */}
+      {DEBUG && debugInfo && (
+        <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
+          <h3 className="text-sm font-semibold mb-2 text-blue-900">🔍 デバッグ情報</h3>
+          <div className="text-xs space-y-1 text-blue-800">
+            <p>• 総処理時間: <span className="font-medium">{debugInfo.totalTime}ms</span></p>
+            <div className="bg-white p-2 rounded text-xs overflow-auto max-h-32">
+              <pre>{JSON.stringify(debugInfo.steps, null, 2)}</pre>
+            </div>
+          </div>
+        </div>
+      )}
+
       {error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg" role="alert">
           <p>{error}</p>
@@ -602,6 +647,15 @@ export default function BookingCalendarClient({ userRole }: BookingCalendarClien
           >
             再読み込み
           </Button>
+          {/* デバッグ情報も表示 */}
+          {debugInfo && (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-sm">デバッグ情報を表示</summary>
+              <div className="bg-white p-2 rounded text-xs overflow-auto max-h-32 mt-2">
+                <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+              </div>
+            </details>
+          )}
         </div>
       ) : (
         <MentorCalendar

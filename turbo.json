@@ -27,7 +27,8 @@
     "E2E_MENTOR_USER_EMAIL",
     "E2E_ADMIN_USER_EMAIL",
     "METABASE_DB_PASS",
-    "POSTGRES_PASSWORD"
+    "POSTGRES_PASSWORD",
+    "MOBILE_PREVIEW"
   ],
   "tasks": {
     "build": {
@@ -47,7 +48,8 @@
         "GOOGLE_CLIENT_SECRET",
         "CLOUDINARY_URL",
         "RESEND_API_KEY",
-        "CRON_SECRET"
+        "CRON_SECRET",
+        "MOBILE_PREVIEW"
       ]
     },
     "dev": {

@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const withPWA = require('@ducanh2912/next-pwa').default({
   dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
+  disable: process.env.NODE_ENV === 'development' && process.env.MOBILE_PREVIEW !== 'true',
   register: true,
   skipWaiting: true,
   buildExcludes: [/middleware-manifest.json$/],
@@ -95,7 +95,7 @@ const nextConfig = {
           ...(isDev ? [
             {
               key: 'Content-Security-Policy',
-              value: "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; frame-ancestors 'self';"
+              value: "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https: wss:; connect-src 'self' https: wss: *.supabase.co; frame-ancestors 'self';"
             }
           ] : [])
         ],

@@ -5,6 +5,7 @@ import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/session';
 import { getOrCreateStripeCustomer } from '@/lib/stripe';
+import { getBaseUrl } from '@/lib/utils/url';
 
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -80,10 +81,8 @@ export async function POST(
       session.user.email || ''
     );
 
-    // ベースURLの取得
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-      'https://dev.mued.jp' || 
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+    // ベースURLの動的取得
+    const baseUrl = getBaseUrl(request);
 
     // Setup Intent用のCheckout Sessionを作成
     const checkoutSession = await stripe.checkout.sessions.create({

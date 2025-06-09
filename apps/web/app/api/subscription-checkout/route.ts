@@ -4,6 +4,7 @@ import { getPlanByPriceId, validatePriceIds } from '@/app/stripe-config';
 import { getSessionFromRequest } from '@/lib/session';
 import { createOrUpdateSubscriptionCheckout, getOrCreateStripeCustomer } from '@/lib/stripe';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { getBaseUrl } from '@/lib/utils/url';
 
 
 export const dynamic = 'force-dynamic';
@@ -116,11 +117,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ベースURLを動的に取得
+    const baseUrl = getBaseUrl(req);
+    
     // サブスクリプションチェックアウトセッションを作成
     const session = await createOrUpdateSubscriptionCheckout({
       priceId,
-      successUrl: successUrl || `${process.env.NEXT_PUBLIC_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancelUrl: cancelUrl || `${process.env.NEXT_PUBLIC_URL}/dashboard?canceled=true`,
+      successUrl: successUrl || `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: cancelUrl || `${baseUrl}/dashboard?canceled=true`,
       customerId: stripeCustomerId,
       metadata: {
         userId: sessionUserId,

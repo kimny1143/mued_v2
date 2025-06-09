@@ -46,28 +46,6 @@ interface MobileLayoutProps {
 }
 
 export default async function MobileLayout({ children }: MobileLayoutProps) {
-  // サーバーサイドで認証チェック
-  const session = await getServerSession();
-  
-  if (!session) {
-    redirect('/m/auth/login');
-  }
-
-  // ユーザー情報を取得
-  const user = await prisma.users.findUnique({
-    where: { id: session.user.id },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role_id: true,
-    }
-  });
-
-  if (!user) {
-    redirect('/m/auth/login');
-  }
-
   return (
     <div className="mobile-app min-h-screen bg-gray-50">
       <main className="pb-16">

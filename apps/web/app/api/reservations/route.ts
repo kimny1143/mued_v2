@@ -87,6 +87,8 @@ export async function GET(request: NextRequest) {
     const slotId = searchParams.get('slotId');
     const date = searchParams.get('date'); // 日付パラメータを追加
     const includeAll = searchParams.get('includeAll') === 'true'; // 全予約取得フラグ
+    const startDate = searchParams.get('startDate'); // 開始日
+    const endDate = searchParams.get('endDate'); // 終了日
     
     // クエリ条件を構築
     const where: Prisma.reservationsWhereInput = {};
@@ -131,79 +133,55 @@ export async function GET(request: NextRequest) {
       };
       
       console.log(`🗓️ 日付フィルタ適用: ${date} (${startOfDay.toISOString()} 〜 ${endOfDay.toISOString()})`);
+    } else if (startDate || endDate) {
+      // 日付範囲でフィルタリング
+      where.booked_start_time = {};
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        where.booked_start_time.gte = start;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.booked_start_time.lte = end;
+      }
+      console.log(`🗓️ 日付範囲フィルタ適用: ${startDate || '開始日なし'} 〜 ${endDate || '終了日なし'}`);
     }
     
     // データベースから予約を取得（エラーハンドリング強化）
-    const reservations = await executePrismaQuery(() => prisma.reservations.findMany({
+    console.log('📊 Prismaクエリ実行開始...');
+    console.log('🔍 Where条件:', JSON.stringify(where, null, 2));
+    
+    // まず基本的な予約データのみを取得（JOINなし）
+    const queryPromise = executePrismaQuery(() => prisma.reservations.findMany({
       where,
-      include: includeAll ? {
-        // プライバシー保護モード：最小限の情報のみ
-        lesson_slots: {
-          select: {
-            id: true,
-            start_time: true,
-            end_time: true,
-            teacher_id: true,
-          },
-        },
-      } : {
-        // 通常モード：詳細情報を含む
-        lesson_slots: {
-          select: {
-            start_time: true,
-            end_time: true,
-            users: {
-              select: { id: true, name: true, image: true },
-            },
-          },
-        },
-        users: {
-          select: { id: true, name: true, email: true, image: true },
-        },
-      },
-      orderBy: { lesson_slots: { start_time: 'asc' } },
+      orderBy: { created_at: 'desc' },
     }));
     
-    // フロントエンドが期待する形式に変換
-    const formattedReservations = reservations.map(reservation => {
-      if (includeAll) {
-        // プライバシー保護モード：最小限の情報のみ返す（キャメルケース変換）
-        return {
-          id: reservation.id,
-          slotId: reservation.slot_id,           // slot_id → slotId
-          status: reservation.status,
-          bookedStartTime: reservation.booked_start_time,  // booked_start_time → bookedStartTime
-          bookedEndTime: reservation.booked_end_time,      // booked_end_time → bookedEndTime
-          studentId: reservation.student_id,     // student_id → studentId
-        };
-      } else {
-        // 通常モード：詳細情報を含む（caseConverterを使用）
-        const convertedReservation = convertReservationToResponse(reservation);
-        
-        // 型アサーションを使用してusersプロパティにアクセス
-        const reservationWithUsers = reservation as typeof reservation & {
-          users: { id: string; name: string | null; email: string | null; image: string | null; };
-        };
-        
-        return {
-          ...convertedReservation,
-          student: reservationWithUsers.users, // usersをstudentとしてエイリアス
-          // lesson_slotsの情報もキャメルケースに変換（型安全に）
-          lessonSlots: reservation.lesson_slots && 'users' in reservation.lesson_slots ? {
-            startTime: reservation.lesson_slots.start_time,
-            endTime: reservation.lesson_slots.end_time,
-            users: reservation.lesson_slots.users
-          } : reservation.lesson_slots ? {
-            id: reservation.lesson_slots.id,
-            teacherId: reservation.lesson_slots.teacher_id,
-            startTime: reservation.lesson_slots.start_time,
-            endTime: reservation.lesson_slots.end_time
-          } : undefined
-        };
-      }
+    // 10秒タイムアウトを追加
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('クエリがタイムアウトしました（10秒）')), 10000);
     });
     
-    console.log(`📊 予約取得完了: ${formattedReservations.length}件 (includeAll: ${includeAll})`);
+    const reservations = await Promise.race([queryPromise, timeoutPromise]) as any[];
+    console.log('📊 Prismaクエリ完了:', reservations.length, '件');
+    
+    // フロントエンドが期待する形式に変換（簡素化）
+    const formattedReservations = reservations.map(reservation => {
+      // 基本的な予約情報のみ返す（キャメルケース変換）
+      return {
+        id: reservation.id,
+        slotId: reservation.slot_id,           // slot_id → slotId
+        status: reservation.status,
+        bookedStartTime: reservation.booked_start_time,  // booked_start_time → bookedStartTime
+        bookedEndTime: reservation.booked_end_time,      // booked_end_time → bookedEndTime
+        studentId: reservation.student_id,     // student_id → studentId
+        createdAt: reservation.created_at,     // created_at → createdAt
+      };
+    });
+    
+    console.log(`📊 予約取得完了: ${formattedReservations.length}件 (簡素化版)`);
     
     return NextResponse.json(formattedReservations, {
       headers: {
