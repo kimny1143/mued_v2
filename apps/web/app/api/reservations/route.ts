@@ -15,6 +15,7 @@ import Stripe from 'stripe';
 import { convertReservationToResponse } from '@/lib/caseConverter';
 import { getSessionFromRequest } from '@/lib/session';
 import { getBaseUrl, calculateTotalReservedMinutes, calculateSlotTotalMinutes } from '@/lib/utils';
+import { isPastJst, addJstFields } from '@/lib/utils/timezone';
 
 import { prisma } from '../../../lib/prisma';
 
@@ -167,10 +168,20 @@ export async function GET(request: NextRequest) {
     const reservations = await Promise.race([queryPromise, timeoutPromise]) as any[];
     console.log('📊 Prismaクエリ完了:', reservations.length, '件');
     
+    // 過去の予約をフィルタリング（includeAllの場合は過去も含める）
+    const filteredReservations = includeAll 
+      ? reservations 
+      : reservations.filter(reservation => {
+          // 終了時刻が過去の予約は除外
+          return !isPastJst(reservation.booked_end_time);
+        });
+    
+    console.log(`📊 過去の予約フィルタリング後: ${filteredReservations.length}件 (元: ${reservations.length}件)`);
+    
     // フロントエンドが期待する形式に変換（簡素化）
-    const formattedReservations = reservations.map(reservation => {
+    const formattedReservations = filteredReservations.map(reservation => {
       // 基本的な予約情報のみ返す（キャメルケース変換）
-      return {
+      const baseReservation = {
         id: reservation.id,
         slotId: reservation.slot_id,           // slot_id → slotId
         status: reservation.status,
@@ -179,6 +190,9 @@ export async function GET(request: NextRequest) {
         studentId: reservation.student_id,     // student_id → studentId
         createdAt: reservation.created_at,     // created_at → createdAt
       };
+      
+      // JST表示用フィールドを追加
+      return addJstFields(baseReservation, ['bookedStartTime', 'bookedEndTime', 'createdAt']);
     });
     
     console.log(`📊 予約取得完了: ${formattedReservations.length}件 (簡素化版)`);

@@ -9,6 +9,7 @@ import { convertLessonSlotRequestToDb } from '@/lib/caseConverter';
 import { getSessionFromRequest } from '@/lib/session';
 import { stripe } from '@/lib/stripe';
 import { generateHourlySlots } from '@/lib/utils';
+import { isPastJst, addJstFields } from '@/lib/utils/timezone';
 
 // 予約ステータスの列挙型（現在は未使用だがAPIの拡張で使用予定）
 enum _ReservationStatus {
@@ -185,8 +186,14 @@ export async function GET(request: NextRequest) {
       reservations: reservations?.filter(r => r.lesson_slot_id === slot.id) || []
     }));
     
+    // 過去のスロットをフィルタリング（終了時刻が現在より前のものを除外）
+    const activeSlotsWithReservations = slotsWithReservations.filter(slot => {
+      // スロットの終了時刻が過去でないかチェック
+      return !isPastJst(slot.end_time);
+    });
+    
     // 各スロットの予約済み時間帯情報を整形して返す（スネークケース→キャメルケース変換）
-    const enhancedSlots = slotsWithReservations.map(slot => {
+    const enhancedSlots = activeSlotsWithReservations.map(slot => {
       // generateHourlySlots用にデータを変換
       const slotForHourlyGeneration = {
         id: slot.id,
@@ -207,7 +214,7 @@ export async function GET(request: NextRequest) {
       const hourlySlots = generateHourlySlots(slotForHourlyGeneration, slotForHourlyGeneration.reservations);
       
       // フロントエンドが期待するキャメルケース形式に変換
-      return {
+      const baseSlot = {
         id: slot.id,
         teacherId: slot.teacher_id,               // teacher_id → teacherId
         startTime: slot.start_time,               // start_time → startTime
@@ -221,14 +228,16 @@ export async function GET(request: NextRequest) {
         updatedAt: slot.updated_at,               // updated_at → updatedAt
         // フロントエンドが期待するteacher形式に変換
         teacher: slot.users,
-        // 予約情報もキャメルケースに変換
-        reservations: slot.reservations.map((reservation: any) => ({
-          id: reservation.id,
-          bookedStartTime: reservation.booked_start_time,  // booked_start_time → bookedStartTime
-          bookedEndTime: reservation.booked_end_time,      // booked_end_time → bookedEndTime
-          status: reservation.status,
-          student: reservation.users  // users → student
-        })),
+        // 予約情報もキャメルケースに変換（過去の予約も除外）
+        reservations: slot.reservations
+          .filter((reservation: any) => !isPastJst(reservation.booked_end_time))
+          .map((reservation: any) => ({
+            id: reservation.id,
+            bookedStartTime: reservation.booked_start_time,  // booked_start_time → bookedStartTime
+            bookedEndTime: reservation.booked_end_time,      // booked_end_time → bookedEndTime
+            status: reservation.status,
+            student: reservation.users  // users → student
+          })),
         hourlySlots,
         // 分単位の予約時間制約を明示的に含める
         durationConstraints: {
@@ -238,6 +247,9 @@ export async function GET(request: NextRequest) {
           maxHours: slot.max_hours                // max_hours → maxHours
         }
       };
+      
+      // JST表示用フィールドを追加
+      return addJstFields(baseSlot, ['startTime', 'endTime', 'createdAt', 'updatedAt']);
     });
     
     // PENDING_APPROVALの予約を確認
