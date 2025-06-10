@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabaseBrowser } from '@/lib/supabase-browser';
+import { signInWithGoogle } from '@/app/actions/auth';
 import Link from 'next/link';
 
 export default function MobileLoginPage() {
@@ -13,27 +13,19 @@ export default function MobileLoginPage() {
       setLoading(true);
       setError(null);
       
-      // リダイレクトURLを環境変数から取得（フォールバックあり）
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-                     process.env.NEXT_PUBLIC_DEPLOY_URL ||
-                     window.location.origin;
-      const redirectTo = `${baseUrl}/m/callback`;
+      // サーバーアクションを使用してGoogle認証を開始
+      const result = await signInWithGoogle({ isMobile: true });
       
-      console.log('認証リダイレクトURL:', redirectTo);
+      if (result.success && result.redirectUrl) {
+        console.log('認証開始:', result.redirectUrl);
+        window.location.href = result.redirectUrl;
+        return;
+      }
       
-      const { error } = await supabaseBrowser.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      });
-
-      if (error) {
-        throw error;
+      if (!result.success && result.error) {
+        setError(result.error);
+      } else {
+        setError('ログインに失敗しました。もう一度お試しください。');
       }
     } catch (err) {
       console.error('Google login error:', err);
