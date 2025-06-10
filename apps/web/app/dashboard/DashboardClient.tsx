@@ -15,7 +15,7 @@ interface DashboardClientProps {
 
 export default function DashboardClient({ initialData }: DashboardClientProps) {
   const { user, todaySchedule, reservationStats } = initialData;
-  const userRole = user.role_id || 'student';
+  const userRole = user.role_name || 'student';
 
   return (
     <>

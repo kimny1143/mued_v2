@@ -9,6 +9,7 @@ export interface DashboardData {
     email: string;
     name: string | null;
     role_id: string;
+    role_name?: string;
     image: string | null;
   };
   subscription: {
@@ -34,10 +35,15 @@ export interface DashboardData {
 export const getDashboardData = cache(async (userId: string): Promise<DashboardData | null> => {
   try {
     // 並列でデータを取得
-    const [user, reservations, roles] = await Promise.all([
-      // ユーザー情報
+    const [user, reservations] = await Promise.all([
+      // ユーザー情報とロール情報
       prisma.users.findUnique({
-        where: { id: userId }
+        where: { id: userId },
+        include: {
+          roles: {
+            select: { name: true }
+          }
+        }
       }),
       
       // 予約情報
@@ -58,18 +64,14 @@ export const getDashboardData = cache(async (userId: string): Promise<DashboardD
         orderBy: { booked_start_time: 'asc' }
       }),
       
-      // ロール情報
-      prisma.roles.findMany({
-        select: { id: true, name: true }
-      })
     ]);
 
     if (!user) {
       return null;
     }
 
-    const userRole = user.role_id || 'student';
-    const isMentor = userRole === 'mentor';
+    const userRoleName = user.roles?.name || 'student';
+    const isMentor = userRoleName === 'mentor';
 
     // メンターの場合は、メンターとしての予約も取得
     let mentorReservations: any[] = [];
@@ -118,7 +120,7 @@ export const getDashboardData = cache(async (userId: string): Promise<DashboardD
     // サブスクリプション情報（簡易版）
     const subscription = {
       priceId: null,
-      status: userRole === 'mentor' || userRole === 'admin' ? 'role_exempt' : 'free',
+      status: userRoleName === 'mentor' || userRoleName === 'admin' ? 'role_exempt' : 'free',
       currentPeriodEnd: null
     };
 
@@ -127,7 +129,8 @@ export const getDashboardData = cache(async (userId: string): Promise<DashboardD
         id: user.id,
         email: user.email || '',
         name: user.name,
-        role_id: userRole,
+        role_id: user.role_id,
+        role_name: userRoleName,
         image: user.image
       },
       subscription,

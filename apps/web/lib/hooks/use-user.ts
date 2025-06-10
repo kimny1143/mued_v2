@@ -10,6 +10,7 @@ export interface User {
   email: string;
   name?: string;
   role_id: string;
+  roleName?: string;
   plan?: string;
 }
 
@@ -44,15 +45,43 @@ export function useUser() {
         setIsAuthenticated(!!currentSession);
 
         if (currentSession?.user) {
-          // 最小限のユーザー情報を設定
-          const basicUser: User = {
-            id: currentSession.user.id,
-            email: currentSession.user.email || '',
-            name: currentSession.user.user_metadata?.name || currentSession.user.email?.split('@')[0],
-            role_id: currentSession.user.user_metadata?.role_id || 'student',
-            plan: 'FREE' // デフォルト値
-          };
-          setUser(basicUser);
+          // APIからより詳細なユーザー情報を取得
+          try {
+            const response = await fetch(`/api/user?userId=${currentSession.user.id}`);
+            if (response.ok) {
+              const userData = await response.json();
+              const detailedUser: User = {
+                id: userData.id,
+                email: userData.email || currentSession.user.email || '',
+                name: userData.name || currentSession.user.email?.split('@')[0],
+                role_id: userData.role_id || 'student',
+                roleName: userData.roleName || 'student',
+                plan: 'FREE'
+              };
+              setUser(detailedUser);
+            } else {
+              // APIが失敗した場合は基本情報のみ
+              const basicUser: User = {
+                id: currentSession.user.id,
+                email: currentSession.user.email || '',
+                name: currentSession.user.user_metadata?.name || currentSession.user.email?.split('@')[0],
+                role_id: currentSession.user.user_metadata?.role_id || 'student',
+                plan: 'FREE'
+              };
+              setUser(basicUser);
+            }
+          } catch (err) {
+            console.error('ユーザー情報API呼び出しエラー:', err);
+            // エラー時は基本情報のみ
+            const basicUser: User = {
+              id: currentSession.user.id,
+              email: currentSession.user.email || '',
+              name: currentSession.user.user_metadata?.name || currentSession.user.email?.split('@')[0],
+              role_id: currentSession.user.user_metadata?.role_id || 'student',
+              plan: 'FREE'
+            };
+            setUser(basicUser);
+          }
         } else {
           setUser(null);
         }
@@ -76,14 +105,41 @@ export function useUser() {
         setIsAuthenticated(!!newSession);
 
         if (newSession?.user) {
-          const basicUser: User = {
-            id: newSession.user.id,
-            email: newSession.user.email || '',
-            name: newSession.user.user_metadata?.name || newSession.user.email?.split('@')[0],
-            role_id: newSession.user.user_metadata?.role_id || 'student',
-            plan: 'FREE'
-          };
-          setUser(basicUser);
+          // 認証状態変更時もAPIから情報を取得
+          fetch(`/api/user?userId=${newSession.user.id}`)
+            .then(res => res.ok ? res.json() : null)
+            .then(userData => {
+              if (userData) {
+                const detailedUser: User = {
+                  id: userData.id,
+                  email: userData.email || newSession.user.email || '',
+                  name: userData.name || newSession.user.email?.split('@')[0],
+                  role_id: userData.role_id || 'student',
+                  roleName: userData.roleName || 'student',
+                  plan: 'FREE'
+                };
+                setUser(detailedUser);
+              } else {
+                const basicUser: User = {
+                  id: newSession.user.id,
+                  email: newSession.user.email || '',
+                  name: newSession.user.user_metadata?.name || newSession.user.email?.split('@')[0],
+                  role_id: newSession.user.user_metadata?.role_id || 'student',
+                  plan: 'FREE'
+                };
+                setUser(basicUser);
+              }
+            })
+            .catch(() => {
+              const basicUser: User = {
+                id: newSession.user.id,
+                email: newSession.user.email || '',
+                name: newSession.user.user_metadata?.name || newSession.user.email?.split('@')[0],
+                role_id: newSession.user.user_metadata?.role_id || 'student',
+                plan: 'FREE'
+              };
+              setUser(basicUser);
+            });
         } else {
           setUser(null);
         }

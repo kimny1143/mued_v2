@@ -17,7 +17,7 @@ export default async function SlotsCalendarPage() {
     redirect('/login');
   }
 
-  // ユーザー情報を取得
+  // ユーザー情報とロール情報を取得
   const user = await prisma.users.findUnique({
     where: { id: session.user.id },
     select: {
@@ -25,6 +25,11 @@ export default async function SlotsCalendarPage() {
       name: true,
       email: true,
       role_id: true,
+      roles: {
+        select: {
+          name: true
+        }
+      }
     }
   });
 
@@ -32,7 +37,7 @@ export default async function SlotsCalendarPage() {
     redirect('/login');
   }
 
-  const userRole = user.role_id || 'student';
+  const userRole = user.roles?.name || 'student';
   const userName = user.name || user.email || 'ユーザー';
 
   return (
