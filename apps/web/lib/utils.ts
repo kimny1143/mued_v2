@@ -12,7 +12,12 @@ export function cn(...inputs: ClassValue[]) {
  * @deprecated 新しい実装は lib/utils/url.ts の getBaseUrl(request) を使用してください
  */
 export function getBaseUrl(): string {
-  // 明示的に設定されたサイトURLを最優先（ローカル開発・テスト用）
+  // NEXT_PUBLIC_URL を最優先（Vercel環境設定で使用）
+  if (process.env.NEXT_PUBLIC_URL) {
+    return process.env.NEXT_PUBLIC_URL;
+  }
+  
+  // 明示的に設定されたサイトURLを優先（ローカル開発・テスト用）
   if (process.env.NEXT_PUBLIC_SITE_URL) {
     return process.env.NEXT_PUBLIC_SITE_URL;
   }
@@ -44,7 +49,7 @@ export function getBaseUrl(): string {
   
   // 本番環境向け固定URL
   if (process.env.VERCEL_ENV === 'production') {
-    return 'https://mued-lms-fgm.vercel.app';
+    return 'https://www.mued.jp';
   }
   
   // ローカル開発環境のデフォルト

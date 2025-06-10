@@ -13,14 +13,25 @@ export default function MobileLoginPage() {
       setLoading(true);
       setError(null);
       
+      console.log('[モバイルログイン] 開始');
+      console.log('[モバイルログイン] 現在のURL:', window.location.href);
+      console.log('[モバイルログイン] 環境変数:', {
+        NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL || 'なし',
+        NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'なし',
+        NEXT_PUBLIC_DEPLOY_URL: process.env.NEXT_PUBLIC_DEPLOY_URL || 'なし'
+      });
+      
       // サーバーアクションを使用してGoogle認証を開始
       const result = await signInWithGoogle({ isMobile: true });
       
       if (result.success && result.redirectUrl) {
-        console.log('認証開始:', result.redirectUrl);
+        console.log('[モバイルログイン] 認証URLを受信:', result.redirectUrl);
+        console.log('[モバイルログイン] リダイレクト実行');
         window.location.href = result.redirectUrl;
         return;
       }
+      
+      console.error('[モバイルログイン] エラー:', result);
       
       if (!result.success && result.error) {
         setError(result.error);
@@ -28,7 +39,7 @@ export default function MobileLoginPage() {
         setError('ログインに失敗しました。もう一度お試しください。');
       }
     } catch (err) {
-      console.error('Google login error:', err);
+      console.error('[モバイルログイン] 例外エラー:', err);
       setError('ログインに失敗しました。もう一度お試しください。');
     } finally {
       setLoading(false);

@@ -9,28 +9,33 @@
  * @returns ベースURL（プロトコル含む）
  */
 export function getBaseUrl(request?: Request): string {
-  // 1. 明示的に設定された環境変数を最優先（ローカル開発・テスト用）
+  // 1. NEXT_PUBLIC_URL を最優先（Vercel環境設定で使用）
+  if (process.env.NEXT_PUBLIC_URL) {
+    return process.env.NEXT_PUBLIC_URL;
+  }
+  
+  // 2. 明示的に設定された環境変数（ローカル開発・テスト用）
   if (process.env.NEXT_PUBLIC_SITE_URL) {
     return process.env.NEXT_PUBLIC_SITE_URL;
   }
   
-  // 2. 明示的なデプロイURL設定（Vercel環境でのオーバーライド用）
+  // 3. 明示的なデプロイURL設定（Vercel環境でのオーバーライド用）
   if (process.env.NEXT_PUBLIC_DEPLOY_URL) {
     return process.env.NEXT_PUBLIC_DEPLOY_URL;
   }
   
-  // 3. Vercel環境変数をチェック（自動設定）
+  // 4. Vercel環境変数をチェック（自動設定）
   if (process.env.VERCEL_URL) {
     // Vercelプレビューデプロイメント
     return `https://${process.env.VERCEL_URL}`;
   }
   
-  // 4. 本番環境のドメイン
+  // 5. 本番環境のドメイン
   if (process.env.NODE_ENV === 'production' && process.env.VERCEL_ENV === 'production') {
     return 'https://www.mued.jp';
   }
   
-  // 5. リクエストヘッダーから動的に生成
+  // 6. リクエストヘッダーから動的に生成
   if (request) {
     const host = request.headers.get('host');
     if (host) {
@@ -41,12 +46,12 @@ export function getBaseUrl(request?: Request): string {
     }
   }
   
-  // 6. クライアントサイドの場合は現在のオリジンを使用
+  // 7. クライアントサイドの場合は現在のオリジンを使用
   if (typeof window !== 'undefined') {
     return window.location.origin;
   }
   
-  // 7. サーバーサイドのデフォルト
+  // 8. サーバーサイドのデフォルト
   return 'http://localhost:3000';
 }
 
@@ -56,27 +61,51 @@ export function getBaseUrl(request?: Request): string {
  * @returns 認証用のベースURL
  */
 export function getSiteUrl(): string {
-  // 1. 環境変数から明示的に設定された値を最優先
+  // デバッグログ出力
+  if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG === 'true') {
+    console.log('[getSiteUrl] 環境変数の確認:', {
+      NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL,
+      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+      NEXT_PUBLIC_DEPLOY_URL: process.env.NEXT_PUBLIC_DEPLOY_URL,
+      VERCEL_URL: process.env.VERCEL_URL,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      NODE_ENV: process.env.NODE_ENV
+    });
+  }
+  
+  // 1. NEXT_PUBLIC_URL を最優先（Vercel環境設定で使用）
+  if (process.env.NEXT_PUBLIC_URL) {
+    console.log('[getSiteUrl] NEXT_PUBLIC_URL を使用:', process.env.NEXT_PUBLIC_URL);
+    return process.env.NEXT_PUBLIC_URL;
+  }
+  
+  // 2. 環境変数から明示的に設定された値
   if (process.env.NEXT_PUBLIC_SITE_URL) {
+    console.log('[getSiteUrl] NEXT_PUBLIC_SITE_URL を使用:', process.env.NEXT_PUBLIC_SITE_URL);
     return process.env.NEXT_PUBLIC_SITE_URL;
   }
   
-  // 2. Vercelデプロイ環境用の設定
+  // 3. Vercelデプロイ環境用の設定
   if (process.env.NEXT_PUBLIC_DEPLOY_URL) {
+    console.log('[getSiteUrl] NEXT_PUBLIC_DEPLOY_URL を使用:', process.env.NEXT_PUBLIC_DEPLOY_URL);
     return process.env.NEXT_PUBLIC_DEPLOY_URL;
   }
   
-  // 3. Vercel自動環境変数（プレビュー環境）
+  // 4. Vercel自動環境変数（プレビュー環境）
   if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+    const url = `https://${process.env.VERCEL_URL}`;
+    console.log('[getSiteUrl] VERCEL_URL を使用:', url);
+    return url;
   }
   
-  // 4. 本番環境
+  // 5. 本番環境
   if (process.env.NODE_ENV === 'production') {
+    console.log('[getSiteUrl] 本番環境のデフォルトを使用');
     return 'https://www.mued.jp';
   }
   
-  // 5. ローカル開発環境のデフォルト
+  // 6. ローカル開発環境のデフォルト
+  console.log('[getSiteUrl] ローカル開発環境のデフォルトを使用');
   return 'http://localhost:3000';
 }
 

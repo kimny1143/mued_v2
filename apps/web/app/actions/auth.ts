@@ -17,9 +17,17 @@ export async function signInWithGoogle(options?: { isMobile?: boolean }) {
       ? `${baseUrl}/m/callback`
       : `${baseUrl}/auth/callback`;
     
-    console.log(`認証処理開始: ${new Date().toISOString()}`);
-    console.log(`認証コールバックURL: ${redirectUrl}`);
-    console.log(`環境情報: VERCEL_ENV=${process.env.VERCEL_ENV || 'local'}, VERCEL_URL=${process.env.VERCEL_URL || 'なし'}`);
+    console.log(`[認証処理] 開始: ${new Date().toISOString()}`);
+    console.log(`[認証処理] モバイル: ${options?.isMobile ? 'はい' : 'いいえ'}`);
+    console.log(`[認証処理] ベースURL: ${baseUrl}`);
+    console.log(`[認証処理] コールバックURL: ${redirectUrl}`);
+    console.log(`[認証処理] 環境変数:`, {
+      VERCEL_ENV: process.env.VERCEL_ENV || 'local',
+      VERCEL_URL: process.env.VERCEL_URL || 'なし',
+      NEXT_PUBLIC_URL: process.env.NEXT_PUBLIC_URL || 'なし',
+      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'なし',
+      NEXT_PUBLIC_DEPLOY_URL: process.env.NEXT_PUBLIC_DEPLOY_URL || 'なし'
+    });
 
     // Supabaseサーバークライアント初期化
     const supabase = createSupabaseServerClient();
