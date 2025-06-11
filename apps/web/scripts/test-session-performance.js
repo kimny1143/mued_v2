@@ -51,7 +51,8 @@ async function makeRequest(url, headers = {}) {
         resolve({
           status: res.statusCode,
           time: endTime - startTime,
-          cached: res.headers['x-session-cached'] === 'true'
+          cached: res.headers['x-session-cached'] === 'true',
+          headers: res.headers
         });
       });
     });
@@ -112,7 +113,8 @@ async function runTests() {
 - ベースURL: ${TEST_CONFIG.baseUrl}
 - イテレーション: ${TEST_CONFIG.iterations}
 - 並列度: ${TEST_CONFIG.concurrency}
-- 最適化フラグ: ${process.env.NEXT_PUBLIC_USE_OPTIMIZED_SESSION || 'false'}\n`);
+- テスト対象: ${TEST_CONFIG.baseUrl}
+- 注: 最適化の有効/無効はサーバー側の設定に依存\n`);
 
   if (!AUTH_TOKEN) {
     console.error('❌ 認証トークンが設定されていません。TEST_AUTH_TOKENを設定してください。');

@@ -53,7 +53,8 @@ export async function getSessionFromRequestOptimized(request: Request) {
           name: cachedSession.name 
         },
         role: cachedSession.role,
-        cached: true // デバッグ用フラグ
+        cached: true, // デバッグ用フラグ
+        _cacheHit: true // APIレスポンスヘッダー用
       };
     }
 
