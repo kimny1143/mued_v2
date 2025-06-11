@@ -3,7 +3,7 @@
  * キャッシュとバッチ処理により高速化
  */
 import { prisma } from './prisma';
-import { supabase } from './supabase-server';
+import { createClient } from './supabase/server';
 import { 
   getCachedSession, 
   setCachedSession, 
@@ -112,7 +112,8 @@ async function verifyJWTWithCache(token: string): Promise<any | null> {
     return cached;
   }
 
-  // Supabaseクライアントで検証（既にimportされている）
+  // Supabaseクライアントで検証
+  const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser(token);
   
   if (error || !user) {

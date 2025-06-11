@@ -72,8 +72,8 @@ export default async function Layout({
     redirect('/login');
   }
 
-  // roleNameを安全に取得
-  const roleName = user.roles?.name || 'student';
+  // roleNameを安全に取得（大文字の場合は小文字に変換）
+  const roleName = user.roles?.name?.toLowerCase() || 'student';
 
   return (
     <DashboardLayout user={user} roleName={roleName}>

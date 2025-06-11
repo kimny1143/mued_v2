@@ -36,7 +36,8 @@ export const getServerSession = cache(async () => {
     }
     
     // ロール名を取得（roles.nameまたはデフォルト値）
-    const roleName = userData.roles?.name || 'student';
+    // データベースのロール名は大文字なので小文字に変換
+    const roleName = userData.roles?.name?.toLowerCase() || 'student';
     
     console.log('[getServerSession] User found:', userData.email, 'Role:', roleName);
     
