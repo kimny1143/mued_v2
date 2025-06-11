@@ -2,7 +2,7 @@
  * セッション管理の基本実装
  * Supabase Authを使用したセッション取得
  */
-import { createClient } from './supabase-server';
+import { supabase } from './supabase-server';
 import { prisma } from './prisma';
 
 /**
@@ -12,8 +12,7 @@ import { prisma } from './prisma';
  */
 export async function getSessionFromRequest(request: Request) {
   try {
-    // Supabaseクライアントを作成
-    const supabase = createClient();
+    // Supabaseクライアントを使用（既にimportされている）
     
     // Cookieヘッダーを取得
     const cookieHeader = request.headers.get('cookie');
