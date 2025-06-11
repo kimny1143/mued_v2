@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
+import { getSessionFromRequest } from '@/lib/session';
 
 /**
  * 従来のテーブル直接アクセスでアクティブなレッスンスロット取得API
@@ -9,8 +9,8 @@ import { getServerSession } from 'next-auth';
 export async function GET(request: Request) {
   try {
     // 認証チェック
-    const session = await getServerSession();
-    if (!session) {
+    const session = await getSessionFromRequest(request);
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

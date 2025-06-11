@@ -1,29 +1,29 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
+import { getSessionFromRequest } from '@/lib/session';
 
 /**
  * ビューを使用した今日のレッスンセッション取得API
  * todays_lesson_sessionsビューを使用
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
     // 認証チェック
-    const session = await getServerSession();
-    if (!session) {
+    const session = await getSessionFromRequest(request);
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const userRole = session.user?.role;
-    const userId = session.user?.id;
+    const userRole = session.role;
+    const userId = session.user.id;
 
     // ビューを使用（すでにJOIN済み、今日のデータのみ）
     const todaysSessions = await prisma.todays_lesson_sessions.findMany({
-      where: userRole === 'MENTOR' 
+      where: userRole === 'mentor' 
         ? { teacher_id: userId }
-        : userRole === 'STUDENT'
+        : userRole === 'student'
         ? { student_id: userId }
-        : undefined, // ADMINは全て表示
+        : undefined, // adminは全て表示
       orderBy: { scheduled_start_time: 'asc' },
     });
 
