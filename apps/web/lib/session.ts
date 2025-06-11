@@ -52,13 +52,16 @@ export async function getSessionFromRequest(request: Request) {
       return null;
     }
 
+    const roleName = user.roles?.name || 'student';
+    console.log('[Session] User:', user.email, 'Role:', roleName, 'Role ID:', user.role_id);
+
     return {
       user: {
         id: user.id,
         email: user.email || session.user.email,
         name: user.name
       },
-      role: user.roles?.name || 'student'
+      role: roleName
     };
   } catch (error) {
     console.error('[Session] Error:', error);

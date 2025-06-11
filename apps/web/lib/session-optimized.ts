@@ -157,6 +157,7 @@ async function getUserRole(userId: string): Promise<string | null> {
     }
   });
 
+  console.log('[getUserRole] User:', userId, 'Role:', userWithRole?.roles?.name);
   return userWithRole?.roles?.name || null;
 }
 

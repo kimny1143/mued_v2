@@ -18,7 +18,15 @@ export const getServerSession = cache(async () => {
     const serviceClient = createServiceClient();
     const { data: userData, error: userError } = await serviceClient
       .from('users')
-      .select('id, email, name, role_id')
+      .select(`
+        id, 
+        email, 
+        name, 
+        role_id,
+        roles (
+          name
+        )
+      `)
       .eq('id', user.id)
       .single();
     
@@ -27,7 +35,10 @@ export const getServerSession = cache(async () => {
       return null;
     }
     
-    console.log('[getServerSession] User found:', userData.email, 'Role:', userData.role_id);
+    // ロール名を取得（roles.nameまたはデフォルト値）
+    const roleName = userData.roles?.name || 'student';
+    
+    console.log('[getServerSession] User found:', userData.email, 'Role:', roleName);
     
     return {
       user: {
@@ -35,7 +46,7 @@ export const getServerSession = cache(async () => {
         email: userData.email || '',
         name: userData.name || userData.email?.split('@')[0] || ''
       },
-      role: userData.role_id || 'student'
+      role: roleName
     };
   } catch (error) {
     console.error('[getServerSession] Error:', error);
