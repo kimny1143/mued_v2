@@ -21,7 +21,8 @@ interface MentorLessonSlot {
   currency?: string;
   minDuration?: number;
   maxDuration?: number;
-  description?: string;
+  // descriptionフィールドは存在しない
+  // description?: string;
   teacher: {
     id: string;
     name: string | null;
@@ -219,7 +220,8 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
       currency: 'JPY',
       minDuration: 30,
       maxDuration: 120,
-      description: '',
+      // descriptionフィールドは存在しない
+      // description: '',
       teacher: {
         id: '',
         name: null,

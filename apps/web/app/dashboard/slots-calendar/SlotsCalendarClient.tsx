@@ -31,7 +31,8 @@ interface MentorLessonSlot {
   currency?: string;
   minDuration?: number;
   maxDuration?: number;
-  description?: string;
+  // descriptionフィールドは存在しない
+  // description?: string;
   teacher: {
     id: string;
     name: string | null;
@@ -685,16 +686,25 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
 
   // スロット更新処理（最適化版）
   const handleSlotUpdate = useCallback((updatedSlot: MentorLessonSlot) => {
+    console.log('🔄 handleSlotUpdate called:', {
+      slotId: updatedSlot.id,
+      startTime: updatedSlot.startTime,
+      endTime: updatedSlot.endTime,
+      isNew: !slots.some(s => s.id === updatedSlot.id)
+    });
+    
     setSlots(prev => {
       const existingSlotIndex = prev.findIndex(slot => slot.id === updatedSlot.id);
       
       if (existingSlotIndex >= 0) {
         // 既存スロットの更新
+        console.log('✏️ 既存スロットを更新:', updatedSlot.id);
         const newSlots = [...prev];
         newSlots[existingSlotIndex] = updatedSlot;
         return newSlots;
       } else {
         // 新規スロットの追加
+        console.log('➕ 新規スロットを追加:', updatedSlot.id);
         return [...prev, updatedSlot];
       }
     });
@@ -704,9 +714,10 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
     
     // 更新が反映されない場合のフォールバック（短縮）
     setTimeout(() => {
+      console.log('🔄 フォールバック: fetchMySlots を実行');
       fetchMySlots();
     }, 1000);
-  }, [fetchMySlots]);
+  }, [fetchMySlots, slots]);
 
   // スロット削除処理（最適化版）
   const handleSlotDelete = useCallback((deletedSlotId: string) => {

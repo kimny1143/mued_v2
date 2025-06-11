@@ -401,8 +401,8 @@ export async function POST(request: NextRequest) {
       finalIsAdmin: isAdmin
     });
 
-    // メンターまたは管理者の権限チェック - 強制承認テスト（デバッグ用）
-    const forceAuthorize = true; // デバッグ用に一時的に権限チェックをバイパス
+    // メンターまたは管理者の権限チェック
+    const forceAuthorize = false; // 権限チェックを有効化
     
     if (!forceAuthorize && !isMentor && !isAdmin) {
       console.error(`権限エラー - レッスンスロット作成:`, {
@@ -504,6 +504,7 @@ export async function POST(request: NextRequest) {
     }
     
     console.log(`レッスンスロット作成成功: ID ${newSlot.id}, 講師ID ${sessionInfo.user.id}`);
+    console.log('作成されたスロットデータ:', newSlot);
     
     // レスポンスもキャメルケース形式に変換
     const responseSlot = {
@@ -520,7 +521,7 @@ export async function POST(request: NextRequest) {
       isAvailable: newSlot.is_available,       // is_available → isAvailable
       createdAt: newSlot.created_at,           // created_at → createdAt
       updatedAt: newSlot.updated_at,           // updated_at → updatedAt
-      description: newSlot.description || '',  // descriptionフィールドを返す
+      // descriptionフィールドは存在しないため除外
       // teacher情報をincludeから取得
       teacher: newSlot.users,
       reservations: []  // 新規作成時は予約は空

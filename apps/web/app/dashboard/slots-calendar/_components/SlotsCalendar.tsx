@@ -40,7 +40,8 @@ interface MentorLessonSlot {
   currency?: string;
   minDuration?: number;
   maxDuration?: number;
-  description?: string;
+  // descriptionフィールドは存在しない
+  // description?: string;
   teacher: {
     id: string;
     name: string | null;

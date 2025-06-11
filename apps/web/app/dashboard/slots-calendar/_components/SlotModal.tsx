@@ -75,7 +75,8 @@ export const SlotModal: React.FC<SlotModalProps> = ({
     endDate: '',
     endTime: '',
     hourlyRate: 5000,
-    description: '',
+    // descriptionフィールドは存在しないため除外
+    // description: '',
     isAvailable: true,
     minDuration: 30,
     maxDuration: 120,
@@ -98,7 +99,8 @@ export const SlotModal: React.FC<SlotModalProps> = ({
         endDate: format(endTime, 'yyyy-MM-dd'),
         endTime: format(endTime, 'HH:mm'),
         hourlyRate: slot.hourlyRate || 5000,
-        description: slot.description || '',
+        // descriptionフィールドは存在しないため除外
+        // description: slot.description || '',
         isAvailable: slot.isAvailable,
         minDuration: slot.minDuration || 30,
         maxDuration: slot.maxDuration || 120,
@@ -111,7 +113,8 @@ export const SlotModal: React.FC<SlotModalProps> = ({
         endDate: format(selectedDate, 'yyyy-MM-dd'),
         endTime: '11:00',
         hourlyRate: 5000,
-        description: '',
+        // descriptionフィールドは存在しないため除外
+        // description: '',
         isAvailable: true,
         minDuration: 30,
         maxDuration: 120,
@@ -173,7 +176,8 @@ export const SlotModal: React.FC<SlotModalProps> = ({
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         hourlyRate: formData.hourlyRate,
-        description: formData.description || undefined, // 空文字列の場合はundefinedにする
+        // descriptionフィールドは存在しないため除外
+        // description: formData.description || undefined,
         isAvailable: formData.isAvailable,
         minDuration: formData.minDuration,
         maxDuration: formData.maxDuration,
@@ -237,12 +241,19 @@ export const SlotModal: React.FC<SlotModalProps> = ({
       }
 
       const savedSlot = await response.json();
+      console.log('✅ スロット保存成功:', {
+        mode: currentMode,
+        slotId: savedSlot.id,
+        savedSlot: savedSlot
+      });
       
       // 親コンポーネントに更新を通知
       if (currentMode === 'create') {
+        console.log('🆕 新規作成スロットを親コンポーネントに通知');
         // 新規作成の場合もリアルタイムで更新
         onSlotUpdate(savedSlot);
       } else {
+        console.log('✏️ 更新スロットを親コンポーネントに通知');
         onSlotUpdate(savedSlot);
       }
       
