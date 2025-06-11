@@ -20,7 +20,8 @@
     "build-storybook": "storybook build",
     "kill-port": "lsof -ti:3000 | xargs kill -9 || true",
     "kill-mcp-port": "lsof -ti:3333 | xargs kill -9 || true",
-    "setup:local": "cp .env.local.example .env.local && echo 'Please update .env.local with your actual values'"
+    "setup:local": "cp .env.local.example .env.local && echo 'Please update .env.local with your actual values'",
+    "setup:seed-auth": "node scripts/setup-seed-auth-users.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.0",

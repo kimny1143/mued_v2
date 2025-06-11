@@ -5,6 +5,36 @@ import { cookies } from 'next/headers';
 
 import { getSiteUrl } from '@/lib/utils/url';
 
+// メール/パスワード認証（開発・テスト用）
+export async function signInWithEmail(email: string, password: string) {
+  try {
+    const supabase = createSupabaseServerClient();
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error('メール認証エラー:', error);
+      return { success: false, error: error.message };
+    }
+
+    if (data?.session) {
+      console.log('メール認証成功:', data.session.user.email);
+      return { success: true };
+    }
+
+    return { success: false, error: '認証に失敗しました' };
+  } catch (err) {
+    console.error('メール認証処理エラー:', err);
+    return {
+      success: false,
+      error: '認証処理中にエラーが発生しました'
+    };
+  }
+}
+
 // Google認証へのリダイレクト
 export async function signInWithGoogle(options?: { isMobile?: boolean }) {
   try {

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     // Where条件を構築
     const where: any = {
-      reservation: {
+      reservations: {
         OR: [
           { student_id: userId },
           { lesson_slots: { teacher_id: userId } }
@@ -47,12 +47,12 @@ export async function GET(request: NextRequest) {
 
     // 日付範囲フィルター
     if (from || to) {
-      where.scheduled_start = {};
+      where.actual_start_time = {};
       if (from) {
-        where.scheduled_start.gte = new Date(from);
+        where.actual_start_time.gte = new Date(from);
       }
       if (to) {
-        where.scheduled_start.lte = new Date(to);
+        where.actual_start_time.lte = new Date(to);
       }
     }
 
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
         prisma.lesson_sessions.findMany({
           where,
           include: {
-            reservation: {
+            reservations: {
               include: {
                 lesson_slots: {
                   include: {
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
               }
             }
           },
-          orderBy: { scheduled_start: 'desc' },
+          orderBy: { created_at: 'desc' },
           take: limit,
           skip: offset
         }),
@@ -103,37 +103,37 @@ export async function GET(request: NextRequest) {
 
     // ユーザーロールに応じて情報をフィルタリング
     const formattedSessions = sessions.map(session => {
-      const isStudent = session.reservation.student_id === userId;
-      const isTeacher = session.reservation.lesson_slots.teacher_id === userId;
+      const isStudent = session.reservations.student_id === userId;
+      const isTeacher = session.reservations.lesson_slots.teacher_id === userId;
 
       const baseSession = {
         id: session.id,
         status: session.status,
-        scheduled_start: session.scheduled_start,
-        scheduled_end: session.scheduled_end,
-        actual_start: session.actual_start,
-        actual_end: session.actual_end,
+        scheduled_start: session.reservations.booked_start_time,
+        scheduled_end: session.reservations.booked_end_time,
+        actual_start: session.actual_start_time,
+        actual_end: session.actual_end_time,
         reservation: {
-          id: session.reservation.id,
-          status: session.reservation.status,
-          total_amount: session.reservation.total_amount,
-          booked_start_time: session.reservation.booked_start_time,
-          booked_end_time: session.reservation.booked_end_time
+          id: session.reservations.id,
+          status: session.reservations.status,
+          total_amount: session.reservations.total_amount,
+          booked_start_time: session.reservations.booked_start_time,
+          booked_end_time: session.reservations.booked_end_time
         },
-        teacher: session.reservation.lesson_slots.users,
-        student: session.reservation.users
+        teacher: session.reservations.lesson_slots.users,
+        student: session.reservations.users
       };
 
       // メンターは全情報を見られる
       if (isTeacher) {
         return {
           ...baseSession,
-          lesson_notes: session.lesson_notes,
-          homework: session.homework,
+          lesson_notes: session.notes,
+          homework: session.homework_assigned,
           materials_used: session.materials_used,
           student_feedback: session.student_feedback,
-          mentor_feedback: session.mentor_feedback,
-          rating: session.rating
+          mentor_feedback: session.teacher_feedback,
+          rating: session.student_rating
         };
       }
 
@@ -141,13 +141,13 @@ export async function GET(request: NextRequest) {
       if (isStudent) {
         return {
           ...baseSession,
-          homework: session.homework,
+          homework: session.homework_assigned,
           materials_used: session.materials_used,
           student_feedback: session.student_feedback,
-          mentor_feedback: session.mentor_feedback,
-          rating: session.rating,
+          mentor_feedback: session.teacher_feedback,
+          rating: session.teacher_rating,
           // レッスンメモは完了後のみ表示
-          lesson_notes: session.status === 'COMPLETED' ? session.lesson_notes : null
+          lesson_notes: session.status === 'COMPLETED' ? session.notes : null
         };
       }
 

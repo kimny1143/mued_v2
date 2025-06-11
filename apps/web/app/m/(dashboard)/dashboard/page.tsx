@@ -86,9 +86,18 @@ export default async function MobileDashboardPage() {
                 <h1 className="text-xl font-semibold text-gray-900">
                   こんにちは、{userName}さん
                 </h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  {isMentor ? 'メンターダッシュボード' : '生徒ダッシュボード'}
-                </p>
+                <div className="mt-1">
+                  <span className={`
+                    inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                    ${session.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
+                      session.role === 'mentor' ? 'bg-blue-100 text-blue-800' : 
+                      'bg-green-100 text-green-800'}
+                  `}>
+                    {session.role === 'admin' ? '管理者' : 
+                     session.role === 'mentor' ? 'メンター' : 
+                     '生徒'}
+                  </span>
+                </div>
               </div>
               <a
                 href="/api/auth/logout"

@@ -31,14 +31,18 @@ interface NavItem {
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  userRole: string;
-  userName: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string | null;
+  };
+  roleName: string;
   title?: string;
   fullWidth?: boolean;
   actions?: React.ReactNode;
 }
 
-export default function DashboardLayout({ children, userRole, userName, title, fullWidth, actions }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, user, roleName, title, fullWidth, actions }: DashboardLayoutProps) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -64,7 +68,7 @@ export default function DashboardLayout({ children, userRole, userName, title, f
       }
     ];
 
-    if (userRole === 'admin') {
+    if (roleName === 'admin') {
       return [
         ...commonItems.slice(0, 1),
         { 
@@ -89,7 +93,7 @@ export default function DashboardLayout({ children, userRole, userName, title, f
         },
         ...commonItems.slice(1)
       ];
-    } else if (userRole === 'mentor') {
+    } else if (roleName === 'mentor') {
       return [
         ...commonItems.slice(0, 1),
         { 
@@ -213,8 +217,19 @@ export default function DashboardLayout({ children, userRole, userName, title, f
             <UserCircleIcon className="h-10 w-10 text-gray-400" />
             {isSidebarOpen && (
               <div>
-                <p className="text-sm font-medium">{userName}</p>
-                <p className="text-xs text-gray-500 capitalize">{userRole}</p>
+                <p className="text-sm font-medium">{user.name || user.email}</p>
+                <div className="mt-1">
+                  <span className={`
+                    inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                    ${roleName === 'admin' ? 'bg-purple-100 text-purple-800' : 
+                      roleName === 'mentor' ? 'bg-blue-100 text-blue-800' : 
+                      'bg-green-100 text-green-800'}
+                  `}>
+                    {roleName === 'admin' ? '管理者' : 
+                     roleName === 'mentor' ? 'メンター' : 
+                     '生徒'}
+                  </span>
+                </div>
               </div>
             )}
           </div>
