@@ -110,14 +110,7 @@ export async function GET(request: NextRequest) {
       .from(tableName)
       .select(`
         *,
-        users!teacher_id(id, name, image),
-        reservations!inner(
-          id,
-          booked_start_time,
-          booked_end_time,
-          status,
-          users!student_id(id, name, email)
-        )
+        teacher:users(id, name, image)
       `)
       .order('start_time', { ascending: true });
 
@@ -185,13 +178,13 @@ export async function GET(request: NextRequest) {
       .from(reservationTableName)
       .select(`
         id,
-        lesson_slot_id,
+        slot_id,
         booked_start_time,
         booked_end_time,
         status,
         users!student_id(id, name, email)
       `)
-      .in('lesson_slot_id', slots.map(slot => slot.id));
+      .in('slot_id', slots.map(slot => slot.id));
     
     // ビューを使用しない場合はステータスでフィルタリング
     if (!useDbViews) {
@@ -203,7 +196,7 @@ export async function GET(request: NextRequest) {
     // スロットと予約を結合
     const slotsWithReservations = slots.map(slot => ({
       ...slot,
-      reservations: reservations?.filter(r => r.lesson_slot_id === slot.id) || []
+      reservations: reservations?.filter(r => r.slot_id === slot.id) || []
     }));
     
     // DBレベルで既にフィルタリング済みのため、アプリケーション層でのフィルタは不要
@@ -244,7 +237,7 @@ export async function GET(request: NextRequest) {
         createdAt: slot.created_at,               // created_at → createdAt
         updatedAt: slot.updated_at,               // updated_at → updatedAt
         // フロントエンドが期待するteacher形式に変換
-        teacher: slot.users,
+        teacher: slot.teacher || slot.users,
         // 予約情報もキャメルケースに変換（過去の予約も除外）
         reservations: slot.reservations
           .filter((reservation: any) => !isPastJst(reservation.booked_end_time))
@@ -494,7 +487,7 @@ export async function POST(request: NextRequest) {
       })
       .select(`
         *,
-        users!teacher_id(id, name, email, image)
+        teacher:users(id, name, email, image)
       `)
       .single();
     
@@ -523,7 +516,7 @@ export async function POST(request: NextRequest) {
       updatedAt: newSlot.updated_at,           // updated_at → updatedAt
       // descriptionフィールドは存在しないため除外
       // teacher情報をincludeから取得
-      teacher: newSlot.users,
+      teacher: newSlot.teacher || newSlot.users,
       reservations: []  // 新規作成時は予約は空
     };
     

@@ -146,7 +146,6 @@ model reservations {
   payments          payments?         @relation(fields: [payment_id], references: [id])
   lesson_slots      lesson_slots      @relation(fields: [slot_id], references: [id])
   users             users             @relation(fields: [student_id], references: [id])
-  lesson_sessions   lesson_sessions?
 
   @@index([slot_id])
   @@index([status])
@@ -220,6 +219,32 @@ model users {
   @@index([role_id], map: "idx_users_role_id")
 }
 
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model lesson_sessions {
+  id                String              @id
+  reservation_id    String              @unique
+  status            LessonSessionStatus @default(SCHEDULED)
+  actual_start_time DateTime?
+  actual_end_time   DateTime?
+  duration_minutes  Int?
+  notes             String?
+  teacher_feedback  String?
+  student_feedback  String?
+  teacher_rating    Int?
+  student_rating    Int?
+  recording_url     String?
+  materials_used    String[]
+  homework_assigned String?
+  next_lesson_notes String?
+  created_at        DateTime            @default(now())
+  updated_at        DateTime
+
+  @@index([actual_start_time], map: "idx_lesson_sessions_actual_start_time")
+  @@index([created_at], map: "idx_lesson_sessions_created_at")
+  @@index([reservation_id], map: "idx_lesson_sessions_reservation_id")
+  @@index([status], map: "idx_lesson_sessions_status")
+}
+
 enum PaymentStatus {
   PENDING
   SUCCEEDED
@@ -243,148 +268,4 @@ enum LessonSessionStatus {
   COMPLETED
   CANCELED
   NO_SHOW
-}
-
-// ============================================
-// Tables
-// ============================================
-
-/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
-model lesson_sessions {
-  id                String              @id
-  reservation_id    String              @unique
-  status            LessonSessionStatus @default(SCHEDULED)
-  actual_start_time DateTime?
-  actual_end_time   DateTime?
-  duration_minutes  Int?
-  notes             String?
-  teacher_feedback  String?
-  student_feedback  String?
-  teacher_rating    Int?
-  student_rating    Int?
-  recording_url     String?
-  materials_used    String[]
-  homework_assigned String?
-  next_lesson_notes String?
-  created_at        DateTime            @default(now())
-  updated_at        DateTime
-  reservations      reservations        @relation(fields: [reservation_id], references: [id])
-
-  @@index([reservation_id])
-  @@index([status])
-  @@index([actual_start_time])
-  @@index([created_at])
-}
-
-// ============================================
-// Views (read-only)
-// ============================================
-
-/// Database view for active lesson slots
-model active_lesson_slots {
-  id           String   @id
-  currency     String   @default("JPY")
-  created_at   DateTime @default(now())
-  end_time     DateTime
-  hourly_rate  Int      @default(6000)
-  is_available Boolean  @default(true)
-  max_duration Int?     @default(90)
-  max_hours    Int?
-  min_duration Int?     @default(60)
-  min_hours    Int      @default(1)
-  start_time   DateTime
-  teacher_id   String
-  updated_at   DateTime
-
-  @@map("active_lesson_slots")
-}
-
-/// Database view for active reservations
-model active_reservations {
-  id                String            @id
-  status            ReservationStatus @default(PENDING_APPROVAL)
-  notes             String?
-  approved_at       DateTime?
-  approved_by       String?
-  booked_end_time   DateTime
-  booked_start_time DateTime
-  cancel_reason     String?
-  canceled_at       DateTime?         @db.Timestamp(6)
-  canceled_by       String?           @db.VarChar(255)
-  created_at        DateTime          @default(now())
-  duration_minutes  Int?              @default(60)
-  hours_booked      Int               @default(1)
-  payment_id        String?           @unique
-  rejected_at       DateTime?
-  rejection_reason  String?
-  rescheduled_from  String?           @db.VarChar(255)
-  rescheduled_to    String?           @db.VarChar(255)
-  slot_id           String
-  student_id        String
-  total_amount      Int
-  updated_at        DateTime
-
-  @@map("active_reservations")
-}
-
-/// Database view for active lesson sessions
-model active_lesson_sessions {
-  id                   String              @id
-  reservation_id       String              @unique
-  status               LessonSessionStatus @default(SCHEDULED)
-  actual_start_time    DateTime?
-  actual_end_time      DateTime?
-  duration_minutes     Int?
-  notes                String?
-  teacher_feedback     String?
-  student_feedback     String?
-  teacher_rating       Int?
-  student_rating       Int?
-  recording_url        String?
-  materials_used       String[]
-  homework_assigned    String?
-  next_lesson_notes    String?
-  created_at           DateTime            @default(now())
-  updated_at           DateTime
-  // Additional fields from JOIN
-  student_id           String
-  booked_start_time    DateTime
-  booked_end_time      DateTime
-  teacher_id           String
-  scheduled_start_time DateTime
-  scheduled_end_time   DateTime
-
-  @@map("active_lesson_sessions")
-}
-
-/// Database view for today's lesson sessions
-model todays_lesson_sessions {
-  id                   String              @id
-  reservation_id       String              @unique
-  status               LessonSessionStatus @default(SCHEDULED)
-  actual_start_time    DateTime?
-  actual_end_time      DateTime?
-  duration_minutes     Int?
-  notes                String?
-  teacher_feedback     String?
-  student_feedback     String?
-  teacher_rating       Int?
-  student_rating       Int?
-  recording_url        String?
-  materials_used       String[]
-  homework_assigned    String?
-  next_lesson_notes    String?
-  created_at           DateTime            @default(now())
-  updated_at           DateTime
-  // Additional fields from JOIN
-  student_id           String
-  booked_start_time    DateTime
-  booked_end_time      DateTime
-  teacher_id           String
-  scheduled_start_time DateTime
-  scheduled_end_time   DateTime
-  student_name         String?
-  teacher_name         String?
-
-  @@map("todays_lesson_sessions")
 }
