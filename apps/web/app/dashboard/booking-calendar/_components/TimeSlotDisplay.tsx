@@ -2,6 +2,7 @@
 
 import { addMinutes, format, isSameDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { formatJst } from '@/lib/utils/timezone';
 import { Clock } from 'lucide-react';
 import React from 'react';
 
@@ -35,7 +36,7 @@ function generateTimeOptions(slot: TimeSlot): Array<{startTime: Date, label: str
   let currentTime = new Date(startTime);
   
   while (currentTime <= maxStartTime) {
-    const label = format(currentTime, 'HH:mm');
+    const label = formatJst(currentTime, 'HH:mm');
     options.push({
       startTime: new Date(currentTime),
       label: label
@@ -67,7 +68,7 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
 
   console.log(`${selectedDate?.toDateString()} のスロット数: ${filteredTimeSlots.length}件`);
   if (filteredTimeSlots.length > 0) {
-    console.log('例:', filteredTimeSlots.map(slot => format(new Date(slot.startTime), 'HH:mm')));
+    console.log('例:', filteredTimeSlots.map(slot => formatJst(slot.startTime, 'HH:mm')));
   }
 
   const formattedDate = selectedDate
@@ -94,19 +95,19 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
           <div className="space-y-4">
             {filteredTimeSlots.map((slot) => {
               const timeOptions = generateTimeOptions(slot);
-              const slotEndTime = format(new Date(slot.endTime), 'HH:mm');
+              const slotEndTime = formatJst(slot.endTime, 'HH:mm');
               const hourlyRate = slot.hourlyRate || 5000; // デフォルト料金
               
               // デバッグ用に追加
               console.log('slot.startTime文字列:', slot.startTime);
               console.log('Dateオブジェクト:', new Date(slot.startTime));
-              console.log('表示時刻:', format(new Date(slot.startTime), 'HH:mm'));
+              console.log('表示時刻:', formatJst(slot.startTime, 'HH:mm'));
 
               return (
                 <div key={slot.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-3">
                     <h4 className="font-medium text-gray-900">
-                      空き時間: {format(new Date(slot.startTime), 'HH:mm')} 〜 {slotEndTime}
+                      空き時間: {formatJst(slot.startTime, 'HH:mm')} 〜 {slotEndTime}
                     </h4>
                     <div className="text-sm text-gray-600">
                       ¥{hourlyRate.toLocaleString()}/時間
@@ -148,7 +149,7 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
                   {selectedSlot && selectedSlot.id === slot.id && (
                     <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-800">
-                        <strong>選択済み:</strong> {format(selectedSlot.startTime, 'HH:mm')}開始 
+                        <strong>選択済み:</strong> {formatJst(selectedSlot.startTime, 'HH:mm')}開始 
                         （終了時間は講師と相談して決定）
                       </p>
                       <p className="text-xs text-blue-600 mt-1">

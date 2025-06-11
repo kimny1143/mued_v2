@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { formatJst } from '@/lib/utils/timezone';
 import { X, Clock, User, CreditCard } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
@@ -171,7 +172,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       
       options.push({
         time: new Date(currentTime),
-        label: format(currentTime, 'HH:mm'),
+        label: formatJst(currentTime, 'HH:mm'),
         isAvailable,
         unavailableReason
       });
@@ -345,13 +346,13 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     <div>
                       <div className="font-medium text-gray-900">{selectedMentor.name}</div>
                       <div className="text-sm text-gray-600">
-                        スロット時間: {format(new Date(selectedSlot.startTime), 'HH:mm')} - 
-                        {format(new Date(selectedSlot.endTime), 'HH:mm')}
+                        スロット時間: {formatJst(selectedSlot.startTime, 'HH:mm')} - 
+                        {formatJst(selectedSlot.endTime, 'HH:mm')}
                       </div>
                       {selectedStartTime && selectedEndTime && (
                         <div className="text-sm font-medium text-primary">
-                          予約時間: {format(selectedStartTime, 'HH:mm')} - 
-                          {format(selectedEndTime, 'HH:mm')} ({duration}分)
+                          予約時間: {formatJst(selectedStartTime, 'HH:mm')} - 
+                          {formatJst(selectedEndTime, 'HH:mm')} ({duration}分)
                         </div>
                       )}
                     </div>
@@ -429,7 +430,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                                   }`}
                                   title={!option.isAvailable ? option.unavailableReason : undefined}
                                 >
-                                  {format(option.time, 'HH:mm')}
+                                  {formatJst(option.time, 'HH:mm')}
                                 </button>
                                 {!option.isAvailable && option.unavailableReason?.includes('他のメンター') && (
                                   <div className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full" 
@@ -459,7 +460,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                     {selectedStartTime && selectedEndTime && (
                       <div className="mt-3 p-3 bg-green-50 rounded-lg">
                         <p className="text-sm text-green-800">
-                          <strong>選択された時間:</strong> {format(selectedStartTime, 'HH:mm')} - {format(selectedEndTime, 'HH:mm')} ({duration}分)
+                          <strong>選択された時間:</strong> {formatJst(selectedStartTime, 'HH:mm')} - {formatJst(selectedEndTime, 'HH:mm')} ({duration}分)
                         </p>
                       </div>
                     )}
@@ -490,7 +491,7 @@ export const BookingModal: React.FC<BookingModalProps> = ({
                       <span className="font-medium">
                         {selectedDate && format(selectedDate, 'M月d日(E)', { locale: ja })}
                         {selectedStartTime && selectedEndTime && (
-                          <> {format(selectedStartTime, 'HH:mm')}-{format(selectedEndTime, 'HH:mm')}</>
+                          <> {formatJst(selectedStartTime, 'HH:mm')}-{formatJst(selectedEndTime, 'HH:mm')}</>
                         )}
                       </span>
                     </div>
