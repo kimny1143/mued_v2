@@ -102,3 +102,7 @@ backup/*
 
 #doc内機密情報
 docs/secret/*
+
+# scripts（データベース復元・バックアップ等）
+scripts/
+!/apps/web/scripts/

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/session';
 import { createCorsResponse, handleOptions } from '@/lib/cors';
+import { getFeature } from '@/lib/config/features';
 
 // このルートは動的である必要があります（認証ヘッダーを使用するため）
 export const dynamic = 'force-dynamic';
@@ -55,32 +56,50 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // フィーチャーフラグでビュー使用を判定
+    const useDbViews = getFeature('USE_DB_VIEWS');
+    // lesson_sessionsテーブルがないため、ビューは使用しない
+    const tableName = 'lesson_sessions';
+    
+    console.log(`sessions API: ${tableName}を使用 (ビュー利用: 無効)`);
+    
     // セッション一覧を取得
-    const [sessions, total] = await Promise.all([
-      prisma.lesson_sessions.findMany({
-        where,
-        include: {
-          reservation: {
-            include: {
-              lesson_slots: {
-                include: {
-                  users: {
-                    select: { id: true, name: true, email: true, image: true }
+    let sessions: any[];
+    let total: number;
+    
+    try {
+      // 通常のPrismaクエリを使用
+      [sessions, total] = await Promise.all([
+        prisma.lesson_sessions.findMany({
+          where,
+          include: {
+            reservation: {
+              include: {
+                lesson_slots: {
+                  include: {
+                    users: {
+                      select: { id: true, name: true, email: true, image: true }
+                    }
                   }
+                },
+                users: {
+                  select: { id: true, name: true, email: true, image: true }
                 }
-              },
-              users: {
-                select: { id: true, name: true, email: true, image: true }
               }
             }
-          }
-        },
-        orderBy: { scheduled_start: 'desc' },
-        take: limit,
-        skip: offset
-      }),
-      prisma.lesson_sessions.count({ where })
-    ]);
+          },
+          orderBy: { scheduled_start: 'desc' },
+          take: limit,
+          skip: offset
+        }),
+        prisma.lesson_sessions.count({ where })
+      ]);
+    } catch (error) {
+      console.error('lesson_sessionsテーブルエラー:', error);
+      // テーブルが存在しない場合は空の結果を返す
+      sessions = [];
+      total = 0;
+    }
 
     // ユーザーロールに応じて情報をフィルタリング
     const formattedSessions = sessions.map(session => {

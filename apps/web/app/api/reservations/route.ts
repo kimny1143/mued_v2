@@ -16,6 +16,7 @@ import { convertReservationToResponse } from '@/lib/caseConverter';
 import { getSessionFromRequest } from '@/lib/session';
 import { getBaseUrl, calculateTotalReservedMinutes, calculateSlotTotalMinutes } from '@/lib/utils';
 import { isPastJst, addJstFields } from '@/lib/utils/timezone';
+import { getFeature } from '@/lib/config/features';
 
 import { prisma } from '../../../lib/prisma';
 
@@ -91,6 +92,12 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate'); // 開始日
     const endDate = searchParams.get('endDate'); // 終了日
     
+    // フィーチャーフラグでビュー使用を判定
+    const useDbViews = getFeature('USE_DB_VIEWS');
+    const tableName = useDbViews ? 'active_reservations' : 'reservations';
+    
+    console.log(`APIレスポンス: ${tableName}を使用 (ビュー利用: ${useDbViews})`);
+    
     // クエリ条件を構築
     const where: Prisma.reservationsWhereInput = {};
     
@@ -154,11 +161,85 @@ export async function GET(request: NextRequest) {
     console.log('📊 Prismaクエリ実行開始...');
     console.log('🔍 Where条件:', JSON.stringify(where, null, 2));
     
-    // まず基本的な予約データのみを取得（JOINなし）
-    const queryPromise = executePrismaQuery(() => prisma.reservations.findMany({
-      where,
-      orderBy: { created_at: 'desc' },
-    }));
+    // フィーチャーフラグに基づいてクエリを構築
+    let queryPromise: Promise<any[]>;
+    
+    if (useDbViews) {
+      // ビューを使用する場合は$queryRawを使用
+      const conditions: string[] = [];
+      const values: any[] = [];
+      let paramCount = 1;
+      
+      // ベースクエリ
+      let baseQuery = `SELECT * FROM ${tableName}`;
+      
+      // 条件構築
+      if (!includeAll) {
+        if (sessionInfo.role === 'mentor') {
+          conditions.push(`lesson_slot_id IN (SELECT id FROM lesson_slots WHERE teacher_id = $${paramCount})`);
+          values.push(sessionInfo.user.id);
+          paramCount++;
+        } else if (sessionInfo.role !== 'admin') {
+          conditions.push(`student_id = $${paramCount}`);
+          values.push(sessionInfo.user.id);
+          paramCount++;
+        }
+      }
+      
+      if (status) {
+        conditions.push(`status = $${paramCount}`);
+        values.push(status);
+        paramCount++;
+      }
+      
+      if (slotId) {
+        conditions.push(`slot_id = $${paramCount}`);
+        values.push(slotId);
+        paramCount++;
+      }
+      
+      if (date) {
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        conditions.push(`booked_start_time >= $${paramCount} AND booked_start_time <= $${paramCount + 1}`);
+        values.push(startOfDay.toISOString(), endOfDay.toISOString());
+        paramCount += 2;
+      } else if (startDate || endDate) {
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          conditions.push(`booked_start_time >= $${paramCount}`);
+          values.push(start.toISOString());
+          paramCount++;
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          conditions.push(`booked_start_time <= $${paramCount}`);
+          values.push(end.toISOString());
+          paramCount++;
+        }
+      }
+      
+      // WHERE句を追加
+      if (conditions.length > 0) {
+        baseQuery += ' WHERE ' + conditions.join(' AND ');
+      }
+      
+      // ORDER BY句を追加
+      baseQuery += ' ORDER BY created_at DESC';
+      
+      queryPromise = executePrismaQuery(() => prisma.$queryRawUnsafe(baseQuery, ...values));
+    } else {
+      // 従来のPrismaクエリ
+      queryPromise = executePrismaQuery(() => prisma.reservations.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+      }));
+    }
     
     // 10秒タイムアウトを追加
     const timeoutPromise = new Promise((_, reject) => {
@@ -168,8 +249,8 @@ export async function GET(request: NextRequest) {
     const reservations = await Promise.race([queryPromise, timeoutPromise]) as any[];
     console.log('📊 Prismaクエリ完了:', reservations.length, '件');
     
-    // 過去の予約をフィルタリング（includeAllの場合は過去も含める）
-    const filteredReservations = includeAll 
+    // 過去の予約をフィルタリング（ビューを使用している場合は既にフィルタ済み）
+    const filteredReservations = useDbViews || includeAll 
       ? reservations 
       : reservations.filter(reservation => {
           // 終了時刻が過去の予約は除外

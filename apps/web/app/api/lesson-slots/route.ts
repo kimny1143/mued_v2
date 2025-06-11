@@ -10,6 +10,7 @@ import { getSessionFromRequest } from '@/lib/session';
 import { stripe } from '@/lib/stripe';
 import { generateHourlySlots } from '@/lib/utils';
 import { isPastJst, addJstFields } from '@/lib/utils/timezone';
+import { getFeature } from '@/lib/config/features';
 
 // 予約ステータスの列挙型（現在は未使用だがAPIの拡張で使用予定）
 enum _ReservationStatus {
@@ -98,9 +99,15 @@ export async function GET(request: NextRequest) {
     
     const supabase = createServiceClient();
     
+    // フィーチャーフラグでビュー使用を判定
+    const useDbViews = getFeature('USE_DB_VIEWS');
+    const tableName = useDbViews ? 'active_lesson_slots' : 'lesson_slots';
+    
+    console.log(`APIレスポンス: ${tableName}を使用 (ビュー利用: ${useDbViews})`);
+    
     // Supabaseクエリを構築
     let query = supabase
-      .from('lesson_slots')
+      .from(tableName)
       .select(`
         *,
         users!teacher_id(id, name, image),
@@ -131,6 +138,12 @@ export async function GET(request: NextRequest) {
       const end = new Date(endDate);
       end.setHours(23, 59, 59, 999);
       query = query.lte('start_time', end.toISOString());
+    }
+    
+    // 過去のスロットを除外（ビューを使用しない場合のみ）
+    if (!useDbViews) {
+      const now = new Date().toISOString();
+      query = query.gte('end_time', now);
     }
     
     // 時間の制約でフィルタリング（分単位を優先）
@@ -167,8 +180,9 @@ export async function GET(request: NextRequest) {
     }
 
     // 予約情報を別途取得（inner joinでは予約がないスロットが除外されるため）
-    const { data: reservations } = await supabase
-      .from('reservations')
+    const reservationTableName = useDbViews ? 'active_reservations' : 'reservations';
+    let reservationQuery = supabase
+      .from(reservationTableName)
       .select(`
         id,
         lesson_slot_id,
@@ -177,8 +191,14 @@ export async function GET(request: NextRequest) {
         status,
         users!student_id(id, name, email)
       `)
-      .in('status', ['PENDING', 'CONFIRMED', 'APPROVED', 'PENDING_APPROVAL'])
       .in('lesson_slot_id', slots.map(slot => slot.id));
+    
+    // ビューを使用しない場合はステータスでフィルタリング
+    if (!useDbViews) {
+      reservationQuery = reservationQuery.in('status', ['PENDING', 'CONFIRMED', 'APPROVED', 'PENDING_APPROVAL']);
+    }
+    
+    const { data: reservations } = await reservationQuery;
 
     // スロットと予約を結合
     const slotsWithReservations = slots.map(slot => ({
@@ -186,11 +206,8 @@ export async function GET(request: NextRequest) {
       reservations: reservations?.filter(r => r.lesson_slot_id === slot.id) || []
     }));
     
-    // 過去のスロットをフィルタリング（終了時刻が現在より前のものを除外）
-    const activeSlotsWithReservations = slotsWithReservations.filter(slot => {
-      // スロットの終了時刻が過去でないかチェック
-      return !isPastJst(slot.end_time);
-    });
+    // DBレベルで既にフィルタリング済みのため、アプリケーション層でのフィルタは不要
+    const activeSlotsWithReservations = slotsWithReservations;
     
     // 各スロットの予約済み時間帯情報を整形して返す（スネークケース→キャメルケース変換）
     const enhancedSlots = activeSlotsWithReservations.map(slot => {

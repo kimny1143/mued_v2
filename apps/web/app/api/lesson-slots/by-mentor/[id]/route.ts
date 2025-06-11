@@ -8,6 +8,7 @@ import { parseISO, isValid, isBefore } from 'date-fns';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
+import { getFeature } from '@/lib/config/features';
 
 
 // スロットの拡張型定義（動的プロパティへの対応）
@@ -112,27 +113,60 @@ export async function GET(
       );
     }
     
-    // 指定されたメンターの予約可能枠を取得
-    const lessonSlots = await prisma.lesson_slots.findMany({
-      where: {
-        teacher_id: mentorId,
-        start_time: {
-          gte: fromDate,
-          lte: toDate,
-        },
-      },
-      include: {
-        reservations: {
-          select: {
-            id: true,
-            status: true,
+    // フィーチャーフラグでビュー使用を判定
+    const useDbViews = getFeature('USE_DB_VIEWS');
+    const tableName = useDbViews ? 'active_lesson_slots' : 'lesson_slots';
+    const reservationTableName = useDbViews ? 'active_reservations' : 'reservations';
+    
+    console.log(`by-mentor API: ${tableName}を使用 (ビュー利用: ${useDbViews})`);
+    
+    let lessonSlots: any[];
+    
+    if (useDbViews) {
+      // ビューを使用する場合
+      const slotsQuery = await prisma.$queryRaw`
+        SELECT 
+          ls.*,
+          COALESCE(
+            json_agg(
+              json_build_object('id', r.id, 'status', r.status) 
+              ORDER BY r.created_at
+            ) FILTER (WHERE r.id IS NOT NULL),
+            '[]'::json
+          ) as reservations
+        FROM ${Prisma.raw(tableName)} ls
+        LEFT JOIN ${Prisma.raw(reservationTableName)} r ON r.slot_id = ls.id
+        WHERE ls.teacher_id = ${mentorId}
+          AND ls.start_time >= ${fromDate.toISOString()}
+          AND ls.start_time <= ${toDate.toISOString()}
+        GROUP BY ls.id
+        ORDER BY ls.start_time ASC
+      `;
+      
+      lessonSlots = slotsQuery as any[];
+    } else {
+      // 通常のPrismaクエリ
+      lessonSlots = await prisma.lesson_slots.findMany({
+        where: {
+          teacher_id: mentorId,
+          start_time: {
+            gte: fromDate,
+            lte: toDate,
           },
         },
-      },
-      orderBy: {
-        start_time: 'asc',
-      },
-    });
+        include: {
+          reservations: {
+            select: {
+              id: true,
+              status: true,
+            },
+          },
+        },
+        orderBy: {
+          start_time: 'asc',
+        },
+      });
+    }
     
     // クライアントに返すデータ形式に変換
     const formattedSlots = lessonSlots.map(slot => ({

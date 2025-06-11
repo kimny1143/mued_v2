@@ -73,7 +73,13 @@ export function getSiteUrl(): string {
     });
   }
   
-  // 1. NEXT_PUBLIC_URL を最優先（Vercel環境設定で使用）
+  // ローカル開発環境を最優先
+  if (process.env.NODE_ENV === 'development' && !process.env.VERCEL_ENV) {
+    console.log('[getSiteUrl] ローカル開発環境を検出 - http://localhost:3000 を使用');
+    return 'http://localhost:3000';
+  }
+  
+  // 1. NEXT_PUBLIC_URL を優先（Vercel環境設定で使用）
   if (process.env.NEXT_PUBLIC_URL) {
     console.log('[getSiteUrl] NEXT_PUBLIC_URL を使用:', process.env.NEXT_PUBLIC_URL);
     return process.env.NEXT_PUBLIC_URL;
