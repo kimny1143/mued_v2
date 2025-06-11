@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { formatJst } from '@/lib/utils/timezone';
 import { X, Clock, Edit, Trash2, Save, Plus, AlertTriangle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 
@@ -94,10 +95,10 @@ export const SlotModal: React.FC<SlotModalProps> = ({
       const endTime = new Date(slot.endTime);
       
       setFormData({
-        startDate: format(startTime, 'yyyy-MM-dd'),
-        startTime: format(startTime, 'HH:mm'),
-        endDate: format(endTime, 'yyyy-MM-dd'),
-        endTime: format(endTime, 'HH:mm'),
+        startDate: formatJst(startTime, 'yyyy-MM-dd'),
+        startTime: formatJst(startTime, 'HH:mm'),
+        endDate: formatJst(endTime, 'yyyy-MM-dd'),
+        endTime: formatJst(endTime, 'HH:mm'),
         hourlyRate: slot.hourlyRate || 5000,
         // descriptionフィールドは存在しないため除外
         // description: slot.description || '',
@@ -137,8 +138,9 @@ export const SlotModal: React.FC<SlotModalProps> = ({
     }
     
     // 日付と時刻を組み合わせて比較
-    const startDateTime = new Date(`${formData.startDate}T${formData.startTime}:00`);
-    const endDateTime = new Date(`${formData.endDate}T${formData.endTime}:00`);
+    // 日本時間として比較
+    const startDateTime = new Date(`${formData.startDate}T${formData.startTime}:00+09:00`);
+    const endDateTime = new Date(`${formData.endDate}T${formData.endTime}:00+09:00`);
     
     if (endDateTime <= startDateTime) {
       setError('終了日時は開始日時より後に設定してください。');
@@ -169,12 +171,14 @@ export const SlotModal: React.FC<SlotModalProps> = ({
       }
 
       // 日付と時刻を組み合わせて DateTime を作成
-      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}:00`);
-      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}:00`);
+      // 日本時間として入力されたものを正しくUTCに変換する
+      // 例: 2025-06-14 10:00 JST -> 2025-06-14 01:00 UTC
+      const startDateTimeJST = new Date(`${formData.startDate}T${formData.startTime}:00+09:00`);
+      const endDateTimeJST = new Date(`${formData.endDate}T${formData.endTime}:00+09:00`);
 
       const slotData = {
-        startTime: startDateTime.toISOString(),
-        endTime: endDateTime.toISOString(),
+        startTime: startDateTimeJST.toISOString(),
+        endTime: endDateTimeJST.toISOString(),
         hourlyRate: formData.hourlyRate,
         // descriptionフィールドは存在しないため除外
         // description: formData.description || undefined,
@@ -424,8 +428,8 @@ export const SlotModal: React.FC<SlotModalProps> = ({
                     <div className="p-4 bg-gray-50 rounded-lg">
                       <h4 className="font-medium text-gray-900 mb-2">時間</h4>
                       <p className="text-lg">
-                        {format(new Date(slot.startTime), 'HH:mm')} - 
-                        {format(new Date(slot.endTime), 'HH:mm')}
+                        {formatJst(slot.startTime, 'HH:mm')} - 
+                        {formatJst(slot.endTime, 'HH:mm')}
                       </p>
                       <p className="text-sm text-gray-600">
                         {Math.round((new Date(slot.endTime).getTime() - new Date(slot.startTime).getTime()) / (1000 * 60))}分
@@ -463,8 +467,8 @@ export const SlotModal: React.FC<SlotModalProps> = ({
                               <p className="text-sm text-gray-600">
                                 {reservation.bookedStartTime && reservation.bookedEndTime && (
                                   <>
-                                    {format(new Date(reservation.bookedStartTime), 'HH:mm')} - 
-                                    {format(new Date(reservation.bookedEndTime), 'HH:mm')}
+                                    {formatJst(reservation.bookedStartTime, 'HH:mm')} - 
+                                    {formatJst(reservation.bookedEndTime, 'HH:mm')}
                                   </>
                                 )}
                               </p>
@@ -502,7 +506,7 @@ export const SlotModal: React.FC<SlotModalProps> = ({
                               <div key={res.id} className="text-xs text-amber-600">
                                 • {res.student?.name || '予約者'}: 
                                 {res.bookedStartTime && res.bookedEndTime && (
-                                  <> {format(new Date(res.bookedStartTime), 'HH:mm')} - {format(new Date(res.bookedEndTime), 'HH:mm')}</>
+                                  <> {formatJst(res.bookedStartTime, 'HH:mm')} - {formatJst(res.bookedEndTime, 'HH:mm')}</>
                                 )}
                               </div>
                             ))}

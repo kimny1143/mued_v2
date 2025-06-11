@@ -3,6 +3,7 @@
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, startOfDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
+import { formatJst } from '@/lib/utils/timezone';
 import React, { useState } from 'react';
 
 import { Button } from '@/app/components/ui/button';
@@ -132,8 +133,8 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
       if (slot.id === '4e5910f0-1120-472e-a676-cb6ada1cde57') {
         console.log('🌙 22:30-5:30スロット確認:', {
           slotId: slot.id,
-          開始: slotStart.toLocaleString('ja-JP'),
-          終了: slotEnd.toLocaleString('ja-JP'),
+          開始: formatJst(slotStart, 'yyyy-MM-dd HH:mm'),
+          終了: formatJst(slotEnd, 'yyyy-MM-dd HH:mm'),
           検査日: date.toLocaleDateString('ja-JP'),
           表示判定: isOverlapping,
           予約: slot.reservations?.map(r => ({
@@ -332,9 +333,9 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                     ${statusColors[slotStatus]}
                                     leading-tight max-w-full truncate mb-0.5
                                   `}
-                                  title={`${format(new Date(slot.startTime), 'HH:mm')}-${format(new Date(slot.endTime), 'HH:mm')} (クリックで編集)`}
+                                  title={`${formatJst(slot.startTime, 'HH:mm')}-${formatJst(slot.endTime, 'HH:mm')} (クリックで編集)`}
                                 >
-                                  {format(new Date(slot.startTime), 'H:mm')}-{format(new Date(slot.endTime), 'H:mm')}
+                                  {formatJst(slot.startTime, 'H:mm')}-{formatJst(slot.endTime, 'H:mm')}
                                 </div>
                                 
                                 {/* 予約済み情報表示（モバイル最適化） */}
@@ -357,7 +358,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                       .slice(0, 1) // モバイルでは1件まで表示
                                       .map((reservation, resIndex) => {
                                         const startTime = new Date(reservation.bookedStartTime || '');
-                                        const timeString = format(startTime, 'HH:mm');
+                                        const timeString = formatJst(reservation.bookedStartTime || '', 'HH:mm');
                                         
                                         // ステータス別の色分け（コンパクト表示）
                                         const reservationColors = {
