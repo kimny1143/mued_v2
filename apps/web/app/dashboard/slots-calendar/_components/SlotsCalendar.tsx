@@ -161,13 +161,6 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
     }
   };
 
-  // 日付クリック処理 - 日付別予約一覧モーダルを開く
-  const handleDateClick = (date: Date) => {
-    if (onDateClick) {
-      onDateClick(date);
-    }
-  };
-
   // スロットカードをクリックしたときの処理
   const handleSlotClick = (slot: MentorLessonSlot, mode: 'view' | 'edit' = 'view') => {
     setSelectedSlot(slot);
