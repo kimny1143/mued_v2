@@ -37,7 +37,7 @@ export default async function SlotsCalendarPage() {
     redirect('/login');
   }
 
-  const userRole = user.roles?.name || 'student';
+  const userRole = user.roles?.name?.toLowerCase() || 'student';
   const userName = user.name || user.email || 'ユーザー';
 
   return (

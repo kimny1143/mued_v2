@@ -69,6 +69,7 @@ interface SlotsCalendarProps {
   onSlotDelete: (deletedSlotId: string) => void;
   onReservationClick?: (reservation: MentorLessonSlot['reservations'][0], mode?: 'view' | 'cancel' | 'reschedule' | 'approve' | 'reject') => void;
   onDateClick?: (date: Date) => void;
+  userRole?: string;
 }
 
 export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
@@ -78,6 +79,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
   onSlotDelete,
   onReservationClick,
   onDateClick,
+  userRole,
 }) => {
   // 現在表示中の日付
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -159,34 +161,10 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
     }
   };
 
-  // 空の日付エリアクリック処理 - 新規スロット作成（削除予定）
-  const handleEmptyAreaClick = (date: Date) => {
-    // 新しい実装では使用しない - 代わりにhandleDateClickを使用
-    // 日別表示で新規作成機能を提供
+  // 日付クリック処理 - 日付別予約一覧モーダルを開く
+  const handleDateClick = (date: Date) => {
     if (onDateClick) {
       onDateClick(date);
-      return;
-    }
-    
-    // フォールバック処理（onDateClickが提供されていない場合のみ）
-    const daySlots = getSlotsForDate(date);
-    setSelectedDate(date);
-    
-    if (daySlots.length === 0) {
-      // その日にスロットがない場合は新規作成モードでモーダルを開く
-      setSelectedSlot(null);
-      setModalMode('create');
-      setIsModalOpen(true);
-    } else if (daySlots.length === 1) {
-      // スロットが1つの場合はそのスロットを表示
-      setSelectedSlot(daySlots[0]);
-      setModalMode('view');
-      setIsModalOpen(true);
-    } else {
-      // 複数のスロットがある場合は選択ダイアログを表示（今回はシンプルに最初のスロットを表示）
-      setSelectedSlot(daySlots[0]);
-      setModalMode('view');
-      setIsModalOpen(true);
     }
   };
 
@@ -240,28 +218,49 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
       
       <div className="py-4 sm:py-6">
         {/* ヘッダー - 月選択 */}
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={goToPreviousMonth}
-            className="p-2"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+        <div className="mb-4 sm:mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={goToPreviousMonth}
+              className="p-2"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <h2 className="text-lg sm:text-xl font-semibold">
+              {format(currentDate, 'yyyy年 MM月', { locale: ja })}
+            </h2>
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={goToNextMonth}
+              className="p-2"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
           
-          <h2 className="text-lg sm:text-xl font-semibold">
-            {format(currentDate, 'yyyy年 MM月', { locale: ja })}
-          </h2>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={goToNextMonth}
-            className="p-2"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          {/* メンター用の新規作成ボタン */}
+          {userRole === 'mentor' && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSelectedSlot(null);
+                  setModalMode('create');
+                  setIsModalOpen(true);
+                }}
+                className="flex items-center gap-2"
+              >
+                <CalendarIcon className="h-4 w-4" />
+                新規スロット作成
+              </Button>
+            </div>
+          )}
         </div>
         
         {isLoading ? (

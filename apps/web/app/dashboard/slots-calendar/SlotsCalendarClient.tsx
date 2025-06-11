@@ -758,6 +758,7 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
               onSlotDelete={handleSlotDelete}
               onReservationClick={handleReservationClick}
               onDateClick={handleDateClick}
+              userRole={userRole}
             />
           ) : (
             selectedDayViewDate && (
