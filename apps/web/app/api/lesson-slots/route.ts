@@ -205,7 +205,10 @@ export async function GET(request: NextRequest) {
       reservationCount: reservations?.length || 0,
       sampleReservation: reservations?.[0],
       viewMode,
-      useDbViews
+      useDbViews,
+      startDate,
+      endDate,
+      slotIds: slots.map(s => s.id).slice(0, 3)
     });
 
     // スロットと予約を結合
