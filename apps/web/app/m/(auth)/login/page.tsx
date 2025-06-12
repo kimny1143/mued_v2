@@ -1,12 +1,43 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signInWithGoogle } from '@/app/actions/auth';
 import Link from 'next/link';
+import { cleanupPWASession, isPWA } from '@/lib/utils/pwa-logout';
 
 export default function MobileLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cleaningSession, setCleaningSession] = useState(false);
+
+  // PWA環境でページロード時にセッションをクリーンアップ
+  useEffect(() => {
+    const performPWACleanup = async () => {
+      // URLパラメータでログアウト後のリダイレクトを検出
+      const urlParams = new URLSearchParams(window.location.search);
+      const isAfterLogout = urlParams.get('logout') === 'true';
+      
+      if (isPWA() && isAfterLogout) {
+        setCleaningSession(true);
+        console.log('PWA環境でログアウト後のクリーンアップを実行');
+        
+        try {
+          await cleanupPWASession();
+          console.log('PWAセッションクリーンアップ完了');
+          
+          // URLパラメータを削除
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        } catch (error) {
+          console.error('PWAクリーンアップエラー:', error);
+        } finally {
+          setCleaningSession(false);
+        }
+      }
+    };
+
+    performPWACleanup();
+  }, []);
 
   const handleGoogleLogin = async () => {
     try {
@@ -61,6 +92,15 @@ export default function MobileLoginPage() {
       <div className="w-full max-w-sm bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-6 text-center">ログイン</h2>
 
+        {cleaningSession && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-600 flex items-center gap-2">
+              <span className="inline-block w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></span>
+              セッションをクリーンアップ中...
+            </p>
+          </div>
+        )}
+
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
             <p className="text-sm text-red-600">{error}</p>
@@ -69,7 +109,7 @@ export default function MobileLoginPage() {
 
         <button
           onClick={handleGoogleLogin}
-          disabled={loading}
+          disabled={loading || cleaningSession}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? (

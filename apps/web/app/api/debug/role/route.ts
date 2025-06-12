@@ -3,6 +3,9 @@ import { getServerSession } from '@/lib/server/auth';
 import { prisma } from '@/lib/prisma';
 import { createServiceClient } from '@/lib/supabase/service';
 
+// 動的レンダリングを強制（cookiesを使用するため）
+export const dynamic = 'force-dynamic';
+
 // デバッグ用：ロール情報を確認するエンドポイント
 export async function GET(request: NextRequest) {
   try {

@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/session';
 
+// 動的レンダリングを強制（cookiesを使用するため）
+export const dynamic = 'force-dynamic';
+
 /**
  * ビューを使用したアクティブなレッスンスロット取得API
  * フィーチャーフラグ: NEXT_PUBLIC_USE_DB_VIEWS=true

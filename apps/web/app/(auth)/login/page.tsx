@@ -6,6 +6,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { signInWithGoogle, signInWithEmail } from '@/app/actions/auth';
 import { supabaseBrowser as supabase } from '@/lib/supabase-browser';
 import { getBaseUrl } from '@/lib/utils';
+import { cleanupPWASession, isPWA } from '@/lib/utils/pwa-logout';
 
 // 検索パラメータを使用するコンポーネント
 function LoginContent() {
@@ -21,28 +22,55 @@ function LoginContent() {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [cleaningSession, setCleaningSession] = useState(false);
   
-  // ServiceWorkerの登録解除とキャッシュクリア（キャッシュ問題対策）
+  // PWAセッションクリーンアップ（ログアウト後）
   useEffect(() => {
-    // ServiceWorkerの登録解除
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then((registrations) => {
-        registrations.forEach((registration) => {
-          registration.unregister();
-          console.log('[ServiceWorker] 登録解除:', registration.scope);
-        });
-      });
-    }
+    const performCleanup = async () => {
+      const isAfterLogout = searchParams.get('logout') === 'true';
+      
+      if (isAfterLogout) {
+        setCleaningSession(true);
+        console.log('ログアウト後のクリーンアップを実行');
+        
+        try {
+          // PWA環境の場合は強力なクリーンアップを実行
+          if (isPWA()) {
+            await cleanupPWASession();
+          } else {
+            // 通常環境でも基本的なクリーンアップを実行
+            // ServiceWorkerの登録解除
+            if ('serviceWorker' in navigator) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              for (const registration of registrations) {
+                await registration.unregister();
+                console.log('[ServiceWorker] 登録解除:', registration.scope);
+              }
+            }
+            
+            // キャッシュのクリア
+            if ('caches' in window) {
+              const names = await caches.keys();
+              for (const name of names) {
+                await caches.delete(name);
+                console.log('[Cache] 削除:', name);
+              }
+            }
+          }
+          
+          // URLパラメータを削除
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, newUrl);
+        } catch (error) {
+          console.error('クリーンアップエラー:', error);
+        } finally {
+          setCleaningSession(false);
+        }
+      }
+    };
     
-    // キャッシュのクリア
-    if ('caches' in window) {
-      caches.keys().then((names) => {
-        names.forEach((name) => {
-          caches.delete(name);
-          console.log('[Cache] 削除:', name);
-        });
-      });
-    }
+    performCleanup();
+  }, [searchParams]);
     
     // 拡張機能の検出（デバッグ用）
     const detectExtensions = () => {
