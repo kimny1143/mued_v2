@@ -1,19 +1,13 @@
 // PWA環境でのログアウトヘルパー
 export async function cleanupPWASession() {
   try {
-    // 1. Service WorkerのキャッシュをクリアPWA
+    // 1. Service WorkerのキャッシュをクリアPWA（すべてのキャッシュを削除）
     if ('caches' in window) {
       const cacheNames = await caches.keys();
       await Promise.all(
-        cacheNames.map(cacheName => {
-          // 認証関連のキャッシュを削除
-          if (cacheName.includes('auth') || cacheName.includes('session')) {
-            return caches.delete(cacheName);
-          }
-          return Promise.resolve();
-        })
+        cacheNames.map(cacheName => caches.delete(cacheName))
       );
-      console.log('PWA: キャッシュクリア完了');
+      console.log('PWA: すべてのキャッシュクリア完了');
     }
 
     // 2. LocalStorageのSupabase関連データをクリア
@@ -39,15 +33,19 @@ export async function cleanupPWASession() {
     console.log('PWA: SessionStorageクリア完了');
 
     // 4. IndexedDBのSupabaseデータをクリア
-    if ('indexedDB' in window) {
-      const dbs = await window.indexedDB.databases();
-      const supabaseDBs = dbs.filter(db => db.name?.includes('supabase'));
-      
-      for (const db of supabaseDBs) {
-        if (db.name) {
-          await window.indexedDB.deleteDatabase(db.name);
-          console.log(`PWA: IndexedDB ${db.name} 削除完了`);
+    if ('indexedDB' in window && 'databases' in window.indexedDB) {
+      try {
+        const dbs = await (window.indexedDB as any).databases();
+        const supabaseDBs = dbs.filter((db: any) => db.name?.includes('supabase'));
+        
+        for (const db of supabaseDBs) {
+          if (db.name) {
+            window.indexedDB.deleteDatabase(db.name);
+            console.log(`PWA: IndexedDB ${db.name} 削除完了`);
+          }
         }
+      } catch (e) {
+        console.log('PWA: IndexedDB削除スキップ（未サポート）');
       }
     }
 
@@ -60,20 +58,21 @@ export async function cleanupPWASession() {
     // 6. ブラウザのクッキーをクライアント側でもクリア（可能な範囲で）
     document.cookie.split(";").forEach(cookie => {
       const eqPos = cookie.indexOf("=");
-      const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+      const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
       
-      if (name.includes('supabase') || name.includes('sb-') || name.includes('auth')) {
-        // 複数のパスとドメインで削除を試行
-        const paths = ['/', '/m/', '/dashboard/'];
-        const domains = ['', '.mued.jp', '.dev.mued.jp', window.location.hostname];
-        
-        paths.forEach(path => {
-          domains.forEach(domain => {
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=${path};domain=${domain};`;
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=${path};`;
-          });
+      // すべてのクッキーを削除（PWA環境では新規ログインを強制）
+      const paths = ['/', '/m/', '/dashboard/', '/api/', '/auth/'];
+      const domains = ['', '.mued.jp', '.dev.mued.jp', 'dev.mued.jp', 'localhost', window.location.hostname];
+      
+      paths.forEach(path => {
+        domains.forEach(domain => {
+          // 各種組み合わせで削除を試行
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=${path};domain=${domain};secure;`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=${path};domain=${domain};`;
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=${path};`;
+          document.cookie = `${name}=;max-age=0;path=${path};domain=${domain};`;
         });
-      }
+      });
     });
     console.log('PWA: ブラウザクッキークリア完了');
 

@@ -212,7 +212,7 @@ export default async function MobileDashboardPage() {
           {/* Upcoming Reservations */}
           <section>
             <h2 className="text-lg font-medium text-gray-900 mb-3">今後の予約</h2>
-            {upcomingReservations.length > 0 ? (
+            {upcomingReservations && upcomingReservations.length > 0 ? (
               <div className="space-y-3">
                 {upcomingReservations.map((reservation) => {
                   const mentorData = reservation.lesson_slots?.users;

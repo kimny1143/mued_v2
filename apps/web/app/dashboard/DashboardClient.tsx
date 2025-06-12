@@ -27,7 +27,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
             <Card className="p-6 bg-white hover:shadow-lg transition-shadow cursor-pointer">
               <div className="flex items-center mb-4">
                 <CalendarIcon className="h-5 w-5 mr-2 text-blue-500" />
-                <h3 className="font-semibold">今日の予定</h3>
+                <h3 className="font-semibold">今後の予定</h3>
               </div>
               
               <div className="space-y-3">

@@ -50,18 +50,10 @@ export async function GET(request: NextRequest) {
 
   // ログインページへリダイレクト
   const referer = request.headers.get('referer') || '';
-  const userAgent = request.headers.get('user-agent') || '';
   const isMobilePath = referer.includes('/m/');
   
-  // PWA環境の検出（User-Agentから推測）
-  const isPWAEnvironment = userAgent.includes('Mobile') && 
-    (referer.includes('standalone=true') || userAgent.includes('wv'));
-  
-  // リダイレクトURL構築（PWA環境では?logout=trueを追加）
-  let redirectUrl = isMobilePath ? '/m/login' : '/login';
-  if (isPWAEnvironment) {
-    redirectUrl += '?logout=true';
-  }
+  // リダイレクトURL構築（モバイルパスからは常に?logout=trueを追加）
+  const redirectUrl = isMobilePath ? '/m/login?logout=true' : '/login';
   
   // Cache-Controlヘッダーを追加してキャッシュを防ぐ
   const response = NextResponse.redirect(new URL(redirectUrl, request.url));

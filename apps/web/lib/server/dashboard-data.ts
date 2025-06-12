@@ -1,4 +1,3 @@
-import { isToday, isFuture } from 'date-fns';
 import { cache } from 'react';
 
 import { prisma } from '@/lib/prisma';
@@ -34,37 +33,15 @@ export interface DashboardData {
 // React cacheを使用してリクエスト内でのキャッシュ
 export const getDashboardData = cache(async (userId: string): Promise<DashboardData | null> => {
   try {
-    // 並列でデータを取得
-    const [user, reservations] = await Promise.all([
-      // ユーザー情報とロール情報
-      prisma.users.findUnique({
-        where: { id: userId },
-        include: {
-          roles: {
-            select: { name: true }
-          }
+    // まずユーザー情報を取得してロールを確認
+    const user = await prisma.users.findUnique({
+      where: { id: userId },
+      include: {
+        roles: {
+          select: { name: true }
         }
-      }),
-      
-      // 予約情報
-      prisma.reservations.findMany({
-        where: {
-          OR: [
-            { student_id: userId }
-          ]
-        },
-        include: {
-          lesson_slots: {
-            include: {
-              users: true
-            }
-          },
-          users: true
-        },
-        orderBy: { booked_start_time: 'asc' }
-      }),
-      
-    ]);
+      }
+    });
 
     if (!user) {
       return null;
@@ -73,10 +50,12 @@ export const getDashboardData = cache(async (userId: string): Promise<DashboardD
     const userRoleName = user.roles?.name || 'student';
     const isMentor = userRoleName === 'mentor';
 
-    // メンターの場合は、メンターとしての予約も取得
-    let mentorReservations: any[] = [];
+    // ロールに応じて適切な予約を取得
+    let allReservations: any[] = [];
+    
     if (isMentor) {
-      mentorReservations = await prisma.reservations.findMany({
+      // メンターの場合は自分が担当する予約を取得
+      allReservations = await prisma.reservations.findMany({
         where: {
           lesson_slots: {
             teacher_id: userId
@@ -92,17 +71,31 @@ export const getDashboardData = cache(async (userId: string): Promise<DashboardD
         },
         orderBy: { booked_start_time: 'asc' }
       });
+    } else {
+      // 生徒の場合は自分の予約を取得
+      allReservations = await prisma.reservations.findMany({
+        where: {
+          student_id: userId
+        },
+        include: {
+          lesson_slots: {
+            include: {
+              users: true
+            }
+          },
+          users: true
+        },
+        orderBy: { booked_start_time: 'asc' }
+      });
     }
 
-
-    // すべての予約を結合（メンターの場合は生徒としての予約は通常ないので、mentorReservationsのみ使用）
-    const allReservations = isMentor ? mentorReservations : reservations;
-
-    // 今日の予定を抽出
+    // 今後の予定を抽出（今日以降の確定済み予約）
     const todaySchedule = allReservations
       .filter(res => {
         const startTime = new Date(res.booked_start_time);
-        return res.status === 'CONFIRMED' && (isToday(startTime) || isFuture(startTime));
+        const now = new Date();
+        // 終了していない予約のみ表示（現在時刻より後の予約）
+        return res.status === 'CONFIRMED' && startTime > now;
       })
       .map(res => ({
         id: res.id,
