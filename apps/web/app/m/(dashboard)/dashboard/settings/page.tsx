@@ -6,6 +6,7 @@ import { User } from "@supabase/supabase-js";
 import { UserCircleIcon, ArrowLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { cleanupPWASession, isPWA } from "@/lib/utils/pwa-logout";
 
 import { SubscriptionStatus } from "@/app/components/SubscriptionStatus";
 import { supabaseBrowser } from "@/lib/supabase-browser";
@@ -232,9 +233,20 @@ export default function MobileSettingsPage() {
           <Button 
             variant="outline" 
             className="w-full border-red-300 text-red-600 hover:bg-red-50"
-            onClick={() => {
+            onClick={async () => {
               if (confirm('ログアウトしますか？')) {
-                window.location.href = '/api/auth/logout';
+                // PWA環境の場合は事前にセッションクリーンアップ
+                if (isPWA()) {
+                  console.log('PWA環境でのログアウト処理開始');
+                  await cleanupPWASession();
+                }
+                
+                // ログアウトAPIを呼び出し、PWAの場合はパラメータを追加
+                if (isPWA()) {
+                  window.location.href = '/api/auth/logout?redirect=/m/login?logout=true';
+                } else {
+                  window.location.href = '/api/auth/logout';
+                }
               }
             }}
           >

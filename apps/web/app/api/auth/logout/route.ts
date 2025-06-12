@@ -48,12 +48,20 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // ログインページへリダイレクト
-  const referer = request.headers.get('referer') || '';
-  const isMobilePath = referer.includes('/m/');
+  // リダイレクト先の決定
+  const searchParams = request.nextUrl.searchParams;
+  const customRedirect = searchParams.get('redirect');
   
-  // リダイレクトURL構築（モバイルパスからは常に?logout=trueを追加）
-  const redirectUrl = isMobilePath ? '/m/login?logout=true' : '/login';
+  let redirectUrl = '/login';
+  if (customRedirect) {
+    // カスタムリダイレクトURLが指定されている場合
+    redirectUrl = customRedirect;
+  } else {
+    // 従来のロジック：refererから判定
+    const referer = request.headers.get('referer') || '';
+    const isMobilePath = referer.includes('/m/');
+    redirectUrl = isMobilePath ? '/m/login?logout=true' : '/login';
+  }
   
   // Cache-Controlヘッダーを追加してキャッシュを防ぐ
   const response = NextResponse.redirect(new URL(redirectUrl, request.url));

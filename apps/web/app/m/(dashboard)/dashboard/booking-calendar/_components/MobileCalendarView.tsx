@@ -29,7 +29,7 @@ export default function MobileCalendarView({
   isMentor
 }: MobileCalendarViewProps) {
   const router = useRouter();
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(currentDate);
 
   // 日付のスロット数を取得
   const getDateSlotCount = (date: Date) => {
@@ -315,8 +315,43 @@ export default function MobileCalendarView({
                 const displayDurationMinutes = displayDurationMs / (1000 * 60);
                 const height = (displayDurationMinutes / 60) * 50; // 50pxが1時間
                 
-                const reservation = reservations.find(r => r.slotId === slot.id);
+                // このスロットに関連する全予約を取得
+                const slotReservations = reservations.filter(r => r.slotId === slot.id);
                 const mentorName = slot.teacher?.name || slot.teacher?.email?.split('@')[0];
+                
+                // スロット内の予約可能性を判定
+                const hasAvailableTime = (() => {
+                  if (!slot.isAvailable) return false;
+                  if (slotReservations.length === 0) return true;
+                  
+                  // スロットの制約を確認
+                  const minDuration = slot.minHours ? slot.minHours * 60 : 60;
+                  const maxDuration = slot.maxHours ? slot.maxHours * 60 : 180;
+                  
+                  // 予約済み時間帯を整理
+                  const bookedPeriods = slotReservations
+                    .filter(r => r.status !== 'CANCELED')
+                    .map(r => ({
+                      start: new Date(r.bookedStartTime),
+                      end: new Date(r.bookedEndTime)
+                    }))
+                    .sort((a, b) => a.start.getTime() - b.start.getTime());
+                  
+                  // 空き時間をチェック
+                  let checkTime = slotStart;
+                  
+                  for (const period of bookedPeriods) {
+                    const gapMinutes = (period.start.getTime() - checkTime.getTime()) / (1000 * 60);
+                    if (gapMinutes >= minDuration) {
+                      return true;
+                    }
+                    checkTime = period.end;
+                  }
+                  
+                  // 最後の予約から終了時刻までの空き時間
+                  const finalGapMinutes = (slotEnd.getTime() - checkTime.getTime()) / (1000 * 60);
+                  return finalGapMinutes >= minDuration;
+                })();
                 
                 return (
                   <div
@@ -330,7 +365,7 @@ export default function MobileCalendarView({
                     onClick={() => {
                       if (isMentor) {
                         router.push(`/m/dashboard/slots/${slot.id}/edit`);
-                      } else if (slot.isAvailable && !reservation) {
+                      } else if (hasAvailableTime) {
                         onSlotSelect(slot);
                       }
                     }}
@@ -338,8 +373,8 @@ export default function MobileCalendarView({
                     <div 
                       className={`
                         h-full rounded border-2 p-2 transition-all
-                        ${reservation 
-                          ? isMentor ? 'bg-blue-100 border-blue-300' : 'bg-gray-100 border-gray-300'
+                        ${slotReservations.length > 0 
+                          ? isMentor ? 'bg-blue-100 border-blue-300' : hasAvailableTime ? 'bg-yellow-100 border-yellow-300 hover:bg-yellow-200' : 'bg-gray-100 border-gray-300'
                           : slot.isAvailable 
                             ? isMentor ? 'bg-gray-100 border-gray-300 hover:bg-gray-200' : 'bg-green-100 border-green-300 hover:bg-green-200' 
                             : 'bg-gray-100 border-gray-300'
@@ -355,16 +390,23 @@ export default function MobileCalendarView({
                         </div>
                         
                         {isMentor ? (
-                          reservation ? (
-                            <div className="text-xs mt-1 truncate">
-                              {reservation.student?.name || '生徒'}さん
-                              <span className={`ml-1 px-1 py-0.5 rounded text-xxs ${
-                                reservation.status === 'PENDING_APPROVAL' 
-                                  ? 'bg-yellow-200 text-yellow-800' 
-                                  : 'bg-green-200 text-green-800'
-                              }`}>
-                                {reservation.status === 'PENDING_APPROVAL' ? '承認待ち' : '承認済み'}
-                              </span>
+                          slotReservations.length > 0 ? (
+                            <div className="text-xs mt-1">
+                              <div className="truncate">
+                                {slotReservations.length}件の予約
+                              </div>
+                              {slotReservations.slice(0, 1).map(res => (
+                                <div key={res.id} className="truncate">
+                                  {res.student?.name || '生徒'}さん
+                                  <span className={`ml-1 px-1 py-0.5 rounded text-xxs ${
+                                    res.status === 'PENDING_APPROVAL' 
+                                      ? 'bg-yellow-200 text-yellow-800' 
+                                      : 'bg-green-200 text-green-800'
+                                  }`}>
+                                    {res.status === 'PENDING_APPROVAL' ? '承認待ち' : '承認済み'}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           ) : (
                             <div className="text-gray-600 text-xs">未予約</div>
@@ -372,7 +414,14 @@ export default function MobileCalendarView({
                         ) : (
                           <div className="text-xs mt-1">
                             <div className="truncate">{mentorName}先生</div>
-                            {!reservation && <div className="text-gray-600">¥{(slot.hourlyRate || 0).toLocaleString()}</div>}
+                            {hasAvailableTime && (
+                              <div className="text-gray-600">
+                                ¥{(slot.hourlyRate || 0).toLocaleString()}
+                                {slotReservations.length > 0 && (
+                                  <span className="ml-1 text-yellow-600">部分予約可</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
