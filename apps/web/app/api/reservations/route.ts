@@ -586,7 +586,34 @@ export async function POST(request: NextRequest) {
           note: 'Stripe決済ページと成功ページで日本時間が表示されます'
         });
         
-        // 予約レコードを作成
+        // 予約レコードを作成（直前に最終チェック）
+        console.log('🔒 予約作成直前の最終重複チェック');
+        const lastMinuteCheck = await tx.reservations.findFirst({
+          where: {
+            student_id: session.user.id,
+            slot_id: slot.id,
+            status: { 
+              in: ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED'] 
+            },
+            // 完全に同じ時間帯の予約をチェック
+            booked_start_time: reservationStartTime,
+            booked_end_time: reservationEndTime
+          }
+        });
+        
+        if (lastMinuteCheck) {
+          console.log('❌ 最終チェックで重複予約を検出:', {
+            existingId: lastMinuteCheck.id,
+            status: lastMinuteCheck.status,
+            time: `${startTimeJST} - ${endTimeJST}`
+          });
+          throw new Error(
+            `この時間帯の予約は既に処理中または登録済みです。\n` +
+            `時間: ${formattedTimeRange}\n` +
+            `予約一覧をご確認ください。`
+          );
+        }
+        
         const reservation = await tx.reservations.create({
           data: reservationData
         });

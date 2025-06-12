@@ -114,7 +114,7 @@ export async function POST(
           student_id: reservation.student_id,
           id: { not: reservationId }, // 現在の予約は除外
           status: { 
-            in: ['APPROVED', 'CONFIRMED'] // 既に承認済みの予約のみチェック
+            in: ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED'] // 承認待ち・承認済みの予約をチェック
           },
           // 時間帯の重複を検索
           OR: [
@@ -159,14 +159,25 @@ export async function POST(
             hour12: false
           });
           const teacherName = r.lesson_slots.users.name || '不明';
-          return `${date} ${startTime}-${endTime} (${teacherName}先生)`;
+          const statusText = r.status === 'PENDING_APPROVAL' ? ' [承認待ち]' : 
+                           r.status === 'APPROVED' ? ' [承認済み]' : 
+                           r.status === 'CONFIRMED' ? ' [確定済み]' : '';
+          return `${date} ${startTime}-${endTime} (${teacherName}先生)${statusText}`;
         }).join(', ');
         
-        console.log('❌ 生徒に重複予約が見つかりました:', conflictDetails);
+        console.log('❌ 生徒に重複予約が見つかりました:', {
+          conflictDetails,
+          conflictingReservations: conflictingReservations.map(r => ({
+            id: r.id,
+            status: r.status,
+            time: `${new Date(r.booked_start_time).toLocaleTimeString('ja-JP')} - ${new Date(r.booked_end_time).toLocaleTimeString('ja-JP')}`
+          }))
+        });
         
         throw new Error(
           `生徒に時間が重複する他の予約があるため承認できません。\n` +
-          `重複する予約: ${conflictDetails}`
+          `重複する予約: ${conflictDetails}\n` +
+          `※承認待ちの予約がある場合は、先にそれらをキャンセルしてください。`
         );
       }
       
@@ -394,7 +405,28 @@ export async function POST(
     });
     
   } catch (error) {
-    console.error('予約承認エラー:', error);
+    console.error('予約承認エラー詳細:', {
+      error,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      reservationId: params.id,
+      userId: session?.user?.id
+    });
+    
+    // エラーメッセージの詳細化
+    if (error instanceof Error) {
+      if (error.message.includes('重複する')) {
+        return NextResponse.json(
+          { error: error.message },
+          { status: 409 } // Conflict
+        );
+      }
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: '予約の承認中にエラーが発生しました', details: String(error) },
       { status: 500 }
