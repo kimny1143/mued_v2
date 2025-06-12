@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
+import { normalizeRoleName } from '@/lib/role-utils';
 
 export interface MentorDashboardData {
   user: {
@@ -32,8 +33,11 @@ export interface MentorDashboardData {
 }
 
 export const getMentorDashboardData = cache(async (userId: string): Promise<MentorDashboardData | null> => {
+  console.log('[メンターダッシュボード] データ取得開始:', { userId });
+  
   try {
     // ユーザー情報を取得
+    console.log('[メンターダッシュボード] ユーザー情報取得中...');
     const user = await prisma.users.findUnique({
       where: { id: userId },
       include: {
@@ -43,7 +47,26 @@ export const getMentorDashboardData = cache(async (userId: string): Promise<Ment
       }
     });
 
-    if (!user || user.roles?.name !== 'mentor') {
+    console.log('[メンターダッシュボード] ユーザー情報:', {
+      found: !!user,
+      email: user?.email,
+      role_id: user?.role_id,
+      role_name: user?.roles?.name
+    });
+
+    if (!user) {
+      console.log('[メンターダッシュボード] ユーザーが見つかりません');
+      return null;
+    }
+
+    // ロール名を正規化して判定
+    const normalizedRole = normalizeRoleName(user.roles?.name);
+    if (normalizedRole !== 'mentor') {
+      console.log('[メンターダッシュボード] ロール不一致:', {
+        originalRole: user.roles?.name,
+        normalizedRole,
+        userId: user.id
+      });
       return null;
     }
 

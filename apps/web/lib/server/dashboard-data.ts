@@ -1,6 +1,7 @@
 import { cache } from 'react';
 
 import { prisma } from '@/lib/prisma';
+import { normalizeRoleName } from '@/lib/role-utils';
 
 export interface DashboardData {
   user: {
@@ -47,7 +48,7 @@ export const getDashboardData = cache(async (userId: string): Promise<DashboardD
       return null;
     }
 
-    const userRoleName = user.roles?.name || 'student';
+    const userRoleName = normalizeRoleName(user.roles?.name);
     const isMentor = userRoleName === 'mentor';
 
     // ロールに応じて適切な予約を取得

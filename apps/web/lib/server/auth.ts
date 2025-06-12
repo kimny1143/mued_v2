@@ -1,6 +1,7 @@
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { normalizeRoleName } from '@/lib/role-utils';
 
 export const getServerSession = cache(async () => {
   try {
@@ -35,11 +36,10 @@ export const getServerSession = cache(async () => {
       return null;
     }
     
-    // ロール名を取得（roles.nameまたはデフォルト値）
-    // データベースのロール名は大文字なので小文字に変換
-    const roleName = userData.roles?.name?.toLowerCase() || 'student';
+    // ロール名を正規化して取得
+    const roleName = normalizeRoleName(userData.roles?.name);
     
-    console.log('[getServerSession] User found:', userData.email, 'Role:', roleName);
+    console.log('[getServerSession] User found:', userData.email, 'Role:', roleName, '(Original:', userData.roles?.name, ')');
     
     return {
       user: {
