@@ -3,6 +3,7 @@
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, User, CheckCircle, XCircle, Plus, Edit } from 'lucide-react';
+import { formatJst } from '@/lib/utils/timezone';
 import React, { useState, useEffect } from 'react';
 
 import { Button } from '@/app/components/ui/button';
@@ -102,8 +103,12 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
 
   // その日のスロットをフィルタ（日付を跨ぐスロットも含める）
   const daySlots = slots.filter(slot => {
-    const slotStart = new Date(slot.startTime);
-    const slotEnd = new Date(slot.endTime);
+    // startTimeがZサフィックスを含まない場合、追加してUTCとして解釈
+    const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+    const endTimeStr = typeof slot.endTime === 'string' ? slot.endTime : slot.endTime.toISOString();
+    
+    const slotStart = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
+    const slotEnd = new Date(endTimeStr.endsWith('Z') ? endTimeStr : endTimeStr + 'Z');
     
     // 選択日の0:00と23:59:59を設定
     const dayStart = new Date(selectedDate);
@@ -126,11 +131,11 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
         (slotStart.getHours() <= 5 || slotStart.getHours() >= 22)) {
       console.log('📅 注目スロット詳細:', {
         slotId: slot.id,
-        スロット開始: slotStart.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
-        スロット終了: slotEnd.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+        スロット開始: formatJst(slotStart, 'yyyy/M/d H:mm:ss'),
+        スロット終了: formatJst(slotEnd, 'yyyy/M/d H:mm:ss'),
         選択日: selectedDate.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' }),
-        選択日開始: dayStart.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
-        選択日終了: dayEnd.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+        選択日開始: formatJst(dayStart, 'yyyy/M/d H:mm:ss'),
+        選択日終了: formatJst(dayEnd, 'yyyy/M/d H:mm:ss'),
         '開始が選択日内': slotStart >= dayStart && slotStart <= dayEnd,
         '終了が選択日内': slotEnd >= dayStart && slotEnd <= dayEnd,
         '選択日全体を含む': slotStart <= dayStart && slotEnd >= dayEnd,
@@ -450,8 +455,12 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                 >
                   {/* この時間帯のスロットを表示 */}
                   {daySlots.map((slot, slotIndex) => {
-                    const slotStart = new Date(slot.startTime);
-                    const slotEnd = new Date(slot.endTime);
+                    // startTimeがZサフィックスを含まない場合、追加してUTCとして解釈
+                    const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+                    const endTimeStr = typeof slot.endTime === 'string' ? slot.endTime : slot.endTime.toISOString();
+                    
+                    const slotStart = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
+                    const slotEnd = new Date(endTimeStr.endsWith('Z') ? endTimeStr : endTimeStr + 'Z');
                     
                     // 選択日の開始と終了時刻を取得
                     const dayStart = new Date(selectedDate);
@@ -510,7 +519,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                             <div className="flex justify-between items-start">
                               <div>
                                 <div className="font-semibold text-blue-900 text-sm">
-                                  {format(slotStart, 'HH:mm')}-{format(slotEnd, 'HH:mm')}
+                                  {formatJst(slotStart, 'HH:mm')}-{formatJst(slotEnd, 'HH:mm')}
                                   {slotStart < dayStart && (
                                     <span className="text-xs ml-1 text-blue-600">(前日から)</span>
                                   )}
@@ -602,7 +611,7 @@ export const MentorDayView: React.FC<MentorDayViewProps> = ({
                                           {reservation.student?.name || 'ユーザー'}
                                         </div>
                                         <div className="text-xs opacity-75">
-                                          {format(resStart, 'HH:mm')}-{format(resEnd, 'HH:mm')}
+                                          {formatJst(resStart, 'HH:mm')}-{formatJst(resEnd, 'HH:mm')}
                                         </div>
                                       </div>
                                     </div>
