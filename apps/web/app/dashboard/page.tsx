@@ -19,6 +19,11 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
+  // メンターの場合は専用ダッシュボードへリダイレクト
+  if (session.role === 'mentor') {
+    redirect('/dashboard/mentor');
+  }
+
   // ダッシュボードデータを取得
   const dashboardData = await getDashboardData(session.user.id);
 
