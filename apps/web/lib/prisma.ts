@@ -39,6 +39,10 @@ const getDevelopmentUrl = (url: string | undefined) => {
   params.append('statement_cache_size', '0');
   params.append('prepare_threshold', '0');
   
+  // 接続タイムアウトの設定
+  params.append('connect_timeout', '10');
+  params.append('pool_timeout', '10');
+  
   return `${url}?${params.toString()}`;
 };
 
@@ -58,6 +62,11 @@ const prismaClientSingleton = () => {
     // $connectを明示的に呼び出して接続を確立
     client.$connect().catch((error) => {
       console.error('Failed to connect to database:', error);
+    });
+    
+    // クエリイベントのログ
+    client.$on('query' as any, (e: any) => {
+      console.log(`[Prisma Query] ${e.query} - Duration: ${e.duration}ms`);
     });
   }
 

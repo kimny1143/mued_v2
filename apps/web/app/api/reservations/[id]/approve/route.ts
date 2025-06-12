@@ -4,6 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { hasPermission, normalizeRoleName } from '@/lib/role-utils';
 import { getSessionFromRequest } from '@/lib/session';
 
+// コールドスタート対策：モジュールレベルでPrisma接続を事前確立
+if (process.env.NODE_ENV === 'production') {
+  prisma.$connect().catch(console.error);
+}
+
 // 決済関連の型定義
 interface PaymentRecord {
   id: string;
@@ -17,6 +22,10 @@ interface PaymentMetadata {
   paymentMethodId?: string;
   customerId?: string;
 }
+
+// Vercel Function のタイムアウト設定（秒単位）
+// Hobbyプランは最大10秒、Proプランは最大60秒
+export const maxDuration = 30;
 
 export async function POST(
   request: NextRequest,
@@ -142,13 +151,9 @@ export async function POST(
             in: ['PENDING_APPROVAL', 'APPROVED', 'CONFIRMED'] // 承認待ち・承認済みの予約をチェック
           },
           // 時間帯の重複を検索
-          OR: [
-            {
-              AND: [
-                { booked_start_time: { lt: reservation.booked_end_time } },
-                { booked_end_time: { gt: reservation.booked_start_time } }
-              ]
-            }
+          AND: [
+            { booked_start_time: { lt: reservation.booked_end_time } },
+            { booked_end_time: { gt: reservation.booked_start_time } }
           ]
         },
         include: {
@@ -159,7 +164,9 @@ export async function POST(
               }
             }
           }
-        }
+        },
+        // パフォーマンス最適化：必要最小限の結果のみ取得
+        take: 10
       });
       console.log(`⏱️ [APPROVE API] 重複チェック: ${Date.now() - conflictCheckStartTime}ms`);
       
@@ -439,7 +446,9 @@ export async function POST(
     }, {
       status: 200,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store',
+        'Connection': 'keep-alive'
       }
     });
     

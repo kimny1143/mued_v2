@@ -403,12 +403,35 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
 
       if (!response.ok) {
         let errorMessage = '承認処理に失敗しました';
+        let errorDetails = {};
+        
         try {
-          const result = await response.json();
-          errorMessage = result.error || errorMessage;
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const result = await response.json();
+            errorMessage = result.error || errorMessage;
+            errorDetails = result;
+          } else {
+            // JSONではないレスポンスの場合
+            const text = await response.text();
+            console.error('非JSONエラーレスポンス:', text);
+            errorMessage = `サーバーエラー (${response.status}): ${text.substring(0, 100)}`;
+          }
         } catch (jsonError) {
-          console.error('エラーレスポンスのJSON解析に失敗:', jsonError);
+          console.error('エラーレスポンスの解析に失敗:', {
+            error: jsonError,
+            status: response.status,
+            statusText: response.statusText
+          });
         }
+        
+        console.error('承認APIエラー詳細:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorMessage,
+          errorDetails
+        });
+        
         throw new Error(errorMessage);
       }
 
