@@ -46,12 +46,14 @@ export default function MobileCalendarView({
 
   // 日付の予約数を取得
   const getDateReservationCount = (date: Date) => {
-    return reservations.filter(reservation => {
-      const slot = lessonSlots.find(s => s.id === reservation.slotId);
-      if (!slot) return false;
+    // 全てのスロットから、指定日の予約数を集計
+    return lessonSlots.reduce((count, slot) => {
       const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
-      return isSameDay(new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z'), date);
-    }).length;
+      if (isSameDay(new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z'), date)) {
+        return count + (slot.reservations?.length || 0);
+      }
+      return count;
+    }, 0);
   };
 
   // カレンダーグリッドの生成
@@ -332,6 +334,17 @@ export default function MobileCalendarView({
                 // 重要: slot.reservationsには全ユーザーの予約が含まれている
                 // reservations配列には自分の予約のみが含まれている
                 const slotReservations = slot.reservations || [];
+                
+                // デバッグ: slotオブジェクトの構造を確認
+                if (!isMentor && slotIndex === 0) {
+                  console.log('📱 スロットデータ構造:', {
+                    slotId: slot.id,
+                    hasReservations: !!slot.reservations,
+                    reservationsLength: slot.reservations?.length || 0,
+                    slotKeys: Object.keys(slot),
+                    sampleReservation: slot.reservations?.[0]
+                  });
+                }
                 
                 // デバッグ: スロット内の予約情報を確認
                 if (slotReservations.length > 0 && !isMentor) {

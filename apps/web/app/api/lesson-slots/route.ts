@@ -199,12 +199,23 @@ export async function GET(request: NextRequest) {
     }
     
     const { data: reservations } = await reservationQuery;
+    
+    // 🔍 デバッグ: 予約情報取得結果
+    console.log('🔍 予約情報取得:', {
+      reservationCount: reservations?.length || 0,
+      sampleReservation: reservations?.[0],
+      viewMode,
+      useDbViews
+    });
 
     // スロットと予約を結合
-    const slotsWithReservations = slots.map(slot => ({
-      ...slot,
-      reservations: reservations?.filter(r => r.slot_id === slot.id) || []
-    }));
+    const slotsWithReservations = slots.map(slot => {
+      const slotReservations = reservations?.filter(r => r.slot_id === slot.id) || [];
+      return {
+        ...slot,
+        reservations: slotReservations
+      };
+    });
     
     // DBレベルで既にフィルタリング済みのため、アプリケーション層でのフィルタは不要
     const activeSlotsWithReservations = slotsWithReservations;

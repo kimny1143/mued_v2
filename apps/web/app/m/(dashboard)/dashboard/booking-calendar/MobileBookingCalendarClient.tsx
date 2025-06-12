@@ -75,6 +75,14 @@ export default function MobileBookingCalendarClient({ userId, isMentor }: Mobile
         setLessonSlots(slotsData);
         // デバッグ: スロット内の予約情報を確認
         const slotsWithReservations = slotsData.filter((s: any) => s.reservations && s.reservations.length > 0);
+        console.log('📱 スロットデータ概要:', {
+          totalSlots: slotsData.length,
+          slotsWithReservations: slotsWithReservations.length,
+          firstSlotKeys: slotsData[0] ? Object.keys(slotsData[0]) : [],
+          sampleSlot: slotsData[0],
+          hasReservationsKey: slotsData[0] ? 'reservations' in slotsData[0] : false,
+          firstSlotReservations: slotsData[0]?.reservations
+        });
         if (slotsWithReservations.length > 0) {
           console.log('📱 スロット内予約情報:', 
             slotsWithReservations.map((s: any) => ({
@@ -92,9 +100,9 @@ export default function MobileBookingCalendarClient({ userId, isMentor }: Mobile
         setLessonSlots([]);
       }
 
-      // 予約情報取得
+      // 予約情報取得（全予約を取得して空き時間を正確に判定）
       console.log('📱 Fetching reservations...');
-      const reservationsResponse = await fetch(`/api/reservations?startDate=${startDate}&endDate=${endDate}`, {
+      const reservationsResponse = await fetch(`/api/reservations?startDate=${startDate}&endDate=${endDate}&includeAll=true`, {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -135,6 +143,49 @@ export default function MobileBookingCalendarClient({ userId, isMentor }: Mobile
       setLoading(false);
     }
   }, [currentDate, isMentor]);
+
+  // スロットと予約を結合する関数
+  const combineSlotsWithReservations = useCallback(() => {
+    if (!lessonSlots.length) return lessonSlots;
+    
+    // まず、APIから取得したスロットにreservationsが含まれているか確認
+    const hasApiReservations = lessonSlots.some(slot => slot.reservations && slot.reservations.length > 0);
+    console.log('📱 APIレスポンスにreservations含まれている:', hasApiReservations);
+    
+    // APIから既に予約情報が含まれている場合はそのまま使用
+    if (hasApiReservations) {
+      console.log('📱 APIからの予約情報を使用');
+      return lessonSlots;
+    }
+    
+    // APIに予約情報が含まれていない場合は手動で結合
+    const combined = lessonSlots.map(slot => {
+      const slotReservations = reservations
+        .filter(res => res.slotId === slot.id)
+        .map(res => ({
+          id: res.id,
+          bookedStartTime: res.bookedStartTime,
+          bookedEndTime: res.bookedEndTime,
+          status: res.status,
+          student: res.student
+        }));
+        
+      return {
+        ...slot,
+        reservations: slotReservations
+      };
+    });
+    
+    // デバッグ: 結合後のデータを確認
+    console.log('📱 スロット予約結合結果:', {
+      totalSlots: combined.length,
+      slotsWithReservations: combined.filter(s => s.reservations && s.reservations.length > 0).length,
+      allReservationsCount: reservations.length,
+      sampleCombined: combined.find(s => s.reservations && s.reservations.length > 0)
+    });
+    
+    return combined;
+  }, [lessonSlots, reservations]);
 
   // 初回読み込みと成功/キャンセル処理
   useEffect(() => {
@@ -256,7 +307,7 @@ export default function MobileBookingCalendarClient({ userId, isMentor }: Mobile
           <MobileCalendarView
             currentDate={currentDate}
             setCurrentDate={setCurrentDate}
-            lessonSlots={lessonSlots}
+            lessonSlots={combineSlotsWithReservations()}
             reservations={reservations}
             onSlotSelect={handleSlotSelect}
             viewMode={viewMode}
