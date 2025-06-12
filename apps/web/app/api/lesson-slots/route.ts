@@ -9,17 +9,13 @@ import { convertLessonSlotRequestToDb } from '@/lib/caseConverter';
 import { getSessionFromRequest } from '@/lib/session';
 import { stripe } from '@/lib/stripe';
 import { generateHourlySlots } from '@/lib/utils';
-import { isPastJst, addJstFields } from '@/lib/utils/timezone';
+import { isPastJst, addJstFields, parseAsUTC } from '@/lib/utils/timezone';
 import { getFeature } from '@/lib/config/features';
 
 // データベースの時刻文字列をUTCとして解釈するヘルパー関数
 function ensureUTCTimestamp(timestamp: string): string {
-  // タイムゾーン指定がない場合、Zサフィックスを追加してUTCとして扱う
-  if (timestamp && !timestamp.endsWith('Z') && !timestamp.includes('+') && !timestamp.includes('-')) {
-    // データベースからの時刻はUTCとして保存されているはず
-    return timestamp + 'Z';
-  }
-  return timestamp;
+  // parseAsUTCで変換してISO文字列として返す
+  return parseAsUTC(timestamp).toISOString();
 }
 
 // 予約ステータスの列挙型（現在は未使用だがAPIの拡張で使用予定）
@@ -95,6 +91,7 @@ export async function GET(request: NextRequest) {
     const availableOnly = searchParams.get('availableOnly') !== 'false'; // デフォルトはtrue
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const debug = searchParams.get('debug') === 'true'; // デバッグモード
     
     console.log('レッスンスロット取得API呼び出し:', {
       userId: sessionInfo.user.id,
@@ -269,7 +266,7 @@ export async function GET(request: NextRequest) {
       };
       
       // JST表示用フィールドを追加
-      return addJstFields(baseSlot, ['startTime', 'endTime', 'createdAt', 'updatedAt']);
+      return addJstFields(baseSlot, ['startTime', 'endTime', 'createdAt', 'updatedAt'], debug);
     });
     
     // PENDING_APPROVALの予約を確認

@@ -3,6 +3,19 @@ import { format, parseISO } from 'date-fns';
 const JAPAN_TIMEZONE = 'Asia/Tokyo';
 
 /**
+ * ISO文字列をUTC時刻として確実に解釈する
+ * @param dateStr - ISO形式の日時文字列
+ * @returns UTC時刻のDateオブジェクト
+ */
+export function parseAsUTC(dateStr: string): Date {
+  // Zサフィックスやタイムゾーンオフセットがない場合はZを追加
+  if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('-')) {
+    return parseISO(dateStr + 'Z');
+  }
+  return parseISO(dateStr);
+}
+
+/**
  * 日付を日本時間の文字列として取得
  */
 function toJSTString(date: Date): string {
@@ -37,9 +50,27 @@ export function jstToUtc(date: Date | string): Date {
 
 /**
  * 日本時間でフォーマット（表示用）
+ * @param date - UTC時刻のDateオブジェクトまたはISO文字列
+ * @param formatStr - date-fnsのフォーマット文字列
+ * @param debug - デバッグログを出力するか（オプション）
  */
-export function formatJst(date: Date | string, formatStr: string): string {
-  const inputDate = typeof date === 'string' ? parseISO(date) : date;
+export function formatJst(date: Date | string, formatStr: string, debug = false): string {
+  let inputDate: Date;
+  
+  if (typeof date === 'string') {
+    // 文字列の場合、Zサフィックスがない場合は追加してUTCとして解釈
+    const dateStr = date.endsWith('Z') || date.includes('+') || date.includes('-') 
+      ? date 
+      : date + 'Z';
+    inputDate = parseISO(dateStr);
+  } else {
+    inputDate = date;
+  }
+  
+  if (debug) {
+    console.log('[formatJst] Input:', date);
+    console.log('[formatJst] Parsed as UTC:', inputDate.toISOString());
+  }
   
   // Intl.DateTimeFormatを使用して日本時間を取得
   const formatter = new Intl.DateTimeFormat('ja-JP', {
@@ -50,16 +81,23 @@ export function formatJst(date: Date | string, formatStr: string): string {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: false
+    hour12: false,
+    // タイムゾーン情報も含めて取得（デバッグ用）
+    timeZoneName: debug ? 'short' : undefined
   });
   
   const parts = formatter.formatToParts(inputDate);
-  const dateMap: any = {};
+  const dateMap: Record<string, string> = {};
   parts.forEach(part => {
     if (part.type !== 'literal') {
       dateMap[part.type] = part.value;
     }
   });
+  
+  if (debug) {
+    console.log('[formatJst] Formatted parts:', dateMap);
+    console.log('[formatJst] JST time:', formatter.format(inputDate));
+  }
   
   // date-fnsのformatで使えるように、擬似的なDateオブジェクトを作成
   // 注：これは表示専用で、実際の日時計算には使用しない
@@ -72,7 +110,13 @@ export function formatJst(date: Date | string, formatStr: string): string {
     parseInt(dateMap.second || '0')
   );
   
-  return format(pseudoDate, formatStr);
+  const result = format(pseudoDate, formatStr);
+  
+  if (debug) {
+    console.log('[formatJst] Final result:', result);
+  }
+  
+  return result;
 }
 
 /**
@@ -100,19 +144,54 @@ export function isPastJst(date: Date | string): boolean {
 /**
  * レスポンス用にオブジェクト内の日時フィールドをJST表記に変換
  * （実際の値はUTCのまま保持し、表示用フィールドを追加）
+ * @param obj - 変換対象のオブジェクト
+ * @param dateFields - 日時フィールドの名前の配列
+ * @param debug - デバッグログを出力するか（オプション）
  */
 export function addJstFields<T extends Record<string, any>>(
   obj: T,
-  dateFields: string[]
+  dateFields: string[],
+  debug = false
 ): T & Record<string, string> {
   const result = { ...obj };
   
   dateFields.forEach(field => {
     if (obj[field]) {
       // JST表示用フィールドを追加（例: startTime → startTimeJst）
-      result[`${field}Jst`] = formatJst(obj[field], 'yyyy-MM-dd HH:mm:ss');
+      result[`${field}Jst`] = formatJst(obj[field], 'yyyy-MM-dd HH:mm:ss', debug);
+      
+      if (debug) {
+        console.log(`[addJstFields] ${field}:`, obj[field], '→', result[`${field}Jst`]);
+      }
     }
   });
   
   return result;
+}
+
+/**
+ * シンプルな日本時間表示（デフォルトフォーマット）
+ * @param date - UTC時刻のDateオブジェクトまたはISO文字列
+ * @returns 日本時間の文字列（yyyy-MM-dd HH:mm:ss形式）
+ */
+export function toJstString(date: Date | string): string {
+  return formatJst(date, 'yyyy-MM-dd HH:mm:ss');
+}
+
+/**
+ * 時刻のみの日本時間表示
+ * @param date - UTC時刻のDateオブジェクトまたはISO文字列
+ * @returns 日本時間の時刻文字列（HH:mm形式）
+ */
+export function toJstTimeString(date: Date | string): string {
+  return formatJst(date, 'HH:mm');
+}
+
+/**
+ * 日付のみの日本時間表示
+ * @param date - UTC時刻のDateオブジェクトまたはISO文字列
+ * @returns 日本時間の日付文字列（yyyy-MM-dd形式）
+ */
+export function toJstDateString(date: Date | string): string {
+  return formatJst(date, 'yyyy-MM-dd');
 }

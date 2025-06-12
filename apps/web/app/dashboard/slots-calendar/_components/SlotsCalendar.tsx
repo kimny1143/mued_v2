@@ -330,6 +330,26 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                               disabled: 'bg-gray-100 border-gray-300 text-gray-600'
                             };
                             
+                            // デバッグログ追加
+                            console.log('[SlotsCalendar] Slot time debug:', {
+                              slotId: slot.id,
+                              startTime: {
+                                original: slot.startTime,
+                                type: typeof slot.startTime,
+                                value: slot.startTime
+                              },
+                              endTime: {
+                                original: slot.endTime,
+                                type: typeof slot.endTime,
+                                value: slot.endTime
+                              },
+                              formatted: {
+                                startTime: formatJst(slot.startTime, 'HH:mm'),
+                                endTime: formatJst(slot.endTime, 'HH:mm'),
+                                display: `${formatJst(slot.startTime, 'H:mm')}-${formatJst(slot.endTime, 'H:mm')}`
+                              }
+                            });
+                            
                             return (
                               <div key={`slot-${slot.id}`} className="w-full">
                                 {/* スロット時間表示 - モバイル対応 */}

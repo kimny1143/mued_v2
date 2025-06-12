@@ -15,7 +15,7 @@ import Stripe from 'stripe';
 import { convertReservationToResponse } from '@/lib/caseConverter';
 import { getSessionFromRequest } from '@/lib/session';
 import { getBaseUrl, calculateTotalReservedMinutes, calculateSlotTotalMinutes } from '@/lib/utils';
-import { isPastJst, addJstFields } from '@/lib/utils/timezone';
+import { isPastJst, addJstFields, parseAsUTC } from '@/lib/utils/timezone';
 import { getFeature } from '@/lib/config/features';
 
 import { prisma } from '../../../lib/prisma';
@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
     const includeAll = searchParams.get('includeAll') === 'true'; // 全予約取得フラグ
     const startDate = searchParams.get('startDate'); // 開始日
     const endDate = searchParams.get('endDate'); // 終了日
+    const debug = searchParams.get('debug') === 'true'; // デバッグモード
     
     // フィーチャーフラグでビュー使用を判定
     const useDbViews = getFeature('USE_DB_VIEWS');
@@ -273,7 +274,7 @@ export async function GET(request: NextRequest) {
       };
       
       // JST表示用フィールドを追加
-      return addJstFields(baseReservation, ['bookedStartTime', 'bookedEndTime', 'createdAt']);
+      return addJstFields(baseReservation, ['bookedStartTime', 'bookedEndTime', 'createdAt'], debug);
     });
     
     console.log(`📊 予約取得完了: ${formattedReservations.length}件 (簡素化版)`);
@@ -398,9 +399,9 @@ export async function POST(request: NextRequest) {
       
       if (bookedStartTime && bookedEndTime) {
         // ユーザーが選択した正確な時間帯を使用
-        // フロントエンドからの時刻をそのまま使用（二重変換を防ぐ）
-        reservationStartTime = new Date(bookedStartTime);
-        reservationEndTime = new Date(bookedEndTime);
+        // フロントエンドからの時刻をUTCとして確実に解釈
+        reservationStartTime = parseAsUTC(bookedStartTime);
+        reservationEndTime = parseAsUTC(bookedEndTime);
         
         console.log('受信した予約時間（変換前）:', {
           originalStart: bookedStartTime,
@@ -419,7 +420,7 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // 選択がない場合は、開始時間からduration分の枠を予約
-        reservationStartTime = new Date(slot.start_time);
+        reservationStartTime = parseAsUTC(slot.start_time);
         
         // 予約時間がスロットの最小時間制約を満たしているか検証
         if (duration < slotMinDuration) {
@@ -436,15 +437,15 @@ export async function POST(request: NextRequest) {
         reservationEndTime.setMinutes(reservationEndTime.getMinutes() + duration);
         
         // 予約終了時間がスロット終了時間を超えないようにする
-        const slotEndTime = new Date(slot.end_time);
+        const slotEndTime = parseAsUTC(slot.end_time);
         if (reservationEndTime > slotEndTime) {
           reservationEndTime = slotEndTime;
         }
       }
       
       // 予約時間の整合性チェック
-      const slotStartTime = new Date(slot.start_time);
-      const slotEndTime = new Date(slot.end_time);
+      const slotStartTime = parseAsUTC(slot.start_time);
+      const slotEndTime = parseAsUTC(slot.end_time);
       
       if (reservationStartTime < slotStartTime || reservationEndTime > slotEndTime) {
         throw new Error('予約時間がレッスン枠の範囲外です');
@@ -453,9 +454,9 @@ export async function POST(request: NextRequest) {
       // 予約時間の重複チェック
       const existingReservations = slot.reservations || [];
       const hasOverlap = existingReservations.some(reservation => {
-        // 既存予約の時刻をそのまま使用（二重変換を防ぐ）
-        const existingStart = new Date(reservation.booked_start_time);
-        const existingEnd = new Date(reservation.booked_end_time);
+        // 既存予約の時刻をUTCとして解釈
+        const existingStart = parseAsUTC(reservation.booked_start_time);
+        const existingEnd = parseAsUTC(reservation.booked_end_time);
         
         console.log('重複チェック - 既存予約:', {
           id: reservation.id,
