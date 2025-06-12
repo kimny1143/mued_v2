@@ -7,6 +7,17 @@ import { getSessionFromRequest } from '@/lib/session';
 
 import { prisma } from '../../../../lib/prisma';
 
+// データベースの時刻文字列をUTCとして解釈するヘルパー関数
+function ensureUTCTimestamp(timestamp: Date | string | null): string | null {
+  if (!timestamp) return null;
+  const timestampStr = timestamp instanceof Date ? timestamp.toISOString() : timestamp.toString();
+  // タイムゾーン指定がない場合、Zサフィックスを追加してUTCとして扱う
+  if (timestampStr && !timestampStr.endsWith('Z') && !timestampStr.includes('+') && !timestampStr.includes('-')) {
+    return timestampStr + 'Z';
+  }
+  return timestampStr;
+}
+
 export const dynamic = 'force-dynamic';
 
 // 更新データの型を定義（Prismaスキーマに合わせてスネークケース）
@@ -56,15 +67,15 @@ export async function GET(
     const formattedSlot = {
       id: slot.id,
       teacherId: slot.teacher_id,               // teacher_id → teacherId
-      startTime: slot.start_time,               // start_time → startTime
-      endTime: slot.end_time,                   // end_time → endTime
+      startTime: ensureUTCTimestamp(slot.start_time),  // UTC時刻として解釈
+      endTime: ensureUTCTimestamp(slot.end_time),      // UTC時刻として解釈
       hourlyRate: slot.hourly_rate,             // hourly_rate → hourlyRate
       currency: slot.currency,
       minHours: slot.min_hours,                 // min_hours → minHours
       maxHours: slot.max_hours,                 // max_hours → maxHours
       isAvailable: slot.is_available,           // is_available → isAvailable
-      createdAt: slot.created_at,               // created_at → createdAt
-      updatedAt: slot.updated_at,               // updated_at → updatedAt
+      createdAt: ensureUTCTimestamp(slot.created_at),  // UTC時刻として解釈
+      updatedAt: ensureUTCTimestamp(slot.updated_at),  // UTC時刻として解釈
       minDuration: slot.min_duration,           // min_duration → minDuration
       maxDuration: slot.max_duration,           // max_duration → maxDuration
       teacher: slot.users,
@@ -74,13 +85,13 @@ export async function GET(
         studentId: reservation.student_id,      // student_id → studentId
         status: reservation.status,
         paymentId: reservation.payment_id,      // payment_id → paymentId
-        bookedStartTime: reservation.booked_start_time,  // booked_start_time → bookedStartTime
-        bookedEndTime: reservation.booked_end_time,      // booked_end_time → bookedEndTime
+        bookedStartTime: ensureUTCTimestamp(reservation.booked_start_time),  // UTC時刻として解釈
+        bookedEndTime: ensureUTCTimestamp(reservation.booked_end_time),      // UTC時刻として解釈
         hoursBooked: reservation.hours_booked,  // hours_booked → hoursBooked
         totalAmount: reservation.total_amount,  // total_amount → totalAmount
         notes: reservation.notes,
-        createdAt: reservation.created_at,      // created_at → createdAt
-        updatedAt: reservation.updated_at,      // updated_at → updatedAt
+        createdAt: ensureUTCTimestamp(reservation.created_at),  // UTC時刻として解釈
+        updatedAt: ensureUTCTimestamp(reservation.updated_at),  // UTC時刻として解釈
         durationMinutes: reservation.duration_minutes  // duration_minutes → durationMinutes
       }))
     };
@@ -243,8 +254,8 @@ export async function PUT(
     const responseSlot = {
       id: updatedSlot.id,
       teacherId: updatedSlot.teacher_id,           // teacher_id → teacherId
-      startTime: updatedSlot.start_time,           // start_time → startTime
-      endTime: updatedSlot.end_time,               // end_time → endTime
+      startTime: ensureUTCTimestamp(updatedSlot.start_time),  // UTC時刻として解釈
+      endTime: ensureUTCTimestamp(updatedSlot.end_time),      // UTC時刻として解釈
       hourlyRate: updatedSlot.hourly_rate,         // hourly_rate → hourlyRate
       currency: updatedSlot.currency,
       minHours: updatedSlot.min_hours,             // min_hours → minHours
@@ -252,8 +263,8 @@ export async function PUT(
       minDuration: updatedSlot.min_duration,       // min_duration → minDuration
       maxDuration: updatedSlot.max_duration,       // max_duration → maxDuration
       isAvailable: updatedSlot.is_available,       // is_available → isAvailable
-      createdAt: updatedSlot.created_at,           // created_at → createdAt
-      updatedAt: updatedSlot.updated_at            // updated_at → updatedAt
+      createdAt: ensureUTCTimestamp(updatedSlot.created_at),  // UTC時刻として解釈
+      updatedAt: ensureUTCTimestamp(updatedSlot.updated_at)   // UTC時刻として解釈
     };
     
     return NextResponse.json(responseSlot);

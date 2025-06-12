@@ -12,6 +12,16 @@ import { generateHourlySlots } from '@/lib/utils';
 import { isPastJst, addJstFields } from '@/lib/utils/timezone';
 import { getFeature } from '@/lib/config/features';
 
+// データベースの時刻文字列をUTCとして解釈するヘルパー関数
+function ensureUTCTimestamp(timestamp: string): string {
+  // タイムゾーン指定がない場合、Zサフィックスを追加してUTCとして扱う
+  if (timestamp && !timestamp.endsWith('Z') && !timestamp.includes('+') && !timestamp.includes('-')) {
+    // データベースからの時刻はUTCとして保存されているはず
+    return timestamp + 'Z';
+  }
+  return timestamp;
+}
+
 // 予約ステータスの列挙型（現在は未使用だがAPIの拡張で使用予定）
 enum _ReservationStatus {
   CONFIRMED = 'CONFIRMED',
@@ -207,14 +217,14 @@ export async function GET(request: NextRequest) {
       // generateHourlySlots用にデータを変換
       const slotForHourlyGeneration = {
         id: slot.id,
-        startTime: slot.start_time,
-        endTime: slot.end_time,
+        startTime: ensureUTCTimestamp(slot.start_time),
+        endTime: ensureUTCTimestamp(slot.end_time),
         teacherId: slot.teacher_id,
         isAvailable: slot.is_available,
         reservations: slot.reservations.map((reservation: any) => ({
           id: reservation.id,
-          bookedStartTime: reservation.booked_start_time,
-          bookedEndTime: reservation.booked_end_time,
+          bookedStartTime: ensureUTCTimestamp(reservation.booked_start_time),
+          bookedEndTime: ensureUTCTimestamp(reservation.booked_end_time),
           status: reservation.status
         })),
         hourlyRate: slot.hourly_rate,
@@ -227,24 +237,24 @@ export async function GET(request: NextRequest) {
       const baseSlot = {
         id: slot.id,
         teacherId: slot.teacher_id,               // teacher_id → teacherId
-        startTime: slot.start_time,               // start_time → startTime
-        endTime: slot.end_time,                   // end_time → endTime
+        startTime: ensureUTCTimestamp(slot.start_time),  // UTC時刻として解釈
+        endTime: ensureUTCTimestamp(slot.end_time),      // UTC時刻として解釈
         hourlyRate: slot.hourly_rate,             // hourly_rate → hourlyRate
         currency: slot.currency,
         minHours: slot.min_hours,                 // min_hours → minHours
         maxHours: slot.max_hours,                 // max_hours → maxHours
         isAvailable: slot.is_available,           // is_available → isAvailable
-        createdAt: slot.created_at,               // created_at → createdAt
-        updatedAt: slot.updated_at,               // updated_at → updatedAt
+        createdAt: ensureUTCTimestamp(slot.created_at),  // UTC時刻として解釈
+        updatedAt: ensureUTCTimestamp(slot.updated_at),  // UTC時刻として解釈
         // フロントエンドが期待するteacher形式に変換
         teacher: slot.teacher || slot.users,
         // 予約情報もキャメルケースに変換（過去の予約も除外）
         reservations: slot.reservations
-          .filter((reservation: any) => !isPastJst(reservation.booked_end_time))
+          .filter((reservation: any) => !isPastJst(ensureUTCTimestamp(reservation.booked_end_time)))
           .map((reservation: any) => ({
             id: reservation.id,
-            bookedStartTime: reservation.booked_start_time,  // booked_start_time → bookedStartTime
-            bookedEndTime: reservation.booked_end_time,      // booked_end_time → bookedEndTime
+            bookedStartTime: ensureUTCTimestamp(reservation.booked_start_time),  // UTC時刻として解釈
+            bookedEndTime: ensureUTCTimestamp(reservation.booked_end_time),      // UTC時刻として解釈
             status: reservation.status,
             student: reservation.users  // users → student
           })),
@@ -429,7 +439,9 @@ export async function POST(request: NextRequest) {
     });
     console.log('Dateオブジェクト変換後:', {
       startTime: new Date(data.startTime),
-      endTime: new Date(data.endTime)
+      endTime: new Date(data.endTime),
+      startTimeISO: new Date(data.startTime).toISOString(),
+      endTimeISO: new Date(data.endTime).toISOString()
     });
     
     // 入力検証 - フロントエンドはキャメルケース（startTime, endTime）で送信
@@ -497,14 +509,20 @@ export async function POST(request: NextRequest) {
     }
     
     console.log(`レッスンスロット作成成功: ID ${newSlot.id}, 講師ID ${sessionInfo.user.id}`);
-    console.log('作成されたスロットデータ:', newSlot);
+    console.log('作成されたスロットデータ:', {
+      ...newSlot,
+      start_time_raw: newSlot.start_time,
+      end_time_raw: newSlot.end_time,
+      start_time_jst: new Date(newSlot.start_time).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }),
+      end_time_jst: new Date(newSlot.end_time).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
+    });
     
     // レスポンスもキャメルケース形式に変換
     const responseSlot = {
       id: newSlot.id,
       teacherId: newSlot.teacher_id,           // teacher_id → teacherId
-      startTime: newSlot.start_time,           // start_time → startTime
-      endTime: newSlot.end_time,               // end_time → endTime
+      startTime: ensureUTCTimestamp(newSlot.start_time),  // UTC時刻として解釈
+      endTime: ensureUTCTimestamp(newSlot.end_time),      // UTC時刻として解釈
       hourlyRate: newSlot.hourly_rate,         // hourly_rate → hourlyRate
       currency: newSlot.currency,
       minHours: newSlot.min_hours,             // min_hours → minHours
@@ -512,8 +530,8 @@ export async function POST(request: NextRequest) {
       minDuration: newSlot.min_duration,       // min_duration → minDuration
       maxDuration: newSlot.max_duration,       // max_duration → maxDuration
       isAvailable: newSlot.is_available,       // is_available → isAvailable
-      createdAt: newSlot.created_at,           // created_at → createdAt
-      updatedAt: newSlot.updated_at,           // updated_at → updatedAt
+      createdAt: ensureUTCTimestamp(newSlot.created_at),  // UTC時刻として解釈
+      updatedAt: ensureUTCTimestamp(newSlot.updated_at),  // UTC時刻として解釈
       // descriptionフィールドは存在しないため除外
       // teacher情報をincludeから取得
       teacher: newSlot.teacher || newSlot.users,
