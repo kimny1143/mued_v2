@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfDay, isSameDay, isToday, getDay, startOfWeek, endOfWeek, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -30,6 +30,11 @@ export default function MobileCalendarView({
 }: MobileCalendarViewProps) {
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(currentDate);
+  
+  // 初回マウント時のみcurrentDateをselectedDateに設定
+  useEffect(() => {
+    setSelectedDate(currentDate);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 日付のスロット数を取得
   const getDateSlotCount = (date: Date) => {
@@ -187,7 +192,11 @@ export default function MobileCalendarView({
         {/* 日付ナビゲーション */}
         <div className="flex items-center justify-between mb-4">
           <button
-            onClick={() => setSelectedDate(addDays(selectedDate, -1))}
+            onClick={() => {
+              const prevDate = addDays(selectedDate, -1);
+              setSelectedDate(prevDate);
+              setCurrentDate(prevDate);
+            }}
             className="p-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,7 +212,11 @@ export default function MobileCalendarView({
             )}
           </div>
           <button
-            onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+            onClick={() => {
+              const nextDate = addDays(selectedDate, 1);
+              setSelectedDate(nextDate);
+              setCurrentDate(nextDate);
+            }}
             className="p-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -325,24 +338,48 @@ export default function MobileCalendarView({
                   if (slotReservations.length === 0) return true;
                   
                   // スロットの制約を確認
+                  const slotDurationMinutes = (slotEnd.getTime() - slotStart.getTime()) / (1000 * 60);
                   const minDuration = slot.minHours ? slot.minHours * 60 : 60;
-                  const maxDuration = slot.maxHours ? slot.maxHours * 60 : 180;
+                  const maxDuration = slot.maxHours ? 
+                    Math.min(slot.maxHours * 60, slotDurationMinutes) : 
+                    Math.min(180, slotDurationMinutes);
                   
-                  // 予約済み時間帯を整理
-                  const bookedPeriods = slotReservations
+                  // 予約済み時間帯を整理（タイムゾーン考慮）
+                  const rawBookedPeriods = slotReservations
                     .filter(r => r.status !== 'CANCELED')
-                    .map(r => ({
-                      start: new Date(r.bookedStartTime),
-                      end: new Date(r.bookedEndTime)
-                    }))
+                    .map(r => {
+                      // 文字列がZで終わっていない場合はZを追加（UTC時刻として扱う）
+                      const startStr = r.bookedStartTime.endsWith('Z') ? r.bookedStartTime : r.bookedStartTime + 'Z';
+                      const endStr = r.bookedEndTime.endsWith('Z') ? r.bookedEndTime : r.bookedEndTime + 'Z';
+                      return {
+                        start: new Date(startStr),
+                        end: new Date(endStr)
+                      };
+                    })
                     .sort((a, b) => a.start.getTime() - b.start.getTime());
+                  
+                  // 重複する予約期間をマージ
+                  const bookedPeriods: Array<{start: Date, end: Date}> = [];
+                  for (const period of rawBookedPeriods) {
+                    if (bookedPeriods.length === 0) {
+                      bookedPeriods.push(period);
+                    } else {
+                      const lastPeriod = bookedPeriods[bookedPeriods.length - 1];
+                      if (period.start <= lastPeriod.end) {
+                        // 重複している場合はマージ
+                        lastPeriod.end = new Date(Math.max(lastPeriod.end.getTime(), period.end.getTime()));
+                      } else {
+                        bookedPeriods.push(period);
+                      }
+                    }
+                  }
                   
                   // 空き時間をチェック
                   let checkTime = slotStart;
                   
                   for (const period of bookedPeriods) {
                     const gapMinutes = (period.start.getTime() - checkTime.getTime()) / (1000 * 60);
-                    if (gapMinutes >= minDuration) {
+                    if (gapMinutes >= minDuration && gapMinutes <= maxDuration) {
                       return true;
                     }
                     checkTime = period.end;
@@ -350,7 +387,7 @@ export default function MobileCalendarView({
                   
                   // 最後の予約から終了時刻までの空き時間
                   const finalGapMinutes = (slotEnd.getTime() - checkTime.getTime()) / (1000 * 60);
-                  return finalGapMinutes >= minDuration;
+                  return finalGapMinutes >= minDuration && finalGapMinutes <= maxDuration;
                 })();
                 
                 return (

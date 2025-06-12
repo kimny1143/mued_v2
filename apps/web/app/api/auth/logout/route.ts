@@ -35,16 +35,22 @@ export async function GET(request: NextRequest) {
   // 明示的にSupabase関連のクッキーをクリア（PWA対応）
   const allCookies = cookieStore.getAll();
   for (const cookie of allCookies) {
-    // Supabase関連のクッキーを削除
+    // Supabase関連のクッキーを削除（より具体的な条件）
     if (cookie.name.includes('supabase') || 
         cookie.name.includes('sb-') || 
-        cookie.name.includes('auth')) {
-      cookieStore.set(cookie.name, '', {
-        maxAge: 0,
-        path: '/',
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production'
-      });
+        cookie.name.startsWith('sb:') ||
+        cookie.name === 'supabase-auth-token' ||
+        cookie.name === 'supabase.auth.token') {
+      // 複数のパスでクッキーを削除
+      const paths = ['/', '/m/', '/api/', '/auth/'];
+      for (const path of paths) {
+        cookieStore.set(cookie.name, '', {
+          maxAge: 0,
+          path,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production'
+        });
+      }
     }
   }
 

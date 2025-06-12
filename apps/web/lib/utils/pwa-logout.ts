@@ -86,14 +86,16 @@ export async function cleanupPWASession() {
 // PWA環境かどうかを判定
 export function isPWA(): boolean {
   // スタンドアロンモードで動作している
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-    (window.navigator as any).standalone === true;
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
   
-  // iOS PWA
+  // iOS PWA（iOS Safari特有のプロパティ）
   const isIOSPWA = 'standalone' in window.navigator && (window.navigator as any).standalone === true;
   
-  // Service Workerが登録されている
-  const hasServiceWorker = 'serviceWorker' in navigator;
+  // フルスクリーンモード
+  const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
   
-  return isStandalone || isIOSPWA || hasServiceWorker;
+  // minimal-uiモード（一部のPWA）
+  const isMinimalUI = window.matchMedia('(display-mode: minimal-ui)').matches;
+  
+  return isStandalone || isIOSPWA || isFullscreen || isMinimalUI;
 }

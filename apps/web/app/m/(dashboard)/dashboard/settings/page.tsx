@@ -243,7 +243,8 @@ export default function MobileSettingsPage() {
                 
                 // ログアウトAPIを呼び出し、PWAの場合はパラメータを追加
                 if (isPWA()) {
-                  window.location.href = '/api/auth/logout?redirect=/m/login?logout=true';
+                  const redirectUrl = encodeURIComponent('/m/login?logout=true');
+                  window.location.href = `/api/auth/logout?redirect=${redirectUrl}`;
                 } else {
                   window.location.href = '/api/auth/logout';
                 }
