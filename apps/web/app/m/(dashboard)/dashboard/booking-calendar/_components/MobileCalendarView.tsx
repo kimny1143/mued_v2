@@ -329,13 +329,36 @@ export default function MobileCalendarView({
                 const height = (displayDurationMinutes / 60) * 50; // 50pxが1時間
                 
                 // このスロットに関連する全予約を取得
-                const slotReservations = reservations.filter(r => r.slotId === slot.id);
+                // 重要: slot.reservationsには全ユーザーの予約が含まれている
+                // reservations配列には自分の予約のみが含まれている
+                const slotReservations = slot.reservations || [];
+                
+                // デバッグ: スロット内の予約情報を確認
+                if (slotReservations.length > 0 && !isMentor) {
+                  console.log('📱 生徒側 - スロット予約情報:', {
+                    slotId: slot.id,
+                    slotTime: `${formatJst(slotStart, 'HH:mm')}-${formatJst(slotEnd, 'HH:mm')}`,
+                    reservationCount: slotReservations.length,
+                    reservations: slotReservations.map(r => ({
+                      status: r.status,
+                      bookedTime: `${r.bookedStartTime} - ${r.bookedEndTime}`
+                    })),
+                    note: 'slot.reservationsを使用中'
+                  });
+                }
+                
                 const mentorName = slot.teacher?.name || slot.teacher?.email?.split('@')[0];
                 
                 // スロット内の予約可能性を判定
                 const hasAvailableTime = (() => {
-                  if (!slot.isAvailable) return false;
-                  if (slotReservations.length === 0) return true;
+                  if (!slot.isAvailable) {
+                    console.log('📱 スロット利用不可:', slot.id);
+                    return false;
+                  }
+                  if (slotReservations.length === 0) {
+                    console.log('📱 予約なし - 利用可能:', slot.id);
+                    return true;
+                  }
                   
                   // スロットの制約を確認
                   const slotDurationMinutes = (slotEnd.getTime() - slotStart.getTime()) / (1000 * 60);
@@ -387,7 +410,27 @@ export default function MobileCalendarView({
                   
                   // 最後の予約から終了時刻までの空き時間
                   const finalGapMinutes = (slotEnd.getTime() - checkTime.getTime()) / (1000 * 60);
-                  return finalGapMinutes >= minDuration && finalGapMinutes <= maxDuration;
+                  const result = finalGapMinutes >= minDuration && finalGapMinutes <= maxDuration;
+                  
+                  // デバッグ: 利用可能性判定結果
+                  if (!isMentor && slotReservations.length > 0) {
+                    console.log('📱 生徒側 - 利用可能性判定:', {
+                      slotId: slot.id,
+                      hasAvailableTime: result,
+                      minDuration,
+                      maxDuration,
+                      bookedPeriods: bookedPeriods.map(p => ({
+                        start: formatJst(p.start, 'HH:mm'),
+                        end: formatJst(p.end, 'HH:mm')
+                      })),
+                      finalGapMinutes,
+                      slotDurationMinutes,
+                      allReservationsInSlot: slotReservations.length,
+                      myReservations: reservations.filter(r => r.slotId === slot.id).length
+                    });
+                  }
+                  
+                  return result;
                 })();
                 
                 return (

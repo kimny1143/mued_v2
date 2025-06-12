@@ -73,6 +73,18 @@ export default function MobileBookingCalendarClient({ userId, isMentor }: Mobile
       // APIは配列を直接返すので、そのまま設定
       if (Array.isArray(slotsData)) {
         setLessonSlots(slotsData);
+        // デバッグ: スロット内の予約情報を確認
+        const slotsWithReservations = slotsData.filter((s: any) => s.reservations && s.reservations.length > 0);
+        if (slotsWithReservations.length > 0) {
+          console.log('📱 スロット内予約情報:', 
+            slotsWithReservations.map((s: any) => ({
+              slotId: s.id,
+              teacherId: s.teacherId,
+              reservationCount: s.reservations.length,
+              reservations: s.reservations
+            }))
+          );
+        }
       } else if (slotsData.lessonSlots) {
         // 後方互換性のため
         setLessonSlots(slotsData.lessonSlots);
@@ -101,6 +113,15 @@ export default function MobileBookingCalendarClient({ userId, isMentor }: Mobile
       // APIは配列を直接返すので、そのまま設定
       if (Array.isArray(reservationsData)) {
         setReservations(reservationsData);
+        console.log('📱 予約データ取得:', {
+          count: reservationsData.length,
+          sample: reservationsData.slice(0, 3).map((r: any) => ({
+            id: r.id,
+            slotId: r.slotId,
+            status: r.status,
+            bookedTime: `${r.bookedStartTime} - ${r.bookedEndTime}`
+          }))
+        });
       } else if (reservationsData.reservations) {
         // 後方互換性のため
         setReservations(reservationsData.reservations);
