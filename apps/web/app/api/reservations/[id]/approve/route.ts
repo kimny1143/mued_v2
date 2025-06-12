@@ -42,9 +42,11 @@ export async function POST(
     referer: headers.referer
   });
   
+  let session: any = null;
+  
   try {
     const authStartTime = Date.now();
-    const session = await getSessionFromRequest(request);
+    session = await getSessionFromRequest(request);
     console.log(`⏱️ [APPROVE API] 認証取得: ${Date.now() - authStartTime}ms`);
     
     if (!session || !session.user) {
