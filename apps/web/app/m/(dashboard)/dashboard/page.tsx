@@ -124,7 +124,7 @@ export default async function MobileDashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <span className="text-xs font-medium text-center">
-                  {isMentor ? 'スロット管理' : '予約する'}
+                  {isMentor ? 'レッスン管理' : '予約する'}
                 </span>
               </a>
 
@@ -185,22 +185,6 @@ export default async function MobileDashboardPage() {
                 <span className="text-xs font-medium text-center">練習記録</span>
               </a>
 
-              {isMentor && (
-                <a
-                  href="/m/dashboard/mentor-approvals"
-                  className="flex flex-col items-center justify-center p-3 bg-red-500 text-white rounded-lg shadow-sm relative"
-                >
-                  {pendingApprovalCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {pendingApprovalCount}
-                    </span>
-                  )}
-                  <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-xs font-medium text-center">承認管理</span>
-                </a>
-              )}
 
               <a
                 href="/m/dashboard/plans"
