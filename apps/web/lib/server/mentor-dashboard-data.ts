@@ -95,9 +95,9 @@ export const getMentorDashboardData = cache(async (userId: string): Promise<Ment
       orderBy: { booked_start_time: 'asc' }
     });
 
-    // 本日の予約からレッスンセッションを取得
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // 現在時刻
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
     
@@ -119,10 +119,6 @@ export const getMentorDashboardData = cache(async (userId: string): Promise<Ment
           status: 'SCHEDULED'
         }
       }) : [];
-
-    // 現在時刻
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const thisWeekStart = new Date(today);
     thisWeekStart.setDate(today.getDate() - today.getDay());
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
