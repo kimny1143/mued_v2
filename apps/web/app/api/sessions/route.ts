@@ -30,15 +30,37 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Where条件を構築
-    const where: any = {
-      reservations: {
+    // Where条件を構築 - lesson_sessionsは予約IDで紐づける
+    const where: any = {};
+    
+    // まずユーザーの予約を取得
+    const userReservations = await prisma.reservations.findMany({
+      where: {
         OR: [
           { student_id: userId },
           { lesson_slots: { teacher_id: userId } }
-        ]
-      }
-    };
+        ],
+        status: { in: ['APPROVED', 'CONFIRMED', 'COMPLETED'] }
+      },
+      select: { id: true }
+    });
+    
+    const reservationIds = userReservations.map(r => r.id);
+    
+    if (reservationIds.length > 0) {
+      where.reservation_id = { in: reservationIds };
+    } else {
+      // 予約がない場合は空の結果を返す
+      return createCorsResponse({
+        sessions: [],
+        pagination: {
+          total: 0,
+          limit,
+          offset,
+          hasMore: false
+        }
+      }, origin);
+    }
 
     // ステータスフィルター
     if (status) {
@@ -68,32 +90,43 @@ export async function GET(request: NextRequest) {
     let total: number;
     
     try {
-      // 通常のPrismaクエリを使用
+      // lesson_sessionsを取得し、予約情報は別途取得
       [sessions, total] = await Promise.all([
         prisma.lesson_sessions.findMany({
           where,
-          include: {
-            reservations: {
-              include: {
-                lesson_slots: {
-                  include: {
-                    users: {
-                      select: { id: true, name: true, email: true, image: true }
-                    }
-                  }
-                },
-                users: {
-                  select: { id: true, name: true, email: true, image: true }
-                }
-              }
-            }
-          },
           orderBy: { created_at: 'desc' },
           take: limit,
           skip: offset
         }),
         prisma.lesson_sessions.count({ where })
       ]);
+      
+      // 予約情報を別途取得
+      if (sessions.length > 0) {
+        const sessionReservationIds = sessions.map(s => s.reservation_id);
+        const reservations = await prisma.reservations.findMany({
+          where: { id: { in: sessionReservationIds } },
+          include: {
+            lesson_slots: {
+              include: {
+                users: {
+                  select: { id: true, name: true, email: true, image: true }
+                }
+              }
+            },
+            users: {
+              select: { id: true, name: true, email: true, image: true }
+            }
+          }
+        });
+        
+        // セッションに予約情報を紐付け
+        const reservationMap = new Map(reservations.map(r => [r.id, r]));
+        sessions = sessions.map(session => ({
+          ...session,
+          reservations: reservationMap.get(session.reservation_id)
+        }));
+      }
     } catch (error) {
       console.error('lesson_sessionsテーブルエラー:', error);
       // テーブルが存在しない場合は空の結果を返す

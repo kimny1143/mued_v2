@@ -50,11 +50,44 @@ export default function Page() {
   const categorizedSessions = useMemo(() => {
     if (!sessions) return { scheduled: [], in_progress: [], completed: [] };
     
-    return {
-      scheduled: sessions.filter(s => s.status === 'SCHEDULED'),
-      in_progress: sessions.filter(s => s.status === 'IN_PROGRESS'),
-      completed: sessions.filter(s => s.status === 'COMPLETED')
-    };
+    const now = new Date();
+    
+    // ステータスベースと時刻ベースの両方を考慮して振り分け
+    const scheduled: LessonSession[] = [];
+    const in_progress: LessonSession[] = [];
+    const completed: LessonSession[] = [];
+    
+    sessions.forEach(session => {
+      const startTime = new Date(session.scheduled_start);
+      const endTime = new Date(session.scheduled_end);
+      
+      // ステータスがある場合はそれを優先
+      if (session.status === 'COMPLETED') {
+        completed.push(session);
+      } else if (session.status === 'IN_PROGRESS') {
+        in_progress.push(session);
+      } else if (session.status === 'SCHEDULED') {
+        // 時刻チェックで振り分け
+        if (now >= endTime) {
+          completed.push(session);
+        } else if (now >= startTime && now < endTime) {
+          in_progress.push(session);
+        } else {
+          scheduled.push(session);
+        }
+      } else {
+        // ステータスがない場合は時刻ベースで判定
+        if (now >= endTime) {
+          completed.push(session);
+        } else if (now >= startTime && now < endTime) {
+          in_progress.push(session);
+        } else {
+          scheduled.push(session);
+        }
+      }
+    });
+    
+    return { scheduled, in_progress, completed };
   }, [sessions]);
 
   const isStudent = user?.roleName === 'student';

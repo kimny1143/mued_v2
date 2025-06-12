@@ -66,7 +66,7 @@ export function useSessions(options: UseSessionsOptions = {}) {
 
   const { data, error, mutate } = useSWR<SessionsResponse>(
     // userIdがない場合はnullを返してSWRの実行を防ぐ
-    options.userId ? `/api/sessions?${queryParams.toString()}` : null,
+    options.userId ? `/api/my-lessons?${queryParams.toString()}` : null,
     async (url: string) => {
       console.log('useSessions - API呼び出し開始:', url);
       
