@@ -232,12 +232,16 @@ export async function POST(
 
       // レッスンセッションを自動作成
       const sessionCreateStartTime = Date.now();
+      // UUIDを生成
+      const { v4: uuidv4 } = await import('uuid');
       const lessonSession = await tx.lesson_sessions.create({
         data: {
+          id: uuidv4(),
           reservation_id: reservationId,
           scheduled_start: reservation.booked_start_time,
           scheduled_end: reservation.booked_end_time,
-          status: 'SCHEDULED'
+          status: 'SCHEDULED',
+          updated_at: new Date()
         }
       });
       console.log(`⏱️ [APPROVE API] セッション作成: ${Date.now() - sessionCreateStartTime}ms`);
@@ -459,7 +463,7 @@ export async function POST(
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       reservationId: params.id,
-      userId: session?.user?.id
+      userId: (session as any)?.user?.id
     });
     
     // エラーメッセージの詳細化
