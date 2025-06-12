@@ -60,7 +60,8 @@ export const TimeSlotDisplay: React.FC<TimeSlotDisplayProps> = ({
   const filteredTimeSlots = selectedDate
     ? timeSlots.filter(
         slot => {
-          const slotStartTime = new Date(slot.startTime);
+          const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+          const slotStartTime = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
           return isSameDay(slotStartTime, selectedDate) && slot.isAvailable;
         }
       )

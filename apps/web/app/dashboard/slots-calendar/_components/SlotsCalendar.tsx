@@ -96,7 +96,10 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
 
   // スロットがある日付リストを生成
   const slotDays = Array.from(new Set(
-    slots.map(slot => startOfDay(new Date(slot.startTime)).getTime())
+    slots.map(slot => {
+      const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+      return startOfDay(new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z')).getTime();
+    })
   )).map(timestamp => new Date(timestamp));
 
   // 日付が今日かどうかをチェック
@@ -110,8 +113,12 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
   // 特定の日のスロットを取得（日付を跨ぐスロットも含める）
   const getSlotsForDate = (date: Date) => {
     return slots.filter(slot => {
-      const slotStart = new Date(slot.startTime);
-      const slotEnd = new Date(slot.endTime);
+      // startTimeがZサフィックスを含まない場合、追加してUTCとして解釈
+      const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+      const endTimeStr = typeof slot.endTime === 'string' ? slot.endTime : slot.endTime.toISOString();
+      
+      const slotStart = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
+      const slotEnd = new Date(endTimeStr.endsWith('Z') ? endTimeStr : endTimeStr + 'Z');
       
       // 検査日の0:00と23:59:59を設定
       const dayStart = new Date(date);
@@ -357,8 +364,9 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                       })
                                       .slice(0, 1) // モバイルでは1件まで表示
                                       .map((reservation, resIndex) => {
-                                        const startTime = new Date(reservation.bookedStartTime || '');
-                                        const timeString = formatJst(reservation.bookedStartTime || '', 'HH:mm');
+                                        const bookedStartTimeStr = reservation.bookedStartTime || '';
+                                        const startTime = new Date(bookedStartTimeStr.endsWith('Z') ? bookedStartTimeStr : bookedStartTimeStr + 'Z');
+                                        const timeString = formatJst(startTime, 'HH:mm');
                                         
                                         // ステータス別の色分け（コンパクト表示）
                                         const reservationColors = {

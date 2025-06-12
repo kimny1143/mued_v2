@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfDay, isSameDay, isToday, getDay, startOfWeek, endOfWeek, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { formatJst } from '@/lib/utils/timezone';
 import type { LessonSlot, Reservation } from '../_types/calendar';
 
 interface MobileCalendarViewProps {
@@ -32,16 +33,19 @@ export default function MobileCalendarView({
 
   // 日付のスロット数を取得
   const getDateSlotCount = (date: Date) => {
-    return lessonSlots.filter(slot => 
-      isSameDay(new Date(slot.startTime), date)
-    ).length;
+    return lessonSlots.filter(slot => {
+      const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+      return isSameDay(new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z'), date);
+    }).length;
   };
 
   // 日付の予約数を取得
   const getDateReservationCount = (date: Date) => {
     return reservations.filter(reservation => {
       const slot = lessonSlots.find(s => s.id === reservation.slotId);
-      return slot && isSameDay(new Date(slot.startTime), date);
+      if (!slot) return false;
+      const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+      return isSameDay(new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z'), date);
     }).length;
   };
 
@@ -153,8 +157,11 @@ export default function MobileCalendarView({
   // 日表示
   const renderDayView = () => {
     const daySlots = lessonSlots.filter(slot => {
-      const slotStart = new Date(slot.startTime);
-      const slotEnd = new Date(slot.endTime);
+      const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+      const endTimeStr = typeof slot.endTime === 'string' ? slot.endTime : slot.endTime.toISOString();
+      
+      const slotStart = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
+      const slotEnd = new Date(endTimeStr.endsWith('Z') ? endTimeStr : endTimeStr + 'Z');
       
       // 選択日の0:00と23:59:59を設定
       const dayStart = new Date(selectedDate);
@@ -283,8 +290,11 @@ export default function MobileCalendarView({
             {/* スロット帯の重ね表示 */}
             <div className="absolute inset-0 pointer-events-none">
               {daySlots.map((slot, slotIndex) => {
-                const slotStart = new Date(slot.startTime);
-                const slotEnd = new Date(slot.endTime);
+                const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+                const endTimeStr = typeof slot.endTime === 'string' ? slot.endTime : slot.endTime.toISOString();
+                
+                const slotStart = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
+                const slotEnd = new Date(endTimeStr.endsWith('Z') ? endTimeStr : endTimeStr + 'Z');
                 
                 // 選択日の範囲
                 const dayStart = new Date(selectedDate);
@@ -339,7 +349,7 @@ export default function MobileCalendarView({
                       {/* スロット基本情報 */}
                       <div className="text-xs">
                         <div className="font-semibold truncate">
-                          {format(slotStart, 'HH:mm')}-{format(slotEnd, 'HH:mm')}
+                          {formatJst(slotStart, 'HH:mm')}-{formatJst(slotEnd, 'HH:mm')}
                           {slotStart < dayStart && <span className="ml-1">(前日から)</span>}
                           {slotEnd > dayEnd && <span className="ml-1">(翌日まで)</span>}
                         </div>

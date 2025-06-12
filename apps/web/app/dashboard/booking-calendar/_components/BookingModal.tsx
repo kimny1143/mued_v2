@@ -104,8 +104,11 @@ export const BookingModal: React.FC<BookingModalProps> = ({
   // スロット範囲内で選択可能な開始時間を生成（15分刻み）- 予約済み時間帯を除外
   const generateStartTimeOptions = (slot: TimeSlot) => {
     const options: Array<{ time: Date; label: string; isAvailable: boolean; unavailableReason?: string }> = [];
-    const slotStart = new Date(slot.startTime);
-    const slotEnd = new Date(slot.endTime);
+    const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+    const endTimeStr = typeof slot.endTime === 'string' ? slot.endTime : slot.endTime.toISOString();
+    
+    const slotStart = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
+    const slotEnd = new Date(endTimeStr.endsWith('Z') ? endTimeStr : endTimeStr + 'Z');
     
     // 選択されたレッスン時間分だけ余裕を持たせる
     const maxStartTime = new Date(slotEnd.getTime() - duration * 60 * 1000);
@@ -120,12 +123,16 @@ export const BookingModal: React.FC<BookingModalProps> = ({
         const mentorBookedIntervals = currentSlot.reservations
           .filter(res => res.status === 'CONFIRMED' || res.status === 'PENDING')
           .filter(res => res.bookedStartTime && res.bookedEndTime)
-          .map(res => ({
-            start: new Date(res.bookedStartTime!).getTime(),
-            end: new Date(res.bookedEndTime!).getTime(),
-            type: 'mentor' as const,
-            detail: '他の生徒が予約済み'
-          }));
+          .map(res => {
+            const startStr = res.bookedStartTime!;
+            const endStr = res.bookedEndTime!;
+            return {
+              start: new Date(startStr.endsWith('Z') ? startStr : startStr + 'Z').getTime(),
+              end: new Date(endStr.endsWith('Z') ? endStr : endStr + 'Z').getTime(),
+              type: 'mentor' as const,
+              detail: '他の生徒が予約済み'
+            };
+          });
         bookedIntervals.push(...mentorBookedIntervals);
       }
     }
@@ -136,15 +143,20 @@ export const BookingModal: React.FC<BookingModalProps> = ({
       
       const studentBookedIntervals = studentReservations
         .filter(res => {
-          const resDate = new Date(res.bookedStartTime);
+          const startStr = res.bookedStartTime;
+          const resDate = new Date(startStr.endsWith('Z') ? startStr : startStr + 'Z');
           return resDate.toDateString() === selectedDateStr;
         })
-        .map(res => ({
-          start: new Date(res.bookedStartTime).getTime(),
-          end: new Date(res.bookedEndTime).getTime(),
-          type: 'student' as const,
-          detail: '他のメンターと予約済み'
-        }));
+        .map(res => {
+          const startStr = res.bookedStartTime;
+          const endStr = res.bookedEndTime;
+          return {
+            start: new Date(startStr.endsWith('Z') ? startStr : startStr + 'Z').getTime(),
+            end: new Date(endStr.endsWith('Z') ? endStr : endStr + 'Z').getTime(),
+            type: 'student' as const,
+            detail: '他のメンターと予約済み'
+          };
+        });
       bookedIntervals.push(...studentBookedIntervals);
     }
     

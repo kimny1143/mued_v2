@@ -2,6 +2,7 @@
 
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, startOfDay } from 'date-fns';
 import React from 'react';
+import { formatJst } from '@/lib/utils/timezone';
 
 import type { ExtendedTimeSlot, MyReservation } from '../_types/calendar.js';
 
@@ -31,7 +32,10 @@ export const MonthView: React.FC<MonthViewProps> = ({
   const availableDays = Array.from(new Set(
     allTimeSlots
       .filter(slot => slot.isAvailable)
-      .map(slot => startOfDay(new Date(slot.startTime)).getTime())
+      .map(slot => {
+        const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+        return startOfDay(new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z')).getTime();
+      })
   )).map(timestamp => new Date(timestamp));
 
   // 日付が今日かどうかをチェック
@@ -72,8 +76,12 @@ export const MonthView: React.FC<MonthViewProps> = ({
         const daySlots = allTimeSlots.filter(slot => {
           if (!slot.isAvailable) return false;
           
-          const slotStart = new Date(slot.startTime);
-          const slotEnd = new Date(slot.endTime);
+          // startTimeがZサフィックスを含まない場合、追加してUTCとして解釈
+          const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+          const endTimeStr = typeof slot.endTime === 'string' ? slot.endTime : slot.endTime.toISOString();
+          
+          const slotStart = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
+          const slotEnd = new Date(endTimeStr.endsWith('Z') ? endTimeStr : endTimeStr + 'Z');
           const dayStart = new Date(date);
           dayStart.setHours(0, 0, 0, 0);
           const dayEnd = new Date(date);
@@ -139,17 +147,20 @@ export const MonthView: React.FC<MonthViewProps> = ({
             
             {/* 生徒自身の予約を最優先で表示 - PENDING_APPROVALを含むように修正 */}
             {(() => {
-              const myReservationsOnDate = myReservations.filter(res => 
-                isSameDay(new Date(res.bookedStartTime), date) && 
-                (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
-              );
+              const myReservationsOnDate = myReservations.filter(res => {
+                const bookedTimeStr = res.bookedStartTime;
+                const bookedTime = new Date(bookedTimeStr.endsWith('Z') ? bookedTimeStr : bookedTimeStr + 'Z');
+                return isSameDay(bookedTime, date) && 
+                  (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL');
+              });
               
               if (myReservationsOnDate.length > 0) {
                 return (
                   <div className="flex flex-col gap-0.5 w-full mt-1">
                     {myReservationsOnDate.slice(0, 2).map((reservation, resIndex) => {
-                      const startTime = new Date(reservation.bookedStartTime);
-                      const timeString = format(startTime, 'HH:mm');
+                      const bookedStartTimeStr = reservation.bookedStartTime;
+                      const startTime = new Date(bookedStartTimeStr.endsWith('Z') ? bookedStartTimeStr : bookedStartTimeStr + 'Z');
+                      const timeString = formatJst(startTime, 'HH:mm');
                       
                       // ステータス別の色分け（コンパクト表示）- PENDING_APPROVALの色を追加
                       const statusColors = {
@@ -197,10 +208,12 @@ export const MonthView: React.FC<MonthViewProps> = ({
 
             {/* スロットタグ表示 - 自分の予約がない日のみ */}
             {(() => {
-              const myReservationsOnDate = myReservations.filter(res => 
-                isSameDay(new Date(res.bookedStartTime), date) && 
-                (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
-              );
+              const myReservationsOnDate = myReservations.filter(res => {
+                const bookedTimeStr = res.bookedStartTime;
+                const bookedTime = new Date(bookedTimeStr.endsWith('Z') ? bookedTimeStr : bookedTimeStr + 'Z');
+                return isSameDay(bookedTime, date) && 
+                  (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL');
+              });
               
               if (myReservationsOnDate.length > 0) return null;
               
@@ -226,14 +239,14 @@ export const MonthView: React.FC<MonthViewProps> = ({
                           cursor-pointer transition-colors leading-tight max-w-full truncate
                           ${(extSlot.bookingStatus === 'available' || extSlot.bookingStatus === 'partial') ? 'hover:opacity-80' : 'cursor-default'}
                         `}
-                        title={`${extSlot.mentorName} ${format(new Date(extSlot.startTime), 'HH:mm')}-${format(new Date(extSlot.endTime), 'HH:mm')} ${extSlot.bookingStatus === 'available' ? '(完全空き)' : extSlot.bookingStatus === 'partial' ? `(${extSlot.availableTime}分空き)` : extSlot.bookingStatus === 'full' ? '(満席)' : '(利用不可)'} - クリックで予約`}
+                        title={`${extSlot.mentorName} ${formatJst(extSlot.startTime, 'HH:mm')}-${formatJst(extSlot.endTime, 'HH:mm')} ${extSlot.bookingStatus === 'available' ? '(完全空き)' : extSlot.bookingStatus === 'partial' ? `(${extSlot.availableTime}分空き)` : extSlot.bookingStatus === 'full' ? '(満席)' : '(利用不可)'} - クリックで予約`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="truncate">
                             {extSlot.mentorName?.substring(0, 2)}
                           </span>
                           <span className="ml-1">
-                            {format(new Date(extSlot.startTime), 'H:mm')}
+                            {formatJst(extSlot.startTime, 'H:mm')}
                           </span>
                         </div>
                       </div>

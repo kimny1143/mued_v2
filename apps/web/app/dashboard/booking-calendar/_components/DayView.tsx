@@ -4,6 +4,7 @@ import { format, isSameDay } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, User } from 'lucide-react';
 import React from 'react';
+import { formatJst } from '@/lib/utils/timezone';
 
 import { Button } from '@/app/components/ui/button';
 
@@ -54,8 +55,12 @@ export const DayView: React.FC<DayViewProps> = ({
   const daySlots = allTimeSlots.filter(slot => {
     if (!slot.isAvailable) return false;
     
-    const slotStart = new Date(slot.startTime);
-    const slotEnd = new Date(slot.endTime);
+    // startTimeがZサフィックスを含まない場合、追加してUTCとして解釈
+    const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+    const endTimeStr = typeof slot.endTime === 'string' ? slot.endTime : slot.endTime.toISOString();
+    
+    const slotStart = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
+    const slotEnd = new Date(endTimeStr.endsWith('Z') ? endTimeStr : endTimeStr + 'Z');
     const dayStart = new Date(selectedDate);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(selectedDate);
@@ -266,8 +271,11 @@ export const DayView: React.FC<DayViewProps> = ({
               
               return mentorSlots.map((slot) => {
                 // スロットの時間範囲を計算
-                const slotStart = new Date(slot.startTime);
-                const slotEnd = new Date(slot.endTime);
+                const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+                const endTimeStr = typeof slot.endTime === 'string' ? slot.endTime : slot.endTime.toISOString();
+                
+                const slotStart = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
+                const slotEnd = new Date(endTimeStr.endsWith('Z') ? endTimeStr : endTimeStr + 'Z');
                 
                 // グリッド上での位置計算
                 const startHour = slotStart.getHours();
@@ -314,7 +322,7 @@ export const DayView: React.FC<DayViewProps> = ({
                         {/* スロット基本情報 */}
                         <div>
                           <div className="font-semibold text-gray-900">
-                            {format(slotStart, 'HH:mm')}-{format(slotEnd, 'HH:mm')}
+                            {formatJst(slotStart, 'HH:mm')}-{formatJst(slotEnd, 'HH:mm')}
                           </div>
                           <div className="text-gray-700 font-medium">
                             {formatPrice(slot.hourlyRate || 5000)}
@@ -349,11 +357,13 @@ export const DayView: React.FC<DayViewProps> = ({
                     
                     {/* 生徒自身の予約を最優先で表示 */}
                     {(() => {
-                      const myReservationsInSlot = myReservations.filter(res => 
-                        isSameDay(new Date(res.bookedStartTime), selectedDate) &&
-                        res.slotId === slot.id &&
-                        (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
-                      );
+                      const myReservationsInSlot = myReservations.filter(res => {
+                        const bookedTimeStr = res.bookedStartTime;
+                        const bookedTime = new Date(bookedTimeStr.endsWith('Z') ? bookedTimeStr : bookedTimeStr + 'Z');
+                        return isSameDay(bookedTime, selectedDate) &&
+                          res.slotId === slot.id &&
+                          (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL');
+                      });
                       
                       console.log(`🔍 スロット ${slot.id} の自分の予約チェック:`, {
                         slotId: slot.id,
@@ -371,8 +381,11 @@ export const DayView: React.FC<DayViewProps> = ({
                       });
                       
                       return myReservationsInSlot.map((myReservation, myResIndex) => {
-                        const resStart = new Date(myReservation.bookedStartTime);
-                        const resEnd = new Date(myReservation.bookedEndTime);
+                        const resStartStr = myReservation.bookedStartTime;
+                        const resEndStr = myReservation.bookedEndTime;
+                        
+                        const resStart = new Date(resStartStr.endsWith('Z') ? resStartStr : resStartStr + 'Z');
+                        const resEnd = new Date(resEndStr.endsWith('Z') ? resEndStr : resEndStr + 'Z');
                         
                         console.log(`🔍 自分の予約を表示: ${myReservation.id}`, {
                           resStart: resStart.toISOString(),
@@ -419,7 +432,7 @@ export const DayView: React.FC<DayViewProps> = ({
                                 🎵 あなたの予約
                               </div>
                               <div className="font-semibold text-center">
-                                {format(resStart, 'HH:mm')}-{format(resEnd, 'HH:mm')}
+                                {formatJst(resStart, 'HH:mm')}-{formatJst(resEnd, 'HH:mm')}
                               </div>
                               <div className="text-center text-xs opacity-90">
                                 {statusText[myReservation.status as keyof typeof statusText] || myReservation.status}
@@ -433,15 +446,20 @@ export const DayView: React.FC<DayViewProps> = ({
                     {/* 他の予約の重ね表示（プライバシー保護） */}
                     {(() => {
                       // このスロットに関連する他の予約を取得
-                      const otherReservationsInSlot = otherReservations.filter(res => 
-                        isSameDay(new Date(res.bookedStartTime), selectedDate) &&
-                        res.slotId === slot.id &&
-                        (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL')
-                      );
+                      const otherReservationsInSlot = otherReservations.filter(res => {
+                        const bookedTimeStr = res.bookedStartTime;
+                        const bookedTime = new Date(bookedTimeStr.endsWith('Z') ? bookedTimeStr : bookedTimeStr + 'Z');
+                        return isSameDay(bookedTime, selectedDate) &&
+                          res.slotId === slot.id &&
+                          (res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'APPROVED' || res.status === 'PENDING_APPROVAL');
+                      });
                       
                       return otherReservationsInSlot.map((otherReservation, otherResIndex) => {
-                        const resStart = new Date(otherReservation.bookedStartTime);
-                        const resEnd = new Date(otherReservation.bookedEndTime);
+                        const resStartStr = otherReservation.bookedStartTime;
+                        const resEndStr = otherReservation.bookedEndTime;
+                        
+                        const resStart = new Date(resStartStr.endsWith('Z') ? resStartStr : resStartStr + 'Z');
+                        const resEnd = new Date(resEndStr.endsWith('Z') ? resEndStr : resEndStr + 'Z');
                         
                         // 予約時間の相対位置計算
                         const resStartPos = resStart.getHours() + (resStart.getMinutes() / 60);
@@ -470,7 +488,7 @@ export const DayView: React.FC<DayViewProps> = ({
                                   ? 'text-red-800' 
                                   : 'text-orange-800'
                               }`}>
-                                {format(resStart, 'HH:mm')}-{format(resEnd, 'HH:mm')}
+                                {formatJst(resStart, 'HH:mm')}-{formatJst(resEnd, 'HH:mm')}
                               </div>
                               <div className={`text-xs ${
                                 otherReservation.status === 'CONFIRMED' 

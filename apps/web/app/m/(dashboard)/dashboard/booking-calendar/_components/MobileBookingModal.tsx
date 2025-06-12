@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import { isPastJst } from '@/lib/utils/timezone';
+import { isPastJst, formatJst } from '@/lib/utils/timezone';
 import type { LessonSlot } from '../_types/calendar';
 
 interface MobileBookingModalProps {
@@ -82,8 +82,11 @@ export default function MobileBookingModal({
   if (!isOpen) return null;
 
   const mentorName = slot.teacher?.name || slot.teacher?.email?.split('@')[0] || '講師';
-  const slotStart = new Date(slot.startTime);
-  const slotEnd = new Date(slot.endTime);
+  const startTimeStr = typeof slot.startTime === 'string' ? slot.startTime : slot.startTime.toISOString();
+  const endTimeStr = typeof slot.endTime === 'string' ? slot.endTime : slot.endTime.toISOString();
+  
+  const slotStart = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
+  const slotEnd = new Date(endTimeStr.endsWith('Z') ? endTimeStr : endTimeStr + 'Z');
 
   // 時間選択肢を生成（15分刻み）
   const generateTimeOptions = () => {
@@ -99,9 +102,11 @@ export default function MobileBookingModal({
         .filter(res => res.status === 'CONFIRMED' || res.status === 'PENDING' || res.status === 'PENDING_APPROVAL' || res.status === 'APPROVED')
         .forEach(res => {
           if (res.bookedStartTime && res.bookedEndTime) {
+            const startStr = res.bookedStartTime;
+            const endStr = res.bookedEndTime;
             bookedIntervals.push({
-              start: new Date(res.bookedStartTime).getTime(),
-              end: new Date(res.bookedEndTime).getTime(),
+              start: new Date(startStr.endsWith('Z') ? startStr : startStr + 'Z').getTime(),
+              end: new Date(endStr.endsWith('Z') ? endStr : endStr + 'Z').getTime(),
               type: 'mentor'
             });
           }
@@ -112,13 +117,16 @@ export default function MobileBookingModal({
     const slotDate = slotStart.toDateString();
     studentReservations
       .filter(res => {
-        const resDate = new Date(res.bookedStartTime);
+        const startStr = res.bookedStartTime;
+        const resDate = new Date(startStr.endsWith('Z') ? startStr : startStr + 'Z');
         return resDate.toDateString() === slotDate && res.slotId !== slot.id;
       })
       .forEach(res => {
+        const startStr = res.bookedStartTime;
+        const endStr = res.bookedEndTime;
         bookedIntervals.push({
-          start: new Date(res.bookedStartTime).getTime(),
-          end: new Date(res.bookedEndTime).getTime(),
+          start: new Date(startStr.endsWith('Z') ? startStr : startStr + 'Z').getTime(),
+          end: new Date(endStr.endsWith('Z') ? endStr : endStr + 'Z').getTime(),
           type: 'student'
         });
       });
@@ -149,7 +157,7 @@ export default function MobileBookingModal({
       
       options.push({
         time: new Date(currentTime),
-        label: format(currentTime, 'HH:mm'),
+        label: formatJst(currentTime, 'HH:mm'),
         isAvailable,
         reason
       });
@@ -274,12 +282,12 @@ export default function MobileBookingModal({
             <h3 className="font-medium mb-2">{mentorName}先生</h3>
             <div className="text-sm text-gray-600">
               <p>{format(slotStart, 'yyyy年M月d日(E)', { locale: ja })}</p>
-              <p>{format(slotStart, 'HH:mm')} - {format(slotEnd, 'HH:mm')}</p>
+              <p>{formatJst(slotStart, 'HH:mm')} - {formatJst(slotEnd, 'HH:mm')}</p>
               <p className="mt-1">¥{slot.hourlyRate.toLocaleString()}/時間</p>
             </div>
             {selectedStartTime && selectedEndTime && (
               <div className="text-sm font-medium text-blue-600 mt-2">
-                予約時間: {format(selectedStartTime, 'HH:mm')} - {format(selectedEndTime, 'HH:mm')}
+                予約時間: {formatJst(selectedStartTime, 'HH:mm')} - {formatJst(selectedEndTime, 'HH:mm')}
               </div>
             )}
           </div>
@@ -380,7 +388,7 @@ export default function MobileBookingModal({
                   <span>日時</span>
                   <span>
                     {format(slotStart, 'M/d(E)', { locale: ja })}
-                    {' '}{format(selectedStartTime, 'HH:mm')}-{format(selectedEndTime, 'HH:mm')}
+                    {' '}{formatJst(selectedStartTime, 'HH:mm')}-{formatJst(selectedEndTime, 'HH:mm')}
                   </span>
                 </div>
                 <div className="flex justify-between">
