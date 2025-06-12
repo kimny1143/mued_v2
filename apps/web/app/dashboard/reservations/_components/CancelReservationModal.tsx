@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { formatJst } from '@/lib/utils/timezone';
 import { AlertTriangle, Clock, DollarSign } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -179,8 +180,8 @@ export const CancelReservationModal: React.FC<CancelReservationModalProps> = ({
               <div className="flex justify-between">
                 <span className="text-gray-600">日時:</span>
                 <span>
-                  {format(reservation.bookedStartTime, 'yyyy年M月d日(E) HH:mm', { locale: ja })} - 
-                  {format(reservation.bookedEndTime, 'HH:mm', { locale: ja })}
+                  {formatJst(reservation.bookedStartTime, 'yyyy年M月d日(E) HH:mm')} - 
+                  {formatJst(reservation.bookedEndTime, 'HH:mm')}
                 </span>
               </div>
               <div className="flex justify-between">
