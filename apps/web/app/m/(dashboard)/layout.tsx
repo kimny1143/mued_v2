@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getServerSession } from '@/lib/server/auth';
+import MobileDashboardClient from './dashboard/MobileDashboardClient';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -14,5 +15,9 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
     redirect('/m/login');
   }
 
-  return <>{children}</>;
+  return (
+    <MobileDashboardClient>
+      {children}
+    </MobileDashboardClient>
+  );
 }

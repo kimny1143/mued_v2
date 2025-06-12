@@ -143,8 +143,11 @@ export default function MobileReservationsClient({
   const renderReservationCard = (reservation: any) => {
     const mentorName = reservation.lesson_slots?.users?.name || reservation.lesson_slots?.users?.email?.split('@')[0];
     const studentName = reservation.users?.name || reservation.users?.email?.split('@')[0];
-    const startTime = new Date(reservation.booked_start_time);
-    const endTime = new Date(reservation.booked_end_time);
+    // Zサフィックスを追加してUTCとして解釈
+    const startTimeStr = reservation.booked_start_time.endsWith('Z') ? reservation.booked_start_time : reservation.booked_start_time + 'Z';
+    const endTimeStr = reservation.booked_end_time.endsWith('Z') ? reservation.booked_end_time : reservation.booked_end_time + 'Z';
+    const startTime = new Date(startTimeStr);
+    const endTime = new Date(endTimeStr);
 
     return (
       <div key={reservation.id} className="bg-white rounded-lg shadow-sm p-4 mb-3">

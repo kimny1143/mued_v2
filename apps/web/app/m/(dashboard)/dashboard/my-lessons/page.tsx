@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { format, isWithinInterval, subMinutes, addMinutes } from "date-fns";
 import { ja } from "date-fns/locale";
+import { formatJst } from '@/lib/utils/timezone';
 import { 
   PlayCircleIcon, 
   CalendarIcon,
@@ -144,9 +145,7 @@ export default function MobileMyLessonsPage() {
   };
 
   const formatSessionTime = (start: string, end: string) => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    return `${format(startDate, 'M月d日 HH:mm', { locale: ja })} - ${format(endDate, 'HH:mm', { locale: ja })}`;
+    return `${formatJst(start, 'M月d日 HH:mm')} - ${formatJst(end, 'HH:mm')}`;
   };
 
   const getStatusBadge = (status: string) => {

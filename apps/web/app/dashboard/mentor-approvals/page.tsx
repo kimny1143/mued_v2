@@ -86,15 +86,27 @@ export default function MentorApprovalsPage() {
 
   // 予約を承認する関数
   const approveReservation = async (reservationId: string): Promise<void> => {
+    console.log('予約承認処理開始:', { reservationId });
+    
     try {
       const { data: sessionData } = await supabaseBrowser.auth.getSession();
       const token = sessionData.session?.access_token ?? null;
+
+      console.log('セッション情報:', {
+        hasSession: !!sessionData.session,
+        hasToken: !!token,
+        userId: sessionData.session?.user?.id,
+        userRole: sessionData.session?.user?.role
+      });
 
       if (!token) {
         throw new Error('認証が必要です');
       }
 
-      const response = await fetch(`/api/reservations/${reservationId}/approve`, {
+      const url = `/api/reservations/${reservationId}/approve`;
+      console.log('APIリクエスト送信:', { url, method: 'POST' });
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,15 +115,26 @@ export default function MentorApprovalsPage() {
         credentials: 'include',
       });
 
+      console.log('APIレスポンス:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('APIエラーレスポンス:', errorData);
         throw new Error(errorData.error || '承認に失敗しました');
       }
 
       const result = await response.json();
       console.log('承認成功:', result);
     } catch (error) {
-      console.error('承認エラー:', error);
+      console.error('承認エラー詳細:', {
+        error,
+        message: error instanceof Error ? error.message : '不明なエラー',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       throw error;
     }
   };

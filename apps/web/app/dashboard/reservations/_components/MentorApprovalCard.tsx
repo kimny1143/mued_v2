@@ -1,7 +1,6 @@
 'use client';
 
-import { format } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { formatJst } from '@/lib/utils/timezone';
 import { Clock, User, Calendar, DollarSign, CheckCircle, XCircle } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
@@ -48,15 +47,27 @@ export const MentorApprovalCard: React.FC<MentorApprovalCardProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleApprove = async () => {
+    console.log('承認ボタンクリック - 開始', {
+      reservationId: reservation.id,
+      status: reservation.status
+    });
+    
     try {
       setIsProcessing(true);
+      console.log('承認処理を実行中...');
       await onApprove(reservation.id);
+      console.log('承認処理成功');
       toast.success('予約を承認しました');
     } catch (error) {
+      console.error('承認エラー詳細:', {
+        error,
+        message: error instanceof Error ? error.message : '不明なエラー',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       toast.error('承認に失敗しました');
-      console.error('承認エラー:', error);
     } finally {
       setIsProcessing(false);
+      console.log('承認処理完了');
     }
   };
 
@@ -81,7 +92,7 @@ export const MentorApprovalCard: React.FC<MentorApprovalCardProps> = ({
   };
 
   const formatDateTime = (dateString: string) => {
-    return format(new Date(dateString), 'M月d日(E) HH:mm', { locale: ja });
+    return formatJst(dateString, 'M月d日(E) HH:mm');
   };
 
   const formatCurrency = (amount: number) => {
@@ -118,7 +129,7 @@ export const MentorApprovalCard: React.FC<MentorApprovalCardProps> = ({
           <div className="flex items-center space-x-2">
             <Calendar className="h-4 w-4 text-gray-500" />
             <span className="text-sm">
-              {formatDateTime(reservation.bookedStartTime)} - {format(new Date(reservation.bookedEndTime), 'HH:mm')}
+              {formatDateTime(reservation.bookedStartTime)} - {formatJst(reservation.bookedEndTime, 'HH:mm')}
             </span>
           </div>
           
@@ -148,7 +159,7 @@ export const MentorApprovalCard: React.FC<MentorApprovalCardProps> = ({
 
         {/* 申請日時 */}
         <div className="text-xs text-gray-500">
-          申請日時: {format(new Date(reservation.createdAt), 'yyyy年M月d日 HH:mm', { locale: ja })}
+          申請日時: {formatJst(reservation.createdAt, 'yyyy年M月d日 HH:mm')}
         </div>
 
         {/* 承認・拒否ボタン */}
