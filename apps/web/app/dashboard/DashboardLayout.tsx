@@ -26,7 +26,6 @@ interface NavItem {
   icon: React.ElementType;
   label: string;
   path: string;
-  subMenu?: Array<{ label: string; path: string }>;
 }
 
 interface DashboardLayoutProps {
@@ -46,7 +45,6 @@ export default function DashboardLayout({ children, user, roleName, title, fullW
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({});
 
   // ロールに基づいたナビゲーション項目を定義
   const getNavigationItems = (): NavItem[] => {
@@ -149,19 +147,8 @@ export default function DashboardLayout({ children, user, roleName, title, fullW
 
   const navigationItems = getNavigationItems();
 
-  const toggleSubmenu = (label: string) => {
-    setExpandedMenus(prev => ({
-      ...prev,
-      [label]: !prev[label]
-    }));
-  };
-
-  const isMenuActive = (path: string, subMenu?: Array<{ label: string; path: string }>) => {
-    if (pathname === path) return true;
-    if (subMenu) {
-      return subMenu.some(item => pathname === item.path);
-    }
-    return false;
+  const isMenuActive = (path: string) => {
+    return pathname === path;
   };
 
   const handleSignOut = async () => {
@@ -237,11 +224,7 @@ export default function DashboardLayout({ children, user, roleName, title, fullW
             <div key={item.path}>
               <Link
                 href={item.path}
-                onClick={(e) => {
-                  if (item.subMenu) {
-                    e.preventDefault();
-                    toggleSubmenu(item.label);
-                  }
+                onClick={() => {
                   // モバイルメニューの場合は閉じる
                   if (isMobileMenuOpen) {
                     setIsMobileMenuOpen(false);
@@ -249,7 +232,7 @@ export default function DashboardLayout({ children, user, roleName, title, fullW
                 }}
                 className={`
                   flex items-center px-4 py-2 text-sm font-medium rounded-md
-                  ${isMenuActive(item.path, item.subMenu) 
+                  ${isMenuActive(item.path) 
                     ? 'bg-blue-50 text-blue-700' 
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
                   ${!isSidebarOpen && 'justify-center'}
@@ -257,36 +240,9 @@ export default function DashboardLayout({ children, user, roleName, title, fullW
               >
                 <item.icon className={`h-5 w-5 ${isSidebarOpen && 'mr-3'}`} />
                 {isSidebarOpen && (
-                  <>
-                    <span className="flex-1">{item.label}</span>
-                    {item.subMenu && (
-                      <ChevronRightIcon className={`h-4 w-4 transition-transform ${
-                        expandedMenus[item.label] ? 'rotate-90' : ''
-                      }`} />
-                    )}
-                  </>
+                  <span className="flex-1">{item.label}</span>
                 )}
               </Link>
-              
-              {/* サブメニュー */}
-              {item.subMenu && expandedMenus[item.label] && isSidebarOpen && (
-                <div className="ml-11 mt-1 space-y-1">
-                  {item.subMenu.map((subItem) => (
-                    <Link
-                      key={subItem.path}
-                      href={subItem.path}
-                      className={`
-                        block px-4 py-2 text-sm rounded-md
-                        ${pathname === subItem.path
-                          ? 'bg-blue-50 text-blue-700 font-medium'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
-                      `}
-                    >
-                      {subItem.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
             </div>
           ))}
         </nav>
