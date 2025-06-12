@@ -84,14 +84,19 @@ export const getDashboardData = cache(async (userId: string): Promise<DashboardD
         },
         include: {
           users: true,
-          lesson_slots: true
+          lesson_slots: {
+            include: {
+              users: true
+            }
+          }
         },
         orderBy: { booked_start_time: 'asc' }
       });
     }
 
-    // すべての予約を結合
-    const allReservations = [...reservations, ...mentorReservations];
+
+    // すべての予約を結合（メンターの場合は生徒としての予約は通常ないので、mentorReservationsのみ使用）
+    const allReservations = isMentor ? mentorReservations : reservations;
 
     // 今日の予定を抽出
     const todaySchedule = allReservations
@@ -116,6 +121,7 @@ export const getDashboardData = cache(async (userId: string): Promise<DashboardD
       approved: allReservations.filter(r => r.status === 'APPROVED').length,
       confirmed: allReservations.filter(r => r.status === 'CONFIRMED').length
     };
+
 
     // サブスクリプション情報（簡易版）
     const subscription = {

@@ -99,11 +99,7 @@ export default function DashboardLayout({ children, user, roleName, title, fullW
         { 
           icon: CalendarIcon, 
           label: "レッスン管理", 
-          path: "/dashboard/slots-calendar",
-          subMenu: [
-            { label: "スロットカレンダー", path: "/dashboard/slots-calendar" },
-            { label: "承認待ち", path: "/dashboard/mentor-approvals" }
-          ]
+          path: "/dashboard/slots-calendar"
         },
         { 
           icon: BookOpenIcon, 
@@ -245,6 +241,10 @@ export default function DashboardLayout({ children, user, roleName, title, fullW
                   if (item.subMenu) {
                     e.preventDefault();
                     toggleSubmenu(item.label);
+                  }
+                  // モバイルメニューの場合は閉じる
+                  if (isMobileMenuOpen) {
+                    setIsMobileMenuOpen(false);
                   }
                 }}
                 className={`
