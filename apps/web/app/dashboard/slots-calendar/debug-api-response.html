@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API レスポンス デバッグツール</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2563eb;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 10px;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .code {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .slot-item {
+            background: #e3f2fd;
+            border: 1px solid #1976d2;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .time-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .time-box {
+            background: #f0f7ff;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        .instructions {
+            background: #e8f4fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 レッスンスロット API レスポンス デバッグツール</h1>
+
+    <div class="instructions">
+        <h3>📋 使用方法</h3>
+        <ol>
+            <li><strong>開発者ツールを開く</strong>: F12キー または 右クリック→「検証」</li>
+            <li><strong>ネットワークタブ</strong>を選択</li>
+            <li>下の「APIを呼び出す」ボタンをクリック</li>
+            <li>ネットワークタブで <code>lesson-slots</code> リクエストを確認</li>
+            <li>レスポンスの時刻データを下のテキストエリアに貼り付け</li>
+            <li>「解析する」ボタンをクリック</li>
+        </ol>
+    </div>
+
+    <div class="section">
+        <h2>1. API呼び出し</h2>
+        <button onclick="fetchLessonSlots()">📡 APIを呼び出す</button>
+        <div id="apiStatus" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. レスポンスデータ貼り付け</h2>
+        <p>ネットワークタブからレスポンスをコピーして貼り付けてください：</p>
+        <textarea id="responseData" rows="10" style="width: 100%; font-family: monospace;"></textarea>
+        <br><br>
+        <button onclick="analyzeResponse()">🔍 解析する</button>
+    </div>
+
+    <div class="section" id="analysisResult" style="display: none;">
+        <h2>3. 解析結果</h2>
+        <div id="analysisContent"></div>
+    </div>
+
+    <script>
+        // API呼び出し関数
+        async function fetchLessonSlots() {
+            const statusEl = document.getElementById('apiStatus');
+            statusEl.innerHTML = '<div class="warning">⏳ APIを呼び出し中...</div>';
+            
+            try {
+                const response = await fetch('/api/lesson-slots?viewMode=own', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+                
+                statusEl.innerHTML = `
+                    <div class="success">
+                        ✅ API呼び出し成功！
+                        <br>ステータス: ${response.status}
+                        <br>スロット数: ${Array.isArray(data) ? data.length : 0}件
+                    </div>
+                    <div class="code">${JSON.stringify(data, null, 2)}</div>
+                `;
+
+                // 自動的にテキストエリアに設定
+                document.getElementById('responseData').value = JSON.stringify(data, null, 2);
+                
+                // 自動解析
+                analyzeResponse();
+                
+            } catch (error) {
+                statusEl.innerHTML = `
+                    <div class="warning">
+                        ❌ エラーが発生しました: ${error.message}
+                        <br>開発者ツールのコンソールで詳細を確認してください。
+                    </div>
+                `;
+                console.error('API呼び出しエラー:', error);
+            }
+        }
+
+        // レスポンス解析関数
+        function analyzeResponse() {
+            const responseText = document.getElementById('responseData').value;
+            const resultSection = document.getElementById('analysisResult');
+            const resultContent = document.getElementById('analysisContent');
+            
+            if (!responseText.trim()) {
+                alert('レスポンスデータを貼り付けてください');
+                return;
+            }
+
+            try {
+                const data = JSON.parse(responseText);
+                
+                if (!Array.isArray(data)) {
+                    throw new Error('レスポンスが配列ではありません');
+                }
+
+                let html = `<h3>📊 解析結果（${data.length}件のスロット）</h3>`;
+
+                data.forEach((slot, index) => {
+                    html += `
+                        <div class="slot-item">
+                            <h4>スロット ${index + 1}</h4>
+                            <p><strong>ID:</strong> ${slot.id}</p>
+                            
+                            <div class="time-comparison">
+                                <div class="time-box">
+                                    <h5>🌐 APIレスポンスの時刻データ</h5>
+                                    <p><strong>startTime:</strong> ${slot.startTime}</p>
+                                    <p><strong>endTime:</strong> ${slot.endTime}</p>
+                                    ${slot.startTimeJst ? `<p><strong>startTimeJst:</strong> ${slot.startTimeJst}</p>` : ''}
+                                    ${slot.endTimeJst ? `<p><strong>endTimeJst:</strong> ${slot.endTimeJst}</p>` : ''}
+                                </div>
+                                
+                                <div class="time-box">
+                                    <h5>🕐 JavaScript Date解析</h5>
+                                    <p><strong>開始（UTC）:</strong> ${new Date(slot.startTime).toISOString()}</p>
+                                    <p><strong>終了（UTC）:</strong> ${new Date(slot.endTime).toISOString()}</p>
+                                    <p><strong>開始（JST）:</strong> ${new Date(slot.startTime).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</p>
+                                    <p><strong>終了（JST）:</strong> ${new Date(slot.endTime).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}</p>
+                                </div>
+                                
+                                <div class="time-box">
+                                    <h5>🖥️ ローカル時間</h5>
+                                    <p><strong>開始:</strong> ${new Date(slot.startTime).toLocaleString()}</p>
+                                    <p><strong>終了:</strong> ${new Date(slot.endTime).toLocaleString()}</p>
+                                    <p><strong>タイムゾーン:</strong> ${Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // 問題の診断
+                html += `
+                    <div class="warning">
+                        <h3>🔍 診断結果</h3>
+                        <ul>
+                            <li>APIレスポンスに <strong>${data[0]?.startTimeJst ? 'JSTフィールドが含まれています' : 'JSTフィールドが含まれていません'}</strong></li>
+                            <li>データベースの時刻形式: <strong>${data[0]?.startTime && data[0].startTime.includes('T') ? 'ISO 8601形式' : '不明'}</strong></li>
+                            <li>タイムゾーン情報: <strong>${data[0]?.startTime && data[0].startTime.endsWith('Z') ? 'UTC明示（Zサフィックス）' : 'タイムゾーン情報なし'}</strong></li>
+                        </ul>
+                    </div>
+                `;
+
+                resultContent.innerHTML = html;
+                resultSection.style.display = 'block';
+                
+            } catch (error) {
+                resultContent.innerHTML = `
+                    <div class="warning">
+                        ❌ 解析エラー: ${error.message}
+                        <br>正しいJSON形式のデータを貼り付けてください。
+                    </div>
+                `;
+                resultSection.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

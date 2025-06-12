@@ -35,6 +35,17 @@ interface SlotWithReservations {
   [key: string]: any;
 }
 
+// データベースの時刻文字列をUTCとして解釈するヘルパー関数
+function ensureUTCTimestamp(timestamp: Date | string | null): string | null {
+  if (!timestamp) return null;
+  const timestampStr = timestamp instanceof Date ? timestamp.toISOString() : timestamp.toString();
+  // タイムゾーン指定がない場合、Zサフィックスを追加してUTCとして扱う
+  if (timestampStr && !timestampStr.endsWith('Z') && !timestampStr.includes('+') && !timestampStr.includes('-')) {
+    return timestampStr + 'Z';
+  }
+  return timestampStr;
+}
+
 // Prismaクエリ実行のラッパー関数（エラーハンドリング強化）
 async function executePrismaQuery<T>(queryFn: () => Promise<T>): Promise<T> {
   try {
@@ -169,13 +180,30 @@ export async function GET(
     }
     
     // クライアントに返すデータ形式に変換
-    const formattedSlots = lessonSlots.map(slot => ({
-      id: slot.id,
-      mentorId: slot.teacher_id,
-      startTime: slot.start_time.toISOString(),
-      endTime: slot.end_time.toISOString(),
-      isBooked: Boolean(slot.reservations.length > 0 && slot.reservations.some(r => r.status !== 'CANCELED')),
-    }));
+    const formattedSlots = lessonSlots.map(slot => {
+      // デバッグログ
+      console.log('API - Original slot times:', {
+        id: slot.id,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        start_type: typeof slot.start_time,
+        end_type: typeof slot.end_time
+      });
+      
+      const formatted = {
+        id: slot.id,
+        mentorId: slot.teacher_id,
+        startTime: ensureUTCTimestamp(slot.start_time),
+        endTime: ensureUTCTimestamp(slot.end_time),
+        isBooked: Boolean(slot.reservations.length > 0 && slot.reservations.some(r => r.status !== 'CANCELED')),
+      };
+      
+      console.log('API - Formatted slot:', formatted);
+      
+      return formatted;
+    });
+    
+    console.log('API - Final response data:', JSON.stringify(formattedSlots, null, 2));
     
     return NextResponse.json(formattedSlots);
     
