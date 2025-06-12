@@ -377,6 +377,12 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
       }
 
       const apiStartTime = performance.now();
+      console.log('📡 承認APIコール開始:', {
+        url: `/api/reservations/${reservationId}/approve`,
+        token: token ? 'あり' : 'なし',
+        tokenLength: token?.length
+      });
+      
       const response = await fetch(`/api/reservations/${reservationId}/approve`, {
         method: 'POST',
         headers: {
@@ -384,8 +390,16 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
           Authorization: `Bearer ${token}`,
         },
         credentials: 'include',
+        // タイムアウトを10秒に設定
+        signal: AbortSignal.timeout(10000)
       });
       console.log(`⏱️ API呼び出し: ${(performance.now() - apiStartTime).toFixed(2)}ms`);
+      console.log('📡 レスポンス詳細:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
 
       if (!response.ok) {
         let errorMessage = '承認処理に失敗しました';
@@ -437,7 +451,13 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
       
     } catch (error) {
       console.error('承認処理エラー:', error);
-      toast.error(`承認に失敗しました: ${(error as Error).message}`);
+      
+      // タイムアウトエラーの場合
+      if (error instanceof Error && error.name === 'AbortError') {
+        toast.error('承認処理がタイムアウトしました。しばらく待ってから再度お試しください。');
+      } else {
+        toast.error(`承認に失敗しました: ${(error as Error).message}`);
+      }
     } finally {
       setIsReservationProcessing(false);
     }

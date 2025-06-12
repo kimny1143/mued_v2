@@ -22,11 +22,30 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const startTime = Date.now();
+  const headers = Object.fromEntries(request.headers.entries());
+  console.log(`🎯 [APPROVE API] 開始: ${params.id}`, {
+    timestamp: new Date().toISOString(),
+    authorization: headers.authorization ? `Bearer ${headers.authorization.substring(7, 17)}...` : 'なし',
+    cookie: headers.cookie ? 'あり' : 'なし',
+    contentType: headers['content-type'],
+    origin: headers.origin,
+    referer: headers.referer
+  });
+  
   try {
+    const authStartTime = Date.now();
     const session = await getSessionFromRequest(request);
+    console.log(`⏱️ [APPROVE API] 認証取得: ${Date.now() - authStartTime}ms`);
     
     if (!session || !session.user) {
-      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+      console.log(`❌ [APPROVE API] 認証エラー - 合計処理時間: ${Date.now() - startTime}ms`);
+      return NextResponse.json({ error: '認証が必要です' }, { 
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     }
     
     // メンターロールのチェック（role-utilsを使用した統一的な判定）
@@ -67,6 +86,7 @@ export async function POST(
     const reservationId = params.id;
     
     // 予約の存在確認と権限チェック
+    const findStartTime = Date.now();
     const reservation = await prisma.reservations.findUnique({
       where: { id: reservationId },
       include: {
@@ -80,6 +100,7 @@ export async function POST(
         }
       }
     });
+    console.log(`⏱️ [APPROVE API] 予約検索: ${Date.now() - findStartTime}ms`);
     
     if (!reservation) {
       return NextResponse.json(
@@ -105,8 +126,12 @@ export async function POST(
     }
     
     // トランザクションで承認と決済処理を実行
+    const transactionStartTime = Date.now();
+    console.log(`🔄 [APPROVE API] トランザクション開始`);
+    
     const result = await prisma.$transaction(async (tx) => {
       // 承認前に生徒の重複予約をチェック
+      const conflictCheckStartTime = Date.now();
       console.log('🔍 生徒の重複予約チェック開始');
       
       const conflictingReservations = await tx.reservations.findMany({
@@ -136,6 +161,7 @@ export async function POST(
           }
         }
       });
+      console.log(`⏱️ [APPROVE API] 重複チェック: ${Date.now() - conflictCheckStartTime}ms`);
       
       if (conflictingReservations.length > 0) {
         // 重複する予約の詳細情報を作成
@@ -183,6 +209,7 @@ export async function POST(
       
       console.log('✅ 生徒の重複予約なし - 承認処理を続行');
       // 予約を承認状態に更新
+      const updateStartTime = Date.now();
       const updatedReservation = await tx.reservations.update({
         where: { id: reservationId },
         data: {
@@ -194,8 +221,10 @@ export async function POST(
           payments: true
         }
       });
+      console.log(`⏱️ [APPROVE API] 予約更新: ${Date.now() - updateStartTime}ms`);
 
       // レッスンセッションを自動作成
+      const sessionCreateStartTime = Date.now();
       const lessonSession = await tx.lesson_sessions.create({
         data: {
           reservation_id: reservationId,
@@ -204,6 +233,7 @@ export async function POST(
           status: 'SCHEDULED'
         }
       });
+      console.log(`⏱️ [APPROVE API] セッション作成: ${Date.now() - sessionCreateStartTime}ms`);
 
       console.log('📚 レッスンセッション作成完了:', {
         sessionId: lessonSession.id,
@@ -366,6 +396,8 @@ export async function POST(
       return { updatedReservation, paymentResult };
     });
     
+    console.log(`⏱️ [APPROVE API] トランザクション完了: ${Date.now() - transactionStartTime}ms`);
+    
     // 型アサーションで一時的に回避（Prismaクライアントの型が更新されるまで）
     const reservationWithApprovedAt = result.updatedReservation as typeof result.updatedReservation & { approvedAt: Date };
     
@@ -397,6 +429,8 @@ export async function POST(
       message = '予約を承認しました。生徒に決済手続きの案内が送信されます。';
     }
     
+    console.log(`✅ [APPROVE API] 成功 - 合計処理時間: ${Date.now() - startTime}ms`);
+    
     return NextResponse.json({
       success: true,
       message,
@@ -410,6 +444,7 @@ export async function POST(
     });
     
   } catch (error) {
+    console.error(`❌ [APPROVE API] エラー - 合計処理時間: ${Date.now() - startTime}ms`);
     console.error('予約承認エラー詳細:', {
       error,
       message: error instanceof Error ? error.message : String(error),

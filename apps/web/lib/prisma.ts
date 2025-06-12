@@ -44,7 +44,7 @@ const getDevelopmentUrl = (url: string | undefined) => {
 
 const prismaClientSingleton = () => {
   const client = new PrismaClient({
-    log: isDevelopment ? ['error', 'warn'] : ['error'],
+    log: isDevelopment ? ['query', 'error', 'warn'] : ['error'],
     errorFormat: 'minimal',
     datasources: {
       db: {
