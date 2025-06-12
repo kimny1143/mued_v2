@@ -402,6 +402,11 @@ export async function POST(
       message,
       reservation: result.updatedReservation,
       payment: result.paymentResult
+    }, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
     
   } catch (error) {

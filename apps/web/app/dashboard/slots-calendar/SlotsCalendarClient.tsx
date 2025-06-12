@@ -388,10 +388,28 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
       console.log(`⏱️ API呼び出し: ${(performance.now() - apiStartTime).toFixed(2)}ms`);
 
       if (!response.ok) {
-        const result = await response.json();
-        throw new Error(result.error || '承認処理に失敗しました');
+        let errorMessage = '承認処理に失敗しました';
+        try {
+          const result = await response.json();
+          errorMessage = result.error || errorMessage;
+        } catch (jsonError) {
+          console.error('エラーレスポンスのJSON解析に失敗:', jsonError);
+        }
+        throw new Error(errorMessage);
       }
 
+      // 成功時もレスポンスを読み取る（空の場合も処理）
+      let result = {};
+      try {
+        const text = await response.text();
+        if (text) {
+          result = JSON.parse(text);
+        }
+      } catch (parseError) {
+        console.warn('レスポンスのJSON解析に失敗（空の可能性）:', parseError);
+      }
+      console.log('承認API成功レスポンス:', result);
+      
       toast.success('予約を承認しました');
       
       // 🚀 高速化: ローカル状態を直接更新
@@ -460,6 +478,7 @@ export default function SlotsCalendarClient({ userRole }: SlotsCalendarClientPro
         throw new Error(result.error || 'キャンセル処理に失敗しました');
       }
 
+      console.log('キャンセルAPI成功レスポンス:', result);
       toast.success('予約をキャンセルしました');
       
       // 🚀 高速化: ローカル状態を直接更新
