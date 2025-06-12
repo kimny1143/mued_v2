@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { format, isPast, isFuture } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { createBrowserClient } from '@supabase/ssr';
+import { formatJst } from '@/lib/utils/timezone';
 // Tabs component removed to avoid import issues
 
 const supabase = createBrowserClient(
@@ -156,10 +157,10 @@ export default function MobileReservationsClient({
               </span>
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              {format(startTime, 'yyyy年M月d日(E)', { locale: ja })}
+              {formatJst(startTime, 'yyyy年M月d日(E)')}
             </p>
             <p className="text-sm text-gray-600">
-              {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+              {formatJst(startTime, 'HH:mm')} - {formatJst(endTime, 'HH:mm')}
               <span className="ml-2">({reservation.duration_minutes}分)</span>
             </p>
           </div>

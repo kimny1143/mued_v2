@@ -376,7 +376,7 @@ export const SlotsCalendar: React.FC<SlotsCalendarProps> = ({
                                             id: res.id,
                                             status: res.status,
                                             slotId: slot.id,
-                                            date: format(new Date(slot.startTime), 'yyyy-MM-dd'),
+                                            date: formatJst(slot.startTime, 'yyyy-MM-dd'),
                                             studentName: res.student?.name
                                           });
                                         }
