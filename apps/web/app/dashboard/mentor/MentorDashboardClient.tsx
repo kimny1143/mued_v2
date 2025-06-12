@@ -2,15 +2,7 @@
 
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
-import { 
-  CalendarIcon, 
-  ClockIcon, 
-  AlertCircleIcon,
-  UsersIcon,
-  TrendingUpIcon,
-  DollarSignIcon,
-  CheckCircleIcon
-} from "lucide-react";
+import { CalendarIcon, ClockIcon, CheckCircleIcon, AlertCircleIcon } from "lucide-react";
 import Link from 'next/link';
 import React from "react";
 
@@ -27,157 +19,110 @@ export default function MentorDashboardClient({ initialData }: MentorDashboardCl
 
   return (
     <>
-      {/* 統計カード */}
+      {/* ロール別の予約状況セクション */}
       <section className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {/* 承認待ち */}
-          <Link href="/dashboard/slots-calendar">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* 今後の予定カード */}
+          <Link href="/dashboard/my-lessons" passHref>
             <Card className="p-6 bg-white hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">承認待ち</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pendingApproval}</p>
-                </div>
-                <AlertCircleIcon className="h-8 w-8 text-yellow-500" />
+              <div className="flex items-center mb-4">
+                <CalendarIcon className="h-5 w-5 mr-2 text-blue-500" />
+                <h3 className="font-semibold">今後の予定</h3>
+              </div>
+              
+              <div className="space-y-3">
+                {upcomingLessons && upcomingLessons.length > 0 ? (
+                  upcomingLessons.map((lesson) => (
+                    <div key={lesson.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center">
+                        <ClockIcon className="h-4 w-4 mr-2 text-gray-500" />
+                        <div>
+                          <p className="text-sm font-medium">
+                            {format(new Date(lesson.startTime), 'yyyy/MM/dd HH:mm')} - 
+                            {format(new Date(lesson.endTime), 'HH:mm')}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {lesson.studentName}さん
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">
+                        確定
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">確定済みの予定はありません</p>
+                )}
               </div>
             </Card>
           </Link>
 
-          {/* 本日のレッスン */}
-          <Card className="p-6 bg-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">本日のレッスン</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.todayLessons}</p>
+          {/* 予約状況カード */}
+          <Link href="/dashboard/slots-calendar" passHref>
+            <Card className="p-6 bg-white hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="flex items-center mb-4">
+                <CheckCircleIcon className="h-5 w-5 mr-2 text-green-500" />
+                <h3 className="font-semibold">予約状況</h3>
               </div>
-              <CalendarIcon className="h-8 w-8 text-blue-500" />
-            </div>
-          </Card>
-
-          {/* 今週のレッスン */}
-          <Card className="p-6 bg-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">今週のレッスン</p>
-                <p className="text-2xl font-bold text-green-600">{stats.thisWeekLessons}</p>
+              
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <AlertCircleIcon className="h-4 w-4 mr-2 text-yellow-500" />
+                    <span className="text-sm text-gray-600">承認待ち</span>
+                  </div>
+                  <span className="text-lg font-semibold text-yellow-600">{stats.pendingApproval}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <ClockIcon className="h-4 w-4 mr-2 text-blue-500" />
+                    <span className="text-sm text-gray-600">本日のレッスン</span>
+                  </div>
+                  <span className="text-lg font-semibold text-blue-600">{stats.todayLessons}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
+                    <span className="text-sm text-gray-600">今週のレッスン</span>
+                  </div>
+                  <span className="text-lg font-semibold text-green-600">{stats.thisWeekLessons}</span>
+                </div>
               </div>
-              <TrendingUpIcon className="h-8 w-8 text-green-500" />
-            </div>
-          </Card>
-
-          {/* 今月の収益 */}
-          <Card className="p-6 bg-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">今月の収益</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  ¥{stats.thisMonthEarnings.toLocaleString()}
-                </p>
-              </div>
-              <DollarSignIcon className="h-8 w-8 text-purple-500" />
-            </div>
-          </Card>
+            </Card>
+          </Link>
         </div>
       </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 今後の予定 */}
-        <section>
-          <Card className="p-6 bg-white">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold flex items-center">
-                <ClockIcon className="h-5 w-5 mr-2 text-blue-500" />
-                今後の予定
-              </h3>
-              <Link href="/dashboard/my-lessons">
-                <Button variant="ghost" size="sm">すべて見る</Button>
-              </Link>
+      {/* Recent Activity */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+        <Card className="bg-white divide-y">
+          {recentActivities && recentActivities.length > 0 ? (
+            recentActivities.slice(0, 3).map((activity) => (
+              <div key={activity.id} className="p-4 flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">{activity.message}</h4>
+                  <p className="text-sm text-gray-500">
+                    {format(new Date(activity.timestamp), 'yyyy/MM/dd HH:mm')}
+                  </p>
+                </div>
+                {activity.type === 'approval_pending' && (
+                  <Link href="/dashboard/slots-calendar">
+                    <Button variant="ghost" size="sm">
+                      View Details
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="p-4">
+              <p className="text-sm text-gray-500">アクティビティはありません</p>
             </div>
-            
-            <div className="space-y-3">
-              {upcomingLessons && upcomingLessons.length > 0 ? (
-                upcomingLessons.map((lesson) => (
-                  <div key={lesson.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center">
-                      <UsersIcon className="h-4 w-4 mr-2 text-gray-500" />
-                      <div>
-                        <p className="text-sm font-medium">
-                          {lesson.studentName}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {format(new Date(lesson.startTime), 'M月d日(E) HH:mm', { locale: ja })} - 
-                          {format(new Date(lesson.endTime), 'HH:mm')}
-                        </p>
-                      </div>
-                    </div>
-                    <CheckCircleIcon className="h-4 w-4 text-green-500" />
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  確定済みの予定はありません
-                </p>
-              )}
-            </div>
-          </Card>
-        </section>
-
-        {/* 最近のアクティビティ */}
-        <section>
-          <Card className="p-6 bg-white">
-            <h3 className="font-semibold mb-4">最近のアクティビティ</h3>
-            
-            <div className="space-y-3">
-              {recentActivities && recentActivities.length > 0 ? (
-                recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <p className="text-sm">{activity.message}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {format(new Date(activity.timestamp), 'M月d日 HH:mm', { locale: ja })}
-                      </p>
-                    </div>
-                    {activity.type === 'approval_pending' && (
-                      <Link href="/dashboard/slots-calendar">
-                        <Button size="sm" variant="outline">確認</Button>
-                      </Link>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-4">
-                  アクティビティはありません
-                </p>
-              )}
-            </div>
-          </Card>
-        </section>
-      </div>
-
-      {/* クイックアクション */}
-      <section className="mt-8">
-        <Card className="p-6 bg-white">
-          <h3 className="font-semibold mb-4">クイックアクション</h3>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/dashboard/slots-calendar">
-              <Button variant="outline">
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                スロット管理
-              </Button>
-            </Link>
-            <Link href="/dashboard/reservations">
-              <Button variant="outline">
-                <ClockIcon className="h-4 w-4 mr-2" />
-                予約一覧
-              </Button>
-            </Link>
-            <Link href="/dashboard/messages">
-              <Button variant="outline">
-                <UsersIcon className="h-4 w-4 mr-2" />
-                メッセージ
-              </Button>
-            </Link>
-          </div>
+          )}
         </Card>
       </section>
     </>
