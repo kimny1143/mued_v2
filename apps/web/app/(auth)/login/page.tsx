@@ -71,8 +71,9 @@ function LoginContent() {
     
     performCleanup();
   }, [searchParams]);
-    
-    // 拡張機能の検出（デバッグ用）
+  
+  // 拡張機能の検出（デバッグ用）
+  useEffect(() => {
     const detectExtensions = () => {
       const extensions = {
         adblock: window.document.documentElement.getAttribute('data-adblockkey'),
