@@ -240,8 +240,6 @@ export async function POST(
         data: {
           id: uuidv4(),
           reservation_id: reservationId,
-          scheduled_start: reservation.booked_start_time,
-          scheduled_end: reservation.booked_end_time,
           status: 'SCHEDULED',
           updated_at: new Date()
         }
@@ -251,8 +249,7 @@ export async function POST(
       console.log('📚 レッスンセッション作成完了:', {
         sessionId: lessonSession.id,
         reservationId: lessonSession.reservation_id,
-        scheduledStart: lessonSession.scheduled_start,
-        scheduledEnd: lessonSession.scheduled_end
+        status: lessonSession.status
       });
       
       // Setup完了済みの場合は自動決済実行
