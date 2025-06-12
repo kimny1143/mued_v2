@@ -46,13 +46,15 @@ export default function MentorDashboardClient({ initialData }: MentorDashboardCl
                           </p>
                         </div>
                       </div>
-                      <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-800">
-                        確定
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        lesson.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {lesson.status === 'CONFIRMED' ? '確定' : '承認済み'}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-gray-500">確定済みの予定はありません</p>
+                  <p className="text-sm text-gray-500">予定はありません</p>
                 )}
               </div>
             </Card>
@@ -86,9 +88,9 @@ export default function MentorDashboardClient({ initialData }: MentorDashboardCl
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <CheckCircleIcon className="h-4 w-4 mr-2 text-green-500" />
-                    <span className="text-sm text-gray-600">今週のレッスン</span>
+                    <span className="text-sm text-gray-600">今後のレッスン</span>
                   </div>
-                  <span className="text-lg font-semibold text-green-600">{stats.thisWeekLessons}</span>
+                  <span className="text-lg font-semibold text-green-600">{stats.upcomingLessons}</span>
                 </div>
               </div>
             </Card>
@@ -109,13 +111,26 @@ export default function MentorDashboardClient({ initialData }: MentorDashboardCl
                     {format(new Date(activity.timestamp), 'yyyy/MM/dd HH:mm')}
                   </p>
                 </div>
-                {activity.type === 'approval_pending' && (
-                  <Link href="/dashboard/slots-calendar">
-                    <Button variant="ghost" size="sm">
-                      View Details
-                    </Button>
-                  </Link>
-                )}
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    activity.type === 'approval_pending' ? 'bg-yellow-100 text-yellow-800' :
+                    activity.type === 'confirmed' ? 'bg-green-100 text-green-800' :
+                    activity.type === 'canceled' ? 'bg-red-100 text-red-800' :
+                    'bg-blue-100 text-blue-800'
+                  }`}>
+                    {activity.type === 'approval_pending' ? '承認待ち' :
+                     activity.type === 'confirmed' ? '確定' :
+                     activity.type === 'canceled' ? 'キャンセル' :
+                     '完了'}
+                  </span>
+                  {activity.type === 'approval_pending' && (
+                    <Link href="/dashboard/slots-calendar">
+                      <Button variant="ghost" size="sm">
+                        詳細
+                      </Button>
+                    </Link>
+                  )}
+                </div>
               </div>
             ))
           ) : (

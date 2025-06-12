@@ -21,14 +21,15 @@ export interface MentorDashboardData {
   stats: {
     pendingApproval: number;
     todayLessons: number;
-    thisWeekLessons: number;
+    upcomingLessons: number;
     thisMonthEarnings: number;
   };
   recentActivities: Array<{
     id: string;
-    type: 'approval_pending' | 'lesson_completed' | 'new_student';
+    type: 'approval_pending' | 'confirmed' | 'canceled' | 'completed';
     message: string;
     timestamp: string;
+    status?: string;
   }>;
 }
 
@@ -94,6 +95,31 @@ export const getMentorDashboardData = cache(async (userId: string): Promise<Ment
       orderBy: { booked_start_time: 'asc' }
     });
 
+    // 本日の予約からレッスンセッションを取得
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // 本日の予約IDを取得
+    const todayReservationIds = allReservations
+      .filter(r => {
+        const start = new Date(r.booked_start_time);
+        return start >= today && start < tomorrow && (r.status === 'APPROVED' || r.status === 'CONFIRMED');
+      })
+      .map(r => r.id);
+    
+    // 本日のレッスンセッションを取得
+    const todayLessonSessions = todayReservationIds.length > 0 ? 
+      await prisma.lesson_sessions.findMany({
+        where: {
+          reservation_id: {
+            in: todayReservationIds
+          },
+          status: 'SCHEDULED'
+        }
+      }) : [];
+
     // 現在時刻
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -104,15 +130,10 @@ export const getMentorDashboardData = cache(async (userId: string): Promise<Ment
     // 統計情報を計算
     const stats = {
       pendingApproval: allReservations.filter(r => r.status === 'PENDING_APPROVAL').length,
-      todayLessons: allReservations.filter(r => {
+      todayLessons: todayLessonSessions.length,
+      upcomingLessons: allReservations.filter(r => {
         const start = new Date(r.booked_start_time);
-        return r.status === 'CONFIRMED' && 
-               start >= today && 
-               start < new Date(today.getTime() + 24 * 60 * 60 * 1000);
-      }).length,
-      thisWeekLessons: allReservations.filter(r => {
-        const start = new Date(r.booked_start_time);
-        return r.status === 'CONFIRMED' && start >= thisWeekStart;
+        return (r.status === 'APPROVED' || r.status === 'CONFIRMED') && start >= now;
       }).length,
       thisMonthEarnings: allReservations
         .filter(r => {
@@ -122,11 +143,11 @@ export const getMentorDashboardData = cache(async (userId: string): Promise<Ment
         .reduce((sum, r) => sum + r.total_amount, 0)
     };
 
-    // 今後のレッスン（確定済みのみ）
+    // 今後のレッスン（承認済み・確定済み）
     const upcomingLessons = allReservations
       .filter(r => {
         const start = new Date(r.booked_start_time);
-        return r.status === 'CONFIRMED' && start > now;
+        return (r.status === 'APPROVED' || r.status === 'CONFIRMED') && start > now;
       })
       .slice(0, 5)
       .map(r => ({
@@ -137,22 +158,49 @@ export const getMentorDashboardData = cache(async (userId: string): Promise<Ment
         status: r.status
       }));
 
-    // 最近のアクティビティ
-    const recentActivities: MentorDashboardData['recentActivities'] = [];
+    // 最近のアクティビティ（過去7日間の予約状況）
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     
-    // 承認待ち予約
-    const pendingReservations = allReservations
-      .filter(r => r.status === 'PENDING_APPROVAL')
-      .slice(0, 3);
+    const recentReservations = allReservations
+      .filter(r => r.updated_at >= oneWeekAgo || r.created_at >= oneWeekAgo)
+      .sort((a, b) => b.updated_at.getTime() - a.updated_at.getTime())
+      .slice(0, 10);
     
-    for (const reservation of pendingReservations) {
-      recentActivities.push({
+    const recentActivities: MentorDashboardData['recentActivities'] = recentReservations.map(reservation => {
+      let type: 'approval_pending' | 'confirmed' | 'canceled' | 'completed';
+      let message: string;
+      
+      switch (reservation.status) {
+        case 'PENDING_APPROVAL':
+          type = 'approval_pending';
+          message = `${reservation.users?.name || '生徒'}さんからの予約承認待ち`;
+          break;
+        case 'CONFIRMED':
+          type = 'confirmed';
+          message = `${reservation.users?.name || '生徒'}さんのレッスンが確定しました`;
+          break;
+        case 'CANCELED':
+          type = 'canceled';
+          message = `${reservation.users?.name || '生徒'}さんのレッスンがキャンセルされました`;
+          break;
+        case 'COMPLETED':
+          type = 'completed';
+          message = `${reservation.users?.name || '生徒'}さんのレッスンが完了しました`;
+          break;
+        default:
+          type = 'confirmed';
+          message = `${reservation.users?.name || '生徒'}さんの予約 (${reservation.status})`;
+      }
+      
+      return {
         id: reservation.id,
-        type: 'approval_pending',
-        message: `${reservation.users?.name || '生徒'}さんからの予約承認待ち`,
-        timestamp: reservation.created_at.toISOString()
-      });
-    }
+        type,
+        message,
+        timestamp: reservation.updated_at.toISOString(),
+        status: reservation.status
+      };
+    });
 
     return {
       user: {
