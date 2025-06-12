@@ -1,5 +1,6 @@
 import { getServerSession } from '@/lib/server/auth';
 import { createServiceClient } from '@/lib/supabase/service';
+import { formatJst } from '@/lib/utils/timezone';
 import { redirect } from 'next/navigation';
 
 export default async function MobileDashboardPage() {
@@ -234,8 +235,6 @@ export default async function MobileDashboardPage() {
                   const studentData = reservation.users;
                   const mentorName = mentorData?.name || mentorData?.email || 'メンター情報なし';
                   const studentName = studentData?.name || studentData?.email || '生徒情報なし';
-                  const startTime = new Date(reservation.booked_start_time);
-                  const endTime = new Date(reservation.booked_end_time);
                   
                   return (
                     <div key={reservation.id} className="bg-white rounded-lg shadow-sm p-4">
@@ -245,20 +244,10 @@ export default async function MobileDashboardPage() {
                             {isMentor ? studentName : mentorName}
                           </p>
                           <p className="text-sm text-gray-600 mt-1">
-                            {startTime.toLocaleDateString('ja-JP', {
-                              month: 'numeric',
-                              day: 'numeric',
-                              weekday: 'short'
-                            })}
+                            {formatJst(reservation.booked_start_time, 'M月d日(E)')}
                           </p>
                           <p className="text-sm text-gray-600">
-                            {startTime.toLocaleTimeString('ja-JP', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })} - {endTime.toLocaleTimeString('ja-JP', {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                            {formatJst(reservation.booked_start_time, 'HH:mm')} - {formatJst(reservation.booked_end_time, 'HH:mm')}
                           </p>
                         </div>
                         <span className={`text-xs px-2 py-1 rounded-full ${

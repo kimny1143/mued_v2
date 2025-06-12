@@ -624,7 +624,7 @@ export const MentorCalendar: React.FC<MentorCalendarProps> = ({
               </div>
             ) : (
               <DayView
-                selectedDate={selectedDateForDay!}
+                selectedDate={selectedDateForDay || new Date()}
                 allTimeSlots={allTimeSlots}
                 myReservations={myReservations}
                 otherReservations={otherReservations}

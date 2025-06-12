@@ -36,9 +36,13 @@ export const DayView: React.FC<DayViewProps> = ({
   onDayNavigation,
   onSlotClick,
 }) => {
+  // selectedDateが正しくセットされているか確認
+  const effectiveDate = selectedDate || new Date();
+  
   // デバッグログを追加
   console.log('🔍 DayView デバッグ情報:');
   console.log('- selectedDate:', selectedDate);
+  console.log('- effectiveDate:', effectiveDate);
   console.log('- allTimeSlots:', allTimeSlots);
   console.log('- myReservations:', myReservations);
   console.log('- otherReservations:', otherReservations);
@@ -61,9 +65,9 @@ export const DayView: React.FC<DayViewProps> = ({
     
     const slotStart = new Date(startTimeStr.endsWith('Z') ? startTimeStr : startTimeStr + 'Z');
     const slotEnd = new Date(endTimeStr.endsWith('Z') ? endTimeStr : endTimeStr + 'Z');
-    const dayStart = new Date(selectedDate);
+    const dayStart = new Date(effectiveDate);
     dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(selectedDate);
+    const dayEnd = new Date(effectiveDate);
     dayEnd.setHours(23, 59, 59, 999);
     
     // より正確な重複判定（これが正しく動作している）
@@ -118,14 +122,14 @@ export const DayView: React.FC<DayViewProps> = ({
             月表示に戻る
           </Button>
           <h4 className="text-xl font-semibold text-gray-900">
-            {format(selectedDate, 'yyyy年M月d日 (EEEE)', { locale: ja })}
+            {format(effectiveDate, 'yyyy年M月d日 (EEEE)', { locale: ja })}
           </h4>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
-                const prevDay = new Date(selectedDate);
+                const prevDay = new Date(effectiveDate);
                 prevDay.setDate(prevDay.getDate() - 1);
                 onDayNavigation(prevDay);
               }}
@@ -136,7 +140,7 @@ export const DayView: React.FC<DayViewProps> = ({
               variant="outline" 
               size="sm" 
               onClick={() => {
-                const nextDay = new Date(selectedDate);
+                const nextDay = new Date(effectiveDate);
                 nextDay.setDate(nextDay.getDate() + 1);
                 onDayNavigation(nextDay);
               }}
@@ -168,7 +172,7 @@ export const DayView: React.FC<DayViewProps> = ({
           月表示に戻る
         </Button>
         <h4 className="text-xl font-semibold text-gray-900">
-          {format(selectedDate, 'yyyy年M月d日 (EEEE)', { locale: ja })}
+          {format(effectiveDate, 'yyyy年M月d日 (EEEE)', { locale: ja })}
           {isLoadingReservations && (
             <span className="ml-2 text-sm text-gray-500">予約情報読み込み中...</span>
           )}
@@ -178,7 +182,7 @@ export const DayView: React.FC<DayViewProps> = ({
             variant="outline"
             size="sm"
             onClick={() => {
-              const prevDay = new Date(selectedDate);
+              const prevDay = new Date(effectiveDate);
               prevDay.setDate(prevDay.getDate() - 1);
               onDayNavigation(prevDay);
             }}
@@ -189,7 +193,7 @@ export const DayView: React.FC<DayViewProps> = ({
             variant="outline" 
             size="sm" 
             onClick={() => {
-              const nextDay = new Date(selectedDate);
+              const nextDay = new Date(effectiveDate);
               nextDay.setDate(nextDay.getDate() + 1);
               onDayNavigation(nextDay);
             }}
