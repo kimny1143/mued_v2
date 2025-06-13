@@ -2,7 +2,7 @@
 
 import { format } from "date-fns";
 import { useState } from "react";
-import { toast } from "@/app/components/ui/use-toast";
+import { useToast } from "@/app/components/ui/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ interface ApprovalModalProps {
 
 export function ApprovalModal({ isOpen, onClose, activity, onApprove }: ApprovalModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   if (!activity) return null;
 
@@ -54,7 +55,9 @@ export function ApprovalModal({ isOpen, onClose, activity, onApprove }: Approval
       });
 
       if (!response.ok) {
-        throw new Error('承認処理に失敗しました');
+        const errorData = await response.text();
+        console.error('承認APIエラー:', response.status, errorData);
+        throw new Error(`承認処理に失敗しました: ${response.status}`);
       }
 
       toast({

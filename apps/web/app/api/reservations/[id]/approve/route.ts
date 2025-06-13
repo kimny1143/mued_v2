@@ -29,11 +29,14 @@ export const maxDuration = 30;
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } | Promise<{ id: string }> }
 ) {
   const startTime = Date.now();
+  const resolvedParams = await Promise.resolve(params);
+  const reservationId = resolvedParams.id;
+  
   const headers = Object.fromEntries(request.headers.entries());
-  console.log(`🎯 [APPROVE API] 開始: ${params.id}`, {
+  console.log(`🎯 [APPROVE API] 開始: ${reservationId}`, {
     timestamp: new Date().toISOString(),
     authorization: headers.authorization ? `Bearer ${headers.authorization.substring(7, 17)}...` : 'なし',
     cookie: headers.cookie ? 'あり' : 'なし',
@@ -94,7 +97,7 @@ export async function POST(
       );
     }
     
-    const reservationId = params.id;
+    const reservationId = reservationId;
     
     // 予約の存在確認と権限チェック
     const findStartTime = Date.now();
@@ -461,7 +464,7 @@ export async function POST(
       error,
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      reservationId: params.id,
+      reservationId: reservationId,
       userId: (session as any)?.user?.id
     });
     
