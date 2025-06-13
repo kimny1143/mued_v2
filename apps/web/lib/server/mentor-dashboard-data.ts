@@ -30,6 +30,11 @@ export interface MentorDashboardData {
     message: string;
     timestamp: string;
     status?: string;
+    reservationId?: string;
+    studentName?: string;
+    lessonDate?: string;
+    startTime?: string;
+    endTime?: string;
   }>;
 }
 
@@ -194,7 +199,12 @@ export const getMentorDashboardData = cache(async (userId: string): Promise<Ment
         type,
         message,
         timestamp: reservation.updated_at.toISOString(),
-        status: reservation.status
+        status: reservation.status,
+        reservationId: reservation.id,
+        studentName: reservation.users?.name || reservation.users?.email || '生徒情報なし',
+        lessonDate: reservation.booked_start_time.toISOString(),
+        startTime: reservation.booked_start_time.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+        endTime: reservation.booked_end_time.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })
       };
     });
 

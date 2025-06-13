@@ -4,11 +4,12 @@ import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { CalendarIcon, ClockIcon, CheckCircleIcon, AlertCircleIcon } from "lucide-react";
 import Link from 'next/link';
-import React from "react";
+import React, { useState, useCallback } from "react";
 
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import type { MentorDashboardData } from '@/lib/server/mentor-dashboard-data';
+import { ApprovalModal } from './ApprovalModal';
 
 interface MentorDashboardClientProps {
   initialData: MentorDashboardData;
@@ -16,6 +17,23 @@ interface MentorDashboardClientProps {
 
 export default function MentorDashboardClient({ initialData }: MentorDashboardClientProps) {
   const { user, upcomingLessons, stats, recentActivities } = initialData;
+  const [selectedActivity, setSelectedActivity] = useState<any>(null);
+  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
+  const [activities, setActivities] = useState(recentActivities);
+
+  const handleActivityClick = useCallback((activity: any) => {
+    if (activity.type === 'approval_pending') {
+      setSelectedActivity(activity);
+      setIsApprovalModalOpen(true);
+    }
+  }, []);
+
+  const handleApprove = useCallback(() => {
+    // アクティビティリストから承認済みのものを削除または更新
+    setActivities(prev => 
+      prev.filter(act => act.id !== selectedActivity?.id)
+    );
+  }, [selectedActivity]);
 
   return (
     <>
@@ -102,14 +120,17 @@ export default function MentorDashboardClient({ initialData }: MentorDashboardCl
       <section>
         <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
         <Card className="bg-white divide-y">
-          {recentActivities && recentActivities.length > 0 ? (
-            recentActivities.slice(0, 3).map((activity) => {
+          {activities && activities.length > 0 ? (
+            activities.slice(0, 3).map((activity) => {
               const activityDate = new Date(activity.timestamp);
-              const dateParam = format(activityDate, 'yyyy-MM-dd');
               const isClickable = activity.type === 'approval_pending';
               
-              const content = (
-                <div className={`p-4 flex items-center justify-between ${isClickable ? 'hover:bg-gray-50 cursor-pointer transition-colors' : ''}`}>
+              return (
+                <div 
+                  key={activity.id}
+                  onClick={() => handleActivityClick(activity)}
+                  className={`p-4 flex items-center justify-between ${isClickable ? 'hover:bg-gray-50 cursor-pointer transition-colors' : ''}`}
+                >
                   <div>
                     <h4 className="font-medium">{activity.message}</h4>
                     <p className="text-sm text-gray-500">
@@ -131,20 +152,6 @@ export default function MentorDashboardClient({ initialData }: MentorDashboardCl
                   </div>
                 </div>
               );
-              
-              return isClickable ? (
-                <Link 
-                  key={activity.id} 
-                  href={`/dashboard/slots-calendar?date=${dateParam}`}
-                  className="block"
-                >
-                  {content}
-                </Link>
-              ) : (
-                <div key={activity.id}>
-                  {content}
-                </div>
-              );
             })
           ) : (
             <div className="p-4">
@@ -153,6 +160,17 @@ export default function MentorDashboardClient({ initialData }: MentorDashboardCl
           )}
         </Card>
       </section>
+
+      {/* 承認モーダル */}
+      <ApprovalModal
+        isOpen={isApprovalModalOpen}
+        onClose={() => {
+          setIsApprovalModalOpen(false);
+          setSelectedActivity(null);
+        }}
+        activity={selectedActivity}
+        onApprove={handleApprove}
+      />
     </>
   );
 }
