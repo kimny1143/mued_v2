@@ -235,4 +235,39 @@ export const api = {
   delete: (url: string, options?: RequestInit) => apiClient.delete(url, options),
 };
 
+// 練習ログデータ型
+export interface ExerciseLogData {
+  user_id: string;
+  instrument: string;
+  duration_minutes: number;
+  difficulty: string;
+  notes?: string;
+  mood?: string;
+  date?: string;
+}
+
+// 練習ログレスポンス型
+export interface ExerciseLog {
+  id: string;
+  user_id: string;
+  instrument: string;
+  duration_minutes: number;
+  difficulty: string;
+  notes?: string;
+  mood?: string;
+  date: string;
+  created_at: string;
+}
+
+// 練習ログAPIクライアント
+export const exerciseLogsApi = {
+  // 練習ログを保存する
+  createLog: async (logData: ExerciseLogData): Promise<ExerciseLog> => {
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const clientWithBaseUrl = new ApiClient({ baseUrl: apiBaseUrl });
+    const response = await clientWithBaseUrl.post('/exercise/logs', logData) as ExerciseLog;
+    return response;
+  },
+};
+
 export default apiClient; 

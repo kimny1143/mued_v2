@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 
-import { exerciseLogsApi } from '../../lib/apiClient';
+import { exerciseLogsApi } from '../../lib/api-client';
 import { offlineExerciseLogs, useNetworkStatus } from '../../lib/offlineStorage';
 import { ExerciseLogFormData, ExerciseLogSchema } from '../../lib/validationSchemas';
 

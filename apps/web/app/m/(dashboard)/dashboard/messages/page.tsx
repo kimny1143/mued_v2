@@ -8,7 +8,7 @@ import { ArrowLeft, Send, Paperclip } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { ChatMessage, ChatInput } from "@/app/components/chat";
-import { chatMessagesApi } from "@/lib/apiClient";
+import { supabaseOps } from "@/lib/supabase-operations";
 import { useChatMessages } from "@/lib/hooks/useSupabaseChannel";
 import { ChatMessage as ChatMessageType } from "@/lib/types";
 import { Button } from "@ui/button";
@@ -75,7 +75,7 @@ export default function MobileMessagesPage() {
     const fetchMessages = async () => {
       try {
         setIsLoading(true);
-        const response = await chatMessagesApi.getMessages(ROOM_ID);
+        const response = await supabaseOps.messages.getMessages(ROOM_ID);
         setMessages(response.messages);
       } catch (error) {
         console.error("Failed to fetch messages:", error);
@@ -164,13 +164,13 @@ export default function MobileMessagesPage() {
       if (!hasError) {
         try {
           if (files && files.length > 0) {
-            await chatMessagesApi.sendMessageWithFiles({
+            await supabaseOps.messages.sendMessageWithFiles({
               content,
               room_id: ROOM_ID,
               files,
             });
           } else {
-            await chatMessagesApi.sendMessage({
+            await supabaseOps.messages.sendMessage({
               content,
               room_id: ROOM_ID,
             });

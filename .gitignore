@@ -18,6 +18,8 @@ apps/*/.next
 packages/*/dist
 packages/*/lib
 .turbo
+tsconfig.tsbuildinfo
+apps/*/tsconfig.tsbuildinfo
 
 # 環境変数
 .env

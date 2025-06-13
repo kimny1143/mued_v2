@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import React from "react";
 
 import { ChatMessage, ChatInput } from "@/app/components/chat";
-import { chatMessagesApi } from "@/lib/apiClient";
+import { supabaseOps } from "@/lib/supabase-operations";
 import { useChatMessages } from "@/lib/hooks/useSupabaseChannel";
 import { ChatMessage as ChatMessageType } from "@/lib/types";
 import { useToast } from "@ui/use-toast";
@@ -75,7 +75,7 @@ export default function Page() {
     const fetchMessages = async () => {
       try {
         setIsLoading(true);
-        const response = await chatMessagesApi.getMessages(ROOM_ID);
+        const response = await supabaseOps.messages.getMessages(ROOM_ID);
         setMessages(response.messages);
       } catch (error) {
         console.error("Failed to fetch messages:", error);
@@ -168,13 +168,13 @@ export default function Page() {
       if (!hasError) {
         try {
           if (files && files.length > 0) {
-            await chatMessagesApi.sendMessageWithFiles({
+            await supabaseOps.messages.sendMessageWithFiles({
               content,
               room_id: ROOM_ID,
               files,
             });
           } else {
-            await chatMessagesApi.sendMessage({
+            await supabaseOps.messages.sendMessage({
               content,
               room_id: ROOM_ID,
             });
