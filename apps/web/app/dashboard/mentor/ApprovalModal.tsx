@@ -52,6 +52,7 @@ export function ApprovalModal({ isOpen, onClose, activity, onApprove }: Approval
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // 認証クッキーを含める
       });
 
       if (!response.ok) {
