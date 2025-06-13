@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog";
 import { Button } from "@/app/components/ui/button";
+import { api } from "@/lib/api-client";
 
 interface ApprovalModalProps {
   isOpen: boolean;
@@ -47,19 +48,7 @@ export function ApprovalModal({ isOpen, onClose, activity, onApprove }: Approval
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/reservations/${activity.reservationId}/approve`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // 認証クッキーを含める
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        console.error('承認APIエラー:', response.status, errorData);
-        throw new Error(`承認処理に失敗しました: ${response.status}`);
-      }
+      await api.post(`/api/reservations/${activity.reservationId}/approve`);
 
       toast({
         title: "成功",
@@ -72,7 +61,7 @@ export function ApprovalModal({ isOpen, onClose, activity, onApprove }: Approval
       console.error('承認エラー:', error);
       toast({
         title: "エラー",
-        description: "承認処理中にエラーが発生しました",
+        description: error instanceof Error ? error.message : "承認処理中にエラーが発生しました",
         variant: "destructive",
       });
     } finally {
