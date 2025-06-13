@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { supabaseServer } from './supabase-server';
+import { supabaseBrowser } from './supabase-browser';
 import type { ChatMessage, GetMessagesResponse, SendMessageRequest } from './types';
 
 // Supabase操作を集約したモジュール
@@ -8,7 +8,7 @@ export const supabaseOps = {
   messages: {
     // メッセージ一覧を取得する
     getMessages: async (roomId: string, cursor?: string, limit = 20): Promise<GetMessagesResponse> => {
-      let query = supabaseServer
+      let query = supabaseBrowser
         .from('messages')
         .select('*')
         .eq('room_id', roomId)
@@ -50,7 +50,7 @@ export const supabaseOps = {
         timestamp: new Date().toISOString(),
       };
 
-      const { data, error } = await supabaseServer
+      const { data, error } = await supabaseBrowser
         .from('messages')
         .insert(newMessage)
         .select()
@@ -71,7 +71,7 @@ export const supabaseOps = {
       if (messageData.files && messageData.files.length > 0) {
         for (const file of messageData.files) {
           const filePath = `messages/${messageData.room_id}/${uuidv4()}-${file.name}`;
-          const { data: uploadData, error: uploadError } = await supabaseServer.storage
+          const { data: uploadData, error: uploadError } = await supabaseBrowser.storage
             .from('chat_files')
             .upload(filePath, file);
 
@@ -80,7 +80,7 @@ export const supabaseOps = {
           }
 
           // 公開URLを取得
-          const { data: urlData } = supabaseServer.storage
+          const { data: urlData } = supabaseBrowser.storage
             .from('chat_files')
             .getPublicUrl(filePath);
 
@@ -113,7 +113,7 @@ export const supabaseOps = {
         file_urls: fileUrls
       };
 
-      const { data, error } = await supabaseServer
+      const { data, error } = await supabaseBrowser
         .from('messages')
         .insert(newMessage)
         .select()
