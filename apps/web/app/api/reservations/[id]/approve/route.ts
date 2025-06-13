@@ -97,8 +97,6 @@ export async function POST(
       );
     }
     
-    const reservationId = reservationId;
-    
     // 予約の存在確認と権限チェック
     const findStartTime = Date.now();
     const reservation = await prisma.reservations.findUnique({
