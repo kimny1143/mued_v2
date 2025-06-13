@@ -104,16 +104,3 @@ export function getUserFromSession(session: any) {
   };
 }
 
-// フィーチャーフラグで最適化版に切り替え可能
-const USE_OPTIMIZED = process.env.NEXT_PUBLIC_USE_OPTIMIZED_SESSION === 'true';
-
-if (USE_OPTIMIZED) {
-  console.log('[Session] Optimized session management enabled');
-  // 最適化版を動的インポート
-  import('./session-optimized').then(module => {
-    // エクスポートを上書き
-    Object.assign(exports, {
-      getSessionFromRequest: module.getSessionFromRequest
-    });
-  });
-}
