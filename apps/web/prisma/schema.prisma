@@ -214,6 +214,8 @@ model users {
   stripe_customers          stripe_customers?
   stripe_user_subscriptions stripe_user_subscriptions[]
   roles                     roles                       @relation(fields: [role_id], references: [id])
+  ai_generated_materials    ai_generated_materials[]
+  ai_curriculums            ai_curriculums[]
 
   @@index([role_id])
   @@index([role_id], map: "idx_users_role_id")
@@ -268,4 +270,50 @@ enum LessonSessionStatus {
   COMPLETED
   CANCELED
   NO_SHOW
+}
+
+// AI Service関連のモデル
+
+model ai_knowledge_sources {
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  type       String   @db.VarChar(50) // 'rss', 'pdf', 'video', 'web'
+  source_url String?  @db.Text
+  title      String?  @db.VarChar(255)
+  content    String   @db.Text
+  metadata   Json     @default("{}")
+  embeddings Unsupported("vector(1536)")?
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+}
+
+model ai_generated_materials {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()"))
+  title                String   @db.VarChar(255)
+  content              String   @db.Text // Markdown形式
+  theme                String?  @db.VarChar(255)
+  format               String   @default("markdown") @db.VarChar(50)
+  knowledge_source_ids String[] @default([])
+  generation_params    Json     @default("{}")
+  creator_id           String?
+  status               String   @default("draft") @db.VarChar(50) // 'draft', 'published', 'archived'
+  created_at           DateTime @default(now())
+  updated_at           DateTime @default(now()) @updatedAt
+  
+  creator              users?   @relation(fields: [creator_id], references: [id])
+}
+
+model ai_curriculums {
+  id            String   @id @default(dbgenerated("gen_random_uuid()"))
+  title         String   @db.VarChar(255)
+  description   String?  @db.Text
+  material_ids  String[] @default([])
+  structure     Json     @default("{}")
+  target_level  String?  @db.VarChar(50) // 'beginner', 'intermediate', 'advanced'
+  duration_weeks Int?
+  creator_id    String?
+  status        String   @default("draft") @db.VarChar(50) // 'draft', 'published', 'archived'
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now()) @updatedAt
+  
+  creator       users?   @relation(fields: [creator_id], references: [id])
 }
