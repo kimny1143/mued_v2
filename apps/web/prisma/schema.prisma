@@ -1,0 +1,271 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+model Account {
+  id                  String  @id
+  type                String
+  provider            String
+  refresh_token       String?
+  access_token        String?
+  expires_at          Int?
+  token_type          String?
+  scope               String?
+  id_token            String?
+  session_state       String?
+  provider_account_id String
+  user_id             String
+  users               users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([provider, provider_account_id])
+}
+
+model Session {
+  id            String   @id
+  expires       DateTime
+  session_token String   @unique
+  user_id       String
+  users         users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model lesson_slots {
+  id           String         @id
+  currency     String         @default("JPY")
+  created_at   DateTime       @default(now())
+  end_time     DateTime
+  hourly_rate  Int            @default(6000)
+  is_available Boolean        @default(true)
+  max_duration Int?           @default(90)
+  max_hours    Int?
+  min_duration Int?           @default(60)
+  min_hours    Int            @default(1)
+  start_time   DateTime
+  teacher_id   String
+  updated_at   DateTime
+  users        users          @relation(fields: [teacher_id], references: [id])
+  reservations reservations[]
+
+  @@index([start_time, end_time])
+  @@index([start_time, is_available])
+  @@index([teacher_id])
+  @@index([start_time, end_time], map: "idx_lesson_slots_start_time_end_time")
+  @@index([start_time, is_available], map: "idx_lesson_slots_start_time_is_available")
+  @@index([teacher_id], map: "idx_lesson_slots_teacher_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model messages {
+  id          String   @id
+  content     String?
+  sender_type String?
+  room_id     String?
+  timestamp   DateTime @default(now()) @db.Timestamptz(6)
+  file_urls   String[]
+  sender_id   String
+  users       users    @relation(fields: [sender_id], references: [id], map: "messages_senderId_fkey")
+
+  @@index([room_id])
+  @@index([sender_id], map: "messages_senderId_idx")
+  @@index([room_id], map: "idx_messages_room_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model payments {
+  id                 String        @id
+  amount             Int
+  currency           String        @default("JPY")
+  status             PaymentStatus @default(PENDING)
+  metadata           String?
+  charge_executed_at DateTime?     @db.Timestamp(6)
+  created_at         DateTime      @default(now())
+  refund_amount      Int?
+  refund_reason      String?
+  refunded_at        DateTime?     @db.Timestamp(6)
+  stripe_payment_id  String?       @unique
+  stripe_session_id  String        @unique
+  updated_at         DateTime
+  user_id            String
+  reservations       reservations?
+
+  @@index([user_id])
+  @@index([user_id], map: "idx_payments_user_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model permissions {
+  id         String   @id
+  name       String   @unique
+  created_at DateTime @default(now())
+  role_id    String
+  updated_at DateTime
+  roles      roles    @relation(fields: [role_id], references: [id])
+
+  @@index([role_id])
+  @@index([role_id], map: "idx_permissions_role_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model reservations {
+  id                String            @id
+  status            ReservationStatus @default(PENDING_APPROVAL)
+  notes             String?
+  approved_at       DateTime?
+  approved_by       String?
+  booked_end_time   DateTime
+  booked_start_time DateTime
+  cancel_reason     String?
+  canceled_at       DateTime?         @db.Timestamp(6)
+  canceled_by       String?           @db.VarChar(255)
+  created_at        DateTime          @default(now())
+  duration_minutes  Int?              @default(60)
+  hours_booked      Int               @default(1)
+  payment_id        String?           @unique
+  rejected_at       DateTime?
+  rejection_reason  String?
+  rescheduled_from  String?           @db.VarChar(255)
+  rescheduled_to    String?           @db.VarChar(255)
+  slot_id           String
+  student_id        String
+  total_amount      Int
+  updated_at        DateTime
+  payments          payments?         @relation(fields: [payment_id], references: [id])
+  lesson_slots      lesson_slots      @relation(fields: [slot_id], references: [id])
+  users             users             @relation(fields: [student_id], references: [id])
+
+  @@index([slot_id])
+  @@index([status])
+  @@index([student_id])
+  @@index([slot_id], map: "idx_reservations_slot_id")
+  @@index([status], map: "idx_reservations_status")
+  @@index([student_id], map: "idx_reservations_student_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model roles {
+  id          String        @id
+  name        String        @unique(map: "roles_name_unique")
+  description String?
+  permissions permissions[]
+  users       users[]
+}
+
+model stripe_customers {
+  id          Int       @id @default(autoincrement())
+  currency    String?   @default("jpy") @db.VarChar(3)
+  created_at  DateTime  @default(now())
+  customer_id String    @unique
+  deleted_at  DateTime?
+  updated_at  DateTime
+  user_id     String    @unique
+  users       users     @relation(fields: [user_id], references: [id])
+
+  @@index([currency], map: "idx_stripe_customers_currency")
+}
+
+model stripe_user_subscriptions {
+  id                   Int       @id @default(autoincrement())
+  status               String?
+  cancel_at_period_end Boolean?
+  created_at           DateTime  @default(now())
+  current_period_end   BigInt?
+  current_period_start BigInt?
+  customer_id          String
+  deleted_at           DateTime?
+  payment_method_brand String?
+  payment_method_last4 String?
+  price_id             String?
+  subscription_id      String    @unique
+  updated_at           DateTime
+  user_id              String
+  users                users     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([user_id], map: "idx_stripe_user_subscriptions_user_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model users {
+  id                        String                      @id
+  name                      String?
+  email                     String?                     @unique
+  image                     String?
+  email_verified            DateTime?
+  role_id                   String                      @default("student")
+  Account                   Account[]
+  Session                   Session[]
+  lesson_slots              lesson_slots[]
+  messages                  messages[]
+  reservations              reservations[]
+  stripe_customers          stripe_customers?
+  stripe_user_subscriptions stripe_user_subscriptions[]
+  roles                     roles                       @relation(fields: [role_id], references: [id])
+
+  @@index([role_id])
+  @@index([role_id], map: "idx_users_role_id")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model lesson_sessions {
+  id                String              @id
+  reservation_id    String              @unique
+  status            LessonSessionStatus @default(SCHEDULED)
+  actual_start_time DateTime?
+  actual_end_time   DateTime?
+  duration_minutes  Int?
+  notes             String?
+  teacher_feedback  String?
+  student_feedback  String?
+  teacher_rating    Int?
+  student_rating    Int?
+  recording_url     String?
+  materials_used    String[]
+  homework_assigned String?
+  next_lesson_notes String?
+  created_at        DateTime            @default(now())
+  updated_at        DateTime
+
+  @@index([actual_start_time], map: "idx_lesson_sessions_actual_start_time")
+  @@index([created_at], map: "idx_lesson_sessions_created_at")
+  @@index([reservation_id], map: "idx_lesson_sessions_reservation_id")
+  @@index([status], map: "idx_lesson_sessions_status")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  CANCELED
+  SETUP_COMPLETED
+}
+
+enum ReservationStatus {
+  PENDING
+  PENDING_APPROVAL
+  APPROVED
+  CONFIRMED
+  REJECTED
+  CANCELED
+  COMPLETED
+}
+
+enum LessonSessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+  NO_SHOW
+}

@@ -1,38 +1,13 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next",
+  "buildCommand": "npm run build:web",
+  "outputDirectory": "apps/web/.next",
+  "installCommand": "npm ci",
+  "framework": "nextjs",
+  "ignoreCommand": "npx turbo-ignore @mued/web",
   "git": {
     "deploymentEnabled": {
       "main": true,
-      "develop": true,
-      "feature/sprint-R0": true
+      "develop": true
     }
-  },
-  "github": {
-    "enabled": true,
-    "silent": false,
-    "autoAlias": true
-  },
-  "framework": "nextjs",
-  "env": {
-    "NEXT_PUBLIC_VERCEL_URL": "${VERCEL_URL}",
-    "NEXT_PUBLIC_DEPLOY_URL": "${VERCEL_URL}"
-  },
-  "functions": {
-    "app/api/webhooks/stripe/route.ts": {
-      "maxDuration": 30
-    }
-  },
-  "headers": [
-    {
-      "source": "/api/webhooks/(.*)",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex"
-        }
-      ]
-    }
-  ],
-  "installCommand": "npm ci"
-} 
+  }
+}
