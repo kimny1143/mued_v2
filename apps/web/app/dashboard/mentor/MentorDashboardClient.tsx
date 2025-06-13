@@ -32,7 +32,7 @@ export default function MentorDashboardClient({ initialData }: MentorDashboardCl
               
               <div className="space-y-3">
                 {upcomingLessons && upcomingLessons.length > 0 ? (
-                  upcomingLessons.map((lesson) => (
+                  upcomingLessons.slice(0, 3).map((lesson) => (
                     <div key={lesson.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center">
                         <ClockIcon className="h-4 w-4 mr-2 text-gray-500" />
@@ -103,36 +103,49 @@ export default function MentorDashboardClient({ initialData }: MentorDashboardCl
         <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
         <Card className="bg-white divide-y">
           {recentActivities && recentActivities.length > 0 ? (
-            recentActivities.slice(0, 3).map((activity) => (
-              <div key={activity.id} className="p-4 flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">{activity.message}</h4>
-                  <p className="text-sm text-gray-500">
-                    {format(new Date(activity.timestamp), 'yyyy/MM/dd HH:mm')}
-                  </p>
+            recentActivities.slice(0, 3).map((activity) => {
+              const activityDate = new Date(activity.timestamp);
+              const dateParam = format(activityDate, 'yyyy-MM-dd');
+              const isClickable = activity.type === 'approval_pending';
+              
+              const content = (
+                <div className={`p-4 flex items-center justify-between ${isClickable ? 'hover:bg-gray-50 cursor-pointer transition-colors' : ''}`}>
+                  <div>
+                    <h4 className="font-medium">{activity.message}</h4>
+                    <p className="text-sm text-gray-500">
+                      {format(activityDate, 'yyyy/MM/dd HH:mm')}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      activity.type === 'approval_pending' ? 'bg-yellow-100 text-yellow-800' :
+                      activity.type === 'confirmed' ? 'bg-green-100 text-green-800' :
+                      activity.type === 'canceled' ? 'bg-red-100 text-red-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}>
+                      {activity.type === 'approval_pending' ? '承認待ち' :
+                       activity.type === 'confirmed' ? '確定' :
+                       activity.type === 'canceled' ? 'キャンセル' :
+                       '完了'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    activity.type === 'approval_pending' ? 'bg-yellow-100 text-yellow-800' :
-                    activity.type === 'confirmed' ? 'bg-green-100 text-green-800' :
-                    activity.type === 'canceled' ? 'bg-red-100 text-red-800' :
-                    'bg-blue-100 text-blue-800'
-                  }`}>
-                    {activity.type === 'approval_pending' ? '承認待ち' :
-                     activity.type === 'confirmed' ? '確定' :
-                     activity.type === 'canceled' ? 'キャンセル' :
-                     '完了'}
-                  </span>
-                  {activity.type === 'approval_pending' && (
-                    <Link href="/dashboard/slots-calendar">
-                      <Button variant="ghost" size="sm">
-                        詳細
-                      </Button>
-                    </Link>
-                  )}
+              );
+              
+              return isClickable ? (
+                <Link 
+                  key={activity.id} 
+                  href={`/dashboard/slots-calendar?date=${dateParam}`}
+                  className="block"
+                >
+                  {content}
+                </Link>
+              ) : (
+                <div key={activity.id}>
+                  {content}
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="p-4">
               <p className="text-sm text-gray-500">アクティビティはありません</p>

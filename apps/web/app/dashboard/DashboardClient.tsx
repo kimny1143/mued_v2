@@ -32,7 +32,7 @@ export default function DashboardClient({ initialData }: DashboardClientProps) {
               
               <div className="space-y-3">
                 {todaySchedule && todaySchedule.length > 0 ? (
-                  todaySchedule.map((reservation) => (
+                  todaySchedule.slice(0, 3).map((reservation) => (
                     <div key={reservation.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center">
                         <ClockIcon className="h-4 w-4 mr-2 text-gray-500" />
