@@ -2,6 +2,7 @@ import { getServerSession } from '@/lib/server/auth';
 import { createServiceClient } from '@/lib/supabase/service';
 import { formatJst } from '@/lib/utils/timezone';
 import { redirect } from 'next/navigation';
+import { LogoutButton } from './LogoutButton';
 
 export default async function MobileDashboardPage() {
   const session = await getServerSession();
@@ -100,12 +101,7 @@ export default async function MobileDashboardPage() {
                   </span>
                 </div>
               </div>
-              <a
-                href="/api/auth/logout"
-                className="text-sm text-red-600 hover:text-red-700 font-medium"
-              >
-                ログアウト
-              </a>
+              <LogoutButton />
             </div>
           </div>
         </header>

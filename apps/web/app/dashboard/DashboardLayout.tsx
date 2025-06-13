@@ -152,10 +152,20 @@ export default function DashboardLayout({ children, user, roleName, title, fullW
   };
 
   const handleSignOut = async () => {
-    const result = await signOut();
-    if (result.success && typeof window !== 'undefined') {
-      // クライアント側でリダイレクト（ログアウトフラグ付き）
-      window.location.href = '/login?from=logout';
+    try {
+      const result = await signOut();
+      if (result && result.success && typeof window !== 'undefined') {
+        // クライアント側でリダイレクト（ログアウトフラグ付き）
+        window.location.href = '/login?from=logout';
+      } else if (!result) {
+        console.error('ログアウト処理でresultが返されませんでした');
+        // フォールバック: 直接ログアウトAPIを呼び出す
+        window.location.href = '/api/auth/logout';
+      }
+    } catch (error) {
+      console.error('ログアウトエラー:', error);
+      // エラー時のフォールバック
+      window.location.href = '/api/auth/logout';
     }
   };
 

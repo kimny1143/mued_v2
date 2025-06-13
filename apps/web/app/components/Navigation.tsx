@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { cn } from '../../lib/utils';
@@ -27,7 +27,33 @@ const authenticatedNavItems: NavItem[] = [
 
 export function Navigation({ isAuthenticated }: { isAuthenticated: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (!window?.location) {
+      console.error('window.location is not available');
+      router.push('/login');
+      return;
+    }
+
+    try {
+      setIsLoggingOut(true);
+      window.location.href = '/api/auth/signout';
+    } catch (error) {
+      console.error('Logout error:', error);
+      setIsLoggingOut(false);
+      // エラーが発生した場合でも、ログインページへリダイレクトを試みる
+      try {
+        router.push('/login');
+      } catch (routerError) {
+        console.error('Router navigation error:', routerError);
+      }
+    }
+  };
 
   // 現在のユーザー状態に基づいてナビゲーションアイテムを表示
   const navItems = [...publicNavItems, ...(isAuthenticated ? authenticatedNavItems : [])];
@@ -69,12 +95,13 @@ export function Navigation({ isAuthenticated }: { isAuthenticated: boolean }) {
                 >
                   設定
                 </Link>
-                <Link
-                  href="/api/auth/signout"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md text-sm font-medium"
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded-md text-sm font-medium"
                 >
-                  ログアウト
-                </Link>
+                  {isLoggingOut ? 'ログアウト中...' : 'ログアウト'}
+                </button>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
@@ -144,12 +171,13 @@ export function Navigation({ isAuthenticated }: { isAuthenticated: boolean }) {
               >
                 設定
               </Link>
-              <Link
-                href="/api/auth/signout"
-                className="block pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+              <button
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                ログアウト
-              </Link>
+                {isLoggingOut ? 'ログアウト中...' : 'ログアウト'}
+              </button>
             </div>
           ) : (
             <div className="space-y-1">

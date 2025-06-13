@@ -234,19 +234,35 @@ export default function MobileSettingsPage() {
             variant="outline" 
             className="w-full border-red-300 text-red-600 hover:bg-red-50"
             onClick={async () => {
+              if (!window?.location) {
+                console.error('window.location is not available');
+                router.push('/m/login');
+                return;
+              }
+
               if (confirm('ログアウトしますか？')) {
-                // PWA環境の場合は事前にセッションクリーンアップ
-                if (isPWA()) {
-                  console.log('PWA環境でのログアウト処理開始');
-                  await cleanupPWASession();
-                }
-                
-                // ログアウトAPIを呼び出し、PWAの場合はパラメータを追加
-                if (isPWA()) {
-                  const redirectUrl = encodeURIComponent('/m/login?logout=true');
-                  window.location.href = `/api/auth/logout?redirect=${redirectUrl}`;
-                } else {
-                  window.location.href = '/api/auth/logout';
+                try {
+                  // PWA環境の場合は事前にセッションクリーンアップ
+                  if (isPWA()) {
+                    console.log('PWA環境でのログアウト処理開始');
+                    await cleanupPWASession();
+                  }
+                  
+                  // ログアウトAPIを呼び出し、PWAの場合はパラメータを追加
+                  if (isPWA()) {
+                    const redirectUrl = encodeURIComponent('/m/login?logout=true');
+                    window.location.href = `/api/auth/logout?redirect=${redirectUrl}`;
+                  } else {
+                    window.location.href = '/api/auth/logout';
+                  }
+                } catch (error) {
+                  console.error('Logout error:', error);
+                  // エラーが発生した場合でも、ログインページへリダイレクトを試みる
+                  try {
+                    router.push('/m/login');
+                  } catch (routerError) {
+                    console.error('Router navigation error:', routerError);
+                  }
                 }
               }
             }}
