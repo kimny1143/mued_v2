@@ -95,8 +95,9 @@ export default function BookLessonPage() {
         // エラーの場合でも予約管理ページへ
         router.push("/dashboard/reservations?success=true");
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "予約に失敗しました";
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -30,7 +30,7 @@ interface Reservation {
   };
 }
 
-export default function ReservationsPage() {
+function ReservationsContent() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -261,5 +261,19 @@ export default function ReservationsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ReservationsPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-gray-500">読み込み中...</div>
+        </div>
+      </div>
+    }>
+      <ReservationsContent />
+    </Suspense>
   );
 }

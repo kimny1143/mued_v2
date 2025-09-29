@@ -45,7 +45,14 @@ export default function BookingCalendarPage() {
       console.log(`Fetched ${data.slots?.length || 0} slots from API`); // デバッグ用
 
       // APIデータを画面用に整形
-      const formattedSlots = data.slots.map((slot: any) => ({
+      const formattedSlots = data.slots.map((slot: {
+        id: string;
+        mentorId: string;
+        mentor?: { name: string };
+        startTime: string;
+        endTime: string;
+        price: string | number;
+      }) => ({
         id: slot.id,
         mentorId: slot.mentorId,
         mentorName: slot.mentor?.name || "メンター",
