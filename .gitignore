@@ -1,110 +1,41 @@
-# 依存関係
-node_modules
-npm-debug.log
-yarn-error.log
-yarn-debug.log
-.pnp
-.pnp.js
-yarn.lock
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# ビルド出力
-/dist
-/build
-/out
-/.next
-/.nuxt
-apps/*/dist
-apps/*/.next
-packages/*/dist
-packages/*/lib
-.turbo
-tsconfig.tsbuildinfo
-apps/*/tsconfig.tsbuildinfo
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# 環境変数
-.env
-.env.local
-.env.development.local
-.env.test
-.env.test.local
-.env.production.local
-.env.heroku
-.env.staging.local
-.env.staging.heroku
-.env.production.heroku
-
-# エディタ設定
-.idea
-.vscode
-*.swp
-*.swo
-.DS_Store
-
-# テスト関連
+# testing
 /coverage
-.nyc_output
 
-# キャッシュ
-.cache
-.parcel-cache
-.eslintcache
-.stylelintcache
+# next.js
+/.next/
+/out/
 
-# ログ
-logs
-*.log
+# production
+/build
 
-# その他
+# misc
 .DS_Store
-Thumbs.db
-.cursor/*
-.cursor/
+*.pem
 
-#bolt_mockフォルダ配下全て除外
-bolt_mock/
-*storybook.log
-.env.heroku
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
+# env files (can opt-in for committing if needed)
+.env*
 
-# Docker関連
-docker-compose.override.yml
+# vercel
 .vercel
 
-
-#migrations
-supabase/migrations/*
-*/migrations/*
-
-#playwright
-test-results/*
-playwright-report/*
-
-# backup
-backup/*
-
-#doc内機密情報
-docs/secret/*
-
-# scripts（データベース復元・バックアップ等）
-scripts/
-!/apps/web/scripts/
+# typescript
+*.tsbuildinfo
+next-env.d.ts

@@ -1,3 +1,0 @@
-{
-  "ignoreCommand": "cd ../.. && git diff HEAD^ HEAD --quiet apps/web packages/shared"
-}

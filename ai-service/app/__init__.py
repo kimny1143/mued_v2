@@ -1,3 +1,0 @@
-"""
-MUED LMS AI Service
-""" 
