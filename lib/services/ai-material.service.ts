@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createChatCompletion, selectModel, type ModelName } from '@/lib/openai';
+import { createChatCompletion, type ModelName } from '@/lib/openai';
 import { db } from '@/db';
 import { materials, subscriptions } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';

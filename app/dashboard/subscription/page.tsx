@@ -73,7 +73,6 @@ const PLANS = [
 ];
 
 export default function SubscriptionPage() {
-  const router = useRouter();
   const [limits, setLimits] = useState<UsageLimits | null>(null);
   const [loading, setLoading] = useState(true);
 

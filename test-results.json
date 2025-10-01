@@ -1,0 +1,338 @@
+{
+  "config": {
+    "configFile": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/playwright.config.ts",
+    "rootDir": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.55.1",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000,
+      "stdout": "ignore",
+      "stderr": "ignore"
+    }
+  },
+  "suites": [
+    {
+      "title": "e2e/subscription.spec.ts",
+      "file": "e2e/subscription.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Subscription Plans",
+          "file": "e2e/subscription.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "subscription page should display all 4 tiers",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 607,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-10-01T06:50:22.338Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "17a448d5357972f256ed-1fb9a0478be660f4e2f2",
+              "file": "e2e/subscription.spec.ts",
+              "line": 9,
+              "column": 7
+            },
+            {
+              "title": "subscription page structure is correct",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 420,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m404\u001b[39m\nReceived array: \u001b[31m[200, 307, 308]\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m404\u001b[39m\nReceived array: \u001b[31m[200, 307, 308]\u001b[39m\n    at /Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests/e2e/subscription.spec.ts:24:29",
+                        "location": {
+                          "file": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests/e2e/subscription.spec.ts",
+                          "column": 29,
+                          "line": 24
+                        },
+                        "snippet": "  22 |\n  23 |     // Should get 200 or redirect (307/308)\n> 24 |     expect([200, 307, 308]).toContain(response.status());\n     |                             ^\n  25 |   });\n  26 | });\n  27 |"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests/e2e/subscription.spec.ts",
+                            "column": 29,
+                            "line": 24
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m404\u001b[39m\nReceived array: \u001b[31m[200, 307, 308]\u001b[39m\n\n  22 |\n  23 |     // Should get 200 or redirect (307/308)\n> 24 |     expect([200, 307, 308]).toContain(response.status());\n     |                             ^\n  25 |   });\n  26 | });\n  27 |\n    at /Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests/e2e/subscription.spec.ts:24:29"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-10-01T06:50:23.064Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/test-results/e2e-subscription-Subscript-37322-n-page-structure-is-correct-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/test-results/e2e-subscription-Subscript-37322-n-page-structure-is-correct-chromium/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests/e2e/subscription.spec.ts",
+                        "column": 29,
+                        "line": 24
+                      }
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 219,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m404\u001b[39m\nReceived array: \u001b[31m[200, 307, 308]\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m404\u001b[39m\nReceived array: \u001b[31m[200, 307, 308]\u001b[39m\n    at /Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests/e2e/subscription.spec.ts:24:29",
+                        "location": {
+                          "file": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests/e2e/subscription.spec.ts",
+                          "column": 29,
+                          "line": 24
+                        },
+                        "snippet": "  22 |\n  23 |     // Should get 200 or redirect (307/308)\n> 24 |     expect([200, 307, 308]).toContain(response.status());\n     |                             ^\n  25 |   });\n  26 | });\n  27 |"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests/e2e/subscription.spec.ts",
+                            "column": 29,
+                            "line": 24
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoContain\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // indexOf\u001b[22m\n\nExpected value: \u001b[32m404\u001b[39m\nReceived array: \u001b[31m[200, 307, 308]\u001b[39m\n\n  22 |\n  23 |     // Should get 200 or redirect (307/308)\n> 24 |     expect([200, 307, 308]).toContain(response.status());\n     |                             ^\n  25 |   });\n  26 | });\n  27 |\n    at /Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests/e2e/subscription.spec.ts:24:29"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2025-10-01T06:50:23.838Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/test-results/e2e-subscription-Subscript-37322-n-page-structure-is-correct-chromium-retry1/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/test-results/e2e-subscription-Subscript-37322-n-page-structure-is-correct-chromium-retry1/video.webm"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/test-results/e2e-subscription-Subscript-37322-n-page-structure-is-correct-chromium-retry1/trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/tests/e2e/subscription.spec.ts",
+                        "column": 29,
+                        "line": 24
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "17a448d5357972f256ed-712a835c2763b9831d93",
+              "file": "e2e/subscription.spec.ts",
+              "line": 19,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Usage Limits API",
+          "file": "e2e/subscription.spec.ts",
+          "line": 28,
+          "column": 6,
+          "specs": [
+            {
+              "title": "usage limits endpoint requires authentication",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 470,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-10-01T06:50:24.525Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "17a448d5357972f256ed-4b5d4b07eb98027d0213",
+              "file": "e2e/subscription.spec.ts",
+              "line": 29,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Stripe Integration",
+          "file": "e2e/subscription.spec.ts",
+          "line": 40,
+          "column": 6,
+          "specs": [
+            {
+              "title": "checkout endpoint requires authentication",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 552,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-10-01T06:50:25.006Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "17a448d5357972f256ed-98329d5bc24bae34b564",
+              "file": "e2e/subscription.spec.ts",
+              "line": 41,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-10-01T06:50:21.751Z",
+    "duration": 3822.294,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

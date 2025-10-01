@@ -5,7 +5,7 @@ import { users } from '@/db/schema';
 export async function GET() {
   try {
     // Simple database connectivity check
-    const result = await db.select().from(users).limit(1);
+    await db.select().from(users).limit(1);
 
     return NextResponse.json({
       status: 'healthy',

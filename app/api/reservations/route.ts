@@ -5,7 +5,7 @@ import { eq, or } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/actions/user";
 import { checkCanCreateReservation, incrementReservationUsage } from "@/lib/middleware/usage-limiter";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) {

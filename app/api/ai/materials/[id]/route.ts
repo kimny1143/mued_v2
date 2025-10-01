@@ -12,15 +12,16 @@ import {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { userId: clerkUserId } = await auth();
     if (!clerkUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const material = await getMaterialById(params.id);
+    const material = await getMaterialById(id);
 
     if (!material) {
       return NextResponse.json(
@@ -80,15 +81,16 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const { userId: clerkUserId } = await auth();
     if (!clerkUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await deleteMaterial(params.id, clerkUserId);
+    await deleteMaterial(id, clerkUserId);
 
     return NextResponse.json({
       success: true,

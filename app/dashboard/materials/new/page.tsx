@@ -40,7 +40,7 @@ export default function NewMaterialPage() {
           }, 3000);
         }
       }
-    } catch (err) {
+    } catch {
       setError('Network error. Please try again.');
     } finally {
       setGenerating(false);

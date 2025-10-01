@@ -41,7 +41,7 @@ export default function MaterialsPage() {
       } else {
         setError(data.error || 'Failed to load materials');
       }
-    } catch (err) {
+    } catch {
       setError('Network error');
     } finally {
       setLoading(false);
@@ -61,7 +61,7 @@ export default function MaterialsPage() {
       } else {
         alert('Failed to delete material');
       }
-    } catch (err) {
+    } catch {
       alert('Network error');
     }
   };
