@@ -28,14 +28,14 @@ const env = envSchema.parse({
 let _openaiClient: OpenAI | null = null;
 
 export const openai = new Proxy({} as OpenAI, {
-  get(target, prop) {
+  get(target, prop: keyof OpenAI) {
     if (!_openaiClient) {
       if (!env.OPENAI_API_KEY) {
         throw new Error('OPENAI_API_KEY is required at runtime');
       }
       _openaiClient = new OpenAI({ apiKey: env.OPENAI_API_KEY });
     }
-    return (_openaiClient as any)[prop];
+    return _openaiClient[prop];
   },
 });
 
