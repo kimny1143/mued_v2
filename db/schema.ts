@@ -83,13 +83,15 @@ export const materials = pgTable("materials", {
 export const subscriptions = pgTable("subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull().references(() => users.id),
-  stripeSubscriptionId: text("stripe_subscription_id").notNull().unique(),
-  stripeCustomerId: text("stripe_customer_id").notNull(),
-  plan: text("plan").notNull(), // free, basic, premium
-  status: text("status").notNull(), // active, cancelled, past_due, unpaid
-  currentPeriodStart: timestamp("current_period_start").notNull(),
-  currentPeriodEnd: timestamp("current_period_end").notNull(),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  stripeCustomerId: text("stripe_customer_id"),
+  tier: text("plan").notNull().default("freemium"), // freemium, starter, basic, premium (DB column: plan)
+  status: text("status").notNull().default("active"), // active, cancelled, past_due, unpaid
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  aiMaterialsUsed: integer("ai_materials_used").notNull().default(0),
+  reservationsUsed: integer("reservations_used").notNull().default(0),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { reservations, lessonSlots, users } from "@/db/schema";
-import { eq, and, or } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/actions/user";
+import { checkCanCreateReservation, incrementReservationUsage } from "@/lib/middleware/usage-limiter";
 
 export async function GET(request: Request) {
   try {
@@ -65,6 +66,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Check usage limits
+    const usageCheck = await checkCanCreateReservation(user.id);
+    if (!usageCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: usageCheck.reason,
+          upgradeRequired: true,
+          limits: usageCheck.limits
+        },
+        { status: 403 }
+      );
+    }
+
     const { slotId, notes } = await request.json();
 
     // スロット情報を取得
@@ -112,6 +126,9 @@ export async function POST(request: Request) {
         updatedAt: new Date(),
       })
       .where(eq(lessonSlots.id, slotId));
+
+    // Increment usage counter
+    await incrementReservationUsage(user.id);
 
     return NextResponse.json({ reservation });
   } catch (error) {
