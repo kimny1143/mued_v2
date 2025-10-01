@@ -33,6 +33,7 @@ export default function LessonsPage() {
 
   useEffect(() => {
     fetchSlots();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMentor]);
 
   const fetchSlots = async () => {

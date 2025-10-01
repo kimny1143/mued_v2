@@ -13,7 +13,7 @@ import { z } from 'zod';
 
 // Environment variable validation
 const envSchema = z.object({
-  OPENAI_API_KEY: z.string().min(1, 'OPENAI_API_KEY is required'),
+  OPENAI_API_KEY: z.string().min(1).optional(), // Optional to allow build, but required at runtime
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
   OPENAI_MAX_TOKENS: z.coerce.number().default(1000),
 });
@@ -24,9 +24,19 @@ const env = envSchema.parse({
   OPENAI_MAX_TOKENS: process.env.OPENAI_MAX_TOKENS,
 });
 
-// Initialize OpenAI client
-export const openai = new OpenAI({
-  apiKey: env.OPENAI_API_KEY,
+// Lazy initialization - only create client when needed (runtime)
+let _openaiClient: OpenAI | null = null;
+
+export const openai = new Proxy({} as OpenAI, {
+  get(target, prop) {
+    if (!_openaiClient) {
+      if (!env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY is required at runtime');
+      }
+      _openaiClient = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+    }
+    return (_openaiClient as any)[prop];
+  },
 });
 
 // Model pricing (per 1M tokens) - as of 2025
