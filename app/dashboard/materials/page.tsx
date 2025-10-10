@@ -91,7 +91,7 @@ export default function MaterialsPage() {
               id={material.id}
               title={material.title}
               description={material.description || ""}
-              category={material.category || "未分類"}
+              category={material.type || "未分類"}
               createdAt={new Date(material.createdAt)}
               onView={handleMaterialClick}
               onDelete={handleDelete}
