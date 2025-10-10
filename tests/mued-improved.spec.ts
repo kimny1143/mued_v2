@@ -80,7 +80,7 @@ test.describe("MUED LMS - Authentication Flow", () => {
 
       // Check dashboard elements
       await expect(
-        page.locator('h1:has-text("ダッシュボード"), h1:has-text("Dashboard"), text="ようこそ"')
+        page.locator('h1:has-text("ようこそ")')
       ).toBeVisible({ timeout: 10000 });
 
     } catch (error) {

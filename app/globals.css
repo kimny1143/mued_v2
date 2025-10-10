@@ -6,21 +6,38 @@
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: #ffffff;
+  --color-foreground: #171717;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Figma Design System Colors */
+
+  /* Primary Brand */
+  --color-brand-green: #75bc11;
+  --color-brand-green-hover: #65a20f;
+  --color-brand-green-active: #559308;
+  --color-brand-text: #000a14;
+
+  /* Neutral Text & Backgrounds */
+  --color-text-primary: #192129;
+  --color-text-secondary: #192129;
+  --color-card-bg: rgba(0, 0, 0, 0.04);
+  --color-card-border: rgba(0, 0, 0, 0.2);
+
+  /* Semantic Colors */
+  --color-success: #08762c;
+  --color-toggle-handle: #080f17;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: #ffffff;
+  color: #171717;
   font-family: Arial, Helvetica, sans-serif;
 }

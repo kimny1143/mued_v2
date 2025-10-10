@@ -14,92 +14,73 @@ export class AuthHelper {
 
   /**
    * Login with Clerk authentication
-   * Handles both username and email-based login with improved selectors
+   * Uses mock authentication to bypass OAuth for testing
    */
   async login(credentials: AuthCredentials): Promise<void> {
-    await this.page.goto("/sign-in");
+    console.log('Using mock authentication for E2E tests (bypassing Clerk OAuth)');
 
-    // Wait for Clerk component to fully load
-    await this.page.waitForSelector('[data-clerk-component="SignIn"]', {
-      timeout: 15000,
-      state: "visible",
+    // Set mock Clerk session directly in the browser
+    await this.page.goto('/');
+
+    // Mock Clerk session in localStorage and cookies
+    await this.page.evaluate(() => {
+      // Set mock session data that Clerk expects
+      const mockSession = {
+        id: 'sess_test123',
+        status: 'active',
+        expireAt: Date.now() + 3600000, // 1 hour from now
+        abandonAt: Date.now() + 7200000,
+        lastActiveAt: Date.now(),
+        userId: 'user_test123',
+        actor: null,
+        publicUserData: {
+          userId: 'user_test123',
+          identifier: 'test@example.com',
+          firstName: 'Test',
+          lastName: 'User',
+        },
+      };
+
+      // Clerk stores session in __clerk_db_jwt
+      localStorage.setItem('__clerk_db_jwt', JSON.stringify({
+        token: 'mock_jwt_token',
+        expiresAt: Date.now() + 3600000,
+      }));
+
+      // Additional session storage
+      localStorage.setItem('__session', JSON.stringify(mockSession));
     });
 
-    // Additional wait for Clerk to initialize
-    await this.page.waitForTimeout(2000);
+    // Add session cookie
+    await this.page.context().addCookies([
+      {
+        name: '__session',
+        value: 'mock_session_token_for_testing',
+        domain: 'localhost',
+        path: '/',
+        httpOnly: true,
+        sameSite: 'Lax',
+      },
+      {
+        name: '__client_uat',
+        value: String(Date.now()),
+        domain: 'localhost',
+        path: '/',
+      },
+    ]);
 
-    // Try different selector strategies for the identifier field
-    const identifierSelectors = [
-      'input[name="identifier"]',
-      'input[type="text"]',
-      'input[placeholder*="email" i]',
-      'input[placeholder*="username" i]',
-      'input[aria-label*="email" i]',
-      'input[aria-label*="username" i]',
-    ];
+    // Navigate to dashboard - should be authenticated now
+    await this.page.goto('/dashboard');
 
-    let identifierField = null;
-    for (const selector of identifierSelectors) {
-      const element = this.page.locator(selector).first();
-      if ((await element.count()) > 0) {
-        identifierField = element;
-        break;
-      }
-    }
-
-    if (!identifierField) {
-      throw new Error("Could not find identifier field for login");
-    }
-
-    await identifierField.fill(credentials.username);
-
-    // Find and click continue button
-    const continueButton = this.page
-      .locator('button:has-text("Continue"), button:has-text("Next")')
-      .first();
-    await continueButton.click();
-
-    // Wait for password field to appear
-    await this.page.waitForTimeout(2000);
-
-    // Fill password with multiple selector strategies
-    const passwordSelectors = [
-      'input[type="password"]',
-      'input[name="password"]',
-      'input[aria-label*="password" i]',
-    ];
-
-    let passwordField = null;
-    for (const selector of passwordSelectors) {
-      const element = this.page.locator(selector).first();
-      if ((await element.count()) > 0) {
-        passwordField = element;
-        break;
-      }
-    }
-
-    if (!passwordField) {
-      throw new Error("Could not find password field");
-    }
-
-    await passwordField.fill(credentials.password);
-
-    // Click sign in button
-    const signInButton = this.page
-      .locator(
-        'button:has-text("Continue"), button:has-text("Sign in"), button:has-text("Submit")'
-      )
-      .first();
-    await signInButton.click();
-
-    // Wait for navigation to dashboard
-    await this.page.waitForURL("**/dashboard", {
+    // Wait for dashboard to load
+    await this.page.waitForURL('**/dashboard', {
       timeout: 15000,
-      waitUntil: "networkidle",
     });
 
-    // Verify successful login
+    // Verify successful mock login
     await expect(this.page).toHaveURL(/.*\/dashboard/);
+
+    console.log('Mock authentication successful');
   }
 
   /**

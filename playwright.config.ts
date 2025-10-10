@@ -1,4 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import dotenv from "dotenv";
+import path from "path";
+
+// Load test environment variables
+dotenv.config({ path: path.resolve(__dirname, ".env.test") });
 
 export default defineConfig({
   testDir: "./tests",
@@ -42,5 +47,8 @@ export default defineConfig({
     timeout: 120 * 1000,
     stdout: "ignore",
     stderr: "ignore",
+    env: {
+      NEXT_PUBLIC_E2E_TEST_MODE: 'true', // Enable E2E test mode to bypass Clerk auth
+    },
   },
 });

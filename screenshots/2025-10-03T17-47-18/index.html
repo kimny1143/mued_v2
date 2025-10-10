@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUED LMS v2 - Screenshots for Figma</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            background: #f9fafb;
+            color: #111827;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #111827;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+
+        .meta {
+            display: inline-flex;
+            gap: 24px;
+            font-size: 14px;
+            color: #6b7280;
+            background: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .meta-label {
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .instructions-link {
+            display: inline-block;
+            margin-top: 24px;
+            padding: 12px 24px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .instructions-link:hover {
+            background: #1d4ed8;
+        }
+
+        .screenshots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .screenshot-section {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .screenshot-header {
+            padding: 20px 24px;
+            background: #f3f4f6;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .screenshot-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #111827;
+        }
+
+        .screenshot-path {
+            font-size: 14px;
+            color: #6b7280;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .screenshot-content {
+            padding: 24px;
+        }
+
+        .screenshot-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 12px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #4b5563;
+        }
+
+        .tab:hover {
+            background: #e5e7eb;
+        }
+
+        .tab.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .screenshot-image {
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            display: none;
+        }
+
+        .screenshot-image.active {
+            display: block;
+        }
+
+        .screenshot-info {
+            margin-top: 16px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #6b7280;
+            display: none;
+        }
+
+        .screenshot-info.active {
+            display: block;
+        }
+
+        footer {
+            margin-top: 80px;
+            padding-top: 40px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .screenshots-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            .meta {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 MUED LMS v2</h1>
+            <p class="subtitle">Figma AI Design Reference Screenshots</p>
+            <div style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 24px auto; max-width: 800px; color: #92400e;">
+                <strong>⚠️ 重要:</strong> これらは基本的なTailwindCSSデフォルトスタイルのプロトタイプ版です。<br>
+                Figma AIに「<strong>機能を維持しながらビジュアルを大幅に改善</strong>」させるための<strong>参考資料</strong>として使用します。
+            </div>
+            <div class="meta">
+                <div class="meta-item">
+                    <span class="meta-label">生成日:</span>
+                    <span>2025-10-04</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">解像度:</span>
+                    <span>1440x900 @2x</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">画面数:</span>
+                    <span>6画面 (12枚)</span>
+                </div>
+            </div>
+            <a href="FIGMA_INSTRUCTIONS.md" class="instructions-link" target="_blank">
+                📋 Figma AI Instructions を開く
+            </a>
+        </header>
+
+        <div class="screenshots-grid">
+            <!-- Landing Page -->
+            <div class="screenshot-section">
+                <div class="screenshot-header">
+                    <div class="screenshot-title">1. Landing Page</div>
+                    <div class="screenshot-path">/</div>
+                </div>
+                <div class="screenshot-content">
+                    <div class="screenshot-tabs">
+                        <button class="tab active" onclick="switchTab(this, 'landing', 'viewport')">Viewport (1440x900)</button>
+                        <button class="tab" onclick="switchTab(this, 'landing', 'fullpage')">Full Page</button>
+                    </div>
+                    <img src="landing-viewport.png" alt="Landing Page Viewport" class="screenshot-image active" id="landing-viewport">
+                    <img src="landing-fullpage.png" alt="Landing Page Full" class="screenshot-image" id="landing-fullpage">
+                    <div class="screenshot-info active" id="landing-viewport-info">
+                        <strong>Viewport版:</strong> フォールドライン（スクロールなし）で見える範囲。メインのヒーローセクションとCTAボタンが確認できます。
+                    </div>
+                    <div class="screenshot-info" id="landing-fullpage-info">
+                        <strong>Full Page版:</strong> ページ全体のスクロール可能な範囲。追加コンテンツやフッターが含まれます。
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard -->
+            <div class="screenshot-section">
+                <div class="screenshot-header">
+                    <div class="screenshot-title">2. Dashboard</div>
+                    <div class="screenshot-path">/dashboard</div>
+                </div>
+                <div class="screenshot-content">
+                    <div class="screenshot-tabs">
+                        <button class="tab active" onclick="switchTab(this, 'dashboard', 'viewport')">Viewport</button>
+                        <button class="tab" onclick="switchTab(this, 'dashboard', 'fullpage')">Full Page</button>
+                    </div>
+                    <img src="dashboard-viewport.png" alt="Dashboard Viewport" class="screenshot-image active" id="dashboard-viewport">
+                    <img src="dashboard-fullpage.png" alt="Dashboard Full" class="screenshot-image" id="dashboard-fullpage">
+                    <div class="screenshot-info active" id="dashboard-viewport-info">
+                        <strong>重要:</strong> 6枚のダッシュボードカード（レッスン予約、マイレッスン、教材、メッセージ、プロフィール、サブスクリプション）が3カラムグリッドで配置されています。
+                    </div>
+                    <div class="screenshot-info" id="dashboard-fullpage-info">
+                        <strong>レイアウト:</strong> 3x2 グリッド、各カードに異なる色のCTAボタン（青、グレー、緑、紫、オレンジ）
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lessons -->
+            <div class="screenshot-section">
+                <div class="screenshot-header">
+                    <div class="screenshot-title">3. Lessons List</div>
+                    <div class="screenshot-path">/dashboard/lessons</div>
+                </div>
+                <div class="screenshot-content">
+                    <div class="screenshot-tabs">
+                        <button class="tab active" onclick="switchTab(this, 'lessons', 'viewport')">Viewport</button>
+                        <button class="tab" onclick="switchTab(this, 'lessons', 'fullpage')">Full Page</button>
+                    </div>
+                    <img src="lessons-viewport.png" alt="Lessons Viewport" class="screenshot-image active" id="lessons-viewport">
+                    <img src="lessons-fullpage.png" alt="Lessons Full" class="screenshot-image" id="lessons-fullpage">
+                    <div class="screenshot-info active" id="lessons-viewport-info">
+                        <strong>Empty State:</strong> 現在利用可能なレッスンがない状態のUIが確認できます。
+                    </div>
+                    <div class="screenshot-info" id="lessons-fullpage-info">
+                        <strong>コンポーネント:</strong> ページヘッダー、フィルタードロップダウン、Empty Stateメッセージ
+                    </div>
+                </div>
+            </div>
+
+            <!-- Materials -->
+            <div class="screenshot-section">
+                <div class="screenshot-header">
+                    <div class="screenshot-title">4. Materials Library</div>
+                    <div class="screenshot-path">/dashboard/materials</div>
+                </div>
+                <div class="screenshot-content">
+                    <div class="screenshot-tabs">
+                        <button class="tab active" onclick="switchTab(this, 'materials', 'viewport')">Viewport</button>
+                        <button class="tab" onclick="switchTab(this, 'materials', 'fullpage')">Full Page</button>
+                    </div>
+                    <img src="materials-viewport.png" alt="Materials Viewport" class="screenshot-image active" id="materials-viewport">
+                    <img src="materials-fullpage.png" alt="Materials Full" class="screenshot-image" id="materials-fullpage">
+                    <div class="screenshot-info active" id="materials-viewport-info">
+                        <strong>Empty State:</strong> 教材がまだない状態。「新しい教材を作成」ボタンが右上に配置。
+                    </div>
+                    <div class="screenshot-info" id="materials-fullpage-info">
+                        <strong>将来の実装:</strong> 教材カードグリッド（3カラム）、カテゴリータグ、アクションメニュー
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reservations -->
+            <div class="screenshot-section">
+                <div class="screenshot-header">
+                    <div class="screenshot-title">5. Reservations</div>
+                    <div class="screenshot-path">/dashboard/reservations</div>
+                </div>
+                <div class="screenshot-content">
+                    <div class="screenshot-tabs">
+                        <button class="tab active" onclick="switchTab(this, 'reservations', 'viewport')">Viewport</button>
+                        <button class="tab" onclick="switchTab(this, 'reservations', 'fullpage')">Full Page</button>
+                    </div>
+                    <img src="reservations-viewport.png" alt="Reservations Viewport" class="screenshot-image active" id="reservations-viewport">
+                    <img src="reservations-fullpage.png" alt="Reservations Full" class="screenshot-image" id="reservations-fullpage">
+                    <div class="screenshot-info active" id="reservations-viewport-info">
+                        <strong>Empty State:</strong> 予約がない状態のUI。「レッスンを予約する」CTAボタン。
+                    </div>
+                    <div class="screenshot-info" id="reservations-fullpage-info">
+                        <strong>将来の実装:</strong> ステータスフィルタータブ、予約カードリスト、ステータスバッジ（予定/完了/キャンセル）
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Calendar -->
+            <div class="screenshot-section">
+                <div class="screenshot-header">
+                    <div class="screenshot-title">6. Booking Calendar</div>
+                    <div class="screenshot-path">/dashboard/booking-calendar</div>
+                </div>
+                <div class="screenshot-content">
+                    <div class="screenshot-tabs">
+                        <button class="tab active" onclick="switchTab(this, 'calendar', 'viewport')">Viewport</button>
+                        <button class="tab" onclick="switchTab(this, 'calendar', 'fullpage')">Full Page</button>
+                    </div>
+                    <img src="booking-calendar-viewport.png" alt="Calendar Viewport" class="screenshot-image active" id="calendar-viewport">
+                    <img src="booking-calendar-fullpage.png" alt="Calendar Full" class="screenshot-image" id="calendar-fullpage">
+                    <div class="screenshot-info active" id="calendar-viewport-info">
+                        <strong>Empty State:</strong> 利用可能なスロットがない状態のカレンダー表示。
+                    </div>
+                    <div class="screenshot-info" id="calendar-fullpage-info">
+                        <strong>将来の実装:</strong> 月次カレンダーグリッド、利用可能スロットバッジ、日付ナビゲーション
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p><strong>MUED LMS v2</strong> - Multi-User Educational Dashboard</p>
+            <p style="margin-top: 8px;">生成日: 2025-10-04 | 解像度: 1440x900 @2x (Retina)</p>
+            <p style="margin-top: 16px; font-size: 12px;">
+                これらのスクリーンショットは、Figma AI でのデザイン生成に使用するための参照資料です。<br>
+                詳細な指示は <a href="FIGMA_INSTRUCTIONS.md" style="color: #2563eb;">FIGMA_INSTRUCTIONS.md</a> を参照してください。
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        function switchTab(button, sectionId, type) {
+            // Update tab active state
+            const tabs = button.parentElement.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            button.classList.add('active');
+
+            // Update image visibility
+            const images = button.closest('.screenshot-content').querySelectorAll('.screenshot-image');
+            images.forEach(img => img.classList.remove('active'));
+            document.getElementById(`${sectionId}-${type}`).classList.add('active');
+
+            // Update info visibility
+            const infos = button.closest('.screenshot-content').querySelectorAll('.screenshot-info');
+            infos.forEach(info => info.classList.remove('active'));
+            document.getElementById(`${sectionId}-${type}-info`).classList.add('active');
+        }
+    </script>
+</body>
+</html>

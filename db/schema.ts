@@ -25,6 +25,7 @@ export const lessonSlots = pgTable("lesson_slots", {
   maxCapacity: integer("max_capacity").notNull().default(1),
   currentCapacity: integer("current_capacity").notNull().default(0),
   status: text("status").notNull().default("available"), // available, booked, cancelled
+  tags: jsonb("tags").$type<string[]>(), // 楽器・科目・ジャンル・レベルのタグ
   recurringId: uuid("recurring_id"), // 繰り返し予約用
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

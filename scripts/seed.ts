@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 import { db } from "../db";
-import { users, lessonSlots, reservations, materials } from "../db/schema";
+import { users, lessonSlots, reservations, materials, subscriptions } from "../db/schema";
 
 config({ path: ".env.local" });
 
@@ -13,6 +13,7 @@ async function seed() {
     await db.delete(reservations);
     await db.delete(lessonSlots);
     await db.delete(materials);
+    await db.delete(subscriptions);
     await db.delete(users);
 
     // テストユーザーの作成
@@ -85,6 +86,7 @@ async function seed() {
         maxCapacity: 1,
         currentCapacity: 0,
         status: "available",
+        tags: ["piano", "beginner", "classical"],
       },
       {
         mentorId: mentor1.id,
@@ -94,6 +96,7 @@ async function seed() {
         maxCapacity: 1,
         currentCapacity: 1,
         status: "booked",
+        tags: ["piano", "intermediate", "theory"],
       },
       {
         mentorId: mentor2.id,
@@ -103,6 +106,7 @@ async function seed() {
         maxCapacity: 1,
         currentCapacity: 0,
         status: "available",
+        tags: ["guitar", "beginner", "pop"],
       },
       {
         mentorId: mentor2.id,
@@ -112,6 +116,7 @@ async function seed() {
         maxCapacity: 2,
         currentCapacity: 0,
         status: "available",
+        tags: ["guitar", "bass", "rock", "intermediate"],
       },
     ]).returning();
 

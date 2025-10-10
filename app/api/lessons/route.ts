@@ -36,6 +36,7 @@ export async function GET(request: Request) {
         maxCapacity: lessonSlots.maxCapacity,
         currentCapacity: lessonSlots.currentCapacity,
         status: lessonSlots.status,
+        tags: lessonSlots.tags,
         mentor: {
           id: users.id,
           name: users.name,

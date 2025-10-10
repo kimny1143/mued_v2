@@ -17,55 +17,45 @@ const PLANS = [
     id: 'freemium',
     name: 'Freemium',
     price: 0,
-    description: 'Get started with AI-powered learning',
+    currency: 'JPY',
+    description: 'AI教材とレッスンを無料で体験',
     features: [
-      '3 AI materials per month',
-      '1 mentor session per month',
-      'Basic analytics',
-      'Community support',
-    ],
-    highlighted: false,
-  },
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 9.99,
-    description: 'Perfect for getting started',
-    features: [
-      '3 AI materials per month',
-      '1 mentor session per month',
-      'Basic analytics',
-      'Email support',
+      'AI教材: 月3本まで',
+      'レッスン予約: 月1件まで',
+      '基本的な分析機能',
+      'コミュニティサポート',
+      '広告表示あり',
     ],
     highlighted: false,
   },
   {
     id: 'basic',
     name: 'Basic',
-    price: 19.99,
-    description: 'Unlimited AI materials',
+    price: 2480,
+    currency: 'JPY',
+    description: 'AI教材無制限で本格的な学習',
     features: [
-      'Unlimited AI materials',
-      '5 mentor sessions per month',
-      'Advanced analytics',
-      'Priority email support',
-      'Custom study plans',
+      'AI教材: 無制限',
+      'レッスン予約: 月5件まで',
+      'チャットサポート',
+      '個別レッスン予約',
+      '高度な分析機能',
     ],
     highlighted: true,
   },
   {
     id: 'premium',
     name: 'Premium',
-    price: 49.99,
-    description: 'Full access to everything',
+    price: 5980,
+    currency: 'JPY',
+    description: 'すべての機能を無制限で利用',
     features: [
-      'Unlimited AI materials',
-      'Unlimited mentor sessions',
-      'Advanced analytics',
-      '24/7 priority support',
-      'Custom study plans',
-      '1-on-1 learning consultant',
-      'Exclusive webinars',
+      'AI教材: 無制限＋PDF取込',
+      'レッスン予約: 無制限',
+      'メンターマッチング優先',
+      'グループ／個別レッスン対応',
+      '24/7優先サポート',
+      '専任学習コンサルタント',
     ],
     highlighted: false,
   },
@@ -117,10 +107,10 @@ export default function SubscriptionPage() {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Choose Your Plan
+          プランを選択
         </h1>
         <p className="text-xl text-gray-600">
-          Unlock the full power of AI-assisted learning
+          AI支援学習の力を最大限に活用しましょう
         </p>
       </div>
 
@@ -130,15 +120,15 @@ export default function SubscriptionPage() {
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                Current Plan: {limits.tier.charAt(0).toUpperCase() + limits.tier.slice(1)}
+                現在のプラン: {limits.tier.charAt(0).toUpperCase() + limits.tier.slice(1)}
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-blue-700">AI Materials:</span>
+                  <span className="text-blue-700">AI教材:</span>
                   <span className="font-medium">
                     {limits.aiMaterialsLimit === -1
-                      ? 'Unlimited'
-                      : `${limits.aiMaterialsUsed} / ${limits.aiMaterialsLimit} used`}
+                      ? '無制限'
+                      : `${limits.aiMaterialsUsed} / ${limits.aiMaterialsLimit} 使用中`}
                   </span>
                   {limits.aiMaterialsLimit !== -1 && (
                     <div className="flex-1 max-w-xs bg-white rounded-full h-2">
@@ -152,11 +142,11 @@ export default function SubscriptionPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-blue-700">Reservations:</span>
+                  <span className="text-blue-700">予約:</span>
                   <span className="font-medium">
                     {limits.reservationsLimit === -1
-                      ? 'Unlimited'
-                      : `${limits.reservationsUsed} / ${limits.reservationsLimit} used`}
+                      ? '無制限'
+                      : `${limits.reservationsUsed} / ${limits.reservationsLimit} 使用中`}
                   </span>
                   {limits.reservationsLimit !== -1 && (
                     <div className="flex-1 max-w-xs bg-white rounded-full h-2">
@@ -192,12 +182,12 @@ export default function SubscriptionPage() {
             >
               {plan.highlighted && (
                 <div className="bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full inline-block mb-4">
-                  MOST POPULAR
+                  人気No.1
                 </div>
               )}
               {isCurrentPlan && (
                 <div className="bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full inline-block mb-4">
-                  CURRENT PLAN
+                  現在のプラン
                 </div>
               )}
 
@@ -208,9 +198,9 @@ export default function SubscriptionPage() {
 
               <div className="mb-6">
                 <span className="text-4xl font-bold text-gray-900">
-                  ${plan.price}
+                  {plan.currency === 'JPY' ? '¥' : '$'}{plan.price.toLocaleString()}
                 </span>
-                <span className="text-gray-600">/month</span>
+                <span className="text-gray-600">/月</span>
               </div>
 
               <ul className="space-y-3 mb-6">
@@ -236,12 +226,12 @@ export default function SubscriptionPage() {
                 }`}
               >
                 {isCurrentPlan
-                  ? 'Current Plan'
+                  ? '現在のプラン'
                   : canUpgrade
                   ? plan.id === 'freemium'
-                    ? 'Free Forever'
-                    : 'Upgrade Now'
-                  : 'Downgrade'}
+                    ? '永久無料'
+                    : 'アップグレード'
+                  : 'ダウングレード'}
               </button>
             </div>
           );
@@ -251,25 +241,25 @@ export default function SubscriptionPage() {
       {/* FAQ Section */}
       <div className="mt-16">
         <h2 className="text-2xl font-bold text-center mb-8">
-          Frequently Asked Questions
+          よくある質問
         </h2>
         <div className="max-w-3xl mx-auto space-y-6">
           {[
             {
-              q: 'Can I cancel anytime?',
-              a: 'Yes, you can cancel your subscription at any time. You will continue to have access until the end of your billing period.',
+              q: 'いつでも解約できますか？',
+              a: 'はい、いつでも解約可能です。課金期間の終了まで引き続きご利用いただけます。',
             },
             {
-              q: 'What happens if I reach my monthly limit?',
-              a: "You can upgrade to a higher tier anytime to get more usage, or wait until next month when your limits reset.",
+              q: '月間利用上限に達したらどうなりますか？',
+              a: 'いつでも上位プランにアップグレードできます。または、翌月まで待つと上限がリセットされます。',
             },
             {
-              q: 'Do unused AI materials roll over to the next month?',
-              a: 'No, usage limits reset at the start of each billing period. We recommend upgrading to Basic or Premium for unlimited access.',
+              q: '未使用のAI教材は翌月に繰り越されますか？',
+              a: 'いいえ、利用上限は毎月リセットされます。無制限にご利用いただくにはBasicまたはPremiumプランへのアップグレードをお勧めします。',
             },
             {
-              q: 'Can I downgrade my plan?',
-              a: 'Yes, you can downgrade at any time. The change will take effect at the end of your current billing period.',
+              q: 'プランをダウングレードできますか？',
+              a: 'はい、いつでもダウングレード可能です。変更は現在の課金期間終了時に適用されます。',
             },
           ].map((faq, idx) => (
             <div key={idx} className="bg-white rounded-lg border border-gray-200 p-6">
