@@ -236,7 +236,7 @@ export function calculateMatchScore(
   };
 
   // プリファレンスに基づく重み調整
-  let weights = {
+  const weights = {
     skillLevelMatch: 1.0,
     goalAlignment: 1.0,
     scheduleOverlap: 1.0,

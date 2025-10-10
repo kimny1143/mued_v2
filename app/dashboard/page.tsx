@@ -23,7 +23,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       firstName: 'Test',
       username: 'testuser',
       emailAddresses: [{ emailAddress: 'test@example.com' }],
-    } as any;
+    } as unknown as Awaited<ReturnType<typeof currentUser>>;
   }
 
   return (
