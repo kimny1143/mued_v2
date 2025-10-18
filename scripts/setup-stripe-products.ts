@@ -19,13 +19,13 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Plan configurations
+// Plan configurations (JPY pricing)
 const plans = [
   {
     name: 'MUED Starter',
     id: 'starter',
     description: 'Perfect for getting started with AI-powered learning',
-    price: 999, // $9.99 in cents
+    price: 999, // ¥999/month
     features: [
       '3 AI-generated study materials per month',
       '1 mentor session per month',
@@ -42,7 +42,7 @@ const plans = [
     name: 'MUED Basic',
     id: 'basic',
     description: 'Unlimited AI materials for serious learners',
-    price: 1999, // $19.99 in cents
+    price: 1999, // ¥1,999/month
     features: [
       'Unlimited AI-generated study materials',
       '5 mentor sessions per month',
@@ -60,7 +60,7 @@ const plans = [
     name: 'MUED Premium',
     id: 'premium',
     description: 'Full access to all features for dedicated students',
-    price: 4999, // $49.99 in cents
+    price: 4999, // ¥4,999/month
     features: [
       'Unlimited AI-generated study materials',
       'Unlimited mentor sessions',
@@ -98,7 +98,7 @@ async function setupStripeProducts() {
       const price = await stripe.prices.create({
         product: product.id,
         unit_amount: plan.price,
-        currency: 'usd',
+        currency: 'jpy',
         recurring: {
           interval: 'month',
         },
@@ -106,7 +106,7 @@ async function setupStripeProducts() {
       });
 
       console.log(`✅ Price created: ${price.id}`);
-      console.log(`   Amount: $${(plan.price / 100).toFixed(2)}/month`);
+      console.log(`   Amount: ¥${plan.price.toLocaleString()}/month`);
       console.log(`   Features: ${plan.features.join(', ')}`);
       console.log('');
 

@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   profileImageUrl: text("profile_image_url"),
   bio: text("bio"),
   skills: jsonb("skills").$type<string[]>(),
+  stripeCustomerId: text("stripe_customer_id"), // Stripe顧客ID
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

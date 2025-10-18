@@ -8,6 +8,13 @@
       "when": 1759907645707,
       "tag": "0000_milky_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1760757544759,
+      "tag": "0001_equal_selene",
+      "breakpoints": true
     }
   ]
 }

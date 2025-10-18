@@ -17,6 +17,7 @@ const PLANS = [
     id: 'freemium',
     name: 'Freemium',
     price: 0,
+    priceId: null,
     currency: 'JPY',
     description: 'AI教材とレッスンを無料で体験',
     features: [
@@ -24,38 +25,55 @@ const PLANS = [
       'レッスン予約: 月1件まで',
       '基本的な分析機能',
       'コミュニティサポート',
-      '広告表示あり',
+    ],
+    highlighted: false,
+  },
+  {
+    id: 'starter',
+    name: 'Starter',
+    price: 999,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER,
+    currency: 'JPY',
+    description: 'AI支援学習を始める方向け',
+    features: [
+      'AI教材: 月3本まで',
+      'レッスン予約: 月1件まで',
+      '基本的な分析機能',
+      'メールサポート',
     ],
     highlighted: false,
   },
   {
     id: 'basic',
     name: 'Basic',
-    price: 2480,
+    price: 1999,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_BASIC,
     currency: 'JPY',
     description: 'AI教材無制限で本格的な学習',
     features: [
       'AI教材: 無制限',
       'レッスン予約: 月5件まで',
-      'チャットサポート',
-      '個別レッスン予約',
       '高度な分析機能',
+      '優先メールサポート',
+      'カスタム学習プラン',
     ],
     highlighted: true,
   },
   {
     id: 'premium',
     name: 'Premium',
-    price: 5980,
+    price: 4999,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM,
     currency: 'JPY',
     description: 'すべての機能を無制限で利用',
     features: [
-      'AI教材: 無制限＋PDF取込',
+      'AI教材: 無制限',
       'レッスン予約: 無制限',
-      'メンターマッチング優先',
-      'グループ／個別レッスン対応',
+      '高度な分析機能',
       '24/7優先サポート',
-      '専任学習コンサルタント',
+      'カスタム学習プラン',
+      '1対1学習コンサルタント',
+      '限定ウェビナー＆ワークショップ',
     ],
     highlighted: false,
   },
@@ -86,20 +104,31 @@ export default function SubscriptionPage() {
   const handleUpgrade = async (planId: string) => {
     if (planId === 'freemium') return;
 
+    const plan = PLANS.find(p => p.id === planId);
+    if (!plan || !plan.priceId) {
+      alert('プランが見つかりません');
+      return;
+    }
+
     try {
-      const response = await fetch('/api/checkout', {
+      const response = await fetch('/api/subscription/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: planId }),
+        body: JSON.stringify({
+          priceId: plan.priceId,
+          tier: planId
+        }),
       });
 
       const data = await response.json();
-      if (data.url) {
+      if (data.success && data.url) {
         window.location.href = data.url;
+      } else {
+        throw new Error(data.error || 'Checkout failed');
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('Failed to start checkout process');
+      alert('チェックアウト処理に失敗しました。もう一度お試しください。');
     }
   };
 
