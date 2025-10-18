@@ -1,5 +1,5 @@
 import { db } from '@/db';
-import { subscriptions } from '@/db/schema';
+import { subscriptions, users } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 
 /**
@@ -44,13 +44,36 @@ const TIER_LIMITS = {
 
 /**
  * Get user's current usage limits and remaining quota
+ * @param clerkId - Clerk user ID
  */
-export async function getUserUsageLimits(userId: string): Promise<UsageLimits> {
+export async function getUserUsageLimits(clerkId: string): Promise<UsageLimits> {
+  // Get user from database
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!user) {
+    // Return freemium limits if user not found
+    return {
+      aiMaterialsLimit: TIER_LIMITS.freemium.aiMaterialsLimit,
+      aiMaterialsUsed: 0,
+      aiMaterialsRemaining: TIER_LIMITS.freemium.aiMaterialsLimit,
+      reservationsLimit: TIER_LIMITS.freemium.reservationsLimit,
+      reservationsUsed: 0,
+      reservationsRemaining: TIER_LIMITS.freemium.reservationsLimit,
+      tier: 'freemium',
+      canGenerateMaterial: true,
+      canCreateReservation: true,
+    };
+  }
+
   // Get user's subscription
   const [subscription] = await db
     .select()
     .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
+    .where(eq(subscriptions.userId, user.id))
     .orderBy(desc(subscriptions.createdAt))
     .limit(1);
 
@@ -88,13 +111,14 @@ export async function getUserUsageLimits(userId: string): Promise<UsageLimits> {
 
 /**
  * Check if user can generate AI material
+ * @param clerkId - Clerk user ID
  */
-export async function checkCanGenerateMaterial(userId: string): Promise<{
+export async function checkCanGenerateMaterial(clerkId: string): Promise<{
   allowed: boolean;
   reason?: string;
   limits: UsageLimits;
 }> {
-  const limits = await getUserUsageLimits(userId);
+  const limits = await getUserUsageLimits(clerkId);
 
   if (!limits.canGenerateMaterial) {
     return {
@@ -112,13 +136,14 @@ export async function checkCanGenerateMaterial(userId: string): Promise<{
 
 /**
  * Check if user can create reservation
+ * @param clerkId - Clerk user ID
  */
-export async function checkCanCreateReservation(userId: string): Promise<{
+export async function checkCanCreateReservation(clerkId: string): Promise<{
   allowed: boolean;
   reason?: string;
   limits: UsageLimits;
 }> {
-  const limits = await getUserUsageLimits(userId);
+  const limits = await getUserUsageLimits(clerkId);
 
   if (!limits.canCreateReservation) {
     return {
@@ -136,12 +161,24 @@ export async function checkCanCreateReservation(userId: string): Promise<{
 
 /**
  * Increment AI material usage counter
+ * @param clerkId - Clerk user ID
  */
-export async function incrementMaterialUsage(userId: string): Promise<void> {
+export async function incrementMaterialUsage(clerkId: string): Promise<void> {
+  // Get user from database
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
   const [subscription] = await db
     .select()
     .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
+    .where(eq(subscriptions.userId, user.id))
     .orderBy(desc(subscriptions.createdAt))
     .limit(1);
 
@@ -155,7 +192,7 @@ export async function incrementMaterialUsage(userId: string): Promise<void> {
   } else {
     // Create freemium subscription if doesn't exist
     await db.insert(subscriptions).values({
-      userId,
+      userId: user.id,
       tier: 'freemium',
       status: 'active',
       aiMaterialsUsed: 1,
@@ -166,12 +203,24 @@ export async function incrementMaterialUsage(userId: string): Promise<void> {
 
 /**
  * Increment reservation usage counter
+ * @param clerkId - Clerk user ID
  */
-export async function incrementReservationUsage(userId: string): Promise<void> {
+export async function incrementReservationUsage(clerkId: string): Promise<void> {
+  // Get user from database
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
   const [subscription] = await db
     .select()
     .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
+    .where(eq(subscriptions.userId, user.id))
     .orderBy(desc(subscriptions.createdAt))
     .limit(1);
 
@@ -185,7 +234,7 @@ export async function incrementReservationUsage(userId: string): Promise<void> {
   } else {
     // Create freemium subscription if doesn't exist
     await db.insert(subscriptions).values({
-      userId,
+      userId: user.id,
       tier: 'freemium',
       status: 'active',
       aiMaterialsUsed: 0,
@@ -196,12 +245,24 @@ export async function incrementReservationUsage(userId: string): Promise<void> {
 
 /**
  * Reset monthly usage counters (call this at the start of each billing period)
+ * @param clerkId - Clerk user ID
  */
-export async function resetMonthlyUsage(userId: string): Promise<void> {
+export async function resetMonthlyUsage(clerkId: string): Promise<void> {
+  // Get user from database
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
   const [subscription] = await db
     .select()
     .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
+    .where(eq(subscriptions.userId, user.id))
     .orderBy(desc(subscriptions.createdAt))
     .limit(1);
 
