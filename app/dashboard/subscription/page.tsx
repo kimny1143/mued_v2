@@ -32,7 +32,7 @@ const PLANS = [
     id: 'starter',
     name: 'Starter',
     price: 999,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER?.trim(),
     currency: 'JPY',
     description: 'AI支援学習を始める方向け',
     features: [
@@ -47,7 +47,7 @@ const PLANS = [
     id: 'basic',
     name: 'Basic',
     price: 1999,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_BASIC,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_BASIC?.trim(),
     currency: 'JPY',
     description: 'AI教材無制限で本格的な学習',
     features: [
@@ -63,7 +63,7 @@ const PLANS = [
     id: 'premium',
     name: 'Premium',
     price: 4999,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM?.trim(),
     currency: 'JPY',
     description: 'すべての機能を無制限で利用',
     features: [
