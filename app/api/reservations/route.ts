@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { reservations, lessonSlots, users } from "@/db/schema";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/actions/user";
+import { alias } from "drizzle-orm/pg-core";
+
+// テーブルエイリアスを作成（JOINバグ修正）
+const students = alias(users, "students");
+const mentors = alias(users, "mentors");
 
 export async function GET(request: Request) {
   try {
@@ -28,19 +33,20 @@ export async function GET(request: Request) {
           endTime: lessonSlots.endTime,
         },
         student: {
-          id: users.id,
-          name: users.name,
-          email: users.email,
+          id: students.id,
+          name: students.name,
+          email: students.email,
         },
         mentor: {
-          id: users.id,
-          name: users.name,
-          email: users.email,
+          id: mentors.id,
+          name: mentors.name,
+          email: mentors.email,
         },
       })
       .from(reservations)
       .leftJoin(lessonSlots, eq(reservations.slotId, lessonSlots.id))
-      .leftJoin(users, eq(reservations.studentId, users.id))
+      .leftJoin(students, eq(reservations.studentId, students.id))
+      .leftJoin(mentors, eq(reservations.mentorId, mentors.id))
       .where(
         or(
           eq(reservations.studentId, user.id),
@@ -67,58 +73,58 @@ export async function POST(request: Request) {
 
     const { slotId, notes } = await request.json();
 
-    // スロット情報を取得
-    const [slot] = await db
-      .select()
-      .from(lessonSlots)
-      .where(eq(lessonSlots.id, slotId))
-      .limit(1);
+    // トランザクション処理で競合状態を防止
+    const result = await db.transaction(async (tx) => {
+      // スロット情報を取得
+      const [slot] = await tx
+        .select()
+        .from(lessonSlots)
+        .where(eq(lessonSlots.id, slotId))
+        .limit(1);
 
-    if (!slot) {
-      return NextResponse.json(
-        { error: "Lesson slot not found" },
-        { status: 404 }
-      );
-    }
+      if (!slot) {
+        throw new Error("Lesson slot not found");
+      }
 
-    // 空き状況を確認
-    if (slot.currentCapacity >= slot.maxCapacity) {
-      return NextResponse.json(
-        { error: "This slot is fully booked" },
-        { status: 400 }
-      );
-    }
+      // 空き状況を確認
+      if (slot.currentCapacity >= slot.maxCapacity) {
+        throw new Error("This slot is fully booked");
+      }
 
-    // 予約を作成
-    const [reservation] = await db
-      .insert(reservations)
-      .values({
-        slotId: slot.id,
-        studentId: user.id,
-        mentorId: slot.mentorId,
-        status: "pending",
-        paymentStatus: "pending",
-        amount: slot.price,
-        notes,
-      })
-      .returning();
+      // 予約を作成
+      const [reservation] = await tx
+        .insert(reservations)
+        .values({
+          slotId: slot.id,
+          studentId: user.id,
+          mentorId: slot.mentorId,
+          status: "pending",
+          paymentStatus: "pending",
+          amount: slot.price,
+          notes,
+        })
+        .returning();
 
-    // スロットの現在の予約数を更新
-    await db
-      .update(lessonSlots)
-      .set({
-        currentCapacity: slot.currentCapacity + 1,
-        status: slot.currentCapacity + 1 >= slot.maxCapacity ? "booked" : "available",
-        updatedAt: new Date(),
-      })
-      .where(eq(lessonSlots.id, slotId));
+      // スロットの現在の予約数を原子的に更新（競合状態修正）
+      await tx
+        .update(lessonSlots)
+        .set({
+          currentCapacity: sql`${lessonSlots.currentCapacity} + 1`,
+          status: sql`CASE WHEN ${lessonSlots.currentCapacity} + 1 >= ${lessonSlots.maxCapacity} THEN 'booked' ELSE 'available' END`,
+          updatedAt: new Date(),
+        })
+        .where(eq(lessonSlots.id, slotId));
 
-    return NextResponse.json({ reservation });
+      return reservation;
+    });
+
+    return NextResponse.json({ reservation: result });
   } catch (error) {
     console.error("Error creating reservation:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to create reservation";
     return NextResponse.json(
-      { error: "Failed to create reservation" },
-      { status: 500 }
+      { error: errorMessage },
+      { status: errorMessage.includes("not found") ? 404 : errorMessage.includes("fully booked") ? 400 : 500 }
     );
   }
 }

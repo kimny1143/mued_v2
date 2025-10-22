@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { formatDateTimeShort, formatPrice } from "@/lib/utils/formatters";
 
 interface Mentor {
   id: string;
@@ -51,24 +52,6 @@ export default function LessonsPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const options: Intl.DateTimeFormatOptions = {
-      month: "numeric",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    };
-    return date.toLocaleDateString("ja-JP", options);
-  };
-
-  const formatPrice = (price: string) => {
-    return new Intl.NumberFormat("ja-JP", {
-      style: "currency",
-      currency: "JPY",
-    }).format(parseFloat(price));
   };
 
   const handleBooking = (slotId: string) => {
@@ -168,7 +151,7 @@ export default function LessonsPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">日時:</span>
                   <span className="font-medium">
-                    {formatDateTime(slot.startTime)}
+                    {formatDateTimeShort(slot.startTime)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">

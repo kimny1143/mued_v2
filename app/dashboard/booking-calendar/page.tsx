@@ -22,62 +22,51 @@ export default function BookingCalendarPage() {
     new Date().toISOString().split("T")[0]
   );
 
+  // useEffect統合（重複実行を防止）
   useEffect(() => {
+    const fetchSlots = async () => {
+      setLoading(true);
+
+      try {
+        const response = await fetch("/api/lessons?available=true");
+        if (!response.ok) throw new Error("Failed to fetch slots");
+        const data = await response.json();
+
+        // APIデータを画面用に整形
+        const formattedSlots = data.slots.map((slot: {
+          id: string;
+          mentorId: string;
+          mentor?: { name: string };
+          startTime: string;
+          endTime: string;
+          price: string | number;
+        }) => ({
+          id: slot.id,
+          mentorId: slot.mentorId,
+          mentorName: slot.mentor?.name || "メンター",
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          status: "AVAILABLE",
+          price: typeof slot.price === "string" ? parseFloat(slot.price) : slot.price,
+        }));
+
+        setSlots(formattedSlots);
+      } catch (error) {
+        console.error("Error fetching slots:", error);
+        setSlots([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchSlots();
-  }, []); // 初回マウント時のみ実行
-
-  useEffect(() => {
-    // selectedDate変更時は別途処理
-    if (selectedDate) {
-      fetchSlots();
-    }
   }, [selectedDate]);
-
-  const fetchSlots = async () => {
-    console.log("Fetching slots..."); // デバッグ用
-    setLoading(true); // 明示的にローディング開始
-
-    try {
-      const response = await fetch("/api/lessons?available=true");
-      if (!response.ok) throw new Error("Failed to fetch slots");
-      const data = await response.json();
-
-      console.log(`Fetched ${data.slots?.length || 0} slots from API`); // デバッグ用
-
-      // APIデータを画面用に整形
-      const formattedSlots = data.slots.map((slot: {
-        id: string;
-        mentorId: string;
-        mentor?: { name: string };
-        startTime: string;
-        endTime: string;
-        price: string | number;
-      }) => ({
-        id: slot.id,
-        mentorId: slot.mentorId,
-        mentorName: slot.mentor?.name || "メンター",
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        status: "AVAILABLE",
-        price: typeof slot.price === "string" ? parseFloat(slot.price) : slot.price,
-      }));
-
-      setSlots(formattedSlots);
-      console.log(`Set ${formattedSlots.length} slots to state`); // デバッグ用
-    } catch (error) {
-      console.error("Error fetching slots:", error);
-      setSlots([]);
-    } finally {
-      setLoading(false);
-      console.log("Loading complete"); // デバッグ用
-    }
-  };
 
   const handleBookSlot = (slotId: string) => {
     router.push(`/dashboard/lessons/${slotId}/book`);
   };
 
-  const formatTime = (dateStr: string) => {
+  const formatTime = (dateStr: string): string => {
     return new Date(dateStr).toLocaleTimeString("ja-JP", {
       hour: "2-digit",
       minute: "2-digit",

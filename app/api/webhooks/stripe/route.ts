@@ -4,12 +4,15 @@ import Stripe from "stripe";
 import { db } from "@/db";
 import { reservations } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { validateStripeConfig } from "@/lib/utils/env";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// 環境変数の検証
+const stripeConfig = validateStripeConfig();
+const stripe = new Stripe(stripeConfig.secretKey, {
   apiVersion: "2025-08-27.basil",
 });
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const endpointSecret = stripeConfig.webhookSecret;
 
 export async function POST(request: Request) {
   const body = await request.text();

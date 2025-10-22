@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { formatDateTime, formatPrice } from "@/lib/utils/formatters";
 
 interface Reservation {
   id: string;
@@ -53,25 +54,6 @@ function ReservationsContent() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ja-JP", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      weekday: "short",
-    });
-  };
-
-  const formatPrice = (price: string) => {
-    return new Intl.NumberFormat("ja-JP", {
-      style: "currency",
-      currency: "JPY",
-    }).format(parseFloat(price));
   };
 
   const getStatusBadge = (status: string) => {
