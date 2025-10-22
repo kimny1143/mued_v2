@@ -1,7 +1,7 @@
 // 環境変数の検証ユーティリティ
 
 export function getRequiredEnv(key: string): string {
-  const value = process.env[key];
+  const value = process.env[key]?.trim();
   if (!value) {
     throw new Error(`Missing required environment variable: ${key}`);
   }
