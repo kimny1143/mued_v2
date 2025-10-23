@@ -4,6 +4,12 @@ import { db } from "@/db";
 import { reservations, lessonSlots, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/actions/user";
+import { z } from "zod";
+
+// 入力バリデーションスキーマ
+const checkoutSchema = z.object({
+  reservationId: z.string().uuid("Invalid reservation ID format"),
+});
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
@@ -16,7 +22,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { reservationId } = await request.json();
+    // 入力バリデーション
+    const body = await request.json();
+    const validation = checkoutSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid input",
+          details: validation.error.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    const { reservationId } = validation.data;
 
     // 予約情報を取得（認可チェック付き）
     const [reservation] = await db

@@ -4,6 +4,13 @@ import { reservations, lessonSlots, users } from "@/db/schema";
 import { eq, or, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/actions/user";
 import { checkCanCreateReservation, incrementReservationUsage } from "@/lib/middleware/usage-limiter";
+import { z } from "zod";
+
+// 入力バリデーションスキーマ
+const createReservationSchema = z.object({
+  slotId: z.string().uuid("Invalid slot ID format"),
+  notes: z.string().max(1000, "Notes must be less than 1000 characters").optional(),
+});
 
 export async function GET() {
   try {
@@ -79,7 +86,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const { slotId, notes } = await request.json();
+    // 入力バリデーション
+    const body = await request.json();
+    const validation = createReservationSchema.safeParse(body);
+
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid input",
+          details: validation.error.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    const { slotId, notes } = validation.data;
 
     // トランザクションで予約作成を実行（競合状態を防止）
     try {
