@@ -63,7 +63,7 @@ export async function POST(request: Request) {
         eventId: event.id,
         type: event.type,
         source: "stripe",
-        payload: event.data.object as Record<string, unknown>,
+        payload: event.data.object as unknown as Record<string, unknown>,
       });
 
       // イベントタイプに応じて処理（トランザクション内で実行）
