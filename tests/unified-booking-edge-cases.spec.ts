@@ -142,7 +142,7 @@ test.describe("Unified Booking Page - Edge Cases", () => {
   });
 
   test("EC07: Handle modal interactions during loading", async ({ page }) => {
-    const bookButton = page.locator('button:has-text("Book Now")').first();
+    const bookButton = page.locator('button:has-text("予約する")').first();
 
     if (await bookButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       // Click book button
@@ -195,7 +195,7 @@ test.describe("Unified Booking Page - Edge Cases", () => {
     });
 
     // Try to interact with the page
-    const bookButton = page.locator('button:has-text("Book Now")').first();
+    const bookButton = page.locator('button:has-text("予約する")').first();
 
     if (await bookButton.isVisible({ timeout: 1000 }).catch(() => false)) {
       await bookButton.click();
@@ -227,7 +227,7 @@ test.describe("Unified Booking Page - Concurrent Operations", () => {
   });
 
   test("EC11: Handle filter changes while modal is open", async ({ page }) => {
-    const bookButton = page.locator('button:has-text("Book Now")').first();
+    const bookButton = page.locator('button:has-text("予約する")').first();
 
     if (await bookButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       // Open modal
@@ -246,7 +246,7 @@ test.describe("Unified Booking Page - Concurrent Operations", () => {
   });
 
   test("EC12: Handle multiple rapid modal opens/closes", async ({ page }) => {
-    const bookButton = page.locator('button:has-text("Book Now")').first();
+    const bookButton = page.locator('button:has-text("予約する")').first();
 
     if (await bookButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       // Rapidly open and close modal
@@ -340,7 +340,7 @@ test.describe("Unified Booking Page - Responsive Behavior", () => {
       await page.waitForLoadState("networkidle");
 
       // Page should adapt and remain functional
-      await expect(page.locator('button:has-text("Book Lessons")')).toBeVisible();
+      await expect(page.locator('button:has-text("レッスン予約")')).toBeVisible();
 
       // Check if layout adapts (grid should change on smaller screens)
       const grid = page.locator('.grid');
@@ -382,14 +382,14 @@ test.describe("Unified Booking Page - Network Conditions", () => {
 
     // Should eventually load
     await page.waitForLoadState("networkidle", { timeout: 30000 });
-    await expect(page.locator('button:has-text("Book Lessons")')).toBeVisible();
+    await expect(page.locator('button:has-text("レッスン予約")')).toBeVisible();
   });
 
   test("EC18: Handle network interruption during booking", async ({ page, context }) => {
     await page.goto("/dashboard/lessons");
     await page.waitForLoadState("networkidle");
 
-    const bookButton = page.locator('button:has-text("Book Now")').first();
+    const bookButton = page.locator('button:has-text("予約する")').first();
 
     if (await bookButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       // Open modal

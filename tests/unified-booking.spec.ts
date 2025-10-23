@@ -26,31 +26,31 @@ test.describe("Unified Booking Page - Tab Navigation", () => {
 
   test("01: Tab switching between Book Lessons and My Reservations", async ({ page }) => {
     // Verify initial state - Book Lessons tab is active
-    await expect(page.locator('button:has-text("Book Lessons")')).toHaveClass(/text-\[var\(--color-brand-green\)\]/);
-    await expect(page.locator('button:has-text("My Reservations")')).not.toHaveClass(/text-\[var\(--color-brand-green\)\]/);
+    await expect(page.locator('button:has-text("レッスン予約")')).toHaveClass(/text-\[var\(--color-brand-green\)\]/);
+    await expect(page.locator('button:has-text("予約状況")')).not.toHaveClass(/text-\[var\(--color-brand-green\)\]/);
 
     // Verify Book Lessons content is visible
     await expect(bookingHelper.getFilterSidebar()).toBeVisible();
     await expect(bookingHelper.getCalendarSection()).toBeVisible();
 
     // Switch to My Reservations tab
-    await page.locator('button:has-text("My Reservations")').click();
+    await page.locator('button:has-text("予約状況")').click();
 
     // Verify tab state change
-    await expect(page.locator('button:has-text("My Reservations")')).toHaveClass(/text-\[var\(--color-brand-green\)\]/);
-    await expect(page.locator('button:has-text("Book Lessons")')).not.toHaveClass(/text-\[var\(--color-brand-green\)\]/);
+    await expect(page.locator('button:has-text("予約状況")')).toHaveClass(/text-\[var\(--color-brand-green\)\]/);
+    await expect(page.locator('button:has-text("レッスン予約")')).not.toHaveClass(/text-\[var\(--color-brand-green\)\]/);
 
     // Verify My Reservations content is visible
     await expect(page.locator('table, div:has-text("予約がありません")')).toBeVisible();
 
     // Switch back to Book Lessons
-    await page.locator('button:has-text("Book Lessons")').click();
+    await page.locator('button:has-text("レッスン予約")').click();
     await expect(bookingHelper.getFilterSidebar()).toBeVisible();
   });
 
   test("02: Reservation count badge displays correctly", async ({ page }) => {
     // Check if the badge exists when there are reservations
-    const badge = page.locator('button:has-text("My Reservations") span.bg-\\[var\\(--color-brand-green\\)\\]');
+    const badge = page.locator('button:has-text("予約状況") span.bg-\\[var\\(--color-brand-green\\)\\]');
 
     // The badge should show count if there are reservations
     const badgeExists = await badge.isVisible({ timeout: 1000 }).catch(() => false);
@@ -235,7 +235,7 @@ test.describe("Unified Booking Page - Filter Functionality", () => {
     await bookingHelper.selectSubject("math");
 
     // Click reset button
-    await page.locator('button:has-text("Reset Filters")').click();
+    await page.locator('button:has-text("フィルターをリセット")').click();
 
     // Verify all filters are reset
     const allCheckboxes = page.locator('input[type="checkbox"]');
@@ -264,7 +264,7 @@ test.describe("Unified Booking Page - Time Slot Booking", () => {
 
   test("12: Time slots display correctly", async ({ page }) => {
     // Check if time slots are displayed
-    const timeSlots = page.locator('button:has-text("Book Now")');
+    const timeSlots = page.locator('button:has-text("予約する")');
     const slotCount = await timeSlots.count();
 
     if (slotCount > 0) {
@@ -296,16 +296,16 @@ test.describe("Unified Booking Page - Time Slot Booking", () => {
     await bookingHelper.selectDate(15);
 
     // Check for empty state message
-    const emptyState = page.locator('text=/No available slots on this date/i');
+    const emptyState = page.locator('text=/この日は予約可能な枠がありません/i');
     if (await emptyState.isVisible({ timeout: 2000 }).catch(() => false)) {
       await expect(emptyState).toBeVisible();
-      await expect(page.locator('text=/Please select another date or adjust your filters/i')).toBeVisible();
+      await expect(page.locator('text=/別の日付を選択するか、フィルターを調整してください/i')).toBeVisible();
     }
   });
 
   test("14: Book Now button opens confirmation modal", async ({ page }) => {
     // Find and click a Book Now button
-    const bookButton = page.locator('button:has-text("Book Now")').first();
+    const bookButton = page.locator('button:has-text("予約する")').first();
     const buttonExists = await bookButton.isVisible({ timeout: 2000 }).catch(() => false);
 
     if (buttonExists) {
@@ -333,7 +333,7 @@ test.describe("Unified Booking Page - Booking Confirmation Modal", () => {
     await page.waitForLoadState("networkidle");
 
     // Open modal if there's a slot available
-    const bookButton = page.locator('button:has-text("Book Now")').first();
+    const bookButton = page.locator('button:has-text("予約する")').first();
     if (await bookButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       await bookButton.click();
       await page.waitForSelector('h3:has-text("予約確認")', { state: 'visible' });
@@ -425,7 +425,7 @@ test.describe("Unified Booking Page - My Reservations Tab", () => {
     await page.waitForLoadState("networkidle");
 
     // Switch to My Reservations tab
-    await page.locator('button:has-text("My Reservations")').click();
+    await page.locator('button:has-text("予約状況")').click();
   });
 
   test("20: Reservations table displays correctly", async ({ page }) => {
@@ -477,7 +477,7 @@ test.describe("Unified Booking Page - My Reservations Tab", () => {
       await page.locator('button:has-text("レッスンを予約する")').click();
 
       // Verify switched to Book Lessons tab
-      await expect(page.locator('button:has-text("Book Lessons")')).toHaveClass(/text-\[var\(--color-brand-green\)\]/);
+      await expect(page.locator('button:has-text("レッスン予約")')).toHaveClass(/text-\[var\(--color-brand-green\)\]/);
       await expect(bookingHelper.getFilterSidebar()).toBeVisible();
     }
   });
@@ -535,7 +535,7 @@ test.describe("Unified Booking Page - Filter Integration", () => {
 
   test("24: Filters affect displayed time slots", async ({ page }) => {
     // Count initial slots
-    const initialSlots = await page.locator('button:has-text("Book Now")').count();
+    const initialSlots = await page.locator('button:has-text("予約する")').count();
 
     // Apply a filter (if mentors exist)
     const mentorCheckbox = page.locator('input[type="checkbox"]').first();
@@ -546,7 +546,7 @@ test.describe("Unified Booking Page - Filter Integration", () => {
       await page.waitForTimeout(500);
 
       // Count filtered slots
-      const filteredSlots = await page.locator('button:has-text("Book Now")').count();
+      const filteredSlots = await page.locator('button:has-text("予約する")').count();
 
       // The count might change (could be same if all slots are from that mentor)
       expect(filteredSlots).toBeGreaterThanOrEqual(0);
@@ -555,7 +555,7 @@ test.describe("Unified Booking Page - Filter Integration", () => {
       await mentorCheckbox.uncheck();
       await page.waitForTimeout(500);
 
-      const restoredSlots = await page.locator('button:has-text("Book Now")').count();
+      const restoredSlots = await page.locator('button:has-text("予約する")').count();
       expect(restoredSlots).toBe(initialSlots);
     }
   });
@@ -579,11 +579,11 @@ test.describe("Unified Booking Page - Filter Integration", () => {
       await page.waitForTimeout(500);
 
       // Verify filters are applied (slots might be 0 if no matches)
-      const filteredSlots = await page.locator('button:has-text("Book Now")').count();
+      const filteredSlots = await page.locator('button:has-text("予約する")').count();
       expect(filteredSlots).toBeGreaterThanOrEqual(0);
 
       // Reset filters
-      await page.locator('button:has-text("Reset Filters")').click();
+      await page.locator('button:has-text("フィルターをリセット")').click();
 
       // Verify filters are cleared
       await expect(mentorCheckbox).not.toBeChecked();
@@ -607,8 +607,8 @@ test.describe("Unified Booking Page - Accessibility", () => {
     await page.keyboard.press("Tab");
 
     // The focus should move through the tabs
-    const bookLessonsTab = page.locator('button:has-text("Book Lessons")');
-    const reservationsTab = page.locator('button:has-text("My Reservations")');
+    const bookLessonsTab = page.locator('button:has-text("レッスン予約")');
+    const reservationsTab = page.locator('button:has-text("予約状況")');
 
     // Press Tab multiple times and check focus
     for (let i = 0; i < 5; i++) {
@@ -669,7 +669,7 @@ test.describe("Unified Booking Page - Performance", () => {
     expect(loadTime).toBeLessThan(5000);
 
     // Critical content should be visible quickly
-    await expect(page.locator('button:has-text("Book Lessons")')).toBeVisible();
+    await expect(page.locator('button:has-text("レッスン予約")')).toBeVisible();
   });
 
   test("29: Filter responsiveness", async ({ page }) => {
@@ -722,6 +722,6 @@ test.describe("Unified Booking Page - Error Handling", () => {
     }
 
     // Content should load eventually
-    await expect(page.locator('button:has-text("Book Lessons")')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('button:has-text("レッスン予約")')).toBeVisible({ timeout: 5000 });
   });
 });

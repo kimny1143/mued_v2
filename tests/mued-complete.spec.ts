@@ -118,7 +118,7 @@ test.describe('MUED LMS Complete Test Suite', () => {
     await page.waitForURL('**/dashboard', { timeout: 10000 });
 
     // Navigate to booking calendar
-    await page.goto('/dashboard/booking-calendar');
+    await page.goto('/dashboard/lessons');
 
     // Wait for page load
     await page.waitForLoadState('domcontentloaded');
@@ -149,7 +149,7 @@ test.describe('MUED LMS Complete Test Suite', () => {
     await page.waitForURL('**/dashboard', { timeout: 10000 });
 
     // Navigate to booking calendar
-    await page.goto('/dashboard/booking-calendar');
+    await page.goto('/dashboard/lessons');
 
     // Wait for slots
     const slotsCount = await waitForSlotsToRender(page);
@@ -157,7 +157,7 @@ test.describe('MUED LMS Complete Test Suite', () => {
 
     // Click on first available slot
     const firstSlot = await page.locator('[data-available="true"]').first();
-    const bookButton = await firstSlot.locator('button:has-text("このスロットを予約")');
+    const bookButton = await firstSlot.locator('button:has-text("予約する")');
     await bookButton.click();
 
     // Verify action (button clicked)
@@ -196,7 +196,7 @@ test.describe('MUED LMS Complete Test Suite', () => {
 
     // Try to book
     const firstSlot = await page.locator('[data-available="true"]').first();
-    const bookButton = await firstSlot.locator('button:has-text("このスロットを予約")');
+    const bookButton = await firstSlot.locator('button:has-text("予約する")');
     await bookButton.click();
 
     await page.waitForTimeout(2000);

@@ -9,10 +9,10 @@ export class BookingPageHelper {
 
   // Locator constants
   private readonly selectors = {
-    // Tabs
-    bookLessonsTab: 'button:has-text("Book Lessons")',
-    myReservationsTab: 'button:has-text("My Reservations")',
-    reservationBadge: 'button:has-text("My Reservations") span.bg-\\[var\\(--color-brand-green\\)\\]',
+    // Tabs (Japanese text)
+    bookLessonsTab: 'button:has-text("レッスン予約")',
+    myReservationsTab: 'button:has-text("予約状況")',
+    reservationBadge: 'button:has-text("予約状況") span.bg-\\[var\\(--color-brand-green\\)\\]',
 
     // Filter sidebar
     filterSidebar: '.grid > div:first-child',
@@ -20,7 +20,7 @@ export class BookingPageHelper {
     priceSlider: 'input[type="range"]',
     timeSlotRadio: (value: string) => `input[type="radio"][value="${value}"][name="timeSlot"]`,
     subjectRadio: (value: string) => `input[type="radio"][value="${value}"][name="subject"]`,
-    resetFiltersButton: 'button:has-text("Reset Filters")',
+    resetFiltersButton: 'button:has-text("フィルターをリセット")',
 
     // Calendar
     calendarSection: '.grid > div:nth-child(2)',
@@ -33,8 +33,8 @@ export class BookingPageHelper {
     // Time slots
     timeSlotsContainer: '.space-y-3',
     timeSlot: '.bg-white.border.border-gray-100.rounded-xl',
-    bookNowButton: 'button:has-text("Book Now")',
-    emptySlotMessage: 'text=/No available slots on this date/i',
+    bookNowButton: 'button:has-text("予約する")',
+    emptySlotMessage: 'text=/この日は予約可能な枠がありません/i',
 
     // Modal
     modal: '.fixed.inset-0.z-50',

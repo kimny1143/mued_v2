@@ -145,7 +145,7 @@ test.describe("MUED LMS - Dashboard Features", () => {
   });
 
   test("08: Booking Calendar View", async ({ page }) => {
-    await page.goto("/dashboard/booking-calendar");
+    await page.goto("/dashboard/lessons");
 
     // Wait for page load with multiple strategies
     await page.waitForLoadState("domcontentloaded");
@@ -224,7 +224,9 @@ test.describe("MUED LMS - Dashboard Features", () => {
   });
 
   test("10: Reservations Page", async ({ page }) => {
-    await page.goto("/dashboard/reservations");
+    await page.goto("/dashboard/lessons");
+    // Switch to My Reservations tab
+    await page.locator('button:has-text("予約状況")').click();
 
     await page.waitForLoadState("networkidle");
 
@@ -256,7 +258,7 @@ test.describe("MUED LMS - Booking Flow", () => {
 
   test("11: Complete Booking Flow", async ({ page }) => {
     // Navigate to booking calendar
-    await page.goto("/dashboard/booking-calendar");
+    await page.goto("/dashboard/lessons");
 
     // Wait for calendar to load
     await page.waitForLoadState("networkidle");
@@ -274,7 +276,7 @@ test.describe("MUED LMS - Booking Flow", () => {
 
     // Click on first available slot
     const firstSlot = availableSlots.first();
-    const bookButton = firstSlot.locator('button:has-text("予約"), button:has-text("Book")');
+    const bookButton = firstSlot.locator('button:has-text("予約する")');
 
     // Store slot information before clicking
     const slotInfo = await firstSlot.textContent();
