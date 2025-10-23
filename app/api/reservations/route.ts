@@ -107,7 +107,16 @@ export async function POST(request: Request) {
       const reservation = await db.transaction(async (tx) => {
         // スロット情報を取得（行レベルロックで排他制御）
         // FOR UPDATE により、同時に複数のリクエストが来ても順番に処理される
-        const slots = await tx.execute<typeof lessonSlots.$inferSelect>(
+        const slots = await tx.execute<{
+          id: string;
+          mentor_id: string;
+          current_capacity: number;
+          max_capacity: number;
+          price: string;
+          start_time: Date;
+          end_time: Date;
+          status: string;
+        }>(
           sql`
             SELECT * FROM lesson_slots
             WHERE id = ${slotId}
@@ -121,7 +130,7 @@ export async function POST(request: Request) {
         }
 
         // 空き状況を確認
-        if ((slot as any).current_capacity >= (slot as any).max_capacity) {
+        if (slot.current_capacity >= slot.max_capacity) {
           throw new Error("This slot is fully booked");
         }
 
@@ -129,12 +138,12 @@ export async function POST(request: Request) {
         const [newReservation] = await tx
           .insert(reservations)
           .values({
-            slotId: (slot as any).id,
+            slotId: slot.id,
             studentId: user.id,
-            mentorId: (slot as any).mentor_id,
+            mentorId: slot.mentor_id,
             status: "pending",
             paymentStatus: "pending",
-            amount: (slot as any).price,
+            amount: slot.price,
             notes,
           })
           .returning();
@@ -143,8 +152,8 @@ export async function POST(request: Request) {
         await tx
           .update(lessonSlots)
           .set({
-            currentCapacity: (slot as any).current_capacity + 1,
-            status: (slot as any).current_capacity + 1 >= (slot as any).max_capacity ? "booked" : "available",
+            currentCapacity: slot.current_capacity + 1,
+            status: slot.current_capacity + 1 >= slot.max_capacity ? "booked" : "available",
             updatedAt: new Date(),
           })
           .where(eq(lessonSlots.id, slotId));
@@ -156,19 +165,21 @@ export async function POST(request: Request) {
       });
 
       return NextResponse.json({ reservation });
-    } catch (txError: any) {
+    } catch (txError) {
       // トランザクションエラーを適切にハンドリング
-      if (txError.message === "Lesson slot not found") {
-        return NextResponse.json(
-          { error: "Lesson slot not found" },
-          { status: 404 }
-        );
-      }
-      if (txError.message === "This slot is fully booked") {
-        return NextResponse.json(
-          { error: "This slot is fully booked" },
-          { status: 400 }
-        );
+      if (txError instanceof Error) {
+        if (txError.message === "Lesson slot not found") {
+          return NextResponse.json(
+            { error: "Lesson slot not found" },
+            { status: 404 }
+          );
+        }
+        if (txError.message === "This slot is fully booked") {
+          return NextResponse.json(
+            { error: "This slot is fully booked" },
+            { status: 400 }
+          );
+        }
       }
       // その他のエラーは外側のcatchで処理
       throw txError;

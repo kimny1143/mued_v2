@@ -5,6 +5,9 @@ import { db } from "@/db";
 import { reservations, subscriptions, users, webhookEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
+// Drizzle transaction type
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
 });
@@ -60,7 +63,7 @@ export async function POST(request: Request) {
         eventId: event.id,
         type: event.type,
         source: "stripe",
-        payload: event.data.object as any,
+        payload: event.data.object as Record<string, unknown>,
       });
 
       // イベントタイプに応じて処理（トランザクション内で実行）
@@ -78,7 +81,7 @@ export async function POST(request: Request) {
 }
 
 // イベント処理ロジックを別関数に分離
-async function processStripeEvent(tx: any, event: Stripe.Event) {
+async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
   // イベントタイプに応じて処理
   switch (event.type) {
     case "checkout.session.completed": {
