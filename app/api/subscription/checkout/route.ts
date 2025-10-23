@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { validateStripeConfig } from '@/lib/utils/env';
 
 /**
  * POST /api/subscription/checkout
@@ -12,7 +13,9 @@ import { eq } from 'drizzle-orm';
  * Create a Stripe Checkout session for subscription purchase
  */
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// 環境変数の検証
+const stripeConfig = validateStripeConfig();
+const stripe = new Stripe(stripeConfig.secretKey, {
   apiVersion: '2025-08-27.basil',
 });
 

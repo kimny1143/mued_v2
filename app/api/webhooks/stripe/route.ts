@@ -4,15 +4,18 @@ import Stripe from "stripe";
 import { db } from "@/db";
 import { reservations, subscriptions, users, webhookEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { validateStripeConfig } from "@/lib/utils/env";
 
 // Drizzle transaction type
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// 環境変数の検証
+const stripeConfig = validateStripeConfig();
+const stripe = new Stripe(stripeConfig.secretKey, {
   apiVersion: "2025-08-27.basil",
 });
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const endpointSecret = stripeConfig.webhookSecret;
 
 // Stripe Webhookイベント用の型定義
 interface StripeSubscriptionWithPeriods extends Stripe.Subscription {

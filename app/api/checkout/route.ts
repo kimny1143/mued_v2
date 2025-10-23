@@ -5,13 +5,16 @@ import { reservations, lessonSlots, users } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/actions/user";
 import { z } from "zod";
+import { validateStripeConfig } from "@/lib/utils/env";
 
 // 入力バリデーションスキーマ
 const checkoutSchema = z.object({
   reservationId: z.string().uuid("Invalid reservation ID format"),
 });
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// 環境変数の検証
+const stripeConfig = validateStripeConfig();
+const stripe = new Stripe(stripeConfig.secretKey, {
   apiVersion: "2025-08-27.basil",
 });
 
@@ -102,7 +105,8 @@ export async function POST(request: Request) {
               name: `レッスン予約: ${reservation.mentor?.name}先生`,
               description: `日時: ${new Date(reservation.slot?.startTime || "").toLocaleString("ja-JP")}`,
             },
-            unit_amount: parseInt(reservation.amount),
+            // Stripe決済金額の正しい変換（小数点対応）
+            unit_amount: Math.round(parseFloat(reservation.amount)),
           },
           quantity: 1,
         },
