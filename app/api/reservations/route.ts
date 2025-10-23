@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { reservations, lessonSlots, users } from "@/db/schema";
-import { eq, or } from "drizzle-orm";
+import { eq, or, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/actions/user";
 import { checkCanCreateReservation, incrementReservationUsage } from "@/lib/middleware/usage-limiter";
 
@@ -81,56 +81,77 @@ export async function POST(request: Request) {
 
     const { slotId, notes } = await request.json();
 
-    // スロット情報を取得
-    const [slot] = await db
-      .select()
-      .from(lessonSlots)
-      .where(eq(lessonSlots.id, slotId))
-      .limit(1);
+    // トランザクションで予約作成を実行（競合状態を防止）
+    try {
+      const reservation = await db.transaction(async (tx) => {
+        // スロット情報を取得（行レベルロックで排他制御）
+        // FOR UPDATE により、同時に複数のリクエストが来ても順番に処理される
+        const slots = await tx.execute<typeof lessonSlots.$inferSelect>(
+          sql`
+            SELECT * FROM lesson_slots
+            WHERE id = ${slotId}
+            FOR UPDATE
+          `
+        );
 
-    if (!slot) {
-      return NextResponse.json(
-        { error: "Lesson slot not found" },
-        { status: 404 }
-      );
+        const slot = slots.rows[0];
+        if (!slot) {
+          throw new Error("Lesson slot not found");
+        }
+
+        // 空き状況を確認
+        if ((slot as any).current_capacity >= (slot as any).max_capacity) {
+          throw new Error("This slot is fully booked");
+        }
+
+        // 予約を作成
+        const [newReservation] = await tx
+          .insert(reservations)
+          .values({
+            slotId: (slot as any).id,
+            studentId: user.id,
+            mentorId: (slot as any).mentor_id,
+            status: "pending",
+            paymentStatus: "pending",
+            amount: (slot as any).price,
+            notes,
+          })
+          .returning();
+
+        // スロットの現在の予約数を更新（アトミック）
+        await tx
+          .update(lessonSlots)
+          .set({
+            currentCapacity: (slot as any).current_capacity + 1,
+            status: (slot as any).current_capacity + 1 >= (slot as any).max_capacity ? "booked" : "available",
+            updatedAt: new Date(),
+          })
+          .where(eq(lessonSlots.id, slotId));
+
+        // 使用量カウンターをインクリメント（トランザクション内）
+        await incrementReservationUsage(user.id);
+
+        return newReservation;
+      });
+
+      return NextResponse.json({ reservation });
+    } catch (txError: any) {
+      // トランザクションエラーを適切にハンドリング
+      if (txError.message === "Lesson slot not found") {
+        return NextResponse.json(
+          { error: "Lesson slot not found" },
+          { status: 404 }
+        );
+      }
+      if (txError.message === "This slot is fully booked") {
+        return NextResponse.json(
+          { error: "This slot is fully booked" },
+          { status: 400 }
+        );
+      }
+      // その他のエラーは外側のcatchで処理
+      throw txError;
     }
-
-    // 空き状況を確認
-    if (slot.currentCapacity >= slot.maxCapacity) {
-      return NextResponse.json(
-        { error: "This slot is fully booked" },
-        { status: 400 }
-      );
-    }
-
-    // 予約を作成
-    const [reservation] = await db
-      .insert(reservations)
-      .values({
-        slotId: slot.id,
-        studentId: user.id,
-        mentorId: slot.mentorId,
-        status: "pending",
-        paymentStatus: "pending",
-        amount: slot.price,
-        notes,
-      })
-      .returning();
-
-    // スロットの現在の予約数を更新
-    await db
-      .update(lessonSlots)
-      .set({
-        currentCapacity: slot.currentCapacity + 1,
-        status: slot.currentCapacity + 1 >= slot.maxCapacity ? "booked" : "available",
-        updatedAt: new Date(),
-      })
-      .where(eq(lessonSlots.id, slotId));
-
-    // Increment usage counter
-    await incrementReservationUsage(user.id);
-
-    return NextResponse.json({ reservation });
   } catch (error) {
     console.error("Error creating reservation:", error);
     return NextResponse.json(

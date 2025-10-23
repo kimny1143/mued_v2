@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/db";
 import { reservations, lessonSlots, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/actions/user";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -18,13 +18,14 @@ export async function POST(request: Request) {
 
     const { reservationId } = await request.json();
 
-    // 予約情報を取得
+    // 予約情報を取得（認可チェック付き）
     const [reservation] = await db
       .select({
         id: reservations.id,
         amount: reservations.amount,
         status: reservations.status,
         paymentStatus: reservations.paymentStatus,
+        studentId: reservations.studentId,
         slot: {
           id: lessonSlots.id,
           startTime: lessonSlots.startTime,
@@ -39,12 +40,17 @@ export async function POST(request: Request) {
       .from(reservations)
       .leftJoin(lessonSlots, eq(reservations.slotId, lessonSlots.id))
       .leftJoin(users, eq(reservations.mentorId, users.id))
-      .where(eq(reservations.id, reservationId))
+      .where(
+        and(
+          eq(reservations.id, reservationId),
+          eq(reservations.studentId, user.id) // 認可チェック: 予約の所有者のみ決済可能
+        )
+      )
       .limit(1);
 
     if (!reservation) {
       return NextResponse.json(
-        { error: "Reservation not found" },
+        { error: "Reservation not found or unauthorized" },
         { status: 404 }
       );
     }

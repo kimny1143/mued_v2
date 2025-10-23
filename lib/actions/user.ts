@@ -10,30 +10,29 @@ export async function getCurrentUser() {
     return null;
   }
 
-  // DBからユーザー情報を取得
-  const dbUser = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, clerkUser.id))
-    .limit(1);
-
-  // ユーザーが存在しない場合は作成（初回ログイン対応）
-  if (dbUser.length === 0) {
-    const newUser = await db
-      .insert(users)
-      .values({
-        clerkId: clerkUser.id,
+  // Upsertパターンで競合状態を回避
+  // Clerk webhookと同時に実行されても安全
+  const [user] = await db
+    .insert(users)
+    .values({
+      clerkId: clerkUser.id,
+      email: clerkUser.emailAddresses?.[0]?.emailAddress || clerkUser.username || "unknown",
+      name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || clerkUser.username || "Unknown",
+      profileImageUrl: clerkUser.imageUrl,
+      role: "student", // デフォルトは生徒
+    })
+    .onConflictDoUpdate({
+      target: users.clerkId,
+      set: {
         email: clerkUser.emailAddresses?.[0]?.emailAddress || clerkUser.username || "unknown",
         name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || clerkUser.username || "Unknown",
         profileImageUrl: clerkUser.imageUrl,
-        role: "student", // デフォルトは生徒
-      })
-      .returning();
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
 
-    return newUser[0];
-  }
-
-  return dbUser[0];
+  return user;
 }
 
 export async function updateUserRole(userId: string, role: "student" | "mentor" | "admin") {
