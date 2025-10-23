@@ -2,9 +2,15 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/db";
 import { reservations, lessonSlots, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/actions/user";
+import { z } from "zod";
 import { validateStripeConfig } from "@/lib/utils/env";
+
+// 入力バリデーションスキーマ
+const checkoutSchema = z.object({
+  reservationId: z.string().uuid("Invalid reservation ID format"),
+});
 
 // 環境変数の検証
 const stripeConfig = validateStripeConfig();
@@ -19,15 +25,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { reservationId } = await request.json();
+    // 入力バリデーション
+    const body = await request.json();
+    const validation = checkoutSchema.safeParse(body);
 
-    // 予約情報を取得
+    if (!validation.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid input",
+          details: validation.error.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    const { reservationId } = validation.data;
+
+    // 予約情報を取得（認可チェック付き）
     const [reservation] = await db
       .select({
         id: reservations.id,
         amount: reservations.amount,
         status: reservations.status,
         paymentStatus: reservations.paymentStatus,
+        studentId: reservations.studentId,
         slot: {
           id: lessonSlots.id,
           startTime: lessonSlots.startTime,
@@ -42,12 +63,17 @@ export async function POST(request: Request) {
       .from(reservations)
       .leftJoin(lessonSlots, eq(reservations.slotId, lessonSlots.id))
       .leftJoin(users, eq(reservations.mentorId, users.id))
-      .where(eq(reservations.id, reservationId))
+      .where(
+        and(
+          eq(reservations.id, reservationId),
+          eq(reservations.studentId, user.id) // 認可チェック: 予約の所有者のみ決済可能
+        )
+      )
       .limit(1);
 
     if (!reservation) {
       return NextResponse.json(
-        { error: "Reservation not found" },
+        { error: "Reservation not found or unauthorized" },
         { status: 404 }
       );
     }

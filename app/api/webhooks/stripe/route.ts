@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { db } from "@/db";
-import { reservations, subscriptions, users } from "@/db/schema";
+import { reservations, subscriptions, users, webhookEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { validateStripeConfig } from "@/lib/utils/env";
+
+// Drizzle transaction type
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 // 環境変数の検証
 const stripeConfig = validateStripeConfig();
@@ -43,6 +46,45 @@ export async function POST(request: Request) {
     );
   }
 
+  // 冪等性チェック: 既に処理済みのイベントかチェック
+  const [existingEvent] = await db
+    .select()
+    .from(webhookEvents)
+    .where(eq(webhookEvents.eventId, event.id))
+    .limit(1);
+
+  if (existingEvent) {
+    console.log(`Event ${event.id} already processed, skipping.`);
+    return NextResponse.json({ received: true, skipped: true });
+  }
+
+  // トランザクション内でイベント処理 + webhook記録
+  try {
+    await db.transaction(async (tx) => {
+      // Webhookイベントを記録（重複防止）
+      await tx.insert(webhookEvents).values({
+        eventId: event.id,
+        type: event.type,
+        source: "stripe",
+        payload: event.data.object as unknown as Record<string, unknown>,
+      });
+
+      // イベントタイプに応じて処理（トランザクション内で実行）
+      await processStripeEvent(tx, event);
+    });
+
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error("Error processing webhook:", error);
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 }
+    );
+  }
+}
+
+// イベント処理ロジックを別関数に分離
+async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
   // イベントタイプに応じて処理
   switch (event.type) {
     case "checkout.session.completed": {
@@ -88,7 +130,7 @@ export async function POST(request: Request) {
             console.log(`Subscription updated for user: ${userId}`);
           } else {
             // 新規サブスクリプションを作成
-            await db.insert(subscriptions).values({
+            await tx.insert(subscriptions).values({
               userId,
               stripeSubscriptionId,
               stripeCustomerId: session.customer as string,
@@ -224,7 +266,7 @@ export async function POST(request: Request) {
             })
             .where(eq(subscriptions.id, existingSub.id));
         } else {
-          await db.insert(subscriptions).values({
+          await tx.insert(subscriptions).values({
             userId,
             stripeSubscriptionId: subscription.id,
             stripeCustomerId: subscription.customer as string,
@@ -408,6 +450,4 @@ export async function POST(request: Request) {
     default:
       console.log(`Unhandled event type: ${event.type}`);
   }
-
-  return NextResponse.json({ received: true });
 }

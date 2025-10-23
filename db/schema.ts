@@ -99,6 +99,17 @@ export const subscriptions = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Webhook イベント（冪等性保証）
+export const webhookEvents = pgTable("webhook_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  eventId: text("event_id").notNull().unique(), // Stripe/Clerk event ID
+  type: text("type").notNull(), // イベントタイプ
+  source: text("source").notNull(), // stripe, clerk
+  processedAt: timestamp("processed_at").notNull().defaultNow(),
+  payload: jsonb("payload"), // イベントの生データ（デバッグ用）
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // リレーション定義
 export const usersRelations = relations(users, ({ many }) => ({
   mentorSlots: many(lessonSlots),

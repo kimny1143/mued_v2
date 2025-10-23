@@ -1,6 +1,6 @@
 import { db } from '@/db';
 import { subscriptions, users } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 
 /**
  * Usage Limiter Middleware
@@ -160,7 +160,7 @@ export async function checkCanCreateReservation(clerkId: string): Promise<{
 }
 
 /**
- * Increment AI material usage counter
+ * Increment AI material usage counter (atomic operation)
  * @param clerkId - Clerk user ID
  */
 export async function incrementMaterialUsage(clerkId: string): Promise<void> {
@@ -175,22 +175,19 @@ export async function incrementMaterialUsage(clerkId: string): Promise<void> {
     throw new Error('User not found');
   }
 
-  const [subscription] = await db
-    .select()
-    .from(subscriptions)
+  // アトミックなインクリメント操作
+  // UPDATEが影響した行数をチェックして、サブスクリプションが存在するか判定
+  const result = await db
+    .update(subscriptions)
+    .set({
+      aiMaterialsUsed: sql`ai_materials_used + 1`,
+      updatedAt: new Date(),
+    })
     .where(eq(subscriptions.userId, user.id))
-    .orderBy(desc(subscriptions.createdAt))
-    .limit(1);
+    .returning();
 
-  if (subscription) {
-    await db
-      .update(subscriptions)
-      .set({
-        aiMaterialsUsed: subscription.aiMaterialsUsed + 1,
-      })
-      .where(eq(subscriptions.id, subscription.id));
-  } else {
-    // Create freemium subscription if doesn't exist
+  // サブスクリプションが存在しない場合は作成
+  if (result.length === 0) {
     await db.insert(subscriptions).values({
       userId: user.id,
       tier: 'freemium',
@@ -202,7 +199,7 @@ export async function incrementMaterialUsage(clerkId: string): Promise<void> {
 }
 
 /**
- * Increment reservation usage counter
+ * Increment reservation usage counter (atomic operation)
  * @param clerkId - Clerk user ID
  */
 export async function incrementReservationUsage(clerkId: string): Promise<void> {
@@ -217,22 +214,19 @@ export async function incrementReservationUsage(clerkId: string): Promise<void> 
     throw new Error('User not found');
   }
 
-  const [subscription] = await db
-    .select()
-    .from(subscriptions)
+  // アトミックなインクリメント操作
+  // UPDATEが影響した行数をチェックして、サブスクリプションが存在するか判定
+  const result = await db
+    .update(subscriptions)
+    .set({
+      reservationsUsed: sql`reservations_used + 1`,
+      updatedAt: new Date(),
+    })
     .where(eq(subscriptions.userId, user.id))
-    .orderBy(desc(subscriptions.createdAt))
-    .limit(1);
+    .returning();
 
-  if (subscription) {
-    await db
-      .update(subscriptions)
-      .set({
-        reservationsUsed: subscription.reservationsUsed + 1,
-      })
-      .where(eq(subscriptions.id, subscription.id));
-  } else {
-    // Create freemium subscription if doesn't exist
+  // サブスクリプションが存在しない場合は作成
+  if (result.length === 0) {
     await db.insert(subscriptions).values({
       userId: user.id,
       tier: 'freemium',
