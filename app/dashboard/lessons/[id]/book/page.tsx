@@ -93,8 +93,8 @@ export default function BookLessonPage() {
         // Stripe Checkoutページへリダイレクト
         window.location.href = checkoutData.url;
       } else {
-        // エラーの場合でも予約管理ページへ
-        router.push("/dashboard/reservations?success=true");
+        // エラーの場合でも予約状況タブへ
+        router.push("/dashboard/lessons?tab=reservations");
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "予約に失敗しました";

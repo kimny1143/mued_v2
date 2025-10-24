@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLessons } from "@/hooks/use-lessons";
 import { useReservations } from "@/hooks/use-reservations";
@@ -40,6 +40,26 @@ export default function UnifiedBookingPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+
+  // URL パラメータからタブと決済状態を読み取る
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      const payment = params.get('payment');
+
+      if (tab === 'reservations' || tab === 'ai-matching' || tab === 'booking') {
+        setActiveTab(tab as TabType);
+      }
+
+      if (payment) {
+        setPaymentStatus(payment);
+        // 3秒後にメッセージを消す
+        setTimeout(() => setPaymentStatus(null), 5000);
+      }
+    }
+  }, []);
 
   const { slots, loading } = useLessons({
     available: true,
@@ -209,6 +229,33 @@ export default function UnifiedBookingPage() {
   return (
     <DashboardLayout>
       <DashboardTabs />
+
+      {/* Payment Status Message */}
+      {paymentStatus && (
+        <div className={`mb-6 p-4 rounded-lg ${
+          paymentStatus === 'success'
+            ? 'bg-green-50 border border-green-200 text-green-800'
+            : 'bg-yellow-50 border border-yellow-200 text-yellow-800'
+        }`}>
+          {paymentStatus === 'success' ? (
+            <>
+              <div className="flex items-center gap-2 font-semibold mb-1">
+                <span>✅</span>
+                <span>決済が完了しました！</span>
+              </div>
+              <p className="text-sm">レッスンの予約が確定しました。メンターからの連絡をお待ちください。</p>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 font-semibold mb-1">
+                <span>⚠️</span>
+                <span>決済がキャンセルされました</span>
+              </div>
+              <p className="text-sm">予約は保留中です。後で決済を完了してください。</p>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Booking Confirmation Modal */}
       <BookingConfirmationModal

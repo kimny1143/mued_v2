@@ -33,16 +33,23 @@ export function useReservations() {
     try {
       setLoading(true);
       const response = await fetch('/api/reservations');
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
 
-      if (data.success) {
+      if (data.error) {
+        setError(data.error);
+        setReservations([]);
+      } else {
         setReservations(data.reservations || []);
         setError(null);
-      } else {
-        setError(data.error || 'Failed to load reservations');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
+      setReservations([]);
     } finally {
       setLoading(false);
     }
@@ -63,11 +70,15 @@ export function useReservations() {
 
       const data = await response.json();
 
-      if (data.success) {
-        return { success: true, reservation: data.reservation };
-      } else {
-        throw new Error(data.error || 'Failed to create reservation');
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      return { success: true, reservation: data.reservation };
     } catch (err) {
       return {
         success: false,

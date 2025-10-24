@@ -35,7 +35,9 @@ export function AccessibleCalendar({
   };
 
   const monthDays = getDaysInMonth(selectedDate);
+  // 時刻を00:00:00に正規化して、日付のみで比較できるようにする
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const navigateMonth = (direction: number) => {
     const newDate = new Date(selectedDate);

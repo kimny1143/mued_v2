@@ -69,12 +69,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
+
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Check usage limits
-    const usageCheck = await checkCanCreateReservation(user.id);
+    const usageCheck = await checkCanCreateReservation(user.clerkId);
+
     if (!usageCheck.allowed) {
       return NextResponse.json(
         {
@@ -88,6 +90,7 @@ export async function POST(request: Request) {
 
     // 入力バリデーション
     const body = await request.json();
+
     const validation = createReservationSchema.safeParse(body);
 
     if (!validation.success) {
@@ -159,7 +162,7 @@ export async function POST(request: Request) {
           .where(eq(lessonSlots.id, slotId));
 
         // 使用量カウンターをインクリメント（トランザクション内）
-        await incrementReservationUsage(user.id);
+        await incrementReservationUsage(user.clerkId);
 
         return newReservation;
       });
@@ -167,6 +170,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ reservation });
     } catch (txError) {
       // トランザクションエラーを適切にハンドリング
+
       if (txError instanceof Error) {
         if (txError.message === "Lesson slot not found") {
           return NextResponse.json(
@@ -187,7 +191,10 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error creating reservation:", error);
     return NextResponse.json(
-      { error: "Failed to create reservation" },
+      {
+        error: "Failed to create reservation",
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }

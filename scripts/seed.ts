@@ -74,14 +74,27 @@ async function seed() {
     console.log("レッスンスロットを作成しています...");
 
     const now = new Date();
-    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const dayAfterTomorrow = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+    // 明日と明後日の基準日を作成
+    const getTomorrow = () => {
+      const d = new Date(now);
+      d.setDate(d.getDate() + 1);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
+
+    const getDayAfterTomorrow = () => {
+      const d = new Date(now);
+      d.setDate(d.getDate() + 2);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
 
     const slots = await db.insert(lessonSlots).values([
       {
         mentorId: mentor1.id,
-        startTime: new Date(tomorrow.setHours(10, 0, 0, 0)),
-        endTime: new Date(tomorrow.setHours(11, 0, 0, 0)),
+        startTime: new Date(getTomorrow().setHours(10, 0, 0, 0)),
+        endTime: new Date(getTomorrow().setHours(11, 0, 0, 0)),
         price: "5000",
         maxCapacity: 1,
         currentCapacity: 0,
@@ -90,8 +103,8 @@ async function seed() {
       },
       {
         mentorId: mentor1.id,
-        startTime: new Date(tomorrow.setHours(14, 0, 0, 0)),
-        endTime: new Date(tomorrow.setHours(15, 0, 0, 0)),
+        startTime: new Date(getTomorrow().setHours(14, 0, 0, 0)),
+        endTime: new Date(getTomorrow().setHours(15, 0, 0, 0)),
         price: "5000",
         maxCapacity: 1,
         currentCapacity: 1,
@@ -100,8 +113,8 @@ async function seed() {
       },
       {
         mentorId: mentor2.id,
-        startTime: new Date(dayAfterTomorrow.setHours(13, 0, 0, 0)),
-        endTime: new Date(dayAfterTomorrow.setHours(14, 0, 0, 0)),
+        startTime: new Date(getDayAfterTomorrow().setHours(13, 0, 0, 0)),
+        endTime: new Date(getDayAfterTomorrow().setHours(14, 0, 0, 0)),
         price: "4500",
         maxCapacity: 1,
         currentCapacity: 0,
@@ -110,8 +123,8 @@ async function seed() {
       },
       {
         mentorId: mentor2.id,
-        startTime: new Date(dayAfterTomorrow.setHours(16, 0, 0, 0)),
-        endTime: new Date(dayAfterTomorrow.setHours(17, 0, 0, 0)),
+        startTime: new Date(getDayAfterTomorrow().setHours(16, 0, 0, 0)),
+        endTime: new Date(getDayAfterTomorrow().setHours(17, 0, 0, 0)),
         price: "4500",
         maxCapacity: 2,
         currentCapacity: 0,
