@@ -112,8 +112,8 @@ export async function POST(request: Request) {
         },
       ],
       mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/lessons?tab=reservations&payment=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/lessons?tab=reservations&payment=cancelled`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/payment/cancelled`,
       metadata: {
         reservationId: reservation.id,
         userId: user.id,
