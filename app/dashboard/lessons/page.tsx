@@ -599,14 +599,14 @@ export default function UnifiedBookingPage() {
               const isCompleted = slot.reservation?.paymentStatus === "completed";
 
               return (
-              <div
-                key={slot.id}
-                className={`relative bg-white border rounded-xl p-5 transition-all duration-200 ${
-                  isReserved
-                    ? "border-blue-200 bg-blue-50/30"
-                    : "border-gray-100 hover:shadow-lg hover:border-gray-200 hover:-translate-y-0.5"
-                }`}
-              >
+                <div
+                  key={slot.id}
+                  className={`relative bg-white border rounded-xl p-5 transition-all duration-200 ${
+                    isReserved
+                      ? "border-blue-200 bg-blue-50/30"
+                      : "border-gray-100 hover:shadow-lg hover:border-gray-200 hover:-translate-y-0.5"
+                  }`}
+                >
                 {/* 予約済みバッジ */}
                 {isReserved && (
                   <div className="absolute top-3 right-3 z-10">
@@ -697,9 +697,9 @@ export default function UnifiedBookingPage() {
                     予約する
                   </button>
                 )}
-              </div>
-            );
-            }))
+                </div>
+              );
+            })
           )}
         </div>
         </div>

@@ -57,7 +57,7 @@ export async function GET(request: Request) {
       .limit(50);
 
     // 現在のユーザーの予約情報を取得（ログインしている場合のみ）
-    let userReservations: Record<string, any> = {};
+    let userReservations: Record<string, { id: string; slotId: string; status: string; paymentStatus: string }> = {};
     if (currentUser) {
       const userReservationsData = await db
         .select({
