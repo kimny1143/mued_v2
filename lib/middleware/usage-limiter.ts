@@ -23,14 +23,17 @@ export interface UsageLimits {
 }
 
 // Tier-based limits configuration
+// 開発環境では制限を緩和
+const isDevelopment = process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview';
+
 const TIER_LIMITS = {
   freemium: {
-    aiMaterialsLimit: 3,
-    reservationsLimit: 1,
+    aiMaterialsLimit: isDevelopment ? -1 : 3,
+    reservationsLimit: isDevelopment ? -1 : 1,
   },
   starter: {
-    aiMaterialsLimit: 3,
-    reservationsLimit: 1,
+    aiMaterialsLimit: isDevelopment ? -1 : 3,
+    reservationsLimit: isDevelopment ? -1 : 1,
   },
   basic: {
     aiMaterialsLimit: -1, // unlimited
