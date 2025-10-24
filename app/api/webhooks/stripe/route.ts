@@ -114,7 +114,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId) as unknown as StripeSubscriptionWithPeriods;
 
           // 既存のサブスクリプションを確認
-          const [existingSub] = await db
+          const [existingSub] = await tx
             .select()
             .from(subscriptions)
             .where(eq(subscriptions.userId, userId))
@@ -122,7 +122,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
 
           if (existingSub) {
             // 既存のサブスクリプションを更新
-            await db
+            await tx
               .update(subscriptions)
               .set({
                 stripeSubscriptionId,
@@ -156,13 +156,14 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           }
 
           // Stripe Customer IDをusersテーブルに保存
-          await db
+          await tx
             .update(users)
             .set({ stripeCustomerId: session.customer as string })
             .where(eq(users.id, userId));
 
         } catch (error) {
           console.error("Error handling subscription checkout:", error);
+          throw error;
         }
         break;
       }
@@ -177,7 +178,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
 
       try {
         // 予約の支払いステータスを更新
-        await db
+        await tx
           .update(reservations)
           .set({
             paymentStatus: "completed",
@@ -190,6 +191,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         console.log(`Payment completed for reservation: ${reservationId}`);
       } catch (error) {
         console.error("Error updating reservation:", error);
+        throw error; // トランザクションをロールバックするために再スロー
       }
       break;
     }
@@ -202,7 +204,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
 
       try {
         // セッションの有効期限が切れた場合、支払いステータスをリセット
-        await db
+        await tx
           .update(reservations)
           .set({
             paymentStatus: "pending",
@@ -214,6 +216,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         console.log(`Payment session expired for reservation: ${reservationId}`);
       } catch (error) {
         console.error("Error updating reservation:", error);
+        throw error;
       }
       break;
     }
@@ -227,7 +230,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
       if (!reservationId) break;
 
       try {
-        await db
+        await tx
           .update(reservations)
           .set({
             paymentStatus: "failed",
@@ -238,6 +241,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         console.log(`Payment failed for reservation: ${reservationId}`);
       } catch (error) {
         console.error("Error updating reservation:", error);
+        throw error;
       }
       break;
     }
@@ -254,14 +258,14 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
 
       try {
         // サブスクリプションレコードを作成または更新
-        const [existingSub] = await db
+        const [existingSub] = await tx
           .select()
           .from(subscriptions)
           .where(eq(subscriptions.userId, userId))
           .limit(1);
 
         if (existingSub) {
-          await db
+          await tx
             .update(subscriptions)
             .set({
               stripeSubscriptionId: subscription.id,
@@ -292,6 +296,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         console.log(`Subscription created: ${subscription.id} for user: ${userId}`);
       } catch (error) {
         console.error("Error creating subscription:", error);
+        throw error;
       }
       break;
     }
@@ -302,7 +307,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
       const { tier } = subscription.metadata || {};
 
       try {
-        const [existingSub] = await db
+        const [existingSub] = await tx
           .select()
           .from(subscriptions)
           .where(eq(subscriptions.stripeSubscriptionId, subscription.id))
@@ -325,7 +330,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           paused: 'cancelled',
         };
 
-        await db
+        await tx
           .update(subscriptions)
           .set({
             tier: tier || existingSub.tier,
@@ -340,6 +345,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         console.log(`Subscription updated: ${subscription.id}`);
       } catch (error) {
         console.error("Error updating subscription:", error);
+        throw error;
       }
       break;
     }
@@ -349,7 +355,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
       const subscription = event.data.object as Stripe.Subscription;
 
       try {
-        const [existingSub] = await db
+        const [existingSub] = await tx
           .select()
           .from(subscriptions)
           .where(eq(subscriptions.stripeSubscriptionId, subscription.id))
@@ -361,7 +367,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         }
 
         // サブスクリプションをキャンセル状態に更新
-        await db
+        await tx
           .update(subscriptions)
           .set({
             status: 'cancelled',
@@ -374,6 +380,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         console.log(`Subscription cancelled: ${subscription.id}`);
       } catch (error) {
         console.error("Error cancelling subscription:", error);
+        throw error;
       }
       break;
     }
@@ -388,7 +395,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
       if (!subscriptionId) break;
 
       try {
-        const [sub] = await db
+        const [sub] = await tx
           .select()
           .from(subscriptions)
           .where(eq(subscriptions.stripeSubscriptionId, subscriptionId))
@@ -400,7 +407,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         }
 
         // 月次使用量をリセット
-        await db
+        await tx
           .update(subscriptions)
           .set({
             aiMaterialsUsed: 0,
@@ -413,6 +420,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         console.log(`Usage reset for subscription: ${subscriptionId}`);
       } catch (error) {
         console.error("Error resetting usage:", error);
+        throw error;
       }
       break;
     }
@@ -427,7 +435,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
       if (!subscriptionId) break;
 
       try {
-        const [sub] = await db
+        const [sub] = await tx
           .select()
           .from(subscriptions)
           .where(eq(subscriptions.stripeSubscriptionId, subscriptionId))
@@ -439,7 +447,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         }
 
         // ステータスを past_due に更新
-        await db
+        await tx
           .update(subscriptions)
           .set({
             status: 'past_due',
@@ -452,6 +460,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         // TODO: ユーザーにメール通知を送信
       } catch (error) {
         console.error("Error handling payment failure:", error);
+        throw error;
       }
       break;
     }
