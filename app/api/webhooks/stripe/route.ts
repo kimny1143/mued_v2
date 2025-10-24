@@ -17,6 +17,15 @@ const stripe = new Stripe(stripeConfig.secretKey, {
 
 const endpointSecret = stripeConfig.webhookSecret;
 
+// GETリクエストに対応（エンドポイントの動作確認用）
+export async function GET() {
+  return NextResponse.json({
+    status: "ok",
+    message: "Stripe webhook endpoint is running",
+    endpoint: "/api/webhooks/stripe"
+  });
+}
+
 // Stripe Webhookイベント用の型定義
 interface StripeSubscriptionWithPeriods extends Stripe.Subscription {
   current_period_start: number;
