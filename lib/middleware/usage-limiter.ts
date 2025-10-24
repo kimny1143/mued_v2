@@ -23,8 +23,10 @@ export interface UsageLimits {
 }
 
 // Tier-based limits configuration
-// 開発環境では制限を緩和
-const isDevelopment = process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview';
+// 開発環境・テスト用に制限を緩和（本番環境も一時的に含む）
+const isDevelopment = process.env.NODE_ENV === 'development'
+  || process.env.VERCEL_ENV === 'preview'
+  || process.env.VERCEL_ENV === 'production'; // TODO: テスト完了後に削除
 
 const TIER_LIMITS = {
   freemium: {
