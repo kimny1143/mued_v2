@@ -96,17 +96,23 @@ export function ReservationTable({
                 <td className="py-3 px-4">
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded ${
-                      reservation.paymentStatus === "paid"
+                      reservation.paymentStatus === "completed"
                         ? "bg-green-100 text-green-700"
+                        : reservation.paymentStatus === "processing"
+                        ? "bg-yellow-100 text-yellow-700"
                         : "bg-red-100 text-red-700"
                     }`}
                   >
-                    {reservation.paymentStatus === "paid" ? "済" : "未払い"}
+                    {reservation.paymentStatus === "completed"
+                      ? "決済完了"
+                      : reservation.paymentStatus === "processing"
+                      ? "処理中"
+                      : "未払い"}
                   </span>
                 </td>
                 <td className="py-3 px-4 text-right">
                   <div className="flex justify-end gap-2">
-                    {reservation.paymentStatus !== "paid" && onPayment && (
+                    {reservation.paymentStatus !== "completed" && onPayment && (
                       <Button
                         variant="primary"
                         size="sm"
