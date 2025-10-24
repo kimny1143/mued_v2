@@ -62,7 +62,7 @@ export default function UnifiedBookingPage() {
   }, []);
 
   const { slots, loading } = useLessons({
-    available: true,
+    available: false, // 全てのスロットを取得（予約済みも含む）
   });
   const { reservations, loading: reservationsLoading } = useReservations();
   const { processPayment } = usePayment();
@@ -594,11 +594,32 @@ export default function UnifiedBookingPage() {
               </p>
             </div>
           ) : (
-            filteredSlots.map((slot) => (
+            filteredSlots.map((slot) => {
+              const isReserved = !!slot.reservation;
+              const isCompleted = slot.reservation?.paymentStatus === "completed";
+
+              return (
               <div
                 key={slot.id}
-                className="bg-white border border-gray-100 rounded-xl p-5 hover:shadow-lg hover:border-gray-200 hover:-translate-y-0.5 transition-all duration-200"
+                className={`relative bg-white border rounded-xl p-5 transition-all duration-200 ${
+                  isReserved
+                    ? "border-blue-200 bg-blue-50/30"
+                    : "border-gray-100 hover:shadow-lg hover:border-gray-200 hover:-translate-y-0.5"
+                }`}
               >
+                {/* 予約済みバッジ */}
+                {isReserved && (
+                  <div className="absolute top-3 right-3 z-10">
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                      isCompleted
+                        ? "bg-green-100 text-green-700"
+                        : "bg-yellow-100 text-yellow-700"
+                    }`}>
+                      {isCompleted ? "✓ 予約済み" : "⏳ 予約中"}
+                    </span>
+                  </div>
+                )}
+
                 {/* Mentor Info */}
                 <div className="flex items-start gap-3 mb-4">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex-shrink-0 flex items-center justify-center text-gray-600 font-semibold">
@@ -660,15 +681,25 @@ export default function UnifiedBookingPage() {
                   ¥{parseFloat(slot.price?.toString() || "0").toLocaleString()}
                 </div>
 
-                {/* Book Button */}
-                <button
-                  onClick={() => handleBooking(slot.id)}
-                  className="w-full px-4 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
-                >
-                  予約する
-                </button>
+                {/* Action Button */}
+                {isReserved ? (
+                  <button
+                    onClick={() => setActiveTab("reservations")}
+                    className="w-full px-4 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
+                  >
+                    予約詳細を見る
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleBooking(slot.id)}
+                    className="w-full px-4 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
+                  >
+                    予約する
+                  </button>
+                )}
               </div>
-            ))
+            );
+            }))
           )}
         </div>
         </div>

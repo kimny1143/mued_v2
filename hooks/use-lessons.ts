@@ -9,6 +9,13 @@ export interface Mentor {
   skills: string[] | null;
 }
 
+export interface Reservation {
+  id: string;
+  slotId: string;
+  status: string;
+  paymentStatus: string;
+}
+
 export interface LessonSlot {
   id: string;
   mentorId: string;
@@ -20,6 +27,7 @@ export interface LessonSlot {
   status: string;
   tags?: string[] | null;
   mentor: Mentor;
+  reservation?: Reservation | null;
 }
 
 export interface LessonFilters {
