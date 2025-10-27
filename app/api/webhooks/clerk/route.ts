@@ -67,13 +67,13 @@ export async function POST(req: Request) {
       const newUser = newUsers[0];
       console.log(`User created: ${id}`);
 
-      // 新規ユーザーにFreeプランのサブスクリプションを自動作成
+      // 新規ユーザーにFreemiumプランのサブスクリプションを自動作成
       await db.insert(subscriptions).values({
         userId: newUser.id,
-        plan: "free",
+        tier: "freemium",
         status: "active",
       });
-      console.log(`Free subscription created for user: ${id}`);
+      console.log(`Freemium subscription created for user: ${id}`);
     } catch (error) {
       console.error("Error creating user:", error);
     }
