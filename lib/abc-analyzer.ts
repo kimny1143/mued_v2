@@ -4,7 +4,7 @@
  * ABC記法を分析し、教育的品質スコアを計算
  */
 
-import abcjs from 'abcjs';
+import abcjs, { type TuneObject } from 'abcjs';
 import {
   getInstrumentCoefficients,
   getInstrumentRange,
@@ -156,7 +156,7 @@ export function analyzeAbc(
 /**
  * MIDI note number の配列を抽出
  */
-function extractMidiNotes(tune: any): number[] {
+function extractMidiNotes(tune: TuneObject): number[] {
   const notes: number[] = [];
 
   if (!tune.lines) return notes;
@@ -189,7 +189,7 @@ function extractMidiNotes(tune: any): number[] {
 /**
  * 小節数をカウント
  */
-function countMeasures(tune: any): number {
+function countMeasures(tune: TuneObject): number {
   let count = 0;
 
   if (!tune.lines) return 0;

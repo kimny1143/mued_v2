@@ -4,7 +4,7 @@
  * ABC記法の構文検証とブロック抽出
  */
 
-import abcjs from 'abcjs';
+import abcjs, { type TuneObject, type AbcElem } from 'abcjs';
 
 export interface AbcBlock {
   id: string;
@@ -36,7 +36,7 @@ export function validateAbcSyntax(abc: string): string | null {
     }
 
     // スタッフ（五線）の存在確認
-    if (firstTune.lines && firstTune.lines.some((line: any) => line.staff)) {
+    if (firstTune.lines && firstTune.lines.some((line: AbcElem) => 'staff' in line && line.staff)) {
       return null; // 正常
     }
 
