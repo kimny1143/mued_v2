@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     await browser.close();
 
     // PDFをレスポンスとして返す
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${sanitizeFilename(material.title)}.pdf"`,
@@ -120,7 +120,7 @@ async function renderMaterialToHtml(material: AiMaterial): Promise<string> {
 
     return {
       title: block.title,
-      svg: renderResult[0]?.svg || '<p>Failed to render notation</p>',
+      svg: (renderResult[0] as any)?.svg || '<p>Failed to render notation</p>',
     };
   });
 

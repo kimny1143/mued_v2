@@ -165,7 +165,7 @@ export async function generateWeakDrill(
 function extractSection(abc: string, startBar: number, endBar: number): string | null {
   try {
     // ヘッダー部分を抽出
-    const headerMatch = abc.match(/^(X:.*?\nT:.*?\nM:.*?\nL:.*?\nQ:.*?\nK:.*?\n)/s);
+    const headerMatch = abc.match(/^(X:[\s\S]*?\nT:[\s\S]*?\nM:[\s\S]*?\nL:[\s\S]*?\nQ:[\s\S]*?\nK:[\s\S]*?\n)/);
     if (!headerMatch) {
       console.error('[WeakDrillGenerator] Invalid ABC format - missing headers');
       return null;

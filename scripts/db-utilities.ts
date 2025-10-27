@@ -130,7 +130,7 @@ async function seedTestData() {
               startTime,
               endTime,
               status: 'available',
-              price: 5000
+              price: '5000'
             })
             .onConflictDoNothing();
         }
@@ -226,7 +226,7 @@ async function checkReservations() {
     })
     .from(reservations)
     .leftJoin(users, eq(reservations.studentId, users.id))
-    .leftJoin(lessonSlots, eq(reservations.lessonSlotId, lessonSlots.id));
+    .leftJoin(lessonSlots, eq(reservations.slotId, lessonSlots.id));
 
     console.log(`Total Reservations: ${allReservations.length}`);
     console.log('─'.repeat(50));

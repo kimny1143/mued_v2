@@ -443,7 +443,7 @@ test.describe("Unified Booking Page - Accessibility Edge Cases", () => {
       // Focused element should be interactive
       const interactiveTags = ['button', 'input', 'a', 'select', 'textarea'];
       const isInteractive =
-        interactiveTags.includes(focusedElement.tagName) ||
+        (focusedElement.tagName && interactiveTags.includes(focusedElement.tagName)) ||
         focusedElement.role === 'button';
 
       expect(isInteractive).toBeTruthy();

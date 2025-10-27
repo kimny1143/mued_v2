@@ -109,7 +109,7 @@ export default function QuickTestPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">5-Minute Quick Test Generator</h1>
         <p className="mt-2 text-gray-600">
-          Generate focused practice exercises based on your class's weak spots
+          Generate focused practice exercises based on your class&apos;s weak spots
         </p>
       </div>
 

@@ -58,7 +58,7 @@ export function analyzeAbc(
   try {
     // ABC記法をパース
     const parseResult = abcjs.parseOnly(abc);
-    if (!parseResult || parseResult.length === 0) {
+    if (!parseResult || !Array.isArray(parseResult) || parseResult.length < 1) {
       console.error('[AbcAnalyzer] Failed to parse ABC');
       return null;
     }
@@ -170,7 +170,7 @@ function extractMidiNotes(tune: TuneObject): number[] {
       for (const voice of staff.voices) {
         for (const element of voice) {
           // pitchは配列形式で格納されている
-          if (element.pitches && Array.isArray(element.pitches)) {
+          if ('pitches' in element && element.pitches && Array.isArray(element.pitches)) {
             for (const pitch of element.pitches) {
               if (typeof pitch.pitch === 'number') {
                 // abcjsのpitch値はMIDI note numberに相当

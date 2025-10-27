@@ -81,7 +81,7 @@ export class AbcAudioPlayer {
 
       document.body.removeChild(tempContainer);
 
-      if (!renderResult || renderResult.length === 0) {
+      if (!renderResult || !Array.isArray(renderResult) || renderResult.length < 1) {
         throw new Error('Failed to parse ABC notation');
       }
 

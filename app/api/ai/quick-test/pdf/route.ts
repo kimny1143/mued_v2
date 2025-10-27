@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     console.log('[QuickTestPDF] PDF generated successfully');
 
     // PDFをレスポンスとして返す
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${sanitizeFilename(quickTest.title)}.pdf"`,

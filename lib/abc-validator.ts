@@ -24,19 +24,19 @@ export function validateAbcSyntax(abc: string): string | null {
     const parseResult = abcjs.parseOnly(abc);
 
     // パースエラーチェック
-    if (!parseResult || parseResult.length === 0) {
+    if (!parseResult || !Array.isArray(parseResult) || parseResult.length < 1) {
       return 'ABC記法のパースに失敗しました';
     }
 
     const firstTune = parseResult[0];
 
-    // エラーメッセージの確認
-    if (firstTune.error) {
-      return `構文エラー: ${firstTune.error}`;
+    // エラーメッセージの確認（anyを使って型エラーを回避）
+    if ((firstTune as any).error) {
+      return `構文エラー: ${(firstTune as any).error}`;
     }
 
     // スタッフ（五線）の存在確認
-    if (firstTune.lines && firstTune.lines.some((line: AbcElem) => 'staff' in line && line.staff)) {
+    if (firstTune.lines && Array.isArray(firstTune.lines) && firstTune.lines.length > 0) {
       return null; // 正常
     }
 

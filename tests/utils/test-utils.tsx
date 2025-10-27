@@ -1,7 +1,7 @@
 import React from 'react';
 import { render as rtlRender, RenderOptions, RenderResult } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
+import { vi, expect } from 'vitest';
 
 /**
  * Custom render function that wraps components with necessary providers

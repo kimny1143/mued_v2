@@ -40,6 +40,7 @@ export const lessonSlots = pgTable("lesson_slots", {
   startTimeIdx: index("idx_lesson_slots_start_time").on(table.startTime),
   statusIdx: index("idx_lesson_slots_status").on(table.status),
   mentorStartIdx: index("idx_lesson_slots_mentor_start").on(table.mentorId, table.startTime),
+  startStatusIdx: index("idx_lesson_slots_start_status").on(table.startTime, table.status),
 }));
 
 // 予約
@@ -65,6 +66,7 @@ export const reservations = pgTable("reservations", {
   statusIdx: index("idx_reservations_status").on(table.status),
   paymentStatusIdx: index("idx_reservations_payment_status").on(table.paymentStatus),
   studentStatusIdx: index("idx_reservations_student_status").on(table.studentId, table.status),
+  mentorStatusPaymentIdx: index("idx_reservations_mentor_status_payment").on(table.mentorId, table.status, table.paymentStatus),
 }));
 
 // メッセージ
@@ -196,6 +198,7 @@ export const learningMetrics = pgTable("learning_metrics", {
   materialIdIdx: index("idx_learning_metrics_material_id").on(table.materialId),
   lastPracticedIdx: index("idx_learning_metrics_last_practiced").on(table.lastPracticedAt),
   userMaterialIdx: index("idx_learning_metrics_user_material").on(table.userId, table.materialId),
+  userCreatedIdx: index("idx_learning_metrics_user_created").on(table.userId, table.createdAt),
 }));
 
 // リレーション定義
