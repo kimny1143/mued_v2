@@ -5,21 +5,20 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { learningMetrics } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { calculateLearningMetrics, type PracticeSession } from '@/lib/metrics/learning-tracker';
+import { getAuthenticatedUserWithE2E, isE2ETestMode } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
-    // 認証確認
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const body = await req.json();
+    const session: PracticeSession = body;
 
-    const session: PracticeSession = await req.json();
+    // E2Eテスト対応の認証チェック
+    const testUserId = isE2ETestMode() ? body.testUserId : undefined;
+    const user = await getAuthenticatedUserWithE2E(testUserId);
 
     // セッションデータのバリデーション
     if (!session.materialId || !session.userId || !session.instrument) {
@@ -29,9 +28,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Clerk UserIDとリクエストのUserIDが一致するか確認
-    // Note: session.userIdはDB上のUUID、clerkUserIdはClerk ID
-    // 実際の実装では users テーブルから userId を取得する必要がある
+    // ユーザー所有権チェック
+    if (user.id !== session.userId) {
+      return NextResponse.json(
+        { error: 'Forbidden: Cannot save session for another user' },
+        { status: 403 }
+      );
+    }
 
     // 学習メトリクスを計算
     const metrics = calculateLearningMetrics(session);
