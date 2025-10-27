@@ -10,6 +10,7 @@ export function DashboardTabs() {
     { name: "Overview", href: "/dashboard" },
     { name: "Lessons", href: "/dashboard/lessons" },
     { name: "Materials", href: "/dashboard/materials" },
+    { name: "Library", href: "/dashboard/library" },
   ];
 
   return (

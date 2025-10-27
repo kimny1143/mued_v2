@@ -1,0 +1,125 @@
+'use client';
+
+/**
+ * Library Content Component
+ * ライブラリコンテンツコンポーネント
+ *
+ * Main content browser for Library page
+ */
+
+import { useState, useEffect } from 'react';
+import type { UnifiedContent, ContentFetchResult, ContentSource } from '@/types/unified-content';
+import { LibraryCard } from './library-card';
+import { LibraryFilters } from './library-filters';
+import { LoadingState } from '@/components/ui/loading-state';
+
+interface FilterState {
+  source: ContentSource | 'all';
+  search: string;
+  category?: string;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  sortBy: 'date' | 'relevance' | 'popularity';
+}
+
+export function LibraryContent() {
+  const [content, setContent] = useState<UnifiedContent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FilterState>({
+    source: 'all',
+    search: '',
+    sortBy: 'date',
+  });
+
+  useEffect(() => {
+    fetchContent();
+  }, [filters]);
+
+  async function fetchContent() {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams({
+        source: filters.source,
+        sortBy: filters.sortBy,
+        sortOrder: 'desc',
+        limit: '20',
+      });
+
+      if (filters.search) {
+        params.append('search', filters.search);
+      }
+      if (filters.category) {
+        params.append('category', filters.category);
+      }
+      if (filters.difficulty) {
+        params.append('difficulty', filters.difficulty);
+      }
+
+      const response = await fetch(`/api/content?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch content');
+      }
+
+      const result: ContentFetchResult = await response.json();
+
+      if (result.success) {
+        setContent(result.content);
+      } else {
+        setError(result.error || 'Unknown error');
+      }
+    } catch (err) {
+      console.error('Error fetching library content:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load content');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading && content.length === 0) {
+    return <LoadingState message="Loading library content..." />;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Filters */}
+      <LibraryFilters
+        filters={filters}
+        onChange={setFilters}
+      />
+
+      {/* Error State */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800 text-sm font-medium">Error loading content</p>
+          <p className="text-red-600 text-sm mt-1">{error}</p>
+        </div>
+      )}
+
+      {/* Content Grid */}
+      {content.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {content.map((item) => (
+            <LibraryCard key={item.id} content={item} />
+          ))}
+        </div>
+      ) : !loading ? (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg">No content found</p>
+          <p className="text-gray-400 text-sm mt-2">
+            Try adjusting your filters or check back later
+          </p>
+        </div>
+      ) : null}
+
+      {/* Loading indicator for filter changes */}
+      {loading && content.length > 0 && (
+        <div className="text-center py-4">
+          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--color-brand-green)]"></div>
+        </div>
+      )}
+    </div>
+  );
+}
