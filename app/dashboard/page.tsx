@@ -41,7 +41,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           Welcome back, {user?.firstName || user?.username || 'Student'}!
         </h1>
         <p className="text-[var(--color-text-secondary)]">
-          Here's what's happening with your learning journey today.
+          Here&apos;s what&apos;s happening with your learning journey today.
         </p>
       </section>
 
