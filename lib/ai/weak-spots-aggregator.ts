@@ -5,7 +5,7 @@
  */
 
 import { db } from '@/db';
-import { learningMetrics, materials, users } from '@/db/schema';
+import { learningMetrics, materials } from '@/db/schema';
 import { eq, and, inArray, isNotNull } from 'drizzle-orm';
 
 export interface WeakSpot {

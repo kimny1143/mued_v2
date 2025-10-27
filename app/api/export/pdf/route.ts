@@ -153,7 +153,7 @@ async function renderMaterialToHtml(material: AiMaterial): Promise<string> {
         ${contentHtml}
       </div>
 
-      ${notationSvgs.map((notation, idx) => `
+      ${notationSvgs.map((notation) => `
         <div class="notation-block ${notation.svg.length > 2000 ? 'long' : ''}">
           <h3 class="notation-title">${notation.title}</h3>
           <div class="notation-svg">

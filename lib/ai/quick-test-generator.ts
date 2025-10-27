@@ -201,7 +201,7 @@ Return a JSON object with this structure:
  */
 function parseQuickTestResponse(
   content: string,
-  weakSpots: AggregatedWeakSpot[]
+  _weakSpots: AggregatedWeakSpot[]
 ): QuickTestResult | null {
   try {
     // JSONブロックを抽出

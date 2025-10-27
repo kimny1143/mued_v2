@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedUser, requireMentor } from '@/lib/auth';
 import { db } from '@/db';
 import { reservations } from '@/db/schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 /**
  * GET /api/teacher/revenue

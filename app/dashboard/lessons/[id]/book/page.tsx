@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Mentor {
   id: string;
@@ -157,10 +158,12 @@ export default function BookLessonPage() {
           {/* Mentor Information */}
           <div className="flex items-start gap-4">
             {slot.mentor?.profileImageUrl ? (
-              <img
+              <Image
                 src={slot.mentor.profileImageUrl}
                 alt={slot.mentor.name}
-                className="w-16 h-16 rounded-full"
+                width={64}
+                height={64}
+                className="w-16 h-16 rounded-full object-cover"
               />
             ) : (
               <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">

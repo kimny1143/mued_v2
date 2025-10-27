@@ -170,7 +170,7 @@ export class AbcAudioPlayer {
   /**
    * シーク（特定の位置から再生）
    */
-  async seek(time: number): Promise<void> {
+  async seek(_time: number): Promise<void> {
     if (!this.synth) {
       throw new Error('Player not initialized');
     }

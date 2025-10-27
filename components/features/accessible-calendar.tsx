@@ -104,7 +104,7 @@ export function AccessibleCalendar({
       grid.addEventListener("keydown", handleKeyDown);
       return () => grid.removeEventListener("keydown", handleKeyDown);
     }
-  }, [selectedDate, monthDays]);
+  }, [selectedDate, monthDays, navigateMonth]);
 
   const weekdayNames = [
     "Sunday",

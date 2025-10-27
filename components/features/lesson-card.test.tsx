@@ -196,7 +196,7 @@ describe('LessonCard', () => {
     });
 
     it('has semantic HTML structure', () => {
-      const { container } = render(<LessonCard {...defaultProps} />);
+      render(<LessonCard {...defaultProps} />);
 
       // Check for heading element for mentor name
       const mentorName = screen.getByText('John Doe');
