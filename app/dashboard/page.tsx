@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/layouts/dashboard-layout";
 import { DashboardTabs } from "@/components/layouts/dashboard-tabs";
 import { Button } from "@/components/ui/button";
+import { SubscriptionBadge } from "@/components/features/subscription-badge";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ test?: string }> }) {
   const params = await searchParams;
@@ -30,6 +31,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
     <DashboardLayout>
       {/* Tabs */}
       <DashboardTabs />
+
+      {/* Subscription Badge */}
+      <div className="mb-6">
+        <SubscriptionBadge />
+      </div>
 
       {/* Dashboard Overview Section */}
       <section className="mb-12">
