@@ -3,6 +3,8 @@ import { createChatCompletion, type ModelName } from '@/lib/openai';
 import { db } from '@/db';
 import { materials, subscriptions, users } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { checkQualityGate, suggestImprovements, type QualityStatus } from '@/lib/quality-gate';
+import { validateAbcSyntax } from '@/lib/abc-validator';
 
 /**
  * AI Material Generation Service
@@ -40,8 +42,9 @@ export const materialGenerationSchema = z.object({
   subject: z.string().min(1).max(100),
   topic: z.string().min(1).max(200),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
-  format: z.enum(['quiz', 'summary', 'flashcards', 'practice']),
+  format: z.enum(['quiz', 'summary', 'flashcards', 'practice', 'music']),
   additionalContext: z.string().optional(),
+  instrument: z.enum(['piano', 'guitar', 'violin', 'flute']).optional(), // For music materials
 });
 
 export type MaterialGenerationRequest = z.infer<typeof materialGenerationSchema>;
@@ -83,11 +86,21 @@ export interface PracticeMaterial {
   }>;
 }
 
+export interface MusicMaterial {
+  type: 'music';
+  title: string;
+  description: string;
+  abcNotation: string;
+  learningPoints: string[];
+  practiceInstructions: string[];
+}
+
 export type GeneratedMaterial =
   | QuizMaterial
   | SummaryMaterial
   | FlashcardMaterial
-  | PracticeMaterial;
+  | PracticeMaterial
+  | MusicMaterial;
 
 // Prompt templates for each material type
 const QUIZ_PROMPT = `You are an expert educator. Generate a quiz on the following topic.
@@ -185,6 +198,42 @@ Return the problems in the following JSON format:
   ]
 }`;
 
+const MUSIC_PROMPT = `You are an expert music educator. Create a music learning exercise in ABC notation.
+
+Subject: {subject}
+Topic: {topic}
+Difficulty: {difficulty}
+Instrument: {instrument}
+Additional Context: {context}
+
+Generate a music exercise that:
+- Is written in valid ABC notation (version 2.1)
+- Is appropriate for {difficulty} level students
+- Is playable on {instrument}
+- Has clear learning objectives
+
+For difficulty levels:
+- beginner: Use simple rhythms (quarter/half notes), limited range (1 octave), no accidentals, common time
+- intermediate: Include eighth notes, dotted rhythms, 1.5 octave range, 1-2 sharps/flats, varied time signatures
+- advanced: Complex rhythms, full instrument range, key changes, advanced techniques
+
+ABC Notation Requirements:
+- Must start with X:1, T:title, M:meter, L:note length, K:key
+- Use proper ABC syntax for notes (C D E F G A B with octave markers)
+- Include tempo marking (Q:1/4=120)
+- Keep melody within comfortable range for {instrument}
+- Use bar lines (|) and repeat signs (|: :|) appropriately
+
+Return in the following JSON format:
+{
+  "type": "music",
+  "title": "Exercise title",
+  "description": "Brief description of the exercise",
+  "abcNotation": "X:1\\nT:Title\\nM:4/4\\nL:1/4\\nQ:1/4=120\\nK:C\\n|notes here|",
+  "learningPoints": ["Point 1", "Point 2", "Point 3"],
+  "practiceInstructions": ["Instruction 1", "Instruction 2", "Instruction 3"]
+}`;
+
 function getPromptTemplate(format: string): string {
   switch (format) {
     case 'quiz':
@@ -195,6 +244,8 @@ function getPromptTemplate(format: string): string {
       return FLASHCARD_PROMPT;
     case 'practice':
       return PRACTICE_PROMPT;
+    case 'music':
+      return MUSIC_PROMPT;
     default:
       throw new Error(`Unknown material format: ${format}`);
   }
@@ -206,6 +257,7 @@ function buildPrompt(request: MaterialGenerationRequest): string {
     .replace('{subject}', request.subject)
     .replace('{topic}', request.topic)
     .replace('{difficulty}', request.difficulty)
+    .replace('{instrument}', request.instrument || 'piano')
     .replace('{context}', request.additionalContext || 'None');
 }
 
@@ -294,6 +346,14 @@ export async function generateMaterial(
   material: GeneratedMaterial;
   materialId: string;
   cost: number;
+  qualityStatus?: QualityStatus;
+  qualityMetadata?: {
+    playabilityScore: number;
+    learningValueScore: number;
+    qualityMessage: string;
+    canPublish: boolean;
+    suggestions: string[];
+  };
 }> {
   // Validate request
   const validated = materialGenerationSchema.parse(request);
@@ -349,6 +409,44 @@ export async function generateMaterial(
     throw new Error(`Failed to parse AI response: ${error}`);
   }
 
+  // For music materials, validate ABC notation and check quality gate
+  let qualityStatus: QualityStatus = 'approved'; // Default for non-music materials
+  let qualityMetadata: {
+    playabilityScore: number;
+    learningValueScore: number;
+    qualityMessage: string;
+    canPublish: boolean;
+    suggestions: string[];
+  } | Record<string, never> = {};
+
+  if (validated.format === 'music' && generatedMaterial.type === 'music') {
+    const abcNotation = generatedMaterial.abcNotation;
+
+    // Validate ABC syntax
+    const validationError = validateAbcSyntax(abcNotation);
+    if (validationError) {
+      throw new Error(`Generated ABC notation is invalid: ${validationError}`);
+    }
+
+    // Check quality gate
+    const instrument = validated.instrument || 'piano';
+    const qualityResult = checkQualityGate(abcNotation, instrument);
+
+    qualityStatus = qualityResult.status;
+    qualityMetadata = {
+      playabilityScore: qualityResult.playabilityScore,
+      learningValueScore: qualityResult.learningValueScore,
+      qualityMessage: qualityResult.message,
+      canPublish: qualityResult.canPublish,
+      suggestions: qualityResult.analysis ? suggestImprovements(qualityResult.analysis) : [],
+    };
+
+    // If quality gate fails, still save but mark as draft
+    if (!qualityResult.canPublish) {
+      console.warn(`Music material failed quality gate: ${qualityResult.message}`);
+    }
+  }
+
   // Save to database
   const [savedMaterial] = await db
     .insert(materials)
@@ -359,13 +457,16 @@ export async function generateMaterial(
       content: JSON.stringify(generatedMaterial),
       type: validated.format,
       difficulty: validated.difficulty,
+      qualityStatus: qualityStatus,
       metadata: {
         subject: validated.subject,
         topic: validated.topic,
         format: validated.format,
+        instrument: validated.instrument,
         generationCost: usage.estimatedCost,
         model: usage.model,
         tokens: usage.totalTokens,
+        ...qualityMetadata,
       },
     })
     .returning();
@@ -373,10 +474,20 @@ export async function generateMaterial(
   // Increment usage counter
   await incrementMaterialUsage(validated.userId);
 
+  const hasQualityMetadata = Object.keys(qualityMetadata).length > 0;
+
   return {
     material: generatedMaterial,
     materialId: savedMaterial.id,
     cost: usage.estimatedCost,
+    qualityStatus,
+    qualityMetadata: hasQualityMetadata ? (qualityMetadata as {
+      playabilityScore: number;
+      learningValueScore: number;
+      qualityMessage: string;
+      canPublish: boolean;
+      suggestions: string[];
+    }) : undefined,
   };
 }
 

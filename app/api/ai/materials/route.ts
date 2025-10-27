@@ -82,7 +82,13 @@ export async function POST(request: NextRequest) {
       materialId: result.materialId,
       material: result.material,
       cost: result.cost,
-      message: 'Material generated successfully',
+      qualityStatus: result.qualityStatus,
+      qualityMetadata: result.qualityMetadata,
+      message: result.qualityStatus === 'approved'
+        ? 'Material generated successfully and passed quality gate'
+        : result.qualityStatus === 'draft'
+          ? 'Material generated but needs improvement'
+          : 'Material generated and requires manual review',
     });
   } catch (error) {
     console.error('Generate material error:', error);
