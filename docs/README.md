@@ -7,6 +7,13 @@
 
 ## 🚨 最重要ドキュメント
 
+### 🎯 最終総合検証レポート (2025-10-27) ⭐️NEW
+**[`FINAL_COMPREHENSIVE_REPORT_2025-10-27.md`](./FINAL_COMPREHENSIVE_REPORT_2025-10-27.md)**
+- **総合評価: 87/100** (本番push可能)
+- 6エージェント統合検証の最終結果
+- 事業計画整合性・DB・テスト・コード品質・ドキュメント・スクリプトの包括評価
+- Push前の必須対応事項とデプロイ戦略
+
 ### 📊 実装追跡 (最新)
 **[`IMPLEMENTATION_TRACKER.md`](./IMPLEMENTATION_TRACKER.md)**
 - 全機能の実装状況をリアルタイム追跡
@@ -37,11 +44,11 @@
 
 ### 💾 /database - データベース文書
 データベース設計と最適化
-- **[ディレクトリ概要](./database/README.md)** | [改善計画](./database/improvement-plan.md) | [インデックス実装](./database/index-implementation-report.md)
+- **[ディレクトリ概要](./database/README.md)** | [インデックス実装](./database/index-implementation-report.md)
 
 ### 🎨 /features - 機能仕様
 各機能の詳細仕様書
-- **[ディレクトリ概要](./features/README.md)** | [音楽教材](./features/music-material-specification.md) | [UI移行](./features/ui-migration-strategy.md)
+- **[ディレクトリ概要](./features/README.md)** | [音楽教材](./music-material-specification.md) | [UI移行](./ui-migration-strategy.md)
 
 ### 🛠️ /implementation - 実装ガイド
 実装詳細とガイドライン
@@ -61,7 +68,7 @@
 
 ### 🔧 /tools - ツール文書
 開発ツールとユーティリティ
-- **[ディレクトリ概要](./tools/README.md)** | [Claude Desktop](./tools/claude-desktop-commands.md)
+- **[ディレクトリ概要](./tools/README.md)** | [Claude Desktop](./claude-desktop-commands.md)
 
 ### 📦 /archive - アーカイブ
 過去のドキュメントと履歴
