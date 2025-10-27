@@ -1,6 +1,6 @@
 /**
  * Matching Preferences Component
- * マッチングの優先度を設定するUI
+ * UI for configuring matching priorities
  */
 
 'use client';
@@ -26,20 +26,20 @@ export function MatchingPreferencesPanel({
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          マッチング設定
+          Matching Settings
         </h3>
         {onReset && (
           <button
             onClick={onReset}
             className="text-sm text-gray-600 hover:text-gray-900 underline"
           >
-            リセット
+            Reset
           </button>
         )}
       </div>
 
       <div className="space-y-3">
-        {/* スケジュール優先 */}
+        {/* Prioritize Schedule */}
         <label className="flex items-center gap-3 cursor-pointer group">
           <input
             type="checkbox"
@@ -49,15 +49,15 @@ export function MatchingPreferencesPanel({
           />
           <div>
             <div className="font-medium text-gray-900 group-hover:text-[var(--color-brand-green)]">
-              スケジュール優先
+              Prioritize Schedule
             </div>
             <div className="text-sm text-gray-500">
-              予約可能な時間帯の重なりを重視
+              Emphasize availability overlap
             </div>
           </div>
         </label>
 
-        {/* 価格優先 */}
+        {/* Prioritize Price */}
         <label className="flex items-center gap-3 cursor-pointer group">
           <input
             type="checkbox"
@@ -67,15 +67,15 @@ export function MatchingPreferencesPanel({
           />
           <div>
             <div className="font-medium text-gray-900 group-hover:text-[var(--color-brand-green)]">
-              価格優先
+              Prioritize Price
             </div>
             <div className="text-sm text-gray-500">
-              予算内の価格帯を重視
+              Emphasize budget-friendly options
             </div>
           </div>
         </label>
 
-        {/* 経験値優先 */}
+        {/* Prioritize Experience */}
         <label className="flex items-center gap-3 cursor-pointer group">
           <input
             type="checkbox"
@@ -85,15 +85,15 @@ export function MatchingPreferencesPanel({
           />
           <div>
             <div className="font-medium text-gray-900 group-hover:text-[var(--color-brand-green)]">
-              経験値優先
+              Prioritize Experience
             </div>
             <div className="text-sm text-gray-500">
-              高評価・レビュー数を重視
+              Emphasize high ratings and reviews
             </div>
           </div>
         </label>
 
-        {/* 過去のメンター除外 */}
+        {/* Exclude Previous Mentors */}
         <label className="flex items-center gap-3 cursor-pointer group">
           <input
             type="checkbox"
@@ -103,38 +103,38 @@ export function MatchingPreferencesPanel({
           />
           <div>
             <div className="font-medium text-gray-900 group-hover:text-[var(--color-brand-green)]">
-              新しいメンターを探す
+              Find New Mentors
             </div>
             <div className="text-sm text-gray-500">
-              過去にレッスンを受けたメンターを除外
+              Exclude mentors from previous lessons
             </div>
           </div>
         </label>
       </div>
 
-      {/* アクティブな設定の表示 */}
+      {/* Active Settings Display */}
       {Object.values(preferences).some((v) => v) && (
         <div className="mt-4 pt-4 border-t border-gray-200">
-          <div className="text-xs text-gray-500 mb-2">適用中の設定:</div>
+          <div className="text-xs text-gray-500 mb-2">Active Settings:</div>
           <div className="flex flex-wrap gap-2">
             {preferences.prioritizeSchedule && (
               <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                スケジュール優先
+                Schedule Priority
               </span>
             )}
             {preferences.prioritizePrice && (
               <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                価格優先
+                Price Priority
               </span>
             )}
             {preferences.prioritizeExperience && (
               <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
-                経験値優先
+                Experience Priority
               </span>
             )}
             {preferences.excludePreviousMentors && (
               <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full">
-                新メンター優先
+                New Mentors Only
               </span>
             )}
           </div>

@@ -58,10 +58,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       {/* Mid Cards Section */}
       <section className="mb-12">
         <div className="grid grid-cols-3 gap-6">
-          {/* 432塗り×261内包 */}
+          {/* Placeholder Card */}
           <div className="bg-[var(--color-card-bg)] border border-[var(--color-card-border)] rounded-[var(--radius-lg)] p-6 h-[160px] relative overflow-hidden">
             <div className="absolute top-4 left-4 bg-blue-500 text-white px-3 py-1 text-sm font-bold rounded">
-              432塗り × 261内包
+              Placeholder Card
             </div>
           </div>
 

@@ -46,7 +46,7 @@ export default function BookLessonPage() {
       const data = await response.json();
       setSlot(data.slot);
     } catch (err) {
-      setError("レッスン情報の取得に失敗しました");
+      setError("Failed to load lesson information");
       console.error(err);
     } finally {
       setLoading(false);
@@ -72,12 +72,12 @@ export default function BookLessonPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "予約に失敗しました");
+        throw new Error(data.error || "Booking failed");
       }
 
       const data = await response.json();
 
-      // Stripe決済ページを開く
+      // Open Stripe payment page
       const checkoutResponse = await fetch("/api/checkout", {
         method: "POST",
         headers: {
@@ -90,14 +90,14 @@ export default function BookLessonPage() {
 
       if (checkoutResponse.ok) {
         const checkoutData = await checkoutResponse.json();
-        // Stripe Checkoutページへリダイレクト
+        // Redirect to Stripe Checkout page
         window.location.href = checkoutData.url;
       } else {
-        // エラーの場合でも予約状況タブへ
+        // Go to reservations tab even on error
         router.push("/dashboard/lessons?tab=reservations");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "予約に失敗しました";
+      const errorMessage = err instanceof Error ? err.message : "Booking failed";
       setError(errorMessage);
     } finally {
       setSubmitting(false);
@@ -127,7 +127,7 @@ export default function BookLessonPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-center items-center h-64">
-          <div className="text-gray-500">読み込み中...</div>
+          <div className="text-gray-500">Loading...</div>
         </div>
       </div>
     );
@@ -137,9 +137,9 @@ export default function BookLessonPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow p-8 text-center">
-          <p className="text-red-500 mb-4">レッスンが見つかりませんでした</p>
+          <p className="text-red-500 mb-4">Lesson not found</p>
           <Link href="/dashboard/lessons" className="text-blue-600 hover:underline">
-            レッスン一覧に戻る
+            Back to Lessons
           </Link>
         </div>
       </div>
@@ -150,11 +150,11 @@ export default function BookLessonPage() {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b">
-          <h1 className="text-2xl font-bold">レッスン予約確認</h1>
+          <h1 className="text-2xl font-bold">Booking Confirmation</h1>
         </div>
 
         <div className="p-6 space-y-6">
-          {/* メンター情報 */}
+          {/* Mentor Information */}
           <div className="flex items-start gap-4">
             {slot.mentor?.profileImageUrl ? (
               <img
@@ -189,31 +189,31 @@ export default function BookLessonPage() {
             </div>
           </div>
 
-          {/* レッスン詳細 */}
+          {/* Lesson Details */}
           <div className="bg-gray-50 p-4 rounded-lg space-y-3">
             <div className="flex justify-between">
-              <span className="text-gray-600">日時:</span>
+              <span className="text-gray-600">Date & Time:</span>
               <span className="font-medium">{formatDateTime(slot.startTime)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">時間:</span>
+              <span className="text-gray-600">Duration:</span>
               <span>
-                {new Date(slot.endTime).getHours() - new Date(slot.startTime).getHours()}時間
+                {new Date(slot.endTime).getHours() - new Date(slot.startTime).getHours()} hours
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">料金:</span>
+              <span className="text-gray-600">Price:</span>
               <span className="font-semibold text-xl text-blue-600">
                 {formatPrice(slot.price)}
               </span>
             </div>
           </div>
 
-          {/* 予約フォーム */}
+          {/* Booking Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                メッセージ（任意）
+                Message (Optional)
               </label>
               <textarea
                 id="notes"
@@ -221,7 +221,7 @@ export default function BookLessonPage() {
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="メンターへのメッセージや質問があれば記入してください"
+                placeholder="Enter any message or questions for your mentor"
               />
             </div>
 
@@ -236,7 +236,7 @@ export default function BookLessonPage() {
                 href="/dashboard/lessons"
                 className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-lg text-center hover:bg-gray-300 transition"
               >
-                キャンセル
+                Cancel
               </Link>
               <button
                 type="submit"
@@ -247,13 +247,13 @@ export default function BookLessonPage() {
                     : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
-                {submitting ? "処理中..." : "予約を確定する"}
+                {submitting ? "Processing..." : "Confirm Booking"}
               </button>
             </div>
           </form>
 
           <p className="text-sm text-gray-500 text-center">
-            ※ 予約確定後、決済ページへ移動します
+            * You will be redirected to the payment page after confirming your booking
           </p>
         </div>
       </div>

@@ -9,7 +9,7 @@ interface LoadingStateProps {
 }
 
 export function LoadingState({
-  message = "読み込み中...",
+  message = "Loading...",
   showLayout = true,
   showTabs = true,
   height = "h-64",

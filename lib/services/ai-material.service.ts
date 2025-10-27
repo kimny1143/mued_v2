@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createChatCompletion, type ModelName } from '@/lib/openai';
 import { db } from '@/db';
-import { materials, subscriptions } from '@/db/schema';
+import { materials, subscriptions, users } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 
 /**
@@ -14,9 +14,29 @@ import { eq, desc } from 'drizzle-orm';
  * - Practice problems (with solutions)
  */
 
+/**
+ * Helper: Get internal user UUID from Clerk ID
+ * @exported for use in API routes
+ */
+export async function getUserIdFromClerkId(clerkId: string): Promise<string> {
+  const [user] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!user) {
+    throw new Error(
+      `User ${clerkId} not found in database. Please ensure Clerk webhooks are properly configured.`
+    );
+  }
+
+  return user.id;
+}
+
 // Material generation request schema
 export const materialGenerationSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string(), // Clerk user ID
   subject: z.string().min(1).max(100),
   topic: z.string().min(1).max(200),
   difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
@@ -192,12 +212,14 @@ function buildPrompt(request: MaterialGenerationRequest): string {
 /**
  * Check if user has remaining quota for AI material generation
  */
-export async function checkMaterialQuota(userId: string): Promise<{
+export async function checkMaterialQuota(clerkUserId: string): Promise<{
   allowed: boolean;
   remaining: number;
   limit: number;
   tier: string;
 }> {
+  const userId = await getUserIdFromClerkId(clerkUserId);
+
   const [subscription] = await db
     .select()
     .from(subscriptions)
@@ -243,7 +265,9 @@ export async function checkMaterialQuota(userId: string): Promise<{
 /**
  * Increment AI material usage counter
  */
-async function incrementMaterialUsage(userId: string): Promise<void> {
+async function incrementMaterialUsage(clerkUserId: string): Promise<void> {
+  const userId = await getUserIdFromClerkId(clerkUserId);
+
   const [subscription] = await db
     .select()
     .from(subscriptions)
@@ -273,6 +297,9 @@ export async function generateMaterial(
 }> {
   // Validate request
   const validated = materialGenerationSchema.parse(request);
+
+  // Convert Clerk ID to internal UUID
+  const internalUserId = await getUserIdFromClerkId(validated.userId);
 
   // Check quota
   const quota = await checkMaterialQuota(validated.userId);
@@ -326,7 +353,7 @@ export async function generateMaterial(
   const [savedMaterial] = await db
     .insert(materials)
     .values({
-      creatorId: validated.userId,
+      creatorId: internalUserId,
       title: `${validated.subject}: ${validated.topic}`,
       description: `${validated.format} for ${validated.difficulty} level`,
       content: JSON.stringify(generatedMaterial),
@@ -356,7 +383,9 @@ export async function generateMaterial(
 /**
  * Get user's generated materials
  */
-export async function getUserMaterials(userId: string) {
+export async function getUserMaterials(clerkUserId: string) {
+  const userId = await getUserIdFromClerkId(clerkUserId);
+
   return db
     .select()
     .from(materials)
@@ -380,8 +409,10 @@ export async function getMaterialById(materialId: string) {
 /**
  * Delete material
  */
-export async function deleteMaterial(materialId: string, userId: string) {
+export async function deleteMaterial(materialId: string, clerkUserId: string) {
+  const userId = await getUserIdFromClerkId(clerkUserId);
   const material = await getMaterialById(materialId);
+
   if (!material || material.creatorId !== userId) {
     throw new Error('Material not found or access denied');
   }

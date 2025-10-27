@@ -4,7 +4,7 @@ interface QuotaIndicatorProps {
   label?: string;
 }
 
-export function QuotaIndicator({ used, limit, label = "使用量" }: QuotaIndicatorProps) {
+export function QuotaIndicator({ used, limit, label = "Usage" }: QuotaIndicatorProps) {
   const percentage = (used / limit) * 100;
   const isNearLimit = percentage >= 80;
 
@@ -26,7 +26,7 @@ export function QuotaIndicator({ used, limit, label = "使用量" }: QuotaIndica
       </div>
       {isNearLimit && (
         <p className="text-xs text-red-600 mt-2">
-          制限に近づいています。アップグレードをご検討ください。
+          Approaching limit. Please consider upgrading.
         </p>
       )}
     </div>

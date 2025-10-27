@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import {
   getMaterialById,
   deleteMaterial,
+  getUserIdFromClerkId,
 } from '@/lib/services/ai-material.service';
 
 /**
@@ -21,6 +22,9 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get internal user UUID from Clerk ID (with auto-creation fallback)
+    const userId = await getUserIdFromClerkId(clerkUserId);
+
     const material = await getMaterialById(id);
 
     if (!material) {
@@ -30,8 +34,8 @@ export async function GET(
       );
     }
 
-    // Check if user owns this material
-    if (material.creatorId !== clerkUserId) {
+    // Check if user owns this material (compare internal UUIDs)
+    if (material.creatorId !== userId) {
       return NextResponse.json(
         { success: false, error: 'Access denied' },
         { status: 403 }

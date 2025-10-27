@@ -42,7 +42,7 @@ export default function UnifiedBookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<SelectedSlot | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
 
-  // URL パラメータからタブと決済状態を読み取る
+  // Read tab and payment status from URL parameters
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -55,14 +55,14 @@ export default function UnifiedBookingPage() {
 
       if (payment) {
         setPaymentStatus(payment);
-        // 3秒後にメッセージを消す
+        // Clear message after 5 seconds
         setTimeout(() => setPaymentStatus(null), 5000);
       }
     }
   }, []);
 
   const { slots, loading } = useLessons({
-    available: false, // 全てのスロットを取得（予約済みも含む）
+    available: false, // Get all slots (including reserved ones)
   });
   const { reservations, loading: reservationsLoading } = useReservations();
   const { processPayment } = usePayment();
@@ -121,21 +121,21 @@ export default function UnifiedBookingPage() {
 
   // Available tags (TODO: get from database)
   const availableTags = [
-    { id: "piano", label: "ピアノ" },
-    { id: "guitar", label: "ギター" },
-    { id: "bass", label: "ベース" },
-    { id: "drums", label: "ドラム" },
-    { id: "vocal", label: "ボーカル" },
-    { id: "composition", label: "作曲・編曲" },
-    { id: "theory", label: "音楽理論" },
-    { id: "dtm", label: "DTM・DAW" },
-    { id: "beginner", label: "初心者" },
-    { id: "intermediate", label: "中級者" },
-    { id: "advanced", label: "上級者" },
-    { id: "jazz", label: "ジャズ" },
-    { id: "classical", label: "クラシック" },
-    { id: "pop", label: "ポップス" },
-    { id: "rock", label: "ロック" },
+    { id: "piano", label: "Piano" },
+    { id: "guitar", label: "Guitar" },
+    { id: "bass", label: "Bass" },
+    { id: "drums", label: "Drums" },
+    { id: "vocal", label: "Vocal" },
+    { id: "composition", label: "Composition & Arrangement" },
+    { id: "theory", label: "Music Theory" },
+    { id: "dtm", label: "DTM/DAW" },
+    { id: "beginner", label: "Beginner" },
+    { id: "intermediate", label: "Intermediate" },
+    { id: "advanced", label: "Advanced" },
+    { id: "jazz", label: "Jazz" },
+    { id: "classical", label: "Classical" },
+    { id: "pop", label: "Pop" },
+    { id: "rock", label: "Rock" },
   ];
 
   const toggleTag = (tagId: string) => {
@@ -160,7 +160,7 @@ export default function UnifiedBookingPage() {
     const matchesPrice =
       slotPrice >= priceRange[0] && slotPrice <= priceRange[1];
 
-    // タグマッチング - slot.tagsとselectedTagsの共通要素があるか
+    // Tag matching - check if slot.tags and selectedTags have common elements
     const matchesTags =
       selectedTags.length === 0 ||
       (slot.tags &&
@@ -241,17 +241,17 @@ export default function UnifiedBookingPage() {
             <>
               <div className="flex items-center gap-2 font-semibold mb-1">
                 <span>✅</span>
-                <span>決済が完了しました！</span>
+                <span>Payment Completed!</span>
               </div>
-              <p className="text-sm">レッスンの予約が確定しました。メンターからの連絡をお待ちください。</p>
+              <p className="text-sm">Your lesson booking is confirmed. Please wait for contact from your mentor.</p>
             </>
           ) : (
             <>
               <div className="flex items-center gap-2 font-semibold mb-1">
                 <span>⚠️</span>
-                <span>決済がキャンセルされました</span>
+                <span>Payment Cancelled</span>
               </div>
-              <p className="text-sm">予約は保留中です。後で決済を完了してください。</p>
+              <p className="text-sm">Your reservation is pending. Please complete payment later.</p>
             </>
           )}
         </div>
@@ -276,7 +276,7 @@ export default function UnifiedBookingPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            ✨ AIマッチング
+            ✨ AI Matching
             {matching.perfectMatches.length > 0 && (
               <span className="ml-2 px-2 py-0.5 text-xs bg-[var(--color-brand-green)] text-white rounded-full">
                 {matching.perfectMatches.length}
@@ -291,7 +291,7 @@ export default function UnifiedBookingPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            レッスン予約
+            Book Lesson
           </button>
           <button
             onClick={() => setActiveTab("reservations")}
@@ -301,7 +301,7 @@ export default function UnifiedBookingPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            予約状況
+            My Reservations
             {reservations.length > 0 && (
               <span className="ml-2 px-2 py-0.5 text-xs bg-[var(--color-brand-green)] text-white rounded-full">
                 {reservations.length}
@@ -317,9 +317,9 @@ export default function UnifiedBookingPage() {
         <div className="space-y-8">
           {/* Header */}
           <div className="bg-gradient-to-r from-[var(--color-brand-green)] to-green-600 rounded-xl p-8 text-white">
-            <h2 className="text-3xl font-bold mb-3">AIメンターマッチング</h2>
+            <h2 className="text-3xl font-bold mb-3">AI Mentor Matching</h2>
             <p className="text-lg opacity-90">
-              あなたの学習スタイル、目標、スケジュールに基づいて、最適なメンターを見つけます
+              Find the perfect mentor based on your learning style, goals, and schedule
             </p>
           </div>
 
@@ -339,15 +339,15 @@ export default function UnifiedBookingPage() {
               {/* Student Profile Summary */}
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  あなたのプロフィール
+                  Your Profile
                 </h3>
                 <div className="space-y-3 text-sm">
                   <div>
-                    <span className="text-gray-600">スキルレベル:</span>
+                    <span className="text-gray-600">Skill Level:</span>
                     <span className="ml-2 font-medium">{studentProfile.skillLevel}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">学習目標:</span>
+                    <span className="text-gray-600">Learning Goals:</span>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {studentProfile.learningGoals.map((goal) => (
                         <span
@@ -360,7 +360,7 @@ export default function UnifiedBookingPage() {
                     </div>
                   </div>
                   <div>
-                    <span className="text-gray-600">予算:</span>
+                    <span className="text-gray-600">Budget:</span>
                     <span className="ml-2 font-medium">
                       ¥{studentProfile.priceRange.min.toLocaleString()} - ¥
                       {studentProfile.priceRange.max.toLocaleString()}
@@ -377,7 +377,7 @@ export default function UnifiedBookingPage() {
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <span className="text-2xl">✨</span>
-                    最適なマッチ ({matching.perfectMatches.length})
+                    Perfect Matches ({matching.perfectMatches.length})
                   </h3>
                   <div className="grid gap-4">
                     {matching.perfectMatches.map((result) => (
@@ -401,7 +401,7 @@ export default function UnifiedBookingPage() {
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <span className="text-2xl">💡</span>
-                    おすすめのメンター ({matching.recommendedMentors.length})
+                    Recommended Mentors ({matching.recommendedMentors.length})
                   </h3>
                   <div className="grid gap-4">
                     {matching.recommendedMentors
@@ -424,7 +424,7 @@ export default function UnifiedBookingPage() {
               {matching.topMatches.length > 0 && (
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-4">
-                    その他のメンター
+                    Other Mentors
                   </h3>
                   <div className="grid gap-4">
                     {matching.topMatches
@@ -448,16 +448,16 @@ export default function UnifiedBookingPage() {
                 <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
                   <div className="text-6xl mb-4">🔍</div>
                   <p className="text-lg font-semibold text-gray-700 mb-2">
-                    マッチするメンターが見つかりませんでした
+                    No Matching Mentors Found
                   </p>
                   <p className="text-sm text-gray-500 mb-6">
-                    検索条件を調整してみてください
+                    Try adjusting your search criteria
                   </p>
                   <button
                     onClick={matching.resetPreferences}
                     className="px-6 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] transition-all"
                   >
-                    設定をリセット
+                    Reset Preferences
                   </button>
                 </div>
               )}
@@ -471,7 +471,7 @@ export default function UnifiedBookingPage() {
         <div className="bg-white rounded-lg border border-gray-100 p-6 h-fit sticky top-4 shadow-sm">
           {/* Mentors */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">講師</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">Mentors</h3>
             <div className="space-y-3">
               {mentors.map((mentor) => (
                 <label key={mentor.id} className="flex items-center gap-3 cursor-pointer group">
@@ -489,7 +489,7 @@ export default function UnifiedBookingPage() {
 
           {/* Price Range */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">料金</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">Price</h3>
             <div className="space-y-2">
               <input
                 type="range"
@@ -509,13 +509,13 @@ export default function UnifiedBookingPage() {
 
           {/* Time Slot */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">時間帯</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">Time Slot</h3>
             <div className="space-y-3">
               {[
-                { value: "all", label: "すべて" },
-                { value: "morning", label: "午前 (9:00-12:00)" },
-                { value: "afternoon", label: "午後 (12:00-18:00)" },
-                { value: "evening", label: "夜間 (18:00-21:00)" },
+                { value: "all", label: "All" },
+                { value: "morning", label: "Morning (9:00-12:00)" },
+                { value: "afternoon", label: "Afternoon (12:00-18:00)" },
+                { value: "evening", label: "Evening (18:00-21:00)" },
               ].map((option) => (
                 <label key={option.value} className="flex items-center gap-3 cursor-pointer group">
                   <input
@@ -534,7 +534,7 @@ export default function UnifiedBookingPage() {
 
           {/* Tags */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">タグで絞り込み</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">Filter by Tags</h3>
             <div className="flex flex-wrap gap-2">
               {availableTags.map((tag) => (
                 <button
@@ -555,7 +555,7 @@ export default function UnifiedBookingPage() {
                 onClick={() => setSelectedTags([])}
                 className="mt-3 text-xs text-gray-600 hover:text-gray-900 underline"
               >
-                タグをクリア ({selectedTags.length}件選択中)
+                Clear Tags ({selectedTags.length} selected)
               </button>
             )}
           </div>
@@ -570,7 +570,7 @@ export default function UnifiedBookingPage() {
             }}
             className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
           >
-            フィルターをリセット
+            Reset Filters
           </button>
         </div>
 
@@ -587,10 +587,10 @@ export default function UnifiedBookingPage() {
             <div className="flex flex-col items-center justify-center h-full text-center px-8">
               <div className="text-6xl mb-4">📅</div>
               <p className="text-lg font-semibold text-gray-700 mb-2">
-                この日は予約可能な枠がありません
+                No Available Slots on This Day
               </p>
               <p className="text-sm text-gray-500">
-                別の日付を選択するか、フィルターを調整してください
+                Select a different date or adjust your filters
               </p>
             </div>
           ) : (
@@ -607,7 +607,7 @@ export default function UnifiedBookingPage() {
                       : "border-gray-100 hover:shadow-lg hover:border-gray-200 hover:-translate-y-0.5"
                   }`}
                 >
-                {/* 予約済みバッジ */}
+                {/* Reserved Badge */}
                 {isReserved && (
                   <div className="absolute top-3 right-3 z-10">
                     <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
@@ -615,7 +615,7 @@ export default function UnifiedBookingPage() {
                         ? "bg-green-100 text-green-700"
                         : "bg-yellow-100 text-yellow-700"
                     }`}>
-                      {isCompleted ? "✓ 予約済み" : "⏳ 予約中"}
+                      {isCompleted ? "✓ Reserved" : "⏳ Pending"}
                     </span>
                   </div>
                 )}
@@ -687,14 +687,14 @@ export default function UnifiedBookingPage() {
                     onClick={() => setActiveTab("reservations")}
                     className="w-full px-4 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
                   >
-                    予約詳細を見る
+                    View Details
                   </button>
                 ) : (
                   <button
                     onClick={() => handleBooking(slot.id)}
                     className="w-full px-4 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
                   >
-                    予約する
+                    Book Now
                   </button>
                 )}
                 </div>
@@ -710,16 +710,16 @@ export default function UnifiedBookingPage() {
             <div className="bg-white border border-gray-100 rounded-xl p-12 text-center">
               <div className="text-6xl mb-4">📅</div>
               <p className="text-lg font-semibold text-gray-700 mb-2">
-                予約がありません
+                No Reservations Yet
               </p>
               <p className="text-sm text-gray-500 mb-6">
-                まずはレッスンを予約してみましょう
+                Book your first lesson to get started
               </p>
               <button
                 onClick={() => setActiveTab("booking")}
                 className="px-6 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] transition-all shadow-sm hover:shadow-md"
               >
-                レッスンを予約する
+                Book a Lesson
               </button>
             </div>
           ) : (

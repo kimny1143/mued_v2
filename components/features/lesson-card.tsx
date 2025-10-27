@@ -47,12 +47,12 @@ export function LessonCard({
         </span>
       </div>
       <div className="text-sm text-gray-700 mb-4">
-        <p>開始: {formatTime(startTime)}</p>
-        <p>終了: {formatTime(endTime)}</p>
+        <p>Start: {formatTime(startTime)}</p>
+        <p>End: {formatTime(endTime)}</p>
       </div>
       {status === "available" && onBook && (
         <Button variant="primary" size="sm" onClick={() => onBook(id)} className="w-full">
-          予約する
+          Book Now
         </Button>
       )}
     </Card>

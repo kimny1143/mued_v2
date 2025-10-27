@@ -1,6 +1,6 @@
 /**
  * Mentor Match Card Component
- * メンターマッチング結果を表示するカード
+ * Display mentor matching results
  */
 
 'use client';
@@ -37,25 +37,25 @@ export function MentorMatchCard({
       }`}
       onClick={handleClick}
     >
-      {/* ヘッダー: メンター情報 + マッチスコア */}
+      {/* Header: Mentor Info + Match Score */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          {/* アバター */}
+          {/* Avatar */}
           <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-xl font-bold text-gray-600">
             {mentor.name.charAt(0)}
           </div>
 
-          {/* 名前と評価 */}
+          {/* Name and Rating */}
           <div>
             <h3 className="font-semibold text-lg text-gray-900">{mentor.name}</h3>
             <div className="flex items-center gap-2 text-sm">
               <span className="text-yellow-500">★ {mentor.rating.toFixed(1)}</span>
-              <span className="text-gray-500">({mentor.totalReviews}件)</span>
+              <span className="text-gray-500">({mentor.totalReviews} reviews)</span>
             </div>
           </div>
         </div>
 
-        {/* マッチスコア */}
+        {/* Match Score */}
         <div className="text-right">
           <div
             className={`text-3xl font-bold ${
@@ -68,29 +68,29 @@ export function MentorMatchCard({
           >
             {score.totalScore}
           </div>
-          <div className="text-xs text-gray-500">マッチ度</div>
+          <div className="text-xs text-gray-500">Match Score</div>
         </div>
       </div>
 
-      {/* バッジ */}
+      {/* Badges */}
       <div className="flex gap-2 mb-3">
         {isPerfectMatch && (
           <span className="px-3 py-1 bg-[var(--color-brand-green)] text-white text-xs font-semibold rounded-full">
-            ✨ 最適なマッチ
+            ✨ Perfect Match
           </span>
         )}
         {isRecommended && !isPerfectMatch && (
           <span className="px-3 py-1 bg-blue-600 text-white text-xs font-semibold rounded-full">
-            おすすめ
+            Recommended
           </span>
         )}
       </div>
 
-      {/* マッチング理由 */}
+      {/* Matching Reasons */}
       {score.reasoning.length > 0 && (
         <div className="mb-4">
           <h4 className="text-sm font-medium text-gray-700 mb-2">
-            マッチング理由:
+            Why This Match:
           </h4>
           <ul className="space-y-1">
             {score.reasoning.map((reason, idx) => (
@@ -103,43 +103,43 @@ export function MentorMatchCard({
         </div>
       )}
 
-      {/* 価格 */}
+      {/* Price */}
       <div className="pt-3 border-t border-gray-200">
         <span className="text-lg font-bold text-gray-900">
           ¥{mentor.pricePerHour.toLocaleString()}
         </span>
-        <span className="text-sm text-gray-500">/時間</span>
+        <span className="text-sm text-gray-500">/hour</span>
       </div>
 
-      {/* 詳細スコア（オプション） */}
+      {/* Detailed Score (Optional) */}
       {showDetailedScore && (
         <div className="mt-4 pt-4 border-t border-gray-200">
           <h4 className="text-xs font-medium text-gray-700 mb-2">
-            詳細スコア:
+            Detailed Score:
           </h4>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="flex justify-between">
-              <span className="text-gray-600">スキルレベル:</span>
+              <span className="text-gray-600">Skill Level:</span>
               <span className="font-medium">{score.breakdown.skillLevelMatch}/25</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">学習目標:</span>
+              <span className="text-gray-600">Learning Goals:</span>
               <span className="font-medium">{score.breakdown.goalAlignment}/20</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">スケジュール:</span>
+              <span className="text-gray-600">Schedule:</span>
               <span className="font-medium">{score.breakdown.scheduleOverlap}/20</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">価格:</span>
+              <span className="text-gray-600">Price:</span>
               <span className="font-medium">{score.breakdown.priceCompatibility}/15</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">評価:</span>
+              <span className="text-gray-600">Rating:</span>
               <span className="font-medium">{score.breakdown.reviewScore}/10</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">ジャンル:</span>
+              <span className="text-gray-600">Genre:</span>
               <span className="font-medium">{score.breakdown.genreMatch}/10</span>
             </div>
           </div>

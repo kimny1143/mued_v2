@@ -33,7 +33,7 @@ export default function MaterialsPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-brand-green)] mx-auto"></div>
-            <p className="mt-4 text-gray-600">読み込み中...</p>
+            <p className="mt-4 text-gray-600">Loading...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -44,11 +44,11 @@ export default function MaterialsPage() {
     <DashboardLayout>
       <DashboardTabs />
       <PageHeader
-        title="教材ライブラリ"
-        description="AI生成された学習教材を管理"
+        title="🎵 Music Material Library"
+        description="AI-powered music learning materials tailored to your needs"
         action={
           <Button onClick={() => router.push('/dashboard/materials/new')}>
-            + 新規作成
+            <span className="mr-1">✨</span> Generate Music Material
           </Button>
         }
       />
@@ -59,7 +59,7 @@ export default function MaterialsPage() {
           <QuotaIndicator
             used={quota.used}
             limit={quota.limit}
-            label="今月の使用量"
+            label="Monthly Usage"
           />
         </div>
       )}
@@ -73,14 +73,18 @@ export default function MaterialsPage() {
 
       {/* Materials Grid */}
       {materials.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="text-6xl mb-4">📚</div>
-          <h3 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2">教材がありません</h3>
-          <p className="text-gray-600 mb-6">
-            最初のAI教材を生成してみましょう
+        <div className="text-center py-20">
+          <div className="text-7xl mb-6">🎼</div>
+          <h3 className="text-2xl font-bold text-[var(--color-text-primary)] mb-3">Your Music Library Awaits</h3>
+          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            Create personalized practice routines, sheet music, exercises, and theory lessons tailored to your instrument and skill level
           </p>
-          <Button onClick={() => router.push('/dashboard/materials/new')}>
-            教材を生成
+          <Button
+            onClick={() => router.push('/dashboard/materials/new')}
+            className="bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-hover)] text-white font-semibold px-8 py-3"
+          >
+            <span className="mr-2">✨</span>
+            Generate Your First Music Material
           </Button>
         </div>
       ) : (
@@ -91,7 +95,7 @@ export default function MaterialsPage() {
               id={material.id}
               title={material.title}
               description={material.description || ""}
-              category={material.type || "未分類"}
+              category={material.type || "Uncategorized"}
               createdAt={new Date(material.createdAt)}
               onView={handleMaterialClick}
               onDelete={handleDelete}

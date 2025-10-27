@@ -32,17 +32,17 @@ export function MaterialCard({
         <p className="text-sm text-gray-600 line-clamp-2">{description}</p>
       </div>
       <div className="text-xs text-gray-500 mb-4">
-        作成日: {new Date(createdAt).toLocaleDateString("ja-JP")}
+        Created: {new Date(createdAt).toLocaleDateString("en-US")}
       </div>
       <div className="flex gap-2">
         {onView && (
           <Button variant="primary" size="sm" onClick={() => onView(id)} className="flex-1">
-            閲覧
+            View
           </Button>
         )}
         {onDelete && (
           <Button variant="danger" size="sm" onClick={() => onDelete(id)}>
-            削除
+            Delete
           </Button>
         )}
       </div>

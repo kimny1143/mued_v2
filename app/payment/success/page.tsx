@@ -7,7 +7,7 @@ export default function PaymentSuccessPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // 2秒後にダッシュボードにリダイレクト
+    // Redirect to dashboard after 2 seconds
     const timer = setTimeout(() => {
       router.push("/dashboard/lessons?tab=reservations&payment=success");
     }, 2000);
@@ -37,12 +37,12 @@ export default function PaymentSuccessPage() {
         </div>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          決済が完了しました！
+          Payment Successful!
         </h1>
         <p className="text-gray-600 mb-6">
-          レッスンの予約が確定しました。
+          Your lesson booking is confirmed.
           <br />
-          メンターからの連絡をお待ちください。
+          Please wait for contact from your mentor.
         </p>
 
         <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
@@ -61,7 +61,7 @@ export default function PaymentSuccessPage() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          <span>ダッシュボードに移動しています...</span>
+          <span>Redirecting to dashboard...</span>
         </div>
       </div>
     </div>

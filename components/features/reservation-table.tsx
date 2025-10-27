@@ -37,22 +37,22 @@ export function ReservationTable({
         <thead>
           <tr className="border-b border-[var(--color-card-border)]">
             <th className="text-left py-3 px-4 text-sm font-semibold text-[var(--color-text-primary)]">
-              メンター
+              Mentor
             </th>
             <th className="text-left py-3 px-4 text-sm font-semibold text-[var(--color-text-primary)]">
-              開始時間
+              Start Time
             </th>
             <th className="text-left py-3 px-4 text-sm font-semibold text-[var(--color-text-primary)]">
-              終了時間
+              End Time
             </th>
             <th className="text-left py-3 px-4 text-sm font-semibold text-[var(--color-text-primary)]">
-              ステータス
+              Status
             </th>
             <th className="text-left py-3 px-4 text-sm font-semibold text-[var(--color-text-primary)]">
-              決済
+              Payment
             </th>
             <th className="text-right py-3 px-4 text-sm font-semibold text-[var(--color-text-primary)]">
-              操作
+              Actions
             </th>
           </tr>
         </thead>
@@ -60,7 +60,7 @@ export function ReservationTable({
           {reservations.length === 0 ? (
             <tr>
               <td colSpan={6} className="text-center py-8 text-gray-500">
-                予約がありません
+                No Reservations
               </td>
             </tr>
           ) : (
@@ -104,10 +104,10 @@ export function ReservationTable({
                     }`}
                   >
                     {reservation.paymentStatus === "completed"
-                      ? "決済完了"
+                      ? "Completed"
                       : reservation.paymentStatus === "processing"
-                      ? "処理中"
-                      : "未払い"}
+                      ? "Processing"
+                      : "Unpaid"}
                   </span>
                 </td>
                 <td className="py-3 px-4 text-right">
@@ -118,7 +118,7 @@ export function ReservationTable({
                         size="sm"
                         onClick={() => onPayment(reservation.id)}
                       >
-                        支払う
+                        Pay Now
                       </Button>
                     )}
                     {onCancel && (
@@ -127,7 +127,7 @@ export function ReservationTable({
                         size="sm"
                         onClick={() => onCancel(reservation.id)}
                       >
-                        キャンセル
+                        Cancel
                       </Button>
                     )}
                   </div>

@@ -2,10 +2,19 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 
 export function Header() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const router = useRouter();
+  const { signOut } = useClerk();
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/");
+  };
 
   return (
     <header className="bg-white border-b border-[var(--color-card-border)] sticky top-0 z-50">
@@ -62,14 +71,8 @@ export function Header() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm">
-              Download app
-            </Button>
-            <Button variant="outline" size="sm">
-              Log in
-            </Button>
-            <Button variant="primary" size="sm">
-              Try it free
+            <Button variant="outline" size="sm" onClick={handleSignOut}>
+              Log Out
             </Button>
           </div>
         </div>

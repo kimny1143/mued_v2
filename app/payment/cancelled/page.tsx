@@ -7,7 +7,7 @@ export default function PaymentCancelledPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // 3秒後にダッシュボードにリダイレクト
+    // Redirect to dashboard after 3 seconds
     const timer = setTimeout(() => {
       router.push("/dashboard/lessons?tab=reservations&payment=cancelled");
     }, 3000);
@@ -37,12 +37,12 @@ export default function PaymentCancelledPage() {
         </div>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          決済がキャンセルされました
+          Payment Cancelled
         </h1>
         <p className="text-gray-600 mb-6">
-          予約は保留中です。
+          Your reservation is pending.
           <br />
-          後で決済を完了することができます。
+          You can complete the payment later.
         </p>
 
         <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
@@ -61,7 +61,7 @@ export default function PaymentCancelledPage() {
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-          <span>ダッシュボードに移動しています...</span>
+          <span>Redirecting to dashboard...</span>
         </div>
       </div>
     </div>
