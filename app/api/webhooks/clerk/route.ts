@@ -2,7 +2,7 @@ import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, subscriptions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
@@ -55,14 +55,25 @@ export async function POST(req: Request) {
     const { id, email_addresses, first_name, last_name, image_url, username } = evt.data;
 
     try {
-      await db.insert(users).values({
+      // ユーザーを作成
+      const newUsers = await db.insert(users).values({
         clerkId: id,
         email: email_addresses?.[0]?.email_address || username || "unknown",
         name: `${first_name || ""} ${last_name || ""}`.trim() || username || "Unknown",
         profileImageUrl: image_url,
         role: "student", // デフォルトは生徒
-      });
+      }).returning();
+
+      const newUser = newUsers[0];
       console.log(`User created: ${id}`);
+
+      // 新規ユーザーにFreeプランのサブスクリプションを自動作成
+      await db.insert(subscriptions).values({
+        userId: newUser.id,
+        plan: "free",
+        status: "active",
+      });
+      console.log(`Free subscription created for user: ${id}`);
     } catch (error) {
       console.error("Error creating user:", error);
     }
