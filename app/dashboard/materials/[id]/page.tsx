@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ShareToLibraryButton } from '@/components/features/materials/share-to-library-button';
 
 interface MaterialContent {
   type?: string;
@@ -108,7 +109,7 @@ export default function MaterialDetailPage({ params }: { params: { id: string } 
           ← Back to Materials
         </button>
         <div className="flex justify-between items-start">
-          <div>
+          <div className="flex-1">
             <h1 className="text-3xl font-bold text-gray-900">{material.title}</h1>
             <p className="text-gray-600 mt-2">{material.description}</p>
             <div className="flex gap-2 mt-3">
@@ -119,6 +120,15 @@ export default function MaterialDetailPage({ params }: { params: { id: string } 
                 {material.difficulty}
               </span>
             </div>
+          </div>
+          <div className="ml-4">
+            <ShareToLibraryButton
+              materialId={material.id}
+              materialTitle={material.title}
+              materialType={material.type}
+              materialDifficulty={material.difficulty}
+              materialDescription={material.description}
+            />
           </div>
         </div>
       </div>

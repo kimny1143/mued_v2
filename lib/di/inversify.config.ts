@@ -11,6 +11,7 @@ import { TYPES } from './types';
 import { PluginRegistry } from '@/lib/plugins/plugin-registry';
 import { PluginLoader } from '@/lib/plugins/plugin-loader';
 import { ContentFetcherRegistry } from '@/lib/content/content-fetcher-registry';
+import { ContentValidator } from '@/lib/content/content-validator';
 
 /**
  * Create and configure the DI container
@@ -26,6 +27,7 @@ export function createContainer(): Container {
   container.bind(TYPES.PluginRegistry).to(PluginRegistry).inSingletonScope();
   container.bind(TYPES.PluginLoader).to(PluginLoader).inSingletonScope();
   container.bind(TYPES.ContentFetcherRegistry).to(ContentFetcherRegistry).inSingletonScope();
+  container.bind(TYPES.ContentValidator).to(ContentValidator).inSingletonScope();
 
   return container;
 }
