@@ -1,12 +1,13 @@
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 /**
  * 認証済みユーザーを取得する
  *
  * Clerk認証とデータベースのユーザー情報を統合して返す
+ * RLS (Row Level Security) のために current_user_id を設定
  *
  * @throws {Error} 未認証の場合
  * @throws {Error} ユーザーがデータベースに存在しない場合
@@ -31,11 +32,16 @@ import { eq } from 'drizzle-orm';
  */
 export async function getAuthenticatedUser() {
   // Clerk認証チェック
-  const { userId } = auth();
+  const { userId } = await auth();
 
   if (!userId) {
     throw new Error('Unauthorized: No valid session found');
   }
+
+  // RLSのためにセッション変数を設定
+  await db.execute(
+    sql`SET LOCAL app.current_user_id = ${userId}`
+  );
 
   // データベースからユーザー取得
   const user = await db.query.users.findFirst({
