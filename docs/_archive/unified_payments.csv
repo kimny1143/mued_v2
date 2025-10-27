@@ -1,0 +1,5 @@
+id,Created date (UTC),Amount,Amount Refunded,Currency,Captured,Converted Amount,Converted Amount Refunded,Converted Currency,Decline Reason,Description,Fee,Refunded date (UTC),Statement Descriptor,Status,Seller Message,Taxes On Fee,Card ID,Customer ID,Customer Description,Customer Email,Invoice ID,Transfer,executedAt (metadata),cronExecution (metadata),executionTrigger (metadata),studentId (metadata),slotId (metadata),teacherId (metadata),reservationId (metadata)
+ch_3SLcyPRYtspYtD2z12iCZQTg,2025-10-24 04:51:34,4500,0,jpy,true,4500,0,jpy,,,162,,MUED LMS,Paid,Payment complete.,0,pm_1SLcyPRYtspYtD2z74KIozk1,,,kimny1143@gmail.com,,,,,,,,,
+ch_3SLcwnRYtspYtD2z1WE7oMby,2025-10-24 04:49:53,4500,0,jpy,true,4500,0,jpy,,,162,,MUED LMS,Paid,Payment complete.,0,pm_1SLcwmRYtspYtD2z4KkN3wjv,,,kimny1143@gmail.com,,,,,,,,,
+ch_3SLcm1RYtspYtD2z0BRXl4ur,2025-10-24 04:38:46,5000,0,jpy,true,5000,0,jpy,,,180,,MUED LMS,Paid,Payment complete.,0,pm_1SLcm1RYtspYtD2zB42e8QZ3,,,kimny1143@gmail.com,,,,,,,,,
+ch_3SLcWIRYtspYtD2z1EvaVQz3,2025-10-24 04:22:30,20.00,0.00,usd,true,2994,0,jpy,,(created by Stripe CLI),108,,MUED LMS,Paid,Payment complete.,0,pm_1SLcWIRYtspYtD2zBpgbMzqA,,,,,,,,,,,,
