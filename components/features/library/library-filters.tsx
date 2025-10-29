@@ -12,7 +12,8 @@ interface FilterState {
   search: string;
   category?: string;
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
-  sortBy: 'date' | 'relevance' | 'popularity';
+  sortBy: 'date' | 'relevance';
+  sortOrder: 'asc' | 'desc';
 }
 
 interface LibraryFiltersProps {
@@ -23,7 +24,7 @@ interface LibraryFiltersProps {
 export function LibraryFilters({ filters, onChange }: LibraryFiltersProps) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Search */}
         <div>
           <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
@@ -77,7 +78,7 @@ export function LibraryFilters({ filters, onChange }: LibraryFiltersProps) {
           </select>
         </div>
 
-        {/* Sort */}
+        {/* Sort By */}
         <div>
           <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-1">
             Sort By
@@ -88,9 +89,24 @@ export function LibraryFilters({ filters, onChange }: LibraryFiltersProps) {
             onChange={(e) => onChange({ ...filters, sortBy: e.target.value as FilterState['sortBy'] })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-green)]"
           >
-            <option value="date">Latest</option>
+            <option value="date">Date</option>
             <option value="relevance">Relevance</option>
-            <option value="popularity">Popularity</option>
+          </select>
+        </div>
+
+        {/* Sort Order */}
+        <div>
+          <label htmlFor="sortOrder" className="block text-sm font-medium text-gray-700 mb-1">
+            Order
+          </label>
+          <select
+            id="sortOrder"
+            value={filters.sortOrder}
+            onChange={(e) => onChange({ ...filters, sortOrder: e.target.value as FilterState['sortOrder'] })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-green)]"
+          >
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
           </select>
         </div>
       </div>

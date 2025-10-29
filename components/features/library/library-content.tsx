@@ -7,7 +7,7 @@
  * Main content browser for Library page
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { UnifiedContent, ContentFetchResult, ContentSource } from '@/types/unified-content';
 import { LibraryCard } from './library-card';
 import { LibraryFilters } from './library-filters';
@@ -18,7 +18,8 @@ interface FilterState {
   search: string;
   category?: string;
   difficulty?: 'beginner' | 'intermediate' | 'advanced';
-  sortBy: 'date' | 'relevance' | 'popularity';
+  sortBy: 'date' | 'relevance';
+  sortOrder: 'asc' | 'desc';
 }
 
 export function LibraryContent() {
@@ -29,11 +30,23 @@ export function LibraryContent() {
     source: 'all',
     search: '',
     sortBy: 'date',
+    sortOrder: 'desc',
   });
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search);
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(filters.search);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [filters.search]);
+
+  // Fetch content when filters change (except search uses debounced value)
   useEffect(() => {
     fetchContent();
-  }, [filters]);
+  }, [filters.source, filters.category, filters.difficulty, filters.sortBy, filters.sortOrder, debouncedSearch]);
 
   async function fetchContent() {
     try {
@@ -43,12 +56,12 @@ export function LibraryContent() {
       const params = new URLSearchParams({
         source: filters.source,
         sortBy: filters.sortBy,
-        sortOrder: 'desc',
+        sortOrder: filters.sortOrder,
         limit: '20',
       });
 
-      if (filters.search) {
-        params.append('search', filters.search);
+      if (debouncedSearch) {
+        params.append('search', debouncedSearch);
       }
       if (filters.category) {
         params.append('category', filters.category);

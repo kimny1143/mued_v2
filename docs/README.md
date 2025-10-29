@@ -1,144 +1,184 @@
-# MUED v2 ドキュメントガイド
+# MUED v2 Documentation Guide
 
-**最終更新**: 2025年10月27日
-**本番環境**: ✅ **稼働中** ([https://mued.jp](https://mued.jp))
-
----
-
-## 🚨 最重要ドキュメント
-
-### 🎯 最終総合検証レポート (2025-10-27) ⭐️NEW
-**[`FINAL_COMPREHENSIVE_REPORT_2025-10-27.md`](./FINAL_COMPREHENSIVE_REPORT_2025-10-27.md)**
-- **総合評価: 87/100** (本番push可能)
-- 6エージェント統合検証の最終結果
-- 事業計画整合性・DB・テスト・コード品質・ドキュメント・スクリプトの包括評価
-- Push前の必須対応事項とデプロイ戦略
-
-### 📊 実装追跡 (最新)
-**[`IMPLEMENTATION_TRACKER.md`](./IMPLEMENTATION_TRACKER.md)**
-- 全機能の実装状況をリアルタイム追跡
-- 優先順位別タスクリスト
-- 完了/未完了の詳細ステータス
-
-### 🔍 包括的プロジェクト分析 (2025-10-27)
-**[`COMPREHENSIVE_PROJECT_ANALYSIS_2025-10-27.md`](./COMPREHENSIVE_PROJECT_ANALYSIS_2025-10-27.md)**
-- システム全体の現状分析
-- 技術的債務の評価
-- 改善提案とロードマップ
+**Last Updated**: 2025年10月29日
+**Production Environment**: ✅ **Active** ([https://mued.jp](https://mued.jp))
+**Current Phase**: Phase 2 - RAG観測とデータ管理層
 
 ---
 
-## 📂 ドキュメント構造
+## 🎯 Master Documents (Current Strategy & Implementation)
 
-### 📈 /analysis - 分析レポート
-最新の技術分析とコードベース評価
-- **[ディレクトリ概要](./analysis/)** | [最適化分析](./analysis/CODEBASE_OPTIMIZATION_ANALYSIS_2025.md) | [実装サマリー](./analysis/IMPLEMENTATION_SUMMARY_2025-10-27.md)
+### 📌 Unified Strategy Document ⭐️ MASTER
+**[`business/MUED_Unified_Strategy_2025Q4.md`](./business/MUED_Unified_Strategy_2025Q4.md)**
+- **Created**: 2025-10-29 (Latest revision)
+- **Purpose**: Consolidates all strategic decisions from Sep-Oct 2025
+- **Content**: Business pivot from LMS to Creative CMS, two-tier subscription model, 12-month roadmap
+- **Status**: Official strategy document - all other documents should align with this
 
-### 🏗️ /architecture - アーキテクチャ設計
-システム設計とアーキテクチャドキュメント
-- **[ディレクトリ概要](./architecture/README.md)** | [MVP設計](./architecture/mvp-architecture.md) | [ビジネスロジック](./architecture/business-logic-specification.md)
+### 📊 Current Sprint Plan
+**[`implementation/phase2-sprint-plan.md`](./implementation/phase2-sprint-plan.md)**
+- **Sprint Period**: 2025-10-30 to 2025-11-12
+- **Focus**: RAG metrics collection, provenance management, SLO monitoring
+- **Success Criteria**: Citation Rate 70%+, P50 latency <1.5s
 
-### 💼 /business - ビジネス文書
-事業計画と要件定義
-- **[ディレクトリ概要](./business/README.md)** | [事業計画](./business/株式会社グラスワークス%20MUEDプロジェクト%20事業計画.md) | [実装対比](./business/implementation-vs-business-plan.md)
-
-### 💾 /database - データベース文書
-データベース設計と最適化
-- **[ディレクトリ概要](./database/README.md)** | [インデックス実装](./database/index-implementation-report.md)
-
-### 🎨 /features - 機能仕様
-各機能の詳細仕様書
-- **[ディレクトリ概要](./features/README.md)** | [音楽教材](./music-material-specification.md) | [UI移行](./ui-migration-strategy.md)
-
-### 🛠️ /implementation - 実装ガイド
-実装詳細とガイドライン
-- **[ディレクトリ概要](./implementation/README.md)** | [MVP計画](./implementation/mvp-implementation-plan.md) | [OpenAI統合](./implementation/openai-function-calling-guide.md)
-
-### 🧪 /testing - テスト戦略
-テスト計画と実装（テストディレクトリは `/testing` に存在）
-- **[ディレクトリ概要](./testing/README.md)** | [テスト戦略](./TESTING.md) | [E2Eセットアップ](./e2e-test-setup.md)
-
-### 🗺️ /roadmap - ロードマップ
-プロジェクトロードマップとマイルストーン
-- **[POCからMVPへ](./roadmap/poc-to-mvp-roadmap.md)**
-
-### 🔬 /research - リサーチ
-技術調査とリサーチ結果
-- **[AIメンターマッチング](./research/ai-mentor-matching-research.md)**
-
-### 🔧 /tools - ツール文書
-開発ツールとユーティリティ
-- **[ディレクトリ概要](./tools/README.md)** | [Claude Desktop](./claude-desktop-commands.md)
-
-### 📦 /archive - アーカイブ
-過去のドキュメントと履歴
-- **[アーカイブ概要](./archive/README.md)** | [2025-10-27](./archive/2025-10-27/) | [2025-10-19](./archive/2025-10-19/) | [2025-10-18](./_archive/2025-10-18/)
+### 🔧 API Specifications
+**[`api/rag-metrics-api.yaml`](./api/rag-metrics-api.yaml)**
+- OpenAPI 3.0 specification for RAG metrics endpoints
+- Provenance tracking and performance monitoring APIs
 
 ---
 
-## 🚀 クイックナビゲーション
+## 📂 Documentation Structure
 
-### 今すぐ確認すべき項目
-
-1. **実装状況を知りたい** → [`IMPLEMENTATION_TRACKER.md`](./IMPLEMENTATION_TRACKER.md)
-2. **最新の分析を読みたい** → [`COMPREHENSIVE_PROJECT_ANALYSIS_2025-10-27.md`](./COMPREHENSIVE_PROJECT_ANALYSIS_2025-10-27.md)
-3. **MVPチェックリストを確認** → [`implementation/mvp-checklist.md`](./implementation/mvp-checklist.md)
-4. **テスト戦略を理解** → [`TEST_STRATEGY.md`](./TEST_STRATEGY.md)
-
-### 開発タスク別ガイド
-
-- **新機能を追加する** → [`architecture/mvp-architecture.md`](./architecture/mvp-architecture.md)
-- **AIを統合する** → [`implementation/openai-function-calling-guide.md`](./implementation/openai-function-calling-guide.md)
-- **DBを最適化する** → [`implementation/database-improvement-plan.md`](./implementation/database-improvement-plan.md)
-- **テストを書く** → [`testing/README.md`](./testing/README.md)
-
-### プロジェクト管理
-
-- **進捗を追跡** → [`implementation/current-progress.md`](./implementation/current-progress.md)
-- **ロードマップを確認** → [`roadmap/poc-to-mvp-roadmap.md`](./roadmap/poc-to-mvp-roadmap.md)
-- **ビジネス要件を確認** → [`business/implementation-vs-business-plan.md`](./business/implementation-vs-business-plan.md)
-
----
-
-## 📝 その他のドキュメント
-
-### 技術仕様
-- **[`music-material-specification.md`](./music-material-specification.md)** - 音楽教材仕様
-- **[`ui-migration-strategy.md`](./ui-migration-strategy.md)** - UI移行戦略
-- **[`claude-desktop-commands.md`](./claude-desktop-commands.md)** - Claude Desktop コマンドリファレンス
-
-### MCP関連
-- **[`implementation/mcp-test-request.md`](./implementation/mcp-test-request.md)** - MCPテストリクエスト
-
----
-
-## 🔄 更新履歴
-
-- **2025-10-27**: ドキュメント構造改善、各ディレクトリにREADME追加、重複文書の整理
-- **2025-10-27**: IMPLEMENTATION_TRACKER.md追加、データベースインデックス35個適用完了
-- **2025-10-19**: 包括的分析レポート作成、DB最適化計画策定
-- **2025-10-18**: 本番環境検証、ステータスレポート更新
-- **2025-10-10**: 本番環境デプロイ完了
-
----
-
-## 💡 ドキュメント管理方針
-
-### 命名規則
-- 分析レポート: `{TYPE}_ANALYSIS_{YYYY-MM-DD}.md`
-- 実装ドキュメント: `{feature}-{type}.md`
-- アーカイブ: `archive/{YYYY-MM-DD}/`
-
-### 更新サイクル
-- **IMPLEMENTATION_TRACKER.md**: 日次更新
-- **current-progress.md**: 週次更新
-- **分析レポート**: 月次またはマイルストーン時
-
-### アーカイブポリシー
-- 古い分析レポートは日付ごとにアーカイブ
-- 実装ドキュメントは最新版を維持
-- 履歴的価値のあるドキュメントは保存
+```
+docs/
+├── README.md                              # This navigation guide
+├── CHANGELOG.md                           # Documentation change history
+│
+├── business/                              # Business Strategy & Planning
+│   ├── MUED_Unified_Strategy_2025Q4.md  # ⭐️ MASTER DOCUMENT
+│   ├── MUED事業計画書_20251029追記.md      # Two-tier subscription model
+│   ├── 株式会社グラスワークス MUEDプロジェクト 事業計画.md
+│   └── archive/                          # Historical business documents
+│
+├── architecture/                          # System Architecture
+│   ├── current/
+│   │   ├── mvp-architecture.md          # Current MVP architecture
+│   │   ├── business-logic-specification.md
+│   │   └── mcp-feasibility-analysis.md
+│   └── archive/                          # Past architecture designs
+│
+├── implementation/                        # Implementation Plans & Progress
+│   ├── phase2-sprint-plan.md            # ⭐️ CURRENT SPRINT
+│   ├── mvp-implementation-plan.md
+│   ├── mvp-checklist.md
+│   ├── current-progress.md
+│   └── archive/                          # Completed sprints
+│
+├── api/                                  # API Specifications
+│   └── rag-metrics-api.yaml             # RAG metrics OpenAPI spec
+│
+├── proposals/                            # Active Proposals & Philosophy
+│   ├── MUED_v2_architecture_philosophy_refocus.md  # Architecture philosophy
+│   ├── MUED_Layered_Architecture_Proposal_Draft.md
+│   ├── NOTE_MATERIALS_INTEGRATION_PROPOSAL_V4_JA.md
+│   └── archive/                         # Implemented/rejected proposals
+│
+├── testing/                              # Test Strategies & Reports
+│   ├── TEST_STRATEGY.md
+│   └── e2e-test-setup.md
+│
+├── research/                             # Research & Analysis
+│   └── ai-mentor-matching-research.md
+│
+└── archive/                              # Historical Documents
+    ├── 2025-10-29/                      # Today's archived documents
+    ├── 2025-10-27/                      # October 27 comprehensive reports
+    ├── 2025-10-19/                      # Database optimization era
+    └── 2025-10-18/                      # Initial production deployment
+```
 
 ---
 
-*このREADMEはドキュメント全体のナビゲーションガイドです。各ドキュメントの詳細は個別ファイルを参照してください。*
+## 🚀 Quick Navigation by Task
+
+### Current Development Tasks
+
+| Task | Primary Document | Supporting Docs |
+|------|-----------------|-----------------|
+| **Understanding current strategy** | [`MUED_Unified_Strategy_2025Q4.md`](./business/MUED_Unified_Strategy_2025Q4.md) | Business plans |
+| **Phase 2 implementation** | [`phase2-sprint-plan.md`](./implementation/phase2-sprint-plan.md) | RAG metrics API |
+| **Architecture decisions** | [`architecture_philosophy_refocus.md`](./proposals/MUED_v2_architecture_philosophy_refocus.md) | MVP architecture |
+| **Testing approach** | [`TEST_STRATEGY.md`](./testing/TEST_STRATEGY.md) | E2E setup guide |
+
+### Project Management
+
+| Purpose | Document | Update Frequency |
+|---------|----------|------------------|
+| **Strategic direction** | Unified Strategy | Quarterly |
+| **Sprint tracking** | Sprint plans | Bi-weekly |
+| **Progress monitoring** | current-progress.md | Weekly |
+| **Change tracking** | CHANGELOG.md | As needed |
+
+---
+
+## 📝 Key Insights from Reorganization (2025-10-29)
+
+### What Changed
+1. **Consolidated Strategy**: Multiple October 27 reports merged into single Unified Strategy document
+2. **Clear Hierarchy**: Master documents clearly marked, supporting docs categorized
+3. **Archive Structure**: Historical documents preserved but moved out of active workspace
+4. **Sprint-based Planning**: Moved from generic trackers to specific sprint plans
+
+### Document Status Classification
+
+#### 🟢 Active (Keep in main folders)
+- Unified Strategy Document (Master)
+- Current sprint plans
+- API specifications
+- Architecture philosophy documents
+- Active implementation guides
+
+#### 🟡 Reference (Keep but mark as historical context)
+- Original business plans (for historical reference)
+- Philosophy documents (valuable for understanding evolution)
+- Research documents (background information)
+
+#### 🔴 Archived (Move to archive folders)
+- October 27 comprehensive reports (superseded by unified strategy)
+- Old implementation trackers (replaced by sprint plans)
+- Duplicate analysis documents
+- Completed checklist documents
+
+---
+
+## 🔄 Document Lifecycle Management
+
+### Update Schedule
+- **Unified Strategy**: Updated quarterly (next: 2026 Q1)
+- **Sprint Plans**: New document every 2-week sprint
+- **API Specs**: Version bumped with changes
+- **Progress Reports**: Weekly updates during active sprints
+
+### Archival Policy
+1. Documents superseded by newer versions → Archive with date prefix
+2. Completed sprint plans → Archive after sprint completion
+3. Analysis reports → Archive when findings are incorporated into strategy
+4. Keep philosophy and research docs as reference material
+
+### Naming Conventions
+- Strategy documents: `{SCOPE}_Strategy_{YYYY}Q{Q}.md`
+- Sprint plans: `phase{N}-sprint-plan.md`
+- Analysis reports: `{TYPE}_ANALYSIS_{YYYY-MM-DD}.md`
+- Archived files: `archive/{YYYY-MM-DD}/{original_filename}`
+
+---
+
+## 💡 How to Use This Documentation
+
+### For New Team Members
+1. Start with [`MUED_Unified_Strategy_2025Q4.md`](./business/MUED_Unified_Strategy_2025Q4.md)
+2. Review current [`phase2-sprint-plan.md`](./implementation/phase2-sprint-plan.md)
+3. Understand architecture via [`architecture_philosophy_refocus.md`](./proposals/MUED_v2_architecture_philosophy_refocus.md)
+
+### For Daily Development
+1. Check sprint plan for current tasks
+2. Refer to API specs for integration
+3. Update progress in appropriate tracking document
+
+### For Strategic Decisions
+1. Always align with Unified Strategy document
+2. Propose changes via new proposal documents
+3. Archive superseded documents properly
+
+---
+
+## 📞 Document Maintenance Contact
+
+**Documentation Owner**: Development Team
+**Review Cycle**: Bi-weekly with sprint planning
+**Major Reviews**: Quarterly with strategy updates
+
+---
+
+*This README serves as the central navigation hub for MUED v2 documentation. For detailed content, refer to individual documents. For change history, see [CHANGELOG.md](./CHANGELOG.md).*

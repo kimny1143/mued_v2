@@ -32,7 +32,7 @@ export class NoteContentFetcher implements IContentFetcher {
   private readonly cacheDuration = 3600; // 1 hour in seconds
   private cache: { data: ContentFetchResult; timestamp: number } | null = null;
 
-  constructor(rssUrl = 'https://note.com/mued_glasswerks/rss') {
+  constructor(rssUrl = 'https://note.com/mued_glasswerks/m/mdeeb405509ee/rss') {
     this.rssUrl = rssUrl;
     this.parser = new Parser();
     this.adapter = new NoteContentAdapter();

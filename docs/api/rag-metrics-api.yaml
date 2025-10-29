@@ -1,0 +1,587 @@
+openapi: 3.1.0
+info:
+  title: MUED RAG Metrics API
+  description: Phase 2 - RAG観測とデータ管理用API
+  version: 2.0.0
+  contact:
+    name: MUED Development Team
+    email: dev@mued.jp
+
+servers:
+  - url: https://api.mued.jp/v2
+    description: Production server
+  - url: http://localhost:3000/api
+    description: Development server
+
+paths:
+  /admin/rag-metrics:
+    get:
+      summary: RAGメトリクス取得
+      description: 指定期間のRAGメトリクスとSLOコンプライアンス情報を取得
+      operationId: getRagMetrics
+      tags:
+        - RAG Metrics
+      security:
+        - ClerkAuth: [admin]
+      parameters:
+        - name: startDate
+          in: query
+          description: 開始日 (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            default: "14 days ago"
+        - name: endDate
+          in: query
+          description: 終了日 (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            default: "today"
+      responses:
+        '200':
+          description: メトリクス取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagMetricsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/rag-metrics/history:
+    get:
+      summary: RAGメトリクス履歴取得
+      description: 過去のRAGメトリクス集計データを取得
+      operationId: getRagMetricsHistory
+      tags:
+        - RAG Metrics
+      security:
+        - ClerkAuth: [admin]
+      parameters:
+        - name: limit
+          in: query
+          description: 取得件数
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 30
+        - name: offset
+          in: query
+          description: オフセット
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: 履歴取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RagMetricsHistoryResponse'
+
+  /admin/rag-metrics/realtime:
+    get:
+      summary: リアルタイムメトリクス取得
+      description: 直近1時間のリアルタイムメトリクスを取得
+      operationId: getRealtimeMetrics
+      tags:
+        - RAG Metrics
+      security:
+        - ClerkAuth: [admin]
+      responses:
+        '200':
+          description: リアルタイムメトリクス取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RealtimeMetricsResponse'
+
+  /admin/provenance:
+    get:
+      summary: プロヴェナンス情報一覧取得
+      description: コンテンツのプロヴェナンス情報を取得
+      operationId: getProvenanceList
+      tags:
+        - Provenance
+      security:
+        - ClerkAuth: [admin]
+      parameters:
+        - name: contentType
+          in: query
+          description: コンテンツタイプでフィルタ
+          schema:
+            $ref: '#/components/schemas/ContentType'
+        - name: licenseType
+          in: query
+          description: ライセンスタイプでフィルタ
+          schema:
+            $ref: '#/components/schemas/LicenseType'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: プロヴェナンス情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvenanceListResponse'
+
+  /admin/provenance/{contentId}:
+    get:
+      summary: 特定コンテンツのプロヴェナンス情報取得
+      operationId: getProvenance
+      tags:
+        - Provenance
+      security:
+        - ClerkAuth: [admin]
+      parameters:
+        - name: contentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: プロヴェナンス情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvenanceResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    post:
+      summary: プロヴェナンス情報登録
+      operationId: createProvenance
+      tags:
+        - Provenance
+      security:
+        - ClerkAuth: [admin]
+      parameters:
+        - name: contentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProvenanceRequest'
+      responses:
+        '201':
+          description: プロヴェナンス情報作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvenanceResponse'
+
+  /admin/plugins:
+    get:
+      summary: プラグイン一覧取得
+      operationId: getPlugins
+      tags:
+        - Plugins
+      security:
+        - ClerkAuth: [admin]
+      responses:
+        '200':
+          description: プラグイン一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginListResponse'
+
+  /admin/plugins/{pluginName}/health:
+    get:
+      summary: プラグインヘルスチェック
+      operationId: checkPluginHealth
+      tags:
+        - Plugins
+      security:
+        - ClerkAuth: [admin]
+      parameters:
+        - name: pluginName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ヘルスチェック成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginHealthResponse'
+
+components:
+  schemas:
+    ContentType:
+      type: string
+      enum:
+        - material
+        - creation_log
+        - generated
+        - note_article
+        - ai_response
+
+    LicenseType:
+      type: string
+      enum:
+        - cc_by
+        - cc_by_sa
+        - cc_by_nc
+        - cc_by_nc_sa
+        - proprietary
+        - mit
+        - apache_2_0
+        - all_rights_reserved
+        - public_domain
+
+    Citation:
+      type: object
+      required:
+        - source
+        - sourceType
+        - excerpt
+        - confidence
+        - timestamp
+      properties:
+        source:
+          type: string
+          description: ソースURL or ID
+        sourceType:
+          type: string
+          enum: [note, material, document, web]
+        excerpt:
+          type: string
+          description: 引用箇所の抜粋
+        confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: 信頼度スコア
+        timestamp:
+          type: string
+          format: date-time
+        pageNumber:
+          type: integer
+          description: ページ番号（該当する場合）
+        paragraphIndex:
+          type: integer
+          description: 段落インデックス
+
+    MetricStatus:
+      type: string
+      enum: [pass, warn, fail]
+
+    Metric:
+      type: object
+      required:
+        - current
+        - status
+      properties:
+        current:
+          type: number
+          format: float
+        target:
+          type: number
+          format: float
+        status:
+          $ref: '#/components/schemas/MetricStatus'
+        unit:
+          type: string
+        trend:
+          type: string
+          enum: [up, down, stable]
+
+    RagMetricsResponse:
+      type: object
+      required:
+        - period
+        - metrics
+        - sloCompliance
+      properties:
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date
+            end:
+              type: string
+              format: date
+        metrics:
+          type: object
+          properties:
+            citationRate:
+              $ref: '#/components/schemas/Metric'
+            latencyP50:
+              $ref: '#/components/schemas/Metric'
+            latencyP95:
+              $ref: '#/components/schemas/Metric'
+            costPerAnswer:
+              $ref: '#/components/schemas/Metric'
+            relevanceScore:
+              $ref: '#/components/schemas/Metric'
+            totalQueries:
+              type: integer
+            uniqueUsers:
+              type: integer
+        sloCompliance:
+          type: object
+          properties:
+            consecutiveDaysPass:
+              type: integer
+            phase2Ready:
+              type: boolean
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  metric:
+                    type: string
+                  compliant:
+                    type: boolean
+                  message:
+                    type: string
+
+    RagMetricsHistoryResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              citationRate:
+                type: number
+              latencyP50Ms:
+                type: integer
+              costPerAnswer:
+                type: number
+              totalQueries:
+                type: integer
+              sloCompliance:
+                type: object
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+            limit:
+              type: integer
+            offset:
+              type: integer
+
+    RealtimeMetricsResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        metrics:
+          type: object
+          properties:
+            activeQueries:
+              type: integer
+            averageLatencyMs:
+              type: integer
+            queueSize:
+              type: integer
+            errorRate:
+              type: number
+        alerts:
+          type: array
+          items:
+            type: object
+            properties:
+              level:
+                type: string
+                enum: [info, warning, error, critical]
+              message:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+
+    ProvenanceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        contentId:
+          type: string
+          format: uuid
+        contentType:
+          $ref: '#/components/schemas/ContentType'
+        sourceUri:
+          type: string
+        licenseType:
+          $ref: '#/components/schemas/LicenseType'
+        rightsHolder:
+          type: string
+        permissionFlag:
+          type: boolean
+        hashSha256:
+          type: string
+        retentionYears:
+          type: integer
+        externalShareConsent:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProvenanceListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProvenanceResponse'
+        total:
+          type: integer
+
+    CreateProvenanceRequest:
+      type: object
+      required:
+        - contentType
+      properties:
+        contentType:
+          $ref: '#/components/schemas/ContentType'
+        sourceUri:
+          type: string
+        licenseType:
+          $ref: '#/components/schemas/LicenseType'
+        rightsHolder:
+          type: string
+        permissionFlag:
+          type: boolean
+        retentionYears:
+          type: integer
+        externalShareConsent:
+          type: boolean
+
+    PluginListResponse:
+      type: object
+      properties:
+        plugins:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              source:
+                type: string
+              version:
+                type: string
+              enabled:
+                type: boolean
+              capabilities:
+                type: object
+                properties:
+                  list:
+                    type: boolean
+                  search:
+                    type: boolean
+                  filter:
+                    type: boolean
+                  fetch:
+                    type: boolean
+                  transform:
+                    type: boolean
+              healthStatus:
+                type: string
+              lastHealthCheck:
+                type: string
+                format: date-time
+
+    PluginHealthResponse:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy, unknown]
+        lastCheck:
+          type: string
+          format: date-time
+        details:
+          type: object
+          properties:
+            apiReachable:
+              type: boolean
+            latencyMs:
+              type: integer
+            errorRate:
+              type: number
+            message:
+              type: string
+
+  responses:
+    Unauthorized:
+      description: 認証が必要です
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Authentication required"
+
+    Forbidden:
+      description: アクセス権限がありません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Admin access required"
+
+    NotFound:
+      description: リソースが見つかりません
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Resource not found"
+
+  securitySchemes:
+    ClerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk authentication token

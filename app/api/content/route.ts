@@ -9,8 +9,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getContainer, TYPES } from '@/lib/di';
 import type { ContentFetcherRegistry } from '@/lib/content';
-import type { PluginLoader } from '@/lib/plugins';
 import type { ContentSource, ContentFetchParams } from '@/types/unified-content';
+import { NoteContentFetcher } from '@/lib/plugins/note/note-content-fetcher';
 
 // Initialize plugins on cold start
 let pluginsInitialized = false;
@@ -20,18 +20,13 @@ async function initializePlugins() {
 
   try {
     const container = getContainer();
-    const loader = container.get<PluginLoader>(TYPES.PluginLoader);
     const registry = container.get<ContentFetcherRegistry>(TYPES.ContentFetcherRegistry);
 
-    // Load note.com plugin
-    const notePlugin = await loader.load('@/lib/plugins/note');
+    // Create and register note.com fetcher directly
+    const noteFetcher = new NoteContentFetcher();
+    registry.register('note', noteFetcher as any);
 
-    // Register the fetcher
-    if (notePlugin.fetcher && typeof notePlugin.fetcher === 'object' && 'fetch' in notePlugin.fetcher) {
-      registry.register('note', notePlugin.fetcher as any);
-      console.log('[ContentAPI] note.com plugin registered successfully');
-    }
-
+    console.log('[ContentAPI] note.com fetcher registered successfully');
     pluginsInitialized = true;
   } catch (error) {
     console.error('[ContentAPI] Failed to initialize plugins:', error);
