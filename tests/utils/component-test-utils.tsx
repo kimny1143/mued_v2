@@ -443,9 +443,9 @@ export function simulateNetworkConditions(type: 'slow' | 'offline' | 'normal') {
 
   switch (type) {
     case 'slow':
-      global.fetch = vi.fn().mockImplementation((...args) =>
+      global.fetch = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) =>
         new Promise((resolve) => {
-          setTimeout(() => originalFetch(...args).then(resolve), 3000);
+          setTimeout(() => originalFetch(input, init).then(resolve), 3000);
         }),
       );
       break;
