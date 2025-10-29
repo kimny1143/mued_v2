@@ -10,7 +10,9 @@ describe('LoadingSpinner', () => {
 
       expect(spinner).toBeInTheDocument();
       expect(spinner).toHaveAttribute('aria-label', 'Loading');
-      expect(spinner).toHaveClass('animate-spin', 'rounded-full', 'border-b-2', 'border-primary');
+      expect(spinner).toHaveClass('animate-spin', 'rounded-full', 'border-primary');
+      // Default size is 'md' which adds h-8 w-8 border-2
+      expect(spinner).toHaveClass('h-8', 'w-8', 'border-2');
     });
 
     it('renders with custom label', () => {

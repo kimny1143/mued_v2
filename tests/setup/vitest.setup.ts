@@ -1,4 +1,5 @@
 import { afterEach, vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
 // Mock environment variables
@@ -91,6 +92,7 @@ vi.mock('@clerk/nextjs', () => ({
 
 // Global test utilities
 afterEach(() => {
+  cleanup(); // Clean up DOM between tests
   vi.clearAllMocks();
 });
 

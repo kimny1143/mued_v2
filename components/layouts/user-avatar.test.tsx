@@ -484,8 +484,6 @@ describe('UserAvatar', () => {
     });
 
     it('should render once user data is loaded', () => {
-      const { rerender } = renderWithProviders(<UserAvatar />);
-
       // Initially not loaded
       vi.mocked(useUser).mockReturnValue({
         isLoaded: false,
@@ -493,7 +491,7 @@ describe('UserAvatar', () => {
         user: null,
       });
 
-      rerender(<UserAvatar />);
+      const { rerender } = renderWithProviders(<UserAvatar />);
       expect(screen.queryByText(/./)).not.toBeInTheDocument();
 
       // After loading

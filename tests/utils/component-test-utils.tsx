@@ -3,7 +3,6 @@ import { render, RenderOptions, RenderResult } from '@testing-library/react';
 import { vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import * as Clerk from '@clerk/nextjs';
-import { LocaleProviderWrapper } from '@/components/providers/locale-provider-wrapper';
 
 // Mock ClerkProvider for tests
 const MockClerkProvider = ({ children }: { children: React.ReactNode }) => <>{children}</>;
@@ -290,11 +289,11 @@ export function TestProviders({ children, user, session, locale = 'ja', isSigned
     }
   }, [user, session, isSignedIn, isLoaded]);
 
+  // Note: LocaleProvider is already mocked in vitest.setup.ts
+  // We don't need to wrap with LocaleProviderWrapper here
   return (
     <MockClerkProvider>
-      <LocaleProviderWrapper>
-        {children}
-      </LocaleProviderWrapper>
+      {children}
     </MockClerkProvider>
   );
 }

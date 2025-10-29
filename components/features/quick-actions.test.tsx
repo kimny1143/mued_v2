@@ -369,8 +369,12 @@ describe('QuickActions', () => {
       const { container } = renderWithProviders(<QuickActions />);
       const cards = container.querySelectorAll('a');
 
+      // Check that cards have proper flex layout for handling long text
       cards.forEach(card => {
-        expect(card).toHaveClass('items-center', 'text-sm');
+        expect(card).toHaveClass('items-center');
+        // The text-sm class is on the span inside, not on the card itself
+        const spans = card.querySelectorAll('span.text-sm');
+        expect(spans.length).toBeGreaterThan(0);
       });
     });
   });
