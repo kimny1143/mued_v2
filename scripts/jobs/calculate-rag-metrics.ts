@@ -8,15 +8,15 @@
  *   - Node.js Script (Development)
  */
 
-import { db } from '@/db/client';
+import { db } from '@/db';
 import {
   aiDialogueLog,
   ragMetricsHistory,
   type NewRagMetricsHistory
 } from '@/db/schema/rag-metrics';
-import { sql, between, gte, desc, count, avg } from 'drizzle-orm';
+import { sql, between, count, avg } from 'drizzle-orm';
 import { subDays, startOfDay, endOfDay, format } from 'date-fns';
-import { zonedTimeToUtc } from 'date-fns-tz';
+import { fromZonedTime } from 'date-fns-tz';
 
 // SLO Targets
 const SLO_TARGETS = {
@@ -195,8 +195,8 @@ export async function runRagMetricsCalculation(
     const endDate = endOfDay(processDate);
 
     // Convert to UTC for database queries
-    const startDateUtc = zonedTimeToUtc(startDate, 'Asia/Tokyo');
-    const endDateUtc = zonedTimeToUtc(endDate, 'Asia/Tokyo');
+    const startDateUtc = fromZonedTime(startDate, 'Asia/Tokyo');
+    const endDateUtc = fromZonedTime(endDate, 'Asia/Tokyo');
 
     // Calculate metrics
     const metrics = await calculateMetricsForPeriod(startDateUtc, endDateUtc);
@@ -248,7 +248,7 @@ async function sendSloAlert(
   date: Date,
   compliance: ReturnType<typeof checkSloCompliance>
 ): Promise<void> {
-  const violations = [];
+  const violations: string[] = [];
 
   if (!compliance.citationRateMet) {
     violations.push('Citation Rate');
@@ -291,21 +291,6 @@ export async function backfillMetrics(
   }
 
   console.log('✅ Backfill completed');
-}
-
-/**
- * Check if metrics for a date already exist
- */
-async function metricsExistForDate(date: Date): Promise<boolean> {
-  const startDate = startOfDay(date);
-  const endDate = endOfDay(date);
-
-  const existing = await db
-    .select({ count: count() })
-    .from(ragMetricsHistory)
-    .where(between(ragMetricsHistory.date, startDate, endDate));
-
-  return existing[0]?.count > 0;
 }
 
 // CLI execution

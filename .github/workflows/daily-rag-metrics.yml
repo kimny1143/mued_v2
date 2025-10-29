@@ -1,0 +1,70 @@
+name: Daily RAG Metrics Calculation
+
+# Schedule: Every day at 02:00 JST (17:00 UTC previous day)
+# Also allows manual triggering via workflow_dispatch
+on:
+  schedule:
+    - cron: '0 17 * * *'  # 02:00 JST (UTC+9)
+  workflow_dispatch:      # Manual trigger button in GitHub Actions UI
+    inputs:
+      date:
+        description: 'Target date (YYYY-MM-DD) - leave empty for yesterday'
+        required: false
+        type: string
+
+jobs:
+  calculate-rag-metrics:
+    name: Calculate and Store RAG Metrics
+    runs-on: ubuntu-latest
+
+    # Timeout after 10 minutes
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run RAG metrics calculation
+        run: |
+          if [ -z "${{ github.event.inputs.date }}" ]; then
+            echo "Calculating metrics for yesterday (default)"
+            npm run job:rag-metrics
+          else
+            echo "Calculating metrics for ${{ github.event.inputs.date }}"
+            npm run job:rag-metrics ${{ github.event.inputs.date }}
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Report success
+        if: success()
+        run: |
+          echo "✅ RAG metrics calculation completed successfully"
+          echo "Timestamp: $(date -u)"
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "❌ RAG metrics calculation failed"
+          echo "Timestamp: $(date -u)"
+          echo "Check logs above for error details"
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rag-metrics-logs-${{ github.run_number }}
+          path: |
+            npm-debug.log*
+            yarn-error.log*
+          retention-days: 7
+          if-no-files-found: ignore
