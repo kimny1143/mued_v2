@@ -2,34 +2,61 @@
 -- Phase 2: RAG観測とデータ管理
 -- Generated: 2025-10-29
 
--- Create ENUMs
-CREATE TYPE content_type AS ENUM (
-  'material',
-  'creation_log',
-  'generated',
-  'note_article',
-  'ai_response'
+-- Create base ai_dialogue_log table if not exists
+CREATE TABLE IF NOT EXISTS ai_dialogue_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  session_id UUID NOT NULL,
+  query TEXT NOT NULL,
+  response TEXT NOT NULL,
+  model_used VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 
-CREATE TYPE acquisition_method AS ENUM (
-  'api_fetch',
-  'manual_upload',
-  'ai_generated',
-  'user_created',
-  'system_import'
-);
+-- Create ENUMs (with existence check)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'content_type') THEN
+    CREATE TYPE content_type AS ENUM (
+      'material',
+      'creation_log',
+      'generated',
+      'note_article',
+      'ai_response'
+    );
+  END IF;
+END $$;
 
-CREATE TYPE license_type AS ENUM (
-  'cc_by',
-  'cc_by_sa',
-  'cc_by_nc',
-  'cc_by_nc_sa',
-  'proprietary',
-  'mit',
-  'apache_2_0',
-  'all_rights_reserved',
-  'public_domain'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'acquisition_method') THEN
+    CREATE TYPE acquisition_method AS ENUM (
+      'api_fetch',
+      'manual_upload',
+      'ai_generated',
+      'user_created',
+      'system_import'
+    );
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'license_type') THEN
+    CREATE TYPE license_type AS ENUM (
+      'cc_by',
+      'cc_by_sa',
+      'cc_by_nc',
+      'cc_by_nc_sa',
+      'proprietary',
+      'mit',
+      'apache_2_0',
+      'all_rights_reserved',
+      'public_domain'
+    );
+  END IF;
+END $$;
 
 -- Extend existing ai_dialogue_log table
 ALTER TABLE ai_dialogue_log
@@ -84,10 +111,10 @@ CREATE TABLE IF NOT EXISTS provenance (
 );
 
 -- Create indices for provenance
-CREATE INDEX idx_provenance_content ON provenance(content_id, content_type);
-CREATE INDEX idx_provenance_source ON provenance(source_uri);
-CREATE INDEX idx_provenance_license ON provenance(license_type);
-CREATE INDEX idx_provenance_retention ON provenance(retention_years);
+CREATE INDEX IF NOT EXISTS idx_provenance_content ON provenance(content_id, content_type);
+CREATE INDEX IF NOT EXISTS idx_provenance_source ON provenance(source_uri);
+CREATE INDEX IF NOT EXISTS idx_provenance_license ON provenance(license_type);
+CREATE INDEX IF NOT EXISTS idx_provenance_retention ON provenance(retention_years);
 
 -- Create RAG metrics history table
 CREATE TABLE IF NOT EXISTS rag_metrics_history (
@@ -124,8 +151,8 @@ CREATE TABLE IF NOT EXISTS rag_metrics_history (
 );
 
 -- Create indices for rag_metrics_history
-CREATE INDEX idx_rag_metrics_date ON rag_metrics_history(date);
-CREATE INDEX idx_rag_metrics_compliance ON rag_metrics_history USING GIN (slo_compliance);
+CREATE INDEX IF NOT EXISTS idx_rag_metrics_date ON rag_metrics_history(date);
+CREATE INDEX IF NOT EXISTS idx_rag_metrics_compliance ON rag_metrics_history USING GIN (slo_compliance);
 
 -- Create plugin registry table
 CREATE TABLE IF NOT EXISTS plugin_registry (
@@ -152,8 +179,8 @@ CREATE TABLE IF NOT EXISTS plugin_registry (
 );
 
 -- Create indices for plugin_registry
-CREATE INDEX idx_plugin_name ON plugin_registry(name);
-CREATE INDEX idx_plugin_enabled ON plugin_registry(enabled);
+CREATE INDEX IF NOT EXISTS idx_plugin_name ON plugin_registry(name);
+CREATE INDEX IF NOT EXISTS idx_plugin_enabled ON plugin_registry(enabled);
 
 -- Create update trigger for updated_at columns
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -164,18 +191,33 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Apply triggers
-CREATE TRIGGER update_ai_dialogue_log_updated_at
-  BEFORE UPDATE ON ai_dialogue_log
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Apply triggers (only if not already exists)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'update_ai_dialogue_log_updated_at'
+  ) THEN
+    CREATE TRIGGER update_ai_dialogue_log_updated_at
+      BEFORE UPDATE ON ai_dialogue_log
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
 
-CREATE TRIGGER update_provenance_updated_at
-  BEFORE UPDATE ON provenance
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'update_provenance_updated_at'
+  ) THEN
+    CREATE TRIGGER update_provenance_updated_at
+      BEFORE UPDATE ON provenance
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
 
-CREATE TRIGGER update_plugin_registry_updated_at
-  BEFORE UPDATE ON plugin_registry
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'update_plugin_registry_updated_at'
+  ) THEN
+    CREATE TRIGGER update_plugin_registry_updated_at
+      BEFORE UPDATE ON plugin_registry
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+  END IF;
+END $$;
 
 -- Insert default plugin registrations
 INSERT INTO plugin_registry (name, source, capabilities, version, enabled)
