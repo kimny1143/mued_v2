@@ -43,8 +43,8 @@ export default defineConfig({
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3000",
-    reuseExistingServer: true, // Always reuse existing server to avoid conflicts
-    timeout: 120 * 1000,
+    reuseExistingServer: !process.env.CI, // Reuse existing server in local development, start fresh in CI
+    timeout: 180 * 1000, // Increased to 3 minutes for Next.js compile time
     stdout: "ignore",
     stderr: "ignore",
     env: {
