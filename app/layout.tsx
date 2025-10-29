@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { LocaleProviderWrapper } from "@/components/providers/locale-provider-wrapper";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,6 +35,8 @@ export default function RootLayout({
           <LocaleProviderWrapper>
             {children}
           </LocaleProviderWrapper>
+          <Analytics />
+          <SpeedInsights />
         </body>
       </html>
     </ClerkProvider>
