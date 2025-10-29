@@ -15,6 +15,7 @@ vi.mock('next/link', () => ({
 
 // Mock locale context
 vi.mock('@/lib/i18n/locale-context', () => ({
+  LocaleProvider: vi.fn(({ children }: { children: any }) => children),
   useLocale: () => ({
     t: {
       dashboard: {

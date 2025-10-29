@@ -27,7 +27,7 @@ export function RecentMaterials() {
       const response = await fetch('/api/dashboard/stats');
       const data = await response.json();
       if (data.success) {
-        setMaterials(data.recentMaterials);
+        setMaterials(data.recentMaterials || []);
       }
     } catch (error) {
       console.error('Failed to fetch materials:', error);
