@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 
 interface UsageLimits {
   tier: string;
@@ -52,6 +53,7 @@ export function Header() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             {limits && (
               <Link href="/dashboard/subscription">
                 <div className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${

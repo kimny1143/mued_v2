@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useLocale } from '@/lib/i18n/locale-context';
 import {
   LineChart,
   Line,
@@ -25,6 +26,7 @@ interface HistoricalMetrics {
 }
 
 export function RAGMetricsHistory() {
+  const { t } = useLocale();
   const [history, setHistory] = useState<HistoricalMetrics[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedView, setSelectedView] = useState<'7d' | '30d'>('7d');
@@ -38,11 +40,16 @@ export function RAGMetricsHistory() {
       const limit = selectedView === '7d' ? 7 : 30;
       const response = await fetch(`/api/admin/rag-metrics/history?limit=${limit}&sortBy=date&sortOrder=asc`);
       const data = await response.json();
-      if (data.success) {
+
+      console.log('History API response:', data); // Debug log
+
+      if (data.history && Array.isArray(data.history)) {
         setHistory(data.history.map((item: any) => ({
           ...item,
           date: new Date(item.date).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' }),
         })));
+      } else if (data.error) {
+        console.error('History API error:', data.error);
       }
     } catch (error) {
       console.error('Failed to fetch history:', error);
@@ -54,11 +61,11 @@ export function RAGMetricsHistory() {
   if (loading) {
     return (
       <section>
-        <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-4">Historical Trends</h2>
+        <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-4">{t.ragMetrics.historical.title}</h2>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-center py-16">
-              <div className="animate-pulse text-[var(--color-text-secondary)]">Loading charts...</div>
+              <div className="animate-pulse text-[var(--color-text-secondary)]">{t.common.loading}</div>
             </div>
           </CardContent>
         </Card>
@@ -69,11 +76,11 @@ export function RAGMetricsHistory() {
   if (history.length === 0) {
     return (
       <section>
-        <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-4">Historical Trends</h2>
+        <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-4">{t.ragMetrics.historical.title}</h2>
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-center py-16 text-[var(--color-text-secondary)]">
-              No historical data available yet. Data will be collected daily.
+              {t.ragMetrics.historical.noData}
             </div>
           </CardContent>
         </Card>
@@ -84,7 +91,7 @@ export function RAGMetricsHistory() {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Historical Trends</h2>
+        <h2 className="text-xl font-bold text-[var(--color-text-primary)]">{t.ragMetrics.historical.title}</h2>
         <div className="flex gap-2">
           <button
             onClick={() => setSelectedView('7d')}
@@ -94,7 +101,7 @@ export function RAGMetricsHistory() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            7 Days
+            {t.ragMetrics.historical.period7d}
           </button>
           <button
             onClick={() => setSelectedView('30d')}
@@ -104,7 +111,7 @@ export function RAGMetricsHistory() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            30 Days
+            {t.ragMetrics.historical.period30d}
           </button>
         </div>
       </div>
@@ -113,7 +120,7 @@ export function RAGMetricsHistory() {
         {/* Citation Rate Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Citation Rate Over Time</CardTitle>
+            <CardTitle>{t.ragMetrics.historical.citationRateChart}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -135,7 +142,7 @@ export function RAGMetricsHistory() {
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
                   }}
-                  formatter={(value: number) => [`${value.toFixed(1)}%`, 'Citation Rate']}
+                  formatter={(value: number) => [`${Number(value).toFixed(1)}%`, t.ragMetrics.historical.citationRateLabel]}
                 />
                 <Line
                   type="monotone"
@@ -153,7 +160,7 @@ export function RAGMetricsHistory() {
         {/* Latency Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Latency Over Time</CardTitle>
+            <CardTitle>{t.ragMetrics.historical.latencyChart}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -176,8 +183,8 @@ export function RAGMetricsHistory() {
                     borderRadius: '8px',
                   }}
                   formatter={(value: number, name: string) => [
-                    `${value.toFixed(0)}ms`,
-                    name === 'latencyP50Ms' ? 'P50 Latency' : 'P95 Latency',
+                    `${Number(value).toFixed(0)}ms`,
+                    name === 'latencyP50Ms' ? t.ragMetrics.historical.latencyP50Label : t.ragMetrics.historical.latencyP95Label,
                   ]}
                 />
                 <Legend />
@@ -205,7 +212,7 @@ export function RAGMetricsHistory() {
         {/* Cost and Queries Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Cost per Answer & Query Volume</CardTitle>
+            <CardTitle>{t.ragMetrics.historical.costChart}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -236,8 +243,8 @@ export function RAGMetricsHistory() {
                     borderRadius: '8px',
                   }}
                   formatter={(value: number, name: string) => [
-                    name === 'costPerAnswer' ? `¥${value.toFixed(2)}` : value,
-                    name === 'costPerAnswer' ? 'Cost' : 'Queries',
+                    name === 'costPerAnswer' ? `¥${Number(value).toFixed(2)}` : value,
+                    name === 'costPerAnswer' ? t.ragMetrics.historical.costLabel : t.ragMetrics.historical.queriesLabel,
                   ]}
                 />
                 <Legend />

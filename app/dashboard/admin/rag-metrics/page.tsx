@@ -15,6 +15,11 @@ export default async function RAGMetricsPage() {
   // Check if user is admin
   const isAdmin = user.publicMetadata?.role === "admin";
 
+  // Debug logging
+  console.log('User publicMetadata:', user.publicMetadata);
+  console.log('Role:', user.publicMetadata?.role);
+  console.log('Is Admin:', isAdmin);
+
   if (!isAdmin) {
     redirect("/dashboard");
   }
