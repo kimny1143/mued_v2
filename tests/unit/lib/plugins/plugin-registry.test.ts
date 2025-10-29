@@ -8,6 +8,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PluginRegistry } from '@/lib/plugins/plugin-registry';
 import type { LoadedPlugin, PluginManifest, PluginConfig } from '@/types/plugin-system';
 
+// Mock DI decorators
+vi.mock('@/lib/di', () => ({
+  Injectable: () => (target: any) => target,
+  Inject: () => () => {},
+  TYPES: {
+    PluginRegistry: Symbol('PluginRegistry'),
+  },
+}));
+
 describe('PluginRegistry', () => {
   let registry: PluginRegistry;
 

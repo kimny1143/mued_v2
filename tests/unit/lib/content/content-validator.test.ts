@@ -4,9 +4,18 @@
  * Tests for content validation and quality score calculation
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ContentValidator } from '@/lib/content/content-validator';
 import type { UnifiedContent } from '@/types/unified-content';
+
+// Mock DI decorators
+vi.mock('@/lib/di', () => ({
+  Injectable: () => (target: any) => target,
+  Inject: () => () => {},
+  TYPES: {
+    PluginRegistry: Symbol('PluginRegistry'),
+  },
+}));
 
 describe('ContentValidator', () => {
   let validator: ContentValidator;
