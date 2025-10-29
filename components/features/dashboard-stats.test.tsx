@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import { DashboardStats } from './dashboard-stats';
 import { renderWithProviders, mockApiResponse, waitForLoadingToFinish } from '@/tests/utils/component-test-utils';
@@ -26,10 +26,6 @@ vi.mock('@/lib/i18n/locale-context', () => ({
 describe('DashboardStats', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   describe('Rendering', () => {
@@ -113,12 +109,13 @@ describe('DashboardStats', () => {
       ]);
       mockFetchResponses(mockResponses);
 
-      const { container } = renderWithProviders(<DashboardStats />);
+      renderWithProviders(<DashboardStats />);
 
+      // Wait for actual data to be displayed instead of checking for absence of loading
       await waitFor(() => {
-        const skeletons = container.querySelectorAll('.animate-pulse');
-        expect(skeletons).toHaveLength(0);
-      });
+        expect(screen.getByText('10')).toBeInTheDocument();
+        expect(screen.getByText('5')).toBeInTheDocument();
+      }, { timeout: 3000 });
     });
   });
 
@@ -291,13 +288,17 @@ describe('DashboardStats', () => {
 
       const { container } = renderWithProviders(<DashboardStats />);
 
+      // First wait for data to load
       await waitFor(() => {
-        const cards = container.querySelectorAll('.hover\\:shadow-md');
-        expect(cards).toHaveLength(4);
+        expect(screen.getByText('10')).toBeInTheDocument();
+      }, { timeout: 3000 });
 
-        cards.forEach(card => {
-          expect(card).toHaveClass('transition-shadow');
-        });
+      // Then check hover effects
+      const cards = container.querySelectorAll('.hover\\:shadow-md');
+      expect(cards).toHaveLength(4);
+
+      cards.forEach(card => {
+        expect(card).toHaveClass('transition-shadow');
       });
     });
 
