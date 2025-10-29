@@ -7,6 +7,7 @@ import { DashboardStats } from "@/components/features/dashboard-stats";
 import { RecentMaterials } from "@/components/features/recent-materials";
 import { UpcomingLessons } from "@/components/features/upcoming-lessons";
 import { QuickActions } from "@/components/features/quick-actions";
+import { DashboardWelcome } from "@/components/features/dashboard-welcome";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ test?: string }> }) {
   const params = await searchParams;
@@ -36,14 +37,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
       <DashboardTabs />
 
       {/* Welcome Section */}
-      <section className="mb-8">
-        <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2">
-          Welcome back, {user?.firstName || user?.username || 'Student'}!
-        </h1>
-        <p className="text-[var(--color-text-secondary)]">
-          Here&apos;s what&apos;s happening with your learning journey today.
-        </p>
-      </section>
+      <DashboardWelcome userName={user?.firstName || user?.username || 'Student'} />
 
       {/* Subscription Badge */}
       <div className="mb-8">

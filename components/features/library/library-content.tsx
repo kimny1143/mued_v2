@@ -12,6 +12,7 @@ import type { UnifiedContent, ContentFetchResult, ContentSource } from '@/types/
 import { LibraryCard } from './library-card';
 import { LibraryFilters } from './library-filters';
 import { LoadingState } from '@/components/ui/loading-state';
+import { useLocale } from '@/lib/i18n/locale-context';
 
 interface FilterState {
   source: ContentSource | 'all';
@@ -23,6 +24,7 @@ interface FilterState {
 }
 
 export function LibraryContent() {
+  const { t } = useLocale();
   const [content, setContent] = useState<UnifiedContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +94,7 @@ export function LibraryContent() {
   }
 
   if (loading && content.length === 0) {
-    return <LoadingState message="Loading library content..." />;
+    return <LoadingState message={t.library.loadingContent} />;
   }
 
   return (
@@ -106,7 +108,7 @@ export function LibraryContent() {
       {/* Error State */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 text-sm font-medium">Error loading content</p>
+          <p className="text-red-800 text-sm font-medium">{t.library.errorLoading}</p>
           <p className="text-red-600 text-sm mt-1">{error}</p>
         </div>
       )}
@@ -120,9 +122,9 @@ export function LibraryContent() {
         </div>
       ) : !loading ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No content found</p>
+          <p className="text-gray-500 text-lg">{t.library.noContent}</p>
           <p className="text-gray-400 text-sm mt-2">
-            Try adjusting your filters or check back later
+            {t.library.noContentDesc}
           </p>
         </div>
       ) : null}

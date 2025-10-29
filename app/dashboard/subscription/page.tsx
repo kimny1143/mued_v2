@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useLocale } from '@/lib/i18n/locale-context';
 
 interface UsageLimits {
   aiMaterialsLimit: number;
@@ -12,74 +13,9 @@ interface UsageLimits {
   tier: string;
 }
 
-const PLANS = [
-  {
-    id: 'freemium',
-    name: 'Freemium',
-    price: 0,
-    priceId: null,
-    currency: 'JPY',
-    description: 'Try AI materials and lessons for free',
-    features: [
-      'AI Materials: Up to 3/month',
-      'Lesson Bookings: Up to 1/month',
-      'Basic Analytics',
-      'Community Support',
-    ],
-    highlighted: false,
-  },
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 999,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER?.trim(),
-    currency: 'JPY',
-    description: 'For those starting with AI-assisted learning',
-    features: [
-      'AI Materials: Up to 3/month',
-      'Lesson Bookings: Up to 1/month',
-      'Basic Analytics',
-      'Email Support',
-    ],
-    highlighted: false,
-  },
-  {
-    id: 'basic',
-    name: 'Basic',
-    price: 1999,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_BASIC?.trim(),
-    currency: 'JPY',
-    description: 'Serious learning with unlimited AI materials',
-    features: [
-      'AI Materials: Unlimited',
-      'Lesson Bookings: Up to 5/month',
-      'Advanced Analytics',
-      'Priority Email Support',
-      'Custom Learning Plan',
-    ],
-    highlighted: true,
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 4999,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM?.trim(),
-    currency: 'JPY',
-    description: 'Unlimited access to all features',
-    features: [
-      'AI Materials: Unlimited',
-      'Lesson Bookings: Unlimited',
-      'Advanced Analytics',
-      '24/7 Priority Support',
-      'Custom Learning Plan',
-      '1-on-1 Learning Consultant',
-      'Exclusive Webinars & Workshops',
-    ],
-    highlighted: false,
-  },
-];
 
 export default function SubscriptionPage() {
+  const { t } = useLocale();
   const [limits, setLimits] = useState<UsageLimits | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -100,6 +36,49 @@ export default function SubscriptionPage() {
       setLoading(false);
     }
   };
+
+  const PLANS = [
+    {
+      id: 'freemium',
+      name: t.subscription.plans.freemium.name,
+      price: 0,
+      priceId: null,
+      currency: 'JPY',
+      description: t.subscription.plans.freemium.description,
+      features: t.subscription.plans.freemium.features,
+      highlighted: false,
+    },
+    {
+      id: 'starter',
+      name: t.subscription.plans.starter.name,
+      price: 999,
+      priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER?.trim(),
+      currency: 'JPY',
+      description: t.subscription.plans.starter.description,
+      features: t.subscription.plans.starter.features,
+      highlighted: false,
+    },
+    {
+      id: 'basic',
+      name: t.subscription.plans.basic.name,
+      price: 1999,
+      priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_BASIC?.trim(),
+      currency: 'JPY',
+      description: t.subscription.plans.basic.description,
+      features: t.subscription.plans.basic.features,
+      highlighted: true,
+    },
+    {
+      id: 'premium',
+      name: t.subscription.plans.premium.name,
+      price: 4999,
+      priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM?.trim(),
+      currency: 'JPY',
+      description: t.subscription.plans.premium.description,
+      features: t.subscription.plans.premium.features,
+      highlighted: false,
+    },
+  ];
 
   const handleUpgrade = async (planId: string) => {
     if (planId === 'freemium') return;
@@ -136,10 +115,10 @@ export default function SubscriptionPage() {
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Choose Your Plan
+          {t.subscription.title}
         </h1>
         <p className="text-xl text-gray-600">
-          Unlock the full power of AI-assisted learning
+          {t.subscription.subtitle}
         </p>
       </div>
 
@@ -149,15 +128,15 @@ export default function SubscriptionPage() {
           <div className="flex justify-between items-start">
             <div>
               <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                Current Plan: {limits.tier.charAt(0).toUpperCase() + limits.tier.slice(1)}
+                {t.subscription.currentPlan} {limits.tier.charAt(0).toUpperCase() + limits.tier.slice(1)}
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-blue-700">AI Materials:</span>
+                  <span className="text-blue-700">{t.subscription.aiMaterials}</span>
                   <span className="font-medium">
                     {limits.aiMaterialsLimit === -1
-                      ? 'Unlimited'
-                      : `${limits.aiMaterialsUsed} / ${limits.aiMaterialsLimit} used`}
+                      ? t.subscription.unlimited
+                      : `${limits.aiMaterialsUsed} / ${limits.aiMaterialsLimit} ${t.subscription.used}`}
                   </span>
                   {limits.aiMaterialsLimit !== -1 && (
                     <div className="flex-1 max-w-xs bg-white rounded-full h-2">
@@ -171,11 +150,11 @@ export default function SubscriptionPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-blue-700">Reservations:</span>
+                  <span className="text-blue-700">{t.subscription.reservations}</span>
                   <span className="font-medium">
                     {limits.reservationsLimit === -1
-                      ? 'Unlimited'
-                      : `${limits.reservationsUsed} / ${limits.reservationsLimit} used`}
+                      ? t.subscription.unlimited
+                      : `${limits.reservationsUsed} / ${limits.reservationsLimit} ${t.subscription.used}`}
                   </span>
                   {limits.reservationsLimit !== -1 && (
                     <div className="flex-1 max-w-xs bg-white rounded-full h-2">
@@ -211,12 +190,12 @@ export default function SubscriptionPage() {
             >
               {plan.highlighted && (
                 <div className="bg-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full inline-block mb-4">
-                  Most Popular
+                  {t.subscription.mostPopular}
                 </div>
               )}
               {isCurrentPlan && (
                 <div className="bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full inline-block mb-4">
-                  Current Plan
+                  {t.subscription.currentPlanBadge}
                 </div>
               )}
 
@@ -255,12 +234,12 @@ export default function SubscriptionPage() {
                 }`}
               >
                 {isCurrentPlan
-                  ? 'Current Plan'
+                  ? t.subscription.currentPlanBadge
                   : canUpgrade
                   ? plan.id === 'freemium'
-                    ? 'Free Forever'
-                    : 'Upgrade'
-                  : 'Downgrade'}
+                    ? t.subscription.freeForever
+                    : t.subscription.upgrade
+                  : t.subscription.downgrade}
               </button>
             </div>
           );
@@ -270,25 +249,25 @@ export default function SubscriptionPage() {
       {/* FAQ Section */}
       <div className="mt-16">
         <h2 className="text-2xl font-bold text-center mb-8">
-          Frequently Asked Questions
+          {t.subscription.faq.title}
         </h2>
         <div className="max-w-3xl mx-auto space-y-6">
           {[
             {
-              q: 'Can I cancel anytime?',
-              a: 'Yes, you can cancel anytime. You will continue to have access until the end of your billing period.',
+              q: t.subscription.faq.q1,
+              a: t.subscription.faq.a1,
             },
             {
-              q: 'What happens when I reach my monthly limit?',
-              a: 'You can upgrade to a higher plan at any time, or wait until next month when your limits reset.',
+              q: t.subscription.faq.q2,
+              a: t.subscription.faq.a2,
             },
             {
-              q: 'Do unused AI materials roll over to the next month?',
-              a: 'No, usage limits reset monthly. For unlimited usage, we recommend upgrading to Basic or Premium plans.',
+              q: t.subscription.faq.q3,
+              a: t.subscription.faq.a3,
             },
             {
-              q: 'Can I downgrade my plan?',
-              a: 'Yes, you can downgrade at any time. The change will take effect at the end of your current billing period.',
+              q: t.subscription.faq.q4,
+              a: t.subscription.faq.a4,
             },
           ].map((faq, idx) => (
             <div key={idx} className="bg-white rounded-lg border border-gray-200 p-6">

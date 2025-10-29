@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/layouts/dashboard-layout";
+import { AdminTabs } from "@/components/layouts/admin-tabs";
 import { RAGMetricsOverview } from "@/components/features/admin/rag-metrics-overview";
 import { RAGMetricsHistory } from "@/components/features/admin/rag-metrics-history";
 import { SLOStatusCard } from "@/components/features/admin/slo-status-card";
@@ -26,6 +27,8 @@ export default async function RAGMetricsPage() {
 
   return (
     <DashboardLayout>
+      <AdminTabs />
+
       {/* Header */}
       <section className="mb-8">
         <h1 className="text-3xl font-bold text-[var(--color-text-primary)] mb-2">

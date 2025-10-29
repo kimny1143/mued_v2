@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { useLessons } from "@/hooks/use-lessons";
 import { useReservations } from "@/hooks/use-reservations";
 import { usePayment } from "@/hooks/use-payment";
@@ -31,6 +32,7 @@ interface SelectedSlot {
 }
 
 export default function UnifiedBookingPage() {
+  const { t } = useLocale();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("booking");
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -241,17 +243,17 @@ export default function UnifiedBookingPage() {
             <>
               <div className="flex items-center gap-2 font-semibold mb-1">
                 <span>✅</span>
-                <span>Payment Completed!</span>
+                <span>{t.lessons.payment.success}</span>
               </div>
-              <p className="text-sm">Your lesson booking is confirmed. Please wait for contact from your mentor.</p>
+              <p className="text-sm">{t.lessons.payment.successDesc}</p>
             </>
           ) : (
             <>
               <div className="flex items-center gap-2 font-semibold mb-1">
                 <span>⚠️</span>
-                <span>Payment Cancelled</span>
+                <span>{t.lessons.payment.cancelled}</span>
               </div>
-              <p className="text-sm">Your reservation is pending. Please complete payment later.</p>
+              <p className="text-sm">{t.lessons.payment.cancelledDesc}</p>
             </>
           )}
         </div>
@@ -276,7 +278,7 @@ export default function UnifiedBookingPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            ✨ AI Matching
+            {t.lessons.tabs.aiMatching}
             {matching.perfectMatches.length > 0 && (
               <span className="ml-2 px-2 py-0.5 text-xs bg-[var(--color-brand-green)] text-white rounded-full">
                 {matching.perfectMatches.length}
@@ -291,7 +293,7 @@ export default function UnifiedBookingPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            Book Lesson
+            {t.lessons.tabs.booking}
           </button>
           <button
             onClick={() => setActiveTab("reservations")}
@@ -301,7 +303,7 @@ export default function UnifiedBookingPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            My Reservations
+            {t.lessons.tabs.reservations}
             {reservations.length > 0 && (
               <span className="ml-2 px-2 py-0.5 text-xs bg-[var(--color-brand-green)] text-white rounded-full">
                 {reservations.length}
@@ -317,9 +319,9 @@ export default function UnifiedBookingPage() {
         <div className="space-y-8">
           {/* Header */}
           <div className="bg-gradient-to-r from-[var(--color-brand-green)] to-green-600 rounded-xl p-8 text-white">
-            <h2 className="text-3xl font-bold mb-3">AI Mentor Matching</h2>
+            <h2 className="text-3xl font-bold mb-3">{t.lessons.aiMatching.title}</h2>
             <p className="text-lg opacity-90">
-              Find the perfect mentor based on your learning style, goals, and schedule
+              {t.lessons.aiMatching.subtitle}
             </p>
           </div>
 
@@ -339,15 +341,15 @@ export default function UnifiedBookingPage() {
               {/* Student Profile Summary */}
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  Your Profile
+                  {t.lessons.aiMatching.yourProfile}
                 </h3>
                 <div className="space-y-3 text-sm">
                   <div>
-                    <span className="text-gray-600">Skill Level:</span>
+                    <span className="text-gray-600">{t.lessons.aiMatching.skillLevel}</span>
                     <span className="ml-2 font-medium">{studentProfile.skillLevel}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Learning Goals:</span>
+                    <span className="text-gray-600">{t.lessons.aiMatching.learningGoals}</span>
                     <div className="mt-1 flex flex-wrap gap-1">
                       {studentProfile.learningGoals.map((goal) => (
                         <span
@@ -360,7 +362,7 @@ export default function UnifiedBookingPage() {
                     </div>
                   </div>
                   <div>
-                    <span className="text-gray-600">Budget:</span>
+                    <span className="text-gray-600">{t.lessons.aiMatching.budget}</span>
                     <span className="ml-2 font-medium">
                       ¥{studentProfile.priceRange.min.toLocaleString()} - ¥
                       {studentProfile.priceRange.max.toLocaleString()}
@@ -377,7 +379,7 @@ export default function UnifiedBookingPage() {
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <span className="text-2xl">✨</span>
-                    Perfect Matches ({matching.perfectMatches.length})
+                    {t.lessons.aiMatching.perfectMatches} ({matching.perfectMatches.length})
                   </h3>
                   <div className="grid gap-4">
                     {matching.perfectMatches.map((result) => (
@@ -401,7 +403,7 @@ export default function UnifiedBookingPage() {
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <span className="text-2xl">💡</span>
-                    Recommended Mentors ({matching.recommendedMentors.length})
+                    {t.lessons.aiMatching.recommendedMentors} ({matching.recommendedMentors.length})
                   </h3>
                   <div className="grid gap-4">
                     {matching.recommendedMentors
@@ -424,7 +426,7 @@ export default function UnifiedBookingPage() {
               {matching.topMatches.length > 0 && (
                 <div>
                   <h3 className="text-xl font-bold text-gray-900 mb-4">
-                    Other Mentors
+                    {t.lessons.aiMatching.otherMentors}
                   </h3>
                   <div className="grid gap-4">
                     {matching.topMatches
@@ -448,16 +450,16 @@ export default function UnifiedBookingPage() {
                 <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
                   <div className="text-6xl mb-4">🔍</div>
                   <p className="text-lg font-semibold text-gray-700 mb-2">
-                    No Matching Mentors Found
+                    {t.lessons.aiMatching.noMatches}
                   </p>
                   <p className="text-sm text-gray-500 mb-6">
-                    Try adjusting your search criteria
+                    {t.lessons.aiMatching.noMatchesDesc}
                   </p>
                   <button
                     onClick={matching.resetPreferences}
                     className="px-6 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] transition-all"
                   >
-                    Reset Preferences
+                    {t.lessons.aiMatching.resetPreferences}
                   </button>
                 </div>
               )}
@@ -471,7 +473,7 @@ export default function UnifiedBookingPage() {
         <div className="bg-white rounded-lg border border-gray-100 p-6 h-fit sticky top-4 shadow-sm">
           {/* Mentors */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">Mentors</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">{t.lessons.filters.mentors}</h3>
             <div className="space-y-3">
               {mentors.map((mentor) => (
                 <label key={mentor.id} className="flex items-center gap-3 cursor-pointer group">
@@ -489,7 +491,7 @@ export default function UnifiedBookingPage() {
 
           {/* Price Range */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">Price</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">{t.lessons.filters.price}</h3>
             <div className="space-y-2">
               <input
                 type="range"
@@ -509,13 +511,13 @@ export default function UnifiedBookingPage() {
 
           {/* Time Slot */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">Time Slot</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">{t.lessons.filters.timeSlot}</h3>
             <div className="space-y-3">
               {[
-                { value: "all", label: "All" },
-                { value: "morning", label: "Morning (9:00-12:00)" },
-                { value: "afternoon", label: "Afternoon (12:00-18:00)" },
-                { value: "evening", label: "Evening (18:00-21:00)" },
+                { value: "all", label: t.lessons.filters.timeSlots.all },
+                { value: "morning", label: t.lessons.filters.timeSlots.morning },
+                { value: "afternoon", label: t.lessons.filters.timeSlots.afternoon },
+                { value: "evening", label: t.lessons.filters.timeSlots.evening },
               ].map((option) => (
                 <label key={option.value} className="flex items-center gap-3 cursor-pointer group">
                   <input
@@ -534,7 +536,7 @@ export default function UnifiedBookingPage() {
 
           {/* Tags */}
           <div className="mb-8">
-            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">Filter by Tags</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-text-primary)] mb-4 uppercase tracking-wide">{t.lessons.filters.filterByTags}</h3>
             <div className="flex flex-wrap gap-2">
               {availableTags.map((tag) => (
                 <button
@@ -555,7 +557,7 @@ export default function UnifiedBookingPage() {
                 onClick={() => setSelectedTags([])}
                 className="mt-3 text-xs text-gray-600 hover:text-gray-900 underline"
               >
-                Clear Tags ({selectedTags.length} selected)
+                {t.lessons.filters.clearTags} ({selectedTags.length} {t.lessons.filters.selectedTags})
               </button>
             )}
           </div>
@@ -570,7 +572,7 @@ export default function UnifiedBookingPage() {
             }}
             className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
           >
-            Reset Filters
+            {t.lessons.filters.resetFilters}
           </button>
         </div>
 
@@ -587,10 +589,10 @@ export default function UnifiedBookingPage() {
             <div className="flex flex-col items-center justify-center h-full text-center px-8">
               <div className="text-6xl mb-4">📅</div>
               <p className="text-lg font-semibold text-gray-700 mb-2">
-                No Available Slots on This Day
+                {t.lessons.slots.noSlots}
               </p>
               <p className="text-sm text-gray-500">
-                Select a different date or adjust your filters
+                {t.lessons.slots.noSlotsDesc}
               </p>
             </div>
           ) : (
@@ -615,7 +617,7 @@ export default function UnifiedBookingPage() {
                         ? "bg-green-100 text-green-700"
                         : "bg-yellow-100 text-yellow-700"
                     }`}>
-                      {isCompleted ? "✓ Reserved" : "⏳ Pending"}
+                      {isCompleted ? t.lessons.slots.reserved : t.lessons.slots.pending}
                     </span>
                   </div>
                 )}
@@ -687,14 +689,14 @@ export default function UnifiedBookingPage() {
                     onClick={() => setActiveTab("reservations")}
                     className="w-full px-4 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
                   >
-                    View Details
+                    {t.lessons.slots.viewDetails}
                   </button>
                 ) : (
                   <button
                     onClick={() => handleBooking(slot.id)}
                     className="w-full px-4 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
                   >
-                    Book Now
+                    {t.lessons.slots.bookNow}
                   </button>
                 )}
                 </div>
@@ -710,16 +712,16 @@ export default function UnifiedBookingPage() {
             <div className="bg-white border border-gray-100 rounded-xl p-12 text-center">
               <div className="text-6xl mb-4">📅</div>
               <p className="text-lg font-semibold text-gray-700 mb-2">
-                No Reservations Yet
+                {t.lessons.reservations.noReservations}
               </p>
               <p className="text-sm text-gray-500 mb-6">
-                Book your first lesson to get started
+                {t.lessons.reservations.noReservationsDesc}
               </p>
               <button
                 onClick={() => setActiveTab("booking")}
                 className="px-6 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] transition-all shadow-sm hover:shadow-md"
               >
-                Book a Lesson
+                {t.lessons.reservations.bookLesson}
               </button>
             </div>
           ) : (

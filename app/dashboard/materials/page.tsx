@@ -9,16 +9,18 @@ import { DashboardTabs } from '@/components/layouts/dashboard-tabs';
 import { PageHeader } from '@/components/layouts/page-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useLocale } from '@/lib/i18n/locale-context';
 
 export default function MaterialsPage() {
+  const { t } = useLocale();
   const router = useRouter();
   const { materials, quota, loading, error, deleteMaterial } = useMaterials();
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this material?')) return;
+    if (!confirm(t.materials.deleteConfirm)) return;
     const success = await deleteMaterial(id);
     if (!success) {
-      alert('Failed to delete material');
+      alert(t.materials.deleteFailed);
     }
   };
 
@@ -33,7 +35,7 @@ export default function MaterialsPage() {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-brand-green)] mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
+            <p className="mt-4 text-gray-600">{t.common.loading}</p>
           </div>
         </div>
       </DashboardLayout>
@@ -44,11 +46,11 @@ export default function MaterialsPage() {
     <DashboardLayout>
       <DashboardTabs />
       <PageHeader
-        title="🎵 Music Material Library"
-        description="AI-powered music learning materials tailored to your needs"
+        title={t.materials.title}
+        description={t.materials.subtitle}
         action={
           <Button onClick={() => router.push('/dashboard/materials/new')}>
-            <span className="mr-1">✨</span> Generate Music Material
+            <span className="mr-1">✨</span> {t.materials.generate}
           </Button>
         }
       />
@@ -59,7 +61,7 @@ export default function MaterialsPage() {
           <QuotaIndicator
             used={quota.used}
             limit={quota.limit}
-            label="Monthly Usage"
+            label={t.materials.monthlyUsage}
           />
         </div>
       )}
@@ -75,16 +77,16 @@ export default function MaterialsPage() {
       {materials.length === 0 ? (
         <div className="text-center py-20">
           <div className="text-7xl mb-6">🎼</div>
-          <h3 className="text-2xl font-bold text-[var(--color-text-primary)] mb-3">Your Music Library Awaits</h3>
+          <h3 className="text-2xl font-bold text-[var(--color-text-primary)] mb-3">{t.materials.emptyState.title}</h3>
           <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            Create personalized practice routines, sheet music, exercises, and theory lessons tailored to your instrument and skill level
+            {t.materials.emptyState.description}
           </p>
           <Button
             onClick={() => router.push('/dashboard/materials/new')}
             className="bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-hover)] text-white font-semibold px-8 py-3"
           >
             <span className="mr-2">✨</span>
-            Generate Your First Music Material
+            {t.materials.emptyState.cta}
           </Button>
         </div>
       ) : (

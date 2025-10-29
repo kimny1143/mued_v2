@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { FileText, Calendar, CheckCircle, Clock } from 'lucide-react';
+import { useLocale } from '@/lib/i18n/locale-context';
 
 interface DashboardStatsData {
   totalMaterials: number;
@@ -9,6 +10,7 @@ interface DashboardStatsData {
 }
 
 export function DashboardStats() {
+  const { t } = useLocale();
   const [stats, setStats] = useState<DashboardStatsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +35,7 @@ export function DashboardStats() {
   if (loading) {
     return (
       <section>
-        <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-4">Overview</h2>
+        <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-4">{t.dashboard.overview}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="bg-white border border-gray-200 rounded-lg p-6 animate-pulse">
@@ -49,28 +51,28 @@ export function DashboardStats() {
   const statCards = [
     {
       icon: FileText,
-      label: 'Total Materials',
+      label: t.dashboard.stats.totalMaterials,
       value: stats?.totalMaterials || 0,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
     },
     {
       icon: Calendar,
-      label: 'Total Lessons',
+      label: t.dashboard.stats.totalLessons,
       value: stats?.totalReservations || 0,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
     {
       icon: CheckCircle,
-      label: 'Completed',
+      label: t.dashboard.stats.completed,
       value: 0, // TODO: Implement completed count
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
     },
     {
       icon: Clock,
-      label: 'In Progress',
+      label: t.dashboard.stats.inProgress,
       value: 0, // TODO: Implement in-progress count
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
@@ -79,7 +81,7 @@ export function DashboardStats() {
 
   return (
     <section>
-      <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-4">Overview</h2>
+      <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-4">{t.dashboard.overview}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card, index) => {
           const Icon = card.icon;

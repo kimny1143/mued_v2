@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FileText, ArrowRight, Sparkles } from 'lucide-react';
+import { useLocale } from '@/lib/i18n/locale-context';
 
 interface Material {
   id: string;
@@ -13,6 +14,7 @@ interface Material {
 }
 
 export function RecentMaterials() {
+  const { t } = useLocale();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +51,7 @@ export function RecentMaterials() {
   if (loading) {
     return (
       <section className="bg-white border border-gray-200 rounded-lg p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Materials</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">{t.dashboard.recentMaterials.title}</h2>
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center gap-3 p-3 border border-gray-200 rounded animate-pulse">
@@ -70,13 +72,13 @@ export function RecentMaterials() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
           <Sparkles className="w-5 h-5 text-[var(--color-brand-green)]" />
-          Recent Materials
+          {t.dashboard.recentMaterials.title}
         </h2>
         <Link
           href="/dashboard/materials"
           className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
         >
-          View All
+          {t.dashboard.recentMaterials.viewAll}
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
@@ -84,13 +86,13 @@ export function RecentMaterials() {
       {materials.length === 0 ? (
         <div className="text-center py-8">
           <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 mb-4">No materials yet</p>
+          <p className="text-gray-500 mb-4">{t.dashboard.recentMaterials.noMaterials}</p>
           <Link
             href="/dashboard/materials/new"
             className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-green)] text-white rounded-lg hover:bg-[var(--color-brand-green-hover)] transition-colors"
           >
             <Sparkles className="w-4 h-4" />
-            Create Your First Material
+            {t.dashboard.recentMaterials.createFirst}
           </Link>
         </div>
       ) : (
