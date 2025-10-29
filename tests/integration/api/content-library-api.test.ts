@@ -1,0 +1,356 @@
+/**
+ * Content Library API Tests
+ * Phase 2: Multi-source content aggregation via plugins
+ */
+
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { GET } from '@/app/api/content/route';
+
+// Mock dependencies
+vi.mock('@/lib/plugins/rag-plugin-registry', () => ({
+  ragPluginFactory: {
+    aggregateContent: vi.fn(),
+  },
+  ragPluginRegistry: {
+    getAll: vi.fn(),
+  },
+}));
+
+vi.mock('@clerk/nextjs', () => ({
+  auth: vi.fn(),
+}));
+
+describe('Content Library API', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('GET /api/content', () => {
+    it('should return aggregated content from all sources', async () => {
+      const mockContent = [
+        {
+          id: '1',
+          title: 'Music Theory Basics',
+          content: 'Learn the fundamentals...',
+          type: 'note_article',
+          sourceUrl: 'https://note.com/article/1',
+          metadata: {
+            author: 'John Doe',
+            tags: ['theory', 'basics'],
+          },
+          createdAt: new Date('2025-01-15'),
+          updatedAt: new Date('2025-01-20'),
+        },
+        {
+          id: '2',
+          title: 'Piano Practice Routine',
+          content: 'Daily exercises for...',
+          type: 'material',
+          metadata: {
+            tags: ['piano', 'practice'],
+          },
+          createdAt: new Date('2025-01-18'),
+          updatedAt: new Date('2025-01-18'),
+        },
+      ];
+
+      const { ragPluginFactory } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginFactory.aggregateContent).mockResolvedValue(mockContent as any);
+
+      const { ragPluginRegistry } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginRegistry.getAll).mockReturnValue([
+        { source: 'note' },
+        { source: 'local' },
+      ] as any);
+
+      const { auth } = await import('@clerk/nextjs');
+      vi.mocked(auth).mockReturnValue({ userId: 'user-123' } as any);
+
+      const mockRequest = {
+        nextUrl: new URL('http://localhost:3000/api/content'),
+      } as any;
+
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.content).toHaveLength(2);
+      expect(data.content[0].title).toBe('Music Theory Basics');
+    });
+
+    it('should support search query parameter', async () => {
+      const mockContent = [
+        {
+          id: '1',
+          title: 'Guitar Techniques',
+          content: 'Advanced guitar playing...',
+          type: 'note_article',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      const { ragPluginFactory } = await import('@/lib/plugins/rag-plugin-registry');
+      const aggregateMock = vi.mocked(ragPluginFactory.aggregateContent);
+      aggregateMock.mockResolvedValue(mockContent as any);
+
+      const { ragPluginRegistry } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginRegistry.getAll).mockReturnValue([
+        { source: 'note' },
+      ] as any);
+
+      const { auth } = await import('@clerk/nextjs');
+      vi.mocked(auth).mockReturnValue({ userId: 'user-123' } as any);
+
+      const mockRequest = {
+        nextUrl: new URL('http://localhost:3000/api/content?query=guitar'),
+      } as any;
+
+      await GET(mockRequest);
+
+      expect(aggregateMock).toHaveBeenCalledWith(
+        ['note'],
+        expect.objectContaining({ query: 'guitar' })
+      );
+    });
+
+    it('should support limit parameter', async () => {
+      const { ragPluginFactory } = await import('@/lib/plugins/rag-plugin-registry');
+      const aggregateMock = vi.mocked(ragPluginFactory.aggregateContent);
+      aggregateMock.mockResolvedValue([]);
+
+      const { ragPluginRegistry } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginRegistry.getAll).mockReturnValue([
+        { source: 'note' },
+      ] as any);
+
+      const { auth } = await import('@clerk/nextjs');
+      vi.mocked(auth).mockReturnValue({ userId: 'user-123' } as any);
+
+      const mockRequest = {
+        nextUrl: new URL('http://localhost:3000/api/content?limit=5'),
+      } as any;
+
+      await GET(mockRequest);
+
+      expect(aggregateMock).toHaveBeenCalledWith(
+        ['note'],
+        expect.objectContaining({ limit: 5 })
+      );
+    });
+
+    it('should support source filtering', async () => {
+      const { ragPluginFactory } = await import('@/lib/plugins/rag-plugin-registry');
+      const aggregateMock = vi.mocked(ragPluginFactory.aggregateContent);
+      aggregateMock.mockResolvedValue([]);
+
+      const { ragPluginRegistry } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginRegistry.getAll).mockReturnValue([
+        { source: 'note' },
+        { source: 'local' },
+      ] as any);
+
+      const { auth } = await import('@clerk/nextjs');
+      vi.mocked(auth).mockReturnValue({ userId: 'user-123' } as any);
+
+      const mockRequest = {
+        nextUrl: new URL('http://localhost:3000/api/content?source=note'),
+      } as any;
+
+      await GET(mockRequest);
+
+      expect(aggregateMock).toHaveBeenCalledWith(['note'], expect.anything());
+    });
+
+    it('should return empty array when no content', async () => {
+      const { ragPluginFactory } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginFactory.aggregateContent).mockResolvedValue([]);
+
+      const { ragPluginRegistry } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginRegistry.getAll).mockReturnValue([
+        { source: 'note' },
+      ] as any);
+
+      const { auth } = await import('@clerk/nextjs');
+      vi.mocked(auth).mockReturnValue({ userId: 'user-123' } as any);
+
+      const mockRequest = {
+        nextUrl: new URL('http://localhost:3000/api/content'),
+      } as any;
+
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.content).toEqual([]);
+    });
+
+    it('should require authentication', async () => {
+      const { auth } = await import('@clerk/nextjs');
+      vi.mocked(auth).mockReturnValue({ userId: null } as any);
+
+      const mockRequest = {
+        nextUrl: new URL('http://localhost:3000/api/content'),
+      } as any;
+
+      const response = await GET(mockRequest);
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should handle plugin errors gracefully', async () => {
+      const { ragPluginFactory } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginFactory.aggregateContent).mockRejectedValue(
+        new Error('Plugin fetch failed')
+      );
+
+      const { ragPluginRegistry } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginRegistry.getAll).mockReturnValue([
+        { source: 'note' },
+      ] as any);
+
+      const { auth } = await import('@clerk/nextjs');
+      vi.mocked(auth).mockReturnValue({ userId: 'user-123' } as any);
+
+      const mockRequest = {
+        nextUrl: new URL('http://localhost:3000/api/content'),
+      } as any;
+
+      const response = await GET(mockRequest);
+
+      expect(response.status).toBe(500);
+    });
+  });
+
+  describe('Content Filtering', () => {
+    it('should support type filtering', async () => {
+      const { ragPluginFactory } = await import('@/lib/plugins/rag-plugin-registry');
+      const aggregateMock = vi.mocked(ragPluginFactory.aggregateContent);
+      aggregateMock.mockResolvedValue([]);
+
+      const { ragPluginRegistry } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginRegistry.getAll).mockReturnValue([
+        { source: 'note' },
+      ] as any);
+
+      const { auth } = await import('@clerk/nextjs');
+      vi.mocked(auth).mockReturnValue({ userId: 'user-123' } as any);
+
+      const mockRequest = {
+        nextUrl: new URL('http://localhost:3000/api/content?type=note_article'),
+      } as any;
+
+      await GET(mockRequest);
+
+      expect(aggregateMock).toHaveBeenCalledWith(
+        ['note'],
+        expect.objectContaining({
+          filters: expect.objectContaining({ type: 'note_article' }),
+        })
+      );
+    });
+
+    it('should support tag filtering', async () => {
+      const { ragPluginFactory } = await import('@/lib/plugins/rag-plugin-registry');
+      const aggregateMock = vi.mocked(ragPluginFactory.aggregateContent);
+      aggregateMock.mockResolvedValue([]);
+
+      const { ragPluginRegistry } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginRegistry.getAll).mockReturnValue([
+        { source: 'note' },
+      ] as any);
+
+      const { auth } = await import('@clerk/nextjs');
+      vi.mocked(auth).mockReturnValue({ userId: 'user-123' } as any);
+
+      const mockRequest = {
+        nextUrl: new URL('http://localhost:3000/api/content?tags=piano,theory'),
+      } as any;
+
+      await GET(mockRequest);
+
+      expect(aggregateMock).toHaveBeenCalledWith(
+        ['note'],
+        expect.objectContaining({
+          filters: expect.objectContaining({ tags: ['piano', 'theory'] }),
+        })
+      );
+    });
+  });
+
+  describe('Content Metadata', () => {
+    it('should include content metadata', async () => {
+      const mockContent = [{
+        id: '1',
+        title: 'Test Article',
+        content: 'Content here',
+        type: 'note_article',
+        sourceUrl: 'https://note.com/article/1',
+        metadata: {
+          author: 'Author Name',
+          tags: ['tag1', 'tag2'],
+          license: 'CC BY 4.0',
+          confidence: 0.95,
+        },
+        createdAt: new Date('2025-01-15'),
+        updatedAt: new Date('2025-01-20'),
+      }];
+
+      const { ragPluginFactory } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginFactory.aggregateContent).mockResolvedValue(mockContent as any);
+
+      const { ragPluginRegistry } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginRegistry.getAll).mockReturnValue([
+        { source: 'note' },
+      ] as any);
+
+      const { auth } = await import('@clerk/nextjs');
+      vi.mocked(auth).mockReturnValue({ userId: 'user-123' } as any);
+
+      const mockRequest = {
+        nextUrl: new URL('http://localhost:3000/api/content'),
+      } as any;
+
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      const content = data.content[0];
+      expect(content.metadata).toBeDefined();
+      expect(content.metadata.author).toBe('Author Name');
+      expect(content.metadata.tags).toEqual(['tag1', 'tag2']);
+      expect(content.metadata.license).toBe('CC BY 4.0');
+    });
+
+    it('should handle missing metadata gracefully', async () => {
+      const mockContent = [{
+        id: '1',
+        title: 'Test Article',
+        content: 'Content here',
+        type: 'material',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }];
+
+      const { ragPluginFactory } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginFactory.aggregateContent).mockResolvedValue(mockContent as any);
+
+      const { ragPluginRegistry } = await import('@/lib/plugins/rag-plugin-registry');
+      vi.mocked(ragPluginRegistry.getAll).mockReturnValue([
+        { source: 'local' },
+      ] as any);
+
+      const { auth } = await import('@clerk/nextjs');
+      vi.mocked(auth).mockReturnValue({ userId: 'user-123' } as any);
+
+      const mockRequest = {
+        nextUrl: new URL('http://localhost:3000/api/content'),
+      } as any;
+
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.content[0]).toBeDefined();
+    });
+  });
+});
