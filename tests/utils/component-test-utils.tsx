@@ -3,8 +3,10 @@ import { render, RenderOptions, RenderResult } from '@testing-library/react';
 import { vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import * as Clerk from '@clerk/nextjs';
-import { ClerkProvider } from '@clerk/nextjs';
 import { LocaleProviderWrapper } from '@/components/providers/locale-provider-wrapper';
+
+// Mock ClerkProvider for tests
+const MockClerkProvider = ({ children }: { children: React.ReactNode }) => <>{children}</>;
 
 // Types
 export interface MockUser {
@@ -289,11 +291,11 @@ export function TestProviders({ children, user, session, locale = 'ja', isSigned
   }, [user, session, isSignedIn, isLoaded]);
 
   return (
-    <ClerkProvider>
-      <LocaleProviderWrapper initialLocale={locale}>
+    <MockClerkProvider>
+      <LocaleProviderWrapper>
         {children}
       </LocaleProviderWrapper>
-    </ClerkProvider>
+    </MockClerkProvider>
   );
 }
 

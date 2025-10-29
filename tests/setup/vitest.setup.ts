@@ -25,6 +25,16 @@ vi.mock('next/navigation', () => ({
   redirect: vi.fn(),
 }));
 
+// Mock Locale Context
+vi.mock('@/lib/i18n/locale-context', () => ({
+  LocaleProvider: vi.fn(({ children }: { children: any }) => children),
+  useLocale: vi.fn(() => ({
+    locale: 'en',
+    setLocale: vi.fn(),
+    t: vi.fn((key: string) => key),
+  })),
+}));
+
 // Mock Clerk
 vi.mock('@clerk/nextjs', () => ({
   auth: () => ({
@@ -37,24 +47,46 @@ vi.mock('@clerk/nextjs', () => ({
     username: 'testuser',
     emailAddresses: [{ emailAddress: 'test@example.com' }],
   }),
-  useAuth: () => ({
+  useAuth: vi.fn(() => ({
     isLoaded: true,
     isSignedIn: true,
     userId: 'test_user_123',
-  }),
-  useUser: () => ({
+    sessionId: 'test_session_123',
+    actor: null,
+    orgId: null,
+    orgRole: null,
+    orgSlug: null,
+    has: vi.fn().mockReturnValue(true),
+    getToken: vi.fn().mockResolvedValue('test_token'),
+    signOut: vi.fn(),
+  })),
+  useUser: vi.fn(() => ({
     isLoaded: true,
     isSignedIn: true,
     user: {
       id: 'test_user_123',
       username: 'testuser',
+      firstName: 'Test',
+      lastName: 'User',
+      emailAddresses: [{ emailAddress: 'test@example.com' }],
       primaryEmailAddress: { emailAddress: 'test@example.com' },
+      imageUrl: 'https://example.com/avatar.jpg',
     },
-  }),
-  SignIn: () => null,
-  SignUp: () => null,
-  UserButton: () => null,
-  ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
+  })),
+  useSession: vi.fn(() => ({
+    isLoaded: true,
+    isSignedIn: true,
+    session: {
+      id: 'test_session_123',
+      status: 'active',
+      lastActiveAt: new Date(),
+      expireAt: new Date(Date.now() + 3600000),
+    },
+  })),
+  SignIn: vi.fn(() => null),
+  SignUp: vi.fn(() => null),
+  UserButton: vi.fn(() => null),
+  ClerkProvider: vi.fn(({ children }: { children: any }) => children),
 }));
 
 // Global test utilities
