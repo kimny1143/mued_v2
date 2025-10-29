@@ -19,7 +19,7 @@ export const mockUnifiedContent: {
   valid: {
     id: 'test-content-123',
     source: 'internal',
-    type: 'lesson',
+    type: 'article',
     title: 'Introduction to Jazz Piano',
     description: 'Learn the fundamentals of jazz piano including chord progressions, scales, and improvisation techniques.',
     url: 'https://example.com/lessons/jazz-piano-intro',
