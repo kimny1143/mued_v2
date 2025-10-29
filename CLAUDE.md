@@ -585,4 +585,94 @@ db/migrations/
 
 ---
 
+## Claude Code での MCP サーバー利用
+
+### テスト駆動開発用 MCP サーバー
+
+Claude Code には以下のテスト用 MCP サーバーが登録されています。コーディング中に即座にテストを実行できます。
+
+#### 利用可能なサーバー
+
+**1. mued_unit_test** - ユニット・コンポーネントテスト
+```
+パス: /scripts/mcp/mued-unit-test.js
+用途: Vitestによるユニットテストとコンポーネントテストの実行
+```
+
+**提供ツール:**
+- `run_unit_tests(pattern)` - ユニットテスト実行（パターン指定可能）
+- `run_component_tests()` - コンポーネントテスト実行
+- `run_integration_tests()` - 統合テスト実行
+- `run_all_tests()` - 全テスト実行
+- `run_test_watch(testType)` - ウォッチモードでテスト実行
+
+**2. mued_e2e** - E2Eテスト
+```
+パス: /scripts/mcp/mued-playwright-e2e.js
+用途: Playwright による E2E テストの実行
+```
+
+**提供ツール:**
+- `run_e2e_tests(spec)` - E2Eテスト実行（spec指定可能）
+- `run_e2e_headed()` - ヘッドモードでE2E実行（ブラウザ表示）
+- `run_e2e_debug(spec)` - デバッグモードでE2E実行
+
+### 使用例
+
+**開発中のテストフロー:**
+
+1. **コンポーネント作成後:**
+```
+「LibraryCard コンポーネントを作成しました。関連するテストを実行してください」
+→ mued_unit_test の run_component_tests ツールを使用
+```
+
+2. **特定のテストファイルのみ実行:**
+```
+「lib/plugins 配下のテストだけ実行して」
+→ mued_unit_test の run_unit_tests("lib/plugins") を使用
+```
+
+3. **E2E テストで動作確認:**
+```
+「phase2-complete-flow の E2E テストを実行」
+→ mued_e2e の run_e2e_tests("phase2-complete-flow") を使用
+```
+
+4. **ウォッチモードで開発:**
+```
+「コンポーネントテストをウォッチモードで」
+→ mued_unit_test の run_test_watch("components") を使用
+```
+
+### MCP サーバーの確認
+
+登録済みサーバーの確認:
+```bash
+claude mcp list
+```
+
+新しいサーバーの追加:
+```bash
+claude mcp add <server_name> node /path/to/server.js
+```
+
+### トラブルシューティング
+
+**サーバーが接続できない場合:**
+
+1. サーバーファイルの存在確認:
+```bash
+ls -la /Users/kimny/Dropbox/_DevProjects/mued/mued_v2/scripts/mcp/
+```
+
+2. Node.js で手動実行してエラー確認:
+```bash
+node /Users/kimny/Dropbox/_DevProjects/mued/mued_v2/scripts/mcp/mued-unit-test.js
+```
+
+3. Claude Code の再起動
+
+---
+
 *最終更新: 2025-10-29*
