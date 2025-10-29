@@ -44,7 +44,7 @@ jobs:
           name: unit-coverage
 
       - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: unit-test-coverage
@@ -98,7 +98,7 @@ jobs:
           OPENAI_API_KEY: test-key-for-mocking
 
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: integration-test-results
@@ -147,7 +147,7 @@ jobs:
           NEXT_PUBLIC_E2E_TEST_MODE: true
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: playwright-report
@@ -155,7 +155,7 @@ jobs:
           retention-days: 7
 
       - name: Upload Playwright videos
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-videos
@@ -195,7 +195,7 @@ jobs:
           CI: true
 
       - name: Upload accessibility report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: a11y-report
@@ -297,7 +297,7 @@ jobs:
 
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Generate test summary
         run: |
