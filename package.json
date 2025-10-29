@@ -39,6 +39,7 @@
     "abcjs": "^6.5.2",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.2",
     "drizzle-orm": "^0.44.5",
     "inversify": "^7.10.3",
