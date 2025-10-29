@@ -2,6 +2,7 @@ import React from 'react';
 import { render, RenderOptions, RenderResult } from '@testing-library/react';
 import { vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
+import * as Clerk from '@clerk/nextjs';
 import { ClerkProvider } from '@clerk/nextjs';
 import { LocaleProviderWrapper } from '@/components/providers/locale-provider-wrapper';
 
@@ -86,7 +87,7 @@ export function setupClerkMocks(user?: MockUser, session?: MockSession, options?
   const isLoaded = options?.isLoaded ?? true;
 
   // Mock useAuth
-  vi.mocked((await import('@clerk/nextjs')).useAuth).mockReturnValue({
+  (vi.mocked(Clerk.useAuth) as any).mockReturnValue({
     isLoaded,
     isSignedIn,
     userId: user?.id || null,
@@ -101,7 +102,7 @@ export function setupClerkMocks(user?: MockUser, session?: MockSession, options?
   });
 
   // Mock useUser
-  vi.mocked((await import('@clerk/nextjs')).useUser).mockReturnValue({
+  (vi.mocked(Clerk.useUser) as any).mockReturnValue({
     isLoaded,
     isSignedIn,
     user: user ? {
@@ -176,7 +177,7 @@ export function setupClerkMocks(user?: MockUser, session?: MockSession, options?
   });
 
   // Mock useSession
-  vi.mocked((await import('@clerk/nextjs')).useSession).mockReturnValue({
+  (vi.mocked(Clerk.useSession) as any).mockReturnValue({
     isLoaded,
     isSignedIn,
     session: session && isSignedIn ? {
