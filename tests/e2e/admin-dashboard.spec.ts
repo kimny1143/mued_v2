@@ -413,6 +413,124 @@ test.describe('Admin Dashboard - Quality Monitoring', () => {
   });
 });
 
+test.describe('Admin Dashboard - Plugin Management', () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto('/dashboard/admin/plugins');
+  });
+
+  test('should display plugin management page', async ({ page }) => {
+    // Check page title
+    await expect(page.locator('h1')).toContainText(/Plugin Management|プラグイン管理/);
+
+    // Check health status overview section
+    await expect(page.locator('text=/Health Status|ヘルス状態/')).toBeVisible();
+  });
+
+  test('should display registered plugins list', async ({ page }) => {
+    // Wait for plugins to load
+    await page.waitForTimeout(1000);
+
+    // Check if plugins are displayed (Note.com and Local should be registered)
+    const pluginCards = page.locator('[class*="rounded-lg border"]').filter({ hasText: /note|local/i });
+    const count = await pluginCards.count();
+    expect(count).toBeGreaterThanOrEqual(1);
+  });
+
+  test('should show plugin capabilities', async ({ page }) => {
+    await page.waitForTimeout(1000);
+
+    // Check first plugin card has capabilities section
+    const firstPlugin = page.locator('[class*="rounded-lg border"]').first();
+    await expect(firstPlugin.locator('text=/Capabilities|機能/')).toBeVisible();
+
+    // Check for capability badges
+    const capabilityBadges = firstPlugin.locator('[class*="px-2 py-1"][class*="rounded"]');
+    const badgeCount = await capabilityBadges.count();
+    expect(badgeCount).toBeGreaterThan(0);
+  });
+
+  test('should display health status badges', async ({ page }) => {
+    await page.waitForTimeout(1000);
+
+    // Check for health status indicators
+    const healthBadges = page.locator('text=/Healthy|正常|Unknown|不明|Unhealthy|異常/');
+    const count = await healthBadges.count();
+    expect(count).toBeGreaterThan(0);
+  });
+
+  test('should run health check for individual plugin', async ({ page }) => {
+    await page.waitForTimeout(1000);
+
+    // Find and click health check button for first plugin
+    const healthCheckButton = page.locator('button').filter({ hasText: /Check Health|ヘルスチェック/ }).first();
+    await healthCheckButton.click();
+
+    // Wait for health check to complete
+    await page.waitForTimeout(2000);
+
+    // Verify health status updated (should show timestamp or message)
+    await expect(page.locator('text=/Last Check|最終チェック/')).toBeVisible();
+  });
+
+  test('should run health check for all plugins', async ({ page }) => {
+    await page.waitForTimeout(1000);
+
+    // Click "Check All" button
+    const checkAllButton = page.locator('button').filter({ hasText: /Check All|全てチェック/ });
+    await checkAllButton.click();
+
+    // Wait for all health checks to complete
+    await page.waitForTimeout(3000);
+
+    // Verify health status counts updated
+    const healthyCount = page.locator('text=/Healthy|正常/').first();
+    await expect(healthyCount).toBeVisible();
+  });
+
+  test('should display plugin details', async ({ page }) => {
+    await page.waitForTimeout(1000);
+
+    // Check first plugin card has details
+    const firstPlugin = page.locator('[class*="rounded-lg border"]').first();
+
+    // Check for plugin name
+    await expect(firstPlugin.locator('[class*="text-lg font-semibold"]')).toBeVisible();
+
+    // Check for version info
+    await expect(firstPlugin.locator('text=/v[0-9]+\.[0-9]+\.[0-9]+/')).toBeVisible();
+  });
+
+  test('should navigate between Admin tabs', async ({ page }) => {
+    // Should be on Plugins tab
+    await expect(page.locator('text=/Plugin Management|プラグイン管理/')).toBeVisible();
+
+    // Click RAG Metrics tab
+    const ragMetricsTab = page.locator('a').filter({ hasText: /RAG Metrics|RAGメトリクス/ });
+    await ragMetricsTab.click();
+
+    // Should navigate to RAG Metrics page
+    await page.waitForURL('/dashboard/admin/rag-metrics');
+    await expect(page.locator('text=/RAG Metrics Dashboard|RAGメトリクスダッシュボード/')).toBeVisible();
+
+    // Navigate back to Plugins
+    const pluginsTab = page.locator('a').filter({ hasText: /Plugin|プラグイン/ });
+    await pluginsTab.click();
+
+    await page.waitForURL('/dashboard/admin/plugins');
+    await expect(page.locator('text=/Plugin Management|プラグイン管理/')).toBeVisible();
+  });
+
+  test('should display health statistics summary', async ({ page }) => {
+    await page.waitForTimeout(1000);
+
+    // Check for health statistics cards
+    const statsCards = page.locator('[class*="p-4"][class*="rounded-lg"]').filter({ hasText: /Registered|登録済み|Healthy|正常/ });
+    const count = await statsCards.count();
+    expect(count).toBeGreaterThanOrEqual(2);
+  });
+});
+
 test.describe('Admin Dashboard - Access Control', () => {
   test('should redirect non-admin users', async ({ page }) => {
     // Login as regular user (not admin)
@@ -438,5 +556,32 @@ test.describe('Admin Dashboard - Access Control', () => {
 
     // Should redirect to sign-in
     await page.waitForURL(/\/sign-in/);
+  });
+
+  test('should not show Admin tab for non-admin users', async ({ page }) => {
+    // Login as regular user
+    await page.goto('/sign-in');
+    await page.fill('input[name="identifier"]', 'student@test.example.com');
+    await page.click('button:has-text("Continue")');
+    await page.fill('input[name="password"]', 'StudentPassword123!');
+    await page.click('button:has-text("Continue")');
+
+    await page.waitForURL('/dashboard');
+
+    // Admin tab should not be visible
+    const adminTab = page.locator('a').filter({ hasText: /Admin|管理/ });
+    await expect(adminTab).not.toBeVisible();
+  });
+
+  test('should show Admin tab for admin users', async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto('/dashboard');
+
+    // Admin tab should be visible
+    const adminTab = page.locator('a').filter({ hasText: /Admin|管理/ });
+    await expect(adminTab).toBeVisible();
+
+    // Should have Shield icon
+    await expect(adminTab.locator('svg')).toBeVisible();
   });
 });
