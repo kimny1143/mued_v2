@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       const newRepetitionCount = existing.repetitionCount + session.loopEvents.length;
 
       const newRepetitionIndex =
-        ((existing.repetitionIndex as any) * existing.repetitionCount + metrics.repetitionIndex * session.loopEvents.length) /
+        (Number(existing.repetitionIndex) * existing.repetitionCount + metrics.repetitionIndex * session.loopEvents.length) /
         (existing.repetitionCount + session.loopEvents.length);
 
       const newAchievedTempo = Math.max(existing.achievedTempo, session.achievedTempo);
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       );
 
       // 弱点箇所をマージ
-      const existingWeakSpots = (existing.weakSpots as any) || [];
+      const existingWeakSpots = (existing.weakSpots as WeakSpot[]) || [];
       const newWeakSpots = mergeWeakSpots(existingWeakSpots, metrics.weakSpots);
 
       const newTotalPracticeTime = existing.totalPracticeTime + session.duration;
@@ -167,11 +167,13 @@ function calculateTempoAchievement(achieved: number, target: number): number {
 /**
  * 弱点箇所をマージ（既存 + 新規）
  */
+type WeakSpot = { startBar: number; endBar: number; loopCount: number; lastPracticedAt: string };
+
 function mergeWeakSpots(
-  existing: Array<{ startBar: number; endBar: number; loopCount: number; lastPracticedAt: string }>,
-  newSpots: Array<{ startBar: number; endBar: number; loopCount: number; lastPracticedAt: string }>
-): Array<{ startBar: number; endBar: number; loopCount: number; lastPracticedAt: string }> {
-  const merged = new Map<string, any>();
+  existing: Array<WeakSpot>,
+  newSpots: Array<WeakSpot>
+): Array<WeakSpot> {
+  const merged = new Map<string, WeakSpot>();
 
   // 既存の弱点箇所を追加
   for (const spot of existing) {

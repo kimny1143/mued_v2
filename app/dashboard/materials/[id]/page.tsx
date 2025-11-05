@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShareToLibraryButton } from '@/components/features/materials/share-to-library-button';
+import { PageLoading } from '@/components/ui/loading-spinner';
 
 interface MaterialContent {
   type?: string;
@@ -57,14 +58,7 @@ export default function MaterialDetailPage({ params }: { params: { id: string } 
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading material...</p>
-        </div>
-      </div>
-    );
+    return <PageLoading label="Loading material..." />;
   }
 
   if (error || !material) {

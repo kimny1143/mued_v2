@@ -477,7 +477,8 @@ describe('UserAvatar', () => {
         isLoaded: false,
         isSignedIn: false,
         user: null,
-      });
+        setActive: vi.fn(),
+      } as unknown as ReturnType<typeof useUser>);
 
       const { container } = renderWithProviders(<UserAvatar />);
       expect(container.firstChild).toBeNull();
@@ -489,7 +490,8 @@ describe('UserAvatar', () => {
         isLoaded: false,
         isSignedIn: false,
         user: null,
-      });
+        setActive: vi.fn(),
+      } as unknown as ReturnType<typeof useUser>);
 
       const { rerender } = renderWithProviders(<UserAvatar />);
       expect(screen.queryByText(/./)).not.toBeInTheDocument();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Slot {
   id: string;
@@ -39,11 +39,11 @@ export function AccessibleCalendar({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const navigateMonth = (direction: number) => {
+  const navigateMonth = useCallback((direction: number) => {
     const newDate = new Date(selectedDate);
     newDate.setMonth(newDate.getMonth() + direction);
     onDateSelect(newDate);
-  };
+  }, [selectedDate, onDateSelect]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -8,6 +8,7 @@ import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/materials/share-to-library/route';
 import { db } from '@/db';
+import { auth } from '@clerk/nextjs/server';
 
 // Mock Clerk auth
 vi.mock('@clerk/nextjs/server', () => ({
@@ -58,8 +59,8 @@ describe('Share to Library API', () => {
     vi.clearAllMocks();
 
     // Setup auth mock
-    mockAuth = vi.mocked((await import('@clerk/nextjs/server')).auth);
-    mockAuth.mockResolvedValue({ userId: 'clerk-user-123' });
+    mockAuth = vi.mocked(auth);
+    mockAuth.mockResolvedValue({ userId: 'clerk-user-123' } as any);
 
     // Setup database mock chain
     const mockLimit = vi.fn().mockResolvedValue([mockUser]);

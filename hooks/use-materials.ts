@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useApiFetch } from './use-api-fetch';
 
 export interface Material {
   id: string;
@@ -17,31 +18,26 @@ export interface QuotaInfo {
   remaining: number;
 }
 
+interface MaterialsResponse {
+  success: boolean;
+  materials: Material[];
+  quota: QuotaInfo | null;
+  error?: string;
+}
+
+interface MaterialResponse {
+  success: boolean;
+  material: Material;
+  error?: string;
+}
+
 export function useMaterials() {
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [quota, setQuota] = useState<QuotaInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, error, isLoading, refetch } = useApiFetch<MaterialsResponse>('/api/ai/materials');
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const fetchMaterials = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/ai/materials');
-      const data = await response.json();
-
-      if (data.success) {
-        setMaterials(data.materials);
-        setQuota(data.quota);
-        setError(null);
-      } else {
-        setError(data.error || 'Failed to load materials');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Network error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const materials = data?.materials || [];
+  const quota = data?.quota || null;
+  const displayError = error || (data && !data.success ? data.error || null : null) || localError;
 
   const deleteMaterial = async (id: string) => {
     try {
@@ -50,53 +46,32 @@ export function useMaterials() {
       });
 
       if (response.ok) {
-        setMaterials((prev) => prev.filter((m) => m.id !== id));
+        // Refetch to update the list
+        refetch();
         return true;
       } else {
         throw new Error('Failed to delete material');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete material');
+      setLocalError(err instanceof Error ? err.message : 'Failed to delete material');
       return false;
     }
   };
 
-  useEffect(() => {
-    fetchMaterials();
-  }, []);
-
-  return { materials, quota, loading, error, refetch: fetchMaterials, deleteMaterial };
+  return { materials, quota, loading: isLoading, error: displayError, refetch, deleteMaterial };
 }
 
 export function useMaterial(materialId: string) {
-  const [material, setMaterial] = useState<Material | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchMaterial = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/ai/materials/${materialId}`);
-        const data = await response.json();
-
-        if (data.success) {
-          setMaterial(data.material);
-          setError(null);
-        } else {
-          setError(data.error || 'Failed to load material');
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Network error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (materialId) {
-      fetchMaterial();
+  const { data, error, isLoading } = useApiFetch<MaterialResponse>(
+    `/api/ai/materials/${materialId}`,
+    {
+      manual: !materialId, // Don't fetch if no materialId provided
+      dependencies: [materialId],
     }
-  }, [materialId]);
+  );
 
-  return { material, loading, error };
+  const material = data?.material || null;
+  const displayError = error || (data && !data.success ? data.error || null : null);
+
+  return { material, loading: isLoading, error: displayError };
 }

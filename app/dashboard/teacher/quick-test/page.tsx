@@ -9,6 +9,15 @@
 import { useState } from 'react';
 import type { QuickTestResult } from '@/lib/ai/quick-test-generator';
 
+interface AggregationInfo {
+  materialTitle: string;
+  studentsWithMetrics: number;
+  totalStudents: number;
+  instrument: string;
+  targetTempo: number;
+  topWeakSpots?: Array<{ startBar: number; endBar: number }>;
+}
+
 export default function QuickTestPage() {
   const [materialId, setMaterialId] = useState('');
   const [studentIds, setStudentIds] = useState('');
@@ -16,7 +25,7 @@ export default function QuickTestPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [quickTest, setQuickTest] = useState<QuickTestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [aggregationInfo, setAggregationInfo] = useState<any>(null);
+  const [aggregationInfo, setAggregationInfo] = useState<AggregationInfo | null>(null);
 
   const handleGenerate = async () => {
     setError(null);

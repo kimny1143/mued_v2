@@ -8,7 +8,8 @@ import { DashboardLayout } from '@/components/layouts/dashboard-layout';
 import { DashboardTabs } from '@/components/layouts/dashboard-tabs';
 import { PageHeader } from '@/components/layouts/page-header';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { InlineError } from '@/components/ui/error-boundary';
 import { useLocale } from '@/lib/i18n/locale-context';
 
 export default function MaterialsPage() {
@@ -33,10 +34,7 @@ export default function MaterialsPage() {
       <DashboardLayout>
         <DashboardTabs />
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--color-brand-green)] mx-auto"></div>
-            <p className="mt-4 text-gray-600">{t.common.loading}</p>
-          </div>
+          <LoadingSpinner size="lg" label={t.common.loading} />
         </div>
       </DashboardLayout>
     );
@@ -68,9 +66,9 @@ export default function MaterialsPage() {
 
       {/* Error Message */}
       {error && (
-        <Card className="bg-red-50 border-red-200 text-red-700 mb-6 p-4">
-          {error}
-        </Card>
+        <div className="mb-6">
+          <InlineError error={error} />
+        </div>
       )}
 
       {/* Materials Grid */}

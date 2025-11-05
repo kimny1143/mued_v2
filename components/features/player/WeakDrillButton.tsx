@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import type { WeakDrillResult } from '@/lib/ai/weak-drill-generator';
+import { InlineError } from '@/components/ui/error-boundary';
 
 export interface WeakDrillButtonProps {
   materialId: string;
@@ -107,7 +108,7 @@ export function WeakDrillButton({
         </button>
 
         {error && (
-          <p className="text-xs text-red-600">{error}</p>
+          <InlineError error={error} className="text-xs" />
         )}
 
         {canGenerate && (

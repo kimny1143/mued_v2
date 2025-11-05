@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { lessonSlots, users, reservations } from "@/db/schema";
 import { eq, gte, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/actions/user";
+import { apiSuccess, apiServerError } from "@/lib/api-response";
 
 export async function GET(request: Request) {
   try {
@@ -80,12 +80,9 @@ export async function GET(request: Request) {
       reservation: userReservations[slot.id] || null,
     }));
 
-    return NextResponse.json({ slots });
+    return apiSuccess({ slots });
   } catch (error) {
     console.error("Error fetching lesson slots:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch lesson slots" },
-      { status: 500 }
-    );
+    return apiServerError(error instanceof Error ? error : new Error("Failed to fetch lesson slots"));
   }
 }

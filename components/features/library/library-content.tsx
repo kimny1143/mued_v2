@@ -12,6 +12,8 @@ import type { UnifiedContent, ContentFetchResult, ContentSource } from '@/types/
 import { LibraryCard } from './library-card';
 import { LibraryFilters } from './library-filters';
 import { LoadingState } from '@/components/ui/loading-state';
+import { InlineLoading } from '@/components/ui/loading-spinner';
+import { InlineError } from '@/components/ui/error-boundary';
 import { useLocale } from '@/lib/i18n/locale-context';
 
 interface FilterState {
@@ -45,12 +47,7 @@ export function LibraryContent() {
     return () => clearTimeout(timer);
   }, [filters.search]);
 
-  // Fetch content when filters change (except search uses debounced value)
-  useEffect(() => {
-    fetchContent();
-  }, [filters.source, filters.category, filters.difficulty, filters.sortBy, filters.sortOrder, debouncedSearch]);
-
-  async function fetchContent() {
+  const fetchContent = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -91,7 +88,12 @@ export function LibraryContent() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [filters.source, filters.category, filters.difficulty, filters.sortBy, filters.sortOrder, debouncedSearch]);
+
+  // Fetch content when filters change (except search uses debounced value)
+  useEffect(() => {
+    fetchContent();
+  }, [fetchContent]);
 
   if (loading && content.length === 0) {
     return <LoadingState message={t.library.loadingContent} />;
@@ -107,10 +109,7 @@ export function LibraryContent() {
 
       {/* Error State */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 text-sm font-medium">{t.library.errorLoading}</p>
-          <p className="text-red-600 text-sm mt-1">{error}</p>
-        </div>
+        <InlineError error={error} title={t.library.errorLoading} />
       )}
 
       {/* Content Grid */}
@@ -131,9 +130,7 @@ export function LibraryContent() {
 
       {/* Loading indicator for filter changes */}
       {loading && content.length > 0 && (
-        <div className="text-center py-4">
-          <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--color-brand-green)]"></div>
-        </div>
+        <InlineLoading label={t.library.loadingContent} />
       )}
     </div>
   );

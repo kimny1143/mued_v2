@@ -1,5 +1,7 @@
 import * as schema from "./schema";
 import { config } from "dotenv";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type { NeonDatabase } from "drizzle-orm/neon-serverless";
 
 // Node.js環境の場合のみ.env.localを読み込む
 if (typeof window === "undefined") {
@@ -13,7 +15,10 @@ if (!process.env.DATABASE_URL) {
 // CI環境ではnode-postgres、本番ではneon-serverlessを使用
 const isCI = process.env.CI === "true";
 
-let db;
+// Drizzle DB型定義
+type DrizzleDB = NodePgDatabase<typeof schema> | NeonDatabase<typeof schema>;
+
+let db: DrizzleDB;
 
 if (isCI) {
   // GitHub Actions用: 標準PostgreSQL接続

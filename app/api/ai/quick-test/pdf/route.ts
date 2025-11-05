@@ -94,11 +94,11 @@ function renderQuickTestToHtml(quickTest: QuickTestResult): string {
   const problemsHtml = quickTest.problems
     .map((problem, idx) => {
       // ABC記法をSVGにレンダリング
-      const container = { innerHTML: '' };
+      const container: { innerHTML: string } = { innerHTML: '' };
 
       try {
         // abcjsのrenderAbc関数を使用してSVGを生成
-        const visualObj = abcjs.renderAbc(container as any, problem.abc, {
+        abcjs.renderAbc(container as unknown as HTMLElement, problem.abc, {
           responsive: 'resize',
           staffwidth: 500,
           scale: 0.9,

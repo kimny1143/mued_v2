@@ -5,11 +5,11 @@
  * GET /api/admin/plugins - List all registered plugins
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/actions/user';
 import { ragPluginRegistry } from '@/lib/plugins/rag-plugin-registry';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Admin authentication check
     const user = await getCurrentUser();

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { DashboardStats } from './dashboard-stats';
-import { renderWithProviders, mockApiResponse, waitForLoadingToFinish } from '@/tests/utils/component-test-utils';
+import { renderWithProviders, mockApiResponse } from '@/tests/utils/component-test-utils';
 import { mockFetchResponses } from '@/tests/mocks/common-mocks';
 
 // Mock the locale context

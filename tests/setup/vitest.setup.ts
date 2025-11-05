@@ -36,7 +36,7 @@ vi.mock('@/lib/i18n/locale-context', () => ({
   })),
 }));
 
-// Mock Clerk
+// Mock Clerk (Client-side)
 vi.mock('@clerk/nextjs', () => ({
   auth: () => ({
     userId: 'test_user_123',
@@ -88,6 +88,20 @@ vi.mock('@clerk/nextjs', () => ({
   SignUp: vi.fn(() => null),
   UserButton: vi.fn(() => null),
   ClerkProvider: vi.fn(({ children }: { children: any }) => children),
+}));
+
+// Mock Clerk (Server-side)
+vi.mock('@clerk/nextjs/server', () => ({
+  auth: vi.fn(() => Promise.resolve({
+    userId: 'test_user_123',
+    sessionId: 'test_session_123',
+    getToken: vi.fn().mockResolvedValue('test_token'),
+  })),
+  currentUser: vi.fn().mockResolvedValue({
+    id: 'test_user_123',
+    username: 'testuser',
+    emailAddresses: [{ emailAddress: 'test@example.com' }],
+  }),
 }));
 
 // Global test utilities

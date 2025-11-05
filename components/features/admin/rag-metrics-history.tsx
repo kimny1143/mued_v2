@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { useLocale } from '@/lib/i18n/locale-context';
 import {
@@ -31,11 +31,7 @@ export function RAGMetricsHistory() {
   const [loading, setLoading] = useState(true);
   const [selectedView, setSelectedView] = useState<'7d' | '30d'>('7d');
 
-  useEffect(() => {
-    fetchHistory();
-  }, [selectedView]);
-
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       const limit = selectedView === '7d' ? 7 : 30;
       const response = await fetch(`/api/admin/rag-metrics/history?limit=${limit}&sortBy=date&sortOrder=asc`);
@@ -44,7 +40,7 @@ export function RAGMetricsHistory() {
       console.log('History API response:', data); // Debug log
 
       if (data.history && Array.isArray(data.history)) {
-        setHistory(data.history.map((item: any) => ({
+        setHistory(data.history.map((item: HistoricalMetrics) => ({
           ...item,
           date: new Date(item.date).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' }),
         })));
@@ -56,7 +52,11 @@ export function RAGMetricsHistory() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedView]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
   if (loading) {
     return (

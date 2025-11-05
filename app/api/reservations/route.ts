@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { reservations, lessonSlots, users } from "@/db/schema";
 import { eq, or, sql } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/actions/user";
 import { checkCanCreateReservation, incrementReservationUsage } from "@/lib/middleware/usage-limiter";
 import { z } from "zod";
+import { apiSuccess, apiUnauthorized, apiValidationError, apiForbidden, apiNotFound, apiServerError } from "@/lib/api-response";
 
 // 入力バリデーションスキーマ
 const createReservationSchema = z.object({
@@ -16,7 +16,7 @@ export async function GET() {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return apiUnauthorized();
     }
 
     // ユーザーの予約を取得（生徒として、またはメンターとして）
@@ -56,13 +56,10 @@ export async function GET() {
         )
       );
 
-    return NextResponse.json({ reservations: userReservations });
+    return apiSuccess({ reservations: userReservations });
   } catch (error) {
     console.error("Error fetching reservations:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch reservations" },
-      { status: 500 }
-    );
+    return apiServerError(error instanceof Error ? error : new Error("Failed to fetch reservations"));
   }
 }
 
@@ -71,21 +68,14 @@ export async function POST(request: Request) {
     const user = await getCurrentUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return apiUnauthorized();
     }
 
     // Check usage limits
     const usageCheck = await checkCanCreateReservation(user.clerkId);
 
     if (!usageCheck.allowed) {
-      return NextResponse.json(
-        {
-          error: usageCheck.reason,
-          upgradeRequired: true,
-          limits: usageCheck.limits
-        },
-        { status: 403 }
-      );
+      return apiForbidden(usageCheck.reason);
     }
 
     // 入力バリデーション
@@ -94,13 +84,7 @@ export async function POST(request: Request) {
     const validation = createReservationSchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          error: "Invalid input",
-          details: validation.error.errors
-        },
-        { status: 400 }
-      );
+      return apiValidationError("Invalid input", validation.error.errors);
     }
 
     const { slotId, notes } = validation.data;
@@ -167,22 +151,16 @@ export async function POST(request: Request) {
         return newReservation;
       });
 
-      return NextResponse.json({ reservation });
+      return apiSuccess({ reservation });
     } catch (txError) {
       // トランザクションエラーを適切にハンドリング
 
       if (txError instanceof Error) {
         if (txError.message === "Lesson slot not found") {
-          return NextResponse.json(
-            { error: "Lesson slot not found" },
-            { status: 404 }
-          );
+          return apiNotFound("Lesson slot not found");
         }
         if (txError.message === "This slot is fully booked") {
-          return NextResponse.json(
-            { error: "This slot is fully booked" },
-            { status: 400 }
-          );
+          return apiValidationError("This slot is fully booked");
         }
       }
       // その他のエラーは外側のcatchで処理
@@ -190,12 +168,9 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error("Error creating reservation:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to create reservation",
-        details: error instanceof Error ? error.message : String(error)
-      },
-      { status: 500 }
+    return apiServerError(
+      error instanceof Error ? error : new Error("Failed to create reservation"),
+      error instanceof Error ? error.message : String(error)
     );
   }
 }

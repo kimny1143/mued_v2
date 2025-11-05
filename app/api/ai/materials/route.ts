@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import {
@@ -7,6 +7,7 @@ import {
   checkMaterialQuota,
   materialGenerationSchema,
 } from '@/lib/services/ai-material.service';
+import { apiSuccess, apiUnauthorized, apiValidationError, apiForbidden, apiServerError } from '@/lib/api-response';
 
 /**
  * GET /api/ai/materials
@@ -17,7 +18,7 @@ export async function GET() {
   try {
     const { userId: clerkUserId } = await auth();
     if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiUnauthorized();
     }
 
     // Get user's materials from database
@@ -26,8 +27,7 @@ export async function GET() {
     // Also get quota info
     const quota = await checkMaterialQuota(clerkUserId);
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       materials: materials.map((m) => ({
         id: m.id,
         title: m.title,
@@ -45,13 +45,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Get materials error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return apiServerError(error instanceof Error ? error : new Error('Internal server error'));
   }
 }
 
@@ -64,7 +58,7 @@ export async function POST(request: NextRequest) {
   try {
     const { userId: clerkUserId } = await auth();
     if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiUnauthorized();
     }
 
     // Parse request body
@@ -77,51 +71,31 @@ export async function POST(request: NextRequest) {
     // Generate material
     const result = await generateMaterial(generationRequest);
 
-    return NextResponse.json({
-      success: true,
+    const message = result.qualityStatus === 'approved'
+      ? 'Material generated successfully and passed quality gate'
+      : result.qualityStatus === 'draft'
+        ? 'Material generated but needs improvement'
+        : 'Material generated and requires manual review';
+
+    return apiSuccess({
       materialId: result.materialId,
       material: result.material,
       cost: result.cost,
       qualityStatus: result.qualityStatus,
       qualityMetadata: result.qualityMetadata,
-      message: result.qualityStatus === 'approved'
-        ? 'Material generated successfully and passed quality gate'
-        : result.qualityStatus === 'draft'
-          ? 'Material generated but needs improvement'
-          : 'Material generated and requires manual review',
-    });
+    }, { message });
   } catch (error) {
     console.error('Generate material error:', error);
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid request',
-          details: error.errors,
-        },
-        { status: 400 }
-      );
+      return apiValidationError('Invalid request', error.errors);
     }
 
     // Check if it's a quota error
     if (error instanceof Error && error.message.includes('limit reached')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: error.message,
-          upgradeRequired: true,
-        },
-        { status: 403 }
-      );
+      return apiForbidden(error.message);
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return apiServerError(error instanceof Error ? error : new Error('Internal server error'));
   }
 }

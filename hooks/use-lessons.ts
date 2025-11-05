@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
+import { useApiFetch } from './use-api-fetch';
 
 export interface Mentor {
   id: string;
@@ -35,61 +36,42 @@ export interface LessonFilters {
   mentorId?: string;
 }
 
+interface LessonSlotsResponse {
+  slots: LessonSlot[];
+}
+
+interface LessonSlotResponse {
+  slot: LessonSlot | null;
+}
+
 export function useLessons(filters?: LessonFilters) {
-  const [slots, setSlots] = useState<LessonSlot[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchSlots = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (filters?.available) params.append('available', 'true');
-      if (filters?.mentorId) params.append('mentorId', filters.mentorId);
-
-      const response = await fetch(`/api/lessons?${params.toString()}`);
-      const data = await response.json();
-      setSlots(data.slots || []);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch lessons');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSlots();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Build URL with query parameters
+  const url = useMemo(() => {
+    const params = new URLSearchParams();
+    if (filters?.available) params.append('available', 'true');
+    if (filters?.mentorId) params.append('mentorId', filters.mentorId);
+    return `/api/lessons?${params.toString()}`;
   }, [filters?.available, filters?.mentorId]);
 
-  return { slots, loading, error, refetch: fetchSlots };
+  const { data, error, isLoading, refetch } = useApiFetch<LessonSlotsResponse>(url, {
+    dependencies: [url],
+  });
+
+  const slots = data?.slots || [];
+
+  return { slots, loading: isLoading, error, refetch };
 }
 
 export function useLessonSlot(slotId: string) {
-  const [slot, setSlot] = useState<LessonSlot | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchSlot = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/lessons/${slotId}`);
-        const data = await response.json();
-        setSlot(data.slot || null);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch lesson slot');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (slotId) {
-      fetchSlot();
+  const { data, error, isLoading } = useApiFetch<LessonSlotResponse>(
+    `/api/lessons/${slotId}`,
+    {
+      manual: !slotId, // Don't fetch if no slotId provided
+      dependencies: [slotId],
     }
-  }, [slotId]);
+  );
 
-  return { slot, loading, error };
+  const slot = data?.slot || null;
+
+  return { slot, loading: isLoading, error };
 }

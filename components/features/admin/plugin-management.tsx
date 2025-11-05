@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useLocale } from '@/lib/i18n/locale-context';
-import { Activity, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { PluginList } from './plugin-list';
 import { PluginHealthStatus } from './plugin-health-status';
 
@@ -102,10 +103,7 @@ export function PluginManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex items-center gap-3 text-[var(--color-text-secondary)]">
-          <RefreshCw className="w-5 h-5 animate-spin" />
-          <span>{t.common.loading}</span>
-        </div>
+        <LoadingSpinner size="lg" label={t.common.loading} />
       </div>
     );
   }

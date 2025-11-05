@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { screen, waitFor, within, fireEvent } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { screen } from '@testing-library/react';
 import { LibraryCard } from './library-card';
-import { renderWithProviders, mockStorage } from '@/tests/utils/component-test-utils';
+import { renderWithProviders } from '@/tests/utils/component-test-utils';
 import type { UnifiedContent } from '@/types/unified-content';
 
 // Mock Next.js Link
@@ -35,20 +35,11 @@ const mockContent: UnifiedContent = {
   thumbnail: 'https://example.com/thumbnail.jpg',
   author: {
     name: 'Test Author',
-    url: 'https://note.com/author',
   },
-  publishedAt: '2025-01-15T10:00:00Z',
+  publishedAt: new Date('2025-01-15T10:00:00Z'),
   tags: ['education', 'javascript', 'testing', 'react', 'vitest'],
-  contentRaw: 'Raw content here',
-  processedContent: 'Processed content here',
   difficulty: 'intermediate',
   category: 'programming',
-  relatedContents: [],
-  metrics: {
-    views: 100,
-    likes: 10,
-    comments: 5,
-  },
 };
 
 const mockAIContent: UnifiedContent = {
@@ -60,12 +51,15 @@ const mockAIContent: UnifiedContent = {
       provider: 'OpenAI',
       model: 'GPT-4',
       version: '1.0',
+      timestamp: new Date('2025-01-15T10:00:00Z'),
     },
     qualityScore: {
       playability: 8,
       learningValue: 9,
-      accuracy: 0.95,
+      accuracy: 9.5,
+      overallStatus: 'approved',
     },
+    regenerationCount: 0,
     sourceContext: {
       articleId: 'original_123',
       articleTitle: 'Original Article',
@@ -73,23 +67,16 @@ const mockAIContent: UnifiedContent = {
     },
     humanReview: {
       status: 'approved',
-      reviewerId: 'reviewer_123',
-      reviewDate: '2025-01-16T10:00:00Z',
-      comments: 'Good quality content',
+      reviewedBy: 'reviewer_123',
+      reviewedAt: new Date('2025-01-16T10:00:00Z'),
+      reviewNotes: 'Good quality content',
     },
   },
 };
 
 describe('LibraryCard', () => {
-  let storage: ReturnType<typeof mockStorage>;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    storage = mockStorage();
-  });
-
-  afterEach(() => {
-    storage.restore();
   });
 
   describe('Rendering', () => {

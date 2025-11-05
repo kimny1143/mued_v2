@@ -1,41 +1,40 @@
-import { useCallback, useState } from 'react';
+import { useApiPost } from './use-api-fetch';
 
 interface PaymentResult {
   success: boolean;
   error?: string;
 }
 
+interface CheckoutPayload {
+  reservationId: string;
+}
+
+interface CheckoutResponse {
+  url: string;
+}
+
 export function usePayment() {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { mutate: checkout, isLoading: isProcessing, error } = useApiPost<CheckoutResponse, CheckoutPayload>('/api/checkout');
 
-  const processPayment = useCallback(async (reservationId: string): Promise<PaymentResult> => {
-    setIsProcessing(true);
-    setError(null);
-
+  const processPayment = async (reservationId: string): Promise<PaymentResult> => {
     try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reservationId }),
-      });
+      const data = await checkout({ reservationId });
 
-      if (!response.ok) {
-        throw new Error(`Payment failed: ${response.statusText}`);
+      if (!data) {
+        return {
+          success: false,
+          error: error?.message || '支払い処理に失敗しました'
+        };
       }
 
-      const data = await response.json();
       window.location.href = data.url;
       return { success: true };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '支払い処理に失敗しました';
-      setError(errorMessage);
-      console.error("Checkout error:", error);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '支払い処理に失敗しました';
+      console.error("Checkout error:", err);
       return { success: false, error: errorMessage };
-    } finally {
-      setIsProcessing(false);
     }
-  }, []);
+  };
 
   return { processPayment, isProcessing, error };
 }

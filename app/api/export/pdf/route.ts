@@ -16,7 +16,7 @@ interface AiMaterial {
   title: string;
   content: string;
   notation: string | null;
-  metadata: any;
+  metadata: Record<string, unknown> | null;
 }
 
 export async function POST(req: NextRequest) {
@@ -120,7 +120,7 @@ async function renderMaterialToHtml(material: AiMaterial): Promise<string> {
 
     return {
       title: block.title,
-      svg: (renderResult[0] as any)?.svg || '<p>Failed to render notation</p>',
+      svg: (renderResult[0] as { svg?: string })?.svg || '<p>Failed to render notation</p>',
     };
   });
 

@@ -13,8 +13,8 @@ vi.mock('@/db', () => ({
   },
 }));
 
-vi.mock('@clerk/nextjs', () => ({
-  auth: vi.fn(),
+vi.mock('@/lib/actions/user', () => ({
+  getCurrentUser: vi.fn(),
 }));
 
 describe('RAG Metrics History API', () => {
@@ -34,6 +34,7 @@ describe('RAG Metrics History API', () => {
           totalQueries: 150,
           uniqueUsers: 45,
           positiveVotes: 120,
+          sloCompliance: { overallMet: true },
         },
         {
           date: new Date('2025-01-21'),
@@ -44,21 +45,30 @@ describe('RAG Metrics History API', () => {
           totalQueries: 160,
           uniqueUsers: 48,
           positiveVotes: 130,
+          sloCompliance: { overallMet: true },
         },
       ];
 
       const { db } = await import('@/db');
+      const mockQuery = {
+        limit: vi.fn().mockReturnThis(),
+        offset: vi.fn().mockResolvedValue(mockMetrics),
+      };
+      const mockOrderBy = vi.fn().mockReturnValue(mockQuery);
       const mockFrom = vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(mockMetrics),
-        }),
+        where: vi.fn().mockReturnThis(),
+        orderBy: mockOrderBy,
       });
       vi.mocked(db.select).mockReturnValue({
         from: mockFrom,
       } as any);
 
-      const { auth } = await import('@clerk/nextjs');
-      vi.mocked(auth).mockReturnValue({ userId: 'admin-123' } as any);
+      const { getCurrentUser } = await import('@/lib/actions/user');
+      vi.mocked(getCurrentUser).mockResolvedValue({
+        id: 'admin-123',
+        email: 'admin@example.com',
+        role: 'admin',
+      } as any);
 
       const mockRequest = {
         nextUrl: new URL('http://localhost:3000/api/admin/rag-metrics/history'),
@@ -68,8 +78,10 @@ describe('RAG Metrics History API', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.metrics).toHaveLength(2);
-      expect(data.metrics[0].citationRate).toBe(75.5);
+      expect(data.history).toHaveLength(2);
+      expect(data.history[0].citationRate).toBe(75.5);
+      expect(data.summary).toBeDefined();
+      expect(data.pagination).toBeDefined();
     });
 
     it('should support custom period (30 days)', async () => {
@@ -82,45 +94,62 @@ describe('RAG Metrics History API', () => {
         totalQueries: 100 + Math.floor(Math.random() * 50),
         uniqueUsers: 30 + Math.floor(Math.random() * 20),
         positiveVotes: 80 + Math.floor(Math.random() * 30),
+        sloCompliance: { overallMet: true },
       }));
 
       const { db } = await import('@/db');
+      const mockQuery = {
+        limit: vi.fn().mockReturnThis(),
+        offset: vi.fn().mockResolvedValue(mockMetrics),
+      };
+      const mockOrderBy = vi.fn().mockReturnValue(mockQuery);
       const mockFrom = vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(mockMetrics),
-        }),
+        where: vi.fn().mockReturnThis(),
+        orderBy: mockOrderBy,
       });
       vi.mocked(db.select).mockReturnValue({
         from: mockFrom,
       } as any);
 
-      const { auth } = await import('@clerk/nextjs');
-      vi.mocked(auth).mockReturnValue({ userId: 'admin-123' } as any);
+      const { getCurrentUser } = await import('@/lib/actions/user');
+      vi.mocked(getCurrentUser).mockResolvedValue({
+        id: 'admin-123',
+        email: 'admin@example.com',
+        role: 'admin',
+      } as any);
 
       const mockRequest = {
-        nextUrl: new URL('http://localhost:3000/api/admin/rag-metrics/history?period=30'),
+        nextUrl: new URL('http://localhost:3000/api/admin/rag-metrics/history?limit=30'),
       } as any;
 
       const response = await GET(mockRequest);
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.metrics.length).toBeGreaterThan(0);
+      expect(data.history.length).toBeGreaterThan(0);
     });
 
     it('should return empty array when no data', async () => {
       const { db } = await import('@/db');
+      const mockQuery = {
+        limit: vi.fn().mockReturnThis(),
+        offset: vi.fn().mockResolvedValue([]),
+      };
+      const mockOrderBy = vi.fn().mockReturnValue(mockQuery);
       const mockFrom = vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue([]),
-        }),
+        where: vi.fn().mockReturnThis(),
+        orderBy: mockOrderBy,
       });
       vi.mocked(db.select).mockReturnValue({
         from: mockFrom,
       } as any);
 
-      const { auth } = await import('@clerk/nextjs');
-      vi.mocked(auth).mockReturnValue({ userId: 'admin-123' } as any);
+      const { getCurrentUser } = await import('@/lib/actions/user');
+      vi.mocked(getCurrentUser).mockResolvedValue({
+        id: 'admin-123',
+        email: 'admin@example.com',
+        role: 'admin',
+      } as any);
 
       const mockRequest = {
         nextUrl: new URL('http://localhost:3000/api/admin/rag-metrics/history'),
@@ -130,12 +159,12 @@ describe('RAG Metrics History API', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.metrics).toEqual([]);
+      expect(data.history).toEqual([]);
     });
 
     it('should require authentication', async () => {
-      const { auth } = await import('@clerk/nextjs');
-      vi.mocked(auth).mockReturnValue({ userId: null } as any);
+      const { getCurrentUser } = await import('@/lib/actions/user');
+      vi.mocked(getCurrentUser).mockResolvedValue(null as any);
 
       const mockRequest = {
         nextUrl: new URL('http://localhost:3000/api/admin/rag-metrics/history'),
@@ -147,11 +176,15 @@ describe('RAG Metrics History API', () => {
     });
 
     it('should validate period parameter', async () => {
-      const { auth } = await import('@clerk/nextjs');
-      vi.mocked(auth).mockReturnValue({ userId: 'admin-123' } as any);
+      const { getCurrentUser } = await import('@/lib/actions/user');
+      vi.mocked(getCurrentUser).mockResolvedValue({
+        id: 'admin-123',
+        email: 'admin@example.com',
+        role: 'admin',
+      } as any);
 
       const mockRequest = {
-        nextUrl: new URL('http://localhost:3000/api/admin/rag-metrics/history?period=invalid'),
+        nextUrl: new URL('http://localhost:3000/api/admin/rag-metrics/history?limit=invalid'),
       } as any;
 
       const response = await GET(mockRequest);
@@ -165,8 +198,12 @@ describe('RAG Metrics History API', () => {
         throw new Error('Database connection failed');
       });
 
-      const { auth } = await import('@clerk/nextjs');
-      vi.mocked(auth).mockReturnValue({ userId: 'admin-123' } as any);
+      const { getCurrentUser } = await import('@/lib/actions/user');
+      vi.mocked(getCurrentUser).mockResolvedValue({
+        id: 'admin-123',
+        email: 'admin@example.com',
+        role: 'admin',
+      } as any);
 
       const mockRequest = {
         nextUrl: new URL('http://localhost:3000/api/admin/rag-metrics/history'),
@@ -181,23 +218,31 @@ describe('RAG Metrics History API', () => {
   describe('Data Formatting', () => {
     it('should return metrics in chronological order', async () => {
       const mockMetrics = [
-        { date: new Date('2025-01-18'), citationRate: 70, latencyP50Ms: 1000, latencyP95Ms: 2000, costPerAnswer: 2, totalQueries: 100, uniqueUsers: 30, positiveVotes: 80 },
-        { date: new Date('2025-01-19'), citationRate: 72, latencyP50Ms: 1100, latencyP95Ms: 2100, costPerAnswer: 2.1, totalQueries: 110, uniqueUsers: 32, positiveVotes: 85 },
-        { date: new Date('2025-01-20'), citationRate: 75, latencyP50Ms: 1200, latencyP95Ms: 2200, costPerAnswer: 2.2, totalQueries: 120, uniqueUsers: 35, positiveVotes: 90 },
+        { date: new Date('2025-01-18'), citationRate: 70, latencyP50Ms: 1000, latencyP95Ms: 2000, costPerAnswer: 2, totalQueries: 100, uniqueUsers: 30, positiveVotes: 80, sloCompliance: { overallMet: true } },
+        { date: new Date('2025-01-19'), citationRate: 72, latencyP50Ms: 1100, latencyP95Ms: 2100, costPerAnswer: 2.1, totalQueries: 110, uniqueUsers: 32, positiveVotes: 85, sloCompliance: { overallMet: true } },
+        { date: new Date('2025-01-20'), citationRate: 75, latencyP50Ms: 1200, latencyP95Ms: 2200, costPerAnswer: 2.2, totalQueries: 120, uniqueUsers: 35, positiveVotes: 90, sloCompliance: { overallMet: true } },
       ];
 
       const { db } = await import('@/db');
+      const mockQuery = {
+        limit: vi.fn().mockReturnThis(),
+        offset: vi.fn().mockResolvedValue(mockMetrics),
+      };
+      const mockOrderBy = vi.fn().mockReturnValue(mockQuery);
       const mockFrom = vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(mockMetrics),
-        }),
+        where: vi.fn().mockReturnThis(),
+        orderBy: mockOrderBy,
       });
       vi.mocked(db.select).mockReturnValue({
         from: mockFrom,
       } as any);
 
-      const { auth } = await import('@clerk/nextjs');
-      vi.mocked(auth).mockReturnValue({ userId: 'admin-123' } as any);
+      const { getCurrentUser } = await import('@/lib/actions/user');
+      vi.mocked(getCurrentUser).mockResolvedValue({
+        id: 'admin-123',
+        email: 'admin@example.com',
+        role: 'admin',
+      } as any);
 
       const mockRequest = {
         nextUrl: new URL('http://localhost:3000/api/admin/rag-metrics/history'),
@@ -207,7 +252,7 @@ describe('RAG Metrics History API', () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      const dates = data.metrics.map((m: any) => new Date(m.date).getTime());
+      const dates = data.history.map((m: any) => new Date(m.date).getTime());
       expect(dates).toEqual([...dates].sort((a, b) => a - b)); // Ascending order
     });
 
@@ -221,20 +266,29 @@ describe('RAG Metrics History API', () => {
         totalQueries: 150,
         uniqueUsers: 45,
         positiveVotes: 120,
+        sloCompliance: { overallMet: true },
       }];
 
       const { db } = await import('@/db');
+      const mockQuery = {
+        limit: vi.fn().mockReturnThis(),
+        offset: vi.fn().mockResolvedValue(mockMetrics),
+      };
+      const mockOrderBy = vi.fn().mockReturnValue(mockQuery);
       const mockFrom = vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockResolvedValue(mockMetrics),
-        }),
+        where: vi.fn().mockReturnThis(),
+        orderBy: mockOrderBy,
       });
       vi.mocked(db.select).mockReturnValue({
         from: mockFrom,
       } as any);
 
-      const { auth } = await import('@clerk/nextjs');
-      vi.mocked(auth).mockReturnValue({ userId: 'admin-123' } as any);
+      const { getCurrentUser } = await import('@/lib/actions/user');
+      vi.mocked(getCurrentUser).mockResolvedValue({
+        id: 'admin-123',
+        email: 'admin@example.com',
+        role: 'admin',
+      } as any);
 
       const mockRequest = {
         nextUrl: new URL('http://localhost:3000/api/admin/rag-metrics/history'),
@@ -243,7 +297,7 @@ describe('RAG Metrics History API', () => {
       const response = await GET(mockRequest);
       const data = await response.json();
 
-      const metric = data.metrics[0];
+      const metric = data.history[0];
       expect(metric).toHaveProperty('date');
       expect(metric).toHaveProperty('citationRate');
       expect(metric).toHaveProperty('latencyP50Ms');

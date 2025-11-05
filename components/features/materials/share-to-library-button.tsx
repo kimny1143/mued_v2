@@ -8,6 +8,7 @@
  */
 
 import { useState } from 'react';
+import { InlineError } from '@/components/ui/error-boundary';
 
 interface ShareToLibraryButtonProps {
   materialId: string;
@@ -80,7 +81,9 @@ export function ShareToLibraryButton({
       </button>
 
       {error && (
-        <p className="text-sm text-red-600 mt-2">{error}</p>
+        <div className="mt-2">
+          <InlineError error={error} />
+        </div>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { InlineError } from "@/components/ui/error-boundary";
 
 interface Mentor {
   id: string;
@@ -229,9 +230,7 @@ export default function BookLessonPage() {
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
+              <InlineError error={error} />
             )}
 
             <div className="flex gap-4">

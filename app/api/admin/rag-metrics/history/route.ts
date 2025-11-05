@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
         acc.avgCitationRate += Number(record.citationRate) || 0;
         acc.avgLatencyP50 += Number(record.latencyP50Ms) || 0;
         acc.avgCostPerAnswer += Number(record.costPerAnswer) || 0;
-        acc.daysWithFullCompliance += record.sloCompliance && (record.sloCompliance as any).overallMet ? 1 : 0;
+        acc.daysWithFullCompliance += record.sloCompliance?.overallMet ? 1 : 0;
         return acc;
       },
       {

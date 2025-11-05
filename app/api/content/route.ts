@@ -24,7 +24,7 @@ async function initializePlugins() {
 
     // Create and register note.com fetcher directly
     const noteFetcher = new NoteContentFetcher();
-    registry.register('note', noteFetcher as any);
+    registry.register('note', noteFetcher);
 
     console.log('[ContentAPI] note.com fetcher registered successfully');
     pluginsInitialized = true;
