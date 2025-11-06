@@ -108,7 +108,9 @@ export function WeakDrillButton({
         </button>
 
         {error && (
-          <InlineError error={error} className="text-xs" />
+          <div className="text-xs">
+            <InlineError error={error} />
+          </div>
         )}
 
         {canGenerate && (

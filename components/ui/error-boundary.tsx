@@ -87,7 +87,8 @@ export function PageError({ error, onRetry }: ErrorBoundaryProps) {
 
 /**
  * インラインエラー表示
+ * ErrorBoundaryのすべてのプロパティをサポート
  */
-export function InlineError({ error }: { error: Error | string }) {
-  return <ErrorBoundary error={error} />;
+export function InlineError(props: ErrorBoundaryProps) {
+  return <ErrorBoundary {...props} />;
 }
