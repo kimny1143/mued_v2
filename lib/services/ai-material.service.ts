@@ -96,12 +96,42 @@ export interface MusicMaterial {
   practiceInstructions: string[];
 }
 
+// Phase 2: MultiTrack Music Material (Intermediate/Advanced)
+export interface MultiTrackMusicMaterial {
+  type: 'multi-track-music';
+  title: string;
+  description: string;
+  tracks: Array<{
+    instrument: string;
+    midiProgram?: number;
+    notes: Array<{
+      pitch: string;
+      duration: string;
+      velocity: number;
+      time: number;
+    }>;
+    volume?: number;
+    pan?: number;
+  }>;
+  tempo: number;
+  timeSignature: string;
+  keySignature: string;
+  totalBars?: number;
+  metadata?: {
+    difficulty?: 'beginner' | 'intermediate' | 'advanced';
+    composer?: string;
+  };
+  learningPoints: string[];
+  practiceInstructions: string[];
+}
+
 export type GeneratedMaterial =
   | QuizMaterial
   | SummaryMaterial
   | FlashcardMaterial
   | PracticeMaterial
-  | MusicMaterial;
+  | MusicMaterial
+  | MultiTrackMusicMaterial;
 
 // Prompt templates for each material type
 const QUIZ_PROMPT = `You are an expert educator. Generate a quiz on the following topic.
