@@ -1,8 +1,9 @@
 # MUED v2 Documentation Guide
 
-**Last Updated**: 2025年10月29日
+**Last Updated**: 2025年11月6日
 **Production Environment**: ✅ **Active** ([https://mued.jp](https://mued.jp))
 **Current Phase**: Phase 2 - RAG観測とデータ管理層
+**Project Health**: 85/100 🟢 (↑ from 78/100)
 
 ---
 
@@ -15,16 +16,32 @@
 - **Content**: Business pivot from LMS to Creative CMS, two-tier subscription model, 12-month roadmap
 - **Status**: Official strategy document - all other documents should align with this
 
+### 📊 最新進捗レポート 🆕
+**[`_today/PROGRESS_REPORT_2025-11-06.md`](./_today/PROGRESS_REPORT_2025-11-06.md)**
+- **作成日**: 2025-11-06
+- **主な成果**: テスト通過率100%達成、CI/CD緑化、API標準化開始
+- **プロジェクト健全性**: 78/100 → 85/100 (⬆️ +7)
+
+### 🔧 開発ワークフロー 🆕
+**[`guides/GIT_WORKTREE_WORKFLOW.md`](./guides/GIT_WORKTREE_WORKFLOW.md)**
+- Git Worktreeによる並行開発手法
+- 1日15-25分の時間節約
+- 緊急修正とPRレビューの効率化
+
 ### 📊 Current Sprint Plan
 **[`implementation/phase2-sprint-plan.md`](./implementation/phase2-sprint-plan.md)**
 - **Sprint Period**: 2025-10-30 to 2025-11-12
 - **Focus**: RAG metrics collection, provenance management, SLO monitoring
 - **Success Criteria**: Citation Rate 70%+, P50 latency <1.5s
 
-### 🔧 API Specifications
+### 🔧 API Specifications & Status
 **[`api/rag-metrics-api.yaml`](./api/rag-metrics-api.yaml)**
 - OpenAPI 3.0 specification for RAG metrics endpoints
 - Provenance tracking and performance monitoring APIs
+
+**[`_today/API_STANDARDIZATION_STATUS_2025-11-06.md`](./_today/API_STANDARDIZATION_STATUS_2025-11-06.md)** 🆕
+- API標準化の実態: 3/27エンドポイント完了 (11.1%)
+- 優先度付き実装ロードマップ
 
 ---
 
@@ -35,6 +52,19 @@ docs/
 ├── README.md                              # This navigation guide
 ├── CHANGELOG.md                           # Documentation change history
 │
+├── _today/                                # 🆕 Latest Work & Reports
+│   ├── PROGRESS_REPORT_2025-11-06.md    # Latest progress report
+│   ├── API_STANDARDIZATION_STATUS_2025-11-06.md  # API status audit
+│   ├── DOCUMENTATION_CLEANUP_PLAN_2025-11-06.md  # Cleanup plan
+│   ├── IMPROVEMENT_IMPLEMENTATION_PLAN.md
+│   ├── IMPLEMENTATION_QUICK_REFERENCE.md
+│   ├── IMPLEMENTATION_START_GUIDE.md
+│   └── PROJECT_REVIEW_2025.md
+│
+├── guides/                                # 🆕 Development Guides
+│   ├── GIT_WORKTREE_WORKFLOW.md         # Git Worktree best practices
+│   └── ai-powered-development.md
+│
 ├── business/                              # Business Strategy & Planning
 │   ├── MUED_Unified_Strategy_2025Q4.md  # ⭐️ MASTER DOCUMENT
 │   ├── MUED事業計画書_20251029追記.md      # Two-tier subscription model
@@ -42,40 +72,60 @@ docs/
 │   └── archive/                          # Historical business documents
 │
 ├── architecture/                          # System Architecture
-│   ├── current/
-│   │   ├── mvp-architecture.md          # Current MVP architecture
-│   │   ├── business-logic-specification.md
-│   │   └── mcp-feasibility-analysis.md
+│   ├── mvp-architecture.md              # Current MVP architecture
+│   ├── business-logic-specification.md
+│   ├── mcp-feasibility-analysis.md
+│   ├── ci-cd-analysis-and-fixes.md      # 🆕 CI/CD optimization
 │   └── archive/                          # Past architecture designs
+│
+├── database/                              # 🆕 Database Documentation
+│   ├── MIGRATION_GUIDE.md
+│   ├── EXECUTE_MIGRATION.md
+│   ├── MIGRATION_EXECUTION_SUMMARY.md
+│   ├── phase2-migration-guide.md
+│   ├── phase2-schema-review-report.md
+│   ├── PHASE2_IMPLEMENTATION_SUMMARY.md
+│   └── QUICK_REFERENCE.md
+│
+├── deployment/                            # 🆕 Deployment & CI/CD
+│   ├── deployment-checklist.md
+│   ├── github-actions-setup.md
+│   ├── github-actions-env-setup.md
+│   ├── environment-variables.md
+│   └── sentry-setup.md
+│
+├── reports/                               # 🆕 Quality & Audit Reports
+│   ├── CODE_QUALITY_REPORT.md
+│   ├── DOCUMENTATION_AUDIT_REPORT_2025-10-29.md
+│   └── phase2-completion-report.md
 │
 ├── implementation/                        # Implementation Plans & Progress
 │   ├── phase2-sprint-plan.md            # ⭐️ CURRENT SPRINT
 │   ├── mvp-implementation-plan.md
-│   ├── mvp-checklist.md
-│   ├── current-progress.md
-│   └── archive/                          # Completed sprints
+│   └── mvp-checklist.md
 │
 ├── api/                                  # API Specifications
 │   └── rag-metrics-api.yaml             # RAG metrics OpenAPI spec
 │
 ├── proposals/                            # Active Proposals & Philosophy
-│   ├── MUED_v2_architecture_philosophy_refocus.md  # Architecture philosophy
-│   ├── MUED_Layered_Architecture_Proposal_Draft.md
-│   ├── NOTE_MATERIALS_INTEGRATION_PROPOSAL_V4_JA.md
+│   ├── MUED_v2_architecture_philosophy_refocus.md
 │   └── archive/                         # Implemented/rejected proposals
 │
 ├── testing/                              # Test Strategies & Reports
 │   ├── TEST_STRATEGY.md
 │   └── e2e-test-setup.md
 │
+├── features/                             # Feature Specifications
+│   └── note-materials-integration.md
+│
 ├── research/                             # Research & Analysis
 │   └── ai-mentor-matching-research.md
 │
 └── archive/                              # Historical Documents
-    ├── 2025-10-29/                      # Today's archived documents
-    ├── 2025-10-27/                      # October 27 comprehensive reports
-    ├── 2025-10-19/                      # Database optimization era
-    └── 2025-10-18/                      # Initial production deployment
+    ├── 2025-10-29/
+    ├── 2025-10-27/
+    ├── 2025-10-19/
+    └── 2025-10-18/
 ```
 
 ---

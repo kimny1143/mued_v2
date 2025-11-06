@@ -52,39 +52,41 @@
 改善率: 100% → テスト通過率100%達成
 ```
 
-### ✅ 2. API レスポンス標準化（フェーズ4完了）
+### 🔄 2. API レスポンス標準化（フェーズ4: 11% → 継続中）
 
 **課題**: APIエンドポイント間でレスポンス形式が統一されていない
 
 **実施内容**:
 
-**a. `lib/api-response.ts` ユーティリティ作成**
+**a. `lib/api-response.ts` ヘルパー関数作成** ✅
 ```typescript
-export class ApiResponse {
-  static success<T>(data: T, meta?: Record<string, unknown>, status = 200)
-  static error(message: string, code?: string, status = 400)
-}
+// 標準化されたヘルパー関数
+export function apiSuccess<T>(data: T, meta?: { message?: string })
+export function apiUnauthorized(message?: string)
+export function apiValidationError(message: string, errors?: unknown[])
+export function apiForbidden(message?: string)
+export function apiNotFound(message?: string)
+export function apiServerError(error: Error, detail?: string)
 ```
 
-**b. 全APIエンドポイントへの適用**（28個中28個）
-- `/app/api/admin/` - 管理者API
-- `/app/api/ai/` - AI機能API
-- `/app/api/content/` - コンテンツAPI
-- `/app/api/lessons/` - レッスンAPI
-- `/app/api/materials/` - 教材API
-- `/app/api/metrics/` - メトリクスAPI
-- `/app/api/reservations/` - 予約API
+**b. APIエンドポイントへの段階的適用**（3/27 = 11.1%）
 
-**c. カスタムフック統一**
-- `hooks/use-materials.ts`
-- `hooks/use-lessons.ts`
-- `hooks/use-reservations.ts`
-- `hooks/use-payment.ts`
+✅ **標準化済み** (3ファイル):
+- `app/api/reservations/route.ts` - 予約API (GET, POST)
+- `app/api/lessons/route.ts` - レッスン一覧API (GET)
+- `app/api/ai/materials/route.ts` - AI教材生成API (GET, POST)
+
+❌ **未標準化** (24ファイル):
+- 優先度High: AI系API (5)、決済系API (3)、レッスンAPI (1)
+- 優先度Medium: Admin系API (4)、ダッシュボード (2)
+- 優先度Low: Webhook (2)、ヘルスチェック (2)、その他 (5)
+
+詳細は `/tmp/api-standardization-status.md` 参照
 
 **成果**:
-- ✅ 統一されたエラーハンドリング
-- ✅ 一貫したレスポンス構造
-- ✅ フロントエンドでの型安全性向上
+- ✅ 標準化ユーティリティ実装完了
+- 🔄 段階的な適用を継続中
+- 📋 優先度付きロードマップ作成完了
 
 ### ✅ 3. GitHub Actions RAGメトリクス計算修正
 
@@ -219,30 +221,31 @@ ESLint警告: 約60件（主にテストファイルのany型使用）
 
 **目標**: 全APIエンドポイントで統一されたレスポンス形式
 
-**進捗**: ✅ **完了 (100%)**
+**進捗**: 🔄 **進行中 (11.1%)**
 
 | タスク | 状態 | 完了数 |
 |--------|------|--------|
-| ApiResponseユーティリティ作成 | ✅ 完了 | 1/1 |
-| APIルートへの適用 | ✅ 完了 | 28/28 |
+| ApiResponseヘルパー関数作成 | ✅ 完了 | 1/1 |
+| APIルートへの適用 | 🔄 進行中 | 3/27 |
 
 **成果物**:
 ```typescript
 // lib/api-response.ts
-export interface ApiSuccessResponse<T> {
-  success: true;
-  data: T;
-  meta?: { timestamp: string; [key: string]: unknown };
-}
-
-export interface ApiErrorResponse {
-  success: false;
-  error: { message: string; code?: string };
-  timestamp: string;
-}
+export function apiSuccess<T>(data: T, meta?: { message?: string })
+export function apiUnauthorized(message?: string)
+export function apiValidationError(message: string, errors?: unknown[])
+export function apiForbidden(message?: string)
+export function apiNotFound(message?: string)
+export function apiServerError(error: Error, detail?: string)
 ```
 
-**適用済みAPIエンドポイント**: 28個全て
+**適用済みAPIエンドポイント**: 3個（reservations, lessons, ai/materials）
+**未適用**: 24個（優先度付きリスト作成済み）
+
+**次のアクション**:
+1. 優先度High（9ファイル）の標準化実施
+2. カスタムフックの型定義更新
+3. エラーハンドリングのテスト追加
 
 ---
 
@@ -374,7 +377,7 @@ Deletions:   -1,200 lines
 
 1. ✅ **テスト通過率**: 48% → 100% (⬆️ +52%)
 2. ✅ **TypeScript型エラー**: 17件 → 0件 (✅ -17)
-3. ✅ **API標準化**: 28個のエンドポイントを統一
+3. 🔄 **API標準化**: ヘルパー関数実装完了、3/27エンドポイントに適用 (11.1%)
 4. ✅ **統合テスト**: 完全に安定化
 5. ✅ **GitHub Actions**: RAGメトリクス計算が正常動作
 
@@ -389,6 +392,7 @@ Deletions:   -1,200 lines
 - フェーズ1: 型エラー・警告解消（50% → 100%）
 - フェーズ2: 共通コンポーネント移行（0% → 100%）
 - フェーズ3: テストカバレッジ向上（65% → 70%）
+- フェーズ4: API標準化完了（11% → 100%、残り24エンドポイント）
 
 ---
 
