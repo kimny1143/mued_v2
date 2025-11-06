@@ -68,12 +68,13 @@ export class AIGeneratedMaterialFetcher implements IContentFetcher {
       const content: UnifiedContent[] = results
         .filter(({ material }) => material !== null)
         .map(({ material, creator }) => {
-          const typedMetadata = material.metadata as {
+          // Safely handle metadata (can be null for manually created materials)
+          const typedMetadata = (material.metadata as {
             model?: string;
             tokens?: number;
             generationCost?: number;
             tags?: string[];
-          };
+          } | null) || {};
 
           return {
             id: `material-${material.id}`,
@@ -211,14 +212,15 @@ function extractTags(material: typeof materials.$inferSelect): string[] {
     tags.push(material.difficulty);
   }
 
-  // Extract from metadata if available
-  const metadata = material.metadata as { tags?: string[]; instrument?: string };
-  if (metadata?.tags && Array.isArray(metadata.tags)) {
+  // Extract from metadata if available (safely handle null)
+  const metadata = (material.metadata as { tags?: string[]; instrument?: string } | null) || {};
+
+  if (metadata.tags && Array.isArray(metadata.tags)) {
     tags.push(...metadata.tags);
   }
 
   // Add instrument if available
-  if (metadata?.instrument) {
+  if (metadata.instrument) {
     tags.push(metadata.instrument);
   }
 
