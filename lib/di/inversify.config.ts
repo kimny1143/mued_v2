@@ -12,6 +12,7 @@ import { PluginRegistry } from '@/lib/plugins/plugin-registry';
 import { PluginLoader } from '@/lib/plugins/plugin-loader';
 import { ContentFetcherRegistry } from '@/lib/content/content-fetcher-registry';
 import { ContentValidator } from '@/lib/content/content-validator';
+import { AIGeneratedMaterialFetcher } from '@/lib/plugins/ai-material';
 
 /**
  * Create and configure the DI container
@@ -28,6 +29,13 @@ export function createContainer(): Container {
   container.bind(TYPES.PluginLoader).to(PluginLoader).inSingletonScope();
   container.bind(TYPES.ContentFetcherRegistry).to(ContentFetcherRegistry).inSingletonScope();
   container.bind(TYPES.ContentValidator).to(ContentValidator).inSingletonScope();
+
+  // Register AI Material fetcher
+  // AI教材フェッチャーを登録
+  const registry = container.get<ContentFetcherRegistry>(TYPES.ContentFetcherRegistry);
+  const aiMaterialFetcher = new AIGeneratedMaterialFetcher();
+  registry.register('ai_generated', aiMaterialFetcher);
+  console.log('[DI Container] Registered AI Material fetcher');
 
   return container;
 }

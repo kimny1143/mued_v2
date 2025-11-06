@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShareToLibraryButton } from '@/components/features/materials/share-to-library-button';
 import { PageLoading } from '@/components/ui/loading-spinner';
@@ -29,7 +29,8 @@ interface MaterialData {
   createdAt: string;
 }
 
-export default function MaterialDetailPage({ params }: { params: { id: string } }) {
+export default function MaterialDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const router = useRouter();
   const [material, setMaterial] = useState<MaterialData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,11 +39,11 @@ export default function MaterialDetailPage({ params }: { params: { id: string } 
   useEffect(() => {
     fetchMaterial();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id]);
+  }, [resolvedParams.id]);
 
   const fetchMaterial = async () => {
     try {
-      const response = await fetch(`/api/ai/materials/${params.id}`);
+      const response = await fetch(`/api/ai/materials/${resolvedParams.id}`);
       const data = await response.json();
 
       if (data.success) {
