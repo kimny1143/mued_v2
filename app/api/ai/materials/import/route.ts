@@ -112,10 +112,10 @@ export async function POST(request: NextRequest) {
         difficulty,
         content: content as unknown as Record<string, unknown>,
         creatorId: userId,
+        isPublic: makePublic, // Set isPublic column directly
         metadata: {
           importedFrom: 'external',
           importedAt: new Date().toISOString(),
-          isPublic: makePublic,
         },
       })
       .returning();
