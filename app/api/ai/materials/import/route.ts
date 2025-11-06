@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         description: content.description,
         type: content.type,
         difficulty,
-        content: content as unknown as Record<string, unknown>,
+        content: JSON.stringify(content),
         creatorId: userId,
         isPublic: makePublic, // Set isPublic column directly
         metadata: {

@@ -35,7 +35,11 @@ export const openai = new Proxy({} as OpenAI, {
       if (!env.OPENAI_API_KEY) {
         throw new Error('OPENAI_API_KEY is required at runtime');
       }
-      _openaiClient = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+      _openaiClient = new OpenAI({
+        apiKey: env.OPENAI_API_KEY,
+        timeout: 180000, // 3 minutes timeout for GPT-5 reasoning
+        maxRetries: 2,
+      });
     }
     return _openaiClient[prop];
   },
@@ -77,6 +81,7 @@ export interface ChatCompletionOptions {
   temperature?: number;
   tools?: OpenAI.Chat.Completions.ChatCompletionTool[];
   toolChoice?: OpenAI.Chat.Completions.ChatCompletionToolChoiceOption;
+  reasoning_effort?: 'low' | 'medium' | 'high' | 'minimal'; // GPT-5 only
 }
 
 /**
@@ -144,7 +149,10 @@ export async function createChatCompletion(
     if (isGPT5) {
       completionParams.max_completion_tokens = maxTokens;
       // temperature is fixed at 1.0 for GPT-5 (cannot be customized)
-      // reasoning_effort can be added here if needed: 'low' | 'medium' | 'high'
+      // reasoning_effort: control reasoning time (GPT-5 only)
+      if (options.reasoning_effort) {
+        completionParams.reasoning_effort = options.reasoning_effort;
+      }
     } else {
       // Other models (GPT-4o, GPT-4o-mini, etc.): use max_tokens and temperature
       completionParams.max_tokens = maxTokens;

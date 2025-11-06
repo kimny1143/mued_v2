@@ -115,7 +115,26 @@ export interface Track {
 /**
  * マルチトラックJSON中間フォーマット
  */
+/**
+ * マルチトラックJSON中間フォーマット
+ *
+ * Phase 2対応：教育メタデータフィールドを追加
+ */
 export interface MultiTrackJSON {
+  // AI生成時の識別子（GPT-5が自動的に追加）
+  type?: 'multi-track-music';
+
+  // 教育メタデータ（Phase 2で追加）
+  /** 楽曲タイトル */
+  title?: string;
+  /** 楽曲の説明 */
+  description?: string;
+  /** 学習ポイント（教育用） */
+  learningPoints?: string[];
+  /** 練習指示（教育用） */
+  practiceInstructions?: string[];
+
+  // 音楽データ（必須）
   /** トラックのリスト */
   tracks: Track[];
 
@@ -131,7 +150,7 @@ export interface MultiTrackJSON {
   /** オプション: 総小節数 */
   totalBars?: number;
 
-  /** オプション: メタデータ */
+  /** オプション: メタデータ（後方互換性のため維持） */
   metadata?: {
     title?: string;
     composer?: string;
@@ -188,7 +207,7 @@ export const NoteSchema = z.object({
  */
 export const TrackSchema = z.object({
   instrument: InstrumentNameSchema,
-  midiProgram: z.number().min(1).max(128).optional(),
+  midiProgram: z.number().min(0).max(128).optional(), // 0 = Percussion/Drums (General MIDI Channel 10)
   notes: z.array(NoteSchema),
   volume: z.number().min(0).max(127).optional(),
   pan: z.number().min(-64).max(63).optional(),
@@ -198,13 +217,32 @@ export const TrackSchema = z.object({
 
 /**
  * マルチトラックJSON中間フォーマットのZodスキーマ
+ *
+ * Phase 2対応：教育メタデータフィールドを追加
+ * - type: "multi-track-music" (固定値、AIが生成時に使用)
+ * - title: 楽曲タイトル（トップレベル）
+ * - description: 楽曲説明（トップレベル）
+ * - learningPoints: 学習ポイント配列（教育用）
+ * - practiceInstructions: 練習指示配列（教育用）
  */
 export const MultiTrackJSONSchema = z.object({
+  // AI生成時の識別子（GPT-5が自動的に追加）
+  type: z.literal('multi-track-music').optional(),
+
+  // 教育メタデータ（Phase 2で追加）
+  title: z.string().optional(),
+  description: z.string().optional(),
+  learningPoints: z.array(z.string()).optional(),
+  practiceInstructions: z.array(z.string()).optional(),
+
+  // 音楽データ（必須）
   tracks: z.array(TrackSchema).min(1),
   tempo: z.number().min(20).max(300),
   timeSignature: z.string().regex(/^\d+\/\d+$/),  // 例: 4/4, 3/4
   keySignature: z.string(),  // 例: C major, D minor
   totalBars: z.number().min(1).optional(),
+
+  // 旧メタデータ形式（後方互換性のため維持）
   metadata: z.object({
     title: z.string().optional(),
     composer: z.string().optional(),

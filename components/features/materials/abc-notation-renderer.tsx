@@ -61,8 +61,11 @@ export function AbcNotationRenderer({
 
     const initSynth = async () => {
       try {
+        const audioElement = audioRef.current;
+        if (!audioElement) return;
+
         const synthControl = new abcjs.synth.SynthController();
-        synthControl.load(audioRef.current, null, {
+        synthControl.load(audioElement, null, {
           displayLoop: true,
           displayRestart: true,
           displayPlay: true,

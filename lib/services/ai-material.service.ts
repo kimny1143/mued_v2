@@ -5,6 +5,7 @@ import { materials, subscriptions, users } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { checkQualityGate, suggestImprovements, type QualityStatus } from '@/lib/quality-gate';
 import { validateAbcSyntax } from '@/lib/abc-validator';
+import { generateConciseMultiTrackPrompt } from '@/lib/prompts/multi-track-music-prompt-concise';
 
 /**
  * AI Material Generation Service
@@ -417,6 +418,18 @@ function getPromptTemplate(format: string): string {
 }
 
 function buildPrompt(request: MaterialGenerationRequest): string {
+  // Phase 2: Use concise prompt for intermediate/advanced music materials (GPT-5 optimized)
+  if (request.format === 'music' && (request.difficulty === 'intermediate' || request.difficulty === 'advanced')) {
+    return generateConciseMultiTrackPrompt({
+      subject: request.subject,
+      topic: request.topic,
+      difficulty: request.difficulty,
+      instrument: request.instrument || 'piano',
+      context: request.additionalContext,
+    });
+  }
+
+  // Use traditional detailed prompts for beginner music and other formats
   const template = getPromptTemplate(request.format);
   return template
     .replace('{subject}', request.subject)
