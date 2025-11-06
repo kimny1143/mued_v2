@@ -93,13 +93,8 @@ export function generateMIDI(multiTrackJSON: MultiTrackJSON): string {
   tracks.forEach((track) => {
     const midiTrack = new MidiWriter.Track();
 
-    // トラック名を設定
-    midiTrack.addEvent(
-      new MidiWriter.MetaEvent({
-        type: MidiWriter.MetaEvent.TRACK_NAME,
-        data: track.instrument,
-      })
-    );
+    // トラック名を設定（v3のヘルパーメソッド使用）
+    midiTrack.addTrackName(track.instrument);
 
     // 楽器を設定（Program Change）
     const midiProgram = track.midiProgram || getDefaultMidiProgram(track.instrument);
