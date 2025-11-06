@@ -41,10 +41,20 @@ export const openai = new Proxy({} as OpenAI, {
 
 // Model pricing (per 1M tokens) - as of 2025
 export const MODEL_PRICING = {
+  // GPT-5 series (2025-08)
+  'gpt-5': { input: 1.25, output: 10.0 },
+  'gpt-5-mini': { input: 0.25, output: 2.0 },
+  'gpt-5-nano': { input: 0.05, output: 0.4 },
+  // GPT-4 series
   'gpt-4o': { input: 2.5, output: 10.0 },
   'gpt-4o-mini': { input: 0.15, output: 0.6 },
   'gpt-4-turbo': { input: 10.0, output: 30.0 },
+  // GPT-3.5 series
   'gpt-3.5-turbo': { input: 0.5, output: 1.5 },
+  // o-series reasoning models
+  'o1': { input: 15.0, output: 60.0 },
+  'o1-mini': { input: 3.0, output: 12.0 },
+  'o3-mini': { input: 1.1, output: 4.4 },
 } as const;
 
 export type ModelName = keyof typeof MODEL_PRICING;
@@ -71,11 +81,34 @@ export interface ChatCompletionOptions {
  * Calculate estimated cost based on token usage
  */
 export function calculateCost(
-  model: ModelName,
+  model: string,
   promptTokens: number,
   completionTokens: number
 ): number {
-  const pricing = MODEL_PRICING[model];
+  // Try to find exact model match
+  if (model in MODEL_PRICING) {
+    const pricing = MODEL_PRICING[model as ModelName];
+    const inputCost = (promptTokens / 1_000_000) * pricing.input;
+    const outputCost = (completionTokens / 1_000_000) * pricing.output;
+    return inputCost + outputCost;
+  }
+
+  // Fallback: try to infer pricing from model name prefix
+  if (model.startsWith('gpt-5')) {
+    const pricing = MODEL_PRICING['gpt-5'];
+    const inputCost = (promptTokens / 1_000_000) * pricing.input;
+    const outputCost = (completionTokens / 1_000_000) * pricing.output;
+    return inputCost + outputCost;
+  } else if (model.startsWith('gpt-4o')) {
+    const pricing = MODEL_PRICING['gpt-4o'];
+    const inputCost = (promptTokens / 1_000_000) * pricing.input;
+    const outputCost = (completionTokens / 1_000_000) * pricing.output;
+    return inputCost + outputCost;
+  }
+
+  // Default fallback to gpt-4o-mini pricing
+  console.warn(`Unknown model for cost calculation: ${model}, using gpt-4o-mini pricing`);
+  const pricing = MODEL_PRICING['gpt-4o-mini'];
   const inputCost = (promptTokens / 1_000_000) * pricing.input;
   const outputCost = (completionTokens / 1_000_000) * pricing.output;
   return inputCost + outputCost;
