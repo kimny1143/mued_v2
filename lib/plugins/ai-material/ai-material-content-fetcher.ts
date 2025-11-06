@@ -88,6 +88,7 @@ export class AIGeneratedMaterialFetcher implements IContentFetcher {
             tags: extractTags(material),
             publishedAt: material.createdAt,
             updatedAt: material.updatedAt || material.createdAt,
+            url: `/dashboard/materials/${material.id}`, // Direct link to material detail page
             author: creator
               ? {
                   id: creator.clerkId,
