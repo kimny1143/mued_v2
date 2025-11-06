@@ -508,9 +508,24 @@ export async function generateMaterial(
     }
   );
 
-  const response = completion.choices[0]?.message?.content;
+  const message = completion.choices[0]?.message;
+
+  // Debug logging for GPT-5
+  console.log('[AI Material Service] Completion response:', {
+    hasMessage: !!message,
+    hasContent: !!message?.content,
+    contentLength: message?.content?.length,
+    messageKeys: message ? Object.keys(message) : [],
+    fullMessage: JSON.stringify(message, null, 2),
+  });
+
+  const response = message?.content;
   if (!response) {
-    throw new Error('Failed to generate material');
+    console.error('[AI Material Service] No content in response:', {
+      message,
+      fullCompletion: JSON.stringify(completion, null, 2),
+    });
+    throw new Error('Failed to generate material: No content in API response');
   }
 
   // Parse JSON response
