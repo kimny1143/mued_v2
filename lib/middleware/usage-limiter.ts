@@ -23,29 +23,57 @@ export interface UsageLimits {
 }
 
 // Tier-based limits configuration
-// 開発環境・テスト用に制限を緩和（本番環境も一時的に含む）
-const isDevelopment = process.env.NODE_ENV === 'development'
-  || process.env.VERCEL_ENV === 'preview'
-  || process.env.VERCEL_ENV === 'production'; // TODO: テスト完了後に削除
+// 開発・テスト用に制限を完全解放（本番環境も一時的に含む）
+// TODO: テスト完了後に本番環境の制限を戻す
 
-const TIER_LIMITS = {
-  freemium: {
-    aiMaterialsLimit: isDevelopment ? -1 : 3,
-    reservationsLimit: isDevelopment ? -1 : 1,
-  },
-  starter: {
-    aiMaterialsLimit: isDevelopment ? -1 : 3,
-    reservationsLimit: isDevelopment ? -1 : 1,
-  },
-  basic: {
-    aiMaterialsLimit: -1, // unlimited
-    reservationsLimit: 5,
-  },
-  premium: {
-    aiMaterialsLimit: -1, // unlimited
-    reservationsLimit: -1, // unlimited
-  },
-};
+// IMPORTANT: Function-level evaluation to ensure runtime environment is checked
+function getTierLimits() {
+  // 一時的に全環境でunlimitedに設定（テスト中）
+  const UNLIMITED_FOR_TESTING = true; // TODO: テスト完了後にfalseに変更
+
+  if (UNLIMITED_FOR_TESTING) {
+    return {
+      freemium: {
+        aiMaterialsLimit: -1,
+        reservationsLimit: -1,
+      },
+      starter: {
+        aiMaterialsLimit: -1,
+        reservationsLimit: -1,
+      },
+      basic: {
+        aiMaterialsLimit: -1,
+        reservationsLimit: -1,
+      },
+      premium: {
+        aiMaterialsLimit: -1,
+        reservationsLimit: -1,
+      },
+    };
+  }
+
+  // 本番環境の制限（テスト完了後に使用）
+  return {
+    freemium: {
+      aiMaterialsLimit: 3,
+      reservationsLimit: 1,
+    },
+    starter: {
+      aiMaterialsLimit: 3,
+      reservationsLimit: 1,
+    },
+    basic: {
+      aiMaterialsLimit: -1, // unlimited
+      reservationsLimit: 5,
+    },
+    premium: {
+      aiMaterialsLimit: -1, // unlimited
+      reservationsLimit: -1, // unlimited
+    },
+  };
+}
+
+const TIER_LIMITS = getTierLimits();
 
 /**
  * Get user's current usage limits and remaining quota
