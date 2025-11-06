@@ -15,7 +15,9 @@ import { z } from 'zod';
 const envSchema = z.object({
   OPENAI_API_KEY: z.string().min(1).optional(), // Optional to allow build, but required at runtime
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
-  OPENAI_MAX_TOKENS: z.coerce.number().default(1000),
+  // GPT-5 reasoning models need much higher limits due to reasoning tokens
+  // GPT-5 supports up to 128k output tokens
+  OPENAI_MAX_TOKENS: z.coerce.number().default(16000),
 });
 
 const env = envSchema.parse({
