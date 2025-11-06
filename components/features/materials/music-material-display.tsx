@@ -33,28 +33,31 @@ export function MusicMaterialDisplay({ content }: MusicMaterialDisplayProps) {
     const blueNotes: string[] = [];
 
     // Parse ABC and extract notes
-    // ABC notation: C,, C, C c c' (lower to higher octaves)
-    // Accidentals: _E = Eb, ^F = F#
+    // ABC notation octave rules:
+    // C,, = C2, C, = C3, C = C4 (middle C), c = C5, c' = C6
     const noteMatches = abc.match(/[_^]?[A-Ga-g][',]*/g) || [];
 
     noteMatches.forEach((note) => {
-      // Determine octave based on case and octave markers
-      let octave = 4; // Default middle octave
-      let noteName = note.replace(/[_^',]/g, '');
+      // Get base note name (A-G)
+      const baseNote = note.replace(/[_^',]/g, '');
+      const isUpperCase = baseNote === baseNote.toUpperCase();
 
-      // Count commas (lower octaves) and apostrophes (higher octaves)
+      // Count octave modifiers
       const commas = (note.match(/,/g) || []).length;
       const apostrophes = (note.match(/'/g) || []).length;
 
-      // Uppercase = octave 3-4, lowercase = octave 4-5
-      if (noteName === noteName.toUpperCase()) {
+      // Determine octave
+      // Uppercase: base octave 4, subtract commas
+      // Lowercase: base octave 5, add apostrophes
+      let octave: number;
+      if (isUpperCase) {
         octave = 4 - commas;
       } else {
         octave = 5 + apostrophes;
       }
 
       // Convert to uppercase for scientific notation
-      noteName = noteName.toUpperCase();
+      let noteName = baseNote.toUpperCase();
 
       // Handle accidentals
       if (note.startsWith('_')) {
@@ -70,8 +73,22 @@ export function MusicMaterialDisplay({ content }: MusicMaterialDisplayProps) {
       allNotes.push(noteName + octave);
     });
 
+    // Sort notes by pitch (octave first, then note name)
+    const noteOrder = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+    const sortedNotes = [...new Set(allNotes)].sort((a, b) => {
+      const octaveA = parseInt(a.match(/\d+$/)?.[0] || '4');
+      const octaveB = parseInt(b.match(/\d+$/)?.[0] || '4');
+      const nameA = a.replace(/\d+$/, '');
+      const nameB = b.replace(/\d+$/, '');
+
+      if (octaveA !== octaveB) {
+        return octaveA - octaveB;
+      }
+      return noteOrder.indexOf(nameA) - noteOrder.indexOf(nameB);
+    });
+
     return {
-      all: [...new Set(allNotes)],
+      all: sortedNotes,
       blue: [...new Set(blueNotes)],
     };
   };

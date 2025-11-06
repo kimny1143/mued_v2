@@ -33,22 +33,16 @@ export function PianoKeyboardDiagram({
     // Clear previous content
     containerRef.current.innerHTML = '';
 
-    // Create labels object for highlighted notes
-    const labels: Record<string, string> = {};
-    highlightedNotes.forEach((note) => {
-      // Blue notes get special color
-      if (blueNotes.includes(note)) {
-        labels[note] = '●'; // Dot marker for blue notes
-      } else {
-        labels[note] = '●'; // Dot marker for regular notes
-      }
-    });
+    // Create colorize array for individual note colors
+    const colorize = highlightedNotes.map((note) => ({
+      keys: [note],
+      color: blueNotes.includes(note) ? '#6366f1' : '#75bc11', // Blue notes in indigo, others in green
+    }));
 
     // Render piano with highlighted notes
     renderPiano(containerRef.current, {
       range,
-      labels,
-      palette: ['#75bc11', '#6366f1'], // Brand green, indigo for blue notes
+      colorize,
     });
   }, [highlightedNotes, blueNotes, range]);
 
