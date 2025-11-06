@@ -52,35 +52,78 @@ export default function NewMusicMaterialPage() {
       const parsedData = await parseResponse.json();
 
       if (!parsedData.success) {
-        setError(parsedData.error || 'リクエストの解析に失敗しました');
+        console.error('Parse request error:', parsedData);
+        const errorMessage = parsedData.error || 'リクエストの解析に失敗しました';
+        const detailsInfo = parsedData.details
+          ? `\n詳細: ${JSON.stringify(parsedData.details, null, 2)}`
+          : '';
+        setError(errorMessage + detailsInfo);
         setGenerating(false);
         return;
       }
 
+      // Map instrument to schema enum (only send if it matches)
+      const instrumentMap: Record<string, string> = {
+        'Piano': 'piano',
+        'Guitar': 'guitar',
+        'Violin': 'violin',
+        'Flute': 'flute',
+      };
+      const schemaInstrument = instrumentMap[parsedData.instrument];
+
+      // Map difficulty to schema enum (handle expert/professional -> advanced)
+      const difficultyMap: Record<string, string> = {
+        'beginner': 'beginner',
+        'intermediate': 'intermediate',
+        'advanced': 'advanced',
+        'expert': 'advanced',
+        'professional': 'advanced',
+      };
+      const schemaDifficulty = difficultyMap[parsedData.difficulty] || 'intermediate';
+
+      // Include metadata in additional context
+      const contextWithMetadata = `${naturalInput}
+
+[教材メタデータ]
+楽器: ${parsedData.instrument}
+ジャンル: ${parsedData.genre || '指定なし'}
+練習時間: ${parsedData.duration}分
+教材タイプ: ${parsedData.materialType}`;
+
       // Generate material with parsed parameters
+      const requestBody: {
+        subject: string;
+        topic: string;
+        difficulty: string;
+        format: string;
+        additionalContext: string;
+        instrument?: string;
+      } = {
+        subject: parsedData.instrument,
+        topic: parsedData.topic,
+        difficulty: schemaDifficulty, // Use mapped difficulty
+        format: 'music', // Fixed to 'music' for all music materials
+        additionalContext: contextWithMetadata,
+      };
+
+      if (schemaInstrument) {
+        requestBody.instrument = schemaInstrument;
+      }
+
       const response = await fetch('/api/ai/materials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject: parsedData.instrument,
-          topic: parsedData.topic,
-          difficulty: parsedData.difficulty,
-          format: parsedData.materialType,
-          additionalContext: naturalInput,
-          metadata: {
-            instrument: parsedData.instrument,
-            genre: parsedData.genre,
-            duration: parsedData.duration,
-            materialType: parsedData.materialType,
-          },
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
 
       if (data.success) {
-        router.push(`/dashboard/materials/${data.materialId}`);
+        // API uses standardized response format: { success: true, data: {...} }
+        const materialId = data.data?.materialId || data.materialId;
+        router.push(`/dashboard/materials/${materialId}`);
       } else {
+        console.error('Material generation error:', data);
         setError(data.error || 'Failed to generate material');
         if (data.upgradeRequired) {
           setTimeout(() => {
