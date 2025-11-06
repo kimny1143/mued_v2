@@ -8,7 +8,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { Piano } from 'svg-piano';
+import { renderPiano } from 'svg-piano';
 
 interface PianoKeyboardDiagramProps {
   highlightedNotes?: string[];
@@ -33,25 +33,23 @@ export function PianoKeyboardDiagram({
     // Clear previous content
     containerRef.current.innerHTML = '';
 
-    // Create color palette
-    const colors = highlightedNotes.map((note) => {
-      // Blue notes get special highlighting
+    // Create labels object for highlighted notes
+    const labels: Record<string, string> = {};
+    highlightedNotes.forEach((note) => {
+      // Blue notes get special color
       if (blueNotes.includes(note)) {
-        return '#6366f1'; // Indigo for blue notes
+        labels[note] = '●'; // Dot marker for blue notes
+      } else {
+        labels[note] = '●'; // Dot marker for regular notes
       }
-      return '#75bc11'; // Brand green for regular notes
     });
 
-    // Render piano
-    const piano = Piano({
+    // Render piano with highlighted notes
+    renderPiano(containerRef.current, {
       range,
-      scaleX: 2,
-      scaleY: 2,
-      palette: colors,
-      colorize: highlightedNotes.map((note, i) => ({ keys: [note], color: colors[i] })),
+      labels,
+      palette: ['#75bc11', '#6366f1'], // Brand green, indigo for blue notes
     });
-
-    containerRef.current.appendChild(piano);
   }, [highlightedNotes, blueNotes, range]);
 
   return (
