@@ -168,24 +168,32 @@ export async function createStreamingChatCompletion(
   const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
 
   try {
-    const streamParams: any = {
-      model,
-      messages,
-      tools: options.tools,
-      tool_choice: options.toolChoice,
-      stream: true,
-      stream_options: { include_usage: true },
-    };
+    let stream;
 
-    // GPT-5 series: use max_completion_tokens and no temperature
     if (isGPT5) {
-      streamParams.max_completion_tokens = maxTokens;
+      // GPT-5 series: use max_completion_tokens, no temperature
+      stream = await openai.chat.completions.create({
+        model,
+        messages,
+        max_completion_tokens: maxTokens,
+        tools: options.tools,
+        tool_choice: options.toolChoice,
+        stream: true,
+        stream_options: { include_usage: true },
+      });
     } else {
-      streamParams.max_tokens = maxTokens;
-      streamParams.temperature = options.temperature ?? 0.7;
+      // Other models: use max_tokens and temperature
+      stream = await openai.chat.completions.create({
+        model,
+        messages,
+        max_tokens: maxTokens,
+        temperature: options.temperature ?? 0.7,
+        tools: options.tools,
+        tool_choice: options.toolChoice,
+        stream: true,
+        stream_options: { include_usage: true },
+      });
     }
-
-    const stream = await openai.chat.completions.create(streamParams);
 
     return { stream };
   } catch (error) {
