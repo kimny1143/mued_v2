@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
         { role: 'user', content: naturalInput },
       ],
       response_format: { type: 'json_object' },
-      temperature: 0.3,
+      // Note: GPT-5 only supports temperature=1 (default), removed explicit temperature
     });
 
     const content = response.choices[0].message.content;

@@ -503,7 +503,7 @@ export async function generateMaterial(
     ],
     {
       // model will be set from env.OPENAI_MODEL via createChatCompletion
-      temperature: 0.7,
+      // Note: GPT-5 only supports temperature=1 (default), removed explicit temperature
       // maxTokens will be set from env.OPENAI_MAX_TOKENS via createChatCompletion
     }
   );

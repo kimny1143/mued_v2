@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
       await createChatCompletion(messages, {
         tools: ALL_TOOLS,
         toolChoice: 'auto',
-        temperature: 0.7,
+        // Note: GPT-5 only supports temperature=1 (default)
       });
 
     const initialMessage = initialCompletion.choices[0]?.message;
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       // Get final response from AI with tool results
       const { completion: finalCompletion, usage: finalUsage } =
         await createChatCompletion(messages, {
-          temperature: 0.7,
+          // Note: GPT-5 only supports temperature=1 (default)
         });
 
       const finalMessage = finalCompletion.choices[0]?.message;

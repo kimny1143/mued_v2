@@ -105,7 +105,7 @@ export async function generateWeakDrill(
           content: prompt,
         },
       ],
-      temperature: 0.8,
+      // Note: GPT-5 only supports temperature=1 (default)
       max_tokens: 2500,
     });
 

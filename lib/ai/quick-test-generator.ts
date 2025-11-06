@@ -80,7 +80,7 @@ export async function generateQuickTest(
           content: prompt,
         },
       ],
-      temperature: 0.7,
+      // Note: GPT-5 only supports temperature=1 (default)
       max_tokens: 2000,
     });
 
