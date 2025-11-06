@@ -106,8 +106,23 @@ jobs:
           DATABASE_URL: "postgresql://build:build@localhost:5432/build"
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_TEST_PUBLISHABLE_KEY || 'pk_test_build' }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_TEST_SECRET_KEY || 'sk_test_build' }}
+          CLERK_WEBHOOK_SECRET: "whsec_mock_webhook_secret"
+          NEXT_PUBLIC_CLERK_SIGN_IN_URL: "/sign-in"
+          NEXT_PUBLIC_CLERK_SIGN_UP_URL: "/sign-up"
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: "/dashboard"
+          NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: "/dashboard"
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'sk-mock-openai-key-for-build-only' }}
+          OPENAI_MODEL: "gpt-4"
+          OPENAI_MAX_TOKENS: "2000"
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || 'sk_test_mock_stripe_key_for_build' }}
+          STRIPE_WEBHOOK_SECRET: "whsec_mock_stripe_webhook"
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_mock_stripe_publishable"
+          NEXT_PUBLIC_STRIPE_PRICE_STARTER: "price_mock_starter"
+          NEXT_PUBLIC_STRIPE_PRICE_BASIC: "price_mock_basic"
+          NEXT_PUBLIC_STRIPE_PRICE_PREMIUM: "price_mock_premium"
+          RESEND_API_KEY: "re_mock_resend_api_key"
           NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+          FIGMA_ACCESS_TOKEN: "figd_mock_figma_token"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
