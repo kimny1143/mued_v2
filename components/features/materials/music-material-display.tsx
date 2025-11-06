@@ -29,32 +29,46 @@ export function MusicMaterialDisplay({ content }: MusicMaterialDisplayProps) {
 
   // Extract notes from ABC notation for keyboard display
   const extractNotes = (abc: string): { all: string[]; blue: string[] } => {
-    // Simple extraction - look for note names in ABC
-    // _E = Eb, ^F = F#, _B = Bb
-    const blueNotePatterns = ['_E', '^F', '_B'];
     const allNotes: string[] = [];
     const blueNotes: string[] = [];
 
-    // Parse ABC and extract notes (simplified)
+    // Parse ABC and extract notes
+    // ABC notation: C,, C, C c c' (lower to higher octaves)
+    // Accidentals: _E = Eb, ^F = F#
     const noteMatches = abc.match(/[_^]?[A-Ga-g][',]*/g) || [];
+
     noteMatches.forEach((note) => {
-      let cleanNote = note.replace(/[',]/g, '');
+      // Determine octave based on case and octave markers
+      let octave = 4; // Default middle octave
+      let noteName = note.replace(/[_^',]/g, '');
 
-      // Convert ABC to scientific notation
-      if (cleanNote.startsWith('_E')) {
-        blueNotes.push('Eb4');
-        allNotes.push('Eb4');
-      } else if (cleanNote.startsWith('^F')) {
-        blueNotes.push('F#4');
-        allNotes.push('F#4');
-      } else if (cleanNote.startsWith('_B')) {
-        blueNotes.push('Bb4');
-        allNotes.push('Bb4');
+      // Count commas (lower octaves) and apostrophes (higher octaves)
+      const commas = (note.match(/,/g) || []).length;
+      const apostrophes = (note.match(/'/g) || []).length;
+
+      // Uppercase = octave 3-4, lowercase = octave 4-5
+      if (noteName === noteName.toUpperCase()) {
+        octave = 4 - commas;
+      } else {
+        octave = 5 + apostrophes;
       }
-    });
 
-    // Add basic scale notes for C blues
-    allNotes.push('C4', 'Eb4', 'F4', 'F#4', 'G4', 'Bb4', 'C5');
+      // Convert to uppercase for scientific notation
+      noteName = noteName.toUpperCase();
+
+      // Handle accidentals
+      if (note.startsWith('_')) {
+        // Flat
+        noteName = noteName + 'b';
+        blueNotes.push(noteName + octave);
+      } else if (note.startsWith('^')) {
+        // Sharp
+        noteName = noteName + '#';
+        blueNotes.push(noteName + octave);
+      }
+
+      allNotes.push(noteName + octave);
+    });
 
     return {
       all: [...new Set(allNotes)],
