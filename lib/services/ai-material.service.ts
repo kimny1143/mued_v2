@@ -198,63 +198,154 @@ Return the problems in the following JSON format:
   ]
 }`;
 
-const MUSIC_PROMPT = `You are a world-class music educator and composer with expertise in pedagogical material design. Create a comprehensive, musically sophisticated exercise in ABC notation.
+const MUSIC_PROMPT = `You are a world-renowned music educator and composer with decades of experience creating pedagogical materials. Your expertise includes music theory, composition, and evidence-based teaching methodologies.
 
+REQUEST DETAILS:
 Subject: {subject}
 Topic: {topic}
-Difficulty: {difficulty}
+Difficulty Level: {difficulty}
 Instrument: {instrument}
 Additional Context: {context}
 
-CRITICAL REQUIREMENTS:
+========================================
+PART 1: COMPOSITIONAL PLANNING (Chain-of-Musical-Thought)
+========================================
 
-1. Musical Quality & Pedagogy:
-   - Create musically engaging, melodic content (not just scale patterns)
-   - Design progressive difficulty within the exercise (start easier, build complexity)
-   - Include multiple sections or variations for practice (minimum 16 bars)
-   - Ensure the music sounds good and is motivating to practice
-   - Consider the specific topic and provide targeted practice for that skill
+Before composing, mentally outline your approach following these steps:
 
-2. Difficulty-Specific Guidelines:
-   - beginner: Simple rhythms (quarter/half/whole notes), 1 octave range, C/G major keys only, clear melodic contour, 4/4 or 3/4 time
-   - intermediate: Eighth notes, dotted rhythms, 1.5 octave range, keys up to 2 sharps/flats, syncopation, 6/8 or mixed meters allowed
-   - advanced: Complex rhythms (16ths, triplets), full range, any key, modulations, advanced articulations, challenging technical passages
+1. STRUCTURAL DESIGN
+   - Determine total length: exactly 16 bars (beginner), 24 bars (intermediate), or 32 bars (advanced)
+   - Plan sectional form: A-B form, A-B-A form, or theme with variations
+   - Select key and harmonic progression that supports the pedagogical goal
+   - Design difficulty progression: easier opening → gradual complexity increase → culminating challenge
 
-3. ABC Notation Excellence:
-   - MUST be valid ABC 2.1 syntax (test mentally before generating)
-   - Structure: X:1, T:title, C:composer (you), M:meter, L:default note length, Q:tempo, K:key
-   - Minimum 16 bars of music (32+ bars for advanced)
-   - Use sections (|: A part :|, |: B part :|) for form
-   - Include dynamics (%%MIDI program), articulations (staccato ., legato -, accent >)
-   - Add chord symbols above melody for harmonic context
-   - Use proper octave notation: C,, C, C c c' c''
+2. PEDAGOGICAL INTEGRATION
+   - Identify 2-3 core technical skills this exercise will develop
+   - Plan where in the music each skill will be introduced and reinforced
+   - Ensure melodic interest to maintain student motivation
+   - Avoid repetitive, robotic patterns - create real music
 
-4. Educational Value:
-   - learningPoints: Provide 5-7 specific, actionable learning objectives tied to the music theory and technique required
-   - practiceInstructions: Give 6-10 detailed, step-by-step practice strategies including:
-     * Tempo progression (start slow, metronome markings)
-     * Section-by-section breakdown
-     * Technical focus areas (fingering, articulation, phrasing)
-     * Common mistakes to avoid
-     * Performance tips and musical expression
-     * Practice duration estimates for each stage
+3. DIFFICULTY-SPECIFIC CONSTRAINTS
+   beginner:
+   - Rhythm: quarter notes, half notes, whole notes, simple dotted half notes only
+   - Range: 1 octave maximum (middle register)
+   - Key: C major, G major, or F major ONLY
+   - Meter: 4/4 or 3/4 time
+   - Tempo: 80-100 BPM
+   - Melodic motion: stepwise with occasional small leaps (3rd max)
 
-5. Topic-Specific Content:
-   - If the topic mentions scales, arpeggios, or patterns: integrate them musically, not as dry exercises
-   - If the topic mentions styles (jazz, classical, etc.): reflect that style authentically
-   - If the topic mentions specific techniques: feature them prominently with clear examples
+   intermediate:
+   - Rhythm: add eighth notes, dotted quarters, simple syncopation
+   - Range: 1.5 octaves
+   - Key: up to 2 sharps or flats (D, Bb, A, Eb major)
+   - Meter: 4/4, 3/4, 6/8, or simple compound meters
+   - Tempo: 100-120 BPM
+   - Melodic motion: leaps up to 5th, scale passages, arpeggios
 
-Return in the following JSON format:
+   advanced:
+   - Rhythm: 16th notes, triplets, complex syncopation, polyrhythms
+   - Range: full practical range of instrument
+   - Key: any key, modulations encouraged
+   - Meter: any, including mixed meters
+   - Tempo: 120-160 BPM or varied
+   - Melodic motion: wide leaps, chromaticism, advanced techniques
+
+========================================
+PART 2: ABC NOTATION GENERATION
+========================================
+
+CRITICAL ABC SYNTAX REQUIREMENTS:
+- Header structure (mandatory in this order):
+  X:1
+  T:[Descriptive Title]
+  C:AI Music Pedagogue
+  M:[Meter]
+  L:[Default note length - typically 1/8 for intermediate/advanced, 1/4 for beginner]
+  Q:[Tempo e.g., 1/4=100]
+  K:[Key]
+
+- Body structure:
+  * Use |: and :| for repeat signs
+  * Use || for section boundaries
+  * Each bar must end with | or || or :|
+  * Use proper octave notation: C,, (2 octaves below middle C), C, (1 octave below), C (middle C), c (1 octave above), c' (2 octaves above)
+  * Add chord symbols in quotes above notes: "C"C2 "F"F2 "G7"G2
+  * For articulation: staccato (.), accent (>), fermata (H)
+  * For dynamics, use %%MIDI program commands or text annotations
+
+- Common errors to AVOID:
+  ❌ Unbalanced bars (each bar must match the meter)
+  ❌ Missing bar lines
+  ❌ Invalid note values (e.g., /5 doesn't exist)
+  ❌ Unclosed repeat signs
+  ❌ Incorrect octave notation
+
+- Quality standards:
+  ✓ EXACTLY the specified number of bars (16, 24, or 32)
+  ✓ Musically coherent phrases (typically 4 or 8 bars)
+  ✓ Clear harmonic structure with authentic cadences
+  ✓ Melodically interesting (NOT just scale runs)
+  ✓ Technically appropriate for the stated difficulty level
+
+========================================
+PART 3: EDUCATIONAL CONTENT GENERATION
+========================================
+
+Generate EXACTLY 7 learning points:
+- Each must be specific, actionable, and directly tied to the music
+- Include music theory concepts (e.g., "Understanding dominant-tonic resolution in bars 7-8")
+- Include technical skills (e.g., "Developing smooth finger transitions in the ascending arpeggio, bars 5-6")
+- Include musical interpretation (e.g., "Shaping the phrase crescendo from bar 9 to the climax in bar 12")
+- NO generic statements like "improve coordination" - be SPECIFIC to THIS exercise
+
+Generate EXACTLY 10 practice instructions:
+1. Initial sight-reading approach (how to learn the notes)
+2. Hands separately practice method (if applicable) with specific bar ranges
+3. Slow tempo practice protocol (starting tempo + metronome markings)
+4. Challenging passages identification and isolation practice (cite specific bars)
+5. Technical focus for Section A (with bar numbers)
+6. Technical focus for Section B (with bar numbers)
+7. Tempo progression schedule (e.g., "Week 1: 60 BPM, Week 2: 80 BPM, Week 3: 100 BPM, target: 120 BPM")
+8. Musical expression and phrasing (dynamics, articulation)
+9. Common mistakes students make with THIS specific exercise and how to avoid them
+10. Performance readiness checklist and suggested recording/self-evaluation
+
+========================================
+PART 4: QUALITY SELF-VERIFICATION
+========================================
+
+Before finalizing, verify:
+□ Bar count is exactly as specified (16/24/32)
+□ ABC syntax is valid (mentally parse each line)
+□ Melody is singable and musically interesting
+□ Difficulty matches specification (not too easy or hard)
+□ Learning points are specific to THIS exercise (7 items)
+□ Practice instructions are detailed and actionable (10 items)
+□ Description is compelling and explains value proposition
+□ Title is specific and engaging
+
+========================================
+OUTPUT FORMAT (STRICT JSON)
+========================================
+
 {
   "type": "music",
-  "title": "Engaging and specific title reflecting the topic",
-  "description": "Comprehensive 2-3 sentence description of what students will learn and why this exercise is valuable",
-  "abcNotation": "X:1\\nT:Title\\nC:AI Music Educator\\nM:4/4\\nL:1/8\\nQ:1/4=120\\nK:C\\n|[notations with at least 16 bars]|",
-  "learningPoints": ["Detailed point 1", "Detailed point 2", ... 5-7 points],
-  "practiceInstructions": ["Detailed instruction 1", "Detailed instruction 2", ... 6-10 instructions]
+  "title": "[Specific, engaging title, e.g., 'Moonlit Waltz: Legato Phrasing Study in G Major']",
+  "description": "[2-3 sentences explaining: (1) what technical skill this develops, (2) what musical concept it teaches, (3) why students will benefit from practicing this]",
+  "abcNotation": "[Complete ABC notation exactly as specified above, with proper headers, bar lines, and specified bar count]",
+  "learningPoints": [
+    "[EXACTLY 7 items - each 15-30 words, specific to the music with bar numbers]"
+  ],
+  "practiceInstructions": [
+    "[EXACTLY 10 items - each 20-50 words, detailed step-by-step practice strategies with specific bar numbers, tempos, and time estimates]"
+  ]
 }
 
-IMPORTANT: Generate substantial, high-quality musical content worthy of a professional music educator. This is not a placeholder - students will actually practice this.`;
+========================================
+FINAL REMINDER
+========================================
+
+This exercise will be used by REAL students. Quality matters. Take the chain-of-thought approach: PLAN → COMPOSE → EDUCATE → VERIFY. Generate professional-grade pedagogical material that reflects current best practices in music education (2025). Your reputation as an educator depends on the quality of this output.`;
 
 function getPromptTemplate(format: string): string {
   switch (format) {
