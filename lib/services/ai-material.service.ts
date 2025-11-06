@@ -624,6 +624,19 @@ export async function generateMaterial(
 export async function getUserMaterials(clerkUserId: string) {
   const userId = await getUserIdFromClerkId(clerkUserId);
 
+  // In development, return all materials for testing
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const disableAccessCheck = process.env.DISABLE_MATERIAL_ACCESS_CHECK === 'true';
+
+  if (isDevelopment || disableAccessCheck) {
+    // Development: Return all materials
+    return db
+      .select()
+      .from(materials)
+      .orderBy(desc(materials.createdAt));
+  }
+
+  // Production: Return only user's materials
   return db
     .select()
     .from(materials)
