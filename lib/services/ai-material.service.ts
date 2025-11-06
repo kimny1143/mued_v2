@@ -198,7 +198,7 @@ Return the problems in the following JSON format:
   ]
 }`;
 
-const MUSIC_PROMPT = `You are an expert music educator. Create a music learning exercise in ABC notation.
+const MUSIC_PROMPT = `You are a world-class music educator and composer with expertise in pedagogical material design. Create a comprehensive, musically sophisticated exercise in ABC notation.
 
 Subject: {subject}
 Topic: {topic}
@@ -206,33 +206,55 @@ Difficulty: {difficulty}
 Instrument: {instrument}
 Additional Context: {context}
 
-Generate a music exercise that:
-- Is written in valid ABC notation (version 2.1)
-- Is appropriate for {difficulty} level students
-- Is playable on {instrument}
-- Has clear learning objectives
+CRITICAL REQUIREMENTS:
 
-For difficulty levels:
-- beginner: Use simple rhythms (quarter/half notes), limited range (1 octave), no accidentals, common time
-- intermediate: Include eighth notes, dotted rhythms, 1.5 octave range, 1-2 sharps/flats, varied time signatures
-- advanced: Complex rhythms, full instrument range, key changes, advanced techniques
+1. Musical Quality & Pedagogy:
+   - Create musically engaging, melodic content (not just scale patterns)
+   - Design progressive difficulty within the exercise (start easier, build complexity)
+   - Include multiple sections or variations for practice (minimum 16 bars)
+   - Ensure the music sounds good and is motivating to practice
+   - Consider the specific topic and provide targeted practice for that skill
 
-ABC Notation Requirements:
-- Must start with X:1, T:title, M:meter, L:note length, K:key
-- Use proper ABC syntax for notes (C D E F G A B with octave markers)
-- Include tempo marking (Q:1/4=120)
-- Keep melody within comfortable range for {instrument}
-- Use bar lines (|) and repeat signs (|: :|) appropriately
+2. Difficulty-Specific Guidelines:
+   - beginner: Simple rhythms (quarter/half/whole notes), 1 octave range, C/G major keys only, clear melodic contour, 4/4 or 3/4 time
+   - intermediate: Eighth notes, dotted rhythms, 1.5 octave range, keys up to 2 sharps/flats, syncopation, 6/8 or mixed meters allowed
+   - advanced: Complex rhythms (16ths, triplets), full range, any key, modulations, advanced articulations, challenging technical passages
+
+3. ABC Notation Excellence:
+   - MUST be valid ABC 2.1 syntax (test mentally before generating)
+   - Structure: X:1, T:title, C:composer (you), M:meter, L:default note length, Q:tempo, K:key
+   - Minimum 16 bars of music (32+ bars for advanced)
+   - Use sections (|: A part :|, |: B part :|) for form
+   - Include dynamics (%%MIDI program), articulations (staccato ., legato -, accent >)
+   - Add chord symbols above melody for harmonic context
+   - Use proper octave notation: C,, C, C c c' c''
+
+4. Educational Value:
+   - learningPoints: Provide 5-7 specific, actionable learning objectives tied to the music theory and technique required
+   - practiceInstructions: Give 6-10 detailed, step-by-step practice strategies including:
+     * Tempo progression (start slow, metronome markings)
+     * Section-by-section breakdown
+     * Technical focus areas (fingering, articulation, phrasing)
+     * Common mistakes to avoid
+     * Performance tips and musical expression
+     * Practice duration estimates for each stage
+
+5. Topic-Specific Content:
+   - If the topic mentions scales, arpeggios, or patterns: integrate them musically, not as dry exercises
+   - If the topic mentions styles (jazz, classical, etc.): reflect that style authentically
+   - If the topic mentions specific techniques: feature them prominently with clear examples
 
 Return in the following JSON format:
 {
   "type": "music",
-  "title": "Exercise title",
-  "description": "Brief description of the exercise",
-  "abcNotation": "X:1\\nT:Title\\nM:4/4\\nL:1/4\\nQ:1/4=120\\nK:C\\n|notes here|",
-  "learningPoints": ["Point 1", "Point 2", "Point 3"],
-  "practiceInstructions": ["Instruction 1", "Instruction 2", "Instruction 3"]
-}`;
+  "title": "Engaging and specific title reflecting the topic",
+  "description": "Comprehensive 2-3 sentence description of what students will learn and why this exercise is valuable",
+  "abcNotation": "X:1\\nT:Title\\nC:AI Music Educator\\nM:4/4\\nL:1/8\\nQ:1/4=120\\nK:C\\n|[notations with at least 16 bars]|",
+  "learningPoints": ["Detailed point 1", "Detailed point 2", ... 5-7 points],
+  "practiceInstructions": ["Detailed instruction 1", "Detailed instruction 2", ... 6-10 instructions]
+}
+
+IMPORTANT: Generate substantial, high-quality musical content worthy of a professional music educator. This is not a placeholder - students will actually practice this.`;
 
 function getPromptTemplate(format: string): string {
   switch (format) {
@@ -369,9 +391,8 @@ export async function generateMaterial(
     );
   }
 
-  // Select appropriate model based on difficulty
-  const model: ModelName =
-    validated.difficulty === 'advanced' ? 'gpt-4o' : 'gpt-4o-mini';
+  // Use model from environment variable (no longer auto-downgrade based on difficulty)
+  // This allows consistent high-quality generation regardless of difficulty level
 
   // Build prompt
   const prompt = buildPrompt(validated);
@@ -382,7 +403,7 @@ export async function generateMaterial(
       {
         role: 'system',
         content:
-          'You are an expert educator. Generate educational materials in valid JSON format only. Do not include any text outside the JSON structure.',
+          'You are a world-class educator and instructional designer with deep expertise in creating high-quality learning materials. Your materials are comprehensive, pedagogically sound, and designed to maximize student engagement and learning outcomes. You always generate content in valid JSON format only. Do not include any text outside the JSON structure. Take your time to create substantial, professional-grade educational content.',
       },
       {
         role: 'user',
@@ -390,9 +411,9 @@ export async function generateMaterial(
       },
     ],
     {
-      model,
+      // model will be set from env.OPENAI_MODEL via createChatCompletion
       temperature: 0.7,
-      maxTokens: 2000,
+      // maxTokens will be set from env.OPENAI_MAX_TOKENS via createChatCompletion
     }
   );
 
