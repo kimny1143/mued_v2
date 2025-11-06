@@ -3,10 +3,16 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShareToLibraryButton } from '@/components/features/materials/share-to-library-button';
+import { MusicMaterialDisplay } from '@/components/features/materials/music-material-display';
 import { PageLoading } from '@/components/ui/loading-spinner';
 
 interface MaterialContent {
   type?: string;
+  title?: string;
+  description?: string;
+  abcNotation?: string;
+  learningPoints?: string[];
+  practiceInstructions?: string[];
   questions?: Array<{
     question: string;
     options: string[];
@@ -80,6 +86,8 @@ export default function MaterialDetailPage({ params }: { params: Promise<{ id: s
 
   const renderContent = () => {
     switch (material.content.type) {
+      case 'music':
+        return <MusicMaterialDisplay content={material.content as any} />;
       case 'quiz':
         return <QuizContent content={material.content} />;
       case 'summary':
