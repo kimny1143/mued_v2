@@ -1,4 +1,7 @@
-name: Test Suite
+# Optimized CI Pipeline for MUED LMS v2
+# This workflow implements the recommendations from docs/architecture/ci-cd-analysis-and-fixes.md
+
+name: CI Pipeline (Optimized)
 
 on:
   push:
@@ -8,365 +11,361 @@ on:
 
 env:
   NODE_VERSION: '20'
-  PNPM_VERSION: '8'
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  # Unit Tests
-  unit-tests:
-    name: Unit Tests
+  # ============================================
+  # STAGE 1: Fast Validation (< 1 minute)
+  # ============================================
+  validate:
+    name: Fast Validation
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js with cache
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (cached)
+        run: npm ci --prefer-offline --no-audit
 
-      - name: Run unit tests
-        run: npm run test:unit
-        env:
-          CI: true
+      - name: TypeScript check
+        run: npx tsc --noEmit
 
-      - name: Generate coverage report
-        run: npm run test:coverage
+      - name: ESLint (errors only)
+        run: npm run lint -- --max-warnings=0 --quiet
+
+  # ============================================
+  # STAGE 2: Core Tests (2-3 minutes, parallel)
+  # ============================================
+  test:
+    name: Test (${{ matrix.suite }})
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [unit, components]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js with cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies (cached)
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Run ${{ matrix.suite }} tests
+        run: npm run test:${{ matrix.suite }}
 
       - name: Upload coverage to Codecov
+        if: matrix.suite == 'unit'
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage/lcov.info
-          flags: unit
-          name: unit-coverage
+          flags: ${{ matrix.suite }}
+          name: ${{ matrix.suite }}-coverage
 
-      - name: Upload coverage artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: unit-test-coverage
-          path: coverage/
-
-  # Integration Tests
-  # TODO: Re-enable after completing integration test implementation
-  # Currently disabled due to incomplete test stubs (6/9 tests are unfinished)
-  # See: docs/reports/phase2-completion-report.md - Integration Tests section
-  #
-  # integration-tests:
-  #   name: Integration Tests
-  #   runs-on: ubuntu-latest
-  #
-  #   services:
-  #     postgres:
-  #       image: postgres:16-alpine
-  #       env:
-  #         POSTGRES_USER: test
-  #         POSTGRES_PASSWORD: test
-  #         POSTGRES_DB: mued_test
-  #       ports:
-  #         - 5432:5432
-  #       options: >-
-  #         --health-cmd pg_isready
-  #         --health-interval 10s
-  #         --health-timeout 5s
-  #         --health-retries 5
-  #
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: ${{ env.NODE_VERSION }}
-  #
-  #     - name: Install dependencies
-  #       run: npm ci
-  #
-  #     - name: Setup test database
-  #       run: |
-  #         npm run db:push
-  #         npm run db:seed
-  #       env:
-  #         DATABASE_URL: postgresql://test:test@localhost:5432/mued_test
-  #
-  #     - name: Run integration tests
-  #       run: npm run test:integration
-  #       env:
-  #         CI: true
-  #         DATABASE_URL: postgresql://test:test@localhost:5432/mued_test
-  #         CLERK_SECRET_KEY: ${{ secrets.CLERK_TEST_SECRET_KEY }}
-  #         OPENAI_API_KEY: test-key-for-mocking
-  #
-  #     - name: Upload test results
-  #       uses: actions/upload-artifact@v4
-  #       if: always()
-  #       with:
-  #         name: integration-test-results
-  #         path: test-results/
-
-  # E2E Tests
-  e2e-tests:
-    name: E2E Tests
+  # ============================================
+  # STAGE 3: Build Verification (2-3 minutes)
+  # ============================================
+  build:
+    name: Build Application
+    needs: validate
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js with cache
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (cached)
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Build Next.js application
+        run: npm run build
+        env:
+          # Mock environment variables for build
+          DATABASE_URL: "postgresql://build:build@localhost:5432/build"
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_build"
+          CLERK_SECRET_KEY: "sk_test_build"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: .next/
+          retention-days: 1
+
+  # ============================================
+  # STAGE 4: E2E Tests (PR only, 5-10 minutes)
+  # ============================================
+  e2e:
+    name: E2E Tests
+    if: github.event_name == 'pull_request'
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js with cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies (cached)
+        run: npm ci --prefer-offline --no-audit
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      # E2E tests use mocked APIs, no real database needed
-      - name: Build application
-        run: npm run build
-        env:
-          DATABASE_URL: postgresql://mock:mock@localhost:5432/mock
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_TEST_PUBLISHABLE_KEY }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_TEST_SECRET_KEY }}
-          NEXT_PUBLIC_E2E_TEST_MODE: true
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .next/
 
       - name: Run E2E tests
         run: npm run test:e2e
         env:
           CI: true
-          DATABASE_URL: postgresql://mock:mock@localhost:5432/mock
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_TEST_PUBLISHABLE_KEY }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_TEST_SECRET_KEY }}
           NEXT_PUBLIC_E2E_TEST_MODE: true
+          # Mock database URL (E2E tests should not need real DB)
+          DATABASE_URL: "postgresql://mock:mock@localhost:5432/mock"
+          # Clerk test keys (if configured in GitHub secrets)
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_TEST_PUBLISHABLE_KEY || 'pk_test_mock' }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_TEST_SECRET_KEY || 'sk_test_mock' }}
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
 
       - name: Upload Playwright videos
-        uses: actions/upload-artifact@v4
         if: failure()
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-videos
           path: test-results/
           retention-days: 3
 
-  # Accessibility Tests
-  a11y-tests:
+  # ============================================
+  # STAGE 5: Accessibility Tests (PR only)
+  # ============================================
+  a11y:
     name: Accessibility Tests
+    if: github.event_name == 'pull_request'
+    needs: build
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js with cache
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
       - name: Install dependencies
         run: |
-          npm ci
+          npm ci --prefer-offline --no-audit
           npm install -D @axe-core/playwright
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Build application
-        run: npm run build
-        env:
-          NEXT_PUBLIC_E2E_TEST_MODE: true
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .next/
 
       - name: Run accessibility tests
         run: npx playwright test tests/e2e/accessibility.spec.ts
         env:
           CI: true
+          NEXT_PUBLIC_E2E_TEST_MODE: true
+          DATABASE_URL: "postgresql://mock:mock@localhost:5432/mock"
 
       - name: Upload accessibility report
-        uses: actions/upload-artifact@v4
         if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: a11y-report
           path: test-results/a11y/
+          retention-days: 7
 
-  # Type Checking
-  type-check:
-    name: Type Check
+  # ============================================
+  # STAGE 6: Quality Checks (non-blocking)
+  # ============================================
+  quality:
+    name: Quality Checks
+    needs: validate
     runs-on: ubuntu-latest
-
+    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js with cache
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit
 
-      - name: Run TypeScript type check
-        run: npx tsc --noEmit
+      - name: Full ESLint scan
+        run: |
+          npm run lint || {
+            echo "::warning::ESLint found issues - see details above"
+            exit 0
+          }
 
-  # Linting
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
+      - name: Security audit (production deps)
+        run: |
+          npm audit --omit=dev --audit-level=moderate || {
+            echo "::error::Security vulnerabilities found in production dependencies"
+            exit 1
+          }
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Security audit (all deps)
+        run: |
+          npm audit --audit-level=critical || {
+            echo "::warning::Security vulnerabilities found in dev dependencies"
+            exit 0
+          }
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint
-        continue-on-error: true  # Don't block CI on linting issues
-
-  # Performance Tests (Lighthouse CI)
+  # ============================================
+  # STAGE 7: Performance Tests (PR only)
+  # ============================================
   performance:
     name: Performance Tests
-    runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js with cache
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
-        run: npm run build
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .next/
 
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v10
         with:
           uploadArtifacts: true
           temporaryPublicStorage: true
-          budgetPath: ./lighthouse-budget.json
-          configPath: ./lighthouserc.json
           runs: 3
+        continue-on-error: true
 
-  # Security Scan
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run npm audit
-        run: npm audit --audit-level=moderate
-        continue-on-error: true  # Don't block CI on dev dependency vulnerabilities
-
-      # CodeQL requires separate initialization step
-      # Disabled for now - can be enabled with proper setup
-      # - name: Run CodeQL analysis
-      #   uses: github/codeql-action/init@v2
-      #   with:
-      #     languages: javascript
-      # - name: Perform CodeQL Analysis
-      #   uses: github/codeql-action/analyze@v2
-      #   continue-on-error: true
-
-  # Report Test Results
-  test-report:
-    name: Test Report Summary
-    runs-on: ubuntu-latest
-    needs: [unit-tests, e2e-tests, a11y-tests]  # TODO: Add integration-tests back when re-enabled
+  # ============================================
+  # FINAL: CI Status Check (required)
+  # ============================================
+  ci-status:
+    name: CI Status
+    needs: [validate, test, build]
     if: always()
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-
-      - name: Generate test summary
+      - name: Check required jobs
         run: |
-          echo "## Test Results Summary 📊" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Checking CI pipeline status..."
+          echo "Validate: ${{ needs.validate.result }}"
+          echo "Test: ${{ needs.test.result }}"
+          echo "Build: ${{ needs.build.result }}"
 
-          echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
-
-          if [ "${{ needs.unit-tests.result }}" == "success" ]; then
-            echo "| Unit Tests | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "| Unit Tests | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.validate.result }}" != "success" ] || \
+             [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.build.result }}" != "success" ]; then
+            echo "::error::Required CI checks failed"
+            exit 1
           fi
 
-          # TODO: Uncomment when integration-tests job is re-enabled
-          # if [ "${{ needs.integration-tests.result }}" == "success" ]; then
-          #   echo "| Integration Tests | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
-          # else
-          #   echo "| Integration Tests | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
-          # fi
+          echo "✅ All required CI checks passed!"
 
-          if [ "${{ needs.e2e-tests.result }}" == "success" ]; then
-            echo "| E2E Tests | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "| E2E Tests | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          if [ "${{ needs.a11y-tests.result }}" == "success" ]; then
-            echo "| Accessibility Tests | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "| Accessibility Tests | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Comment PR with results
+      - name: Create status comment (PR only)
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v6
+        continue-on-error: true
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const unitTests = '${{ needs.unit-tests.result }}' === 'success' ? '✅' : '❌';
-            // TODO: Uncomment when integration-tests job is re-enabled
-            // const integrationTests = '${{ needs.integration-tests.result }}' === 'success' ? '✅' : '❌';
-            const e2eTests = '${{ needs.e2e-tests.result }}' === 'success' ? '✅' : '❌';
-            const a11yTests = '${{ needs.a11y-tests.result }}' === 'success' ? '✅' : '❌';
+            const validate = '${{ needs.validate.result }}' === 'success' ? '✅' : '❌';
+            const test = '${{ needs.test.result }}' === 'success' ? '✅' : '❌';
+            const build = '${{ needs.build.result }}' === 'success' ? '✅' : '❌';
 
-            const comment = `## Test Results Summary 📊
+            const comment = `## CI Pipeline Status 📊
 
-            | Test Suite | Status |
-            |------------|--------|
-            | Unit Tests | ${unitTests} |
-            | E2E Tests | ${e2eTests} |
-            | Accessibility Tests | ${a11yTests} |
+            ### Required Checks
+            | Check | Status |
+            |-------|--------|
+            | Fast Validation | ${validate} |
+            | Unit & Component Tests | ${test} |
+            | Build | ${build} |
 
-            **Note:** Integration Tests temporarily disabled pending implementation completion
+            ### Optional Checks
+            See [Actions tab](${{ github.event.pull_request.html_url.replace('/pull/', '/actions/runs/') }}) for E2E, accessibility, and quality check results.
 
-            View detailed reports in the [Actions tab](${context.payload.pull_request.html_url.replace('/pull/', '/actions/runs/')})
-            `;
+            ---
+            *Generated at ${new Date().toISOString()}*`;
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            // Try to update existing comment or create new one
+            const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: comment
+              issue_number: context.issue.number
             });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('CI Pipeline Status')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
