@@ -94,15 +94,29 @@ export async function createChatCompletion(
   const model = options.model || (env.OPENAI_MODEL as ModelName);
   const maxTokens = options.maxTokens || env.OPENAI_MAX_TOKENS;
 
+  // GPT-5 series uses different parameter names and restrictions
+  const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
+
   try {
-    const completion = await openai.chat.completions.create({
+    const completionParams: any = {
       model,
       messages,
-      max_tokens: maxTokens,
-      temperature: options.temperature ?? 0.7,
       tools: options.tools,
       tool_choice: options.toolChoice,
-    });
+    };
+
+    // GPT-5 series: use max_completion_tokens and no temperature
+    if (isGPT5) {
+      completionParams.max_completion_tokens = maxTokens;
+      // temperature is fixed at 1.0 for GPT-5 (cannot be customized)
+      // reasoning_effort can be added here if needed: 'low' | 'medium' | 'high'
+    } else {
+      // Other models (GPT-4o, GPT-4o-mini, etc.): use max_tokens and temperature
+      completionParams.max_tokens = maxTokens;
+      completionParams.temperature = options.temperature ?? 0.7;
+    }
+
+    const completion = await openai.chat.completions.create(completionParams);
 
     const usage = completion.usage;
     if (!usage) {
@@ -150,17 +164,28 @@ export async function createStreamingChatCompletion(
   const model = options.model || (env.OPENAI_MODEL as ModelName);
   const maxTokens = options.maxTokens || env.OPENAI_MAX_TOKENS;
 
+  // GPT-5 series uses different parameter names and restrictions
+  const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
+
   try {
-    const stream = await openai.chat.completions.create({
+    const streamParams: any = {
       model,
       messages,
-      max_tokens: maxTokens,
-      temperature: options.temperature ?? 0.7,
       tools: options.tools,
       tool_choice: options.toolChoice,
       stream: true,
       stream_options: { include_usage: true },
-    });
+    };
+
+    // GPT-5 series: use max_completion_tokens and no temperature
+    if (isGPT5) {
+      streamParams.max_completion_tokens = maxTokens;
+    } else {
+      streamParams.max_tokens = maxTokens;
+      streamParams.temperature = options.temperature ?? 0.7;
+    }
+
+    const stream = await openai.chat.completions.create(streamParams);
 
     return { stream };
   } catch (error) {

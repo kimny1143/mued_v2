@@ -68,8 +68,11 @@ export async function generateQuickTest(
 
     console.log('[QuickTestGenerator] Generating test with OpenAI...');
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
+
+    const params: any = {
+      model,
       messages: [
         {
           role: 'system',
@@ -80,9 +83,16 @@ export async function generateQuickTest(
           content: prompt,
         },
       ],
-      // Note: GPT-5 only supports temperature=1 (default)
-      max_tokens: 2000,
-    });
+    };
+
+    if (isGPT5) {
+      params.max_completion_tokens = 2000;
+    } else {
+      params.max_tokens = 2000;
+      params.temperature = 0.7;
+    }
+
+    const response = await openai.chat.completions.create(params);
 
     const generatedContent = response.choices[0]?.message?.content;
 

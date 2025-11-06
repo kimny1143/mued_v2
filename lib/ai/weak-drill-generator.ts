@@ -93,8 +93,11 @@ export async function generateWeakDrill(
 
     console.log('[WeakDrillGenerator] Generating drills with OpenAI...');
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
+
+    const params: any = {
+      model,
       messages: [
         {
           role: 'system',
@@ -105,9 +108,16 @@ export async function generateWeakDrill(
           content: prompt,
         },
       ],
-      // Note: GPT-5 only supports temperature=1 (default)
-      max_tokens: 2500,
-    });
+    };
+
+    if (isGPT5) {
+      params.max_completion_tokens = 2500;
+    } else {
+      params.max_tokens = 2500;
+      params.temperature = 0.8;
+    }
+
+    const response = await openai.chat.completions.create(params);
 
     const generatedContent = response.choices[0]?.message?.content;
 

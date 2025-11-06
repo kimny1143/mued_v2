@@ -119,15 +119,24 @@ export async function POST(request: NextRequest) {
 
 必ずJSON形式で返してください。他の説明は不要です。`;
 
-    const response = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
+
+    const params: any = {
+      model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: naturalInput },
       ],
       response_format: { type: 'json_object' },
-      // Note: GPT-5 only supports temperature=1 (default), removed explicit temperature
-    });
+    };
+
+    // GPT-5 doesn't support custom temperature
+    if (!isGPT5) {
+      params.temperature = 0.3;
+    }
+
+    const response = await openai.chat.completions.create(params);
 
     const content = response.choices[0].message.content;
     if (!content) {
