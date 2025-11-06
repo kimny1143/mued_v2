@@ -47,9 +47,17 @@ export default function MaterialsPage() {
         title={t.materials.title}
         description={t.materials.subtitle}
         action={
-          <Button onClick={() => router.push('/dashboard/materials/new')}>
-            <span className="mr-1">✨</span> {t.materials.generate}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => router.push('/dashboard/materials/import')}
+              variant="outline"
+            >
+              <span className="mr-1">📥</span> Import JSON
+            </Button>
+            <Button onClick={() => router.push('/dashboard/materials/new')}>
+              <span className="mr-1">✨</span> {t.materials.generate}
+            </Button>
+          </div>
         }
       />
 
