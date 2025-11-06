@@ -328,6 +328,9 @@ jobs:
             const test = '${{ needs.test.result }}' === 'success' ? '✅' : '❌';
             const build = '${{ needs.build.result }}' === 'success' ? '✅' : '❌';
 
+            const prUrl = '${{ github.event.pull_request.html_url }}';
+            const actionsUrl = prUrl.replace('/pull/', '/actions/runs/');
+
             const comment = `## CI Pipeline Status 📊
 
             ### Required Checks
@@ -338,7 +341,7 @@ jobs:
             | Build | ${build} |
 
             ### Optional Checks
-            See [Actions tab](${{ github.event.pull_request.html_url.replace('/pull/', '/actions/runs/') }}) for E2E, accessibility, and quality check results.
+            See [Actions tab](${actionsUrl}) for E2E, accessibility, and quality check results.
 
             ---
             *Generated at ${new Date().toISOString()}*`;
