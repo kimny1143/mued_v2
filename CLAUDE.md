@@ -386,6 +386,185 @@ npm run build
 
 ---
 
+## Git Worktree による並行開発ワークフロー
+
+### 🎯 Git Worktreeとは
+
+Git worktree を使用すると、同じリポジトリの複数ブランチを**異なるディレクトリで同時に**チェックアウトできます。これにより、ブランチ切り替えに伴う再ビルド時間を大幅に削減し、緊急バグ修正やコードレビューを並行して進められます。
+
+### 📁 標準ディレクトリ構成
+
+```
+~/Dropbox/_DevProjects/mued/
+├── mued_v2/              # メイン開発用 (main or feature branch)
+├── mued_v2-hotfix/       # 緊急修正用 (detached HEAD)
+└── mued_v2-review/       # PRレビュー用 (detached HEAD)
+```
+
+### 🚀 基本コマンド
+
+#### Worktree 一覧表示
+```bash
+git worktree list
+```
+
+#### 新しいWorktreeを作成
+```bash
+# detached HEAD で作成（推奨）
+git worktree add --detach ../mued_v2-feature HEAD
+
+# 特定のブランチで作成
+git worktree add -b feature/new-feature ../mued_v2-feature main
+```
+
+#### Worktreeを削除
+```bash
+git worktree remove ../mued_v2-feature
+```
+
+### 💡 実践的な使用例
+
+#### シナリオ1: 緊急バグ修正
+```bash
+# メインで開発中 (feature/payment-flow)
+cd ~/Dropbox/_DevProjects/mued/mued_v2
+
+# Slackで緊急バグ報告！
+cd ../mued_v2-hotfix
+git checkout main
+git pull
+git checkout -b hotfix/stripe-error
+
+# 修正 → テスト → PR
+npm run test
+git add .
+git commit -m "fix: resolve Stripe webhook error"
+git push origin hotfix/stripe-error
+
+# すぐに開発に戻る（stash不要！）
+cd ../mued_v2
+# feature/payment-flow の作業を継続
+```
+
+#### シナリオ2: チームメイトのPRレビュー
+```bash
+# メインで開発中
+cd ~/Dropbox/_DevProjects/mued/mued_v2
+
+# PRレビュー依頼が来た
+cd ../mued_v2-review
+gh pr checkout 456
+npm run test:e2e
+npm run build
+
+# レビューコメント記入後、開発に戻る
+cd ../mued_v2
+# そのまま継続
+```
+
+#### シナリオ3: 複数機能の並行開発
+```bash
+# 新機能Aの開発開始
+git worktree add -b feature/ai-tutor ../mued_v2-ai-tutor main
+cd ../mued_v2-ai-tutor
+npm install
+npm run dev
+
+# 別ターミナルで新機能Bも開始
+cd ~/Dropbox/_DevProjects/mued/mued_v2
+git worktree add -b feature/analytics ../mued_v2-analytics main
+cd ../mued_v2-analytics
+npm install
+npm run dev --port 3001
+
+# 両方のブラウザを開いて同時にテスト可能
+```
+
+### ⚡ メリット
+
+1. **ビルド時間の節約**
+   - Next.js ビルド: ~1-2分
+   - ブランチ切り替え10回/日 = **15-25分/日の節約**
+   - 各worktreeが独立したビルドキャッシュを保持
+
+2. **コンテキストスイッチングの高速化**
+   - `git stash` 不要
+   - ディレクトリ移動だけ（< 5秒）
+   - 開発中の作業がそのまま残る
+
+3. **並行作業の実現**
+   - 開発とレビューを同時進行
+   - 緊急修正中も開発を中断しない
+   - 複数の開発サーバーを同時起動可能
+
+### ⚠️ 注意点
+
+#### 1. node_modules の管理
+各worktreeで個別にインストール推奨：
+```bash
+cd ../mued_v2-hotfix
+npm install  # 独立したnode_modules
+```
+
+#### 2. 環境変数の共有
+`.env.local` は各worktreeで共有されます：
+```bash
+# シンボリックリンクで共有（オプション）
+cd ../mued_v2-hotfix
+ln -s ../mued_v2/.env.local .env.local
+```
+
+#### 3. IDEサポート
+- **VS Code / Cursor**: 各worktreeを別ウィンドウで開く
+- **Claude Code**: 各worktreeのディレクトリで`claude`を起動
+
+#### 4. 使い終わったら削除
+```bash
+# 不要になったworktreeは削除
+git worktree remove ../mued_v2-feature-old
+git worktree prune  # 参照を整理
+```
+
+### 📊 推奨される運用
+
+#### 常設Worktree（2つ）
+```bash
+mued_v2-hotfix/   # 緊急修正用（常に最新のmainをpull）
+mued_v2-review/   # PRレビュー用（チェックアウトして使用）
+```
+
+#### 一時的なWorktree
+```bash
+# 機能開発時に作成
+git worktree add -b feature/new-feature ../mued_v2-new-feature main
+
+# 完了後に削除
+git worktree remove ../mued_v2-new-feature
+```
+
+### 🔍 トラブルシューティング
+
+**Q: 「'main' is already used by worktree」エラー**
+```bash
+# detached HEAD で作成
+git worktree add --detach ../mued_v2-temp HEAD
+
+# または明示的に新しいブランチを指定
+git worktree add -b temp-branch ../mued_v2-temp main
+```
+
+**Q: Worktreeが残っているか確認したい**
+```bash
+git worktree list
+```
+
+**Q: 削除したWorktreeの参照が残っている**
+```bash
+git worktree prune
+```
+
+---
+
 ## コーディング規約
 
 ### TypeScript/React
