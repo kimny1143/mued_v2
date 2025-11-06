@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { DashboardLayout } from "@/components/layouts/dashboard-layout";
-import { AdminTabs } from "@/components/layouts/admin-tabs";
+import { DashboardTabs } from "@/components/layouts/dashboard-tabs";
 import { RAGMetricsOverview } from "@/components/features/admin/rag-metrics-overview";
 import { RAGMetricsHistory } from "@/components/features/admin/rag-metrics-history";
 import { SLOStatusCard } from "@/components/features/admin/slo-status-card";
@@ -27,7 +27,7 @@ export default async function RAGMetricsPage() {
 
   return (
     <DashboardLayout>
-      <AdminTabs />
+      <DashboardTabs />
 
       {/* Header */}
       <section className="mb-8">

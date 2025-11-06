@@ -9,7 +9,7 @@ import { Suspense } from 'react';
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { DashboardLayout } from '@/components/layouts/dashboard-layout';
-import { AdminTabs } from '@/components/layouts/admin-tabs';
+import { DashboardTabs } from '@/components/layouts/dashboard-tabs';
 import { PluginManagement } from '@/components/features/admin/plugin-management';
 import { LoadingState } from '@/components/ui/loading-state';
 
@@ -27,7 +27,7 @@ export default async function PluginsPage() {
 
   return (
     <DashboardLayout>
-      <AdminTabs />
+      <DashboardTabs />
 
       <Suspense fallback={<LoadingState message="Loading plugin management..." />}>
         <PluginManagement />
