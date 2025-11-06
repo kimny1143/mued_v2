@@ -104,8 +104,10 @@ jobs:
         env:
           # Mock environment variables for build
           DATABASE_URL: "postgresql://build:build@localhost:5432/build"
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_build"
-          CLERK_SECRET_KEY: "sk_test_build"
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_TEST_PUBLISHABLE_KEY || 'pk_test_build' }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_TEST_SECRET_KEY || 'sk_test_build' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'sk-mock-openai-key-for-build-only' }}
+          NEXT_PUBLIC_APP_URL: "http://localhost:3000"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
