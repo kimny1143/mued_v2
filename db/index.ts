@@ -22,14 +22,19 @@ let db: DrizzleDB;
 
 if (isCI) {
   // GitHub Actions用: 標準PostgreSQL接続
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const pg = require("pg");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { drizzle } = require("drizzle-orm/node-postgres");
   const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
   db = drizzle(pool, { schema });
 } else {
   // 本番環境用: Neon Serverless接続
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { Pool, neonConfig } = require("@neondatabase/serverless");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { drizzle } = require("drizzle-orm/neon-serverless");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const ws = require("ws");
 
   neonConfig.webSocketConstructor = ws;

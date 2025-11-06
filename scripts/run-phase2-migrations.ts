@@ -24,7 +24,7 @@ import ws from 'ws';
 config({ path: '.env.local' });
 
 // Configure WebSocket for Neon
-// @ts-ignore
+// @ts-expect-error - WebSocket polyfill for Node.js environment
 globalThis.WebSocket = ws;
 
 if (!process.env.DATABASE_URL) {

@@ -112,6 +112,7 @@ afterEach(() => {
 
 // Custom matchers
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Vi {
     interface Assertion {
       toBeWithinRange(floor: number, ceiling: number): void;

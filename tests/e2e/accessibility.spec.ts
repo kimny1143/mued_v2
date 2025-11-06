@@ -179,7 +179,7 @@ test.describe('Keyboard Navigation', () => {
     // Tab through all elements and verify we stay in modal
     let tabCount = 0;
     const maxTabs = 20;
-    let modalElements = [];
+    const modalElements = [];
 
     while (tabCount < maxTabs) {
       await page.keyboard.press('Tab');

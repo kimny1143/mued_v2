@@ -1,0 +1,25 @@
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Test outputs
+coverage/
+playwright-report/
+test-results/
+
+# Dependencies
+node_modules/
+
+# Scripts (CommonJS, require() is intentional)
+scripts/mcp/*.js
+scripts/test-*.js
+
+# Generated files
+*.min.js
+*.bundle.js
+
+# Environment
+.env*
+!.env.example
