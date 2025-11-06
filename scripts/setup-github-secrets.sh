@@ -1,0 +1,108 @@
+#!/bin/bash
+
+# GitHub Secrets Setup Helper Script
+# This script guides you through configuring required GitHub Secrets for CI/CD
+
+echo "======================================"
+echo "GitHub Secrets Configuration Helper"
+echo "======================================"
+echo ""
+echo "This script will help you configure the required GitHub Secrets for the CI/CD pipeline."
+echo "You'll need to add these secrets manually in your GitHub repository settings."
+echo ""
+echo "Navigate to: Settings → Secrets and variables → Actions → New repository secret"
+echo ""
+echo "======================================"
+echo "REQUIRED SECRETS:"
+echo "======================================"
+echo ""
+
+# Check for existing env variables
+if [ -f .env.local ]; then
+    echo "Found .env.local file. You can use values from there as reference."
+    echo ""
+fi
+
+echo "1. CLERK_TEST_PUBLISHABLE_KEY"
+echo "   Description: Clerk publishable key for test environment"
+echo "   Format: pk_test_..."
+echo "   Where to find: Clerk Dashboard → Your App → API Keys"
+echo ""
+
+echo "2. CLERK_TEST_SECRET_KEY"
+echo "   Description: Clerk secret key for test environment"
+echo "   Format: sk_test_..."
+echo "   Where to find: Clerk Dashboard → Your App → API Keys"
+echo "   ⚠️  Keep this secret and never commit to code!"
+echo ""
+
+echo "======================================"
+echo "OPTIONAL SECRETS:"
+echo "======================================"
+echo ""
+
+echo "3. TEST_DATABASE_URL (only if using real database for tests)"
+echo "   Description: PostgreSQL connection string for test database"
+echo "   Format: postgresql://user:pass@host:5432/database"
+echo "   Example: postgresql://test_user:password@db.neon.tech:5432/test_db"
+echo ""
+
+echo "4. OPENAI_API_KEY (if using AI features in tests)"
+echo "   Description: OpenAI API key for test environment"
+echo "   Format: sk-..."
+echo "   Where to find: platform.openai.com → API Keys"
+echo ""
+
+echo "5. STRIPE_SECRET_KEY (if testing payment features)"
+echo "   Description: Stripe secret key for test environment"
+echo "   Format: sk_test_..."
+echo "   Where to find: Stripe Dashboard → Developers → API Keys"
+echo ""
+
+echo "======================================"
+echo "HOW TO ADD SECRETS:"
+echo "======================================"
+echo ""
+echo "1. Go to your GitHub repository"
+echo "2. Click on 'Settings' tab"
+echo "3. Navigate to 'Secrets and variables' → 'Actions'"
+echo "4. Click 'New repository secret'"
+echo "5. Enter the secret name (e.g., CLERK_TEST_PUBLISHABLE_KEY)"
+echo "6. Enter the secret value"
+echo "7. Click 'Add secret'"
+echo ""
+
+echo "======================================"
+echo "VERIFICATION:"
+echo "======================================"
+echo ""
+echo "After adding secrets, you can verify they're available by:"
+echo "1. Creating a test pull request"
+echo "2. Checking the Actions tab to see if workflows run successfully"
+echo "3. Looking for green checkmarks in the CI pipeline"
+echo ""
+
+echo "======================================"
+echo "LOCAL TESTING:"
+echo "======================================"
+echo ""
+echo "To test the CI pipeline locally, run:"
+echo "  npm run lint -- --max-warnings=0"
+echo "  npm run typecheck"
+echo "  npm run test:unit"
+echo "  npm run build"
+echo "  npm run test:e2e"
+echo ""
+
+echo "======================================"
+echo "EXAMPLE .env.test FOR LOCAL E2E:"
+echo "======================================"
+echo ""
+echo "Create a .env.test file with:"
+echo "  NEXT_PUBLIC_E2E_TEST_MODE=true"
+echo "  DATABASE_URL=postgresql://mock:mock@localhost:5432/mock"
+echo "  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_mock"
+echo "  CLERK_SECRET_KEY=sk_test_mock"
+echo ""
+
+echo "Script completed. Please configure the secrets in your GitHub repository settings."
