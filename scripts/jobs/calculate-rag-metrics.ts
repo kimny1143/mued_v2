@@ -72,14 +72,21 @@ async function calculateMetricsForPeriod(
             ELSE 0
           END
         )
-      `,
-      uniqueSources: sql<string[]>`
-        ARRAY_AGG(DISTINCT jsonb_array_elements(citations)->>'source')
-        FILTER (WHERE citations IS NOT NULL)
       `
     })
     .from(aiDialogueLog)
     .where(between(aiDialogueLog.createdAt, startDate, endDate));
+
+  // Get unique sources separately using a subquery
+  const uniqueSourcesResult = await db.execute<{ sources: string[] }>(sql`
+    SELECT ARRAY_AGG(DISTINCT source) as sources
+    FROM (
+      SELECT jsonb_array_elements(citations)->>'source' as source
+      FROM ${aiDialogueLog}
+      WHERE ${between(aiDialogueLog.createdAt, startDate, endDate)}
+        AND citations IS NOT NULL
+    ) expanded_sources
+  `);
 
   // 2. Latency percentile calculation
   const latencyPercentiles = await db
@@ -130,7 +137,7 @@ async function calculateMetricsForPeriod(
     .from(aiDialogueLog)
     .where(between(aiDialogueLog.createdAt, startDate, endDate));
 
-  const uniqueSourcesCount = citationMetrics[0]?.uniqueSources?.length || 0;
+  const uniqueSourcesCount = uniqueSourcesResult.rows[0]?.sources?.length || 0;
 
   return {
     citationRate: citationMetrics[0]?.citationRate || null,
