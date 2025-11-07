@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/nextjs/server';
 import Stripe from 'stripe';
 import { z } from 'zod';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { validateStripeConfig } from '@/lib/utils/env';
+import { withAuth } from '@/lib/middleware/with-auth';
+import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
 
 /**
  * POST /api/subscription/checkout
@@ -24,21 +25,20 @@ const checkoutSchema = z.object({
   tier: z.enum(['starter', 'basic', 'premium']),
 });
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
   try {
-    // Authenticate user
-    const { userId: clerkUserId } = await auth();
     console.log('[Checkout] ClerkUserId:', clerkUserId);
-
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Parse and validate request
     const body = await request.json();
     console.log('[Checkout] Request body:', body);
 
-    const { priceId, tier } = checkoutSchema.parse(body);
+    const validation = checkoutSchema.safeParse(body);
+    if (!validation.success) {
+      return apiValidationError('Invalid request', validation.error.errors);
+    }
+
+    const { priceId, tier } = validation.data;
     console.log('[Checkout] Parsed:', { priceId, tier });
 
     // Get user from database
@@ -70,10 +70,9 @@ export async function POST(request: NextRequest) {
         console.log('[Checkout] User created:', user.id);
       } catch (createError) {
         console.error('[Checkout] Error creating user:', createError);
-        return NextResponse.json({
-          success: false,
-          error: 'Failed to create user in database',
-        }, { status: 500 });
+        return apiServerError(
+          createError instanceof Error ? createError : new Error('Failed to create user in database')
+        );
       }
     }
 
@@ -126,31 +125,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       url: session.url,
       sessionId: session.id,
     });
   } catch (error) {
     console.error('Subscription checkout error:', error);
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid request',
-          details: error.errors,
-        },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
+    return apiServerError(
+      error instanceof Error ? error : new Error('Subscription checkout failed')
     );
   }
-}
+});

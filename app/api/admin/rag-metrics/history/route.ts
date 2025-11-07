@@ -1,9 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { ragMetricsHistory } from "@/db/schema/rag-metrics";
 import { desc, gte, lte, and } from "drizzle-orm";
-import { getCurrentUser } from "@/lib/actions/user";
 import { z } from "zod";
+import { withAdminAuth } from "@/lib/middleware/with-auth";
+import {
+  apiSuccess,
+  apiValidationError,
+  apiServerError,
+} from "@/lib/api-response";
 
 // Query parameter validation schema
 const querySchema = z.object({
@@ -30,22 +35,8 @@ const querySchema = z.object({
  *
  * Authorization: Admin only
  */
-export async function GET(request: NextRequest) {
+export const GET = withAdminAuth(async ({ request }) => {
   try {
-    // Authentication & Authorization
-    const user = await getCurrentUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (user.role !== "admin") {
-      return NextResponse.json(
-        { error: "Forbidden: Admin access required" },
-        { status: 403 }
-      );
-    }
-
     // Parse and validate query parameters
     const searchParams = request.nextUrl.searchParams;
     const queryParams = {
@@ -60,13 +51,7 @@ export async function GET(request: NextRequest) {
     const validation = querySchema.safeParse(queryParams);
 
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          error: "Invalid query parameters",
-          details: validation.error.errors,
-        },
-        { status: 400 }
-      );
+      return apiValidationError("Invalid query parameters", validation.error.errors);
     }
 
     const { startDate, endDate, limit, offset, sortBy, sortOrder } = validation.data;
@@ -125,7 +110,7 @@ export async function GET(request: NextRequest) {
       ? (summary.daysWithFullCompliance / history.length) * 100
       : 0;
 
-    return NextResponse.json({
+    return apiSuccess({
       history,
       summary: {
         ...summary,
@@ -141,12 +126,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching RAG metrics history:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to fetch metrics history",
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
+    return apiServerError(
+      error instanceof Error ? error : new Error("Failed to fetch metrics history")
     );
   }
-}
+});

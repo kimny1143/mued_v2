@@ -4,27 +4,19 @@
  * 生成された小テストを即座にPDF出力
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 import puppeteer from 'puppeteer';
 import abcjs from 'abcjs';
 import type { QuickTestResult } from '@/lib/ai/quick-test-generator';
+import { withAuth } from '@/lib/middleware/with-auth';
+import { apiValidationError, apiServerError } from '@/lib/api-response';
 
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async ({ request }) => {
   try {
-    // 認証確認
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { quickTest } = await req.json() as { quickTest: QuickTestResult };
+    const { quickTest } = await request.json() as { quickTest: QuickTestResult };
 
     if (!quickTest || !quickTest.problems) {
-      return NextResponse.json(
-        { error: 'Quick test data required' },
-        { status: 400 }
-      );
+      return apiValidationError('Quick test data required');
     }
 
     console.log('[QuickTestPDF] Generating PDF for:', quickTest.title);
@@ -67,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     console.log('[QuickTestPDF] PDF generated successfully');
 
-    // PDFをレスポンスとして返す
+    // PDFをレスポンスとして返す (binary response, not using apiSuccess)
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
@@ -77,15 +69,11 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('[QuickTestPDF] Error:', error);
-    return NextResponse.json(
-      {
-        error: 'PDF generation failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
+    return apiServerError(
+      error instanceof Error ? error : new Error('PDF generation failed')
     );
   }
-}
+});
 
 /**
  * 小テストを印刷用HTMLに変換

@@ -1,9 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { provenance, type NewProvenance } from "@/db/schema/rag-metrics";
 import { eq, like, and, or, desc } from "drizzle-orm";
-import { getCurrentUser } from "@/lib/actions/user";
 import { z } from "zod";
+import { withAdminAuth } from "@/lib/middleware/with-auth";
+import {
+  apiSuccess,
+  apiValidationError,
+  apiServerError,
+} from "@/lib/api-response";
 
 // Query schema for GET
 const querySchema = z.object({
@@ -75,22 +80,8 @@ const createProvenanceSchema = z.object({
  *
  * Authorization: Admin only
  */
-export async function GET(request: NextRequest) {
+export const GET = withAdminAuth(async ({ request }) => {
   try {
-    // Authentication & Authorization
-    const user = await getCurrentUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (user.role !== "admin") {
-      return NextResponse.json(
-        { error: "Forbidden: Admin access required" },
-        { status: 403 }
-      );
-    }
-
     // Parse and validate query parameters
     const searchParams = request.nextUrl.searchParams;
     const queryParams = {
@@ -106,13 +97,7 @@ export async function GET(request: NextRequest) {
     const validation = querySchema.safeParse(queryParams);
 
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          error: "Invalid query parameters",
-          details: validation.error.errors,
-        },
-        { status: 400 }
-      );
+      return apiValidationError("Invalid query parameters", validation.error.errors);
     }
 
     const { contentId, contentType, sourceUri, licenseType, limit, offset, search } = validation.data;
@@ -150,7 +135,7 @@ export async function GET(request: NextRequest) {
     // Apply pagination
     const records = await query.limit(limit).offset(offset);
 
-    return NextResponse.json({
+    return apiSuccess({
       records,
       pagination: {
         limit,
@@ -161,15 +146,11 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching provenance records:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to fetch provenance records",
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
+    return apiServerError(
+      error instanceof Error ? error : new Error("Failed to fetch provenance records")
     );
   }
-}
+});
 
 /**
  * POST /api/admin/provenance
@@ -178,34 +159,14 @@ export async function GET(request: NextRequest) {
  *
  * Authorization: Admin only
  */
-export async function POST(request: NextRequest) {
+export const POST = withAdminAuth(async ({ userId, request }) => {
   try {
-    // Authentication & Authorization
-    const user = await getCurrentUser();
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (user.role !== "admin") {
-      return NextResponse.json(
-        { error: "Forbidden: Admin access required" },
-        { status: 403 }
-      );
-    }
-
     // Parse and validate request body
     const body = await request.json();
     const validation = createProvenanceSchema.safeParse(body);
 
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          error: "Invalid request body",
-          details: validation.error.errors,
-        },
-        { status: 400 }
-      );
+      return apiValidationError("Invalid request body", validation.error.errors);
     }
 
     const data = validation.data;
@@ -215,28 +176,21 @@ export async function POST(request: NextRequest) {
       .insert(provenance)
       .values({
         ...data,
-        acquiredBy: data.acquiredBy || user.id,
+        acquiredBy: data.acquiredBy || userId,
         acquiredAt: data.acquiredAt ? new Date(data.acquiredAt) : new Date(),
         lastVerifiedAt: new Date(),
         verificationStatus: "verified",
       } as NewProvenance)
       .returning();
 
-    return NextResponse.json(
-      {
-        record: newRecord,
-        message: "Provenance record created successfully",
-      },
-      { status: 201 }
+    return apiSuccess(
+      { record: newRecord },
+      { message: "Provenance record created successfully" }
     );
   } catch (error) {
     console.error("Error creating provenance record:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to create provenance record",
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
+    return apiServerError(
+      error instanceof Error ? error : new Error("Failed to create provenance record")
     );
   }
-}
+});

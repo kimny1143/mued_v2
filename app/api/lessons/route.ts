@@ -1,17 +1,21 @@
 import { db } from "@/db";
 import { lessonSlots, users, reservations } from "@/db/schema";
 import { eq, gte, and } from "drizzle-orm";
-import { getCurrentUser } from "@/lib/actions/user";
+import { withAuth } from "@/lib/middleware/with-auth";
 import { apiSuccess, apiServerError } from "@/lib/api-response";
 
-export async function GET(request: Request) {
+export const GET = withAuth(async ({ userId: clerkUserId, request }) => {
   try {
     const { searchParams } = new URL(request.url);
     const mentorId = searchParams.get("mentorId");
     const onlyAvailable = searchParams.get("available") === "true";
 
-    // 現在のユーザーを取得
-    const currentUser = await getCurrentUser();
+    // Get current user from database
+    const [currentUser] = await db
+      .select()
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
 
     // 条件を構築
     const conditions = [];
@@ -56,7 +60,7 @@ export async function GET(request: Request) {
       .orderBy(lessonSlots.startTime)
       .limit(50);
 
-    // 現在のユーザーの予約情報を取得（ログインしている場合のみ）
+    // Get user's reservations
     let userReservations: Record<string, { id: string; slotId: string; status: string; paymentStatus: string }> = {};
     if (currentUser) {
       const userReservationsData = await db
@@ -85,4 +89,4 @@ export async function GET(request: Request) {
     console.error("Error fetching lesson slots:", error);
     return apiServerError(error instanceof Error ? error : new Error("Failed to fetch lesson slots"));
   }
-}
+});

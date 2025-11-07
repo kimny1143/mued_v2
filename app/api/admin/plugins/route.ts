@@ -5,22 +5,15 @@
  * GET /api/admin/plugins - List all registered plugins
  */
 
-import { NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/actions/user';
 import { ragPluginRegistry } from '@/lib/plugins/rag-plugin-registry';
+import { withAdminAuth } from '@/lib/middleware/with-auth';
+import {
+  apiSuccess,
+  apiServerError,
+} from '@/lib/api-response';
 
-export async function GET() {
+export const GET = withAdminAuth(async () => {
   try {
-    // Admin authentication check
-    const user = await getCurrentUser();
-
-    if (!user || user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'Admin access required' },
-        { status: 403 }
-      );
-    }
-
     // Get all registered plugins
     const plugins = ragPluginRegistry.getAll();
 
@@ -38,7 +31,7 @@ export async function GET() {
       }
     }));
 
-    return NextResponse.json({
+    return apiSuccess({
       plugins: pluginList,
       total: pluginList.length,
       timestamp: new Date().toISOString()
@@ -46,12 +39,8 @@ export async function GET() {
 
   } catch (error) {
     console.error('[Plugins API] Error:', error);
-    return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Failed to fetch plugins'
-      },
-      { status: 500 }
+    return apiServerError(
+      error instanceof Error ? error : new Error('Failed to fetch plugins')
     );
   }
-}
+});

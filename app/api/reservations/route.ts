@@ -1,10 +1,10 @@
 import { db } from "@/db";
 import { reservations, lessonSlots, users } from "@/db/schema";
 import { eq, or, sql } from "drizzle-orm";
-import { getCurrentUser } from "@/lib/actions/user";
+import { withAuth } from "@/lib/middleware/with-auth";
 import { checkCanCreateReservation, incrementReservationUsage } from "@/lib/middleware/usage-limiter";
 import { z } from "zod";
-import { apiSuccess, apiUnauthorized, apiValidationError, apiForbidden, apiNotFound, apiServerError } from "@/lib/api-response";
+import { apiSuccess, apiValidationError, apiForbidden, apiNotFound, apiServerError } from "@/lib/api-response";
 
 // 入力バリデーションスキーマ
 const createReservationSchema = z.object({
@@ -12,11 +12,17 @@ const createReservationSchema = z.object({
   notes: z.string().max(1000, "Notes must be less than 1000 characters").optional(),
 });
 
-export async function GET() {
+export const GET = withAuth(async ({ userId: clerkUserId }) => {
   try {
-    const user = await getCurrentUser();
+    // Get user from database
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
+
     if (!user) {
-      return apiUnauthorized();
+      return apiNotFound('User not found');
     }
 
     // ユーザーの予約を取得（生徒として、またはメンターとして）
@@ -61,18 +67,23 @@ export async function GET() {
     console.error("Error fetching reservations:", error);
     return apiServerError(error instanceof Error ? error : new Error("Failed to fetch reservations"));
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
   try {
-    const user = await getCurrentUser();
+    // Get user from database
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.clerkId, clerkUserId))
+      .limit(1);
 
     if (!user) {
-      return apiUnauthorized();
+      return apiNotFound('User not found');
     }
 
     // Check usage limits
-    const usageCheck = await checkCanCreateReservation(user.clerkId);
+    const usageCheck = await checkCanCreateReservation(clerkUserId);
 
     if (!usageCheck.allowed) {
       return apiForbidden(usageCheck.reason);
@@ -146,7 +157,7 @@ export async function POST(request: Request) {
           .where(eq(lessonSlots.id, slotId));
 
         // 使用量カウンターをインクリメント（トランザクション内）
-        await incrementReservationUsage(user.clerkId);
+        await incrementReservationUsage(clerkUserId);
 
         return newReservation;
       });
@@ -173,4 +184,4 @@ export async function POST(request: Request) {
       error instanceof Error ? error.message : String(error)
     );
   }
-}
+});
