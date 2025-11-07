@@ -506,13 +506,42 @@ cd ../mued_v2-hotfix
 npm install  # 独立したnode_modules
 ```
 
-#### 2. 環境変数の共有
-`.env.local` は各worktreeで共有されます：
-```bash
-# シンボリックリンクで共有（オプション）
-cd ../mued_v2-hotfix
-ln -s ../mued_v2/.env.local .env.local
-```
+#### 2. 環境変数の管理
+
+**重要**: `.env.local` は各worktreeで**独立**しており、自動的には共有されません。
+
+**ベストプラクティス:**
+
+1. **`.env.local.example` を Git で管理**
+   ```bash
+   # .gitignore に追加
+   .env*
+   !.env.test
+   !.env.local.example  # テンプレートとして追跡
+   ```
+
+2. **新しいworktreeでの初期設定**
+   ```bash
+   cd ../mued_v2-hotfix
+   cp .env.local.example .env.local
+   # または main worktree からコピー
+   cp ../mued_v2/.env.local .env.local
+   # 必要に応じて編集
+   ```
+
+3. **機密情報の管理**
+   - API keyは1Password等のパスワードマネージャーで管理
+   - worktree削除前に必ず main worktree の `.env.local` を更新
+   - 新しいAPI keyは全worktreeで同期
+
+4. **シンボリックリンクでの共有（オプション）**
+   ```bash
+   # すべてのworktreeで同じ設定を使う場合
+   cd ../mued_v2-hotfix
+   ln -s ../mued_v2/.env.local .env.local
+   ```
+
+**注意**: Worktree削除時、その `.env.local` も削除されます。重要なAPI keyは削除前にバックアップすること。
 
 #### 3. IDEサポート
 - **VS Code / Cursor**: 各worktreeを別ウィンドウで開く

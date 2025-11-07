@@ -8,6 +8,15 @@
         },
         {
             "path": "../../../../Library/Application Support/Claude"
+        },
+        {
+            "path": "../mued_v2_phase2"
+        },
+        {
+            "path": "../mued_v2-hotfix"
+        },
+        {
+            "path": "../mued_v2-review"
         }
     ]
 }
