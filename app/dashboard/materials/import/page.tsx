@@ -275,7 +275,7 @@ export default function MaterialImportPage() {
           <li>Copy the generated JSON output</li>
           <li>Paste it into the text area on the left</li>
           <li>Select difficulty level and public/private setting</li>
-          <li>Click "Import Material" to save to your library</li>
+          <li>Click &quot;Import Material&quot; to save to your library</li>
         </ol>
         <div className="mt-4 text-sm text-blue-700">
           <strong>Prompt locations:</strong>

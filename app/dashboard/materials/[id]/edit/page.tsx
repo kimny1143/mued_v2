@@ -1,20 +1,9 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface MaterialContent {
-  type?: string;
-  title?: string;
-  description?: string;
-  abcNotation?: string;
-  learningPoints?: string[];
-  practiceInstructions?: string[];
-  [key: string]: unknown;
-}
-
-export default function MaterialEditPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
+export default function MaterialEditPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [material, setMaterial] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -32,11 +21,11 @@ export default function MaterialEditPage({ params }: { params: Promise<{ id: str
   useEffect(() => {
     fetchMaterial();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolvedParams.id]);
+  }, [params.id]);
 
   const fetchMaterial = async () => {
     try {
-      const response = await fetch(`/api/ai/materials/${resolvedParams.id}`);
+      const response = await fetch(`/api/ai/materials/${params.id}`);
       const data = await response.json();
 
       if (data.success) {
@@ -74,7 +63,7 @@ export default function MaterialEditPage({ params }: { params: Promise<{ id: str
 
     setSaving(true);
     try {
-      const response = await fetch(`/api/ai/materials/${resolvedParams.id}`, {
+      const response = await fetch(`/api/ai/materials/${params.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -89,7 +78,7 @@ export default function MaterialEditPage({ params }: { params: Promise<{ id: str
       const result = await response.json();
 
       if (result.success) {
-        router.push(`/dashboard/materials/${resolvedParams.id}`);
+        router.push(`/dashboard/materials/${params.id}`);
       } else {
         setError(result.error || 'Update failed');
       }
@@ -130,7 +119,7 @@ export default function MaterialEditPage({ params }: { params: Promise<{ id: str
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="mb-8">
         <button
-          onClick={() => router.push(`/dashboard/materials/${resolvedParams.id}`)}
+          onClick={() => router.push(`/dashboard/materials/${params.id}`)}
           className="text-blue-600 hover:text-blue-800 mb-4 flex items-center"
         >
           ← Cancel and Go Back
@@ -233,7 +222,7 @@ export default function MaterialEditPage({ params }: { params: Promise<{ id: str
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
             <button
-              onClick={() => router.push(`/dashboard/materials/${resolvedParams.id}`)}
+              onClick={() => router.push(`/dashboard/materials/${params.id}`)}
               className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               Cancel
@@ -306,7 +295,7 @@ export default function MaterialEditPage({ params }: { params: Promise<{ id: str
           <li>Modify the JSON content to fix errors or add missing information</li>
           <li>For music materials, ensure ABC notation is valid</li>
           <li>Validate JSON before saving to prevent errors</li>
-          <li>Changes will be saved immediately upon clicking "Save Changes"</li>
+          <li>Changes will be saved immediately upon clicking &quot;Save Changes&quot;</li>
         </ul>
       </div>
     </div>
