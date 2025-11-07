@@ -1,9 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import { db } from '@/db';
 import { materials } from '@/db/schema';
 import { getUserIdFromClerkId } from '@/lib/services/ai-material.service';
+import { withAuth } from '@/lib/middleware/with-auth';
+import {
+  apiSuccess,
+  apiValidationError,
+  apiServerError,
+} from '@/lib/api-response';
 
 // Material content schema for validation
 const musicContentSchema = z.object({
@@ -86,13 +90,8 @@ const importRequestSchema = z.object({
  *
  * Import material from external JSON (Claude Desktop, ChatGPT)
  */
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
   try {
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get internal user UUID
     const userId = await getUserIdFromClerkId(clerkUserId);
 
@@ -128,8 +127,7 @@ export async function POST(request: NextRequest) {
       isPublic: makePublic,
     });
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       materialId: newMaterial.id,
       material: {
         id: newMaterial.id,
@@ -138,28 +136,14 @@ export async function POST(request: NextRequest) {
         type: newMaterial.type,
         difficulty: newMaterial.difficulty,
       },
-      message: 'Material imported successfully',
-    });
+    }, { message: 'Material imported successfully' });
   } catch (error) {
     console.error('[Material Import] Error:', error);
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid material format',
-          details: error.errors,
-        },
-        { status: 400 }
-      );
+      return apiValidationError('Invalid material format', error.errors);
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Import failed',
-      },
-      { status: 500 }
-    );
+    return apiServerError(error instanceof Error ? error : new Error('Import failed'));
   }
-}
+});

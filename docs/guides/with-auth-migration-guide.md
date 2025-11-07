@@ -342,11 +342,11 @@ export const GET = withAdminAuth(async ({ userId }) => {
 ### 対象ファイル（23個）
 
 **Priority 1 - AI Materials (5個)**:
-- [ ] `app/api/ai/materials/route.ts` ✅ **完了**
-- [ ] `app/api/ai/materials/[id]/route.ts`
-- [ ] `app/api/ai/materials/import/route.ts`
-- [ ] `app/api/ai/intent/route.ts`
-- [ ] `app/api/ai/parse-material-request/route.ts`
+- [x] `app/api/ai/materials/route.ts` ✅ **完了**
+- [x] `app/api/ai/materials/[id]/route.ts` ✅ **完了**
+- [x] `app/api/ai/materials/import/route.ts` ✅ **完了**
+- [x] `app/api/ai/intent/route.ts` ✅ **完了**
+- [x] `app/api/ai/parse-material-request/route.ts` ✅ **完了**
 
 **Priority 2 - Dashboard & Stats (4個)**:
 - [ ] `app/api/dashboard/stats/route.ts`
@@ -449,26 +449,30 @@ export const GET = withAuthParams(
 
 | カテゴリ | 完了 | 合計 | 進捗率 |
 |---------|------|------|--------|
-| AI Materials | 1 | 5 | 20% |
+| AI Materials | 5 | 5 | **100%** ✅ |
 | Dashboard | 0 | 4 | 0% |
 | Admin Routes | 0 | 7 | 0% |
 | Others | 0 | 7 | 0% |
-| **Total** | **1** | **23** | **4%** |
+| **Total** | **5** | **23** | **22%** |
 
 **目標**: 4週間で100%移行完了
+**Week 1達成**: Priority 1 完了！
 
 ---
 
 ## 🎯 次のステップ
 
-### Week 1 (今週)
+### Week 1 (完了) ✅
 - [x] `withAuth()` ミドルウェア実装
 - [x] 1つのAPIで動作確認（`app/api/ai/materials/route.ts`）
-- [ ] Priority 1（AI Materials）の残り4個を移行
+- [x] Priority 1（AI Materials）の残り4個を移行
+- [x] `withAuthParams()` のNext.js 15互換性修正
 
-### Week 2
-- [ ] Priority 2（Dashboard）を移行
-- [ ] Priority 3（Admin Routes）の一部を移行
+**成果**: 5/5 API routes migrated (100%)
+
+### Week 2 (次週)
+- [ ] Priority 2（Dashboard & Stats）を移行 - 4個
+- [ ] Priority 3（Admin Routes）の一部を移行 - 3-4個
 
 ### Week 3
 - [ ] Priority 3（Admin Routes）完了
@@ -496,5 +500,20 @@ export const GET = withAuthParams(
 ---
 
 **作成者**: Claude Code
-**最終更新**: 2025-11-07
-**次回レビュー**: 2025-11-14（Week 1完了時）
+**最終更新**: 2025-11-07 (Week 1完了)
+**次回レビュー**: 2025-11-14（Week 2完了時）
+
+---
+
+## 📝 更新履歴
+
+**2025-11-07 (Week 1完了)**:
+- ✅ Priority 1 (AI Materials) 5個すべて完了
+- ✅ withAuthParams() のNext.js 15互換性修正（params: Promise<P>対応）
+- ✅ TypeScript type checking: 移行対象ファイルのエラーなし
+- ✅ ESLint: warnings のみ（既存）
+- ⚠️ Build: 既存のabc-notation-renderer.tsxエラーにより失敗（移行とは無関係）
+
+**削減効果**:
+- 削減行数: ~50行（5ファイル x 10行平均）
+- 認証コード重複の削減: 5/23 (22%完了)

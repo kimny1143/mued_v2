@@ -1,5 +1,3 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import OpenAI from 'openai';
 import {
@@ -8,6 +6,12 @@ import {
   requiresToolExecution,
 } from '@/lib/openai';
 import { ALL_TOOLS, executeTool, type ToolName } from '@/lib/ai/tools';
+import { withAuth } from '@/lib/middleware/with-auth';
+import {
+  apiSuccess,
+  apiValidationError,
+  apiServerError,
+} from '@/lib/api-response';
 
 /**
  * POST /api/ai/intent
@@ -72,14 +76,8 @@ When users ask about dates:
 
 Current date: ${new Date().toISOString().split('T')[0]}`;
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async ({ request }) => {
   try {
-    // Authenticate user
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Parse and validate request
     const body = await request.json();
     const { message, conversationHistory } = intentRequestSchema.parse(body);
@@ -163,8 +161,7 @@ export async function POST(request: NextRequest) {
 
       const finalMessage = finalCompletion.choices[0]?.message;
 
-      return NextResponse.json({
-        success: true,
+      return apiSuccess({
         message: finalMessage?.content || 'I apologize, but I could not generate a response.',
         toolsUsed: toolCalls.map((tc) => ('function' in tc ? tc.function.name : 'unknown')),
         usage: {
@@ -182,8 +179,7 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // No tool execution needed, return direct response
-      return NextResponse.json({
-        success: true,
+      return apiSuccess({
         message: initialMessage.content || 'I apologize, but I could not generate a response.',
         toolsUsed: [],
         usage: {
@@ -196,33 +192,19 @@ export async function POST(request: NextRequest) {
     console.error('Intent API error:', error);
 
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid request',
-          details: error.errors,
-        },
-        { status: 400 }
-      );
+      return apiValidationError('Invalid request', error.errors);
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return apiServerError(error instanceof Error ? error : new Error('Internal server error'));
   }
-}
+});
 
 // GET endpoint for health check
-export async function GET() {
-  return NextResponse.json({
+export const GET = withAuth(async () => {
+  return apiSuccess({
     status: 'ok',
     endpoint: '/api/ai/intent',
     description: 'Natural language intent analysis',
     availableTools: ALL_TOOLS.map((tool) => tool.function.name),
   });
-}
+});

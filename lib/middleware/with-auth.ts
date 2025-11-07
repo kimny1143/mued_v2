@@ -80,10 +80,10 @@ export type AuthenticatedHandlerWithParams<P = Record<string, string>> = (
 
 export function withAuthParams<P = Record<string, string>>(
   handler: AuthenticatedHandlerWithParams<P>
-): (request: NextRequest, context: { params: P }) => Promise<NextResponse> {
+): (request: NextRequest, context: { params: Promise<P> }) => Promise<NextResponse> {
   return async (
     request: NextRequest,
-    context: { params: P }
+    context: { params: Promise<P> }
   ): Promise<NextResponse> => {
     try {
       // Authenticate user with Clerk
@@ -94,11 +94,14 @@ export function withAuthParams<P = Record<string, string>>(
         return apiUnauthorized();
       }
 
-      // Call the handler with auth context and params
+      // Await params (Next.js 15 compatibility)
+      const resolvedParams = await context.params;
+
+      // Call the handler with auth context and resolved params
       return await handler({
         userId,
         request,
-        params: context.params,
+        params: resolvedParams,
       });
     } catch (error) {
       console.error('[withAuthParams] Authentication error:', error);
