@@ -124,7 +124,13 @@ export default function MaterialDetailPage({ params }: { params: Promise<{ id: s
               </span>
             </div>
           </div>
-          <div className="ml-4">
+          <div className="ml-4 flex gap-2">
+            <button
+              onClick={() => router.push(`/dashboard/materials/${material.id}/edit`)}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700 font-medium"
+            >
+              ✏️ Edit
+            </button>
             <ShareToLibraryButton
               materialId={material.id}
               materialTitle={material.title}

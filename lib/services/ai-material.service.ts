@@ -45,6 +45,7 @@ export const materialGenerationSchema = z.object({
   format: z.enum(['quiz', 'summary', 'flashcards', 'practice', 'music']),
   additionalContext: z.string().optional(),
   instrument: z.enum(['piano', 'guitar', 'violin', 'flute']).optional(), // For music materials
+  isPublic: z.boolean().optional().default(false), // Public visibility
 });
 
 export type MaterialGenerationRequest = z.infer<typeof materialGenerationSchema>;
@@ -199,6 +200,27 @@ Return the problems in the following JSON format:
 }`;
 
 const MUSIC_PROMPT = `You are a world-renowned music educator and composer with decades of experience creating pedagogical materials. Your expertise includes music theory, composition, and evidence-based teaching methodologies.
+
+========================================
+IMPORTANT: TECHNICAL CONSTRAINTS
+========================================
+
+This system uses ABC notation, which has specific limitations:
+
+SUPPORTED (All difficulty levels):
+✓ Single melodic line instruments (piano solo, guitar solo, flute, violin, etc.)
+✓ Melody with chord symbols (accompaniment as symbols only)
+✓ Basic music education exercises
+
+CURRENTLY LIMITED (Phase 2 development in progress):
+✗ Multiple simultaneous parts (orchestra, band arrangements)
+✗ DAW/ProTools multi-track materials
+✗ Detailed drum notation or tablature
+
+FOR INTERMEDIATE/ADVANCED REQUESTS:
+- If orchestra or band arrangement is requested, generate ONLY the main melody in ABC notation
+- Provide detailed instructions for other parts in the practiceInstructions section
+- Full multi-part support will be available after MIDI/MusicXML implementation
 
 REQUEST DETAILS:
 Subject: {subject}
@@ -584,6 +606,7 @@ export async function generateMaterial(
       content: JSON.stringify(generatedMaterial),
       type: validated.format,
       difficulty: validated.difficulty,
+      isPublic: validated.isPublic ?? false, // Set public visibility
       qualityStatus: qualityStatus,
       metadata: {
         subject: validated.subject,

@@ -35,7 +35,15 @@ export function MusicMaterialDisplay({ content }: MusicMaterialDisplayProps) {
     // Parse ABC and extract notes
     // ABC notation octave rules:
     // C,, = C2, C, = C3, C = C4 (middle C), c = C5, c' = C6
-    const noteMatches = abc.match(/[_^]?[A-Ga-g][',]*/g) || [];
+
+    // Extract only the music data (after K: key signature line)
+    const lines = abc.split('\n');
+    const keyIndex = lines.findIndex(line => line.trim().startsWith('K:'));
+    const musicData = keyIndex >= 0
+      ? lines.slice(keyIndex + 1).join('\n')
+      : abc;
+
+    const noteMatches = musicData.match(/[_^]?[A-Ga-g][',]*/g) || [];
 
     noteMatches.forEach((note) => {
       // Get base note name (A-G)

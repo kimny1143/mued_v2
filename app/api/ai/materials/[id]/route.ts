@@ -5,6 +5,9 @@ import {
   deleteMaterial,
   getUserIdFromClerkId,
 } from '@/lib/services/ai-material.service';
+import { db } from '@/db';
+import { materials } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 /**
  * GET /api/ai/materials/[id]
@@ -69,12 +72,84 @@ export async function GET(
         content: parsedContent,
         type: material.type,
         difficulty: material.difficulty,
+        isPublic: material.isPublic,
         metadata: material.metadata,
         createdAt: material.createdAt.toISOString(),
       },
     });
   } catch (error) {
     console.error('Get material error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Internal server error',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/ai/materials/[id]
+ *
+ * Update material
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  try {
+    const { userId: clerkUserId } = await auth();
+    if (!clerkUserId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = await getUserIdFromClerkId(clerkUserId);
+    const body = await request.json();
+
+    // Check ownership
+    const existingMaterial = await getMaterialById(id);
+    if (!existingMaterial) {
+      return NextResponse.json(
+        { success: false, error: 'Material not found' },
+        { status: 404 }
+      );
+    }
+
+    // Check access (development mode bypasses this)
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    if (!isDevelopment && existingMaterial.creatorId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'Access denied' },
+        { status: 403 }
+      );
+    }
+
+    // Update material
+    await db
+      .update(materials)
+      .set({
+        title: body.title,
+        description: body.description,
+        difficulty: body.difficulty,
+        content: body.content,
+        isPublic: body.isPublic !== undefined ? body.isPublic : undefined,
+        updatedAt: new Date(),
+      })
+      .where(eq(materials.id, id));
+
+    console.log('[Material Update] Successfully updated:', {
+      id,
+      title: body.title,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Material updated successfully',
+    });
+  } catch (error) {
+    console.error('Update material error:', error);
     return NextResponse.json(
       {
         success: false,

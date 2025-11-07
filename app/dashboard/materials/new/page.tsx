@@ -26,6 +26,7 @@ export default function NewMusicMaterialPage() {
   });
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
+  const [isPublic, setIsPublic] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,12 +99,14 @@ export default function NewMusicMaterialPage() {
         format: string;
         additionalContext: string;
         instrument?: string;
+        isPublic?: boolean;
       } = {
         subject: parsedData.instrument,
         topic: parsedData.topic,
         difficulty: schemaDifficulty, // Use mapped difficulty
         format: 'music', // Fixed to 'music' for all music materials
         additionalContext: contextWithMetadata,
+        isPublic: isPublic,
       };
 
       if (schemaInstrument) {
@@ -349,6 +352,21 @@ export default function NewMusicMaterialPage() {
             </div>
           </div>
         )}
+
+        {/* Public/Private Toggle */}
+        <div className="flex items-center gap-2 mb-6">
+          <input
+            type="checkbox"
+            id="isPublic"
+            checked={isPublic}
+            onChange={(e) => setIsPublic(e.target.checked)}
+            className="w-4 h-4 text-[var(--color-brand-green)] rounded focus:ring-2 focus:ring-[var(--color-brand-green)]"
+            disabled={generating}
+          />
+          <label htmlFor="isPublic" className="text-sm font-medium text-gray-700 cursor-pointer">
+            🌐 この教材を公開する（他のユーザーもライブラリで閲覧可能）
+          </label>
+        </div>
 
         {/* Submit Buttons */}
         <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
