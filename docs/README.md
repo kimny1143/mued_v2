@@ -1,9 +1,10 @@
 # MUED v2 Documentation Guide
 
-**Last Updated**: 2025年11月6日
+**Last Updated**: 2025年11月7日
 **Production Environment**: ✅ **Active** ([https://mued.jp](https://mued.jp))
-**Current Phase**: Phase 2 - RAG観測とデータ管理層
+**Current Phase**: Phase 2 - RAG観測とデータ管理層（85%完了）
 **Project Health**: 85/100 🟢 (↑ from 78/100)
+**Documentation Health**: 75/100 🟡 要改善 ([監査レポート](./reports/2025-11-07_documentation-audit.md))
 
 ---
 
@@ -16,11 +17,18 @@
 - **Content**: Business pivot from LMS to Creative CMS, two-tier subscription model, 12-month roadmap
 - **Status**: Official strategy document - all other documents should align with this
 
-### 📊 最新進捗レポート 🆕
-**[`_today/PROGRESS_REPORT_2025-11-06.md`](./_today/PROGRESS_REPORT_2025-11-06.md)**
-- **作成日**: 2025-11-06
-- **主な成果**: テスト通過率100%達成、CI/CD緑化、API標準化開始
-- **プロジェクト健全性**: 78/100 → 85/100 (⬆️ +7)
+### 📊 最新レポート 🆕
+
+**[`reports/2025-11-07_current-progress.md`](./reports/2025-11-07_current-progress.md)**
+- **作成日**: 2025-11-07
+- **内容**: Phase 1-5の進捗、MCP実装状況、次のアクション
+- **全体進捗**: 68% (Phase 1完了、Phase 2部分完了)
+
+**[`reports/2025-11-07_documentation-audit.md`](./reports/2025-11-07_documentation-audit.md)** ⭐️
+- **作成日**: 2025-11-07
+- **内容**: ドキュメント監査、整理推奨アクション
+- **ドキュメント健全性**: 75/100 🟡
+- **アクションサマリー**: [`2025-11-07_documentation-audit-summary.md`](./reports/2025-11-07_documentation-audit-summary.md)
 
 ### 🔧 開発ワークフロー 🆕
 **[`guides/GIT_WORKTREE_WORKFLOW.md`](./guides/GIT_WORKTREE_WORKFLOW.md)**

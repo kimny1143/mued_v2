@@ -1,5 +1,3 @@
-import { NextRequest } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { z } from 'zod';
 import {
   generateMaterial,
@@ -7,20 +5,16 @@ import {
   checkMaterialQuota,
   materialGenerationSchema,
 } from '@/lib/services/ai-material.service';
-import { apiSuccess, apiUnauthorized, apiValidationError, apiForbidden, apiServerError } from '@/lib/api-response';
+import { apiSuccess, apiValidationError, apiForbidden, apiServerError } from '@/lib/api-response';
+import { withAuth } from '@/lib/middleware/with-auth';
 
 /**
  * GET /api/ai/materials
  *
  * Get user's generated materials
  */
-export async function GET() {
+export const GET = withAuth(async ({ userId: clerkUserId }) => {
   try {
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return apiUnauthorized();
-    }
-
     // Get user's materials from database
     const materials = await getUserMaterials(clerkUserId);
 
@@ -47,20 +41,15 @@ export async function GET() {
     console.error('Get materials error:', error);
     return apiServerError(error instanceof Error ? error : new Error('Internal server error'));
   }
-}
+});
 
 /**
  * POST /api/ai/materials
  *
  * Generate new AI material
  */
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
   try {
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return apiUnauthorized();
-    }
-
     // Parse request body
     const body = await request.json();
     const generationRequest = materialGenerationSchema.parse({
@@ -98,4 +87,4 @@ export async function POST(request: NextRequest) {
 
     return apiServerError(error instanceof Error ? error : new Error('Internal server error'));
   }
-}
+});
