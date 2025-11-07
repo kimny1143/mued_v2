@@ -59,10 +59,13 @@ export function AbcNotationRenderer({
   useEffect(() => {
     if (!enableAudio || !visualObj || !audioRef.current) return;
 
+    // Store ref to ensure type safety in async function
+    const audioElement = audioRef.current;
+
     const initSynth = async () => {
       try {
         const synthControl = new abcjs.synth.SynthController();
-        synthControl.load(audioRef.current, null, {
+        synthControl.load(audioElement, null, {
           displayLoop: true,
           displayRestart: true,
           displayPlay: true,
