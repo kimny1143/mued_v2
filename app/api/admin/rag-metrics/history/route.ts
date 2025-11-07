@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { ragMetricsHistory } from "@/db/schema/rag-metrics";
 import { desc, gte, lte, and } from "drizzle-orm";

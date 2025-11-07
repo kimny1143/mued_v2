@@ -12,13 +12,14 @@ import type { IContentFetcher } from '@/lib/content/content-fetcher.interface';
 import type { ContentFetchParams, ContentFetchResult, UnifiedContent } from '@/types/unified-content';
 
 export class AIGeneratedMaterialFetcher implements IContentFetcher {
-  name = 'ai-material-fetcher';
+  readonly id = 'ai-material-fetcher';
+  readonly name = 'AI Generated Material Fetcher';
   supportedSources = ['ai_generated'] as const;
 
   async fetch(params: ContentFetchParams): Promise<ContentFetchResult> {
     try {
       const {
-        query,
+        search,
         type,
         difficulty,
         tags,
@@ -37,11 +38,11 @@ export class AIGeneratedMaterialFetcher implements IContentFetcher {
         conditions.push(eq(materials.difficulty, difficulty));
       }
 
-      if (query) {
+      if (search) {
         conditions.push(
           sql`(
-            ${materials.title} ILIKE ${`%${query}%`} OR
-            ${materials.description} ILIKE ${`%${query}%`}
+            ${materials.title} ILIKE ${`%${search}%`} OR
+            ${materials.description} ILIKE ${`%${search}%`}
           )`
         );
       }
@@ -142,6 +143,10 @@ export class AIGeneratedMaterialFetcher implements IContentFetcher {
         total,
         sources: {
           ai_generated: content.length,
+          note: 0,
+          youtube: 0,
+          internal: 0,
+          partner: 0,
         },
       };
     } catch (error) {
@@ -152,6 +157,10 @@ export class AIGeneratedMaterialFetcher implements IContentFetcher {
         total: 0,
         sources: {
           ai_generated: 0,
+          note: 0,
+          youtube: 0,
+          internal: 0,
+          partner: 0,
         },
         error: error instanceof Error ? error.message : 'Unknown error',
       };

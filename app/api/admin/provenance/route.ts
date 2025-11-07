@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { db } from "@/db";
 import { provenance, type NewProvenance } from "@/db/schema/rag-metrics";
 import { eq, like, and, or, desc } from "drizzle-orm";
