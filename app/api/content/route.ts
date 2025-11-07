@@ -5,12 +5,17 @@
  * Unified content fetching endpoint for Library
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { NextRequest } from 'next/server';
 import { getContainer, TYPES } from '@/lib/di';
 import type { ContentFetcherRegistry } from '@/lib/content';
 import type { ContentSource, ContentFetchParams } from '@/types/unified-content';
 import { NoteContentFetcher } from '@/lib/plugins/note/note-content-fetcher';
+import { withAuth } from '@/lib/middleware/with-auth';
+import {
+  apiSuccess,
+  apiValidationError,
+  apiServerError,
+} from '@/lib/api-response';
 
 // Initialize plugins on cold start
 let pluginsInitialized = false;
@@ -38,17 +43,8 @@ async function initializePlugins() {
  * GET /api/content
  * Fetch content from registered sources
  */
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async ({ request }) => {
   try {
-    // Verify authentication
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     // Initialize plugins if needed
     await initializePlugins();
 
@@ -90,34 +86,19 @@ export async function GET(request: NextRequest) {
       result = await fetcherRegistry.fetchAll(params);
     }
 
-    return NextResponse.json(result);
+    return apiSuccess(result);
   } catch (error) {
     console.error('[ContentAPI] Error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return apiServerError(error instanceof Error ? error : new Error('Internal server error'));
   }
-}
+});
 
 /**
- * GET /api/content/sources
- * Get list of available content sources
+ * POST /api/content
+ * Handle content-related actions
  */
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async ({ request }) => {
   try {
-    // Verify authentication
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
 
     if (body.action === 'list-sources') {
@@ -129,10 +110,7 @@ export async function POST(request: NextRequest) {
 
       const sources = fetcherRegistry.listSources();
 
-      return NextResponse.json({
-        success: true,
-        sources,
-      });
+      return apiSuccess({ sources });
     }
 
     if (body.action === 'health-check') {
@@ -144,24 +122,12 @@ export async function POST(request: NextRequest) {
 
       const health = await fetcherRegistry.healthCheckAll();
 
-      return NextResponse.json({
-        success: true,
-        health,
-      });
+      return apiSuccess({ health });
     }
 
-    return NextResponse.json(
-      { success: false, error: 'Unknown action' },
-      { status: 400 }
-    );
+    return apiValidationError('Unknown action');
   } catch (error) {
     console.error('[ContentAPI] Error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return apiServerError(error instanceof Error ? error : new Error('Internal server error'));
   }
-}
+});

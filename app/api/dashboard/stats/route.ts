@@ -1,16 +1,15 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { materials, reservations, lessonSlots, users } from '@/db/schema';
 import { eq, and, gte, desc, sql } from 'drizzle-orm';
+import { withAuth } from '@/lib/middleware/with-auth';
+import {
+  apiSuccess,
+  apiNotFound,
+  apiServerError,
+} from '@/lib/api-response';
 
-export async function GET() {
+export const GET = withAuth(async ({ userId: clerkUserId }) => {
   try {
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Get user from database
     const [user] = await db
       .select()
@@ -19,7 +18,7 @@ export async function GET() {
       .limit(1);
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return apiNotFound('User not found');
     }
 
     // Get recent materials (last 5)
@@ -78,8 +77,7 @@ export async function GET() {
       .from(reservations)
       .where(eq(reservations.studentId, user.id));
 
-    return NextResponse.json({
-      success: true,
+    return apiSuccess({
       stats: {
         totalMaterials: materialCount?.count || 0,
         totalReservations: reservationCount?.count || 0,
@@ -108,12 +106,6 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Dashboard stats error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return apiServerError(error instanceof Error ? error : new Error('Internal server error'));
   }
-}
+});

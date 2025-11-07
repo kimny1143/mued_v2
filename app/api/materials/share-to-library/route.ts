@@ -5,12 +5,17 @@
  * Converts a Material to UnifiedContent format and stores the relationship
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { users, materials } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import type { UnifiedContent } from '@/types/unified-content';
+import { withAuth } from '@/lib/middleware/with-auth';
+import {
+  apiSuccess,
+  apiNotFound,
+  apiForbidden,
+  apiServerError,
+} from '@/lib/api-response';
 
 interface ShareRequest {
   materialId: string;
@@ -20,16 +25,8 @@ interface ShareRequest {
   description: string;
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
   try {
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     // Get user from database
     const [user] = await db
       .select()
@@ -38,10 +35,7 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
+      return apiNotFound('User not found');
     }
 
     const body: ShareRequest = await request.json();
@@ -55,18 +49,12 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!material) {
-      return NextResponse.json(
-        { success: false, error: 'Material not found' },
-        { status: 404 }
-      );
+      return apiNotFound('Material not found');
     }
 
     // Check ownership
     if (material.creatorId !== user.id) {
-      return NextResponse.json(
-        { success: false, error: 'Not authorized to share this material' },
-        { status: 403 }
-      );
+      return apiForbidden('Not authorized to share this material');
     }
 
     // Convert to UnifiedContent format
@@ -116,22 +104,15 @@ export async function POST(request: NextRequest) {
 
     console.log('[ShareToLibrary] Created unified content:', unifiedContent.id);
 
-    return NextResponse.json({
-      success: true,
-      contentId: unifiedContent.id,
-      message: 'Material shared to Library successfully',
-    });
+    return apiSuccess(
+      { contentId: unifiedContent.id },
+      { message: 'Material shared to Library successfully' }
+    );
   } catch (error) {
     console.error('[ShareToLibrary] Error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
-      { status: 500 }
-    );
+    return apiServerError(error instanceof Error ? error : new Error('Internal server error'));
   }
-}
+});
 
 /**
  * Map material type to content type

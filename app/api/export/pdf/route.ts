@@ -4,12 +4,16 @@
  * Puppeteer + 印刷CSSによる高品質PDF生成
  */
 
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { NextResponse } from 'next/server';
 import puppeteer from 'puppeteer';
 import abcjs from 'abcjs';
 import { markdownToHtml } from '@/lib/export/markdown-to-html';
 import { extractAbcBlocks } from '@/lib/abc-validator';
+import { withAuth } from '@/lib/middleware/with-auth';
+import {
+  apiValidationError,
+  apiServerError,
+} from '@/lib/api-response';
 
 interface AiMaterial {
   id: string;
@@ -19,18 +23,12 @@ interface AiMaterial {
   metadata: Record<string, unknown> | null;
 }
 
-export async function POST(req: NextRequest) {
+export const POST = withAuth(async ({ request }) => {
   try {
-    // 認証確認
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { materialId } = await req.json();
+    const { materialId } = await request.json();
 
     if (!materialId) {
-      return NextResponse.json({ error: 'Material ID required' }, { status: 400 });
+      return apiValidationError('Material ID required');
     }
 
     // 教材データ取得（実際のDB接続は後で実装）
@@ -93,15 +91,11 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('[PDF Export] Error:', error);
-    return NextResponse.json(
-      {
-        error: 'PDF generation failed',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
+    return apiServerError(
+      error instanceof Error ? error : new Error('PDF generation failed')
     );
   }
-}
+});
 
 /**
  * 教材を印刷用HTMLに変換

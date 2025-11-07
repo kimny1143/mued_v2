@@ -349,10 +349,10 @@ export const GET = withAdminAuth(async ({ userId }) => {
 - [x] `app/api/ai/parse-material-request/route.ts` ✅ **完了**
 
 **Priority 2 - Dashboard & Stats (4個)**:
-- [ ] `app/api/dashboard/stats/route.ts`
-- [ ] `app/api/content/route.ts`
-- [ ] `app/api/materials/share-to-library/route.ts`
-- [ ] `app/api/export/pdf/route.ts`
+- [x] `app/api/dashboard/stats/route.ts` ✅ **完了**
+- [x] `app/api/content/route.ts` ✅ **完了**
+- [x] `app/api/materials/share-to-library/route.ts` ✅ **完了**
+- [x] `app/api/export/pdf/route.ts` ✅ **完了**
 
 **Priority 3 - Admin Routes (7個)**:
 - [ ] `app/api/admin/rag-metrics/route.ts`
@@ -450,13 +450,14 @@ export const GET = withAuthParams(
 | カテゴリ | 完了 | 合計 | 進捗率 |
 |---------|------|------|--------|
 | AI Materials | 5 | 5 | **100%** ✅ |
-| Dashboard | 0 | 4 | 0% |
+| Dashboard & Stats | 4 | 4 | **100%** ✅ |
 | Admin Routes | 0 | 7 | 0% |
 | Others | 0 | 7 | 0% |
-| **Total** | **5** | **23** | **22%** |
+| **Total** | **9** | **23** | **39%** |
 
 **目標**: 4週間で100%移行完了
 **Week 1達成**: Priority 1 完了！
+**Week 2進行中**: Priority 2 完了！
 
 ---
 
@@ -507,6 +508,23 @@ export const GET = withAuthParams(
 
 ## 📝 更新履歴
 
+**2025-11-07 (Week 2完了)**:
+- ✅ Priority 2 (Dashboard & Stats) 4個すべて完了
+- ✅ TypeScript type checking: 移行対象ファイルのエラーなし
+- ✅ ESLint: 新規エラーなし
+
+**移行済みルート**:
+- `app/api/dashboard/stats/route.ts` (GET)
+- `app/api/content/route.ts` (GET, POST)
+- `app/api/materials/share-to-library/route.ts` (POST)
+- `app/api/export/pdf/route.ts` (POST)
+
+**削減効果 (Week 2)**:
+- 削減行数: ~40行（4ファイル x 10行平均）
+- 認証コード重複の削減: 9/23 (39%完了)
+
+---
+
 **2025-11-07 (Week 1完了)**:
 - ✅ Priority 1 (AI Materials) 5個すべて完了
 - ✅ withAuthParams() のNext.js 15互換性修正（params: Promise<P>対応）
@@ -514,6 +532,6 @@ export const GET = withAuthParams(
 - ✅ ESLint: warnings のみ（既存）
 - ⚠️ Build: 既存のabc-notation-renderer.tsxエラーにより失敗（移行とは無関係）
 
-**削減効果**:
+**削減効果 (Week 1)**:
 - 削減行数: ~50行（5ファイル x 10行平均）
 - 認証コード重複の削減: 5/23 (22%完了)
