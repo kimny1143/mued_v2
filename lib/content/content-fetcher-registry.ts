@@ -69,12 +69,20 @@ export class ContentFetcherRegistry {
   async fetch(source: ContentSource, params: ContentFetchParams): Promise<ContentFetchResult> {
     const fetcher = this.get(source);
 
+    const emptySourceCounts: Record<ContentSource, number> = {
+      ai_generated: 0,
+      note: 0,
+      youtube: 0,
+      internal: 0,
+      partner: 0,
+    };
+
     if (!fetcher) {
       return {
         success: false,
         content: [],
         total: 0,
-        sources: {} as Record<ContentSource, number>,
+        sources: emptySourceCounts,
         error: `No fetcher registered for source: ${source}`,
       };
     }
@@ -87,7 +95,7 @@ export class ContentFetcherRegistry {
         success: false,
         content: [],
         total: 0,
-        sources: {} as Record<ContentSource, number>,
+        sources: emptySourceCounts,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
@@ -100,12 +108,20 @@ export class ContentFetcherRegistry {
   async fetchAll(params: ContentFetchParams): Promise<ContentFetchResult> {
     const sources = Array.from(this.fetchers.keys());
 
+    const emptySourceCounts: Record<ContentSource, number> = {
+      ai_generated: 0,
+      note: 0,
+      youtube: 0,
+      internal: 0,
+      partner: 0,
+    };
+
     if (sources.length === 0) {
       return {
         success: false,
         content: [],
         total: 0,
-        sources: {} as Record<ContentSource, number>,
+        sources: emptySourceCounts,
         error: 'No fetchers registered',
       };
     }
@@ -115,7 +131,13 @@ export class ContentFetcherRegistry {
     );
 
     const allContent: ContentFetchResult['content'] = [];
-    const sourceCounts: Record<ContentSource, number> = {} as Record<ContentSource, number>;
+    const sourceCounts: Record<ContentSource, number> = {
+      ai_generated: 0,
+      note: 0,
+      youtube: 0,
+      internal: 0,
+      partner: 0,
+    };
     const errors: string[] = [];
 
     results.forEach((result, index) => {
