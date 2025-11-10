@@ -60,7 +60,13 @@ export class NoteContentFetcher implements IContentFetcher {
           success: true,
           content: [],
           total: 0,
-          sources: { note: 0 } as Record<ContentSource, number>,
+          sources: {
+            ai_generated: 0,
+            note: 0,
+            youtube: 0,
+            internal: 0,
+            partner: 0,
+          },
         };
       }
 
@@ -73,7 +79,13 @@ export class NoteContentFetcher implements IContentFetcher {
         success: true,
         content,
         total: content.length,
-        sources: { note: content.length } as Record<ContentSource, number>,
+        sources: {
+          ai_generated: 0,
+          note: content.length,
+          youtube: 0,
+          internal: 0,
+          partner: 0,
+        },
       };
 
       // Cache the result
@@ -90,7 +102,13 @@ export class NoteContentFetcher implements IContentFetcher {
         success: false,
         content: [],
         total: 0,
-        sources: { note: 0 } as Record<ContentSource, number>,
+        sources: {
+          ai_generated: 0,
+          note: 0,
+          youtube: 0,
+          internal: 0,
+          partner: 0,
+        },
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
@@ -121,7 +139,7 @@ export class NoteContentFetcher implements IContentFetcher {
     // Filter by tags
     if (params.tags && params.tags.length > 0) {
       filtered = filtered.filter(item =>
-        params.tags!.some(tag => item.tags.includes(tag))
+        item.tags && params.tags!.some(tag => item.tags.includes(tag))
       );
     }
 

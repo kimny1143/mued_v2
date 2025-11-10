@@ -99,7 +99,7 @@ export function LibraryCard({ content }: LibraryCardProps) {
         </div>
 
         {/* Tags */}
-        {content.tags.length > 0 && (
+        {content.tags && content.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {content.tags.slice(0, 3).map((tag) => (
               <span
