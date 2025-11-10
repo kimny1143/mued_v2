@@ -75,12 +75,18 @@ export function LibraryContent() {
         throw new Error('Failed to fetch content');
       }
 
-      const result: ContentFetchResult = await response.json();
+      const apiResponse = await response.json();
 
-      if (result.success) {
-        setContent(result.content);
+      // Handle wrapped API response
+      if (apiResponse.success && apiResponse.data) {
+        const result: ContentFetchResult = apiResponse.data;
+        if (result.success) {
+          setContent(result.content);
+        } else {
+          setError(result.error || 'Unknown error');
+        }
       } else {
-        setError(result.error || 'Unknown error');
+        setError('Failed to fetch content');
       }
     } catch (err) {
       console.error('Error fetching library content:', err);
