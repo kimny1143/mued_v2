@@ -59,21 +59,22 @@ export function AbcNotationRenderer({
     try {
       setIsDownloadingMidi(true);
 
+      // Extract tempo from ABC notation (Q: field)
+      const tempoMatch = abcNotation.match(/Q:\s*1\/4\s*=\s*(\d+)/i);
+      const bpm = tempoMatch ? parseInt(tempoMatch[1]) : 120;
+
       // Use abcjs to convert ABC notation to MIDI
-      const midiData = abcjs.renderMidi(abcNotation, {
-        generateDownload: false, // We'll handle download manually
+      const midiBuffer = abcjs.synth.getMidiFile(abcNotation, {
+        midiOutputType: 'binary',
+        bpm: bpm,
       });
 
-      if (!midiData || midiData.length === 0) {
+      if (!midiBuffer) {
         throw new Error('Failed to generate MIDI data');
       }
 
-      // Get the MIDI blob from the first track
-      const midiBlob = midiData[0].download;
-
-      if (!midiBlob) {
-        throw new Error('No MIDI download data available');
-      }
+      // Create Blob from binary MIDI data
+      const midiBlob = new Blob([midiBuffer], { type: 'audio/midi' });
 
       // Create download link
       const url = URL.createObjectURL(midiBlob);
