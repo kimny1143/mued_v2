@@ -28,6 +28,7 @@ export function AbcNotationRenderer({
   const audioRef = useRef<HTMLDivElement>(null);
   const [visualObj, setVisualObj] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDownloadingMidi, setIsDownloadingMidi] = useState(false);
 
   // Render sheet music
   useEffect(() => {
@@ -50,6 +51,54 @@ export function AbcNotationRenderer({
       setError(err instanceof Error ? err.message : 'Failed to render notation');
     }
   }, [abcNotation]);
+
+  // Download MIDI file
+  const handleDownloadMidi = () => {
+    if (!abcNotation) return;
+
+    try {
+      setIsDownloadingMidi(true);
+
+      // Use abcjs to convert ABC notation to MIDI
+      const midiData = abcjs.renderMidi(abcNotation, {
+        generateDownload: false, // We'll handle download manually
+      });
+
+      if (!midiData || midiData.length === 0) {
+        throw new Error('Failed to generate MIDI data');
+      }
+
+      // Get the MIDI blob from the first track
+      const midiBlob = midiData[0].download;
+
+      if (!midiBlob) {
+        throw new Error('No MIDI download data available');
+      }
+
+      // Create download link
+      const url = URL.createObjectURL(midiBlob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      // Generate filename from title or default
+      const filename = title
+        ? `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mid`
+        : 'music_material.mid';
+
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      console.log('[ABC MIDI] Downloaded MIDI file:', filename);
+    } catch (err) {
+      console.error('[ABC MIDI] Download error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to download MIDI file');
+    } finally {
+      setIsDownloadingMidi(false);
+    }
+  };
 
   // Initialize audio synthesizer
   useEffect(() => {
@@ -126,6 +175,32 @@ export function AbcNotationRenderer({
         </div>
       )}
 
+      {/* MIDI Download Button */}
+      <div className="flex items-center gap-4 mb-4">
+        <button
+          onClick={handleDownloadMidi}
+          disabled={isDownloadingMidi || !abcNotation}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+              clipRule="evenodd"
+            />
+          </svg>
+          {isDownloadingMidi ? 'ダウンロード中...' : 'MIDIファイルをダウンロード'}
+        </button>
+        <span className="text-sm text-gray-600">
+          DAW や音楽制作ソフトで使用可能な SMF (Standard MIDI File) 形式
+        </span>
+      </div>
+
       {/* Instructions */}
       <div className="mt-4 text-sm text-gray-600 space-y-1">
         <p>💡 <strong>使い方:</strong></p>
@@ -137,6 +212,7 @@ export function AbcNotationRenderer({
               <li>🔄 ループ再生で繰り返し練習できます</li>
             </>
           )}
+          <li>💾 MIDIファイルをダウンロードしてDAWや音楽ソフトで編集できます</li>
         </ul>
       </div>
     </div>
