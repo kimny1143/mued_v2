@@ -82,9 +82,15 @@ export function AbcNotationRenderer({
       link.href = url;
 
       // Generate filename from title or default
-      const filename = title
-        ? `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mid`
-        : 'music_material.mid';
+      let filename = 'music_material.mid';
+      if (title) {
+        // Romanize Japanese and preserve alphanumeric characters
+        const sanitized = title
+          .replace(/\s+/g, '_') // Replace spaces with underscores
+          .replace(/[<>:"/\\|?*]/g, '') // Remove invalid filename characters
+          .substring(0, 100); // Limit length
+        filename = sanitized ? `${sanitized}.mid` : 'music_material.mid';
+      }
 
       link.download = filename;
       document.body.appendChild(link);
