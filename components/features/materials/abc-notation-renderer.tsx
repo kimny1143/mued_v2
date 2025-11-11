@@ -29,6 +29,7 @@ export function AbcNotationRenderer({
   const [visualObj, setVisualObj] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDownloadingMidi, setIsDownloadingMidi] = useState(false);
+  const synthControllerRef = useRef<any>(null);
 
   // Render sheet music
   useEffect(() => {
@@ -78,24 +79,47 @@ export function AbcNotationRenderer({
 
       console.log('[ABC MIDI] MIDI data type:', typeof midiData);
       console.log('[ABC MIDI] MIDI data length:', Array.isArray(midiData) ? midiData.length : midiData?.length);
+      console.log('[ABC MIDI] First 100 chars:', typeof midiData === 'string' ? midiData.substring(0, 100) : 'not a string');
 
       if (!midiData) {
         throw new Error('Failed to generate MIDI data');
       }
 
-      // Convert array of byte values to Uint8Array (true binary)
+      // Convert to Uint8Array (true binary)
       let midiBytes: Uint8Array;
       if (typeof midiData === 'string') {
-        // If it's a comma-separated string like "77,84,104,100,..."
-        const byteValues = midiData.split(',').map(s => parseInt(s.trim(), 10));
-        midiBytes = new Uint8Array(byteValues);
+        // Check if it's a data URI
+        if (midiData.startsWith('data:audio/midi,')) {
+          console.log('[ABC MIDI] Decoding data URI...');
+          // Remove the "data:audio/midi," prefix
+          const encodedData = midiData.substring(16); // "data:audio/midi,".length = 16
+          // Decode URL-encoded data
+          const decodedData = decodeURIComponent(encodedData);
+          // Convert to byte array
+          midiBytes = new Uint8Array(decodedData.length);
+          for (let i = 0; i < decodedData.length; i++) {
+            midiBytes[i] = decodedData.charCodeAt(i);
+          }
+          console.log('[ABC MIDI] Decoded byte count:', midiBytes.length);
+        } else {
+          // If it's a comma-separated string like "77,84,104,100,..."
+          console.log('[ABC MIDI] Converting comma-separated string to bytes...');
+          const byteValues = midiData.split(',').map(s => parseInt(s.trim(), 10));
+          console.log('[ABC MIDI] Converted byte count:', byteValues.length);
+          midiBytes = new Uint8Array(byteValues);
+        }
       } else if (Array.isArray(midiData)) {
         // If it's already an array of numbers
+        console.log('[ABC MIDI] Using array directly, length:', midiData.length);
         midiBytes = new Uint8Array(midiData);
       } else {
         // If it's already a buffer
+        console.log('[ABC MIDI] Using buffer directly');
         midiBytes = new Uint8Array(midiData);
       }
+
+      console.log('[ABC MIDI] Final midiBytes length:', midiBytes.length);
+      console.log('[ABC MIDI] First 16 bytes (hex):', Array.from(midiBytes.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' '));
 
       // Create Blob from binary MIDI data
       const midiBlob = new Blob([midiBytes], { type: 'audio/midi' });
