@@ -52,7 +52,11 @@ export default function MaterialDetailPage({ params }: { params: Promise<{ id: s
       const response = await fetch(`/api/ai/materials/${resolvedParams.id}`);
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
+        // Handle wrapped API response
+        setMaterial(data.data.material);
+      } else if (data.success) {
+        // Handle unwrapped response (backward compatibility)
         setMaterial(data.material);
       } else {
         setError(data.error || 'Failed to load material');

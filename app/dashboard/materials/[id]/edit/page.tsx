@@ -28,7 +28,17 @@ export default function MaterialEditPage({ params }: { params: { id: string } })
       const response = await fetch(`/api/ai/materials/${params.id}`);
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
+        // Handle wrapped API response
+        const material = data.data.material;
+        setMaterial(material);
+        setTitle(material.title);
+        setDescription(material.description);
+        setDifficulty(material.difficulty);
+        setContentJson(JSON.stringify(material.content, null, 2));
+        setIsPublic(material.isPublic || false);
+      } else if (data.success) {
+        // Handle unwrapped response (backward compatibility)
         setMaterial(data.material);
         setTitle(data.material.title);
         setDescription(data.material.description);

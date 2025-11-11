@@ -52,12 +52,12 @@ async function debugLibraryError() {
 
   try {
     // Navigate to library page (using localhost for testing)
-    const url = 'http://localhost:3001/dashboard/library';
+    const url = 'http://localhost:3000/dashboard/library';
 
     console.log(`🌐 Navigating to: ${url}\n`);
 
     // Mock authentication by setting cookies/local storage
-    await page.goto('http://localhost:3001');
+    await page.goto('http://localhost:3000');
 
     // Wait for any redirects
     await page.waitForTimeout(1000);
