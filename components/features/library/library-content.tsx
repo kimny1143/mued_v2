@@ -80,13 +80,13 @@ export function LibraryContent() {
       // Handle wrapped API response
       if (apiResponse.success && apiResponse.data) {
         const result: ContentFetchResult = apiResponse.data;
-        if (result.success) {
+        if (result.success && result.content && Array.isArray(result.content)) {
           setContent(result.content);
         } else {
-          setError(result.error || 'Unknown error');
+          setError(result.error || 'No content available');
         }
       } else {
-        setError('Failed to fetch content');
+        setError(apiResponse.error || 'Failed to fetch content');
       }
     } catch (err) {
       console.error('Error fetching library content:', err);
