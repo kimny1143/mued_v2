@@ -16,6 +16,7 @@ import { InlineError } from '@/components/ui/error-boundary';
 export default function NewMusicMaterialPage() {
   const router = useRouter();
   const [naturalInput, setNaturalInput] = useState('');
+  const [generationEngine, setGenerationEngine] = useState<'openai' | 'midi-llm'>('openai');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [advancedSettings, setAdvancedSettings] = useState({
     materialType: '',
@@ -113,7 +114,12 @@ export default function NewMusicMaterialPage() {
         requestBody.instrument = schemaInstrument;
       }
 
-      const response = await fetch('/api/ai/materials', {
+      // Select API endpoint based on generation engine
+      const apiEndpoint = generationEngine === 'midi-llm'
+        ? '/api/ai/midi-llm/generate'
+        : '/api/ai/materials';
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -200,6 +206,66 @@ export default function NewMusicMaterialPage() {
           <p className="text-xs text-gray-500 mt-2">
             💡 楽器、レベル、ジャンル、時間など、具体的に書くほど精度の高い教材が生成されます
           </p>
+        </div>
+
+        {/* Generation Engine Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-gray-900 mb-3">
+            🎵 生成エンジン
+          </label>
+          <div className="space-y-2">
+            <label
+              className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                generationEngine === 'openai'
+                  ? 'border-[var(--color-brand-green)] bg-green-50'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <input
+                type="radio"
+                name="engine"
+                value="openai"
+                checked={generationEngine === 'openai'}
+                onChange={(e) => setGenerationEngine(e.target.value as 'openai' | 'midi-llm')}
+                className="mt-1"
+                disabled={generating}
+              />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900">標準（OpenAI）- 推奨</div>
+                <div className="text-xs text-gray-600 mt-1">
+                  汎用的な音楽教材生成。幅広いジャンルと楽器に対応
+                </div>
+              </div>
+            </label>
+            <label
+              className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                generationEngine === 'midi-llm'
+                  ? 'border-[var(--color-brand-green)] bg-green-50'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <input
+                type="radio"
+                name="engine"
+                value="midi-llm"
+                checked={generationEngine === 'midi-llm'}
+                onChange={(e) => setGenerationEngine(e.target.value as 'openai' | 'midi-llm')}
+                className="mt-1"
+                disabled={generating}
+              />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900 flex items-center gap-2">
+                  音楽専用AI（MIDI-LLM）
+                  <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full font-semibold">
+                    Beta
+                  </span>
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  音楽専用LLM。より高度な音楽理論とリアルな演奏表現
+                </div>
+              </div>
+            </label>
+          </div>
         </div>
 
         {/* Advanced Settings Toggle */}
