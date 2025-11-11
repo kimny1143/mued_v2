@@ -22,7 +22,11 @@ export function DashboardStats() {
     try {
       const response = await fetch('/api/dashboard/stats');
       const data = await response.json();
-      if (data.success) {
+      if (data.success && data.data) {
+        // Handle wrapped API response
+        setStats(data.data.stats);
+      } else if (data.success) {
+        // Handle unwrapped response (backward compatibility)
         setStats(data.stats);
       }
     } catch (error) {

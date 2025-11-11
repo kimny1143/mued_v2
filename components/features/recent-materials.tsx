@@ -26,7 +26,11 @@ export function RecentMaterials() {
     try {
       const response = await fetch('/api/dashboard/stats');
       const data = await response.json();
-      if (data.success) {
+      if (data.success && data.data) {
+        // Handle wrapped API response
+        setMaterials(data.data.recentMaterials || []);
+      } else if (data.success) {
+        // Handle unwrapped response (backward compatibility)
         setMaterials(data.recentMaterials || []);
       }
     } catch (error) {
@@ -83,7 +87,7 @@ export function RecentMaterials() {
         </Link>
       </div>
 
-      {materials.length === 0 ? (
+      {!materials || materials.length === 0 ? (
         <div className="text-center py-8">
           <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 mb-4">{t.dashboard.recentMaterials.noMaterials}</p>
