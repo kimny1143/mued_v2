@@ -64,17 +64,31 @@ export function AbcNotationRenderer({
       const bpm = tempoMatch ? parseInt(tempoMatch[1]) : 120;
 
       // Use abcjs to convert ABC notation to MIDI
-      const midiBuffer = abcjs.synth.getMidiFile(abcNotation, {
-        midiOutputType: 'binary',
+      const midiData = abcjs.synth.getMidiFile(abcNotation, {
+        midiOutputType: 'encoded', // Get array of byte values
         bpm: bpm,
       });
 
-      if (!midiBuffer) {
+      if (!midiData) {
         throw new Error('Failed to generate MIDI data');
       }
 
+      // Convert array of byte values to Uint8Array (true binary)
+      let midiBytes: Uint8Array;
+      if (typeof midiData === 'string') {
+        // If it's a comma-separated string like "77,84,104,100,..."
+        const byteValues = midiData.split(',').map(s => parseInt(s.trim(), 10));
+        midiBytes = new Uint8Array(byteValues);
+      } else if (Array.isArray(midiData)) {
+        // If it's already an array of numbers
+        midiBytes = new Uint8Array(midiData);
+      } else {
+        // If it's already a buffer
+        midiBytes = new Uint8Array(midiData);
+      }
+
       // Create Blob from binary MIDI data
-      const midiBlob = new Blob([midiBuffer], { type: 'audio/midi' });
+      const midiBlob = new Blob([midiBytes], { type: 'audio/midi' });
 
       // Create download link
       const url = URL.createObjectURL(midiBlob);
