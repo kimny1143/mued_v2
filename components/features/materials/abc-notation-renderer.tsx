@@ -54,7 +54,7 @@ export function AbcNotationRenderer({
   }, [abcNotation]);
 
   // Download MIDI file
-  const handleDownloadMidi = () => {
+  const handleDownloadMidi = async () => {
     if (!abcNotation || !visualObj) {
       setError('楽譜が表示されていません。しばらく待ってから再試行してください。');
       return;
@@ -85,44 +85,40 @@ export function AbcNotationRenderer({
         throw new Error('Failed to generate MIDI data');
       }
 
-      // Convert to Uint8Array (true binary)
-      let midiBytes: Uint8Array;
+      // Convert to Blob
+      let midiBlob: Blob;
       if (typeof midiData === 'string') {
         // Check if it's a data URI
         if (midiData.startsWith('data:audio/midi,')) {
-          console.log('[ABC MIDI] Decoding data URI...');
-          // Remove the "data:audio/midi," prefix
-          const encodedData = midiData.substring(16); // "data:audio/midi,".length = 16
-          // Decode URL-encoded data
-          const decodedData = decodeURIComponent(encodedData);
-          // Convert to byte array
-          midiBytes = new Uint8Array(decodedData.length);
-          for (let i = 0; i < decodedData.length; i++) {
-            midiBytes[i] = decodedData.charCodeAt(i);
-          }
-          console.log('[ABC MIDI] Decoded byte count:', midiBytes.length);
+          console.log('[ABC MIDI] Converting data URI to blob...');
+          // Fetch the data URI and convert to blob directly
+          const response = await fetch(midiData);
+          midiBlob = await response.blob();
+          console.log('[ABC MIDI] Blob size:', midiBlob.size, 'bytes');
+
+          // Read first 16 bytes for verification
+          const arrayBuffer = await midiBlob.slice(0, 16).arrayBuffer();
+          const firstBytes = new Uint8Array(arrayBuffer);
+          console.log('[ABC MIDI] First 16 bytes (hex):', Array.from(firstBytes).map(b => b.toString(16).padStart(2, '0')).join(' '));
         } else {
           // If it's a comma-separated string like "77,84,104,100,..."
           console.log('[ABC MIDI] Converting comma-separated string to bytes...');
           const byteValues = midiData.split(',').map(s => parseInt(s.trim(), 10));
           console.log('[ABC MIDI] Converted byte count:', byteValues.length);
-          midiBytes = new Uint8Array(byteValues);
+          const midiBytes = new Uint8Array(byteValues);
+          midiBlob = new Blob([midiBytes], { type: 'audio/midi' });
         }
       } else if (Array.isArray(midiData)) {
         // If it's already an array of numbers
         console.log('[ABC MIDI] Using array directly, length:', midiData.length);
-        midiBytes = new Uint8Array(midiData);
+        const midiBytes = new Uint8Array(midiData);
+        midiBlob = new Blob([midiBytes], { type: 'audio/midi' });
       } else {
         // If it's already a buffer
         console.log('[ABC MIDI] Using buffer directly');
-        midiBytes = new Uint8Array(midiData);
+        const midiBytes = new Uint8Array(midiData);
+        midiBlob = new Blob([midiBytes], { type: 'audio/midi' });
       }
-
-      console.log('[ABC MIDI] Final midiBytes length:', midiBytes.length);
-      console.log('[ABC MIDI] First 16 bytes (hex):', Array.from(midiBytes.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join(' '));
-
-      // Create Blob from binary MIDI data
-      const midiBlob = new Blob([midiBytes], { type: 'audio/midi' });
 
       // Create download link
       const url = URL.createObjectURL(midiBlob);
