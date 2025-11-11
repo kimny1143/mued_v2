@@ -54,7 +54,10 @@ export function AbcNotationRenderer({
 
   // Download MIDI file
   const handleDownloadMidi = () => {
-    if (!abcNotation) return;
+    if (!abcNotation || !visualObj) {
+      setError('楽譜が表示されていません。しばらく待ってから再試行してください。');
+      return;
+    }
 
     try {
       setIsDownloadingMidi(true);
@@ -63,11 +66,18 @@ export function AbcNotationRenderer({
       const tempoMatch = abcNotation.match(/Q:\s*1\/4\s*=\s*(\d+)/i);
       const bpm = tempoMatch ? parseInt(tempoMatch[1]) : 120;
 
+      console.log('[ABC MIDI] Generating MIDI file with BPM:', bpm);
+      console.log('[ABC MIDI] Using visualObj:', visualObj);
+
       // Use abcjs to convert ABC notation to MIDI
-      const midiData = abcjs.synth.getMidiFile(abcNotation, {
+      // Pass the visualObj (rendered tune) instead of raw ABC string
+      const midiData = abcjs.synth.getMidiFile(visualObj, {
         midiOutputType: 'encoded', // Get array of byte values
         bpm: bpm,
       });
+
+      console.log('[ABC MIDI] MIDI data type:', typeof midiData);
+      console.log('[ABC MIDI] MIDI data length:', Array.isArray(midiData) ? midiData.length : midiData?.length);
 
       if (!midiData) {
         throw new Error('Failed to generate MIDI data');
