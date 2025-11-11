@@ -87,6 +87,26 @@ export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
       duration: metadata.duration,
     });
 
+    // Build material content object (matching MusicMaterialDisplay expectations)
+    const materialContent = {
+      type: 'music' as const,
+      title: `${params.subject} - ${params.topic}`,
+      description: params.additionalContext || `${params.difficulty} level ${params.subject} material`,
+      abcNotation: abc,
+      learningPoints: [
+        `この楽曲は${params.difficulty}レベルの${params.subject}の練習曲です`,
+        `テンポは${metadata.tempo} BPMで設定されています`,
+        `全体で${metadata.noteCount}個の音符が含まれています`,
+        `演奏時間は約${metadata.duration}秒です`,
+      ],
+      practiceInstructions: [
+        'まずゆっくりとしたテンポで練習してください',
+        '各音符を正確に演奏することを心がけてください',
+        '慣れてきたら、徐々にテンポを上げていきましょう',
+        'MIDIプレイヤーで音源を確認しながら練習するとより効果的です',
+      ],
+    };
+
     // Save to database
     const [material] = await db
       .insert(materials)
@@ -96,7 +116,7 @@ export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
         description: params.additionalContext || `${params.difficulty} level ${params.subject} material`,
         type: 'music',
         difficulty: params.difficulty,
-        content: abc,
+        content: JSON.stringify(materialContent),
         metadata: {
           engine: 'midi-llm',
           model: 'midi-llm-1b',
@@ -136,7 +156,8 @@ export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
     console.error('[MIDI-LLM] Generation error:', error);
 
     if (error instanceof z.ZodError) {
-      return apiValidationError('Invalid request', error.errors);
+      console.error('[MIDI-LLM] Validation error details:', error.errors);
+      return apiValidationError('Invalid request - バリデーションエラー', error.errors);
     }
 
     return apiServerError(error instanceof Error ? error : new Error('Internal server error'));

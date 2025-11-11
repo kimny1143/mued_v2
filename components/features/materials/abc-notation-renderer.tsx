@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import abcjs from 'abcjs';
+import 'abcjs/abcjs-audio.css';
 
 interface AbcNotationRendererProps {
   abcNotation: string;
@@ -26,8 +27,6 @@ export function AbcNotationRenderer({
   const notationRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLDivElement>(null);
   const [visualObj, setVisualObj] = useState<any>(null);
-  const [synth, setSynth] = useState<any>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Render sheet music
@@ -38,9 +37,6 @@ export function AbcNotationRenderer({
       const renderResult = abcjs.renderAbc(notationRef.current, abcNotation, {
         responsive: 'resize',
         add_classes: true,
-        clickListener: (abcelem: any) => {
-          console.log('Clicked note:', abcelem);
-        },
         scale: 1.2,
         staffwidth: 800,
       });
@@ -59,13 +55,28 @@ export function AbcNotationRenderer({
   useEffect(() => {
     if (!enableAudio || !visualObj || !audioRef.current) return;
 
-    // Store ref to ensure type safety in async function
     const audioElement = audioRef.current;
 
     const initSynth = async () => {
       try {
+        console.log('[ABC Audio] Initializing synthesizer...');
+
+        // Create cursor control for visual feedback (using visualObj, not DOM element)
+        const cursorControl = new abcjs.TimingCallbacks(visualObj, {
+          eventCallback: (event: any) => {
+            // Visual feedback during playback
+            if (event && notationRef.current) {
+              // Highlight current note
+              console.log('[ABC Audio] Playing:', event);
+            }
+          },
+        });
+
+        // Create synth controller
         const synthControl = new abcjs.synth.SynthController();
-        synthControl.load(audioElement, null, {
+
+        // Load the synth controller with options
+        synthControl.load(audioElement, cursorControl, {
           displayLoop: true,
           displayRestart: true,
           displayPlay: true,
@@ -73,37 +84,18 @@ export function AbcNotationRenderer({
           displayWarp: true,
         });
 
+        // Set the tune
         await synthControl.setTune(visualObj, false);
-        setSynth(synthControl);
+
+        console.log('[ABC Audio] Synthesizer initialized successfully');
       } catch (err) {
-        console.error('Audio initialization error:', err);
+        console.error('[ABC Audio] Initialization error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to initialize audio');
       }
     };
 
     initSynth();
-
-    return () => {
-      if (synth) {
-        synth.destroy();
-      }
-    };
   }, [visualObj, enableAudio]);
-
-  const handlePlay = async () => {
-    if (!synth || !visualObj) return;
-
-    try {
-      if (isPlaying) {
-        synth.pause();
-        setIsPlaying(false);
-      } else {
-        await synth.play();
-        setIsPlaying(true);
-      }
-    } catch (err) {
-      console.error('Playback error:', err);
-    }
-  };
 
   return (
     <div className={`abc-notation-container ${className}`}>
@@ -126,10 +118,10 @@ export function AbcNotationRenderer({
 
       {/* Audio Controls */}
       {enableAudio && (
-        <div className="audio-controls">
+        <div className="audio-controls mb-4">
           <div
             ref={audioRef}
-            className="bg-gray-50 border border-gray-200 rounded-lg p-4"
+            className="abcjs-inline-audio"
           />
         </div>
       )}
@@ -138,11 +130,11 @@ export function AbcNotationRenderer({
       <div className="mt-4 text-sm text-gray-600 space-y-1">
         <p>💡 <strong>使い方:</strong></p>
         <ul className="list-disc list-inside ml-4 space-y-1">
-          <li>五線譜をクリックすると音符の詳細が表示されます</li>
           {enableAudio && (
             <>
-              <li>再生ボタンで楽譜を音声で確認できます</li>
-              <li>テンポ調整やループ再生も可能です</li>
+              <li>▶️ 再生ボタンで楽譜を音声で確認できます</li>
+              <li>⏸️ 一時停止やテンポ調整も可能です</li>
+              <li>🔄 ループ再生で繰り返し練習できます</li>
             </>
           )}
         </ul>
