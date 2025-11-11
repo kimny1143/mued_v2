@@ -32,8 +32,12 @@ export function UpcomingLessons() {
     try {
       const response = await fetch('/api/dashboard/stats');
       const data = await response.json();
-      if (data.success) {
-        setReservations(data.upcomingReservations);
+      if (data.success && data.data) {
+        // Handle wrapped API response
+        setReservations(data.data.upcomingReservations || []);
+      } else if (data.success) {
+        // Handle unwrapped response (backward compatibility)
+        setReservations(data.upcomingReservations || []);
       }
     } catch (error) {
       console.error('Failed to fetch reservations:', error);
@@ -93,7 +97,7 @@ export function UpcomingLessons() {
         </Link>
       </div>
 
-      {reservations.length === 0 ? (
+      {!reservations || reservations.length === 0 ? (
         <div className="text-center py-8">
           <Video className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500 mb-4">{t.dashboard.upcomingLessons.noLessons}</p>
