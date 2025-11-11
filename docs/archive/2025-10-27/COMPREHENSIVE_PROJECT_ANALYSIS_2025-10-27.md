@@ -51,7 +51,7 @@ MUED LMS v2は本番環境で17日間安定稼働しており、MVPコア機能�
 
 **実装完了の重要機能（MVP要件）**
 - ✅ AIメンターマッチング（ルールベース実装）
-- ✅ AI教材生成（OpenAI GPT-4o-mini統合）
+- ✅ AI教材生成（OpenAI GPT-5-mini統合）
 - ✅ レッスン予約・決済フロー（Stripe統合）
 - ✅ サブスクリプション管理（3プラン: Free/Standard/Pro）
 - ✅ 音楽教材対応（ABC記法解析・検証）
@@ -80,7 +80,7 @@ MUED LMS v2は本番環境で17日間安定稼働しており、MVPコア機能�
 ```
 Frontend: Next.js 15.5.4, React 19, TypeScript 5.6, TailwindCSS 4
 Backend:  Clerk認証, Neon PostgreSQL, Drizzle ORM
-AI/ML:    OpenAI GPT-4o-mini
+AI/ML:    OpenAI GPT-5-mini
 決済:     Stripe
 本番環境: Vercel (https://mued.jp - 17日間稼働中)
 ```
@@ -799,7 +799,7 @@ AI駆動型の適応学習管理システム
 ## 技術スタック
 - Next.js 15.5.4, React 19, TypeScript
 - Clerk認証, Neon PostgreSQL, Drizzle ORM
-- OpenAI GPT-4o-mini, Stripe
+- OpenAI GPT-5-mini, Stripe
 
 ## セットアップ
 ...

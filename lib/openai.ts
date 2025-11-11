@@ -14,7 +14,7 @@ import { z } from 'zod';
 // Environment variable validation
 const envSchema = z.object({
   OPENAI_API_KEY: z.string().min(1).optional(), // Optional to allow build, but required at runtime
-  OPENAI_MODEL: z.string().default('gpt-4o-mini'),
+  OPENAI_MODEL: z.string().default('gpt-5-mini'),
   // GPT-5 reasoning models need much higher limits due to reasoning tokens
   // GPT-5 supports up to 128k output tokens
   OPENAI_MAX_TOKENS: z.coerce.number().default(16000),
@@ -108,9 +108,9 @@ export function calculateCost(
     return inputCost + outputCost;
   }
 
-  // Default fallback to gpt-4o-mini pricing
-  console.warn(`Unknown model for cost calculation: ${model}, using gpt-4o-mini pricing`);
-  const pricing = MODEL_PRICING['gpt-4o-mini'];
+  // Default fallback to gpt-5-mini pricing
+  console.warn(`Unknown model for cost calculation: ${model}, using gpt-5-mini pricing`);
+  const pricing = MODEL_PRICING['gpt-5-mini'];
   const inputCost = (promptTokens / 1_000_000) * pricing.input;
   const outputCost = (completionTokens / 1_000_000) * pricing.output;
   return inputCost + outputCost;
@@ -268,13 +268,13 @@ export function requiresToolExecution(
 export function selectModel(taskComplexity: 'simple' | 'medium' | 'complex'): ModelName {
   switch (taskComplexity) {
     case 'simple':
-      return 'gpt-4o-mini'; // Fast, cheap, good for simple tasks
+      return 'gpt-5-nano'; // Fast, cheapest, good for simple tasks
     case 'medium':
-      return 'gpt-4o-mini'; // Still cost-effective for most tasks
+      return 'gpt-5-mini'; // Cost-effective for most tasks
     case 'complex':
-      return 'gpt-4o'; // More capable for complex reasoning
+      return 'gpt-5'; // Most capable for complex reasoning
     default:
-      return 'gpt-4o-mini';
+      return 'gpt-5-mini';
   }
 }
 

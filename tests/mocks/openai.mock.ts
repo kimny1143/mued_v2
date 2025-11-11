@@ -16,7 +16,7 @@ export class MockOpenAI {
 
   constructor(options: MockOpenAIOptions = {}) {
     this.options = {
-      defaultModel: 'gpt-4o-mini',
+      defaultModel: 'gpt-5-mini',
       defaultResponse: 'Mock AI response',
       throwError: false,
       streamResponse: false,
@@ -166,7 +166,7 @@ export class MockOpenAI {
             id: 'chatcmpl-mock-stream',
             object: 'chat.completion.chunk',
             created: Math.floor(Date.now() / 1000),
-            model: params.model || 'gpt-4o-mini',
+            model: params.model || 'gpt-5-mini',
             choices: [
               {
                 index: 0,

@@ -56,9 +56,9 @@ export interface UnifiedContent {
 
 export interface AIContentMetadata {
   generatedBy: {
-    model: string;                   // 'gpt-4o-mini'
+    model: string;                   // 'gpt-5-mini'
     provider: string;                // 'OpenAI'
-    version: string;                 // '2024-07-18'
+    version: string;                 // '2025-08-07'
     timestamp: Date;
   };
 

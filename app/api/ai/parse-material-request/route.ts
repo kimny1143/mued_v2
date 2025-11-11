@@ -110,7 +110,7 @@ export const POST = withAuth(async ({ request }) => {
 
 必ずJSON形式で返してください。他の説明は不要です。`;
 
-    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    const model = process.env.OPENAI_MODEL || 'gpt-5-mini';
     const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
 
     const params: any = {

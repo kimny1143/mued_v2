@@ -49,7 +49,7 @@ describe('OpenAI Client', () => {
     it('should generate a chat completion', async () => {
       const mockClient = createMockOpenAI();
       const response = await mockClient.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         messages: [{ role: 'user', content: 'Hello' }],
       });
 
@@ -61,7 +61,7 @@ describe('OpenAI Client', () => {
     it('should handle streaming responses', async () => {
       const mockClient = createMockOpenAI({ streamResponse: true });
       const stream = await mockClient.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         messages: [{ role: 'user', content: 'Hello' }],
         stream: true,
       });
@@ -81,7 +81,7 @@ describe('OpenAI Client', () => {
 
       await expect(
         mockClient.chat.completions.create({
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
           messages: [{ role: 'user', content: 'Hello' }],
         })
       ).rejects.toThrow('Mock OpenAI error');
@@ -110,7 +110,7 @@ describe('OpenAI Client', () => {
       ];
 
       const response = await mockClient.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         messages: [{ role: 'user', content: 'Find available slots for tomorrow' }],
         tools,
       });
@@ -142,7 +142,7 @@ describe('OpenAI Client', () => {
       ];
 
       const response = await mockClient.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         messages: [{ role: 'user', content: 'What is my subscription status?' }],
         tools,
       });
@@ -160,7 +160,7 @@ describe('OpenAI Client', () => {
     it('should track token usage', async () => {
       const mockClient = createMockOpenAI();
       const response = await mockClient.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         messages: [{ role: 'user', content: 'Hello' }],
       });
 
@@ -173,12 +173,12 @@ describe('OpenAI Client', () => {
     it('should calculate cost based on model and tokens', () => {
       // Cost calculation logic to be implemented in lib/openai.ts
       const modelPricing = {
-        'gpt-4o-mini': {
-          input: 0.00015, // per 1K tokens
-          output: 0.0006, // per 1K tokens
+        'gpt-5-mini': {
+          input: 0.00025, // per 1K tokens
+          output: 0.002, // per 1K tokens
         },
-        'gpt-4o': {
-          input: 0.0025,
+        'gpt-5': {
+          input: 0.00125,
           output: 0.01,
         },
       };
@@ -188,12 +188,12 @@ describe('OpenAI Client', () => {
         completion_tokens: 500,
       };
 
-      const model = 'gpt-4o-mini';
+      const model = 'gpt-5-mini';
       const cost =
         (usage.prompt_tokens / 1000) * modelPricing[model].input +
         (usage.completion_tokens / 1000) * modelPricing[model].output;
 
-      expect(cost).toBeCloseTo(0.00045, 5);
+      expect(cost).toBeCloseTo(0.00125, 5);
     });
   });
 
@@ -208,7 +208,7 @@ describe('OpenAI Client', () => {
 
       await expect(
         mockClient.chat.completions.create({
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
           messages: [{ role: 'user', content: 'Hello' }],
         })
       ).rejects.toMatchObject({
@@ -227,7 +227,7 @@ describe('OpenAI Client', () => {
 
       await expect(
         mockClient.chat.completions.create({
-          model: 'gpt-4o-mini',
+          model: 'gpt-5-mini',
           messages: [{ role: 'user', content: 'Hello' }],
         })
       ).rejects.toMatchObject({

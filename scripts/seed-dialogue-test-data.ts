@@ -36,7 +36,7 @@ async function seedTestData() {
 
     // Generate test data for the last 14 days
     const testDialogues = [];
-    const models = ['gpt-4o-mini', 'gpt-4o', 'claude-3-5-sonnet'];
+    const models = ['gpt-5-mini', 'gpt-5', 'claude-3-5-sonnet'];
     const topics = [
       { query: 'ジャズピアノの基本的なコード進行を教えてください', keywords: ['ジャズ', 'コード', 'II-V-I'] },
       { query: 'ピアノ初心者におすすめの練習曲は？', keywords: ['初心者', '練習曲', 'バイエル'] },
@@ -73,9 +73,9 @@ async function seedTestData() {
         const totalTokens = promptTokens + completionTokens;
 
         // Cost calculation (rough estimate)
-        // gpt-4o-mini: $0.15/1M input, $0.60/1M output
-        const inputCostUSD = (promptTokens / 1_000_000) * 0.15;
-        const outputCostUSD = (completionTokens / 1_000_000) * 0.60;
+        // gpt-5-mini: $0.25/1M input, $2.0/1M output
+        const inputCostUSD = (promptTokens / 1_000_000) * 0.25;
+        const outputCostUSD = (completionTokens / 1_000_000) * 2.0;
         const totalCostUSD = inputCostUSD + outputCostUSD;
         const tokenCostJpy = totalCostUSD * 150; // USD to JPY conversion
 

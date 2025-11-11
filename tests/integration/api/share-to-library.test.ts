@@ -48,7 +48,7 @@ describe('Share to Library API', () => {
       ],
     },
     metadata: {
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       tags: ['jazz', 'scales', 'piano'],
     },
     createdAt: new Date('2024-01-15'),

@@ -16,7 +16,7 @@ This document outlines a comprehensive testing strategy for the MUED LMS music e
 ### Tech Stack
 - **Frontend**: Next.js 15.5, React 19, TypeScript, TailwindCSS
 - **Backend**: Clerk auth, Neon PostgreSQL, Drizzle ORM
-- **AI**: OpenAI GPT-4o-mini
+- **AI**: OpenAI GPT-5-mini
 - **Testing**: Vitest (unit), Playwright (E2E)
 - **Audio**: abcjs library
 

@@ -132,7 +132,7 @@ export const openAIHandlers = [
       id: 'chatcmpl-mock-' + Date.now(),
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: body.model || 'gpt-4o-mini',
+      model: body.model || 'gpt-5-mini',
       choices: [
         {
           index: 0,
@@ -195,7 +195,7 @@ export function createCustomOpenAIHandler(customResponse: any) {
       id: 'chatcmpl-custom-' + Date.now(),
       object: 'chat.completion',
       created: Math.floor(Date.now() / 1000),
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       choices: [
         {
           index: 0,

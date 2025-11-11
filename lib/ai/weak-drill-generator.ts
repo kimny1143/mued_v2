@@ -93,7 +93,7 @@ export async function generateWeakDrill(
 
     console.log('[WeakDrillGenerator] Generating drills with OpenAI...');
 
-    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    const model = process.env.OPENAI_MODEL || 'gpt-5-mini';
     const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
 
     const params: any = {

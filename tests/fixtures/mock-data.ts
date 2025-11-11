@@ -58,9 +58,9 @@ export const mockUnifiedContent: {
     },
     aiMetadata: {
       generatedBy: {
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         provider: 'OpenAI',
-        version: '2024-07-18',
+        version: '2025-08-07',
         timestamp: new Date('2024-02-01T08:00:00Z'),
       },
       qualityScore: {

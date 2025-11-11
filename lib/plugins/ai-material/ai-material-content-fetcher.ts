@@ -103,9 +103,9 @@ export class AIGeneratedMaterialFetcher implements IContentFetcher {
                 },
             aiMetadata: {
               generatedBy: {
-                model: typedMetadata.model || 'gpt-4o-mini',
+                model: typedMetadata.model || 'gpt-5-mini',
                 provider: 'OpenAI',
-                version: '2024-07-18',
+                version: '2025-08-07',
                 timestamp: material.createdAt,
               },
               qualityScore: {

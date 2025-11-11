@@ -23,7 +23,7 @@
 - **認証**: Clerk
 - **データベース**: Neon PostgreSQL + Drizzle ORM
 - **決済**: Stripe
-- **AI機能**: OpenAI API (GPT-4o/GPT-4o-mini)
+- **AI機能**: OpenAI API (GPT-5/GPT-5-mini)
 - **スタイリング**: TailwindCSS 4 (インライン設定)
 - **テスト**: Vitest + Playwright
 
