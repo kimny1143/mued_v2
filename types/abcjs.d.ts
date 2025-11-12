@@ -83,8 +83,11 @@ declare module 'abcjs' {
     options?: RenderOptions
   ): TuneObject[];
 
+  export function parseOnly(abcString: string): TuneObject[];
+
   export default {
     renderAbc,
+    parseOnly,
     synth,
     TimingCallbacks,
     SynthController,
