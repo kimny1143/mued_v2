@@ -4,77 +4,100 @@
  * Testing the metrics saving endpoint with mocked database
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
 import { POST } from '@/app/api/metrics/save-session/route';
 import { NextRequest } from 'next/server';
 import type { PracticeSession } from '@/lib/metrics/learning-tracker';
-import { auth } from '@clerk/nextjs/server';
 
 // Test user ID constant
 const testUserId = 'test-user-id';
+const testClerkId = 'test-clerk-id';
+
+// Mock database functions
+const mockSelect = vi.fn();
+const mockInsert = vi.fn();
+const mockUpdate = vi.fn();
+const mockFrom = vi.fn();
+const mockWhere = vi.fn();
+const mockLimit = vi.fn();
+const mockValues = vi.fn();
+const mockSet = vi.fn();
+
+// Setup chained mock functions
+mockSelect.mockReturnValue({ from: mockFrom });
+mockFrom.mockReturnValue({ where: mockWhere });
+mockWhere.mockReturnValue({ limit: mockLimit });
+mockLimit.mockResolvedValue([]);
+
+mockInsert.mockReturnValue({ values: mockValues });
+mockValues.mockResolvedValue([{
+  id: 'test-metric-id',
+  userId: testUserId,
+  materialId: 'test-material',
+}]);
+
+mockUpdate.mockReturnValue({ set: mockSet });
+mockSet.mockReturnValue({ where: mockWhere });
 
 // Mock the database
 vi.mock('@/db', () => ({
   db: {
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          limit: vi.fn(() => Promise.resolve([])),
-        })),
-      })),
-    })),
-    insert: vi.fn(() => ({
-      values: vi.fn(() => ({
-        returning: vi.fn(() => Promise.resolve([{
-          id: 'test-metric-id',
-          userId: 'test-user-id',
-          materialId: 'test-material',
-        }])),
-      })),
-    })),
-    update: vi.fn(() => ({
-      set: vi.fn(() => ({
-        where: vi.fn(() => Promise.resolve()),
-      })),
-    })),
+    select: () => mockSelect(),
+    insert: () => mockInsert(),
+    update: () => mockUpdate(),
   },
 }));
 
+// Mock Drizzle ORM functions
+vi.mock('drizzle-orm', () => ({
+  eq: (field: any, value: any) => ({ field, value, op: 'eq' }),
+  and: (...conditions: any[]) => ({ conditions, op: 'and' }),
+}));
+
 // Mock the learning tracker calculator
+const mockCalculateLearningMetrics = vi.fn();
 vi.mock('@/lib/metrics/learning-tracker', () => ({
-  calculateLearningMetrics: vi.fn(() => ({
-    achievementRate: 75,
-    repetitionIndex: 2.5,
-    tempoAchievement: 90,
-    weakSpots: [
-      { startBar: 1, endBar: 4, loopCount: 5, lastPracticedAt: new Date().toISOString() },
-    ],
-  })),
+  calculateLearningMetrics: mockCalculateLearningMetrics,
 }));
 
 // Mock lib/auth
+const mockGetAuthenticatedUserWithE2E = vi.fn();
+const mockIsE2ETestMode = vi.fn();
+
 vi.mock('@/lib/auth', () => ({
-  getAuthenticatedUserWithE2E: vi.fn(() => Promise.resolve({
-    id: 'test-user-id',
-    clerkId: 'test-clerk-id',
-    email: 'test@example.com',
-    role: 'student',
-  })),
-  isE2ETestMode: vi.fn(() => false),
+  getAuthenticatedUserWithE2E: mockGetAuthenticatedUserWithE2E,
+  isE2ETestMode: mockIsE2ETestMode,
 }));
 
 describe('Save Session API', () => {
-  const mockAuth = vi.mocked(auth);
-
   beforeEach(() => {
     vi.clearAllMocks();
-    mockAuth.mockResolvedValue({ userId: 'test-clerk-id' } as any);
+
+    // Set default mock responses
+    mockIsE2ETestMode.mockReturnValue(false);
+    mockGetAuthenticatedUserWithE2E.mockResolvedValue({
+      id: testUserId,
+      clerkId: testClerkId,
+      email: 'test@example.com',
+      role: 'student',
+    });
+
+    mockCalculateLearningMetrics.mockReturnValue({
+      achievementRate: 75,
+      repetitionIndex: 2.5,
+      tempoAchievement: 90,
+      weakSpots: [
+        { startBar: 1, endBar: 4, loopCount: 5, lastPracticedAt: new Date().toISOString() },
+      ],
+    });
+
+    // Reset database mock behavior
+    mockLimit.mockResolvedValue([]);
   });
 
   describe('Authentication', () => {
     it('should reject unauthenticated requests', async () => {
-      const { getAuthenticatedUserWithE2E } = await import('@/lib/auth');
-      (getAuthenticatedUserWithE2E as any).mockRejectedValueOnce(new Error('Unauthorized: No valid session found'));
+      mockGetAuthenticatedUserWithE2E.mockRejectedValueOnce(new Error('Unauthorized: No valid session found'));
 
       const session: PracticeSession = {
         materialId: 'test-material',
@@ -164,6 +187,25 @@ describe('Save Session API', () => {
 
   describe('Existing Metrics Update', () => {
     it('should update existing metrics with cumulative data', async () => {
+      // Set up existing metrics
+      const existingMetric = {
+        id: 'existing-metric-id',
+        userId: testUserId,
+        materialId: 'existing-material',
+        sectionsCompleted: 2,
+        sectionsTotal: 8,
+        achievementRate: '25.00',
+        repetitionCount: 3,
+        repetitionIndex: '1.50',
+        achievedTempo: 90,
+        tempoAchievement: '75.00',
+        weakSpots: [],
+        totalPracticeTime: 300,
+        sessionCount: 1,
+      };
+
+      mockLimit.mockResolvedValueOnce([existingMetric]);
+
       const session: PracticeSession = {
         materialId: 'existing-material',
         userId: testUserId,
@@ -191,11 +233,11 @@ describe('Save Session API', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.metrics).toBeDefined();
+      expect(mockUpdate).toHaveBeenCalled();
     });
 
     it('should merge weak spots correctly', async () => {
-      const { calculateLearningMetrics } = await import('@/lib/metrics/learning-tracker');
-      (calculateLearningMetrics as any).mockReturnValueOnce({
+      mockCalculateLearningMetrics.mockReturnValueOnce({
         achievementRate: 50,
         repetitionIndex: 2.5,
         tempoAchievement: 80,
