@@ -53,6 +53,8 @@ export default function NewMusicMaterialPage() {
 
       const parsedData = await parseResponse.json();
 
+      console.log('[Debug] Parse response:', parsedData);
+
       if (!parsedData.success) {
         console.error('Parse request error:', parsedData);
         const errorMessage = parsedData.error || 'リクエストの解析に失敗しました';
@@ -64,6 +66,9 @@ export default function NewMusicMaterialPage() {
         return;
       }
 
+      // Extract data from standardized API response
+      const parsed = parsedData.data || parsedData;
+
       // Map instrument to schema enum (only send if it matches)
       const instrumentMap: Record<string, string> = {
         'Piano': 'piano',
@@ -71,7 +76,7 @@ export default function NewMusicMaterialPage() {
         'Violin': 'violin',
         'Flute': 'flute',
       };
-      const schemaInstrument = instrumentMap[parsedData.instrument];
+      const schemaInstrument = instrumentMap[parsed.instrument];
 
       // Map difficulty to schema enum (handle expert/professional -> advanced)
       const difficultyMap: Record<string, string> = {
@@ -81,16 +86,16 @@ export default function NewMusicMaterialPage() {
         'expert': 'advanced',
         'professional': 'advanced',
       };
-      const schemaDifficulty = difficultyMap[parsedData.difficulty] || 'intermediate';
+      const schemaDifficulty = difficultyMap[parsed.difficulty] || 'intermediate';
 
       // Include metadata in additional context
       const contextWithMetadata = `${naturalInput}
 
 [教材メタデータ]
-楽器: ${parsedData.instrument}
-ジャンル: ${parsedData.genre || '指定なし'}
-練習時間: ${parsedData.duration}分
-教材タイプ: ${parsedData.materialType}`;
+楽器: ${parsed.instrument}
+ジャンル: ${parsed.genre || '指定なし'}
+練習時間: ${parsed.duration}分
+教材タイプ: ${parsed.materialType}`;
 
       // Generate material with parsed parameters
       const requestBody: {
@@ -102,8 +107,8 @@ export default function NewMusicMaterialPage() {
         instrument?: string;
         isPublic?: boolean;
       } = {
-        subject: parsedData.instrument,
-        topic: parsedData.topic,
+        subject: parsed.instrument,
+        topic: parsed.topic,
         difficulty: schemaDifficulty, // Use mapped difficulty
         format: 'music', // Fixed to 'music' for all music materials
         additionalContext: contextWithMetadata,
@@ -119,6 +124,9 @@ export default function NewMusicMaterialPage() {
         ? '/api/ai/midi-llm/generate'
         : '/api/ai/materials';
 
+      console.log('[Debug] Sending request to:', apiEndpoint);
+      console.log('[Debug] Request body:', requestBody);
+
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -133,7 +141,10 @@ export default function NewMusicMaterialPage() {
         router.push(`/dashboard/materials/${materialId}`);
       } else {
         console.error('Material generation error:', data);
-        setError(data.error || 'Failed to generate material');
+        // Show detailed error for debugging
+        const errorMessage = data.error || 'Failed to generate material';
+        const errorDetails = data.details ? `\n詳細: ${JSON.stringify(data.details, null, 2)}` : '';
+        setError(errorMessage + errorDetails);
         if (data.upgradeRequired) {
           setTimeout(() => {
             router.push('/dashboard/subscription');

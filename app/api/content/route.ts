@@ -5,7 +5,6 @@
  * Unified content fetching endpoint for Library
  */
 
-import { NextRequest } from 'next/server';
 import { getContainer, TYPES } from '@/lib/di';
 import type { ContentFetcherRegistry } from '@/lib/content';
 import type { ContentSource, ContentFetchParams } from '@/types/unified-content';

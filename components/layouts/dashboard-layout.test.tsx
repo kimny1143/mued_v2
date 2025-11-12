@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, within, waitFor } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { DashboardLayout } from './dashboard-layout';
 import { renderWithProviders, mockUser, expectNoA11yViolations } from '@/tests/utils/component-test-utils';
 
@@ -198,7 +198,7 @@ describe('DashboardLayout', () => {
     });
 
     it('should maintain proper document structure', () => {
-      const { container } = renderWithProviders(
+      renderWithProviders(
         <DashboardLayout>
           <div>Content</div>
         </DashboardLayout>

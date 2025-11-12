@@ -161,7 +161,7 @@ export function MusicMaterialDisplay({ content }: MusicMaterialDisplayProps) {
         {activeTab === 'sheet' && (
           <AbcNotationRenderer
             abcNotation={content.abcNotation}
-            title="五線譜"
+            title={content.title}
             enableAudio={true}
           />
         )}
