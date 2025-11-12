@@ -19,18 +19,37 @@ const Anthropic = require("@anthropic-ai/sdk");
 const path = require("path");
 const fs = require("fs");
 
-// Load .env.local from project root
+// Load .env.local from project root (without using dotenv to avoid console output)
 const projectRoot = path.resolve(__dirname, '../..');
 const envLocalPath = path.join(projectRoot, '.env.local');
 
-// Load environment variables silently (no console output before MCP server starts)
+// Manual .env.local parsing to avoid dotenv console output
 if (fs.existsSync(envLocalPath)) {
-  const dotenvResult = require('dotenv').config({ path: envLocalPath });
-  // Don't log here - it breaks MCP JSON-RPC protocol
-  // Logging will happen after server starts
-}
+  const envContent = fs.readFileSync(envLocalPath, 'utf8');
+  envContent.split('\n').forEach(line => {
+    // Skip comments and empty lines
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return;
 
-// Validate API key (will log error after server starts if missing)
+    // Parse KEY=VALUE format
+    const match = trimmed.match(/^([^=]+)=(.*)$/);
+    if (match) {
+      const key = match[1].trim();
+      let value = match[2].trim();
+
+      // Remove quotes if present
+      if ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+
+      // Set environment variable (only if not already set)
+      if (!process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+  });
+}
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
