@@ -7,7 +7,7 @@
 
 import Parser from 'rss-parser';
 import type { IContentFetcher } from '@/lib/content';
-import type { ContentFetchParams, ContentFetchResult, ContentSource } from '@/types/unified-content';
+import type { ContentFetchParams, ContentFetchResult } from '@/types/unified-content';
 import { NoteContentAdapter } from './note-content-adapter';
 
 interface NoteRSSItem {

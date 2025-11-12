@@ -4,7 +4,7 @@
  * ABC記法の構文検証とブロック抽出
  */
 
-import abcjs, { type TuneObject, type AbcElem } from 'abcjs';
+import abcjs from 'abcjs';
 
 export interface AbcBlock {
   id: string;

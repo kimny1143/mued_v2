@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, within } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { QuickActions } from './quick-actions';
 import { renderWithProviders, expectNoA11yViolations } from '@/tests/utils/component-test-utils';
 

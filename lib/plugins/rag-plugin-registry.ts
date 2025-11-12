@@ -6,8 +6,6 @@
  * It complements the existing plugin-registry.ts
  */
 
-import { z } from 'zod';
-
 // RAG-specific plugin capabilities
 export interface RagPluginCapabilities {
   list: boolean;      // Can list content items

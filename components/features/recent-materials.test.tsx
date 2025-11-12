@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { RecentMaterials } from './recent-materials';
 import { renderWithProviders, mockApiResponse } from '@/tests/utils/component-test-utils';
-import { mockFetchResponses, mockTestData } from '@/tests/mocks/common-mocks';
+import { mockFetchResponses } from '@/tests/mocks/common-mocks';
 
 // Mock Next.js Link
 vi.mock('next/link', () => ({
