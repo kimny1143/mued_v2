@@ -14,6 +14,7 @@
 
 const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
 const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
+const { z } = require("zod");
 const Anthropic = require("@anthropic-ai/sdk");
 
 // Initialize Anthropic client
@@ -181,38 +182,11 @@ server.registerTool(
     title: "Generate Music Learning Material (Claude)",
     description: "Generate educational music materials using Claude with Chain-of-Musical-Thought reasoning. Outputs ABC notation, learning points, and practice instructions in Japanese.",
     inputSchema: {
-      type: "object",
-      properties: {
-        level: {
-          type: "string",
-          enum: ["beginner", "intermediate", "advanced"],
-          description: "Student skill level",
-          default: "beginner",
-        },
-        instrument: {
-          type: "string",
-          enum: ["guitar", "piano", "violin", "flute", "clarinet", "saxophone"],
-          description: "Target instrument",
-          default: "guitar",
-        },
-        genre: {
-          type: "string",
-          enum: ["classical", "jazz", "pop", "folk", "blues", "rock"],
-          description: "Musical genre/style",
-          default: "classical",
-        },
-        length: {
-          type: "string",
-          enum: ["short", "medium", "long"],
-          description: "Piece length (short: 8-16 bars, medium: 16-32 bars, long: 32+ bars)",
-          default: "medium",
-        },
-        specificRequest: {
-          type: "string",
-          description: "Optional: Specific requirements (e.g., 'arpeggio practice', 'scale exercise', 'chord progression study')",
-        },
-      },
-      required: ["level", "instrument"],
+      level: z.enum(["beginner", "intermediate", "advanced"]).default("beginner").describe("Student skill level"),
+      instrument: z.enum(["guitar", "piano", "violin", "flute", "clarinet", "saxophone"]).default("guitar").describe("Target instrument"),
+      genre: z.enum(["classical", "jazz", "pop", "folk", "blues", "rock"]).optional().default("classical").describe("Musical genre/style"),
+      length: z.enum(["short", "medium", "long"]).optional().default("medium").describe("Piece length (short: 8-16 bars, medium: 16-32 bars, long: 32+ bars)"),
+      specificRequest: z.string().optional().describe("Optional: Specific requirements (e.g., 'arpeggio practice', 'scale exercise', 'chord progression study')"),
     },
   },
   async (params) => {
@@ -277,19 +251,11 @@ server.registerTool(
     title: "Test CoMT Quality",
     description: "Generate a standardized test piece to evaluate Chain-of-Musical-Thought quality. Uses fixed parameters for consistent comparison.",
     inputSchema: {
-      type: "object",
-      properties: {
-        model: {
-          type: "string",
-          enum: ["sonnet", "haiku"],
-          description: "Claude model to test (sonnet-4-5 or haiku-3-5)",
-          default: "sonnet",
-        },
-      },
+      model: z.enum(["sonnet", "haiku"]).optional().default("sonnet").describe("Claude model to test (sonnet-4-5 or haiku-3-5)"),
     },
   },
   async (params) => {
-    const model = params.model === "haiku"
+    const model = (params?.model || "sonnet") === "haiku"
       ? "claude-3-5-haiku-20241022"
       : "claude-sonnet-4-5-20250929";
 
