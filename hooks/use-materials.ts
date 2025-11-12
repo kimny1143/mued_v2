@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApiFetch } from './use-api-fetch';
+import { useApiClient, getErrorMessage } from '@/lib/api-client';
 
 export interface Material {
   id: string;
@@ -33,6 +34,7 @@ interface MaterialResponse {
 
 export function useMaterials() {
   const { data, error, isLoading, refetch } = useApiFetch<MaterialsResponse>('/api/ai/materials');
+  const apiClient = useApiClient();
   const [localError, setLocalError] = useState<string | null>(null);
 
   const materials = data?.materials || [];
@@ -41,19 +43,12 @@ export function useMaterials() {
 
   const deleteMaterial = async (id: string) => {
     try {
-      const response = await fetch(`/api/ai/materials/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        // Refetch to update the list
-        refetch();
-        return true;
-      } else {
-        throw new Error('Failed to delete material');
-      }
+      await apiClient.delete(`/api/ai/materials/${id}`);
+      // Refetch to update the list
+      refetch();
+      return true;
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to delete material');
+      setLocalError(getErrorMessage(err));
       return false;
     }
   };
