@@ -15,6 +15,7 @@
     "incremental": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "types": ["@testing-library/jest-dom", "vitest/globals"],
     "plugins": [
       {
         "name": "next"
