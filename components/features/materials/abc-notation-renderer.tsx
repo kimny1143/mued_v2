@@ -161,22 +161,11 @@ export function AbcNotationRenderer({
       try {
         console.log('[ABC Audio] Initializing synthesizer...');
 
-        // Create cursor control for visual feedback (using visualObj, not DOM element)
-        const cursorControl = new abcjs.TimingCallbacks(visualObj, {
-          eventCallback: (event: any) => {
-            // Visual feedback during playback
-            if (event && notationRef.current) {
-              // Highlight current note
-              console.log('[ABC Audio] Playing:', event);
-            }
-          },
-        });
-
         // Create synth controller
         const synthControl = new abcjs.synth.SynthController();
 
         // Load the synth controller with options
-        synthControl.load(audioElement, cursorControl, {
+        synthControl.load(audioElement, null, {
           displayLoop: true,
           displayRestart: true,
           displayPlay: true,
