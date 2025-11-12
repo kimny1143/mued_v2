@@ -4,6 +4,7 @@ import { WebhookEvent } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { users, subscriptions } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 export async function POST(req: Request) {
   // Clerk Webhookの秘密鍵を取得
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
       }).returning();
 
       const newUser = newUsers[0];
-      console.log(`User created: ${id}`);
+      logger.debug(`User created: ${id}`);
 
       // 新規ユーザーにFreemiumプランのサブスクリプションを自動作成
       await db.insert(subscriptions).values({
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
         tier: "freemium",
         status: "active",
       });
-      console.log(`Freemium subscription created for user: ${id}`);
+      logger.debug(`Freemium subscription created for user: ${id}`);
     } catch (error) {
       console.error("Error creating user:", error);
     }
@@ -93,7 +94,7 @@ export async function POST(req: Request) {
           updatedAt: new Date(),
         })
         .where(eq(users.clerkId, id));
-      console.log(`User updated: ${id}`);
+      logger.debug(`User updated: ${id}`);
     } catch (error) {
       console.error("Error updating user:", error);
     }
@@ -103,7 +104,7 @@ export async function POST(req: Request) {
     // ユーザー削除時の処理
     try {
       await db.delete(users).where(eq(users.clerkId, evt.data.id!));
-      console.log(`User deleted: ${evt.data.id}`);
+      logger.debug(`User deleted: ${evt.data.id}`);
     } catch (error) {
       console.error("Error deleting user:", error);
     }

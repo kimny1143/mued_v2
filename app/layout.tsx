@@ -5,6 +5,7 @@ import { LocaleProviderWrapper } from "@/components/providers/locale-provider-wr
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
+import "abcjs/abcjs-audio.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

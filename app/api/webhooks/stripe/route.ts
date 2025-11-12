@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { reservations, subscriptions, users, webhookEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { validateStripeConfig } from "@/lib/utils/env";
+import { logger } from "@/lib/utils/logger";
 
 // Drizzle transaction type
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
     .limit(1);
 
   if (existingEvent) {
-    console.log(`Event ${event.id} already processed, skipping.`);
+    logger.debug(`Event ${event.id} already processed, skipping.`);
     return NextResponse.json({ received: true, skipped: true });
   }
 
@@ -136,7 +137,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
               })
               .where(eq(subscriptions.id, existingSub.id));
 
-            console.log(`Subscription updated for user: ${userId}`);
+            logger.debug(`Subscription updated for user: ${userId}`);
           } else {
             // 新規サブスクリプションを作成
             await tx.insert(subscriptions).values({
@@ -152,7 +153,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
               reservationsUsed: 0,
             });
 
-            console.log(`Subscription created for user: ${userId}`);
+            logger.debug(`Subscription created for user: ${userId}`);
           }
 
           // Stripe Customer IDをusersテーブルに保存
@@ -188,7 +189,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           })
           .where(eq(reservations.id, reservationId));
 
-        console.log(`Payment completed for reservation: ${reservationId}`);
+        logger.debug(`Payment completed for reservation: ${reservationId}`);
       } catch (error) {
         console.error("Error updating reservation:", error);
         throw error; // トランザクションをロールバックするために再スロー
@@ -213,7 +214,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           })
           .where(eq(reservations.id, reservationId));
 
-        console.log(`Payment session expired for reservation: ${reservationId}`);
+        logger.debug(`Payment session expired for reservation: ${reservationId}`);
       } catch (error) {
         console.error("Error updating reservation:", error);
         throw error;
@@ -238,7 +239,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           })
           .where(eq(reservations.id, reservationId));
 
-        console.log(`Payment failed for reservation: ${reservationId}`);
+        logger.debug(`Payment failed for reservation: ${reservationId}`);
       } catch (error) {
         console.error("Error updating reservation:", error);
         throw error;
@@ -293,7 +294,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           });
         }
 
-        console.log(`Subscription created: ${subscription.id} for user: ${userId}`);
+        logger.debug(`Subscription created: ${subscription.id} for user: ${userId}`);
       } catch (error) {
         console.error("Error creating subscription:", error);
         throw error;
@@ -342,7 +343,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           })
           .where(eq(subscriptions.id, existingSub.id));
 
-        console.log(`Subscription updated: ${subscription.id}`);
+        logger.debug(`Subscription updated: ${subscription.id}`);
       } catch (error) {
         console.error("Error updating subscription:", error);
         throw error;
@@ -377,7 +378,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           })
           .where(eq(subscriptions.id, existingSub.id));
 
-        console.log(`Subscription cancelled: ${subscription.id}`);
+        logger.debug(`Subscription cancelled: ${subscription.id}`);
       } catch (error) {
         console.error("Error cancelling subscription:", error);
         throw error;
@@ -417,7 +418,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           })
           .where(eq(subscriptions.id, sub.id));
 
-        console.log(`Usage reset for subscription: ${subscriptionId}`);
+        logger.debug(`Usage reset for subscription: ${subscriptionId}`);
       } catch (error) {
         console.error("Error resetting usage:", error);
         throw error;
@@ -455,7 +456,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           })
           .where(eq(subscriptions.id, sub.id));
 
-        console.log(`Payment failed for subscription: ${subscriptionId}`);
+        logger.debug(`Payment failed for subscription: ${subscriptionId}`);
 
         // TODO: ユーザーにメール通知を送信
       } catch (error) {
@@ -466,6 +467,6 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
     }
 
     default:
-      console.log(`Unhandled event type: ${event.type}`);
+      logger.debug(`Unhandled event type: ${event.type}`);
   }
 }

@@ -16,6 +16,7 @@ import { InlineError } from '@/components/ui/error-boundary';
 export default function NewMusicMaterialPage() {
   const router = useRouter();
   const [naturalInput, setNaturalInput] = useState('');
+  const [generationEngine, setGenerationEngine] = useState<'openai' | 'midi-llm'>('openai');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [advancedSettings, setAdvancedSettings] = useState({
     materialType: '',
@@ -52,6 +53,8 @@ export default function NewMusicMaterialPage() {
 
       const parsedData = await parseResponse.json();
 
+      console.log('[Debug] Parse response:', parsedData);
+
       if (!parsedData.success) {
         console.error('Parse request error:', parsedData);
         const errorMessage = parsedData.error || 'リクエストの解析に失敗しました';
@@ -63,6 +66,9 @@ export default function NewMusicMaterialPage() {
         return;
       }
 
+      // Extract data from standardized API response
+      const parsed = parsedData.data || parsedData;
+
       // Map instrument to schema enum (only send if it matches)
       const instrumentMap: Record<string, string> = {
         'Piano': 'piano',
@@ -70,7 +76,7 @@ export default function NewMusicMaterialPage() {
         'Violin': 'violin',
         'Flute': 'flute',
       };
-      const schemaInstrument = instrumentMap[parsedData.instrument];
+      const schemaInstrument = instrumentMap[parsed.instrument];
 
       // Map difficulty to schema enum (handle expert/professional -> advanced)
       const difficultyMap: Record<string, string> = {
@@ -80,16 +86,16 @@ export default function NewMusicMaterialPage() {
         'expert': 'advanced',
         'professional': 'advanced',
       };
-      const schemaDifficulty = difficultyMap[parsedData.difficulty] || 'intermediate';
+      const schemaDifficulty = difficultyMap[parsed.difficulty] || 'intermediate';
 
       // Include metadata in additional context
       const contextWithMetadata = `${naturalInput}
 
 [教材メタデータ]
-楽器: ${parsedData.instrument}
-ジャンル: ${parsedData.genre || '指定なし'}
-練習時間: ${parsedData.duration}分
-教材タイプ: ${parsedData.materialType}`;
+楽器: ${parsed.instrument}
+ジャンル: ${parsed.genre || '指定なし'}
+練習時間: ${parsed.duration}分
+教材タイプ: ${parsed.materialType}`;
 
       // Generate material with parsed parameters
       const requestBody: {
@@ -101,8 +107,8 @@ export default function NewMusicMaterialPage() {
         instrument?: string;
         isPublic?: boolean;
       } = {
-        subject: parsedData.instrument,
-        topic: parsedData.topic,
+        subject: parsed.instrument,
+        topic: parsed.topic,
         difficulty: schemaDifficulty, // Use mapped difficulty
         format: 'music', // Fixed to 'music' for all music materials
         additionalContext: contextWithMetadata,
@@ -113,7 +119,15 @@ export default function NewMusicMaterialPage() {
         requestBody.instrument = schemaInstrument;
       }
 
-      const response = await fetch('/api/ai/materials', {
+      // Select API endpoint based on generation engine
+      const apiEndpoint = generationEngine === 'midi-llm'
+        ? '/api/ai/midi-llm/generate'
+        : '/api/ai/materials';
+
+      console.log('[Debug] Sending request to:', apiEndpoint);
+      console.log('[Debug] Request body:', requestBody);
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -127,7 +141,10 @@ export default function NewMusicMaterialPage() {
         router.push(`/dashboard/materials/${materialId}`);
       } else {
         console.error('Material generation error:', data);
-        setError(data.error || 'Failed to generate material');
+        // Show detailed error for debugging
+        const errorMessage = data.error || 'Failed to generate material';
+        const errorDetails = data.details ? `\n詳細: ${JSON.stringify(data.details, null, 2)}` : '';
+        setError(errorMessage + errorDetails);
         if (data.upgradeRequired) {
           setTimeout(() => {
             router.push('/dashboard/subscription');
@@ -200,6 +217,66 @@ export default function NewMusicMaterialPage() {
           <p className="text-xs text-gray-500 mt-2">
             💡 楽器、レベル、ジャンル、時間など、具体的に書くほど精度の高い教材が生成されます
           </p>
+        </div>
+
+        {/* Generation Engine Selection */}
+        <div className="mb-6">
+          <label className="block text-sm font-semibold text-gray-900 mb-3">
+            🎵 生成エンジン
+          </label>
+          <div className="space-y-2">
+            <label
+              className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                generationEngine === 'openai'
+                  ? 'border-[var(--color-brand-green)] bg-green-50'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <input
+                type="radio"
+                name="engine"
+                value="openai"
+                checked={generationEngine === 'openai'}
+                onChange={(e) => setGenerationEngine(e.target.value as 'openai' | 'midi-llm')}
+                className="mt-1"
+                disabled={generating}
+              />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900">標準（OpenAI）- 推奨</div>
+                <div className="text-xs text-gray-600 mt-1">
+                  汎用的な音楽教材生成。幅広いジャンルと楽器に対応
+                </div>
+              </div>
+            </label>
+            <label
+              className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                generationEngine === 'midi-llm'
+                  ? 'border-[var(--color-brand-green)] bg-green-50'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <input
+                type="radio"
+                name="engine"
+                value="midi-llm"
+                checked={generationEngine === 'midi-llm'}
+                onChange={(e) => setGenerationEngine(e.target.value as 'openai' | 'midi-llm')}
+                className="mt-1"
+                disabled={generating}
+              />
+              <div className="flex-1">
+                <div className="font-medium text-gray-900 flex items-center gap-2">
+                  音楽専用AI（MIDI-LLM）
+                  <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full font-semibold">
+                    Beta
+                  </span>
+                </div>
+                <div className="text-xs text-gray-600 mt-1">
+                  音楽専用LLM。より高度な音楽理論とリアルな演奏表現
+                </div>
+              </div>
+            </label>
+          </div>
         </div>
 
         {/* Advanced Settings Toggle */}

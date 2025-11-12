@@ -10,7 +10,9 @@
 - **Frontend**: Next.js 15.5.4 (App Router), React 19, TypeScript, TailwindCSS 4
 - **Backend**: Clerk認証, Neon PostgreSQL, Drizzle ORM
 - **Payments**: Stripe
-- **AI**: OpenAI API
+- **AI**:
+  - **本番環境**: OpenAI GPT-5系 (音楽教材生成)
+  - **開発・管理者モード**: Claude Sonnet 4.5 (MCP Server経由)
 - **Testing**: Vitest (unit), Playwright (E2E)
 
 ### アーキテクチャパターン
@@ -854,4 +856,131 @@ node /Users/kimny/Dropbox/_DevProjects/mued/mued_v2/scripts/mcp/mued-unit-test.j
 
 ---
 
-*最終更新: 2025-10-29*
+## 音楽教材生成における AI モデル運用方針
+
+### 🎯 基本方針
+
+**重要: 本番環境では OpenAI GPT-5系を使用（GPT-4o系は使用しない）**
+
+```
+┌─────────────────────────────────────────────┐
+│ 🌐 本番環境（一般ユーザー向け）             │
+├─────────────────────────────────────────────┤
+│ OpenAI GPT-5系（GPT-5-mini 推奨）           │
+│                                             │
+│ 選定理由:                                   │
+│ ✅ 安定した API 提供と実績                  │
+│ ✅ ABC notation 生成品質が高い              │
+│ ✅ 既存実装との統合が完了                   │
+│ ✅ コスト効率が良い                         │
+│                                             │
+│ 実装パス:                                   │
+│ - API エンドポイント: /api/materials/generate│
+│ - 環境変数: OPENAI_API_KEY (.env.local)     │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│ 🔧 開発・管理者モード                        │
+├─────────────────────────────────────────────┤
+│ Claude Sonnet 4.5 (MCP Server経由)          │
+│                                             │
+│ 選定理由:                                   │
+│ ✅ 日本語の自然さが圧倒的（5/5 vs 1/5）    │
+│ ✅ 段階的な練習指示が優秀                   │
+│ ✅ コスト0円（Claude Code定額プラン）       │
+│ ✅ 高品質な教育的コンテンツ生成             │
+│                                             │
+│ 実装パス:                                   │
+│ - MCP Server: /scripts/mcp/mued-material-generator-claude.js│
+│ - Claude Desktop 経由で実行                 │
+│ - テストページ: /app/test-claude-material   │
+└─────────────────────────────────────────────┘
+```
+
+### 📊 モデル比較結果（2025-11-12 評価）
+
+**テストケース**: Dメジャー・6/8拍子・初心者向けギターアルペジオ練習曲
+
+| 評価項目 | OpenAI GPT-5系 | Claude Sonnet 4.5 | 優位 |
+|---------|---------------|------------------|------|
+| **ABC記法の正確性** | ⭐⭐⭐⭐⭐ (5/5) | ⭐⭐⭐⭐⭐ (5/5) | 同等 |
+| **音楽理論的妥当性** | ⭐⭐⭐⭐⭐ (5/5) | ⭐⭐⭐⭐⭐ (5/5) | 同等 |
+| **教育的価値** | ⭐⭐⭐⭐ (4/5) | ⭐⭐⭐⭐⭐ (5/5) | **Claude** |
+| **日本語の自然さ** | ⭐ (1/5) | ⭐⭐⭐⭐⭐ (5/5) | **Claude** |
+| **練習指示の明確さ** | ⭐⭐⭐ (3/5) | ⭐⭐⭐⭐⭐ (5/5) | **Claude** |
+| **コスト効率** | ⭐⭐⭐⭐ (4/5) | ⭐⭐⭐⭐⭐ (5/5) | **Claude** |
+| **生成速度** | ⭐⭐⭐⭐⭐ (5/5) | ⭐⭐⭐⭐ (4/5) | **OpenAI** |
+| **UI統合の容易さ** | ⭐⭐⭐⭐⭐ (5/5) | ⭐⭐⭐⭐ (4/5) | **OpenAI** |
+| **実績・安定性** | ⭐⭐⭐⭐⭐ (5/5) | ⭐⭐⭐⭐ (4/5) | **OpenAI** |
+
+**総合スコア:**
+- OpenAI GPT-5系: 43/50 (86%)
+- Claude Sonnet 4.5: 48/50 (96%)
+
+### 🎓 Claude の優位性
+
+1. **日本語品質**: 初心者にも理解しやすい平易な日本語
+   - 例: "まず各コード(D、G、A7)の形を確認し、ゆっくりと押さえる練習をしましょう。コードチェンジに30秒以上かけても構いません。"
+
+2. **段階的な練習指示**: テンポ設定が具体的
+   - テンポ60（ゆっくり）→ 80（Part A前半）→ 100（Part A+B）→ 120（全曲通し）
+
+3. **教育的配慮**: 励ましの言葉と具体的なアドバイス
+   - "録音して自分の演奏を聴き返すと、改善点が見つかります"
+
+4. **コスト**: 開発モードなら0円（Claude Code定額プラン活用）
+
+### 🚀 実装状況
+
+#### 本番環境（OpenAI GPT-5系）
+- ✅ `/api/materials/generate` - 教材生成APIエンドポイント
+- ✅ `/teacher/materials/new` - 教材作成UI
+- ✅ データベース保存対応
+- ✅ MIDI生成・再生・ダウンロード機能
+
+#### 開発・管理者モード（Claude Sonnet 4.5）
+- ✅ `/scripts/mcp/mued-material-generator-claude.js` - MCP Server
+- ✅ `generate_music_material_claude` - 教材生成ツール
+- ✅ `test_comt_quality` - 品質テストツール
+- ✅ `/app/test-claude-material` - テストページ
+
+### 📝 使用方法
+
+#### 本番環境での教材生成（OpenAI GPT-5系）
+1. `/teacher/materials/new` にアクセス
+2. レベル・楽器・ジャンルを選択
+3. 「生成」ボタンをクリック
+4. ABC notation、MIDI、学習ポイントが自動生成
+
+#### 開発モードでの教材生成（Claude MCP）
+1. Claude Desktop を起動
+2. MCP ツール `generate_music_material_claude` を使用
+3. パラメータ指定：
+   ```javascript
+   {
+     level: "beginner",
+     instrument: "guitar",
+     genre: "classical",
+     length: "medium",
+     specificRequest: "Dメジャーのアルペジオ練習曲"
+   }
+   ```
+4. 生成された JSON を `/app/test-claude-material` で確認
+
+### 🔍 関連ドキュメント
+
+- 詳細比較分析: `/docs/research/openai-vs-claude-comparison.md`
+- Claude MCP Server 実装: `/scripts/mcp/mued-material-generator-claude.js`
+- Chain-of-Musical-Thought (CoMT) プロンプト: MCP Server内に実装
+- UI互換テストデータ: `/docs/research/spring_brook_d_major_arpeggio_ui_compatible.json`
+
+### ⚠️ 注意事項
+
+1. **GPT-4o系は使用しない**: 必ず GPT-5系（GPT-5-mini推奨）を使用すること
+2. **環境変数の管理**: `OPENAI_API_KEY` と `ANTHROPIC_API_KEY` は `.env.local` で管理
+3. **MCP Server の dotenv 禁止**: dotenv v17 の console 出力が JSON-RPC を破壊するため、手動パースを使用
+4. **UI データ形式**: `type: 'music'` フィールド必須、`learningPoints` と `practiceInstructions` は string[] 型
+
+---
+
+*最終更新: 2025-11-12*

@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import { validateStripeConfig } from '@/lib/utils/env';
 import { withAuth } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * POST /api/subscription/checkout
@@ -27,11 +28,11 @@ const checkoutSchema = z.object({
 
 export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
   try {
-    console.log('[Checkout] ClerkUserId:', clerkUserId);
+    logger.debug('[Checkout] ClerkUserId:', clerkUserId);
 
     // Parse and validate request
     const body = await request.json();
-    console.log('[Checkout] Request body:', body);
+    logger.debug('[Checkout] Request body:', body);
 
     const validation = checkoutSchema.safeParse(body);
     if (!validation.success) {
@@ -39,7 +40,7 @@ export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
     }
 
     const { priceId, tier } = validation.data;
-    console.log('[Checkout] Parsed:', { priceId, tier });
+    logger.debug('[Checkout] Parsed:', { priceId, tier });
 
     // Get user from database
     let [user] = await db
@@ -48,11 +49,11 @@ export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
       .where(eq(users.clerkId, clerkUserId))
       .limit(1);
 
-    console.log('[Checkout] User found:', user ? `ID: ${user.id}` : 'NOT FOUND');
+    logger.debug('[Checkout] User found:', user ? `ID: ${user.id}` : 'NOT FOUND');
 
     // If user doesn't exist, create them
     if (!user) {
-      console.log('[Checkout] Creating user in database...');
+      logger.debug('[Checkout] Creating user in database...');
 
       try {
         const client = await clerkClient();
@@ -67,7 +68,7 @@ export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
         }).returning();
 
         user = newUser;
-        console.log('[Checkout] User created:', user.id);
+        logger.debug('[Checkout] User created:', user.id);
       } catch (createError) {
         console.error('[Checkout] Error creating user:', createError);
         return apiServerError(

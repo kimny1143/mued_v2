@@ -113,7 +113,7 @@ export const POST = withAuth(async ({ request }) => {
     const model = process.env.OPENAI_MODEL || 'gpt-5-mini';
     const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
 
-    const params: any = {
+    const params: import('@/types/openai').OpenAICompletionParams = {
       model,
       messages: [
         { role: 'system', content: systemPrompt },
