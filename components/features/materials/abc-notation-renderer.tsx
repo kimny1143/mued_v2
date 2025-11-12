@@ -72,9 +72,9 @@ export function AbcNotationRenderer({
 
       // Use abcjs to convert ABC notation to MIDI
       // Pass the visualObj (rendered tune) instead of raw ABC string
+      // BPM is already specified in the ABC notation (Q: field)
       const midiData = abcjs.synth.getMidiFile(visualObj, {
         midiOutputType: 'encoded', // Get array of byte values
-        bpm: bpm,
       });
 
       console.log('[ABC MIDI] MIDI data type:', typeof midiData);
