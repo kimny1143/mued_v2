@@ -36,6 +36,7 @@
     "test:coverage:ui": "vitest run --coverage --ui --dir tests/unit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0",
     "@clerk/nextjs": "^6.32.2",
     "@neondatabase/serverless": "^1.0.1",
     "@sentry/nextjs": "^10.22.0",
