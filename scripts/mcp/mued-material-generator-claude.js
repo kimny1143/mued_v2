@@ -128,17 +128,18 @@ ${specificRequest ? `- 特定の要求: ${specificRequest}` : ""}
 
 出力フォーマット（必ず以下のJSON形式で出力してください）:
 {
+  "type": "music",
   "title": "曲のタイトル（日本語）",
   "description": "この教材の概要（日本語、1-2文）",
   "abcNotation": "ABC notation形式の楽譜（複数行可）",
   "learningPoints": [
-    "学習ポイント1（日本語）",
-    "学習ポイント2（日本語）",
+    "学習ポイント1（日本語、文字列のみ）",
+    "学習ポイント2（日本語、文字列のみ）",
     "..."
   ],
   "practiceInstructions": [
-    "練習指示1（日本語、具体的かつ段階的に）",
-    "練習指示2（日本語）",
+    "練習指示1（日本語、具体的かつ段階的に、文字列のみ）",
+    "練習指示2（日本語、文字列のみ）",
     "..."
   ]
 }
@@ -188,8 +189,28 @@ ${specificRequest ? `- 特定の要求: ${specificRequest}` : ""}
     }
 
     // Validate response structure
+    if (!result.type || result.type !== 'music') {
+      console.error('[Claude Material] Missing or invalid type field');
+      result.type = 'music'; // Auto-fix
+    }
     if (!result.abcNotation || !result.learningPoints || !result.practiceInstructions) {
       throw new Error("Invalid response structure: missing required fields");
+    }
+
+    // Validate array types (ensure string arrays, not object arrays)
+    if (!Array.isArray(result.learningPoints) || !result.learningPoints.every(p => typeof p === 'string')) {
+      console.error('[Claude Material] learningPoints must be string array');
+      // Auto-fix if object array with 'point' field
+      if (Array.isArray(result.learningPoints) && result.learningPoints[0]?.point) {
+        result.learningPoints = result.learningPoints.map(p => p.point);
+      }
+    }
+    if (!Array.isArray(result.practiceInstructions) || !result.practiceInstructions.every(p => typeof p === 'string')) {
+      console.error('[Claude Material] practiceInstructions must be string array');
+      // Auto-fix if object array with 'instruction' or 'step' field
+      if (Array.isArray(result.practiceInstructions) && result.practiceInstructions[0]?.instruction) {
+        result.practiceInstructions = result.practiceInstructions.map(p => p.instruction);
+      }
     }
 
     console.error("[Claude Material] Successfully generated material");
