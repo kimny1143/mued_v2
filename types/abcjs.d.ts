@@ -11,6 +11,11 @@ declare module 'abcjs' {
       rhythm?: string;
       composer?: string;
     };
+    formatting?: any;
+    media?: string;
+    metaTextInfo?: any;
+    version?: any;
+    [key: string]: any;
   }
 
   export interface RenderOptions {
@@ -32,10 +37,8 @@ declare module 'abcjs' {
     displayWarp?: boolean;
   }
 
-  export interface VisualObject {
-    lines: any[];
-    metaText?: Record<string, any>;
-  }
+  // VisualObject is an alias for TuneObject
+  export type VisualObject = TuneObject;
 
   export class SynthController {
     load(
@@ -43,7 +46,7 @@ declare module 'abcjs' {
       cursorControl: null | any,
       options: SynthOptions
     ): void;
-    setTune(visualObj: VisualObject, userAction: boolean): Promise<void>;
+    setTune(visualObj: TuneObject, userAction: boolean): Promise<void>;
     play(): void;
     pause(): void;
     restart(): void;
@@ -51,7 +54,7 @@ declare module 'abcjs' {
   }
 
   export class TimingCallbacks {
-    constructor(visualObj: VisualObject, options: any);
+    constructor(visualObj: TuneObject, options: any);
   }
 
   export namespace synth {
@@ -61,7 +64,7 @@ declare module 'abcjs' {
         cursorControl: null | any,
         options: SynthOptions
       ): void;
-      setTune(visualObj: VisualObject, userAction: boolean): Promise<void>;
+      setTune(visualObj: TuneObject, userAction: boolean): Promise<void>;
       play(): void;
       pause(): void;
       restart(): void;
@@ -69,7 +72,7 @@ declare module 'abcjs' {
     }
 
     export function getMidiFile(
-      visualObj: VisualObject,
+      visualObj: TuneObject,
       options: MidiFileOptions
     ): string | number[];
   }
@@ -78,7 +81,7 @@ declare module 'abcjs' {
     element: HTMLElement | null,
     abcString: string,
     options?: RenderOptions
-  ): VisualObject[];
+  ): TuneObject[];
 
   export default {
     renderAbc,

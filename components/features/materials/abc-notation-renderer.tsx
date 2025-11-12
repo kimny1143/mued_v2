@@ -26,7 +26,7 @@ export function AbcNotationRenderer({
 }: AbcNotationRendererProps) {
   const notationRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLDivElement>(null);
-  const [visualObj, setVisualObj] = useState<import('abcjs').VisualObject | null>(null);
+  const [visualObj, setVisualObj] = useState<import('abcjs').TuneObject | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDownloadingMidi, setIsDownloadingMidi] = useState(false);
 
