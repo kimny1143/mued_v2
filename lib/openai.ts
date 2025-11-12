@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { z } from 'zod';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * OpenAI Client Wrapper with Cost Tracking
@@ -109,7 +110,7 @@ export function calculateCost(
   }
 
   // Default fallback to gpt-5-mini pricing
-  console.warn(`Unknown model for cost calculation: ${model}, using gpt-5-mini pricing`);
+  logger.warn(`Unknown model for cost calculation: ${model}, using gpt-5-mini pricing`);
   const pricing = MODEL_PRICING['gpt-5-mini'];
   const inputCost = (promptTokens / 1_000_000) * pricing.input;
   const outputCost = (completionTokens / 1_000_000) * pricing.output;
@@ -175,7 +176,7 @@ export async function createChatCompletion(
     return { completion, usage: metrics };
   } catch (error) {
     if (error instanceof OpenAI.APIError) {
-      console.error('OpenAI API Error:', {
+      logger.error('OpenAI API Error:', {
         status: error.status,
         message: error.message,
         code: error.code,
@@ -234,7 +235,7 @@ export async function createStreamingChatCompletion(
     return { stream };
   } catch (error) {
     if (error instanceof OpenAI.APIError) {
-      console.error('OpenAI API Error:', {
+      logger.error('OpenAI API Error:', {
         status: error.status,
         message: error.message,
       });

@@ -10,6 +10,7 @@ import { materials, users } from '@/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import type { IContentFetcher } from '@/lib/content/content-fetcher.interface';
 import type { ContentFetchParams, ContentFetchResult, UnifiedContent } from '@/types/unified-content';
+import { logger } from '@/lib/utils/logger';
 
 export class AIGeneratedMaterialFetcher implements IContentFetcher {
   readonly id = 'ai-material-fetcher';
@@ -150,7 +151,7 @@ export class AIGeneratedMaterialFetcher implements IContentFetcher {
         },
       };
     } catch (error) {
-      console.error('[AIGeneratedMaterialFetcher] Fetch error:', error);
+      logger.error('[AIGeneratedMaterialFetcher] Fetch error:', error);
       return {
         success: false,
         content: [],

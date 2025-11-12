@@ -9,6 +9,7 @@ import Parser from 'rss-parser';
 import type { IContentFetcher } from '@/lib/content';
 import type { ContentFetchParams, ContentFetchResult } from '@/types/unified-content';
 import { NoteContentAdapter } from './note-content-adapter';
+import { logger } from '@/lib/utils/logger';
 
 interface NoteRSSItem {
   title?: string;
@@ -46,11 +47,11 @@ export class NoteContentFetcher implements IContentFetcher {
     try {
       // Check cache first
       if (this.cache && Date.now() - this.cache.timestamp < this.cacheDuration * 1000) {
-        console.log('[NoteContentFetcher] Using cached data');
+        logger.debug('[NoteContentFetcher] Using cached data');
         return this.applyFilters(this.cache.data, params);
       }
 
-      console.log(`[NoteContentFetcher] Fetching from: ${this.rssUrl}`);
+      logger.debug(`[NoteContentFetcher] Fetching from: ${this.rssUrl}`);
 
       // Fetch RSS feed
       const feed = await this.parser.parseURL(this.rssUrl);
@@ -94,10 +95,10 @@ export class NoteContentFetcher implements IContentFetcher {
         timestamp: Date.now(),
       };
 
-      console.log(`[NoteContentFetcher] Fetched ${content.length} items`);
+      logger.debug(`[NoteContentFetcher] Fetched ${content.length} items`);
       return this.applyFilters(result, params);
     } catch (error) {
-      console.error('[NoteContentFetcher] Fetch error:', error);
+      logger.error('[NoteContentFetcher] Fetch error:', error);
       return {
         success: false,
         content: [],
@@ -218,6 +219,6 @@ export class NoteContentFetcher implements IContentFetcher {
    */
   clearCache(): void {
     this.cache = null;
-    console.log('[NoteContentFetcher] Cache cleared');
+    logger.debug('[NoteContentFetcher] Cache cleared');
   }
 }

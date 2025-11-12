@@ -8,6 +8,7 @@
 import { Injectable, Inject, TYPES } from '@/lib/di';
 import type { PluginManifest, LoadedPlugin } from '@/types/plugin-system';
 import type { PluginRegistry } from './plugin-registry';
+import { logger } from '@/lib/utils/logger';
 
 interface PluginModule {
   default: {
@@ -33,7 +34,7 @@ export class PluginLoader {
    */
   async load(modulePath: string): Promise<LoadedPlugin> {
     try {
-      console.log(`[PluginLoader] Loading plugin from: ${modulePath}`);
+      logger.debug(`[PluginLoader] Loading plugin from: ${modulePath}`);
 
       // Dynamically import the plugin module
       const pluginModule = await import(modulePath) as PluginModule;
@@ -67,10 +68,10 @@ export class PluginLoader {
       // Register the plugin
       this.registry.register(plugin);
 
-      console.log(`[PluginLoader] Successfully loaded plugin: ${manifest.name}`);
+      logger.debug(`[PluginLoader] Successfully loaded plugin: ${manifest.name}`);
       return plugin;
     } catch (error) {
-      console.error(`[PluginLoader] Failed to load plugin from ${modulePath}:`, error);
+      logger.error(`[PluginLoader] Failed to load plugin from ${modulePath}:`, error);
       throw error;
     }
   }
@@ -95,15 +96,15 @@ export class PluginLoader {
         loaded.push(result.value);
       } else {
         failed.push(modulePaths[index]);
-        console.error(`Failed to load plugin ${modulePaths[index]}:`, result.reason);
+        logger.error(`Failed to load plugin ${modulePaths[index]}:`, result.reason);
       }
     });
 
     if (failed.length > 0) {
-      console.warn(`[PluginLoader] Failed to load ${failed.length} plugins:`, failed);
+      logger.warn(`[PluginLoader] Failed to load ${failed.length} plugins:`, failed);
     }
 
-    console.log(`[PluginLoader] Successfully loaded ${loaded.length}/${modulePaths.length} plugins`);
+    logger.debug(`[PluginLoader] Successfully loaded ${loaded.length}/${modulePaths.length} plugins`);
     return loaded;
   }
 
@@ -117,7 +118,7 @@ export class PluginLoader {
   unload(pluginId: string): boolean {
     const plugin = this.registry.get(pluginId);
     if (!plugin) {
-      console.warn(`[PluginLoader] Plugin ${pluginId} not found`);
+      logger.warn(`[PluginLoader] Plugin ${pluginId} not found`);
       return false;
     }
 
@@ -126,7 +127,7 @@ export class PluginLoader {
 
     const result = this.registry.unregister(pluginId);
     if (result) {
-      console.log(`[PluginLoader] Unloaded plugin: ${pluginId}`);
+      logger.debug(`[PluginLoader] Unloaded plugin: ${pluginId}`);
     }
 
     return result;
@@ -141,7 +142,7 @@ export class PluginLoader {
    * @returns Reloaded plugin
    */
   async reload(pluginId: string, modulePath: string): Promise<LoadedPlugin> {
-    console.log(`[PluginLoader] Reloading plugin: ${pluginId}`);
+    logger.debug(`[PluginLoader] Reloading plugin: ${pluginId}`);
 
     // Unload existing plugin
     this.unload(pluginId);
