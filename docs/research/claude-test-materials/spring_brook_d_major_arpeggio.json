@@ -1,0 +1,125 @@
+{
+  "title": "春の小川 - Dメジャー アルペジオ練習曲",
+  "metadata": {
+    "level": "beginner",
+    "instrument": "guitar",
+    "genre": "classical",
+    "key": "D major",
+    "timeSignature": "6/8",
+    "tempo": 120,
+    "length": "medium",
+    "generatedBy": "Claude Sonnet 4.5",
+    "generatedDate": "2025-11-12",
+    "model": "claude-sonnet-4-5-20250929"
+  },
+  "description": "初心者向けのDメジャーのアルペジオ練習曲です。6/8拍子の流れるようなリズムで、基本的なコード進行(D-G-A7-D)を使用し、右手のアルペジオパターンと左手のコードチェンジを学びます。",
+  "abcNotation": "X:1\nT:春の小川 - Dメジャー アルペジオ練習曲\nC:Music Education AI\nM:6/8\nL:1/8\nQ:1/8=120\nK:D\n%%MIDI program 24\n% Part A - 基本パターンの導入\n|:\"D\"d2f a2f|d2f a2f|\"G\"g2b d'2b|g2b d'2b|\n\"A7\"e2a c'2a|e2a c'2a|\"D\"d2f a2d'|d2f a2d'|\n% Part B - パターンの展開\n\"D\"f2a d'2a|f2a d'2f|\"G\"g2b d'2b|g2b g2d'|\n\"A7\"e2g c'2e'|e2g c'2a|\"D\"d2f a2f|d3 d3:|\n% Part C - 変奏と上行\n|:\"D\"A2d f2a|d'2a f2d|\"G\"B2d g2b|d'2b g2d|\n\"A7\"c2e a2c'|e'2c' a2e|\"D\"d2f a2d'|f'2d' a2f|\n% Part D - クライマックスと終結\n\"G\"g2b d'2g'|\"D\"f2a d'2f'|\"A7\"e2a c'2e'|\"A7\"e2g c'2e|\n\"D\"d2f a2d'|\"D\"f2a d'2f|\"G\"g2b \"A7\"e2g|\"D\"d3 d3:|",
+  "structure": {
+    "parts": [
+      {
+        "name": "Part A",
+        "description": "基本パターンの導入",
+        "measures": 8
+      },
+      {
+        "name": "Part B",
+        "description": "パターンの展開",
+        "measures": 8
+      },
+      {
+        "name": "Part C",
+        "description": "変奏と上行",
+        "measures": 8
+      },
+      {
+        "name": "Part D",
+        "description": "クライマックスと終結",
+        "measures": 8
+      }
+    ],
+    "totalMeasures": 32,
+    "chordProgression": ["D", "G", "A7", "D"]
+  },
+  "learningPoints": [
+    {
+      "id": 1,
+      "point": "Dメジャースケールの基本ポジション(開放弦を含む)を習得します"
+    },
+    {
+      "id": 2,
+      "point": "6/8拍子の「強-弱-弱-中強-弱-弱」のリズム感覚を身につけます"
+    },
+    {
+      "id": 3,
+      "point": "D、G、A7の3つの基本コードのアルペジオパターンを学びます"
+    },
+    {
+      "id": 4,
+      "point": "右手の指(p-i-m-a)を使った分散和音の奏法を練習します"
+    },
+    {
+      "id": 5,
+      "point": "コード進行に合わせた左手のスムーズな移動を習得します"
+    }
+  ],
+  "practiceInstructions": [
+    {
+      "stage": 1,
+      "tempo": null,
+      "title": "コードの形の確認",
+      "instruction": "まず各コード(D、G、A7)の形を確認し、ゆっくりと押さえる練習をしましょう。コードチェンジに30秒以上かけても構いません。"
+    },
+    {
+      "stage": 2,
+      "tempo": 60,
+      "title": "右手のアルペジオパターン",
+      "instruction": "右手のアルペジオパターンを1つのコードで繰り返し練習します。テンポ60(記載の半分)で、親指(p)-人差し指(i)-中指(m)-人差し指(i)-中指(m)-人差し指(i)の順で弾きます。"
+    },
+    {
+      "stage": 3,
+      "tempo": 80,
+      "title": "Part A 前半の練習",
+      "instruction": "Part Aの最初の4小節だけを取り出し、テンポ80で練習します。コードチェンジの際は、次のコードの形を頭の中でイメージしてから移動しましょう。"
+    },
+    {
+      "stage": 4,
+      "tempo": 80,
+      "title": "Part A 全体の通し練習",
+      "instruction": "Part A全体(8小節)を通して弾けるようになったら、Part Bに進みます。各パートを個別に完成させてから繋げる方が効果的です。"
+    },
+    {
+      "stage": 5,
+      "tempo": 100,
+      "title": "テンポアップと安定",
+      "instruction": "Part AとBが安定したら、テンポを100に上げて練習します。メトロノームを使って正確なリズムを保ちましょう。"
+    },
+    {
+      "stage": 6,
+      "tempo": 100,
+      "title": "Part C・D の個別練習",
+      "instruction": "Part CとDは少し難易度が上がります。ポジション移動が多いので、最初は各小節を個別に練習し、音の繋がりを確認してください。"
+    },
+    {
+      "stage": 7,
+      "tempo": 120,
+      "title": "全曲通し演奏と表現",
+      "instruction": "全曲を通して演奏できるようになったら、指定テンポ120で演奏します。強弱をつけて(Part Aはmf、Part Cはfで)表現力を高めましょう。録音して自分の演奏を聴き返すと、改善点が見つかります。"
+    }
+  ],
+  "techniques": {
+    "rightHand": {
+      "pattern": "p-i-m-i-m-i",
+      "description": "親指(p)-人差し指(i)-中指(m)を使った基本的なアルペジオパターン"
+    },
+    "leftHand": {
+      "chords": ["D", "G", "A7"],
+      "description": "3つの基本コードのスムーズな移動"
+    }
+  },
+  "dynamics": {
+    "partA": "mf (mezzo-forte)",
+    "partB": "mf (mezzo-forte)",
+    "partC": "f (forte)",
+    "partD": "f (forte)"
+  }
+}
