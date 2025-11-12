@@ -23,19 +23,14 @@ const fs = require("fs");
 const projectRoot = path.resolve(__dirname, '../..');
 const envLocalPath = path.join(projectRoot, '.env.local');
 
+// Load environment variables silently (no console output before MCP server starts)
 if (fs.existsSync(envLocalPath)) {
-  require('dotenv').config({ path: envLocalPath });
-  console.error(`[MCP] Loaded environment variables from: ${envLocalPath}`);
-} else {
-  console.error(`[MCP] Warning: .env.local not found at ${envLocalPath}`);
+  const dotenvResult = require('dotenv').config({ path: envLocalPath });
+  // Don't log here - it breaks MCP JSON-RPC protocol
+  // Logging will happen after server starts
 }
 
-// Initialize Anthropic client
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('[MCP] ERROR: ANTHROPIC_API_KEY not found in environment variables');
-  console.error('[MCP] Please add ANTHROPIC_API_KEY to .env.local file');
-  console.error(`[MCP] Expected location: ${envLocalPath}`);
-}
+// Validate API key (will log error after server starts if missing)
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -360,6 +355,14 @@ async function main() {
   console.error("Available tools:");
   console.error("  - generate_music_material_claude");
   console.error("  - test_comt_quality");
+
+  // Log environment status (safe to log after server connects)
+  if (process.env.ANTHROPIC_API_KEY) {
+    console.error(`[MCP] ✅ ANTHROPIC_API_KEY loaded from .env.local`);
+  } else {
+    console.error(`[MCP] ❌ ANTHROPIC_API_KEY not found`);
+    console.error(`[MCP] Please add ANTHROPIC_API_KEY to: ${envLocalPath}`);
+  }
 }
 
 main().catch((error) => {
