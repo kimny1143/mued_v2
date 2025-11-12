@@ -16,8 +16,27 @@ const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
 const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
 const { z } = require("zod");
 const Anthropic = require("@anthropic-ai/sdk");
+const path = require("path");
+const fs = require("fs");
+
+// Load .env.local from project root
+const projectRoot = path.resolve(__dirname, '../..');
+const envLocalPath = path.join(projectRoot, '.env.local');
+
+if (fs.existsSync(envLocalPath)) {
+  require('dotenv').config({ path: envLocalPath });
+  console.error(`[MCP] Loaded environment variables from: ${envLocalPath}`);
+} else {
+  console.error(`[MCP] Warning: .env.local not found at ${envLocalPath}`);
+}
 
 // Initialize Anthropic client
+if (!process.env.ANTHROPIC_API_KEY) {
+  console.error('[MCP] ERROR: ANTHROPIC_API_KEY not found in environment variables');
+  console.error('[MCP] Please add ANTHROPIC_API_KEY to .env.local file');
+  console.error(`[MCP] Expected location: ${envLocalPath}`);
+}
+
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
