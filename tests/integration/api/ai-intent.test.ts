@@ -1,467 +1,594 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createMockOpenAI } from '@/tests/mocks/openai.mock';
-
 /**
  * Integration tests for /api/ai/intent endpoint
- * This template tests the AI intent processing API once implemented
  */
 
-describe('AI Intent API Integration', () => {
-  let mockFetch: any;
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { POST, GET } from '@/app/api/ai/intent/route';
+import { NextRequest } from 'next/server';
 
-  beforeEach(() => {
-    // Mock global fetch for API calls
-    mockFetch = vi.fn();
-    global.fetch = mockFetch;
+// Mock OpenAI
+const mockCreateChatCompletion = vi.fn();
+const mockExtractToolCalls = vi.fn();
+const mockRequiresToolExecution = vi.fn();
+
+vi.mock('@/lib/openai', () => ({
+  createChatCompletion: mockCreateChatCompletion,
+  extractToolCalls: mockExtractToolCalls,
+  requiresToolExecution: mockRequiresToolExecution,
+}));
+
+// Mock AI tools
+const mockExecuteTool = vi.fn();
+const mockAllTools = [
+  {
+    type: 'function',
+    function: {
+      name: 'searchAvailableSlots',
+      description: 'Search for available lesson slots',
+      parameters: {
+        type: 'object',
+        properties: {
+          date: { type: 'string' },
+          subject: { type: 'string' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'createReservation',
+      description: 'Create a reservation',
+      parameters: {
+        type: 'object',
+        properties: {
+          slotId: { type: 'string' },
+        },
+      },
+    },
+  },
+];
+
+vi.mock('@/lib/ai/tools', () => ({
+  ALL_TOOLS: mockAllTools,
+  executeTool: mockExecuteTool,
+}));
+
+// Mock auth middleware
+const mockWithAuth = vi.fn((handler: any) => async (request: NextRequest) => {
+  // Simulate auth by adding user context
+  return handler({
+    request,
+    user: {
+      id: 'test-user-id',
+      clerkId: 'test-clerk-id',
+      role: 'student'
+    }
   });
+});
 
-  afterEach(() => {
+vi.mock('@/lib/middleware/with-auth', () => ({
+  withAuth: mockWithAuth,
+}));
+
+// Mock API response helpers
+vi.mock('@/lib/api-response', () => ({
+  apiSuccess: (data: any) => new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  }),
+  apiValidationError: (message: string, errors: any) => new Response(
+    JSON.stringify({ error: message, details: errors }),
+    {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  ),
+  apiServerError: (error: Error) => new Response(
+    JSON.stringify({ error: 'Internal server error', message: error.message }),
+    {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  ),
+}));
+
+describe('AI Intent API Integration', () => {
+  beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('POST /api/ai/intent', () => {
     it('should process a lesson search intent', async () => {
-      const mockOpenAI = createMockOpenAI();
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          intent: 'search_lessons',
-          parameters: {
-            date: '2025-10-15',
-            subject: 'Mathematics',
-          },
-          response: 'I found 3 available Mathematics lessons for October 15, 2025.',
-          toolCalls: [
-            {
-              tool: 'searchAvailableSlots',
-              result: {
-                slots: [
-                  { id: 'slot1', startTime: '10:00', mentorName: 'John Doe' },
-                  { id: 'slot2', startTime: '14:00', mentorName: 'Jane Smith' },
-                  { id: 'slot3', startTime: '16:00', mentorName: 'Bob Johnson' },
-                ],
-              },
+      mockCreateChatCompletion.mockResolvedValueOnce({
+        completion: {
+          choices: [{
+            message: {
+              content: 'I found 3 available Mathematics lessons for tomorrow.',
+              tool_calls: [{
+                id: 'call_1',
+                type: 'function',
+                function: {
+                  name: 'searchAvailableSlots',
+                  arguments: JSON.stringify({
+                    date: '2025-10-16',
+                    subject: 'Mathematics',
+                  }),
+                },
+              }],
             },
-          ],
-        }),
+          }],
+        },
+        usage: {
+          promptTokens: 100,
+          completionTokens: 50,
+          totalTokens: 150,
+          estimatedCost: 0.001,
+        },
       });
 
-      const response = await fetch('/api/ai/intent', {
+      mockRequiresToolExecution.mockReturnValueOnce(true);
+      mockExtractToolCalls.mockReturnValueOnce([{
+        id: 'call_1',
+        type: 'function',
+        function: {
+          name: 'searchAvailableSlots',
+          arguments: JSON.stringify({
+            date: '2025-10-16',
+            subject: 'Mathematics',
+          }),
+        },
+      }]);
+
+      mockExecuteTool.mockResolvedValueOnce({
+        success: true,
+        slots: [
+          { id: 'slot1', startTime: '10:00', mentorName: 'John Doe' },
+          { id: 'slot2', startTime: '14:00', mentorName: 'Jane Smith' },
+          { id: 'slot3', startTime: '16:00', mentorName: 'Bob Johnson' },
+        ],
+      });
+
+      mockCreateChatCompletion.mockResolvedValueOnce({
+        completion: {
+          choices: [{
+            message: {
+              content: 'I found 3 available Mathematics lessons for October 16, 2025:\n\n1. 10:00 AM with John Doe\n2. 2:00 PM with Jane Smith\n3. 4:00 PM with Bob Johnson\n\nWould you like to book one of these slots?',
+            },
+          }],
+        },
+        usage: {
+          promptTokens: 150,
+          completionTokens: 60,
+          totalTokens: 210,
+          estimatedCost: 0.002,
+        },
+      });
+
+      const request = new NextRequest('http://localhost:3000/api/ai/intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: 'Find me available math lessons for tomorrow',
-          userId: 'user_123',
         }),
       });
 
+      const response = await POST(request);
       const data = await response.json();
 
-      expect(response.ok).toBe(true);
-      expect(data.intent).toBe('search_lessons');
-      expect(data.toolCalls).toHaveLength(1);
-      expect(data.toolCalls[0].result.slots).toHaveLength(3);
+      expect(response.status).toBe(200);
+      expect(data.message).toContain('3 available Mathematics lessons');
+      expect(data.toolsUsed).toEqual(['searchAvailableSlots']);
+      expect(data.usage.total.totalTokens).toBe(360);
     });
 
     it('should process a reservation creation intent', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          intent: 'create_reservation',
-          parameters: {
-            slotId: 'slot_123',
-          },
-          response: 'I\'ve successfully booked your lesson for October 15 at 10:00 AM.',
-          toolCalls: [
-            {
-              tool: 'createReservation',
-              result: {
-                success: true,
-                reservationId: 'res_456',
-                confirmationMessage: 'Reservation confirmed',
-              },
+      mockCreateChatCompletion.mockResolvedValueOnce({
+        completion: {
+          choices: [{
+            message: {
+              content: '',
+              tool_calls: [{
+                id: 'call_2',
+                type: 'function',
+                function: {
+                  name: 'createReservation',
+                  arguments: JSON.stringify({ slotId: 'slot_123' }),
+                },
+              }],
             },
-          ],
-        }),
+          }],
+        },
+        usage: {
+          promptTokens: 80,
+          completionTokens: 30,
+          totalTokens: 110,
+          estimatedCost: 0.0008,
+        },
       });
 
-      const response = await fetch('/api/ai/intent', {
+      mockRequiresToolExecution.mockReturnValueOnce(true);
+      mockExtractToolCalls.mockReturnValueOnce([{
+        id: 'call_2',
+        type: 'function',
+        function: {
+          name: 'createReservation',
+          arguments: JSON.stringify({ slotId: 'slot_123' }),
+        },
+      }]);
+
+      mockExecuteTool.mockResolvedValueOnce({
+        success: true,
+        reservationId: 'res_456',
+        confirmationMessage: 'Reservation confirmed for October 15 at 10:00 AM',
+      });
+
+      mockCreateChatCompletion.mockResolvedValueOnce({
+        completion: {
+          choices: [{
+            message: {
+              content: "I've successfully booked your lesson for October 15 at 10:00 AM. Your reservation ID is res_456.",
+            },
+          }],
+        },
+        usage: {
+          promptTokens: 120,
+          completionTokens: 40,
+          totalTokens: 160,
+          estimatedCost: 0.001,
+        },
+      });
+
+      const request = new NextRequest('http://localhost:3000/api/ai/intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: 'Book the first available slot',
-          context: {
-            availableSlots: ['slot_123'],
-          },
-          userId: 'user_123',
+          conversationHistory: [{
+            role: 'assistant',
+            content: 'I found several available slots...',
+          }],
         }),
       });
 
+      const response = await POST(request);
       const data = await response.json();
 
-      expect(data.intent).toBe('create_reservation');
-      expect(data.toolCalls[0].result.success).toBe(true);
-      expect(data.toolCalls[0].result.reservationId).toBe('res_456');
+      expect(response.status).toBe(200);
+      expect(data.message).toContain('successfully booked');
+      expect(data.toolsUsed).toEqual(['createReservation']);
     });
 
-    it('should process a material generation intent', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          intent: 'generate_material',
-          parameters: {
-            subject: 'Mathematics',
-            topic: 'Calculus',
-            difficulty: 'intermediate',
-          },
-          response: 'I\'ve generated intermediate-level Calculus study material for you.',
-          toolCalls: [
-            {
-              tool: 'generateStudyMaterial',
-              result: {
-                materialId: 'mat_789',
-                title: 'Introduction to Derivatives',
-                content: '# Calculus: Derivatives\n\n## Introduction...',
-                estimatedTime: '30 minutes',
-              },
+    it('should handle direct responses without tool execution', async () => {
+      mockCreateChatCompletion.mockResolvedValueOnce({
+        completion: {
+          choices: [{
+            message: {
+              content: 'MUED is an online learning management system that helps you book lessons, generate study materials, and track your learning progress.',
             },
-          ],
-        }),
+          }],
+        },
+        usage: {
+          promptTokens: 50,
+          completionTokens: 30,
+          totalTokens: 80,
+          estimatedCost: 0.0005,
+        },
       });
 
-      const response = await fetch('/api/ai/intent', {
+      mockRequiresToolExecution.mockReturnValueOnce(false);
+
+      const request = new NextRequest('http://localhost:3000/api/ai/intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: 'Create intermediate calculus exercises',
-          userId: 'user_123',
+          message: 'What is MUED?',
         }),
       });
 
+      const response = await POST(request);
       const data = await response.json();
 
-      expect(data.intent).toBe('generate_material');
-      expect(data.toolCalls[0].tool).toBe('generateStudyMaterial');
-      expect(data.toolCalls[0].result.materialId).toBe('mat_789');
+      expect(response.status).toBe(200);
+      expect(data.message).toContain('online learning management system');
+      expect(data.toolsUsed).toEqual([]);
+      expect(data.usage.total.totalTokens).toBe(80);
     });
 
-    it('should handle subscription status queries', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          intent: 'check_subscription',
-          response: 'You are on the Basic plan with 3 AI materials and 2 reservations remaining this month.',
-          toolCalls: [
-            {
-              tool: 'getSubscriptionStatus',
-              result: {
-                tier: 'basic',
-                usage: {
-                  aiMaterials: 2,
-                  reservations: 3,
+    it('should handle multiple tool calls in sequence', async () => {
+      // First call with multiple tools
+      mockCreateChatCompletion.mockResolvedValueOnce({
+        completion: {
+          choices: [{
+            message: {
+              content: '',
+              tool_calls: [
+                {
+                  id: 'call_3',
+                  type: 'function',
+                  function: {
+                    name: 'searchAvailableSlots',
+                    arguments: JSON.stringify({ date: '2025-10-20' }),
+                  },
                 },
-                limits: {
-                  aiMaterials: 5,
-                  reservations: 5,
+                {
+                  id: 'call_4',
+                  type: 'function',
+                  function: {
+                    name: 'getSubscriptionStatus',
+                    arguments: JSON.stringify({}),
+                  },
                 },
-                renewalDate: '2025-11-01',
-              },
+              ],
             },
-          ],
-        }),
-      });
-
-      const response = await fetch('/api/ai/intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+          }],
         },
-        body: JSON.stringify({
-          message: 'What\'s my current subscription status?',
-          userId: 'user_123',
-        }),
+        usage: {
+          promptTokens: 100,
+          completionTokens: 50,
+          totalTokens: 150,
+          estimatedCost: 0.001,
+        },
       });
 
-      const data = await response.json();
+      mockRequiresToolExecution.mockReturnValueOnce(true);
+      mockExtractToolCalls.mockReturnValueOnce([
+        {
+          id: 'call_3',
+          type: 'function',
+          function: {
+            name: 'searchAvailableSlots',
+            arguments: JSON.stringify({ date: '2025-10-20' }),
+          },
+        },
+        {
+          id: 'call_4',
+          type: 'function',
+          function: {
+            name: 'getSubscriptionStatus',
+            arguments: JSON.stringify({}),
+          },
+        },
+      ]);
 
-      expect(data.intent).toBe('check_subscription');
-      expect(data.toolCalls[0].result.tier).toBe('basic');
-      expect(data.toolCalls[0].result.usage.aiMaterials).toBe(2);
-    });
-
-    it('should handle multiple tool calls in one request', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          intent: 'complex_request',
-          response: 'I found 2 available slots and checked your subscription. You can book 2 more lessons this month.',
-          toolCalls: [
-            {
-              tool: 'searchAvailableSlots',
-              result: {
-                slots: [
-                  { id: 'slot1', startTime: '10:00' },
-                  { id: 'slot2', startTime: '14:00' },
-                ],
-              },
-            },
-            {
-              tool: 'getSubscriptionStatus',
-              result: {
-                tier: 'basic',
-                usage: { reservations: 3 },
-                limits: { reservations: 5 },
-              },
-            },
+      // Mock tool executions
+      mockExecuteTool
+        .mockResolvedValueOnce({
+          success: true,
+          slots: [
+            { id: 'slot1', startTime: '10:00' },
+            { id: 'slot2', startTime: '14:00' },
           ],
-        }),
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          tier: 'basic',
+          usage: { reservations: 3 },
+          limits: { reservations: 5 },
+        });
+
+      // Final response
+      mockCreateChatCompletion.mockResolvedValueOnce({
+        completion: {
+          choices: [{
+            message: {
+              content: 'I found 2 available slots and you can book 2 more lessons this month.',
+            },
+          }],
+        },
+        usage: {
+          promptTokens: 200,
+          completionTokens: 60,
+          totalTokens: 260,
+          estimatedCost: 0.002,
+        },
       });
 
-      const response = await fetch('/api/ai/intent', {
+      const request = new NextRequest('http://localhost:3000/api/ai/intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: 'Show me available slots and how many I can book',
-          userId: 'user_123',
         }),
       });
 
+      const response = await POST(request);
       const data = await response.json();
 
-      expect(data.toolCalls).toHaveLength(2);
-      expect(data.toolCalls[0].tool).toBe('searchAvailableSlots');
-      expect(data.toolCalls[1].tool).toBe('getSubscriptionStatus');
+      expect(response.status).toBe(200);
+      expect(data.toolsUsed).toHaveLength(2);
+      expect(data.toolsUsed).toContain('searchAvailableSlots');
+      expect(data.toolsUsed).toContain('getSubscriptionStatus');
     });
-  });
 
-  describe('Error Handling', () => {
-    it('should handle invalid request body', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        json: async () => ({
-          error: 'Invalid request body',
-          details: 'message field is required',
-        }),
+    it('should handle tool execution errors gracefully', async () => {
+      mockCreateChatCompletion.mockResolvedValueOnce({
+        completion: {
+          choices: [{
+            message: {
+              content: '',
+              tool_calls: [{
+                id: 'call_5',
+                type: 'function',
+                function: {
+                  name: 'createReservation',
+                  arguments: JSON.stringify({ slotId: 'invalid_slot' }),
+                },
+              }],
+            },
+          }],
+        },
+        usage: {
+          promptTokens: 80,
+          completionTokens: 30,
+          totalTokens: 110,
+          estimatedCost: 0.0008,
+        },
       });
 
-      const response = await fetch('/api/ai/intent', {
+      mockRequiresToolExecution.mockReturnValueOnce(true);
+      mockExtractToolCalls.mockReturnValueOnce([{
+        id: 'call_5',
+        type: 'function',
+        function: {
+          name: 'createReservation',
+          arguments: JSON.stringify({ slotId: 'invalid_slot' }),
+        },
+      }]);
+
+      // Tool execution fails
+      mockExecuteTool.mockRejectedValueOnce(new Error('Slot not found'));
+
+      mockCreateChatCompletion.mockResolvedValueOnce({
+        completion: {
+          choices: [{
+            message: {
+              content: 'I apologize, but I could not book that slot. The slot may no longer be available.',
+            },
+          }],
+        },
+        usage: {
+          promptTokens: 120,
+          completionTokens: 40,
+          totalTokens: 160,
+          estimatedCost: 0.001,
+        },
+      });
+
+      const request = new NextRequest('http://localhost:3000/api/ai/intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // Missing message field
-          userId: 'user_123',
+          message: 'Book slot invalid_slot',
         }),
       });
 
-      expect(response.ok).toBe(false);
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.message).toContain('could not book');
+    });
+
+    it('should validate request body', async () => {
+      const request = new NextRequest('http://localhost:3000/api/ai/intent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          // Missing required 'message' field
+        }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
       expect(response.status).toBe(400);
-
-      const data = await response.json();
-      expect(data.error).toBe('Invalid request body');
+      expect(data.error).toBe('Invalid request');
     });
 
-    it('should handle authentication errors', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        json: async () => ({
-          error: 'Unauthorized',
-          message: 'Invalid or missing authentication token',
-        }),
-      });
+    it('should handle very long messages', async () => {
+      const longMessage = 'a'.repeat(1001);
 
-      const response = await fetch('/api/ai/intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Missing Authorization header
-        },
-        body: JSON.stringify({
-          message: 'Find available slots',
-        }),
-      });
-
-      expect(response.status).toBe(401);
-      const data = await response.json();
-      expect(data.error).toBe('Unauthorized');
-    });
-
-    it('should handle rate limiting', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 429,
-        json: async () => ({
-          error: 'Rate limit exceeded',
-          retryAfter: 60,
-          message: 'Too many requests. Please try again in 60 seconds.',
-        }),
-      });
-
-      const response = await fetch('/api/ai/intent', {
+      const request = new NextRequest('http://localhost:3000/api/ai/intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: 'Generate study material',
-          userId: 'user_123',
+          message: longMessage,
         }),
       });
 
-      expect(response.status).toBe(429);
-      const data = await response.json();
-      expect(data.error).toBe('Rate limit exceeded');
-      expect(data.retryAfter).toBe(60);
-    });
-
-    it('should handle OpenAI API errors', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        json: async () => ({
-          error: 'OpenAI API error',
-          message: 'Failed to process AI request',
-          details: 'OpenAI service temporarily unavailable',
-        }),
-      });
-
-      const response = await fetch('/api/ai/intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: 'Find lessons',
-          userId: 'user_123',
-        }),
-      });
-
-      expect(response.status).toBe(500);
-      const data = await response.json();
-      expect(data.error).toBe('OpenAI API error');
-    });
-  });
-
-  describe('Usage Tracking', () => {
-    it('should track AI usage for subscription limits', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          intent: 'generate_material',
-          response: 'Material generated successfully',
-          usage: {
-            tokensUsed: 500,
-            costEstimate: 0.001,
-            remainingQuota: {
-              aiMaterials: 2,
-              dailyTokens: 9500,
-            },
-          },
-        }),
-      });
-
-      const response = await fetch('/api/ai/intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: 'Generate physics exercises',
-          userId: 'user_123',
-        }),
-      });
-
+      const response = await POST(request);
       const data = await response.json();
 
-      expect(data.usage).toBeDefined();
-      expect(data.usage.tokensUsed).toBe(500);
-      expect(data.usage.remainingQuota.aiMaterials).toBe(2);
+      expect(response.status).toBe(400);
+      expect(data.error).toBe('Invalid request');
     });
 
-    it('should reject requests when quota is exceeded', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        json: async () => ({
-          error: 'Quota exceeded',
-          message: 'You have reached your monthly AI material generation limit',
-          upgradeUrl: '/dashboard/subscription/upgrade',
-        }),
-      });
-
-      const response = await fetch('/api/ai/intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: 'Generate another material',
-          userId: 'user_123',
-        }),
-      });
-
-      expect(response.status).toBe(403);
-      const data = await response.json();
-      expect(data.error).toBe('Quota exceeded');
-      expect(data.upgradeUrl).toBeDefined();
-    });
-  });
-
-  describe('Context Handling', () => {
     it('should maintain conversation context', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          intent: 'follow_up',
-          response: 'I\'ll book the 10:00 AM slot with John Doe for you.',
-          conversationId: 'conv_123',
-          toolCalls: [
-            {
-              tool: 'createReservation',
-              result: {
-                success: true,
-                reservationId: 'res_789',
-              },
+      mockCreateChatCompletion.mockResolvedValueOnce({
+        completion: {
+          choices: [{
+            message: {
+              content: 'Based on our previous discussion, I\'ll book the morning slot for you.',
             },
-          ],
-        }),
+          }],
+        },
+        usage: {
+          promptTokens: 150,
+          completionTokens: 40,
+          totalTokens: 190,
+          estimatedCost: 0.0015,
+        },
       });
 
-      const response = await fetch('/api/ai/intent', {
+      mockRequiresToolExecution.mockReturnValueOnce(false);
+
+      const request = new NextRequest('http://localhost:3000/api/ai/intent', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: 'Book the first one',
-          conversationId: 'conv_123',
-          context: {
-            previousResponse: {
-              slots: [
-                { id: 'slot1', startTime: '10:00', mentorName: 'John Doe' },
-              ],
+          conversationHistory: [
+            {
+              role: 'user',
+              content: 'Show me morning slots',
             },
-          },
-          userId: 'user_123',
+            {
+              role: 'assistant',
+              content: 'I found 3 morning slots available.',
+            },
+          ],
         }),
       });
 
+      const response = await POST(request);
       const data = await response.json();
 
-      expect(data.conversationId).toBe('conv_123');
-      expect(data.toolCalls[0].result.success).toBe(true);
+      expect(response.status).toBe(200);
+      expect(data.message).toContain('morning slot');
+
+      // Verify that conversation history was passed to OpenAI
+      expect(mockCreateChatCompletion).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ role: 'system' }),
+          expect.objectContaining({ role: 'user', content: 'Show me morning slots' }),
+          expect.objectContaining({ role: 'assistant', content: 'I found 3 morning slots available.' }),
+          expect.objectContaining({ role: 'user', content: 'Book the first one' }),
+        ]),
+        expect.any(Object)
+      );
+    });
+  });
+
+  describe('GET /api/ai/intent', () => {
+    it('should return health check information', async () => {
+      const request = new NextRequest('http://localhost:3000/api/ai/intent', {
+        method: 'GET',
+      });
+
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.status).toBe('ok');
+      expect(data.endpoint).toBe('/api/ai/intent');
+      expect(data.availableTools).toEqual(['searchAvailableSlots', 'createReservation']);
     });
   });
 });

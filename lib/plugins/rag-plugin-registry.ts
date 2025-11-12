@@ -6,6 +6,8 @@
  * It complements the existing plugin-registry.ts
  */
 
+import { logger } from '@/lib/utils/logger';
+
 // RAG-specific plugin capabilities
 export interface RagPluginCapabilities {
   list: boolean;      // Can list content items
@@ -94,11 +96,11 @@ export class RagPluginRegistry {
    */
   register(source: string, descriptor: RagPluginDescriptor): void {
     if (this.plugins.has(source)) {
-      console.warn(`[RAG Registry] Overwriting existing plugin: ${source}`);
+      logger.warn(`[RAG Registry] Overwriting existing plugin: ${source}`);
     }
 
     this.plugins.set(source, descriptor);
-    console.log(`[RAG Registry] ✅ Registered: ${descriptor.name} v${descriptor.version}`);
+    logger.debug(`[RAG Registry] ✅ Registered: ${descriptor.name} v${descriptor.version}`);
   }
 
   /**
@@ -173,17 +175,17 @@ export class RagPluginFactory {
     const fetcher: IRagContentFetcher = {
       async list(limit = 10, offset = 0): Promise<RagContentItem[]> {
         // This would connect to actual Note.com API
-        console.log(`[Note Plugin] Fetching list: limit=${limit}, offset=${offset}`);
+        logger.debug(`[Note Plugin] Fetching list: limit=${limit}, offset=${offset}`);
         return [];
       },
 
       async search(params: RagSearchParams): Promise<RagContentItem[]> {
-        console.log(`[Note Plugin] Searching: query="${params.query}"`);
+        logger.debug(`[Note Plugin] Searching: query="${params.query}"`);
         return [];
       },
 
       async fetch(id: string): Promise<RagContentItem | null> {
-        console.log(`[Note Plugin] Fetching item: id=${id}`);
+        logger.debug(`[Note Plugin] Fetching item: id=${id}`);
         return null;
       },
 
@@ -233,27 +235,27 @@ export class RagPluginFactory {
     // Simplified mock implementation for Phase 2
     const fetcher: IRagContentFetcher = {
       async list(limit = 10, offset = 0): Promise<RagContentItem[]> {
-        console.log(`[Local Plugin] Listing materials: limit=${limit}, offset=${offset}`);
+        logger.debug(`[Local Plugin] Listing materials: limit=${limit}, offset=${offset}`);
         return [];
       },
 
       async search(params: RagSearchParams): Promise<RagContentItem[]> {
-        console.log(`[Local Plugin] Searching materials: query="${params.query}"`);
+        logger.debug(`[Local Plugin] Searching materials: query="${params.query}"`);
         return [];
       },
 
       async fetch(id: string): Promise<RagContentItem | null> {
-        console.log(`[Local Plugin] Fetching material: id=${id}`);
+        logger.debug(`[Local Plugin] Fetching material: id=${id}`);
         return null;
       },
 
       async filter(criteria: Record<string, any>): Promise<RagContentItem[]> {
-        console.log(`[Local Plugin] Filtering materials:`, criteria);
+        logger.debug(`[Local Plugin] Filtering materials:`, criteria);
         return [];
       },
 
       async transform(content: RagContentItem, format: string): Promise<any> {
-        console.log(`[Local Plugin] Transforming content to ${format}`);
+        logger.debug(`[Local Plugin] Transforming content to ${format}`);
         return content;
       },
 
@@ -288,7 +290,7 @@ export class RagPluginFactory {
   initializeStandardPlugins(): void {
     this.registerNotePlugin();
     this.registerLocalPlugin();
-    console.log('[RAG Factory] Standard plugins initialized');
+    logger.debug('[RAG Factory] Standard plugins initialized');
   }
 
   /**
@@ -303,7 +305,7 @@ export class RagPluginFactory {
     for (const source of sources) {
       const plugin = this.registry.get(source);
       if (!plugin) {
-        console.warn(`[RAG Factory] Plugin "${source}" not found`);
+        logger.warn(`[RAG Factory] Plugin "${source}" not found`);
         continue;
       }
 
@@ -314,7 +316,7 @@ export class RagPluginFactory {
 
         results.push(...items);
       } catch (error) {
-        console.error(`[RAG Factory] Error fetching from "${source}":`, error);
+        logger.error(`[RAG Factory] Error fetching from "${source}":`, error);
       }
     }
 

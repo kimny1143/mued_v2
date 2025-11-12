@@ -54,7 +54,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [unit, components]
+        suite: [unit, components, integration]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -72,7 +72,7 @@ jobs:
         run: npm run test:${{ matrix.suite }}
 
       - name: Upload coverage to Codecov
-        if: matrix.suite == 'unit'
+        if: matrix.suite == 'unit' || matrix.suite == 'integration'
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage/lcov.info

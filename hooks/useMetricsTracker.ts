@@ -8,6 +8,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { LoopEvent, PracticeSession } from '@/lib/metrics/learning-tracker';
+import { useApiClient, getErrorMessage } from '@/lib/api-client';
+import { logger } from '@/lib/utils/logger';
 
 export interface UseMetricsTrackerOptions {
   materialId: string;
@@ -27,6 +29,7 @@ export interface MetricsTrackerState {
 
 export function useMetricsTracker(options: UseMetricsTrackerOptions) {
   const { materialId, userId, instrument, targetTempo, sectionsTotal } = options;
+  const apiClient = useApiClient();
 
   const [state, setState] = useState<MetricsTrackerState>({
     isTracking: false,
@@ -53,7 +56,7 @@ export function useMetricsTracker(options: UseMetricsTrackerOptions) {
       loopEvents: [],
     }));
 
-    console.log('[MetricsTracker] Tracking started');
+    logger.debug('[MetricsTracker] Tracking started');
   }, []);
 
   /**
@@ -61,7 +64,7 @@ export function useMetricsTracker(options: UseMetricsTrackerOptions) {
    */
   const stopTracking = useCallback(async () => {
     if (!sessionStartTimeRef.current) {
-      console.warn('[MetricsTracker] No active session to stop');
+      logger.warn('[MetricsTracker] No active session to stop');
       return;
     }
 
@@ -84,7 +87,7 @@ export function useMetricsTracker(options: UseMetricsTrackerOptions) {
       achievedTempo: state.currentTempo,
     };
 
-    console.log('[MetricsTracker] Session ended:', {
+    logger.debug('[MetricsTracker] Session ended:', {
       duration: `${duration}s`,
       sectionsCompleted: session.sectionsCompleted,
       loopEvents: session.loopEvents.length,
@@ -92,19 +95,10 @@ export function useMetricsTracker(options: UseMetricsTrackerOptions) {
 
     // サーバーに保存
     try {
-      const response = await fetch('/api/metrics/save-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(session),
-      });
-
-      if (!response.ok) {
-        console.error('[MetricsTracker] Failed to save session:', response.statusText);
-      } else {
-        console.log('[MetricsTracker] Session saved successfully');
-      }
+      await apiClient.post('/api/metrics/save-session', session);
+      logger.debug('[MetricsTracker] Session saved successfully');
     } catch (error) {
-      console.error('[MetricsTracker] Error saving session:', error);
+      logger.error('[MetricsTracker] Error saving session', getErrorMessage(error));
     }
 
     // ステートをリセット
@@ -117,7 +111,7 @@ export function useMetricsTracker(options: UseMetricsTrackerOptions) {
     });
 
     sessionStartTimeRef.current = null;
-  }, [materialId, userId, instrument, targetTempo, sectionsTotal, state]);
+  }, [apiClient, materialId, userId, instrument, targetTempo, sectionsTotal, state]);
 
   /**
    * セクション完了を記録
@@ -128,7 +122,7 @@ export function useMetricsTracker(options: UseMetricsTrackerOptions) {
       sectionsCompleted: Math.min(prev.sectionsCompleted + 1, sectionsTotal),
     }));
 
-    console.log('[MetricsTracker] Section completed');
+    logger.debug('[MetricsTracker] Section completed');
   }, [sectionsTotal]);
 
   /**
@@ -148,7 +142,7 @@ export function useMetricsTracker(options: UseMetricsTrackerOptions) {
         loopEvents: [...prev.loopEvents, event],
       }));
 
-      console.log('[MetricsTracker] Loop event recorded:', { startBar, endBar, tempo });
+      logger.debug('[MetricsTracker] Loop event recorded:', { startBar, endBar, tempo });
     },
     []
   );
@@ -215,16 +209,12 @@ export function useMetricsTracker(options: UseMetricsTrackerOptions) {
             achievedTempo: state.currentTempo,
           };
 
-          console.log('[MetricsTracker] Auto-saving session...');
+          logger.debug('[MetricsTracker] Auto-saving session...');
 
           try {
-            await fetch('/api/metrics/save-session', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(partialSession),
-            });
+            await apiClient.post('/api/metrics/save-session', partialSession);
           } catch (error) {
-            console.error('[MetricsTracker] Auto-save failed:', error);
+            logger.error('[MetricsTracker] Auto-save failed', getErrorMessage(error));
           }
         }
       },
@@ -233,6 +223,7 @@ export function useMetricsTracker(options: UseMetricsTrackerOptions) {
 
     return () => clearInterval(intervalId);
   }, [
+    apiClient,
     state.isTracking,
     state.sectionsCompleted,
     state.loopEvents,

@@ -7,6 +7,7 @@
 
 import { Injectable } from '@/lib/di';
 import type { PluginManifest, LoadedPlugin, PluginConfig } from '@/types/plugin-system';
+import { logger } from '@/lib/utils/logger';
 
 @Injectable()
 export class PluginRegistry {
@@ -23,7 +24,7 @@ export class PluginRegistry {
     }
 
     this.plugins.set(plugin.manifest.id, plugin);
-    console.log(`[PluginRegistry] Registered plugin: ${plugin.manifest.name} v${plugin.manifest.version}`);
+    logger.debug(`[PluginRegistry] Registered plugin: ${plugin.manifest.name} v${plugin.manifest.version}`);
   }
 
   /**
@@ -34,7 +35,7 @@ export class PluginRegistry {
     const result = this.plugins.delete(pluginId);
     if (result) {
       this.configs.delete(pluginId);
-      console.log(`[PluginRegistry] Unregistered plugin: ${pluginId}`);
+      logger.debug(`[PluginRegistry] Unregistered plugin: ${pluginId}`);
     }
     return result;
   }
@@ -123,7 +124,7 @@ export class PluginRegistry {
   clear(): void {
     this.plugins.clear();
     this.configs.clear();
-    console.log('[PluginRegistry] Cleared all plugins');
+    logger.debug('[PluginRegistry] Cleared all plugins');
   }
 
   /**

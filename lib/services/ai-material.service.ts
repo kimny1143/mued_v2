@@ -5,6 +5,7 @@ import { materials, subscriptions, users } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { checkQualityGate, suggestImprovements, type QualityStatus } from '@/lib/quality-gate';
 import { validateAbcSyntax } from '@/lib/abc-validator';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * AI Material Generation Service
@@ -472,45 +473,46 @@ async function incrementMaterialUsage(clerkUserId: string): Promise<void> {
   }
 }
 
-/**
- * Generate AI-powered educational material
- */
-export async function generateMaterial(
-  request: MaterialGenerationRequest
-): Promise<{
-  material: GeneratedMaterial;
-  materialId: string;
-  cost: number;
-  qualityStatus?: QualityStatus;
-  qualityMetadata?: {
-    playabilityScore: number;
-    learningValueScore: number;
-    qualityMessage: string;
-    canPublish: boolean;
-    suggestions: string[];
-  };
-}> {
-  // Validate request
-  const validated = materialGenerationSchema.parse(request);
+// ============================================================================
+// Helper Functions for generateMaterial
+// ============================================================================
 
-  // Convert Clerk ID to internal UUID
+/**
+ * Step 1: Validate and prepare generation request
+ */
+async function prepareGenerationRequest(request: MaterialGenerationRequest): Promise<{
+  validated: MaterialGenerationRequest;
+  internalUserId: string;
+}> {
+  const validated = materialGenerationSchema.parse(request);
   const internalUserId = await getUserIdFromClerkId(validated.userId);
 
-  // Check quota
-  const quota = await checkMaterialQuota(validated.userId);
+  return { validated, internalUserId };
+}
+
+/**
+ * Step 2: Validate user quota
+ */
+async function validateMaterialQuota(userId: string): Promise<void> {
+  const quota = await checkMaterialQuota(userId);
   if (!quota.allowed) {
     throw new Error(
       `Material generation limit reached. You have ${quota.remaining}/${quota.limit} remaining this month. Upgrade to Basic or Premium for unlimited generation.`
     );
   }
+}
 
-  // Use model from environment variable (no longer auto-downgrade based on difficulty)
-  // This allows consistent high-quality generation regardless of difficulty level
-
-  // Build prompt
+/**
+ * Step 3: Generate material using AI
+ */
+async function generateMaterialWithAI(
+  validated: MaterialGenerationRequest
+): Promise<{
+  material: GeneratedMaterial;
+  usage: { estimatedCost: number; model: string; totalTokens: number };
+}> {
   const prompt = buildPrompt(validated);
 
-  // Generate material using OpenAI
   const { completion, usage } = await createChatCompletion(
     [
       {
@@ -532,25 +534,18 @@ export async function generateMaterial(
 
   const message = completion.choices[0]?.message;
 
-  // Debug logging for GPT-5
-  console.log('[AI Material Service] Completion response:', {
+  logger.debug('[AI Material Service] Completion response:', {
     hasMessage: !!message,
     hasContent: !!message?.content,
     contentLength: message?.content?.length,
-    messageKeys: message ? Object.keys(message) : [],
-    fullMessage: JSON.stringify(message, null, 2),
   });
 
   const response = message?.content;
   if (!response) {
-    console.error('[AI Material Service] No content in response:', {
-      message,
-      fullCompletion: JSON.stringify(completion, null, 2),
-    });
+    logger.error('[AI Material Service] No content in response');
     throw new Error('Failed to generate material: No content in API response');
   }
 
-  // Parse JSON response
   let generatedMaterial: GeneratedMaterial;
   try {
     generatedMaterial = JSON.parse(response) as GeneratedMaterial;
@@ -558,8 +553,26 @@ export async function generateMaterial(
     throw new Error(`Failed to parse AI response: ${error}`);
   }
 
-  // For music materials, validate ABC notation and check quality gate
-  let qualityStatus: QualityStatus = 'approved'; // Default for non-music materials
+  return { material: generatedMaterial, usage };
+}
+
+/**
+ * Step 4: Validate material quality (music materials only)
+ */
+async function validateGeneratedQuality(
+  material: GeneratedMaterial,
+  validated: MaterialGenerationRequest
+): Promise<{
+  status: QualityStatus;
+  metadata: {
+    playabilityScore: number;
+    learningValueScore: number;
+    qualityMessage: string;
+    canPublish: boolean;
+    suggestions: string[];
+  } | Record<string, never>;
+}> {
+  let qualityStatus: QualityStatus = 'approved';
   let qualityMetadata: {
     playabilityScore: number;
     learningValueScore: number;
@@ -568,8 +581,8 @@ export async function generateMaterial(
     suggestions: string[];
   } | Record<string, never> = {};
 
-  if (validated.format === 'music' && generatedMaterial.type === 'music') {
-    const abcNotation = generatedMaterial.abcNotation;
+  if (validated.format === 'music' && material.type === 'music') {
+    const abcNotation = material.abcNotation;
 
     // Validate ABC syntax
     const validationError = validateAbcSyntax(abcNotation);
@@ -590,23 +603,35 @@ export async function generateMaterial(
       suggestions: qualityResult.analysis ? suggestImprovements(qualityResult.analysis) : [],
     };
 
-    // If quality gate fails, still save but mark as draft
     if (!qualityResult.canPublish) {
-      console.warn(`Music material failed quality gate: ${qualityResult.message}`);
+      logger.warn(`Music material failed quality gate: ${qualityResult.message}`);
     }
   }
 
-  // Save to database
+  return { status: qualityStatus, metadata: qualityMetadata };
+}
+
+/**
+ * Step 5: Save material to database
+ */
+async function saveGeneratedMaterial(
+  material: GeneratedMaterial,
+  validated: MaterialGenerationRequest,
+  internalUserId: string,
+  qualityStatus: QualityStatus,
+  qualityMetadata: Record<string, unknown>,
+  usage: { estimatedCost: number; model: string; totalTokens: number }
+): Promise<{ id: string }> {
   const [savedMaterial] = await db
     .insert(materials)
     .values({
       creatorId: internalUserId,
       title: `${validated.subject}: ${validated.topic}`,
       description: `${validated.format} for ${validated.difficulty} level`,
-      content: JSON.stringify(generatedMaterial),
+      content: JSON.stringify(material),
       type: validated.format,
       difficulty: validated.difficulty,
-      isPublic: validated.isPublic ?? false, // Set public visibility
+      isPublic: validated.isPublic ?? false,
       qualityStatus: qualityStatus,
       metadata: {
         subject: validated.subject,
@@ -621,24 +646,91 @@ export async function generateMaterial(
     })
     .returning();
 
-  // Increment usage counter
   await incrementMaterialUsage(validated.userId);
 
-  const hasQualityMetadata = Object.keys(qualityMetadata).length > 0;
+  return savedMaterial;
+}
 
-  return {
-    material: generatedMaterial,
-    materialId: savedMaterial.id,
-    cost: usage.estimatedCost,
-    qualityStatus,
-    qualityMetadata: hasQualityMetadata ? (qualityMetadata as {
-      playabilityScore: number;
-      learningValueScore: number;
-      qualityMessage: string;
-      canPublish: boolean;
-      suggestions: string[];
-    }) : undefined,
+// ============================================================================
+// Main Function (Refactored)
+// ============================================================================
+
+/**
+ * Generate AI-powered educational material
+ *
+ * Orchestrates the material generation pipeline:
+ * 1. Validate and prepare request
+ * 2. Check user quota
+ * 3. Generate with AI
+ * 4. Validate quality (music only)
+ * 5. Save to database
+ */
+export async function generateMaterial(
+  request: MaterialGenerationRequest
+): Promise<{
+  material: GeneratedMaterial;
+  materialId: string;
+  cost: number;
+  qualityStatus?: QualityStatus;
+  qualityMetadata?: {
+    playabilityScore: number;
+    learningValueScore: number;
+    qualityMessage: string;
+    canPublish: boolean;
+    suggestions: string[];
   };
+}> {
+  try {
+    // Step 1: Validate and prepare request
+    const { validated, internalUserId } = await prepareGenerationRequest(request);
+
+    // Step 2: Check user quota
+    await validateMaterialQuota(validated.userId);
+
+    // Step 3: Generate with AI
+    const { material, usage } = await generateMaterialWithAI(validated);
+
+    // Step 4: Validate quality (music materials only)
+    const { status: qualityStatus, metadata: qualityMetadata } = await validateGeneratedQuality(
+      material,
+      validated
+    );
+
+    // Step 5: Save to database
+    const savedMaterial = await saveGeneratedMaterial(
+      material,
+      validated,
+      internalUserId,
+      qualityStatus,
+      qualityMetadata,
+      usage
+    );
+
+    // Build response
+    const hasQualityMetadata = Object.keys(qualityMetadata).length > 0;
+
+    return {
+      material,
+      materialId: savedMaterial.id,
+      cost: usage.estimatedCost,
+      qualityStatus,
+      qualityMetadata: hasQualityMetadata
+        ? (qualityMetadata as {
+            playabilityScore: number;
+            learningValueScore: number;
+            qualityMessage: string;
+            canPublish: boolean;
+            suggestions: string[];
+          })
+        : undefined,
+    };
+  } catch (error) {
+    logger.error('[generateMaterial] Failed to generate material', {
+      error: error instanceof Error ? error.message : String(error),
+      request: { subject: request.subject, topic: request.topic, format: request.format },
+    });
+    throw error;
+  }
 }
 
 /**
