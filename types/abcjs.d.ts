@@ -4,25 +4,55 @@
  */
 
 declare module 'abcjs' {
+  export interface AbcjsLine {
+    staff?: number[];
+    voice?: number[];
+    [key: string]: unknown;
+  }
+
+  export interface AbcjsFormatting {
+    scale?: number;
+    staffwidth?: number;
+    [key: string]: unknown;
+  }
+
   export interface TuneObject {
-    lines: any[];
+    lines: AbcjsLine[];
     metaText?: {
       title?: string;
       rhythm?: string;
       composer?: string;
     };
-    formatting?: any;
+    formatting?: AbcjsFormatting;
     media?: string;
-    metaTextInfo?: any;
-    version?: any;
-    [key: string]: any;
+    metaTextInfo?: Record<string, unknown>;
+    version?: string;
+    [key: string]: unknown;
+  }
+
+  export interface AbcElement {
+    [key: string]: unknown;
+  }
+
+  export interface Analysis {
+    [key: string]: unknown;
+  }
+
+  export interface DragInfo {
+    [key: string]: unknown;
   }
 
   export interface RenderOptions {
     responsive?: 'resize';
     staffwidth?: number;
     add_classes?: boolean;
-    clickListener?: (abcElem: any, tuneNumber: number, classes: string, analysis: any, drag: any) => void;
+    clickListener?: (
+      abcElem: AbcElement,
+      tuneNumber: number,
+      classes: string,
+      analysis: Analysis,
+      drag: DragInfo
+    ) => void;
   }
 
   export interface MidiFileOptions {
@@ -53,8 +83,13 @@ declare module 'abcjs' {
     download(filename: string): void;
   }
 
+  export interface TimingOptions {
+    eventCallback?: (event: unknown) => void;
+    [key: string]: unknown;
+  }
+
   export class TimingCallbacks {
-    constructor(visualObj: TuneObject, options: any);
+    constructor(visualObj: TuneObject, options: TimingOptions);
   }
 
   export namespace synth {

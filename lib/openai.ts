@@ -133,6 +133,7 @@ export async function createChatCompletion(
   const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const completionParams: any = {
       model,
       messages,

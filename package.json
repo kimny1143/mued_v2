@@ -51,6 +51,7 @@
     "dotenv": "^17.2.2",
     "drizzle-orm": "^0.44.5",
     "inversify": "^7.10.3",
+    "isomorphic-dompurify": "^2.31.0",
     "lucide-react": "^0.544.0",
     "next": "15.5.4",
     "openai": "^6.0.0",

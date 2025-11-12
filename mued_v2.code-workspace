@@ -8,6 +8,9 @@
         },
         {
             "path": "../../../../Library/Application Support/Claude"
+        },
+        {
+            "path": "../../Echovna"
         }
     ]
 }

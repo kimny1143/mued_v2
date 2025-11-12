@@ -7,6 +7,7 @@
 import { NextResponse } from 'next/server';
 import puppeteer from 'puppeteer';
 import abcjs from 'abcjs';
+import DOMPurify from 'isomorphic-dompurify';
 import type { QuickTestResult } from '@/lib/ai/quick-test-generator';
 import { withAuth } from '@/lib/middleware/with-auth';
 import { apiValidationError, apiServerError } from '@/lib/api-response';
@@ -92,7 +93,12 @@ function renderQuickTestToHtml(quickTest: QuickTestResult): string {
           scale: 0.9,
         });
 
-        const svgContent = container.innerHTML || '<p>Failed to render notation</p>';
+        // Sanitize SVG content to prevent XSS
+        const rawSvgContent = container.innerHTML || '<p>Failed to render notation</p>';
+        const svgContent = DOMPurify.sanitize(rawSvgContent, {
+          ADD_TAGS: ['svg', 'path', 'g', 'circle', 'rect', 'line', 'text'],
+          ADD_ATTR: ['viewBox', 'd', 'transform', 'fill', 'stroke', 'stroke-width', 'x', 'y', 'width', 'height'],
+        });
 
         return `
           <div class="problem-block ${idx > 0 ? 'page-break-before' : ''}">

@@ -30,8 +30,10 @@ export function PianoKeyboardDiagram({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Clear previous content
-    containerRef.current.innerHTML = '';
+    // Clear previous content using DOM methods (safer than innerHTML)
+    while (containerRef.current.firstChild) {
+      containerRef.current.removeChild(containerRef.current.firstChild);
+    }
 
     // Create colorize array for individual note colors
     const colorize = highlightedNotes.map((note) => ({
