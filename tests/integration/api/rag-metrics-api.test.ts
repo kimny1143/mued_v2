@@ -346,11 +346,14 @@ describe('Admin RAG Metrics API', () => {
         return { from: mockFrom };
       });
 
-      // Override mockWhere to return filtered data when called with date conditions
+      // Override mockWhere to support: .where().orderBy().limit().offset()
       mockWhere.mockReturnValue({
         orderBy: mockOrderBy,
-        limit: mockLimit,
-        then: (resolve: any) => resolve(filteredHistory)
+      });
+
+      // Override mockOffset to return filtered data
+      mockOffset.mockReturnValue({
+        then: (resolve: any) => resolve(filteredHistory),
       });
 
       const request = new NextRequest(

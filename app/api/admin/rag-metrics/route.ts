@@ -76,23 +76,23 @@ export const GET = withAdminAuth(async ({ request }) => {
     const [metrics] = await metricsQuery;
 
     // Fetch historical metrics for trend analysis
-    let historyQuery = db
-      .select()
-      .from(ragMetricsHistory)
-      .orderBy(desc(ragMetricsHistory.date))
-      .limit(limit)
-      .offset(offset);
+    let historyQuery = db.select().from(ragMetricsHistory);
 
+    // Apply date filters if provided
     if (startDate) {
       historyQuery = historyQuery.where(
         and(
           gte(ragMetricsHistory.date, new Date(startDate)),
           endDate ? lte(ragMetricsHistory.date, new Date(endDate)) : sql`true`
         )
-      );
+      ) as typeof historyQuery;
     }
 
-    const history = await historyQuery;
+    // Apply sorting and pagination
+    const history = await historyQuery
+      .orderBy(desc(ragMetricsHistory.date))
+      .limit(limit)
+      .offset(offset);
 
     // Calculate SLO compliance
     const citationRateTarget = 70; // 70%
