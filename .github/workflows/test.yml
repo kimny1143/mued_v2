@@ -137,12 +137,17 @@ jobs:
           echo "Directory size:"
           du -sh .next/
 
+      - name: Create build archive
+        run: |
+          echo "Creating tar archive to preserve all filenames..."
+          tar -czf build-output.tar.gz .next
+          ls -lh build-output.tar.gz
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-output
-          path: .next
-          include-hidden-files: true
+          path: build-output.tar.gz
           retention-days: 1
           if-no-files-found: error
 
@@ -175,6 +180,13 @@ jobs:
         with:
           name: build-output
           path: .
+
+      - name: Extract build artifacts
+        run: |
+          echo "Extracting build archive..."
+          tar -xzf build-output.tar.gz
+          rm build-output.tar.gz
+          ls -la .next/
 
       - name: Run E2E tests
         run: npm run test:e2e
@@ -234,6 +246,13 @@ jobs:
         with:
           name: build-output
           path: .
+
+      - name: Extract build artifacts
+        run: |
+          echo "Extracting build archive..."
+          tar -xzf build-output.tar.gz
+          rm build-output.tar.gz
+          ls -la .next/
 
       - name: Run accessibility tests
         run: npx playwright test tests/e2e/accessibility.spec.ts
@@ -316,6 +335,13 @@ jobs:
         with:
           name: build-output
           path: .
+
+      - name: Extract build artifacts
+        run: |
+          echo "Extracting build archive..."
+          tar -xzf build-output.tar.gz
+          rm build-output.tar.gz
+          ls -la .next/
 
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v10
