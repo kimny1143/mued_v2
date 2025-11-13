@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PluginRegistry } from '@/lib/plugins/plugin-registry';
 import type { LoadedPlugin, PluginManifest, PluginConfig } from '@/types/plugin-system';
+import { logger } from '@/lib/utils/logger';
 
 // Mock DI decorators
 vi.mock('@/lib/di', () => ({
@@ -71,8 +72,8 @@ describe('PluginRegistry', () => {
 
   beforeEach(() => {
     registry = new PluginRegistry();
-    // Suppress console.log in tests
-    vi.spyOn(console, 'log').mockImplementation(() => {});
+    // Suppress logger.debug in tests (unless specifically testing for it)
+    vi.spyOn(logger, 'debug').mockImplementation(() => {});
   });
 
   describe('register()', () => {
@@ -92,11 +93,15 @@ describe('PluginRegistry', () => {
     });
 
     it('should log registration message', () => {
+      const loggerSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {});
+
       registry.register(mockPlugin);
 
-      expect(console.log).toHaveBeenCalledWith(
+      expect(loggerSpy).toHaveBeenCalledWith(
         '[PluginRegistry] Registered plugin: Test Plugin v1.0.0'
       );
+
+      loggerSpy.mockRestore();
     });
   });
 
@@ -125,12 +130,16 @@ describe('PluginRegistry', () => {
     });
 
     it('should log unregistration message', () => {
+      const loggerSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {});
+
       registry.register(mockPlugin);
       registry.unregister('test-plugin');
 
-      expect(console.log).toHaveBeenCalledWith(
+      expect(loggerSpy).toHaveBeenCalledWith(
         '[PluginRegistry] Unregistered plugin: test-plugin'
       );
+
+      loggerSpy.mockRestore();
     });
   });
 
@@ -283,11 +292,15 @@ describe('PluginRegistry', () => {
     });
 
     it('should log clear message', () => {
+      const loggerSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {});
+
       registry.clear();
 
-      expect(console.log).toHaveBeenCalledWith(
+      expect(loggerSpy).toHaveBeenCalledWith(
         '[PluginRegistry] Cleared all plugins'
       );
+
+      loggerSpy.mockRestore();
     });
   });
 

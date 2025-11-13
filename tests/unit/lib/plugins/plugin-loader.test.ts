@@ -6,6 +6,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PluginLoader } from '@/lib/plugins/plugin-loader';
 import type { PluginManifest, LoadedPlugin } from '@/types/plugin-system';
+import { logger } from '@/lib/utils/logger';
 
 // Mock dependencies
 vi.mock('@/lib/di', () => ({
@@ -258,16 +259,16 @@ describe('PluginLoader', () => {
     });
 
     it('should log warning for missing plugin', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       mockRegistry.get.mockReturnValue(null);
 
       loader.unload('missing-plugin');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(loggerSpy).toHaveBeenCalledWith(
         expect.stringContaining('not found')
       );
 
-      consoleSpy.mockRestore();
+      loggerSpy.mockRestore();
     });
   });
 
