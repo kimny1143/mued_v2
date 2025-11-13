@@ -6,6 +6,17 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GET } from '@/app/api/admin/rag-metrics/history/route';
 
+// Mock Clerk authentication
+const mockAuth = vi.fn();
+
+vi.mock('@clerk/nextjs/server', async () => {
+  const actual = await vi.importActual('@clerk/nextjs/server');
+  return {
+    ...actual,
+    auth: () => mockAuth(),
+  };
+});
+
 // Mock dependencies
 vi.mock('@/db', () => ({
   db: {
@@ -20,6 +31,14 @@ vi.mock('@/lib/actions/user', () => ({
 describe('RAG Metrics History API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Setup admin auth mock - must match withAdminAuth's sessionClaims structure
+    mockAuth.mockReturnValue({
+      userId: 'admin-123',
+      sessionClaims: {
+        metadata: { role: 'admin' }
+      }
+    });
   });
 
   describe('GET /api/admin/rag-metrics/history', () => {

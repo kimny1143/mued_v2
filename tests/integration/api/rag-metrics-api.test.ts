@@ -142,8 +142,13 @@ describe('Admin RAG Metrics API', () => {
     vi.clearAllMocks();
     setupMockChain();
 
-    // Default mock returns
-    mockAuth.mockReturnValue({ userId: 'admin-user-123' });
+    // Default mock returns - must match withAdminAuth's sessionClaims structure
+    mockAuth.mockReturnValue({
+      userId: 'admin-user-123',
+      sessionClaims: {
+        metadata: { role: 'admin' }
+      }
+    });
     mockGetUserById.mockResolvedValue({
       id: 'admin-user-123',
       publicMetadata: { role: 'admin' },
