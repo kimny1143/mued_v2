@@ -3,72 +3,68 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { POST, GET } from '@/app/api/ai/intent/route';
 import { NextRequest } from 'next/server';
 
-// Mock OpenAI
+// Mock OpenAI - define inside factory to avoid initialization order issues
 const mockCreateChatCompletion = vi.fn();
 const mockExtractToolCalls = vi.fn();
 const mockRequiresToolExecution = vi.fn();
 
 vi.mock('@/lib/openai', () => ({
-  createChatCompletion: mockCreateChatCompletion,
-  extractToolCalls: mockExtractToolCalls,
-  requiresToolExecution: mockRequiresToolExecution,
+  createChatCompletion: (...args: any[]) => mockCreateChatCompletion(...args),
+  extractToolCalls: (...args: any[]) => mockExtractToolCalls(...args),
+  requiresToolExecution: (...args: any[]) => mockRequiresToolExecution(...args),
 }));
 
 // Mock AI tools
 const mockExecuteTool = vi.fn();
-const mockAllTools = [
-  {
-    type: 'function',
-    function: {
-      name: 'searchAvailableSlots',
-      description: 'Search for available lesson slots',
-      parameters: {
-        type: 'object',
-        properties: {
-          date: { type: 'string' },
-          subject: { type: 'string' },
-        },
-      },
-    },
-  },
-  {
-    type: 'function',
-    function: {
-      name: 'createReservation',
-      description: 'Create a reservation',
-      parameters: {
-        type: 'object',
-        properties: {
-          slotId: { type: 'string' },
-        },
-      },
-    },
-  },
-];
 
 vi.mock('@/lib/ai/tools', () => ({
-  ALL_TOOLS: mockAllTools,
-  executeTool: mockExecuteTool,
+  ALL_TOOLS: [
+    {
+      type: 'function',
+      function: {
+        name: 'searchAvailableSlots',
+        description: 'Search for available lesson slots',
+        parameters: {
+          type: 'object',
+          properties: {
+            date: { type: 'string' },
+            subject: { type: 'string' },
+          },
+        },
+      },
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'createReservation',
+        description: 'Create a reservation',
+        parameters: {
+          type: 'object',
+          properties: {
+            slotId: { type: 'string' },
+          },
+        },
+      },
+    },
+  ],
+  executeTool: (...args: any[]) => mockExecuteTool(...args),
 }));
 
 // Mock auth middleware
-const mockWithAuth = vi.fn((handler: any) => async (request: NextRequest) => {
-  // Simulate auth by adding user context
-  return handler({
-    request,
-    user: {
-      id: 'test-user-id',
-      clerkId: 'test-clerk-id',
-      role: 'student'
-    }
-  });
-});
-
 vi.mock('@/lib/middleware/with-auth', () => ({
-  withAuth: mockWithAuth,
+  withAuth: (handler: any) => async (request: any) => {
+    // Simulate auth by adding user context
+    return handler({
+      request,
+      user: {
+        id: 'test-user-id',
+        clerkId: 'test-clerk-id',
+        role: 'student'
+      }
+    });
+  },
 }));
 
 // Mock API response helpers
@@ -92,6 +88,9 @@ vi.mock('@/lib/api-response', () => ({
     }
   ),
 }));
+
+// Import after all mocks are set up
+import { POST, GET } from '@/app/api/ai/intent/route';
 
 describe('AI Intent API Integration', () => {
   beforeEach(() => {

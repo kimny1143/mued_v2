@@ -49,15 +49,19 @@ vi.mock('@/db', () => ({
 }));
 
 // Mock Drizzle ORM functions
-vi.mock('drizzle-orm', () => ({
-  eq: (field: any, value: any) => ({ field, value, op: 'eq' }),
-  and: (...conditions: any[]) => ({ conditions, op: 'and' }),
-}));
+vi.mock('drizzle-orm', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('drizzle-orm')>();
+  return {
+    ...actual,
+    eq: (field: any, value: any) => ({ field, value, op: 'eq' }),
+    and: (...conditions: any[]) => ({ conditions, op: 'and' }),
+  };
+});
 
 // Mock the learning tracker calculator
 const mockCalculateLearningMetrics = vi.fn();
 vi.mock('@/lib/metrics/learning-tracker', () => ({
-  calculateLearningMetrics: mockCalculateLearningMetrics,
+  calculateLearningMetrics: (...args: any[]) => mockCalculateLearningMetrics(...args),
 }));
 
 // Mock lib/auth
@@ -65,8 +69,8 @@ const mockGetAuthenticatedUserWithE2E = vi.fn();
 const mockIsE2ETestMode = vi.fn();
 
 vi.mock('@/lib/auth', () => ({
-  getAuthenticatedUserWithE2E: mockGetAuthenticatedUserWithE2E,
-  isE2ETestMode: mockIsE2ETestMode,
+  getAuthenticatedUserWithE2E: (...args: any[]) => mockGetAuthenticatedUserWithE2E(...args),
+  isE2ETestMode: (...args: any[]) => mockIsE2ETestMode(...args),
 }));
 
 describe('Save Session API', () => {
@@ -91,8 +95,21 @@ describe('Save Session API', () => {
       ],
     });
 
-    // Reset database mock behavior
+    // Reset database mock behavior and re-setup chains
+    mockSelect.mockReturnValue({ from: mockFrom });
+    mockFrom.mockReturnValue({ where: mockWhere });
+    mockWhere.mockReturnValue({ limit: mockLimit });
     mockLimit.mockResolvedValue([]);
+
+    mockInsert.mockReturnValue({ values: mockValues });
+    mockValues.mockResolvedValue([{
+      id: 'test-metric-id',
+      userId: testUserId,
+      materialId: 'test-material',
+    }]);
+
+    mockUpdate.mockReturnValue({ set: mockSet });
+    mockSet.mockReturnValue({ where: mockWhere });
   });
 
   describe('Authentication', () => {
