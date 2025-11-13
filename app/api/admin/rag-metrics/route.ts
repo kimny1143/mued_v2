@@ -76,7 +76,7 @@ export const GET = withAdminAuth(async ({ request }) => {
     const [metrics] = await metricsQuery;
 
     // Fetch historical metrics for trend analysis
-    const historyQuery = db
+    let historyQuery = db
       .select()
       .from(ragMetricsHistory)
       .orderBy(desc(ragMetricsHistory.date))
@@ -84,7 +84,7 @@ export const GET = withAdminAuth(async ({ request }) => {
       .offset(offset);
 
     if (startDate) {
-      historyQuery.where(
+      historyQuery = historyQuery.where(
         and(
           gte(ragMetricsHistory.date, new Date(startDate)),
           endDate ? lte(ragMetricsHistory.date, new Date(endDate)) : sql`true`
