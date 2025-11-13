@@ -124,12 +124,26 @@ jobs:
           NEXT_PUBLIC_APP_URL: "http://localhost:3000"
           FIGMA_ACCESS_TOKEN: "figd_mock_figma_token"
 
+      - name: Verify build output
+        run: |
+          echo "Checking build output..."
+          if [ ! -d ".next" ]; then
+            echo "❌ ERROR: .next directory not found!"
+            exit 1
+          fi
+          echo "✅ .next directory exists"
+          ls -la .next/
+          echo ""
+          echo "Directory size:"
+          du -sh .next/
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-output
           path: .next/
           retention-days: 1
+          if-no-files-found: error
 
   # ============================================
   # STAGE 4: E2E Tests (PR only, 5-10 minutes)
