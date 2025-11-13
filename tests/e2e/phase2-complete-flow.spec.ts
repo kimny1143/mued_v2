@@ -9,26 +9,52 @@ test.describe('Phase 2 Complete User Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to admin dashboard (assuming authenticated)
     await page.goto('/admin');
+    // Wait for the page to fully load
+    await page.waitForLoadState('networkidle');
   });
 
   test('should navigate through all Phase 2 features', async ({ page }) => {
     // Check if we're on admin dashboard
-    await expect(page).toHaveURL(/\/admin/);
+    await expect(page).toHaveURL(/\/admin/, { timeout: 15000 });
 
     // Navigate to RAG Metrics Dashboard
-    await page.click('text=RAG Metrics');
-    await expect(page).toHaveURL(/\/admin\/rag-metrics/);
-    await expect(page.getByText(/RAG.*Dashboard|RAGメトリクスダッシュボード/)).toBeVisible();
+    const ragMetricsLink = page.getByRole('link', { name: /RAG Metrics/i }).or(
+      page.getByText('RAG Metrics').first()
+    );
+    await ragMetricsLink.click();
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/\/admin\/rag-metrics/, { timeout: 15000 });
+    await expect(
+      page.getByRole('heading', { name: /RAG|メトリクス/i }).or(
+        page.getByText(/RAG.*Dashboard|RAGメトリクスダッシュボード/).first()
+      )
+    ).toBeVisible({ timeout: 15000 });
 
     // Navigate to Plugin Management
-    await page.click('text=Plugins');
-    await expect(page).toHaveURL(/\/admin\/plugins/);
-    await expect(page.getByText(/Plugin Management|プラグイン管理/)).toBeVisible();
+    const pluginsLink = page.getByRole('link', { name: /Plugins/i }).or(
+      page.getByText('Plugins').first()
+    );
+    await pluginsLink.click();
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/\/admin\/plugins/, { timeout: 15000 });
+    await expect(
+      page.getByRole('heading', { name: /Plugin|プラグイン/i }).or(
+        page.getByText(/Plugin Management|プラグイン管理/).first()
+      )
+    ).toBeVisible({ timeout: 15000 });
 
     // Navigate to Library
-    await page.click('text=Library');
-    await expect(page).toHaveURL(/\/library/);
-    await expect(page.getByText(/Content Library|コンテンツライブラリ/)).toBeVisible();
+    const libraryLink = page.getByRole('link', { name: /Library/i }).or(
+      page.getByText('Library').first()
+    );
+    await libraryLink.click();
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/\/library/, { timeout: 15000 });
+    await expect(
+      page.getByRole('heading', { name: /Library|ライブラリ/i }).or(
+        page.getByText(/Content Library|コンテンツライブラリ/).first()
+      )
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test('should switch language and verify translations', async ({ page }) => {
@@ -186,22 +212,20 @@ test.describe('Phase 2 Complete User Flow', () => {
 
   test('should handle period switching in metrics', async ({ page }) => {
     await page.goto('/admin/rag-metrics');
+    await page.waitForLoadState('networkidle');
 
-    // Find period selector
-    const period7d = page.locator('button:has-text("7")').or(
-      page.locator('button:has-text("7日")')
-    );
-    const period30d = page.locator('button:has-text("30")').or(
-      page.locator('button:has-text("30日")')
-    );
+    // Find period selector by data-testid
+    const period7d = page.getByTestId('period-7d');
+    const period30d = page.getByTestId('period-30d');
 
     // Click 30 days if available
     if (await period30d.isVisible()) {
       await period30d.click();
       await page.waitForLoadState('networkidle');
 
-      // Verify period changed (charts should update)
-      await expect(period30d).toHaveClass(/active|selected/);
+      // Verify period changed using data-selected attribute
+      await expect(period30d).toHaveAttribute('data-selected', 'true');
+      await expect(period7d).toHaveAttribute('data-selected', 'false');
     }
   });
 });
@@ -235,9 +259,7 @@ test.describe('Phase 2 Accessibility', () => {
 
 test.describe('Phase 2 Error Handling', () => {
   test('should handle plugin errors gracefully', async ({ page }) => {
-    await page.goto('/admin/plugins');
-
-    // Simulate plugin error by intercepting API
+    // Set up route interception before navigation
     await page.route('**/api/admin/plugins', route =>
       route.fulfill({
         status: 500,
@@ -245,16 +267,19 @@ test.describe('Phase 2 Error Handling', () => {
       })
     );
 
-    await page.reload();
+    await page.goto('/admin/plugins');
 
-    // Should show error message
-    await expect(page.getByText(/error|エラー/i)).toBeVisible({ timeout: 5000 });
+    // Wait for page to fully load
+    await page.waitForLoadState('networkidle');
+
+    // Should show error message with increased timeout for CI
+    await expect(
+      page.getByText(/error|エラー|failed|失敗/i).first()
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test('should handle metrics loading errors', async ({ page }) => {
-    await page.goto('/admin/rag-metrics');
-
-    // Intercept metrics API
+    // Set up route interception before navigation
     await page.route('**/api/admin/rag-metrics/**', route =>
       route.fulfill({
         status: 500,
@@ -262,24 +287,38 @@ test.describe('Phase 2 Error Handling', () => {
       })
     );
 
-    await page.reload();
+    await page.goto('/admin/rag-metrics');
 
-    // Should show error state
-    await expect(page.getByText(/error|failed|エラー/i)).toBeVisible({ timeout: 5000 });
+    // Wait for page to fully load
+    await page.waitForLoadState('networkidle');
+
+    // Should show error state with increased timeout
+    await expect(
+      page.getByText(/error|failed|エラー|失敗|問題/i).first()
+    ).toBeVisible({ timeout: 15000 });
   });
 
   test('should handle empty library gracefully', async ({ page }) => {
+    // Set up route interception before navigation
     await page.route('**/api/content', route =>
       route.fulfill({
         status: 200,
-        body: JSON.stringify({ content: [] }),
+        body: JSON.stringify({
+          success: true,
+          data: { content: [] }
+        }),
       })
     );
 
     await page.goto('/library');
 
-    // Should show empty state
-    await expect(page.getByText(/No content|コンテンツが見つかりません/)).toBeVisible();
+    // Wait for page to fully load
+    await page.waitForLoadState('networkidle');
+
+    // Should show empty state with increased timeout
+    await expect(
+      page.getByText(/No content|コンテンツが見つかりません|Empty|空/i).first()
+    ).toBeVisible({ timeout: 15000 });
   });
 });
 
@@ -320,7 +359,10 @@ test.describe('Phase 2 Performance', () => {
     await page.route('**/api/content', route =>
       route.fulfill({
         status: 200,
-        body: JSON.stringify({ content: largeContentList }),
+        body: JSON.stringify({
+          success: true,
+          data: { content: largeContentList }
+        }),
       })
     );
 

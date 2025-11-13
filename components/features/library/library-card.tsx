@@ -53,7 +53,10 @@ export function LibraryCard({ content }: LibraryCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+    <div
+      className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+      data-testid="library-card"
+    >
       {/* Thumbnail */}
       {content.thumbnail && (
         <div className="aspect-video bg-gray-100 overflow-hidden">

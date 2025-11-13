@@ -22,6 +22,7 @@ export function LanguageSwitcher() {
       onClick={toggleLocale}
       className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
       aria-label="Switch language"
+      data-testid="language-switcher"
     >
       <Languages className="w-4 h-4" />
       {mounted && <span>{locale === 'en' ? 'EN' : '日本語'}</span>}

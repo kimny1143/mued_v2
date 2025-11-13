@@ -56,6 +56,7 @@ export function PluginList({ plugins, checkingHealth, onCheckHealth }: PluginLis
           <div
             key={plugin.source}
             className="bg-white rounded-lg border border-gray-200 p-6 hover:border-[var(--color-primary)] transition-colors"
+            data-testid="plugin-card"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-start gap-4">

@@ -94,6 +94,8 @@ export function RAGMetricsHistory() {
         <h2 className="text-xl font-bold text-[var(--color-text-primary)]">{t.ragMetrics.historical.title}</h2>
         <div className="flex gap-2">
           <button
+            data-testid="period-7d"
+            data-selected={selectedView === '7d'}
             onClick={() => setSelectedView('7d')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               selectedView === '7d'
@@ -104,6 +106,8 @@ export function RAGMetricsHistory() {
             {t.ragMetrics.historical.period7d}
           </button>
           <button
+            data-testid="period-30d"
+            data-selected={selectedView === '30d'}
             onClick={() => setSelectedView('30d')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               selectedView === '30d'
