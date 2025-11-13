@@ -66,12 +66,25 @@ export function useApiFetch<T>(
     setError(null);
 
     try {
-      const response = await apiClient.get<{ success: boolean; data: T }>(url);
-      // Unwrap apiSuccess response: { success: true, data: T } -> T
-      if (response.data.success && response.data.data !== undefined) {
-        setData(response.data.data);
+      const response = await apiClient.get<T | { success: boolean; data: T }>(url);
+
+      // Check if response is in apiSuccess format: { success: true, data: T }
+      const responseData = response.data as any;
+      if (
+        typeof responseData === 'object' &&
+        responseData !== null &&
+        'success' in responseData &&
+        'data' in responseData
+      ) {
+        // apiSuccess format - unwrap the data
+        if (responseData.success && responseData.data !== undefined) {
+          setData(responseData.data);
+        } else {
+          throw new Error('API returned success: false');
+        }
       } else {
-        throw new Error('API returned success: false');
+        // Legacy format - use response data directly
+        setData(response.data as T);
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(getErrorMessage(err));
@@ -123,12 +136,25 @@ export function useApiPost<TResponse, TPayload = unknown>(url: string) {
       setError(null);
 
       try {
-        const response = await apiClient.post<{ success: boolean; data: TResponse }>(url, payload);
-        // Unwrap apiSuccess response: { success: true, data: TResponse } -> TResponse
-        if (response.data.success && response.data.data !== undefined) {
-          return response.data.data;
+        const response = await apiClient.post<TResponse | { success: boolean; data: TResponse }>(url, payload);
+
+        // Check if response is in apiSuccess format: { success: true, data: TResponse }
+        const responseData = response.data as any;
+        if (
+          typeof responseData === 'object' &&
+          responseData !== null &&
+          'success' in responseData &&
+          'data' in responseData
+        ) {
+          // apiSuccess format - unwrap the data
+          if (responseData.success && responseData.data !== undefined) {
+            return responseData.data;
+          } else {
+            throw new Error('API returned success: false');
+          }
         } else {
-          throw new Error('API returned success: false');
+          // Legacy format - use response data directly
+          return response.data as TResponse;
         }
       } catch (err) {
         const error = err instanceof Error ? err : new Error(getErrorMessage(err));
