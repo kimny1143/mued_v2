@@ -113,7 +113,7 @@ describe('Share to Library API', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.contentId).toBe('material-material-123');
+      expect(data.data.contentId).toBe('material-material-123');
       expect(data.message).toBe('Material shared to Library successfully');
     });
 

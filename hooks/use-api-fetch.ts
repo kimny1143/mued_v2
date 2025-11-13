@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useApiClient, getErrorMessage } from '@/lib/api-client';
+import { logger } from '@/lib/utils/logger';
 
 export interface UseApiFetchOptions {
   /**
@@ -53,6 +55,7 @@ export function useApiFetch<T>(
   options: UseApiFetchOptions = {}
 ): UseApiFetchResult<T> {
   const { manual = false, dependencies = [] } = options;
+  const apiClient = useApiClient();
 
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -63,25 +66,34 @@ export function useApiFetch<T>(
     setError(null);
 
     try {
-      const response = await fetch(url);
+      const response = await apiClient.get<T | { success: boolean; data: T }>(url);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || `HTTP ${response.status}: ${response.statusText}`
-        );
+      // Check if response is in apiSuccess format: { success: true, data: T }
+      const responseData = response.data as any;
+      if (
+        typeof responseData === 'object' &&
+        responseData !== null &&
+        'success' in responseData &&
+        'data' in responseData
+      ) {
+        // apiSuccess format - unwrap the data
+        if (responseData.success && responseData.data !== undefined) {
+          setData(responseData.data);
+        } else {
+          throw new Error('API returned success: false');
+        }
+      } else {
+        // Legacy format - use response data directly
+        setData(response.data as T);
       }
-
-      const json = await response.json();
-      setData(json);
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error occurred');
+      const error = err instanceof Error ? err : new Error(getErrorMessage(err));
       setError(error);
-      console.error('Fetch error:', error);
+      logger.error('Fetch error:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [url]);
+  }, [apiClient, url]);
 
   useEffect(() => {
     if (!manual) {
@@ -114,6 +126,7 @@ export function useApiFetch<T>(
  * ```
  */
 export function useApiPost<TResponse, TPayload = unknown>(url: string) {
+  const apiClient = useApiClient();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -123,33 +136,36 @@ export function useApiPost<TResponse, TPayload = unknown>(url: string) {
       setError(null);
 
       try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
+        const response = await apiClient.post<TResponse | { success: boolean; data: TResponse }>(url, payload);
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.error || `HTTP ${response.status}: ${response.statusText}`
-          );
+        // Check if response is in apiSuccess format: { success: true, data: TResponse }
+        const responseData = response.data as any;
+        if (
+          typeof responseData === 'object' &&
+          responseData !== null &&
+          'success' in responseData &&
+          'data' in responseData
+        ) {
+          // apiSuccess format - unwrap the data
+          if (responseData.success && responseData.data !== undefined) {
+            return responseData.data;
+          } else {
+            throw new Error('API returned success: false');
+          }
+        } else {
+          // Legacy format - use response data directly
+          return response.data as TResponse;
         }
-
-        const json = await response.json();
-        return json;
       } catch (err) {
-        const error = err instanceof Error ? err : new Error('Unknown error occurred');
+        const error = err instanceof Error ? err : new Error(getErrorMessage(err));
         setError(error);
-        console.error('Post error:', error);
+        logger.error('Post error:', error);
         return null;
       } finally {
         setIsLoading(false);
       }
     },
-    [url]
+    [apiClient, url]
   );
 
   return {

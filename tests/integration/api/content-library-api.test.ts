@@ -43,7 +43,18 @@ vi.mock('@/lib/plugins/note/note-content-fetcher', () => ({
   })),
 }));
 
-// Mock authentication
+// Mock Clerk authentication
+const mockAuth = vi.fn();
+
+vi.mock('@clerk/nextjs/server', async () => {
+  const actual = await vi.importActual('@clerk/nextjs/server');
+  return {
+    ...actual,
+    auth: () => mockAuth(),
+  };
+});
+
+// Mock authentication (legacy)
 const mockGetAuthenticatedUserWithE2E = vi.fn();
 const mockIsE2ETestMode = vi.fn();
 
@@ -119,7 +130,12 @@ describe('Content Library API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Setup default auth
+    // Setup Clerk auth mock - must match withAuth's auth() structure
+    mockAuth.mockReturnValue({
+      userId: 'user-123',
+    });
+
+    // Setup default auth (legacy)
     mockIsE2ETestMode.mockReturnValue(false);
     mockGetAuthenticatedUserWithE2E.mockResolvedValue({
       id: 'user-123',
@@ -417,9 +433,8 @@ describe('Content Library API', () => {
     });
 
     it('should return 401 for unauthenticated requests', async () => {
-      mockGetAuthenticatedUserWithE2E.mockRejectedValueOnce(
-        new Error('Unauthorized: No valid session found')
-      );
+      // Mock unauthenticated state
+      mockAuth.mockReturnValue({ userId: null });
 
       const request = new NextRequest('http://localhost:3000/api/content', {
         method: 'GET',
@@ -428,9 +443,9 @@ describe('Content Library API', () => {
       const response = await GET(request);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('Internal server error');
+      expect(data.error).toContain('Unauthorized');
     });
 
     it('should handle empty results gracefully', async () => {
@@ -530,9 +545,8 @@ describe('Content Library API', () => {
     });
 
     it('should return 401 for unauthenticated POST requests', async () => {
-      mockGetAuthenticatedUserWithE2E.mockRejectedValueOnce(
-        new Error('Unauthorized: No valid session found')
-      );
+      // Mock unauthenticated state
+      mockAuth.mockReturnValue({ userId: null });
 
       const request = new NextRequest('http://localhost:3000/api/content', {
         method: 'POST',
@@ -542,8 +556,9 @@ describe('Content Library API', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
+      expect(data.error).toContain('Unauthorized');
     });
   });
 

@@ -11,6 +11,7 @@ import {
   type RagContentItem,
   type RagSearchParams,
 } from '@/lib/plugins/rag-plugin-registry';
+import { logger } from '@/lib/utils/logger';
 
 describe('RagPluginRegistry', () => {
   let registry: RagPluginRegistry;
@@ -60,7 +61,7 @@ describe('RagPluginRegistry', () => {
     });
 
     it('should log warning when overwriting existing plugin', () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       const plugin: RagPluginDescriptor = {
         name: 'Test',
@@ -84,11 +85,11 @@ describe('RagPluginRegistry', () => {
       registry.register('test', plugin);
       registry.register('test', plugin); // Overwrite
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(loggerSpy).toHaveBeenCalledWith(
         expect.stringContaining('Overwriting existing plugin')
       );
 
-      consoleSpy.mockRestore();
+      loggerSpy.mockRestore();
     });
   });
 
@@ -451,15 +452,15 @@ describe('RagPluginFactory', () => {
     });
 
     it('should log initialization message', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const loggerSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {});
 
       factory.initializeStandardPlugins();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(loggerSpy).toHaveBeenCalledWith(
         expect.stringContaining('Standard plugins initialized')
       );
 
-      consoleSpy.mockRestore();
+      loggerSpy.mockRestore();
     });
   });
 
@@ -605,16 +606,16 @@ describe('RagPluginFactory', () => {
     });
 
     it('should skip non-existent sources', async () => {
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       const results = await factory.aggregateContent(['non-existent']);
 
       expect(results).toEqual([]);
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(loggerSpy).toHaveBeenCalledWith(
         expect.stringContaining('not found')
       );
 
-      consoleSpy.mockRestore();
+      loggerSpy.mockRestore();
     });
 
     it('should support search parameters', async () => {

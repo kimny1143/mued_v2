@@ -17,19 +17,81 @@ const mockOrderBy = vi.fn();
 const mockLimit = vi.fn();
 const mockOffset = vi.fn();
 
+// Sample data for tests
+const sampleHistoryData = [
+  {
+    id: 'history-1',
+    date: new Date('2024-01-15'),
+    citationRate: '75.5',
+    latencyP50Ms: '1200',
+    latencyP95Ms: '2500',
+    costPerAnswer: '2.8',
+    totalQueries: 1500,
+    successRate: '98.5',
+    createdAt: new Date('2024-01-15T10:00:00Z'),
+    updatedAt: new Date('2024-01-15T10:00:00Z'),
+  },
+  {
+    id: 'history-2',
+    date: new Date('2024-01-14'),
+    citationRate: '72.3',
+    latencyP50Ms: '1300',
+    latencyP95Ms: '2600',
+    costPerAnswer: '2.9',
+    totalQueries: 1450,
+    successRate: '97.8',
+    createdAt: new Date('2024-01-14T10:00:00Z'),
+    updatedAt: new Date('2024-01-14T10:00:00Z'),
+  },
+  {
+    id: 'history-3',
+    date: new Date('2024-01-13'),
+    citationRate: '73.8',
+    latencyP50Ms: '1250',
+    latencyP95Ms: '2550',
+    costPerAnswer: '2.85',
+    totalQueries: 1480,
+    successRate: '98.2',
+    createdAt: new Date('2024-01-13T10:00:00Z'),
+    updatedAt: new Date('2024-01-13T10:00:00Z'),
+  },
+];
+
+const sampleMetricsData = [
+  {
+    totalQueries: 100,
+    avgCitationRate: '75.5',
+    avgLatencyMs: '1250',
+    avgCostJpy: '2.85',
+    avgRelevanceScore: '88.5',
+  },
+];
+
 // Setup chained mock functions
 const setupMockChain = () => {
   mockSelect.mockReturnValue({ from: mockFrom });
-  mockFrom.mockReturnValue({ where: mockWhere });
+  mockFrom.mockReturnValue({
+    where: mockWhere,
+    orderBy: mockOrderBy  // Add orderBy directly to from()
+  });
   mockWhere.mockReturnValue({
     orderBy: mockOrderBy,
-    limit: mockLimit
+    limit: mockLimit,
+    then: (resolve: any) => resolve(sampleHistoryData)  // Make .where() awaitable for history query
   });
   mockOrderBy.mockReturnValue({
     limit: mockLimit,
-    offset: mockOffset
+    offset: mockOffset,
+    where: mockWhere  // Support conditional .where() after .orderBy()
   });
-  mockLimit.mockReturnValue({ offset: mockOffset });
+  mockLimit.mockReturnValue({
+    offset: mockOffset,
+    where: mockWhere  // Support conditional .where() after .limit()
+  });
+  mockOffset.mockReturnValue({
+    where: mockWhere,  // Support conditional .where() after .offset()
+    then: (resolve: any) => resolve(sampleHistoryData)  // Make final chain awaitable
+  });
 };
 
 // Mock the database
@@ -89,61 +151,17 @@ vi.mock('@clerk/nextjs/server', async () => {
 });
 
 describe('Admin RAG Metrics API', () => {
-  const sampleHistoryData = [
-    {
-      id: 'history-1',
-      date: new Date('2024-01-15'),
-      citationRate: '75.5',
-      latencyP50Ms: '1200',
-      latencyP95Ms: '2500',
-      costPerAnswer: '2.8',
-      totalQueries: 1500,
-      successRate: '98.5',
-      createdAt: new Date('2024-01-15T10:00:00Z'),
-      updatedAt: new Date('2024-01-15T10:00:00Z'),
-    },
-    {
-      id: 'history-2',
-      date: new Date('2024-01-14'),
-      citationRate: '72.3',
-      latencyP50Ms: '1300',
-      latencyP95Ms: '2600',
-      costPerAnswer: '2.9',
-      totalQueries: 1450,
-      successRate: '97.8',
-      createdAt: new Date('2024-01-14T10:00:00Z'),
-      updatedAt: new Date('2024-01-14T10:00:00Z'),
-    },
-    {
-      id: 'history-3',
-      date: new Date('2024-01-13'),
-      citationRate: '73.8',
-      latencyP50Ms: '1250',
-      latencyP95Ms: '2550',
-      costPerAnswer: '2.85',
-      totalQueries: 1480,
-      successRate: '98.2',
-      createdAt: new Date('2024-01-13T10:00:00Z'),
-      updatedAt: new Date('2024-01-13T10:00:00Z'),
-    },
-  ];
-
-  const sampleMetricsData = [
-    {
-      totalQueries: 100,
-      avgCitationRate: '75.5',
-      avgLatencyMs: '1250',
-      avgCostJpy: '2.85',
-      avgRelevanceScore: '88.5',
-    },
-  ];
-
   beforeEach(() => {
     vi.clearAllMocks();
     setupMockChain();
 
-    // Default mock returns
-    mockAuth.mockReturnValue({ userId: 'admin-user-123' });
+    // Default mock returns - must match withAdminAuth's sessionClaims structure
+    mockAuth.mockReturnValue({
+      userId: 'admin-user-123',
+      sessionClaims: {
+        metadata: { role: 'admin' }
+      }
+    });
     mockGetUserById.mockResolvedValue({
       id: 'admin-user-123',
       publicMetadata: { role: 'admin' },
@@ -152,16 +170,16 @@ describe('Admin RAG Metrics API', () => {
 
   describe('GET /api/admin/rag-metrics', () => {
     it('should fetch metrics and SLO status for authenticated admin', async () => {
-      // Setup mock data
+      // Setup mock data - create Promise-like query builder
       mockSelect.mockImplementation((fields) => {
         if (fields) {
-          // This is the metrics query
-          const result = {
-            from: () => ({
-              where: () => Promise.resolve(sampleMetricsData)
-            })
+          // This is the metrics query - returns a Promise-like object
+          const metricsQueryBuilder = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockReturnThis(),
+            then: (resolve: any) => resolve(sampleMetricsData),
           };
-          return result;
+          return metricsQueryBuilder;
         }
         // This is the history query
         return { from: mockFrom };
@@ -197,11 +215,12 @@ describe('Admin RAG Metrics API', () => {
 
       mockSelect.mockImplementation((fields) => {
         if (fields) {
-          return {
-            from: () => ({
-              where: () => Promise.resolve(metricsWithGoodSLO)
-            })
+          const metricsQueryBuilder = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockReturnThis(),
+            then: (resolve: any) => resolve(metricsWithGoodSLO),
           };
+          return metricsQueryBuilder;
         }
         return { from: mockFrom };
       });
@@ -235,11 +254,12 @@ describe('Admin RAG Metrics API', () => {
 
       mockSelect.mockImplementation((fields) => {
         if (fields) {
-          return {
-            from: () => ({
-              where: () => Promise.resolve(metricsWithBadSLO)
-            })
+          const metricsQueryBuilder = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockReturnThis(),
+            then: (resolve: any) => resolve(metricsWithBadSLO),
           };
+          return metricsQueryBuilder;
         }
         return { from: mockFrom };
       });
@@ -261,31 +281,37 @@ describe('Admin RAG Metrics API', () => {
     });
 
     it('should calculate trends for the last 7 days vs previous 7 days', async () => {
-      // Create 14 days of history data
+      // Create 14 days of history data with improving trend
+      // Most recent dates (i=0-6) should have BETTER metrics than older dates (i=7-13)
       const last14DaysHistory = Array.from({ length: 14 }, (_, i) => ({
         id: `history-${i}`,
         date: new Date(`2024-01-${30 - i}`),
-        citationRate: String(70 + i * 0.5), // Improving trend
-        latencyP50Ms: String(1500 - i * 10), // Improving trend
-        costPerAnswer: String(3.0 - i * 0.05), // Improving trend
-        totalQueries: 1500 + i * 10,
-        successRate: String(98 + i * 0.1),
+        citationRate: String(83 - i * 0.5), // i=0: 83, i=6: 80, i=7: 79.5, i=13: 76.5
+        latencyP50Ms: String(1200 + i * 10), // i=0: 1200, i=6: 1260, i=7: 1270, i=13: 1330
+        costPerAnswer: String(2.5 + i * 0.05), // i=0: 2.5, i=6: 2.8, i=7: 2.85, i=13: 3.15
+        totalQueries: 1700 - i * 10, // i=0: 1700, i=6: 1640, i=7: 1630, i=13: 1570
+        successRate: String(99 - i * 0.1), // i=0: 99, i=6: 98.4, i=7: 98.3, i=13: 97.7
         createdAt: new Date(`2024-01-${30 - i}T10:00:00Z`),
         updatedAt: new Date(`2024-01-${30 - i}T10:00:00Z`),
       }));
 
       mockSelect.mockImplementation((fields) => {
         if (fields) {
-          return {
-            from: () => ({
-              where: () => Promise.resolve(sampleMetricsData)
-            })
+          const metricsQueryBuilder = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockReturnThis(),
+            then: (resolve: any) => resolve(sampleMetricsData),
           };
+          return metricsQueryBuilder;
         }
         return { from: mockFrom };
       });
 
-      mockOffset.mockResolvedValue(last14DaysHistory);
+      // Use proper chain mock instead of mockResolvedValue
+      mockOffset.mockReturnValue({
+        where: mockWhere,
+        then: (resolve: any) => resolve(last14DaysHistory),
+      });
 
       const request = new NextRequest('http://localhost:3000/api/admin/rag-metrics', {
         method: 'GET',
@@ -306,18 +332,29 @@ describe('Admin RAG Metrics API', () => {
     });
 
     it('should filter metrics by date range', async () => {
+      const filteredHistory = sampleHistoryData.slice(0, 2);
+
       mockSelect.mockImplementation((fields) => {
         if (fields) {
-          return {
-            from: () => ({
-              where: () => Promise.resolve(sampleMetricsData)
-            })
+          const metricsQueryBuilder = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockReturnThis(),
+            then: (resolve: any) => resolve(sampleMetricsData),
           };
+          return metricsQueryBuilder;
         }
         return { from: mockFrom };
       });
 
-      mockOffset.mockResolvedValue(sampleHistoryData.slice(0, 2));
+      // Override mockWhere to support: .where().orderBy().limit().offset()
+      mockWhere.mockReturnValue({
+        orderBy: mockOrderBy,
+      });
+
+      // Override mockOffset to return filtered data
+      mockOffset.mockReturnValue({
+        then: (resolve: any) => resolve(filteredHistory),
+      });
 
       const request = new NextRequest(
         'http://localhost:3000/api/admin/rag-metrics?startDate=2024-01-14T00:00:00Z&endDate=2024-01-15T23:59:59Z',
@@ -334,18 +371,25 @@ describe('Admin RAG Metrics API', () => {
     });
 
     it('should support pagination with limit and offset', async () => {
+      const paginatedHistory = sampleHistoryData.slice(1, 2);
+
       mockSelect.mockImplementation((fields) => {
         if (fields) {
-          return {
-            from: () => ({
-              where: () => Promise.resolve(sampleMetricsData)
-            })
+          const metricsQueryBuilder = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockReturnThis(),
+            then: (resolve: any) => resolve(sampleMetricsData),
           };
+          return metricsQueryBuilder;
         }
         return { from: mockFrom };
       });
 
-      mockOffset.mockResolvedValue(sampleHistoryData.slice(1, 2));
+      // Override mockOffset to return paginated data
+      mockOffset.mockReturnValue({
+        where: mockWhere,
+        then: (resolve: any) => resolve(paginatedHistory)
+      });
 
       const request = new NextRequest(
         'http://localhost:3000/api/admin/rag-metrics?limit=1&offset=1',
@@ -366,10 +410,12 @@ describe('Admin RAG Metrics API', () => {
     });
 
     it('should return 401 for non-admin users', async () => {
-      mockAuth.mockReturnValue({ userId: 'regular-user-123' });
-      mockGetUserById.mockResolvedValue({
-        id: 'regular-user-123',
-        publicMetadata: { role: 'student' },
+      // Non-admin user has different metadata structure
+      mockAuth.mockReturnValue({
+        userId: 'regular-user-123',
+        sessionClaims: {
+          metadata: { role: 'student' }
+        }
       });
 
       const request = new NextRequest('http://localhost:3000/api/admin/rag-metrics', {
@@ -379,9 +425,9 @@ describe('Admin RAG Metrics API', () => {
       const response = await GET(request);
       const data = await response.json();
 
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('Unauthorized');
+      expect(data.error).toContain('Admin access required');
     });
 
     it('should return 401 for unauthenticated requests', async () => {
@@ -451,17 +497,18 @@ describe('Admin RAG Metrics API', () => {
     it('should handle empty results gracefully', async () => {
       mockSelect.mockImplementation((fields) => {
         if (fields) {
-          return {
-            from: () => ({
-              where: () => Promise.resolve([{
-                totalQueries: 0,
-                avgCitationRate: null,
-                avgLatencyMs: null,
-                avgCostJpy: null,
-                avgRelevanceScore: null,
-              }])
-            })
+          const metricsQueryBuilder = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockReturnThis(),
+            then: (resolve: any) => resolve([{
+              totalQueries: 0,
+              avgCitationRate: null,
+              avgLatencyMs: null,
+              avgCostJpy: null,
+              avgRelevanceScore: null,
+            }]),
           };
+          return metricsQueryBuilder;
         }
         return { from: mockFrom };
       });
@@ -487,11 +534,12 @@ describe('Admin RAG Metrics API', () => {
 
       mockSelect.mockImplementation((fields) => {
         if (fields) {
-          return {
-            from: () => ({
-              where: () => Promise.resolve(sampleMetricsData)
-            })
+          const metricsQueryBuilder = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockReturnThis(),
+            then: (resolve: any) => resolve(sampleMetricsData),
           };
+          return metricsQueryBuilder;
         }
         return { from: mockFrom };
       });

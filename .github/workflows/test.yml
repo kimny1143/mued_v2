@@ -124,12 +124,32 @@ jobs:
           NEXT_PUBLIC_APP_URL: "http://localhost:3000"
           FIGMA_ACCESS_TOKEN: "figd_mock_figma_token"
 
+      - name: Verify build output
+        run: |
+          echo "Checking build output..."
+          if [ ! -d ".next" ]; then
+            echo "❌ ERROR: .next directory not found!"
+            exit 1
+          fi
+          echo "✅ .next directory exists"
+          ls -la .next/
+          echo ""
+          echo "Directory size:"
+          du -sh .next/
+
+      - name: Create build archive
+        run: |
+          echo "Creating tar archive to preserve all filenames..."
+          tar -czf build-output.tar.gz .next
+          ls -lh build-output.tar.gz
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-output
-          path: .next/
+          path: build-output.tar.gz
           retention-days: 1
+          if-no-files-found: error
 
   # ============================================
   # STAGE 4: E2E Tests (PR only, 5-10 minutes)
@@ -159,7 +179,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-output
-          path: .next/
+          path: .
+
+      - name: Extract build artifacts
+        run: |
+          echo "Extracting build archive..."
+          tar -xzf build-output.tar.gz
+          rm build-output.tar.gz
+          ls -la .next/
 
       - name: Run E2E tests
         run: npm run test:e2e
@@ -218,7 +245,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-output
-          path: .next/
+          path: .
+
+      - name: Extract build artifacts
+        run: |
+          echo "Extracting build archive..."
+          tar -xzf build-output.tar.gz
+          rm build-output.tar.gz
+          ls -la .next/
 
       - name: Run accessibility tests
         run: npx playwright test tests/e2e/accessibility.spec.ts
@@ -300,7 +334,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-output
-          path: .next/
+          path: .
+
+      - name: Extract build artifacts
+        run: |
+          echo "Extracting build archive..."
+          tar -xzf build-output.tar.gz
+          rm build-output.tar.gz
+          ls -la .next/
 
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v10

@@ -15,6 +15,8 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { InlineLoading } from '@/components/ui/loading-spinner';
 import { InlineError } from '@/components/ui/error-boundary';
 import { useLocale } from '@/lib/i18n/locale-context';
+import { useApiClient, getErrorMessage } from '@/lib/api-client';
+import { logger } from '@/lib/utils/logger';
 
 interface FilterState {
   source: ContentSource | 'all';
@@ -27,6 +29,7 @@ interface FilterState {
 
 export function LibraryContent() {
   const { t } = useLocale();
+  const apiClient = useApiClient();
   const [content, setContent] = useState<UnifiedContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,49 +55,43 @@ export function LibraryContent() {
       setLoading(true);
       setError(null);
 
-      const params = new URLSearchParams({
+      const params: Record<string, string> = {
         source: filters.source,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
         limit: '20',
-      });
+      };
 
       if (debouncedSearch) {
-        params.append('search', debouncedSearch);
+        params.search = debouncedSearch;
       }
       if (filters.category) {
-        params.append('category', filters.category);
+        params.category = filters.category;
       }
       if (filters.difficulty) {
-        params.append('difficulty', filters.difficulty);
+        params.difficulty = filters.difficulty;
       }
 
-      const response = await fetch(`/api/content?${params.toString()}`);
+      const apiResponse = await apiClient.get<{ success: boolean; data: ContentFetchResult }>('/api/content', { params });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch content');
-      }
-
-      const apiResponse = await response.json();
-
-      // Handle wrapped API response
-      if (apiResponse.success && apiResponse.data) {
-        const result: ContentFetchResult = apiResponse.data;
+      // Unwrap apiSuccess response
+      if (apiResponse.success && apiResponse.data.success && apiResponse.data.data) {
+        const result: ContentFetchResult = apiResponse.data.data;
         if (result.success && result.content && Array.isArray(result.content)) {
           setContent(result.content);
         } else {
           setError(result.error || 'No content available');
         }
       } else {
-        setError(apiResponse.error || 'Failed to fetch content');
+        setError('Failed to fetch content');
       }
     } catch (err) {
-      console.error('Error fetching library content:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load content');
+      logger.error('Error fetching library content:', err);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [filters.source, filters.category, filters.difficulty, filters.sortBy, filters.sortOrder, debouncedSearch]);
+  }, [apiClient, filters.source, filters.category, filters.difficulty, filters.sortBy, filters.sortOrder, debouncedSearch]);
 
   // Fetch content when filters change (except search uses debounced value)
   useEffect(() => {
