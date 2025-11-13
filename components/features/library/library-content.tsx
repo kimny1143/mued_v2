@@ -72,10 +72,10 @@ export function LibraryContent() {
         params.difficulty = filters.difficulty;
       }
 
-      const apiResponse = await apiClient.get<{ data: ContentFetchResult }>('/api/content', { params });
+      const apiResponse = await apiClient.get<{ success: boolean; data: ContentFetchResult }>('/api/content', { params });
 
-      // Handle wrapped API response
-      if (apiResponse.success && apiResponse.data?.data) {
+      // Unwrap apiSuccess response
+      if (apiResponse.success && apiResponse.data.success && apiResponse.data.data) {
         const result: ContentFetchResult = apiResponse.data.data;
         if (result.success && result.content && Array.isArray(result.content)) {
           setContent(result.content);

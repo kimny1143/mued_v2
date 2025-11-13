@@ -66,8 +66,13 @@ export function useApiFetch<T>(
     setError(null);
 
     try {
-      const response = await apiClient.get<T>(url);
-      setData(response.data);
+      const response = await apiClient.get<{ success: boolean; data: T }>(url);
+      // Unwrap apiSuccess response: { success: true, data: T } -> T
+      if (response.data.success && response.data.data !== undefined) {
+        setData(response.data.data);
+      } else {
+        throw new Error('API returned success: false');
+      }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(getErrorMessage(err));
       setError(error);
@@ -118,8 +123,13 @@ export function useApiPost<TResponse, TPayload = unknown>(url: string) {
       setError(null);
 
       try {
-        const response = await apiClient.post<TResponse>(url, payload);
-        return response.data;
+        const response = await apiClient.post<{ success: boolean; data: TResponse }>(url, payload);
+        // Unwrap apiSuccess response: { success: true, data: TResponse } -> TResponse
+        if (response.data.success && response.data.data !== undefined) {
+          return response.data.data;
+        } else {
+          throw new Error('API returned success: false');
+        }
       } catch (err) {
         const error = err instanceof Error ? err : new Error(getErrorMessage(err));
         setError(error);
