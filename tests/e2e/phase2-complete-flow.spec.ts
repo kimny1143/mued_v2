@@ -212,22 +212,20 @@ test.describe('Phase 2 Complete User Flow', () => {
 
   test('should handle period switching in metrics', async ({ page }) => {
     await page.goto('/admin/rag-metrics');
+    await page.waitForLoadState('networkidle');
 
-    // Find period selector
-    const period7d = page.locator('button:has-text("7")').or(
-      page.locator('button:has-text("7日")')
-    );
-    const period30d = page.locator('button:has-text("30")').or(
-      page.locator('button:has-text("30日")')
-    );
+    // Find period selector by data-testid
+    const period7d = page.getByTestId('period-7d');
+    const period30d = page.getByTestId('period-30d');
 
     // Click 30 days if available
     if (await period30d.isVisible()) {
       await period30d.click();
       await page.waitForLoadState('networkidle');
 
-      // Verify period changed (charts should update)
-      await expect(period30d).toHaveClass(/active|selected/);
+      // Verify period changed using data-selected attribute
+      await expect(period30d).toHaveAttribute('data-selected', 'true');
+      await expect(period7d).toHaveAttribute('data-selected', 'false');
     }
   });
 });
@@ -305,7 +303,10 @@ test.describe('Phase 2 Error Handling', () => {
     await page.route('**/api/content', route =>
       route.fulfill({
         status: 200,
-        body: JSON.stringify({ content: [] }),
+        body: JSON.stringify({
+          success: true,
+          data: { content: [] }
+        }),
       })
     );
 
@@ -358,7 +359,10 @@ test.describe('Phase 2 Performance', () => {
     await page.route('**/api/content', route =>
       route.fulfill({
         status: 200,
-        body: JSON.stringify({ content: largeContentList }),
+        body: JSON.stringify({
+          success: true,
+          data: { content: largeContentList }
+        }),
       })
     );
 
