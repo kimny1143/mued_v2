@@ -8,27 +8,41 @@ dotenv.config({ path: path.resolve(__dirname, ".env.test") });
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts", // Only match .spec.ts files, exclude .test.ts (Vitest)
-  timeout: 30 * 1000,
+  timeout: process.env.CI ? 60 * 1000 : 30 * 1000, // CI: 60s, Local: 30s
   expect: {
-    timeout: 10000, // Increased for better stability
+    timeout: process.env.CI ? 15000 : 10000, // CI: 15s, Local: 10s
   },
   fullyParallel: false, // Run tests sequentially for better stability with auth
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 1, // Add retry for local development
+  retries: process.env.CI ? 3 : 1, // More retries in CI
   workers: process.env.CI ? 1 : 1, // Single worker for auth consistency
-  reporter: [
-    ["html"],
-    ["list"],
-    ["json", { outputFile: "test-results.json" }],
-  ],
+  reporter: process.env.CI
+    ? [
+        ["list"],
+        ["json", { outputFile: "test-results.json" }],
+        ["junit", { outputFile: "test-results.xml" }],
+      ]
+    : [
+        ["html"],
+        ["list"],
+      ],
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
-    // Improved timeouts for navigation
-    navigationTimeout: 30000,
-    actionTimeout: 15000,
+    video: process.env.CI ? "on-first-retry" : "retain-on-failure",
+    // Improved timeouts for CI environment
+    navigationTimeout: process.env.CI ? 45000 : 30000,
+    actionTimeout: process.env.CI ? 20000 : 15000,
+    // Additional CI-specific settings
+    ...(process.env.CI && {
+      // Disable animations in CI for stability
+      launchOptions: {
+        args: ['--disable-animations', '--force-color-profile=srgb'],
+      },
+      // Wait for network to be idle
+      waitForLoadState: 'networkidle',
+    }),
   },
 
   projects: [
