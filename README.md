@@ -39,13 +39,13 @@ MUED LMS v2は、AI技術を活用した革新的なオンライン教育プラ�
 - **データベース**: Neon PostgreSQL 17.5
 - **ORM**: Drizzle ORM
 - **決済**: Stripe
-- **AI**: OpenAI API (GPT-4)
+- **AI**: OpenAI API (GPT-5-mini)
 
 ### インフラ
 - **ホスティング**: Vercel
 - **データベース**: Neon (Serverless PostgreSQL)
 - **ストレージ**: Vercel Blob Storage
-- **CI/CD**: GitHub Actions (予定)
+- **CI/CD**: GitHub Actions
 
 ### 開発ツール
 - **テスト**: Vitest (Unit), Playwright (E2E)
@@ -309,12 +309,34 @@ Proprietary - 株式会社グラスワークス
 
 ## 📈 プロジェクト進捗
 
-- **現在のフェーズ**: MVP開発
-- **実装完了**: 68% (110/162タスク)
-- **本番稼働**: 2025年10月10日〜
-- **次のマイルストーン**: レベニューシェアシステム実装
+**最終更新**: 2025-11-14
 
-詳細は [`docs/COMPREHENSIVE_ANALYSIS_REPORT_2025-10-19.md`](./docs/COMPREHENSIVE_ANALYSIS_REPORT_2025-10-19.md) を参照してください。
+### 最近の主要アップデート
+
+#### ✅ PR #9: API Client Migration Phase 1 (2025-11-13)
+- 統一API Clientの導入（`useApiFetch`, `useApiPost`）
+- エラーハンドリングの標準化
+- 後方互換性の確保
+- 統合テスト: 84/84 passing
+
+#### ✅ PR #11: E2E/Accessibility Test Stabilization (2025-11-14)
+- CI環境でのE2E/Accessibilityテスト安定化
+- Playwright設定の最適化（タイムアウト延長、sequential実行）
+- data-testid属性の追加
+- Mock APIレスポンス形式の統一
+
+### プロジェクト状況
+
+- **現在のフェーズ**: Phase 2 完了、Phase 3 計画中
+- **本番稼働**: 2025年10月10日〜
+- **CI/CD**: 🟢 全テストグリーン化達成
+- **テストカバレッジ**: Unit (243), Component (264), Integration (84), E2E (安定化済み)
+
+### ドキュメント
+
+- **システムアーキテクチャ**: [`docs/architecture/SYSTEM_ARCHITECTURE.md`](./docs/architecture/SYSTEM_ARCHITECTURE.md)
+- **データベース**: [`docs/database/`](./docs/database/)
+- **研究資料**: [`docs/research/`](./docs/research/)
 
 ---
 
