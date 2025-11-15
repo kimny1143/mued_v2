@@ -1,242 +1,122 @@
-# MUED v2 Documentation Guide
+# MUED v2 Documentation
 
-**Last Updated**: 2025年11月7日
-**Production Environment**: ✅ **Active** ([https://mued.jp](https://mued.jp))
-**Current Phase**: Phase 2 - RAG観測とデータ管理層（85%完了）
-**Project Health**: 85/100 🟢 (↑ from 78/100)
-**Documentation Health**: 75/100 🟡 要改善 ([監査レポート](./reports/2025-11-07_documentation-audit.md))
+**Last Updated**: 2025-11-15
+**Status**: Phase 0 - Foundation & Planning
 
 ---
 
-## 🎯 Master Documents (Current Strategy & Implementation)
+## 🚀 Quick Start
 
-### 📌 Unified Strategy Document ⭐️ MASTER
-**[`business/MUED_Unified_Strategy_2025Q4.md`](./business/MUED_Unified_Strategy_2025Q4.md)**
-- **Created**: 2025-10-29 (Latest revision)
-- **Purpose**: Consolidates all strategic decisions from Sep-Oct 2025
-- **Content**: Business pivot from LMS to Creative CMS, two-tier subscription model, 12-month roadmap
-- **Status**: Official strategy document - all other documents should align with this
+### For Developers
+1. [System Architecture](architecture/SYSTEM_ARCHITECTURE.md) - 技術アーキテクチャ概要
+2. [Implementation Plan](architecture/MUED_IMPLEMENTATION_PLAN_2025.md) - 実装計画詳細
+3. [Phase 1 Checklist](implementation/PHASE1_CHECKLIST.md) - 現在進行中のタスク
 
-### 📊 最新レポート 🆕
-
-**[`reports/2025-11-07_current-progress.md`](./reports/2025-11-07_current-progress.md)**
-- **作成日**: 2025-11-07
-- **内容**: Phase 1-5の進捗、MCP実装状況、次のアクション
-- **全体進捗**: 68% (Phase 1完了、Phase 2部分完了)
-
-**[`reports/2025-11-07_documentation-audit.md`](./reports/2025-11-07_documentation-audit.md)** ⭐️
-- **作成日**: 2025-11-07
-- **内容**: ドキュメント監査、整理推奨アクション
-- **ドキュメント健全性**: 75/100 🟡
-- **アクションサマリー**: [`2025-11-07_documentation-audit-summary.md`](./reports/2025-11-07_documentation-audit-summary.md)
-
-### 🔧 開発ワークフロー 🆕
-**[`guides/GIT_WORKTREE_WORKFLOW.md`](./guides/GIT_WORKTREE_WORKFLOW.md)**
-- Git Worktreeによる並行開発手法
-- 1日15-25分の時間節約
-- 緊急修正とPRレビューの効率化
-
-### 📊 Current Sprint Plan
-**[`implementation/phase2-sprint-plan.md`](./implementation/phase2-sprint-plan.md)**
-- **Sprint Period**: 2025-10-30 to 2025-11-12
-- **Focus**: RAG metrics collection, provenance management, SLO monitoring
-- **Success Criteria**: Citation Rate 70%+, P50 latency <1.5s
-
-### 🔧 API Specifications & Status
-**[`api/rag-metrics-api.yaml`](./api/rag-metrics-api.yaml)**
-- OpenAPI 3.0 specification for RAG metrics endpoints
-- Provenance tracking and performance monitoring APIs
-
-**[`_today/API_STANDARDIZATION_STATUS_2025-11-06.md`](./_today/API_STANDARDIZATION_STATUS_2025-11-06.md)** 🆕
-- API標準化の実態: 3/27エンドポイント完了 (11.1%)
-- 優先度付き実装ロードマップ
+### For Project Stakeholders
+1. [MUED企画書251114.md](business/MUED企画書251114.md) - **最重要** Phase 0-4の開発計画
+2. [Unified Strategy](business/MUED_Unified_Strategy_2025Q4.md) - 統合戦略文書
+3. [Roadmap](roadmap.md) - 12ヶ月ロードマップ
 
 ---
 
-## 📂 Documentation Structure
+## 📚 Core Documentation
 
-```
-docs/
-├── README.md                              # This navigation guide
-├── CHANGELOG.md                           # Documentation change history
-│
-├── _today/                                # 🆕 Latest Work & Reports
-│   ├── PROGRESS_REPORT_2025-11-06.md    # Latest progress report
-│   ├── API_STANDARDIZATION_STATUS_2025-11-06.md  # API status audit
-│   ├── DOCUMENTATION_CLEANUP_PLAN_2025-11-06.md  # Cleanup plan
-│   ├── IMPROVEMENT_IMPLEMENTATION_PLAN.md
-│   ├── IMPLEMENTATION_QUICK_REFERENCE.md
-│   ├── IMPLEMENTATION_START_GUIDE.md
-│   └── PROJECT_REVIEW_2025.md
-│
-├── guides/                                # 🆕 Development Guides
-│   ├── GIT_WORKTREE_WORKFLOW.md         # Git Worktree best practices
-│   └── ai-powered-development.md
-│
-├── business/                              # Business Strategy & Planning
-│   ├── MUED_Unified_Strategy_2025Q4.md  # ⭐️ MASTER DOCUMENT
-│   ├── MUED事業計画書_20251029追記.md      # Two-tier subscription model
-│   ├── 株式会社グラスワークス MUEDプロジェクト 事業計画.md
-│   └── archive/                          # Historical business documents
-│
-├── architecture/                          # System Architecture
-│   ├── mvp-architecture.md              # Current MVP architecture
-│   ├── business-logic-specification.md
-│   ├── mcp-feasibility-analysis.md
-│   ├── ci-cd-analysis-and-fixes.md      # 🆕 CI/CD optimization
-│   └── archive/                          # Past architecture designs
-│
-├── database/                              # 🆕 Database Documentation
-│   ├── MIGRATION_GUIDE.md
-│   ├── EXECUTE_MIGRATION.md
-│   ├── MIGRATION_EXECUTION_SUMMARY.md
-│   ├── phase2-migration-guide.md
-│   ├── phase2-schema-review-report.md
-│   ├── PHASE2_IMPLEMENTATION_SUMMARY.md
-│   └── QUICK_REFERENCE.md
-│
-├── deployment/                            # 🆕 Deployment & CI/CD
-│   ├── deployment-checklist.md
-│   ├── github-actions-setup.md
-│   ├── github-actions-env-setup.md
-│   ├── environment-variables.md
-│   └── sentry-setup.md
-│
-├── reports/                               # 🆕 Quality & Audit Reports
-│   ├── CODE_QUALITY_REPORT.md
-│   ├── DOCUMENTATION_AUDIT_REPORT_2025-10-29.md
-│   └── phase2-completion-report.md
-│
-├── implementation/                        # Implementation Plans & Progress
-│   ├── phase2-sprint-plan.md            # ⭐️ CURRENT SPRINT
-│   ├── mvp-implementation-plan.md
-│   └── mvp-checklist.md
-│
-├── api/                                  # API Specifications
-│   └── rag-metrics-api.yaml             # RAG metrics OpenAPI spec
-│
-├── proposals/                            # Active Proposals & Philosophy
-│   ├── MUED_v2_architecture_philosophy_refocus.md
-│   └── archive/                         # Implemented/rejected proposals
-│
-├── testing/                              # Test Strategies & Reports
-│   ├── TEST_STRATEGY.md
-│   └── e2e-test-setup.md
-│
-├── features/                             # Feature Specifications
-│   └── note-materials-integration.md
-│
-├── research/                             # Research & Analysis
-│   └── ai-mentor-matching-research.md
-│
-└── archive/                              # Historical Documents
-    ├── 2025-10-29/
-    ├── 2025-10-27/
-    ├── 2025-10-19/
-    └── 2025-10-18/
-```
+### Philosophy & Strategy
+- [PHILOSOPHY.md](PHILOSOPHY.md) - Difference / Note / Form の3本柱思想
+- [MUED企画書251114.md](business/MUED企画書251114.md) - Phase 0-4 開発計画
+- [Unified Strategy](business/MUED_Unified_Strategy_2025Q4.md) - 2025Q4統合戦略
+- [Roadmap](roadmap.md) - フェーズ別実装ロードマップ
+
+### Architecture
+- [System Architecture](architecture/SYSTEM_ARCHITECTURE.md) - システムアーキテクチャ全体像
+- [Implementation Plan 2025](architecture/MUED_IMPLEMENTATION_PLAN_2025.md) - 詳細実装計画（850行）
+- [Mermaid Diagrams](architecture/MUED_ARCHITECTURE_MERMAID_DIAGRAMS.md) - アーキテクチャ図
+- [Business Logic Specification](architecture/business-logic-specification.md) - ビジネスロジック仕様
+- [Current Architecture (2025-01-11)](architecture/CURRENT_ARCHITECTURE_2025-01-11.md) - 現在の実装状況
+
+### Implementation
+- [Phase 1 Checklist](implementation/PHASE1_CHECKLIST.md) - MUEDnote基盤実装タスク
+- [Phase 2 Sprint Plan](implementation/phase2-sprint-plan.md) - Ear Training MVP計画
+- [Type Safety Migration](implementation/type-safety-migration-guide.md) - 型安全性向上ガイド
 
 ---
 
-## 🚀 Quick Navigation by Task
+## 🛠️ Development Guides
 
-### Current Development Tasks
+### AI Material Generation
+- [OpenAI ABC Technical Guide](development/openai-abc-technical-guide.md) - ABC記譜法生成の技術ガイド
+- [Claude Material Generator Guide](development/claude-material-generator-guide.md) - Claude MCP Serverによる教材生成
+- [OpenAI ABC Generation Guide](features/openai-abc-generation-guide.md) - UI統合ガイド
 
-| Task | Primary Document | Supporting Docs |
-|------|-----------------|-----------------|
-| **Understanding current strategy** | [`MUED_Unified_Strategy_2025Q4.md`](./business/MUED_Unified_Strategy_2025Q4.md) | Business plans |
-| **Phase 2 implementation** | [`phase2-sprint-plan.md`](./implementation/phase2-sprint-plan.md) | RAG metrics API |
-| **Architecture decisions** | [`architecture_philosophy_refocus.md`](./proposals/MUED_v2_architecture_philosophy_refocus.md) | MVP architecture |
-| **Testing approach** | [`TEST_STRATEGY.md`](./testing/TEST_STRATEGY.md) | E2E setup guide |
+### Features
+- [Plugin Management Guide](features/plugin-management-guide.md) - プラグインシステム実装
+- [i18n Implementation Guide](features/i18n-implementation-guide.md) - 多言語対応
 
-### Project Management
+### Workflows
+- [Git Worktree Workflow](guides/GIT_WORKTREE_WORKFLOW.md) - 並行開発ワークフロー
+- [CI/CD Quick Implementation](guides/ci-cd-quick-implementation.md) - CI/CD セットアップ
 
-| Purpose | Document | Update Frequency |
-|---------|----------|------------------|
-| **Strategic direction** | Unified Strategy | Quarterly |
-| **Sprint tracking** | Sprint plans | Bi-weekly |
-| **Progress monitoring** | current-progress.md | Weekly |
-| **Change tracking** | CHANGELOG.md | As needed |
+### Testing
+- [Testing Guide](testing/TESTING_GUIDE.md) - テスト戦略全体
+- [Test Strategy](testing/TEST_STRATEGY.md) - ユニット/E2E/統合テスト
+- [Testing README](testing/README.md) - テスト実行方法
 
----
-
-## 📝 Key Insights from Reorganization (2025-10-29)
-
-### What Changed
-1. **Consolidated Strategy**: Multiple October 27 reports merged into single Unified Strategy document
-2. **Clear Hierarchy**: Master documents clearly marked, supporting docs categorized
-3. **Archive Structure**: Historical documents preserved but moved out of active workspace
-4. **Sprint-based Planning**: Moved from generic trackers to specific sprint plans
-
-### Document Status Classification
-
-#### 🟢 Active (Keep in main folders)
-- Unified Strategy Document (Master)
-- Current sprint plans
-- API specifications
-- Architecture philosophy documents
-- Active implementation guides
-
-#### 🟡 Reference (Keep but mark as historical context)
-- Original business plans (for historical reference)
-- Philosophy documents (valuable for understanding evolution)
-- Research documents (background information)
-
-#### 🔴 Archived (Move to archive folders)
-- October 27 comprehensive reports (superseded by unified strategy)
-- Old implementation trackers (replaced by sprint plans)
-- Duplicate analysis documents
-- Completed checklist documents
+### MCP Servers
+- [MCP README](mcp/README.md) - Model Context Protocol サーバー一覧
+- [MCP Browser Debug](mcp/mcp-browser-debug.md) - MCPサーバーデバッグ方法
 
 ---
 
-## 🔄 Document Lifecycle Management
+## 🚢 Deployment
 
-### Update Schedule
-- **Unified Strategy**: Updated quarterly (next: 2026 Q1)
-- **Sprint Plans**: New document every 2-week sprint
-- **API Specs**: Version bumped with changes
-- **Progress Reports**: Weekly updates during active sprints
-
-### Archival Policy
-1. Documents superseded by newer versions → Archive with date prefix
-2. Completed sprint plans → Archive after sprint completion
-3. Analysis reports → Archive when findings are incorporated into strategy
-4. Keep philosophy and research docs as reference material
-
-### Naming Conventions
-- Strategy documents: `{SCOPE}_Strategy_{YYYY}Q{Q}.md`
-- Sprint plans: `phase{N}-sprint-plan.md`
-- Analysis reports: `{TYPE}_ANALYSIS_{YYYY-MM-DD}.md`
-- Archived files: `archive/{YYYY-MM-DD}/{original_filename}`
+- [Deployment Checklist](deployment/deployment-checklist.md) - デプロイ前チェックリスト
+- [Environment Variables](deployment/environment-variables.md) - 環境変数設定
+- [GitHub Actions Setup](deployment/github-actions-setup.md) - CI/CD パイプライン
 
 ---
 
-## 💡 How to Use This Documentation
+## 📊 Research & Analysis
 
-### For New Team Members
-1. Start with [`MUED_Unified_Strategy_2025Q4.md`](./business/MUED_Unified_Strategy_2025Q4.md)
-2. Review current [`phase2-sprint-plan.md`](./implementation/phase2-sprint-plan.md)
-3. Understand architecture via [`architecture_philosophy_refocus.md`](./proposals/MUED_v2_architecture_philosophy_refocus.md)
-
-### For Daily Development
-1. Check sprint plan for current tasks
-2. Refer to API specs for integration
-3. Update progress in appropriate tracking document
-
-### For Strategic Decisions
-1. Always align with Unified Strategy document
-2. Propose changes via new proposal documents
-3. Archive superseded documents properly
+- [MIDI-LLM Investigation](research/midi-llm-investigation-report.md) - MIDI-LLM統合調査
+- [OpenAI vs Claude Comparison](research/openai-vs-claude-comparison.md) - AIモデル比較分析
+- [Research README](research/README.md) - 調査プロジェクト一覧
 
 ---
 
-## 📞 Document Maintenance Contact
+## 📝 Reports & Progress
 
-**Documentation Owner**: Development Team
-**Review Cycle**: Bi-weekly with sprint planning
-**Major Reviews**: Quarterly with strategy updates
+- [Current Progress (2025-11-07)](reports/2025-11-07_current-progress.md) - 最新進捗レポート
+- [Cleanup Report (2025-11-15)](CLEANUP_FINAL_REPORT_2025-11-15.md) - ドキュメント整理レポート
 
 ---
 
-*This README serves as the central navigation hub for MUED v2 documentation. For detailed content, refer to individual documents. For change history, see [CHANGELOG.md](./CHANGELOG.md).*
+## 📦 Archive
+
+古いドキュメントは `/archive/2025-historical/` に移動されました。
+履歴参照が必要な場合はそちらを確認してください。
+
+---
+
+## 🎯 Current Focus (Phase 0)
+
+**Goal**: Difference / Note / Form 思想の実装基盤構築
+
+**Key Tasks**:
+1. ✅ PHILOSOPHY.md 作成完了
+2. ✅ roadmap.md 作成完了
+3. ✅ ドキュメント整理完了（148→41ファイル）
+4. 🔄 architecture.md の更新（進行中）
+5. ⏳ Phase 1 開発環境セットアップ
+
+**Next Milestone**: Phase 1 - MUEDnote基盤実装（1-3ヶ月）
+
+---
+
+## 📞 Contact & Contributing
+
+- **PR Review Guide**: [PR_REVIEW_GUIDE.md](PR_REVIEW_GUIDE.md)
+- **Changelog**: [CHANGELOG.md](CHANGELOG.md)
+
+---
+
+*このREADMEは整理作業により2025-11-15に大幅に更新されました。*
