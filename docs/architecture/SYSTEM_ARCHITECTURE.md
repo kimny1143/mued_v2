@@ -471,14 +471,261 @@ graph BT
 
 ---
 
+---
+
+## 7. ドメインモデル（Phase 0-4対応）
+
+**説明**: MUED の思想（Difference / Note / Form）に基づくドメインモデルと、各概念の関係性を示します。Phase 0-4の実装計画に沿った設計です。
+
+```mermaid
+graph TD
+    subgraph "MUED Philosophy - 3 Pillars"
+        Difference["🎧 Difference<br/>(耳・差分を聴く)"]
+        Note["📝 Note<br/>(制作・学習ログ)"]
+        Form["🎼 Form<br/>(構造・形式)"]
+    end
+
+    subgraph "Core Domain Models"
+        User["👤 User<br/>(Learner/Mentor)"]
+        Lesson["📚 Lesson"]
+        Material["📄 Material"]
+        LogEntry["📓 LogEntry<br/>(MUEDnote)"]
+    end
+
+    subgraph "Difference Domain (Phase 2)"
+        EarExercise["🎧 EarExercise<br/>(Ear Training)"]
+        EarAttempt["EarAttempt<br/>(試行記録)"]
+        EarProgress["EarProgress<br/>(進捗)"]
+    end
+
+    subgraph "Form Domain (Phase 3)"
+        FormExercise["🎼 FormExercise<br/>(Structure Training)"]
+        FormAnnotation["FormAnnotation<br/>(構造注釈)"]
+        FormAnalysis["FormAnalysis<br/>(AI分析結果)"]
+    end
+
+    subgraph "External Integrations (Phase 4)"
+        Echovna["🎙️ Echovna<br/>(物理空間連携)"]
+        AudioAsset["AudioAsset<br/>(音源管理)"]
+    end
+
+    %% Relationships
+    User --> Lesson
+    User --> LogEntry
+    User --> EarProgress
+
+    Lesson --> Material
+    Lesson --> LogEntry
+
+    Material --> LogEntry
+
+    EarExercise --> EarAttempt
+    EarAttempt --> LogEntry
+    EarAttempt --> EarProgress
+
+    FormExercise --> FormAnnotation
+    FormExercise --> FormAnalysis
+    FormAnalysis --> LogEntry
+
+    Echovna --> AudioAsset
+    AudioAsset --> EarExercise
+    AudioAsset --> FormExercise
+
+    %% Philosophy Links
+    Difference -.-> EarExercise
+    Note -.-> LogEntry
+    Form -.-> FormExercise
+
+    style Difference fill:#e8f5e9
+    style Note fill:#fff3e0
+    style Form fill:#f3e5f5
+    style LogEntry fill:#fff9c4
+    style EarExercise fill:#c8e6c9
+    style FormExercise fill:#e1bee7
+    style Echovna fill:#ffccbc
+```
+
+**主要ドメインモデル**:
+
+### Core Domain
+- **User**: 学習者とメンター（Clerkで管理）
+- **Lesson**: レッスンセッション
+- **Material**: 教材（楽譜、音源、説明）
+- **LogEntry**: MUEDnote（すべての学習活動のログ）
+
+### Difference Domain (Phase 2)
+- **EarExercise**: 耳トレーニング課題（EQ差分、バランス差分等）
+- **EarAttempt**: 各課題への回答記録
+- **EarProgress**: 学習者の耳の成長トラッキング
+
+### Form Domain (Phase 3)
+- **FormExercise**: 構造分析トレーニング課題
+- **FormAnnotation**: 楽曲構造の注釈データ
+- **FormAnalysis**: AI による構造解析結果
+
+### External Integrations (Phase 4)
+- **Echovna**: 物理スタジオとの連携
+- **AudioAsset**: 統合音源管理
+
+---
+
+## 8. モジュール境界とディレクトリ構成（Phase 0-4対応）
+
+**説明**: MUED の思想に沿ったモジュール境界とディレクトリ構成を示します。責務を明確に分離し、Phase ごとの段階的実装を可能にします。
+
+```mermaid
+graph TD
+    subgraph "Application Root"
+        App["/app"]
+        Lib["/lib"]
+        Components["/components"]
+    end
+
+    subgraph "Core Modules (/lib/core)"
+        CoreAuth["/core/auth"]
+        CoreLesson["/core/lesson"]
+        CoreMaterial["/core/material"]
+        CoreLog["/core/log<br/>(Phase 1: MUEDnote)"]
+    end
+
+    subgraph "Feature Modules (/lib/modules)"
+        EarTraining["/modules/ear-training<br/>(Phase 2: Difference)"]
+        StructureTraining["/modules/structure-training<br/>(Phase 3: Form)"]
+        Echovna["/modules/integration/echovna<br/>(Phase 4)"]
+    end
+
+    subgraph "Shared Infrastructure"
+        DB["/db<br/>(Drizzle Schema)"]
+        API["/lib/api<br/>(API Clients)"]
+        Hooks["/hooks<br/>(Custom Hooks)"]
+        UI["/components/ui<br/>(UI Primitives)"]
+    end
+
+    App --> CoreAuth
+    App --> CoreLesson
+    App --> CoreMaterial
+    App --> CoreLog
+
+    App --> EarTraining
+    App --> StructureTraining
+    App --> Echovna
+
+    CoreLog --> DB
+    EarTraining --> DB
+    StructureTraining --> DB
+
+    CoreLog --> API
+    EarTraining --> API
+    StructureTraining --> API
+
+    Components --> UI
+    Components --> Hooks
+
+    style CoreLog fill:#fff9c4
+    style EarTraining fill:#c8e6c9
+    style StructureTraining fill:#e1bee7
+    style Echovna fill:#ffccbc
+    style DB fill:#e8f5e9
+```
+
+**モジュール境界の定義**:
+
+### Core Modules
+- **core/auth**: 認証・認可（Clerk統合）
+- **core/lesson**: レッスン管理
+- **core/material**: 教材管理（ABC記譜法生成含む）
+- **core/log**: MUEDnote（Phase 1）- すべての活動ログの中心
+
+### Feature Modules
+- **modules/ear-training**: Difference系機能（Phase 2）
+  - EarExercise 管理
+  - A/B 再生 UI
+  - スコアリング・進捗トラッキング
+
+- **modules/structure-training**: Form系機能（Phase 3）
+  - FormExercise 管理
+  - 構造可視化 UI
+  - AI 構造解析統合
+
+- **modules/integration/echovna**: 外部連携（Phase 4）
+  - 音源インポート
+  - メタデータ変換
+  - ワークフロー統合
+
+### Shared Infrastructure
+- **db/**: Drizzle ORM スキーマ定義
+- **lib/api/**: 統一 API クライアント
+- **hooks/**: カスタムフック（データフェッチング、状態管理）
+- **components/ui/**: Shadcn/UI ベースの基本コンポーネント
+
+---
+
+## 9. Phase別実装マイルストーン
+
+**説明**: Phase 0-4 の実装順序と各フェーズでの主要成果物を示します。
+
+```mermaid
+gantt
+    title MUED Phase 0-4 Implementation Roadmap
+    dateFormat YYYY-MM
+    axisFormat %Y-%m
+
+    section Phase 0
+    思想・ドキュメント統合           :p0, 2025-11, 1M
+    PHILOSOPHY.md作成               :milestone, p0-m1, 2025-11, 0d
+    architecture.md更新              :milestone, p0-m2, 2025-11, 0d
+    roadmap.md作成                   :milestone, p0-m3, 2025-11, 0d
+
+    section Phase 1
+    MUEDnote基盤実装                 :p1, after p0, 3M
+    LogEntryモデル実装               :milestone, p1-m1, 2025-12, 0d
+    AI要約機能実装                   :milestone, p1-m2, 2026-01, 0d
+    マイノート画面実装               :milestone, p1-m3, 2026-02, 0d
+
+    section Phase 2
+    Ear Training MVP                 :p2, after p1, 3M
+    EarExerciseモデル実装            :milestone, p2-m1, 2026-03, 0d
+    A/B再生UI実装                    :milestone, p2-m2, 2026-04, 0d
+    スコアリング実装                 :milestone, p2-m3, 2026-05, 0d
+
+    section Phase 3
+    Structure Training MVP           :p3, after p2, 3M
+    FormExerciseモデル実装           :milestone, p3-m1, 2026-06, 0d
+    構造可視化UI実装                 :milestone, p3-m2, 2026-07, 0d
+    AI構造解析統合                   :milestone, p3-m3, 2026-08, 0d
+
+    section Phase 4
+    Echovna連携・β版                :p4, after p3, 3M
+    Echovna API統合                  :milestone, p4-m1, 2026-09, 0d
+    クローズドβ開始                 :milestone, p4-m2, 2026-10, 0d
+    対外発表可能状態                 :milestone, p4-m3, 2026-11, 0d
+```
+
+**各Phaseの完了条件**:
+
+- **Phase 0**: PHILOSOPHY / architecture / roadmap の3文書が整合
+- **Phase 1**: 学習者がすべてのレッスン・教材にノートを残し、一覧で閲覧可能
+- **Phase 2**: EarExercise の最小セットが動作し、MUEDnote と連動
+- **Phase 3**: FormExercise の最小セットが動作し、AI 解析と連動
+- **Phase 4**: Echovna 連携が動作し、クローズドβ運用開始
+
+---
+
 ## まとめ
 
 これらの図は、MUED LMS v2の包括的なシステムアーキテクチャを表現しています。各図は異なる視点からシステムを捉え、開発チームが全体像を理解しやすくなるように設計されています。
+
+**Phase 0-4 対応アーキテクチャの特徴**:
+1. **思想の明文化**: Difference / Note / Form の3本柱をドメインモデルに反映
+2. **段階的実装**: Phase ごとに独立して価値を提供できる設計
+3. **モジュール分離**: core/ と modules/ の明確な境界
+4. **拡張性**: Echovna 連携や新機能追加に対応可能な構造
 
 **活用方法**:
 1. 新規開発者のオンボーディング資料として
 2. アーキテクチャレビューの基礎資料として
 3. システム改善の議論のベースラインとして
 4. ドキュメントの一部として保管
+5. **Phase 実装時の参照資料として**（新規追加）
 
 各図はMermaid記法で記述されているため、GitHubやNotionなどのMarkdown対応プラットフォームで直接表示可能です。また、Miroへの転記時は、これらの図を視覚的な基準として使用できます。
