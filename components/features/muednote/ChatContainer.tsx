@@ -1,6 +1,6 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react';
+import { useChat, type UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
@@ -94,7 +94,7 @@ export function ChatContainer() {
     onError: (error: Error) => {
       console.error('Chat error:', error);
     },
-    onFinish: async (event: { messages: typeof messages }) => {
+    onFinish: async (event: { messages: UIMessage[] }) => {
       // AI応答完了後にDBに保存
       try {
         const userMessage = event.messages[event.messages.length - 2]; // User message
@@ -103,12 +103,12 @@ export function ChatContainer() {
         if (userMessage && aiMessage) {
           const userText = userMessage.parts
             .filter((p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text')
-            .map((p) => p.text)
+            .map((p: { text: string }) => p.text)
             .join('');
 
           const aiText = aiMessage.parts
             .filter((p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text')
-            .map((p) => p.text)
+            .map((p: { text: string }) => p.text)
             .join('');
 
           // Parse AI response for structured data
