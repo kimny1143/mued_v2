@@ -305,7 +305,7 @@ describe('RecentMaterials', () => {
           'px-4',
           'py-2',
           'bg-[var(--color-brand-green)]',
-          'text-white',
+          'text-[var(--color-brand-text)]',
           'rounded-lg'
         );
       });
