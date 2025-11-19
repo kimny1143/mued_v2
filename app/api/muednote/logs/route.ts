@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
-import { db } from '@/db';
+import { db } from '@/db/edge'; // Edge Runtime用DB接続
 import { logEntries } from '@/db/schema';
 import { eq, desc, count } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
