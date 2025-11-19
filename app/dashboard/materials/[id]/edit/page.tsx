@@ -3,9 +3,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface MaterialData {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  type: string;
+  content: Record<string, unknown>;
+  isPublic?: boolean;
+}
+
 export default function MaterialEditPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const [material, setMaterial] = useState<any>(null);
+  const [material, setMaterial] = useState<MaterialData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -173,7 +183,12 @@ export default function MaterialEditPage({ params }: { params: { id: string } })
             </label>
             <select
               value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value as any)}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === 'beginner' || value === 'intermediate' || value === 'advanced') {
+                  setDifficulty(value);
+                }
+              }}
               className="w-full p-3 border border-gray-300 rounded-lg"
             >
               <option value="beginner">Beginner</option>

@@ -133,7 +133,12 @@ export default function MaterialImportPage() {
               </label>
               <select
                 value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value as any)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === 'beginner' || value === 'intermediate' || value === 'advanced') {
+                    setDifficulty(value);
+                  }
+                }}
                 className="w-full p-2 border border-gray-300 rounded-lg"
               >
                 <option value="beginner">Beginner</option>
