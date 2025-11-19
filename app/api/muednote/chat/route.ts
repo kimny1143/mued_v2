@@ -1,8 +1,10 @@
 import { openai } from '@ai-sdk/openai';
-import { streamText } from 'ai';
+import { streamText, convertToModelMessages } from 'ai';
+import type { UIMessage } from 'ai';
 
 // Edge Runtime for optimal performance (Doherty Threshold - 0.4s)
 export const runtime = 'edge';
+export const maxDuration = 30; // ストリーミング用のタイムアウト設定
 
 /**
  * MUEDnote Chat API - ストリーミング対応
@@ -14,17 +16,17 @@ export const runtime = 'edge';
  */
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const { messages }: { messages: UIMessage[] } = await req.json();
 
-    const result = await streamText({
+    const result = streamText({
       model: openai('gpt-4o-mini'), // 高速・低コスト
-      messages,
+      messages: convertToModelMessages(messages), // AI SDK v5: UIMessage -> ModelMessage変換
       system: getMUEDnoteSystemPrompt(),
       temperature: 0.7,
-      maxTokens: 500,
+      maxOutputTokens: 500, // AI SDK v5: maxTokens → maxOutputTokens
     });
 
-    return result.toDataStreamResponse();
+    return result.toUIMessageStreamResponse(); // AI SDK v5: 新しいレスポンス形式
   } catch (error) {
     console.error('MUEDnote chat error:', error);
     return new Response('Internal Server Error', { status: 500 });

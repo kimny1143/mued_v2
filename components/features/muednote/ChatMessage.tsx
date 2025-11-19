@@ -1,11 +1,11 @@
 'use client';
 
-import { Message } from 'ai';
+import type { UIMessage } from 'ai';
 import { cn } from '@/lib/utils';
 import { Bot, User } from 'lucide-react';
 
 interface ChatMessageProps {
-  message: Message;
+  message: UIMessage;
 }
 
 /**
@@ -18,6 +18,12 @@ interface ChatMessageProps {
  */
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
+
+  // AI SDK v5: UIMessage.parts から text を抽出
+  const messageText = message.parts
+    .filter((part) => part.type === 'text')
+    .map((part) => part.text)
+    .join('');
 
   return (
     <div
@@ -47,9 +53,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
             : 'bg-muted text-foreground'
         )}
       >
-        <div className="whitespace-pre-wrap break-words">
-          {message.content}
-        </div>
+        <div className="whitespace-pre-wrap break-words">{messageText}</div>
 
         {/* TODO: Phase 1.1 で追加予定 - タグ表示 */}
         {/* {message.metadata?.tags && (

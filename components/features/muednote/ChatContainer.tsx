@@ -1,9 +1,10 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * ChatContainer - MUEDnote のメインチャットコンテナ
@@ -14,17 +15,17 @@ import { useEffect, useRef } from 'react';
  * - 美的ユーザビリティ効果: クリーンで読みやすいレイアウト
  */
 export function ChatContainer() {
-  const chatHelpers = useChat({
-    api: '/api/muednote/chat',
+  // AI SDK v5: 入力状態を自分で管理
+  const [input, setInput] = useState('');
+
+  const { messages, status, error, sendMessage } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/muednote/chat',
+    }),
     onError: (error) => {
       console.error('Chat error:', error);
     },
   });
-
-  // デバッグ: useChatの戻り値を確認
-  console.log('useChat helpers:', Object.keys(chatHelpers));
-
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = chatHelpers;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -32,6 +33,23 @@ export function ChatContainer() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // AI SDK v5: sendMessage() を使用
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || status === 'submitted' || status === 'streaming') {
+      return;
+    }
+
+    await sendMessage({ text: input }); // AI SDK v5: シンプルなtext形式
+    setInput(''); // 送信後に入力をクリア
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+  };
+
+  const isLoading = status === 'submitted' || status === 'streaming';
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden bg-background border rounded-lg shadow-sm">

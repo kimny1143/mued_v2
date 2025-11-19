@@ -51,8 +51,7 @@ export function ChatInput({
       <Button
         type="submit"
         disabled={isLoading || !input?.trim()}
-        size="icon"
-        className="h-[60px] w-[60px] shrink-0"
+        className="h-[60px] w-[60px] shrink-0 p-0"
       >
         {isLoading ? (
           <Loader2 className="h-5 w-5 animate-spin" />
