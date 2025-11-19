@@ -367,6 +367,9 @@ describe('Sessions API Integration Tests', () => {
         focusArea: 'harmony',
         intentHypothesis: 'Trying to create smoother transition to chorus',
       });
+
+      // Verify confidence conversion: 0.85 → 85
+      expect(analysisValues.confidence).toBe(85);
     });
   });
 
