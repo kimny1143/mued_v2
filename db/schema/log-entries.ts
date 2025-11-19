@@ -51,9 +51,12 @@ export const targetTypeEnum = pgEnum('target_type', [
 
 // AI要約の型定義
 export type AISummary = {
-  keyPoints: string[];        // 重要ポイント
-  improvements: string[];      // 改善提案
-  keywords: string[];         // キーワード
+  formatted?: string;          // 整形後のテキスト
+  tags?: string[];             // タグ（#作曲, #練習 など）
+  comment?: string;            // AIからのコメント
+  // Phase 1.1以降で拡張予定
+  keyPoints?: string[];        // 重要ポイント
+  improvements?: string[];      // 改善提案
   emotionalTone?: string;     // 感情的トーン分析
   technicalInsights?: string[]; // 技術的洞察
 };

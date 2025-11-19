@@ -25,6 +25,38 @@ export function ChatContainer() {
     onError: (error) => {
       console.error('Chat error:', error);
     },
+    onFinish: async (event) => {
+      // AI応答完了後にDBに保存
+      try {
+        const userMessage = event.messages[event.messages.length - 2]; // User message
+        const aiMessage = event.messages[event.messages.length - 1]; // AI message
+
+        if (userMessage && aiMessage) {
+          const userText = userMessage.parts
+            .filter((p) => p.type === 'text')
+            .map((p) => p.text)
+            .join('');
+
+          const aiText = aiMessage.parts
+            .filter((p) => p.type === 'text')
+            .map((p) => p.text)
+            .join('');
+
+          // Save to database
+          await fetch('/api/muednote/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userMessage: userText,
+              aiResponse: aiText,
+            }),
+          });
+        }
+      } catch (saveError) {
+        console.error('Failed to save chat entry:', saveError);
+        // Don't block user experience if save fails
+      }
+    },
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);

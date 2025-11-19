@@ -253,3 +253,7 @@ export const learningMetricsRelations = relations(learningMetrics, ({ one }) => 
     references: [materials.id],
   }),
 }));
+// ========================================
+// MUEDnote Log Entries (Phase 1)
+// ========================================
+export * from './schema/log-entries';
