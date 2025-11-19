@@ -137,6 +137,16 @@ export type SessionAttachment = {
   uploadedAt?: string;
 };
 
+/**
+ * AI解析結果（インタビュー回答用）
+ */
+export type AIInsights = {
+  keyPhrases?: string[];
+  technicalTerms?: string[];
+  emotionalTone?: string;
+  suggestedTags?: string[];
+};
+
 // ========================================
 // Main Tables
 // ========================================
@@ -250,12 +260,7 @@ export const interviewAnswers = pgTable('interview_answers', {
   text: text('text').notNull(),                   // ユーザーの回答テキスト
 
   // AI解析結果
-  aiInsights: jsonb('ai_insights').$type<{
-    keyPhrases?: string[];                        // 抽出されたキーフレーズ
-    technicalTerms?: string[];                    // 検出された技術用語
-    emotionalTone?: string;                       // 感情的トーン
-    suggestedTags?: string[];                     // 提案タグ
-  }>(),
+  aiInsights: jsonb('ai_insights').$type<AIInsights>(),
 
   // タイムスタンプ
   createdAt: timestamp('created_at').defaultNow().notNull(),
