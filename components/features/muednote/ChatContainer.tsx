@@ -14,13 +14,17 @@ import { useEffect, useRef } from 'react';
  * - 美的ユーザビリティ効果: クリーンで読みやすいレイアウト
  */
 export function ChatContainer() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
-    useChat({
-      api: '/api/muednote/chat',
-      onError: (error) => {
-        console.error('Chat error:', error);
-      },
-    });
+  const chatHelpers = useChat({
+    api: '/api/muednote/chat',
+    onError: (error) => {
+      console.error('Chat error:', error);
+    },
+  });
+
+  // デバッグ: useChatの戻り値を確認
+  console.log('useChat helpers:', Object.keys(chatHelpers));
+
+  const { messages, input, handleInputChange, handleSubmit, isLoading } = chatHelpers;
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
