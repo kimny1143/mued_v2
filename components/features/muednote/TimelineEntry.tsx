@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import type { LogEntry } from '@/db/schema/log-entries';
+import type { LogEntry, AISummary } from '@/db/schema/log-entries';
 import { Calendar, Tag } from 'lucide-react';
 
 interface TimelineEntryProps {
@@ -28,7 +28,7 @@ export function TimelineEntry({ entry, isLatest }: TimelineEntryProps) {
   });
 
   // AI要約からデータを抽出
-  const aiSummary = entry.aiSummary as any;
+  const aiSummary: AISummary | undefined = entry.aiSummary || undefined;
   const formatted = aiSummary?.formatted || entry.content;
   const tags = aiSummary?.tags || entry.tags || [];
   const comment = aiSummary?.comment;

@@ -105,7 +105,7 @@ export function ExternalLinkModal({
           </button>
           <button
             onClick={handleConfirm}
-            className="flex-1 px-4 py-2 bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-hover)] text-white rounded-md font-medium transition-colors"
+            className="flex-1 px-4 py-2 bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-hover)] text-[var(--color-brand-text)] rounded-md font-medium transition-colors"
           >
             続ける
           </button>

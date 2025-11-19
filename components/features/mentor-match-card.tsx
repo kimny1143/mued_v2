@@ -75,7 +75,7 @@ export function MentorMatchCard({
       {/* Badges */}
       <div className="flex gap-2 mb-3">
         {isPerfectMatch && (
-          <span className="px-3 py-1 bg-[var(--color-brand-green)] text-white text-xs font-semibold rounded-full">
+          <span className="px-3 py-1 bg-[var(--color-brand-green)] text-[var(--color-brand-text)] text-xs font-semibold rounded-full">
             ✨ Perfect Match
           </span>
         )}

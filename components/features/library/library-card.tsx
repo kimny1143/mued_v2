@@ -186,7 +186,7 @@ export function LibraryCard({ content }: LibraryCardProps) {
               target={isExternal ? '_blank' : undefined}
               rel={isExternal ? 'noopener noreferrer' : undefined}
               onClick={handleLinkClick}
-              className="flex-1 px-4 py-2 bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-hover)] text-white rounded-md text-sm font-medium text-center transition-colors"
+              className="flex-1 px-4 py-2 bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-hover)] text-[var(--color-brand-text)] rounded-md text-sm font-medium text-center transition-colors"
             >
               {content.source === 'ai_generated' || content.source === 'internal' ? 'View Details' : 'View Content'}
             </Link>

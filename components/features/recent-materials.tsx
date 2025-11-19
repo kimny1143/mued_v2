@@ -93,7 +93,7 @@ export function RecentMaterials() {
           <p className="text-gray-500 mb-4">{t.dashboard.recentMaterials.noMaterials}</p>
           <Link
             href="/dashboard/materials/new"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-green)] text-white rounded-lg hover:bg-[var(--color-brand-green-hover)] transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--color-brand-green)] text-[var(--color-brand-text)] rounded-lg hover:bg-[var(--color-brand-green-hover)] transition-colors"
           >
             <Sparkles className="w-4 h-4" />
             {t.dashboard.recentMaterials.createFirst}

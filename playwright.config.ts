@@ -8,14 +8,14 @@ dotenv.config({ path: path.resolve(__dirname, ".env.test") });
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts", // Only match .spec.ts files, exclude .test.ts (Vitest)
-  timeout: process.env.CI ? 60 * 1000 : 30 * 1000, // CI: 60s, Local: 30s
+  timeout: process.env.CI ? 30 * 1000 : 30 * 1000, // 30s per test (reduced from 60s)
   expect: {
-    timeout: process.env.CI ? 15000 : 10000, // CI: 15s, Local: 10s
+    timeout: process.env.CI ? 10000 : 10000, // 10s for assertions
   },
-  fullyParallel: false, // Run tests sequentially for better stability with auth
+  fullyParallel: true, // ✅ FIXED: Enable parallel execution
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 3 : 1, // More retries in CI
-  workers: process.env.CI ? 1 : 1, // Single worker for auth consistency
+  retries: process.env.CI ? 1 : 0, // ✅ FIXED: Reduced retries (1 retry in CI, 0 locally)
+  workers: process.env.CI ? 4 : 2, // ✅ FIXED: 4 workers in CI, 2 locally (parallel execution)
   reporter: process.env.CI
     ? [
         ["list"],
@@ -58,7 +58,7 @@ export default defineConfig({
     command: "npm run dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI, // Reuse existing server in local development, start fresh in CI
-    timeout: 180 * 1000, // Increased to 3 minutes for Next.js compile time
+    timeout: 120 * 1000, // ✅ FIXED: Reduced to 2 minutes (was 3 minutes)
     stdout: "ignore",
     stderr: "ignore",
     env: {

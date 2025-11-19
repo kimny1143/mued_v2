@@ -1,9 +1,10 @@
-# Phase 1 Implementation Checklist: MUEDnote基盤
+# Phase 1 Implementation Checklist: MUEDnote チャット型基盤
 ## 実装期間: 1〜3か月
 
 **Status**: Ready to Start
 **Priority**: P0 (Critical Path)
 **Dependencies**: Phase 0 Documentation Complete
+**UI Design**: チャット一枚型（タイムライン型から変更）
 
 ---
 
@@ -124,24 +125,24 @@
 ## 🎨 Week 5-6: Frontend Implementation
 
 ### Components
-- [ ] **LogEditor Component** `/components/log/LogEditor.tsx`
-  - TipTap integration
-  - Markdown toolbar
-  - Auto-save functionality
+- [ ] **ChatInterface Component** `/components/muednote/ChatInterface.tsx`
+  - チャット型入力フィールド
+  - メッセージバブル表示
+  - リアルタイム応答
   - Owner: Frontend Dev
   - Effort: 8h
 
-- [ ] **LogTimeline Component** `/components/log/LogTimeline.tsx`
-  - Infinite scroll
-  - Filtering UI
-  - Date grouping
+- [ ] **MessageBubble Component** `/components/muednote/MessageBubble.tsx`
+  - ユーザー/AI メッセージ表示
+  - タグ表示
+  - 整形済みテキスト
   - Owner: Frontend Dev
-  - Effort: 6h
+  - Effort: 4h
 
-- [ ] **LogCard Component** `/components/log/LogCard.tsx`
-  - Display single log
-  - AI summary section
-  - Tags display
+- [ ] **ChatInput Component** `/components/muednote/ChatInput.tsx`
+  - テキスト入力
+  - 送信ボタン
+  - 音声入力準備（将来）
   - Owner: Frontend Dev
   - Effort: 3h
 

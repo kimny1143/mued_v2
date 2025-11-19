@@ -32,7 +32,11 @@ export function ChatInput({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (input?.trim() && !isLoading) {
-        handleSubmit(e as any);
+        // フォームの submit イベントをトリガー
+        const form = e.currentTarget.form;
+        if (form) {
+          form.requestSubmit();
+        }
       }
     }
   };

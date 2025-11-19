@@ -162,6 +162,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for git diff
 
       - name: Setup Node.js with cache
         uses: actions/setup-node@v4
@@ -188,8 +190,96 @@ jobs:
           rm build-output.tar.gz
           ls -la .next/
 
-      - name: Run E2E tests
-        run: npm run test:e2e
+      - name: Detect changed files and select tests
+        id: detect-changes
+        run: |
+          echo "Detecting changed files to determine which E2E tests to run..."
+          git fetch origin ${{ github.base_ref }}
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+          echo ""
+
+          # Determine which test files to run based on changed files
+          TEST_FILES=""
+          RUN_ALL=false
+
+          # Check for documentation-only changes (skip all E2E tests)
+          if echo "$CHANGED_FILES" | grep -qv "^docs/\|\.md$"; then
+            # Non-documentation changes detected
+
+            # Check for specific feature changes
+            if echo "$CHANGED_FILES" | grep -q "^components/features/muednote/\|^app/api/muednote/"; then
+              echo "✓ MUEDnote feature changes detected (no dedicated E2E tests yet)"
+            fi
+
+            if echo "$CHANGED_FILES" | grep -q "^app/dashboard/materials/\|^components/features/materials/"; then
+              echo "✓ Materials feature changes detected"
+              TEST_FILES="$TEST_FILES tests/e2e/materials-sharing-flow.spec.ts tests/e2e/music-material-flow.spec.ts tests/e2e/teacher-workflow.spec.ts"
+            fi
+
+            if echo "$CHANGED_FILES" | grep -q "^app/api/"; then
+              echo "✓ API changes detected"
+              TEST_FILES="$TEST_FILES tests/e2e/api-endpoints.spec.ts"
+            fi
+
+            if echo "$CHANGED_FILES" | grep -q "^components/layouts/\|^app/layout\.tsx"; then
+              echo "✓ Layout changes detected"
+              TEST_FILES="$TEST_FILES tests/e2e/accessibility.spec.ts"
+            fi
+
+            if echo "$CHANGED_FILES" | grep -q "^tests/e2e/"; then
+              echo "✓ E2E test files changed"
+              # Add the specific changed test files
+              CHANGED_TEST_FILES=$(echo "$CHANGED_FILES" | grep "^tests/e2e/.*\.spec\.ts$" || true)
+              if [ -n "$CHANGED_TEST_FILES" ]; then
+                TEST_FILES="$TEST_FILES $CHANGED_TEST_FILES"
+              fi
+            fi
+
+            # Check for critical changes that require full test suite
+            if echo "$CHANGED_FILES" | grep -q "^playwright\.config\.ts\|^package\.json\|^tsconfig\.json\|^next\.config\.js"; then
+              echo "⚠️  Critical config changes detected - running ALL E2E tests"
+              RUN_ALL=true
+            fi
+
+            # If no specific tests matched but we have non-doc changes, run all tests (safe default)
+            if [ -z "$TEST_FILES" ] && [ "$RUN_ALL" = "false" ]; then
+              echo "⚠️  No specific test pattern matched - running ALL E2E tests (safe default)"
+              RUN_ALL=true
+            fi
+          else
+            echo "ℹ️  Documentation-only changes - skipping all E2E tests"
+          fi
+
+          # Remove duplicates and save to output
+          if [ "$RUN_ALL" = "true" ]; then
+            echo "test_files=ALL" >> $GITHUB_OUTPUT
+            echo ""
+            echo "📋 Will run: ALL E2E tests"
+          elif [ -n "$TEST_FILES" ]; then
+            # Remove duplicates
+            TEST_FILES=$(echo "$TEST_FILES" | tr ' ' '\n' | sort -u | tr '\n' ' ')
+            echo "test_files=$TEST_FILES" >> $GITHUB_OUTPUT
+            echo ""
+            echo "📋 Will run these test files:"
+            echo "$TEST_FILES" | tr ' ' '\n'
+          else
+            echo "test_files=SKIP" >> $GITHUB_OUTPUT
+            echo ""
+            echo "📋 Will skip all E2E tests"
+          fi
+
+      - name: Run E2E tests (selective)
+        if: steps.detect-changes.outputs.test_files != 'SKIP'
+        run: |
+          if [ "${{ steps.detect-changes.outputs.test_files }}" = "ALL" ]; then
+            echo "Running all E2E tests..."
+            npm run test:e2e
+          else
+            echo "Running selected E2E tests..."
+            npx playwright test ${{ steps.detect-changes.outputs.test_files }}
+          fi
         env:
           CI: true
           NEXT_PUBLIC_E2E_TEST_MODE: true

@@ -89,7 +89,7 @@ export default function MaterialsPage() {
           </p>
           <Button
             onClick={() => router.push('/dashboard/materials/new')}
-            className="bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-hover)] text-white font-semibold px-8 py-3"
+            className="bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-hover)] text-[var(--color-brand-text)] font-semibold px-8 py-3"
           >
             <span className="mr-2">✨</span>
             {t.materials.emptyState.cta}

@@ -185,7 +185,7 @@ export function MusicMaterialDisplay({ content }: MusicMaterialDisplayProps) {
                   className="bg-white border border-gray-200 rounded-lg p-4"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="flex-shrink-0 w-8 h-8 bg-[var(--color-brand-green)] text-white rounded-full flex items-center justify-center font-semibold">
+                    <span className="flex-shrink-0 w-8 h-8 bg-[var(--color-brand-green)] text-[var(--color-brand-text)] rounded-full flex items-center justify-center font-semibold">
                       {idx + 1}
                     </span>
                     <p className="text-gray-700 flex-1">{point}</p>

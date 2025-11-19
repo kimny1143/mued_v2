@@ -90,8 +90,21 @@ export default function MaterialDetailPage({ params }: { params: Promise<{ id: s
 
   const renderContent = () => {
     switch (material.content.type) {
-      case 'music':
-        return <MusicMaterialDisplay content={material.content as any} />;
+      case 'music': {
+        // Type guard for MusicMaterialContent
+        const content = material.content;
+        if (
+          typeof content === 'object' &&
+          content !== null &&
+          'type' in content &&
+          'abcNotation' in content &&
+          'learningPoints' in content &&
+          'practiceInstructions' in content
+        ) {
+          return <MusicMaterialDisplay content={content as { type: 'music'; title: string; description: string; abcNotation: string; learningPoints: string[]; practiceInstructions: string[] }} />;
+        }
+        return <div className="text-red-600">Invalid music material format</div>;
+      }
       case 'quiz':
         return <QuizContent content={material.content} />;
       case 'summary':

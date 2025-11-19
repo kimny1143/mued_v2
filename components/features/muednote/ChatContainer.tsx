@@ -1,6 +1,6 @@
 'use client';
 
-import { useChat } from '@ai-sdk/react';
+import { useChat, type UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
@@ -8,7 +8,10 @@ import { useEffect, useRef, useState } from 'react';
 
 /**
  * Parse AI response to extract structured data
- * Expected format:
+ * Expected format (Phase 1.1):
+ * 【質問】(optional)
+ * <follow-up question>
+ *
  * 【整形後】
  * <formatted text>
  *
@@ -19,17 +22,25 @@ import { useEffect, useRef, useState } from 'react';
  * <comment>
  */
 function parseAIResponse(aiText: string): {
+  question: string;
   formatted: string;
   tags: string[];
   comment: string;
 } {
   const result = {
+    question: '',
     formatted: '',
     tags: [] as string[],
     comment: '',
   };
 
   try {
+    // Extract follow-up question (Phase 1.1)
+    const questionMatch = aiText.match(/【質問】\s*([\s\S]*?)(?=【整形後】|$)/);
+    if (questionMatch) {
+      result.question = questionMatch[1].trim();
+    }
+
     // Extract formatted text
     const formattedMatch = aiText.match(/【整形後】\s*([\s\S]*?)(?=【タグ】|$)/);
     if (formattedMatch) {
@@ -80,10 +91,10 @@ export function ChatContainer() {
     transport: new DefaultChatTransport({
       api: '/api/muednote/chat',
     }),
-    onError: (error) => {
+    onError: (error: Error) => {
       console.error('Chat error:', error);
     },
-    onFinish: async (event) => {
+    onFinish: async (event: { messages: UIMessage[] }) => {
       // AI応答完了後にDBに保存
       try {
         const userMessage = event.messages[event.messages.length - 2]; // User message
@@ -91,13 +102,13 @@ export function ChatContainer() {
 
         if (userMessage && aiMessage) {
           const userText = userMessage.parts
-            .filter((p) => p.type === 'text')
-            .map((p) => p.text)
+            .filter((p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text')
+            .map((p: { text: string }) => p.text)
             .join('');
 
           const aiText = aiMessage.parts
-            .filter((p) => p.type === 'text')
-            .map((p) => p.text)
+            .filter((p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text')
+            .map((p: { text: string }) => p.text)
             .join('');
 
           // Parse AI response for structured data
@@ -113,6 +124,7 @@ export function ChatContainer() {
               formatted: parsed.formatted,
               tags: parsed.tags,
               comment: parsed.comment,
+              question: parsed.question, // Phase 1.1: Follow-up question
             }),
           });
         }
@@ -162,7 +174,7 @@ export function ChatContainer() {
           </div>
         ) : (
           <>
-            {messages.map((message) => (
+            {messages.map((message: (typeof messages)[number]) => (
               <ChatMessage key={message.id} message={message} />
             ))}
             <div ref={messagesEndRef} />

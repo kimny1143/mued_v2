@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { TimelineEntry } from './TimelineEntry';
+import { TagFilter } from './TagFilter';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import type { LogEntry } from '@/db/schema/log-entries';
@@ -28,6 +29,7 @@ export function TimelineContainer() {
   const [entries, setEntries] = useState<LogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [pagination, setPagination] = useState({
     total: 0,
     limit: 20,
@@ -35,10 +37,10 @@ export function TimelineContainer() {
     hasMore: false,
   });
 
-  // 初回ロード
+  // 初回ロードとタグ変更時のリロード
   useEffect(() => {
     loadEntries(0);
-  }, []);
+  }, [selectedTags]); // selectedTagsが変更されたら再ロード
 
   const loadEntries = async (offset: number) => {
     try {
@@ -49,8 +51,11 @@ export function TimelineContainer() {
         setIsLoadingMore(true);
       }
 
+      // タグフィルタパラメータを追加
+      const tagsParam = selectedTags.length > 0 ? `&tags=${selectedTags.join(',')}` : '';
+
       const response = await fetch(
-        `/api/muednote/logs?limit=${pagination.limit}&offset=${offset}`
+        `/api/muednote/logs?limit=${pagination.limit}&offset=${offset}${tagsParam}`
       );
 
       if (!response.ok) {
@@ -106,10 +111,24 @@ export function TimelineContainer() {
 
   return (
     <div className="space-y-4">
+      {/* タグフィルタ (Phase 1.1) */}
+      <div className="bg-muted/30 rounded-lg p-4">
+        <TagFilter selectedTags={selectedTags} onTagsChange={setSelectedTags} />
+      </div>
+
       {/* 統計情報 */}
       <div className="bg-muted/30 rounded-lg p-4 mb-6">
         <p className="text-sm text-muted-foreground">
-          全{pagination.total}件の記録
+          {selectedTags.length > 0 ? (
+            <>
+              絞り込み結果: {pagination.total}件
+              <span className="text-xs ml-2">
+                (全体からフィルタ適用)
+              </span>
+            </>
+          ) : (
+            <>全{pagination.total}件の記録</>
+          )}
         </p>
       </div>
 
