@@ -47,10 +47,14 @@ const createInsertChain = () => ({
   }),
 });
 
+// Mock transaction that provides tx object with same methods
+const mockTransaction = vi.fn();
+
 vi.mock('@/db/edge', () => ({
   db: {
     select: vi.fn(() => createSelectChain()),
     insert: vi.fn(() => createInsertChain()),
+    transaction: (callback: any) => mockTransaction(callback),
   },
 }));
 
@@ -163,17 +167,24 @@ describe('Sessions API Integration Tests', () => {
       // Mock analyzer service
       mockAnalyzeSession.mockResolvedValue(mockAnalyzerResult);
 
-      // Mock session creation
-      const insertSessionChain = createInsertChain();
-      insertSessionChain.values().returning.mockResolvedValue([mockSession]);
+      // Mock transaction callback
+      mockTransaction.mockImplementation(async (callback: any) => {
+        // Create tx object with insert method
+        const insertSessionChain = createInsertChain();
+        insertSessionChain.values().returning.mockResolvedValue([mockSession]);
 
-      // Mock analysis creation
-      const insertAnalysisChain = createInsertChain();
-      insertAnalysisChain.values().returning.mockResolvedValue([mockAnalysis]);
+        const insertAnalysisChain = createInsertChain();
+        insertAnalysisChain.values().returning.mockResolvedValue([mockAnalysis]);
 
-      (db.insert as any)
-        .mockReturnValueOnce(insertSessionChain) // For sessions table
-        .mockReturnValueOnce(insertAnalysisChain); // For sessionAnalyses table
+        const tx = {
+          insert: vi.fn()
+            .mockReturnValueOnce(insertSessionChain) // For sessions table
+            .mockReturnValueOnce(insertAnalysisChain), // For sessionAnalyses table
+        };
+
+        // Execute the callback with tx
+        return await callback(tx);
+      });
 
       const request = new NextRequest('http://localhost:3000/api/muednote/sessions', {
         method: 'POST',
@@ -303,26 +314,33 @@ describe('Sessions API Integration Tests', () => {
 
       mockAnalyzeSession.mockResolvedValue(mockAnalyzerResult);
 
-      const insertSessionChain = createInsertChain();
-      const insertAnalysisChain = createInsertChain();
-
       // Capture the values passed to insert
       let sessionValues: any;
       let analysisValues: any;
 
-      insertSessionChain.values.mockImplementation((vals) => {
-        sessionValues = vals;
-        return { returning: vi.fn().mockResolvedValue([mockSession]) };
-      });
+      // Mock transaction callback
+      mockTransaction.mockImplementation(async (callback: any) => {
+        const insertSessionChain = createInsertChain();
+        const insertAnalysisChain = createInsertChain();
 
-      insertAnalysisChain.values.mockImplementation((vals) => {
-        analysisValues = vals;
-        return { returning: vi.fn().mockResolvedValue([mockAnalysis]) };
-      });
+        insertSessionChain.values.mockImplementation((vals) => {
+          sessionValues = vals;
+          return { returning: vi.fn().mockResolvedValue([mockSession]) };
+        });
 
-      (db.insert as any)
-        .mockReturnValueOnce(insertSessionChain)
-        .mockReturnValueOnce(insertAnalysisChain);
+        insertAnalysisChain.values.mockImplementation((vals) => {
+          analysisValues = vals;
+          return { returning: vi.fn().mockResolvedValue([mockAnalysis]) };
+        });
+
+        const tx = {
+          insert: vi.fn()
+            .mockReturnValueOnce(insertSessionChain)
+            .mockReturnValueOnce(insertAnalysisChain),
+        };
+
+        return await callback(tx);
+      });
 
       const request = new NextRequest('http://localhost:3000/api/muednote/sessions', {
         method: 'POST',

@@ -93,42 +93,53 @@ export async function POST(req: Request) {
       confidence: analysisResult.confidence,
     });
 
-    // 2. Create session with AI annotations
-    const [newSession] = await db
-      .insert(sessions)
-      .values({
-        userId: internalUserId,
-        type,
-        title,
-        userShortNote,
-        projectId,
-        projectName,
-        dawMeta: dawMeta as DAWMetadata | undefined,
-        aiAnnotations: {
-          focusArea: analysisResult.focusArea,
-          intentHypothesis: analysisResult.intentHypothesis,
-          confidence: analysisResult.confidence,
-          analysisMethod: analysisResult.analysisMethod,
-        },
-        isPublic,
-        shareWithMentor,
-        status: 'draft',
-      })
-      .returning();
+    // Convert confidence from 0.0-1.0 to 0-100 for database storage
+    const confidenceScore = Math.round(analysisResult.confidence * 100);
 
-    // 3. Create session analysis record
-    const [newAnalysis] = await db
-      .insert(sessionAnalyses)
-      .values({
-        sessionId: newSession.id,
-        analysisData: {
-          focusArea: analysisResult.focusArea,
-          intentHypothesis: analysisResult.intentHypothesis,
-        },
-        analysisVersion: 'mvp-1.0',
-        confidence: analysisResult.confidence,
-      })
-      .returning();
+    // 2. Create session and analysis in a transaction
+    const result = await db.transaction(async (tx) => {
+      // Insert session with AI annotations
+      const [session] = await tx
+        .insert(sessions)
+        .values({
+          userId: internalUserId,
+          type,
+          title,
+          userShortNote,
+          projectId,
+          projectName,
+          dawMeta: dawMeta as DAWMetadata | undefined,
+          aiAnnotations: {
+            focusArea: analysisResult.focusArea,
+            intentHypothesis: analysisResult.intentHypothesis,
+            confidence: analysisResult.confidence,
+            analysisMethod: analysisResult.analysisMethod,
+          },
+          isPublic,
+          shareWithMentor,
+          status: 'draft',
+        })
+        .returning();
+
+      // Insert session analysis record
+      const [analysis] = await tx
+        .insert(sessionAnalyses)
+        .values({
+          sessionId: session.id,
+          analysisData: {
+            focusArea: analysisResult.focusArea,
+            intentHypothesis: analysisResult.intentHypothesis,
+          },
+          analysisVersion: 'mvp-1.0',
+          confidence: confidenceScore, // Store as 0-100 integer
+        })
+        .returning();
+
+      return { session, analysis };
+    });
+
+    const newSession = result.session;
+    const newAnalysis = result.analysis;
 
     logger.info('[POST /api/muednote/sessions] Session created', {
       sessionId: newSession.id,

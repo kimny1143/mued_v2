@@ -126,8 +126,21 @@ export class AnalyzerService {
         throw new Error('Empty response from OpenAI');
       }
 
-      // Parse JSON response
-      const analysisResult = JSON.parse(responseText) as AnalyzeSessionOutput;
+      // Parse JSON response with detailed error handling
+      let analysisResult: AnalyzeSessionOutput;
+      try {
+        analysisResult = JSON.parse(responseText) as AnalyzeSessionOutput;
+      } catch (parseError) {
+        logger.error('[AnalyzerService] Failed to parse JSON response', {
+          error: parseError,
+          responsePreview: responseText.substring(0, 200), // First 200 chars for debugging
+        });
+        throw new Error(
+          `Invalid JSON response from OpenAI: ${
+            parseError instanceof Error ? parseError.message : 'Unknown parsing error'
+          }`
+        );
+      }
 
       // Validate focusArea
       const validFocusAreas = ['harmony', 'melody', 'rhythm', 'mix', 'emotion', 'image', 'structure'];
