@@ -50,9 +50,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get internal user ID
-    const internalUserId = await getUserIdFromClerkId(session.userId);
-
     // Parse request body
     const body = await req.json();
     const {
@@ -66,13 +63,16 @@ export async function POST(req: Request) {
       shareWithMentor = true,
     } = body;
 
-    // Validate required fields
+    // Validate required fields (early return for invalid requests)
     if (!type || !title || !userShortNote) {
       return NextResponse.json(
         { error: 'Missing required fields: type, title, userShortNote' },
         { status: 400 }
       );
     }
+
+    // Get internal user ID (after validation)
+    const internalUserId = await getUserIdFromClerkId(session.userId);
 
     logger.info('[POST /api/muednote/sessions] Creating session', {
       userId: internalUserId,
