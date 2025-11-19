@@ -31,7 +31,7 @@ export function ChatInput({
     // Enter キーで送信（Shift+Enter は改行）
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (input.trim() && !isLoading) {
+      if (input?.trim() && !isLoading) {
         handleSubmit(e as any);
       }
     }
@@ -40,7 +40,7 @@ export function ChatInput({
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
       <Textarea
-        value={input}
+        value={input || ''}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         placeholder="今日はコード進行の練習をした..."
@@ -50,7 +50,7 @@ export function ChatInput({
       />
       <Button
         type="submit"
-        disabled={isLoading || !input.trim()}
+        disabled={isLoading || !input?.trim()}
         size="icon"
         className="h-[60px] w-[60px] shrink-0"
       >
