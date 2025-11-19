@@ -76,7 +76,7 @@ export function ChatContainer() {
   // AI SDK v5: 入力状態を自分で管理
   const [input, setInput] = useState('');
 
-  const { messages, status, error, sendMessage } = useChat({
+  const { messages, status, sendMessage } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/muednote/chat',
     }),
