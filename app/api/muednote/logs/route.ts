@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { logEntries } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, count } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -32,19 +32,19 @@ export async function GET(req: Request) {
       .limit(Math.min(limit, 100)) // Max 100 per request
       .offset(offset);
 
-    // Get total count
-    const totalResult = await db
-      .select()
+    // Get total count efficiently with COUNT(*)
+    const [{ total }] = await db
+      .select({ total: count() })
       .from(logEntries)
       .where(eq(logEntries.userId, session.userId));
 
     return NextResponse.json({
       entries,
       pagination: {
-        total: totalResult.length,
+        total,
         limit,
         offset,
-        hasMore: offset + limit < totalResult.length,
+        hasMore: offset + limit < total,
       },
     });
   } catch (error) {

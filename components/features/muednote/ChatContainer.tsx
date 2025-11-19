@@ -7,6 +7,64 @@ import { ChatInput } from './ChatInput';
 import { useEffect, useRef, useState } from 'react';
 
 /**
+ * Parse AI response to extract structured data
+ * Expected format:
+ * 【整形後】
+ * <formatted text>
+ *
+ * 【タグ】
+ * #tag1 #tag2 #tag3
+ *
+ * 【コメント】
+ * <comment>
+ */
+function parseAIResponse(aiText: string): {
+  formatted: string;
+  tags: string[];
+  comment: string;
+} {
+  const result = {
+    formatted: '',
+    tags: [] as string[],
+    comment: '',
+  };
+
+  try {
+    // Extract formatted text
+    const formattedMatch = aiText.match(/【整形後】\s*([\s\S]*?)(?=【タグ】|$)/);
+    if (formattedMatch) {
+      result.formatted = formattedMatch[1].trim();
+    }
+
+    // Extract tags
+    const tagsMatch = aiText.match(/【タグ】\s*([\s\S]*?)(?=【コメント】|$)/);
+    if (tagsMatch) {
+      const tagText = tagsMatch[1].trim();
+      result.tags = tagText
+        .split(/\s+/)
+        .filter((tag) => tag.startsWith('#'))
+        .map((tag) => tag.trim());
+    }
+
+    // Extract comment
+    const commentMatch = aiText.match(/【コメント】\s*([\s\S]*?)$/);
+    if (commentMatch) {
+      result.comment = commentMatch[1].trim();
+    }
+
+    // Fallback: if parsing fails, use the raw text
+    if (!result.formatted && !result.tags.length && !result.comment) {
+      result.formatted = aiText;
+    }
+  } catch (error) {
+    console.error('Failed to parse AI response:', error);
+    result.formatted = aiText; // Fallback to raw text
+  }
+
+  return result;
+}
+
+/**
  * ChatContainer - MUEDnote のメインチャットコンテナ
  *
  * UX心理学の原則:
@@ -42,6 +100,9 @@ export function ChatContainer() {
             .map((p) => p.text)
             .join('');
 
+          // Parse AI response for structured data
+          const parsed = parseAIResponse(aiText);
+
           // Save to database
           await fetch('/api/muednote/save', {
             method: 'POST',
@@ -49,6 +110,9 @@ export function ChatContainer() {
             body: JSON.stringify({
               userMessage: userText,
               aiResponse: aiText,
+              formatted: parsed.formatted,
+              tags: parsed.tags,
+              comment: parsed.comment,
             }),
           });
         }
