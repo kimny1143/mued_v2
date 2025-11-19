@@ -418,7 +418,7 @@ export default function NewMusicMaterialPage() {
                     onClick={() => setAdvancedSettings({ ...advancedSettings, genre: genre.label })}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                       advancedSettings.genre === genre.label
-                        ? 'bg-[var(--color-brand-green)] text-white'
+                        ? 'bg-[var(--color-brand-green)] text-[var(--color-brand-text)]'
                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
@@ -458,7 +458,7 @@ export default function NewMusicMaterialPage() {
           <button
             type="submit"
             disabled={generating || (!naturalInput.trim() && !advancedSettings.instrument)}
-            className="px-8 py-3 bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-hover)] text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-sm hover:shadow-md"
+            className="px-8 py-3 bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-hover)] text-[var(--color-brand-text)] rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-sm hover:shadow-md"
           >
             {generating ? (
               <>

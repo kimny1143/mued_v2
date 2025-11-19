@@ -136,7 +136,7 @@ export function BookingConfirmationModal({
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 px-4 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] active:scale-[0.98] transition-all shadow-md hover:shadow-lg"
+            className="flex-1 px-4 py-3 bg-[var(--color-brand-green)] text-[var(--color-brand-text)] rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] active:scale-[0.98] transition-all shadow-md hover:shadow-lg"
           >
             Confirm Booking
           </button>

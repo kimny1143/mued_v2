@@ -224,7 +224,7 @@ export function AccessibleCalendar({
               disabled={isPast}
               className={`
                 aspect-square flex items-center justify-center text-sm font-medium rounded-lg transition-all
-                ${isSelected ? "bg-[var(--color-brand-green)] text-white shadow-md scale-105" : ""}
+                ${isSelected ? "bg-[var(--color-brand-green)] text-[var(--color-brand-text)] shadow-md scale-105" : ""}
                 ${isToday && !isSelected ? "ring-2 ring-[var(--color-brand-green)] ring-offset-1" : ""}
                 ${hasSlots && !isSelected ? "bg-blue-50 text-blue-700 font-semibold" : ""}
                 ${isPast ? "text-gray-300 cursor-not-allowed" : "hover:bg-gray-100 hover:scale-105"}

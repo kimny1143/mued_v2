@@ -280,7 +280,7 @@ export default function UnifiedBookingPage() {
           >
             {t.lessons.tabs.aiMatching}
             {matching.perfectMatches.length > 0 && (
-              <span className="ml-2 px-2 py-0.5 text-xs bg-[var(--color-brand-green)] text-white rounded-full">
+              <span className="ml-2 px-2 py-0.5 text-xs bg-[var(--color-brand-green)] text-[var(--color-brand-text)] rounded-full">
                 {matching.perfectMatches.length}
               </span>
             )}
@@ -305,7 +305,7 @@ export default function UnifiedBookingPage() {
           >
             {t.lessons.tabs.reservations}
             {reservations.length > 0 && (
-              <span className="ml-2 px-2 py-0.5 text-xs bg-[var(--color-brand-green)] text-white rounded-full">
+              <span className="ml-2 px-2 py-0.5 text-xs bg-[var(--color-brand-green)] text-[var(--color-brand-text)] rounded-full">
                 {reservations.length}
               </span>
             )}
@@ -457,7 +457,7 @@ export default function UnifiedBookingPage() {
                   </p>
                   <button
                     onClick={matching.resetPreferences}
-                    className="px-6 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] transition-all"
+                    className="px-6 py-3 bg-[var(--color-brand-green)] text-[var(--color-brand-text)] rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] transition-all"
                   >
                     {t.lessons.aiMatching.resetPreferences}
                   </button>
@@ -544,7 +544,7 @@ export default function UnifiedBookingPage() {
                   onClick={() => toggleTag(tag.id)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                     selectedTags.includes(tag.id)
-                      ? "bg-[var(--color-brand-green)] text-white shadow-sm"
+                      ? "bg-[var(--color-brand-green)] text-[var(--color-brand-text)] shadow-sm"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -694,7 +694,7 @@ export default function UnifiedBookingPage() {
                 ) : (
                   <button
                     onClick={() => handleBooking(slot.id)}
-                    className="w-full px-4 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
+                    className="w-full px-4 py-3 bg-[var(--color-brand-green)] text-[var(--color-brand-text)] rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
                   >
                     {t.lessons.slots.bookNow}
                   </button>
@@ -719,7 +719,7 @@ export default function UnifiedBookingPage() {
               </p>
               <button
                 onClick={() => setActiveTab("booking")}
-                className="px-6 py-3 bg-[var(--color-brand-green)] text-white rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] transition-all shadow-sm hover:shadow-md"
+                className="px-6 py-3 bg-[var(--color-brand-green)] text-[var(--color-brand-text)] rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] transition-all shadow-sm hover:shadow-md"
               >
                 {t.lessons.reservations.bookLesson}
               </button>
