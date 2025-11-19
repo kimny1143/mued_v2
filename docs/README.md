@@ -112,6 +112,48 @@
 
 ---
 
+## 🎵 MUEDnote Architecture (Phase 1)
+
+### ⚠️ IMPORTANT: Session/Interview Architecture is the Correct Approach
+
+MUEDnote Phase 1 implements a **Session/Interview architecture**, NOT a simple log-entry system.
+
+**Canonical Documentation**:
+1. **Business Plan**: [MUEDnote企画v1.md](business/MUEDnote企画v1.md) - Technical architecture specification
+2. **Implementation Plan**: [SESSION_INTERVIEW_IMPLEMENTATION_PLAN.md](implementation/MUEDNOTE_SESSION_INTERVIEW_IMPLEMENTATION_PLAN.md)
+3. **Database Schema**: [session-interview-schema.md](database/session-interview-schema.md)
+4. **Architecture Diagrams**: [SESSION_ARCHITECTURE_DIAGRAMS.md](implementation/MUEDNOTE_SESSION_ARCHITECTURE_DIAGRAMS.md)
+
+### Core Concept
+
+```
+User Short Note → Analyzer Module → Session Analysis →
+Interviewer LLM → AI Questions (2-5) → User Answers → RAG Integration
+```
+
+**Key Components**:
+- **Sessions**: Grouped composition/practice activities with metadata
+- **Analyzer**: AI module that infers focus area and intent from user input
+- **Interviewer**: LLM that generates contextual questions to deepen understanding
+- **Interview Q&A**: Structured questions and answers stored for RAG
+- **RAG Integration**: Past Q&A feeds future question generation and material creation
+
+### Database Tables
+
+- `sessions` - Session records (composition/practice/mix/etc)
+- `session_analyses` - Analyzer output (focus area, intent hypothesis)
+- `interview_questions` - AI-generated questions
+- `interview_answers` - User responses
+- `rag_embeddings` - Vector embeddings for RAG retrieval
+
+### Migration from Phase 1.1
+
+**Note**: If you find references to `log_entries` or simple "formatting + tagging" approach, these are **deprecated**. See `/docs/archive/phase1.1-deprecated/README.md` for details.
+
+**Correct Approach**: Always refer to Session/Interview architecture documents listed above.
+
+---
+
 ## 📞 Contact & Contributing
 
 - **PR Review Guide**: [PR_REVIEW_GUIDE.md](PR_REVIEW_GUIDE.md)
