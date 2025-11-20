@@ -182,6 +182,45 @@ export class MockOpenAI {
       },
     };
   }
+
+  // Mock embeddings API
+  embeddings = {
+    create: vi.fn().mockImplementation(async (params) => {
+      if (this.options.throwError) {
+        throw new Error('Mock OpenAI embeddings error');
+      }
+
+      const input = Array.isArray(params.input) ? params.input : [params.input];
+      const embeddings = input.map((text, index) => ({
+        object: 'embedding',
+        index,
+        embedding: this.generateMockEmbedding(text),
+      }));
+
+      return Promise.resolve({
+        object: 'list',
+        data: embeddings,
+        model: params.model || 'text-embedding-ada-002',
+        usage: {
+          prompt_tokens: input.join(' ').length,
+          total_tokens: input.join(' ').length,
+        },
+      });
+    }),
+  };
+
+  // Generate mock embedding vector (deterministic based on text)
+  private generateMockEmbedding(text: string): number[] {
+    const dim = 1536; // OpenAI ada-002 dimension
+    const hashCode = text.split('').reduce((acc, char) => {
+      return char.charCodeAt(0) + ((acc << 5) - acc);
+    }, 0);
+
+    return Array.from({ length: dim }, (_, i) => {
+      const value = Math.sin(hashCode + i * 0.1);
+      return Math.max(-1, Math.min(1, value));
+    });
+  }
 }
 
 // Factory function for creating mock OpenAI instances
@@ -212,6 +251,13 @@ export const mockOpenAIErrors = {
       code: 'insufficient_quota',
     },
   },
+  embeddingError: {
+    error: {
+      message: 'Error generating embedding',
+      type: 'api_error',
+      code: 'embedding_error',
+    },
+  },
 };
 
 // Preset mock responses for common scenarios
@@ -227,6 +273,58 @@ export const mockResponses = {
   generalQuery: {
     role: 'assistant',
     content: 'How can I help you with your learning journey today?',
+  },
+  // Interviewer-specific responses
+  interviewQuestionsHarmony: {
+    role: 'assistant',
+    content: JSON.stringify({
+      questions: [
+        {
+          text: 'コード進行を変更した理由は何ですか？',
+          focus: 'harmony',
+          depth: 'medium',
+        },
+        {
+          text: 'この和音進行が表現したい感情の本質は何ですか？',
+          focus: 'harmony',
+          depth: 'deep',
+        },
+      ],
+    }),
+  },
+  interviewQuestionsMelody: {
+    role: 'assistant',
+    content: JSON.stringify({
+      questions: [
+        {
+          text: 'メロディラインを変更した意図は何ですか？',
+          focus: 'melody',
+          depth: 'medium',
+        },
+        {
+          text: 'このメロディが聴き手に与えたい印象は何ですか？',
+          focus: 'melody',
+          depth: 'deep',
+        },
+      ],
+    }),
+  },
+  interviewQuestionsRhythm: {
+    role: 'assistant',
+    content: JSON.stringify({
+      questions: [
+        {
+          text: 'リズムパターンを変更した理由は何ですか？',
+          focus: 'rhythm',
+          depth: 'medium',
+        },
+        {
+          text: 'このグルーヴが表現したい身体性とは何ですか？',
+          focus: 'rhythm',
+          depth: 'deep',
+        },
+      ],
+    }),
   },
 };
 

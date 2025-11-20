@@ -6,36 +6,14 @@
  * GET  /api/muednote/sessions - List user's sessions with filters
  */
 
-import { auth } from '@clerk/nextjs/server';
-import { db } from '@/db/edge';
-import { sessions, sessionAnalyses, users } from '@/db/schema';
+import { db } from '@/db';
+import { sessions, sessionAnalyses } from '@/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { analyzerService } from '@/lib/services/analyzer.service';
 import { logger } from '@/lib/utils/logger';
+import { authenticateApiRequest, isAuthenticated } from '@/lib/utils/api-auth';
 import type { DAWMetadata, SessionType, SessionStatus } from '@/db/schema/sessions';
-
-export const runtime = 'edge';
-
-// ========================================
-// Helper: Get internal user UUID from Clerk ID
-// ========================================
-
-async function getUserIdFromClerkId(clerkId: string): Promise<string> {
-  const [user] = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.clerkId, clerkId))
-    .limit(1);
-
-  if (!user) {
-    throw new Error(
-      `User ${clerkId} not found in database. Please ensure Clerk webhooks are properly configured.`
-    );
-  }
-
-  return user.id;
-}
 
 // ========================================
 // POST /api/muednote/sessions
@@ -44,11 +22,13 @@ async function getUserIdFromClerkId(clerkId: string): Promise<string> {
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
+    const authResult = await authenticateApiRequest('POST /api/muednote/sessions');
 
-    if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAuthenticated(authResult)) {
+      return authResult; // Return 401 or 500 response
     }
+
+    const { internalUserId } = authResult;
 
     // Parse request body
     const body = await req.json();
@@ -70,9 +50,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    // Get internal user ID (after validation)
-    const internalUserId = await getUserIdFromClerkId(session.userId);
 
     logger.info('[POST /api/muednote/sessions] Creating session', {
       userId: internalUserId,
@@ -167,14 +144,13 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    const session = await auth();
+    const authResult = await authenticateApiRequest('GET /api/muednote/sessions');
 
-    if (!session?.userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAuthenticated(authResult)) {
+      return authResult; // Return 401 or 500 response
     }
 
-    // Get internal user ID
-    const internalUserId = await getUserIdFromClerkId(session.userId);
+    const { internalUserId } = authResult;
 
     // Parse query parameters
     const url = new URL(req.url);

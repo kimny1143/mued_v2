@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { createChatCompletion } from '@/lib/openai';
 import type { SessionAnalysisData } from '@/db/schema/sessions';
 import { logger } from '@/lib/utils/logger';
+import { isValidFocusArea } from '@/lib/constants/question-constants';
 
 // ========================================
 // Type Definitions
@@ -143,8 +144,7 @@ export class AnalyzerService {
       }
 
       // Validate focusArea
-      const validFocusAreas = ['harmony', 'melody', 'rhythm', 'mix', 'emotion', 'image', 'structure'];
-      if (!validFocusAreas.includes(analysisResult.focusArea)) {
+      if (!isValidFocusArea(analysisResult.focusArea)) {
         logger.warn('[AnalyzerService] Invalid focusArea, defaulting to emotion', {
           receivedFocusArea: analysisResult.focusArea,
         });
