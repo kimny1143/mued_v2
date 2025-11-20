@@ -50,7 +50,7 @@ const createInsertChain = () => ({
 // Mock transaction that provides tx object with same methods
 const mockTransaction = vi.fn();
 
-vi.mock('@/db/edge', () => ({
+vi.mock('@/db', () => ({
   db: {
     select: vi.fn(() => createSelectChain()),
     insert: vi.fn(() => createInsertChain()),
@@ -63,6 +63,13 @@ vi.mock('@/db/schema', () => ({
   sessions: {},
   sessionAnalyses: {},
   users: {},
+}));
+
+// Mock api-auth helper
+const mockAuthenticateApiRequest = vi.fn();
+vi.mock('@/lib/utils/api-auth', () => ({
+  authenticateApiRequest: (...args: any[]) => mockAuthenticateApiRequest(...args),
+  isAuthenticated: (result: any) => result && 'internalUserId' in result,
 }));
 
 // Mock analyzer service
@@ -85,7 +92,7 @@ vi.mock('@/lib/utils/logger', () => ({
 
 // Import after all mocks are set up
 import { POST, GET } from '@/app/api/muednote/sessions/route';
-import { db } from '@/db/edge';
+import { db } from '@/db';
 
 // ========================================
 // Test Data
@@ -157,12 +164,10 @@ describe('Sessions API Integration Tests', () => {
   describe('POST /api/muednote/sessions', () => {
     it('should create a session for authenticated user', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: 'clerk-user-123' });
-
-      // Mock getUserIdFromClerkId
-      const selectChain = createSelectChain();
-      selectChain.from().where().limit.mockResolvedValue([{ id: 'internal-user-uuid' }]);
-      (db.select as any).mockReturnValue(selectChain);
+      mockAuthenticateApiRequest.mockResolvedValue({
+        clerkUserId: 'clerk-user-123',
+        internalUserId: 'internal-user-uuid',
+      });
 
       // Mock analyzer service
       mockAnalyzeSession.mockResolvedValue(mockAnalyzerResult);
@@ -232,7 +237,10 @@ describe('Sessions API Integration Tests', () => {
 
     it('should return 400 when required fields are missing', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: 'clerk-user-123' });
+      mockAuthenticateApiRequest.mockResolvedValue({
+        clerkUserId: 'clerk-user-123',
+        internalUserId: 'internal-user-uuid',
+      });
 
       const request = new NextRequest('http://localhost:3000/api/muednote/sessions', {
         method: 'POST',
@@ -254,7 +262,10 @@ describe('Sessions API Integration Tests', () => {
 
     it('should return 401 for unauthenticated users', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: null });
+      const { NextResponse } = await import('next/server');
+      mockAuthenticateApiRequest.mockResolvedValue(
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
 
       const request = new NextRequest('http://localhost:3000/api/muednote/sessions', {
         method: 'POST',
@@ -277,12 +288,10 @@ describe('Sessions API Integration Tests', () => {
 
     it('should handle user not found error', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: 'clerk-user-123' });
-
-      // Mock getUserIdFromClerkId to return empty array (user not found)
-      const selectChain = createSelectChain();
-      selectChain.from().where().limit.mockResolvedValue([]);
-      (db.select as any).mockReturnValue(selectChain);
+      const { NextResponse } = await import('next/server');
+      mockAuthenticateApiRequest.mockResolvedValue(
+        NextResponse.json({ error: 'User authentication failed' }, { status: 500 })
+      );
 
       const request = new NextRequest('http://localhost:3000/api/muednote/sessions', {
         method: 'POST',
@@ -300,17 +309,15 @@ describe('Sessions API Integration Tests', () => {
 
       // Assert
       expect(response.status).toBe(500);
-      expect(data.error).toBe('Failed to create session');
-      expect(data.details).toContain('User clerk-user-123 not found');
+      expect(data.error).toBe('User authentication failed');
     });
 
     it('should save AI annotations correctly', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: 'clerk-user-123' });
-
-      const selectChain = createSelectChain();
-      selectChain.from().where().limit.mockResolvedValue([{ id: 'internal-user-uuid' }]);
-      (db.select as any).mockReturnValue(selectChain);
+      mockAuthenticateApiRequest.mockResolvedValue({
+        clerkUserId: 'clerk-user-123',
+        internalUserId: 'internal-user-uuid',
+      });
 
       mockAnalyzeSession.mockResolvedValue(mockAnalyzerResult);
 
@@ -376,11 +383,10 @@ describe('Sessions API Integration Tests', () => {
   describe('GET /api/muednote/sessions', () => {
     it('should fetch all sessions for authenticated user', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: 'clerk-user-123' });
-
-      // Mock getUserIdFromClerkId
-      const userSelectChain = createSelectChain();
-      userSelectChain.from().where().limit.mockResolvedValue([{ id: 'internal-user-uuid' }]);
+      mockAuthenticateApiRequest.mockResolvedValue({
+        clerkUserId: 'clerk-user-123',
+        internalUserId: 'internal-user-uuid',
+      });
 
       // Mock sessions query
       const sessionsSelectChain = createSelectChain();
@@ -396,7 +402,6 @@ describe('Sessions API Integration Tests', () => {
       countSelectChain.from().where.mockResolvedValue([{ total: 1 }]);
 
       (db.select as any)
-        .mockReturnValueOnce(userSelectChain) // For getUserIdFromClerkId
         .mockReturnValueOnce(sessionsSelectChain) // For sessions query
         .mockReturnValueOnce(countSelectChain); // For count query
 
@@ -424,10 +429,11 @@ describe('Sessions API Integration Tests', () => {
 
     it('should filter sessions by type', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: 'clerk-user-123' });
+      mockAuthenticateApiRequest.mockResolvedValue({
+        clerkUserId: 'clerk-user-123',
+        internalUserId: 'internal-user-uuid',
+      });
 
-      const userSelectChain = createSelectChain();
-      userSelectChain.from().where().limit.mockResolvedValue([{ id: 'internal-user-uuid' }]);
 
       const sessionsSelectChain = createSelectChain();
       const whereFunc = vi.fn().mockReturnValue({
@@ -443,7 +449,6 @@ describe('Sessions API Integration Tests', () => {
       countSelectChain.from().where.mockResolvedValue([{ total: 1 }]);
 
       (db.select as any)
-        .mockReturnValueOnce(userSelectChain)
         .mockReturnValueOnce(sessionsSelectChain)
         .mockReturnValueOnce(countSelectChain);
 
@@ -463,10 +468,11 @@ describe('Sessions API Integration Tests', () => {
 
     it('should filter sessions by status', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: 'clerk-user-123' });
+      mockAuthenticateApiRequest.mockResolvedValue({
+        clerkUserId: 'clerk-user-123',
+        internalUserId: 'internal-user-uuid',
+      });
 
-      const userSelectChain = createSelectChain();
-      userSelectChain.from().where().limit.mockResolvedValue([{ id: 'internal-user-uuid' }]);
 
       const sessionsSelectChain = createSelectChain();
       sessionsSelectChain
@@ -480,7 +486,6 @@ describe('Sessions API Integration Tests', () => {
       countSelectChain.from().where.mockResolvedValue([{ total: 1 }]);
 
       (db.select as any)
-        .mockReturnValueOnce(userSelectChain)
         .mockReturnValueOnce(sessionsSelectChain)
         .mockReturnValueOnce(countSelectChain);
 
@@ -499,10 +504,11 @@ describe('Sessions API Integration Tests', () => {
 
     it('should handle pagination correctly', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: 'clerk-user-123' });
+      mockAuthenticateApiRequest.mockResolvedValue({
+        clerkUserId: 'clerk-user-123',
+        internalUserId: 'internal-user-uuid',
+      });
 
-      const userSelectChain = createSelectChain();
-      userSelectChain.from().where().limit.mockResolvedValue([{ id: 'internal-user-uuid' }]);
 
       const sessionsSelectChain = createSelectChain();
       const mockSessions = Array(10).fill(mockSession).map((s, i) => ({ ...s, id: `session-${i}` }));
@@ -517,7 +523,6 @@ describe('Sessions API Integration Tests', () => {
       countSelectChain.from().where.mockResolvedValue([{ total: 25 }]);
 
       (db.select as any)
-        .mockReturnValueOnce(userSelectChain)
         .mockReturnValueOnce(sessionsSelectChain)
         .mockReturnValueOnce(countSelectChain);
 
@@ -542,10 +547,11 @@ describe('Sessions API Integration Tests', () => {
 
     it('should limit max items to 100', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: 'clerk-user-123' });
+      mockAuthenticateApiRequest.mockResolvedValue({
+        clerkUserId: 'clerk-user-123',
+        internalUserId: 'internal-user-uuid',
+      });
 
-      const userSelectChain = createSelectChain();
-      userSelectChain.from().where().limit.mockResolvedValue([{ id: 'internal-user-uuid' }]);
 
       const sessionsSelectChain = createSelectChain();
       sessionsSelectChain
@@ -559,7 +565,6 @@ describe('Sessions API Integration Tests', () => {
       countSelectChain.from().where.mockResolvedValue([{ total: 0 }]);
 
       (db.select as any)
-        .mockReturnValueOnce(userSelectChain)
         .mockReturnValueOnce(sessionsSelectChain)
         .mockReturnValueOnce(countSelectChain);
 
@@ -578,7 +583,10 @@ describe('Sessions API Integration Tests', () => {
 
     it('should return 401 for unauthenticated users', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: null });
+      const { NextResponse } = await import('next/server');
+      mockAuthenticateApiRequest.mockResolvedValue(
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
 
       const request = new NextRequest('http://localhost:3000/api/muednote/sessions', {
         method: 'GET',
@@ -595,10 +603,11 @@ describe('Sessions API Integration Tests', () => {
 
     it('should not return other users sessions', async () => {
       // Arrange
-      mockAuth.mockReturnValue({ userId: 'clerk-user-123' });
+      mockAuthenticateApiRequest.mockResolvedValue({
+        clerkUserId: 'clerk-user-123',
+        internalUserId: 'internal-user-uuid',
+      });
 
-      const userSelectChain = createSelectChain();
-      userSelectChain.from().where().limit.mockResolvedValue([{ id: 'internal-user-uuid' }]);
 
       // Return empty array for this user's sessions
       const sessionsSelectChain = createSelectChain();
@@ -613,7 +622,6 @@ describe('Sessions API Integration Tests', () => {
       countSelectChain.from().where.mockResolvedValue([{ total: 0 }]);
 
       (db.select as any)
-        .mockReturnValueOnce(userSelectChain)
         .mockReturnValueOnce(sessionsSelectChain)
         .mockReturnValueOnce(countSelectChain);
 
