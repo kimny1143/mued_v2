@@ -6,7 +6,7 @@
  */
 
 import { auth } from '@clerk/nextjs/server';
-import { db } from '@/db/edge';
+import { db } from '@/db';
 import { users, sessions, interviewQuestions } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
@@ -15,8 +15,6 @@ import { analyzerService } from '@/lib/services/analyzer.service';
 import { interviewerService } from '@/lib/services/interviewer.service';
 import { ragService } from '@/lib/services/rag.service';
 import { logger } from '@/lib/utils/logger';
-
-export const runtime = 'edge';
 
 // ========================================
 // Input Validation Schema

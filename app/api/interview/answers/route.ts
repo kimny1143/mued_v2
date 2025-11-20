@@ -6,14 +6,12 @@
  */
 
 import { auth } from '@clerk/nextjs/server';
-import { db } from '@/db/edge';
+import { db } from '@/db';
 import { users, sessions, interviewQuestions, interviewAnswers } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { logger } from '@/lib/utils/logger';
-
-export const runtime = 'edge';
 
 // ========================================
 // Input Validation Schema
