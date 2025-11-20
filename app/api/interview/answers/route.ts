@@ -5,14 +5,14 @@
  * Phase 1.3 Day 18-19: Interview API Routes Implementation
  */
 
-import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
-import { interviewQuestions, interviewAnswers } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { interviewQuestions, interviewAnswers, sessions } from '@/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { logger } from '@/lib/utils/logger';
-import { getUserIdFromClerkId, verifySessionOwnership } from '@/lib/utils/auth-helpers';
+import { verifySessionOwnership } from '@/lib/utils/auth-helpers';
+import { authenticateApiRequest, isAuthenticated } from '@/lib/utils/api-auth';
 
 // ========================================
 // Input Validation Schema
@@ -62,12 +62,13 @@ async function verifyQuestionInSession(questionId: string, sessionId: string): P
 export async function POST(req: Request) {
   try {
     // 1. Authenticate user
-    const session = await auth();
+    const authResult = await authenticateApiRequest('POST /api/interview/answers');
 
-    if (!session?.userId) {
-      logger.warn('[POST /api/interview/answers] Unauthorized request');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAuthenticated(authResult)) {
+      return authResult; // Return 401 or 500 response
     }
+
+    const { internalUserId } = authResult;
 
     // 2. Parse and validate request body
     const body = await req.json();
@@ -91,9 +92,6 @@ export async function POST(req: Request) {
     }
 
     const { sessionId, questionId, answerText } = validationResult.data;
-
-    // 3. Get internal user ID
-    const internalUserId = await getUserIdFromClerkId(session.userId);
 
     // 4. Verify session ownership
     const isOwner = await verifySessionOwnership(sessionId, internalUserId);

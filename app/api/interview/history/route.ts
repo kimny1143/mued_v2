@@ -5,14 +5,14 @@
  * Phase 1.3 Day 18-19: Interview API Routes Implementation
  */
 
-import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { interviewQuestions, interviewAnswers } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { logger } from '@/lib/utils/logger';
-import { getUserIdFromClerkId, verifySessionOwnership } from '@/lib/utils/auth-helpers';
+import { verifySessionOwnership } from '@/lib/utils/auth-helpers';
+import { authenticateApiRequest, isAuthenticated } from '@/lib/utils/api-auth';
 
 // ========================================
 // Query Parameter Validation Schema
@@ -42,12 +42,13 @@ const GetHistoryQuerySchema = z.object({
 export async function GET(req: Request) {
   try {
     // 1. Authenticate user
-    const session = await auth();
+    const authResult = await authenticateApiRequest('GET /api/interview/history');
 
-    if (!session?.userId) {
-      logger.warn('[GET /api/interview/history] Unauthorized request');
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAuthenticated(authResult)) {
+      return authResult; // Return 401 or 500 response
     }
+
+    const { internalUserId } = authResult;
 
     // 2. Parse and validate query parameters
     const url = new URL(req.url);
@@ -79,9 +80,6 @@ export async function GET(req: Request) {
     }
 
     const validatedSessionId = validationResult.data.sessionId;
-
-    // 3. Get internal user ID
-    const internalUserId = await getUserIdFromClerkId(session.userId);
 
     // 4. Verify session ownership
     const isOwner = await verifySessionOwnership(validatedSessionId, internalUserId);
