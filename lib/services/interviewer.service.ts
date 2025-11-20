@@ -18,28 +18,17 @@ import { logger } from '@/lib/utils/logger';
 import { db } from '@/db';
 import { questionTemplates } from '@/db/schema/question-templates';
 import { eq, and, desc } from 'drizzle-orm';
+import {
+  focusAreaSchema,
+  questionDepthSchema,
+  isValidFocusArea,
+  isValidDepth,
+  type FocusArea,
+} from '@/lib/constants/question-constants';
 
 // ========================================
 // Type Definitions
 // ========================================
-
-/**
- * Focus areas for interview questions
- */
-export const focusAreaSchema = z.enum([
-  'harmony',
-  'melody',
-  'rhythm',
-  'mix',
-  'emotion',
-  'image',
-  'structure',
-]);
-
-/**
- * Question depth levels
- */
-export const questionDepthSchema = z.enum(['shallow', 'medium', 'deep']);
 
 /**
  * Input schema for generateQuestions
@@ -74,8 +63,6 @@ export const GenerateQuestionsOutputSchema = z.object({
 export type GenerateQuestionsInput = z.infer<typeof GenerateQuestionsInputSchema>;
 export type GenerateQuestionsOutput = z.infer<typeof GenerateQuestionsOutputSchema>;
 export type InterviewQuestion = z.infer<typeof InterviewQuestionSchema>;
-export type FocusArea = z.infer<typeof focusAreaSchema>;
-export type QuestionDepth = z.infer<typeof questionDepthSchema>;
 
 // ========================================
 // System Prompt for Interviewer LLM
@@ -347,41 +334,15 @@ export class InterviewerService {
 
       return {
         text: typeof questionObj.text === 'string' ? questionObj.text : '',
-        focus: typeof questionObj.focus === 'string' && this.isValidFocusArea(questionObj.focus)
-          ? questionObj.focus as FocusArea
+        focus: typeof questionObj.focus === 'string' && isValidFocusArea(questionObj.focus)
+          ? questionObj.focus
           : input.focusArea,
-        depth: typeof questionObj.depth === 'string' && this.isValidDepth(questionObj.depth)
-          ? questionObj.depth as QuestionDepth
+        depth: typeof questionObj.depth === 'string' && isValidDepth(questionObj.depth)
+          ? questionObj.depth
           : 'medium',
         order: index,
       };
     });
-  }
-
-  /**
-   * Type guard: Check if a string is a valid FocusArea
-   * @private
-   */
-  private isValidFocusArea(value: string): value is FocusArea {
-    const validFocusAreas: FocusArea[] = [
-      'harmony',
-      'melody',
-      'rhythm',
-      'mix',
-      'emotion',
-      'image',
-      'structure',
-    ];
-    return validFocusAreas.includes(value as FocusArea);
-  }
-
-  /**
-   * Type guard: Check if a string is a valid QuestionDepth
-   * @private
-   */
-  private isValidDepth(value: string): value is QuestionDepth {
-    const validDepths: QuestionDepth[] = ['shallow', 'medium', 'deep'];
-    return validDepths.includes(value as QuestionDepth);
   }
 
   /**
@@ -414,17 +375,6 @@ export class InterviewerService {
     questions: InterviewQuestion[],
     expectedFocus: FocusArea
   ): InterviewQuestion[] {
-    const validFocusAreas: FocusArea[] = [
-      'harmony',
-      'melody',
-      'rhythm',
-      'mix',
-      'emotion',
-      'image',
-      'structure',
-    ];
-    const validDepths: QuestionDepth[] = ['shallow', 'medium', 'deep'];
-
     return questions
       .filter((q) => {
         // Filter out invalid questions
@@ -437,7 +387,7 @@ export class InterviewerService {
       .map((q, index) => {
         // Normalize focus area
         let focus = q.focus;
-        if (!validFocusAreas.includes(focus)) {
+        if (!isValidFocusArea(focus)) {
           logger.warn('[InterviewerService] Invalid focus area, using expected', {
             received: focus,
             expected: expectedFocus,
@@ -447,7 +397,7 @@ export class InterviewerService {
 
         // Normalize depth
         let depth = q.depth;
-        if (!validDepths.includes(depth)) {
+        if (!isValidDepth(depth)) {
           logger.warn('[InterviewerService] Invalid depth, defaulting to medium', {
             received: depth,
           });

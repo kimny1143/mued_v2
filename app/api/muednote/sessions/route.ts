@@ -7,35 +7,14 @@
  */
 
 import { auth } from '@clerk/nextjs/server';
-import { db } from '@/db/edge';
-import { sessions, sessionAnalyses, users } from '@/db/schema';
+import { db } from '@/db';
+import { sessions, sessionAnalyses } from '@/db/schema';
 import { eq, desc, and, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { analyzerService } from '@/lib/services/analyzer.service';
 import { logger } from '@/lib/utils/logger';
+import { getUserIdFromClerkId } from '@/lib/utils/auth-helpers';
 import type { DAWMetadata, SessionType, SessionStatus } from '@/db/schema/sessions';
-
-export const runtime = 'edge';
-
-// ========================================
-// Helper: Get internal user UUID from Clerk ID
-// ========================================
-
-async function getUserIdFromClerkId(clerkId: string): Promise<string> {
-  const [user] = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.clerkId, clerkId))
-    .limit(1);
-
-  if (!user) {
-    throw new Error(
-      `User ${clerkId} not found in database. Please ensure Clerk webhooks are properly configured.`
-    );
-  }
-
-  return user.id;
-}
 
 // ========================================
 // POST /api/muednote/sessions

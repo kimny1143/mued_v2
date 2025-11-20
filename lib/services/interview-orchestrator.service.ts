@@ -28,6 +28,7 @@ import { sessions, interviewQuestions, interviewAnswers } from '@/db/schema/sess
 import { eq, desc } from 'drizzle-orm';
 import { analyzerService, type AnalyzeSessionInput } from './analyzer.service';
 import { interviewerService, type GenerateQuestionsInput, InterviewQuestionSchema } from './interviewer.service';
+import type { FocusArea } from '@/lib/constants/question-constants';
 import { ragService, type SimilarLog } from './rag.service';
 
 // ========================================
@@ -227,7 +228,7 @@ class InterviewOrchestrator {
       // AnalyzerService.analyzeSession returns focusArea as a union type matching FocusArea
       const questionInput: GenerateQuestionsInput = {
         sessionId: validated.sessionId,
-        focusArea: focusArea as 'harmony' | 'melody' | 'rhythm' | 'mix' | 'emotion' | 'image' | 'structure',
+        focusArea: focusArea as FocusArea,
         intentHypothesis,
         userShortNote: validated.userShortNote,
         previousQuestions: validated.previousQuestions,

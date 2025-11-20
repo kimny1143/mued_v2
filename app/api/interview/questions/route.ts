@@ -7,7 +7,8 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
-import { interviewQuestions } from '@/db/schema';
+import { interviewQuestions, sessions } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { analyzerService } from '@/lib/services/analyzer.service';
