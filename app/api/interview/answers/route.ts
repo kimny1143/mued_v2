@@ -12,6 +12,7 @@ import { eq, and } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { logger } from '@/lib/utils/logger';
+import { getUserIdFromClerkId, verifySessionOwnership } from '@/lib/utils/auth-helpers';
 
 // ========================================
 // Input Validation Schema
@@ -22,44 +23,6 @@ const SaveAnswerRequestSchema = z.object({
   questionId: z.string().uuid('Invalid question ID format'),
   answerText: z.string().min(1, 'Answer cannot be empty').max(5000, 'Answer too long (max 5000 chars)'),
 });
-
-// ========================================
-// Helper: Get internal user UUID from Clerk ID
-// ========================================
-
-async function getUserIdFromClerkId(clerkId: string): Promise<string> {
-  const [user] = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.clerkId, clerkId))
-    .limit(1);
-
-  if (!user) {
-    throw new Error(
-      `User ${clerkId} not found in database. Please ensure Clerk webhooks are properly configured.`
-    );
-  }
-
-  return user.id;
-}
-
-// ========================================
-// Helper: Verify session ownership
-// ========================================
-
-async function verifySessionOwnership(sessionId: string, userId: string): Promise<boolean> {
-  const [session] = await db
-    .select({ userId: sessions.userId })
-    .from(sessions)
-    .where(eq(sessions.id, sessionId))
-    .limit(1);
-
-  if (!session) {
-    return false;
-  }
-
-  return session.userId === userId;
-}
 
 // ========================================
 // Helper: Verify question belongs to session
