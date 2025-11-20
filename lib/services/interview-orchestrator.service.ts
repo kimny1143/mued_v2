@@ -223,9 +223,11 @@ class InterviewOrchestrator {
         focusArea,
       });
 
+      // Type assertion: focusArea is validated by AnalyzerService to be one of the valid focus areas
+      // AnalyzerService.analyzeSession returns focusArea as a union type matching FocusArea
       const questionInput: GenerateQuestionsInput = {
         sessionId: validated.sessionId,
-        focusArea: focusArea as any, // Type assertion - focusArea is validated by AnalyzerService
+        focusArea: focusArea as 'harmony' | 'melody' | 'rhythm' | 'mix' | 'emotion' | 'image' | 'structure',
         intentHypothesis,
         userShortNote: validated.userShortNote,
         previousQuestions: validated.previousQuestions,
@@ -315,11 +317,13 @@ class InterviewOrchestrator {
 
     try {
       // 2. Insert into database
+      // Note: aiInsights field expects JSONB type (Record<string, unknown>)
+      // validated.metadata is already typed as Record<string, unknown> from SaveAnswerInputSchema
       const [answer] = await db.insert(interviewAnswers).values({
         sessionId: validated.sessionId,
         questionId: validated.questionId,
         text: validated.answerText,
-        aiInsights: validated.metadata as any, // Metadata can be used for AI insights
+        aiInsights: validated.metadata ?? null,
       }).returning();
 
       logger.info('[InterviewOrchestrator] Answer saved successfully', {

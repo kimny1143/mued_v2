@@ -330,13 +330,58 @@ export class InterviewerService {
       );
     }
 
-    // Convert to InterviewQuestion objects
-    return parsedResponse.questions.map((q: any, index: number) => ({
-      text: q.text || '',
-      focus: q.focus || input.focusArea,
-      depth: q.depth || 'medium',
-      order: index,
-    }));
+    // Convert to InterviewQuestion objects with type guards
+    return parsedResponse.questions.map((q: unknown, index: number): InterviewQuestion => {
+      // Type guard: ensure q is an object with expected properties
+      if (!q || typeof q !== 'object') {
+        logger.warn('[InterviewerService] Invalid question object, using defaults', { q, index });
+        return {
+          text: '',
+          focus: input.focusArea,
+          depth: 'medium',
+          order: index,
+        };
+      }
+
+      const questionObj = q as Record<string, unknown>;
+
+      return {
+        text: typeof questionObj.text === 'string' ? questionObj.text : '',
+        focus: typeof questionObj.focus === 'string' && this.isValidFocusArea(questionObj.focus)
+          ? questionObj.focus as FocusArea
+          : input.focusArea,
+        depth: typeof questionObj.depth === 'string' && this.isValidDepth(questionObj.depth)
+          ? questionObj.depth as QuestionDepth
+          : 'medium',
+        order: index,
+      };
+    });
+  }
+
+  /**
+   * Type guard: Check if a string is a valid FocusArea
+   * @private
+   */
+  private isValidFocusArea(value: string): value is FocusArea {
+    const validFocusAreas: FocusArea[] = [
+      'harmony',
+      'melody',
+      'rhythm',
+      'mix',
+      'emotion',
+      'image',
+      'structure',
+    ];
+    return validFocusAreas.includes(value as FocusArea);
+  }
+
+  /**
+   * Type guard: Check if a string is a valid QuestionDepth
+   * @private
+   */
+  private isValidDepth(value: string): value is QuestionDepth {
+    const validDepths: QuestionDepth[] = ['shallow', 'medium', 'deep'];
+    return validDepths.includes(value as QuestionDepth);
   }
 
   /**

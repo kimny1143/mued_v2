@@ -19,7 +19,6 @@ import { db } from '@/db';
 import {
   ragEmbeddings,
   questionTemplates,
-  sessions,
   type InterviewFocus,
   type InterviewDepth,
 } from '@/db/schema';
@@ -32,6 +31,26 @@ import { createHash } from 'crypto';
 // ========================================
 // Type Definitions & Validation Schemas
 // ========================================
+
+/**
+ * Database row types for query results
+ */
+interface SimilaritySearchRow {
+  logId: string;
+  sessionId?: string;
+  content?: string;
+  similarity: number | string;
+  metadata?: unknown;
+}
+
+interface EmbeddingStatsRow {
+  source_type: string;
+  count: number | string;
+}
+
+interface ExplainPlanRow {
+  'QUERY PLAN': unknown;
+}
 
 /**
  * Question template with priority
@@ -72,7 +91,7 @@ export const SimilarLogSchema = z.object({
   sessionId: z.string().uuid(),
   content: z.string(),
   similarity: z.number().min(0).max(1),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.unknown()).optional(),
 });
 
 /**
@@ -229,9 +248,13 @@ class RAGService {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         return await fn();
-      } catch (error: any) {
+      } catch (error: unknown) {
         const isLastAttempt = attempt === maxRetries - 1;
-        const isRateLimitError = error?.status === 429;
+        const isRateLimitError =
+          typeof error === 'object' &&
+          error !== null &&
+          'status' in error &&
+          error.status === 429;
 
         if (isRateLimitError && !isLastAttempt) {
           const delay = this.INITIAL_BACKOFF_MS * Math.pow(2, attempt);
@@ -427,13 +450,19 @@ class RAGService {
       `);
 
       // 3. Parse and validate results
-      const similarLogs: SimilarLog[] = results.rows.map((row: any) => ({
-        logId: row.logId,
-        sessionId: row.sessionId || row.logId,
-        content: row.content || '',
-        similarity: parseFloat(row.similarity),
-        metadata: row.metadata || {},
-      }));
+      const similarLogs: SimilarLog[] = results.rows.map((row) => {
+        const typedRow = row as unknown as SimilaritySearchRow;
+        return {
+          logId: typedRow.logId,
+          sessionId: typedRow.sessionId || typedRow.logId,
+          content: typedRow.content || '',
+          similarity:
+            typeof typedRow.similarity === 'string'
+              ? parseFloat(typedRow.similarity)
+              : typedRow.similarity,
+          metadata: (typedRow.metadata as Record<string, unknown>) || {},
+        };
+      });
 
       logger.info('[RAGService] Similar logs found', {
         queryLength: validated.query.length,
@@ -487,7 +516,7 @@ class RAGService {
         text: template.text,
         focus: template.focus,
         depth: template.depth,
-        variables: (template.variables as any) || {},
+        variables: (template.variables as Record<string, unknown>) || {},
       }));
     } catch (error) {
       logger.error('[RAGService] Template search failed', { error });
@@ -518,7 +547,7 @@ class RAGService {
    * @param query - Sample query text
    * @returns EXPLAIN ANALYZE output
    */
-  async checkIndexUsage(query: string): Promise<any> {
+  async checkIndexUsage(query: string): Promise<ExplainPlanRow | null> {
     try {
       const queryEmbedding = await this.generateEmbedding(query);
 
@@ -532,7 +561,7 @@ class RAGService {
         LIMIT 5
       `);
 
-      return plan.rows[0];
+      return plan.rows[0] as unknown as ExplainPlanRow;
     } catch (error) {
       logger.error('[RAGService] Index usage check failed', { error });
       return null;
@@ -597,12 +626,15 @@ class RAGService {
         GROUP BY source_type
       `);
 
-      const sessionCount =
-        stats.rows.find((row: any) => row.source_type === 'session')?.count ||
-        0;
-      const templateCount =
-        stats.rows.find((row: any) => row.source_type === 'template')?.count ||
-        0;
+      const sessionRow = stats.rows.find(
+        (row) => (row as unknown as EmbeddingStatsRow).source_type === 'session'
+      ) as unknown as EmbeddingStatsRow | undefined;
+      const templateRow = stats.rows.find(
+        (row) => (row as unknown as EmbeddingStatsRow).source_type === 'template'
+      ) as unknown as EmbeddingStatsRow | undefined;
+
+      const sessionCount = sessionRow?.count || 0;
+      const templateCount = templateRow?.count || 0;
 
       return {
         sessions: Number(sessionCount),
