@@ -262,3 +262,8 @@ export * from './schema/log-entries';
 // MUEDnote Sessions (Phase 2)
 // ========================================
 export * from './schema/sessions';
+
+// ========================================
+// Question Templates & RAG (Phase 1.3)
+// ========================================
+export * from './schema/question-templates';

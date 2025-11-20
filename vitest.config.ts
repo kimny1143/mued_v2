@@ -11,6 +11,9 @@ export default defineConfig({
     // Setup files
     setupFiles: ['./tests/setup/vitest.setup.ts'],
 
+    // Global setup (testcontainers)
+    globalSetup: ['./tests/setup/testcontainers.setup.ts'],
+
     // Global test timeout
     testTimeout: 10000,
 
@@ -42,6 +45,7 @@ export default defineConfig({
       'components/**/*.{test,spec}.{ts,tsx}',
       'tests/unit/**/*.{test,spec}.{ts,tsx}',
       'tests/integration/**/*.{test,spec}.{ts,tsx}',
+      'tests/performance/**/*.{test,spec}.{ts,tsx}',
     ],
     exclude: [
       'node_modules/**',

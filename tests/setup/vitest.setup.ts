@@ -1,11 +1,20 @@
 import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import './custom-matchers';
 
 // Mock environment variables
 process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'test_pk_123';
 process.env.CLERK_SECRET_KEY = 'test_sk_123';
-process.env.DATABASE_URL = 'postgresql://test:test@localhost/test';
+
+// Use testcontainers DATABASE_URL if available (set by globalSetup)
+// Otherwise use a mock URL for unit tests
+if (!process.env.DATABASE_URL && process.env.TEST_DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+} else if (!process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = 'postgresql://test:test@localhost/test';
+}
+
 process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
 process.env.STRIPE_SECRET_KEY = 'sk_test_123';
 process.env.STRIPE_WEBHOOK_SECRET = 'whsec_test_123';
@@ -123,20 +132,22 @@ declare global {
 // Mock fetch globally
 global.fetch = vi.fn();
 
-// Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
+// Mock window.matchMedia (only in jsdom environment)
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+}
 
 // Mock IntersectionObserver
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({
