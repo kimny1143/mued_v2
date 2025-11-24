@@ -184,7 +184,7 @@ sequenceDiagram
     DB-->>Quota: tier: premium, used: 50/100
     Quota-->>API: クォータOK
     API->>AI: generateMaterial()
-    AI->>OpenAI: Chat Completion API<br/>(model: gpt-4o-mini)
+    AI->>OpenAI: Chat Completion API<br/>(model: gpt-4.1-mini)
     OpenAI-->>AI: ABC記法の楽譜
     AI->>QG: 品質検証
     QG-->>AI: Playability: 8.5, Learning: 9.0

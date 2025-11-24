@@ -212,11 +212,11 @@ Phase 2 (Cloud Sync): Qdrant + PostgreSQL
 
 | 用途 | モデル | レイテンシ | コスト | 理由 |
 |------|--------|-----------|--------|------|
-| **Tag Extraction** | gpt-4.1-mini | 200ms | $0.4/1M tokens | 高速、軽量 |
-| **Sentiment Analysis** | gpt-4.1-mini | 100ms | $0.4/1M tokens | 短文処理に最適 |
+| **Tag Extraction** | gpt-4.1-mini | 200ms | $0.4/$1.6 per 1M tokens | 高速、軽量 |
+| **Sentiment Analysis** | gpt-4.1-mini | 100ms | $0.4/$1.6 per 1M tokens | 短文処理に最適 |
 | **Context Linking (RAG)** | text-embedding-3-small | 50ms | $0.02/1M tokens | 1536次元、高速 |
-| **Smart Recall (検索)** | gpt-4.1-mini + RAG | 500ms | $0.4/1M tokens | 要約生成 |
-| **Auto Liner Notes** | gpt-5-mini | 2-5s | $0.25/$2.0 per 1M tokens | 長文生成、推論 |
+| **Smart Recall (検索)** | gpt-4.1-mini + RAG | 500ms | $0.4/$1.6 per 1M tokens | 要約生成 |
+| **Auto Liner Notes** | gpt-4.1 | 2-5s | $2.0/$8.0 per 1M tokens | 長文生成、推論 |
 
 **重要な設計原則:**
 - **500ms ルール**: Fragment入力から消失までの処理時間を500ms以内に収める
@@ -524,7 +524,7 @@ n
    └─ Calculate statistics (fragment count, active days, etc.)
 
 3. AI Generation (5-10s) with streaming
-   ├─ Model: gpt-5-mini (推論モデル)
+   ├─ Model: gpt-4.1 (推論モデル)
    │
    ├─ Prompt Structure:
    │  - 全フラグメントの時系列データ
@@ -878,7 +878,7 @@ export function SmartRecall() {
 
 **Deliverables:**
 - [ ] Context clustering algorithm
-- [ ] gpt-5-mini integration (推論モデル)
+- [ ] gpt-4.1 integration (推論モデル)
 - [ ] Context UI (contexts list + detail)
 
 **Context Generation Logic:**
@@ -902,7 +902,7 @@ pub async fn generate_contexts_for_project(
         );
 
         let response = openai_client.chat()
-            .model("gpt-5-mini")
+            .model("gpt-4.1")
             .messages(vec![Message::user(prompt)])
             .await?;
 
@@ -925,7 +925,7 @@ pub async fn generate_contexts_for_project(
 #### Milestone 2.2: Auto Liner Notes (2ヶ月)
 
 **Deliverables:**
-- [ ] gpt-5-mini streaming integration
+- [ ] gpt-4.1 streaming integration
 - [ ] Markdown editor UI
 - [ ] Export (Markdown, HTML, PDF)
 
@@ -947,7 +947,7 @@ async fn generate_liner_notes(
 
     // 3. Streaming generation
     let stream = state.openai_client.chat()
-        .model("gpt-5-mini")
+        .model("gpt-4.1")
         .messages(vec![Message::user(prompt)])
         .stream()
         .await?;
@@ -1067,7 +1067,7 @@ pub async fn encrypt_fragment(fragment: &Fragment, user_key: &[u8]) -> Result<Ve
 | **500ms以内の処理が達成できない** | Low | High | - パフォーマンステストを早期実施<br>- 並列処理の最適化<br>- フォールバック: 1秒まで許容（ユーザーテストで検証） |
 | **Qdrant embeddings生成が遅い** | Low | Medium | - Background queueで非同期化<br>- 検索に影響しない設計<br>- バッチ処理で効率化 |
 | **DAW検出が不正確** | High | Low | - Phase 1では「推測」として扱う<br>- ユーザーが手動で修正可能<br>- Phase 3でプラグイン対応 |
-| **OpenAI API コストが想定を超える** | Medium | Medium | - gpt-4.1-mini（$0.4/1M tokens）を優先<br>- キャッシュ活用<br>- 月次コスト監視ダッシュボード |
+| **OpenAI API コストが想定を超える** | Medium | Medium | - gpt-4.1-mini（$0.4/$1.6 per 1M tokens）を優先<br>- キャッシュ活用<br>- 月次コスト監視ダッシュボード |
 
 ### Business Risks
 
@@ -1133,7 +1133,7 @@ pub async fn encrypt_fragment(fragment: &Fragment, user_key: &[u8]) -> Result<Ve
 **AI Models:**
 - gpt-4.1-mini: Tag extraction, Sentiment analysis
 - text-embedding-3-small: Embeddings
-- gpt-5-mini: Context generation, Liner notes
+- gpt-4.1: Context generation, Liner notes
 
 **DevOps:**
 - GitHub Actions - CI/CD

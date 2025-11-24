@@ -51,7 +51,7 @@ MUEDnote v3.0は、「対話型教育ツール」から「コグニティブ・�
 - 技術スタック選定マトリックス
   - **Tauri vs Electron**: Tauri推奨（メモリ85%削減、起動75%高速化）
   - **Qdrant vs Pinecone vs Weaviate**: Qdrant推奨（ローカルファースト、$0）
-  - **AI モデル**: gpt-4.1-mini（Tag/Sentiment）、gpt-5-mini（Liner Notes）
+  - **AI モデル**: gpt-4.1-mini（Tag/Sentiment）、gpt-4.1（Liner Notes）
 - データモデル設計（PostgreSQL + Qdrant）
 - コアUXフロー（500ms Fragment入力、Smart Recall、Auto Liner Notes）
 - DAW統合戦略（Phase 1: Passive → Phase 3: Active Plugin）
@@ -260,9 +260,9 @@ MUEDnote v3.0は、「対話型教育ツール」から「コグニティブ・�
 - **Qdrant (Self-hosted)**（ベクトルデータベース）
 
 ### AI層
-- **gpt-4.1-mini**: Tag extraction ($0.15/1M tokens)、Sentiment analysis ($0.15/1M tokens)
+- **gpt-4.1-mini**: Tag extraction ($0.4/$1.6 per 1M tokens)、Sentiment analysis ($0.4/$1.6 per 1M tokens)
 - **text-embedding-3-small**: Embeddings ($0.02/1M tokens)
-- **gpt-5-mini**: Context generation ($0.25/1M tokens)、Liner notes ($0.25/1M tokens)
+- **gpt-4.1**: Context generation ($2.0/$8.0 per 1M tokens)、Liner notes ($2.0/$8.0 per 1M tokens)
 
 ### DevOps
 - **GitHub Actions** (CI/CD)

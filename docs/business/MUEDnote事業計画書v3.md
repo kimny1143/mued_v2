@@ -51,7 +51,7 @@ AIはユーザーに話しかけず、裏側で静かに文脈を解析・タグ
 
 ## 2.3 技術スタック
 * **Client**: Electron / Tauri（軽量常駐アプリ、Mac/Win対応）
-* **AI Engine**: gpt-4.1-mini 等の高速モデル + RAG（Vector Database）
+* **AI Engine**: gpt-4o-mini 等の高速モデル + RAG（Vector Database）
 * **Integration**: クリップボード監視による簡易的なDAW連携（トラック名の変更検知など）
 
 ---

@@ -198,10 +198,10 @@ MUEDnote v3.0は、音楽制作者向けの**コグニティブ・オフロー�
 - **Auth**: Clerk (継続使用)
 
 ### AI Services
-- **Tag Extraction**: gpt-4.1-mini ($0.4/1M tokens, 200ms)
-- **Sentiment Analysis**: gpt-4.1-mini ($0.4/1M tokens, 100ms)
+- **Tag Extraction**: gpt-4.1-mini ($0.4/$1.6 per 1M tokens, 200ms)
+- **Sentiment Analysis**: gpt-4.1-mini ($0.4/$1.6 per 1M tokens, 100ms)
 - **Embeddings**: text-embedding-3-small ($0.02/1M tokens, 50ms)
-- **Context Generation**: gpt-5-mini ($0.25/$2.0 per 1M tokens, 2-5s)
+- **Context Generation**: gpt-4.1 ($2.0/$8.0 per 1M tokens, 2-5s)
 
 ### DevOps
 - **CI/CD**: GitHub Actions

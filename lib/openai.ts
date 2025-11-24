@@ -48,6 +48,11 @@ export const MODEL_PRICING = {
   'gpt-5': { input: 1.25, output: 10.0 },
   'gpt-5-mini': { input: 0.25, output: 2.0 },
   'gpt-5-nano': { input: 0.05, output: 0.4 },
+  // GPT-4.1 series (2025-04-14) - WebSearch verified
+  // Source: https://openai.com/index/gpt-4-1/
+  'gpt-4.1': { input: 2.0, output: 8.0 },
+  'gpt-4.1-mini': { input: 0.4, output: 1.6 },
+  'gpt-4.1-nano': { input: 0.1, output: 0.4 },
   // GPT-4 series
   'gpt-4o': { input: 2.5, output: 10.0 },
   'gpt-4o-mini': { input: 0.15, output: 0.6 },
@@ -102,6 +107,11 @@ export function calculateCost(
     const inputCost = (promptTokens / 1_000_000) * pricing.input;
     const outputCost = (completionTokens / 1_000_000) * pricing.output;
     return inputCost + outputCost;
+  } else if (model.startsWith('gpt-4.1')) {
+    const pricing = MODEL_PRICING['gpt-4.1'];
+    const inputCost = (promptTokens / 1_000_000) * pricing.input;
+    const outputCost = (completionTokens / 1_000_000) * pricing.output;
+    return inputCost + outputCost;
   } else if (model.startsWith('gpt-4o')) {
     const pricing = MODEL_PRICING['gpt-4o'];
     const inputCost = (promptTokens / 1_000_000) * pricing.input;
@@ -130,8 +140,8 @@ export async function createChatCompletion(
   const model = options.model || (env.OPENAI_MODEL as ModelName);
   const maxTokens = options.maxTokens || env.OPENAI_MAX_TOKENS;
 
-  // GPT-5 series uses different parameter names and restrictions
-  const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
+  // GPT-5 and GPT-4.1 series uses different parameter names and restrictions
+  const isGPT5 = model.startsWith('gpt-5') || model.startsWith('gpt-4.1') || model.startsWith('o3') || model.startsWith('o1');
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -201,8 +211,8 @@ export async function createStreamingChatCompletion(
   const model = options.model || (env.OPENAI_MODEL as ModelName);
   const maxTokens = options.maxTokens || env.OPENAI_MAX_TOKENS;
 
-  // GPT-5 series uses different parameter names and restrictions
-  const isGPT5 = model.startsWith('gpt-5') || model.startsWith('o3') || model.startsWith('o1');
+  // GPT-5 and GPT-4.1 series uses different parameter names and restrictions
+  const isGPT5 = model.startsWith('gpt-5') || model.startsWith('gpt-4.1') || model.startsWith('o3') || model.startsWith('o1');
 
   try {
     let stream;

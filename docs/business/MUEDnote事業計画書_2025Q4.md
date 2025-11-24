@@ -203,7 +203,7 @@ User Answers → RAG Storage
 - **Neon PostgreSQL** (serverless, pgvector拡張)
 
 #### AI
-- **OpenAI GPT-5系** (本番環境、gpt-5-mini推奨)
+- **OpenAI GPT-5系** (本番環境、gpt-4o推奨)
 - **Claude Sonnet 4.5** (開発・管理者モード、MCP Server経由)
 - **OpenAI Embeddings** (text-embedding-ada-002, RAG用)
 
@@ -503,7 +503,7 @@ User Answers → RAG Storage
 | **MIDI/WAV解析精度が低い** | 高 | 中 | MVP版テキストベースで先行リリース、段階的移行 |
 | **RAG検索品質が低い** | 中 | 中 | 質問テンプレート手動キュレーション、embeddings最適化 |
 | **スケーラビリティ問題** | 高 | 低 | Neon Serverless PostgreSQL、Vercel edge functions活用 |
-| **AI API コスト爆発** | 高 | 中 | キャッシング戦略、gpt-5-mini使用、Rate limiting |
+| **AI API コスト爆発** | 高 | 中 | キャッシング戦略、gpt-4o使用、Rate limiting |
 
 ### 8.2 ビジネスリスク
 
