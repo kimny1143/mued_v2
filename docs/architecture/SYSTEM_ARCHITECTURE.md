@@ -1,6 +1,26 @@
 # MUED LMS v2 システムアーキテクチャ図
 
-最終更新: 2025-11-14
+最終更新: 2025-11-24
+
+---
+
+## Migration Notice: MUEDnote v3.0
+
+**Status**: v2.x architecture documented here is scheduled for replacement in Q2 2025.
+
+MUEDnote is undergoing a strategic pivot from an educational tool to a cognitive offloading platform. The v3.0 architecture introduces fundamental changes:
+
+- **Platform**: Next.js Web → Tauri Desktop App
+- **UX**: Chat UI → Silent Console (1-line input)
+- **Target**: Beginners → Professional/High-Amateur DAW users
+- **Value**: Learning Support → Cognitive Load Externalization
+
+For detailed migration plans, see:
+- [v3.0 Architecture](/docs/architecture/muednote-v3-cognitive-offloading-architecture.md)
+- [Migration Plan](/docs/architecture/muednote-v2-to-v3-migration-plan.md)
+- [Gap Analysis](/docs/architecture/muednote-v2-to-v3-gap-analysis.md)
+
+---
 
 ## 1. システム全体アーキテクチャ
 

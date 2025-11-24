@@ -1,4 +1,16 @@
 /**
+ * @deprecated This implementation is part of MUEDnote v2.x and will be replaced in v3.0.
+ * See `/docs/architecture/muednote-v2-to-v3-migration-plan.md` for migration details.
+ *
+ * v3.0 will use:
+ * - Tauri desktop app (instead of Next.js web)
+ * - Silent Console UX (instead of Chat UI)
+ * - Fragment/Context model (instead of Session/Interview)
+ *
+ * Expected migration: Q2 2025
+ *
+ * ---
+ *
  * InterviewerService - AI Interview Question Generation Service
  * Phase 1.3: MUEDnote AI Interview-driven Logging
  *
@@ -225,6 +237,8 @@ const DEFAULT_QUESTIONS: Record<FocusArea, InterviewQuestion[]> = {
 
 export class InterviewerService {
   /**
+   * @deprecated Part of v2.x Interview model. Replaced by Fragment/Context model in v3.0.
+   *
    * Generate interview questions based on session analysis
    */
   async generateQuestions(

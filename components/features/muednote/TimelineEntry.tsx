@@ -10,6 +10,18 @@ interface TimelineEntryProps {
 }
 
 /**
+ * @deprecated This component is part of MUEDnote v2.x and will be replaced in v3.0.
+ * See `/docs/architecture/muednote-v2-to-v3-migration-plan.md` for migration details.
+ *
+ * v3.0 will use:
+ * - Tauri desktop app (instead of Next.js web)
+ * - Silent Console UX (instead of Chat UI)
+ * - Fragment/Context model (instead of Session/Interview)
+ *
+ * Expected migration: Q2 2025
+ *
+ * ---
+ *
  * TimelineEntry - 個別のログエントリ表示
  *
  * UX心理学の原則:
