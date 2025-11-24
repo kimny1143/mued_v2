@@ -112,12 +112,12 @@ export class AnalyzerService {
     const userMessage = this.buildUserMessage(validatedInput);
 
     try {
-      // Call OpenAI GPT-4o-mini for text-based inference
+      // Call OpenAI GPT-4.1 for text-based inference
       const { completion } = await createChatCompletion([
         { role: 'system', content: ANALYZER_SYSTEM_PROMPT },
         { role: 'user', content: userMessage },
       ], {
-        model: 'gpt-4o-mini', // MVP: gpt-4o-mini for cost efficiency, upgrade to gpt-5-mini when available
+        model: 'gpt-4.1', // Using gpt-4.1 for consistent analysis
         temperature: 0.3, // Lower temperature for consistent analysis
         maxTokens: 300,
       });
