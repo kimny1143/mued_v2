@@ -70,6 +70,11 @@ jobs:
 
       - name: Run ${{ matrix.suite }} tests
         run: npm run test:${{ matrix.suite }}
+        env:
+          # OpenAI API key needed for integration tests (RAG service)
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY || 'sk-mock-openai-key-for-tests' }}
+          # Mock database URL for tests
+          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
 
       - name: Upload coverage to Codecov
         if: matrix.suite == 'unit' || matrix.suite == 'integration'
