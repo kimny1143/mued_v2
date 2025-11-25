@@ -1,9 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { neon } from '@neondatabase/serverless';
+import { z } from 'zod';
 
 // Initialize database connection
 const sql = neon(process.env.DATABASE_URL!);
+
+// Validation schemas
+const CreateFragmentSchema = z.object({
+  content: z.string().min(1).max(10000),
+  projectId: z.string().uuid().optional(),
+  importance: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+});
+
+const UpdateFragmentSchema = z.object({
+  id: z.string().uuid(),
+  content: z.string().min(1).max(10000).optional(),
+  projectId: z.string().uuid().nullable().optional(),
+  importance: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+  status: z.enum(['pending', 'processing', 'completed', 'failed', 'archived']).optional(),
+});
 
 // Helper to get user ID from auth or dev token
 async function getUserId(req: NextRequest) {
@@ -12,13 +28,12 @@ async function getUserId(req: NextRequest) {
   if (!clerkUserId) {
     const authHeader = req.headers.get('authorization');
 
-    // Check for dev token
-    if (authHeader?.startsWith('Bearer dev_token_')) {
-      const userEmail = authHeader.replace('Bearer dev_token_', '') + '@gmail.com';
-
-      // Get user ID from database
+    // Check for dev token - validate against environment variable
+    const expectedDevToken = process.env.DEV_AUTH_TOKEN || 'dev_token_kimny';
+    if (authHeader === `Bearer ${expectedDevToken}`) {
+      // In development, use the dev user
       const users = await sql`
-        SELECT id FROM users WHERE email = ${userEmail}
+        SELECT id FROM users WHERE email = 'kimny1143@gmail.com'
       `;
 
       if (users.length > 0) {
@@ -49,8 +64,8 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const projectId = searchParams.get('projectId');
     const status = searchParams.get('status') || 'pending';
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
+    const offset = Math.max(parseInt(searchParams.get('offset') || '0'), 0);
 
     // Build query based on filters - using tagged template literals
     let fragments;
@@ -241,14 +256,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { content, projectId, importance = 'medium' } = body;
 
-    if (!content) {
+    // Validate request body
+    const validationResult = CreateFragmentSchema.safeParse(body);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Content is required' },
+        { error: 'Invalid request data', details: validationResult.error.issues },
         { status: 400 }
       );
     }
+
+    const { content, projectId, importance = 'medium' } = validationResult.data;
 
     const fragment = await sql`
       INSERT INTO muednote_v3.fragments (
@@ -292,67 +310,79 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, content, projectId, importance, status } = body;
 
-    if (!id) {
+    // Validate request body
+    const validationResult = UpdateFragmentSchema.safeParse(body);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Fragment ID is required' },
+        { error: 'Invalid request data', details: validationResult.error.issues },
         { status: 400 }
       );
     }
 
-    // Simplified update - handle one field at a time
+    const { id, content, projectId, importance, status } = validationResult.data;
+
+    // Check if fragment exists and belongs to user
+    const checkFragment = await sql`
+      SELECT id FROM muednote_v3.fragments
+      WHERE id = ${id} AND user_id = ${userId}
+    `;
+
+    if (checkFragment.length === 0) {
+      return NextResponse.json(
+        { error: 'Fragment not found' },
+        { status: 404 }
+      );
+    }
+
+    // Handle multiple field updates
     let fragment;
 
+    // Special case for archiving - set archived_at
     if (status === 'archived') {
-      // Special case for archiving - set archived_at
       fragment = await sql`
         UPDATE muednote_v3.fragments
         SET status = 'archived',
             archived_at = NOW(),
-            updated_at = NOW()
-        WHERE id = ${id} AND user_id = ${userId}
-        RETURNING *
-      `;
-    } else if (content !== undefined) {
-      fragment = await sql`
-        UPDATE muednote_v3.fragments
-        SET content = ${content}, updated_at = NOW()
-        WHERE id = ${id} AND user_id = ${userId}
-        RETURNING *
-      `;
-    } else if (projectId !== undefined) {
-      fragment = await sql`
-        UPDATE muednote_v3.fragments
-        SET project_id = ${projectId}, updated_at = NOW()
-        WHERE id = ${id} AND user_id = ${userId}
-        RETURNING *
-      `;
-    } else if (importance !== undefined) {
-      fragment = await sql`
-        UPDATE muednote_v3.fragments
-        SET importance = ${importance}, updated_at = NOW()
-        WHERE id = ${id} AND user_id = ${userId}
-        RETURNING *
-      `;
-    } else if (status !== undefined) {
-      fragment = await sql`
-        UPDATE muednote_v3.fragments
-        SET status = ${status}, updated_at = NOW()
+            updated_at = NOW(),
+            content = COALESCE(${content || null}, content),
+            project_id = COALESCE(${projectId !== undefined ? projectId : null}, project_id),
+            importance = COALESCE(${importance || null}, importance)
         WHERE id = ${id} AND user_id = ${userId}
         RETURNING *
       `;
     } else {
-      return NextResponse.json(
-        { error: 'No updates provided' },
-        { status: 400 }
-      );
+      // Update all provided fields at once
+      fragment = await sql`
+        UPDATE muednote_v3.fragments
+        SET
+          content = COALESCE(${content || null}, content),
+          project_id = ${projectId !== undefined ? projectId : 'KEEP_CURRENT'},
+          importance = COALESCE(${importance || null}, importance),
+          status = COALESCE(${status || null}, status),
+          updated_at = NOW()
+        WHERE id = ${id} AND user_id = ${userId}
+          AND ('KEEP_CURRENT' = 'KEEP_CURRENT' OR project_id IS NOT NULL)
+        RETURNING *
+      `;
+
+      // If projectId needs to be updated, handle it separately
+      if (projectId !== undefined) {
+        fragment = await sql`
+          UPDATE muednote_v3.fragments
+          SET
+            project_id = ${projectId},
+            updated_at = NOW()
+          WHERE id = ${id} AND user_id = ${userId}
+          RETURNING *
+        `;
+      }
     }
 
     if (fragment.length === 0) {
       return NextResponse.json(
-        { error: 'Fragment not found' },
-        { status: 404 }
+        { error: 'Failed to update fragment' },
+        { status: 500 }
       );
     }
 
@@ -385,6 +415,15 @@ export async function DELETE(req: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: 'Fragment ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return NextResponse.json(
+        { error: 'Invalid fragment ID format' },
         { status: 400 }
       );
     }

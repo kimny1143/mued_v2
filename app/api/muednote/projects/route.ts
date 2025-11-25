@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { neon } from '@neondatabase/serverless';
+import { z } from 'zod';
 
 // Initialize database connection
 const sql = neon(process.env.DATABASE_URL!);
+
+// Validation schemas
+const CreateProjectSchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().max(1000).optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  icon: z.string().max(50).optional(),
+});
+
+const UpdateProjectSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(255).optional(),
+  description: z.string().max(1000).nullable().optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  icon: z.string().max(50).optional(),
+  isActive: z.boolean().optional(),
+});
 
 // Helper to get user ID from auth or dev token
 async function getUserId(req: NextRequest) {
@@ -12,13 +30,12 @@ async function getUserId(req: NextRequest) {
   if (!clerkUserId) {
     const authHeader = req.headers.get('authorization');
 
-    // Check for dev token
-    if (authHeader?.startsWith('Bearer dev_token_')) {
-      const userEmail = authHeader.replace('Bearer dev_token_', '') + '@gmail.com';
-
-      // Get user ID from database
+    // Check for dev token - validate against environment variable
+    const expectedDevToken = process.env.DEV_AUTH_TOKEN || 'dev_token_kimny';
+    if (authHeader === `Bearer ${expectedDevToken}`) {
+      // In development, use the dev user
       const users = await sql`
-        SELECT id FROM users WHERE email = ${userEmail}
+        SELECT id FROM users WHERE email = 'kimny1143@gmail.com'
       `;
 
       if (users.length > 0) {
@@ -83,14 +100,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, description, color, icon } = body;
 
-    if (!name) {
+    // Validate request body
+    const validationResult = CreateProjectSchema.safeParse(body);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Project name is required' },
+        { error: 'Invalid request data', details: validationResult.error.issues },
         { status: 400 }
       );
     }
+
+    const { name, description, color, icon } = validationResult.data;
 
     const project = await sql`
       INSERT INTO muednote_v3.projects (
@@ -132,18 +152,23 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, name, description, color, icon, isActive } = body;
 
-    if (!id) {
+    // Validate request body
+    const validationResult = UpdateProjectSchema.safeParse(body);
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Project ID is required' },
+        { error: 'Invalid request data', details: validationResult.error.issues },
         { status: 400 }
       );
     }
 
+    const { id, name, description, color, icon, isActive } = validationResult.data;
+
     // Check if project exists and belongs to user
     const checkProject = await sql`
-      SELECT id FROM muednote_v3.projects
+      SELECT id, name as current_name, description as current_description,
+             color as current_color, icon as current_icon, is_active as current_is_active
+      FROM muednote_v3.projects
       WHERE id = ${id} AND user_id = ${userId}
     `;
 
@@ -154,48 +179,26 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // Update fields one by one (simpler with tagged templates)
-    let project;
+    const current = checkProject[0];
 
-    if (name !== undefined) {
-      project = await sql`
-        UPDATE muednote_v3.projects
-        SET name = ${name}, updated_at = NOW()
-        WHERE id = ${id} AND user_id = ${userId}
-        RETURNING *
-      `;
-    } else if (description !== undefined) {
-      project = await sql`
-        UPDATE muednote_v3.projects
-        SET description = ${description}, updated_at = NOW()
-        WHERE id = ${id} AND user_id = ${userId}
-        RETURNING *
-      `;
-    } else if (color !== undefined) {
-      project = await sql`
-        UPDATE muednote_v3.projects
-        SET color = ${color}, updated_at = NOW()
-        WHERE id = ${id} AND user_id = ${userId}
-        RETURNING *
-      `;
-    } else if (icon !== undefined) {
-      project = await sql`
-        UPDATE muednote_v3.projects
-        SET icon = ${icon}, updated_at = NOW()
-        WHERE id = ${id} AND user_id = ${userId}
-        RETURNING *
-      `;
-    } else if (isActive !== undefined) {
-      project = await sql`
-        UPDATE muednote_v3.projects
-        SET is_active = ${isActive}, updated_at = NOW()
-        WHERE id = ${id} AND user_id = ${userId}
-        RETURNING *
-      `;
-    } else {
+    // Update all fields at once, using COALESCE to keep unchanged values
+    const project = await sql`
+      UPDATE muednote_v3.projects
+      SET
+        name = ${name !== undefined ? name : current.current_name},
+        description = ${description !== undefined ? description : current.current_description},
+        color = ${color !== undefined ? color : current.current_color},
+        icon = ${icon !== undefined ? icon : current.current_icon},
+        is_active = ${isActive !== undefined ? isActive : current.current_is_active},
+        updated_at = NOW()
+      WHERE id = ${id} AND user_id = ${userId}
+      RETURNING *
+    `;
+
+    if (project.length === 0) {
       return NextResponse.json(
-        { error: 'No updates provided' },
-        { status: 400 }
+        { error: 'Failed to update project' },
+        { status: 500 }
       );
     }
 
