@@ -27,7 +27,7 @@ export interface MockSession {
 
 export const mockSessions: MockSession[] = [
   {
-    id: 'session-001',
+    id: '550e8400-e29b-41d4-a716-446655440001',
     userId: 'user-001',
     type: 'composition',
     title: 'Dメジャーのバラード制作',
@@ -40,7 +40,7 @@ export const mockSessions: MockSession[] = [
     createdAt: new Date('2025-01-15T10:00:00Z'),
   },
   {
-    id: 'session-002',
+    id: '550e8400-e29b-41d4-a716-446655440002',
     userId: 'user-001',
     type: 'composition',
     title: 'ポップスのメロディアレンジ',
@@ -53,7 +53,7 @@ export const mockSessions: MockSession[] = [
     createdAt: new Date('2025-01-16T11:00:00Z'),
   },
   {
-    id: 'session-003',
+    id: '550e8400-e29b-41d4-a716-446655440003',
     userId: 'user-001',
     type: 'composition',
     title: 'ファンクのグルーヴ作成',
@@ -66,7 +66,7 @@ export const mockSessions: MockSession[] = [
     createdAt: new Date('2025-01-17T14:00:00Z'),
   },
   {
-    id: 'session-004',
+    id: '550e8400-e29b-41d4-a716-446655440009',
     userId: 'user-001',
     type: 'composition',
     title: 'ロックバンドのミックス調整',
@@ -79,7 +79,7 @@ export const mockSessions: MockSession[] = [
     createdAt: new Date('2025-01-18T09:00:00Z'),
   },
   {
-    id: 'session-005',
+    id: '550e8400-e29b-41d4-a716-446655440010',
     userId: 'user-001',
     type: 'composition',
     title: '悲しい雰囲気のバラード',
@@ -92,7 +92,7 @@ export const mockSessions: MockSession[] = [
     createdAt: new Date('2025-01-19T16:00:00Z'),
   },
   {
-    id: 'session-006',
+    id: '550e8400-e29b-41d4-a716-446655440011',
     userId: 'user-001',
     type: 'composition',
     title: '海をイメージした曲',
@@ -105,7 +105,7 @@ export const mockSessions: MockSession[] = [
     createdAt: new Date('2025-01-20T13:00:00Z'),
   },
   {
-    id: 'session-007',
+    id: '550e8400-e29b-41d4-a716-446655440012',
     userId: 'user-001',
     type: 'composition',
     title: 'ポップスの楽曲構成',
@@ -353,52 +353,52 @@ export interface RAGGroundTruth {
 export const ragGroundTruth: RAGGroundTruth[] = [
   {
     query: 'コード進行を変更した',
-    expectedResults: ['session-001', 'session-005'],
+    expectedResults: ['550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440010'],
     minSimilarity: 0.7,
   },
   {
     query: 'メロディを高音に',
-    expectedResults: ['session-002'],
+    expectedResults: ['550e8400-e29b-41d4-a716-446655440002'],
     minSimilarity: 0.75,
   },
   {
     query: 'リズムパターン変更',
-    expectedResults: ['session-003'],
+    expectedResults: ['550e8400-e29b-41d4-a716-446655440003'],
     minSimilarity: 0.7,
   },
   {
     query: 'ミックスバランス調整',
-    expectedResults: ['session-004'],
+    expectedResults: ['550e8400-e29b-41d4-a716-446655440009'],
     minSimilarity: 0.65,
   },
   {
     query: '感情表現を変更',
-    expectedResults: ['session-005'],
+    expectedResults: ['550e8400-e29b-41d4-a716-446655440010'],
     minSimilarity: 0.7,
   },
   {
     query: 'イメージや雰囲気',
-    expectedResults: ['session-006'],
+    expectedResults: ['550e8400-e29b-41d4-a716-446655440011'],
     minSimilarity: 0.65,
   },
   {
     query: '楽曲構成を変更',
-    expectedResults: ['session-007'],
+    expectedResults: ['550e8400-e29b-41d4-a716-446655440012'],
     minSimilarity: 0.7,
   },
   {
     query: 'サビの変更',
-    expectedResults: ['session-001', 'session-002', 'session-007'],
+    expectedResults: ['550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440012'],
     minSimilarity: 0.6,
   },
   {
     query: 'グルーヴ感',
-    expectedResults: ['session-003'],
+    expectedResults: ['550e8400-e29b-41d4-a716-446655440003'],
     minSimilarity: 0.7,
   },
   {
     query: '音響空間',
-    expectedResults: ['session-004', 'session-006'],
+    expectedResults: ['550e8400-e29b-41d4-a716-446655440009', '550e8400-e29b-41d4-a716-446655440011'],
     minSimilarity: 0.6,
   },
 ];
@@ -432,7 +432,7 @@ export interface MockInterviewAnswer {
 export const mockInterviewQuestions: MockInterviewQuestion[] = [
   {
     id: 'q-001',
-    sessionId: 'session-001',
+    sessionId: '550e8400-e29b-41d4-a716-446655440001',
     text: 'FからGに変更した理由は何ですか？',
     focus: 'harmony',
     depth: 'medium',
@@ -442,7 +442,7 @@ export const mockInterviewQuestions: MockInterviewQuestion[] = [
   },
   {
     id: 'q-002',
-    sessionId: 'session-001',
+    sessionId: '550e8400-e29b-41d4-a716-446655440001',
     text: 'この和音進行が表現したい感情の本質は何ですか？',
     focus: 'harmony',
     depth: 'deep',
@@ -452,7 +452,7 @@ export const mockInterviewQuestions: MockInterviewQuestion[] = [
   },
   {
     id: 'q-003',
-    sessionId: 'session-002',
+    sessionId: '550e8400-e29b-41d4-a716-446655440002',
     text: 'メロディを高音域に移動した意図は何ですか？',
     focus: 'melody',
     depth: 'medium',
@@ -692,7 +692,7 @@ export const mockPhase13APIResponses = {
     questions: [
       {
         id: 'q-fallback-001',
-        sessionId: 'session-001',
+        sessionId: '550e8400-e29b-41d4-a716-446655440001',
         text: 'どのような変更を行いましたか？',
         focus: 'harmony' as const,
         depth: 'medium' as const,
@@ -726,12 +726,12 @@ export const mockPhase13APIResponses = {
   ragSearchSuccess: {
     results: [
       {
-        sessionId: 'session-001',
+        sessionId: '550e8400-e29b-41d4-a716-446655440001',
         similarity: 0.85,
         userShortNote: 'サビのコード進行をFからGに変更した',
       },
       {
-        sessionId: 'session-005',
+        sessionId: '550e8400-e29b-41d4-a716-446655440010',
         similarity: 0.72,
         userShortNote: '短調のコードを増やして、テンポを遅くした',
       },
@@ -743,3 +743,20 @@ export const mockPhase13APIResponses = {
  * Export utility function for generating deterministic vectors
  */
 export { generateDeterministicVector };
+
+// Session IDs for testing
+export const MOCK_SESSION_IDS = {
+  MELODY: '550e8400-e29b-41d4-a716-446655440001',
+  HARMONY: '550e8400-e29b-41d4-a716-446655440002',
+  RHYTHM: '550e8400-e29b-41d4-a716-446655440003',
+  // Validation test IDs
+  VALID_UUID: '550e8400-e29b-41d4-a716-446655440001',
+  INVALID_UUID: 'invalid-uuid-format',
+  // Duplicate test IDs
+  DUPLICATE_1: '550e8400-e29b-41d4-a716-446655440004',
+  DUPLICATE_2: '550e8400-e29b-41d4-a716-446655440005',
+  // Batch processing
+  BATCH_1: '550e8400-e29b-41d4-a716-446655440006',
+  BATCH_2: '550e8400-e29b-41d4-a716-446655440007',
+  BATCH_3: '550e8400-e29b-41d4-a716-446655440008'
+};

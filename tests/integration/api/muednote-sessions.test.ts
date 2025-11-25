@@ -98,20 +98,26 @@ import { db } from '@/db';
 // Test Data
 // ========================================
 
+// Define UUID constants for consistent use
+const USER_UUID = '550e8400-e29b-41d4-a716-446655440100';
+const SESSION_UUID = '550e8400-e29b-41d4-a716-446655440101';
+const PROJECT_UUID = '550e8400-e29b-41d4-a716-446655440102';
+const ANALYSIS_UUID = '550e8400-e29b-41d4-a716-446655440103';
+
 const mockUser = {
-  id: 'internal-user-uuid',
+  id: USER_UUID,
   clerkId: 'clerk-user-123',
   email: 'test@example.com',
   role: 'student',
 };
 
 const mockSession = {
-  id: 'session-123',
-  userId: 'internal-user-uuid',
+  id: SESSION_UUID,
+  userId: USER_UUID,
   type: 'composition',
   title: 'Test Session',
   userShortNote: 'Working on chord progression for chorus',
-  projectId: 'project-456',
+  projectId: PROJECT_UUID,
   projectName: 'My Song',
   dawMeta: {
     dawName: 'Logic Pro',
@@ -133,8 +139,8 @@ const mockSession = {
 };
 
 const mockAnalysis = {
-  id: 'analysis-789',
-  sessionId: 'session-123',
+  id: ANALYSIS_UUID,
+  sessionId: SESSION_UUID,
   analysisData: {
     focusArea: 'harmony',
     intentHypothesis: 'Trying to create smoother transition to chorus',
@@ -219,8 +225,8 @@ describe('Sessions API Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(data).toHaveProperty('session');
       expect(data).toHaveProperty('analysis');
-      expect(data.session.id).toBe('session-123');
-      expect(data.analysis.id).toBe('analysis-789');
+      expect(data.session.id).toBe(SESSION_UUID);
+      expect(data.analysis.id).toBe(ANALYSIS_UUID);
 
       // Verify analyzer was called with correct params
       expect(mockAnalyzeSession).toHaveBeenCalledWith({
@@ -418,7 +424,7 @@ describe('Sessions API Integration Tests', () => {
       expect(data).toHaveProperty('sessions');
       expect(data).toHaveProperty('pagination');
       expect(data.sessions).toHaveLength(1);
-      expect(data.sessions[0].id).toBe('session-123');
+      expect(data.sessions[0].id).toBe(SESSION_UUID);
       expect(data.pagination).toEqual({
         total: 1,
         limit: 20,

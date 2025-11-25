@@ -18,7 +18,7 @@ import {
 } from '@/tests/fixtures/phase1.3-fixtures';
 
 describe('RAG Service - pgvector Integration', () => {
-  const TEST_SESSION_ID = 'test-rag-session-001';
+  const TEST_SESSION_ID = crypto.randomUUID();
   const TEST_CONTENT = 'サビのコード進行をFからGに変更した';
 
   beforeAll(async () => {
@@ -77,10 +77,11 @@ describe('RAG Service - pgvector Integration', () => {
     });
 
     it('should handle batch embedding with rate limiting', async () => {
+      const batchSessionIds = [crypto.randomUUID(), crypto.randomUUID(), crypto.randomUUID()];
       const batchSessions = [
-        { id: 'batch-001', userShortNote: 'テスト1: メロディ変更' },
-        { id: 'batch-002', userShortNote: 'テスト2: リズム調整' },
-        { id: 'batch-003', userShortNote: 'テスト3: ミックス改善' },
+        { id: batchSessionIds[0], userShortNote: 'テスト1: メロディ変更' },
+        { id: batchSessionIds[1], userShortNote: 'テスト2: リズム調整' },
+        { id: batchSessionIds[2], userShortNote: 'テスト3: ミックス改善' },
       ];
 
       const startTime = Date.now();
@@ -94,7 +95,7 @@ describe('RAG Service - pgvector Integration', () => {
       const results = await db.execute(sql`
         SELECT COUNT(*) as count
         FROM rag_embeddings
-        WHERE source_id IN ('batch-001', 'batch-002', 'batch-003')
+        WHERE source_id IN (${batchSessionIds[0]}, ${batchSessionIds[1]}, ${batchSessionIds[2]})
       `);
 
       expect(Number(results.rows[0].count)).toBe(3);
@@ -191,7 +192,7 @@ describe('RAG Service - pgvector Integration', () => {
 
     it('should validate RAG results against ground truth', async () => {
       const query = 'サビの変更';
-      const groundTruth = ['session-001', 'session-002', 'session-007'];
+      const groundTruth = ['550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440012'];
       const results = await ragService.findSimilarLogs(query, 5, 0.6);
       const retrievedIds = results.map((r) => r.logId);
 
