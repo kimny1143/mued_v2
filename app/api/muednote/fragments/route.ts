@@ -322,18 +322,24 @@ export async function PATCH(req: NextRequest) {
 
     const { id, content, projectId, importance, status } = validationResult.data;
 
-    // Check if fragment exists and belongs to user
-    const checkFragment = await sql`
-      SELECT id FROM muednote_v3.fragments
+    // Get current values for proper update handling
+    const currentFragment = await sql`
+      SELECT content as current_content,
+             project_id as current_project_id,
+             importance as current_importance,
+             status as current_status
+      FROM muednote_v3.fragments
       WHERE id = ${id} AND user_id = ${userId}
     `;
 
-    if (checkFragment.length === 0) {
+    if (currentFragment.length === 0) {
       return NextResponse.json(
         { error: 'Fragment not found' },
         { status: 404 }
       );
     }
+
+    const current = currentFragment[0];
 
     // Handle multiple field updates
     let fragment;
@@ -345,9 +351,9 @@ export async function PATCH(req: NextRequest) {
         SET status = 'archived',
             archived_at = NOW(),
             updated_at = NOW(),
-            content = COALESCE(${content || null}, content),
-            project_id = COALESCE(${projectId !== undefined ? projectId : null}, project_id),
-            importance = COALESCE(${importance || null}, importance)
+            content = ${content !== undefined ? content : current.current_content},
+            project_id = ${projectId !== undefined ? projectId : current.current_project_id},
+            importance = ${importance !== undefined ? importance : current.current_importance}
         WHERE id = ${id} AND user_id = ${userId}
         RETURNING *
       `;
@@ -356,27 +362,14 @@ export async function PATCH(req: NextRequest) {
       fragment = await sql`
         UPDATE muednote_v3.fragments
         SET
-          content = COALESCE(${content || null}, content),
-          project_id = ${projectId !== undefined ? projectId : 'KEEP_CURRENT'},
-          importance = COALESCE(${importance || null}, importance),
-          status = COALESCE(${status || null}, status),
+          content = ${content !== undefined ? content : current.current_content},
+          project_id = ${projectId !== undefined ? projectId : current.current_project_id},
+          importance = ${importance !== undefined ? importance : current.current_importance},
+          status = ${status !== undefined ? status : current.current_status},
           updated_at = NOW()
         WHERE id = ${id} AND user_id = ${userId}
-          AND ('KEEP_CURRENT' = 'KEEP_CURRENT' OR project_id IS NOT NULL)
         RETURNING *
       `;
-
-      // If projectId needs to be updated, handle it separately
-      if (projectId !== undefined) {
-        fragment = await sql`
-          UPDATE muednote_v3.fragments
-          SET
-            project_id = ${projectId},
-            updated_at = NOW()
-          WHERE id = ${id} AND user_id = ${userId}
-          RETURNING *
-        `;
-      }
     }
 
     if (fragment.length === 0) {
