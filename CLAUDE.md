@@ -4,6 +4,7 @@
 
 ## プロジェクト概要
 
+
 **MUED LMS v2** - Next.js 15.5ベースの教育管理システム
 
 ### 技術スタック
@@ -853,6 +854,73 @@ node /Users/kimny/Dropbox/_DevProjects/mued/mued_v2/scripts/mcp/mued-unit-test.j
 ```
 
 3. Claude Code の再起動
+
+---
+
+## Claude Code Hooks
+
+### CLAUDE.md 育成 Hook
+
+git commit 後に自動発火し、CLAUDE.md への追記を提案するhook。
+
+#### ファイル構成
+
+```
+.claude/
+├── hooks/
+│   └── suggest-claude-md-update.sh  # 育成hook
+└── settings.local.json              # hook登録設定
+```
+
+#### 検知パターン
+
+| パターン | 提案内容 |
+|---------|---------|
+| `scripts/mcp/*.js` 追加 | MCP Serverセクションに追記 |
+| `db/migrations/*.sql` 追加 | Neon PostgreSQLセクションに追記 |
+| `apps/` `app/` `components/` `lib/` 配下の新規ディレクトリ | コンポーネント分離セクションに追記 |
+| ルート直下の設定ファイル変更 | 関連セクション更新 |
+| `.claude/hooks/*.sh` 追加 | hook使用方法追記 |
+| `scripts/*.sh|js|ts` 追加（MCP以外） | 開発コマンドセクションに追記 |
+
+#### 動作仕様
+
+- **発火タイミング**: `git commit` 完了後（PostToolUse）
+- **出力**: stderrに提案メッセージ（警告表示、ブロックなし）
+- **判断**: 追記するかは人間が決定
+
+#### 使用例
+
+```
+$ git commit -m "feat: Add new MCP server"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 CLAUDE.md 更新提案
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📡 新しいMCPサーバーが追加されました: scripts/mcp/new-server.js
+→ CLAUDE.mdの「MCP Server実装ルール」セクションに追記しますか？
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+#### カスタマイズ
+
+新しい検知パターンを追加する場合は `.claude/hooks/suggest-claude-md-update.sh` を編集：
+
+```bash
+# 例: tests/ 配下の新規ファイル検知を追加
+if echo "$CHANGED_FILES" | grep -qE "^A[[:space:]]+tests/.*\.test\.(ts|tsx)$"; then
+  NEW_TEST=$(echo "$CHANGED_FILES" | grep -E "^A[[:space:]]+tests/.*\.test\.(ts|tsx)$" | awk '{print $2}')
+  SUGGESTIONS+=("🧪 新しいテストが追加されました: $NEW_TEST → テスト戦略を更新しますか？")
+fi
+```
+
+#### 注意事項
+
+- **セッション再起動が必要**: `settings.local.json` を変更した場合、Claude Code の再起動が必要
+- **Ctrl+C では発火しない**: hook は正常終了時のみ発火。強制終了では動作しない
+- **ルートからマッチ**: 全パターンはルートディレクトリからの相対パスでマッチ（誤検知防止）
 
 ---
 
