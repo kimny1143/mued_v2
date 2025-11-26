@@ -1,0 +1,169 @@
+/* Silent Console - Minimalist Terminal UI */
+.silent-console {
+  width: 100%;
+  height: 100vh;
+  background: rgba(18, 18, 18, 0.95);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  color: #e0e0e0;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.silent-console.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.silent-console.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Header */
+.console-header {
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #808080;
+}
+
+.console-title {
+  font-weight: 500;
+  color: #75bc11;
+}
+
+.console-time {
+  font-size: 11px;
+}
+
+/* Fragments Container */
+.fragments-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fragments-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.fragments-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fragments-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.fragments-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Fragment Item */
+.fragment {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 13px;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fragment.pending {
+  opacity: 0.6;
+}
+
+.fragment.processed {
+  opacity: 1;
+}
+
+.fragment-time {
+  color: #606060;
+  font-size: 11px;
+  min-width: 64px;
+}
+
+.fragment-content {
+  flex: 1;
+  color: #e0e0e0;
+  word-break: break-word;
+}
+
+.fragment-status {
+  color: #75bc11;
+  font-size: 11px;
+}
+
+/* Input Container */
+.input-container {
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-prompt {
+  color: #75bc11;
+  font-weight: 600;
+}
+
+.console-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #e0e0e0;
+  font-family: inherit;
+  font-size: 14px;
+  caret-color: #75bc11;
+}
+
+.console-input::placeholder {
+  color: #505050;
+  font-style: italic;
+}
+
+.console-input:focus {
+  outline: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .fragment-time {
+    display: none;
+  }
+
+  .console-header {
+    padding: 6px 12px;
+  }
+
+  .fragments-container {
+    padding: 12px;
+  }
+
+  .input-container {
+    padding: 8px 12px;
+  }
+}

@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+/* TailwindCSS v4 Configuration */
+@theme {
+  --color-muednote-primary: #1a1a1a;
+  --color-muednote-secondary: #2a2a2a;
+  --color-muednote-accent: #4a90e2;
+  --color-muednote-text: #e0e0e0;
+  --color-muednote-muted: #8a8a8a;
+  --color-muednote-success: #10b981;
+  --color-muednote-warning: #f59e0b;
+  --color-muednote-error: #ef4444;
+
+  --animate-fade-in: fadeIn 0.2s ease-in;
+  --animate-fade-out: fadeOut 0.5s ease-out;
+  --animate-slide-up: slideUp 0.3s ease-out;
+  --animate-pulse-subtle: pulseSubtle 2s infinite;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@layer base {
+  :root {
+    --background: 20 20 20;
+    --foreground: 224 224 224;
+    --card: 42 42 42;
+    --card-foreground: 224 224 224;
+    --primary: 74 144 226;
+    --primary-foreground: 255 255 255;
+    --secondary: 138 138 138;
+    --secondary-foreground: 255 255 255;
+    --muted: 138 138 138;
+    --muted-foreground: 224 224 224;
+    --accent: 74 144 226;
+    --accent-foreground: 255 255 255;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
+    --border: 42 42 42;
+    --input: 42 42 42;
+    --ring: 74 144 226;
+    --radius: 0.5rem;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    border-color: rgb(42 42 42);
+  }
+
+  body {
+    background-color: transparent;
+    color: rgb(224 224 224);
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    margin: 0;
+    display: flex;
+    place-items: center;
+    min-width: 320px;
+    min-height: 100vh;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    width: 100%;
+    height: 100vh;
+  }
+}
+
+@layer components {
+  .input-focus {
+    @apply focus:outline-none focus:ring-2 focus:ring-muednote-accent focus:border-transparent;
+  }
+
+  .fragment-input {
+    @apply w-full px-4 py-3 bg-transparent text-muednote-text border-none outline-none text-lg;
+  }
+
+  .fragment-input::placeholder {
+    color: #8a8a8a80; /* muednote-muted with 50% opacity */
+  }
+
+  .overlay-window {
+    @apply fixed inset-0 flex items-center justify-center pointer-events-none;
+  }
+
+  .overlay-container {
+    @apply pointer-events-auto w-[600px] h-[120px] rounded-xl shadow-2xl;
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(42 42 42 / 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(138 138 138 / 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(138 138 138 / 0.7);
+}
+
+/* Disable default Tauri window decorations for overlay */
+.overlay-mode {
+  -webkit-app-region: no-drag;
+}
+
+/* Animation classes */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
