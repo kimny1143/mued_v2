@@ -1,8 +1,26 @@
 /**
  * API Authentication Helper
  *
- * Centralized authentication logic for API routes
- * Eliminates code duplication across 10+ API endpoints
+ * @deprecated Use `withAuthResolved` from `@/lib/middleware/with-auth` instead.
+ * This file will be removed in a future version.
+ *
+ * Migration example:
+ * ```typescript
+ * // Before:
+ * import { authenticateApiRequest, isAuthenticated } from '@/lib/utils/api-auth';
+ * export async function POST(req) {
+ *   const authResult = await authenticateApiRequest('POST /api/example');
+ *   if (!isAuthenticated(authResult)) return authResult;
+ *   const { internalUserId } = authResult;
+ *   // ...
+ * }
+ *
+ * // After:
+ * import { withAuthResolved } from '@/lib/middleware/with-auth';
+ * export const POST = withAuthResolved(async ({ internalUserId, request }) => {
+ *   // ...
+ * });
+ * ```
  *
  * Phase 1.3 Code Quality: Issue 4 Resolution
  */

@@ -15,7 +15,7 @@ import { interviewerService } from '@/lib/services/interviewer.service';
 import { ragService } from '@/lib/services/rag.service';
 import { logger } from '@/lib/utils/logger';
 import { verifySessionOwnership } from '@/lib/utils/auth-helpers';
-import { authenticateApiRequest, isAuthenticated } from '@/lib/utils/api-auth';
+import { withAuthResolved } from '@/lib/middleware/with-auth';
 
 // ========================================
 // Input Validation Schema
@@ -45,19 +45,10 @@ const GenerateQuestionsRequestSchema = z.object({
  * 7. Save questions to database
  * 8. Return questions with metadata
  */
-export async function POST(req: Request) {
+export const POST = withAuthResolved(async ({ internalUserId, request }) => {
   try {
-    // 1. Authenticate user
-    const authResult = await authenticateApiRequest('POST /api/interview/questions');
-
-    if (!isAuthenticated(authResult)) {
-      return authResult; // Return 401 or 500 response
-    }
-
-    const { internalUserId } = authResult;
-
-    // 2. Parse and validate request body
-    const body = await req.json();
+    // 1. Parse and validate request body
+    const body = await request.json();
 
     const validationResult = GenerateQuestionsRequestSchema.safeParse(body);
 
@@ -214,4 +205,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
+});

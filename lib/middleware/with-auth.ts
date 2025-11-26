@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { apiUnauthorized } from '@/lib/api-response';
+import { apiUnauthorized, apiServerError } from '@/lib/api-response';
+import { getUserIdFromClerkId } from '@/lib/utils/auth-helpers';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * Authentication context passed to authenticated route handlers
@@ -152,7 +154,124 @@ export function withAdminAuth(
         request,
       });
     } catch (error) {
-      console.error('[withAdminAuth] Authentication error:', error);
+      logger.error('[withAdminAuth] Authentication error:', { error });
+      return apiUnauthorized();
+    }
+  };
+}
+
+// ========================================
+// Extended Auth with Internal User ID Resolution
+// ========================================
+
+/**
+ * Extended authentication context with internal database user ID
+ */
+export interface AuthContextResolved {
+  /** Clerk user ID */
+  clerkUserId: string;
+  /** Internal database user UUID */
+  internalUserId: string;
+  /** Original request object */
+  request: NextRequest;
+}
+
+export type AuthenticatedHandlerResolved = (
+  context: AuthContextResolved
+) => Promise<NextResponse>;
+
+/**
+ * Higher-order function that wraps API route handlers with authentication
+ * AND resolves internal database user ID.
+ *
+ * Use this when you need to query the database with internal user UUID.
+ *
+ * @example
+ * ```typescript
+ * export const GET = withAuthResolved(async ({ internalUserId, request }) => {
+ *   const questions = await getInterviewQuestions(internalUserId);
+ *   return apiSuccess({ questions });
+ * });
+ * ```
+ */
+export function withAuthResolved(
+  handler: AuthenticatedHandlerResolved
+): (request: NextRequest) => Promise<NextResponse> {
+  return async (request: NextRequest): Promise<NextResponse> => {
+    try {
+      // Authenticate user with Clerk
+      const { userId: clerkUserId } = await auth();
+
+      if (!clerkUserId) {
+        return apiUnauthorized();
+      }
+
+      // Resolve internal user ID from database
+      let internalUserId: string;
+      try {
+        internalUserId = await getUserIdFromClerkId(clerkUserId);
+      } catch (error) {
+        logger.error('[withAuthResolved] Failed to resolve user ID', { error, clerkUserId });
+        return apiServerError(new Error('User not found in database'));
+      }
+
+      // Call the handler with resolved auth context
+      return await handler({
+        clerkUserId,
+        internalUserId,
+        request,
+      });
+    } catch (error) {
+      logger.error('[withAuthResolved] Authentication error:', { error });
+      return apiUnauthorized();
+    }
+  };
+}
+
+/**
+ * Variant with params support for [id] routes
+ */
+export interface AuthContextResolvedWithParams<P = Record<string, string>>
+  extends AuthContextResolved {
+  params: P;
+}
+
+export type AuthenticatedHandlerResolvedWithParams<P = Record<string, string>> = (
+  context: AuthContextResolvedWithParams<P>
+) => Promise<NextResponse>;
+
+export function withAuthResolvedParams<P = Record<string, string>>(
+  handler: AuthenticatedHandlerResolvedWithParams<P>
+): (request: NextRequest, context: { params: Promise<P> }) => Promise<NextResponse> {
+  return async (
+    request: NextRequest,
+    context: { params: Promise<P> }
+  ): Promise<NextResponse> => {
+    try {
+      const { userId: clerkUserId } = await auth();
+
+      if (!clerkUserId) {
+        return apiUnauthorized();
+      }
+
+      let internalUserId: string;
+      try {
+        internalUserId = await getUserIdFromClerkId(clerkUserId);
+      } catch (error) {
+        logger.error('[withAuthResolvedParams] Failed to resolve user ID', { error, clerkUserId });
+        return apiServerError(new Error('User not found in database'));
+      }
+
+      const resolvedParams = await context.params;
+
+      return await handler({
+        clerkUserId,
+        internalUserId,
+        request,
+        params: resolvedParams,
+      });
+    } catch (error) {
+      logger.error('[withAuthResolvedParams] Authentication error:', { error });
       return apiUnauthorized();
     }
   };

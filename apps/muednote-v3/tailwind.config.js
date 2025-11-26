@@ -23,6 +23,7 @@ export default {
         'fade-out': 'fadeOut 0.5s ease-out',
         'slide-up': 'slideUp 0.3s ease-out',
         'pulse-subtle': 'pulseSubtle 2s infinite',
+        'shimmer': 'shimmer 1.5s infinite',
       },
       keyframes: {
         fadeIn: {
@@ -41,14 +42,15 @@ export default {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.8' },
         },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
       },
       backdropBlur: {
         'xs': '2px',
-      }
+      },
     },
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-    require('@tailwindcss/typography'),
-  ],
+  plugins: [],
 }
