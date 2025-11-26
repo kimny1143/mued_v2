@@ -1,39 +1,23 @@
 #!/usr/bin/env node
-const { McpServer } = require("@modelcontextprotocol/sdk/server/mcp.js");
-const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
 const { z } = require("zod");
-const { exec } = require("child_process");
-const { promisify } = require("util");
-const fs = require("fs").promises;
-const path = require("path");
 
-const execAsync = promisify(exec);
-
-// Project root directory (where this script is located: /scripts/mcp/)
-const PROJECT_ROOT = path.resolve(__dirname, '../..');
+// Import shared utilities
+const {
+  PROJECT_ROOT,
+  getTimestamp,
+  ensureReportsDir,
+  executeCommand,
+  createMcpServer,
+  startMcpServer,
+  createTextResponse,
+  writeMarkdownReport,
+  formatDuration,
+  fs,
+  path
+} = require("./mcp-utils");
 
 // Create an MCP server for Unit tests
-const server = new McpServer({
-  name: "mued-unit-test",
-  version: "1.0.0"
-});
-
-// Helper function to generate timestamp
-function getTimestamp() {
-  const now = new Date();
-  return now.toISOString().replace(/[:.]/g, '-').slice(0, -5);
-}
-
-// Helper function to ensure reports directory exists
-async function ensureReportsDir() {
-  const reportsDir = path.join(PROJECT_ROOT, 'tests', 'reports');
-  try {
-    await fs.mkdir(reportsDir, { recursive: true });
-  } catch (error) {
-    console.error(`Failed to create reports directory: ${error.message}`);
-  }
-  return reportsDir;
-}
+const server = createMcpServer("mued-unit-test", "1.0.0");
 
 // Helper function to parse Vitest output
 function parseVitestOutput(output) {
@@ -522,9 +506,7 @@ Note: Watch mode is designed for interactive terminal use and cannot be fully au
 
 // Main function
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("MCP Unit Test Server started successfully");
+  await startMcpServer(server, "MCP Unit Test Server");
 }
 
 main().catch(console.error);
