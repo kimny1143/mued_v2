@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tauriInvoke, tauriListen } from '../utils/tauri';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 interface Fragment {
   id: string;
@@ -95,6 +96,13 @@ export const FragmentInput: React.FC = () => {
           className="overlay-window"
         >
           <div className="overlay-container">
+            {/* ドラッグ領域 - ウィンドウを移動可能にする */}
+            <div
+              onMouseDown={() => getCurrentWindow().startDragging()}
+              className="absolute top-0 left-0 right-0 h-8 cursor-move flex items-center justify-center rounded-t-xl z-10"
+            >
+              <div className="w-16 h-1.5 bg-white/30 rounded-full hover:bg-white/50 transition-colors" />
+            </div>
             <form onSubmit={handleSubmit} className="h-full flex items-center p-6">
               <input
                 ref={inputRef}

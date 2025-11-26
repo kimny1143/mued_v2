@@ -10,19 +10,19 @@
     "beforeBuildCommand": "npm run build"
   },
   "app": {
+    "macOSPrivateApi": true,
     "withGlobalTauri": true,
     "windows": [
       {
         "label": "main",
         "title": "MUEDnote v3",
-        "width": 800,
-        "height": 600,
-        "resizable": true,
+        "width": 620,
+        "height": 140,
+        "resizable": false,
         "fullscreen": false,
         "transparent": true,
         "decorations": false,
         "alwaysOnTop": true,
-        "center": true,
         "visible": true,
         "skipTaskbar": true
       }
