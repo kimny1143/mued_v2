@@ -16,39 +16,41 @@ fi
 # 検知パターンと提案メッセージ
 declare -a SUGGESTIONS=()
 
-# 1. MCPサーバーの追加
-if echo "$CHANGED_FILES" | grep -qE "^A.*scripts/mcp/.*\.js$"; then
-  NEW_MCP=$(echo "$CHANGED_FILES" | grep -E "^A.*scripts/mcp/.*\.js$" | awk '{print $2}')
+# 1. MCPサーバーの追加（ルートからマッチ）
+if echo "$CHANGED_FILES" | grep -qE "^A[[:space:]]+scripts/mcp/.*\.js$"; then
+  NEW_MCP=$(echo "$CHANGED_FILES" | grep -E "^A[[:space:]]+scripts/mcp/.*\.js$" | awk '{print $2}')
   SUGGESTIONS+=("📡 新しいMCPサーバーが追加されました: $NEW_MCP → CLAUDE.mdの「MCP Server実装ルール」セクションに追記しますか？")
 fi
 
-# 2. マイグレーションファイルの追加
-if echo "$CHANGED_FILES" | grep -qE "^A.*db/migrations/.*\.sql$"; then
-  NEW_MIGRATION=$(echo "$CHANGED_FILES" | grep -E "^A.*db/migrations/.*\.sql$" | awk '{print $2}')
+# 2. マイグレーションファイルの追加（ルートからマッチ）
+if echo "$CHANGED_FILES" | grep -qE "^A[[:space:]]+db/migrations/.*\.sql$"; then
+  NEW_MIGRATION=$(echo "$CHANGED_FILES" | grep -E "^A[[:space:]]+db/migrations/.*\.sql$" | awk '{print $2}')
   SUGGESTIONS+=("🗄️ 新しいマイグレーションが追加されました: $NEW_MIGRATION → CLAUDE.mdの「Neon PostgreSQL」セクションに追記しますか？")
 fi
 
-# 3. 新しいディレクトリ構造（app/, components/, lib/ 配下）
-if echo "$CHANGED_FILES" | grep -qE "^A.*(app|components|lib)/[^/]+/"; then
-  NEW_DIRS=$(echo "$CHANGED_FILES" | grep -E "^A.*(app|components|lib)/[^/]+/" | sed 's|A[[:space:]]*||' | cut -d'/' -f1-2 | sort -u)
+# 3. 新しいディレクトリ構造（apps/, app/, components/, lib/ 配下 - ルートからマッチ）
+if echo "$CHANGED_FILES" | grep -qE "^A[[:space:]]+(apps?|components|lib)/[^/]+/"; then
+  NEW_DIRS=$(echo "$CHANGED_FILES" | grep -E "^A[[:space:]]+(apps?|components|lib)/[^/]+/" | awk '{print $2}' | cut -d'/' -f1-2 | sort -u)
   SUGGESTIONS+=("📁 新しいディレクトリ構造: $NEW_DIRS → CLAUDE.mdの「コンポーネント分離」セクションに追記しますか？")
 fi
 
-# 4. 設定ファイルの追加・変更
-if echo "$CHANGED_FILES" | grep -qE "^[AM].*(\.config\.(js|ts|mjs)|tsconfig.*\.json|vitest.*|playwright.*)"; then
-  CONFIG_FILES=$(echo "$CHANGED_FILES" | grep -E "^[AM].*(\.config\.(js|ts|mjs)|tsconfig.*\.json|vitest.*|playwright.*)" | awk '{print $2}')
-  SUGGESTIONS+=("⚙️ 設定ファイルが変更されました: $CONFIG_FILES → CLAUDE.mdの関連セクションを更新しますか？")
+# 4. 設定ファイルの追加・変更（ルート直下のみ、.bakを除外）
+if echo "$CHANGED_FILES" | grep -qE "^[AM][[:space:]]+[^/]+\.(config\.(js|ts|mjs)|json)$" | grep -vE "\.bak$|package"; then
+  CONFIG_FILES=$(echo "$CHANGED_FILES" | grep -E "^[AM][[:space:]]+[^/]+\.(config\.(js|ts|mjs)|json)$" | grep -vE "\.bak$|package" | awk '{print $2}')
+  if [ -n "$CONFIG_FILES" ]; then
+    SUGGESTIONS+=("⚙️ 設定ファイルが変更されました: $CONFIG_FILES → CLAUDE.mdの関連セクションを更新しますか？")
+  fi
 fi
 
-# 5. 新しいhookスクリプトの追加
-if echo "$CHANGED_FILES" | grep -qE "^A.*\.claude/hooks/.*\.sh$"; then
-  NEW_HOOK=$(echo "$CHANGED_FILES" | grep -E "^A.*\.claude/hooks/.*\.sh$" | awk '{print $2}')
+# 5. 新しいhookスクリプトの追加（ルートからマッチ）
+if echo "$CHANGED_FILES" | grep -qE "^A[[:space:]]+\.claude/hooks/.*\.sh$"; then
+  NEW_HOOK=$(echo "$CHANGED_FILES" | grep -E "^A[[:space:]]+\.claude/hooks/.*\.sh$" | awk '{print $2}')
   SUGGESTIONS+=("🪝 新しいhookが追加されました: $NEW_HOOK → CLAUDE.mdに使用方法を追記しますか？")
 fi
 
-# 6. 新しいスクリプトの追加（scripts/配下、MCP以外）
-if echo "$CHANGED_FILES" | grep -qE "^A.*scripts/[^/]+\.(sh|js|ts)$" | grep -v "mcp"; then
-  NEW_SCRIPT=$(echo "$CHANGED_FILES" | grep -E "^A.*scripts/[^/]+\.(sh|js|ts)$" | grep -v "mcp" | awk '{print $2}')
+# 6. 新しいスクリプトの追加（scripts/配下、MCP以外 - ルートからマッチ）
+if echo "$CHANGED_FILES" | grep -qE "^A[[:space:]]+scripts/[^/]+\.(sh|js|ts)$" | grep -v "mcp"; then
+  NEW_SCRIPT=$(echo "$CHANGED_FILES" | grep -E "^A[[:space:]]+scripts/[^/]+\.(sh|js|ts)$" | grep -v "mcp" | awk '{print $2}')
   if [ -n "$NEW_SCRIPT" ]; then
     SUGGESTIONS+=("📜 新しいスクリプトが追加されました: $NEW_SCRIPT → CLAUDE.mdの「開発コマンド」セクションに追記しますか？")
   fi
