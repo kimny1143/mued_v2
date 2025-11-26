@@ -12,5 +12,8 @@
         {
             "path": "../../Echovna"
         }
-    ]
+    ],
+    "settings": {
+        "git.ignoreLimitWarning": true
+    }
 }
