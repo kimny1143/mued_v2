@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { formatDateTime } from "@/lib/utils";
 
 interface LessonCardProps {
   id: string;
@@ -20,15 +21,6 @@ export function LessonCard({
   status,
   onBook,
 }: LessonCardProps) {
-  const formatTime = (date: Date) => {
-    return new Date(date).toLocaleString("ja-JP", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   return (
     <Card className="p-4">
       <div className="flex items-start justify-between mb-3">
@@ -47,8 +39,8 @@ export function LessonCard({
         </span>
       </div>
       <div className="text-sm text-gray-700 mb-4">
-        <p>Start: {formatTime(startTime)}</p>
-        <p>End: {formatTime(endTime)}</p>
+        <p>開始: {formatDateTime(startTime)}</p>
+        <p>終了: {formatDateTime(endTime)}</p>
       </div>
       {status === "available" && onBook && (
         <Button variant="primary" size="sm" onClick={() => onBook(id)} className="w-full">

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { formatDate } from "@/lib/utils";
 
 interface MaterialCardProps {
   id: string;
@@ -32,7 +33,7 @@ export function MaterialCard({
         <p className="text-sm text-gray-600 line-clamp-2">{description}</p>
       </div>
       <div className="text-xs text-gray-500 mb-4">
-        Created: {new Date(createdAt).toLocaleDateString("en-US")}
+        作成日: {formatDate(createdAt)}
       </div>
       <div className="flex gap-2">
         {onView && (

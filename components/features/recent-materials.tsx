@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FileText, ArrowRight, Sparkles } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-context';
+import { formatDate } from '@/lib/utils';
 
 interface Material {
   id: string;
@@ -124,7 +125,7 @@ export function RecentMaterials() {
                     {material.difficulty}
                   </span>
                   <span className="text-xs text-gray-500">
-                    {new Date(material.createdAt).toLocaleDateString()}
+                    {formatDate(material.createdAt)}
                   </span>
                 </div>
               </div>

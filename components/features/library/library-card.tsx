@@ -11,6 +11,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import type { UnifiedContent } from '@/types/unified-content';
 import { ExternalLinkModal } from './external-link-modal';
+import { formatDate } from '@/lib/utils';
 
 interface LibraryCardProps {
   content: UnifiedContent;
@@ -98,7 +99,7 @@ export function LibraryCard({ content }: LibraryCardProps) {
         {/* Metadata */}
         <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
           <span>{content.author?.name || 'Unknown'}</span>
-          <span>{new Date(content.publishedAt).toLocaleDateString()}</span>
+          <span>{formatDate(content.publishedAt)}</span>
         </div>
 
         {/* Tags */}

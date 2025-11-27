@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, ArrowRight, Video, User } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-context';
+import { formatMonthDay, formatTime, formatWeekday } from '@/lib/utils';
 
 interface Reservation {
   id: string;
@@ -53,12 +54,11 @@ export function UpcomingLessons() {
     completed: 'bg-gray-100 text-gray-700',
   };
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatLessonDateTime = (dateString: string) => {
     return {
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      time: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      dayOfWeek: date.toLocaleDateString('en-US', { weekday: 'short' }),
+      date: formatMonthDay(dateString, 'en'),
+      time: formatTime(dateString),
+      dayOfWeek: formatWeekday(dateString, 'en'),
     };
   };
 
@@ -112,7 +112,7 @@ export function UpcomingLessons() {
       ) : (
         <div className="space-y-3">
           {reservations.map((reservation) => {
-            const { date, time, dayOfWeek } = formatDateTime(reservation.startTime);
+            const { date, time, dayOfWeek } = formatLessonDateTime(reservation.startTime);
             return (
               <Link
                 key={reservation.id}
