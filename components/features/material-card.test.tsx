@@ -31,9 +31,9 @@ describe('MaterialCard', () => {
     it('formats creation date correctly', () => {
       render(<MaterialCard {...defaultProps} />);
 
-      // The component uses toLocaleDateString with en-US locale
-      expect(screen.getByText(/Created:/)).toBeInTheDocument();
-      expect(screen.getByText(/1\/10\/2025/)).toBeInTheDocument();
+      // The component uses date-fns formatDate with Japanese locale
+      expect(screen.getByText(/作成日:/)).toBeInTheDocument();
+      expect(screen.getByText(/2025年1月10日/)).toBeInTheDocument();
     });
 
     it('renders in a Card container', () => {
@@ -166,10 +166,10 @@ describe('MaterialCard', () => {
   });
 
   describe('Date Formatting', () => {
-    it('formats date using en-US locale', () => {
+    it('formats date using Japanese locale with date-fns', () => {
       render(<MaterialCard {...defaultProps} />);
 
-      const dateText = screen.getByText(/Created:/);
+      const dateText = screen.getByText(/作成日:/);
       expect(dateText).toBeInTheDocument();
     });
 
@@ -181,10 +181,10 @@ describe('MaterialCard', () => {
 
       const { container } = render(<MaterialCard {...props} />);
 
-      // Check for "Created:" text in the container
+      // Check for "作成日:" text in the container
       const createdElement = container.querySelector('.text-xs.text-gray-500');
       expect(createdElement).toBeTruthy();
-      expect(createdElement?.textContent).toMatch(/Created:/);
+      expect(createdElement?.textContent).toMatch(/作成日:/);
     });
 
     it('handles invalid dates gracefully', () => {
@@ -193,10 +193,10 @@ describe('MaterialCard', () => {
         createdAt: new Date('Invalid Date'),
       };
 
-      // Should not throw an error
+      // Should not throw an error - date-fns returns empty string for invalid dates
       const { container } = render(<MaterialCard {...props} />);
       expect(container).toBeInTheDocument();
-      expect(screen.getByText(/Created:/)).toBeInTheDocument();
+      expect(screen.getByText(/作成日:/)).toBeInTheDocument();
     });
   });
 

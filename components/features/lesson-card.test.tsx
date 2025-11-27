@@ -31,10 +31,10 @@ describe('LessonCard', () => {
     it('formats and displays time correctly', () => {
       render(<LessonCard {...defaultProps} />);
 
-      // The component uses toLocaleString with ja-JP locale
+      // The component uses date-fns formatDateTime with Japanese locale
       // We need to check for the presence of date/time text
-      expect(screen.getByText(/Start:/)).toBeInTheDocument();
-      expect(screen.getByText(/End:/)).toBeInTheDocument();
+      expect(screen.getByText(/開始:/)).toBeInTheDocument();
+      expect(screen.getByText(/終了:/)).toBeInTheDocument();
     });
 
     it('renders in a Card container', () => {
@@ -113,12 +113,12 @@ describe('LessonCard', () => {
   });
 
   describe('Date and Time Formatting', () => {
-    it('formats dates using Japanese locale', () => {
+    it('formats dates using Japanese locale with date-fns', () => {
       render(<LessonCard {...defaultProps} />);
 
-      // Check that the Start and End labels are present
-      const startText = screen.getByText(/Start:/);
-      const endText = screen.getByText(/End:/);
+      // Check that the Japanese labels are present (開始/終了)
+      const startText = screen.getByText(/開始:/);
+      const endText = screen.getByText(/終了:/);
 
       expect(startText).toBeInTheDocument();
       expect(endText).toBeInTheDocument();
@@ -133,8 +133,8 @@ describe('LessonCard', () => {
 
       render(<LessonCard {...props} />);
 
-      expect(screen.getByText(/Start:/)).toBeInTheDocument();
-      expect(screen.getByText(/End:/)).toBeInTheDocument();
+      expect(screen.getByText(/開始:/)).toBeInTheDocument();
+      expect(screen.getByText(/終了:/)).toBeInTheDocument();
     });
 
     it('handles invalid dates gracefully', () => {
