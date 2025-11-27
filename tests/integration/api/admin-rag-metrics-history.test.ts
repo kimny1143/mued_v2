@@ -42,6 +42,7 @@ vi.mock('drizzle-orm', () => ({
   gte: (field: any, value: any) => ({ field, value, op: 'gte' }),
   lte: (field: any, value: any) => ({ field, value, op: 'lte' }),
   and: (...conditions: any[]) => ({ conditions, op: 'and' }),
+  relations: () => ({}),
 }));
 
 // Mock the schema

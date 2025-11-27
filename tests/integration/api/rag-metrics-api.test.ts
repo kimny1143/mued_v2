@@ -111,6 +111,7 @@ vi.mock('drizzle-orm', () => ({
   sql: (query: any) => query,
   count: () => 'COUNT(*)',
   avg: (field: any) => `AVG(${field})`,
+  relations: () => ({}),
 }));
 
 // Mock the schema
