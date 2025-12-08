@@ -8,7 +8,7 @@
 
 import { db } from '@/db/edge';
 import { materials, learningMetrics, users } from '@/db/schema';
-import { desc, eq, and, like, sql, or, gte, lte } from 'drizzle-orm';
+import { desc, eq, and, like, sql, or } from 'drizzle-orm';
 
 // ========================================
 // Type Definitions
@@ -224,14 +224,16 @@ export class MaterialRepository {
     }
 
     if (filters.minPlayabilityScore !== undefined) {
+      // Cast to numeric for proper numeric comparison (not string/lexicographic)
       conditions.push(
-        gte(materials.playabilityScore, filters.minPlayabilityScore.toString())
+        sql`${materials.playabilityScore}::numeric >= ${filters.minPlayabilityScore}`
       );
     }
 
     if (filters.minLearningValueScore !== undefined) {
+      // Cast to numeric for proper numeric comparison (not string/lexicographic)
       conditions.push(
-        gte(materials.learningValueScore, filters.minLearningValueScore.toString())
+        sql`${materials.learningValueScore}::numeric >= ${filters.minLearningValueScore}`
       );
     }
 
