@@ -63,23 +63,35 @@ export class UserRepository {
 
   /**
    * Create a new user
+   * @throws Error if clerkId/email missing or user already exists
    */
   async create(input: CreateUserInput) {
-    const [user] = await db
-      .insert(users)
-      .values({
-        clerkId: input.clerkId,
-        email: input.email,
-        name: input.name,
-        role: input.role ?? 'student',
-        profileImageUrl: input.profileImageUrl,
-        bio: input.bio,
-        skills: input.skills,
-        stripeCustomerId: input.stripeCustomerId,
-      })
-      .returning();
+    if (!input.clerkId || !input.email) {
+      throw new Error('clerkId and email are required');
+    }
 
-    return user;
+    try {
+      const [user] = await db
+        .insert(users)
+        .values({
+          clerkId: input.clerkId,
+          email: input.email,
+          name: input.name,
+          role: input.role ?? 'student',
+          profileImageUrl: input.profileImageUrl,
+          bio: input.bio,
+          skills: input.skills,
+          stripeCustomerId: input.stripeCustomerId,
+        })
+        .returning();
+
+      return user;
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('unique')) {
+        throw new Error(`User with clerkId ${input.clerkId} already exists`);
+      }
+      throw error;
+    }
   }
 
   /**
@@ -266,19 +278,37 @@ export class UserRepository {
 
   /**
    * Upsert user (create or update by Clerk ID)
+   * Uses ON CONFLICT to prevent race conditions
    */
   async upsertByClerkId(input: CreateUserInput) {
-    const existing = await this.findByClerkId(input.clerkId);
-
-    if (existing) {
-      return this.update(existing.id, {
-        email: input.email,
-        name: input.name,
-        profileImageUrl: input.profileImageUrl,
-      });
+    if (!input.clerkId || !input.email) {
+      throw new Error('clerkId and email are required');
     }
 
-    return this.create(input);
+    const [user] = await db
+      .insert(users)
+      .values({
+        clerkId: input.clerkId,
+        email: input.email,
+        name: input.name,
+        role: input.role ?? 'student',
+        profileImageUrl: input.profileImageUrl,
+        bio: input.bio,
+        skills: input.skills,
+        stripeCustomerId: input.stripeCustomerId,
+      })
+      .onConflictDoUpdate({
+        target: users.clerkId,
+        set: {
+          email: input.email,
+          name: input.name,
+          profileImageUrl: input.profileImageUrl,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+
+    return user;
   }
 }
 

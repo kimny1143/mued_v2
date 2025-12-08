@@ -31,6 +31,23 @@ export const TIER_LIMITS: Record<SubscriptionTier, {
 };
 
 /**
+ * Type guard to check if a string is a valid SubscriptionTier
+ */
+function isValidTier(tier: string): tier is SubscriptionTier {
+  return ['freemium', 'starter', 'basic', 'premium'].includes(tier);
+}
+
+/**
+ * Get tier with type safety, defaults to freemium if invalid
+ */
+function getTierSafely(tier: string | null | undefined): SubscriptionTier {
+  if (tier && isValidTier(tier)) {
+    return tier;
+  }
+  return 'freemium';
+}
+
+/**
  * Subscription creation input
  */
 export interface CreateSubscriptionInput {
@@ -337,7 +354,7 @@ export class SubscriptionRepository {
       return false;
     }
 
-    const tier = subscription.tier as SubscriptionTier;
+    const tier = getTierSafely(subscription.tier);
     const limits = TIER_LIMITS[tier];
 
     // -1 means unlimited
@@ -358,7 +375,7 @@ export class SubscriptionRepository {
       return false;
     }
 
-    const tier = subscription.tier as SubscriptionTier;
+    const tier = getTierSafely(subscription.tier);
     const limits = TIER_LIMITS[tier];
 
     // -1 means unlimited
@@ -383,7 +400,7 @@ export class SubscriptionRepository {
       };
     }
 
-    const tier = subscription.tier as SubscriptionTier;
+    const tier = getTierSafely(subscription.tier);
     const limits = TIER_LIMITS[tier];
 
     return {
