@@ -157,21 +157,68 @@ END $$;
 
 ```
 db/migrations/
+├── 0000_milky_shotgun.sql          # 初期スキーマ（users, lessonSlots, reservations等）
+├── 0001_equal_selene.sql           # Drizzle生成スキーマ
+├── 0002_yummy_fallen_one.sql       # Drizzle生成スキーマ
+├── 0003_nifty_peter_quill.sql      # Drizzle生成スキーマ
+├── 0004_loud_quasimodo.sql         # Drizzle生成スキーマ
+├── 0005_service_accounts.sql       # サービスアカウント
 ├── 0006_add_rag_metrics.sql        # RAGメトリクステーブル作成
 ├── 0007_optimize_rag_indexes.sql   # パフォーマンス最適化インデックス
-├── 0008_add_foreign_keys_fixed.sql # 外部キー制約
-└── rollback_0006_add_rag_metrics.sql # 緊急ロールバック用
+├── 0008_add_foreign_keys.sql       # 外部キー制約
+├── 0008_add_foreign_keys_fixed.sql # 外部キー制約（修正版）
+├── 0009_add_log_entries_phase1.sql # Phase 1 ログエントリ
+├── 0010_add_sessions_phase2.sql    # Phase 2 セッション/インタビュー
+├── 0010_muednote_v3_chat_tables.sql # MUEDnote v3 チャットテーブル
+├── 0011_add_sessions_rls_policies.sql # セッションRLSポリシー
+├── 0012_add_rag_embeddings.sql     # RAG埋め込みテーブル
+├── 0013_add_question_templates.sql # 質問テンプレート
+├── 0014_add_rag_rls_policies.sql   # RAG RLSポリシー
+├── 0015_add_muednote_v3_schema.sql # MUEDnote v3 スキーマ
+├── rollback_0006_add_rag_metrics.sql  # ロールバック用
+├── rollback_0010_sessions_phase2.sql  # ロールバック用
+└── rollback_0012_rag_phase1.3.sql     # ロールバック用
 ```
 
-### 作成されるテーブル
+### 主要テーブル一覧
 
-- `ai_dialogue_log` - AIチャット履歴とRAGメトリクス
-- `provenance` - データプロヴェナンス管理
-- `rag_metrics_history` - 日次集計メトリクス
-- `plugin_registry` - プラグイン登録情報
+**コアテーブル:**
+- `users` - ユーザー（Clerk連携）
+- `subscriptions` - サブスクリプション（Stripe連携）
+- `lesson_slots` - レッスン枠
+- `reservations` - 予約
+- `materials` - 教材
+- `messages` - メッセージ
+- `webhook_events` - Webhook履歴
+
+**MUEDnote セッション/インタビュー:**
+- `sessions` - セッション記録
+- `session_analyses` - セッション分析
+- `interview_questions` - インタビュー質問
+- `interview_answers` - インタビュー回答
+- `log_entries` - ログエントリ
+
+**MUEDnote v3 チャット:**
+- `chat_sessions` - チャットセッション
+- `chat_messages` - チャットメッセージ
+- `user_ai_profiles` - AIプロファイル
+- `user_ai_memories` - AIメモリ
+- `session_tags` - セッションタグ
+
+**RAG/プラグイン:**
+- `ai_dialogue_log` - AIダイアログ履歴
+- `provenance` - データプロヴェナンス
+- `rag_metrics_history` - RAGメトリクス履歴
+- `rag_embeddings` - RAG埋め込み
+- `question_templates` - 質問テンプレート
+- `plugin_registry` - プラグイン登録
 
 ### 作成されるENUM型
 
 - `content_type` - コンテンツタイプ
 - `acquisition_method` - 取得方法
 - `license_type` - ライセンス種別
+- `session_type` - セッションタイプ
+- `focus_area` - フォーカスエリア
+- `ai_profile_type` - AIプロファイルタイプ
+- `memory_type` - メモリタイプ

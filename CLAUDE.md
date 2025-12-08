@@ -239,7 +239,7 @@ BEGIN
 END $$;
 ```
 
-詳細: [docs/database-operations.md](docs/database-operations.md)
+詳細: [docs/database/database-operations.md](docs/database/database-operations.md)
 
 ---
 
@@ -247,16 +247,20 @@ END $$;
 
 ### 登録済みサーバー
 
-| サーバー | 用途 |
-|---------|------|
-| `mued_unit_test` | Vitest ユニットテスト実行 |
-| `mued_e2e` | Playwright E2E テスト実行 |
+| サーバー | ファイル | 用途 |
+|---------|---------|------|
+| `mued_unit_test` | `mued-unit-test.js` | Vitest ユニットテスト実行 |
+| `mued_e2e` | `mued-playwright-e2e.js` | Playwright E2E テスト実行 |
+| `mued_material_generator` | `mued-material-generator-claude.js` | Claude による教材生成 |
+| `mued_browser_debug` | `mued-browser-debug.js` | ブラウザデバッグ自動化 |
+| `mued_screenshot` | `mued-playwright-screenshot.js` | スクリーンショット取得 |
 
 ### 使用例
 
 ```
 「ユニットテスト実行して」→ mued_unit_test の run_unit_tests
-「E2Eテスト実行して」→ mued_e2e の run_e2e_tests
+「E2Eテスト実行して」→ mued_e2e の run_all_e2e_tests
+「教材を生成して」→ mued_material_generator
 ```
 
 ### 新規MCP作成時の必須パターン
@@ -278,7 +282,7 @@ const transport = new StdioServerTransport();
 server.connect(transport);
 ```
 
-詳細: [docs/mcp-implementation-guide.md](docs/mcp-implementation-guide.md)
+詳細: [docs/mcp/mcp-implementation-guide.md](docs/mcp/mcp-implementation-guide.md)
 
 ---
 
@@ -353,10 +357,10 @@ cd ../mued_v2  # すぐ戻れる（stash不要）
 
 | ドキュメント | 内容 |
 |-------------|------|
-| [docs/figma-workflow.md](docs/figma-workflow.md) | Figma → コード実装手順 |
-| [docs/ai-model-comparison.md](docs/ai-model-comparison.md) | AI モデル選定・比較 |
-| [docs/mcp-implementation-guide.md](docs/mcp-implementation-guide.md) | MCP サーバー実装詳細 |
-| [docs/database-operations.md](docs/database-operations.md) | DB マイグレーション詳細 |
+| [docs/guides/figma-workflow.md](docs/guides/figma-workflow.md) | Figma → コード実装手順 |
+| [docs/archive/ai-model-comparison.md](docs/archive/ai-model-comparison.md) | AI モデル選定・比較 |
+| [docs/mcp/mcp-implementation-guide.md](docs/mcp/mcp-implementation-guide.md) | MCP サーバー実装詳細 |
+| [docs/database/database-operations.md](docs/database/database-operations.md) | DB マイグレーション詳細 |
 
 ---
 
@@ -383,7 +387,7 @@ cd ../mued_v2  # すぐ戻れる（stash不要）
 - GPT-4o は品質が低いため使用禁止
 - o3, o4-mini は使用しない
 
-詳細: [docs/ai-model-comparison.md](docs/ai-model-comparison.md)
+詳細: [docs/archive/ai-model-comparison.md](docs/archive/ai-model-comparison.md)
 
 ### セキュリティ
 
@@ -405,4 +409,4 @@ cd ../mued_v2  # すぐ戻れる（stash不要）
 
 ---
 
-*最終更新: 2025-11-26*
+*最終更新: 2025-12-08*
