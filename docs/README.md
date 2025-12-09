@@ -1,48 +1,65 @@
 # MUED v2 ドキュメント
 
 **最終更新**: 2025-12-09
-**ステータス**: Phase 1 実装中 (約75%完了)
+**ステータス**: Phase 1 実装中 (約25%完了)
+
+---
+
+## これは何か？
+
+MUED は**音楽制作特化プラットフォーム**です。3つの柱で音楽制作者の成長を支援します：
+
+1. **Difference（耳）**: 音の微細な違いを聴き分ける能力
+2. **Note（記録）**: 制作・学習のログを資産化 → **MUEDnote**
+3. **Form（構造）**: 楽曲構造を理解し制作に活かす能力
+
+現在は **MUEDnote（デスクトップ沈黙コンソール）** と **LMS基盤** を並行開発中。
 
 ---
 
 ## クイックリンク
 
-| ドキュメント | 説明 |
-|-------------|------|
-| [自己レビューレポート](reviews/2025-12-09-self-review-report.md) | 最新の実装状況・品質分析 |
-| [CHANGELOG](CHANGELOG.md) | 変更履歴 |
-| [システムアーキテクチャ](architecture/SYSTEM_ARCHITECTURE.md) | 技術アーキテクチャ全体像 |
-| [CLAUDE.md](../CLAUDE.md) | プロジェクトルート設定 |
+| 重要度 | ドキュメント | 説明 |
+|--------|-------------|------|
+| **必読** | [PHILOSOPHY.md](PHILOSOPHY.md) | Difference/Note/Form の3本柱思想 |
+| **必読** | [roadmap.md](roadmap.md) | Phase 0-4 ロードマップ（現実的進捗） |
+| **必読** | [MUEDnote v6.1](business/MUEDnote/muednote_master_plan_v6.1.md) | MUEDnote 単一仕様書 |
+| 参照 | [自己レビュー](reviews/2025-12-09-self-review-report.md) | 実装状況・品質分析 |
+| 参照 | [CHANGELOG](CHANGELOG.md) | 変更履歴 |
+| 参照 | [システムアーキテクチャ](architecture/SYSTEM_ARCHITECTURE.md) | 技術アーキテクチャ |
 
 ---
 
 ## プロジェクト状況
 
-### Phase 1 完成度: 約75%
+### Phase 1 完成度: 約25%
 
-#### 実装済み機能
+| サブフェーズ | 状態 | 完成度 |
+|-------------|------|--------|
+| 1.1 LMS基盤（バックエンド）| 完了 | 100% |
+| 1.2 LMS基盤（フロントエンド）| 進行中 | 50% |
+| 1.3 MUEDnote デスクトップ | 未着手 | 0% |
+| 1.4 AI/HLA 処理 | 未着手 | 0% |
 
-| 機能 | API | Repository | UI | テスト |
-|------|-----|------------|-----|--------|
-| メンタースロット CRUD | 完了 | 完了 | 完了 | 未着手 |
-| 繰り返しスロット作成 | 完了 | 完了 | 完了 | 未着手 |
-| Stripe Webhook (11イベント) | 完了 | - | - | 未着手 |
-| メール通知 (Resend) | 完了 | - | - | 未着手 |
-| 予約作成 | 完了 | 完了 | 一部 | 未着手 |
+#### 実装済み（Phase 1.1）
 
-#### 進行中
+- メンタースロット管理 API（CRUD、繰り返しスロット生成）
+- 予約システム API（Stripe Webhook 11イベント対応）
+- メール通知システム（Resend 統合）
+- Repository パターン実装
 
-- 予約キャンセル API
-- 生徒側キャンセル UI
-- スロット編集フォーム
-- API ドキュメント作成
+#### 進行中（Phase 1.2）
 
-#### 計画中
-
-- 決済履歴ページ (`/dashboard/payments`)
+- スロット作成/一覧表示 UI ✅
+- 予約キャンセル UI
+- 決済履歴ページ
 - メンタープロフィールページ
-- サーバーサイドページネーション
-- ユニットテスト・E2E テスト拡充
+
+#### 未着手（Phase 1.3-1.4）
+
+- MUEDnote Tauri デスクトップアプリ (`apps/muednote-v3/`)
+- 沈黙コンソール UI（0.5秒オーバーレイ）
+- HLA 処理（意図解析、パターン抽出、資産化）
 
 ---
 
@@ -50,64 +67,27 @@
 
 ```
 docs/
-├── api/                    # API ドキュメント (作成予定)
+├── PHILOSOPHY.md           # ★ 思想（Difference/Note/Form）
+├── roadmap.md              # ★ Phase 0-4 ロードマップ
+├── CHANGELOG.md            # 変更履歴
 ├── architecture/           # システムアーキテクチャ
-│   ├── SYSTEM_ARCHITECTURE.md
-│   ├── MUED_ARCHITECTURE_MERMAID_DIAGRAMS.md
-│   └── business-logic-specification.md
+│   └── SYSTEM_ARCHITECTURE.md
 ├── business/               # 事業戦略・企画
 │   ├── MUED_Unified_Strategy_2025Q4.md
-│   ├── MUEDNOTE_INTEGRATED_SPEC_V2.md
-│   └── MUEDnote/          # MUEDnote関連
-├── database/               # データベース運用
-│   ├── README.md
-│   ├── session-interview-schema.md
-│   └── session-quickstart.md
-├── deployment/             # デプロイメントガイド
-│   ├── deployment-checklist.md
-│   ├── environment-variables.md
-│   └── github-actions-setup.md
-├── development/            # 開発ガイド
-│   ├── PHASE1_CHECKLIST.md
-│   ├── openai-abc-technical-guide.md
-│   ├── claude-material-generator-guide.md
-│   ├── typescript-strict-rules.md
-│   ├── accessibility-prevention-strategy.md
-│   ├── rag-service-usage.md
-│   └── type-safety-migration-guide.md
-├── features/               # 機能ドキュメント
-│   ├── i18n-implementation-guide.md
-│   ├── plugin-management-guide.md
-│   ├── openai-abc-generation-guide.md
-│   └── muednote-chat-ui-design.md
-├── guides/                 # ハウツーガイド
-│   ├── ci-cd-quick-implementation.md
-│   └── GIT_WORKTREE_WORKFLOW.md
-├── mcp/                    # MCP サーバードキュメント
-│   ├── README.md
-│   └── mcp-browser-debug.md
-├── reviews/                # コードレビュー・レポート
+│   └── MUEDnote/           # ★ MUEDnote関連
+│       ├── muednote_master_plan_v6.1.md  # 単一仕様書
+│       ├── DOCUMENTATION_STRUCTURE.md     # 構成説明
+│       └── archive/        # 過去バージョン
+├── reviews/                # レビュー・レポート
 │   ├── 2025-12-09-self-review-report.md
 │   └── 2025-12-09-reservation-system-enhancement.md
+├── deployment/             # デプロイメント
+├── development/            # 開発ガイド
 ├── testing/                # テスト戦略
-│   ├── README.md
-│   ├── TESTING_GUIDE.md
-│   └── TEST_STRATEGY.md
-├── UXUI/                   # UX/UI デザイン
-│   ├── CHAT_UX_PATTERNS.md
-│   └── UX_DESIGN_PRINCIPLES.md
-├── prompts/                # AI プロンプト
-│   ├── chatgpt-music-prompt.md
-│   └── claude-desktop-music-prompt.md
-├── research/               # 調査・研究
-│   ├── README.md
-│   └── openai-vs-claude-comparison.md
 └── archive/                # 過去のドキュメント
-    ├── 2025-historical/
-    ├── business-plans/
-    ├── phase1.1-deprecated/
-    ├── phase1.3-reports/
-    └── legacy-assets/
+    ├── muednote-alternative-vision/  # v2.0 Web チャット案
+    ├── 2025-12-completed/            # 完了済みタスク
+    └── ...
 ```
 
 ---
@@ -190,58 +170,39 @@ docs/
 
 ---
 
-## 主要ドキュメント
+## 主要ドキュメント（カテゴリ別）
 
-### 設計・アーキテクチャ
+### 設計・思想
 
 | ドキュメント | 説明 |
 |-------------|------|
-| [PHILOSOPHY.md](PHILOSOPHY.md) | Difference / Note / Form の3本柱思想 |
-| [システムアーキテクチャ](architecture/SYSTEM_ARCHITECTURE.md) | 9つの Mermaid 図で技術構成を解説 |
-| [ビジネスロジック仕様](architecture/business-logic-specification.md) | ドメインルール詳細 |
+| [PHILOSOPHY.md](PHILOSOPHY.md) | Difference/Note/Form の3本柱思想 |
 | [roadmap.md](roadmap.md) | Phase 0-4 の実装ロードマップ |
+| [MUEDnote v6.1](business/MUEDnote/muednote_master_plan_v6.1.md) | MUEDnote 単一仕様書（沈黙コンソール）|
 
-### 開発ガイド
+### 技術
 
 | ドキュメント | 説明 |
 |-------------|------|
-| [Phase 1 チェックリスト](development/PHASE1_CHECKLIST.md) | 現在進行中タスク |
-| [OpenAI ABC 技術ガイド](development/openai-abc-technical-guide.md) | ABC 記譜法生成の実装 |
-| [Claude Material Generator](development/claude-material-generator-guide.md) | MCP による教材生成 |
-| [型安全性移行ガイド](development/type-safety-migration-guide.md) | TypeScript strict 対応 |
+| [システムアーキテクチャ](architecture/SYSTEM_ARCHITECTURE.md) | 技術構成を解説 |
+| [環境変数](deployment/environment-variables.md) | 必須環境変数一覧 |
+| [TypeScript Strict Rules](development/typescript-strict-rules.md) | コーディング規約 |
 
-### テスト
+### テスト・デプロイ
 
 | ドキュメント | 説明 |
 |-------------|------|
 | [テストガイド](testing/TESTING_GUIDE.md) | テスト戦略全体像 |
-| [テスト戦略](testing/TEST_STRATEGY.md) | ユニット/E2E/統合テスト |
-| [テスト README](testing/README.md) | テスト実行方法 |
-
-### デプロイメント
-
-| ドキュメント | 説明 |
-|-------------|------|
 | [デプロイチェックリスト](deployment/deployment-checklist.md) | 本番リリース前確認事項 |
-| [環境変数](deployment/environment-variables.md) | 必須環境変数一覧 |
-| [GitHub Actions](deployment/github-actions-setup.md) | CI/CD パイプライン設定 |
-
----
-
-## 関連リソース
-
-- [PR レビューガイド](PR_REVIEW_GUIDE.md)
-- [Git Worktree ワークフロー](guides/GIT_WORKTREE_WORKFLOW.md)
-- [MCP サーバー一覧](mcp/README.md)
 
 ---
 
 ## アーカイブポリシー
 
 - 新バージョンに置き換えられたドキュメントは `archive/` に移動
-- 履歴的価値のあるドキュメントは日付プレフィックス付きで保存
-- 実装詳細が統合文書に吸収されたものはアーカイブ
+- v2.0 Web チャットアプローチは `archive/muednote-alternative-vision/` に保存
+- 完了済みタスクは `archive/2025-12-completed/` に保存
 
 ---
 
-*このドキュメントは 2025-12-09 に更新されました。*
+*最終更新: 2025-12-09*

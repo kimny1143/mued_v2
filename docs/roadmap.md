@@ -1,7 +1,8 @@
 # MUED Development Roadmap - Phase 0-4
 
-**Version**: 1.0
+**Version**: 1.1
 **Created**: 2025-11-15
+**Updated**: 2025-12-09
 **Period**: 2025年11月 - 2026年11月
 **Focus**: Difference / Note / Form による音楽制作特化プラットフォーム構築
 
@@ -54,10 +55,15 @@ MUEDの思想（Difference/Note/Form）をリポジトリ全体に浸透させ�
 
 ### 🎵 Phase 1: MUEDnote（Note）基盤実装
 **期間**: 2025年12月16日 - 2026年3月15日（3ヶ月）
-**状態**: 🟡 **進行中（60%完了）**
+**状態**: 🟡 **進行中（約25%完了）**
 
 #### 目的
-チャット型UIで音楽活動を自然言語記録し、AIが整形・タグ付けして資産化するシステムを構築する。
+「沈黙のコンソール」として音楽制作中のフローを壊さずに思考断片を記録し、AIが裏側で構造化・資産化するシステムを構築する。
+
+#### 実装アプローチ
+- **Desktop App**: Tauri/Rust による DAW オーバーレイ（`apps/muednote-v3/`）
+- **Silent Console UX**: 0.5秒で入力、AIは返答しない
+- **HLA処理**: 裏側でIntent Recognition, Context Integration, Feature Extraction, Asset Generation
 
 #### 主要機能
 ```typescript
@@ -78,35 +84,31 @@ interface LogEntry {
 ```
 
 #### タスクリスト
-- [ ] **Week 1-2**: データベース設計・マイグレーション
-  - [ ] LogEntryテーブル作成
-  - [ ] インデックス設計
-  - [ ] AI人格システムテーブル（user_profile, user_memory）
 
-- [ ] **Week 3-4**: Core API実装
-  - [ ] CRUD operations
-  - [ ] AI整形・タグ付けAPI
-  - [ ] 人格システムAPI
+**Phase 1.1: LMS基盤（バックエンド）** ✅ 完了
+- [x] メンタースロット管理 API（CRUD、繰り返しスロット生成）
+- [x] 予約システム API（作成、Stripe Webhook 11イベント対応）
+- [x] メール通知システム（Resend 統合、テンプレート）
+- [x] Repository パターン実装
 
-- [ ] **Week 5-6**: チャットUI実装
-  - [ ] チャット型インターフェース
-  - [ ] リアルタイム応答
-  - [ ] モバイル最適化
+**Phase 1.2: LMS基盤（フロントエンド）** 🟡 進行中（50%）
+- [x] スロット作成フォーム（単発・繰り返し）
+- [x] スロット一覧表示
+- [ ] 予約キャンセル UI
+- [ ] 決済履歴ページ
+- [ ] メンタープロフィールページ
 
-- [ ] **Week 7-8**: AI機能統合
-  - [ ] 自動要約生成
-  - [ ] キーワード抽出
-  - [ ] 感情分析
+**Phase 1.3: MUEDnote デスクトップ** ⬜ 未着手
+- [ ] Tauri 基盤セットアップ（`apps/muednote-v3/`）
+- [ ] ホットキー監視・0.5秒オーバーレイUI
+- [ ] ローカルキュー保存
+- [ ] DAWフォーカス管理
 
-- [ ] **Week 9-10**: 既存機能統合
-  - [ ] レッスン詳細への「ノート」タブ
-  - [ ] 教材ページへの記録機能
-  - [ ] ダッシュボードへの最近のノート表示
-
-- [ ] **Week 11-12**: テスト・最適化
-  - [ ] E2Eテスト実装
-  - [ ] パフォーマンス最適化
-  - [ ] ユーザビリティテスト
+**Phase 1.4: AI/HLA 処理** ⬜ 未着手
+- [ ] Intent Recognition（意図解析）
+- [ ] Context Integration（DAW情報紐付け）
+- [ ] Feature Extraction（感情・パターン抽出）
+- [ ] Asset Generation（ライナーノーツ生成）
 
 #### KPI
 - ログ記録率: 60%以上のアクティビティ
@@ -214,33 +216,33 @@ interface FormExercise {
 
 ---
 
-### 🔄 Phase 4: Echovna連携・PoC
+### 🔄 Phase 4: DAW統合・プロダクション
 **期間**: 2026年9月16日 - 2026年12月15日（3ヶ月）
 **状態**: ⬜ **未着手**
 
 #### 目的
-物理空間（Echovna）とMUEDを接続し、実践的な学習循環を実現する。
+MUEDnote を DAW エコシステムに完全統合し、プロダクション品質に仕上げる。
 
 #### 統合ポイント
-1. **データインポート**
-   - Echovnaでの録音データ取り込み
-   - メタデータ自動抽出
-   - MUEDnoteへの自動記録
+1. **DAW連携プロトコル**
+   - Window Title Monitoring（プロジェクト名取得）
+   - File Path Tracking（.als, .logicx 監視）
+   - MIDI/OSC（再生/停止、アクティブトラック）
+   - Keystroke Context Linking（直前操作の推定）
 
-2. **教材化パイプライン**
-   - 録音素材からEarExercise生成
-   - セッションデータからFormExercise生成
-   - 品質管理・承認フロー
+2. **プラグイン化**
+   - AU/VST/AAX 形式での提供
+   - DAW 内での完全統合
 
-3. **フィードバックループ**
-   - MUED学習結果のEchovna表示
-   - 改善提案の実践追跡
-   - 成果の可視化
+3. **商用リリース準備**
+   - 決済システム（サブスクリプション）
+   - B2B ライセンス（教育機関向け）
+   - セキュリティ監査
 
 #### マイルストーン
-- [ ] **Month 1**: API設計・認証
-- [ ] **Month 2**: データ連携実装
-- [ ] **Month 3**: PoCテスト・クローズドβ
+- [ ] **Month 1**: DAW連携プロトコル実装
+- [ ] **Month 2**: プラグイン開発
+- [ ] **Month 3**: クローズドβ・商用リリース
 
 ---
 
@@ -271,10 +273,10 @@ interface FormExercise {
 | Phase | 主要指標 | 目標値 |
 |-------|---------|--------|
 | Phase 0 | ドキュメント整合性 | 100% |
-| Phase 1 | ログ記録率 | 60% |
+| Phase 1 | LMS基盤完成度 / MUEDnote MVP | 100% / 動作確認 |
 | Phase 2 | Ear正答率向上 | +20% |
 | Phase 3 | Form理解度 | 70点 |
-| Phase 4 | 統合成功率 | 80% |
+| Phase 4 | DAW統合 / 商用リリース | Logic Pro + Ableton 対応 |
 
 ## Resource Requirements
 
@@ -292,13 +294,15 @@ interface FormExercise {
 
 ## Revision History
 
+- v1.1 (2025-12-09): Phase 1 進捗を現実に即して更新、MUEDnote v6.1（沈黙のコンソール）に整合、Phase 4 を DAW 統合に変更
 - v1.0 (2025-11-15): 初版作成
 
 ## Related Documents
 
 - [PHILOSOPHY.md](./PHILOSOPHY.md) - 思想定義
-- [architecture.md](./architecture/business-logic-specification.md) - システム設計
-- [MUED企画書251114.md](./business/MUED企画書251114.md) - 原案
+- [MUEDnote Master Plan v6.1](./business/MUEDnote/muednote_master_plan_v6.1.md) - MUEDnote 仕様書
+- [システムアーキテクチャ](./architecture/SYSTEM_ARCHITECTURE.md) - 技術アーキテクチャ
+- [自己レビューレポート](./reviews/2025-12-09-self-review-report.md) - 最新の実装状況
 
 ---
 

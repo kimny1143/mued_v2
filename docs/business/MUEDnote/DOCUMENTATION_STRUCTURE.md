@@ -1,130 +1,106 @@
-# MUEDnote Documentation Structure
+# MUEDnote ドキュメント構成
 
-**Last Updated**: 2025-12-02
-**Status**: Reorganized
-
----
-
-## Overview
-
-This document provides a guide to the MUEDnote documentation structure after the 2025-12-02 reorganization.
+**最終更新**: 2025-12-09
+**状態**: 統合完了（単一情報源）
 
 ---
 
-## Current Valid Documents
+## 概要
 
-### Master Plan
-| File | Purpose | Status |
-|------|---------|--------|
-| `muednote_master_plan_v6.1.md` | **Current master plan** - Unified strategy document | Active |
+このドキュメントは 2025-12-09 の統合後の MUEDnote ドキュメント構成を説明します。
 
-### MVP Specification
-| File | Purpose | Status |
-|------|---------|--------|
-| `muednote_spotlight_mvp_spec_v1.0.md` | Spotlight Input MVP technical specification | Active |
-| `muednote_spotlight_mvp_implementation_plan.md` | MVP implementation roadmap and tasks | Active |
-| `muednote_spotlight_mvp_verification_report.md` | Technical feasibility verification | Active |
+**決定事項 (2025-12-09)**: MUEDnote v6.1（デスクトップ/沈黙のコンソール）を単一情報源とする。代替案の Web チャットアプローチ（v2.0）はアーカイブ済み。
 
 ---
 
-## Archived Documents
+## 現行有効ドキュメント
 
-All historical documents have been moved to `archive/` directory.
+### 単一情報源
+| ファイル | 目的 | 状態 |
+|---------|------|------|
+| `muednote_master_plan_v6.1.md` | **現行マスタープラン** - デスクトップ沈黙コンソール仕様 | 有効 |
 
-### Archive Contents
-
-| File | Original Version | Archive Reason |
-|------|-----------------|----------------|
-| `muednote_business_plan_v3.0.md` | v3.0 | Initial pivot strategy. Superseded by v6.1. |
-| `muednote_business_plan_v3.1.md` | v3.1 | Final Edition of v3.x series. Superseded by v6.1. |
-| `muednote_business_plan_v3.2_algorithm.md` | v3.2 | HLA algorithm details. Integrated into v6.1. |
-| `muednote_strategy_v5.0_drainpipe.md` | v5.0 | DRAINPIPE UX philosophy. Integrated into v6.1. |
-| `gpt5_muednote_master_plan_v6.md` | v6.0 (GPT5) | GPT5 variant. Superseded by v6.1. |
-| `gemini_muednote_master_plan_v6.md` | v6.0 (Gemini) | Gemini variant. Superseded by v6.1. |
-
----
-
-## Naming Convention
-
-### Standard Format
-```
-muednote_{feature}_{type}_v{version}.md
-```
-
-### Examples
-- `muednote_master_plan_v6.1.md` - Master plan version 6.1
-- `muednote_spotlight_mvp_spec_v1.0.md` - Spotlight MVP specification version 1.0
-- `muednote_spotlight_mvp_implementation_plan.md` - Implementation plan (no version, living document)
-- `muednote_spotlight_mvp_verification_report.md` - Verification report (dated internally)
-
-### Prohibited Patterns
-- Square brackets in file names: `[GPT5]file.md` (causes issues with file systems and URLs)
-- Spaces in file names: `MUEDnote 事業計画書.md` (use underscores instead)
-- Japanese characters in file names: Use English for filenames, Japanese for content
+### 実装参照
+| パス | 目的 |
+|------|------|
+| `apps/muednote-v3/` | Tauri デスクトップアプリ ソースコード |
+| `docs/roadmap.md` | MUED 全体ロードマップ（Phase 1.3 = MUEDnote デスクトップ）|
+| `docs/PHILOSOPHY.md` | Difference/Note/Form 思想（v6.1 と整合）|
 
 ---
 
-## Files Pending Deletion
+## アーカイブ済みドキュメント
 
-The following old files should be deleted after confirming the archive copies:
+すべての履歴ドキュメントと代替アプローチは適切なアーカイブディレクトリに移動済み。
 
-```
-docs/business/MUEDnote/
-├── [GPT5]muednote_additional_plan_v_6_1.md    # Renamed to muednote_spotlight_mvp_spec_v1.0.md
-├── [GPT5]muednote_master_plan_v_6.md          # Archived as gpt5_muednote_master_plan_v6.md
-├── [gemini]muednote_master_plan_v_6.md        # Archived as gemini_muednote_master_plan_v6.md
-├── MUEDnote_Strategy_v5.0.md                  # Archived as muednote_strategy_v5.0_drainpipe.md
-├── MUEDnote事業計画書v3.md                    # Archived as muednote_business_plan_v3.0.md
-├── MUEDnote事業計画書v3-1.md                  # Archived as muednote_business_plan_v3.1.md
-└── MUEDnote 事業計画書 (v3.2 - アルゴリズム詳細).md  # Archived as muednote_business_plan_v3.2_algorithm.md
-```
+### 代替ビジョン（別アプローチ）
 
-**To delete these files, run:**
-```bash
-cd /Users/kimny/Dropbox/_DevProjects/mued/mued_v2/docs/business/MUEDnote
+| ファイル | 場所 | アーカイブ理由 |
+|---------|------|----------------|
+| `MUEDNOTE_INTEGRATED_SPEC_V2.md` | `docs/archive/muednote-alternative-vision/` | Web チャットアプローチ。デスクトップ v6.1 に置き換え。 |
+| `muednote-chat-ui-design.md` | `docs/archive/muednote-alternative-vision/` | Web アプローチのチャット UI デザイン。 |
 
-# Delete files with square brackets
-rm "[GPT5]muednote_additional_plan_v_6_1.md"
-rm "[GPT5]muednote_master_plan_v_6.md"
-rm "[gemini]muednote_master_plan_v_6.md"
+### 過去バージョン
 
-# Delete old naming convention files
-rm "MUEDnote_Strategy_v5.0.md"
-rm "MUEDnote事業計画書v3.md"
-rm "MUEDnote事業計画書v3-1.md"
-rm "MUEDnote 事業計画書 (v3.2 - アルゴリズム詳細).md"
-```
+| ファイル | 場所 | アーカイブ理由 |
+|---------|------|----------------|
+| `muednote_business_plan_v3.0.md` | `archive/` | 初期ピボット戦略。v6.1 に置き換え。 |
+| `muednote_business_plan_v3.1.md` | `archive/` | v3.x 系最終版。v6.1 に置き換え。 |
+| `muednote_business_plan_v3.2_algorithm.md` | `archive/` | HLA アルゴリズム詳細。v6.1 に統合。 |
+| `muednote_strategy_v5.0_drainpipe.md` | `archive/` | DRAINPIPE UX 思想。v6.1 に統合。 |
+| `gpt5_muednote_master_plan_v6.md` | `archive/` | GPT5 バリアント。v6.1 に置き換え。 |
+| `gemini_muednote_master_plan_v6.md` | `archive/` | Gemini バリアント。v6.1 に置き換え。 |
+
+### MVP 計画（移動済み）
+
+| ファイル | 場所 | アーカイブ理由 |
+|---------|------|----------------|
+| `muednote_spotlight_mvp_spec_v1.0.md` | `archive/spotlight-mvp-planning/` | Spotlight Input MVP 計画ドキュメント |
+| `muednote_spotlight_mvp_implementation_plan.md` | `archive/spotlight-mvp-planning/` | 実装計画 |
+| `muednote_spotlight_mvp_verification_report.md` | `archive/spotlight-mvp-planning/` | 技術実現可能性レポート |
 
 ---
 
-## Document Evolution
+## 命名規則
+
+### 標準フォーマット
+```
+muednote_{機能}_{種類}_v{バージョン}.md
+```
+
+### 禁止パターン
+- ファイル名の角括弧: `[GPT5]file.md`（ファイルシステム・URL で問題発生）
+- ファイル名のスペース: `MUEDnote 事業計画書.md`（アンダースコアを使用）
+- ファイル名の日本語: ファイル名は英語、内容は日本語
+
+---
+
+## ドキュメント進化
 
 ```
-v3.0 (Pivot Strategy)
+v3.0 (ピボット戦略)
     |
-v3.1 (Final Edition) --- Added HLA concept
+v3.1 (最終版) --- HLA コンセプト追加
     |
-v3.2 (Algorithm Details) --- Technical specifications
+v3.2 (アルゴリズム詳細) --- 技術仕様
     |
-v5.0 (DRAINPIPE UX) --- Text-First philosophy confirmed
+v5.0 (DRAINPIPE UX) --- テキストファースト思想確立
     |
-v6.0 (GPT5/Gemini variants) --- Integration attempts
+v6.0 (GPT5/Gemini バリアント) --- 統合試行
     |
-v6.1 (Unified Master) --- Current authoritative document
-    |
-MVP Spec v1.0 --- Spotlight Input implementation spec
+v6.1 (統合マスター) --- 現行の権威あるドキュメント
 ```
 
 ---
 
-## Related Documentation (Outside This Directory)
+## 関連ドキュメント（このディレクトリ外）
 
-| Path | Purpose |
-|------|---------|
-| `docs/architecture/muednote-spotlight-mvp-feasibility-report.md` | Architect's feasibility analysis |
-| `docs/testing/muednote-spotlight-test-strategy.md` | Test strategy for MVP |
-| `apps/muednote-v3/` | Tauri desktop application source code |
+| パス | 目的 |
+|------|------|
+| `docs/architecture/muednote-spotlight-mvp-feasibility-report.md` | アーキテクト実現可能性分析 |
+| `docs/testing/muednote-spotlight-test-strategy.md` | MVP テスト戦略 |
+| `apps/muednote-v3/` | Tauri デスクトップアプリ ソースコード |
 
 ---
 
-*Document reorganization completed: 2025-12-02*
+*ドキュメント統合完了: 2025-12-09*
