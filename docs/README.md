@@ -13,7 +13,10 @@ MUED は**音楽制作特化プラットフォーム**です。3つの柱で音�
 2. **Note（記録）**: 制作・学習のログを資産化 → **MUEDnote**
 3. **Form（構造）**: 楽曲構造を理解し制作に活かす能力
 
-現在は **MUEDnote（デスクトップ沈黙コンソール）** と **LMS基盤** を並行開発中。
+現在は2つの主要コンポーネントを並行開発中：
+
+- **MUEDnote**: デスクトップ沈黙コンソール（Tauri製、DAWオーバーレイ）
+- **LMS**: Learning Management System（レッスン予約・教材管理・メンター機能）
 
 ---
 
@@ -187,7 +190,7 @@ docs/
 | ドキュメント | 説明 |
 |-------------|------|
 | [テストガイド](testing/TESTING_GUIDE.md) | テスト戦略全体像 |
-| [デプロイチェックリスト](deployment/deployment-checklist.md) | 本番リリース前確認事項 |
+| [GitHub Actions](deployment/github-actions-setup.md) | CI/CD 設定 |
 
 ---
 

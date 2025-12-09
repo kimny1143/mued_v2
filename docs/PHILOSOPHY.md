@@ -140,10 +140,10 @@ Difference（耳）← より精密な聴き分けが可能に
 - AI構造解析API
 - Note連携強化
 
-### Phase 4: 統合とEchovna連携
+### Phase 4: DAW統合・商用リリース
 - 3つの柱の統合ダッシュボード
-- Echovnaからのデータインポート
-- 循環学習の実証実験
+- AU/VST/AAXプラグインによるDAW完全統合
+- 商用リリース（サブスクリプション）
 - クローズドβリリース
 
 ## 5. 成功指標
@@ -191,9 +191,9 @@ Difference（耳）← より精密な聴き分けが可能に
 
 ## 関連ドキュメント
 
-- [ロードマップ](./roadmap.md)
-- [アーキテクチャ仕様](./architecture/business-logic-specification.md)
-- [ドメインモデル定義](./domain-models.md)
+- [ロードマップ](./roadmap.md) - Phase 0-4 実装計画
+- [システムアーキテクチャ](./architecture/SYSTEM_ARCHITECTURE.md) - 技術構成
+- [MUEDnote 仕様書](./business/MUEDnote/muednote_master_plan_v6.1.md) - 沈黙のコンソール詳細
 
 ---
 
