@@ -1,8 +1,11 @@
 import { z } from 'zod';
 import { createChatCompletion } from '@/lib/openai';
-import { db } from '@/db';
-import { materials, subscriptions, users } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import {
+  userRepository,
+  materialRepository,
+  subscriptionRepository,
+  TIER_LIMITS,
+} from '@/lib/repositories';
 import { checkQualityGate, suggestImprovements, type QualityStatus } from '@/lib/quality-gate';
 import { validateAbcSyntax } from '@/lib/abc-validator';
 import { logger } from '@/lib/utils/logger';
@@ -22,11 +25,7 @@ import { logger } from '@/lib/utils/logger';
  * @exported for use in API routes
  */
 export async function getUserIdFromClerkId(clerkId: string): Promise<string> {
-  const [user] = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.clerkId, clerkId))
-    .limit(1);
+  const user = await userRepository.findByClerkId(clerkId);
 
   if (!user) {
     throw new Error(
@@ -407,32 +406,14 @@ export async function checkMaterialQuota(clerkUserId: string): Promise<{
   tier: string;
 }> {
   const userId = await getUserIdFromClerkId(clerkUserId);
+  const usageLimits = await subscriptionRepository.getUsageLimits(userId);
 
-  const [subscription] = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
-    .orderBy(desc(subscriptions.createdAt))
-    .limit(1);
-
-  if (!subscription) {
-    // No subscription = freemium tier
-    return {
-      allowed: false,
-      remaining: 0,
-      limit: 3,
-      tier: 'freemium',
-    };
-  }
-
-  const tier = subscription.tier;
-  const used = subscription.aiMaterialsUsed;
-
-  // Determine limit based on tier
-  const limit = tier === 'basic' || tier === 'premium' ? -1 : 3; // -1 = unlimited
+  const { tier, aiMaterials } = usageLimits;
+  const limit = aiMaterials.limit;
+  const used = aiMaterials.used;
 
   if (limit === -1) {
-    // Unlimited
+    // Unlimited (premium tier)
     return {
       allowed: true,
       remaining: -1,
@@ -455,22 +436,7 @@ export async function checkMaterialQuota(clerkUserId: string): Promise<{
  */
 async function incrementMaterialUsage(clerkUserId: string): Promise<void> {
   const userId = await getUserIdFromClerkId(clerkUserId);
-
-  const [subscription] = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
-    .orderBy(desc(subscriptions.createdAt))
-    .limit(1);
-
-  if (subscription) {
-    await db
-      .update(subscriptions)
-      .set({
-        aiMaterialsUsed: subscription.aiMaterialsUsed + 1,
-      })
-      .where(eq(subscriptions.id, subscription.id));
-  }
+  await subscriptionRepository.incrementAiMaterialsUsed(userId);
 }
 
 // ============================================================================
@@ -622,29 +588,34 @@ async function saveGeneratedMaterial(
   qualityMetadata: Record<string, unknown>,
   usage: { estimatedCost: number; model: string; totalTokens: number }
 ): Promise<{ id: string }> {
-  const [savedMaterial] = await db
-    .insert(materials)
-    .values({
-      creatorId: internalUserId,
-      title: `${validated.subject}: ${validated.topic}`,
-      description: `${validated.format} for ${validated.difficulty} level`,
-      content: JSON.stringify(material),
-      type: validated.format,
-      difficulty: validated.difficulty,
-      isPublic: validated.isPublic ?? false,
-      qualityStatus: qualityStatus,
-      metadata: {
-        subject: validated.subject,
-        topic: validated.topic,
-        format: validated.format,
-        instrument: validated.instrument,
-        generationCost: usage.estimatedCost,
-        model: usage.model,
-        tokens: usage.totalTokens,
-        ...qualityMetadata,
-      },
-    })
-    .returning();
+  const savedMaterial = await materialRepository.create({
+    creatorId: internalUserId,
+    title: `${validated.subject}: ${validated.topic}`,
+    description: `${validated.format} for ${validated.difficulty} level`,
+    content: JSON.stringify(material),
+    type: validated.format,
+    difficulty: validated.difficulty,
+    isPublic: validated.isPublic ?? false,
+    qualityStatus: qualityStatus,
+    playabilityScore: typeof qualityMetadata.playabilityScore === 'number'
+      ? qualityMetadata.playabilityScore
+      : undefined,
+    learningValueScore: typeof qualityMetadata.learningValueScore === 'number'
+      ? qualityMetadata.learningValueScore
+      : undefined,
+    metadata: {
+      subject: validated.subject,
+      topic: validated.topic,
+      format: validated.format,
+      instrument: validated.instrument,
+      generationCost: usage.estimatedCost,
+      model: usage.model,
+      tokens: usage.totalTokens,
+      qualityMessage: qualityMetadata.qualityMessage,
+      canPublish: qualityMetadata.canPublish,
+      suggestions: qualityMetadata.suggestions,
+    },
+  });
 
   await incrementMaterialUsage(validated.userId);
 
@@ -745,31 +716,18 @@ export async function getUserMaterials(clerkUserId: string) {
 
   if (isDevelopment || disableAccessCheck) {
     // Development: Return all materials
-    return db
-      .select()
-      .from(materials)
-      .orderBy(desc(materials.createdAt));
+    return materialRepository.findMany();
   }
 
   // Production: Return only user's materials
-  return db
-    .select()
-    .from(materials)
-    .where(eq(materials.creatorId, userId))
-    .orderBy(desc(materials.createdAt));
+  return materialRepository.findByCreator(userId);
 }
 
 /**
  * Get material by ID
  */
 export async function getMaterialById(materialId: string) {
-  const [material] = await db
-    .select()
-    .from(materials)
-    .where(eq(materials.id, materialId))
-    .limit(1);
-
-  return material;
+  return materialRepository.findById(materialId);
 }
 
 /**
@@ -783,5 +741,5 @@ export async function deleteMaterial(materialId: string, clerkUserId: string) {
     throw new Error('Material not found or access denied');
   }
 
-  await db.delete(materials).where(eq(materials.id, materialId));
+  await materialRepository.delete(materialId);
 }

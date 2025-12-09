@@ -14,7 +14,7 @@ import { desc, eq, and, like, sql, or } from 'drizzle-orm';
 // Type Definitions
 // ========================================
 
-export type MaterialType = 'video' | 'pdf' | 'text' | 'interactive' | 'quiz' | 'music';
+export type MaterialType = 'video' | 'pdf' | 'text' | 'interactive' | 'quiz' | 'music' | 'summary' | 'flashcards' | 'practice';
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
 export type QualityStatus = 'pending' | 'draft' | 'approved';
 

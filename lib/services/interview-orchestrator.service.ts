@@ -23,9 +23,7 @@
 
 import { z } from 'zod';
 import { logger } from '@/lib/utils/logger';
-import { db } from '@/db';
-import { sessions, interviewQuestions, interviewAnswers } from '@/db/schema/sessions';
-import { eq, desc } from 'drizzle-orm';
+import { sessionRepository } from '@/lib/repositories';
 import { analyzerService, type AnalyzeSessionInput } from './analyzer.service';
 import { interviewerService, type GenerateQuestionsInput, InterviewQuestionSchema } from './interviewer.service';
 import type { FocusArea } from '@/lib/constants/question-constants';
@@ -317,15 +315,13 @@ class InterviewOrchestrator {
     }
 
     try {
-      // 2. Insert into database
-      // Note: aiInsights field expects JSONB type (Record<string, unknown>)
-      // validated.metadata is already typed as Record<string, unknown> from SaveAnswerInputSchema
-      const [answer] = await db.insert(interviewAnswers).values({
+      // 2. Insert into database via repository
+      const answer = await sessionRepository.createInterviewAnswer({
         sessionId: validated.sessionId,
         questionId: validated.questionId,
         text: validated.answerText,
-        aiInsights: validated.metadata ?? null,
-      }).returning();
+        aiInsights: validated.metadata,
+      });
 
       logger.info('[InterviewOrchestrator] Answer saved successfully', {
         answerId: answer.id,
@@ -334,12 +330,9 @@ class InterviewOrchestrator {
       });
 
       // 3. Update session metadata (optional - for tracking progress)
+      // Note: updateSession automatically sets updatedAt
       try {
-        await db.update(sessions)
-          .set({
-            updatedAt: new Date(),
-          })
-          .where(eq(sessions.id, validated.sessionId));
+        await sessionRepository.updateSession(validated.sessionId, {});
 
         logger.debug('[InterviewOrchestrator] Session timestamp updated', {
           sessionId: validated.sessionId,
@@ -390,32 +383,21 @@ class InterviewOrchestrator {
     logger.info('[InterviewOrchestrator] Fetching interview history', { sessionId });
 
     try {
-      // 1. Query questions with left join on answers
-      const questionsData = await db
-        .select({
-          question: interviewQuestions,
-          answer: interviewAnswers,
-        })
-        .from(interviewQuestions)
-        .leftJoin(
-          interviewAnswers,
-          eq(interviewQuestions.id, interviewAnswers.questionId)
-        )
-        .where(eq(interviewQuestions.sessionId, sessionId))
-        .orderBy(desc(interviewQuestions.createdAt));
+      // 1. Query questions with answers via repository
+      const qaPairs = await sessionRepository.getSessionQAPairs(sessionId);
 
       // 2. Format response
-      const questions: InterviewHistoryItem[] = questionsData.map(row => ({
-        id: row.question.id,
-        text: row.question.text,
-        focus: row.question.focus,
-        depth: row.question.depth,
-        answer: row.answer ? {
-          id: row.answer.id,
-          text: row.answer.text,
-          createdAt: row.answer.createdAt,
+      const questions: InterviewHistoryItem[] = qaPairs.map(pair => ({
+        id: pair.question.id,
+        text: pair.question.text,
+        focus: pair.question.focus,
+        depth: pair.question.depth,
+        answer: pair.answer ? {
+          id: pair.answer.id,
+          text: pair.answer.text,
+          createdAt: pair.answer.createdAt,
         } : null,
-        createdAt: row.question.createdAt,
+        createdAt: pair.question.createdAt,
       }));
 
       const totalQuestions = questions.length;
