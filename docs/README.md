@@ -63,31 +63,25 @@ MUED は**音楽制作特化プラットフォーム**です。3つの柱で音�
 
 ---
 
-## ドキュメント構成
+## ドキュメント構成（19ファイル, 4,910行）
 
 ```
 docs/
+├── README.md               # このファイル
 ├── PHILOSOPHY.md           # ★ 思想（Difference/Note/Form）
 ├── roadmap.md              # ★ Phase 0-4 ロードマップ
 ├── CHANGELOG.md            # 変更履歴
-├── architecture/           # システムアーキテクチャ
+├── architecture/
 │   └── SYSTEM_ARCHITECTURE.md
-├── business/               # 事業戦略・企画
-│   ├── MUED_Unified_Strategy_2025Q4.md
-│   └── MUEDnote/           # ★ MUEDnote関連
-│       ├── muednote_master_plan_v6.1.md  # 単一仕様書
-│       ├── DOCUMENTATION_STRUCTURE.md     # 構成説明
-│       └── archive/        # 過去バージョン
-├── reviews/                # レビュー・レポート
-│   ├── 2025-12-09-self-review-report.md
-│   └── 2025-12-09-reservation-system-enhancement.md
-├── deployment/             # デプロイメント
-├── development/            # 開発ガイド
-├── testing/                # テスト戦略
-└── archive/                # 過去のドキュメント
-    ├── muednote-alternative-vision/  # v2.0 Web チャット案
-    ├── 2025-12-completed/            # 完了済みタスク
-    └── ...
+├── business/MUEDnote/
+│   └── muednote_master_plan_v6.1.md  # ★ MUEDnote 単一仕様書
+├── database/               # DB運用
+├── deployment/             # 環境変数・GitHub Actions
+├── development/            # TypeScript ルール
+├── mcp/                    # MCP サーバー
+├── reviews/                # 実装レビュー
+├── testing/                # テストガイド
+└── archive/                # 過去のドキュメント（74%削減分）
 ```
 
 ---
