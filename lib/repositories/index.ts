@@ -59,3 +59,14 @@ export {
   type CreateInterviewAnswerInput,
   type SessionFilters,
 } from './sessions.repository';
+
+// Lesson slots (mentor availability)
+export {
+  LessonSlotsRepository,
+  lessonSlotsRepository,
+  type CreateSlotInput,
+  type UpdateSlotInput,
+  type SlotFilters,
+  type SlotStatus,
+  type RecurringSlotPattern,
+} from './lesson-slots.repository';
