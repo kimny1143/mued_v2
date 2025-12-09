@@ -161,12 +161,16 @@ OPENAI_MAX_TOKENS=1000
 
 ```env
 RESEND_API_KEY=re_...
+EMAIL_FROM=MUED <noreply@mued.jp>
+EMAIL_SUPPORT=support@mued.jp
 ```
 
 **Deployment Notes:**
 - Production: Create separate API key for production domain
 - Domain verification: Add DNS records in domain provider
 - Sender email: Configure verified domain or use `onboarding@resend.dev` for testing
+- `EMAIL_FROM`: Default sender address (format: `Name <email>`)
+- `EMAIL_SUPPORT`: Support email shown in email footers
 
 **Resend Dashboard:**
 - [resend.com/dashboard](https://resend.com/dashboard)
@@ -177,6 +181,10 @@ RESEND_API_KEY=re_...
 - Subscription confirmation
 - Payment receipt
 - Password reset (handled by Clerk)
+- **Reservation confirmation** (student + mentor)
+- **Payment completed** notification
+- **Cancellation** notification
+- **Lesson reminder** (24h/1h before)
 
 ---
 
@@ -353,6 +361,8 @@ NEXT_PUBLIC_E2E_TEST_MODE=true
 | `OPENAI_MODEL` | All | Plain Text |
 | `OPENAI_MAX_TOKENS` | All | Plain Text |
 | `RESEND_API_KEY` | All | Sensitive |
+| `EMAIL_FROM` | All | Plain Text |
+| `EMAIL_SUPPORT` | All | Plain Text |
 | `SENTRY_DSN` | Production, Preview | Sensitive |
 | `NEXT_PUBLIC_SENTRY_DSN` | Production, Preview | Plain Text |
 | `NEXT_PUBLIC_APP_URL` | All | Plain Text |
@@ -554,5 +564,5 @@ NEXT_PUBLIC_E2E_TEST_MODE=true
 
 ---
 
-*Last Updated: 2025-10-29*
+*Last Updated: 2025-12-09*
 *Status: ✅ Ready for Production Deployment*

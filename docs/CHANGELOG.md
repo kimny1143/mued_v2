@@ -1,5 +1,47 @@
 # MUED v2 Documentation Changelog
 
+## [2025-12-09] - Reservation System Enhancement
+
+### Added
+- **Stripe Webhook Processing**: Complete implementation with 11 event types (`bca7c4b2`)
+  - `payment_intent.succeeded/canceled/payment_failed`
+  - `charge.refunded` (full/partial)
+  - `checkout.session.completed/expired`
+  - `customer.subscription.*` events
+  - Idempotency with status tracking (processing/processed/failed)
+
+- **Mentor Slot Management API**: Full CRUD with repository pattern (`8ac3071e`)
+  - `GET/POST /api/mentor-slots`
+  - `GET/PUT/DELETE /api/mentor-slots/[id]`
+  - `GET/DELETE /api/mentor-slots/recurring/[recurringId]`
+  - Recurring slot generation algorithm
+  - Conflict detection and capacity management
+
+- **Email Notification System**: Resend integration (`56ca61c4`)
+  - `lib/services/email.service.ts` - Template-based emails
+  - `lib/services/notification.service.ts` - Multi-recipient orchestration
+  - Templates: Reservation confirmation, Payment completed, Cancellation, Reminder
+
+- **Recurring Schedule UI**: Mentor slot management frontend (`0408e146`)
+  - `hooks/use-mentor-slots.ts` - SWR-based hook
+  - `components/features/slot-create-form.tsx` - Single/recurring toggle
+  - `components/features/slot-list.tsx` - Slot management list
+  - `/dashboard/teacher/slots` page
+  - UI components: Input, Label, Switch (shadcn/ui pattern)
+
+- **Self-Review Reports**:
+  - `docs/reviews/2024-12-09-reservation-system-enhancement.md`
+  - `docs/reviews/2024-12-09-self-review-report.md`
+
+### Changed
+- `db/schema.ts`: Added `webhookStatusEnum` for webhook tracking
+- `components/features/teacher-dashboard-content.tsx`: Added slot management link
+
+### Database Migrations
+- `0016_add_webhook_status_tracking.sql`: Added webhook status tracking fields
+
+---
+
 ## [2025-10-29] - Major Reorganization
 
 ### Added
