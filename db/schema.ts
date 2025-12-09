@@ -1,4 +1,4 @@
-import { pgTable, serial, text, timestamp, integer, boolean, jsonb, uuid, decimal, index } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, serial, text, timestamp, integer, boolean, jsonb, uuid, decimal, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // ユーザー情報（Clerk連携）
@@ -139,19 +139,30 @@ export const subscriptions = pgTable("subscriptions", {
   userStatusIdx: index("idx_subscriptions_user_status").on(table.userId, table.status),
 }));
 
+// Webhook イベント処理ステータス
+export const webhookStatusEnum = pgEnum("webhook_status", [
+  "processing",
+  "processed",
+  "failed",
+]);
+
 // Webhook イベント（冪等性保証）
 export const webhookEvents = pgTable("webhook_events", {
   id: uuid("id").primaryKey().defaultRandom(),
   eventId: text("event_id").notNull().unique(), // Stripe/Clerk event ID
   type: text("type").notNull(), // イベントタイプ
   source: text("source").notNull(), // stripe, clerk
+  status: webhookStatusEnum("status").notNull().default("processing"), // 処理ステータス
   processedAt: timestamp("processed_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"), // 処理完了時刻
+  errorMessage: text("error_message"), // エラー詳細
   payload: jsonb("payload"), // イベントの生データ（デバッグ用）
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({
   eventIdIdx: index("idx_webhook_events_event_id").on(table.eventId),
   sourceIdx: index("idx_webhook_events_source").on(table.source),
   typeIdx: index("idx_webhook_events_type").on(table.type),
+  statusIdx: index("idx_webhook_events_status").on(table.status),
   createdAtIdx: index("idx_webhook_events_created_at").on(table.createdAt),
 }));
 

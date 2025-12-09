@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { db } from "@/db";
-import { reservations, subscriptions, users, webhookEvents } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { reservations, subscriptions, users, webhookEvents, lessonSlots } from "@/db/schema";
+import { eq, sql } from "drizzle-orm";
 import { validateStripeConfig } from "@/lib/utils/env";
 import { logger } from "@/lib/utils/logger";
 
@@ -64,28 +64,69 @@ export async function POST(request: Request) {
     .limit(1);
 
   if (existingEvent) {
-    logger.debug(`Event ${event.id} already processed, skipping.`);
-    return NextResponse.json({ received: true, skipped: true });
+    // 処理中のイベントは再試行を許可（Stripeの再送対応）
+    if (existingEvent.status === "processed") {
+      logger.debug(`Event ${event.id} already processed, skipping.`);
+      return NextResponse.json({ received: true, skipped: true });
+    }
+    // processing または failed の場合は再処理を試みる
+    logger.info(`Retrying event ${event.id} (status: ${existingEvent.status})`);
   }
 
   // トランザクション内でイベント処理 + webhook記録
   try {
     await db.transaction(async (tx) => {
-      // Webhookイベントを記録（重複防止）
-      await tx.insert(webhookEvents).values({
-        eventId: event.id,
-        type: event.type,
-        source: "stripe",
-        payload: event.data.object as unknown as Record<string, unknown>,
-      });
+      // Webhookイベントを記録または更新（upsert）
+      if (existingEvent) {
+        await tx
+          .update(webhookEvents)
+          .set({
+            status: "processing",
+            errorMessage: null,
+          })
+          .where(eq(webhookEvents.eventId, event.id));
+      } else {
+        await tx.insert(webhookEvents).values({
+          eventId: event.id,
+          type: event.type,
+          source: "stripe",
+          status: "processing",
+          payload: event.data.object as unknown as Record<string, unknown>,
+        });
+      }
 
       // イベントタイプに応じて処理（トランザクション内で実行）
       await processStripeEvent(tx, event);
+
+      // 処理成功時はステータスを更新
+      await tx
+        .update(webhookEvents)
+        .set({
+          status: "processed",
+          completedAt: new Date(),
+        })
+        .where(eq(webhookEvents.eventId, event.id));
     });
 
     return NextResponse.json({ received: true });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error("Error processing webhook:", error);
+
+    // エラー時はステータスを failed に更新（トランザクション外で）
+    try {
+      await db
+        .update(webhookEvents)
+        .set({
+          status: "failed",
+          errorMessage,
+          completedAt: new Date(),
+        })
+        .where(eq(webhookEvents.eventId, event.id));
+    } catch (updateError) {
+      console.error("Failed to update webhook status:", updateError);
+    }
+
     return NextResponse.json(
       { error: "Webhook processing failed" },
       { status: 500 }
@@ -461,6 +502,149 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         // TODO: ユーザーにメール通知を送信
       } catch (error) {
         console.error("Error handling payment failure:", error);
+        throw error;
+      }
+      break;
+    }
+
+    // 返金処理
+    case "charge.refunded": {
+      const charge = event.data.object as Stripe.Charge;
+      const paymentIntentId = typeof charge.payment_intent === 'string'
+        ? charge.payment_intent
+        : charge.payment_intent?.id;
+
+      if (!paymentIntentId) {
+        logger.debug("No payment_intent in charge.refunded event");
+        break;
+      }
+
+      try {
+        // PaymentIntentIDから予約を検索
+        const [reservation] = await tx
+          .select()
+          .from(reservations)
+          .where(eq(reservations.stripePaymentIntentId, paymentIntentId))
+          .limit(1);
+
+        if (!reservation) {
+          logger.debug(`No reservation found for payment_intent: ${paymentIntentId}`);
+          break;
+        }
+
+        // 全額返金かどうかをチェック
+        const isFullRefund = charge.amount_refunded === charge.amount;
+
+        if (isFullRefund) {
+          // 全額返金の場合は予約をキャンセル状態に
+          await tx
+            .update(reservations)
+            .set({
+              status: "cancelled",
+              paymentStatus: "refunded",
+              cancelReason: "Payment refunded by Stripe",
+              updatedAt: new Date(),
+            })
+            .where(eq(reservations.id, reservation.id));
+
+          // スロットの容量を解放（FOR UPDATE でロック）
+          const [slot] = await tx
+            .select()
+            .from(lessonSlots)
+            .where(eq(lessonSlots.id, reservation.slotId))
+            .for("update")
+            .limit(1);
+
+          if (slot && slot.currentCapacity > 0) {
+            await tx
+              .update(lessonSlots)
+              .set({
+                currentCapacity: sql`${lessonSlots.currentCapacity} - 1`,
+                status: slot.currentCapacity === 1 ? "available" : slot.status,
+                updatedAt: new Date(),
+              })
+              .where(eq(lessonSlots.id, slot.id));
+
+            logger.info(`Slot capacity released for slot: ${slot.id}`);
+          }
+
+          logger.info(`Full refund processed for reservation: ${reservation.id}`);
+        } else {
+          // 部分返金の場合は状態のみ更新
+          await tx
+            .update(reservations)
+            .set({
+              paymentStatus: "partial_refund",
+              updatedAt: new Date(),
+            })
+            .where(eq(reservations.id, reservation.id));
+
+          logger.info(`Partial refund processed for reservation: ${reservation.id}`);
+        }
+
+        // TODO: ユーザーとメンターにメール通知を送信
+      } catch (error) {
+        console.error("Error processing refund:", error);
+        throw error;
+      }
+      break;
+    }
+
+    // Payment Intent キャンセル（予約キャンセル対応）
+    case "payment_intent.canceled": {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
+      const reservationId = paymentIntent.metadata?.reservationId;
+
+      if (!reservationId) break;
+
+      try {
+        // 予約を取得
+        const [reservation] = await tx
+          .select()
+          .from(reservations)
+          .where(eq(reservations.id, reservationId))
+          .limit(1);
+
+        if (!reservation) {
+          logger.debug(`Reservation not found: ${reservationId}`);
+          break;
+        }
+
+        // 予約をキャンセル状態に更新
+        await tx
+          .update(reservations)
+          .set({
+            status: "cancelled",
+            paymentStatus: "cancelled",
+            cancelReason: paymentIntent.cancellation_reason || "Payment intent cancelled",
+            updatedAt: new Date(),
+          })
+          .where(eq(reservations.id, reservationId));
+
+        // スロットの容量を解放（支払い前でも仮予約でブロックしていた場合）
+        const [slot] = await tx
+          .select()
+          .from(lessonSlots)
+          .where(eq(lessonSlots.id, reservation.slotId))
+          .for("update")
+          .limit(1);
+
+        if (slot && slot.currentCapacity > 0) {
+          await tx
+            .update(lessonSlots)
+            .set({
+              currentCapacity: sql`${lessonSlots.currentCapacity} - 1`,
+              status: slot.currentCapacity === 1 ? "available" : slot.status,
+              updatedAt: new Date(),
+            })
+            .where(eq(lessonSlots.id, slot.id));
+
+          logger.info(`Slot capacity released for cancelled payment: ${slot.id}`);
+        }
+
+        logger.info(`Payment cancelled for reservation: ${reservationId}`);
+      } catch (error) {
+        console.error("Error handling payment cancellation:", error);
         throw error;
       }
       break;
