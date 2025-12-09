@@ -6,6 +6,7 @@ import { reservations, subscriptions, users, webhookEvents, lessonSlots } from "
 import { eq, sql } from "drizzle-orm";
 import { validateStripeConfig } from "@/lib/utils/env";
 import { logger } from "@/lib/utils/logger";
+import { notificationService } from "@/lib/services/notification.service";
 
 // Drizzle transaction type
 type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -219,6 +220,31 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
       }
 
       try {
+        // 予約情報を取得
+        const [reservation] = await tx
+          .select({
+            id: reservations.id,
+            studentId: reservations.studentId,
+            mentorId: reservations.mentorId,
+            amount: reservations.amount,
+            slotId: reservations.slotId,
+          })
+          .from(reservations)
+          .where(eq(reservations.id, reservationId))
+          .limit(1);
+
+        if (!reservation) {
+          console.error(`Reservation not found: ${reservationId}`);
+          break;
+        }
+
+        // スロット情報を取得
+        const [slot] = await tx
+          .select()
+          .from(lessonSlots)
+          .where(eq(lessonSlots.id, reservation.slotId))
+          .limit(1);
+
         // 予約の支払いステータスを更新
         await tx
           .update(reservations)
@@ -231,6 +257,24 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           .where(eq(reservations.id, reservationId));
 
         logger.debug(`Payment completed for reservation: ${reservationId}`);
+
+        // 通知を送信（トランザクション外で非同期実行）
+        if (slot) {
+          setImmediate(async () => {
+            try {
+              await notificationService.onPaymentCompleted({
+                reservationId: reservation.id,
+                studentId: reservation.studentId,
+                mentorId: reservation.mentorId,
+                amount: reservation.amount,
+                paymentIntentId: session.payment_intent as string,
+                startTime: slot.startTime,
+              });
+            } catch (notifyError) {
+              logger.error('Failed to send payment notification', { error: notifyError });
+            }
+          });
+        }
       } catch (error) {
         console.error("Error updating reservation:", error);
         throw error; // トランザクションをロールバックするために再スロー
@@ -582,7 +626,32 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           logger.info(`Partial refund processed for reservation: ${reservation.id}`);
         }
 
-        // TODO: ユーザーとメンターにメール通知を送信
+        // キャンセル通知を送信（全額返金時のみ）
+        if (isFullRefund) {
+          const [slot] = await tx
+            .select()
+            .from(lessonSlots)
+            .where(eq(lessonSlots.id, reservation.slotId))
+            .limit(1);
+
+          if (slot) {
+            setImmediate(async () => {
+              try {
+                await notificationService.onReservationCancelled({
+                  reservationId: reservation.id,
+                  studentId: reservation.studentId,
+                  mentorId: reservation.mentorId,
+                  startTime: slot.startTime,
+                  cancelledBy: 'system',
+                  reason: 'Payment refunded',
+                  refundAmount: (charge.amount_refunded / 100).toString(),
+                });
+              } catch (notifyError) {
+                logger.error('Failed to send refund notification', { error: notifyError });
+              }
+            });
+          }
+        }
       } catch (error) {
         console.error("Error processing refund:", error);
         throw error;
