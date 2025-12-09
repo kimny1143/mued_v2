@@ -103,7 +103,7 @@ DAWが高負荷状態でも遵守する。
 |--------|------|------|
 | **Agent** | Rust / Tauri | ホットキー監視、UI描画、ローカルキュー保存、DAWフォーカス管理 |
 | **Daemon** | Node.js / Python | 非同期処理、AIへの送信、HLA処理、DB同期 |
-| **AIエンジン** | GPT-4o mini / Gemini Flash | 高速構造化、JSON mode |
+| **AIエンジン** | GPT-5-mini / GPT-5-nano | 高速構造化、JSON mode |
 | **Storage** | Firestore / Supabase | ログ永続化、パターンDB |
 
 ### 4.2 データ構造

@@ -1,6 +1,6 @@
 # MUED LMS v2 システムアーキテクチャ図
 
-最終更新: 2025-11-14
+最終更新: 2025-12-10
 
 ## 1. システム全体アーキテクチャ
 
@@ -504,8 +504,8 @@ graph TD
         FormAnalysis["FormAnalysis<br/>(AI分析結果)"]
     end
 
-    subgraph "External Integrations (Phase 4)"
-        Echovna["🎙️ Echovna<br/>(物理空間連携)"]
+    subgraph "DAW Integration (Phase 4)"
+        DAWPlugin["🎛️ DAW Plugin<br/>(AU/VST/AAX)"]
         AudioAsset["AudioAsset<br/>(音源管理)"]
     end
 
@@ -527,7 +527,7 @@ graph TD
     FormExercise --> FormAnalysis
     FormAnalysis --> LogEntry
 
-    Echovna --> AudioAsset
+    DAWPlugin --> AudioAsset
     AudioAsset --> EarExercise
     AudioAsset --> FormExercise
 
@@ -542,7 +542,7 @@ graph TD
     style LogEntry fill:#fff9c4
     style EarExercise fill:#c8e6c9
     style FormExercise fill:#e1bee7
-    style Echovna fill:#ffccbc
+    style DAWPlugin fill:#ffccbc
 ```
 
 **主要ドメインモデル**:
@@ -563,8 +563,8 @@ graph TD
 - **FormAnnotation**: 楽曲構造の注釈データ
 - **FormAnalysis**: AI による構造解析結果
 
-### External Integrations (Phase 4)
-- **Echovna**: 物理スタジオとの連携
+### DAW Integration (Phase 4)
+- **DAW Plugin**: AU/VST/AAX によるDAW完全統合
 - **AudioAsset**: 統合音源管理
 
 ---
@@ -591,7 +591,7 @@ graph TD
     subgraph "Feature Modules (/lib/modules)"
         EarTraining["/modules/ear-training<br/>(Phase 2: Difference)"]
         StructureTraining["/modules/structure-training<br/>(Phase 3: Form)"]
-        Echovna["/modules/integration/echovna<br/>(Phase 4)"]
+        DAWIntegration["/modules/integration/daw<br/>(Phase 4)"]
     end
 
     subgraph "Shared Infrastructure"
@@ -608,7 +608,7 @@ graph TD
 
     App --> EarTraining
     App --> StructureTraining
-    App --> Echovna
+    App --> DAWIntegration
 
     CoreLog --> DB
     EarTraining --> DB
@@ -624,7 +624,7 @@ graph TD
     style CoreLog fill:#fff9c4
     style EarTraining fill:#c8e6c9
     style StructureTraining fill:#e1bee7
-    style Echovna fill:#ffccbc
+    style DAWIntegration fill:#ffccbc
     style DB fill:#e8f5e9
 ```
 
@@ -647,10 +647,10 @@ graph TD
   - 構造可視化 UI
   - AI 構造解析統合
 
-- **modules/integration/echovna**: 外部連携（Phase 4）
-  - 音源インポート
-  - メタデータ変換
-  - ワークフロー統合
+- **modules/integration/daw**: DAW統合（Phase 4）
+  - AU/VST/AAX プラグイン
+  - DAW連携プロトコル（Window Title, File Path, MIDI/OSC）
+  - 商用リリース準備
 
 ### Shared Infrastructure
 - **db/**: Drizzle ORM スキーマ定義
@@ -695,10 +695,10 @@ gantt
     AI構造解析統合                   :milestone, p3-m3, 2026-08, 0d
 
     section Phase 4
-    Echovna連携・β版                :p4, after p3, 3M
-    Echovna API統合                  :milestone, p4-m1, 2026-09, 0d
+    DAW統合・商用リリース             :p4, after p3, 3M
+    DAW連携プロトコル実装            :milestone, p4-m1, 2026-09, 0d
     クローズドβ開始                 :milestone, p4-m2, 2026-10, 0d
-    対外発表可能状態                 :milestone, p4-m3, 2026-11, 0d
+    商用リリース                     :milestone, p4-m3, 2026-11, 0d
 ```
 
 **各Phaseの完了条件**:
@@ -707,7 +707,7 @@ gantt
 - **Phase 1**: 学習者がすべてのレッスン・教材にノートを残し、一覧で閲覧可能
 - **Phase 2**: EarExercise の最小セットが動作し、MUEDnote と連動
 - **Phase 3**: FormExercise の最小セットが動作し、AI 解析と連動
-- **Phase 4**: Echovna 連携が動作し、クローズドβ運用開始
+- **Phase 4**: DAW統合（AU/VST/AAX）が動作し、商用リリース
 
 ---
 
@@ -719,7 +719,7 @@ gantt
 1. **思想の明文化**: Difference / Note / Form の3本柱をドメインモデルに反映
 2. **段階的実装**: Phase ごとに独立して価値を提供できる設計
 3. **モジュール分離**: core/ と modules/ の明確な境界
-4. **拡張性**: Echovna 連携や新機能追加に対応可能な構造
+4. **拡張性**: DAW統合や新機能追加に対応可能な構造
 
 **活用方法**:
 1. 新規開発者のオンボーディング資料として
