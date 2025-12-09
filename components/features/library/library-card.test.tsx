@@ -2,11 +2,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { LibraryCard } from './library-card';
 import { renderWithProviders } from '@/tests/utils/component-test-utils';
-import type { UnifiedContent } from '@/types/unified-content';
+import type { UnifiedContent, ContentSource, DifficultyLevel } from '@/types/unified-content';
 
 // Mock Next.js Link
+interface MockLinkProps {
+  children: React.ReactNode;
+  href: string;
+  onClick?: React.MouseEventHandler;
+  className?: string;
+  target?: string;
+  rel?: string;
+}
 vi.mock('next/link', () => ({
-  default: ({ children, href, onClick, className, target, rel, ...props }: any) => (
+  default: ({ children, href, onClick, className, target, rel, ...props }: MockLinkProps & Record<string, unknown>) => (
     <a href={href} onClick={onClick} className={className} target={target} rel={rel} {...props}>
       {children}
     </a>
@@ -14,8 +22,15 @@ vi.mock('next/link', () => ({
 }));
 
 // Mock External Link Modal
+interface MockModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  url: string;
+  sourceName: string;
+}
 vi.mock('./external-link-modal', () => ({
-  ExternalLinkModal: ({ isOpen, onClose, onConfirm, url, sourceName }: any) =>
+  ExternalLinkModal: ({ isOpen, onClose, onConfirm, url, sourceName }: MockModalProps) =>
     isOpen ? (
       <div data-testid="external-link-modal">
         <span>Opening {sourceName} link: {url}</span>
@@ -154,7 +169,7 @@ describe('LibraryCard', () => {
 
       sources.forEach(({ source, expectedClasses }) => {
         const { unmount } = renderWithProviders(
-          <LibraryCard content={{ ...mockContent, source: source as any }} />
+          <LibraryCard content={{ ...mockContent, source: source as ContentSource }} />
         );
         const badge = screen.getByText(source);
         expectedClasses.forEach(cls => {
@@ -173,7 +188,7 @@ describe('LibraryCard', () => {
 
       difficulties.forEach(({ difficulty, expectedClasses }) => {
         const { unmount } = renderWithProviders(
-          <LibraryCard content={{ ...mockContent, difficulty: difficulty as any }} />
+          <LibraryCard content={{ ...mockContent, difficulty: difficulty as DifficultyLevel }} />
         );
         const badge = screen.getByText(difficulty);
         expectedClasses.forEach(cls => {
@@ -231,7 +246,7 @@ describe('LibraryCard', () => {
             ...mockAIContent.aiMetadata!,
             humanReview: {
               ...mockAIContent.aiMetadata!.humanReview!,
-              status: status as any,
+              status: status as 'approved' | 'rejected' | 'needs_revision',
             },
           },
         };
@@ -308,7 +323,7 @@ describe('LibraryCard', () => {
     });
 
     it('should not show modal for internal sources', async () => {
-      const internalContent = { ...mockContent, source: 'internal' as any };
+      const internalContent = { ...mockContent, source: 'internal' as ContentSource };
 
       const { user } = renderWithProviders(<LibraryCard content={internalContent} />);
 
@@ -419,11 +434,11 @@ describe('LibraryCard', () => {
     });
 
     it('should handle button text based on source', () => {
-      const aiContent = { ...mockContent, source: 'ai_generated' as any };
+      const aiContent = { ...mockContent, source: 'ai_generated' as ContentSource };
       const { rerender } = renderWithProviders(<LibraryCard content={aiContent} />);
       expect(screen.getByText('View Details')).toBeInTheDocument();
 
-      rerender(<LibraryCard content={{ ...mockContent, source: 'internal' as any }} />);
+      rerender(<LibraryCard content={{ ...mockContent, source: 'internal' as ContentSource }} />);
       expect(screen.getByText('View Details')).toBeInTheDocument();
 
       rerender(<LibraryCard content={mockContent} />);

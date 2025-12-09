@@ -6,7 +6,7 @@ import { mockFetchResponses } from '@/tests/mocks/common-mocks';
 
 // Mock the locale context
 vi.mock('@/lib/i18n/locale-context', () => ({
-  LocaleProvider: vi.fn(({ children }: { children: any }) => children),
+  LocaleProvider: vi.fn(({ children }: { children: React.ReactNode }) => children),
   useLocale: () => ({
     t: {
       dashboard: {
