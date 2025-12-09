@@ -1,7 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { RevenueStats } from '@/components/features/revenue-stats';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 export function TeacherDashboardContent() {
   const { t } = useLocale();
@@ -16,6 +19,21 @@ export function TeacherDashboardContent() {
       </div>
 
       <div className="grid gap-6">
+        {/* Quick Actions */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>スロット管理</CardTitle>
+              <CardDescription>レッスン枠の作成・編集</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/dashboard/teacher/slots">
+                <Button className="w-full">スロット管理へ</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Revenue Statistics */}
         <RevenueStats />
 
