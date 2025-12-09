@@ -414,8 +414,8 @@ export interface SessionFilterParams {
   searchQuery?: string;
 }
 
-// ページネーション
-export interface PaginationParams {
+// ページネーション (Chat system specific - renamed to avoid conflict with log-entries)
+export interface ChatPaginationParams {
   page: number;
   pageSize: number;
   orderBy?: 'createdAt' | 'updatedAt' | 'lastMessageAt';
