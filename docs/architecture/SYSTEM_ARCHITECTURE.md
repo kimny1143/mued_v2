@@ -92,15 +92,17 @@ graph TD
         Root["/app"]
         Root --> Layout["layout.tsx<br/>(Root Layout)"]
         Root --> Public["Public Routes"]
-        Root --> Protected["Protected Routes"]
+        Root --> Dashboard["/dashboard/*"]
 
         Public --> Home["/ (Home)"]
         Public --> About["/about"]
         Public --> Login["/sign-in"]
 
-        Protected --> Teacher["/teacher/*"]
-        Protected --> Student["/student/*"]
-        Protected --> Admin["/admin/*"]
+        Dashboard --> Lessons["/dashboard/lessons"]
+        Dashboard --> Teacher["/dashboard/teacher/*"]
+        Dashboard --> Admin["/dashboard/admin/*"]
+        Dashboard --> Materials["/dashboard/materials/*"]
+        Dashboard --> Library["/dashboard/library"]
     end
 
     subgraph "Component Architecture"
@@ -113,9 +115,9 @@ graph TD
         UIComp --> Card["Card"]
         UIComp --> Dialog["Dialog"]
 
-        Features --> Materials["MaterialsManager"]
-        Features --> Library["LibraryCard"]
-        Features --> Dashboard["DashboardStats"]
+        Features --> MaterialsComp["MaterialsManager"]
+        Features --> LibraryComp["LibraryCard"]
+        Features --> DashboardComp["DashboardStats"]
 
         Layouts --> Header["Header"]
         Layouts --> Sidebar["Sidebar"]
@@ -133,12 +135,12 @@ graph TD
         StateHooks --> useTheme["useTheme"]
     end
 
-    Teacher --> Materials
-    Student --> Library
-    Admin --> Dashboard
-    Materials --> useApiFetch
-    Library --> useApiPost
-    Dashboard --> useAuth
+    Teacher --> MaterialsComp
+    Lessons --> LibraryComp
+    Admin --> DashboardComp
+    MaterialsComp --> useApiFetch
+    LibraryComp --> useApiPost
+    DashboardComp --> useAuth
 
     style Root fill:#e3f2fd
     style CompRoot fill:#fff3e0

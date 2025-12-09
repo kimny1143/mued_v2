@@ -278,3 +278,23 @@ export * from './schema/sessions';
 // Question Templates & RAG (Phase 1.3)
 // ========================================
 export * from './schema/question-templates';
+
+// ========================================
+// Ear Training (Phase 2: Difference)
+// ========================================
+export * from './schema/ear-training';
+
+// ========================================
+// Structure Training (Phase 3: Form)
+// ========================================
+export * from './schema/structure-training';
+
+// ========================================
+// Chat System (Legacy v2.0 - deprecated)
+// ========================================
+export * from './schema/chat-system';
+
+// ========================================
+// RAG Metrics & Provenance
+// ========================================
+export * from './schema/rag-metrics';
