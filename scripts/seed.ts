@@ -47,6 +47,15 @@ async function seed() {
         skills: ["ギター", "ベース", "バンド指導"],
       },
       {
+        clerkId: "test_mentor_003",
+        email: "mentor3@example.com",
+        name: "鈴木エンジニア",
+        role: "mentor",
+        profileImageUrl: "https://via.placeholder.com/150",
+        bio: "レコーディングスタジオで15年の経験。Pro Tools認定インストラクター。ミックス・マスタリングから録音まで幅広く指導します。",
+        skills: ["Pro Tools", "ミックス", "マスタリング", "レコーディング", "DTM"],
+      },
+      {
         clerkId: "test_student_001",
         email: "student1@example.com",
         name: "山田太郎",
@@ -67,8 +76,9 @@ async function seed() {
     const adminUser = testUsers[0];
     const mentor1 = testUsers[1];
     const mentor2 = testUsers[2];
-    const student1 = testUsers[3];
-    const student2 = testUsers[4];
+    const mentor3 = testUsers[3]; // エンジニア
+    const student1 = testUsers[4];
+    const student2 = testUsers[5];
 
     // レッスンスロットの作成
     console.log("レッスンスロットを作成しています...");
@@ -131,6 +141,27 @@ async function seed() {
         status: "available",
         tags: ["guitar", "bass", "rock", "intermediate"],
       },
+      // エンジニア（鈴木）のスロット
+      {
+        mentorId: mentor3.id,
+        startTime: new Date(getTomorrow().setHours(19, 0, 0, 0)),
+        endTime: new Date(getTomorrow().setHours(21, 0, 0, 0)),
+        price: "8000",
+        maxCapacity: 1,
+        currentCapacity: 0,
+        status: "available",
+        tags: ["protools", "mixing", "recording", "dtm"],
+      },
+      {
+        mentorId: mentor3.id,
+        startTime: new Date(getDayAfterTomorrow().setHours(14, 0, 0, 0)),
+        endTime: new Date(getDayAfterTomorrow().setHours(16, 0, 0, 0)),
+        price: "8000",
+        maxCapacity: 1,
+        currentCapacity: 0,
+        status: "available",
+        tags: ["protools", "mastering", "dtm"],
+      },
     ]).returning();
 
     // 予約の作成
@@ -187,10 +218,11 @@ async function seed() {
     console.log("✅ シードデータの投入が完了しました！");
     console.log("\n📝 作成されたテストユーザー:");
     console.log("  管理者: admin (password: test1234)");
-    console.log("  メンター1: mentor001 (password: test1234)");
-    console.log("  メンター2: mentor002 (password: test1234)");
-    console.log("  生徒1: student001 (password: test1234)");
-    console.log("  生徒2: student002 (password: test1234)");
+    console.log("  メンター1 (ピアノ): 田中先生");
+    console.log("  メンター2 (ギター): 佐藤先生");
+    console.log("  メンター3 (エンジニア): 鈴木エンジニア - Pro Tools, ミックス, マスタリング");
+    console.log("  生徒1: 山田太郎");
+    console.log("  生徒2: 鈴木花子");
     console.log("\n⚠️  注意: これらのユーザーでログインするには、Clerkでアカウントを作成する必要があります。");
 
   } catch (error) {

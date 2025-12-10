@@ -331,6 +331,7 @@ export const translations = {
     // Lessons Page
     lessons: {
       tabs: {
+        chatMatching: '💬 Chat AI',
         aiMatching: '✨ AI Matching',
         booking: 'Book Lesson',
         reservations: 'My Reservations',
@@ -728,6 +729,7 @@ export const translations = {
     // Lessons Page
     lessons: {
       tabs: {
+        chatMatching: '💬 チャットAI',
         aiMatching: '✨ AIマッチング',
         booking: 'レッスン予約',
         reservations: 'マイ予約',

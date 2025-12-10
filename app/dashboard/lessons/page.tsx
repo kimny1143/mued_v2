@@ -6,19 +6,16 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { useLessons } from "@/hooks/use-lessons";
 import { useReservations } from "@/hooks/use-reservations";
 import { usePayment } from "@/hooks/use-payment";
-import { useMentorMatching } from "@/hooks/use-mentor-matching";
 import { ReservationTable } from "@/components/features/reservation-table";
 import { BookingConfirmationModal } from "@/components/features/booking-confirmation-modal";
 import { AccessibleCalendar } from "@/components/features/accessible-calendar";
-import { MentorMatchCard } from "@/components/features/mentor-match-card";
-import { MatchingPreferencesPanel } from "@/components/features/matching-preferences";
-import { MatchingStats } from "@/components/features/matching-stats";
+import { ChatMatchingPanel } from "@/components/features/chat-matching";
 import { LoadingState } from "@/components/ui/loading-state";
 import { DashboardLayout } from "@/components/layouts/dashboard-layout";
 import { DashboardTabs } from "@/components/layouts/dashboard-tabs";
-import type { StudentProfile, MentorProfile } from "@/types/matching";
+import type { MentorProfile, MatchResult } from "@/types/matching";
 
-type TabType = "booking" | "reservations" | "ai-matching";
+type TabType = "chat-matching" | "booking" | "reservations";
 
 interface SelectedSlot {
   id: string;
@@ -34,7 +31,7 @@ interface SelectedSlot {
 export default function UnifiedBookingPage() {
   const { t } = useLocale();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabType>("booking");
+  const [activeTab, setActiveTab] = useState<TabType>("chat-matching");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedMentors, setSelectedMentors] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([0, 15000]);
@@ -51,7 +48,7 @@ export default function UnifiedBookingPage() {
       const tab = params.get('tab');
       const payment = params.get('payment');
 
-      if (tab === 'reservations' || tab === 'ai-matching' || tab === 'booking') {
+      if (tab === 'chat-matching' || tab === 'reservations' || tab === 'booking') {
         setActiveTab(tab as TabType);
       }
 
@@ -78,48 +75,6 @@ export default function UnifiedBookingPage() {
       const slot = slots.find((s) => s.mentor?.id === id);
       return { id: id!, name: slot?.mentor?.name || "Unknown" };
     });
-
-  // TODO: Replace with actual user profile from authentication/database
-  const studentProfile: StudentProfile = {
-    id: "student-001",
-    skillLevel: "intermediate",
-    learningGoals: ["technique_improvement", "repertoire_expansion"],
-    learningStyle: ["visual", "auditory"],
-    preferredGenres: ["classical", "jazz"],
-    availableTimeSlots: [
-      { day: "monday", startHour: 18, endHour: 21 },
-      { day: "wednesday", startHour: 18, endHour: 21 },
-      { day: "saturday", startHour: 10, endHour: 16 },
-    ],
-    priceRange: { min: 3000, max: 8000 },
-    previousMentorIds: [],
-  };
-
-  // TODO: Replace with actual mentor profiles from database
-  const mentorProfiles: MentorProfile[] = mentors.map((mentor, idx) => ({
-    id: mentor.id,
-    name: mentor.name,
-    skillLevel: idx % 2 === 0 ? "advanced" : "professional",
-    specializations: ["technique_improvement", "performance_preparation"],
-    teachingStyles: ["visual", "auditory"],
-    genres: ["classical", "jazz", "contemporary"],
-    availableTimeSlots: [
-      { day: "monday", startHour: 16, endHour: 21 },
-      { day: "wednesday", startHour: 16, endHour: 21 },
-      { day: "saturday", startHour: 9, endHour: 17 },
-    ],
-    pricePerHour: 5000 + idx * 1000,
-    rating: 4.0 + (idx % 10) * 0.1,
-    totalReviews: 10 + idx * 5,
-    responseRate: 0.85 + (idx % 15) * 0.01,
-    successfulMatches: 20 + idx * 3,
-  }));
-
-  const matching = useMentorMatching({
-    studentProfile,
-    availableMentors: mentorProfiles,
-    topN: 10,
-  });
 
   // Available tags (TODO: get from database)
   const availableTags = [
@@ -271,19 +226,17 @@ export default function UnifiedBookingPage() {
       <div className="mb-8">
         <div className="flex gap-2 border-b border-gray-200">
           <button
-            onClick={() => setActiveTab("ai-matching")}
+            onClick={() => setActiveTab("chat-matching")}
             className={`px-6 py-3 font-semibold transition-all relative ${
-              activeTab === "ai-matching"
+              activeTab === "chat-matching"
                 ? "text-[var(--color-brand-green)] border-b-2 border-[var(--color-brand-green)]"
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            {t.lessons.tabs.aiMatching}
-            {matching.perfectMatches.length > 0 && (
-              <span className="ml-2 px-2 py-0.5 text-xs bg-[var(--color-brand-green)] text-[var(--color-brand-text)] rounded-full">
-                {matching.perfectMatches.length}
-              </span>
-            )}
+            {t.lessons.tabs.chatMatching || "Chat AI"}
+            <span className="ml-2 px-2 py-0.5 text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full">
+              New
+            </span>
           </button>
           <button
             onClick={() => setActiveTab("booking")}
@@ -314,157 +267,28 @@ export default function UnifiedBookingPage() {
       </div>
 
       {/* Content based on active tab */}
-      {activeTab === "ai-matching" ? (
-        /* AI Matching View */
-        <div className="space-y-8">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-[var(--color-brand-green)] to-green-600 rounded-xl p-8 text-white">
-            <h2 className="text-3xl font-bold mb-3">{t.lessons.aiMatching.title}</h2>
-            <p className="text-lg opacity-90">
-              {t.lessons.aiMatching.subtitle}
-            </p>
-          </div>
-
-          {/* Matching Stats */}
-          <MatchingStats stats={matching.stats} />
-
-          {/* 2-Column Layout: Preferences + Results */}
-          <div className="grid grid-cols-[320px_1fr] gap-8">
-            {/* LEFT: Matching Preferences */}
-            <div className="space-y-6">
-              <MatchingPreferencesPanel
-                preferences={matching.preferences}
-                onChange={matching.updatePreferences}
-                onReset={matching.resetPreferences}
-              />
-
-              {/* Student Profile Summary */}
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  {t.lessons.aiMatching.yourProfile}
-                </h3>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <span className="text-gray-600">{t.lessons.aiMatching.skillLevel}</span>
-                    <span className="ml-2 font-medium">{studentProfile.skillLevel}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">{t.lessons.aiMatching.learningGoals}</span>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      {studentProfile.learningGoals.map((goal) => (
-                        <span
-                          key={goal}
-                          className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
-                        >
-                          {goal}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">{t.lessons.aiMatching.budget}</span>
-                    <span className="ml-2 font-medium">
-                      ¥{studentProfile.priceRange.min.toLocaleString()} - ¥
-                      {studentProfile.priceRange.max.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT: Matching Results */}
-            <div className="space-y-6">
-              {/* Perfect Matches Section */}
-              {matching.perfectMatches.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <span className="text-2xl">✨</span>
-                    {t.lessons.aiMatching.perfectMatches} ({matching.perfectMatches.length})
-                  </h3>
-                  <div className="grid gap-4">
-                    {matching.perfectMatches.map((result) => (
-                      <MentorMatchCard
-                        key={result.mentor.id}
-                        matchResult={result}
-                        onSelect={(mentorId) => {
-                          // TODO: Navigate to mentor's available slots
-                          setSelectedMentors([mentorId]);
-                          setActiveTab("booking");
-                        }}
-                        showDetailedScore={true}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Recommended Matches Section */}
-              {matching.recommendedMentors.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <span className="text-2xl">💡</span>
-                    {t.lessons.aiMatching.recommendedMentors} ({matching.recommendedMentors.length})
-                  </h3>
-                  <div className="grid gap-4">
-                    {matching.recommendedMentors
-                      .filter((r) => !r.isPerfectMatch)
-                      .map((result) => (
-                        <MentorMatchCard
-                          key={result.mentor.id}
-                          matchResult={result}
-                          onSelect={(mentorId) => {
-                            setSelectedMentors([mentorId]);
-                            setActiveTab("booking");
-                          }}
-                        />
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Other Matches */}
-              {matching.topMatches.length > 0 && (
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">
-                    {t.lessons.aiMatching.otherMentors}
-                  </h3>
-                  <div className="grid gap-4">
-                    {matching.topMatches
-                      .filter((r) => !r.isRecommended)
-                      .map((result) => (
-                        <MentorMatchCard
-                          key={result.mentor.id}
-                          matchResult={result}
-                          onSelect={(mentorId) => {
-                            setSelectedMentors([mentorId]);
-                            setActiveTab("booking");
-                          }}
-                        />
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {/* No Results */}
-              {matching.topMatches.length === 0 && (
-                <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                  <div className="text-6xl mb-4">🔍</div>
-                  <p className="text-lg font-semibold text-gray-700 mb-2">
-                    {t.lessons.aiMatching.noMatches}
-                  </p>
-                  <p className="text-sm text-gray-500 mb-6">
-                    {t.lessons.aiMatching.noMatchesDesc}
-                  </p>
-                  <button
-                    onClick={matching.resetPreferences}
-                    className="px-6 py-3 bg-[var(--color-brand-green)] text-[var(--color-brand-text)] rounded-lg font-semibold hover:bg-[var(--color-brand-green-hover)] transition-all"
-                  >
-                    {t.lessons.aiMatching.resetPreferences}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+      {activeTab === "chat-matching" ? (
+        /* Chat-based AI Matching View */
+        <div className="max-w-4xl mx-auto">
+          <ChatMatchingPanel
+            onMentorSelected={(mentor: MentorProfile, matchResult: MatchResult) => {
+              // Show confirmation before navigating
+              console.log('Mentor selected:', mentor.name, 'Score:', matchResult.score.totalScore);
+              const confirmed = window.confirm(
+                `${mentor.name}さんの予約ページに移動しますか？\n\n※チャット履歴は保存されています。`
+              );
+              if (confirmed) {
+                setSelectedMentors([mentor.id]);
+                setActiveTab("booking");
+              }
+            }}
+            onStepChange={(step, data) => {
+              // Analytics tracking
+              console.log('Chat matching step:', step, data);
+            }}
+            maxSuggestions={3}
+            className="h-[600px]"
+          />
         </div>
       ) : activeTab === "booking" ? (
         /* 3-Column Layout */
