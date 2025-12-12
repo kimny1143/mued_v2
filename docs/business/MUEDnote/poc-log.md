@@ -416,16 +416,28 @@ DTMer/音楽制作者の独り言を9パターン作成：
 2. ~~HLA（乱文構造化）PoC~~ → **完了** ✅
 3. **ローカルログ + 検索** - SQLite or Supabase連携
 4. **タイマーUI統合** - 練習タイマーとメモの統合
-5. **課金設計** - HLA処理を有料機能として設計
+5. **Share Extension（外部ツール連携）** - WhisperFlow等からテキスト受け取り
+6. **課金設計** - HLA処理を有料機能として設計
+
+### 音声入力オプション（v7）
+
+| 入力元 | 方式 | 想定ユーザー |
+|--------|------|-------------|
+| **内蔵Whisper** | タイマー連動録音 → バッチ処理 | 一般ユーザー（デフォルト） |
+| **外部ツール連携** | Share Extension / URL Scheme | WhisperFlow等のパワーユーザー |
+
+**マネタイズ:**
+- HLA処理は入力元に関係なく有料（処理コストは同じ）
+- 外部連携自体は無料で開放（ユーザー獲得優先）
 
 ### 将来構想（v8以降）
 - **DAWプラグイン**: VST/AU形式でDAW内からメモ録音（要検討）
-- **WhisperFlow連携**: PC音声入力はWhisperFlowに任せ、MUEDnoteは受け取り側に
+- **WhisperFlow PC連携**: PC音声入力はWhisperFlowに任せ、MUEDnoteは受け取り側に
   - fn押して喋る → WhisperFlow → MUEDnoteに送信
   - Tauri単体でのPC版は不要（WhisperFlowとfnキー取り合いに勝てない）
 - **MIDI/オーディオ解析**: DAWからのデータ取得で自動コンテキスト付与（将来）
 
-> **ポジショニング**: MUEDnoteはスマホでの制作メモに特化。PC音声入力は既存ツール（WhisperFlow等）との連携で対応。
+> **ポジショニング**: MUEDnoteはスマホでの制作メモに特化。外部音声認識ツール（WhisperFlow等）との連携でパワーユーザーにも対応。
 
 ### 注意事項
 - POCワークツリー: `/Users/kimny/Dropbox/_DevProjects/mued/mued_v2-poc`
