@@ -267,9 +267,131 @@ MUEDnote の想定ユースケース（タイマー連動でメモを録音）�
 
 ---
 
+## 2025-12-12 セッション4: HLA（乱文構造化）PoC
+
+### 目的
+- Whisper文字起こし結果（断片的な独り言）をGPTで構造化
+- カテゴリ分類（idea/todo/tips/frustration）の精度検証
+- 要約の深度保持（抽象化しすぎない）の検証
+- モデル選定とコスト・速度の評価
+
+### 環境
+- Node.js + ESM
+- OpenAI API
+- 検証モデル: gpt-4.1-mini, gpt-4.1-nano, gpt-5-mini
+
+### 実装内容
+
+#### 1. テストデータ作成
+DTMer/音楽制作者の独り言を9パターン作成：
+- `realistic_mixed`: 実際の独り言（断片的、接続詞多め）
+- `very_fragmented`: ほぼ感嘆詞と指示語のみ
+- `raw_session`: 作業中の生々しい独り言
+- `idea_fragments`: アイデア出し中
+- `mixing_session`: ミックス作業中（プラグイン・技術用語多め）
+- `late_night`: 深夜テンション（疲労・焦り）
+- `tech_trouble`: 機材トラブル系
+- `creative_burst`: 創作アイデア爆発
+- `uncertainty`: 悩み・迷い系
+
+#### 2. プロンプト設計
+```
+## カテゴリ分類（できるだけ多く拾う）
+- idea: 「〜かも」「〜したら」「〜ありだな」→ アイデア
+- todo: 「〜しないと」「明日まで」「やんないと」→ タスク
+- tips: 「〜なるんだよね」「前もやった」→ 学び・経験
+- frustration: 「もう」「なんで」「マジで」「ダメだ」「うわ〜」→ 不満
+
+## 重要ルール
+1. 感嘆詞のみ（「んーーー」「あ〜〜」単独）はスキップ
+2. 意味ある発言はすべて拾う（4〜10個程度）
+3. 具体的内容を残す（Dm7, G7, コンプ, BPM等）
+4. 1文に複数カテゴリ混在→主要なもの1つ選択
+```
+
+#### 3. モデル比較
+
+| モデル | 処理時間 | 成功 | 備考 |
+|--------|----------|------|------|
+| gpt-5-mini | 18.8s | NG | 推論モデル、`max_tokens`使用不可、`temperature`固定 |
+| gpt-4.1-nano | 3.2s | OK | 高速・安定・JSON出力良好 |
+| gpt-4.1-mini | 10s平均 | OK | nano より遅いが品質同等 |
+
+**結論: gpt-4.1-nano を採用**
+
+### 発生した問題と解決
+
+#### 1. gpt-5系 APIパラメータエラー
+- **現象**: `Unsupported parameter: 'max_tokens'`
+- **原因**: gpt-5系は推論モデルで `max_tokens` ではなく `max_completion_tokens` を使用
+- **解決**: モデル名で分岐して適切なパラメータを設定
+
+#### 2. gpt-5系 temperatureエラー
+- **現象**: `Only the default (1) value is supported`
+- **原因**: 推論モデルは temperature 変更不可
+- **解決**: gpt-5系では temperature パラメータを省略
+
+#### 3. ESM モジュール解決エラー
+- **現象**: `Cannot find module './test-inputs'` (ts-node使用時)
+- **原因**: ESM環境でのTypeScript local import解決問題
+- **解決**: `.mjs` ファイルに移行し、インラインでデータ定義
+
+### 結果
+
+9パターンの全テスト成功:
+
+| テストケース | 処理時間 | items数 | カテゴリ分布 |
+|-------------|---------|--------|-------------|
+| realistic_mixed | 9.9s | 7 | idea:2, todo:3, tips:1, frustration:1 |
+| very_fragmented | 3.2s | 1 | todo:1（情報量少→正しく最小抽出）|
+| raw_session | 8.2s | 7 | todo:3, frustration:4 |
+| idea_fragments | 8.7s | 6 | idea:5, frustration:1 |
+| mixing_session | 14.8s | 13 | idea:4, todo:5, tips:2, frustration:3 |
+| late_night | 9.9s | 9 | todo:2, frustration:7 |
+| tech_trouble | 11.4s | 7 | frustration:7 |
+| creative_burst | 10.6s | 9 | idea:6, todo:2, frustration:1 |
+| uncertainty | 10.4s | 9 | idea:4, todo:1, frustration:5 |
+
+### 品質評価
+
+#### 具体性保持 ✅
+- 音楽用語（Dm7, G7, BPM, コンプ, サイドチェイン等）が正しく残る
+- プラグイン名（Serum, Pro-Q3, Ozone等）も保持
+
+#### カテゴリ判定 ✅
+- `tech_trouble` → frustration 7個（100%正確）
+- `creative_burst` → idea 6個（正しくアイデア中心）
+- `late_night` → frustration 7個 + todo 2個（疲労+締め切り意識）
+
+#### mood判定 ✅
+- frustrated / creative / mixed が適切に判定
+
+### UX考察
+
+#### 処理時間（約10秒）について
+- **リアルタイム表示には長い** → ただし不要
+- **バッチ処理なら問題なし** → MUEDnoteの想定ユースケース
+
+#### 想定フロー
+```
+タイマー終了 → 生テキスト即時保存 → バックグラウンドでHLA処理 → 後で見返す時に構造化済み
+```
+
+#### マネタイズポイント
+- 無料: 生テキストの保存・閲覧のみ
+- 有料: HLA構造化 + カテゴリ検索 + AI要約
+
+### 次のステップ
+1. ~~HLA（乱文構造化）PoC~~ ✅ 検証完了
+2. **ローカルログ + 検索** - SQLite or Supabase連携
+3. **タイマーUI統合** - 練習タイマーとメモの統合
+4. **課金設計** - HLA処理を有料機能として設計
+
+---
+
 ## 現在の状態（セッション引き継ぎ用）
 
-**最終更新**: 2025-12-12 18:00 JST
+**最終更新**: 2025-12-12 22:00 JST
 
 ### 完了したこと
 - Expo Go録音テスト環境構築
@@ -279,15 +401,31 @@ MUEDnote の想定ユースケース（タイマー連動でメモを録音）�
 - **VAD（silero-vad）導入・動作確認** ✅
 - **RealtimeTranscriber 統合** ✅
 - **PoC 結論：タイマー連動ならバッチ処理が最適** ✅
+- **HLA（乱文構造化）PoC 完了** ✅
+  - gpt-4.1-nano 採用（高速・安定）
+  - 9パターンのテストデータで検証
+  - カテゴリ分類・具体性保持・mood判定すべて良好
+  - 処理時間10秒はバッチ処理なら問題なし
+  - マネタイズポイント: HLA構造化を有料機能に
 
 ### 次にやること
 > **注意**: MUEDnote v7 はスマホアプリ（iOS）で完結する方針。
-> PC版 Tauri/DAW連携は不要となった。
+> PC版 Tauri は v7 スコープ外。DAWプラグイン構想は将来検討として保留。
 
-1. ~~Tauri オーバーレイ UI PoC~~ → **不要**
-2. **HLA（乱文構造化）PoC** - 文字起こし結果をGPTで構造化
+1. ~~Tauri オーバーレイ UI PoC~~ → **v7スコープ外**（将来検討）
+2. ~~HLA（乱文構造化）PoC~~ → **完了** ✅
 3. **ローカルログ + 検索** - SQLite or Supabase連携
 4. **タイマーUI統合** - 練習タイマーとメモの統合
+5. **課金設計** - HLA処理を有料機能として設計
+
+### 将来構想（v8以降）
+- **DAWプラグイン**: VST/AU形式でDAW内からメモ録音（要検討）
+- **WhisperFlow連携**: PC音声入力はWhisperFlowに任せ、MUEDnoteは受け取り側に
+  - fn押して喋る → WhisperFlow → MUEDnoteに送信
+  - Tauri単体でのPC版は不要（WhisperFlowとfnキー取り合いに勝てない）
+- **MIDI/オーディオ解析**: DAWからのデータ取得で自動コンテキスト付与（将来）
+
+> **ポジショニング**: MUEDnoteはスマホでの制作メモに特化。PC音声入力は既存ツール（WhisperFlow等）との連携で対応。
 
 ### 注意事項
 - POCワークツリー: `/Users/kimny/Dropbox/_DevProjects/mued/mued_v2-poc`
