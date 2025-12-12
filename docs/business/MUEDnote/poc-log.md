@@ -153,25 +153,141 @@ const context = await initWhisper({
 
 ---
 
+## 2025-12-12 セッション3: VAD + RealtimeTranscriber 検証
+
+### 目的
+- VAD（Voice Activity Detection）による音声検出の実用性検証
+- whisper.rn の RealtimeTranscriber API の動作確認
+- リアルタイム文字起こしのUX評価
+
+### 環境
+- macOS (Apple Silicon)
+- Expo SDK 54.0.28 + prebuild
+- React Native 0.81.5
+- whisper.rn 0.5.4
+- Whisper モデル: ggml-small.bin (465MB)
+- VAD モデル: ggml-silero-vad.bin (864KB)
+- テスト端末: iPhone 15 (iOS 15.x)
+
+### 実装内容
+
+#### 1. VAD モデルの導入
+- silero-vad モデル（864KB）をダウンロード
+- Xcode の "Copy Bundle Resources" に追加
+- `initWhisperVad()` で初期化
+
+#### 2. RealtimeTranscriber の統合
+- whisper.rn の `RealtimeTranscriber` クラスを使用
+- Metro の custom resolver で submodule import を解決
+- `AudioPcmStreamAdapter` で音声ストリームを取得
+
+```javascript
+// metro.config.js - whisper.rn submodule 解決
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName.startsWith('whisper.rn/src/')) {
+    const subPath = moduleName.replace('whisper.rn/src/', '');
+    const resolvedPath = path.join(whisperRnPath, 'lib', 'module', subPath);
+    // ...
+  }
+};
+```
+
+#### 3. VAD 設定のチューニング
+最終的な設定値：
+
+| パラメータ | 値 | 説明 |
+|-----------|-----|------|
+| `threshold` | 0.3 | 感度（低いほど敏感） |
+| `minSilenceDurationMs` | 800ms | 無音判定までの待機時間 |
+| `speechPadMs` | 200ms | 音声前後のパディング |
+| `audioSliceSec` | 15秒 | スライス長 |
+| `vadThrottleMs` | 2000ms | VAD処理頻度制限 |
+
+### 発生した問題と解決
+
+#### 1. RealtimeTranscriber の import エラー
+- **現象**: `Unable to resolve "whisper.rn/src/realtime-transcription"`
+- **原因**: whisper.rn の package.json exports が Metro で解決されない
+- **解決**: metro.config.js で custom resolver を追加し、`lib/module` ディレクトリにリダイレクト
+
+#### 2. NativeEventEmitter エラー
+- **現象**: `NativeEventEmitter() requires a non-null argument`
+- **原因**: Metro resolver が TypeScript ソース（src/）を参照していた
+- **解決**: ビルド済み JavaScript（lib/module/）を参照するよう修正
+
+#### 3. 認識結果の重複
+- **現象**: 同じ認識結果が2回ログに出力される
+- **原因**: RealtimeTranscriber が `speech_start` と `speech_end` の両方で transcribe をトリガー
+- **解決**: `processedSlicesRef` (Set) で処理済みスライスを追跡し、重複スキップ
+
+#### 4. expo-clipboard ネイティブモジュールエラー
+- **現象**: `Cannot find native module 'ExpoClipboard'`
+- **原因**: expo-clipboard はネイティブビルドが必要
+- **解決**: React Native 標準の `Clipboard` API に変更（ビルド不要）
+
+### 結果
+| 項目 | 結果 |
+|------|------|
+| VAD モデル読み込み | OK |
+| 音声検出（speech_start/end） | OK |
+| リアルタイム文字起こし | OK |
+| 認識精度 | 実用レベル |
+| 認識遅延 | 約1000ms |
+| 重複防止 | OK |
+
+### 所見
+
+#### VAD の限界
+- スライスベースの設計のため、**連続発話の途切れ**が発生しやすい
+- 「音声終了」判定後の「再開」検出が遅い
+- チューニングで改善できるが、完璧なリアルタイム感は難しい
+
+#### 最終製品への示唆
+MUEDnote の想定ユースケース（タイマー連動でメモを録音）を考えると：
+
+```
+タイマー開始 → 録音継続 → タイマー終了 → まとめて文字起こし → DB保存
+```
+
+この流れなら **VAD は不要** で、シンプルな「バッチ処理」で十分。
+
+#### PoC の結論
+| 方式 | 適性 |
+|------|------|
+| VAD + リアルタイム | 会話UI向き、MUEDnote には過剰 |
+| バッチ処理 | タイマー連動メモには最適 |
+
+### 次のステップ
+1. ~~リアルタイム文字起こし機能の検討~~ ✅ 検証完了
+2. ~~VAD 導入でセグメント分割~~ ✅ 検証完了（本番では不要と判断）
+3. Tauri オーバーレイ UI PoC（0.5秒の壁）
+4. HLA（乱文構造化）PoC
+5. ローカルログ + 検索
+
+---
+
 ## 現在の状態（セッション引き継ぎ用）
 
-**最終更新**: 2025-12-12 16:00 JST
+**最終更新**: 2025-12-12 18:00 JST
 
 ### 完了したこと
 - Expo Go録音テスト環境構築
 - iOS prebuild + Xcode ビルド成功
 - Whisper モデル（ggml-small.bin）導入
 - **実機での日本語音声認識動作確認** ✅
+- **VAD（silero-vad）導入・動作確認** ✅
+- **RealtimeTranscriber 統合** ✅
+- **PoC 結論：タイマー連動ならバッチ処理が最適** ✅
 
 ### 次にやること
-1. リアルタイム文字起こし機能の検討
-2. VAD 導入でセグメント分割
-3. より小さいモデル（tiny/base）での速度検証
+1. Tauri オーバーレイ UI PoC（0.5秒の壁の検証）
+2. HLA（乱文構造化）PoC
+3. ローカルログ + 検索
 
 ### 注意事項
 - POCワークツリー: `/Users/kimny/Dropbox/_DevProjects/mued/mued_v2-poc`
 - ブランチ: `funny-heyrovsky`
-- 変更は未コミット状態（コミット推奨）
+- コミット済み: `6f23d235` (feat: Add VAD-enabled realtime transcription)
 
 ---
 
