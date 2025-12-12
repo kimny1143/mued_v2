@@ -383,7 +383,7 @@ DTMer/音楽制作者の独り言を9パターン作成：
 
 ### 次のステップ
 1. ~~HLA（乱文構造化）PoC~~ ✅ 検証完了
-2. **ローカルログ + 検索** - SQLite or Supabase連携
+2. **ローカルログ + 検索** - Neon PostgreSQL (API経由) + AsyncStorage (オフラインキャッシュ)
 3. **タイマーUI統合** - 練習タイマーとメモの統合
 4. **課金設計** - HLA処理を有料機能として設計
 
@@ -391,7 +391,17 @@ DTMer/音楽制作者の独り言を9パターン作成：
 
 ## 現在の状態（セッション引き継ぎ用）
 
-**最終更新**: 2025-12-12 22:00 JST
+**最終更新**: 2025-12-12 23:30 JST
+
+### データベース構成（確定）
+| レイヤー | 技術 | 用途 |
+|---------|------|------|
+| **サーバーDB** | Neon PostgreSQL (`muednote_v3` スキーマ) | fragments, projects, tags 等のマスタデータ |
+| **API** | Next.js API Routes + Drizzle ORM | MUED LMS v2 の既存基盤を使用 |
+| **ローカルキャッシュ** | AsyncStorage | オフライン閲覧用 |
+| **認証** | Clerk | MUED共通認証 |
+
+> **注**: SQLite や Supabase は使用しない。MUED LMS v2 の既存 Neon + API Routes 基盤を活用。
 
 ### 完了したこと
 - Expo Go録音テスト環境構築
@@ -407,6 +417,12 @@ DTMer/音楽制作者の独り言を9パターン作成：
   - カテゴリ分類・具体性保持・mood判定すべて良好
   - 処理時間10秒はバッチ処理なら問題なし
   - マネタイズポイント: HLA構造化を有料機能に
+- **DB PoC（muednote_v3スキーマ検証）完了** ✅
+  - 既存 `muednote_v3` スキーマが HLA データ保存に適合
+  - JSONB 検索（`action_items @> '[{"category": "..."}]'`）動作確認
+  - mood 検索（`emotions->>'mood' = '...'`）動作確認
+  - 日本語全文検索（ILIKE）動作確認
+  - テストスクリプト: `/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/scripts/muednote-db-poc.mjs`
 
 ### 次にやること
 > **注意**: MUEDnote v7 はスマホアプリ（iOS）で完結する方針。
@@ -414,10 +430,11 @@ DTMer/音楽制作者の独り言を9パターン作成：
 
 1. ~~Tauri オーバーレイ UI PoC~~ → **v7スコープ外**（将来検討）
 2. ~~HLA（乱文構造化）PoC~~ → **完了** ✅
-3. **ローカルログ + 検索** - SQLite or Supabase連携
-4. **タイマーUI統合** - 練習タイマーとメモの統合
-5. **Share Extension（外部ツール連携）** - WhisperFlow等からテキスト受け取り
-6. **課金設計** - HLA処理を有料機能として設計
+3. ~~ローカルログ + 検索（DB検証）~~ → **完了** ✅（muednote_v3スキーマ採用）
+4. **Expo → API Routes 接続** - 認証付きAPI呼び出しの検証
+5. **タイマーUI統合** - 練習タイマーとメモの統合
+6. **Share Extension（外部ツール連携）** - WhisperFlow等からテキスト受け取り
+7. **課金設計** - HLA処理を有料機能として設計
 
 ### 音声入力オプション（v7）
 
