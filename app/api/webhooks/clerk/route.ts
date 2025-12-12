@@ -81,22 +81,52 @@ export async function POST(req: Request) {
   }
 
   if (eventType === "user.updated") {
-    // ユーザー更新時の処理
+    // ユーザー更新時の処理（存在しなければ作成 - upsert）
     const { id, email_addresses, first_name, last_name, image_url, username } = evt.data;
 
     try {
-      await db
-        .update(users)
-        .set({
+      // まず既存ユーザーを確認
+      const existingUsers = await db
+        .select()
+        .from(users)
+        .where(eq(users.clerkId, id))
+        .limit(1);
+
+      if (existingUsers.length === 0) {
+        // ユーザーが存在しない場合は作成（user.created が発火しなかった既存ユーザー対応）
+        const newUsers = await db.insert(users).values({
+          clerkId: id,
           email: email_addresses?.[0]?.email_address || username || "unknown",
           name: `${first_name || ""} ${last_name || ""}`.trim() || username || "Unknown",
           profileImageUrl: image_url,
-          updatedAt: new Date(),
-        })
-        .where(eq(users.clerkId, id));
-      logger.debug(`User updated: ${id}`);
+          role: "student",
+        }).returning();
+
+        const newUser = newUsers[0];
+        logger.debug(`User created via update event: ${id}`);
+
+        // Freemiumプランのサブスクリプションを自動作成
+        await db.insert(subscriptions).values({
+          userId: newUser.id,
+          tier: "freemium",
+          status: "active",
+        });
+        logger.debug(`Freemium subscription created for user: ${id}`);
+      } else {
+        // 既存ユーザーを更新
+        await db
+          .update(users)
+          .set({
+            email: email_addresses?.[0]?.email_address || username || "unknown",
+            name: `${first_name || ""} ${last_name || ""}`.trim() || username || "Unknown",
+            profileImageUrl: image_url,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.clerkId, id));
+        logger.debug(`User updated: ${id}`);
+      }
     } catch (error) {
-      console.error("Error updating user:", error);
+      console.error("Error updating/creating user:", error);
     }
   }
 
