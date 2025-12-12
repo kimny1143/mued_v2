@@ -1,0 +1,29 @@
+{
+  "name": "muednote-poc",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@fugood/react-native-audio-pcm-stream": "^1.1.4",
+    "expo": "~54.0.28",
+    "expo-av": "^16.0.8",
+    "expo-clipboard": "~8.0.8",
+    "expo-file-system": "^19.0.20",
+    "expo-status-bar": "~3.0.9",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-fs": "^2.20.0",
+    "react-native-safe-area-context": "^5.6.2",
+    "whisper.rn": "^0.5.4"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}
