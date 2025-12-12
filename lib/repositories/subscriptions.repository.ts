@@ -7,7 +7,7 @@
  */
 
 import { db } from '@/db/edge';
-import { subscriptions, users } from '@/db/schema';
+import { subscriptions } from '@/db/schema';
 import { desc, eq, and, sql, gte, lte } from 'drizzle-orm';
 
 // ========================================

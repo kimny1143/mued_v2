@@ -37,7 +37,10 @@ export const Inject = inject;
  *   constructor(@InjectNamed(TYPES.ContentFetcher, 'note') private noteFetcher: ContentFetcher) { ... }
  * }
  */
-export function InjectNamed(serviceIdentifier: ServiceType, _named: string) {
+export function InjectNamed(serviceIdentifier: ServiceType, named: string) {
+  // The 'named' parameter is currently unused but preserved for future named injection support
+  // It will be used when implementing full Inversify named binding: container.bind().whenTargetNamed()
+  void named; // Explicitly mark as intentionally unused
   return function (target: object, propertyKey: string | symbol, parameterIndex: number) {
     inject(serviceIdentifier)(target, propertyKey, parameterIndex);
     // Note: Inversify's @named decorator would be used here in a full implementation

@@ -69,7 +69,7 @@ export function useApiFetch<T>(
       const response = await apiClient.get<T | { success: boolean; data: T }>(url);
 
       // Check if response is in apiSuccess format: { success: true, data: T }
-      const responseData = response.data as any;
+      const responseData = response.data as unknown;
       if (
         typeof responseData === 'object' &&
         responseData !== null &&
@@ -77,8 +77,9 @@ export function useApiFetch<T>(
         'data' in responseData
       ) {
         // apiSuccess format - unwrap the data
-        if (responseData.success && responseData.data !== undefined) {
-          setData(responseData.data);
+        const apiResponse = responseData as { success: boolean; data: T };
+        if (apiResponse.success && apiResponse.data !== undefined) {
+          setData(apiResponse.data);
         } else {
           throw new Error('API returned success: false');
         }
@@ -139,7 +140,7 @@ export function useApiPost<TResponse, TPayload = unknown>(url: string) {
         const response = await apiClient.post<TResponse | { success: boolean; data: TResponse }>(url, payload);
 
         // Check if response is in apiSuccess format: { success: true, data: TResponse }
-        const responseData = response.data as any;
+        const responseData = response.data as unknown;
         if (
           typeof responseData === 'object' &&
           responseData !== null &&
@@ -147,8 +148,9 @@ export function useApiPost<TResponse, TPayload = unknown>(url: string) {
           'data' in responseData
         ) {
           // apiSuccess format - unwrap the data
-          if (responseData.success && responseData.data !== undefined) {
-            return responseData.data;
+          const apiResponse = responseData as { success: boolean; data: TResponse };
+          if (apiResponse.success && apiResponse.data !== undefined) {
+            return apiResponse.data;
           } else {
             throw new Error('API returned success: false');
           }

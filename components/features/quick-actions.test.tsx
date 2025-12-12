@@ -5,6 +5,7 @@ import { renderWithProviders, expectNoA11yViolations } from '@/tests/utils/compo
 
 // Mock Next.js Link
 vi.mock('next/link', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   default: ({ children, href, className, ...props }: any) => (
     <a href={href} className={className} {...props}>
       {children}
@@ -14,6 +15,7 @@ vi.mock('next/link', () => ({
 
 // Mock locale context
 vi.mock('@/lib/i18n/locale-context', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   LocaleProvider: vi.fn(({ children }: { children: any }) => children),
   useLocale: () => ({
     t: {

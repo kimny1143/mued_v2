@@ -6,9 +6,13 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ hover = true, className = '', children, variant: _variant, ...props }, ref) => {
+  ({ hover = true, className = '', children, variant, ...props }, ref) => {
     const baseStyles = 'rounded-[var(--radius-lg)] p-4 border transition-shadow bg-[var(--color-card-bg)] border-[var(--color-card-border)]';
     const hoverStyles = hover ? 'hover:shadow-lg' : '';
+
+    // variant is defined but currently not used in styling
+    // placeholder for future variant styling implementation
+    void variant;
 
     return (
       <div ref={ref} className={`${baseStyles} ${hoverStyles} ${className}`} {...props}>

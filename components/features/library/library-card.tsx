@@ -9,6 +9,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import type { UnifiedContent } from '@/types/unified-content';
 import { ExternalLinkModal } from './external-link-modal';
 import { formatDate } from '@/lib/utils';
@@ -60,11 +61,13 @@ export function LibraryCard({ content }: LibraryCardProps) {
     >
       {/* Thumbnail */}
       {content.thumbnail && (
-        <div className="aspect-video bg-gray-100 overflow-hidden">
-          <img
+        <div className="aspect-video bg-gray-100 overflow-hidden relative">
+          <Image
             src={content.thumbnail}
             alt={content.title}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
       )}

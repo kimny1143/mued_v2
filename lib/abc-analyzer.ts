@@ -280,12 +280,12 @@ function analyzeRepetition(notes: number[]): {
 
   // 2回以上出現するシーケンス
   const repeatedSequences = Array.from(sequences.entries()).filter(
-    ([_, count]) => count >= 2
+    ([_sequence, count]) => count >= 2
   );
 
   const sequence_count = repeatedSequences.length;
   const repetition_ratio =
-    repeatedSequences.reduce((sum, [_, count]) => sum + count, 0) /
+    repeatedSequences.reduce((sum, [_sequence, count]) => sum + count, 0) /
     Math.max(sequences.size, 1);
 
   return { repetition_ratio, sequence_count };

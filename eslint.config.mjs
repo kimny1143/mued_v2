@@ -35,7 +35,14 @@ const eslintConfig = [
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "warn", // Change any type errors to warnings
-      "@typescript-eslint/no-unused-vars": "warn", // Change unused vars to warnings
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_", // Ignore unused args that start with underscore
+          varsIgnorePattern: "^_", // Ignore unused vars that start with underscore
+          destructuredArrayIgnorePattern: "^_", // Ignore unused destructured items that start with underscore
+        },
+      ],
       "react-hooks/exhaustive-deps": "warn", // Change hook deps to warnings
     },
   },

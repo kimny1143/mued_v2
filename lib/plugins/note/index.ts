@@ -72,8 +72,10 @@ export function createAdapter(): NoteContentAdapter {
  * Default export for plugin loader
  * プラグインローダー用のデフォルトエクスポート
  */
-export default {
+const notePlugin = {
   manifest,
   createFetcher,
   createAdapter,
 };
+
+export default notePlugin;

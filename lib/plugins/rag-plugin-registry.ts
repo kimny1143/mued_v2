@@ -55,8 +55,8 @@ export interface IRagContentFetcher {
   fetch(id: string): Promise<RagContentItem | null>;
 
   // Optional methods
-  filter?(criteria: Record<string, any>): Promise<RagContentItem[]>;
-  transform?(content: RagContentItem, format: string): Promise<any>;
+  filter?(criteria: Record<string, unknown>): Promise<RagContentItem[]>;
+  transform?(content: RagContentItem, format: string): Promise<unknown>;
 
   // Health check for monitoring
   healthCheck(): Promise<{ healthy: boolean; message?: string; latencyMs?: number }>;
@@ -69,7 +69,7 @@ export interface RagPluginDescriptor {
   version: string;
   fetcher: IRagContentFetcher;
   capabilities: RagPluginCapabilities;
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
   apiEndpoint?: string;
   apiKeyEnvVar?: string;
 }
@@ -200,7 +200,8 @@ export class RagPluginFactory {
             message: 'Note.com API is reachable',
             latencyMs: Date.now() - startTime
           };
-        } catch (error) {
+        } catch {
+          // Error details not needed for mock implementation
           return {
             healthy: false,
             message: 'Note.com API is not reachable',
@@ -249,12 +250,12 @@ export class RagPluginFactory {
         return null;
       },
 
-      async filter(criteria: Record<string, any>): Promise<RagContentItem[]> {
+      async filter(criteria: Record<string, unknown>): Promise<RagContentItem[]> {
         logger.debug(`[Local Plugin] Filtering materials:`, criteria);
         return [];
       },
 
-      async transform(content: RagContentItem, format: string): Promise<any> {
+      async transform(content: RagContentItem, format: string): Promise<unknown> {
         logger.debug(`[Local Plugin] Transforming content to ${format}`);
         return content;
       },

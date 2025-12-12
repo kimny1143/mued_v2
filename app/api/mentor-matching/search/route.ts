@@ -106,8 +106,13 @@ function criteriaToStudentProfile(
  * Convert User entity to MentorProfile
  * Uses user.skills from database for instrument matching
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function userToMentorProfile(user: any): MentorProfile {
+function userToMentorProfile(user: {
+  id: string;
+  name?: string | null;
+  profileImageUrl?: string | null;
+  bio?: string | null;
+  skills?: string[] | null;
+}): MentorProfile {
   // Extract skills/instruments from user profile
   const skills: string[] = user.skills || [];
 
@@ -118,8 +123,8 @@ function userToMentorProfile(user: any): MentorProfile {
   return {
     id: user.id,
     name: user.name || 'Unknown Mentor',
-    imageUrl: user.profileImageUrl,
-    bio: user.bio,
+    imageUrl: user.profileImageUrl ?? undefined,
+    bio: user.bio ?? undefined,
     skillLevel: 'advanced',
     specializations: skills.includes('guitar') || skills.includes('ギター')
       ? ['technique_improvement', 'repertoire_expansion']
@@ -240,7 +245,7 @@ export const POST = withAuthResolved(async ({ internalUserId, request }) => {
 
       // Find matching aliases
       let matchTerms = [instrumentLower];
-      for (const [key, aliases] of Object.entries(instrumentAliases)) {
+      for (const aliases of Object.values(instrumentAliases)) {
         if (aliases.some(a => instrumentLower.includes(a.toLowerCase()))) {
           matchTerms = aliases.map(a => a.toLowerCase());
           break;

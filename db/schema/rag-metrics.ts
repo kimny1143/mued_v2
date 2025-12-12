@@ -16,7 +16,6 @@ import {
   index,
   pgEnum,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 // Enum definitions
 export const contentTypeEnum = pgEnum('content_type', [

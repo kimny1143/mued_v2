@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { AnalyzerService, analyzeSessionInputSchema, type AnalyzeSessionInput, type AnalyzeSessionOutput } from './analyzer.service';
+import { AnalyzerService, analyzeSessionInputSchema, type AnalyzeSessionInput } from './analyzer.service';
 import * as openaiModule from '@/lib/openai';
 
 // Mock the OpenAI module
@@ -590,9 +590,9 @@ describe('AnalyzerService', () => {
 
     it('should throw error when sessionType is invalid', async () => {
       const input = {
-        sessionType: 'invalid_type' as any,
+        sessionType: 'invalid_type',
         userShortNote: 'テストノート',
-      };
+      } as any;
 
       await expect(analyzerService.analyzeSession(input)).rejects.toThrow();
     });

@@ -90,7 +90,8 @@ export type CustomPreferences = {
 
 // メモリ値の型
 export type MemoryValue = {
-  content: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  content: any; // Flexible content storage for memory values
   source: 'explicit' | 'inferred' | 'observed';
   examples?: string[];
   relatedMemories?: string[];

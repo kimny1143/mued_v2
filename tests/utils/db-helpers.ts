@@ -185,6 +185,7 @@ export const testDataBuilders = {
   /**
    * Create test material
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   createMaterial(overrides?: any) {
     return {
       creatorId: 'test_user_123',
@@ -220,6 +221,7 @@ export const dbAssertions = {
   /**
    * Get record by ID
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async getRecordById(tableName: string, id: string): Promise<any> {
     // Note: Implement actual query
     return null;

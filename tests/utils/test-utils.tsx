@@ -16,6 +16,7 @@ export interface MockUser {
   lastName?: string;
   imageUrl?: string;
   role?: 'teacher' | 'student' | 'admin';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
 }
 
@@ -88,6 +89,7 @@ export function setupClerkMocks(user?: MockUser, session?: MockSession, options?
   const isLoaded = options?.isLoaded ?? true;
 
   // Mock useAuth
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (vi.mocked(Clerk.useAuth) as any).mockReturnValue({
     isLoaded,
     isSignedIn,
@@ -103,6 +105,7 @@ export function setupClerkMocks(user?: MockUser, session?: MockSession, options?
   });
 
   // Mock useUser
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (vi.mocked(Clerk.useUser) as any).mockReturnValue({
     isLoaded,
     isSignedIn,
@@ -178,6 +181,7 @@ export function setupClerkMocks(user?: MockUser, session?: MockSession, options?
   });
 
   // Mock useSession
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (vi.mocked(Clerk.useSession) as any).mockReturnValue({
     isLoaded,
     isSignedIn,
@@ -251,7 +255,9 @@ export function setupClerkMocks(user?: MockUser, session?: MockSession, options?
         disableTOTP: vi.fn(),
         createBackupCode: vi.fn(),
         isPrimaryIdentification: vi.fn(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } : null as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       status: session.status as any,
       lastActiveAt: session.lastActiveAt,
       lastActiveToken: null,
@@ -281,7 +287,7 @@ export function setupClerkMocks(user?: MockUser, session?: MockSession, options?
 }
 
 // Test providers wrapper
-export function TestProviders({ children, user, session, locale = 'ja', isSignedIn = true, isLoaded = true }: TestProviderProps) {
+export function TestProviders({ children, user, session, locale: _locale = 'ja', isSignedIn = true, isLoaded = true }: TestProviderProps) {
   // Setup Clerk mocks if user is provided
   React.useEffect(() => {
     if (user || session) {
@@ -369,6 +375,7 @@ export function mockApiResponse<T>(data: T, options: { delay?: number; status?: 
 }
 
 // Helper to create mock form data
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createMockFormData(data: Record<string, any>): FormData {
   const formData = new FormData();
   Object.entries(data).forEach(([key, value]) => {

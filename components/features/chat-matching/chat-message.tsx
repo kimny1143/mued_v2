@@ -72,7 +72,7 @@ export function ChatMessage({ message, onQuickReplyClick, onMentorSelect }: Chat
           {/* Mentor Suggestions */}
           {content.type === 'mentor_suggestions' && content.mentorSuggestions && (
             <div className="space-y-3">
-              {content.mentorSuggestions.map((suggestion, idx) => (
+              {content.mentorSuggestions.map((suggestion) => (
                 <MentorSuggestionCard
                   key={suggestion.mentor.id}
                   suggestion={suggestion}

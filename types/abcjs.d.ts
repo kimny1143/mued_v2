@@ -73,6 +73,7 @@ declare module 'abcjs' {
   export class SynthController {
     load(
       element: HTMLElement,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       cursorControl: null | any,
       options: SynthOptions
     ): void;
@@ -96,6 +97,7 @@ declare module 'abcjs' {
     export class SynthController {
       load(
         element: HTMLElement,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         cursorControl: null | any,
         options: SynthOptions
       ): void;
@@ -120,11 +122,13 @@ declare module 'abcjs' {
 
   export function parseOnly(abcString: string): TuneObject[];
 
-  export default {
+  const abcjsExport = {
     renderAbc,
     parseOnly,
     synth,
     TimingCallbacks,
     SynthController,
   };
+
+  export default abcjsExport;
 }

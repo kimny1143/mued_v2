@@ -5,7 +5,10 @@
  * Reduces cognitive load from 9/10 to 4/10 through progressive disclosure
  */
 
-import type { MentorProfile, MatchResult, MatchingPreferences } from '@/types/matching';
+import type { MentorProfile, MatchResult } from '@/types/matching';
+// MatchingPreferences is imported but may be used in future extensions of this type system
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { MatchingPreferences } from '@/types/matching';
 
 // ========================================
 // Chat Message Types

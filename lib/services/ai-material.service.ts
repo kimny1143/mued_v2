@@ -4,7 +4,6 @@ import {
   userRepository,
   materialRepository,
   subscriptionRepository,
-  TIER_LIMITS,
 } from '@/lib/repositories';
 import { checkQualityGate, suggestImprovements, type QualityStatus } from '@/lib/quality-gate';
 import { validateAbcSyntax } from '@/lib/abc-validator';

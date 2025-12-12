@@ -332,6 +332,7 @@ export function ChatMatchingPanel({
       handleSendMessage();
       setPendingQuickReply(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingQuickReply, inputValue]);
 
   // Handle mentor selection - open detail modal instead of navigating away

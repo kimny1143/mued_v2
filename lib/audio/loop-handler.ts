@@ -131,7 +131,6 @@ export function validateLoopRange(
  * ループ範囲の情報を取得
  */
 export function getLoopInfo(abc: string, startBar: number, endBar: number) {
-  const _measures = parseAbcMeasures(abc);
   const { startBeat, endBeat } = normalizeLoopRange(abc, startBar, endBar);
 
   const barCount = endBar - startBar + 1;

@@ -54,6 +54,7 @@ describe('UserAvatar', () => {
               },
             },
           ],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -72,6 +73,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: 'Test',
           emailAddresses: [{ emailAddress: 'test@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -91,6 +93,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: 'Alice',
           emailAddresses: [{ emailAddress: 'alice@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -107,6 +110,7 @@ describe('UserAvatar', () => {
           firstName: null,
           username: 'bobsmith',
           emailAddresses: [{ emailAddress: 'bob@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -123,6 +127,7 @@ describe('UserAvatar', () => {
           firstName: null,
           username: null,
           emailAddresses: [{ emailAddress: 'charlie@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -139,6 +144,7 @@ describe('UserAvatar', () => {
           firstName: null,
           username: null,
           emailAddresses: [],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -154,6 +160,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: 'david',
           emailAddresses: [{ emailAddress: 'david@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -172,6 +179,7 @@ describe('UserAvatar', () => {
           firstName: 'Emily',
           username: 'emilyuser',
           emailAddresses: [{ emailAddress: 'emily@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -188,6 +196,7 @@ describe('UserAvatar', () => {
           firstName: null,
           username: 'frankuser',
           emailAddresses: [{ emailAddress: 'frank@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -204,6 +213,7 @@ describe('UserAvatar', () => {
           firstName: null,
           username: null,
           emailAddresses: [{ emailAddress: 'george@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -222,6 +232,7 @@ describe('UserAvatar', () => {
           firstName: null,
           username: null,
           emailAddresses: [],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -239,6 +250,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: 'Helen',
           emailAddresses: [{ emailAddress: 'helen@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -254,6 +266,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: 'Ian',
           emailAddresses: [],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -272,6 +285,7 @@ describe('UserAvatar', () => {
             { emailAddress: 'jane@example.com' },
             { emailAddress: 'jane.doe@example.org' },
           ],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -290,6 +304,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: 'Kevin',
           emailAddresses: [{ emailAddress: 'kevin@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -315,6 +330,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: 'Laura',
           emailAddresses: [{ emailAddress: 'laura@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -336,6 +352,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: 'Mike',
           emailAddresses: [{ emailAddress: 'mike@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -356,6 +373,7 @@ describe('UserAvatar', () => {
           firstName: '',
           username: '',
           emailAddresses: [{ emailAddress: '' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -373,6 +391,7 @@ describe('UserAvatar', () => {
           firstName: 'Nancy',
           username: null,
           emailAddresses: null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -390,6 +409,7 @@ describe('UserAvatar', () => {
           firstName: undefined,
           username: undefined,
           emailAddresses: undefined,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -406,6 +426,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: '田中',
           emailAddresses: [{ emailAddress: 'tanaka@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -423,6 +444,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: longName,
           emailAddresses: [{ emailAddress: 'long@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -441,6 +463,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: 'Oscar',
           emailAddresses: [{ emailAddress: 'oscar@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -459,6 +482,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: 'Patricia',
           emailAddresses: [{ emailAddress: 'patricia@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 
@@ -504,6 +528,7 @@ describe('UserAvatar', () => {
           id: 'user_123',
           firstName: 'Quinn',
           emailAddresses: [{ emailAddress: 'quinn@example.com' }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       });
 

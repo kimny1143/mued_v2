@@ -11,6 +11,9 @@
         },
         {
             "path": "../../Echovna"
+        },
+        {
+            "path": "../mued_v2-poc"
         }
     ],
     "settings": {

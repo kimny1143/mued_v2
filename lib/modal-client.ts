@@ -101,7 +101,7 @@ export async function generateMidiWithLlm(
  * TODO: Remove when actual Modal.com integration is ready
  */
 async function generateMockMidiResponse(
-  request: MidiLlmGenerateRequest
+  _request: MidiLlmGenerateRequest
 ): Promise<MidiLlmGenerateResponse> {
   // Mock MIDI file (C major scale)
   const mockMidiHex =

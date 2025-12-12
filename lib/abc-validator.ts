@@ -30,9 +30,9 @@ export function validateAbcSyntax(abc: string): string | null {
 
     const firstTune = parseResult[0];
 
-    // エラーメッセージの確認（anyを使って型エラーを回避）
-    if ((firstTune as any).error) {
-      return `構文エラー: ${(firstTune as any).error}`;
+    // エラーメッセージの確認
+    if ('error' in firstTune && firstTune.error) {
+      return `構文エラー: ${String(firstTune.error)}`;
     }
 
     // スタッフ（五線）の存在確認

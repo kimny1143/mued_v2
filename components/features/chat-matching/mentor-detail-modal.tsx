@@ -6,6 +6,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { MentorProfile } from '@/types/matching';
@@ -94,9 +95,11 @@ export function MentorDetailModal({
           <div className="flex items-start gap-4">
             {/* Avatar */}
             {mentor.imageUrl ? (
-              <img
+              <Image
                 src={mentor.imageUrl}
                 alt={mentor.name}
+                width={64}
+                height={64}
                 className="w-16 h-16 rounded-full object-cover"
               />
             ) : (

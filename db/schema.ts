@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, serial, text, timestamp, integer, boolean, jsonb, uuid, decimal, index } from "drizzle-orm/pg-core";
+import { pgTable, pgEnum, text, timestamp, integer, boolean, jsonb, uuid, decimal, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // ユーザー情報（Clerk連携）

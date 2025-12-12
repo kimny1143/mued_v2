@@ -5,6 +5,7 @@
 
 'use client';
 
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { MentorSuggestionCardProps } from '@/types/chat-matching';
@@ -39,9 +40,11 @@ export function MentorSuggestionCard({
       <div className="flex items-start gap-3 mb-3">
         {/* Avatar */}
         {mentor.imageUrl ? (
-          <img
+          <Image
             src={mentor.imageUrl}
             alt={mentor.name}
+            width={48}
+            height={48}
             className="w-12 h-12 rounded-full object-cover flex-shrink-0"
           />
         ) : (

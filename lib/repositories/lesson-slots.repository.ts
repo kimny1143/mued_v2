@@ -10,7 +10,7 @@
 
 import { db } from '@/db/edge';
 import { lessonSlots, users, reservations } from '@/db/schema';
-import { desc, eq, and, gte, lte, sql, or, ne } from 'drizzle-orm';
+import { eq, and, gte, lte, sql, or, ne } from 'drizzle-orm';
 
 // ========================================
 // Type Definitions

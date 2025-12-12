@@ -20,10 +20,28 @@ export interface PlaybackState {
   duration: number;
 }
 
+// abcjs types are incomplete, so we need to define interfaces for the parts we use
+interface AbcSynth {
+  init(options: { audioContext: AudioContext; visualObj: AbcVisualObj; options: Record<string, unknown> }): Promise<void>;
+  prime(): Promise<void>;
+  start(): void;
+  pause(): void;
+  resume(): void;
+  stop(): void;
+  setTempo(tempo: number): void;
+  setGain(gain: number): void;
+  setLoop(startBeat: number | null, endBeat?: number): void;
+  getCurrentTime(): number;
+}
+
+interface AbcVisualObj {
+  getTotalTime(): number;
+}
+
 export class AbcAudioPlayer {
-  private synth: any = null;
+  private synth: AbcSynth | null = null;
   private audioContext: AudioContext | null = null;
-  private visualObj: any = null;
+  private visualObj: AbcVisualObj | null = null;
   private isPlaying: boolean = false;
   private isPaused: boolean = false;
   private resumeOnVisibilityChange: boolean = true;
@@ -62,7 +80,8 @@ export class AbcAudioPlayer {
 
       // AudioContextの初期化（Safari対策）
       if (!this.audioContext) {
-        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const AudioContextConstructor = window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        this.audioContext = new AudioContextConstructor();
       }
 
       // 初回解錠
@@ -85,10 +104,10 @@ export class AbcAudioPlayer {
         throw new Error('Failed to parse ABC notation');
       }
 
-      this.visualObj = renderResult[0];
+      this.visualObj = renderResult[0] as unknown as AbcVisualObj;
 
       // Synthの初期化
-      this.synth = new abcjs.synth.CreateSynth();
+      this.synth = new abcjs.synth.CreateSynth() as unknown as AbcSynth;
       await this.synth.init({
         audioContext: this.audioContext,
         visualObj: this.visualObj,
@@ -170,10 +189,14 @@ export class AbcAudioPlayer {
   /**
    * シーク（特定の位置から再生）
    */
-  async seek(_time: number): Promise<void> {
+  async seek(time: number): Promise<void> {
     if (!this.synth) {
       throw new Error('Player not initialized');
     }
+
+    // time parameter is intended for future implementation
+    // abcjs.synth has limited seek functionality
+    void time;
 
     this.stop();
     // abcjs.synthはシーク機能が限定的なため、再初期化が必要

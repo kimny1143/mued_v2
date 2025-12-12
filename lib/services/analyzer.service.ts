@@ -12,7 +12,6 @@
 
 import { z } from 'zod';
 import { createChatCompletion } from '@/lib/openai';
-import type { SessionAnalysisData } from '@/db/schema/sessions';
 import { logger } from '@/lib/utils/logger';
 import { isValidFocusArea } from '@/lib/constants/question-constants';
 

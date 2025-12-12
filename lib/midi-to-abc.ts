@@ -86,7 +86,7 @@ export function validateMidiData(midiData: string): boolean {
 
     const header = decoded.toString('ascii', 0, 4);
     return header === 'MThd';
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -112,7 +112,7 @@ export function extractMidiMetadata(midiData: string): {
     if (header !== 'MThd') return null;
 
     // Parse header chunk
-    const headerLength = decoded.readUInt32BE(4);
+    // const headerLength = decoded.readUInt32BE(4); // Reserved for future use
     const format = decoded.readUInt16BE(8);
     const tracks = decoded.readUInt16BE(10);
     const ticksPerQuarterNote = decoded.readUInt16BE(12);

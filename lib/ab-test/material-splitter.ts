@@ -121,7 +121,8 @@ export async function evaluateABTest(
  */
 function calculateVariantMetrics(
   materialId: string,
-  metrics: any[]
+  // Using the actual schema type from learningMetrics table
+  metrics: Array<typeof learningMetrics.$inferSelect>
 ): VariantMetrics {
   if (metrics.length === 0) {
     return {
@@ -307,7 +308,9 @@ export async function autoHideFailedMaterials(): Promise<{
     const toHide: Array<{ id: string; title: string; score: number }> = [];
 
     for (const material of failedMaterials) {
-      const score = parseFloat(material.learningValueScore as any as string || '0');
+      // learningValueScore can be string or number in the schema, handle both
+      const scoreValue = material.learningValueScore;
+      const score = parseFloat((typeof scoreValue === 'string' ? scoreValue : String(scoreValue)) || '0');
 
       if (score > 0 && score < 6.0) {
         toHide.push({

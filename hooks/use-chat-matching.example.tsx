@@ -17,7 +17,6 @@ export function ChatMatchingExample() {
     currentStep,
     isLoading,
     extractedNeeds,
-    suggestedMentors,
     error,
     sendMessage,
     handleQuickReply,
@@ -91,6 +90,7 @@ export function ChatMatchingExample() {
                 <div className="mentor-suggestions">
                   {message.content.mentorSuggestions.map((suggestion) => (
                     <div key={suggestion.mentor.id} className="mentor-card">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={suggestion.mentor.imageUrl} alt={suggestion.mentor.name} />
                       <h4>{suggestion.mentor.name}</h4>
                       <p>{suggestion.reasonSummary}</p>
@@ -180,7 +180,10 @@ export function ChatMatchingExample() {
  */
 export function ChatMatchingWithProfile() {
   const {
+    // Intentionally not destructuring unused properties to demonstrate minimal example
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     messages,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     sendMessage,
     // ... other methods
   } = useChatMatching({
@@ -208,9 +211,12 @@ export function ChatMatchingWithProfile() {
  */
 export function ChatMatchingWithAnalytics() {
   const {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     messages,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     currentStep,
     extractedNeeds,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     sendMessage,
   } = useChatMatching({
     onMentorSelected: (mentor, matchResult) => {

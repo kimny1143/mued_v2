@@ -158,8 +158,10 @@ export const formExercises = pgTable('form_exercises', {
   problemType: formProblemTypeEnum('problem_type').notNull(),
   question: text('question').notNull(),
   instructions: text('instructions'),
-  options: jsonb('options').$type<any[]>(),  // 問題タイプに応じた選択肢
-  correctAnswer: jsonb('correct_answer').$type<any>().notNull(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: jsonb('options').$type<any[]>(),  // 問題タイプに応じた選択肢 (flexible structure)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  correctAnswer: jsonb('correct_answer').$type<any>().notNull(), // Flexible answer structure
   explanation: text('explanation'),
   hints: jsonb('hints').$type<string[]>(),
 
@@ -206,7 +208,8 @@ export const formExerciseAttempts = pgTable('form_exercise_attempts', {
   exerciseId: uuid('exercise_id').notNull(),
 
   // 試行詳細
-  userAnswer: jsonb('user_answer').$type<any>().notNull(),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  userAnswer: jsonb('user_answer').$type<any>().notNull(), // Flexible answer structure
   isCorrect: boolean('is_correct').notNull(),
   partialCredit: numeric('partial_credit', { precision: 3, scale: 2 }), // 0.00-1.00
   timeSpentSeconds: integer('time_spent_seconds'),

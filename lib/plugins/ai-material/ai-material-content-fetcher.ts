@@ -23,7 +23,9 @@ export class AIGeneratedMaterialFetcher implements IContentFetcher {
         search,
         type,
         difficulty,
-        tags,
+        // tags is not used in current implementation but part of ContentFetchParams interface
+        // Future: could be used for additional filtering
+        // tags,
         limit = 20,
         offset = 0,
       } = params;

@@ -7,7 +7,7 @@
 
 import OpenAI from 'openai';
 import { validateAbcSyntax } from '@/lib/abc-validator';
-import { analyzeAbc } from '@/lib/abc-analyzer';
+import { analyzeAbc, type AbcAnalysis } from '@/lib/abc-analyzer';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -29,7 +29,7 @@ export interface WeakDrillResult {
     abc: string;
     bars: { start: number; end: number };
     difficulty: string;
-    analysis: any;
+    analysis: AbcAnalysis;
   };
   drills: {
     same: DrillVariation;
@@ -225,7 +225,7 @@ function buildWeakDrillPrompt(
   endBar: number,
   instrument: string,
   currentTempo: number,
-  analysis: any,
+  analysis: AbcAnalysis,
   materialTitle: string
 ): string {
   return `A student is struggling with bars ${startBar}-${endBar} from "${materialTitle}" on ${instrument}.
@@ -310,7 +310,7 @@ function parseWeakDrillResponse(
   originalSection: string,
   startBar: number,
   endBar: number,
-  originalAnalysis: any
+  originalAnalysis: AbcAnalysis
 ): WeakDrillResult | null {
   try {
     // JSONブロックを抽出

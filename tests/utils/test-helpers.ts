@@ -123,11 +123,17 @@ export function findTopKSimilar<T>(
  * @param db - Database connection
  * @param fixtures - Test fixtures to insert
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function seedTestDatabase(db: any, fixtures: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sessions?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   questionTemplates?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   embeddings?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   questions?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   answers?: any[];
 }) {
   // Insert sessions
@@ -229,11 +235,12 @@ export async function seedTestDatabase(db: any, fixtures: {
  * @param tables - Tables to clear (default: all Phase 1.3 tables)
  */
 export async function clearTestDatabase(
-  db: any,
+  db: unknown,
   tables = ['interview_answers', 'interview_questions', 'rag_embeddings', 'question_templates', 'session_analyses', 'sessions']
 ) {
   for (const table of tables) {
-    await db.execute(`DELETE FROM ${table} WHERE user_id LIKE 'user-test%' OR user_id = 'user-001'`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (db as any).execute(`DELETE FROM ${table} WHERE user_id LIKE 'user-test%' OR user_id = 'user-001'`);
   }
 }
 
@@ -248,7 +255,7 @@ export function calculateRAGMetrics(
   expectedResults: string[]
 ): { precision: number; recall: number; f1: number } {
   const expectedSet = new Set(expectedResults);
-  const retrievedSet = new Set(retrievedResults);
+  const _retrievedSet = new Set(retrievedResults);
 
   const truePositives = retrievedResults.filter((r) => expectedSet.has(r)).length;
 
@@ -367,6 +374,7 @@ export function delay(ms: number): Promise<void> {
  * @param message - Additional message
  * @returns Formatted assertion message
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function formatAssertionMessage(actual: any, expected: any, message?: string): string {
   const prefix = message ? `${message}: ` : '';
   return `${prefix}Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}`;

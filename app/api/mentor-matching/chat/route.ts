@@ -193,7 +193,7 @@ async function saveMessage(
     userId,
     role,
     content,
-    metadata: metadata as any,
+    metadata: metadata as Record<string, unknown> | undefined,
     tags: ['mentor-matching'],
   });
 

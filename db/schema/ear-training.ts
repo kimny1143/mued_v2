@@ -66,7 +66,8 @@ export const instrumentEnum = pgEnum('instrument', [
 // 差分メタデータの型定義
 export type DifferenceMetadata = {
   type: string;                        // 差分の種類
-  parameters: Record<string, any>;     // 具体的なパラメータ
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  parameters: Record<string, any>;     // 具体的なパラメータ (flexible structure)
   description: string;                 // 人間が読める説明
   technicalDetails?: string;           // 技術的詳細
   frequency?: number;                  // 周波数（Hz）- EQ用
