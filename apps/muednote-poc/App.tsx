@@ -17,6 +17,7 @@ import { initWhisper, initWhisperVad, AudioSessionIos } from 'whisper.rn';
 import { RealtimeTranscriber } from 'whisper.rn/src/realtime-transcription';
 import { AudioPcmStreamAdapter } from 'whisper.rn/src/realtime-transcription/adapters/AudioPcmStreamAdapter';
 import RNFS from 'react-native-fs';
+import { useShareIntent } from 'expo-share-intent';
 
 // Model filenames - must be added to Xcode "Copy Bundle Resources"
 const WHISPER_MODEL = 'ggml-small.bin';
@@ -31,6 +32,9 @@ interface LogEntry {
 }
 
 export default function App() {
+  // Share Intent hook - receive shared text from other apps
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
+
   // State
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -41,6 +45,7 @@ export default function App() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [vadStatus, setVadStatus] = useState<'silence' | 'speech_start' | 'speech_continue' | 'speech_end'>('silence');
   const [useVad, setUseVad] = useState(true);
+  const [sharedText, setSharedText] = useState<string | null>(null);
 
   // Metrics
   const [avgLatency, setAvgLatency] = useState(0);
@@ -62,6 +67,27 @@ export default function App() {
       cleanup();
     };
   }, []);
+
+  // Handle shared text from other apps (e.g., WhisperFlow)
+  useEffect(() => {
+    if (hasShareIntent && shareIntent) {
+      const text = shareIntent.text || shareIntent.webUrl;
+      if (text) {
+        console.log('[ShareIntent] Received:', text);
+        setSharedText(text);
+        setCurrentTranscript(text);
+        addLog(`📥 外部アプリから受信: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`, 0, 'info');
+        Alert.alert(
+          '外部テキスト受信',
+          `${text.substring(0, 100)}${text.length > 100 ? '...' : ''}`,
+          [
+            { text: 'クリア', onPress: () => resetShareIntent(), style: 'cancel' },
+            { text: 'OK', onPress: () => resetShareIntent() },
+          ]
+        );
+      }
+    }
+  }, [hasShareIntent, shareIntent]);
 
   const initializeModels = async () => {
     try {
