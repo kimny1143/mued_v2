@@ -1,9 +1,36 @@
 # MUED Philosophy - 音楽制作特化プラットフォームの思想
 
-**Version**: 1.1
+**Version**: 1.2
 **Created**: 2025-11-15
-**Updated**: 2025-12-09
-**Status**: Phase 1 Active (aligned with MUEDnote v6.1)
+**Updated**: 2025-12-13
+**Status**: Phase 1 Active (aligned with MUEDnote v7 MVP)
+
+---
+
+## 0. 上位理念: Before You Start
+
+> **出力はAI、判断と欲は人間。**
+
+MUEDの根底にある思想は [docs/concept/MUED理念本文_決定稿.md](./concept/MUED理念本文_決定稿.md) に定義されています。
+
+### 核心メッセージ
+
+| キーフレーズ | 意味 |
+|------------|------|
+| **「出力はAI、判断と欲は人間」** | AIは思考の鏡。代替ではなく拡張 |
+| **「創作＝選び続けること」** | 完成物より判断の痕跡が重要 |
+| **「反応を記録しよう」** | 違和感も納得感も価値として残す |
+
+### Usage Manifesto（使い方の指針）
+
+- AIで出した案を「素材」として扱う
+- 選んだ理由、捨てた理由を短く残す
+- うまくいかなかった判断も、そのまま残す
+- あとで読み返し、「自分の傾向」を見つける
+
+> 詳細: [docs/concept/実装指針_三層構造.md](./concept/実装指針_三層構造.md)
+
+---
 
 ## 1. Core Philosophy - 3つの柱
 
@@ -186,14 +213,23 @@ Difference（耳）← より精密な聴き分けが可能に
 
 ## 改訂履歴
 
+- v1.2 (2025-12-13): 上位理念（docs/concept/）への参照を追加、MUEDnote v7 MVP に整合
 - v1.1 (2025-12-09): MUEDnote v6.1（沈黙のコンソール）に整合、チャット型UIからの方針変更反映
 - v1.0 (2025-11-15): 初版作成、Phase 0向けドラフト
 
 ## 関連ドキュメント
 
+### 上位理念
+- [MUED理念本文 決定稿](./concept/MUED理念本文_決定稿.md) - 「出力はAI、判断と欲は人間」
+- [実装指針 三層構造](./concept/実装指針_三層構造.md) - タグライン・要約カード・完全版
+
+### 実装計画
 - [ロードマップ](./roadmap.md) - Phase 0-4 実装計画
 - [システムアーキテクチャ](./architecture/SYSTEM_ARCHITECTURE.md) - 技術構成
-- [MUEDnote 仕様書](./business/MUEDnote/muednote_master_plan_v6.1.md) - 沈黙のコンソール詳細
+
+### MUEDnote
+- [MUEDnote v7 MVP 仕様](./business/MUEDnote/muednote_v7_mvp_spec.md) - スマホアプリ詳細
+- [MUEDnote PoC ログ](./business/MUEDnote/poc-log.md) - 技術検証記録
 
 ---
 
