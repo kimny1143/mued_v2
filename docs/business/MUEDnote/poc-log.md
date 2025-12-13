@@ -391,7 +391,7 @@ DTMer/音楽制作者の独り言を9パターン作成：
 
 ## 現在の状態（セッション引き継ぎ用）
 
-**最終更新**: 2025-12-12 23:30 JST
+**最終更新**: 2025-12-13 JST
 
 ### データベース構成（確定）
 | レイヤー | 技術 | 用途 |
@@ -399,11 +399,11 @@ DTMer/音楽制作者の独り言を9パターン作成：
 | **サーバーDB** | Neon PostgreSQL (`muednote_v3` スキーマ) | fragments, projects, tags 等のマスタデータ |
 | **API** | Next.js API Routes + Drizzle ORM | MUED LMS v2 の既存基盤を使用 |
 | **ローカルキャッシュ** | AsyncStorage | オフライン閲覧用 |
-| **認証** | Clerk | MUED共通認証 |
+| **認証** | Clerk + dev トークン | MUED共通認証（開発時は dev_token_kimny） |
 
 > **注**: SQLite や Supabase は使用しない。MUED LMS v2 の既存 Neon + API Routes 基盤を活用。
 
-### 完了したこと
+### 完了したこと（PoC フェーズ完了）
 - Expo Go録音テスト環境構築
 - iOS prebuild + Xcode ビルド成功
 - Whisper モデル（ggml-small.bin）導入
@@ -422,19 +422,38 @@ DTMer/音楽制作者の独り言を9パターン作成：
   - JSONB 検索（`action_items @> '[{"category": "..."}]'`）動作確認
   - mood 検索（`emotions->>'mood' = '...'`）動作確認
   - 日本語全文検索（ILIKE）動作確認
-  - テストスクリプト: `/Users/kimny/Dropbox/_DevProjects/mued/mued_v2/scripts/muednote-db-poc.mjs`
+- **Expo → API Routes 接続 完了** ✅
+  - `app/api/muednote/fragments/route.ts` - CRUD 全実装
+  - `app/api/muednote/sessions/route.ts` - セッション管理 + Analyzer 統合
+  - dev トークン + Clerk 認証併用
+  - テストスクリプト: `apps/muednote-poc/api-poc/test-api.mjs`
+- **Share Extension（外部ツール連携）完了** ✅
+  - `expo-share-intent` v5.1.1 導入
+  - App.tsx に受信処理実装（Alert 表示 + テキスト取り込み）
+  - WhisperFlow 等のパワーユーザーツール連携用
 
-### 次にやること
-> **注意**: MUEDnote v7 はスマホアプリ（iOS）で完結する方針。
-> PC版 Tauri は v7 スコープ外。DAWプラグイン構想は将来検討として保留。
+### PoC 完了チェックリスト
 
-1. ~~Tauri オーバーレイ UI PoC~~ → **v7スコープ外**（将来検討）
-2. ~~HLA（乱文構造化）PoC~~ → **完了** ✅
-3. ~~ローカルログ + 検索（DB検証）~~ → **完了** ✅（muednote_v3スキーマ採用）
-4. **Expo → API Routes 接続** - 認証付きAPI呼び出しの検証
-5. **タイマーUI統合** - 練習タイマーとメモの統合
-6. **Share Extension（外部ツール連携）** - WhisperFlow等からテキスト受け取り
-7. **課金設計** - HLA処理を有料機能として設計
+| 項目 | 状態 | 備考 |
+|------|------|------|
+| Whisper 音声認識 | ✅ 完了 | whisper-small、遅延1.5秒、実用レベル |
+| VAD + リアルタイム | ✅ 完了 | 動作確認済み（MVP では不要と判断） |
+| HLA 構造化 | ✅ 完了 | gpt-4.1-nano 採用 |
+| DB スキーマ | ✅ 完了 | muednote_v3 スキーマ採用 |
+| API 連携（認証付き） | ✅ 完了 | fragments/sessions CRUD |
+| Share Extension | ✅ 完了 | expo-share-intent 統合 |
+| タイマー UI | MVP で実装 | Figma デザイン済み、PoC 不要 |
+| 課金設計 | MVP で実装 | HLA 有料化の方針は確定 |
+
+### 次のフェーズ: MVP 実装
+
+> **注意**: PoC フェーズは完了。以下は MVP 実装フェーズで対応。
+
+1. **タイマー UI 実装** - Figma デザインを元に 60/90/120 分タイマー
+2. **ローカル DB（SQLite）統合** - オフライン対応
+3. **レビュー画面** - セッション終了後のログ確認 UI
+4. **Zustand 状態管理** - アプリ全体の状態管理
+5. **課金設計・実装** - HLA 処理を有料機能として設計
 
 ### 音声入力オプション（v7）
 
@@ -457,9 +476,9 @@ DTMer/音楽制作者の独り言を9パターン作成：
 > **ポジショニング**: MUEDnoteはスマホでの制作メモに特化。外部音声認識ツール（WhisperFlow等）との連携でパワーユーザーにも対応。
 
 ### 注意事項
-- POCワークツリー: `/Users/kimny/Dropbox/_DevProjects/mued/mued_v2-poc`
-- ブランチ: `funny-heyrovsky`
-- コミット済み: `6f23d235` (feat: Add VAD-enabled realtime transcription)
+- メインリポジトリ: `/Users/kimny/Dropbox/_DevProjects/mued/mued_v2`
+- PoC コード: `apps/muednote-poc/`
+- API Routes: `app/api/muednote/`
 
 ---
 
