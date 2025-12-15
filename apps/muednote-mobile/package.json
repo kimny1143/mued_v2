@@ -1,0 +1,35 @@
+{
+  "name": "muednote-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "prebuild": "expo prebuild",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fugood/react-native-audio-pcm-stream": "^1.1.4",
+    "@react-native-async-storage/async-storage": "^2.1.2",
+    "expo": "~54.0.28",
+    "expo-av": "^16.0.8",
+    "expo-share-intent": "^5.1.1",
+    "expo-status-bar": "~3.0.9",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-fs": "^2.20.0",
+    "react-native-safe-area-context": "^5.4.0",
+    "whisper.rn": "^0.5.4",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0",
+    "@types/react": "~19.1.0",
+    "@types/react-native": "~0.73.0",
+    "eslint": "^9.0.0",
+    "typescript": "~5.7.0"
+  }
+}
