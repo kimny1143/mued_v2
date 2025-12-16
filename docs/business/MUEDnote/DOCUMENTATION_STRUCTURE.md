@@ -1,124 +1,159 @@
-# MUEDnote ドキュメント構成
+# MUEDnote v7 プロジェクト概要
 
-**最終更新**: 2025-12-10
-**状態**: 統合完了（単一情報源）
-
----
-
-## 概要
-
-このドキュメントは 2025-12-09 の統合後の MUEDnote ドキュメント構成を説明します。
-
-**決定事項 (2025-12-09)**: MUEDnote v6.1（デスクトップ/沈黙のコンソール）を単一情報源とする。代替案の Web チャットアプローチ（v2.0）はアーカイブ済み。
+**最終更新**: 2025-12-16
+**このドキュメントについて**: プロジェクト再開時の最初の一読用。概要把握が目的。
 
 ---
 
-## 現行有効ドキュメント
+## これは何？
 
-### 単一情報源
-| ファイル | 目的 | 状態 |
-|---------|------|------|
-| `muednote_master_plan_v6.1.md` | **現行マスタープラン** - デスクトップ沈黙コンソール仕様 | 有効 |
+**MUEDnote v7** は、音楽制作者の独り言を自動でテキスト化し、思考ログとして蓄積する iOS アプリ。
 
-### 実装参照
-| パス | 目的 |
+- **入力**: 常時音声キャプチャ（オンデバイス whisper.rn）
+- **出力**: タイムスタンプ付き思考ログ
+- **UX**: セッションタイマー → 自動文字起こし → レビュー → 保存
+
+MUED 理念「出力は AI、判断と欲は人間」に基づき、創作過程の思考を記録する。
+
+---
+
+## 現在のステータス
+
+| 項目 | 状態 |
 |------|------|
-| `apps/muednote-v3/` | Tauri デスクトップアプリ ソースコード |
-| `docs/roadmap.md` | MUED 全体ロードマップ（Phase 1.3 = MUEDnote デスクトップ）|
-| `docs/PHILOSOPHY.md` | Difference/Note/Form 思想（v6.1 と整合）|
+| **フェーズ** | MVP 実装完了 → 実機テスト待ち |
+| **次のマイルストーン** | iOS 実機での E2E 動作確認 |
+| **ブロッカー** | なし |
+
+### MVP 実装進捗
+
+| 機能 | 状態 | 備考 |
+|------|------|------|
+| セッションタイマー | ✅ 完了 | HomeScreen, SessionScreen |
+| 音声キャプチャ | ✅ 完了 | expo-av, whisper.rn |
+| オンデバイス文字起こし | ✅ 完了 | RealtimeTranscriber + VAD |
+| ローカルキャッシュ | ✅ 完了 | AsyncStorage（SQLite から変更） |
+| レビュー画面 | ✅ 完了 | ログ一覧、メモ、保存/破棄 |
+| サーバー同期 | ✅ 完了 | Neon DB + Drizzle ORM |
+| オンボーディング | ✅ 完了 | 三層構造（タグライン/カード/詳細） |
 
 ---
 
-## アーカイブ済みドキュメント
-
-すべての履歴ドキュメントと代替アプローチは適切なアーカイブディレクトリに移動済み。
-
-### 代替ビジョン（別アプローチ）
-
-| ファイル | 場所 | アーカイブ理由 |
-|---------|------|----------------|
-| `MUEDNOTE_INTEGRATED_SPEC_V2.md` | `docs/archive/muednote-alternative-vision/` | Web チャットアプローチ。デスクトップ v6.1 に置き換え。 |
-| `muednote-chat-ui-design.md` | `docs/archive/muednote-alternative-vision/` | Web アプローチのチャット UI デザイン。 |
-
-### 過去バージョン
-
-| ファイル | 場所 | アーカイブ理由 |
-|---------|------|----------------|
-| `muednote_business_plan_v3.0.md` | `archive/` | 初期ピボット戦略。v6.1 に置き換え。 |
-| `muednote_business_plan_v3.1.md` | `archive/` | v3.x 系最終版。v6.1 に置き換え。 |
-| `muednote_business_plan_v3.2_algorithm.md` | `archive/` | HLA アルゴリズム詳細。v6.1 に統合。 |
-| `muednote_strategy_v5.0_drainpipe.md` | `archive/` | DRAINPIPE UX 思想。v6.1 に統合。 |
-| `gpt5_muednote_master_plan_v6.md` | `archive/` | GPT5 バリアント。v6.1 に置き換え。 |
-| `gemini_muednote_master_plan_v6.md` | `archive/` | Gemini バリアント。v6.1 に置き換え。 |
-
-### MVP 計画（移動済み）
-
-| ファイル | 場所 | アーカイブ理由 |
-|---------|------|----------------|
-| `muednote_spotlight_mvp_spec_v1.0.md` | `archive/spotlight-mvp-planning/` | Spotlight Input MVP 計画ドキュメント |
-| `muednote_spotlight_mvp_implementation_plan.md` | `archive/spotlight-mvp-planning/` | 実装計画 |
-| `muednote_spotlight_mvp_verification_report.md` | `archive/spotlight-mvp-planning/` | 技術実現可能性レポート |
-
----
-
-## 命名規則
-
-### 標準フォーマット
-```
-muednote_{機能}_{種類}_v{バージョン}.md
-```
-
-### 禁止パターン
-- ファイル名の角括弧: `[GPT5]file.md`（ファイルシステム・URL で問題発生）
-- ファイル名のスペース: `MUEDnote 事業計画書.md`（アンダースコアを使用）
-- ファイル名の日本語: ファイル名は英語、内容は日本語
-
----
-
-## ドキュメント進化
+## アーキテクチャ概要
 
 ```
-v3.0 (ピボット戦略)
-    |
-v3.1 (最終版) --- HLA コンセプト追加
-    |
-v3.2 (アルゴリズム詳細) --- 技術仕様
-    |
-v5.0 (DRAINPIPE UX) --- テキストファースト思想確立
-    |
-v6.0 (GPT5/Gemini バリアント) --- 統合試行
-    |
-v6.1 (統合マスター) --- 現行の権威あるドキュメント
+┌─────────────────────────────────────────────────────────┐
+│  MUEDnote iOS App (React Native + Expo)                 │
+│                                                         │
+│  ┌─────────────┐    ┌─────────────────────────────────┐ │
+│  │ Screens     │    │ Audio Pipeline                  │ │
+│  │             │    │                                 │ │
+│  │ • Home      │    │  expo-av → whisper.rn           │ │
+│  │ • Session   │    │  (RealtimeTranscriber + VAD)    │ │
+│  │ • Review    │    │                                 │ │
+│  │ • Onboarding│    └────────────────┬────────────────┘ │
+│  └──────┬──────┘                     │                  │
+│         │                            ▼                  │
+│         │         ┌──────────────────────────────────┐  │
+│         └────────▶│ Local Storage                    │  │
+│                   │ • Zustand (UI state)             │  │
+│                   │ • AsyncStorage (sessions/logs)   │  │
+│                   └──────────────┬───────────────────┘  │
+└──────────────────────────────────┼──────────────────────┘
+                                   │ 保存時のみ
+                                   ▼
+┌──────────────────────────────────────────────────────────┐
+│  mued_v2 Backend (Next.js API Routes)                    │
+│  POST /api/muednote/sessions/sync                        │
+└──────────────────────────────────┬───────────────────────┘
+                                   ▼
+┌──────────────────────────────────────────────────────────┐
+│  Neon PostgreSQL + Drizzle ORM                           │
+│  • muednote_mobile_sessions                              │
+│  • muednote_mobile_logs                                  │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 実装状況と注意事項
+## 開発を再開するには
 
-### 仕様と実装の乖離（2025-12-10 時点）
+### 1. 現状確認
 
-| 項目 | v6.1 仕様 | 現在の実装 |
-|------|----------|-----------|
-| **UI** | 沈黙のコンソール（AIは返答しない） | Web チャット（AIが質問・コメント） |
-| **技術** | Tauri/Rust デスクトップ | Next.js API Route |
-| **進捗** | 0%（未着手） | レガシー Web チャット API が存在 |
+```bash
+# 最新コードを取得
+git pull origin main
 
-**重要**: `app/api/muednote/chat/route.ts` は v2.0（Web チャット）アプローチの実装であり、v6.1（沈黙のコンソール）仕様とは異なります。
+# 依存関係確認
+cd apps/muednote-mobile && npm install
+```
 
-**今後の方針**:
-- v6.1 仕様に基づき `apps/muednote-v3/` で Tauri デスクトップアプリを新規実装
-- Web チャット API は将来的に廃止または別用途に転用
+### 2. 開発サーバー起動
+
+```bash
+# Expo 開発サーバー
+cd apps/muednote-mobile
+npx expo start
+```
+
+### 3. 実機テスト（iOS）
+
+```bash
+# prebuild が必要な場合
+npx expo prebuild --platform ios
+
+# Xcode でビルド
+open ios/MuedNotePoc.xcworkspace
+# → Xcode で Personal Team 署名 → 実機ビルド
+```
+
+### 4. サーバー側確認
+
+```bash
+# mued_v2 ルートで
+npm run dev
+
+# DB 接続確認
+npm run db:test-connection
+```
 
 ---
 
-## 関連ドキュメント（このディレクトリ外）
+## 関連文書
 
-| パス | 目的 |
+| ドキュメント | 用途 |
+|-------------|------|
+| **[muednote_v7_mvp_spec.md](muednote_v7_mvp_spec.md)** | MVP 詳細仕様（画面設計、API、DB スキーマ） |
+| **[muednote_master_plan_v7.md](muednote_master_plan_v7.md)** | v7 統合仕様（コンセプト、全体設計） |
+| **[poc-log.md](poc-log.md)** | 実装ログ（問題と解決、進捗詳細） |
+
+### コード
+
+| パス | 内容 |
 |------|------|
-| `docs/architecture/muednote-spotlight-mvp-feasibility-report.md` | アーキテクト実現可能性分析 |
-| `docs/testing/muednote-spotlight-test-strategy.md` | MVP テスト戦略 |
-| `apps/muednote-v3/` | Tauri デスクトップアプリ ソースコード |
+| `apps/muednote-mobile/` | React Native アプリ本体 |
+| `app/api/muednote/` | Next.js API エンドポイント |
+| `db/schema/muednote-mobile.ts` | Drizzle スキーマ定義 |
 
 ---
 
-*ドキュメント統合完了: 2025-12-09*
+## ドキュメント履歴
+
+### v7（現行）: モバイルファースト
+
+- **アプローチ**: React Native + Expo + whisper.rn
+- **対象**: iOS（Android は Phase 2）
+- **状態**: MVP 実装完了
+
+### v6.1（アーカイブ）: デスクトップ版
+
+- **アプローチ**: Tauri + Rust デスクトップアプリ
+- **状態**: 開発中断、v7 に移行
+
+アーカイブ済みドキュメント:
+- `muednote_master_plan_v6.1.md` - デスクトップ版仕様
+- `archive/` - 過去バージョン（v3.x, v5.0 など）
+
+---
+
+*プロジェクト再開時はこのドキュメントを最初に確認してください。*
