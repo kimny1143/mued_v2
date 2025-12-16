@@ -51,35 +51,42 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
 
     setIsSyncing(true);
     try {
-      // ログをFragmentとして送信
+      // セッション時間を計算
+      const start = new Date(session.started_at);
+      const end = session.ended_at ? new Date(session.ended_at) : new Date();
+      const durationSec = Math.floor((end.getTime() - start.getTime()) / 1000);
+
+      // ログをサーバー形式に変換
       const logsToSync = session.logs.map((log) => ({
-        content: log.text,
-        timestamp: log.created_at,
+        timestamp_sec: log.timestamp_sec,
+        text: log.text,
+        confidence: log.confidence,
       }));
 
-      const result = await apiClient.uploadLogs(logsToSync);
+      // セッションとログを一括同期
+      const result = await apiClient.syncSession(
+        {
+          duration_sec: durationSec,
+          started_at: session.started_at,
+          ended_at: session.ended_at || new Date().toISOString(),
+          session_memo: memo || undefined,
+        },
+        logsToSync
+      );
 
       setSyncResult({
-        success: result.created,
-        failed: result.failed,
+        success: result.savedLogs,
+        failed: 0,
       });
 
-      if (result.failed === 0) {
-        // 全て成功したらセッションを同期済みにマーク
-        await localStorage.markSessionSynced(session.id);
+      // 全て成功したらセッションを同期済みにマーク
+      await localStorage.markSessionSynced(session.id);
 
-        Alert.alert(
-          '同期完了',
-          `${result.created}件のログを保存しました`,
-          [{ text: 'OK', onPress: onComplete }]
-        );
-      } else {
-        Alert.alert(
-          '一部失敗',
-          `成功: ${result.created}件\n失敗: ${result.failed}件`,
-          [{ text: 'OK' }]
-        );
-      }
+      Alert.alert(
+        '同期完了',
+        `セッションと${result.savedLogs}件のログを保存しました`,
+        [{ text: 'OK', onPress: onComplete }]
+      );
     } catch (error) {
       Alert.alert('エラー', 'サーバーとの通信に失敗しました');
       console.error('[Review] Sync error:', error);
@@ -92,9 +99,10 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
   const handleSaveLocal = async () => {
     if (!session) return;
 
-    // メモを更新
-    session.memo = memo;
-    await localStorage.markSessionSynced(session.id); // ローカル保存として完了扱い
+    // メモを更新（completedステータスのまま保持して後で同期可能に）
+    if (memo) {
+      await localStorage.updateSessionMemo(session.id, memo);
+    }
 
     Alert.alert(
       '保存完了',
@@ -115,11 +123,7 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
           style: 'destructive',
           onPress: async () => {
             if (session) {
-              // セッションリストから削除
-              const sessions = await localStorage.getAllSessions();
-              const filtered = sessions.filter((s) => s.id !== session.id);
-              // 注意: この操作は直接AsyncStorageを操作する必要がある
-              // 簡略化のためonDiscardを呼ぶだけに
+              await localStorage.removeSession(session.id);
             }
             onDiscard();
           },

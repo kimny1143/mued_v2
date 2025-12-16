@@ -11,12 +11,14 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { SessionScreen } from './src/screens/SessionScreen';
 import { ReviewScreen } from './src/screens/ReviewScreen';
+import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { useSessionStore } from './src/stores/sessionStore';
 import { whisperService } from './src/services/whisperService';
+import { localStorage } from './src/cache/storage';
 import { colors, fontSize, fontWeight, spacing } from './src/constants/theme';
 
 // 画面の種類
-type Screen = 'loading' | 'home' | 'session' | 'review';
+type Screen = 'loading' | 'onboarding' | 'home' | 'session' | 'review';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('loading');
@@ -44,12 +46,17 @@ export default function App() {
         // エラーでも続行（録音は使えないが閲覧は可能）
       }
 
+      // オンボーディング完了チェック
+      const onboardingComplete = await localStorage.isOnboardingComplete();
+
       // アクティブセッションがあれば復元
       const { appState: state } = useSessionStore.getState();
       if (state === 'recording') {
         setCurrentScreen('session');
       } else if (state === 'reviewing') {
         setCurrentScreen('review');
+      } else if (!onboardingComplete) {
+        setCurrentScreen('onboarding');
       } else {
         setCurrentScreen('home');
       }
@@ -61,6 +68,10 @@ export default function App() {
   };
 
   // 画面遷移ハンドラー
+  const handleOnboardingComplete = () => {
+    setCurrentScreen('home');
+  };
+
   const handleStartSession = () => {
     setCurrentScreen('session');
   };
@@ -97,6 +108,9 @@ export default function App() {
   // メイン画面
   return (
     <SafeAreaProvider>
+      {currentScreen === 'onboarding' && (
+        <OnboardingScreen onComplete={handleOnboardingComplete} />
+      )}
       {currentScreen === 'home' && (
         <HomeScreen onStartSession={handleStartSession} />
       )}

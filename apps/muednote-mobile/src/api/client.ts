@@ -1,22 +1,25 @@
 /**
- * MUEDnote API Client
- * Neon PostgreSQL APIとの通信
+ * MUEDnote Mobile API Client
+ * v7 MVP: Simple session and log sync
  */
 
 import {
-  Fragment,
-  CreateFragmentRequest,
-  UpdateFragmentRequest,
-  FragmentListResponse,
-  Session,
-  CreateSessionRequest,
-  SessionListResponse,
+  MobileSession,
+  MobileLog,
+  CreateMobileSessionRequest,
+  MobileSessionListResponse,
+  SaveLogsRequest,
+  SaveLogsResponse,
+  SessionLogsResponse,
   ApiError,
 } from './types';
 
 // 環境変数から取得（開発時はデフォルト値を使用）
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 const DEV_AUTH_TOKEN = process.env.EXPO_PUBLIC_DEV_TOKEN || 'dev_token_kimny';
+
+// React Native の __DEV__ グローバル変数
+declare const __DEV__: boolean;
 
 class ApiClient {
   private baseUrl: string;
@@ -25,13 +28,13 @@ class ApiClient {
   constructor() {
     this.baseUrl = API_BASE_URL;
     // 開発時はdevトークンを使用
-    if (__DEV__) {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
       this.authToken = DEV_AUTH_TOKEN;
     }
   }
 
   /**
-   * 認証トークンを設定
+   * 認証トークンを設定（Clerk認証後に呼び出す）
    */
   setAuthToken(token: string) {
     this.authToken = token;
@@ -94,125 +97,87 @@ class ApiClient {
   }
 
   // ========================================
-  // Fragment API
+  // Mobile Session API
   // ========================================
 
   /**
-   * Fragment一覧取得
+   * セッション作成
    */
-  async getFragments(params?: {
-    projectId?: string;
-    status?: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<FragmentListResponse> {
-    const searchParams = new URLSearchParams();
-    if (params?.projectId) searchParams.set('projectId', params.projectId);
-    if (params?.status) searchParams.set('status', params.status);
-    if (params?.limit) searchParams.set('limit', params.limit.toString());
-    if (params?.offset) searchParams.set('offset', params.offset.toString());
-
-    const query = searchParams.toString();
-    const endpoint = `/api/muednote/fragments${query ? `?${query}` : ''}`;
-
-    return this.request<FragmentListResponse>(endpoint);
-  }
-
-  /**
-   * Fragment作成
-   */
-  async createFragment(data: CreateFragmentRequest): Promise<{ fragment: Fragment; message: string }> {
-    return this.request('/api/muednote/fragments', {
+  async createSession(data: CreateMobileSessionRequest): Promise<{ session: MobileSession }> {
+    return this.request('/api/muednote/mobile/sessions', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   /**
-   * Fragment更新
-   */
-  async updateFragment(data: UpdateFragmentRequest): Promise<{ fragment: Fragment; message: string }> {
-    return this.request('/api/muednote/fragments', {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
-  }
-
-  /**
-   * Fragment削除
-   */
-  async deleteFragment(id: string): Promise<{ message: string }> {
-    return this.request(`/api/muednote/fragments?id=${id}`, {
-      method: 'DELETE',
-    });
-  }
-
-  // ========================================
-  // Session API
-  // ========================================
-
-  /**
-   * Session一覧取得
+   * セッション一覧取得
    */
   async getSessions(params?: {
-    type?: string;
-    status?: string;
     limit?: number;
     offset?: number;
-  }): Promise<SessionListResponse> {
+  }): Promise<MobileSessionListResponse> {
     const searchParams = new URLSearchParams();
-    if (params?.type) searchParams.set('type', params.type);
-    if (params?.status) searchParams.set('status', params.status);
     if (params?.limit) searchParams.set('limit', params.limit.toString());
     if (params?.offset) searchParams.set('offset', params.offset.toString());
 
     const query = searchParams.toString();
-    const endpoint = `/api/muednote/sessions${query ? `?${query}` : ''}`;
+    const endpoint = `/api/muednote/mobile/sessions${query ? `?${query}` : ''}`;
 
-    return this.request<SessionListResponse>(endpoint);
+    return this.request<MobileSessionListResponse>(endpoint);
   }
 
   /**
-   * Session作成
+   * 特定セッションのログ取得
    */
-  async createSession(data: CreateSessionRequest): Promise<{ session: Session; analysis: unknown }> {
-    return this.request('/api/muednote/sessions', {
+  async getSessionLogs(sessionId: string): Promise<SessionLogsResponse> {
+    return this.request(`/api/muednote/mobile/sessions/${sessionId}/logs`);
+  }
+
+  // ========================================
+  // Mobile Logs API
+  // ========================================
+
+  /**
+   * ログ一括保存
+   */
+  async saveLogs(data: SaveLogsRequest): Promise<SaveLogsResponse> {
+    return this.request('/api/muednote/mobile/logs', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   // ========================================
-  // Batch Upload (ローカルログの一括送信)
+  // Sync Helper
   // ========================================
 
   /**
-   * ローカルログをFragmentとして一括送信
+   * セッションとログを一括同期
+   * 1. セッション作成
+   * 2. ログ一括送信
    */
-  async uploadLogs(logs: { content: string; timestamp?: string }[]): Promise<{
-    created: number;
-    failed: number;
-    errors: string[];
+  async syncSession(
+    sessionData: CreateMobileSessionRequest,
+    logs: Array<{ timestamp_sec: number; text: string; confidence?: number }>
+  ): Promise<{
+    session: MobileSession;
+    savedLogs: number;
   }> {
-    const results = {
-      created: 0,
-      failed: 0,
-      errors: [] as string[],
-    };
+    // 1. Create session
+    const { session } = await this.createSession(sessionData);
 
-    for (const log of logs) {
-      try {
-        await this.createFragment({ content: log.content });
-        results.created++;
-      } catch (error) {
-        results.failed++;
-        results.errors.push(
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-      }
+    // 2. Save logs
+    let savedLogs = 0;
+    if (logs.length > 0) {
+      const result = await this.saveLogs({
+        session_id: session.id,
+        logs,
+      });
+      savedLogs = result.saved_count;
     }
 
-    return results;
+    return { session, savedLogs };
   }
 }
 

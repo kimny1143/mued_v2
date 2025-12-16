@@ -298,3 +298,8 @@ export * from './schema/chat-system';
 // RAG Metrics & Provenance
 // ========================================
 export * from './schema/rag-metrics';
+
+// ========================================
+// MUEDnote Mobile v7 MVP
+// ========================================
+export * from './schema/muednote-mobile';

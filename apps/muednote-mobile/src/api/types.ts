@@ -162,3 +162,63 @@ export interface LocalSession {
   memo?: string;
   logs: LocalLog[];
 }
+
+// ========================================
+// v7 MVP Mobile Types
+// ========================================
+
+export type MobileSessionStatus = 'active' | 'completed' | 'synced';
+
+export interface MobileSession {
+  id: string;
+  user_id?: string;
+  duration_sec: number;
+  started_at: string;
+  ended_at: string | null;
+  session_memo: string | null;
+  status: MobileSessionStatus;
+  log_count?: number;
+  created_at: string;
+}
+
+export interface CreateMobileSessionRequest {
+  duration_sec: number;
+  started_at: string;       // ISO8601
+  ended_at?: string;        // ISO8601
+  session_memo?: string;
+  device_id?: string;
+}
+
+export interface MobileSessionListResponse {
+  sessions: MobileSession[];
+  pagination: PaginationInfo;
+}
+
+export interface MobileLog {
+  id: string;
+  session_id: string;
+  timestamp_sec: number;
+  text: string;
+  confidence: number | null;
+  created_at: string;
+}
+
+export interface SaveLogsRequest {
+  session_id: string;
+  logs: Array<{
+    timestamp_sec: number;
+    text: string;
+    confidence?: number;
+  }>;
+}
+
+export interface SaveLogsResponse {
+  success: boolean;
+  saved_count: number;
+  session_id: string;
+}
+
+export interface SessionLogsResponse {
+  session: MobileSession;
+  logs: MobileLog[];
+}

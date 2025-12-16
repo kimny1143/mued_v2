@@ -125,6 +125,27 @@ class LocalStorage {
     }
   }
 
+  /**
+   * セッションのメモを更新
+   */
+  async updateSessionMemo(sessionId: string, memo: string): Promise<void> {
+    const sessions = await this.getAllSessions();
+    const index = sessions.findIndex((s) => s.id === sessionId);
+    if (index !== -1) {
+      sessions[index].memo = memo;
+      await AsyncStorage.setItem(KEYS.SESSIONS, JSON.stringify(sessions));
+    }
+  }
+
+  /**
+   * セッション削除（完了済みセッションリストから）
+   */
+  async removeSession(sessionId: string): Promise<void> {
+    const sessions = await this.getAllSessions();
+    const filtered = sessions.filter((s) => s.id !== sessionId);
+    await AsyncStorage.setItem(KEYS.SESSIONS, JSON.stringify(filtered));
+  }
+
   // ========================================
   // Log Management
   // ========================================

@@ -5,8 +5,8 @@
 
 import { Audio } from 'expo-av';
 import { initWhisper, initWhisperVad, AudioSessionIos } from 'whisper.rn';
-import { RealtimeTranscriber } from 'whisper.rn/src/realtime-transcription';
-import { AudioPcmStreamAdapter } from 'whisper.rn/src/realtime-transcription/adapters/AudioPcmStreamAdapter';
+import { RealtimeTranscriber } from 'whisper.rn/realtime-transcription';
+import { AudioPcmStreamAdapter } from 'whisper.rn/realtime-transcription/adapters/AudioPcmStreamAdapter';
 import RNFS from 'react-native-fs';
 
 // モデルファイル名（Xcodeの "Copy Bundle Resources" に追加必須）
@@ -113,13 +113,8 @@ class WhisperService {
     this.processedSlices.clear();
 
     // オーディオストリームアダプター作成
-    const audioStream = new AudioPcmStreamAdapter({
-      sampleRate: 16000,
-      channels: 1,
-      bitsPerSample: 16,
-      audioSource: 6, // VOICE_RECOGNITION
-      bufferSize: 16 * 1024,
-    });
+    // 注意: 初期化は RealtimeTranscriber.start() 内で行われる
+    const audioStream = new AudioPcmStreamAdapter();
 
     // RealtimeTranscriber作成
     this.realtimeTranscriber = new RealtimeTranscriber(
@@ -130,6 +125,14 @@ class WhisperService {
         fs: RNFS,
       },
       {
+        // audioStream の初期化設定
+        audioStreamConfig: {
+          sampleRate: 16000,
+          channels: 1,
+          bitsPerSample: 16,
+          audioSource: 6, // VOICE_RECOGNITION
+          bufferSize: 16 * 1024,
+        },
         audioSliceSec: 15, // 15秒ごとに処理
         audioMinSec: 2, // 最低2秒
         autoSliceOnSpeechEnd: true,

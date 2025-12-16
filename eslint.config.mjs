@@ -30,6 +30,10 @@ const eslintConfig = [
       // Generated files
       "*.min.js",
       "*.bundle.js",
+      // Sub-apps (separate projects with own configs)
+      "apps/muednote-mobile/**",
+      "apps/muednote-v3/**",
+      "apps/muednote-poc/**",
     ],
   },
   {
