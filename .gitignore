@@ -46,3 +46,14 @@ yarn-error.log*
 next-env.d.ts
 apps/muednote-v3/node_modules/
 tests/reports/*.md
+
+# MUEDnote Mobile
+apps/muednote-mobile/ios/build/
+apps/muednote-mobile/ios/Pods/
+apps/muednote-mobile/ios/*.bin
+apps/muednote-mobile/ios/MUEDnote/models/
+apps/muednote-mobile/assets/models/*.bin
+apps/muednote-mobile/node_modules/
+
+# Audio files (test recordings)
+docs/audio/

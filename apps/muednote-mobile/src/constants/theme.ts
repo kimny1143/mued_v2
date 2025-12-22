@@ -74,8 +74,16 @@ export const borderRadius = {
 };
 
 // タイマーオプション
-export const TIMER_OPTIONS = [
-  { label: '60分', value: 3600 },
-  { label: '90分', value: 5400 },
-  { label: '120分', value: 7200 },
-];
+export const TIMER_OPTIONS = __DEV__
+  ? [
+      // 開発用: 短いタイマー（テスト用）
+      { label: '1分', value: 60 },
+      { label: '5分', value: 300 },
+      { label: '30分', value: 1800 },
+    ]
+  : [
+      // 本番用
+      { label: '60分', value: 3600 },
+      { label: '90分', value: 5400 },
+      { label: '120分', value: 7200 },
+    ];

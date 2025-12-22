@@ -151,38 +151,57 @@ class LocalStorage {
   // ========================================
 
   /**
-   * ログ追加
+   * ログ追加（アクティブまたは完了済みセッションに対応）
    */
   async addLog(
     sessionId: string,
     log: Omit<LocalLog, 'id' | 'created_at'>
   ): Promise<LocalLog> {
-    const session = await this.getCurrentSession();
-    if (!session || session.id !== sessionId) {
-      throw new Error('Session not found');
-    }
-
     const newLog: LocalLog = {
       ...log,
       id: `log_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
       created_at: new Date().toISOString(),
     };
 
-    session.logs.push(newLog);
-    await this.updateSession(session);
+    // まずアクティブセッションをチェック
+    const currentSession = await this.getCurrentSession();
+    if (currentSession && currentSession.id === sessionId) {
+      currentSession.logs.push(newLog);
+      await this.updateSession(currentSession);
+      return newLog;
+    }
 
-    return newLog;
+    // 完了済みセッションリストをチェック
+    const sessions = await this.getAllSessions();
+    const index = sessions.findIndex((s) => s.id === sessionId);
+    if (index !== -1) {
+      sessions[index].logs.push(newLog);
+      await AsyncStorage.setItem(KEYS.SESSIONS, JSON.stringify(sessions));
+      return newLog;
+    }
+
+    throw new Error('Session not found');
   }
 
   /**
-   * ログ削除
+   * ログ削除（アクティブまたは完了済みセッションに対応）
    */
   async deleteLog(sessionId: string, logId: string): Promise<void> {
-    const session = await this.getCurrentSession();
-    if (!session || session.id !== sessionId) return;
+    // まずアクティブセッションをチェック
+    const currentSession = await this.getCurrentSession();
+    if (currentSession && currentSession.id === sessionId) {
+      currentSession.logs = currentSession.logs.filter((l) => l.id !== logId);
+      await this.updateSession(currentSession);
+      return;
+    }
 
-    session.logs = session.logs.filter((l) => l.id !== logId);
-    await this.updateSession(session);
+    // 完了済みセッションリストをチェック
+    const sessions = await this.getAllSessions();
+    const index = sessions.findIndex((s) => s.id === sessionId);
+    if (index !== -1) {
+      sessions[index].logs = sessions[index].logs.filter((l) => l.id !== logId);
+      await AsyncStorage.setItem(KEYS.SESSIONS, JSON.stringify(sessions));
+    }
   }
 
   // ========================================

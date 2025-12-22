@@ -11,6 +11,23 @@ import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 
+// 開発用トークン認証（本番では無効化）
+const DEV_TOKEN = process.env.NODE_ENV === 'development' ? 'dev_token_kimny' : null;
+const DEV_USER_ID = 'dev_user_kimny';
+
+async function getAuthUserId(req: Request): Promise<string | null> {
+  // 開発用トークン認証
+  if (DEV_TOKEN) {
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader === `Bearer ${DEV_TOKEN}`) {
+      return DEV_USER_ID;
+    }
+  }
+  // Clerk 認証
+  const session = await auth();
+  return session?.userId || null;
+}
+
 // ========================================
 // POST /api/muednote/mobile/logs
 // Batch save logs for a session
@@ -18,9 +35,9 @@ import { auth } from '@clerk/nextjs/server';
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
+    const userId = await getAuthUserId(req);
 
-    if (!session?.userId) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -49,7 +66,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (existingSession.userId !== session.userId) {
+    if (existingSession.userId !== userId) {
       return NextResponse.json(
         { error: 'Unauthorized access to session' },
         { status: 403 }

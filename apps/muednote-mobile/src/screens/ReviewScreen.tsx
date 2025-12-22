@@ -1,6 +1,6 @@
 /**
  * ReviewScreen - セッション終了後のレビュー画面
- * ログ一覧の確認・編集・同期
+ * バッチ処理方式：文字起こし → 確認 → 同期
  */
 
 import React, { useState, useEffect } from 'react';
@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { localStorage } from '../cache/storage';
 import { apiClient } from '../api/client';
+import { whisperService } from '../services/whisperService';
 import { LocalSession, LocalLog } from '../api/types';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 
@@ -27,28 +28,94 @@ interface ReviewScreenProps {
 
 export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
   const [session, setSession] = useState<LocalSession | null>(null);
+  const [logs, setLogs] = useState<LocalLog[]>([]);
   const [memo, setMemo] = useState('');
+  const [isTranscribing, setIsTranscribing] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<{ success: number; failed: number } | null>(null);
+  const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
 
-  // 最新のセッションを取得
+  // 最新のセッションを取得 & 文字起こし実行
   useEffect(() => {
-    loadLatestSession();
+    loadSessionAndTranscribe();
   }, []);
 
-  const loadLatestSession = async () => {
-    const sessions = await localStorage.getAllSessions();
-    if (sessions.length > 0) {
+  const loadSessionAndTranscribe = async () => {
+    try {
+      // セッション取得
+      const sessions = await localStorage.getAllSessions();
+      if (sessions.length === 0) {
+        setIsTranscribing(false);
+        return;
+      }
+
       const latest = sessions[0];
       setSession(latest);
       setMemo(latest.memo || '');
+
+      // 文字起こし実行
+      console.log('[Review] Starting transcription...');
+      const result = await whisperService.transcribe();
+
+      if (result && result.text) {
+        // セグメントからログを生成（重複除去付き）
+        const generatedLogs: LocalLog[] = [];
+        const seenTexts = new Set<string>();
+
+        if (result.segments && result.segments.length > 0) {
+          // セグメントがある場合は個別にログを作成
+          // 重複テキストは最初の出現のみ保持
+          result.segments.forEach((segment, index) => {
+            const text = segment.text.trim();
+            if (text && !seenTexts.has(text)) {
+              seenTexts.add(text);
+              generatedLogs.push({
+                id: `log_${Date.now()}_${index}`,
+                timestamp_sec: Math.floor(segment.t0 / 1000), // ms to sec
+                text,
+                created_at: new Date().toISOString(),
+              });
+            }
+          });
+        } else {
+          // セグメントがない場合は全体を1つのログとして保存
+          generatedLogs.push({
+            id: `log_${Date.now()}_0`,
+            timestamp_sec: 0,
+            text: result.text,
+            created_at: new Date().toISOString(),
+          });
+        }
+
+        console.log(`[Review] Deduplication: ${result.segments?.length || 1} segments -> ${generatedLogs.length} unique logs`);
+
+        // ローカルストレージに保存
+        for (const log of generatedLogs) {
+          await localStorage.addLog(latest.id, {
+            timestamp_sec: log.timestamp_sec,
+            text: log.text,
+          });
+        }
+
+        // ログを設定
+        setLogs(generatedLogs);
+        console.log(`[Review] Transcription complete: ${generatedLogs.length} logs`);
+      } else {
+        console.log('[Review] No transcription result');
+        setLogs([]);
+      }
+    } catch (error: any) {
+      console.error('[Review] Transcription error:', error);
+      setTranscriptionError(error.message || '文字起こしに失敗しました');
+    } finally {
+      setIsTranscribing(false);
     }
   };
 
-  // サーバーに同期
+  // 同期ボタン押下（DB同期 → 音声保存の順序）
   const handleSync = async () => {
     if (!session) return;
 
+    // 先にDB同期を実行
     setIsSyncing(true);
     try {
       // セッション時間を計算
@@ -57,7 +124,7 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
       const durationSec = Math.floor((end.getTime() - start.getTime()) / 1000);
 
       // ログをサーバー形式に変換
-      const logsToSync = session.logs.map((log) => ({
+      const logsToSync = logs.map((log) => ({
         timestamp_sec: log.timestamp_sec,
         text: log.text,
         confidence: log.confidence,
@@ -74,19 +141,45 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
         logsToSync
       );
 
-      setSyncResult({
-        success: result.savedLogs,
-        failed: 0,
-      });
-
-      // 全て成功したらセッションを同期済みにマーク
+      // 同期済みにマーク
       await localStorage.markSessionSynced(session.id);
+      console.log(`[Review] Sync complete: ${result.savedLogs} logs saved`);
 
-      Alert.alert(
-        '同期完了',
-        `セッションと${result.savedLogs}件のログを保存しました`,
-        [{ text: 'OK', onPress: onComplete }]
-      );
+      // 音声ファイルが存在する場合、保存するか確認
+      const audioPath = whisperService.getAudioFilePath();
+      if (audioPath) {
+        Alert.alert(
+          '同期完了 - 音声を保存しますか？',
+          `${result.savedLogs}件のログを保存しました。録音した音声も保存できます。`,
+          [
+            {
+              text: '保存しない',
+              style: 'cancel',
+              onPress: async () => {
+                await whisperService.deleteAudioFile();
+                onComplete();
+              },
+            },
+            {
+              text: '保存する',
+              onPress: async () => {
+                const shared = await whisperService.shareAudioFile();
+                if (shared) {
+                  console.log('[Review] Audio shared');
+                }
+                await whisperService.deleteAudioFile();
+                onComplete();
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          '同期完了',
+          `セッションと${result.savedLogs}件のログを保存しました`,
+          [{ text: 'OK', onPress: onComplete }]
+        );
+      }
     } catch (error) {
       Alert.alert('エラー', 'サーバーとの通信に失敗しました');
       console.error('[Review] Sync error:', error);
@@ -99,10 +192,12 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
   const handleSaveLocal = async () => {
     if (!session) return;
 
-    // メモを更新（completedステータスのまま保持して後で同期可能に）
     if (memo) {
       await localStorage.updateSessionMemo(session.id, memo);
     }
+
+    // 音声ファイルを削除
+    await whisperService.deleteAudioFile();
 
     Alert.alert(
       '保存完了',
@@ -115,7 +210,7 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
   const handleDiscard = () => {
     Alert.alert(
       'セッションを破棄',
-      'このセッションの全てのログが削除されます。よろしいですか？',
+      'このセッションの全てのログと録音ファイルが削除されます。よろしいですか？',
       [
         { text: 'キャンセル', style: 'cancel' },
         {
@@ -125,6 +220,7 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
             if (session) {
               await localStorage.removeSession(session.id);
             }
+            await whisperService.deleteAudioFile();
             onDiscard();
           },
         },
@@ -160,6 +256,38 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     </View>
   );
 
+  // 文字起こし中の表示
+  if (isTranscribing) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>文字起こし中...</Text>
+          <Text style={styles.loadingSubtext}>しばらくお待ちください</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // エラー表示
+  if (transcriptionError) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>文字起こしエラー</Text>
+          <Text style={styles.errorDetail}>{transcriptionError}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadSessionAndTranscribe}>
+            <Text style={styles.retryButtonText}>再試行</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.discardButtonStyle} onPress={handleDiscard}>
+            <Text style={styles.discardButtonText}>破棄する</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // セッションなし
   if (!session) {
     return (
       <SafeAreaView style={styles.container}>
@@ -184,7 +312,7 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
             <Text style={styles.statLabel}>録音時間</Text>
           </View>
           <View style={styles.stat}>
-            <Text style={styles.statValue}>{session.logs.length}</Text>
+            <Text style={styles.statValue}>{logs.length}</Text>
             <Text style={styles.statLabel}>ログ数</Text>
           </View>
         </View>
@@ -206,27 +334,18 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
 
       {/* Log List */}
       <View style={styles.logsContainer}>
-        <Text style={styles.logsLabel}>録音ログ</Text>
+        <Text style={styles.logsLabel}>文字起こし結果</Text>
         <FlatList
-          data={session.logs}
+          data={logs}
           keyExtractor={(item) => item.id}
           renderItem={renderLogItem}
           style={styles.logsList}
           contentContainerStyle={styles.logsContent}
           ListEmptyComponent={
-            <Text style={styles.emptyLogs}>ログがありません</Text>
+            <Text style={styles.emptyLogs}>音声が検出されませんでした</Text>
           }
         />
       </View>
-
-      {/* Sync Result */}
-      {syncResult && (
-        <View style={styles.syncResult}>
-          <Text style={styles.syncResultText}>
-            同期結果: 成功 {syncResult.success}件 / 失敗 {syncResult.failed}件
-          </Text>
-        </View>
-      )}
 
       {/* Actions */}
       <View style={styles.actions}>
@@ -251,7 +370,7 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, styles.discardButton]}
+            style={[styles.actionButton, styles.discardButtonStyle]}
             onPress={handleDiscard}
           >
             <Text style={styles.discardButtonText}>破棄</Text>
@@ -266,6 +385,52 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.semibold,
+    color: colors.textPrimary,
+    marginTop: spacing.lg,
+  },
+  loadingSubtext: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  errorText: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.semibold,
+    color: colors.error,
+    marginBottom: spacing.sm,
+  },
+  errorDetail: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
+  },
+  retryButton: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+  },
+  retryButtonText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.medium,
+    color: colors.textPrimary,
   },
   header: {
     paddingHorizontal: spacing.lg,
@@ -359,15 +524,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: spacing.xl,
   },
-  syncResult: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  syncResultText: {
-    fontSize: fontSize.sm,
-    color: colors.success,
-    textAlign: 'center',
-  },
   actions: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
@@ -401,7 +557,7 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.medium,
     color: colors.textSecondary,
   },
-  discardButton: {
+  discardButtonStyle: {
     flex: 1,
     backgroundColor: 'transparent',
     borderWidth: 1,

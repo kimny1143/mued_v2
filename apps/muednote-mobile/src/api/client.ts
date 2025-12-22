@@ -14,12 +14,15 @@ import {
   ApiError,
 } from './types';
 
-// 環境変数から取得（開発時はデフォルト値を使用）
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
-const DEV_AUTH_TOKEN = process.env.EXPO_PUBLIC_DEV_TOKEN || 'dev_token_kimny';
-
 // React Native の __DEV__ グローバル変数
 declare const __DEV__: boolean;
+
+// 環境変数から取得（開発時は Mac の IP アドレスを使用）
+// Note: localhost は iPhone からアクセスできないため、開発時は実際の IP を使用
+const DEV_API_URL = 'http://192.168.0.4:3000'; // Mac の IP アドレス
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ||
+  (typeof __DEV__ !== 'undefined' && __DEV__ ? DEV_API_URL : 'http://localhost:3000');
+const DEV_AUTH_TOKEN = process.env.EXPO_PUBLIC_DEV_TOKEN || 'dev_token_kimny';
 
 class ApiClient {
   private baseUrl: string;

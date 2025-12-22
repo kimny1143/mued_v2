@@ -12,6 +12,23 @@ import { eq, desc, sql, count } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 
+// 開発用トークン認証（本番では無効化）
+const DEV_TOKEN = process.env.NODE_ENV === 'development' ? 'dev_token_kimny' : null;
+const DEV_USER_ID = 'dev_user_kimny';
+
+async function getAuthUserId(req: Request): Promise<string | null> {
+  // 開発用トークン認証
+  if (DEV_TOKEN) {
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader === `Bearer ${DEV_TOKEN}`) {
+      return DEV_USER_ID;
+    }
+  }
+  // Clerk 認証
+  const session = await auth();
+  return session?.userId || null;
+}
+
 // ========================================
 // POST /api/muednote/mobile/sessions
 // Create new session
@@ -19,9 +36,9 @@ import { auth } from '@clerk/nextjs/server';
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
+    const userId = await getAuthUserId(req);
 
-    if (!session?.userId) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -40,7 +57,7 @@ export async function POST(req: Request) {
     const [newSession] = await db
       .insert(muednoteMobileSessions)
       .values({
-        userId: session.userId,
+        userId: userId,
         durationSec: duration_sec,
         startedAt: new Date(started_at),
         endedAt: ended_at ? new Date(ended_at) : null,
@@ -78,9 +95,9 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    const session = await auth();
+    const userId = await getAuthUserId(req);
 
-    if (!session?.userId) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -88,7 +105,7 @@ export async function GET(req: Request) {
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '20'), 100);
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
-    // Fetch sessions with log count
+    // Fetch sessions with log count using LEFT JOIN
     const sessions = await db
       .select({
         id: muednoteMobileSessions.id,
@@ -99,13 +116,12 @@ export async function GET(req: Request) {
         sessionMemo: muednoteMobileSessions.sessionMemo,
         status: muednoteMobileSessions.status,
         createdAt: muednoteMobileSessions.createdAt,
-        logCount: sql<number>`(
-          SELECT COUNT(*)::int FROM muednote_mobile_logs
-          WHERE session_id = ${muednoteMobileSessions.id}
-        )`,
+        logCount: sql<number>`COUNT(${muednoteMobileLogs.id})::int`,
       })
       .from(muednoteMobileSessions)
-      .where(eq(muednoteMobileSessions.userId, session.userId))
+      .leftJoin(muednoteMobileLogs, eq(muednoteMobileLogs.sessionId, muednoteMobileSessions.id))
+      .where(eq(muednoteMobileSessions.userId, userId))
+      .groupBy(muednoteMobileSessions.id)
       .orderBy(desc(muednoteMobileSessions.createdAt))
       .limit(limit)
       .offset(offset);
@@ -114,7 +130,7 @@ export async function GET(req: Request) {
     const [{ total }] = await db
       .select({ total: count() })
       .from(muednoteMobileSessions)
-      .where(eq(muednoteMobileSessions.userId, session.userId));
+      .where(eq(muednoteMobileSessions.userId, userId));
 
     return NextResponse.json({
       sessions: sessions.map(s => ({

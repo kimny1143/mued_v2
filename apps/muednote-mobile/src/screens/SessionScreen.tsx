@@ -1,9 +1,9 @@
 /**
  * SessionScreen - 録音中の最小UI
- * Modacityスタイル：タイマーと録音インジケーターのみ
+ * バッチ処理方式：タイマー + 録音インジケーターのみ
  */
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSessionStore } from '../stores/sessionStore';
-import { whisperService, TranscriptionResult, VadStatusType } from '../services/whisperService';
+import { whisperService } from '../services/whisperService';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -28,16 +28,12 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
   const {
     currentSession,
     elapsedSeconds,
-    vadStatus,
     tick,
-    setVadStatus,
-    addLog,
     endSession,
   } = useSessionStore();
 
   // 録音インジケーターのアニメーション
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const [recentText, setRecentText] = useState<string>('');
 
   // タイマー
   useEffect(() => {
@@ -50,63 +46,43 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
 
   // 録音インジケーターのパルスアニメーション
   useEffect(() => {
-    if (vadStatus === 'speech_start' || vadStatus === 'speech_continue') {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.3,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    } else {
-      pulseAnim.stopAnimation();
-      pulseAnim.setValue(1);
-    }
-  }, [vadStatus, pulseAnim]);
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.3,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
 
-  // Whisper コールバック設定
+    return () => animation.stop();
+  }, [pulseAnim]);
+
+  // 録音開始
   useEffect(() => {
-    whisperService.setCallbacks({
-      onVadChange: (status: VadStatusType) => {
-        setVadStatus(status);
-      },
-      onTranscribe: async (result: TranscriptionResult) => {
-        // 直近のテキストを表示
-        setRecentText(result.text);
+    const startRecording = async () => {
+      try {
+        await whisperService.startRecording();
+        console.log('[Session] Recording started');
+      } catch (error) {
+        console.error('[Session] Failed to start recording:', error);
+      }
+    };
 
-        // ログ追加
-        try {
-          await addLog({
-            timestamp_sec: result.startTime,
-            text: result.text,
-            confidence: result.confidence,
-          });
-        } catch (error) {
-          console.error('[Session] Failed to add log:', error);
-        }
-
-        // 3秒後にテキストをフェードアウト
-        setTimeout(() => setRecentText(''), 3000);
-      },
-      onError: (error: string) => {
-        console.error('[Session] Whisper error:', error);
-      },
-    });
-
-    // リアルタイム文字起こし開始
-    whisperService.startRealtimeTranscription().catch(console.error);
+    startRecording();
 
     return () => {
-      whisperService.stopRealtimeTranscription();
+      // クリーンアップ時に録音停止
+      whisperService.stopRecording();
     };
-  }, [setVadStatus, addLog]);
+  }, []);
 
   // 残り時間計算
   const remainingSeconds = currentSession
@@ -122,22 +98,11 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
 
   // セッション終了
   const handleEnd = async () => {
-    await whisperService.stopRealtimeTranscription();
+    // 録音停止
+    await whisperService.stopRecording();
+    // セッション終了
     await endSession();
     onEndSession();
-  };
-
-  // VADステータスに応じた色
-  const getIndicatorColor = () => {
-    switch (vadStatus) {
-      case 'speech_start':
-      case 'speech_continue':
-        return colors.recording;
-      case 'speech_end':
-        return colors.warning;
-      default:
-        return colors.textMuted;
-    }
   };
 
   return (
@@ -168,30 +133,19 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
           style={[
             styles.recordingDot,
             {
-              backgroundColor: getIndicatorColor(),
               transform: [{ scale: pulseAnim }],
             },
           ]}
         />
-        <Text style={styles.indicatorText}>
-          {vadStatus === 'silence' ? '待機中...' : '録音中'}
-        </Text>
+        <Text style={styles.indicatorText}>録音中</Text>
       </View>
 
-      {/* 直近の文字起こし */}
-      {recentText ? (
-        <View style={styles.transcriptContainer}>
-          <Text style={styles.transcriptText} numberOfLines={2}>
-            {recentText}
-          </Text>
-        </View>
-      ) : (
-        <View style={styles.transcriptContainer}>
-          <Text style={styles.transcriptPlaceholder}>
-            話し始めると文字が表示されます
-          </Text>
-        </View>
-      )}
+      {/* メッセージ */}
+      <View style={styles.messageContainer}>
+        <Text style={styles.messageText}>
+          セッション終了後に文字起こしされます
+        </Text>
+      </View>
 
       {/* 終了ボタン */}
       <View style={styles.bottomSection}>
@@ -268,24 +222,18 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
+    backgroundColor: colors.recording,
   },
   indicatorText: {
     fontSize: fontSize.base,
     color: colors.textSecondary,
   },
-  transcriptContainer: {
+  messageContainer: {
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    minHeight: 80,
-    justifyContent: 'center',
+    alignItems: 'center',
   },
-  transcriptText: {
-    fontSize: fontSize.base,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  transcriptPlaceholder: {
+  messageText: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
     textAlign: 'center',

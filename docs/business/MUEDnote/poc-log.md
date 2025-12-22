@@ -391,7 +391,7 @@ DTMer/音楽制作者の独り言を9パターン作成：
 
 ## 現在の状態（セッション引き継ぎ用）
 
-**最終更新**: 2025-12-13 JST
+**最終更新**: 2025-12-16 JST
 
 ### データベース構成（確定）
 | レイヤー | 技術 | 用途 |
@@ -445,15 +445,21 @@ DTMer/音楽制作者の独り言を9パターン作成：
 | タイマー UI | MVP で実装 | Figma デザイン済み、PoC 不要 |
 | 課金設計 | MVP で実装 | HLA 有料化の方針は確定 |
 
-### 次のフェーズ: MVP 実装
+### MVP 実装進捗
 
-> **注意**: PoC フェーズは完了。以下は MVP 実装フェーズで対応。
+> **注意**: PoC フェーズは完了。現在 MVP 実装フェーズ。
 
-1. **タイマー UI 実装** - Figma デザインを元に 60/90/120 分タイマー
-2. **ローカル DB（SQLite）統合** - オフライン対応
-3. **レビュー画面** - セッション終了後のログ確認 UI
-4. **Zustand 状態管理** - アプリ全体の状態管理
-5. **課金設計・実装** - HLA 処理を有料機能として設計
+| タスク | 状態 | 備考 |
+|--------|------|------|
+| タイマー UI 実装 | ✅ 完了 | HomeScreen, SessionScreen |
+| ローカルキャッシュ（AsyncStorage） | ✅ 完了 | SQLiteではなくAsyncStorage採用 |
+| レビュー画面 | ✅ 完了 | ReviewScreen + 同期機能 |
+| Zustand 状態管理 | ✅ 完了 | sessionStore |
+| オンボーディングUI | ✅ 完了 | 三層構造（Layer 0-1） |
+| サーバーAPI（mobile用） | ✅ 完了 | /api/muednote/mobile/* |
+| DBマイグレーション | ✅ 完了 | muednote_mobile_sessions/logs |
+| iOS実機テスト | 🔲 未着手 | prebuild + Xcode ビルド |
+| 課金設計・実装 | 🔲 未着手 | Phase 2 |
 
 ### 音声入力オプション（v7）
 
@@ -531,6 +537,87 @@ PoC 完了後、MUED 理念本文（docs/concept/）との整合性を検証し�
 3. ✅ hum 検出を Phase 2 PoC として明記
 
 **MVP 実装フェーズへの移行を承認。**
+
+---
+
+## 2025-12-16 MVP実装: バックエンド統合 + オンボーディング
+
+### 目的
+- v7 MVP のサーバー側統合
+- モバイルアプリの同期機能実装
+- MUED理念に基づくオンボーディングUI実装
+
+### 実装内容
+
+#### 1. DBマイグレーション
+新規テーブル作成（既存 `muednote_v3` スキーマとは別にシンプル版）：
+
+| テーブル | 用途 |
+|---------|------|
+| `muednote_mobile_sessions` | モバイルセッション管理 |
+| `muednote_mobile_logs` | 思考ログ（タイムスタンプ付き） |
+
+```sql
+-- 新規ENUM
+CREATE TYPE muednote_mobile_session_status AS ENUM ('active', 'completed', 'synced');
+
+-- シンプルなスキーマ（v7 MVP用）
+CREATE TABLE muednote_mobile_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id TEXT NOT NULL,
+  duration_sec INTEGER NOT NULL,
+  started_at TIMESTAMPTZ NOT NULL,
+  ended_at TIMESTAMPTZ,
+  session_memo TEXT,
+  status muednote_mobile_session_status DEFAULT 'completed',
+  ...
+);
+```
+
+#### 2. サーバーAPI拡張
+新規エンドポイント（`/api/muednote/mobile/`）：
+
+| メソッド | パス | 機能 |
+|---------|------|------|
+| POST | `/sessions` | セッション作成 |
+| GET | `/sessions` | セッション一覧（ログ数付き） |
+| POST | `/logs` | ログ一括保存 |
+| GET | `/sessions/:id/logs` | セッション詳細+ログ取得 |
+
+#### 3. モバイル同期処理
+- `apiClient` 更新（新API対応）
+- `syncService` 新規作成（バッチ同期サポート）
+- `ReviewScreen` 同期機能統合
+
+#### 4. オンボーディングUI（三層構造）
+
+MUED理念に基づく三層オンボーディング実装：
+
+| レイヤー | 内容 | 実装 |
+|---------|------|------|
+| **Layer 0** | タグライン | 「出力はAI / 判断と欲は、人間。」 |
+| **Layer 1** | 要約カード | 3枚スライダー（AIは鏡/創作=選択/反応を記録） |
+| **Layer 2** | 完全版 | 設定画面からリンク（後日実装） |
+
+#### 5. whisperService修正
+- `AudioPcmStreamAdapter` API使用法修正
+- 型定義ファイル追加（`src/types/whisper.rn.d.ts`）
+
+### 結果
+
+| 項目 | 状態 |
+|------|------|
+| DBマイグレーション | ✅ 完了 |
+| サーバーAPI | ✅ 完了 |
+| 同期処理 | ✅ 完了 |
+| オンボーディングUI | ✅ 完了 |
+| 型チェック | ✅ パス |
+| CI設定（ESLint除外） | ✅ 完了 |
+
+### 次のステップ
+1. **iOS実機テスト** - prebuild + Xcode ビルド + 動作確認
+2. **統合テスト** - API エンドポイントのテスト作成
+3. **TestFlight配布準備** - App Store Connect 設定
 
 ---
 

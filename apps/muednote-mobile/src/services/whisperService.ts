@@ -1,54 +1,70 @@
 /**
  * MUEDnote Whisper Service
- * whisper.rn を使用した音声認識サービス
+ * バッチ処理方式：録音 → 文字起こし（リアルタイム処理なし）
  */
 
 import { Audio } from 'expo-av';
-import { initWhisper, initWhisperVad, AudioSessionIos } from 'whisper.rn';
-import { RealtimeTranscriber } from 'whisper.rn/realtime-transcription';
-import { AudioPcmStreamAdapter } from 'whisper.rn/realtime-transcription/adapters/AudioPcmStreamAdapter';
+import { initWhisper } from 'whisper.rn';
 import RNFS from 'react-native-fs';
+import * as Sharing from 'expo-sharing';
+import { resample } from '../../modules/audio-resampler';
+import { encodeToM4A } from '../../modules/audio-encoder';
 
-// モデルファイル名（Xcodeの "Copy Bundle Resources" に追加必須）
+// モデルファイル名（Xcodeの「Copy Bundle Resources」に追加必須）
 const WHISPER_MODEL = 'ggml-small.bin';
-const VAD_MODEL = 'ggml-silero-vad.bin';
 
-// VADステータスの型
-export type VadStatusType = 'silence' | 'speech_start' | 'speech_continue' | 'speech_end';
+// 録音設定
+const RECORDING_SAMPLE_RATE = 48000; // 音楽制作品質（Apple Voice Memos と同じ）
+const WHISPER_SAMPLE_RATE = 16000;   // Whisper が必要とするサンプルレート
 
-// 文字起こし結果のコールバック型
+// Whisper ハルシネーション除去パターン（無音時に出やすい定型句）
+// これらは削除される
+const HALLUCINATION_REMOVE_PATTERNS = [
+  /[\(（][音楽字幕パンッシャッ拍手笑い声]+[\)）]/g, // (音楽)、(字幕)、(パンッ) など
+  /\(音声データ\)/g,
+  /ご視聴ありがとうございました。?/g,
+  /字幕を押して.*/g,
+  /チャンネル登録.*/g,
+];
+
+// これらのみの場合は完全にハルシネーション（発話なし）
+const HALLUCINATION_FULL_PATTERNS = [
+  /^[\s\.。、,，]*$/, // 空白や句読点のみ
+  /^お疲れ様でした。?$/,
+  /^ありがとうございました。?$/,
+];
+
+// 文字起こし結果の型
 export interface TranscriptionResult {
   text: string;
-  startTime: number;
-  confidence?: number;
-  sliceIndex: number;
+  segments?: Array<{
+    text: string;
+    t0: number; // 開始時間 (ms)
+    t1: number; // 終了時間 (ms)
+  }>;
 }
 
 export interface WhisperCallbacks {
-  onStatusChange?: (isActive: boolean) => void;
-  onVadChange?: (status: VadStatusType, confidence?: number) => void;
-  onTranscribe?: (result: TranscriptionResult) => void;
+  onRecordingStatusChange?: (isRecording: boolean) => void;
   onError?: (error: string) => void;
 }
 
 class WhisperService {
   private whisperContext: any = null;
-  private vadContext: any = null;
-  private realtimeTranscriber: RealtimeTranscriber | null = null;
   private recording: Audio.Recording | null = null;
+  private audioFilePath: string | null = null;
   private isInitialized = false;
-  private processedSlices = new Set<number>();
   private callbacks: WhisperCallbacks = {};
 
   /**
    * Whisperモデルの初期化
    */
-  async initialize(): Promise<{ success: boolean; hasVad: boolean; error?: string }> {
+  async initialize(): Promise<{ success: boolean; error?: string }> {
     try {
       // マイク権限リクエスト
       const { status } = await Audio.requestPermissionsAsync();
       if (status !== 'granted') {
-        return { success: false, hasVad: false, error: 'マイクの許可が必要です' };
+        return { success: false, error: 'マイクの許可が必要です' };
       }
 
       // オーディオモード設定
@@ -66,24 +82,11 @@ class WhisperService {
       });
       console.log('[Whisper] Model loaded');
 
-      // VAD初期化（オプション）
-      let hasVad = false;
-      try {
-        this.vadContext = await initWhisperVad({
-          filePath: VAD_MODEL,
-          isBundleAsset: true,
-        });
-        hasVad = true;
-        console.log('[Whisper] VAD loaded');
-      } catch (vadError: any) {
-        console.log('[Whisper] VAD not available:', vadError.message);
-      }
-
       this.isInitialized = true;
-      return { success: true, hasVad };
+      return { success: true };
     } catch (error: any) {
       console.error('[Whisper] Initialize error:', error);
-      return { success: false, hasVad: false, error: error.message };
+      return { success: false, error: error.message };
     }
   }
 
@@ -102,186 +105,307 @@ class WhisperService {
   }
 
   /**
-   * リアルタイム文字起こし開始
+   * 録音開始
    */
-  async startRealtimeTranscription(useVad = true): Promise<void> {
-    if (!this.whisperContext) {
-      throw new Error('Whisper not initialized');
-    }
+  async startRecording(): Promise<void> {
+    try {
+      // タイムスタンプ付きファイル名
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `muednote_${timestamp}.wav`;
+      this.audioFilePath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
 
-    // 重複防止リセット
-    this.processedSlices.clear();
+      this.recording = new Audio.Recording();
 
-    // オーディオストリームアダプター作成
-    // 注意: 初期化は RealtimeTranscriber.start() 内で行われる
-    const audioStream = new AudioPcmStreamAdapter();
+      // WAV形式で録音（48kHz - 音楽制作品質、Apple Voice Memos と同じ）
+      // Whisper 処理前に 16kHz にリサンプリングする
+      await this.recording.prepareToRecordAsync({
+        android: {
+          extension: '.wav',
+          outputFormat: Audio.AndroidOutputFormat.DEFAULT,
+          audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
+          sampleRate: RECORDING_SAMPLE_RATE,
+          numberOfChannels: 1,
+          bitRate: 768000, // 48kHz に合わせて増加
+        },
+        ios: {
+          extension: '.wav',
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: RECORDING_SAMPLE_RATE,
+          numberOfChannels: 1,
+          bitRate: 768000, // 48kHz に合わせて増加
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {},
+      });
 
-    // RealtimeTranscriber作成
-    this.realtimeTranscriber = new RealtimeTranscriber(
-      {
-        whisperContext: this.whisperContext,
-        vadContext: useVad ? this.vadContext : undefined,
-        audioStream,
-        fs: RNFS,
-      },
-      {
-        // audioStream の初期化設定
-        audioStreamConfig: {
-          sampleRate: 16000,
-          channels: 1,
-          bitsPerSample: 16,
-          audioSource: 6, // VOICE_RECOGNITION
-          bufferSize: 16 * 1024,
-        },
-        audioSliceSec: 15, // 15秒ごとに処理
-        audioMinSec: 2, // 最低2秒
-        autoSliceOnSpeechEnd: true,
-        vadPreset: 'continuous',
-        vadOptions: {
-          threshold: 0.3,
-          minSpeechDurationMs: 150,
-          minSilenceDurationMs: 800,
-          maxSpeechDurationS: 30,
-          speechPadMs: 200,
-        },
-        vadThrottleMs: 2000,
-        transcribeOptions: {
-          language: 'ja',
-        },
-        logger: (msg: string) => {
-          if (msg.includes('Transcribed') || msg.includes('error')) {
-            console.log(`[Transcriber] ${msg}`);
-          }
-        },
-      },
-      {
-        onStatusChange: (isActive: boolean) => {
-          this.callbacks.onStatusChange?.(isActive);
-        },
-        onVad: (event: any) => {
-          if (event.type === 'speech_start') {
-            this.callbacks.onVadChange?.('speech_start');
-          } else if (event.type === 'speech_end') {
-            this.callbacks.onVadChange?.('speech_end', event.confidence);
-          } else if (event.type === 'speech_continue') {
-            this.callbacks.onVadChange?.('speech_continue');
-          } else {
-            this.callbacks.onVadChange?.('silence');
-          }
-        },
-        onTranscribe: (event: any) => {
-          if (event.type === 'transcribe' && event.data?.result) {
-            // 重複チェック
-            if (this.processedSlices.has(event.sliceIndex)) {
-              return;
-            }
-            this.processedSlices.add(event.sliceIndex);
-
-            const trimmedText = event.data.result.trim();
-            if (trimmedText && trimmedText !== '.') {
-              this.callbacks.onTranscribe?.({
-                text: trimmedText,
-                startTime: event.startTime || 0,
-                confidence: event.confidence,
-                sliceIndex: event.sliceIndex,
-              });
-            }
-          }
-        },
-        onError: (error: string) => {
-          this.callbacks.onError?.(error);
-        },
-      }
-    );
-
-    await this.realtimeTranscriber.start();
-    console.log('[Whisper] Realtime transcription started');
-  }
-
-  /**
-   * リアルタイム文字起こし停止
-   */
-  async stopRealtimeTranscription(): Promise<void> {
-    if (this.realtimeTranscriber) {
-      await this.realtimeTranscriber.stop();
-      this.realtimeTranscriber = null;
-      console.log('[Whisper] Realtime transcription stopped');
+      await this.recording.startAsync();
+      this.callbacks.onRecordingStatusChange?.(true);
+      console.log('[Whisper] Recording started:', this.audioFilePath);
+    } catch (error: any) {
+      console.error('[Whisper] Failed to start recording:', error);
+      this.callbacks.onError?.(error.message);
+      throw error;
     }
   }
 
   /**
-   * バッチ処理用録音開始
+   * 録音停止
    */
-  async startBatchRecording(): Promise<void> {
-    this.recording = new Audio.Recording();
-    await this.recording.prepareToRecordAsync({
-      android: {
-        extension: '.wav',
-        outputFormat: Audio.AndroidOutputFormat.DEFAULT,
-        audioEncoder: Audio.AndroidAudioEncoder.DEFAULT,
-        sampleRate: 16000,
-        numberOfChannels: 1,
-        bitRate: 128000,
-      },
-      ios: {
-        extension: '.wav',
-        audioQuality: Audio.IOSAudioQuality.HIGH,
-        sampleRate: 16000,
-        numberOfChannels: 1,
-        bitRate: 128000,
-        linearPCMBitDepth: 16,
-        linearPCMIsBigEndian: false,
-        linearPCMIsFloat: false,
-      },
-      web: {},
-    });
-
-    await this.recording.startAsync();
-    console.log('[Whisper] Batch recording started');
-  }
-
-  /**
-   * バッチ処理用録音停止 & 文字起こし
-   */
-  async stopBatchRecordingAndTranscribe(): Promise<TranscriptionResult | null> {
-    if (!this.recording) return null;
-
-    await this.recording.stopAndUnloadAsync();
-    const uri = this.recording.getURI();
-    this.recording = null;
-
-    if (!uri || !this.whisperContext) return null;
-
-    console.log('[Whisper] Batch recording stopped, transcribing...');
-    const startTime = Date.now();
+  async stopRecording(): Promise<string | null> {
+    if (!this.recording) {
+      return null;
+    }
 
     try {
-      const { promise } = this.whisperContext.transcribe(uri, {
+      await this.recording.stopAndUnloadAsync();
+      const uri = this.recording.getURI();
+      this.recording = null;
+      this.callbacks.onRecordingStatusChange?.(false);
+
+      // URIが取得できた場合はそれを使用、なければ生成したパスを使用
+      const finalPath = uri || this.audioFilePath;
+      console.log('[Whisper] Recording stopped:', finalPath);
+
+      // ファイルパスを更新
+      if (uri) {
+        this.audioFilePath = uri;
+      }
+
+      return this.audioFilePath;
+    } catch (error: any) {
+      console.error('[Whisper] Failed to stop recording:', error);
+      this.recording = null;
+      this.callbacks.onError?.(error.message);
+      return null;
+    }
+  }
+
+  /**
+   * 録音中かどうか
+   */
+  get isRecording(): boolean {
+    return this.recording !== null;
+  }
+
+  /**
+   * 録音ファイルパスを取得
+   */
+  getAudioFilePath(): string | null {
+    return this.audioFilePath;
+  }
+
+  /**
+   * 音声ファイルを文字起こし（バッチ処理）
+   * 48kHz → 16kHz リサンプリング → Whisper 処理
+   */
+  async transcribe(filePath?: string): Promise<TranscriptionResult | null> {
+    const targetPath = filePath || this.audioFilePath;
+
+    if (!targetPath) {
+      console.error('[Whisper] No audio file to transcribe');
+      return null;
+    }
+
+    if (!this.whisperContext) {
+      console.error('[Whisper] Whisper not initialized');
+      return null;
+    }
+
+    try {
+      console.log('[Whisper] Starting transcription:', targetPath);
+      const startTime = Date.now();
+
+      // リサンプリング (48kHz → 16kHz)
+      const resampledPath = targetPath.replace('.wav', '_16k.wav');
+      console.log('[Whisper] Resampling to 16kHz...');
+
+      const resampleResult = await resample({
+        inputPath: targetPath,
+        outputPath: resampledPath,
+        targetSampleRate: WHISPER_SAMPLE_RATE,
+        chunkSizeMB: 10,
+      });
+
+      if (!resampleResult.success) {
+        console.error('[Whisper] Resampling failed:', resampleResult.error);
+        // リサンプリング失敗時は元のファイルで試行（16kHzの可能性あり）
+        console.log('[Whisper] Falling back to original file');
+      } else {
+        console.log(
+          `[Whisper] Resampled: ${resampleResult.inputSampleRate}Hz → ${resampleResult.outputSampleRate}Hz in ${resampleResult.durationMs}ms`
+        );
+      }
+
+      const whisperInputPath = resampleResult.success ? resampledPath : targetPath;
+
+      const { promise } = this.whisperContext.transcribe(whisperInputPath, {
         language: 'ja',
       });
       const result = await promise;
-      const processingTime = Date.now() - startTime;
+
+      // リサンプル済みファイルを削除（元の48kHzファイルは保持）
+      if (resampleResult.success) {
+        try {
+          await RNFS.unlink(resampledPath);
+          console.log('[Whisper] Deleted resampled file');
+        } catch {
+          // 削除失敗は無視
+        }
+      }
+
+      const elapsed = Date.now() - startTime;
+      console.log(`[Whisper] Transcription completed in ${elapsed}ms`);
 
       if (result?.result) {
+        const rawText = result.result.trim();
+
+        // ハルシネーション除去 & クリーニング
+        const cleanedText = this.cleanTranscription(rawText);
+
+        // セグメントもクリーニング
+        const cleanedSegments = (result.segments || [])
+          .map((seg: { text: string; t0: number; t1: number }) => ({
+            ...seg,
+            text: this.cleanTranscription(seg.text),
+          }))
+          .filter((seg: { text: string }) => seg.text.length > 0);
+
         return {
-          text: result.result.trim(),
-          startTime: 0,
-          sliceIndex: 0,
+          text: cleanedText,
+          segments: cleanedSegments,
         };
       }
+
+      return null;
     } catch (error: any) {
-      console.error('[Whisper] Batch transcribe error:', error);
+      console.error('[Whisper] Transcription error:', error);
       this.callbacks.onError?.(error.message);
+      return null;
+    }
+  }
+
+  /**
+   * ハルシネーション除去 & クリーニング
+   * 実際の発話は残し、ノイズのみ除去
+   */
+  private cleanTranscription(text: string): string {
+    let cleaned = text;
+
+    // ハルシネーションパターンを除去
+    for (const pattern of HALLUCINATION_REMOVE_PATTERNS) {
+      cleaned = cleaned.replace(pattern, '');
     }
 
-    return null;
+    // 連続する空白を1つに
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+
+    // 完全ハルシネーション判定（クリーニング後に何も残らない場合）
+    if (HALLUCINATION_FULL_PATTERNS.some(pattern => pattern.test(cleaned))) {
+      console.log(`[Whisper] Filtered as hallucination: "${text}" -> "${cleaned}"`);
+      return '';
+    }
+
+    if (cleaned !== text) {
+      console.log(`[Whisper] Cleaned: "${text}" -> "${cleaned}"`);
+    }
+
+    return cleaned;
+  }
+
+  /**
+   * 音声ファイルをM4Aに変換してボイスメモに共有
+   * WAV (48kHz, ~10MB/分) → M4A (~1MB/分) で容量削減
+   */
+  async shareAudioFile(): Promise<boolean> {
+    if (!this.audioFilePath) {
+      console.log('[Whisper] No audio file to share');
+      return false;
+    }
+
+    try {
+      const fileExists = await RNFS.exists(this.audioFilePath);
+      if (!fileExists) {
+        console.log('[Whisper] Audio file not found:', this.audioFilePath);
+        return false;
+      }
+
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        console.log('[Whisper] Sharing not available');
+        return false;
+      }
+
+      // WAV → M4A 変換
+      const m4aPath = this.audioFilePath.replace('.wav', '.m4a');
+      console.log('[Whisper] Encoding to M4A...');
+
+      const encodeResult = await encodeToM4A({
+        inputPath: this.audioFilePath,
+        outputPath: m4aPath,
+        bitRate: 128000, // 128kbps（高品質）
+      });
+
+      let shareFilePath = this.audioFilePath;
+      let shareMimeType = 'audio/wav';
+
+      if (encodeResult.success) {
+        console.log(
+          `[Whisper] Encoded: ${(encodeResult.inputSizeBytes / 1024 / 1024).toFixed(1)}MB → ${(encodeResult.outputSizeBytes / 1024 / 1024).toFixed(1)}MB (${encodeResult.compressionRatio.toFixed(1)}x compression) in ${encodeResult.durationMs}ms`
+        );
+        shareFilePath = m4aPath;
+        shareMimeType = 'audio/m4a';
+      } else {
+        console.warn('[Whisper] M4A encoding failed:', encodeResult.error);
+        console.log('[Whisper] Falling back to WAV');
+      }
+
+      await Sharing.shareAsync(shareFilePath, {
+        mimeType: shareMimeType,
+        dialogTitle: 'MUEDnote 録音を保存',
+      });
+      console.log('[Whisper] Audio shared successfully');
+
+      // M4Aファイルを削除（共有後）
+      if (encodeResult.success) {
+        try {
+          await RNFS.unlink(m4aPath);
+          console.log('[Whisper] M4A temp file deleted');
+        } catch {
+          // 削除失敗は無視
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[Whisper] Failed to share audio:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 音声ファイルを削除
+   */
+  async deleteAudioFile(): Promise<void> {
+    if (this.audioFilePath) {
+      try {
+        const exists = await RNFS.exists(this.audioFilePath);
+        if (exists) {
+          await RNFS.unlink(this.audioFilePath);
+          console.log('[Whisper] Audio file deleted:', this.audioFilePath);
+        }
+      } catch (error) {
+        console.error('[Whisper] Failed to delete audio file:', error);
+      }
+      this.audioFilePath = null;
+    }
   }
 
   /**
    * クリーンアップ
    */
   async cleanup(): Promise<void> {
-    await this.stopRealtimeTranscription();
     if (this.recording) {
       try {
         await this.recording.stopAndUnloadAsync();
@@ -289,6 +413,7 @@ class WhisperService {
       this.recording = null;
     }
     this.callbacks = {};
+    console.log('[Whisper] Cleanup completed');
   }
 }
 
