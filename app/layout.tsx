@@ -19,9 +19,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MUED - Making creativity visible.",
+  title: "MUEDnote - Making music visible.",
   description:
-    "AI時代のクリエイター支援プラットフォーム。出力はAI、判断と欲は人間。創作における選択の痕跡を記録・可視化。",
+    "音楽制作中の判断を資産にする。「なぜそうしたか」を声で記録、自動で文字起こし。プロの選び方が見返せる記録帳。2025年1月7日リリース。",
 };
 
 export default function RootLayout({

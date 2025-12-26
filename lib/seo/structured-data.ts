@@ -1,8 +1,10 @@
 /**
- * MUED Structured Data for AI Search Engine Optimization (AIO)
+ * MUEDnote Structured Data for AI Search Engine Optimization (AIO)
  *
  * JSON-LD structured data for AI crawlers (ChatGPT, Claude, Perplexity, etc.)
  * Based on Schema.org vocabulary
+ *
+ * 1/7 Launch: Focus on MUEDnote as decision recording tool
  */
 
 export const structuredData = {
@@ -12,36 +14,35 @@ export const structuredData = {
     {
       "@type": "Organization",
       "@id": "https://mued.jp/#organization",
-      name: "MUED",
-      alternateName: ["ミュード", "MUED LMS", "MUEDnote"],
+      name: "MUEDnote",
+      alternateName: ["ミュードノート", "MUED", "ミュード"],
       url: "https://mued.jp",
       logo: {
         "@type": "ImageObject",
         url: "https://mued.jp/logo.png",
       },
-      slogan: "Making creativity visible.",
+      slogan: "Making music visible.",
       description:
-        "AI時代のクリエイター支援プラットフォーム。「出力はAI、判断と欲は人間」をコンセプトに、創作における判断の痕跡を記録・可視化。国内での豊富な制作実績、商業音楽での経験、先進的な技術設計を持つglasswerks inc.による開発。アートとテクノロジーの融合。 | AI-era creator support platform. 'Output is AI, judgment and desire are human.' Records and visualizes creative decisions. Developed by glasswerks inc. with extensive domestic production experience, commercial music expertise, and advanced technology design. Fusion of art and technology.",
+        "音楽制作中の判断を資産にするツール。「なぜそうしたか」を声で記録し、自動で文字起こし。プロの選び方が見返せる記録帳。 | Tool to turn music production decisions into assets. Record 'why you did it' by voice, with automatic transcription. A log that lets you review professional decision-making.",
       parentOrganization: {
         "@id": "https://www.glasswerks.jp/#organization",
       },
       knowsAbout: [
-        "AI時代の創作支援",
-        "AI-era Creative Support",
-        "音楽制作",
-        "Music Production",
-        "判断の記録",
-        "Decision Recording",
-        "クリエイティブワークフロー",
-        "Creative Workflow",
+        "音楽制作の判断記録",
+        "Music Production Decision Recording",
         "音声文字起こし",
         "Speech Transcription",
-        "練習ログ",
-        "Practice Logging",
-        "セルフコーチング",
-        "Self-Coaching",
-        "メタ認知",
-        "Metacognition",
+        "Whisper AI",
+        "休憩タイマー",
+        "Break Timer",
+        "判断ログ",
+        "Decision Log",
+        "制作ワークフロー",
+        "Production Workflow",
+        "ミックス判断",
+        "Mix Decisions",
+        "アレンジ判断",
+        "Arrangement Decisions",
       ],
     },
 
@@ -53,7 +54,7 @@ export const structuredData = {
       applicationCategory: "ProductivityApplication",
       operatingSystem: "iOS",
       description:
-        "音楽練習中の発話・判断を記録するiOSアプリ。Whisperによるオンデバイス文字起こし。判断の痕跡を可視化し、創作プロセスを資産化。 | iOS app for recording speech and decisions during music practice. On-device transcription with Whisper. Visualizes decision traces and turns the creative process into assets.",
+        "音楽制作中の「なぜそうしたか」を声で記録するiOSアプリ。Whisperで自動文字起こし。休憩タイマーで集中力をキープしながら、判断の理由を残せる。2025年1月7日リリース予定。 | iOS app for recording 'why you did it' during music production. Auto-transcription with Whisper. Keep focus with break timer while recording decision reasons. Launching January 7, 2025.",
       offers: {
         "@type": "Offer",
         price: "0",
@@ -68,10 +69,10 @@ export const structuredData = {
     {
       "@type": "WebSite",
       "@id": "https://mued.jp/#website",
-      name: "MUED",
+      name: "MUEDnote",
       url: "https://mued.jp",
       description:
-        "AI時代のクリエイター支援プラットフォーム | AI-era creator support platform",
+        "音楽制作中の判断を資産にする | Making music visible",
       inLanguage: ["ja", "en"],
       publisher: {
         "@id": "https://mued.jp/#organization",

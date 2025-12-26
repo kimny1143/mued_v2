@@ -4,24 +4,25 @@ import {
   HeroSection,
   PhilosophySection,
   MuednoteSection,
+  RoadmapSection,
   SocialProofSection,
   CtaSection,
   ParallaxBackground,
 } from "@/components/features/landing";
 
 /**
- * Landing Content - MUED Landing Page
+ * Landing Content - MUEDnote Landing Page
  *
  * Design philosophy:
  * - Dark mode first
  * - Glassmorphism
- * - AI-era creator support platform
+ * - MUEDnote: 判断を資産にするツール
  *
- * Psychological effects:
- * - Framing: Creativity as "choosing"
- * - Cognitive dissonance resolution: AI anxiety → human role clarity
- * - Social proof: glasswerks credentials
- * - Loss aversion: CTA emphasis
+ * LP Structure (1/7 launch):
+ * - Pain: 判断が消える問題提起
+ * - Solution: MUEDnoteの機能紹介
+ * - Roadmap: 将来展望
+ * - CTA: 行動喚起
  */
 export function LandingContent() {
   return (
@@ -30,6 +31,7 @@ export function LandingContent() {
       <HeroSection />
       <PhilosophySection />
       <MuednoteSection />
+      <RoadmapSection />
       <SocialProofSection />
       <CtaSection />
 

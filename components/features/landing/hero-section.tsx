@@ -23,16 +23,16 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
 
       <div className="container mx-auto px-6 relative z-10">
         {/* Logo & tagline */}
-        <h1 className="text-6xl md:text-7xl font-bold text-white mb-4">MUED</h1>
+        <h1 className="text-6xl md:text-7xl font-bold text-white mb-4">MUEDnote</h1>
         <p className="text-2xl md:text-3xl text-slate-400 mb-8 font-light">
-          Making creativity visible.
+          Making music visible.
         </p>
 
-        {/* Main message */}
+        {/* Pain point + Solution */}
         <p className="text-xl md:text-2xl text-white/80 max-w-2xl mb-12 leading-relaxed">
-          AI時代、創作は「選び続けること」になりました。
+          「なんでこうしたんだっけ」が消える前に。
           <br />
-          MUEDは、その選択を映し出す鏡です。
+          <span className="text-white">作ってる最中の"判断"を、資産にする。</span>
         </p>
 
         {/* CTA */}

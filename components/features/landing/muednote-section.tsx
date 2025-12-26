@@ -12,20 +12,20 @@ import { GlassCard } from "@/components/ui/glass-card";
 export function MuednoteSection() {
   const features = [
     {
+      icon: Clock,
+      text: "休憩タイマーで集中力をキープ",
+    },
+    {
       icon: Mic,
-      text: "なぜこの案に反応したのか",
+      text: "声で判断理由を即座に記録",
     },
     {
       icon: FileText,
-      text: "なぜこのテイクを捨てたのか",
+      text: "Whisperで自動文字起こし",
     },
     {
       icon: TrendingUp,
-      text: "どこで引っかかったのか",
-    },
-    {
-      icon: Clock,
-      text: "そのとき何を考えていたのか",
+      text: "判断ログとしてDBに蓄積",
     },
   ];
 
@@ -44,11 +44,11 @@ export function MuednoteSection() {
             </h2>
 
             <div className="text-lg text-slate-400 leading-relaxed mb-8 space-y-4">
-              <p>完成物を評価するツールではありません。</p>
+              <p>ミックス中、アレンジ中の「なぜ」を逃さない。</p>
               <p className="text-white/90">
-                未完成、迷い、違和感、判断の途中経過。
+                声で残して、自動で文字になる。
                 <br />
-                それらを価値として残すための場所です。
+                未来の自分が見返せる、判断の記録帳。
               </p>
             </div>
 
@@ -70,13 +70,13 @@ export function MuednoteSection() {
                 href="#"
                 className="inline-flex items-center justify-center gap-2 bg-white text-[#0F0F1A] px-6 py-3 rounded-lg font-medium hover:bg-slate-100 transition-colors cursor-pointer"
               >
-                App Store
+                1/7 リリース予定
               </a>
               <a
                 href="#"
                 className="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer"
               >
-                TestFlight 待機リスト
+                iOS App
               </a>
             </div>
           </div>
