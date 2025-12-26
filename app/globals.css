@@ -5,13 +5,31 @@
   --foreground: #171717;
 }
 
+.dark {
+  --background: #0f0f1a;
+  --foreground: #ffffff;
+}
+
 @theme inline {
-  --color-background: #ffffff;
-  --color-foreground: #171717;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Figma Design System Colors */
+  /* MUED Brand Colors (Dark Mode First) */
+  --color-mued-bg: #0f0f1a;
+  --color-mued-primary: #1a1a2e;
+  --color-mued-accent: #4f46e5;
+  --color-mued-accent-hover: #4338ca;
+  --color-mued-text: #ffffff;
+  --color-mued-text-muted: #94a3b8;
+
+  /* Glassmorphism */
+  --color-glass-bg: rgba(255, 255, 255, 0.05);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+  --color-glass-bg-hover: rgba(255, 255, 255, 0.08);
+
+  /* Figma Design System Colors (Legacy) */
 
   /* Primary Brand */
   --color-brand-green: #75bc11;
@@ -37,7 +55,7 @@
 }
 
 body {
-  background: #ffffff;
-  color: #171717;
+  background: var(--background);
+  color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
