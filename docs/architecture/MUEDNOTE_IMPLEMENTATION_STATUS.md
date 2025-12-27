@@ -25,7 +25,7 @@ MUEDnoteは音楽制作中の「判断」を記録・資産化するツール。
 
 ### 2.1 Mobile (Expo) - v7 MVP
 
-**ステータス: ✅ 機能実装完了、認証統合が必要**
+**ステータス: ✅ 完了**
 
 | 機能 | 状況 | 詳細 |
 |-----|------|------|
@@ -33,30 +33,42 @@ MUEDnoteは音楽制作中の「判断」を記録・資産化するツール。
 | Whisper文字起こし | ✅ 完了 | 16kHzリサンプリング、ハルシネーション除去 |
 | ローカルキャッシュ | ✅ 完了 | AsyncStorage |
 | サーバー同期 | ✅ 完了 | API実装済み |
-| 認証 | ❌ 未完了 | dev_token固定、Clerk統合必要 |
+| 認証 | ✅ 完了 | @clerk/clerk-expo + expo-secure-store |
 
 **主要ファイル:**
 ```
 apps/muednote-mobile/
+├── src/providers/ClerkProvider.tsx  # Clerk認証プロバイダー
+├── src/screens/SignInScreen.tsx     # サインイン画面
 ├── src/services/whisperService.ts   # 音声処理エンジン
 ├── src/services/syncService.ts      # サーバー同期
-├── src/api/client.ts                # APIクライアント（要認証統合）
+├── src/api/client.ts                # APIクライアント（Clerk統合済み）
 └── src/cache/storage.ts             # AsyncStorageラッパー
 ```
 
 ### 2.2 Web (Next.js)
 
-**ステータス: ✅ LMS稼働中、MUEDnote専用ダッシュボード追加が必要**
+**ステータス: ✅ 完了**
 
 | 機能 | 状況 | 詳細 |
 |-----|------|------|
 | Clerk認証 | ✅ 完了 | middleware.ts で保護 |
 | Mobile API | ✅ 完了 | /api/muednote/mobile/* |
-| LMSダッシュボード | ✅ 稼働中 | /dashboard/* |
-| MUEDnoteダッシュボード | ❌ 未実装 | 新規作成が必要 |
+| LMSダッシュボード | ✅ 稼働中 | /dashboard/* (非表示) |
+| MUEDnoteダッシュボード | ✅ 完了 | /dashboard/muednote |
+| サインイン後リダイレクト | ✅ 完了 | → /dashboard/muednote |
 
 **主要ファイル:**
 ```
+app/dashboard/muednote/
+├── page.tsx                    # メインダッシュボード
+└── sessions/page.tsx           # セッション一覧
+
+components/layouts/
+├── muednote-layout.tsx         # MUEDnote専用レイアウト
+├── muednote-header.tsx         # ヘッダー（LMS要素なし）
+└── muednote-tabs.tsx           # ナビゲーション
+
 app/api/muednote/mobile/
 ├── sessions/route.ts           # セッション作成・一覧
 ├── logs/route.ts               # ログ保存
@@ -281,6 +293,8 @@ app/dashboard/muednote/
 | 日付 | 変更内容 | 決定者 |
 |-----|---------|-------|
 | 2025-12-27 | 初版作成、Desktop (Tauri v3) アーカイブ決定 | Kimny + Claude |
+| 2025-12-27 | Web MUEDnoteダッシュボード実装完了 | Kimny + Claude |
+| 2025-12-27 | Mobile Clerk認証統合完了 | Kimny + Claude |
 
 ---
 

@@ -1,17 +1,23 @@
 /**
  * MUEDnote Mobile App
  * メインエントリーポイント
+ *
+ * Authentication: Clerk
+ * Storage: AsyncStorage + Neon PostgreSQL
  */
 
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { useAuth } from '@clerk/clerk-expo';
 
+import { MuednoteClerkProvider } from './src/providers/ClerkProvider';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { SessionScreen } from './src/screens/SessionScreen';
 import { ReviewScreen } from './src/screens/ReviewScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
+import { SignInScreen } from './src/screens/SignInScreen';
 import { useSessionStore } from './src/stores/sessionStore';
 import { whisperService } from './src/services/whisperService';
 import { localStorage } from './src/cache/storage';
@@ -20,16 +26,22 @@ import { colors, fontSize, fontWeight, spacing } from './src/constants/theme';
 // 画面の種類
 type Screen = 'loading' | 'onboarding' | 'home' | 'session' | 'review';
 
-export default function App() {
+/**
+ * Main App Content - requires ClerkProvider context
+ */
+function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('loading');
   const [initError, setInitError] = useState<string | null>(null);
 
-  const { initialize, setWhisperReady, appState } = useSessionStore();
+  const { isSignedIn, isLoaded } = useAuth();
+  const { initialize, setWhisperReady } = useSessionStore();
 
   // アプリ初期化
   useEffect(() => {
-    initializeApp();
-  }, []);
+    if (isLoaded) {
+      initializeApp();
+    }
+  }, [isLoaded]);
 
   const initializeApp = async () => {
     try {
@@ -40,7 +52,7 @@ export default function App() {
       const result = await whisperService.initialize();
       if (result.success) {
         setWhisperReady(true);
-        console.log('[App] Whisper ready, VAD:', result.hasVad);
+        console.log('[App] Whisper ready');
       } else {
         console.warn('[App] Whisper init failed:', result.error);
         // エラーでも続行（録音は使えないが閲覧は可能）
@@ -68,6 +80,11 @@ export default function App() {
   };
 
   // 画面遷移ハンドラー
+  const handleSignIn = () => {
+    // 認証後、オンボーディングチェック
+    initializeApp();
+  };
+
   const handleOnboardingComplete = () => {
     setCurrentScreen('home');
   };
@@ -88,26 +105,39 @@ export default function App() {
     setCurrentScreen('home');
   };
 
-  // ローディング画面
+  // Clerk読み込み中
+  if (!isLoaded) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingTitle}>MUEDnote</Text>
+        <ActivityIndicator size="large" color={colors.primary} style={styles.spinner} />
+        <Text style={styles.loadingText}>認証を確認中...</Text>
+      </View>
+    );
+  }
+
+  // 未認証 → サインイン画面
+  if (!isSignedIn) {
+    return <SignInScreen onSignIn={handleSignIn} />;
+  }
+
+  // アプリ初期化中
   if (currentScreen === 'loading') {
     return (
-      <SafeAreaProvider>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingTitle}>MUEDnote</Text>
-          <ActivityIndicator size="large" color={colors.primary} style={styles.spinner} />
-          <Text style={styles.loadingText}>初期化中...</Text>
-          {initError && (
-            <Text style={styles.errorText}>{initError}</Text>
-          )}
-        </View>
-        <StatusBar style="light" />
-      </SafeAreaProvider>
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingTitle}>MUEDnote</Text>
+        <ActivityIndicator size="large" color={colors.primary} style={styles.spinner} />
+        <Text style={styles.loadingText}>初期化中...</Text>
+        {initError && (
+          <Text style={styles.errorText}>{initError}</Text>
+        )}
+      </View>
     );
   }
 
   // メイン画面
   return (
-    <SafeAreaProvider>
+    <>
       {currentScreen === 'onboarding' && (
         <OnboardingScreen onComplete={handleOnboardingComplete} />
       )}
@@ -123,8 +153,22 @@ export default function App() {
           onDiscard={handleReviewDiscard}
         />
       )}
-      <StatusBar style="light" />
-    </SafeAreaProvider>
+    </>
+  );
+}
+
+/**
+ * Root App Component
+ * Wraps with ClerkProvider and SafeAreaProvider
+ */
+export default function App() {
+  return (
+    <MuednoteClerkProvider>
+      <SafeAreaProvider>
+        <AppContent />
+        <StatusBar style="light" />
+      </SafeAreaProvider>
+    </MuednoteClerkProvider>
   );
 }
 
