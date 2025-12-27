@@ -1,22 +1,24 @@
 /**
- * HomeScreen - タイマー選択・セッション開始画面
- * Modacityスタイルの洗練されたダークUI
+ * HomeScreen - Hoo中心のメイン画面
+ *
+ * 「アプリ = Hoo」のコンセプト:
+ * - Hooが画面上部で常に存在
+ * - 吹き出しで状態を伝える
+ * - 最小限のUIで録音開始
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSessionStore } from '../stores/sessionStore';
+import { Hoo, HooState } from '../components/Hoo';
+import { playSessionStartSound } from '../utils/sound';
 import { colors, spacing, fontSize, fontWeight, borderRadius, TIMER_OPTIONS } from '../constants/theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CIRCLE_SIZE = SCREEN_WIDTH * 0.7;
 
 interface HomeScreenProps {
   onStartSession: () => void;
@@ -26,76 +28,71 @@ export function HomeScreen({ onStartSession }: HomeScreenProps) {
   const { settings, startSession, isWhisperReady } = useSessionStore();
   const [selectedDuration, setSelectedDuration] = useState(settings.defaultDuration);
 
-  // 選択中のタイマーラベル
-  const selectedOption = TIMER_OPTIONS.find((opt) => opt.value === selectedDuration);
-  const minutes = selectedDuration / 60;
+  // Hooの状態を決定
+  const hooState: HooState = isWhisperReady ? 'idle' : 'thinking';
+
+  // Hooのカスタムメッセージ
+  const hooMessage = isWhisperReady ? undefined : '準備中...少し待ってね';
 
   const handleStart = async () => {
+    await playSessionStartSound();
     await startSession(selectedDuration);
     onStartSession();
   };
 
+  const minutes = selectedDuration / 60;
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>MUEDnote</Text>
-        <Text style={styles.subtitle}>制作の思考を記録する</Text>
-      </View>
+      <View style={styles.mainContent}>
+        {/* Hoo Section - 画面の主役 */}
+        <View style={styles.hooSection}>
+          <Hoo state={hooState} customMessage={hooMessage} />
+        </View>
 
-      {/* Timer Circle */}
-      <View style={styles.circleContainer}>
-        <View style={styles.outerCircle}>
-          <View style={styles.innerCircle}>
-            <Text style={styles.timerText}>{minutes}</Text>
-            <Text style={styles.timerUnit}>分</Text>
+        {/* Duration Selector - ミニマル */}
+        <View style={styles.selectorSection}>
+          <View style={styles.optionsRow}>
+            {TIMER_OPTIONS.map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.optionButton,
+                  selectedDuration === option.value && styles.optionButtonActive,
+                ]}
+                onPress={() => setSelectedDuration(option.value)}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    selectedDuration === option.value && styles.optionTextActive,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </View>
 
-      {/* Duration Selector */}
-      <View style={styles.selectorContainer}>
-        <Text style={styles.selectorLabel}>セッション時間</Text>
-        <View style={styles.optionsRow}>
-          {TIMER_OPTIONS.map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.optionButton,
-                selectedDuration === option.value && styles.optionButtonActive,
-              ]}
-              onPress={() => setSelectedDuration(option.value)}
-            >
-              <Text
-                style={[
-                  styles.optionText,
-                  selectedDuration === option.value && styles.optionTextActive,
-                ]}
-              >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Start Button */}
+      {/* Start Button - 固定下部 */}
       <View style={styles.bottomSection}>
         <TouchableOpacity
           style={[styles.startButton, !isWhisperReady && styles.startButtonDisabled]}
           onPress={handleStart}
           disabled={!isWhisperReady}
+          activeOpacity={0.8}
         >
-          <View style={styles.startButtonInner}>
+          <View style={styles.startButtonContent}>
+            <View style={styles.micIcon}>
+              <Text style={styles.micEmoji}>🎙</Text>
+            </View>
             <Text style={styles.startButtonText}>
-              {isWhisperReady ? 'セッション開始' : '準備中...'}
+              {isWhisperReady ? `${minutes}分 録音する` : '準備中...'}
             </Text>
           </View>
         </TouchableOpacity>
-
-        {!isWhisperReady && (
-          <Text style={styles.statusText}>音声認識を初期化中...</Text>
-        )}
       </View>
     </SafeAreaView>
   );
@@ -106,77 +103,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.md,
-  },
-  title: {
-    fontSize: fontSize['3xl'],
-    fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: fontSize.base,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  circleContainer: {
+  mainContent: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  outerCircle: {
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    borderRadius: CIRCLE_SIZE / 2,
-    backgroundColor: colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    // グラデーション的な効果をボーダーで
-    borderWidth: 2,
-    borderColor: colors.border,
+  hooSection: {
+    paddingHorizontal: spacing.lg,
   },
-  innerCircle: {
-    width: CIRCLE_SIZE * 0.85,
-    height: CIRCLE_SIZE * 0.85,
-    borderRadius: (CIRCLE_SIZE * 0.85) / 2,
-    backgroundColor: colors.backgroundTertiary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  timerText: {
-    fontSize: fontSize['6xl'],
-    fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
-  },
-  timerUnit: {
-    fontSize: fontSize.xl,
-    color: colors.textSecondary,
-    marginTop: -spacing.sm,
-  },
-  selectorContainer: {
+  selectorSection: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xl,
-  },
-  selectorLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.md,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
   },
   optionsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   optionButton: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -185,7 +132,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   optionText: {
-    fontSize: fontSize.base,
+    fontSize: fontSize.sm,
     fontWeight: fontWeight.medium,
     color: colors.textSecondary,
   },
@@ -194,7 +141,10 @@ const styles = StyleSheet.create({
   },
   bottomSection: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingVertical: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
   },
   startButton: {
     backgroundColor: colors.primary,
@@ -203,20 +153,27 @@ const styles = StyleSheet.create({
   },
   startButtonDisabled: {
     backgroundColor: colors.backgroundSecondary,
+    opacity: 0.6,
   },
-  startButtonInner: {
-    paddingVertical: spacing.lg,
+  startButtonContent: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+    gap: spacing.md,
+  },
+  micIcon: {
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  micEmoji: {
+    fontSize: 20,
   },
   startButtonText: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
     color: colors.textPrimary,
-  },
-  statusText: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.md,
   },
 });

@@ -11,10 +11,12 @@ import {
   StyleSheet,
   Dimensions,
   Animated,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSessionStore } from '../stores/sessionStore';
 import { whisperService } from '../services/whisperService';
+import { playSessionEndSound } from '../utils/sound';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -100,6 +102,8 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
   const handleEnd = async () => {
     // 録音停止
     await whisperService.stopRecording();
+    // サウンド再生
+    await playSessionEndSound();
     // セッション終了
     await endSession();
     onEndSession();
@@ -107,9 +111,16 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 最小ヘッダー */}
-      <View style={styles.header}>
-        <Text style={styles.statusText}>Recording</Text>
+      {/* Hoo - 聞いてる状態 */}
+      <View style={styles.hooSection}>
+        <Image
+          source={require('../../assets/images/hoo.png')}
+          style={styles.hooImage}
+          resizeMode="contain"
+        />
+        <View style={styles.hooMessage}>
+          <Text style={styles.hooText}>ほほう...聞いてるよ</Text>
+        </View>
       </View>
 
       {/* タイマー表示 */}
@@ -162,17 +173,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
+  hooSection: {
     alignItems: 'center',
+    paddingTop: spacing.lg,
   },
-  statusText: {
+  hooImage: {
+    width: SCREEN_WIDTH * 0.25,
+    height: SCREEN_WIDTH * 0.18,
+    opacity: 0.9,
+  },
+  hooMessage: {
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  hooText: {
     fontSize: fontSize.sm,
-    color: colors.recording,
-    fontWeight: fontWeight.medium,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
+    color: colors.textPrimary,
   },
   circleContainer: {
     flex: 1,
