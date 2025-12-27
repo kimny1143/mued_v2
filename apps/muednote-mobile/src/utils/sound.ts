@@ -1,69 +1,147 @@
 /**
  * Sound Utility - Hooの鳴き声再生
  *
- * TODO: 音声ファイルが決まったら実装
- * 現在はプレースホルダー
- *
+ * expo-audio を使用した音声再生（SDK 54+）
  * 使用タイミング:
  * - 録音完了時
  * - セッション終了時
  * - アラーム音（タイマー終了）
  */
 
-// expo-av を使用予定
-// import { Audio } from 'expo-av';
+import { Audio, AVPlaybackStatus } from 'expo-av';
 
-type SoundType = 'hoo' | 'session_start' | 'session_end' | 'log_saved';
+// Sound sources
+const hooSource = require('../../assets/sounds/hoo.m4a');
+const iconSource = require('../../assets/sounds/icon.m4a');
 
-// Sound instances cache
-// let hooSound: Audio.Sound | null = null;
+/**
+ * 音声システムの初期化
+ * アプリ起動時に呼び出す
+ */
+export async function initSounds(): Promise<void> {
+  try {
+    // expo-audio doesn't require explicit audio mode setup
+    // it handles iOS silent mode automatically
+    console.log('[Sound] Initialized successfully');
+  } catch (error) {
+    console.error('[Sound] Failed to initialize:', error);
+  }
+}
 
 /**
  * Hooの「Ho Hoo」音を再生
  */
-export async function playHooSound(type: SoundType = 'hoo'): Promise<void> {
-  if (__DEV__) {
-    console.log(`[Sound] Ho Hoo! (${type}) - placeholder`);
-  }
+export async function playHooSound(): Promise<void> {
+  try {
+    console.log('[Sound] Playing hoo');
 
-  // TODO: 音声ファイル実装時
-  // if (!hooSound) {
-  //   const { sound } = await Audio.Sound.createAsync(
-  //     require('../../assets/sounds/hoo.mp3')
-  //   );
-  //   hooSound = sound;
-  // }
-  // await hooSound.replayAsync();
+    // Switch from recording mode to playback mode
+    // This is critical after stopping a recording session
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,  // Important: disable recording mode
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
+    });
+    console.log('[Sound] Audio mode set for playback');
+
+    const { sound } = await Audio.Sound.createAsync(hooSource, {
+      shouldPlay: true,
+      volume: 1.0,
+    });
+
+    console.log('[Sound] Playing hoo - started');
+
+    // Unload after playing
+    sound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
+      if (status.isLoaded && status.didJustFinish) {
+        sound.unloadAsync();
+        console.log('[Sound] Hoo sound finished and unloaded');
+      }
+    });
+  } catch (error) {
+    console.error('[Sound] Failed to play hoo:', error);
+  }
 }
 
 /**
- * 録音完了時の音
+ * アイコン音を再生
+ */
+export async function playIconSound(): Promise<void> {
+  try {
+    console.log('[Sound] Playing icon');
+
+    // Ensure playback mode (not recording mode)
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: false,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+      playThroughEarpieceAndroid: false,
+    });
+    console.log('[Sound] Audio mode set for playback');
+
+    const { sound } = await Audio.Sound.createAsync(iconSource, {
+      shouldPlay: true,
+      volume: 1.0,
+    });
+
+    console.log('[Sound] Playing icon - started');
+
+    // Return a promise that resolves when sound finishes
+    return new Promise((resolve) => {
+      sound.setOnPlaybackStatusUpdate(async (status: AVPlaybackStatus) => {
+        if (status.isLoaded && status.didJustFinish) {
+          await sound.unloadAsync();
+          console.log('[Sound] Icon sound finished and unloaded');
+
+          // Switch back to recording mode after sound finishes
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: true,
+            playsInSilentModeIOS: true,
+            staysActiveInBackground: false,
+            shouldDuckAndroid: true,
+          });
+          console.log('[Sound] Audio mode restored for recording');
+          resolve();
+        }
+      });
+    });
+  } catch (error) {
+    console.error('[Sound] Failed to play icon:', error);
+  }
+}
+
+/**
+ * 録音完了時の音（Hoo鳴き声）
  */
 export async function playLogSavedSound(): Promise<void> {
-  await playHooSound('log_saved');
+  await playHooSound();
 }
 
 /**
- * セッション開始時の音
+ * セッション開始時の音（アイコン音）
  */
 export async function playSessionStartSound(): Promise<void> {
-  await playHooSound('session_start');
+  await playIconSound();
 }
 
 /**
- * セッション終了時の音
+ * セッション終了時の音（Hoo鳴き声）
  */
 export async function playSessionEndSound(): Promise<void> {
-  await playHooSound('session_end');
+  await playHooSound();
 }
 
 /**
  * サウンドリソースのクリーンアップ
  */
 export async function unloadSounds(): Promise<void> {
-  // TODO: 音声ファイル実装時
-  // if (hooSound) {
-  //   await hooSound.unloadAsync();
-  //   hooSound = null;
-  // }
+  try {
+    // No-op for now since we unload after each play
+    console.log('[Sound] Unloaded');
+  } catch (error) {
+    console.error('[Sound] Failed to unload:', error);
+  }
 }

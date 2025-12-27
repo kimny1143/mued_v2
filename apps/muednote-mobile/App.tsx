@@ -21,6 +21,7 @@ import { SignInScreen } from './src/screens/SignInScreen';
 import { useSessionStore } from './src/stores/sessionStore';
 import { whisperService } from './src/services/whisperService';
 import { localStorage } from './src/cache/storage';
+import { initSounds, unloadSounds } from './src/utils/sound';
 import { colors, fontSize, fontWeight, spacing } from './src/constants/theme';
 
 // 画面の種類
@@ -41,12 +42,20 @@ function AppContent() {
     if (isLoaded) {
       initializeApp();
     }
+
+    // クリーンアップ
+    return () => {
+      unloadSounds();
+    };
   }, [isLoaded]);
 
   const initializeApp = async () => {
     try {
       // ストア初期化
       await initialize();
+
+      // サウンド初期化
+      await initSounds();
 
       // Whisper初期化
       const result = await whisperService.initialize();

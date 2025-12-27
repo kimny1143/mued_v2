@@ -26,28 +26,25 @@ const DEV_AUTH_TOKEN = process.env.EXPO_PUBLIC_DEV_TOKEN || 'dev_token_kimny';
 
 class ApiClient {
   private baseUrl: string;
-  private authToken: string | null = null;
+  private tokenGetter: (() => Promise<string | null>) | null = null;
 
   constructor() {
     this.baseUrl = API_BASE_URL;
-    // 開発時はdevトークンを使用
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
-      this.authToken = DEV_AUTH_TOKEN;
-    }
   }
 
   /**
-   * 認証トークンを設定（Clerk認証後に呼び出す）
+   * トークン取得関数を設定（Clerk の getToken を渡す）
+   * これにより毎回新しいトークンを取得できる
    */
-  setAuthToken(token: string) {
-    this.authToken = token;
+  setTokenGetter(getter: () => Promise<string | null>) {
+    this.tokenGetter = getter;
   }
 
   /**
-   * 認証トークンをクリア
+   * トークン取得関数をクリア
    */
-  clearAuthToken() {
-    this.authToken = null;
+  clearTokenGetter() {
+    this.tokenGetter = null;
   }
 
   /**
@@ -58,15 +55,37 @@ class ApiClient {
   }
 
   /**
+   * 認証トークンを取得（毎回新しいトークンを取得）
+   */
+  private async getAuthToken(): Promise<string | null> {
+    // 開発時はdevトークンを使用
+    if (typeof __DEV__ !== 'undefined' && __DEV__ && !this.tokenGetter) {
+      return DEV_AUTH_TOKEN;
+    }
+
+    if (this.tokenGetter) {
+      try {
+        return await this.tokenGetter();
+      } catch (error) {
+        console.error('[ApiClient] Failed to get token:', error);
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * HTTPリクエストヘッダー生成
    */
-  private getHeaders(): HeadersInit {
+  private async getHeaders(): Promise<HeadersInit> {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
 
-    if (this.authToken) {
-      headers['Authorization'] = `Bearer ${this.authToken}`;
+    const token = await this.getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     return headers;
@@ -80,11 +99,12 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    const headers = await this.getHeaders();
 
     const response = await fetch(url, {
       ...options,
       headers: {
-        ...this.getHeaders(),
+        ...headers,
         ...options.headers,
       },
     });

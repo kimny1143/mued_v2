@@ -49,24 +49,14 @@ function AuthTokenSync({ children }: { children: React.ReactNode }) {
   const { getToken, isSignedIn } = useAuth();
 
   useEffect(() => {
-    const syncToken = async () => {
-      if (isSignedIn) {
-        try {
-          const token = await getToken();
-          if (token) {
-            apiClient.setAuthToken(token);
-            console.log('[AuthTokenSync] Token set on API client');
-          }
-        } catch (error) {
-          console.error('[AuthTokenSync] Failed to get token:', error);
-        }
-      } else {
-        apiClient.clearAuthToken();
-        console.log('[AuthTokenSync] Token cleared from API client');
-      }
-    };
-
-    syncToken();
+    if (isSignedIn) {
+      // getToken関数を渡すことで、APIリクエスト時に毎回新しいトークンを取得
+      apiClient.setTokenGetter(getToken);
+      console.log('[AuthTokenSync] Token getter set on API client');
+    } else {
+      apiClient.clearTokenGetter();
+      console.log('[AuthTokenSync] Token getter cleared from API client');
+    }
   }, [isSignedIn, getToken]);
 
   return <>{children}</>;

@@ -3,7 +3,7 @@
  * バッチ処理方式：タイマー + 録音インジケーターのみ
  */
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
   StyleSheet,
   Dimensions,
   Animated,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSessionStore } from '../stores/sessionStore';
@@ -34,8 +33,14 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
     endSession,
   } = useSessionStore();
 
+  // Hooのメッセージ
+  const [hooMessage, setHooMessage] = useState('ほほう...聞いてるよ');
+
   // 録音インジケーターのアニメーション
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Hooバウンスアニメーション
+  const hooBounceAnim = useRef(new Animated.Value(0)).current;
 
   // タイマー
   useEffect(() => {
@@ -93,6 +98,13 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
   const minutes = Math.floor(remainingSeconds / 60);
   const seconds = remainingSeconds % 60;
 
+  // タイマー0になったらメッセージ変更
+  useEffect(() => {
+    if (remainingSeconds === 0 && currentSession) {
+      setHooMessage('そろそろ休憩する？');
+    }
+  }, [remainingSeconds, currentSession]);
+
   // 進捗率
   const progress = currentSession
     ? elapsedSeconds / currentSession.duration_sec
@@ -102,24 +114,65 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
   const handleEnd = async () => {
     // 録音停止
     await whisperService.stopRecording();
-    // サウンド再生
-    await playSessionEndSound();
-    // セッション終了
-    await endSession();
-    onEndSession();
+
+    // Hooが「記録したよ」と言う
+    setHooMessage('記録したよ');
+
+    // サウンド再生 + バウンスアニメーション（音声タイミングに同期）
+    playSessionEndSound();
+
+    // 「Ho Hoo」の音に合わせて2回バウンス
+    // Ho: 0.35-0.55s, Hoo: 0.65-0.85s
+    Animated.sequence([
+      // 最初の待機（音声立ち上がりまで）
+      Animated.delay(300),
+      // 1回目バウンス「Ho」
+      Animated.timing(hooBounceAnim, {
+        toValue: -10,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(hooBounceAnim, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      // 谷間の待機
+      Animated.delay(100),
+      // 2回目バウンス「Hoo」
+      Animated.timing(hooBounceAnim, {
+        toValue: -10,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(hooBounceAnim, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // 1.5秒後に遷移（アニメーション完了を待つ）
+    setTimeout(async () => {
+      await endSession();
+      onEndSession();
+    }, 1500);
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Hoo - 聞いてる状態 */}
+      {/* Hoo - 聞いてる/話してる状態 */}
       <View style={styles.hooSection}>
-        <Image
+        <Animated.Image
           source={require('../../assets/images/hoo.png')}
-          style={styles.hooImage}
+          style={[
+            styles.hooImage,
+            { transform: [{ translateY: hooBounceAnim }] },
+          ]}
           resizeMode="contain"
         />
-        <View style={styles.hooMessage}>
-          <Text style={styles.hooText}>ほほう...聞いてるよ</Text>
+        <View style={styles.hooMessageBox}>
+          <Text style={styles.hooText}>{hooMessage}</Text>
         </View>
       </View>
 
@@ -182,7 +235,7 @@ const styles = StyleSheet.create({
     height: SCREEN_WIDTH * 0.18,
     opacity: 0.9,
   },
-  hooMessage: {
+  hooMessageBox: {
     marginTop: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xs,

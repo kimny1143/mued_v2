@@ -10,20 +10,36 @@ import { muednoteMobileSessions, muednoteMobileLogs } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { verifyToken } from '@clerk/backend';
 
 // 開発用トークン認証（本番では無効化）
 const DEV_TOKEN = process.env.NODE_ENV === 'development' ? 'dev_token_kimny' : null;
 const DEV_USER_ID = 'dev_user_kimny';
 
 async function getAuthUserId(req: Request): Promise<string | null> {
+  const authHeader = req.headers.get('Authorization');
+
   // 開発用トークン認証
-  if (DEV_TOKEN) {
-    const authHeader = req.headers.get('Authorization');
-    if (authHeader === `Bearer ${DEV_TOKEN}`) {
-      return DEV_USER_ID;
+  if (DEV_TOKEN && authHeader === `Bearer ${DEV_TOKEN}`) {
+    return DEV_USER_ID;
+  }
+
+  // JWT トークン認証（モバイルアプリ用）
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const payload = await verifyToken(token, {
+        secretKey: process.env.CLERK_SECRET_KEY!,
+      });
+      if (payload?.sub) {
+        return payload.sub;
+      }
+    } catch (error) {
+      console.error('[Auth] JWT verification failed:', error);
     }
   }
-  // Clerk 認証
+
+  // Cookie ベース認証（Web用）
   const session = await auth();
   return session?.userId || null;
 }
