@@ -1,10 +1,10 @@
 /**
  * MUEDnote Design Tokens
- * Modacityスタイルのダークテーマ
+ * ダーク/ライトテーマ対応
  */
 
-// カラーパレット
-export const colors = {
+// ダークテーマカラー
+export const darkColors = {
   // 背景
   background: '#1a1a2e',
   backgroundSecondary: '#16213e',
@@ -29,6 +29,36 @@ export const colors = {
   warning: '#f59e0b',
   error: '#dc2626',
 };
+
+// ライトテーマカラー
+export const lightColors = {
+  // 背景
+  background: '#f8fafc',
+  backgroundSecondary: '#ffffff',
+  backgroundTertiary: '#f1f5f9',
+
+  // プライマリ
+  primary: '#6c5ce7',
+  primaryLight: '#a29bfe',
+
+  // テキスト
+  textPrimary: '#1e293b',
+  textSecondary: '#475569',
+  textMuted: '#94a3b8',
+
+  // ボーダー
+  border: '#e2e8f0',
+  borderLight: '#cbd5e1',
+
+  // ステータス
+  recording: '#ef4444',
+  success: '#22c55e',
+  warning: '#f59e0b',
+  error: '#dc2626',
+};
+
+// デフォルトカラー（後方互換性のため）
+export const colors = darkColors;
 
 // スペーシング
 export const spacing = {
@@ -73,17 +103,5 @@ export const borderRadius = {
   full: 9999,
 };
 
-// タイマーオプション
-export const TIMER_OPTIONS = __DEV__
-  ? [
-      // 開発用: 短いタイマー（テスト用）
-      { label: '1分', value: 60 },
-      { label: '5分', value: 300 },
-      { label: '30分', value: 1800 },
-    ]
-  : [
-      // 本番用
-      { label: '60分', value: 3600 },
-      { label: '90分', value: 5400 },
-      { label: '120分', value: 7200 },
-    ];
+// タイマーオプションは types/timer.ts の FOCUS_MODES に移行
+// import { FOCUS_MODES } from '../types/timer';

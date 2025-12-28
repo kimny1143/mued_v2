@@ -145,6 +145,15 @@ export interface ApiError {
 // Local State Types (for Zustand)
 // ========================================
 
+/**
+ * フォーカスモードID
+ * - pomodoro: 25分集中 + 5分休憩
+ * - standard: 50分集中 + 17分休憩
+ * - deepwork: 90分集中 + 20分休憩
+ * - custom: ユーザー設定
+ */
+export type FocusModeId = 'pomodoro' | 'standard' | 'deepwork' | 'custom';
+
 export interface LocalLog {
   id: string;
   timestamp_sec: number;
@@ -161,6 +170,16 @@ export interface LocalSession {
   status: 'active' | 'completed' | 'synced';
   memo?: string;
   logs: LocalLog[];
+  /**
+   * フォーカスモード（v2で追加）
+   * 既存データにはこのフィールドがないため、読み込み時に'standard'をデフォルト設定
+   */
+  mode?: FocusModeId;
+  /**
+   * 音声ファイルパス（v2で追加）
+   * セッション終了時に録音ファイルのパスを保存
+   */
+  audioFilePath?: string;
 }
 
 // ========================================

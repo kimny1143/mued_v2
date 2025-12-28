@@ -46,6 +46,7 @@ export interface TranscriptionResult {
 
 export interface WhisperCallbacks {
   onRecordingStatusChange?: (isRecording: boolean) => void;
+  onMeteringUpdate?: (metering: number) => void; // -160〜0 dB（0が最大音量）
   onError?: (error: string) => void;
 }
 
@@ -138,6 +139,14 @@ class WhisperService {
           linearPCMIsFloat: false,
         },
         web: {},
+        isMeteringEnabled: true, // 音量メータリング有効化
+      });
+
+      // メータリング更新ハンドラ
+      this.recording.setOnRecordingStatusUpdate((status) => {
+        if (status.isRecording && status.metering !== undefined) {
+          this.callbacks.onMeteringUpdate?.(status.metering);
+        }
       });
 
       await this.recording.startAsync();
@@ -400,6 +409,32 @@ class WhisperService {
       }
       this.audioFilePath = null;
     }
+  }
+
+  /**
+   * 指定パスの音声ファイルを削除
+   */
+  async deleteAudioFileAtPath(filePath: string): Promise<void> {
+    try {
+      const exists = await RNFS.exists(filePath);
+      if (exists) {
+        await RNFS.unlink(filePath);
+        console.log('[Whisper] Audio file deleted:', filePath);
+      }
+    } catch (error) {
+      console.error('[Whisper] Failed to delete audio file:', filePath, error);
+    }
+  }
+
+  /**
+   * 複数の音声ファイルを一括削除
+   */
+  async deleteAudioFiles(filePaths: string[]): Promise<void> {
+    for (const path of filePaths) {
+      await this.deleteAudioFileAtPath(path);
+    }
+    // 現在のファイルパスもクリア
+    this.audioFilePath = null;
   }
 
   /**

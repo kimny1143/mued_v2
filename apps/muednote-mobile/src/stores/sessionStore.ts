@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import { localStorage, UserSettings } from '../cache/storage';
-import { LocalSession, LocalLog } from '../api/types';
+import { LocalSession, LocalLog, FocusModeId } from '../api/types';
 
 // アプリの状態
 type AppState = 'idle' | 'recording' | 'processing' | 'reviewing';
@@ -29,8 +29,8 @@ interface SessionState {
 
   // アクション
   initialize: () => Promise<void>;
-  startSession: (durationSec: number) => Promise<LocalSession>;
-  endSession: (memo?: string) => Promise<LocalSession | null>;
+  startSession: (durationSec: number, mode?: FocusModeId) => Promise<LocalSession>;
+  endSession: (memo?: string, audioFilePath?: string) => Promise<LocalSession | null>;
   cancelSession: () => Promise<void>;
   tick: () => void;
   setWhisperReady: (ready: boolean) => void;
@@ -92,8 +92,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   /**
    * セッション開始
    */
-  startSession: async (durationSec: number) => {
-    const session = await localStorage.createSession(durationSec);
+  startSession: async (durationSec: number, mode: FocusModeId = 'standard') => {
+    const session = await localStorage.createSession(durationSec, mode);
 
     set({
       currentSession: session,
@@ -102,18 +102,18 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       isRecording: true,
     });
 
-    console.log('[Store] Session started:', session.id);
+    console.log('[Store] Session started:', session.id, 'mode:', mode);
     return session;
   },
 
   /**
    * セッション終了
    */
-  endSession: async (memo?: string) => {
+  endSession: async (memo?: string, audioFilePath?: string) => {
     const { currentSession } = get();
     if (!currentSession) return null;
 
-    const session = await localStorage.endSession(currentSession.id, memo);
+    const session = await localStorage.endSession(currentSession.id, memo, audioFilePath);
 
     set({
       currentSession: null,

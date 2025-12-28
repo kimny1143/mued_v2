@@ -9,6 +9,7 @@
  */
 
 import { Audio, AVPlaybackStatus } from 'expo-av';
+import * as Haptics from 'expo-haptics';
 
 // Sound sources
 const hooSource = require('../../assets/sounds/hoo.m4a');
@@ -62,6 +63,19 @@ export async function playHooSound(): Promise<void> {
     });
   } catch (error) {
     console.error('[Sound] Failed to play hoo:', error);
+  }
+}
+
+/**
+ * Haptic Feedback のみ（モード選択等のUI操作用）
+ * iOS設定アプリ風のシンプルな触覚フィードバック
+ */
+export async function playClickSound(): Promise<void> {
+  try {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    console.log('[Sound] Haptic triggered');
+  } catch (error) {
+    console.error('[Sound] Haptic failed:', error);
   }
 }
 
@@ -132,6 +146,24 @@ export async function playSessionStartSound(): Promise<void> {
  */
 export async function playSessionEndSound(): Promise<void> {
   await playHooSound();
+}
+
+/**
+ * 録音モードに切り替え
+ * サウンド再生後、録音前に呼び出す
+ */
+export async function switchToRecordingMode(): Promise<void> {
+  try {
+    await Audio.setAudioModeAsync({
+      allowsRecordingIOS: true,
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+    });
+    console.log('[Sound] Audio mode switched to recording');
+  } catch (error) {
+    console.error('[Sound] Failed to switch to recording mode:', error);
+  }
 }
 
 /**

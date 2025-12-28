@@ -4,7 +4,25 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LocalSession, LocalLog } from '../api/types';
+import { LocalSession, LocalLog, FocusModeId } from '../api/types';
+
+/**
+ * 既存セッションのマイグレーション
+ * modeフィールドがない場合は'standard'を設定
+ */
+function migrateSession(session: LocalSession): LocalSession {
+  if (!session.mode) {
+    return { ...session, mode: 'standard' };
+  }
+  return session;
+}
+
+/**
+ * セッション配列のマイグレーション
+ */
+function migrateSessions(sessions: LocalSession[]): LocalSession[] {
+  return sessions.map(migrateSession);
+}
 
 // Storage Keys
 const KEYS = {
@@ -12,6 +30,7 @@ const KEYS = {
   SESSIONS: 'muednote:sessions',
   SETTINGS: 'muednote:settings',
   ONBOARDING: 'muednote:onboarding_complete',
+  HOO_SETTINGS: 'muednote:hoo_settings',
 };
 
 // ユーザー設定
@@ -27,6 +46,37 @@ const DEFAULT_SETTINGS: UserSettings = {
   autoSync: true,
 };
 
+// Hoo アニメーション設定
+export interface HooSettings {
+  // 強拍（大きな音）
+  strongThreshold: number;  // 閾値 (0-1)
+  strongDelta: number;      // 変化量閾値 (0-1)
+  strongBounce: number;     // バウンス量 (px, 負の値)
+  strongAttack: number;     // アタック時間 (ms)
+  strongRelease: number;    // リリース時間 (ms)
+  // 弱拍（中くらいの音）
+  mediumThreshold: number;
+  mediumDelta: number;
+  mediumBounce: number;
+  mediumAttack: number;
+  mediumRelease: number;
+}
+
+export const DEFAULT_HOO_SETTINGS: HooSettings = {
+  // 強拍
+  strongThreshold: 0.25,
+  strongDelta: 0.06,
+  strongBounce: -5,      // 1.05倍（控えめ）
+  strongAttack: 80,      // ゆっくりめ
+  strongRelease: 120,    // ふわっと戻る
+  // 弱拍
+  mediumThreshold: 0.15,
+  mediumDelta: 0.04,
+  mediumBounce: -3,      // 1.03倍
+  mediumAttack: 80,
+  mediumRelease: 120,
+};
+
 class LocalStorage {
   // ========================================
   // Session Management
@@ -35,13 +85,14 @@ class LocalStorage {
   /**
    * 新規セッション作成
    */
-  async createSession(durationSec: number): Promise<LocalSession> {
+  async createSession(durationSec: number, mode: FocusModeId = 'standard'): Promise<LocalSession> {
     const session: LocalSession = {
       id: `session_${Date.now()}`,
       duration_sec: durationSec,
       started_at: new Date().toISOString(),
       status: 'active',
       logs: [],
+      mode,
     };
 
     await AsyncStorage.setItem(KEYS.CURRENT_SESSION, JSON.stringify(session));
@@ -54,7 +105,8 @@ class LocalStorage {
   async getCurrentSession(): Promise<LocalSession | null> {
     const data = await AsyncStorage.getItem(KEYS.CURRENT_SESSION);
     if (!data) return null;
-    return JSON.parse(data);
+    // マイグレーション: modeがなければ'standard'を設定
+    return migrateSession(JSON.parse(data));
   }
 
   /**
@@ -67,13 +119,18 @@ class LocalStorage {
   /**
    * セッション終了
    */
-  async endSession(sessionId: string, memo?: string): Promise<LocalSession | null> {
+  async endSession(
+    sessionId: string,
+    memo?: string,
+    audioFilePath?: string
+  ): Promise<LocalSession | null> {
     const session = await this.getCurrentSession();
     if (!session || session.id !== sessionId) return null;
 
     session.status = 'completed';
     session.ended_at = new Date().toISOString();
     if (memo) session.memo = memo;
+    if (audioFilePath) session.audioFilePath = audioFilePath;
 
     // 完了済みセッションリストに追加
     const sessions = await this.getAllSessions();
@@ -102,7 +159,8 @@ class LocalStorage {
   async getAllSessions(): Promise<LocalSession[]> {
     const data = await AsyncStorage.getItem(KEYS.SESSIONS);
     if (!data) return [];
-    return JSON.parse(data);
+    // マイグレーション: 既存セッションにmodeがなければ'standard'を設定
+    return migrateSessions(JSON.parse(data));
   }
 
   /**
@@ -133,6 +191,18 @@ class LocalStorage {
     const index = sessions.findIndex((s) => s.id === sessionId);
     if (index !== -1) {
       sessions[index].memo = memo;
+      await AsyncStorage.setItem(KEYS.SESSIONS, JSON.stringify(sessions));
+    }
+  }
+
+  /**
+   * セッションの音声ファイルパスを更新
+   */
+  async updateSessionAudioPath(sessionId: string, audioFilePath: string): Promise<void> {
+    const sessions = await this.getAllSessions();
+    const index = sessions.findIndex((s) => s.id === sessionId);
+    if (index !== -1) {
+      sessions[index].audioFilePath = audioFilePath;
       await AsyncStorage.setItem(KEYS.SESSIONS, JSON.stringify(sessions));
     }
   }
@@ -227,6 +297,35 @@ class LocalStorage {
   }
 
   // ========================================
+  // Hoo Settings
+  // ========================================
+
+  /**
+   * Hoo設定取得
+   */
+  async getHooSettings(): Promise<HooSettings> {
+    const data = await AsyncStorage.getItem(KEYS.HOO_SETTINGS);
+    if (!data) return DEFAULT_HOO_SETTINGS;
+    return { ...DEFAULT_HOO_SETTINGS, ...JSON.parse(data) };
+  }
+
+  /**
+   * Hoo設定保存
+   */
+  async saveHooSettings(settings: Partial<HooSettings>): Promise<void> {
+    const current = await this.getHooSettings();
+    const updated = { ...current, ...settings };
+    await AsyncStorage.setItem(KEYS.HOO_SETTINGS, JSON.stringify(updated));
+  }
+
+  /**
+   * Hoo設定リセット
+   */
+  async resetHooSettings(): Promise<void> {
+    await AsyncStorage.removeItem(KEYS.HOO_SETTINGS);
+  }
+
+  // ========================================
   // Onboarding
   // ========================================
 
@@ -258,6 +357,7 @@ class LocalStorage {
       KEYS.SESSIONS,
       KEYS.SETTINGS,
       KEYS.ONBOARDING,
+      KEYS.HOO_SETTINGS,
     ]);
   }
 }

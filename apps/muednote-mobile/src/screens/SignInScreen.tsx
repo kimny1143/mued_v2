@@ -19,6 +19,7 @@ import {
 import { useSignIn, useSignUp, useOAuth } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
+import { playClickSound } from '../utils/sound';
 
 interface SignInScreenProps {
   onSignIn: () => void;
@@ -112,11 +113,22 @@ export function SignInScreen({ onSignIn }: SignInScreenProps) {
   };
 
   const handleSubmit = () => {
+    playClickSound();
     if (mode === 'signIn') {
       handleEmailSignIn();
     } else {
       handleEmailSignUp();
     }
+  };
+
+  const handleModeSwitch = () => {
+    playClickSound();
+    setMode(mode === 'signIn' ? 'signUp' : 'signIn');
+  };
+
+  const handleOAuthPress = (provider: 'google' | 'apple') => {
+    playClickSound();
+    handleOAuth(provider);
   };
 
   return (
@@ -190,7 +202,7 @@ export function SignInScreen({ onSignIn }: SignInScreenProps) {
 
             <TouchableOpacity
               style={styles.oauthButton}
-              onPress={() => handleOAuth('google')}
+              onPress={() => handleOAuthPress('google')}
               disabled={loading}
             >
               <Text style={styles.oauthButtonText}>Googleで続ける</Text>
@@ -199,7 +211,7 @@ export function SignInScreen({ onSignIn }: SignInScreenProps) {
             {Platform.OS === 'ios' && (
               <TouchableOpacity
                 style={styles.oauthButton}
-                onPress={() => handleOAuth('apple')}
+                onPress={() => handleOAuthPress('apple')}
                 disabled={loading}
               >
                 <Text style={styles.oauthButtonText}>Appleで続ける</Text>
@@ -209,7 +221,7 @@ export function SignInScreen({ onSignIn }: SignInScreenProps) {
             {/* Mode Switch */}
             <TouchableOpacity
               style={styles.switchMode}
-              onPress={() => setMode(mode === 'signIn' ? 'signUp' : 'signIn')}
+              onPress={handleModeSwitch}
             >
               <Text style={styles.switchModeText}>
                 {mode === 'signIn'

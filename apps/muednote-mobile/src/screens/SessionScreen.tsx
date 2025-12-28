@@ -1,6 +1,11 @@
 /**
- * SessionScreen - 録音中の最小UI
- * バッチ処理方式：タイマー + 録音インジケーターのみ
+ * SessionScreen - 録音中のHoo中心UI
+ *
+ * 「常にHooが居る」コンセプト:
+ * - Hooの顔が画面の中心
+ * - タイマーはHooの上部に表示
+ * - メッセージはHooの下に吹き出しで表示
+ * - 録音インジケーター
  */
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -9,23 +14,25 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   Animated,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSessionStore } from '../stores/sessionStore';
+import { useTheme } from '../providers/ThemeProvider';
 import { whisperService } from '../services/whisperService';
-import { playSessionEndSound } from '../utils/sound';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CIRCLE_SIZE = SCREEN_WIDTH * 0.75;
+import { playSessionEndSound, switchToRecordingMode, playClickSound } from '../utils/sound';
+import { spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
+import { Hoo } from '../components/Hoo';
 
 interface SessionScreenProps {
   onEndSession: () => void;
 }
 
 export function SessionScreen({ onEndSession }: SessionScreenProps) {
+  const { colors } = useTheme();
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
   const {
     currentSession,
     elapsedSeconds,
@@ -35,12 +42,15 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
 
   // Hooのメッセージ
   const [hooMessage, setHooMessage] = useState('ほほう...聞いてるよ');
+  // セッション終了処理中フラグ
+  const [isEnding, setIsEnding] = useState(false);
+  // Hooが喋るフラグ（終了時のバウンス用）
+  const [hooSpeaking, setHooSpeaking] = useState(false);
+  // 音量レベル（0〜1に正規化）
+  const [volumeLevel, setVolumeLevel] = useState(0);
 
   // 録音インジケーターのアニメーション
   const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  // Hooバウンスアニメーション
-  const hooBounceAnim = useRef(new Animated.Value(0)).current;
 
   // タイマー
   useEffect(() => {
@@ -72,10 +82,22 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
     return () => animation.stop();
   }, [pulseAnim]);
 
-  // 録音開始
+  // 録音開始 + メータリングコールバック設定
   useEffect(() => {
+    // メータリングコールバック設定（dB → 0〜1に正規化）
+    // metering: -160（無音）〜 0（最大）dB
+    whisperService.setCallbacks({
+      onMeteringUpdate: (metering) => {
+        // -50dB以下は無視、-50〜0を0〜1に正規化（感度を上げる）
+        const normalized = Math.max(0, Math.min(1, (metering + 50) / 50));
+        setVolumeLevel(normalized);
+      },
+    });
+
     const startRecording = async () => {
       try {
+        // 録音モードに切り替え（休憩後などでも確実に録音可能にする）
+        await switchToRecordingMode();
         await whisperService.startRecording();
         console.log('[Session] Recording started');
       } catch (error) {
@@ -86,8 +108,9 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
     startRecording();
 
     return () => {
-      // クリーンアップ時に録音停止
+      // クリーンアップ時に録音停止 & コールバック解除
       whisperService.stopRecording();
+      whisperService.setCallbacks({});
     };
   }, []);
 
@@ -105,228 +128,236 @@ export function SessionScreen({ onEndSession }: SessionScreenProps) {
     }
   }, [remainingSeconds, currentSession]);
 
-  // 進捗率
-  const progress = currentSession
-    ? elapsedSeconds / currentSession.duration_sec
-    : 0;
-
   // セッション終了
   const handleEnd = async () => {
-    // 録音停止
+    if (isEnding) return;
+    playClickSound(); // Haptic feedback
+    setIsEnding(true);
+
+    // 録音停止 & 音声ファイルパス取得
     await whisperService.stopRecording();
+    const audioFilePath = whisperService.getAudioFilePath();
 
-    // Hooが「記録したよ」と言う
+    // Hooが「記録したよ」と言う + バウンスアニメーション
     setHooMessage('記録したよ');
+    setHooSpeaking(true);
 
-    // サウンド再生 + バウンスアニメーション（音声タイミングに同期）
+    // サウンド再生（Hooコンポーネントはmuteなので別途再生）
     playSessionEndSound();
-
-    // 「Ho Hoo」の音に合わせて2回バウンス
-    // Ho: 0.35-0.55s, Hoo: 0.65-0.85s
-    Animated.sequence([
-      // 最初の待機（音声立ち上がりまで）
-      Animated.delay(300),
-      // 1回目バウンス「Ho」
-      Animated.timing(hooBounceAnim, {
-        toValue: -10,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(hooBounceAnim, {
-        toValue: 0,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      // 谷間の待機
-      Animated.delay(100),
-      // 2回目バウンス「Hoo」
-      Animated.timing(hooBounceAnim, {
-        toValue: -10,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(hooBounceAnim, {
-        toValue: 0,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
 
     // 1.5秒後に遷移（アニメーション完了を待つ）
     setTimeout(async () => {
-      await endSession();
+      await endSession(undefined, audioFilePath || undefined);
       onEndSession();
     }, 1500);
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* Hoo - 聞いてる/話してる状態 */}
-      <View style={styles.hooSection}>
-        <Animated.Image
-          source={require('../../assets/images/hoo.png')}
-          style={[
-            styles.hooImage,
-            { transform: [{ translateY: hooBounceAnim }] },
-          ]}
-          resizeMode="contain"
-        />
-        <View style={styles.hooMessageBox}>
-          <Text style={styles.hooText}>{hooMessage}</Text>
-        </View>
-      </View>
+  // 動的スタイル
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    recordingDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.recording,
+    },
+    recordingLabel: {
+      fontSize: fontSize.xs,
+      fontWeight: fontWeight.semibold,
+      color: colors.recording,
+      letterSpacing: 1,
+    },
+    timerDisplay: {
+      backgroundColor: colors.backgroundSecondary,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.lg,
+    },
+    timerText: {
+      fontSize: fontSize['2xl'],
+      fontWeight: fontWeight.bold,
+      color: colors.textPrimary,
+      fontVariant: ['tabular-nums'],
+    },
+    endButton: {
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: borderRadius.xl,
+      paddingVertical: spacing.lg + spacing.xs,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    endButtonText: {
+      fontSize: fontSize.lg,
+      fontWeight: fontWeight.medium,
+      color: colors.textSecondary,
+    },
+    infoText: {
+      fontSize: fontSize.sm,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+  });
 
-      {/* タイマー表示 */}
-      <View style={styles.circleContainer}>
-        <View style={styles.timerCircle}>
-          {/* 進捗リング（簡易版） */}
-          <View style={[styles.progressRing, { opacity: progress }]} />
-
-          <View style={styles.timerContent}>
-            <Text style={styles.timerText}>
+  // 横向きレイアウト（Hooメイン + 下部にUI）
+  if (isLandscape) {
+    return (
+      <SafeAreaView style={dynamicStyles.container}>
+        {/* ステータス - 右上に配置 */}
+        <View style={styles.landscapeStatusBar}>
+          <View style={styles.recordingBadge}>
+            <Animated.View
+              style={[
+                dynamicStyles.recordingDot,
+                { transform: [{ scale: pulseAnim }] },
+              ]}
+            />
+            <Text style={dynamicStyles.recordingLabel}>REC</Text>
+          </View>
+          <View style={dynamicStyles.timerDisplay}>
+            <Text style={dynamicStyles.timerText}>
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </Text>
-            <Text style={styles.timerLabel}>残り時間</Text>
           </View>
+        </View>
+
+        {/* Hoo - 中央に */}
+        <View style={styles.landscapeHooSection}>
+          <Hoo
+            state="listening"
+            customMessage={hooMessage}
+            size="medium"
+            isSpeaking={hooSpeaking}
+            muteSound={true}
+            volumeLevel={volumeLevel}
+          />
+        </View>
+
+        {/* 下部バー - 終了ボタン */}
+        <View style={styles.landscapeBottomBar}>
+          <TouchableOpacity
+            style={[dynamicStyles.endButton, styles.landscapeEndButton, isEnding && styles.endButtonDisabled]}
+            onPress={handleEnd}
+            disabled={isEnding}
+            activeOpacity={0.7}
+          >
+            <Text style={dynamicStyles.endButtonText}>
+              {isEnding ? '終了中...' : '終了'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // 縦向きレイアウト（従来）
+  return (
+    <SafeAreaView style={dynamicStyles.container}>
+      {/* ステータスバー - 上部固定 */}
+      <View style={styles.statusBar}>
+        <View style={styles.recordingBadge}>
+          <Animated.View
+            style={[
+              dynamicStyles.recordingDot,
+              { transform: [{ scale: pulseAnim }] },
+            ]}
+          />
+          <Text style={dynamicStyles.recordingLabel}>REC</Text>
+        </View>
+        <View style={dynamicStyles.timerDisplay}>
+          <Text style={dynamicStyles.timerText}>
+            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+          </Text>
         </View>
       </View>
 
-      {/* 録音インジケーター */}
-      <View style={styles.indicatorContainer}>
-        <Animated.View
-          style={[
-            styles.recordingDot,
-            {
-              transform: [{ scale: pulseAnim }],
-            },
-          ]}
+      {/* Hoo - 画面中央の主役（Hooコンポーネント使用で位置統一） */}
+      <View style={styles.hooContainer}>
+        <Hoo
+          state="listening"
+          customMessage={hooMessage}
+          size="large"
+          isSpeaking={hooSpeaking}
+          muteSound={true}
+          volumeLevel={volumeLevel}
         />
-        <Text style={styles.indicatorText}>録音中</Text>
       </View>
 
-      {/* メッセージ */}
-      <View style={styles.messageContainer}>
-        <Text style={styles.messageText}>
-          セッション終了後に文字起こしされます
-        </Text>
-      </View>
-
-      {/* 終了ボタン */}
+      {/* 終了ボタン - 下部固定 */}
       <View style={styles.bottomSection}>
-        <TouchableOpacity style={styles.endButton} onPress={handleEnd}>
-          <Text style={styles.endButtonText}>セッション終了</Text>
+        <TouchableOpacity
+          style={[dynamicStyles.endButton, isEnding && styles.endButtonDisabled]}
+          onPress={handleEnd}
+          disabled={isEnding}
+          activeOpacity={0.7}
+        >
+          <Text style={dynamicStyles.endButtonText}>
+            {isEnding ? '終了中...' : 'セッション終了'}
+          </Text>
         </TouchableOpacity>
+        <Text style={dynamicStyles.infoText}>
+          終了後に文字起こしされます
+        </Text>
       </View>
     </SafeAreaView>
   );
 }
 
+// 静的スタイル（テーマに依存しない）
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  hooSection: {
-    alignItems: 'center',
-    paddingTop: spacing.lg,
-  },
-  hooImage: {
-    width: SCREEN_WIDTH * 0.25,
-    height: SCREEN_WIDTH * 0.18,
-    opacity: 0.9,
-  },
-  hooMessageBox: {
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  hooText: {
-    fontSize: fontSize.sm,
-    color: colors.textPrimary,
-  },
-  circleContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  timerCircle: {
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    borderRadius: CIRCLE_SIZE / 2,
-    backgroundColor: colors.backgroundSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: colors.primary,
-  },
-  progressRing: {
-    position: 'absolute',
-    width: CIRCLE_SIZE,
-    height: CIRCLE_SIZE,
-    borderRadius: CIRCLE_SIZE / 2,
-    borderWidth: 3,
-    borderColor: colors.primary,
-  },
-  timerContent: {
-    alignItems: 'center',
-  },
-  timerText: {
-    fontSize: fontSize['5xl'],
-    fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
-    fontVariant: ['tabular-nums'],
-  },
-  timerLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  indicatorContainer: {
+  // HomeScreenと同じ高さに揃える
+  statusBar: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.lg,
-    gap: spacing.sm,
-  },
-  recordingDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.recording,
-  },
-  indicatorText: {
-    fontSize: fontSize.base,
-    color: colors.textSecondary,
-  },
-  messageContainer: {
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
-    alignItems: 'center',
+    minHeight: 52, // HomeScreenのheaderと同じ高さ
   },
-  messageText: {
-    fontSize: fontSize.sm,
-    color: colors.textMuted,
-    textAlign: 'center',
+  recordingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    gap: spacing.sm,
+  },
+  hooContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   bottomSection: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
+    gap: spacing.md,
+    minHeight: 160, // HomeScreenと揃える
   },
-  endButton: {
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.xl,
-    paddingVertical: spacing.lg,
+  endButtonDisabled: {
+    opacity: 0.5,
+  },
+  // 横向きレイアウト用（Hooメイン + 下部UI）
+  landscapeStatusBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
-  endButtonText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.medium,
-    color: colors.textSecondary,
+  landscapeHooSection: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  landscapeBottomBar: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.md,
+  },
+  landscapeEndButton: {
+    paddingVertical: spacing.md,
   },
 });

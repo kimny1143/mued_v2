@@ -21,6 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { localStorage } from '../cache/storage';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
+import { playClickSound } from '../utils/sound';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -103,6 +104,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
   // 次のカードへ
   const handleNext = () => {
+    playClickSound();
     if (currentIndex < CARDS.length - 1) {
       flatListRef.current?.scrollToIndex({
         index: currentIndex + 1,
@@ -115,6 +117,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
 
   // スキップ
   const handleSkip = () => {
+    playClickSound();
     handleComplete();
   };
 
