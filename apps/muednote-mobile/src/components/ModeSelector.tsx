@@ -10,10 +10,11 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../providers/ThemeProvider';
+import { ModeIcon } from './ModeIcon';
 import { FOCUS_MODES, type FocusMode, type FocusModeId } from '../types/timer';
 import { spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
+import { formatDurationMinutes } from '../utils/formatTime';
 
 interface ModeSelectorProps {
   selectedMode: FocusModeId;
@@ -21,38 +22,6 @@ interface ModeSelectorProps {
   disabled?: boolean;
   /** カスタムモードの時間（秒） */
   customDuration?: number;
-}
-
-// アイコンマッピング（Expo Vector Icons使用）
-const ICONS: Record<string, { family: 'ionicons' | 'feather' | 'material'; name: string }> = {
-  Timer: { family: 'ionicons', name: 'timer-outline' },
-  Coffee: { family: 'feather', name: 'coffee' },
-  Brain: { family: 'material', name: 'brain' },
-  Settings: { family: 'ionicons', name: 'options-outline' },
-};
-
-function ModeIcon({
-  iconName,
-  size,
-  color,
-}: {
-  iconName: string;
-  size: number;
-  color: string;
-}) {
-  const iconConfig = ICONS[iconName];
-  if (!iconConfig) return null;
-
-  switch (iconConfig.family) {
-    case 'ionicons':
-      return <Ionicons name={iconConfig.name as any} size={size} color={color} />;
-    case 'feather':
-      return <Feather name={iconConfig.name as any} size={size} color={color} />;
-    case 'material':
-      return <MaterialCommunityIcons name={iconConfig.name as any} size={size} color={color} />;
-    default:
-      return null;
-  }
 }
 
 export function ModeSelector({
@@ -111,11 +80,6 @@ export function ModeSelector({
     },
   });
 
-  const formatDuration = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    return `${minutes}m`;
-  };
-
   return (
     <View style={dynamicStyles.container}>
       {FOCUS_MODES.map((mode) => {
@@ -136,7 +100,7 @@ export function ModeSelector({
           >
             <View style={dynamicStyles.iconContainer}>
               <ModeIcon
-                iconName={mode.icon}
+                modeId={mode.id}
                 size={20}
                 color={isActive ? colors.textPrimary : colors.textSecondary}
               />
@@ -155,7 +119,7 @@ export function ModeSelector({
                 isActive && dynamicStyles.modeDurationActive,
               ]}
             >
-              {isCustom ? formatDuration(customDuration) : formatDuration(mode.focusDuration)}
+              {isCustom ? formatDurationMinutes(customDuration) : formatDurationMinutes(mode.focusDuration)}
             </Text>
           </TouchableOpacity>
         );

@@ -16,8 +16,9 @@ import {
   Modal,
   Pressable,
 } from 'react-native';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../providers/ThemeProvider';
+import { ModeIcon } from './ModeIcon';
 import { spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 import {
   FOCUS_MODES,
@@ -34,26 +35,6 @@ interface SessionControlBarProps {
   onCustomDurationChange: (duration: number) => void;
   onStartSession: () => void;
   disabled?: boolean;
-}
-
-// モードアイコンマッピング
-const MODE_ICONS: Record<FocusModeId, { family: 'ionicons' | 'feather' | 'material'; name: string }> = {
-  pomodoro: { family: 'ionicons', name: 'timer-outline' },
-  standard: { family: 'feather', name: 'coffee' },
-  deepwork: { family: 'material', name: 'brain' },
-  custom: { family: 'ionicons', name: 'options-outline' },
-};
-
-function ModeIcon({ modeId, size, color }: { modeId: FocusModeId; size: number; color: string }) {
-  const config = MODE_ICONS[modeId];
-  switch (config.family) {
-    case 'ionicons':
-      return <Ionicons name={config.name as any} size={size} color={color} />;
-    case 'feather':
-      return <Feather name={config.name as any} size={size} color={color} />;
-    case 'material':
-      return <MaterialCommunityIcons name={config.name as any} size={size} color={color} />;
-  }
 }
 
 // 時間オプション（5分刻み）

@@ -19,34 +19,15 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useSessionStore } from '../stores/sessionStore';
 import { useTheme } from '../providers/ThemeProvider';
 import { whisperService } from '../services/whisperService';
 import { playSessionEndSound, switchToRecordingMode, playClickSound } from '../utils/sound';
 import { spacing, fontSize, fontWeight, borderRadius, hooSizes } from '../constants/theme';
 import { Hoo } from '../components/Hoo';
-import { getFocusMode, FOCUS_MODES, type FocusModeId } from '../types/timer';
-
-// モードアイコンマッピング
-const MODE_ICONS: Record<FocusModeId, { family: 'ionicons' | 'feather' | 'material'; name: string }> = {
-  pomodoro: { family: 'ionicons', name: 'timer-outline' },
-  standard: { family: 'feather', name: 'coffee' },
-  deepwork: { family: 'material', name: 'brain' },
-  custom: { family: 'ionicons', name: 'options-outline' },
-};
-
-function ModeIcon({ modeId, size, color }: { modeId: FocusModeId; size: number; color: string }) {
-  const config = MODE_ICONS[modeId];
-  switch (config.family) {
-    case 'ionicons':
-      return <Ionicons name={config.name as any} size={size} color={color} />;
-    case 'feather':
-      return <Feather name={config.name as any} size={size} color={color} />;
-    case 'material':
-      return <MaterialCommunityIcons name={config.name as any} size={size} color={color} />;
-  }
-}
+import { ModeIcon } from '../components/ModeIcon';
+import { getFocusMode, FOCUS_MODES } from '../types/timer';
 
 interface SessionScreenProps {
   onEndSession: () => void;

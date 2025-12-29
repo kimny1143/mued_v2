@@ -30,6 +30,7 @@ import { useTheme } from '../providers/ThemeProvider';
 import { spacing, fontSize, fontWeight, borderRadius, hooSizes } from '../constants/theme';
 import { Hoo } from '../components/Hoo';
 import { playClickSound } from '../utils/sound';
+import { formatTimestamp } from '../utils/formatTime';
 import * as Sharing from 'expo-sharing';
 import RNFS from 'react-native-fs';
 
@@ -301,12 +302,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     );
   };
 
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${String(secs).padStart(2, '0')}`;
-  };
-
   const formatDuration = (): string => {
     if (sessions.length === 0) return '0m';
     let totalMs = 0;
@@ -471,7 +466,7 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
   // ログアイテムのレンダリング
   const renderLogItem = ({ item }: { item: LocalLog }) => (
     <View style={dynamicStyles.logItem}>
-      <Text style={dynamicStyles.logTime}>{formatTime(item.timestamp_sec)}</Text>
+      <Text style={dynamicStyles.logTime}>{formatTimestamp(item.timestamp_sec)}</Text>
       <Text style={dynamicStyles.logText}>{item.text}</Text>
     </View>
   );

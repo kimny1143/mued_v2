@@ -21,37 +21,19 @@ import {
   Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../providers/ThemeProvider';
 import { Hoo } from '../components/Hoo';
+import { ModeIcon } from '../components/ModeIcon';
 import { playHooSound, playClickSound } from '../utils/sound';
 import { spacing, fontSize, fontWeight, borderRadius, hooSizes } from '../constants/theme';
 import { getFocusMode, FOCUS_MODES, DAILY_LIMITS, type FocusModeId, type FocusMode } from '../types/timer';
 import { localStorage } from '../cache/storage';
 import { getBreakMessage } from '../constants/hooMessages';
+import { formatTotalTime } from '../utils/formatTime';
 import { whisperService } from '../services/whisperService';
 import { encodeToM4A } from '../../modules/audio-encoder';
 import RNFS from 'react-native-fs';
-
-// モードアイコンマッピング
-const MODE_ICONS: Record<FocusModeId, { family: 'ionicons' | 'feather' | 'material'; name: string }> = {
-  pomodoro: { family: 'ionicons', name: 'timer-outline' },
-  standard: { family: 'feather', name: 'coffee' },
-  deepwork: { family: 'material', name: 'brain' },
-  custom: { family: 'ionicons', name: 'options-outline' },
-};
-
-function ModeIcon({ modeId, size, color }: { modeId: FocusModeId; size: number; color: string }) {
-  const config = MODE_ICONS[modeId];
-  switch (config.family) {
-    case 'ionicons':
-      return <Ionicons name={config.name as any} size={size} color={color} />;
-    case 'feather':
-      return <Feather name={config.name as any} size={size} color={color} />;
-    case 'material':
-      return <MaterialCommunityIcons name={config.name as any} size={size} color={color} />;
-  }
-}
 
 interface BreakScreenProps {
   mode: FocusModeId;
@@ -215,16 +197,6 @@ export function BreakScreen({
   // 時間フォーマット
   const minutes = Math.floor(remainingSeconds / 60);
   const seconds = remainingSeconds % 60;
-
-  // 累計時間をフォーマット
-  const formatTotalTime = (secs: number): string => {
-    const hours = Math.floor(secs / 3600);
-    const mins = Math.floor((secs % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h${mins}m`;
-    }
-    return `${mins}m`;
-  };
 
   // Hooのメッセージ（hooMessages.tsから取得）
   const hooMessage = getBreakMessage(

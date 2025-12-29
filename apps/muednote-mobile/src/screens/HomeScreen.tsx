@@ -34,19 +34,10 @@ import {
   type FocusModeId,
 } from '../types/timer';
 import { getHomeMessage, MODE_MESSAGES } from '../constants/hooMessages';
+import { formatTotalTime } from '../utils/formatTime';
 
 interface HomeScreenProps {
   onStartSession: (mode: FocusModeId) => void;
-}
-
-// 時間フォーマット（1h 30m形式）
-function formatTotalTime(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
 }
 
 // ダッシュボード展開時のスケール（通常サイズの割合）

@@ -22,6 +22,7 @@ import { apiClient } from '../api/client';
 import { MobileSession, MobileLog } from '../api/types';
 import { spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 import { playClickSound } from '../utils/sound';
+import { formatTotalTime, formatTimeFromIso, getDateKey } from '../utils/formatTime';
 
 interface HistoryScreenProps {
   onBack: () => void;
@@ -40,31 +41,6 @@ interface DateGroup {
   isExpanded: boolean;
   totalDuration: number;
   sessionCount: number;
-}
-
-// 時間フォーマット
-function formatDuration(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  if (mins >= 60) {
-    const hours = Math.floor(mins / 60);
-    const remainingMins = mins % 60;
-    return `${hours}h ${remainingMins}m`;
-  }
-  return `${mins}m`;
-}
-
-// 時刻フォーマット（HH:MM）
-function formatTime(isoString: string): string {
-  const date = new Date(isoString);
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  return `${hours}:${minutes}`;
-}
-
-// 日付キー取得（YYYY-MM-DD）
-function getDateKey(isoString: string): string {
-  const date = new Date(isoString);
-  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
 }
 
 // 日付表示フォーマット（M/D（曜日））
@@ -463,7 +439,7 @@ export function HistoryScreen({ onBack }: HistoryScreenProps) {
                 <View style={dynamicStyles.dateInfo}>
                   <Text style={dynamicStyles.dateTitle}>{group.displayDate}</Text>
                   <Text style={dynamicStyles.dateMeta}>
-                    {group.sessionCount}回 / {formatDuration(group.totalDuration)}
+                    {group.sessionCount}回 / {formatTotalTime(group.totalDuration)}
                   </Text>
                 </View>
                 <View style={dynamicStyles.dateIcon}>
@@ -489,10 +465,10 @@ export function HistoryScreen({ onBack }: HistoryScreenProps) {
                         activeOpacity={0.7}
                       >
                         <Text style={dynamicStyles.sessionTime}>
-                          {formatTime(session.started_at)}
+                          {formatTimeFromIso(session.started_at)}
                         </Text>
                         <Text style={dynamicStyles.sessionDuration}>
-                          {formatDuration(session.duration_sec)}
+                          {formatTotalTime(session.duration_sec)}
                         </Text>
                         {(session.log_count ?? 0) > 0 && (
                           <View style={dynamicStyles.sessionExpandIcon}>
