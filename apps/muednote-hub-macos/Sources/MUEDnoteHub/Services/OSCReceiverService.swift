@@ -9,7 +9,8 @@ class OSCReceiverService: ObservableObject {
     private let abletonReceivePort: UInt16 = 11001
     private let debounceMs: Int = 500
     private let maxTracksToMonitor = 10
-    private let maxParamsPerDevice = 30
+    private let maxParamsPerDevice = 8  // Reduced from 30 to avoid listener overload
+    private let pollingIntervalMs: Int = 200  // Poll every 200ms
 
     // OSC Server & Client
     private var oscServer: OSCServer?
@@ -22,6 +23,11 @@ class OSCReceiverService: ObservableObject {
     // Debounce state
     private var pendingChanges: [String: PendingChange] = [:]
     private var paramValueCache: [String: Double] = [:]
+
+    // Polling state
+    private var pollingTask: Task<Void, Never>?
+    private var registeredDevices: [(trackId: Int, deviceId: Int, numParams: Int)] = []
+    private var pendingValueChanges: Set<String> = []  // Keys with detected value changes
 
     private struct PendingChange {
         let value: Double
@@ -65,15 +71,35 @@ class OSCReceiverService: ObservableObject {
     }
 
     func stop() {
+        pollingTask?.cancel()
+        pollingTask = nil
         oscServer?.stop()
         oscServer = nil
         isRunning = false
+        registeredDevices.removeAll()
+        pendingValueChanges.removeAll()
+        paramValueCache.removeAll()
         onConnectionChange?(false)
         print("[OSC] Server stopped")
     }
 
     private func requestTrackInfo() {
         sendOSC(address: "/live/song/get/num_tracks")
+    }
+
+    private func appendToLogFile(_ text: String) {
+        let logPath = "/tmp/muednote-osc.log"
+        if let data = text.data(using: .utf8) {
+            if FileManager.default.fileExists(atPath: logPath) {
+                if let handle = FileHandle(forWritingAtPath: logPath) {
+                    handle.seekToEndOfFile()
+                    handle.write(data)
+                    handle.closeFile()
+                }
+            } else {
+                FileManager.default.createFile(atPath: logPath, contents: data, attributes: nil)
+            }
+        }
     }
 
     private func sendOSC(address: String, args: [any OSCValue] = []) {
@@ -108,7 +134,7 @@ class OSCReceiverService: ObservableObject {
         }
 
         switch address {
-        // Parameter value (numeric) - cache for later use with value_string
+        // Parameter value (numeric) - cache and detect changes
         case "/live/device/get/parameter/value":
             guard message.values.count >= 4 else { return }
             let trackId: Int
@@ -129,9 +155,20 @@ class OSCReceiverService: ObservableObject {
             else { return }
 
             let key = "\(trackId):\(deviceId):\(paramId)"
+
+            // Detect change by comparing with cached value
+            let oldValue = paramValueCache[key]
+            let hasChanged = (oldValue == nil) || (abs(oldValue! - value) > 0.001)
             paramValueCache[key] = value
 
-        // Parameter value string (triggers debounced log)
+            // If value changed, mark as pending (will be logged when value_string arrives)
+            if hasChanged && oldValue != nil {
+                pendingValueChanges.insert(key)
+                let changeLog = "[CHANGE] \(key): \(oldValue!) -> \(value)\n"
+                appendToLogFile(changeLog)
+            }
+
+        // Parameter value string (triggers debounced log only if value changed)
         case "/live/device/get/parameter/value_string":
             guard message.values.count >= 4 else { return }
             let trackId: Int
@@ -149,7 +186,14 @@ class OSCReceiverService: ObservableObject {
             guard let valueString = message.values[3] as? String else { return }
 
             let key = "\(trackId):\(deviceId):\(paramId)"
+
+            // Only log if value has changed (from polling or listener)
+            guard pendingValueChanges.contains(key) else { return }
+            pendingValueChanges.remove(key)
+
             let value = paramValueCache[key] ?? 0
+
+            appendToLogFile("[LOG] Track \(trackId) Device \(deviceId) Param \(paramId): \(valueString)\n")
 
             scheduleParameterChange(
                 key: key,
@@ -285,12 +329,43 @@ class OSCReceiverService: ObservableObject {
     }
 
     private func registerParameterListeners(trackId: Int, deviceId: Int, numParams: Int) {
-        let maxParams = min(numParams, maxParamsPerDevice)
-        for paramId in 0..<maxParams {
-            // Register value listener (sends both value and value_string)
+        // Use actual param count (not maxParamsPerDevice limit for polling accuracy)
+        let actualParams = min(numParams, maxParamsPerDevice)
+
+        // Still try listeners (might work in some cases)
+        for paramId in 0..<actualParams {
             sendOSC(address: "/live/device/start_listen/parameter/value", args: [Int32(trackId), Int32(deviceId), Int32(paramId)])
         }
-        print("[OSC] Track \(trackId) Device \(deviceId): registered \(maxParams) param listeners")
+        print("[OSC] Track \(trackId) Device \(deviceId): registered \(actualParams)/\(numParams) listeners")
+
+        // Register device for polling as backup (use actual count to avoid index out of range)
+        registeredDevices.append((trackId: trackId, deviceId: deviceId, numParams: actualParams))
+
+        // Start polling if not already running
+        if pollingTask == nil {
+            startPolling()
+        }
+    }
+
+    private func startPolling() {
+        pollingTask = Task { @MainActor in
+            print("[OSC] Starting parameter polling (interval: \(pollingIntervalMs)ms)")
+
+            while !Task.isCancelled {
+                // Poll all registered device parameters
+                for device in registeredDevices {
+                    for paramId in 0..<device.numParams {
+                        // Request current value and value_string
+                        sendOSC(address: "/live/device/get/parameter/value", args: [Int32(device.trackId), Int32(device.deviceId), Int32(paramId)])
+                        sendOSC(address: "/live/device/get/parameter/value_string", args: [Int32(device.trackId), Int32(device.deviceId), Int32(paramId)])
+                    }
+                }
+
+                try? await Task.sleep(nanoseconds: UInt64(pollingIntervalMs * 1_000_000))
+            }
+
+            print("[OSC] Parameter polling stopped")
+        }
     }
 
     private func scheduleParameterChange(
