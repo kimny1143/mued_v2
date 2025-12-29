@@ -1,6 +1,6 @@
 # MUEDnote v7 プロジェクト概要
 
-**最終更新**: 2025-12-22
+**最終更新**: 2025-12-29
 **このドキュメントについて**: プロジェクト再開時の最初の一読用。概要把握が目的。
 
 ---
@@ -122,18 +122,33 @@ npm run db:test-connection
 
 ## 関連文書
 
+### 仕様 (`specs/`)
+
 | ドキュメント | 用途 |
 |-------------|------|
-| **[muednote_v7_mvp_spec.md](muednote_v7_mvp_spec.md)** | MVP 詳細仕様（画面設計、API、DB スキーマ） |
-| **[muednote_master_plan_v7.md](muednote_master_plan_v7.md)** | v7 統合仕様（コンセプト、全体設計） |
-| **[poc-log.md](poc-log.md)** | 実装ログ（問題と解決、進捗詳細） |
-| **[mvp/](mvp/)** | MVP テスト記録 |
+| **[specs/muednote_v7_mvp_spec.md](specs/muednote_v7_mvp_spec.md)** | MVP 詳細仕様（画面設計、API、DB スキーマ） |
+| **[specs/muednote_master_plan_v7.md](specs/muednote_master_plan_v7.md)** | v7 統合仕様（コンセプト、全体設計） |
+| **[specs/muednote_rest_tracker_spec.md](specs/muednote_rest_tracker_spec.md)** | 休憩トラッカー仕様 |
+
+### DAW連携 (`daw/`)
+
+| ドキュメント | 用途 |
+|-------------|------|
+| **[daw/muednote-daw-poc-report.md](daw/muednote-daw-poc-report.md)** | OSC版 PoC検証レポート |
+| **[daw/muednote-daw-full-scope.md](daw/muednote-daw-full-scope.md)** | フルスコープ・ロードマップ |
+
+### 開発ログ (`mvp/`)
+
+| ドキュメント | 用途 |
+|-------------|------|
+| **[mvp/](mvp/)** | MVP テスト記録・日次ログ |
 
 ### コード
 
 | パス | 内容 |
 |------|------|
 | `apps/muednote-mobile/` | React Native アプリ本体 |
+| `apps/muednote-hub-macos/` | Swift macOS メニューバーアプリ（DAW連携） |
 | `app/api/muednote/` | Next.js API エンドポイント |
 | `db/schema/muednote-mobile.ts` | Drizzle スキーマ定義 |
 
