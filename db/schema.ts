@@ -303,3 +303,8 @@ export * from './schema/rag-metrics';
 // MUEDnote Mobile v7 MVP
 // ========================================
 export * from './schema/muednote-mobile';
+
+// ========================================
+// MUEDnote DAW Logs (OSC Integration)
+// ========================================
+export * from './schema/muednote-daw-logs';
