@@ -17,39 +17,23 @@ import {
   Image,
   Text,
   StyleSheet,
-  Dimensions,
   Animated,
+  useWindowDimensions,
 } from 'react-native';
 import { useTheme } from '../providers/ThemeProvider';
 import { useHooSettingsStore } from '../stores/hooSettingsStore';
 import { spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 import { playHooSound } from '../utils/sound';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// サイズ定義
-const SIZES = {
-  small: {
-    width: SCREEN_WIDTH * 0.25,
-    height: SCREEN_WIDTH * 0.18,
-    fontSize: fontSize.sm,
-    bubblePadding: spacing.md,
-  },
-  medium: {
-    width: SCREEN_WIDTH * 0.35,
-    height: SCREEN_WIDTH * 0.25,
-    fontSize: fontSize.base,
-    bubblePadding: spacing.lg,
-  },
-  large: {
-    width: SCREEN_WIDTH * 0.7,
-    height: SCREEN_WIDTH * 0.5,
-    fontSize: fontSize.lg,
-    bubblePadding: spacing.xl,
-  },
+// サイズ係数（短辺ベースで計算するので縦横で一貫したサイズになる）
+const SIZE_FACTORS = {
+  small: { width: 0.35, height: 0.25 },
+  medium: { width: 0.5, height: 0.36 },
+  mediumLarge: { width: 0.65, height: 0.47 },
+  large: { width: 0.8, height: 0.57 },
 };
 
-export type HooSize = 'small' | 'medium' | 'large';
+export type HooSize = 'small' | 'medium' | 'mediumLarge' | 'large';
 export type HooState = 'idle' | 'listening' | 'thinking' | 'done' | 'empty';
 
 interface HooProps {
@@ -57,10 +41,12 @@ interface HooProps {
   customMessage?: string;
   /** trueにするとHooが上下にバウンス（鳴き声と連動） */
   isSpeaking?: boolean;
-  /** サイズ: 'small' | 'medium' | 'large' */
+  /** サイズ: 'small' | 'medium' | 'mediumLarge' | 'large' */
   size?: HooSize;
   /** 吹き出しを非表示にする */
   hideBubble?: boolean;
+  /** 吹き出しをHooの上に重ねて表示（横向き用） */
+  overlayBubble?: boolean;
   /** サウンド再生をスキップ（録音中など） */
   muteSound?: boolean;
   /** 音量レベル（0〜1）に応じてHooが反応 */
@@ -82,20 +68,31 @@ export function Hoo({
   isSpeaking = false,
   size = 'medium',
   hideBubble = false,
+  overlayBubble = false,
   muteSound = false,
   volumeLevel = 0,
 }: HooProps) {
   const { colors, isDark } = useTheme();
   const { settings: hooSettings } = useHooSettingsStore();
+  const { width, height } = useWindowDimensions();
   const message = customMessage ?? stateMessages[state];
-  const sizeConfig = SIZES[size];
+
+  // 短辺ベースでサイズ計算（縦横回転しても一貫したサイズになる）
+  const shortSide = Math.min(width, height);
+  const factors = SIZE_FACTORS[size];
+  const sizeConfig = {
+    width: shortSide * factors.width,
+    height: shortSide * factors.height,
+    fontSize: size === 'small' ? fontSize.sm : size === 'large' ? fontSize.lg : fontSize.base,
+    bubblePadding: size === 'small' ? spacing.md : size === 'large' ? spacing.xl : spacing.lg,
+  };
 
   // バウンスアニメーション用（isSpeaking）
   const bounceAnim = useRef(new Animated.Value(0)).current;
   // 音量反応アニメーション用（scale）
   const volumeScaleAnim = useRef(new Animated.Value(1)).current;
   // バウンス量もサイズに応じて調整
-  const bounceAmount = size === 'large' ? -20 : size === 'small' ? -5 : -10;
+  const bounceAmount = size === 'large' ? -20 : size === 'mediumLarge' ? -15 : size === 'small' ? -5 : -10;
 
   useEffect(() => {
     if (isSpeaking) {
@@ -173,7 +170,7 @@ export function Hoo({
   }, [volumeLevel, volumeScaleAnim, hooSettings]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, overlayBubble && styles.containerOverlay]}>
       {/* Hoo Image with bounce + volume scale animation */}
       <Animated.View
         style={[
@@ -201,15 +198,21 @@ export function Hoo({
 
       {/* Speech Bubble */}
       {!hideBubble && (
-        <View style={styles.bubbleContainer}>
-          <View style={[styles.bubbleTail, { borderBottomColor: colors.backgroundSecondary }]} />
+        <View style={[
+          styles.bubbleContainer,
+          overlayBubble && styles.bubbleContainerOverlay,
+        ]}>
+          {!overlayBubble && (
+            <View style={[styles.bubbleTail, { borderBottomColor: colors.backgroundSecondary }]} />
+          )}
           <View
             style={[
               styles.bubble,
               {
                 paddingHorizontal: sizeConfig.bubblePadding,
-                backgroundColor: colors.backgroundSecondary,
+                backgroundColor: overlayBubble ? 'rgba(22, 33, 62, 0.9)' : colors.backgroundSecondary,
                 borderColor: colors.border,
+                maxWidth: width * 0.85,
               },
             ]}
           >
@@ -228,6 +231,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.lg,
   },
+  containerOverlay: {
+    // オーバーレイモード時は相対配置の親要素として機能
+    position: 'relative',
+  },
   hooWrapper: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -240,6 +247,15 @@ const styles = StyleSheet.create({
   bubbleContainer: {
     alignItems: 'center',
     marginTop: spacing.md,
+  },
+  bubbleContainerOverlay: {
+    // Hooの口あたりに重ねて表示（横向き用）
+    position: 'absolute',
+    top: '55%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
   },
   bubbleTail: {
     width: 0,
@@ -254,7 +270,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    maxWidth: SCREEN_WIDTH * 0.85,
+    alignSelf: 'center',
   },
   bubbleText: {
     fontWeight: fontWeight.medium,

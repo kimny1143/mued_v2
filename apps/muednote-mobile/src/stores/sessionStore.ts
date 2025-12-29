@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { localStorage, UserSettings } from '../cache/storage';
+import { localStorage, UserSettings, DailyTotal } from '../cache/storage';
 import { LocalSession, LocalLog, FocusModeId } from '../api/types';
 
 // アプリの状態
@@ -27,6 +27,9 @@ interface SessionState {
   // 設定
   settings: UserSettings;
 
+  // 1日の累計
+  dailyTotal: DailyTotal;
+
   // アクション
   initialize: () => Promise<void>;
   startSession: (durationSec: number, mode?: FocusModeId) => Promise<LocalSession>;
@@ -37,6 +40,7 @@ interface SessionState {
   setRecording: (recording: boolean) => void;
   loadSettings: () => Promise<void>;
   updateSettings: (settings: Partial<UserSettings>) => Promise<void>;
+  loadDailyTotal: () => Promise<void>;
   reset: () => void;
 }
 
@@ -51,8 +55,14 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   isWhisperReady: false,
   settings: {
     defaultDuration: 3600,
+    customDuration: 45 * 60, // 45分
     enableVAD: false, // バッチ処理方式ではVAD不要
     autoSync: true,
+  },
+  dailyTotal: {
+    date: new Date().toISOString().split('T')[0],
+    totalSeconds: 0,
+    sessionCount: 0,
   },
 
   /**
@@ -63,6 +73,9 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       // 設定読み込み
       const settings = await localStorage.getSettings();
 
+      // 1日の累計読み込み
+      const dailyTotal = await localStorage.getDailyTotal();
+
       // アクティブセッションがあれば復元
       const activeSession = await localStorage.getCurrentSession();
 
@@ -70,6 +83,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         isInitialized: true,
         initError: null,
         settings,
+        dailyTotal,
         currentSession: activeSession,
         appState: activeSession ? 'recording' : 'idle',
         elapsedSeconds: activeSession
@@ -79,7 +93,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           : 0,
       });
 
-      console.log('[Store] Initialized', { hasActiveSession: !!activeSession });
+      console.log('[Store] Initialized', { hasActiveSession: !!activeSession, dailyTotal });
     } catch (error) {
       console.error('[Store] Initialize error:', error);
       set({
@@ -110,18 +124,22 @@ export const useSessionStore = create<SessionState>((set, get) => ({
    * セッション終了
    */
   endSession: async (memo?: string, audioFilePath?: string) => {
-    const { currentSession } = get();
+    const { currentSession, elapsedSeconds } = get();
     if (!currentSession) return null;
 
     const session = await localStorage.endSession(currentSession.id, memo, audioFilePath);
+
+    // 1日の累計に追加
+    const dailyTotal = await localStorage.addToDailyTotal(elapsedSeconds);
 
     set({
       currentSession: null,
       appState: 'reviewing',
       isRecording: false,
+      dailyTotal,
     });
 
-    console.log('[Store] Session ended:', currentSession.id);
+    console.log('[Store] Session ended:', currentSession.id, 'Duration:', elapsedSeconds, 'DailyTotal:', dailyTotal);
     return session;
   },
 
@@ -190,6 +208,14 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     await localStorage.saveSettings(updates);
     const settings = await localStorage.getSettings();
     set({ settings });
+  },
+
+  /**
+   * 1日の累計読み込み
+   */
+  loadDailyTotal: async () => {
+    const dailyTotal = await localStorage.getDailyTotal();
+    set({ dailyTotal });
   },
 
   /**

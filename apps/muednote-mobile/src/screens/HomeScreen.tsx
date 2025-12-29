@@ -1,55 +1,78 @@
 /**
- * HomeScreen - Hoo中心のメイン画面
+ * HomeScreen - Hoo中心のメイン画面 + ダッシュボード
  *
  * 「アプリ = Hoo」のコンセプト:
  * - Hooが画面の主役として大きく表示
- * - 起動時に「Ho Hoo」の声とアニメーション
- * - モード選択時にHooがそのモードを説明
- * - 吹き出しで状態を伝える
- * - 最小限のUIで録音開始
- * - ダーク/ライトモード切替
+ * - 上スワイプでダッシュボード（Hooが縮小して上に移動）
+ * - 下スワイプでダッシュボードを閉じる
+ * - モード選択、録音開始
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  useWindowDimensions,
+  Animated,
+  PanResponder,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Slider } from '@miblanchard/react-native-slider';
+import { Ionicons } from '@expo/vector-icons';
 import { useSessionStore } from '../stores/sessionStore';
 import { useTheme } from '../providers/ThemeProvider';
 import { Hoo, HooState } from '../components/Hoo';
-import { ModeSelector } from '../components/ModeSelector';
-import {
-  playSessionStartSound,
-  playClickSound,
-  switchToRecordingMode,
-} from '../utils/sound';
-import { spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
+import { SessionControlBar } from '../components/SessionControlBar';
+import { DashboardContent } from '../components/DashboardContent';
+import { switchToRecordingMode, playClickSound } from '../utils/sound';
+import { spacing, fontSize, fontWeight, borderRadius, hooSizes } from '../constants/theme';
 import {
   FOCUS_MODES,
   getFocusMode,
-  CUSTOM_MODE_LIMITS,
   type FocusMode,
   type FocusModeId,
 } from '../types/timer';
+import { getHomeMessage, MODE_MESSAGES } from '../constants/hooMessages';
 
 interface HomeScreenProps {
   onStartSession: (mode: FocusModeId) => void;
 }
 
+// 時間フォーマット（1h 30m形式）
+function formatTotalTime(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+}
+
+// ダッシュボード展開時のスケール（通常サイズの割合）
+const DASHBOARD_HOO_SCALE = 0.4; // 40%に縮小
+const SWIPE_THRESHOLD = 80;
+
 export function HomeScreen({ onStartSession }: HomeScreenProps) {
-  const { settings, startSession, isWhisperReady } = useSessionStore();
+  const { settings, startSession, isWhisperReady, updateSettings, dailyTotal } = useSessionStore();
   const { colors, mode, toggleTheme, isDark } = useTheme();
   const { width, height } = useWindowDimensions();
   const isLandscape = width > height;
 
   // モード選択状態
   const [selectedModeId, setSelectedModeId] = useState<FocusModeId>('standard');
-  const [customDuration, setCustomDuration] = useState(45 * 60); // カスタム用
+
+  // カスタム時間は設定から取得
+  const customDuration = settings.customDuration || 45 * 60;
 
   // Hooの状態
   const [hooSpeaking, setHooSpeaking] = useState(false);
   const [hooMessage, setHooMessage] = useState<string | undefined>(undefined);
   const [hasGreeted, setHasGreeted] = useState(false);
+
+  // ダッシュボード展開状態
+  const [isDashboardExpanded, setIsDashboardExpanded] = useState(false);
+  const dashboardAnim = useRef(new Animated.Value(0)).current;
 
   // メッセージ表示タイマー
   const messageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -60,11 +83,96 @@ export function HomeScreen({ onStartSession }: HomeScreenProps) {
   // Hooの状態を決定
   const hooState: HooState = isWhisperReady ? 'idle' : 'thinking';
 
-  // 準備中メッセージ（モード説明がない場合のみ表示）
-  const displayMessage = hooMessage || (isWhisperReady ? undefined : '準備中...少し待ってね');
+  // 4時間超過チェック
+  const isOverLimitEarly = dailyTotal.totalSeconds >= 4 * 60 * 60;
+
+  // 準備中メッセージ
+  const displayMessage = getHomeMessage(isOverLimitEarly, isWhisperReady, hooMessage);
 
   // テーマモードのラベル
   const themeModeLabel = mode === 'system' ? 'Auto' : mode === 'dark' ? 'Dark' : 'Light';
+
+  // ダッシュボード用の計算値
+  const dashboardHeight = height * 0.65;
+
+  // アニメーション値の補間
+  const hooScale = dashboardAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, DASHBOARD_HOO_SCALE],
+  });
+
+  const hooTranslateY = dashboardAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -(height * 0.42)], // ダッシュボード上部に配置
+  });
+
+  const controlBarOpacity = dashboardAnim.interpolate({
+    inputRange: [0, 0.3],
+    outputRange: [1, 0],
+  });
+
+  const dashboardTranslateY = dashboardAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [dashboardHeight, 0],
+  });
+
+  // PanResponder for vertical swipe
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // 垂直方向の動きを検出
+        const isVerticalSwipe = Math.abs(gestureState.dy) > 20 && Math.abs(gestureState.dx) < 30;
+        return isVerticalSwipe;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (!isDashboardExpanded && gestureState.dy < 0) {
+          // 上スワイプ（ダッシュボード展開）
+          const progress = Math.min(1, Math.abs(gestureState.dy) / dashboardHeight);
+          dashboardAnim.setValue(progress);
+        } else if (isDashboardExpanded && gestureState.dy > 0) {
+          // 下スワイプ（ダッシュボード閉じる）
+          const progress = Math.max(0, 1 - gestureState.dy / dashboardHeight);
+          dashboardAnim.setValue(progress);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (!isDashboardExpanded && gestureState.dy < -SWIPE_THRESHOLD) {
+          // 上スワイプ完了 → ダッシュボード展開
+          Animated.spring(dashboardAnim, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 50,
+            friction: 8,
+          }).start(() => setIsDashboardExpanded(true));
+        } else if (isDashboardExpanded && gestureState.dy > SWIPE_THRESHOLD) {
+          // 下スワイプ完了 → ダッシュボード閉じる
+          Animated.spring(dashboardAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+            tension: 50,
+            friction: 8,
+          }).start(() => setIsDashboardExpanded(false));
+        } else {
+          // スワイプ不十分 → 元に戻す
+          Animated.spring(dashboardAnim, {
+            toValue: isDashboardExpanded ? 1 : 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  // ダッシュボード閉じるハンドラ
+  const closeDashboard = () => {
+    Animated.spring(dashboardAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 50,
+      friction: 8,
+    }).start(() => setIsDashboardExpanded(false));
+  };
 
   // 準備完了時にHooが挨拶
   useEffect(() => {
@@ -89,24 +197,17 @@ export function HomeScreen({ onStartSession }: HomeScreenProps) {
 
   // モード選択ハンドラ
   const handleModeSelect = async (focusMode: FocusMode) => {
-    // 同じモードを選択した場合は何もしない
-    if (focusMode.id === selectedModeId) {
-      return;
-    }
+    if (focusMode.id === selectedModeId) return;
 
-    // 前のタイマーをクリア
     if (messageTimerRef.current) {
       clearTimeout(messageTimerRef.current);
     }
 
     setSelectedModeId(focusMode.id);
-    setHooMessage(focusMode.hooMessage);
+    setHooMessage(MODE_MESSAGES[focusMode.id]);
     setHooSpeaking(true);
-
-    // Haptic feedback
     playClickSound();
 
-    // 2.5秒後にメッセージをクリア
     messageTimerRef.current = setTimeout(() => {
       setHooMessage(undefined);
       setHooSpeaking(false);
@@ -115,27 +216,23 @@ export function HomeScreen({ onStartSession }: HomeScreenProps) {
 
   // セッション開始
   const handleStart = async () => {
-    playClickSound(); // Haptic feedback first
-    await playSessionStartSound();
-    await switchToRecordingMode();
+    setHooSpeaking(true);
 
-    // 選択モードの時間を使用（カスタムの場合はcustomDuration）
-    const duration =
-      selectedModeId === 'custom' ? customDuration : selectedMode.focusDuration;
+    setTimeout(async () => {
+      setHooSpeaking(false);
+      await switchToRecordingMode();
 
-    // modeを渡してセッション開始
-    await startSession(duration, selectedModeId);
-    onStartSession(selectedModeId);
+      const duration =
+        selectedModeId === 'custom' ? customDuration : selectedMode.focusDuration;
+
+      await startSession(duration, selectedModeId);
+      onStartSession(selectedModeId);
+    }, 1000);
   };
 
-  // 表示用の時間テキスト
-  const getDurationLabel = (): string => {
-    if (selectedModeId === 'custom') {
-      const minutes = Math.floor(customDuration / 60);
-      return `${minutes}分`;
-    }
-    const minutes = Math.floor(selectedMode.focusDuration / 60);
-    return `${minutes}分`;
+  // カスタム時間変更ハンドラ
+  const handleCustomDurationChange = (duration: number) => {
+    updateSettings({ customDuration: duration });
   };
 
   // 動的スタイル
@@ -144,54 +241,25 @@ export function HomeScreen({ onStartSession }: HomeScreenProps) {
       flex: 1,
       backgroundColor: colors.background,
     },
-    recordButton: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-      backgroundColor: colors.recording,
+    dailyTotalContainer: {
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 2,
-      borderColor: colors.textPrimary,
+      backgroundColor: isOverLimitEarly ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+      borderColor: isOverLimitEarly ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.1)',
+      gap: spacing.xs,
     },
-    recordButtonDisabled: {
-      backgroundColor: colors.textMuted,
-      borderColor: colors.textMuted,
-    },
-    durationLabel: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.medium,
-      color: colors.textSecondary,
-      marginTop: spacing.md,
-    },
-    modeDescription: {
+    dailyTotalLabel: {
       fontSize: fontSize.xs,
       color: colors.textMuted,
-      marginTop: spacing.xs,
     },
-    // Custom slider styles
-    sliderContainer: {
-      width: '100%',
-      paddingHorizontal: spacing.md,
-      marginTop: spacing.md,
-    },
-    sliderLabel: {
-      fontSize: fontSize.lg,
+    dailyTotalValue: {
+      fontSize: fontSize.sm,
       fontWeight: fontWeight.semibold,
-      color: colors.textPrimary,
-      textAlign: 'center',
-      marginBottom: spacing.sm,
-    },
-    sliderTrack: {
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: colors.backgroundTertiary,
-    },
-    sliderThumb: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: colors.primary,
+      color: isOverLimitEarly ? colors.error : colors.textPrimary,
     },
     themeToggle: {
       backgroundColor: colors.backgroundSecondary,
@@ -206,55 +274,78 @@ export function HomeScreen({ onStartSession }: HomeScreenProps) {
       fontWeight: fontWeight.medium,
       color: colors.textSecondary,
     },
-    // 横向きスタイル
-    landscapeContent: {
-      flex: 1,
-      flexDirection: 'column' as const,
+    // ダッシュボードスタイル
+    dashboardContainer: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: dashboardHeight,
+      backgroundColor: colors.background,
+      borderTopLeftRadius: borderRadius.xxl,
+      borderTopRightRadius: borderRadius.xxl,
+      borderTopWidth: 1,
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
     },
+    dashboardHeader: {
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+      paddingBottom: spacing.lg,
+    },
+    dashboardHandleArea: {
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xxl,
+    },
+    dashboardHandle: {
+      width: 48,
+      height: 5,
+      backgroundColor: 'rgba(255, 255, 255, 0.4)',
+      borderRadius: 3,
+      marginBottom: spacing.sm,
+    },
+    dashboardHint: {
+      fontSize: fontSize.xs,
+      color: colors.textSecondary,
+    },
+    closeButton: {
+      position: 'absolute',
+      right: spacing.lg,
+      top: spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    closeButtonText: {
+      fontSize: fontSize.xs,
+      color: colors.textSecondary,
+    },
+    // 横向きスタイル
     landscapeHooSection: {
       flex: 1,
-      justifyContent: 'center' as const,
-      alignItems: 'center' as const,
-    },
-    landscapeBottomBar: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-      paddingHorizontal: spacing.lg,
-      paddingBottom: spacing.md,
-      gap: spacing.md,
-    },
-    landscapeModeSelector: {
-      flex: 1,
-    },
-    landscapeRecordButton: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: colors.recording,
-      alignItems: 'center' as const,
-      justifyContent: 'center' as const,
-      borderWidth: 2,
-      borderColor: colors.textPrimary,
-    },
-    landscapeCustomSlider: {
-      flex: 1,
-      paddingHorizontal: spacing.sm,
-    },
-    landscapeDurationText: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.medium,
-      color: colors.textSecondary,
-      minWidth: 50,
-      textAlign: 'center' as const,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: spacing.xl,
     },
   });
 
-  // 横向きレイアウト
+  // 横向きレイアウト（ダッシュボードなし）
   if (isLandscape) {
     return (
       <SafeAreaView style={dynamicStyles.container}>
-        {/* Header - テーマトグル（右上） */}
         <View style={styles.landscapeHeader}>
+          <View style={dynamicStyles.dailyTotalContainer}>
+            <Text style={dynamicStyles.dailyTotalLabel}>今日</Text>
+            <Text style={dynamicStyles.dailyTotalValue}>
+              {formatTotalTime(dailyTotal.totalSeconds)}
+            </Text>
+          </View>
           <TouchableOpacity
             style={dynamicStyles.themeToggle}
             onPress={toggleTheme}
@@ -265,70 +356,40 @@ export function HomeScreen({ onStartSession }: HomeScreenProps) {
             </Text>
           </TouchableOpacity>
         </View>
-
-        {/* Hoo - 中央に */}
         <View style={dynamicStyles.landscapeHooSection}>
           <Hoo
             state={hooState}
             customMessage={displayMessage}
-            size="medium"
+            size={hooSizes.main}
             isSpeaking={hooSpeaking}
+            overlayBubble
           />
         </View>
-
-        {/* 下部バー - モード選択 + 録音ボタン */}
-        <View style={dynamicStyles.landscapeBottomBar}>
-          <View style={dynamicStyles.landscapeModeSelector}>
-            <ModeSelector
-              selectedMode={selectedModeId}
-              onModeSelect={handleModeSelect}
-              disabled={!isWhisperReady}
-            />
-          </View>
-
-          {/* カスタムモード時はスライダー表示 */}
-          {selectedModeId === 'custom' && (
-            <>
-              <View style={dynamicStyles.landscapeCustomSlider}>
-                <Slider
-                  value={customDuration}
-                  minimumValue={CUSTOM_MODE_LIMITS.minFocusDuration}
-                  maximumValue={CUSTOM_MODE_LIMITS.maxFocusDuration}
-                  step={CUSTOM_MODE_LIMITS.step}
-                  onValueChange={(value) => setCustomDuration(Array.isArray(value) ? value[0] : value)}
-                  minimumTrackTintColor={colors.primary}
-                  maximumTrackTintColor={colors.backgroundTertiary}
-                  thumbTintColor={colors.primary}
-                  trackStyle={dynamicStyles.sliderTrack}
-                  thumbStyle={dynamicStyles.sliderThumb}
-                />
-              </View>
-              <Text style={dynamicStyles.landscapeDurationText}>
-                {Math.floor(customDuration / 60)}分
-              </Text>
-            </>
-          )}
-
-          {/* 録音ボタン */}
-          <TouchableOpacity
-            style={[
-              dynamicStyles.landscapeRecordButton,
-              !isWhisperReady && dynamicStyles.recordButtonDisabled,
-            ]}
-            onPress={handleStart}
+        <View style={styles.landscapeControlBar}>
+          <SessionControlBar
+            selectedMode={selectedModeId}
+            customDuration={customDuration}
+            onModeSelect={handleModeSelect}
+            onCustomDurationChange={handleCustomDurationChange}
+            onStartSession={handleStart}
             disabled={!isWhisperReady}
-            activeOpacity={0.8}
           />
         </View>
       </SafeAreaView>
     );
   }
 
-  // 縦向きレイアウト（既存）
+  // 縦向きレイアウト（ダッシュボード対応）
   return (
     <SafeAreaView style={dynamicStyles.container}>
-      {/* Header - テーマトグル */}
+      {/* Header */}
       <View style={styles.header}>
+        <View style={dynamicStyles.dailyTotalContainer}>
+          <Text style={dynamicStyles.dailyTotalLabel}>今日</Text>
+          <Text style={dynamicStyles.dailyTotalValue}>
+            {formatTotalTime(dailyTotal.totalSeconds)}
+          </Text>
+        </View>
         <TouchableOpacity
           style={dynamicStyles.themeToggle}
           onPress={toggleTheme}
@@ -340,91 +401,96 @@ export function HomeScreen({ onStartSession }: HomeScreenProps) {
         </TouchableOpacity>
       </View>
 
-      {/* Main Content - 中央寄せのフレックスレイアウト */}
-      <View style={styles.mainContent}>
-        {/* Hoo Section - 画面の主役（大きく表示） */}
-        <View style={styles.hooSection}>
+      {/* Main Content with PanResponder */}
+      <View style={styles.mainContent} {...panResponder.panHandlers}>
+        {/* Hoo Section - アニメーション付き */}
+        <Animated.View
+          style={[
+            styles.hooSection,
+            {
+              transform: [
+                { scale: hooScale },
+                { translateY: hooTranslateY },
+              ],
+            },
+          ]}
+        >
           <Hoo
             state={hooState}
-            customMessage={displayMessage}
-            size="large"
+            customMessage={isDashboardExpanded ? undefined : displayMessage}
+            size={hooSizes.main}
             isSpeaking={hooSpeaking}
+            hideBubble={isDashboardExpanded}
           />
-        </View>
+        </Animated.View>
       </View>
 
-      {/* Bottom Controls - 下部固定 */}
-      <View style={styles.bottomControls}>
-        {/* Mode Selector */}
-        <View style={styles.selectorContainer}>
-          <ModeSelector
-            selectedMode={selectedModeId}
-            onModeSelect={handleModeSelect}
-            disabled={!isWhisperReady}
-          />
+      {/* Bottom Controls - ダッシュボード展開時は非表示 */}
+      <Animated.View style={[styles.bottomControls, { opacity: controlBarOpacity }]}>
+        <SessionControlBar
+          selectedMode={selectedModeId}
+          customDuration={customDuration}
+          onModeSelect={handleModeSelect}
+          onCustomDurationChange={handleCustomDurationChange}
+          onStartSession={handleStart}
+          disabled={!isWhisperReady || isDashboardExpanded}
+        />
+      </Animated.View>
 
-          {/* Custom Mode Slider */}
-          {selectedModeId === 'custom' && (
-            <View style={dynamicStyles.sliderContainer}>
-              <Text style={dynamicStyles.sliderLabel}>
-                {Math.floor(customDuration / 60)}分
-              </Text>
-              <Slider
-                value={customDuration}
-                minimumValue={CUSTOM_MODE_LIMITS.minFocusDuration}
-                maximumValue={CUSTOM_MODE_LIMITS.maxFocusDuration}
-                step={CUSTOM_MODE_LIMITS.step}
-                onValueChange={(value) => setCustomDuration(Array.isArray(value) ? value[0] : value)}
-                minimumTrackTintColor={colors.primary}
-                maximumTrackTintColor={colors.backgroundTertiary}
-                thumbTintColor={colors.primary}
-                trackStyle={dynamicStyles.sliderTrack}
-                thumbStyle={dynamicStyles.sliderThumb}
-              />
-            </View>
-          )}
-        </View>
-
-        {/* Record Button */}
-        <View style={styles.recordButtonContainer}>
+      {/* Dashboard - 下からスライドイン */}
+      <Animated.View
+        style={[
+          dynamicStyles.dashboardContainer,
+          { transform: [{ translateY: dashboardTranslateY }] },
+        ]}
+      >
+        {/* ダッシュボードヘッダー */}
+        <View style={dynamicStyles.dashboardHeader}>
           <TouchableOpacity
-            style={[
-              dynamicStyles.recordButton,
-              !isWhisperReady && dynamicStyles.recordButtonDisabled,
-            ]}
-            onPress={handleStart}
-            disabled={!isWhisperReady}
+            style={dynamicStyles.dashboardHandleArea}
+            onPress={closeDashboard}
             activeOpacity={0.8}
-          />
-          <Text style={dynamicStyles.durationLabel}>
-            {isWhisperReady ? getDurationLabel() : '準備中...'}
-          </Text>
-          {isWhisperReady && (
-            <Text style={dynamicStyles.modeDescription}>
-              {selectedMode.description}
-            </Text>
-          )}
+          >
+            <View style={dynamicStyles.dashboardHandle} />
+            <Text style={dynamicStyles.dashboardHint}>下にスワイプで閉じる</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={dynamicStyles.closeButton}
+            onPress={closeDashboard}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close" size={16} color={colors.textSecondary} />
+            <Text style={dynamicStyles.closeButtonText}>閉じる</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+
+        {/* ダッシュボードコンテンツ */}
+        <DashboardContent scrollEnabled={isDashboardExpanded} />
+      </Animated.View>
     </SafeAreaView>
   );
 }
 
-// 静的スタイル（テーマに依存しない）
+// 静的スタイル
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
     minHeight: 52,
+    zIndex: 10,
   },
   landscapeHeader: {
     position: 'absolute',
     top: spacing.sm,
+    left: spacing.lg,
     right: spacing.lg,
     zIndex: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   mainContent: {
     flex: 1,
@@ -434,15 +500,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bottomControls: {
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
-    gap: spacing.lg,
   },
-  selectorContainer: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  recordButtonContainer: {
-    alignItems: 'center',
+  landscapeControlBar: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
   },
 });

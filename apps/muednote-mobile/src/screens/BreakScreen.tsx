@@ -1,27 +1,57 @@
 /**
  * BreakScreen - 休憩 & 次セッション準備
  *
- * セッション終了後に自動遷移:
- * - 休憩タイマー自動開始
- * - 次のモード選択（デフォルトは同じモード）
- * - 当日累計時間表示
- * - 4時間警告（強制しない）
+ * Endel風コントロールバー形式:
+ * - Hooが画面の中心
+ * - 下部にグラスモーフィズムのコントロールバー
+ *   - 左: 休憩タイマー + 累計時間
+ *   - 中: 次モード選択（タップでメニュー）
+ *   - 右: 開始/終了ボタン
  */
 
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, useWindowDimensions, ScrollView } from 'react-native';
-import { Slider } from '@miblanchard/react-native-slider';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  useWindowDimensions,
+  Modal,
+  Pressable,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../providers/ThemeProvider';
 import { Hoo } from '../components/Hoo';
-import { ModeSelector } from '../components/ModeSelector';
 import { playHooSound, playClickSound } from '../utils/sound';
-import { spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
-import { getFocusMode, DAILY_LIMITS, CUSTOM_MODE_LIMITS, type FocusModeId, type FocusMode } from '../types/timer';
+import { spacing, fontSize, fontWeight, borderRadius, hooSizes } from '../constants/theme';
+import { getFocusMode, FOCUS_MODES, DAILY_LIMITS, type FocusModeId, type FocusMode } from '../types/timer';
 import { localStorage } from '../cache/storage';
+import { getBreakMessage } from '../constants/hooMessages';
 import { whisperService } from '../services/whisperService';
 import { encodeToM4A } from '../../modules/audio-encoder';
 import RNFS from 'react-native-fs';
+
+// モードアイコンマッピング
+const MODE_ICONS: Record<FocusModeId, { family: 'ionicons' | 'feather' | 'material'; name: string }> = {
+  pomodoro: { family: 'ionicons', name: 'timer-outline' },
+  standard: { family: 'feather', name: 'coffee' },
+  deepwork: { family: 'material', name: 'brain' },
+  custom: { family: 'ionicons', name: 'options-outline' },
+};
+
+function ModeIcon({ modeId, size, color }: { modeId: FocusModeId; size: number; color: string }) {
+  const config = MODE_ICONS[modeId];
+  switch (config.family) {
+    case 'ionicons':
+      return <Ionicons name={config.name as any} size={size} color={color} />;
+    case 'feather':
+      return <Feather name={config.name as any} size={size} color={color} />;
+    case 'material':
+      return <MaterialCommunityIcons name={config.name as any} size={size} color={color} />;
+  }
+}
 
 interface BreakScreenProps {
   mode: FocusModeId;
@@ -40,16 +70,15 @@ export function BreakScreen({
   const initialMode = getFocusMode(mode);
   const breakDuration = initialMode?.breakDuration || 10 * 60;
 
-  // 次のセッションで使うモード（変更可能）
+  // 次のセッションで使うモード
   const [nextModeId, setNextModeId] = useState<FocusModeId>(mode);
-  const [customDuration, setCustomDuration] = useState(45 * 60); // カスタム用
+  const [showModeMenu, setShowModeMenu] = useState(false);
   const nextMode = getFocusMode(nextModeId);
 
   const [remainingSeconds, setRemainingSeconds] = useState(breakDuration);
   const [isBreakOver, setIsBreakOver] = useState(false);
   const [hooSpeaking, setHooSpeaking] = useState(false);
   const [todayTotal, setTodayTotal] = useState(0);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [transcriptionDone, setTranscriptionDone] = useState(false);
 
   // プログレスアニメーション
@@ -94,25 +123,18 @@ export function BreakScreen({
   // バックグラウンドで文字起こし実行
   useEffect(() => {
     const transcribeAndSave = async () => {
-      setIsTranscribing(true);
       try {
-        // 最後に終了したセッションを取得
         const sessions = await localStorage.getAllSessions();
         const lastSession = sessions
           .filter((s) => s.status === 'completed' && s.ended_at)
           .sort((a, b) => new Date(b.ended_at!).getTime() - new Date(a.ended_at!).getTime())[0];
 
         if (!lastSession) {
-          console.warn('[Break] No completed session found for transcription');
-          setIsTranscribing(false);
           setTranscriptionDone(true);
           return;
         }
 
-        // 既にログがあればスキップ（再マウント対策）
         if (lastSession.logs && lastSession.logs.length > 0) {
-          console.log('[Break] Session already has logs, skipping transcription');
-          setIsTranscribing(false);
           setTranscriptionDone(true);
           return;
         }
@@ -121,29 +143,24 @@ export function BreakScreen({
         const result = await whisperService.transcribe();
 
         if (result && result.text) {
-          // 文字起こし結果をログとして保存
-          // segments.t0 は開始時刻 (ms) なので秒に変換
           const segments = result.segments || [{ text: result.text, t0: 0, t1: 0 }];
 
           for (const segment of segments) {
             await localStorage.addLog(lastSession.id, {
-              timestamp_sec: Math.floor((segment.t0 || 0) / 1000), // ms → sec
+              timestamp_sec: Math.floor((segment.t0 || 0) / 1000),
               text: segment.text.trim(),
               confidence: 0.9,
             });
           }
           console.log('[Break] Transcription saved:', segments.length, 'segments');
-        } else {
-          console.log('[Break] No transcription result');
         }
 
-        // 文字起こし完了後、WAV → M4A 変換（容量削減）
+        // WAV → M4A 変換
         if (lastSession.audioFilePath && lastSession.audioFilePath.endsWith('.wav')) {
           try {
             const wavPath = lastSession.audioFilePath;
             const m4aPath = wavPath.replace('.wav', '.m4a');
 
-            console.log('[Break] Converting WAV to M4A...');
             const encodeResult = await encodeToM4A({
               inputPath: wavPath,
               outputPath: m4aPath,
@@ -151,16 +168,8 @@ export function BreakScreen({
             });
 
             if (encodeResult.success) {
-              console.log(
-                `[Break] Encoded: ${(encodeResult.inputSizeBytes / 1024 / 1024).toFixed(1)}MB → ${(encodeResult.outputSizeBytes / 1024 / 1024).toFixed(1)}MB`
-              );
-              // セッションのパスを更新
               await localStorage.updateSessionAudioPath(lastSession.id, m4aPath);
-              // 元のWAVを削除
               await RNFS.unlink(wavPath);
-              console.log('[Break] WAV deleted, M4A saved');
-            } else {
-              console.warn('[Break] M4A encode failed:', encodeResult.error);
             }
           } catch (encodeError) {
             console.error('[Break] M4A conversion error:', encodeError);
@@ -169,7 +178,6 @@ export function BreakScreen({
       } catch (error) {
         console.error('[Break] Transcription failed:', error);
       } finally {
-        setIsTranscribing(false);
         setTranscriptionDone(true);
       }
     };
@@ -213,30 +221,29 @@ export function BreakScreen({
     const hours = Math.floor(secs / 3600);
     const mins = Math.floor((secs % 3600) / 60);
     if (hours > 0) {
-      return `${hours}時間${mins}分`;
+      return `${hours}h${mins}m`;
     }
-    return `${mins}分`;
+    return `${mins}m`;
   };
 
-  // Hooのメッセージ
-  const getHooMessage = (): string => {
-    if (!transcriptionDone) {
-      return '録音を処理中...少し待ってね';
-    }
-    if (isOverDailyLimit) {
-      return '今日はそろそろ終わりにしませんか？';
-    }
-    if (isBreakOver) {
-      return 'リフレッシュできた？';
-    }
-    return 'お疲れさま！ゆっくり休んでね';
-  };
+  // Hooのメッセージ（hooMessages.tsから取得）
+  const hooMessage = getBreakMessage(
+    breakDuration,
+    isBreakOver,
+    !transcriptionDone,
+    isOverDailyLimit
+  );
 
   // モード選択ハンドラ
-  const handleModeSelect = (focusMode: FocusMode) => {
-    if (focusMode.id === nextModeId) return;
-    setNextModeId(focusMode.id);
+  const handleModePress = () => {
     playClickSound();
+    setShowModeMenu(true);
+  };
+
+  const handleModeSelect = (focusMode: FocusMode) => {
+    playClickSound();
+    setNextModeId(focusMode.id);
+    setShowModeMenu(false);
     setHooSpeaking(true);
     setTimeout(() => setHooSpeaking(false), 1000);
   };
@@ -244,11 +251,7 @@ export function BreakScreen({
   // 次のセッション開始
   const handleStartNext = () => {
     playClickSound();
-    if (nextModeId === 'custom') {
-      onStartNextSession(nextModeId, customDuration);
-    } else {
-      onStartNextSession(nextModeId);
-    }
+    onStartNextSession(nextModeId);
   };
 
   // 終了
@@ -263,150 +266,187 @@ export function BreakScreen({
       flex: 1,
       backgroundColor: colors.background,
     },
+    // グラスモーフィズムコントロールバー
+    controlBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      borderRadius: borderRadius.xxl,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+      padding: spacing.sm,
+      gap: spacing.sm,
+    },
+    // タイマーセクション（左）
+    timerSection: {
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+      minWidth: 80,
+    },
     breakLabel: {
-      fontSize: fontSize.lg,
-      fontWeight: fontWeight.medium,
-      color: colors.textSecondary,
+      fontSize: fontSize.xs,
+      color: colors.textMuted,
+    },
+    timerText: {
+      fontSize: fontSize.xl,
+      fontWeight: fontWeight.bold,
+      color: colors.textPrimary,
+      fontVariant: ['tabular-nums'],
+    },
+    totalText: {
+      fontSize: fontSize.xs,
+      color: colors.textMuted,
+    },
+    // モード選択セクション（中央）
+    modeSection: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      gap: spacing.md,
+    },
+    modeIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    modeTextContainer: {
+      flex: 1,
+    },
+    modeLabel: {
+      fontSize: fontSize.xs,
+      color: colors.textMuted,
+    },
+    modeName: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: colors.textPrimary,
+    },
+    // ボタンセクション（右）
+    buttonSection: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+    },
+    startButton: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    finishButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    // 警告バナー
+    warningBanner: {
+      backgroundColor: 'rgba(245, 158, 11, 0.1)',
+      borderRadius: borderRadius.lg,
+      padding: spacing.sm,
       marginBottom: spacing.sm,
     },
-    timerDisplay: {
-      fontSize: fontSize['5xl'],
-      fontWeight: fontWeight.bold,
-      color: colors.textPrimary,
-      fontVariant: ['tabular-nums'],
-    },
-    timerDisplayLandscape: {
-      fontSize: fontSize['3xl'],
-      fontWeight: fontWeight.bold,
-      color: colors.textPrimary,
-      fontVariant: ['tabular-nums'],
-    },
-    progressContainer: {
-      width: '100%',
-      height: 8,
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: 4,
-      marginTop: spacing.xl,
-      overflow: 'hidden',
-    },
-    progressBar: {
-      height: '100%',
-      backgroundColor: colors.success,
-      borderRadius: 4,
-    },
-    todayTotal: {
-      fontSize: fontSize.sm,
-      color: colors.textMuted,
-      textAlign: 'center',
-      marginBottom: spacing.md,
-    },
-    warningBanner: {
-      backgroundColor: 'rgba(245, 158, 11, 0.15)',
-      borderRadius: borderRadius.lg,
-      padding: spacing.md,
-      marginBottom: spacing.md,
-      borderWidth: 1,
-      borderColor: colors.warning,
-    },
     warningText: {
-      fontSize: fontSize.sm,
+      fontSize: fontSize.xs,
       color: colors.warning,
       textAlign: 'center',
     },
-    sectionLabel: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.medium,
-      color: colors.textSecondary,
-      marginBottom: spacing.sm,
+    // Modal styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      justifyContent: 'flex-end',
+    },
+    menuContainer: {
+      backgroundColor: colors.backgroundSecondary,
+      borderTopLeftRadius: borderRadius.xxl,
+      borderTopRightRadius: borderRadius.xxl,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.xxxl,
+      paddingHorizontal: spacing.lg,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    menuHandle: {
+      width: 40,
+      height: 4,
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: 2,
+      alignSelf: 'center',
+      marginBottom: spacing.lg,
+    },
+    menuTitle: {
+      fontSize: fontSize.lg,
+      fontWeight: fontWeight.bold,
+      color: colors.textPrimary,
+      marginBottom: spacing.lg,
       textAlign: 'center',
     },
-    button: {
-      backgroundColor: colors.primary,
-      borderRadius: borderRadius.xl,
-      paddingVertical: spacing.lg,
+    menuItem: {
+      flexDirection: 'row',
       alignItems: 'center',
-      marginTop: spacing.lg,
-    },
-    buttonText: {
-      fontSize: fontSize.lg,
-      fontWeight: fontWeight.semibold,
-      color: '#ffffff',
-    },
-    secondaryButton: {
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.xl,
       paddingVertical: spacing.md,
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: colors.border,
-      marginTop: spacing.md,
+      paddingHorizontal: spacing.lg,
+      borderRadius: borderRadius.lg,
+      marginBottom: spacing.sm,
+      gap: spacing.md,
     },
-    secondaryButtonText: {
+    menuItemActive: {
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    menuItemIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    menuItemText: {
+      flex: 1,
+    },
+    menuItemLabel: {
       fontSize: fontSize.base,
       fontWeight: fontWeight.medium,
-      color: colors.textSecondary,
-    },
-    // Custom slider styles
-    sliderContainer: {
-      width: '100%',
-      paddingHorizontal: spacing.md,
-      marginTop: spacing.md,
-    },
-    sliderLabel: {
-      fontSize: fontSize.lg,
-      fontWeight: fontWeight.semibold,
       color: colors.textPrimary,
-      textAlign: 'center',
-      marginBottom: spacing.sm,
     },
-    sliderTrack: {
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: colors.backgroundTertiary,
+    menuItemDescription: {
+      fontSize: fontSize.sm,
+      color: colors.textMuted,
     },
-    sliderThumb: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: colors.primary,
+    menuItemDuration: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.semibold,
+      color: colors.primary,
     },
   });
 
-  // 共通コンテンツ: タイマー & アクション
-  const timerAndActions = (
-    <>
-      {/* Timer Section */}
-      <View style={isLandscape ? styles.landscapeTimerSection : styles.timerSection}>
-        <Text style={dynamicStyles.breakLabel}>
-          {isBreakOver ? '休憩終了' : '休憩中'}
-        </Text>
-        <Text style={isLandscape ? dynamicStyles.timerDisplayLandscape : dynamicStyles.timerDisplay}>
-          {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-        </Text>
-
-        {/* Progress Bar */}
-        <View style={dynamicStyles.progressContainer}>
-          <Animated.View
-            style={[
-              dynamicStyles.progressBar,
-              {
-                width: progressAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0%', '100%'],
-                }),
-              },
-            ]}
-          />
-        </View>
+  return (
+    <SafeAreaView style={dynamicStyles.container}>
+      {/* Hoo - 画面中央の主役 */}
+      <View style={styles.hooContainer}>
+        <Hoo
+          state={isBreakOver ? 'done' : 'thinking'}
+          customMessage={hooMessage}
+          size={hooSizes.main}
+          isSpeaking={hooSpeaking}
+          overlayBubble={isLandscape}
+        />
       </View>
 
-      {/* Actions */}
-      <View style={isLandscape ? styles.landscapeActionsSection : styles.actionsSection}>
-        {/* 累計時間表示 */}
-        <Text style={dynamicStyles.todayTotal}>
-          今日の累計: {formatTotalTime(todayTotal)}
-        </Text>
-
+      {/* コントロールバー - 下部固定 */}
+      <View style={styles.controlBarContainer}>
         {/* 4時間警告 */}
         {isOverDailyLimit && (
           <View style={dynamicStyles.warningBanner}>
@@ -416,217 +456,113 @@ export function BreakScreen({
           </View>
         )}
 
-        {/* 次のモード選択 */}
-        <Text style={dynamicStyles.sectionLabel}>次のセッション</Text>
-        <ModeSelector
-          selectedMode={nextModeId}
-          onModeSelect={handleModeSelect}
-        />
-
-        {/* Custom Mode Slider */}
-        {nextModeId === 'custom' && (
-          <View style={dynamicStyles.sliderContainer}>
-            <Text style={dynamicStyles.sliderLabel}>
-              {Math.floor(customDuration / 60)}分
-            </Text>
-            <Slider
-              value={customDuration}
-              minimumValue={CUSTOM_MODE_LIMITS.minFocusDuration}
-              maximumValue={CUSTOM_MODE_LIMITS.maxFocusDuration}
-              step={CUSTOM_MODE_LIMITS.step}
-              onValueChange={(value) => setCustomDuration(Array.isArray(value) ? value[0] : value)}
-              minimumTrackTintColor={colors.primary}
-              maximumTrackTintColor={colors.backgroundTertiary}
-              thumbTintColor={colors.primary}
-              trackStyle={dynamicStyles.sliderTrack}
-              thumbStyle={dynamicStyles.sliderThumb}
-            />
-          </View>
-        )}
-
-        {/* ボタン行（横向きでは横並び） */}
-        <View style={isLandscape ? styles.landscapeButtonRow : undefined}>
-          {/* 開始ボタン */}
-          <TouchableOpacity
-            style={[
-              dynamicStyles.button,
-              isLandscape && styles.landscapeButtonFlex,
-              !transcriptionDone && styles.buttonDisabled,
-            ]}
-            onPress={handleStartNext}
-            disabled={!transcriptionDone}
-            activeOpacity={0.8}
-          >
-            <Text style={dynamicStyles.buttonText}>
-              {transcriptionDone ? `${nextMode?.label}で開始` : '処理中...'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* 終了ボタン */}
-          <TouchableOpacity
-            style={[
-              dynamicStyles.secondaryButton,
-              isLandscape && styles.landscapeButtonFlex,
-              !transcriptionDone && styles.buttonDisabled,
-            ]}
-            onPress={handleFinish}
-            disabled={!transcriptionDone}
-            activeOpacity={0.7}
-          >
-            <Text style={dynamicStyles.secondaryButtonText}>
-              {transcriptionDone ? '終了する' : '処理中...'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </>
-  );
-
-  // 横向きレイアウト（Hooメイン + 下部にUI）
-  if (isLandscape) {
-    return (
-      <SafeAreaView style={dynamicStyles.container}>
-        {/* Hoo - 中央に大きく */}
-        <View style={styles.landscapeHooSection}>
-          <Hoo
-            state={isBreakOver ? 'done' : 'thinking'}
-            customMessage={getHooMessage()}
-            size="medium"
-            isSpeaking={hooSpeaking}
-          />
-        </View>
-
-        {/* 下部バー - タイマー + モード選択 + ボタン */}
-        <View style={styles.landscapeBottomBar}>
-          {/* 左: タイマー */}
-          <View style={styles.landscapeTimerBox}>
+        <View style={dynamicStyles.controlBar}>
+          {/* タイマー（左） */}
+          <View style={dynamicStyles.timerSection}>
             <Text style={dynamicStyles.breakLabel}>
               {isBreakOver ? '休憩終了' : '休憩中'}
             </Text>
-            <Text style={dynamicStyles.timerDisplayLandscape}>
+            <Text style={dynamicStyles.timerText}>
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </Text>
-            <Text style={[dynamicStyles.todayTotal, { marginBottom: 0, marginTop: spacing.xs }]}>
-              累計: {formatTotalTime(todayTotal)}
+            <Text style={dynamicStyles.totalText}>
+              累計 {formatTotalTime(todayTotal)}
             </Text>
           </View>
 
-          {/* 中央: モード選択 */}
-          <View style={styles.landscapeModeBox}>
-            <ModeSelector
-              selectedMode={nextModeId}
-              onModeSelect={handleModeSelect}
-            />
-          </View>
+          {/* モード選択（中央） */}
+          <TouchableOpacity
+            style={dynamicStyles.modeSection}
+            onPress={handleModePress}
+            activeOpacity={0.7}
+          >
+            <View style={dynamicStyles.modeIcon}>
+              <ModeIcon modeId={nextModeId} size={18} color={colors.textPrimary} />
+            </View>
+            <View style={dynamicStyles.modeTextContainer}>
+              <Text style={dynamicStyles.modeLabel}>次のセッション</Text>
+              <Text style={dynamicStyles.modeName}>{nextMode?.label}</Text>
+            </View>
+          </TouchableOpacity>
 
-          {/* 右: ボタン */}
-          <View style={styles.landscapeButtonBox}>
+          {/* ボタン（右） */}
+          <View style={dynamicStyles.buttonSection}>
             <TouchableOpacity
-              style={[dynamicStyles.button, styles.landscapeCompactButton, !transcriptionDone && styles.buttonDisabled]}
-              onPress={handleStartNext}
-              disabled={!transcriptionDone}
-              activeOpacity={0.8}
-            >
-              <Text style={dynamicStyles.buttonText}>
-                {transcriptionDone ? '開始' : '処理中'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[dynamicStyles.secondaryButton, styles.landscapeCompactButton, !transcriptionDone && styles.buttonDisabled]}
+              style={[dynamicStyles.finishButton, !transcriptionDone && dynamicStyles.buttonDisabled]}
               onPress={handleFinish}
               disabled={!transcriptionDone}
               activeOpacity={0.7}
             >
-              <Text style={dynamicStyles.secondaryButtonText}>終了</Text>
+              <Ionicons name="close" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[dynamicStyles.startButton, !transcriptionDone && dynamicStyles.buttonDisabled]}
+              onPress={handleStartNext}
+              disabled={!transcriptionDone}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="play" size={24} color="#ffffff" />
             </TouchableOpacity>
           </View>
         </View>
-      </SafeAreaView>
-    );
-  }
-
-  // 縦向きレイアウト（従来）
-  return (
-    <SafeAreaView style={dynamicStyles.container}>
-      {/* Hoo Section */}
-      <View style={styles.hooSection}>
-        <Hoo
-          state={isBreakOver ? 'done' : 'thinking'}
-          customMessage={getHooMessage()}
-          size="medium"
-          isSpeaking={hooSpeaking}
-        />
       </View>
 
-      {timerAndActions}
+      {/* モード選択メニュー */}
+      <Modal
+        visible={showModeMenu}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowModeMenu(false)}
+      >
+        <Pressable
+          style={dynamicStyles.modalOverlay}
+          onPress={() => setShowModeMenu(false)}
+        >
+          <View style={dynamicStyles.menuContainer}>
+            <View style={dynamicStyles.menuHandle} />
+            <Text style={dynamicStyles.menuTitle}>次のモードを選択</Text>
+            {FOCUS_MODES.map((focusMode) => {
+              const isActive = focusMode.id === nextModeId;
+              const duration = Math.floor(focusMode.focusDuration / 60);
+              return (
+                <TouchableOpacity
+                  key={focusMode.id}
+                  style={[
+                    dynamicStyles.menuItem,
+                    isActive && dynamicStyles.menuItemActive,
+                  ]}
+                  onPress={() => handleModeSelect(focusMode)}
+                  activeOpacity={0.7}
+                >
+                  <View style={dynamicStyles.menuItemIcon}>
+                    <ModeIcon modeId={focusMode.id} size={22} color={colors.textPrimary} />
+                  </View>
+                  <View style={dynamicStyles.menuItemText}>
+                    <Text style={dynamicStyles.menuItemLabel}>{focusMode.label}</Text>
+                    <Text style={dynamicStyles.menuItemDescription}>{focusMode.description}</Text>
+                  </View>
+                  {focusMode.id !== 'custom' && (
+                    <Text style={dynamicStyles.menuItemDuration}>{duration}m</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 // 静的スタイル
 const styles = StyleSheet.create({
-  hooSection: {
+  hooContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 200,
   },
-  timerSection: {
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.lg,
-  },
-  actionsSection: {
-    paddingHorizontal: spacing.xl,
+  controlBarContainer: {
+    paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xl,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  // 横向きレイアウト用（Hooメイン + 下部UI）
-  landscapeHooSection: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  landscapeBottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    gap: spacing.md,
-  },
-  landscapeTimerBox: {
-    alignItems: 'center',
-    minWidth: 100,
-  },
-  landscapeModeBox: {
-    flex: 1,
-  },
-  landscapeButtonBox: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  landscapeCompactButton: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    marginTop: 0,
-  },
-  // 縦向き用（残す）
-  landscapeTimerSection: {
-    alignItems: 'center',
-    paddingBottom: spacing.md,
-  },
-  landscapeActionsSection: {
-    paddingBottom: spacing.md,
-  },
-  landscapeButtonRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.md,
-  },
-  landscapeButtonFlex: {
-    flex: 1,
-    marginTop: 0,
   },
 });

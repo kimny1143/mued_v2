@@ -19,6 +19,8 @@ interface ModeSelectorProps {
   selectedMode: FocusModeId;
   onModeSelect: (mode: FocusMode) => void;
   disabled?: boolean;
+  /** カスタムモードの時間（秒） */
+  customDuration?: number;
 }
 
 // アイコンマッピング（Expo Vector Icons使用）
@@ -57,6 +59,7 @@ export function ModeSelector({
   selectedMode,
   onModeSelect,
   disabled = false,
+  customDuration = 45 * 60,
 }: ModeSelectorProps) {
   const { colors } = useTheme();
 
@@ -152,7 +155,7 @@ export function ModeSelector({
                 isActive && dynamicStyles.modeDurationActive,
               ]}
             >
-              {isCustom ? 'Set' : formatDuration(mode.focusDuration)}
+              {isCustom ? formatDuration(customDuration) : formatDuration(mode.focusDuration)}
             </Text>
           </TouchableOpacity>
         );

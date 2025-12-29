@@ -10,9 +10,9 @@ export const darkColors = {
   backgroundSecondary: '#16213e',
   backgroundTertiary: '#0f3460',
 
-  // プライマリ
-  primary: '#6c5ce7',
-  primaryLight: '#a29bfe',
+  // プライマリ（emerald系）
+  primary: '#059669',
+  primaryLight: '#10b981',
 
   // テキスト
   textPrimary: '#ffffff',
@@ -37,9 +37,9 @@ export const lightColors = {
   backgroundSecondary: '#ffffff',
   backgroundTertiary: '#f1f5f9',
 
-  // プライマリ
-  primary: '#6c5ce7',
-  primaryLight: '#a29bfe',
+  // プライマリ（emerald系）
+  primary: '#059669',
+  primaryLight: '#10b981',
 
   // テキスト
   textPrimary: '#1e293b',
@@ -105,3 +105,18 @@ export const borderRadius = {
 
 // タイマーオプションは types/timer.ts の FOCUS_MODES に移行
 // import { FOCUS_MODES } from '../types/timer';
+
+/**
+ * Hooサイズ設定
+ * 画面ごとのHooサイズを一元管理
+ */
+export type HooSizeKey = 'small' | 'medium' | 'mediumLarge' | 'large';
+
+export const hooSizes = {
+  // メイン画面（Home, Session）- 主役サイズ
+  main: 'large' as HooSizeKey,
+  // サブ画面（Break）- 中サイズ
+  sub: 'medium' as HooSizeKey,
+  // コンパクト画面（Review, Loading）- 小サイズ
+  compact: 'small' as HooSizeKey,
+};

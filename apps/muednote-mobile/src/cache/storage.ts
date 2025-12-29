@@ -31,17 +31,27 @@ const KEYS = {
   SETTINGS: 'muednote:settings',
   ONBOARDING: 'muednote:onboarding_complete',
   HOO_SETTINGS: 'muednote:hoo_settings',
+  DAILY_TOTAL: 'muednote:daily_total',
 };
+
+// 1日の累計記録
+export interface DailyTotal {
+  date: string; // YYYY-MM-DD形式
+  totalSeconds: number;
+  sessionCount: number;
+}
 
 // ユーザー設定
 export interface UserSettings {
   defaultDuration: number;
+  customDuration: number; // カスタムモードの時間（秒）
   enableVAD: boolean;
   autoSync: boolean;
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
   defaultDuration: 3600, // 60分
+  customDuration: 45 * 60, // 45分
   enableVAD: true,
   autoSync: true,
 };
@@ -345,6 +355,63 @@ class LocalStorage {
   }
 
   // ========================================
+  // Daily Total Tracking
+  // ========================================
+
+  /**
+   * 今日の日付を取得（YYYY-MM-DD形式）
+   */
+  private getTodayDate(): string {
+    const now = new Date();
+    return now.toISOString().split('T')[0];
+  }
+
+  /**
+   * 1日の累計取得（日付が変わっていたらリセット）
+   */
+  async getDailyTotal(): Promise<DailyTotal> {
+    const today = this.getTodayDate();
+    const data = await AsyncStorage.getItem(KEYS.DAILY_TOTAL);
+
+    if (!data) {
+      return { date: today, totalSeconds: 0, sessionCount: 0 };
+    }
+
+    const stored: DailyTotal = JSON.parse(data);
+
+    // 日付が変わっていたらリセット
+    if (stored.date !== today) {
+      const newTotal = { date: today, totalSeconds: 0, sessionCount: 0 };
+      await AsyncStorage.setItem(KEYS.DAILY_TOTAL, JSON.stringify(newTotal));
+      return newTotal;
+    }
+
+    return stored;
+  }
+
+  /**
+   * セッション完了時に累計を更新
+   */
+  async addToDailyTotal(durationSeconds: number): Promise<DailyTotal> {
+    const current = await this.getDailyTotal();
+    const updated: DailyTotal = {
+      date: current.date,
+      totalSeconds: current.totalSeconds + durationSeconds,
+      sessionCount: current.sessionCount + 1,
+    };
+    await AsyncStorage.setItem(KEYS.DAILY_TOTAL, JSON.stringify(updated));
+    return updated;
+  }
+
+  /**
+   * 4時間超過チェック
+   */
+  async isOverDailyLimit(): Promise<boolean> {
+    const { totalSeconds } = await this.getDailyTotal();
+    return totalSeconds >= 4 * 60 * 60; // 4時間
+  }
+
+  // ========================================
   // Debug / Maintenance
   // ========================================
 
@@ -358,6 +425,7 @@ class LocalStorage {
       KEYS.SETTINGS,
       KEYS.ONBOARDING,
       KEYS.HOO_SETTINGS,
+      KEYS.DAILY_TOTAL,
     ]);
   }
 }

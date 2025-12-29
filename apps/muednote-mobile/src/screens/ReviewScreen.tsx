@@ -1,10 +1,12 @@
 /**
  * ReviewScreen - セッション終了後のレビュー画面
- * バッチ処理方式：文字起こし → 確認 → 同期
  *
- * 「常にHooが居る」コンセプト:
- * - 文字起こし中は小さなHooが表示
- * - 完了画面でもHooが表示
+ * Endel風コントロールバー形式:
+ * - 上部: Hoo（小さめ）+ 統計カード
+ * - 中央: ログリスト（スクロール可能）
+ * - 下部: グラスモーフィズムのコントロールバー
+ *   - 左: メモ入力
+ *   - 右: 同期/保存/破棄ボタン
  */
 
 import React, { useState, useEffect } from 'react';
@@ -17,15 +19,15 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { localStorage } from '../cache/storage';
 import { apiClient } from '../api/client';
 import { whisperService } from '../services/whisperService';
 import { LocalSession, LocalLog } from '../api/types';
 import { useTheme } from '../providers/ThemeProvider';
-import { spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
+import { spacing, fontSize, fontWeight, borderRadius, hooSizes } from '../constants/theme';
 import { Hoo } from '../components/Hoo';
 import { playClickSound } from '../utils/sound';
 import * as Sharing from 'expo-sharing';
@@ -43,8 +45,6 @@ interface ReviewScreenProps {
 
 export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
   const { colors } = useTheme();
-  const { width, height } = useWindowDimensions();
-  const isLandscape = width > height;
   const [sessions, setSessions] = useState<LocalSession[]>([]);
   const [allLogs, setAllLogs] = useState<LocalLog[]>([]);
   const [audioFilePaths, setAudioFilePaths] = useState<string[]>([]);
@@ -59,7 +59,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
 
   const loadAllSessionLogs = async () => {
     try {
-      // 当日のcompletedセッションを取得
       const allSessions = await localStorage.getAllSessions();
       const today = new Date().toISOString().split('T')[0];
 
@@ -74,7 +73,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
 
       setSessions(todaySessions);
 
-      // 全セッションのログを結合（セッション順、タイムスタンプ順）
       const combinedLogs: LocalLog[] = [];
       const collectedAudioPaths: string[] = [];
       let sessionOffset = 0;
@@ -85,7 +83,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
         }
 
         if (session.logs && session.logs.length > 0) {
-          // 各セッションのログにオフセットを追加して時系列を維持
           session.logs.forEach((log) => {
             combinedLogs.push({
               ...log,
@@ -93,7 +90,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
             });
           });
         }
-        // 次のセッション用のオフセット（セッションの長さ + 休憩を考慮）
         if (session.ended_at) {
           const start = new Date(session.started_at).getTime();
           const end = new Date(session.ended_at).getTime();
@@ -103,7 +99,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
 
       setAllLogs(combinedLogs);
       setAudioFilePaths(collectedAudioPaths);
-      console.log(`[Review] Loaded ${todaySessions.length} sessions, ${combinedLogs.length} total logs, ${collectedAudioPaths.length} audio files`);
     } catch (error: any) {
       console.error('[Review] Load error:', error);
     } finally {
@@ -111,11 +106,9 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     }
   };
 
-  // セッションを取得（最新のものを代表として使用）
   const session = sessions.length > 0 ? sessions[sessions.length - 1] : null;
 
   // 音声ファイルを保存（共有）
-  // Caches/AVディレクトリはexpo-sharingでアクセスできないため、Documentsにコピーしてから共有
   const saveAudioFiles = async (): Promise<boolean> => {
     if (audioFilePaths.length === 0) return true;
 
@@ -133,7 +126,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
         const cleanPath = originalPath.replace('file://', '');
         let filePath = cleanPath;
 
-        // Caches内のファイルはDocumentsにコピーして共有
         if (cleanPath.includes('/Caches/')) {
           const fileName = cleanPath.split('/').pop() || `recording_${i}.m4a`;
           const destPath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
@@ -149,7 +141,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
         });
       }
 
-      // 共有後に一時コピーを削除
       for (const tempFile of tempFiles) {
         try {
           await RNFS.unlink(tempFile);
@@ -165,9 +156,7 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     }
   };
 
-  // 同期完了後の処理
   const finishAfterSync = async (totalLogsSynced: number, savedAudio: boolean) => {
-    // 全ての音声ファイルを削除
     await whisperService.deleteAudioFiles(audioFilePaths);
 
     const audioMessage = savedAudio && audioFilePaths.length > 0
@@ -181,7 +170,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     );
   };
 
-  // 同期ボタン押下（全セッションをDB同期）
   const handleSync = async () => {
     if (sessions.length === 0) return;
     playClickSound();
@@ -189,7 +177,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     try {
       let totalLogsSynced = 0;
 
-      // 各セッションを順番に同期
       for (const sess of sessions) {
         const start = new Date(sess.started_at);
         const end = sess.ended_at ? new Date(sess.ended_at) : new Date();
@@ -215,10 +202,8 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
         totalLogsSynced += result.savedLogs;
       }
 
-      console.log(`[Review] Sync complete: ${sessions.length} sessions, ${totalLogsSynced} logs`);
       setIsSyncing(false);
 
-      // 音声ファイルがある場合は保存確認
       if (audioFilePaths.length > 0) {
         Alert.alert(
           '録音ファイルの保存',
@@ -248,9 +233,7 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     }
   };
 
-  // ローカル保存完了後の処理
   const finishAfterLocalSave = async (savedAudio: boolean) => {
-    // 全ての音声ファイルを削除
     await whisperService.deleteAudioFiles(audioFilePaths);
 
     const audioMessage = savedAudio && audioFilePaths.length > 0
@@ -264,7 +247,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     );
   };
 
-  // ローカルのみ保存
   const handleSaveLocal = async () => {
     if (!session) return;
     playClickSound();
@@ -272,7 +254,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
       await localStorage.updateSessionMemo(session.id, memo);
     }
 
-    // 音声ファイルがある場合は保存確認
     if (audioFilePaths.length > 0) {
       Alert.alert(
         '録音ファイルの保存',
@@ -297,7 +278,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     }
   };
 
-  // 破棄
   const handleDiscard = () => {
     playClickSound();
     const audioCount = audioFilePaths.length;
@@ -313,7 +293,6 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
             for (const sess of sessions) {
               await localStorage.removeSession(sess.id);
             }
-            // 全ての音声ファイルを削除
             await whisperService.deleteAudioFiles(audioFilePaths);
             onDiscard();
           },
@@ -322,16 +301,14 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     );
   };
 
-  // タイムスタンプをフォーマット
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${String(secs).padStart(2, '0')}`;
   };
 
-  // 全セッションの合計時間をフォーマット
   const formatDuration = (): string => {
-    if (sessions.length === 0) return '';
+    if (sessions.length === 0) return '0m';
     let totalMs = 0;
     for (const sess of sessions) {
       const start = new Date(sess.started_at);
@@ -339,7 +316,7 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
       totalMs += end.getTime() - start.getTime();
     }
     const mins = Math.floor(totalMs / 60000);
-    return `${mins}分`;
+    return `${mins}m`;
   };
 
   // 動的スタイル
@@ -348,131 +325,141 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
       flex: 1,
       backgroundColor: colors.background,
     },
-    loadingSubtext: {
-      fontSize: fontSize.sm,
-      color: colors.textMuted,
-      marginTop: spacing.md,
-    },
-    errorDetail: {
-      fontSize: fontSize.sm,
-      color: colors.textMuted,
-      textAlign: 'center',
-      marginBottom: spacing.xl,
-    },
-    retryButton: {
+    // ヘッダー（Hoo + 統計）
+    headerSection: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
       paddingVertical: spacing.md,
-      paddingHorizontal: spacing.xl,
-      backgroundColor: colors.primary,
-      borderRadius: borderRadius.lg,
-      marginBottom: spacing.md,
+      gap: spacing.md,
     },
-    retryButtonText: {
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.medium,
-      color: colors.textPrimary,
+    statsRow: {
+      flex: 1,
+      flexDirection: 'row',
+      gap: spacing.sm,
     },
     statCard: {
-      backgroundColor: colors.backgroundSecondary,
-      paddingHorizontal: spacing.xl,
-      paddingVertical: spacing.md,
+      flex: 1,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
       borderRadius: borderRadius.lg,
       alignItems: 'center',
-      minWidth: 100,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     statValue: {
-      fontSize: fontSize.xl,
+      fontSize: fontSize.lg,
       fontWeight: fontWeight.bold,
       color: colors.primary,
     },
     statLabel: {
-      fontSize: fontSize.sm,
-      color: colors.textSecondary,
-      marginTop: spacing.xs,
+      fontSize: fontSize.xs,
+      color: colors.textMuted,
     },
-    memoInput: {
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.md,
-      padding: spacing.md,
-      color: colors.textPrimary,
-      fontSize: fontSize.base,
-      minHeight: 60,
-      textAlignVertical: 'top',
+    // ログリスト
+    logsContainer: {
+      flex: 1,
+      paddingHorizontal: spacing.lg,
     },
     logsLabel: {
-      fontSize: fontSize.sm,
-      color: colors.textSecondary,
+      fontSize: fontSize.xs,
+      color: colors.textMuted,
       marginBottom: spacing.sm,
     },
     logItem: {
-      backgroundColor: colors.backgroundSecondary,
+      backgroundColor: 'rgba(255, 255, 255, 0.03)',
       borderRadius: borderRadius.md,
       padding: spacing.md,
       marginBottom: spacing.sm,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.05)',
     },
     logTime: {
-      fontSize: fontSize.sm,
+      fontSize: fontSize.xs,
       color: colors.primary,
       fontWeight: fontWeight.medium,
     },
-    logIndex: {
-      fontSize: fontSize.sm,
-      color: colors.textMuted,
-    },
     logText: {
-      fontSize: fontSize.base,
+      fontSize: fontSize.sm,
       color: colors.textPrimary,
-      lineHeight: 22,
+      lineHeight: 20,
+      marginTop: spacing.xs,
     },
     emptyLogs: {
-      fontSize: fontSize.base,
+      fontSize: fontSize.sm,
       color: colors.textMuted,
       textAlign: 'center',
       paddingVertical: spacing.xl,
     },
-    primaryButton: {
-      backgroundColor: colors.primary,
-      paddingVertical: spacing.lg,
-      borderRadius: borderRadius.xl,
+    // グラスモーフィズムコントロールバー
+    controlBar: {
+      flexDirection: 'row',
       alignItems: 'center',
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      borderRadius: borderRadius.xxl,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+      padding: spacing.sm,
+      gap: spacing.sm,
     },
-    primaryButtonText: {
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.semibold,
+    // メモ入力
+    memoInput: {
+      flex: 1,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
       color: colors.textPrimary,
-    },
-    secondaryButton: {
-      flex: 1,
-      backgroundColor: colors.backgroundSecondary,
-      paddingVertical: spacing.md,
-      borderRadius: borderRadius.lg,
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    secondaryButtonText: {
       fontSize: fontSize.sm,
-      fontWeight: fontWeight.medium,
-      color: colors.textSecondary,
+      maxHeight: 60,
     },
-    dangerButton: {
-      flex: 1,
-      backgroundColor: 'transparent',
-      paddingVertical: spacing.md,
-      borderRadius: borderRadius.lg,
+    // ボタンセクション
+    buttonSection: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+    },
+    syncButton: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.primary,
       alignItems: 'center',
-      borderWidth: 1,
-      borderColor: colors.error,
+      justifyContent: 'center',
     },
-    dangerButtonText: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.medium,
-      color: colors.error,
+    saveButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    discardButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(239, 68, 68, 0.2)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    // ローディング/エンプティ
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     backButton: {
+      marginTop: spacing.lg,
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.xl,
-      backgroundColor: colors.primary,
-      borderRadius: borderRadius.lg,
+      backgroundColor: 'rgba(255, 255, 255, 0.05)',
+      borderRadius: borderRadius.xxl,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.1)',
     },
     backButtonText: {
       fontSize: fontSize.base,
@@ -482,24 +469,20 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
   });
 
   // ログアイテムのレンダリング
-  const renderLogItem = ({ item, index }: { item: LocalLog; index: number }) => (
+  const renderLogItem = ({ item }: { item: LocalLog }) => (
     <View style={dynamicStyles.logItem}>
-      <View style={styles.logHeader}>
-        <Text style={dynamicStyles.logTime}>{formatTime(item.timestamp_sec)}</Text>
-        <Text style={dynamicStyles.logIndex}>#{index + 1}</Text>
-      </View>
+      <Text style={dynamicStyles.logTime}>{formatTime(item.timestamp_sec)}</Text>
       <Text style={dynamicStyles.logText}>{item.text}</Text>
     </View>
   );
 
-  // ローディング中の表示
+  // ローディング中
   if (isLoading) {
     return (
       <SafeAreaView style={dynamicStyles.container}>
-        <View style={styles.loadingContainer}>
-          <Hoo state="thinking" customMessage="読み込み中..." size="small" />
-          <ActivityIndicator size="small" color={colors.primary} style={styles.spinner} />
-          <Text style={dynamicStyles.loadingSubtext}>しばらくお待ちください</Text>
+        <View style={dynamicStyles.centerContainer}>
+          <Hoo state="thinking" customMessage="読み込み中..." size={hooSizes.compact} />
+          <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: spacing.md }} />
         </View>
       </SafeAreaView>
     );
@@ -509,8 +492,8 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
   if (!session) {
     return (
       <SafeAreaView style={dynamicStyles.container}>
-        <View style={styles.emptyContainer}>
-          <Hoo state="empty" size="small" />
+        <View style={dynamicStyles.centerContainer}>
+          <Hoo state="empty" size={hooSizes.compact} />
           <TouchableOpacity style={dynamicStyles.backButton} onPress={onDiscard}>
             <Text style={dynamicStyles.backButtonText}>戻る</Text>
           </TouchableOpacity>
@@ -519,90 +502,12 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     );
   }
 
-  // 横向きレイアウト
-  if (isLandscape) {
-    return (
-      <SafeAreaView style={dynamicStyles.container}>
-        <View style={styles.landscapeContainer}>
-          {/* 左側: Hoo + 統計 + メモ + アクション */}
-          <View style={styles.landscapeLeft}>
-            <Hoo state="done" customMessage="記録したよ" size="small" />
-            <View style={styles.statsRow}>
-              <View style={dynamicStyles.statCard}>
-                <Text style={dynamicStyles.statValue}>{formatDuration()}</Text>
-                <Text style={dynamicStyles.statLabel}>録音時間</Text>
-              </View>
-              <View style={dynamicStyles.statCard}>
-                <Text style={dynamicStyles.statValue}>{allLogs.length}</Text>
-                <Text style={dynamicStyles.statLabel}>ログ数</Text>
-              </View>
-            </View>
-            <TextInput
-              style={[dynamicStyles.memoInput, styles.landscapeMemo]}
-              value={memo}
-              onChangeText={setMemo}
-              placeholder="セッションメモを追加..."
-              placeholderTextColor={colors.textMuted}
-              multiline
-              numberOfLines={2}
-            />
-            <View style={styles.landscapeActions}>
-              <TouchableOpacity
-                style={[dynamicStyles.primaryButton, styles.landscapePrimaryButton, isSyncing && styles.buttonDisabled]}
-                onPress={handleSync}
-                disabled={isSyncing}
-                activeOpacity={0.8}
-              >
-                {isSyncing ? (
-                  <ActivityIndicator color={colors.textPrimary} />
-                ) : (
-                  <Text style={dynamicStyles.primaryButtonText}>同期</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[dynamicStyles.secondaryButton, styles.landscapeSecondaryButton]}
-                onPress={handleSaveLocal}
-                activeOpacity={0.7}
-              >
-                <Text style={dynamicStyles.secondaryButtonText}>保存</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[dynamicStyles.dangerButton, styles.landscapeSecondaryButton]}
-                onPress={handleDiscard}
-                activeOpacity={0.7}
-              >
-                <Text style={dynamicStyles.dangerButtonText}>破棄</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* 右側: ログリスト */}
-          <View style={styles.landscapeRight}>
-            <Text style={dynamicStyles.logsLabel}>文字起こし結果</Text>
-            <FlatList
-              data={allLogs}
-              keyExtractor={(item) => item.id}
-              renderItem={renderLogItem}
-              style={styles.landscapeLogsList}
-              contentContainerStyle={styles.logsContent}
-              showsVerticalScrollIndicator={true}
-              ListEmptyComponent={
-                <Text style={dynamicStyles.emptyLogs}>音声が検出されませんでした</Text>
-              }
-            />
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // 縦向きレイアウト（既存）
   return (
     <SafeAreaView style={dynamicStyles.container}>
-      {/* Header - Hoo + 統計 */}
-      <View style={styles.header}>
-        <Hoo state="done" customMessage="記録したよ" size="small" />
-        <View style={styles.statsRow}>
+      {/* ヘッダー（Hoo + 統計） */}
+      <View style={dynamicStyles.headerSection}>
+        <Hoo state="done" customMessage="記録したよ" size={hooSizes.compact} hideBubble />
+        <View style={dynamicStyles.statsRow}>
           <View style={dynamicStyles.statCard}>
             <Text style={dynamicStyles.statValue}>{formatDuration()}</Text>
             <Text style={dynamicStyles.statLabel}>録音時間</Text>
@@ -614,28 +519,13 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
         </View>
       </View>
 
-      {/* Memo Input */}
-      <View style={styles.memoContainer}>
-        <TextInput
-          style={dynamicStyles.memoInput}
-          value={memo}
-          onChangeText={setMemo}
-          placeholder="セッションメモを追加..."
-          placeholderTextColor={colors.textMuted}
-          multiline
-          numberOfLines={2}
-        />
-      </View>
-
-      {/* Log List */}
-      <View style={styles.logsContainer}>
+      {/* ログリスト */}
+      <View style={dynamicStyles.logsContainer}>
         <Text style={dynamicStyles.logsLabel}>文字起こし結果</Text>
         <FlatList
           data={allLogs}
           keyExtractor={(item) => item.id}
           renderItem={renderLogItem}
-          style={styles.logsList}
-          contentContainerStyle={styles.logsContent}
           showsVerticalScrollIndicator={true}
           ListEmptyComponent={
             <Text style={dynamicStyles.emptyLogs}>音声が検出されませんでした</Text>
@@ -643,140 +533,59 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
         />
       </View>
 
-      {/* Actions - 固定下部 */}
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={[dynamicStyles.primaryButton, isSyncing && styles.buttonDisabled]}
-          onPress={handleSync}
-          disabled={isSyncing}
-          activeOpacity={0.8}
-        >
-          {isSyncing ? (
-            <ActivityIndicator color={colors.textPrimary} />
-          ) : (
-            <Text style={dynamicStyles.primaryButtonText}>サーバーに同期</Text>
-          )}
-        </TouchableOpacity>
+      {/* コントロールバー - 下部固定 */}
+      <View style={styles.controlBarContainer}>
+        <View style={dynamicStyles.controlBar}>
+          {/* メモ入力 */}
+          <TextInput
+            style={dynamicStyles.memoInput}
+            value={memo}
+            onChangeText={setMemo}
+            placeholder="メモを追加..."
+            placeholderTextColor={colors.textMuted}
+            multiline
+          />
 
-        <View style={styles.secondaryActions}>
-          <TouchableOpacity
-            style={dynamicStyles.secondaryButton}
-            onPress={handleSaveLocal}
-            activeOpacity={0.7}
-          >
-            <Text style={dynamicStyles.secondaryButtonText}>ローカル保存</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={dynamicStyles.dangerButton}
-            onPress={handleDiscard}
-            activeOpacity={0.7}
-          >
-            <Text style={dynamicStyles.dangerButtonText}>破棄</Text>
-          </TouchableOpacity>
+          {/* ボタン */}
+          <View style={dynamicStyles.buttonSection}>
+            <TouchableOpacity
+              style={dynamicStyles.discardButton}
+              onPress={handleDiscard}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash-outline" size={20} color={colors.error} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={dynamicStyles.saveButton}
+              onPress={handleSaveLocal}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="download-outline" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[dynamicStyles.syncButton, isSyncing && dynamicStyles.buttonDisabled]}
+              onPress={handleSync}
+              disabled={isSyncing}
+              activeOpacity={0.7}
+            >
+              {isSyncing ? (
+                <ActivityIndicator color="#ffffff" size="small" />
+              ) : (
+                <Ionicons name="cloud-upload-outline" size={24} color="#ffffff" />
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </SafeAreaView>
   );
 }
 
-// 静的スタイル（テーマに依存しない）
+// 静的スタイル
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  spinner: {
-    marginTop: spacing.md,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-  },
-  header: {
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.md,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  memoContainer: {
+  controlBarContainer: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  logsContainer: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-  },
-  logsList: {
-    flex: 1,
-  },
-  logsContent: {
-    paddingBottom: spacing.md,
-  },
-  logHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs,
-  },
-  actions: {
-    paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xl,
-    gap: spacing.md,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  secondaryActions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // 横向きレイアウト用
-  landscapeContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    gap: spacing.lg,
-  },
-  landscapeLeft: {
-    width: 280,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  landscapeRight: {
-    flex: 1,
-  },
-  landscapeMemo: {
-    width: '100%',
-    minHeight: 50,
-  },
-  landscapeActions: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    width: '100%',
-  },
-  landscapePrimaryButton: {
-    flex: 1,
-    paddingVertical: spacing.md,
-  },
-  landscapeSecondaryButton: {
-    flex: 0,
-    paddingHorizontal: spacing.md,
-  },
-  landscapeLogsList: {
-    flex: 1,
+    paddingTop: spacing.md,
   },
 });

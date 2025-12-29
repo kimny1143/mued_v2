@@ -1,22 +1,25 @@
 /**
- * HooSettingsScreen - Hooの音声反応アニメーション設定
+ * HooSettingsScreen - 設定画面
  *
- * 強拍・弱拍のアタック/リリース、閾値を調整可能
- * 左スワイプでホームに戻る
+ * - アカウント設定
+ * - Hoo音声反応設定（折りたたみ式）
  *
  * デザイン: MUEDグラスモーフィズム、ミニマル
  */
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Slider } from '@miblanchard/react-native-slider';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '@clerk/clerk-expo';
 import { useTheme } from '../providers/ThemeProvider';
 import { useHooSettingsStore, DEFAULT_HOO_SETTINGS } from '../stores/hooSettingsStore';
 import { spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
@@ -39,7 +42,11 @@ interface SliderConfig {
 
 export function HooSettingsScreen({ onBack }: HooSettingsScreenProps) {
   const { colors } = useTheme();
+  const { signOut } = useAuth();
   const { settings, isLoaded, loadSettings, updateSettings, resetToDefaults } = useHooSettingsStore();
+
+  // 折りたたみ状態
+  const [isHooSettingsExpanded, setIsHooSettingsExpanded] = useState(false);
 
   // 初期ロード
   useEffect(() => {
@@ -63,6 +70,25 @@ export function HooSettingsScreen({ onBack }: HooSettingsScreenProps) {
   const handleReset = () => {
     playClickSound();
     resetToDefaults();
+  };
+
+  // ログアウト
+  const handleLogout = () => {
+    playClickSound();
+    Alert.alert(
+      'ログアウト',
+      'ログアウトしますか？',
+      [
+        { text: 'キャンセル', style: 'cancel' },
+        {
+          text: 'ログアウト',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+          },
+        },
+      ]
+    );
   };
 
   // 強拍設定
@@ -151,19 +177,6 @@ export function HooSettingsScreen({ onBack }: HooSettingsScreenProps) {
       fontWeight: fontWeight.bold,
       color: colors.textPrimary,
     },
-    resetButton: {
-      paddingVertical: spacing.sm,
-      paddingHorizontal: spacing.md,
-      backgroundColor: colors.backgroundSecondary,
-      borderRadius: borderRadius.full,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    resetText: {
-      fontSize: fontSize.sm,
-      color: colors.textSecondary,
-      fontWeight: fontWeight.medium,
-    },
     sectionTitle: {
       fontSize: fontSize.base,
       fontWeight: fontWeight.semibold,
@@ -184,7 +197,82 @@ export function HooSettingsScreen({ onBack }: HooSettingsScreenProps) {
       shadowOpacity: 0.1,
       shadowRadius: 12,
     },
+    logoutButton: {
+      backgroundColor: colors.background,
+      borderRadius: borderRadius.lg,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      borderWidth: 1,
+      borderColor: colors.error,
+      alignItems: 'center',
+    },
+    logoutText: {
+      fontSize: fontSize.base,
+      fontWeight: fontWeight.medium,
+      color: colors.error,
+    },
+    // 折りたたみヘッダー
+    accordionHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+    },
+    accordionTitle: {
+      flex: 1,
+    },
+    accordionTitleText: {
+      fontSize: fontSize.base,
+      fontWeight: fontWeight.semibold,
+      color: colors.textPrimary,
+    },
+    accordionSubtitle: {
+      fontSize: fontSize.xs,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    accordionIcon: {
+      padding: spacing.xs,
+    },
+    accordionContent: {
+      paddingTop: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    subSectionTitle: {
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.medium,
+      color: colors.textSecondary,
+      marginTop: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    resetRow: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginTop: spacing.lg,
+      paddingTop: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    resetButtonSmall: {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      backgroundColor: colors.background,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    resetButtonSmallText: {
+      fontSize: fontSize.xs,
+      color: colors.textSecondary,
+    },
   });
+
+  // Hoo設定トグル
+  const toggleHooSettings = () => {
+    playClickSound();
+    setIsHooSettingsExpanded(!isHooSettingsExpanded);
+  };
 
   return (
     <SafeAreaView style={dynamicStyles.container}>
@@ -193,10 +281,8 @@ export function HooSettingsScreen({ onBack }: HooSettingsScreenProps) {
         <TouchableOpacity style={dynamicStyles.backButton} onPress={handleBack} activeOpacity={0.7}>
           <Text style={dynamicStyles.backText}>戻る</Text>
         </TouchableOpacity>
-        <Text style={dynamicStyles.title}>Hoo 設定</Text>
-        <TouchableOpacity style={dynamicStyles.resetButton} onPress={handleReset} activeOpacity={0.7}>
-          <Text style={dynamicStyles.resetText}>リセット</Text>
-        </TouchableOpacity>
+        <Text style={dynamicStyles.title}>設定</Text>
+        <View style={{ width: 60 }} />
       </View>
 
       {/* 設定リスト */}
@@ -205,16 +291,62 @@ export function HooSettingsScreen({ onBack }: HooSettingsScreenProps) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 強拍セクション */}
+        {/* アカウントセクション */}
         <View style={dynamicStyles.card}>
-          <Text style={dynamicStyles.sectionTitle}>強拍（大きな音）</Text>
-          {strongConfigs.map(renderSlider)}
+          <Text style={dynamicStyles.sectionTitle}>アカウント</Text>
+          <TouchableOpacity
+            style={dynamicStyles.logoutButton}
+            onPress={handleLogout}
+            activeOpacity={0.7}
+          >
+            <Text style={dynamicStyles.logoutText}>ログアウト</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* 弱拍セクション */}
+        {/* Hoo音声反応設定（折りたたみ式） */}
         <View style={dynamicStyles.card}>
-          <Text style={dynamicStyles.sectionTitle}>弱拍（中くらいの音）</Text>
-          {mediumConfigs.map(renderSlider)}
+          <TouchableOpacity
+            style={dynamicStyles.accordionHeader}
+            onPress={toggleHooSettings}
+            activeOpacity={0.7}
+          >
+            <View style={dynamicStyles.accordionTitle}>
+              <Text style={dynamicStyles.accordionTitleText}>Hoo 音声反応</Text>
+              <Text style={dynamicStyles.accordionSubtitle}>
+                アニメーションの閾値・速度を調整
+              </Text>
+            </View>
+            <View style={dynamicStyles.accordionIcon}>
+              <Ionicons
+                name={isHooSettingsExpanded ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color={colors.textSecondary}
+              />
+            </View>
+          </TouchableOpacity>
+
+          {isHooSettingsExpanded && (
+            <View style={dynamicStyles.accordionContent}>
+              {/* 強拍 */}
+              <Text style={dynamicStyles.subSectionTitle}>強拍（大きな音）</Text>
+              {strongConfigs.map(renderSlider)}
+
+              {/* 弱拍 */}
+              <Text style={dynamicStyles.subSectionTitle}>弱拍（中くらいの音）</Text>
+              {mediumConfigs.map(renderSlider)}
+
+              {/* リセットボタン */}
+              <View style={dynamicStyles.resetRow}>
+                <TouchableOpacity
+                  style={dynamicStyles.resetButtonSmall}
+                  onPress={handleReset}
+                  activeOpacity={0.7}
+                >
+                  <Text style={dynamicStyles.resetButtonSmallText}>デフォルトに戻す</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -17,13 +17,18 @@ import {
   FlatList,
   Animated,
   ViewToken,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { localStorage } from '../cache/storage';
 import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 import { playClickSound } from '../utils/sound';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// 背景画像
+const heroBg = require('../../assets/images/hero-bg.jpg');
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -31,25 +36,25 @@ interface OnboardingScreenProps {
 
 // 三層構造のコンテンツ
 const TAGLINE = {
-  line1: '出力はAI',
-  line2: '判断と欲は、人間。',
+  line1: '集中して、休む。',
+  line2: 'それだけでいい。',
 };
 
 const CARDS = [
   {
     id: '1',
-    title: 'AIは思考の鏡である',
-    description: 'AIは人間の脳の動きを外部に可視化し、加速させたもの。思考の代替ではなく拡張。',
+    title: '時間を決めて集中',
+    description: '25分、50分、90分。あなたに合ったモードを選んで開始。Hooが適切なタイミングで休憩を促します。',
   },
   {
     id: '2',
-    title: '創作とは「選び続けること」',
-    description: 'AI時代において、創作とは「作ること」ではなく「選び続けること」。',
+    title: '声で気づきを記録',
+    description: '作業中のアイデアや違和感を声に出すだけ。Hooが書き起こして保存します。',
   },
   {
     id: '3',
-    title: '反応を記録しよう',
-    description: '違和感も、納得感も。どちらもあなたの判断の痕跡です。',
+    title: '記録を振り返る',
+    description: '集中した時間はすべて記録されます。ホーム画面を右スワイプで履歴を確認。',
   },
 ];
 
@@ -124,67 +129,75 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   // レイヤー0: タグライン（スプラッシュ）
   if (!showCards) {
     return (
-      <SafeAreaView style={styles.splashContainer}>
-        <Animated.View style={[styles.taglineContainer, { opacity: fadeAnim }]}>
-          <Text style={styles.taglineLine1}>{TAGLINE.line1}</Text>
-          <Text style={styles.taglineLine2}>{TAGLINE.line2}</Text>
-        </Animated.View>
-      </SafeAreaView>
+      <ImageBackground source={heroBg} style={styles.splashContainer} resizeMode="cover">
+        <View style={styles.splashOverlay}>
+          <SafeAreaView style={styles.splashContent}>
+            <Animated.View style={[styles.taglineContainer, { opacity: fadeAnim }]}>
+              <Text style={styles.taglineLine1}>{TAGLINE.line1}</Text>
+              <Text style={styles.taglineLine2}>{TAGLINE.line2}</Text>
+            </Animated.View>
+          </SafeAreaView>
+        </View>
+      </ImageBackground>
     );
   }
 
   // レイヤー1: 要約カード
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Skip button */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-          <Text style={styles.skipText}>スキップ</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Card slider */}
-      <FlatList
-        ref={flatListRef}
-        data={CARDS}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.id}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        renderItem={({ item }) => (
-          <View style={styles.cardWrapper}>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{item.title}</Text>
-              <Text style={styles.cardDescription}>{item.description}</Text>
-            </View>
+    <ImageBackground source={heroBg} style={styles.splashContainer} resizeMode="cover">
+      <BlurView intensity={80} tint="systemMaterialDark" style={styles.blurContainer}>
+        <SafeAreaView style={styles.container}>
+          {/* Skip button */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+              <Text style={styles.skipText}>スキップ</Text>
+            </TouchableOpacity>
           </View>
-        )}
-      />
 
-      {/* Pagination dots */}
-      <View style={styles.pagination}>
-        {CARDS.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              index === currentIndex && styles.dotActive,
-            ]}
+          {/* Card slider */}
+          <FlatList
+            ref={flatListRef}
+            data={CARDS}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id}
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+            renderItem={({ item }) => (
+              <View style={styles.cardWrapper}>
+                <View style={styles.card}>
+                  <Text style={styles.cardTitle}>{item.title}</Text>
+                  <Text style={styles.cardDescription}>{item.description}</Text>
+                </View>
+              </View>
+            )}
           />
-        ))}
-      </View>
 
-      {/* Next/Start button */}
-      <View style={styles.footer}>
-        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>
-            {currentIndex === CARDS.length - 1 ? 'はじめる' : '次へ'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+          {/* Pagination dots */}
+          <View style={styles.pagination}>
+            {CARDS.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  index === currentIndex && styles.dotActive,
+                ]}
+              />
+            ))}
+          </View>
+
+          {/* Next/Start button */}
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+              <Text style={styles.nextButtonText}>
+                {currentIndex === CARDS.length - 1 ? 'はじめる' : '次へ'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </BlurView>
+    </ImageBackground>
   );
 }
 
@@ -192,7 +205,15 @@ const styles = StyleSheet.create({
   // Splash (Layer 0)
   splashContainer: {
     flex: 1,
-    backgroundColor: colors.background,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT,
+  },
+  splashOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  splashContent: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -204,17 +225,25 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.textPrimary,
     marginBottom: spacing.sm,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   taglineLine2: {
     fontSize: fontSize.xl,
     fontWeight: fontWeight.medium,
     color: colors.primary,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
 
   // Cards (Layer 1)
+  blurContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -236,11 +265,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   card: {
-    backgroundColor: colors.backgroundSecondary,
+    backgroundColor: 'rgba(30, 30, 50, 0.85)',
     borderRadius: borderRadius.xl,
     padding: spacing.xxl,
     minHeight: 300,
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   cardTitle: {
     fontSize: fontSize['2xl'],

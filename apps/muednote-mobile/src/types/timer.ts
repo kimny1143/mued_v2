@@ -20,7 +20,6 @@ export interface FocusMode {
   focusDuration: number; // seconds
   breakDuration: number; // seconds
   description: string;
-  hooMessage: string;
 }
 
 export const FOCUS_MODES: FocusMode[] = [
@@ -32,7 +31,6 @@ export const FOCUS_MODES: FocusMode[] = [
     focusDuration: 25 * 60,
     breakDuration: 5 * 60,
     description: '短い集中と休憩を繰り返す',
-    hooMessage: '25分集中して5分休む、ポモドーロだね。短く区切ってリズムよく！',
   },
   {
     id: 'standard',
@@ -42,7 +40,6 @@ export const FOCUS_MODES: FocusMode[] = [
     focusDuration: 50 * 60,
     breakDuration: 17 * 60,
     description: 'バランスの取れた標準セッション',
-    hooMessage: '50分の標準セッション。バランスよく集中できるよ！',
   },
   {
     id: 'deepwork',
@@ -52,7 +49,6 @@ export const FOCUS_MODES: FocusMode[] = [
     focusDuration: 90 * 60,
     breakDuration: 20 * 60,
     description: '創作・没入作業に最適',
-    hooMessage: '90分のディープワーク。創作に没頭するならこれだね！',
   },
   {
     id: 'custom',
@@ -62,7 +58,6 @@ export const FOCUS_MODES: FocusMode[] = [
     focusDuration: 0, // カスタム値を使用
     breakDuration: 0,
     description: '自分だけの時間設定',
-    hooMessage: '自分だけの時間設定。最大120分まで選べるよ！',
   },
 ];
 

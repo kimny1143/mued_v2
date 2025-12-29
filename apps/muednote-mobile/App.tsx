@@ -30,6 +30,7 @@ import { ReviewScreen } from './src/screens/ReviewScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { SignInScreen } from './src/screens/SignInScreen';
 import { HooSettingsScreen } from './src/screens/HooSettingsScreen';
+import { HistoryScreen } from './src/screens/HistoryScreen';
 import { useSessionStore } from './src/stores/sessionStore';
 import { useHooSettingsStore } from './src/stores/hooSettingsStore';
 import { whisperService } from './src/services/whisperService';
@@ -42,7 +43,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.25; // 25%スワイプで遷移
 
 // 画面の種類
-type Screen = 'loading' | 'onboarding' | 'home' | 'settings' | 'session' | 'break' | 'review';
+type Screen = 'loading' | 'onboarding' | 'home' | 'settings' | 'history' | 'session' | 'break' | 'review';
 
 /**
  * Main App Content - requires ClerkProvider and ThemeProvider context
@@ -66,7 +67,8 @@ function AppContent() {
     currentScreenRef.current = currentScreen;
   }, [currentScreen]);
 
-  // Home/Settings間のスワイプ検出
+  // Home/Settings/History間のスワイプ検出
+  // History ← Home → Settings
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
@@ -81,19 +83,23 @@ function AppContent() {
       onPanResponderMove: (_, gestureState) => {
         // スワイプ方向に応じてアニメーション（制限付き）
         const screen = currentScreenRef.current;
-        // Home: 左スワイプのみ許可
-        if (screen === 'home' && gestureState.dx < 0) {
+        // Home: 両方向スワイプ許可
+        if (screen === 'home') {
           slideAnim.setValue(gestureState.dx);
         }
-        // Settings: 右スワイプのみ許可
+        // Settings: 右スワイプのみ許可（→ Home）
         else if (screen === 'settings' && gestureState.dx > 0) {
+          slideAnim.setValue(gestureState.dx);
+        }
+        // History: 左スワイプのみ許可（→ Home）
+        else if (screen === 'history' && gestureState.dx < 0) {
           slideAnim.setValue(gestureState.dx);
         }
       },
       onPanResponderRelease: (_, gestureState) => {
         const screen = currentScreenRef.current;
 
-        // 左スワイプ → 設定画面へ
+        // Home → Settings（左スワイプ）
         if (gestureState.dx < -SWIPE_THRESHOLD && screen === 'home') {
           Animated.timing(slideAnim, {
             toValue: -SCREEN_WIDTH,
@@ -104,10 +110,32 @@ function AppContent() {
             slideAnim.setValue(0);
           });
         }
-        // 右スワイプ → ホームへ
+        // Home → History（右スワイプ）
+        else if (gestureState.dx > SWIPE_THRESHOLD && screen === 'home') {
+          Animated.timing(slideAnim, {
+            toValue: SCREEN_WIDTH,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            setCurrentScreen('history');
+            slideAnim.setValue(0);
+          });
+        }
+        // Settings → Home（右スワイプ）
         else if (gestureState.dx > SWIPE_THRESHOLD && screen === 'settings') {
           Animated.timing(slideAnim, {
             toValue: SCREEN_WIDTH,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            setCurrentScreen('home');
+            slideAnim.setValue(0);
+          });
+        }
+        // History → Home（左スワイプ）
+        else if (gestureState.dx < -SWIPE_THRESHOLD && screen === 'history') {
+          Animated.timing(slideAnim, {
+            toValue: -SCREEN_WIDTH,
             duration: 200,
             useNativeDriver: true,
           }).start(() => {
@@ -233,6 +261,10 @@ function AppContent() {
     setCurrentScreen('home');
   };
 
+  const handleHistoryBack = () => {
+    setCurrentScreen('home');
+  };
+
   // 動的スタイル
   const dynamicStyles = {
     loadingContainer: {
@@ -303,8 +335,8 @@ function AppContent() {
       {currentScreen === 'onboarding' && (
         <OnboardingScreen onComplete={handleOnboardingComplete} />
       )}
-      {/* Home/Settings はスワイプ対応 */}
-      {(currentScreen === 'home' || currentScreen === 'settings') && (
+      {/* Home/Settings/History はスワイプ対応 */}
+      {(currentScreen === 'home' || currentScreen === 'settings' || currentScreen === 'history') && (
         <Animated.View
           style={[styles.swipeContainer, { transform: [{ translateX: slideAnim }] }]}
           {...panResponder.panHandlers}
@@ -314,6 +346,9 @@ function AppContent() {
           )}
           {currentScreen === 'settings' && (
             <HooSettingsScreen onBack={handleSettingsBack} />
+          )}
+          {currentScreen === 'history' && (
+            <HistoryScreen onBack={handleHistoryBack} />
           )}
         </Animated.View>
       )}
