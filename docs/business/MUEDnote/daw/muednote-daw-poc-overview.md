@@ -30,8 +30,8 @@ MUEDnoteモバイルアプリの練習セッションと、DAWでの操作ログ
 |-----|---------------|-------------------|------|
 | **Ableton Live** | Python API + OSC | ✅ フルアクセス | PoC実証済み |
 | **Digital Performer** | OSC | ✅ 期待大 | 要PoC |
-| **Logic Pro** | OSC (Control Surface) | ⚠️ 16パラメータ上限 | 制限あり |
-| **Cubase** | MIDI Remote API (JS) | ⚠️ 8コントロール/ページ | 制限あり |
+| **Logic Pro** | Smart Controls / OSC | ⚠️ 12ノブ/タブ上限 | 制限あり |
+| **Cubase** | Quick Controls / MIDI Remote API | ⚠️ 8パラメータ上限 | 制限あり |
 | **Pro Tools** | PTSL SDK / EUCON | ❌ 不可 | SDK未実装/非公開 |
 
 ### 3.2 機能別対応状況
