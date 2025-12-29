@@ -61,3 +61,4 @@ docs/audio/
 # Swift Package Manager (macOS app)
 apps/muednote-hub-macos/.build/
 apps/muednote-hub-macos/.swiftpm/
+apps/muednote-hub-macos/MUEDnoteHub.app/

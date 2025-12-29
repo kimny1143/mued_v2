@@ -11,8 +11,9 @@ class OSCReceiverService: ObservableObject {
     private let maxTracksToMonitor = 10
     private let maxParamsPerDevice = 30
 
-    // OSC Server
+    // OSC Server & Client
     private var oscServer: OSCServer?
+    private var oscClient: OSCClient?
 
     // Callbacks
     var onParameterChange: ((DAWLog) -> Void)?
@@ -39,6 +40,10 @@ class OSCReceiverService: ObservableObject {
         guard oscServer == nil else { return }
 
         do {
+            // Create OSC client for sending to Ableton
+            oscClient = OSCClient()
+
+            // Create OSC server for receiving from Ableton
             oscServer = OSCServer(port: abletonReceivePort) { [weak self] message, _ in
                 Task { @MainActor in
                     self?.handleOSCMessage(message)
@@ -73,32 +78,75 @@ class OSCReceiverService: ObservableObject {
 
     private func sendOSC(address: String, args: [any OSCValue] = []) {
         let message = OSCMessage(address, values: args)
-        // Note: For sending, we need a UDP client to port 11000
-        // This will be implemented with a separate OSCClient
+        do {
+            try oscClient?.send(message, to: "localhost", port: abletonSendPort)
+            print("[OSC] Sent: \(address) \(args)")
+        } catch {
+            print("[OSC] Failed to send: \(error)")
+        }
     }
 
     private func handleOSCMessage(_ message: OSCMessage) {
         let address = message.addressPattern.stringValue
 
+        // Debug: すべてのOSCメッセージをログ出力（型情報付き）
+        let valueTypes = message.values.map { "\(type(of: $0))" }.joined(separator: ", ")
+        print("[OSC] Received: \(address) - values: \(message.values) types: [\(valueTypes)]")
+        // ファイルにも出力
+        let logLine = "[OSC] \(Date()): \(address) - \(message.values) types: [\(valueTypes)]\n"
+        if let data = logLine.data(using: .utf8) {
+            let logPath = "/tmp/muednote-osc.log"
+            if FileManager.default.fileExists(atPath: logPath) {
+                if let handle = FileHandle(forWritingAtPath: logPath) {
+                    handle.seekToEndOfFile()
+                    handle.write(data)
+                    handle.closeFile()
+                }
+            } else {
+                FileManager.default.createFile(atPath: logPath, contents: data, attributes: nil)
+            }
+        }
+
         switch address {
-        // Parameter value (numeric)
+        // Parameter value (numeric) - cache for later use with value_string
         case "/live/device/get/parameter/value":
-            guard message.values.count >= 4,
-                  let trackId = message.values[0] as? Int,
-                  let deviceId = message.values[1] as? Int,
-                  let paramId = message.values[2] as? Int,
-                  let value = message.values[3] as? Double else { return }
+            guard message.values.count >= 4 else { return }
+            let trackId: Int
+            if let id = message.values[0] as? Int32 { trackId = Int(id) }
+            else if let id = message.values[0] as? Int { trackId = id }
+            else { return }
+            let deviceId: Int
+            if let id = message.values[1] as? Int32 { deviceId = Int(id) }
+            else if let id = message.values[1] as? Int { deviceId = id }
+            else { return }
+            let paramId: Int
+            if let id = message.values[2] as? Int32 { paramId = Int(id) }
+            else if let id = message.values[2] as? Int { paramId = id }
+            else { return }
+            let value: Double
+            if let v = message.values[3] as? Float { value = Double(v) }
+            else if let v = message.values[3] as? Double { value = v }
+            else { return }
 
             let key = "\(trackId):\(deviceId):\(paramId)"
             paramValueCache[key] = value
 
         // Parameter value string (triggers debounced log)
         case "/live/device/get/parameter/value_string":
-            guard message.values.count >= 4,
-                  let trackId = message.values[0] as? Int,
-                  let deviceId = message.values[1] as? Int,
-                  let paramId = message.values[2] as? Int,
-                  let valueString = message.values[3] as? String else { return }
+            guard message.values.count >= 4 else { return }
+            let trackId: Int
+            if let id = message.values[0] as? Int32 { trackId = Int(id) }
+            else if let id = message.values[0] as? Int { trackId = id }
+            else { return }
+            let deviceId: Int
+            if let id = message.values[1] as? Int32 { deviceId = Int(id) }
+            else if let id = message.values[1] as? Int { deviceId = id }
+            else { return }
+            let paramId: Int
+            if let id = message.values[2] as? Int32 { paramId = Int(id) }
+            else if let id = message.values[2] as? Int { paramId = id }
+            else { return }
+            guard let valueString = message.values[3] as? String else { return }
 
             let key = "\(trackId):\(deviceId):\(paramId)"
             let value = paramValueCache[key] ?? 0
@@ -115,9 +163,15 @@ class OSCReceiverService: ObservableObject {
 
         // Track volume
         case "/live/track/get/volume":
-            guard message.values.count >= 2,
-                  let trackId = message.values[0] as? Int,
-                  let value = message.values[1] as? Double else { return }
+            guard message.values.count >= 2 else { return }
+            let trackId: Int
+            if let id = message.values[0] as? Int32 { trackId = Int(id) }
+            else if let id = message.values[0] as? Int { trackId = id }
+            else { return }
+            let value: Double
+            if let v = message.values[1] as? Float { value = Double(v) }
+            else if let v = message.values[1] as? Double { value = v }
+            else { return }
 
             let db = 20 * log10(value)
             let valueString = String(format: "%.1f dB", db)
@@ -134,9 +188,16 @@ class OSCReceiverService: ObservableObject {
 
         // Track pan
         case "/live/track/get/panning":
-            guard message.values.count >= 2,
-                  let trackId = message.values[0] as? Int,
-                  let value = message.values[1] as? Double else { return }
+            guard message.values.count >= 2 else { return }
+            // OSCKit uses Int32 for integers, Float for floats
+            let trackId: Int
+            if let id = message.values[0] as? Int32 { trackId = Int(id) }
+            else if let id = message.values[0] as? Int { trackId = id }
+            else { return }
+            let value: Double
+            if let v = message.values[1] as? Float { value = Double(v) }
+            else if let v = message.values[1] as? Double { value = v }
+            else { return }
 
             let pan: String
             if value == 0 {
@@ -159,13 +220,77 @@ class OSCReceiverService: ObservableObject {
 
         // Track count response
         case "/live/song/get/num_tracks":
-            guard let numTracks = message.values.first as? Int else { return }
+            let numTracks: Int
+            if let n = message.values.first as? Int32 { numTracks = Int(n) }
+            else if let n = message.values.first as? Int { numTracks = n }
+            else { return }
             print("[OSC] Detected \(numTracks) tracks")
-            // Would register listeners here
+            registerTrackListeners(numTracks: min(numTracks, maxTracksToMonitor))
+
+        // Device count response
+        case "/live/track/get/num_devices":
+            guard message.values.count >= 2 else { return }
+            let trackId: Int
+            if let id = message.values[0] as? Int32 { trackId = Int(id) }
+            else if let id = message.values[0] as? Int { trackId = id }
+            else { return }
+            let numDevices: Int
+            if let n = message.values[1] as? Int32 { numDevices = Int(n) }
+            else if let n = message.values[1] as? Int { numDevices = n }
+            else { return }
+            print("[OSC] Track \(trackId): \(numDevices) devices")
+            registerDeviceListeners(trackId: trackId, numDevices: numDevices)
+
+        // Parameter count response
+        case "/live/device/get/num_parameters":
+            guard message.values.count >= 3 else { return }
+            let trackId: Int
+            if let id = message.values[0] as? Int32 { trackId = Int(id) }
+            else if let id = message.values[0] as? Int { trackId = id }
+            else { return }
+            let deviceId: Int
+            if let id = message.values[1] as? Int32 { deviceId = Int(id) }
+            else if let id = message.values[1] as? Int { deviceId = id }
+            else { return }
+            let numParams: Int
+            if let n = message.values[2] as? Int32 { numParams = Int(n) }
+            else if let n = message.values[2] as? Int { numParams = n }
+            else { return }
+            print("[OSC] Track \(trackId) Device \(deviceId): \(numParams) parameters")
+            registerParameterListeners(trackId: trackId, deviceId: deviceId, numParams: numParams)
 
         default:
             break
         }
+    }
+
+    private func registerTrackListeners(numTracks: Int) {
+        for trackId in 0..<numTracks {
+            // Register volume listener
+            sendOSC(address: "/live/track/start_listen/volume", args: [Int32(trackId)])
+            // Register pan listener
+            sendOSC(address: "/live/track/start_listen/panning", args: [Int32(trackId)])
+            // Request device count for this track
+            sendOSC(address: "/live/track/get/num_devices", args: [Int32(trackId)])
+        }
+        print("[OSC] Registered volume/pan listeners for \(numTracks) tracks, requesting device info...")
+    }
+
+    private func registerDeviceListeners(trackId: Int, numDevices: Int) {
+        for deviceId in 0..<numDevices {
+            // Request parameter count for each device
+            sendOSC(address: "/live/device/get/num_parameters", args: [Int32(trackId), Int32(deviceId)])
+        }
+        print("[OSC] Track \(trackId): requesting params for \(numDevices) devices")
+    }
+
+    private func registerParameterListeners(trackId: Int, deviceId: Int, numParams: Int) {
+        let maxParams = min(numParams, maxParamsPerDevice)
+        for paramId in 0..<maxParams {
+            // Register value listener (sends both value and value_string)
+            sendOSC(address: "/live/device/start_listen/parameter/value", args: [Int32(trackId), Int32(deviceId), Int32(paramId)])
+        }
+        print("[OSC] Track \(trackId) Device \(deviceId): registered \(maxParams) param listeners")
     }
 
     private func scheduleParameterChange(
@@ -177,6 +302,9 @@ class OSCReceiverService: ObservableObject {
         valueString: String,
         action: DAWAction
     ) {
+        // Debug: パラメータ変更検出
+        print("[OSC] scheduleParameterChange: \(key) = \(valueString)")
+
         // Cancel existing timer
         pendingChanges[key]?.timer?.cancel()
 
@@ -194,6 +322,7 @@ class OSCReceiverService: ObservableObject {
                 valueString: valueString
             )
 
+            print("[OSC] Emitting log: Track \(trackId), \(valueString)")
             self.onParameterChange?(log)
             self.pendingChanges.removeValue(forKey: key)
         }

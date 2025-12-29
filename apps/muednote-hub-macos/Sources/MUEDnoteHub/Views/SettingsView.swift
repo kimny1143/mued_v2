@@ -7,6 +7,7 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             GeneralSettingsView()
+                .environmentObject(appState)
                 .tabItem {
                     Label("一般", systemImage: "gear")
                 }
@@ -17,6 +18,7 @@ struct SettingsView: View {
                 }
 
             AccountSettingsView()
+                .environmentObject(appState)
                 .tabItem {
                     Label("アカウント", systemImage: "person.circle")
                 }
@@ -28,15 +30,21 @@ struct SettingsView: View {
 // MARK: - General Settings
 
 struct GeneralSettingsView: View {
-    @AppStorage("launchAtLogin") private var launchAtLogin = false
+    @EnvironmentObject var appState: AppState
     @AppStorage("showNotifications") private var showNotifications = true
     @AppStorage("debounceMs") private var debounceMs = 500
 
     var body: some View {
         Form {
             Section {
-                Toggle("ログイン時に起動", isOn: $launchAtLogin)
+                Toggle("ログイン時に起動", isOn: $appState.launchAtLogin.isEnabled)
                 Toggle("通知を表示", isOn: $showNotifications)
+
+                if let error = appState.launchAtLogin.error {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
             }
 
             Section("デバウンス設定") {
@@ -107,23 +115,50 @@ struct ConnectionSettingsView: View {
 struct AccountSettingsView: View {
     @EnvironmentObject var appState: AppState
     @State private var apiKey = ""
-    @State private var showingOAuthSheet = false
 
     var body: some View {
         Form {
             Section("認証状態") {
                 HStack {
-                    Image(systemName: appState.isAuthenticated ? "checkmark.circle.fill" : "xmark.circle")
-                        .foregroundColor(appState.isAuthenticated ? .green : .red)
-                    Text(appState.isAuthenticated ? "認証済み" : "未認証")
+                    Image(systemName: appState.authService.isAuthenticated ? "checkmark.circle.fill" : "xmark.circle")
+                        .foregroundColor(appState.authService.isAuthenticated ? .green : .red)
+                    Text(appState.authService.isAuthenticated ? "認証済み" : "未認証")
+                    Spacer()
+                    if let email = appState.authService.userEmail {
+                        Text(email)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                if let error = appState.authService.error {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundColor(.red)
                 }
             }
 
             Section("OAuth認証 (推奨)") {
-                Button("MUEDアカウントでログイン") {
-                    showingOAuthSheet = true
+                if appState.authService.isAuthenticated {
+                    Button("ログアウト") {
+                        appState.authService.signOut()
+                    }
+                    .buttonStyle(.bordered)
+                } else {
+                    Button(action: {
+                        appState.authService.signIn()
+                    }) {
+                        if appState.authService.isLoading {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .scaleEffect(0.8)
+                        } else {
+                            Text("MUEDアカウントでログイン")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(appState.authService.isLoading)
                 }
-                .buttonStyle(.borderedProminent)
 
                 Text("Clerkを使用したセキュアな認証です。")
                     .font(.caption)
@@ -146,9 +181,6 @@ struct AccountSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
-        .sheet(isPresented: $showingOAuthSheet) {
-            OAuthView()
-        }
     }
 
     private func saveApiKey() {
@@ -160,43 +192,6 @@ struct AccountSettingsView: View {
                 print("[Settings] Failed to save API key: \(error)")
             }
         }
-    }
-}
-
-// MARK: - OAuth View (Placeholder)
-
-struct OAuthView: View {
-    @Environment(\.dismiss) var dismiss
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "person.badge.key.fill")
-                .font(.system(size: 48))
-                .foregroundColor(.blue)
-
-            Text("MUEDアカウントでログイン")
-                .font(.title2)
-                .fontWeight(.semibold)
-
-            Text("ブラウザでClerk認証ページを開きます。\n認証完了後、自動的にこのアプリに戻ります。")
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-
-            Button("ブラウザで認証") {
-                // TODO: Implement Clerk OAuth flow
-                // Open Safari with Clerk auth URL
-                // Handle callback with custom URL scheme
-                dismiss()
-            }
-            .buttonStyle(.borderedProminent)
-
-            Button("キャンセル") {
-                dismiss()
-            }
-            .buttonStyle(.bordered)
-        }
-        .padding(40)
-        .frame(width: 350, height: 300)
     }
 }
 

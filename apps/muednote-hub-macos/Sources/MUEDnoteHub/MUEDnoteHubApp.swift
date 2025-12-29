@@ -6,14 +6,11 @@ struct MUEDnoteHubApp: App {
 
     var body: some Scene {
         // Menu bar only app - no main window
-        MenuBarExtra {
+        MenuBarExtra("MUEDnote Hub", systemImage: "music.note.house") {
             MenuBarView()
                 .environmentObject(appState)
-        } label: {
-            Image(systemName: appState.statusIcon)
-                .symbolRenderingMode(.hierarchical)
         }
-        .menuBarExtraStyle(.window)
+        .menuBarExtraStyle(.menu)
 
         // Settings window
         Settings {
@@ -29,7 +26,6 @@ class AppState: ObservableObject {
     // Connection status
     @Published var isAbletonConnected = false
     @Published var isServerConnected = false
-    @Published var isAuthenticated = false
 
     // Statistics
     @Published var todayLogCount = 0
@@ -38,6 +34,13 @@ class AppState: ObservableObject {
     // Services
     let oscReceiver: OSCReceiverService
     let apiClient: APIClient
+    let authService: AuthService
+    var launchAtLogin: LaunchAtLoginService
+
+    /// Authentication state (delegated to AuthService)
+    var isAuthenticated: Bool {
+        authService.isAuthenticated
+    }
 
     /// Status icon based on connection state
     var statusIcon: String {
@@ -56,6 +59,8 @@ class AppState: ObservableObject {
     init() {
         self.oscReceiver = OSCReceiverService()
         self.apiClient = APIClient()
+        self.authService = AuthService()
+        self.launchAtLogin = LaunchAtLoginService()
 
         setupBindings()
     }
