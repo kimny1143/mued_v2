@@ -44,14 +44,46 @@ interface ReviewScreenProps {
   onDiscard: () => void;
 }
 
+// DAWログの型定義
+interface DawLog {
+  id: string;
+  ts: string;
+  daw: string;
+  action: string;
+  track_id: number;
+  device_id: number;
+  param_id: number;
+  value: number;
+  value_string: string;
+}
+
+// 統合ログ型（音声とDAW両方を表示）
+interface UnifiedLog {
+  id: string;
+  type: 'voice' | 'daw';
+  timestamp: Date;
+  timestamp_sec: number;  // セッション開始からの秒数
+  text: string;
+  metadata?: {
+    track_id?: number;
+    device_id?: number;
+    param_id?: number;
+    value?: number;
+    action?: string;
+  };
+}
+
 export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
   const { colors } = useTheme();
   const [sessions, setSessions] = useState<LocalSession[]>([]);
   const [allLogs, setAllLogs] = useState<LocalLog[]>([]);
+  const [dawLogs, setDawLogs] = useState<DawLog[]>([]);
+  const [unifiedLogs, setUnifiedLogs] = useState<UnifiedLog[]>([]);
   const [audioFilePaths, setAudioFilePaths] = useState<string[]>([]);
   const [memo, setMemo] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [showDawLogs, setShowDawLogs] = useState(true);
 
   // 全セッションのログを取得
   useEffect(() => {
@@ -100,6 +132,71 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
 
       setAllLogs(combinedLogs);
       setAudioFilePaths(collectedAudioPaths);
+
+      // DAWログ取得（セッション時間範囲）
+      const firstSession = todaySessions[0];
+      const lastSession = todaySessions[todaySessions.length - 1];
+      const since = firstSession.started_at;
+      const until = lastSession.ended_at || new Date().toISOString();
+
+      try {
+        const dawResult = await apiClient.getDawLogs({
+          since,
+          until,
+          limit: 200,
+        });
+        setDawLogs(dawResult.logs);
+
+        // 統合ログを作成
+        const sessionStartTime = new Date(since).getTime();
+        const unified: UnifiedLog[] = [];
+
+        // 音声ログを追加
+        for (const log of combinedLogs) {
+          unified.push({
+            id: log.id,
+            type: 'voice',
+            timestamp: new Date(sessionStartTime + log.timestamp_sec * 1000),
+            timestamp_sec: log.timestamp_sec,
+            text: log.text,
+          });
+        }
+
+        // DAWログを追加
+        for (const log of dawResult.logs) {
+          const logTime = new Date(log.ts).getTime();
+          const secFromStart = Math.floor((logTime - sessionStartTime) / 1000);
+          unified.push({
+            id: log.id,
+            type: 'daw',
+            timestamp: new Date(log.ts),
+            timestamp_sec: secFromStart,
+            text: `${log.action === 'track_volume' ? 'Vol' : log.action === 'track_pan' ? 'Pan' : 'Param'}: ${log.value_string}`,
+            metadata: {
+              track_id: log.track_id,
+              device_id: log.device_id,
+              param_id: log.param_id,
+              value: log.value,
+              action: log.action,
+            },
+          });
+        }
+
+        // タイムスタンプでソート
+        unified.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+        setUnifiedLogs(unified);
+      } catch (dawError) {
+        console.log('[Review] DAW logs not available:', dawError);
+        // DAWログなしで音声のみ表示
+        const unified: UnifiedLog[] = combinedLogs.map((log) => ({
+          id: log.id,
+          type: 'voice' as const,
+          timestamp: new Date(new Date(since).getTime() + log.timestamp_sec * 1000),
+          timestamp_sec: log.timestamp_sec,
+          text: log.text,
+        }));
+        setUnifiedLogs(unified);
+      }
     } catch (error: any) {
       console.error('[Review] Load error:', error);
     } finally {
@@ -370,9 +467,35 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.05)',
     },
+    dawLogItem: {
+      backgroundColor: 'rgba(139, 92, 246, 0.08)',
+      borderColor: 'rgba(139, 92, 246, 0.2)',
+    },
+    logHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
     logTime: {
       fontSize: fontSize.xs,
       color: colors.primary,
+      fontWeight: fontWeight.medium,
+    },
+    dawLogTime: {
+      color: colors.secondary,
+    },
+    dawBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(139, 92, 246, 0.2)',
+      paddingHorizontal: spacing.xs,
+      paddingVertical: 2,
+      borderRadius: borderRadius.sm,
+      gap: 3,
+    },
+    dawBadgeText: {
+      fontSize: 9,
+      color: colors.secondary,
       fontWeight: fontWeight.medium,
     },
     logText: {
@@ -380,6 +503,9 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
       color: colors.textPrimary,
       lineHeight: 20,
       marginTop: spacing.xs,
+    },
+    dawLogText: {
+      color: colors.textSecondary,
     },
     emptyLogs: {
       fontSize: fontSize.sm,
@@ -463,13 +589,28 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
     },
   });
 
-  // ログアイテムのレンダリング
-  const renderLogItem = ({ item }: { item: LocalLog }) => (
-    <View style={dynamicStyles.logItem}>
-      <Text style={dynamicStyles.logTime}>{formatTimestamp(item.timestamp_sec)}</Text>
-      <Text style={dynamicStyles.logText}>{item.text}</Text>
-    </View>
-  );
+  // ログアイテムのレンダリング（統合ログ対応）
+  const renderLogItem = ({ item }: { item: UnifiedLog }) => {
+    const isDaw = item.type === 'daw';
+    return (
+      <View style={[dynamicStyles.logItem, isDaw && dynamicStyles.dawLogItem]}>
+        <View style={dynamicStyles.logHeader}>
+          <Text style={[dynamicStyles.logTime, isDaw && dynamicStyles.dawLogTime]}>
+            {formatTimestamp(item.timestamp_sec)}
+          </Text>
+          {isDaw && (
+            <View style={dynamicStyles.dawBadge}>
+              <Ionicons name="musical-notes" size={10} color={colors.secondary} />
+              <Text style={dynamicStyles.dawBadgeText}>DAW</Text>
+            </View>
+          )}
+        </View>
+        <Text style={[dynamicStyles.logText, isDaw && dynamicStyles.dawLogText]}>
+          {item.text}
+        </Text>
+      </View>
+    );
+  };
 
   // ローディング中
   if (isLoading) {
@@ -505,25 +646,31 @@ export function ReviewScreen({ onComplete, onDiscard }: ReviewScreenProps) {
         <View style={dynamicStyles.statsRow}>
           <View style={dynamicStyles.statCard}>
             <Text style={dynamicStyles.statValue}>{formatDuration()}</Text>
-            <Text style={dynamicStyles.statLabel}>録音時間</Text>
+            <Text style={dynamicStyles.statLabel}>時間</Text>
           </View>
           <View style={dynamicStyles.statCard}>
             <Text style={dynamicStyles.statValue}>{allLogs.length}</Text>
-            <Text style={dynamicStyles.statLabel}>ログ数</Text>
+            <Text style={dynamicStyles.statLabel}>音声</Text>
+          </View>
+          <View style={dynamicStyles.statCard}>
+            <Text style={dynamicStyles.statValue}>{dawLogs.length}</Text>
+            <Text style={dynamicStyles.statLabel}>DAW</Text>
           </View>
         </View>
       </View>
 
       {/* ログリスト */}
       <View style={dynamicStyles.logsContainer}>
-        <Text style={dynamicStyles.logsLabel}>文字起こし結果</Text>
+        <Text style={dynamicStyles.logsLabel}>
+          セッションログ {dawLogs.length > 0 && `(DAW: ${dawLogs.length}件)`}
+        </Text>
         <FlatList
-          data={allLogs}
+          data={unifiedLogs}
           keyExtractor={(item) => item.id}
           renderItem={renderLogItem}
           showsVerticalScrollIndicator={true}
           ListEmptyComponent={
-            <Text style={dynamicStyles.emptyLogs}>音声が検出されませんでした</Text>
+            <Text style={dynamicStyles.emptyLogs}>ログがありません</Text>
           }
         />
       </View>

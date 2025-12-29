@@ -14,6 +14,10 @@ export const darkColors = {
   primary: '#059669',
   primaryLight: '#10b981',
 
+  // セカンダリ（purple系 - DAW連携など）
+  secondary: '#8b5cf6',
+  secondaryLight: '#a78bfa',
+
   // テキスト
   textPrimary: '#ffffff',
   textSecondary: '#94a3b8',
@@ -40,6 +44,10 @@ export const lightColors = {
   // プライマリ（emerald系）
   primary: '#059669',
   primaryLight: '#10b981',
+
+  // セカンダリ（purple系 - DAW連携など）
+  secondary: '#7c3aed',
+  secondaryLight: '#8b5cf6',
 
   // テキスト
   textPrimary: '#1e293b',

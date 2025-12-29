@@ -172,6 +172,40 @@ class ApiClient {
   }
 
   // ========================================
+  // DAW Logs API
+  // ========================================
+
+  /**
+   * DAWログ取得（時間範囲指定）
+   * セッションの開始〜終了時刻でフィルタ
+   */
+  async getDawLogs(params: {
+    since: string;  // ISO 8601 format
+    until: string;  // ISO 8601 format
+    limit?: number;
+  }): Promise<{
+    logs: Array<{
+      id: string;
+      ts: string;
+      daw: string;
+      action: string;
+      track_id: number;
+      device_id: number;
+      param_id: number;
+      value: number;
+      value_string: string;
+    }>;
+    count: number;
+  }> {
+    const searchParams = new URLSearchParams();
+    searchParams.set('since', params.since);
+    searchParams.set('until', params.until);
+    if (params.limit) searchParams.set('limit', params.limit.toString());
+
+    return this.request(`/api/muednote/daw-log?${searchParams.toString()}`);
+  }
+
+  // ========================================
   // Sync Helper
   // ========================================
 
