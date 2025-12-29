@@ -26,13 +26,17 @@ class AppState: ObservableObject {
     // Connection status
     @Published var isAbletonConnected = false
     @Published var isServerConnected = false
+    @Published var isMIDIConnected = false
 
     // Statistics
     @Published var todayLogCount = 0
+    @Published var todayMIDICount = 0
     @Published var recentLogs: [DAWLog] = []
+    @Published var recentMIDILogs: [MIDILog] = []
 
     // Services
     let oscReceiver: OSCReceiverService
+    let midiReceiver: MIDIReceiverService
     let apiClient: APIClient
     let authService: AuthService
     var launchAtLogin: LaunchAtLoginService
@@ -58,6 +62,7 @@ class AppState: ObservableObject {
 
     init() {
         self.oscReceiver = OSCReceiverService()
+        self.midiReceiver = MIDIReceiverService()
         self.apiClient = APIClient()
         self.authService = AuthService()
         self.launchAtLogin = LaunchAtLoginService()
@@ -66,7 +71,7 @@ class AppState: ObservableObject {
     }
 
     private func setupBindings() {
-        // OSC receiver callbacks will be set up here
+        // OSC receiver callbacks
         oscReceiver.onParameterChange = { [weak self] log in
             Task { @MainActor in
                 self?.handleNewLog(log)
@@ -76,6 +81,19 @@ class AppState: ObservableObject {
         oscReceiver.onConnectionChange = { [weak self] connected in
             Task { @MainActor in
                 self?.isAbletonConnected = connected
+            }
+        }
+
+        // MIDI receiver callbacks
+        midiReceiver.onMIDIMessage = { [weak self] log in
+            Task { @MainActor in
+                self?.handleNewMIDILog(log)
+            }
+        }
+
+        midiReceiver.onConnectionChange = { [weak self] connected in
+            Task { @MainActor in
+                self?.isMIDIConnected = connected
             }
         }
     }
@@ -99,11 +117,29 @@ class AppState: ObservableObject {
         }
     }
 
+    func handleNewMIDILog(_ log: MIDILog) {
+        recentMIDILogs.insert(log, at: 0)
+        if recentMIDILogs.count > 20 {
+            recentMIDILogs.removeLast()
+        }
+        todayMIDICount += 1
+
+        // TODO: Send to server (Phase 2)
+    }
+
     func startListening() {
         oscReceiver.start()
     }
 
     func stopListening() {
         oscReceiver.stop()
+    }
+
+    func startMIDI() {
+        midiReceiver.start()
+    }
+
+    func stopMIDI() {
+        midiReceiver.stop()
     }
 }

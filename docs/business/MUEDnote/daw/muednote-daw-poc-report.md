@@ -1,8 +1,9 @@
 # MUEDnote DAW連携 PoC レポート
 
 **作成日**: 2025-12-29
-**バージョン**: 1.0
-**ステータス**: PoC完了
+**更新日**: 2025-12-30
+**バージョン**: 1.1
+**ステータス**: OSC + MIDI PoC完了
 
 ---
 
@@ -34,11 +35,13 @@ MUEDnoteモバイルアプリの練習セッションと、DAW（Ableton Live）
 │  ┌──────────────┐    OSC (UDP)    ┌──────────────────────┐  │
 │  │ Ableton Live │ ◄─────────────► │ MUEDnote Hub         │  │
 │  │ + AbletonOSC │    port 11000   │ (Swift macOS App)    │  │
-│  └──────────────┘    port 11001   │                      │  │
-│                                   │ - OSC送受信          │  │
-│                                   │ - ポーリング検出     │  │
-│                                   │ - 変化検出           │  │
-│                                   └──────────┬───────────┘  │
+│  └──────┬───────┘    port 11001   │                      │  │
+│         │                         │ - OSC送受信          │  │
+│         │ MIDI                    │ - MIDI受信           │  │
+│         ▼                         │ - ポーリング検出     │  │
+│  ┌──────────────┐                 │ - 変化検出           │  │
+│  │ IAC Driver   │ ───CoreMIDI───► │                      │  │
+│  └──────────────┘                 └──────────┬───────────┘  │
 └──────────────────────────────────────────────┼──────────────┘
                                                │ HTTP POST
                                                ▼
@@ -72,6 +75,7 @@ if hasChanged && oldValue != nil {
 | ファイル | 役割 |
 |---------|------|
 | `OSCReceiverService.swift` | OSC送受信、ポーリング、変化検出 |
+| `MIDIReceiverService.swift` | CoreMIDI受信、Note/CC/PitchBend解析 |
 | `MenuBarView.swift` | メニューバーUI |
 | `SettingsView.swift` | 設定画面（API URL、認証） |
 
@@ -142,21 +146,20 @@ Pianoteq 8（AU版）はAbleton Live APIからOn/Offパラメータのみ公開�
 
 ---
 
-## 5. 未対応領域：MIDI情報
+## 5. MIDI対応 ✅ PoC完了
 
 ### 5.1 MIDIの重要性
 
 インストゥルメントプラグイン（AU/VST）の**リアルタイム操作**（演奏、エクスプレッション）はMIDIで行われる：
 
-| MIDI情報 | 用途 |
-|---------|------|
-| Note On/Off | 演奏内容 |
-| CC1 (Modulation) | モジュレーション |
-| CC7 (Volume) | ボリューム |
-| CC11 (Expression) | エクスプレッション |
-| CC64 (Sustain) | サステインペダル |
-| Keyswitch | アーティキュレーション切替 |
-| Pitch Bend | ピッチベンド |
+| MIDI情報 | 用途 | 検出 |
+|---------|------|------|
+| Note On/Off | 演奏内容 | ✅ |
+| CC1 (Modulation) | モジュレーション | ✅ |
+| CC7 (Volume) | ボリューム | ✅ |
+| CC11 (Expression) | エクスプレッション | ✅ |
+| CC64 (Sustain) | サステインペダル | ✅ |
+| Pitch Bend | ピッチベンド | ✅ |
 
 ### 5.2 OSC vs MIDI
 
@@ -165,20 +168,50 @@ Pianoteq 8（AU版）はAbleton Live APIからOn/Offパラメータのみ公開�
 | **OSC** | デバイスパラメータ、Vol/Pan | MIDIノート、CC |
 | **MIDI** | ノート、CC、ベロシティ | - |
 
-### 5.3 MIDI実装方針（次フェーズ）
+### 5.3 MIDI実装（PoC完了）
 
 ```
 Ableton Live
-    ↓ MIDI Out設定
+    ↓ MIDI Out（自動）
 IAC Driver (仮想MIDIポート)
     ↓
 MUEDnote Hub (CoreMIDI)
+    │
+    └─→ /tmp/muednote-midi.log
 ```
 
-**必要な実装**:
-1. macOS IAC Driverで仮想MIDIポート作成
-2. Abletonの出力先にIAC設定
-3. Swift CoreMIDIでMIDI受信実装
+**実装済み**:
+- ✅ CoreMIDI受信（`MIDIReceiverService.swift`）
+- ✅ IAC Driver経由でMIDI受信
+- ✅ Note On/Off、CC、Pitch Bend解析
+- ✅ 50msデバウンス（CC用）
+
+### 5.4 MIDI検証結果
+
+| 項目 | 結果 |
+|-----|------|
+| Note On/Off | ✅ 正常検出 |
+| ベロシティ | ✅ 取得可能 |
+| チャンネル | ✅ 識別可能 |
+| フィードバック対策 | ✅ IAC Input Trackオフで解決 |
+
+**発見事項**：
+- インストゥルメントトラックは自動でIAC含む全出力先にMIDI送信
+- 明示的なルーティング設定なしでMIDI取得可能
+
+### 5.5 MIDIログ最適化
+
+**収録中はMIDIログ不要**：DAWが録音するため、MUEDnoteでの重複記録は不要。
+
+| シナリオ | MIDIログ | 理由 |
+|---------|---------|------|
+| 停止中（練習） | ✅ 必要 | DAWに残らない |
+| 再生中 | ✅ 必要 | 一緒に弾く可能性 |
+| **収録中** | ❌ 不要 | DAWが録音する |
+
+**本番実装案**：
+- AbletonOSCの`/live/song/get/is_recording`で収録状態を監視
+- 収録中はMIDIログをスキップ
 
 ---
 
@@ -247,27 +280,36 @@ MUEDnote Hub (CoreMIDI)
 
 ### 8.1 PoC成功項目
 
+**OSC（パラメータ）：**
 - ✅ Ableton標準エフェクト（EQ Eight, Glue Compressor）のパラメータ検出
 - ✅ **サードパーティエフェクト（FabFilter Pro-Q4）のパラメータ検出 - 完全動作**
 - ✅ Ableton標準インストゥルメント（Analog）のパラメータ検出
 - ✅ トラックVolume/Panのリアルタイム検出
 - ✅ ポーリング方式による安定したパラメータ監視
+
+**MIDI（演奏）：**
+- ✅ CoreMIDI経由でNote On/Off検出
+- ✅ ベロシティ、チャンネル情報取得
+- ✅ CC、Pitch Bend対応（実装済み）
+- ✅ IAC Driver経由の自動MIDI取得
+
+**共通：**
 - ✅ DAWパフォーマンスへの影響なし
 
 ### 8.2 制限事項（Ableton API由来）
 
-- サードパーティインストゥルメント（AU/VST共通）は基本On/Offのみ
-- MIDI情報は取得不可（別実装必要）
+- サードパーティインストゥルメント（AU/VST共通）はOSCでOn/Offのみ
+- MIDIフィードバック回避のためIAC Input Trackオフが必要
 
 ### 8.3 総評
 
-**PoCは成功**。
+**OSC + MIDI両方のPoCが成功**。
 
 **エフェクトプラグイン**については、Ableton標準・サードパーティ共にフル対応可能であり、ミキシング作業のログ取得という主要ユースケースは十分に満たせる。
 
-**インストゥルメントプラグイン**については、Ableton標準はフル対応可能だが、サードパーティプラグイン（AU/VST共通）はAbleton Live APIの制限によりOn/Off検出のみとなる。ただし、インストゥルメントの「音色作り」はプリセット共有でカバーし、「リアルタイム演奏」はMIDI対応で取得するアプローチが現実的。
+**インストゥルメントプラグイン**については、Ableton標準はOSCでフル対応可能だが、サードパーティプラグイン（AU/VST共通）はAbleton Live APIの制限によりOn/Off検出のみとなる。ただし、**MIDIで演奏情報（ノート、ベロシティ、CC）は取得可能**であり、実用上の問題はない。
 
-次フェーズとして**MIDI対応**を実装することで、演奏情報（ノート、CC、ベロシティ）の取得も可能となり、より包括的なセッションログが実現できる。
+**MIDIログの最適化**として、収録中はDAWが録音するためログをスキップすることで、効率的なログ取得が可能。
 
 ---
 
@@ -283,4 +325,5 @@ MUEDnote Hub (CoreMIDI)
 
 | 日付 | バージョン | 変更内容 |
 |-----|-----------|---------|
-| 2025-12-29 | 1.0 | 初版作成 |
+| 2025-12-29 | 1.0 | 初版作成（OSC PoC完了） |
+| 2025-12-30 | 1.1 | MIDI PoC追加、収録中スキップ仕様追記 |
