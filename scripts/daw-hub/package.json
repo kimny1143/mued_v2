@@ -1,0 +1,32 @@
+{
+  "name": "@mued/daw-hub",
+  "version": "0.1.0",
+  "description": "MUEDnote DAW Hub - Ableton Live parameter logging via OSC",
+  "main": "dist/index.js",
+  "bin": {
+    "muednote-daw": "bin/muednote-daw.js"
+  },
+  "scripts": {
+    "start": "tsx index.ts",
+    "build": "tsup index.ts --format cjs --dts --clean",
+    "dev": "tsx watch index.ts"
+  },
+  "keywords": [
+    "daw",
+    "ableton",
+    "osc",
+    "music",
+    "muednote"
+  ],
+  "author": "MUED",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.0.0"
+  }
+}

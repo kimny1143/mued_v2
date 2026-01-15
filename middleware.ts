@@ -10,6 +10,8 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/api/webhooks(.*)",
   "/payment(.*)",
+  "/privacy(.*)",
+  "/support(.*)",
 ]);
 
 // Check if we're in E2E test mode (from build-time env or NODE_ENV)

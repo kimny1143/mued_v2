@@ -18,7 +18,10 @@
       "bundleIdentifier": "com.mued.muednote",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "音声認識のためにマイクを使用します",
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -28,25 +31,19 @@
       },
       "package": "com.mued.muednote",
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "plugins": [
       "expo-av",
-      [
-        "expo-share-intent",
-        {
-          "iosActivationRules": {
-            "NSExtensionActivationSupportsText": true
-          }
-        }
-      ],
       "./plugins/withWhisperModel"
     ],
     "extra": {
       "eas": {
-        "projectId": "muednote-mobile"
+        "projectId": "d9c69c5e-bf40-4b59-b8a5-b2636336182d"
       }
-    }
+    },
+    "owner": "glasswerkskimny"
   }
 }

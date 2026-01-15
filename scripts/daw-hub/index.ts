@@ -1,28 +1,97 @@
 /**
- * DAW Hub - AbletonOSC リスナー（デバウンス付き）
+ * DAW Hub - AbletonOSC Listener with Polling + Batch API
  *
- * パラメータ変更を500msデバウンスして出力
- * 将来的にはAPIにPOSTする
+ * Features:
+ * - OSC message reception from Ableton Live (via AbletonOSC)
+ * - **Polling-based change detection** (200ms interval) for device parameters
+ * - Listener-based for Volume/Pan (works reliably)
+ * - Parameter change debouncing (500ms default)
+ * - Batch API posting (5 second buffer)
+ * - Retry logic with exponential backoff
+ * - **Device configuration refresh** to handle device reordering
  *
- * 使い方:
+ * Usage:
  *   npx tsx scripts/daw-hub/index.ts
+ *
+ * Environment:
+ *   DAW_HUB_API_URL  - API endpoint (default: http://localhost:3000/api/muednote/daw-log)
+ *   DAW_HUB_API_KEY  - API key for authentication (required in production)
  */
 
 import dgram from 'dgram';
+import { formatPluginValue } from './plugins';
 
-// 設定
-const CONFIG = {
-  abletonSendPort: 11000,
-  abletonReceivePort: 11001,
-  debounceMs: 500,
-  maxTracksToMonitor: 10,
-  maxParamsPerDevice: 30,
-  // API設定
-  apiUrl: process.env.DAW_HUB_API_URL || 'http://localhost:3000/api/muednote/daw-log',
-  apiKey: process.env.DAW_HUB_API_KEY || 'dev_daw_key_kimny',
-};
+// ========================================
+// Configuration
+// ========================================
 
-// デバウンス用マップ
+interface Config {
+  abletonSendPort: number;
+  abletonReceivePort: number;
+  debounceMs: number;
+  pollingIntervalMs: number;
+  deviceRefreshIntervalMs: number; // Refresh device list periodically
+  maxTracksToMonitor: number;
+  maxParamsPerDevice: number;
+  apiUrl: string;
+  apiKey: string;
+  batchIntervalMs: number;
+  maxBatchSize: number;
+  maxRetries: number;
+  retryBaseDelayMs: number;
+}
+
+function loadConfig(): Config {
+  const apiUrl = process.env.DAW_HUB_API_URL;
+  const apiKey = process.env.DAW_HUB_API_KEY;
+
+  if (!apiUrl) {
+    console.warn('\x1b[33m[WARN] DAW_HUB_API_URL not set, using localhost default\x1b[0m');
+  }
+  if (!apiKey) {
+    console.warn('\x1b[33m[WARN] DAW_HUB_API_KEY not set, using dev fallback\x1b[0m');
+  }
+
+  return {
+    abletonSendPort: 11000,
+    abletonReceivePort: 11001,
+    debounceMs: 500,
+    pollingIntervalMs: 200,
+    deviceRefreshIntervalMs: 3000, // Refresh device info every 3s
+    maxTracksToMonitor: 10,
+    maxParamsPerDevice: 50,
+    apiUrl: apiUrl || 'http://localhost:3000/api/muednote/daw-log',
+    apiKey: apiKey || 'dev_daw_key_kimny',
+    batchIntervalMs: 5000,
+    maxBatchSize: 100,
+    maxRetries: 3,
+    retryBaseDelayMs: 1000,
+  };
+}
+
+const CONFIG = loadConfig();
+
+// ========================================
+// Types
+// ========================================
+
+type DawAction = 'parameter_change' | 'track_volume' | 'track_pan' | 'device_config_change';
+
+interface LogEntry {
+  timestamp: Date;
+  action?: DawAction;
+  trackId: number;
+  deviceId: number;
+  paramId: number;
+  value: number;
+  valueString: string;
+  trackName?: string;
+  deviceName?: string;
+  paramName?: string;
+  prevParamCount?: number;
+  newParamCount?: number;
+}
+
 interface PendingChange {
   value: number;
   valueString: string;
@@ -31,60 +100,222 @@ interface PendingChange {
   deviceId: number;
   paramId: number;
 }
-const pendingChanges = new Map<string, PendingChange>();
 
-// API送信カウンター
-let apiSentCount = 0;
-let apiErrorCount = 0;
+interface ApiLogPayload {
+  timestamp: string;
+  daw: 'ableton';
+  action: DawAction;
+  track_id: number;
+  device_id: number;
+  param_id: number;
+  value: number;
+  value_string: string;
+  metadata?: {
+    track_name?: string;
+    device_name?: string;
+    param_name?: string;
+    prev_param_count?: number;
+    new_param_count?: number;
+  };
+}
 
-// ログ出力 + API送信
-async function emitLog(data: {
-  timestamp: Date;
+interface DeviceInfo {
   trackId: number;
   deviceId: number;
-  paramId: number;
-  value: number;
-  valueString: string;
-}) {
-  const time = data.timestamp.toLocaleTimeString('ja-JP');
-  console.log(
-    `\x1b[32m[LOG]\x1b[0m ${time} | Track:${data.trackId} Device:${data.deviceId} Param:${data.paramId} → ${data.valueString}`
-  );
+  name: string;
+  numParams: number;
+}
 
-  // APIにPOST
-  try {
-    const response = await fetch(CONFIG.apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-DAW-API-Key': CONFIG.apiKey,
-      },
-      body: JSON.stringify({
-        timestamp: data.timestamp.toISOString(),
-        daw: 'ableton',
-        action: data.deviceId === -1 ? (data.paramId === 0 ? 'track_volume' : 'track_pan') : 'parameter_change',
-        track_id: data.trackId,
-        device_id: data.deviceId,
-        param_id: data.paramId,
-        value: data.value,
-        value_string: data.valueString,
-      }),
-    });
+// ========================================
+// State
+// ========================================
 
-    if (response.ok) {
-      apiSentCount++;
-      process.stdout.write(`\x1b[90m  → API sent (${apiSentCount} total)\x1b[0m\n`);
-    } else {
-      apiErrorCount++;
-      console.error(`\x1b[31m  → API error: ${response.status}\x1b[0m`);
+const pendingChanges = new Map<string, PendingChange>();
+const logBuffer: LogEntry[] = [];
+
+// Device registry - keyed by "trackId:deviceId"
+const devices = new Map<string, DeviceInfo>();
+
+// Caches - keyed by "trackId:deviceId:paramId"
+const paramValueCache = new Map<string, number>();
+const paramStringCache = new Map<string, string>();
+const paramNameCache = new Map<string, string>();
+const pendingValueChanges = new Set<string>();
+
+// Track names
+const trackNameCache = new Map<number, string>();
+
+// Track count for refresh
+let numTracks = 0;
+
+// Polling state
+let pollingInterval: NodeJS.Timeout | null = null;
+let deviceRefreshInterval: NodeJS.Timeout | null = null;
+let isInitialSetup = true;
+
+// Statistics
+let stats = {
+  logsQueued: 0,
+  logsSent: 0,
+  batchesSent: 0,
+  errors: 0,
+  retries: 0,
+};
+
+// ========================================
+// API Client with Retry
+// ========================================
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function sendBatchWithRetry(logs: LogEntry[]): Promise<boolean> {
+  const payload: ApiLogPayload[] = logs.map((log) => {
+    const hasMetadata = log.trackName || log.deviceName || log.paramName || log.prevParamCount !== undefined;
+    return {
+      timestamp: log.timestamp.toISOString(),
+      daw: 'ableton' as const,
+      action: log.action || getAction(log.deviceId, log.paramId),
+      track_id: log.trackId,
+      device_id: log.deviceId,
+      param_id: log.paramId,
+      value: log.value,
+      value_string: log.valueString,
+      metadata: hasMetadata ? {
+        track_name: log.trackName,
+        device_name: log.deviceName,
+        param_name: log.paramName,
+        prev_param_count: log.prevParamCount,
+        new_param_count: log.newParamCount,
+      } : undefined,
+    };
+  });
+
+  for (let attempt = 0; attempt <= CONFIG.maxRetries; attempt++) {
+    try {
+      const response = await fetch(CONFIG.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-DAW-API-Key': CONFIG.apiKey,
+        },
+        body: JSON.stringify({ logs: payload }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        stats.logsSent += result.inserted || logs.length;
+        stats.batchesSent++;
+        return true;
+      }
+
+      if (response.status >= 400 && response.status < 500) {
+        const errorBody = await response.text();
+        console.error(`\x1b[31m[API] Client error ${response.status}: ${errorBody}\x1b[0m`);
+        stats.errors++;
+        return false;
+      }
+
+      console.warn(
+        `\x1b[33m[API] Server error ${response.status}, attempt ${attempt + 1}/${CONFIG.maxRetries + 1}\x1b[0m`
+      );
+    } catch (error) {
+      console.warn(
+        `\x1b[33m[API] Network error, attempt ${attempt + 1}/${CONFIG.maxRetries + 1}: ${error}\x1b[0m`
+      );
     }
-  } catch (error) {
-    apiErrorCount++;
-    console.error(`\x1b[31m  → API error: ${error}\x1b[0m`);
+
+    if (attempt < CONFIG.maxRetries) {
+      const delay = CONFIG.retryBaseDelayMs * Math.pow(2, attempt);
+      stats.retries++;
+      await sleep(delay);
+    }
+  }
+
+  stats.errors++;
+  console.error('\x1b[31m[API] All retry attempts failed\x1b[0m');
+  return false;
+}
+
+function getAction(
+  deviceId: number,
+  paramId: number
+): 'parameter_change' | 'track_volume' | 'track_pan' {
+  if (deviceId === -1) {
+    return paramId === 0 ? 'track_volume' : 'track_pan';
+  }
+  return 'parameter_change';
+}
+
+// ========================================
+// Batch Processing
+// ========================================
+
+let batchTimer: NodeJS.Timeout | null = null;
+
+function scheduleFlush() {
+  if (batchTimer) return;
+
+  batchTimer = setTimeout(async () => {
+    batchTimer = null;
+    await flushBuffer();
+  }, CONFIG.batchIntervalMs);
+}
+
+async function flushBuffer() {
+  if (logBuffer.length === 0) return;
+
+  const logsToSend = logBuffer.splice(0, CONFIG.maxBatchSize);
+  const count = logsToSend.length;
+
+  process.stdout.write(`\x1b[36m[BATCH] Sending ${count} logs...\x1b[0m`);
+
+  const success = await sendBatchWithRetry(logsToSend);
+
+  if (success) {
+    console.log(` \x1b[32mOK\x1b[0m (total: ${stats.logsSent})`);
+  } else {
+    console.log(` \x1b[31mFAILED\x1b[0m`);
+  }
+
+  if (logBuffer.length > 0) {
+    scheduleFlush();
   }
 }
 
-// デバウンス処理
+// ========================================
+// Log Handling
+// ========================================
+
+function queueLog(entry: LogEntry) {
+  logBuffer.push(entry);
+  stats.logsQueued++;
+
+  const time = entry.timestamp.toLocaleTimeString('ja-JP');
+  const trackInfo = entry.trackName || `Track ${entry.trackId}`;
+  const deviceInfo = entry.deviceId >= 0
+    ? (entry.deviceName || `Device ${entry.deviceId}`)
+    : 'Mixer';
+  const paramInfo = entry.paramName || (entry.deviceId === -1 ? (entry.paramId === 0 ? 'Volume' : 'Pan') : `Param ${entry.paramId}`);
+
+  if (entry.action === 'device_config_change') {
+    console.log(
+      `\x1b[35m[CONFIG]\x1b[0m ${time} | ${trackInfo} > ${deviceInfo} → ${entry.valueString}`
+    );
+  } else {
+    console.log(
+      `\x1b[32m[LOG]\x1b[0m ${time} | ${trackInfo} > ${deviceInfo} > ${paramInfo} → ${entry.valueString}`
+    );
+  }
+
+  scheduleFlush();
+}
+
+// ========================================
+// Debounce Processing
+// ========================================
+
 function handleParameterChange(
   trackId: number,
   deviceId: number,
@@ -100,13 +331,28 @@ function handleParameterChange(
   }
 
   const timer = setTimeout(() => {
-    emitLog({
+    // Get names at LOG time, not at change detection time
+    // This ensures we use the most recent param name (important for Pro-Q4 etc)
+    const trackName = trackNameCache.get(trackId);
+    const deviceKey = `${trackId}:${deviceId}`;
+    const device = devices.get(deviceKey);
+    const deviceName = device?.name;
+    const paramName = paramNameCache.get(key);
+
+    // Apply plugin-specific value formatting (e.g., Pro-Q frequency)
+    const formattedValue = formatPluginValue(deviceName, paramName, value, valueString);
+    const finalValueString = formattedValue ?? valueString;
+
+    queueLog({
       timestamp: new Date(),
       trackId,
       deviceId,
       paramId,
       value,
-      valueString,
+      valueString: finalValueString,
+      trackName,
+      deviceName,
+      paramName,
     });
     pendingChanges.delete(key);
   }, CONFIG.debounceMs);
@@ -121,7 +367,77 @@ function handleParameterChange(
   });
 }
 
-// OSCメッセージ作成
+// ========================================
+// Polling
+// ========================================
+
+function startPolling(send: (address: string, args: (string | number)[]) => void) {
+  if (pollingInterval) return;
+
+  console.log(`\x1b[34m[POLL] Starting parameter polling (${CONFIG.pollingIntervalMs}ms)\x1b[0m`);
+
+  pollingInterval = setInterval(() => {
+    for (const device of devices.values()) {
+      // Only poll up to maxParamsPerDevice
+      const maxParams = Math.min(device.numParams, CONFIG.maxParamsPerDevice);
+      for (let paramId = 0; paramId < maxParams; paramId++) {
+        // Always request param name (Pro-Q4 etc change dynamically based on selected band)
+        send('/live/device/get/parameter/name', [device.trackId, device.deviceId, paramId]);
+        send('/live/device/get/parameter/value', [device.trackId, device.deviceId, paramId]);
+        send('/live/device/get/parameter/value_string', [device.trackId, device.deviceId, paramId]);
+      }
+    }
+  }, CONFIG.pollingIntervalMs);
+}
+
+function startDeviceRefresh(send: (address: string, args: (string | number)[]) => void) {
+  if (deviceRefreshInterval) return;
+
+  console.log(`\x1b[34m[REFRESH] Starting device refresh (${CONFIG.deviceRefreshIntervalMs}ms)\x1b[0m`);
+
+  deviceRefreshInterval = setInterval(() => {
+    // Re-query all tracks for their devices
+    for (let i = 0; i < numTracks; i++) {
+      send('/live/track/get/num_devices', [i]);
+    }
+  }, CONFIG.deviceRefreshIntervalMs);
+}
+
+function stopPolling() {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+  if (deviceRefreshInterval) {
+    clearInterval(deviceRefreshInterval);
+    deviceRefreshInterval = null;
+  }
+}
+
+// ========================================
+// Device Management
+// ========================================
+
+function clearDeviceCaches(trackId: number, deviceId: number) {
+  const prefix = `${trackId}:${deviceId}:`;
+  for (const key of paramValueCache.keys()) {
+    if (key.startsWith(prefix)) paramValueCache.delete(key);
+  }
+  for (const key of paramStringCache.keys()) {
+    if (key.startsWith(prefix)) paramStringCache.delete(key);
+  }
+  for (const key of paramNameCache.keys()) {
+    if (key.startsWith(prefix)) paramNameCache.delete(key);
+  }
+  for (const key of pendingValueChanges) {
+    if (key.startsWith(prefix)) pendingValueChanges.delete(key);
+  }
+}
+
+// ========================================
+// OSC Message Handling
+// ========================================
+
 function createOscMessage(address: string, args: (string | number)[] = []): Buffer {
   const buffers: Buffer[] = [];
 
@@ -163,7 +479,6 @@ function createOscMessage(address: string, args: (string | number)[] = []): Buff
   return Buffer.concat(buffers);
 }
 
-// OSCメッセージ解析
 function parseOscMessage(buffer: Buffer): { address: string; args: (number | string)[] } {
   let offset = 0;
 
@@ -193,14 +508,92 @@ function parseOscMessage(buffer: Buffer): { address: string; args: (number | str
   return { address, args };
 }
 
-// パラメータ値のキャッシュ（value_string用）
-const paramValueCache = new Map<string, number>();
+// ========================================
+// Pending device info collection
+// ========================================
 
-// メイン
+// Track pending device info requests
+const pendingDeviceInfo = new Map<string, { name?: string; numParams?: number }>();
+
+function checkAndRegisterDevice(trackId: number, deviceId: number, send: (address: string, args: (string | number)[]) => void) {
+  const key = `${trackId}:${deviceId}`;
+  const pending = pendingDeviceInfo.get(key);
+
+  if (pending?.name !== undefined && pending?.numParams !== undefined) {
+    const existingDevice = devices.get(key);
+
+    // Check if device changed (name or param count)
+    if (existingDevice) {
+      if (existingDevice.name !== pending.name) {
+        // Device at this position changed!
+        console.log(`\x1b[33m[DEVICE]\x1b[0m Track ${trackId} Device ${deviceId}: "${existingDevice.name}" → "${pending.name}"`);
+        clearDeviceCaches(trackId, deviceId);
+      }
+
+      if (existingDevice.numParams !== pending.numParams && !isInitialSetup) {
+        const trackName = trackNameCache.get(trackId);
+        const diff = pending.numParams - existingDevice.numParams;
+        const changeType = diff > 0 ? 'added' : 'removed';
+
+        console.log(
+          `\x1b[35m[CONFIG]\x1b[0m ${trackName || `Track ${trackId}`} > ${pending.name}: ${Math.abs(diff)} param(s) ${changeType} (${existingDevice.numParams} → ${pending.numParams})`
+        );
+
+        // Only log config change if same device (same name)
+        if (existingDevice.name === pending.name) {
+          queueLog({
+            timestamp: new Date(),
+            action: 'device_config_change',
+            trackId,
+            deviceId,
+            paramId: -1,
+            value: pending.numParams,
+            valueString: `${Math.abs(diff)} param(s) ${changeType}`,
+            trackName,
+            deviceName: pending.name,
+            prevParamCount: existingDevice.numParams,
+            newParamCount: pending.numParams,
+          });
+        }
+
+        clearDeviceCaches(trackId, deviceId);
+      }
+    }
+
+    // Register/update device (store actual count, poll only up to max)
+    devices.set(key, {
+      trackId,
+      deviceId,
+      name: pending.name,
+      numParams: pending.numParams, // Store actual count for comparison
+    });
+
+    pendingDeviceInfo.delete(key);
+
+    // Start polling if needed
+    if (!pollingInterval && devices.size > 0) {
+      setTimeout(() => {
+        isInitialSetup = false;
+        startPolling(send);
+        startDeviceRefresh(send);
+      }, 500);
+    }
+  }
+}
+
+// ========================================
+// Main
+// ========================================
+
 async function main() {
   console.log('╔════════════════════════════════════════╗');
   console.log('║       DAW Hub - MUEDnote Logger        ║');
   console.log('╚════════════════════════════════════════╝\n');
+
+  console.log(`API URL: ${CONFIG.apiUrl}`);
+  console.log(`Batch interval: ${CONFIG.batchIntervalMs}ms`);
+  console.log(`Debounce: ${CONFIG.debounceMs}ms`);
+  console.log(`Polling: ${CONFIG.pollingIntervalMs}ms\n`);
 
   const receiver = dgram.createSocket('udp4');
   const sender = dgram.createSocket('udp4');
@@ -210,106 +603,219 @@ async function main() {
     sender.send(msg, CONFIG.abletonSendPort, '127.0.0.1');
   }
 
-  // 受信ハンドラ
+  // Message handler
   receiver.on('message', (msg) => {
     try {
       const { address, args } = parseOscMessage(msg);
 
-      // パラメータ値変更
+      // ========================================
+      // Parameter name response
+      // ========================================
+      if (address === '/live/device/get/parameter/name') {
+        const [trackId, deviceId, paramId, name] = args as [number, number, number, string];
+        const key = `${trackId}:${deviceId}:${paramId}`;
+        paramNameCache.set(key, name);
+      }
+
+      // ========================================
+      // Polling responses: Parameter value (numeric)
+      // ========================================
       if (address === '/live/device/get/parameter/value') {
         const [trackId, deviceId, paramId, value] = args as [number, number, number, number];
         const key = `${trackId}:${deviceId}:${paramId}`;
+
+        const oldValue = paramValueCache.get(key);
+        const hasChanged = oldValue !== undefined && Math.abs(oldValue - value) > 0.001;
+
         paramValueCache.set(key, value);
+
+        if (hasChanged) {
+          // Mark that we're waiting for the new value_string
+          // Don't use cached string - it's from the OLD value!
+          pendingValueChanges.add(key);
+        }
       }
 
-      // パラメータ値文字列（これがきたらデバウンス処理）
+      // ========================================
+      // Polling responses: Parameter value string
+      // ========================================
       if (address === '/live/device/get/parameter/value_string') {
         const [trackId, deviceId, paramId, valueString] = args as [number, number, number, string];
         const key = `${trackId}:${deviceId}:${paramId}`;
-        const value = paramValueCache.get(key) ?? 0;
-        handleParameterChange(trackId, deviceId, paramId, value, valueString);
+
+        const oldString = paramStringCache.get(key);
+        paramStringCache.set(key, valueString);
+
+        // If value changed and we have the string, or string itself changed
+        if (pendingValueChanges.has(key)) {
+          pendingValueChanges.delete(key);
+          const value = paramValueCache.get(key) ?? 0;
+          handleParameterChange(trackId, deviceId, paramId, value, valueString);
+        } else if (oldString !== undefined && oldString !== valueString) {
+          // String changed even if numeric value didn't trigger (e.g., different display format)
+          const value = paramValueCache.get(key) ?? 0;
+          handleParameterChange(trackId, deviceId, paramId, value, valueString);
+        }
       }
 
-      // トラック数取得 → リスナー登録開始
+      // ========================================
+      // Track count → start setup
+      // ========================================
       if (address === '/live/song/get/num_tracks') {
-        const numTracks = args[0] as number;
-        console.log(`トラック検出: ${numTracks}本`);
+        numTracks = args[0] as number;
+        console.log(`Detected ${numTracks} tracks`);
 
         for (let i = 0; i < Math.min(numTracks, CONFIG.maxTracksToMonitor); i++) {
+          send('/live/track/get/name', [i]);
           send('/live/track/get/num_devices', [i]);
           send('/live/track/start_listen/volume', [i]);
           send('/live/track/start_listen/panning', [i]);
         }
       }
 
-      // デバイス数取得 → パラメータリスナー登録
+      // ========================================
+      // Track name response
+      // ========================================
+      if (address === '/live/track/get/name') {
+        const [trackId, name] = args as [number, string];
+        trackNameCache.set(trackId, name);
+        console.log(`  Track ${trackId}: "${name}"`);
+      }
+
+      // ========================================
+      // Device count → query device info
+      // ========================================
       if (address === '/live/track/get/num_devices') {
         const [trackId, numDevices] = args as [number, number];
-        if (numDevices > 0) {
-          console.log(`  Track ${trackId}: ${numDevices}デバイス`);
-          for (let d = 0; d < numDevices; d++) {
-            send('/live/device/get/num_parameters', [trackId, d]);
+
+        // Remove devices that no longer exist
+        for (const [key, device] of devices.entries()) {
+          if (device.trackId === trackId && device.deviceId >= numDevices) {
+            console.log(`\x1b[33m[DEVICE]\x1b[0m Removed: Track ${trackId} Device ${device.deviceId} "${device.name}"`);
+            devices.delete(key);
+            clearDeviceCaches(trackId, device.deviceId);
           }
         }
-      }
 
-      // パラメータ数取得 → 各パラメータにリスナー登録
-      if (address === '/live/device/get/num_parameters') {
-        const [trackId, deviceId, numParams] = args as [number, number, number];
-        for (let p = 0; p < Math.min(numParams, CONFIG.maxParamsPerDevice); p++) {
-          send('/live/device/start_listen/parameter/value', [trackId, deviceId, p]);
+        // Query all devices on this track
+        for (let d = 0; d < numDevices; d++) {
+          const key = `${trackId}:${d}`;
+          pendingDeviceInfo.set(key, {});
+          send('/live/device/get/name', [trackId, d]);
+          send('/live/device/get/num_parameters', [trackId, d]);
         }
       }
 
-      // トラックVolume変更
+      // ========================================
+      // Device name response
+      // ========================================
+      if (address === '/live/device/get/name') {
+        const [trackId, deviceId, name] = args as [number, number, string];
+        const key = `${trackId}:${deviceId}`;
+
+        const pending = pendingDeviceInfo.get(key) || {};
+        pending.name = name;
+        pendingDeviceInfo.set(key, pending);
+
+        // Only log during initial setup
+        if (isInitialSetup) {
+          console.log(`    Device ${deviceId}: "${name}"`);
+        }
+
+        checkAndRegisterDevice(trackId, deviceId, send);
+      }
+
+      // ========================================
+      // Parameter count response
+      // ========================================
+      if (address === '/live/device/get/num_parameters') {
+        const [trackId, deviceId, numParams] = args as [number, number, number];
+        const key = `${trackId}:${deviceId}`;
+
+        const pending = pendingDeviceInfo.get(key) || {};
+        pending.numParams = numParams;
+        pendingDeviceInfo.set(key, pending);
+
+        checkAndRegisterDevice(trackId, deviceId, send);
+      }
+
+      // ========================================
+      // Track volume change (listener-based)
+      // ========================================
       if (address === '/live/track/get/volume') {
         const [trackId, value] = args as [number, number];
         const db = 20 * Math.log10(value);
         handleParameterChange(trackId, -1, 0, value, `${db.toFixed(1)} dB`);
       }
 
-      // トラックPan変更
+      // ========================================
+      // Track pan change (listener-based)
+      // ========================================
       if (address === '/live/track/get/panning') {
         const [trackId, value] = args as [number, number];
-        const pan = value === 0 ? 'C' : value > 0 ? `${Math.round(value * 50)}R` : `${Math.round(-value * 50)}L`;
+        const pan =
+          value === 0 ? 'C' : value > 0 ? `${Math.round(value * 50)}R` : `${Math.round(-value * 50)}L`;
         handleParameterChange(trackId, -1, 1, value, pan);
       }
-    } catch (e) {
-      // パースエラーは無視
+    } catch {
+      // Ignore parse errors
     }
   });
 
   receiver.on('error', (err) => {
-    console.error(`エラー: ${err.message}`);
+    console.error(`Error: ${err.message}`);
     if (err.message.includes('EADDRINUSE')) {
-      console.log('\n※ port 11001 が使用中です。Protokol を閉じてください。');
+      console.log('\nPort 11001 is in use. Please close Protokol or other OSC listeners.');
     }
     process.exit(1);
   });
 
-  // 受信開始
+  // Start receiving
   receiver.bind(CONFIG.abletonReceivePort, () => {
-    console.log(`OSC受信中 (port ${CONFIG.abletonReceivePort})`);
-    console.log(`デバウンス: ${CONFIG.debounceMs}ms\n`);
-    console.log('接続中...\n');
+    console.log(`OSC listening on port ${CONFIG.abletonReceivePort}`);
+    console.log('Connecting...\n');
 
     send('/live/song/get/num_tracks');
 
     setTimeout(() => {
       console.log('\n────────────────────────────────────────');
-      console.log('準備完了！Abletonでパラメータを操作してください');
-      console.log('Ctrl+C で終了');
+      console.log('Ready! Adjust parameters in Ableton Live');
+      console.log('Ctrl+C to exit');
       console.log('────────────────────────────────────────\n');
-    }, 1000);
+    }, 1500);
   });
 
-  // 終了処理
-  process.on('SIGINT', () => {
-    console.log('\n\n終了中...');
+  // Graceful shutdown
+  async function shutdown() {
+    console.log('\n\nShutting down...');
+
+    stopPolling();
+
+    for (const [, pending] of pendingChanges) {
+      clearTimeout(pending.timer);
+    }
+
+    if (logBuffer.length > 0) {
+      console.log(`Flushing ${logBuffer.length} remaining logs...`);
+      await flushBuffer();
+    }
+
+    console.log('\n────────────────────────────────────────');
+    console.log('Session Statistics:');
+    console.log(`  Logs queued:  ${stats.logsQueued}`);
+    console.log(`  Logs sent:    ${stats.logsSent}`);
+    console.log(`  Batches sent: ${stats.batchesSent}`);
+    console.log(`  Errors:       ${stats.errors}`);
+    console.log(`  Retries:      ${stats.retries}`);
+    console.log('────────────────────────────────────────');
+
     receiver.close();
     sender.close();
     process.exit(0);
-  });
+  }
+
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }
 
 main().catch(console.error);

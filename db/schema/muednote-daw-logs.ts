@@ -35,11 +35,12 @@ export const dawTypeEnum = pgEnum('muednote_daw_type', [
  * アクション種別
  */
 export const dawActionEnum = pgEnum('muednote_daw_action', [
-  'parameter_change',  // デバイスパラメータ変更
-  'track_volume',      // トラックボリューム変更
-  'track_pan',         // トラックパン変更
-  'track_select',      // トラック選択（将来）
-  'clip_trigger',      // クリップトリガー（将来）
+  'parameter_change',     // デバイスパラメータ変更
+  'track_volume',         // トラックボリューム変更
+  'track_pan',            // トラックパン変更
+  'track_select',         // トラック選択（将来）
+  'clip_trigger',         // クリップトリガー（将来）
+  'device_config_change', // デバイス設定変更（バンド追加/削除等）
 ]);
 
 // ========================================
@@ -88,4 +89,4 @@ export const muednoteDawLogs = pgTable(
 export type DawLog = typeof muednoteDawLogs.$inferSelect;
 export type NewDawLog = typeof muednoteDawLogs.$inferInsert;
 export type DawType = 'ableton' | 'protools' | 'logic' | 'other';
-export type DawAction = 'parameter_change' | 'track_volume' | 'track_pan' | 'track_select' | 'clip_trigger';
+export type DawAction = 'parameter_change' | 'track_volume' | 'track_pan' | 'track_select' | 'clip_trigger' | 'device_config_change';

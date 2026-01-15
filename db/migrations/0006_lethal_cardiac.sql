@@ -1,0 +1,1 @@
+ALTER TYPE "public"."muednote_daw_action" ADD VALUE 'device_config_change';

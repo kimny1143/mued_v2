@@ -8,7 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
-        "simulator": false
+        "simulator": true
       }
     },
     "preview": {
@@ -27,9 +27,9 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "",
-        "ascAppId": "",
-        "appleTeamId": ""
+        "appleId": "glasswerkskimny@gmail.com",
+        "ascAppId": "6757840889",
+        "appleTeamId": "F529L4WT3V"
       }
     }
   }

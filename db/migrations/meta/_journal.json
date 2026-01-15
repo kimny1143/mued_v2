@@ -43,6 +43,13 @@
       "when": 1766992203239,
       "tag": "0005_melodic_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1768207519189,
+      "tag": "0006_lethal_cardiac",
+      "breakpoints": true
     }
   ]
 }
