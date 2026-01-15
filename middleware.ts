@@ -27,6 +27,11 @@ export default clerkMiddleware(async (auth, req) => {
     return;
   }
 
+  // Public routes don't require authentication
+  if (isPublicRoute(req)) {
+    return;
+  }
+
   if (isProtectedRoute(req)) await auth.protect();
 });
 
