@@ -60,28 +60,35 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Hoo gentle bounce animation - 2 bounces then pause */
+/* Hoo gentle bounce animation - 2 bounces then long pause */
 @keyframes hoo-bounce {
   0%, 100% {
     transform: translateY(0);
   }
-  5% {
+  2% {
     transform: translateY(-12px);
   }
-  10% {
+  4% {
     transform: translateY(0);
   }
-  15% {
+  6% {
     transform: translateY(-8px);
   }
-  20% {
+  8% {
     transform: translateY(0);
   }
-  /* Stay still from 20% to 100% */
+  /* Stay still from 8% to 100% (92% of the time) */
 }
 
 .animate-hoo-bounce {
-  animation: hoo-bounce 5s ease-in-out infinite;
+  animation: hoo-bounce 15s ease-in-out infinite;
+}
+
+/* Disable Hoo bounce on mobile/tablet */
+@media (max-width: 1023px) {
+  .animate-hoo-bounce {
+    animation: none;
+  }
 }
 
 /* Speech bubble pop-in animation */
