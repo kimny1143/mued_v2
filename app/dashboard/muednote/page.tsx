@@ -1,11 +1,14 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { MuednoteLayout } from "@/components/layouts/muednote-layout";
-import { Mic, Clock, ArrowRight, Calendar, TrendingUp, Sliders } from "lucide-react";
+import { Mic, Clock, ArrowRight, Calendar, TrendingUp } from "lucide-react";
+// TODO: v1.1.0 - DAW Logs feature
+// import { Sliders } from "lucide-react";
 import Link from "next/link";
 import { db } from "@/db";
 import { muednoteMobileSessions, muednoteMobileLogs } from "@/db/schema/muednote-mobile";
-import { muednoteDawLogs } from "@/db/schema/muednote-daw-logs";
+// TODO: v1.1.0 - DAW Logs feature
+// import { muednoteDawLogs } from "@/db/schema/muednote-daw-logs";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
 import { MuednoteTabs } from "./muednote-tabs";
 
@@ -29,10 +32,12 @@ export default async function MuednoteDashboardPage({
   }
 
   const params = await searchParams;
-  const activeTab = params.tab === "daw" ? "daw" : "overview";
+  // TODO: v1.1.0 - DAW Logs tab
+  // const activeTab = params.tab === "daw" ? "daw" : "overview";
+  const activeTab = "overview";
 
   // Fetch real stats from DB
-  const [sessionsResult, logsResult, durationResult, recentSessions, dawLogsResult, recentDawLogs] = await Promise.all([
+  const [sessionsResult, logsResult, durationResult, recentSessions] = await Promise.all([
     db
       .select({ count: sql<number>`count(*)` })
       .from(muednoteMobileSessions)
@@ -55,18 +60,19 @@ export default async function MuednoteDashboardPage({
       .where(eq(muednoteMobileSessions.userId, user.id))
       .orderBy(desc(muednoteMobileSessions.createdAt))
       .limit(3),
-    // DAW logs count
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(muednoteDawLogs)
-      .where(eq(muednoteDawLogs.userId, user.id)),
-    // Recent DAW logs
-    db
-      .select()
-      .from(muednoteDawLogs)
-      .where(eq(muednoteDawLogs.userId, user.id))
-      .orderBy(desc(muednoteDawLogs.ts))
-      .limit(50),
+    // TODO: v1.1.0 - DAW Logs feature
+    // // DAW logs count
+    // db
+    //   .select({ count: sql<number>`count(*)` })
+    //   .from(muednoteDawLogs)
+    //   .where(eq(muednoteDawLogs.userId, user.id)),
+    // // Recent DAW logs
+    // db
+    //   .select()
+    //   .from(muednoteDawLogs)
+    //   .where(eq(muednoteDawLogs.userId, user.id))
+    //   .orderBy(desc(muednoteDawLogs.ts))
+    //   .limit(50),
   ]);
 
   // 累計時間クエリ（今日/今週/今月）
@@ -123,7 +129,9 @@ export default async function MuednoteDashboardPage({
 
   const sessionCount = Number(sessionsResult[0]?.count) || 0;
   const logCount = Number(logsResult[0]?.count) || 0;
-  const dawLogCount = Number(dawLogsResult[0]?.count) || 0;
+  // TODO: v1.1.0 - DAW Logs feature
+  // const dawLogCount = Number(dawLogsResult[0]?.count) || 0;
+  const dawLogCount = 0;
 
   // 累計時間（秒→時間:分 形式）
   const todaySeconds = Number(todayResult[0]?.total) || 0;
@@ -193,13 +201,14 @@ export default async function MuednoteDashboardPage({
     }).format(date);
   };
 
+  // TODO: v1.1.0 - DAW Logs feature
   // Action type labels
-  const actionLabels: Record<string, { label: string; color: string }> = {
-    track_volume: { label: "Volume", color: "bg-blue-500/20 text-blue-300" },
-    track_pan: { label: "Pan", color: "bg-green-500/20 text-green-300" },
-    parameter_change: { label: "Param", color: "bg-purple-500/20 text-purple-300" },
-    device_config_change: { label: "Config", color: "bg-amber-500/20 text-amber-300" },
-  };
+  // const actionLabels: Record<string, { label: string; color: string }> = {
+  //   track_volume: { label: "Volume", color: "bg-blue-500/20 text-blue-300" },
+  //   track_pan: { label: "Pan", color: "bg-green-500/20 text-green-300" },
+  //   parameter_change: { label: "Param", color: "bg-purple-500/20 text-purple-300" },
+  //   device_config_change: { label: "Config", color: "bg-amber-500/20 text-amber-300" },
+  // };
 
   return (
     <MuednoteLayout>
@@ -213,7 +222,7 @@ export default async function MuednoteDashboardPage({
         </h1>
         <p className="text-slate-400 text-sm sm:text-base max-w-lg">
           制作中の判断は、iPhoneアプリで声で残す。<br className="hidden sm:block" />
-          DAWの操作ログも自動で記録されます。
+          後から振り返って、次の制作に活かそう。
         </p>
       </div>
 
@@ -402,8 +411,9 @@ export default async function MuednoteDashboardPage({
             </div>
           </div>
         </div>
-      ) : (
-        /* DAW Logs Tab Content */
+      ) : null}
+      {/* TODO: v1.1.0 - DAW Logs Tab Content
+      {activeTab === "daw" && (
         <div>
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-white">DAW操作ログ</h2>
@@ -482,6 +492,7 @@ export default async function MuednoteDashboardPage({
           )}
         </div>
       )}
+      */}
     </MuednoteLayout>
   );
 }

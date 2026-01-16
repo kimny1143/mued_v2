@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Mic, Sliders } from "lucide-react";
+import { Mic } from "lucide-react";
+// TODO: v1.1.0 - DAW Logs feature
+// import { Sliders } from "lucide-react";
 
 interface MuednoteTabsProps {
   activeTab: "overview" | "daw";
@@ -11,7 +13,8 @@ interface MuednoteTabsProps {
 
 export function MuednoteTabs({
   activeTab,
-  dawLogCount,
+  // TODO: v1.1.0 - DAW Logs feature
+  // dawLogCount,
   sessionCount,
 }: MuednoteTabsProps) {
   return (
@@ -30,6 +33,7 @@ export function MuednoteTabs({
           <span className="ml-1 text-xs text-slate-500">({sessionCount})</span>
         )}
       </Link>
+      {/* TODO: v1.1.0 - DAW Logs tab
       <Link
         href="/dashboard/muednote?tab=daw"
         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -44,6 +48,7 @@ export function MuednoteTabs({
           <span className="ml-1 text-xs text-slate-500">({dawLogCount})</span>
         )}
       </Link>
+      */}
     </div>
   );
 }
