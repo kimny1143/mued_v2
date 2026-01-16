@@ -5,7 +5,6 @@ import {
   PhilosophySection,
   MuednoteSection,
   GrowthPreviewSection,
-  RoadmapSection,
   SocialProofSection,
   CtaSection,
   ParallaxBackground,
@@ -33,7 +32,6 @@ export function LandingContent() {
       <PhilosophySection />
       <MuednoteSection />
       <GrowthPreviewSection />
-      <RoadmapSection />
       <SocialProofSection />
       <CtaSection />
 
