@@ -61,21 +61,21 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
 
           {/* Right: Hoo with speech bubble */}
           <div className="flex-1 flex justify-center lg:justify-end">
-            <div className="relative animate-hoo-bounce">
-              {/* Speech bubble */}
-              <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20">
+            <div className="relative">
+              {/* Speech bubble - pops in after delay */}
+              <div className="absolute -top-16 left-1/2 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20 animate-bubble-pop">
                 <p className="text-white text-lg font-medium whitespace-nowrap">ほほう 🦉</p>
                 {/* Bubble tail */}
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/10 border-r border-b border-white/20 rotate-45" />
               </div>
 
-              {/* Hoo logo - large */}
+              {/* Hoo logo - gentle bounce */}
               <Image
                 src="/logo.png"
                 alt="Hoo - MUEDnote mascot"
                 width={280}
                 height={280}
-                className="drop-shadow-2xl"
+                className="drop-shadow-2xl animate-hoo-bounce"
                 priority
               />
             </div>
