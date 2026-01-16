@@ -1,15 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Bell } from "lucide-react";
 
 /**
  * CTA Section - Landing Page
  *
- * Psychological effects applied:
- * - Loss aversion: Emphasize what's lost without action
- * - Peak-end rule: End with impactful message
- * - Urgency: 1/7 launch date
+ * Hoo-centric closing message
+ * Warm, inviting tone
  */
 export function CtaSection() {
   return (
@@ -22,16 +21,27 @@ export function CtaSection() {
             近日リリース予定
           </div>
 
+          {/* Hoo image */}
+          <div className="mb-8">
+            <Image
+              src="/logo.png"
+              alt="Hoo"
+              width={100}
+              height={100}
+              className="mx-auto drop-shadow-lg"
+            />
+          </div>
+
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-            今日の判断が、
+            Hooと一緒に、
             <br />
-            明日の自分を助ける。
+            制作を始めよう。
           </h2>
 
           <p className="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed">
-            「なぜそうしたか」は、作業が終わると消えていく。
+            最初はただの休憩タイマー。
             <br />
-            MUEDnoteで、あなたの選び方を資産にしよう。
+            でも気づいたら、いちばんの理解者になってるかも。
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -39,7 +49,7 @@ export function CtaSection() {
               href="/sign-up"
               className="group inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-lg text-lg font-medium transition-all duration-200 cursor-pointer shadow-lg shadow-indigo-600/25 hover:shadow-indigo-500/40 hover:scale-[1.02]"
             >
-              リリースを待つ
+              Hooに会う
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>

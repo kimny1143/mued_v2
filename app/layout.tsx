@@ -19,9 +19,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MUEDnote - Making music visible.",
+  title: "MUEDnote - 制作のそばに、いつもHoo。",
   description:
-    "音楽制作中の判断を資産にする。「なぜそうしたか」を声で記録、自動で文字起こし。クリエイターの選び方が見返せる記録帳。",
+    "音楽制作に寄り添うコンパニオンアプリ。休憩を教えてくれて、話しかけると覚えておいてくれる。気づいたらHooがあなたの制作をいちばん知ってる存在に。",
 };
 
 export default function RootLayout({
