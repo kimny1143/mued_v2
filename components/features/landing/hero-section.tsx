@@ -30,14 +30,14 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
               Making music visible.
             </p>
 
-            {/* Hoo-centric copy */}
+            {/* Hoo-centric copy - rest tracker focus */}
             <p className="text-2xl md:text-3xl text-white/90 max-w-xl mb-6 leading-relaxed">
               制作のそばに、いつもHoo。
             </p>
             <p className="text-lg text-slate-400 max-w-xl mb-12">
-              休憩の時間、教えるね。
+              集中しすぎる前に、休憩の時間を教えてくれる。
               <br />
-              話しかけてくれたら、覚えておくよ。
+              音に反応して動く、制作のおとも。
             </p>
 
             {/* CTA */}

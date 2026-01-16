@@ -39,9 +39,9 @@ export function CtaSection() {
           </h2>
 
           <p className="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed">
-            最初はただの休憩タイマー。
+            休憩のタイミング、Hooに任せてみない？
             <br />
-            でも気づいたら、いちばんの理解者になってるかも。
+            制作のおともに、どうぞ。
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

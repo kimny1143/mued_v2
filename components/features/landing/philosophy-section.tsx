@@ -1,13 +1,13 @@
 "use client";
 
-import { Clock, MessageCircle, Sparkles } from "lucide-react";
+import { Clock, Music, Mic } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 
 /**
  * Philosophy Section - Landing Page
  *
- * Hoo-centric feature explanation
- * Soft, companion-like tone instead of productivity tool
+ * MVP features: Rest tracker + Sound reaction + Voice memo
+ * No AI conversation - just a cute companion
  */
 export function PhilosophySection() {
   return (
@@ -25,14 +25,10 @@ export function PhilosophySection() {
               <br />
               Hooがそばにいるから、大丈夫。
             </p>
-
-            <p className="text-white/90">
-              気づいたら、あなたの制作をいちばん知ってる存在になってるかも。
-            </p>
           </div>
         </div>
 
-        {/* Three features - Hoo as subject */}
+        {/* Three features - MVP accurate */}
         <div className="grid md:grid-cols-3 gap-6">
           <GlassCard>
             <div className="flex items-center gap-3 mb-4">
@@ -50,26 +46,26 @@ export function PhilosophySection() {
           <GlassCard>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-indigo-600/20 rounded-lg flex items-center justify-center">
-                <MessageCircle className="w-5 h-5 text-indigo-400" />
+                <Music className="w-5 h-5 text-indigo-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white">話しかけると覚えてる</h3>
+              <h3 className="text-lg font-semibold text-white">音に反応する</h3>
             </div>
             <p className="text-slate-400">
-              「このEQにした理由は...」って話しかけるだけ。
-              Hooが聞いて、ちゃんと覚えておいてくれる。
+              音楽が鳴ると、Hooがゆらゆら動く。
+              制作中、そばにいる感じがするでしょ？
             </p>
           </GlassCard>
 
           <GlassCard>
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-indigo-600/20 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-indigo-400" />
+                <Mic className="w-5 h-5 text-indigo-400" />
               </div>
-              <h3 className="text-lg font-semibold text-white">あなたのパターンを知っていく</h3>
+              <h3 className="text-lg font-semibold text-white">声でメモを残せる</h3>
             </div>
             <p className="text-slate-400">
-              使ってるうちに、Hooはあなたの制作スタイルを学んでいく。
-              いつの間にか、一番の理解者に。
+              思いついたことを声で残しておける。
+              後で文字になって見返せるよ。
             </p>
           </GlassCard>
         </div>

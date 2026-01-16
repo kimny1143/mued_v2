@@ -36,8 +36,8 @@ export function MuednoteSection() {
             {/* Simple feature hints - not a bullet list */}
             <div className="bg-white/5 rounded-xl p-6 mb-8 border border-white/10">
               <p className="text-slate-300 text-sm leading-relaxed">
-                💡 裏側では、話しかけた内容を自動で文字にして覚えておいてくれます。
-                気づいたらログが溜まってる、そんな感じ。
+                💡 声でメモを残すと、自動で文字起こし。
+                後から見返せるよ。
               </p>
             </div>
 
