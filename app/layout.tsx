@@ -22,6 +22,31 @@ export const metadata: Metadata = {
   title: "MUEDnote - 制作のそばに、いつもHoo。",
   description:
     "音楽制作のおともアプリ。休憩のタイミングを教えてくれて、音に反応して動く。声でメモを残すと自動で文字起こし。",
+  metadataBase: new URL("https://mued.jp"),
+  openGraph: {
+    title: "MUEDnote - 制作のそばに、いつもHoo。",
+    description:
+      "音楽制作のおともアプリ。休憩のタイミングを教えてくれて、音に反応して動く。",
+    url: "https://mued.jp",
+    siteName: "MUEDnote",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "MUEDnote - 音楽制作のおともアプリ",
+      },
+    ],
+    locale: "ja_JP",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MUEDnote - 制作のそばに、いつもHoo。",
+    description:
+      "音楽制作のおともアプリ。休憩のタイミングを教えてくれて、音に反応して動く。",
+    images: ["/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({
