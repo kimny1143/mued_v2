@@ -4,6 +4,7 @@ import {
   HeroSection,
   PhilosophySection,
   MuednoteSection,
+  GrowthPreviewSection,
   RoadmapSection,
   SocialProofSection,
   CtaSection,
@@ -31,6 +32,7 @@ export function LandingContent() {
       <HeroSection />
       <PhilosophySection />
       <MuednoteSection />
+      <GrowthPreviewSection />
       <RoadmapSection />
       <SocialProofSection />
       <CtaSection />

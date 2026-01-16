@@ -2,7 +2,7 @@
   "expo": {
     "name": "MUEDnote",
     "slug": "muednote-mobile",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "scheme": "muednote",
     "orientation": "default",
     "icon": "./assets/icon.png",
@@ -22,7 +22,8 @@
           "audio"
         ],
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "3"
     },
     "android": {
       "adaptiveIcon": {
