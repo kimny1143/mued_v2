@@ -13,6 +13,12 @@ export default function SignInPage() {
       <SignIn
         forceRedirectUrl="/dashboard/muednote"
         signUpForceRedirectUrl="/dashboard/muednote"
+        appearance={{
+          elements: {
+            rootBox: "mx-auto",
+            card: "bg-white shadow-xl",
+          },
+        }}
       />
     </div>
   );
