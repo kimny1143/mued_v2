@@ -34,7 +34,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
   return (
     <section className="min-h-screen flex items-center relative overflow-hidden">
       {/* Overlay for text readability */}
-      <div className="absolute inset-0 bg-black/45" />
+      <div className="absolute inset-0 bg-black/45 pointer-events-none" />
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
