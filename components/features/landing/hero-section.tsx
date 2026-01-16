@@ -78,11 +78,11 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           {/* Right: Hoo with speech bubble */}
           <div className="flex-1 flex justify-center lg:justify-end">
             <div className="relative">
-              {/* Speech bubble - pops in after delay, positioned top-right */}
-              <div className="absolute -top-12 left-1/2 bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/20 animate-bubble-pop">
+              {/* Speech bubble - pops in after delay, positioned top-left of Hoo */}
+              <div className="absolute -top-10 right-1/2 translate-x-4 bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/20 animate-bubble-pop">
                 <p className="text-white text-base font-medium whitespace-nowrap">{phrase}</p>
                 {/* Bubble tail - points to Hoo's head */}
-                <div className="absolute -bottom-2 right-8 w-4 h-4 bg-white/10 border-r border-b border-white/20 rotate-45" />
+                <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white/10 border-r border-b border-white/20 rotate-45" />
               </div>
 
               {/* Hoo logo - gentle bounce */}
