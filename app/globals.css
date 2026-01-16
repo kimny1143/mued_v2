@@ -59,3 +59,27 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Hoo gentle bounce animation - 2 bounces then pause */
+@keyframes hoo-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  5% {
+    transform: translateY(-12px);
+  }
+  10% {
+    transform: translateY(0);
+  }
+  15% {
+    transform: translateY(-8px);
+  }
+  20% {
+    transform: translateY(0);
+  }
+  /* Stay still from 20% to 100% */
+}
+
+.animate-hoo-bounce {
+  animation: hoo-bounce 5s ease-in-out infinite;
+}

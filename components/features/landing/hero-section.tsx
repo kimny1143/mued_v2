@@ -61,7 +61,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
 
           {/* Right: Hoo with speech bubble */}
           <div className="flex-1 flex justify-center lg:justify-end">
-            <div className="relative">
+            <div className="relative animate-hoo-bounce">
               {/* Speech bubble */}
               <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20">
                 <p className="text-white text-lg font-medium whitespace-nowrap">ほほう 🦉</p>
