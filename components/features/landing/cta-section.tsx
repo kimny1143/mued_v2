@@ -19,7 +19,7 @@ export function CtaSection() {
           {/* Launch announcement badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600/20 rounded-full text-indigo-400 text-sm font-medium mb-8">
             <Bell className="w-4 h-4" />
-            2025年1月7日 リリース予定
+            近日リリース予定
           </div>
 
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">

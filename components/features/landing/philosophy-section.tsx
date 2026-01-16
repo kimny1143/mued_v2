@@ -17,7 +17,7 @@ export function PhilosophySection() {
         {/* Problem statement - left aligned */}
         <div className="max-w-3xl mb-20">
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-8 leading-tight">
-            プロの"選び方"は、
+            クリエイターの"選び方"は、
             <br />
             完成作品には残らない。
           </h2>

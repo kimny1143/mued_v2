@@ -70,7 +70,7 @@ export function MuednoteSection() {
                 href="#"
                 className="inline-flex items-center justify-center gap-2 bg-white text-[#0F0F1A] px-6 py-3 rounded-lg font-medium hover:bg-slate-100 transition-colors cursor-pointer"
               >
-                1/7 リリース予定
+                近日リリース予定
               </a>
               <a
                 href="#"

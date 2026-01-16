@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MUEDnote - Making music visible.",
   description:
-    "音楽制作中の判断を資産にする。「なぜそうしたか」を声で記録、自動で文字起こし。プロの選び方が見返せる記録帳。2025年1月7日リリース。",
+    "音楽制作中の判断を資産にする。「なぜそうしたか」を声で記録、自動で文字起こし。クリエイターの選び方が見返せる記録帳。",
 };
 
 export default function RootLayout({
