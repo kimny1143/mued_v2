@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
@@ -8,6 +9,12 @@ interface HeroSectionProps {
   onGetStarted?: () => void;
 }
 
+const HOO_PHRASES = [
+  "Ho-Hoo, そのアイデアいいね",
+  "Ho-Hoo, そんなアプローチするんだ",
+  "Ho-Hoo, なるほど、そうきたか",
+];
+
 /**
  * Hero Section - Landing Page
  *
@@ -15,6 +22,14 @@ interface HeroSectionProps {
  * Focus on companion experience, not feature list
  */
 export function HeroSection({ onGetStarted }: HeroSectionProps) {
+  const [phrase, setPhrase] = useState(HOO_PHRASES[0]);
+
+  useEffect(() => {
+    // Random phrase on mount
+    const randomIndex = Math.floor(Math.random() * HOO_PHRASES.length);
+    setPhrase(HOO_PHRASES[randomIndex]);
+  }, []);
+
   return (
     <section className="min-h-screen flex items-center relative overflow-hidden">
       {/* Overlay for text readability */}
@@ -62,11 +77,11 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           {/* Right: Hoo with speech bubble */}
           <div className="flex-1 flex justify-center lg:justify-end">
             <div className="relative">
-              {/* Speech bubble - pops in after delay */}
-              <div className="absolute -top-16 left-1/2 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20 animate-bubble-pop">
-                <p className="text-white text-lg font-medium whitespace-nowrap">ほほう 🦉</p>
-                {/* Bubble tail */}
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/10 border-r border-b border-white/20 rotate-45" />
+              {/* Speech bubble - pops in after delay, positioned top-right */}
+              <div className="absolute -top-12 -right-8 bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/20 animate-bubble-pop">
+                <p className="text-white text-base font-medium whitespace-nowrap">{phrase}</p>
+                {/* Bubble tail - points to Hoo */}
+                <div className="absolute -bottom-2 left-6 w-4 h-4 bg-white/10 border-r border-b border-white/20 rotate-45" />
               </div>
 
               {/* Hoo logo - gentle bounce */}
