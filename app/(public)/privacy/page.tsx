@@ -1,4 +1,4 @@
-import PrivacyPolicyJa from "@/docs/policy/privacy-ja";
+import PrivacyPolicyJa from "@/components/legal/privacy-ja";
 
 export const metadata = {
   title: "プライバシーポリシー | MUEDnote",
