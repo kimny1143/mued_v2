@@ -48,7 +48,7 @@ interface Stats {
 
 const MODELS: { id: HooModelId; name: string; description: string }[] = [
   { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', description: '~2.5円/会話' },
-  { id: 'claude-haiku', name: 'Claude Haiku', description: '~0.7円/会話' },
+  { id: 'claude-haiku', name: 'Claude Haiku 4.5', description: '~0.9円/会話' },
   { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: '~0.05円/会話' },
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: '~0.08円/会話' },
 ];

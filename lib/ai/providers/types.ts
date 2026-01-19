@@ -79,11 +79,11 @@ export const HOO_MODELS: HooModelInfo[] = [
   },
   {
     id: 'claude-haiku',
-    name: 'Claude Haiku',
+    name: 'Claude Haiku 4.5',
     provider: 'claude',
     description: 'Fast and affordable',
-    inputCostPer1M: 0.8,
-    outputCostPer1M: 4.0,
+    inputCostPer1M: 1.0,
+    outputCostPer1M: 5.0,
   },
   {
     id: 'gemini-2.0-flash',
