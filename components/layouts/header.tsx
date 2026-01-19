@@ -9,10 +9,10 @@ import { LanguageSwitcher } from "@/components/ui/language-switcher";
 
 interface UsageLimits {
   tier: string;
-  aiMaterialsLimit: number;
-  aiMaterialsUsed: number;
-  reservationsLimit: number;
-  reservationsUsed: number;
+  hooConversationsLimit: number;
+  hooConversationsUsed: number;
+  hooConversationsRemaining: number;
+  canUseHooAI: boolean;
 }
 
 export function Header() {
@@ -28,8 +28,8 @@ export function Header() {
     try {
       const response = await fetch('/api/subscription/limits');
       const data = await response.json();
-      if (data.success) {
-        setLimits(data.limits);
+      if (data.success && data.data?.limits) {
+        setLimits(data.data.limits);
       }
     } catch (error) {
       console.error('Failed to fetch limits:', error);
@@ -57,10 +57,8 @@ export function Header() {
             {limits && (
               <Link href="/dashboard/subscription">
                 <div className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
-                  limits.tier === 'freemium'
+                  limits.tier === 'free'
                     ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    : limits.tier === 'starter'
-                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                     : limits.tier === 'basic'
                     ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
                     : limits.tier === 'premium'

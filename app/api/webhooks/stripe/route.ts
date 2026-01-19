@@ -37,6 +37,9 @@ interface StripeSubscriptionWithPeriods extends Stripe.Subscription {
 
 interface StripeInvoiceWithSubscription extends Stripe.Invoice {
   subscription: string | Stripe.Subscription | null;
+  last_payment_error?: {
+    message?: string;
+  } | null;
 }
 
 export async function POST(request: Request) {
@@ -457,7 +460,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           .update(subscriptions)
           .set({
             status: 'cancelled',
-            tier: 'freemium', // フリーミアムにダウングレード
+            tier: 'free', // Freeにダウングレード
             cancelAtPeriodEnd: false,
             updatedAt: new Date(),
           })
@@ -543,7 +546,19 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
 
         logger.debug(`Payment failed for subscription: ${subscriptionId}`);
 
-        // TODO: ユーザーにメール通知を送信
+        // Send payment failure notification to user
+        setImmediate(async () => {
+          try {
+            await notificationService.onPaymentFailed({
+              subscriptionId: sub.id,
+              userId: sub.userId,
+              tier: sub.tier,
+              errorMessage: invoice.last_payment_error?.message || undefined,
+            });
+          } catch (notifyError) {
+            logger.error('Failed to send payment failure notification', { error: notifyError });
+          }
+        });
       } catch (error) {
         console.error("Error handling payment failure:", error);
         throw error;

@@ -77,10 +77,37 @@ export const GET = withAuth(async ({ userId: clerkUserId }) => {
       .from(reservations)
       .where(eq(reservations.studentId, user.id));
 
+    // Get completed count (lessons that have already happened)
+    const [completedCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(reservations)
+      .innerJoin(lessonSlots, eq(reservations.slotId, lessonSlots.id))
+      .where(
+        and(
+          eq(reservations.studentId, user.id),
+          eq(reservations.status, 'completed')
+        )
+      );
+
+    // Get in-progress count (paid/pending reservations for future lessons)
+    const [inProgressCount] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(reservations)
+      .innerJoin(lessonSlots, eq(reservations.slotId, lessonSlots.id))
+      .where(
+        and(
+          eq(reservations.studentId, user.id),
+          sql`${reservations.status} IN ('pending', 'paid')`,
+          gte(lessonSlots.startTime, now)
+        )
+      );
+
     return apiSuccess({
       stats: {
         totalMaterials: materialCount?.count || 0,
         totalReservations: reservationCount?.count || 0,
+        completedCount: completedCount?.count || 0,
+        inProgressCount: inProgressCount?.count || 0,
       },
       recentMaterials: recentMaterials.map((m) => ({
         id: m.id,

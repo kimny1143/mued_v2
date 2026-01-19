@@ -14,7 +14,6 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const priceIds = {
-  starter: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER,
   basic: process.env.NEXT_PUBLIC_STRIPE_PRICE_BASIC,
   premium: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM,
 };

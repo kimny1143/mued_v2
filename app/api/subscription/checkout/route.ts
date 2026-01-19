@@ -23,7 +23,7 @@ const stripe = new Stripe(stripeConfig.secretKey, {
 
 const checkoutSchema = z.object({
   priceId: z.string().min(1),
-  tier: z.enum(['starter', 'basic', 'premium']),
+  tier: z.enum(['basic', 'premium']),
 });
 
 export const POST = withAuth(async ({ userId: clerkUserId, request }) => {

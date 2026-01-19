@@ -7,6 +7,8 @@ import { useLocale } from '@/lib/i18n/locale-context';
 interface DashboardStatsData {
   totalMaterials: number;
   totalReservations: number;
+  completedCount: number;
+  inProgressCount: number;
 }
 
 export function DashboardStats() {
@@ -70,14 +72,14 @@ export function DashboardStats() {
     {
       icon: CheckCircle,
       label: t.dashboard.stats.completed,
-      value: 0, // TODO: Implement completed count
+      value: stats?.completedCount || 0,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
     },
     {
       icon: Clock,
       label: t.dashboard.stats.inProgress,
-      value: 0, // TODO: Implement in-progress count
+      value: stats?.inProgressCount || 0,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
     },

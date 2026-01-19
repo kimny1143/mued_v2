@@ -98,6 +98,13 @@ export interface ReminderEmailData {
   dashboardUrl: string;
 }
 
+export interface PaymentFailedEmailData {
+  userName: string;
+  tier: string;
+  errorMessage?: string;
+  updatePaymentUrl: string;
+}
+
 // ========================================
 // Template Generators
 // ========================================
@@ -419,6 +426,57 @@ ${data.studentName} 様
 
     return { subject, html, text };
   },
+
+  /**
+   * Payment failed notification
+   */
+  paymentFailed(data: PaymentFailedEmailData): { subject: string; html: string; text: string } {
+    const subject = `【重要】お支払いに失敗しました - ご確認ください`;
+
+    const html = baseTemplate(`
+      <h2 style="color: #dc2626; margin-top: 0;">お支払いに失敗しました</h2>
+      <p>${data.userName} 様</p>
+      <p>サブスクリプション（${data.tier}プラン）の請求処理中にエラーが発生しました。</p>
+
+      ${data.errorMessage ? `
+      <div class="info-box" style="background: #fef2f2; border-color: #fecaca;">
+        <p style="color: #dc2626; margin: 0;">
+          <strong>エラー内容:</strong> ${data.errorMessage}
+        </p>
+      </div>
+      ` : ''}
+
+      <p>サービスを継続してご利用いただくため、お支払い方法の更新をお願いいたします。</p>
+
+      <p style="text-align: center;">
+        <a href="${data.updatePaymentUrl}" class="button" style="background: #dc2626;">お支払い方法を更新</a>
+      </p>
+
+      <p style="color: #6b7280; font-size: 14px;">
+        お支払い方法を更新されない場合、サブスクリプションは自動的にキャンセルされる場合があります。
+        ご不明な点がございましたら、サポートまでお問い合わせください。
+      </p>
+    `);
+
+    const text = `
+【重要】お支払いに失敗しました
+
+${data.userName} 様
+
+サブスクリプション（${data.tier}プラン）の請求処理中にエラーが発生しました。
+
+${data.errorMessage ? `エラー内容: ${data.errorMessage}\n` : ''}
+
+サービスを継続してご利用いただくため、お支払い方法の更新をお願いいたします。
+
+お支払い方法の更新: ${data.updatePaymentUrl}
+
+お支払い方法を更新されない場合、サブスクリプションは自動的にキャンセルされる場合があります。
+ご不明な点がございましたら、サポートまでお問い合わせください。
+    `.trim();
+
+    return { subject, html, text };
+  },
 };
 
 // ========================================
@@ -551,6 +609,21 @@ class EmailService {
       to,
       ...template,
       tags: [{ name: 'type', value: 'reminder' }],
+    });
+  }
+
+  /**
+   * Send payment failed notification
+   */
+  async sendPaymentFailed(
+    to: EmailRecipient,
+    data: PaymentFailedEmailData
+  ): Promise<EmailResult> {
+    const template = emailTemplates.paymentFailed(data);
+    return this.send({
+      to,
+      ...template,
+      tags: [{ name: 'type', value: 'payment_failed' }],
     });
   }
 

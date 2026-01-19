@@ -122,7 +122,6 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY || 'sk_test_mock_stripe_key_for_build' }}
           STRIPE_WEBHOOK_SECRET: "whsec_mock_stripe_webhook"
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_mock_stripe_publishable"
-          NEXT_PUBLIC_STRIPE_PRICE_STARTER: "price_mock_starter"
           NEXT_PUBLIC_STRIPE_PRICE_BASIC: "price_mock_basic"
           NEXT_PUBLIC_STRIPE_PRICE_PREMIUM: "price_mock_premium"
           RESEND_API_KEY: "re_mock_resend_api_key"

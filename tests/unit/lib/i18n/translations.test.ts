@@ -241,9 +241,9 @@ describe('i18n Translations', () => {
 
     it('should have consistent array lengths for lists', () => {
       // Check subscription plans features
-      const enFreemium = translations.en.subscription.plans.freemium.features;
-      const jaFreemium = translations.ja.subscription.plans.freemium.features;
-      expect(enFreemium.length).toBe(jaFreemium.length);
+      const enFree = translations.en.subscription.plans.free.features;
+      const jaFree = translations.ja.subscription.plans.free.features;
+      expect(enFree.length).toBe(jaFree.length);
 
       const enPremium = translations.en.subscription.plans.premium.features;
       const jaPremium = translations.ja.subscription.plans.premium.features;
@@ -322,8 +322,7 @@ describe('i18n Translations', () => {
       it('should have all plan tiers', () => {
         const { plans } = translations.en.subscription;
 
-        expect(plans.freemium.name).toBe('Freemium');
-        expect(plans.starter.name).toBe('Starter');
+        expect(plans.free.name).toBe('Free');
         expect(plans.basic.name).toBe('Basic');
         expect(plans.premium.name).toBe('Premium');
       });

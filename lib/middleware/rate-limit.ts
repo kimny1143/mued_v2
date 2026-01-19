@@ -5,10 +5,20 @@ import { auth } from "@clerk/nextjs/server";
 
 // Redis client (lazy initialization)
 let redis: Redis | null = null;
+let hasLoggedWarning = false;
 
 function getRedis(): Redis | null {
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    console.warn("[RateLimit] Upstash credentials not configured, skipping rate limit");
+    // Log warning only once to avoid spam
+    if (!hasLoggedWarning) {
+      hasLoggedWarning = true;
+      if (process.env.NODE_ENV === 'production') {
+        // In production, this is a critical configuration error
+        console.error("[RateLimit] CRITICAL: Upstash credentials not configured in production! Rate limiting is DISABLED.");
+      } else {
+        console.warn("[RateLimit] Upstash credentials not configured, skipping rate limit in development");
+      }
+    }
     return null;
   }
 

@@ -5,12 +5,10 @@ import Link from 'next/link';
 
 interface UsageLimits {
   tier: string;
-  aiMaterialsLimit: number;
-  aiMaterialsUsed: number;
-  aiMaterialsRemaining: number;
-  reservationsLimit: number;
-  reservationsUsed: number;
-  reservationsRemaining: number;
+  hooConversationsLimit: number; // -1 = unlimited, 0 = not available
+  hooConversationsUsed: number;
+  hooConversationsRemaining: number;
+  canUseHooAI: boolean;
 }
 
 export function SubscriptionBadge() {
@@ -25,8 +23,8 @@ export function SubscriptionBadge() {
     try {
       const response = await fetch('/api/subscription/limits');
       const data = await response.json();
-      if (data.success) {
-        setLimits(data.limits);
+      if (data.success && data.data?.limits) {
+        setLimits(data.data.limits);
       }
     } catch (error) {
       console.error('Failed to fetch limits:', error);
@@ -49,17 +47,11 @@ export function SubscriptionBadge() {
   }
 
   const planColors = {
-    freemium: {
+    free: {
       bg: 'bg-gray-50',
       border: 'border-gray-300',
       badge: 'bg-gray-600',
       text: 'text-gray-900',
-    },
-    starter: {
-      bg: 'bg-blue-50',
-      border: 'border-blue-300',
-      badge: 'bg-blue-600',
-      text: 'text-blue-900',
     },
     basic: {
       bg: 'bg-purple-50',
@@ -75,7 +67,7 @@ export function SubscriptionBadge() {
     },
   };
 
-  const colors = planColors[limits.tier as keyof typeof planColors] || planColors.freemium;
+  const colors = planColors[limits.tier as keyof typeof planColors] || planColors.free;
 
   return (
     <div className={`${colors.bg} border ${colors.border} rounded-lg p-6`}>
@@ -85,7 +77,7 @@ export function SubscriptionBadge() {
             <span className={`${colors.badge} text-white text-sm font-bold px-4 py-1.5 rounded-full`}>
               {limits.tier.charAt(0).toUpperCase() + limits.tier.slice(1)} Plan
             </span>
-            {limits.tier === 'freemium' && (
+            {limits.tier === 'free' && (
               <Link
                 href="/dashboard/subscription"
                 className="text-sm font-medium text-blue-600 hover:text-blue-700 underline"
@@ -95,50 +87,28 @@ export function SubscriptionBadge() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* AI Materials Usage */}
-            <div>
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className={`text-sm font-medium ${colors.text}`}>AI Materials:</span>
-                <span className="text-lg font-bold text-gray-900">
-                  {limits.aiMaterialsLimit === -1
-                    ? 'Unlimited'
-                    : `${limits.aiMaterialsUsed} / ${limits.aiMaterialsLimit}`}
-                </span>
-              </div>
-              {limits.aiMaterialsLimit !== -1 && (
-                <div className="w-full bg-white rounded-full h-2">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${Math.min((limits.aiMaterialsUsed / limits.aiMaterialsLimit) * 100, 100)}%`,
-                    }}
-                  />
-                </div>
-              )}
+          {/* Hoo AI Usage */}
+          <div>
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className={`text-sm font-medium ${colors.text}`}>Hoo AI:</span>
+              <span className="text-lg font-bold text-gray-900">
+                {limits.hooConversationsLimit === -1
+                  ? 'Unlimited'
+                  : limits.hooConversationsLimit === 0
+                  ? 'Not available'
+                  : `${limits.hooConversationsUsed} / ${limits.hooConversationsLimit}`}
+              </span>
             </div>
-
-            {/* Reservations Usage */}
-            <div>
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className={`text-sm font-medium ${colors.text}`}>Lesson Bookings:</span>
-                <span className="text-lg font-bold text-gray-900">
-                  {limits.reservationsLimit === -1
-                    ? 'Unlimited'
-                    : `${limits.reservationsUsed} / ${limits.reservationsLimit}`}
-                </span>
+            {limits.hooConversationsLimit > 0 && (
+              <div className="w-full bg-white rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min((limits.hooConversationsUsed / limits.hooConversationsLimit) * 100, 100)}%`,
+                  }}
+                />
               </div>
-              {limits.reservationsLimit !== -1 && (
-                <div className="w-full bg-white rounded-full h-2">
-                  <div
-                    className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${Math.min((limits.reservationsUsed / limits.reservationsLimit) * 100, 100)}%`,
-                    }}
-                  />
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
 

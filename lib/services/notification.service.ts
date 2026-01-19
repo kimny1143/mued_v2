@@ -19,6 +19,7 @@ import {
   type PaymentEmailData,
   type CancellationEmailData,
   type ReminderEmailData,
+  type PaymentFailedEmailData,
 } from './email.service';
 import { formatInTimeZone } from 'date-fns-tz';
 
@@ -68,6 +69,13 @@ export interface ReminderNotificationData {
   mentorId: string;
   startTime: Date;
   hoursUntil: number;
+}
+
+export interface PaymentFailedNotificationData {
+  subscriptionId: string;
+  userId: string;
+  tier: string;
+  errorMessage?: string;
 }
 
 interface NotificationResult {
@@ -375,6 +383,57 @@ class NotificationService {
       logger.error('[NotificationService] Failed to send reminder', {
         error,
         reservationId: data.reservationId,
+      });
+      return {
+        success: false,
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
+      };
+    }
+  }
+
+  /**
+   * Send notification when subscription payment fails
+   */
+  async onPaymentFailed(data: PaymentFailedNotificationData): Promise<NotificationResult> {
+    try {
+      const user = await userRepository.findById(data.userId);
+
+      if (!user) {
+        logger.error('[NotificationService] User not found for payment failure notification', {
+          userId: data.userId,
+          subscriptionId: data.subscriptionId,
+        });
+        return { success: false, errors: ['User not found'] };
+      }
+
+      const emailData: PaymentFailedEmailData = {
+        userName: user.name || user.email,
+        tier: data.tier.charAt(0).toUpperCase() + data.tier.slice(1),
+        errorMessage: data.errorMessage,
+        updatePaymentUrl: `${APP_URL}/dashboard/settings/billing`,
+      };
+
+      const result = await emailService.sendPaymentFailed(
+        { email: user.email, name: user.name || undefined },
+        emailData
+      );
+
+      logger.info('[NotificationService] Payment failure notification sent', {
+        subscriptionId: data.subscriptionId,
+        userId: data.userId,
+        success: result.success,
+      });
+
+      return {
+        success: result.success,
+        studentEmailSent: result.success,
+        errors: result.error ? [result.error] : undefined,
+      };
+    } catch (error) {
+      logger.error('[NotificationService] Failed to send payment failure notification', {
+        error,
+        subscriptionId: data.subscriptionId,
+        userId: data.userId,
       });
       return {
         success: false,

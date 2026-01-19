@@ -4,11 +4,10 @@ import { config } from 'dotenv';
 /**
  * Stripe Product & Price Setup Script
  *
- * Creates 4 subscription tiers on Stripe:
- * 1. Freemium (Free) - No Stripe product needed
- * 2. Starter ($9.99/month) - AI materials: 3/month, Reservations: 1/month
- * 3. Basic ($19.99/month) - AI materials: unlimited, Reservations: 5/month
- * 4. Premium ($49.99/month) - Everything unlimited
+ * Creates 2 subscription tiers on Stripe (Free tier doesn't need Stripe):
+ * 1. Free - No Stripe product needed
+ * 2. Basic (¥1,980/month) - AI materials: unlimited, Reservations: 5/month
+ * 3. Premium (¥2,980/month) - Everything unlimited
  */
 
 config({ path: '.env.local' });
@@ -22,27 +21,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 // Plan configurations (JPY pricing)
 const plans = [
   {
-    name: 'MUED Starter',
-    id: 'starter',
-    description: 'Perfect for getting started with AI-powered learning',
-    price: 999, // ¥999/month
-    features: [
-      '3 AI-generated study materials per month',
-      '1 mentor session per month',
-      'Basic analytics',
-      'Email support',
-    ],
-    metadata: {
-      tier: 'starter',
-      aiMaterialsLimit: '3',
-      reservationsLimit: '1',
-    },
-  },
-  {
     name: 'MUED Basic',
     id: 'basic',
     description: 'Unlimited AI materials for serious learners',
-    price: 1999, // ¥1,999/month
+    price: 1980, // ¥1,980/month
     features: [
       'Unlimited AI-generated study materials',
       '5 mentor sessions per month',
@@ -60,7 +42,7 @@ const plans = [
     name: 'MUED Premium',
     id: 'premium',
     description: 'Full access to all features for dedicated students',
-    price: 4999, // ¥4,999/month
+    price: 2980, // ¥2,980/month
     features: [
       'Unlimited AI-generated study materials',
       'Unlimited mentor sessions',

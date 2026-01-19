@@ -101,24 +101,17 @@ describe('SubscriptionRepository', () => {
   });
 
   describe('TIER_LIMITS', () => {
-    it('should have correct limits for freemium', () => {
-      expect(TIER_LIMITS.freemium).toEqual({
-        aiMaterialsLimit: 5,
+    it('should have correct limits for free', () => {
+      expect(TIER_LIMITS.free).toEqual({
+        aiMaterialsLimit: 3,
         reservationsLimit: 1,
-      });
-    });
-
-    it('should have correct limits for starter', () => {
-      expect(TIER_LIMITS.starter).toEqual({
-        aiMaterialsLimit: 20,
-        reservationsLimit: 5,
       });
     });
 
     it('should have correct limits for basic', () => {
       expect(TIER_LIMITS.basic).toEqual({
-        aiMaterialsLimit: 50,
-        reservationsLimit: 15,
+        aiMaterialsLimit: -1,
+        reservationsLimit: 5,
       });
     });
 
@@ -205,7 +198,7 @@ describe('SubscriptionRepository', () => {
 
     it('should return false when at limit', async () => {
       // Mock subscription with usage at limit
-      const atLimitSub = { ...mockSubscription, tier: 'freemium', aiMaterialsUsed: 5 };
+      const atLimitSub = { ...mockSubscription, tier: 'free', aiMaterialsUsed: 3 };
       const mockLimit = vi.fn().mockResolvedValue([atLimitSub]);
       const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
       const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
@@ -256,12 +249,12 @@ describe('SubscriptionRepository', () => {
 
       expect(result).toEqual({
         tier: 'basic',
-        aiMaterials: { used: 20, limit: 50 },
-        reservations: { used: 5, limit: 15 },
+        aiMaterials: { used: 20, limit: -1 },
+        reservations: { used: 5, limit: 5 },
       });
     });
 
-    it('should return freemium limits when no subscription', async () => {
+    it('should return free limits when no subscription', async () => {
       const mockLimit = vi.fn().mockResolvedValue([]);
       const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
       const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
@@ -271,8 +264,8 @@ describe('SubscriptionRepository', () => {
       const result = await repository.getUsageLimits('user-no-sub');
 
       expect(result).toEqual({
-        tier: 'freemium',
-        aiMaterials: { used: 0, limit: 5 },
+        tier: 'free',
+        aiMaterials: { used: 0, limit: 3 },
         reservations: { used: 0, limit: 1 },
       });
     });

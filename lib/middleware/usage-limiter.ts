@@ -5,71 +5,44 @@ import { eq, desc, sql } from 'drizzle-orm';
 /**
  * Usage Limiter Middleware
  *
- * Enforces subscription tier-based usage limits:
- * - AI Material Generation
- * - Lesson Reservations
+ * Enforces subscription tier-based usage limits for MUEDnote:
+ * - Hoo AI Conversations
  */
 
 export interface UsageLimits {
-  aiMaterialsLimit: number; // -1 = unlimited
-  aiMaterialsUsed: number;
-  aiMaterialsRemaining: number;
-  reservationsLimit: number; // -1 = unlimited
-  reservationsUsed: number;
-  reservationsRemaining: number;
+  hooConversationsLimit: number; // -1 = unlimited, 0 = not available
+  hooConversationsUsed: number;
+  hooConversationsRemaining: number;
   tier: string;
-  canGenerateMaterial: boolean;
-  canCreateReservation: boolean;
+  canUseHooAI: boolean;
 }
 
 // Tier-based limits configuration
-// 開発・テスト用に制限を完全解放（本番環境も一時的に含む）
-// TODO: テスト完了後に本番環境の制限を戻す
+// Production limits are enforced by default.
+// Set UNLIMITED_FOR_TESTING=true in non-production to bypass limits.
 
 // IMPORTANT: Function-level evaluation to ensure runtime environment is checked
 function getTierLimits() {
-  // 一時的に全環境でunlimitedに設定（テスト中）
-  const UNLIMITED_FOR_TESTING = true; // TODO: テスト完了後にfalseに変更
+  // Environment variable control: only allow unlimited in non-production with explicit opt-in
+  const UNLIMITED_FOR_TESTING =
+    process.env.UNLIMITED_FOR_TESTING === 'true' &&
+    process.env.NODE_ENV !== 'production';
 
   if (UNLIMITED_FOR_TESTING) {
+    console.warn('[UsageLimiter] UNLIMITED_FOR_TESTING is enabled - all limits disabled');
     return {
-      freemium: {
-        aiMaterialsLimit: -1,
-        reservationsLimit: -1,
-      },
-      starter: {
-        aiMaterialsLimit: -1,
-        reservationsLimit: -1,
-      },
-      basic: {
-        aiMaterialsLimit: -1,
-        reservationsLimit: -1,
-      },
-      premium: {
-        aiMaterialsLimit: -1,
-        reservationsLimit: -1,
-      },
+      free: { hooConversationsLimit: -1 },
+      basic: { hooConversationsLimit: -1 },
+      premium: { hooConversationsLimit: -1 },
     };
   }
 
-  // 本番環境の制限（テスト完了後に使用）
+  // Production tier limits for MUEDnote
+  // IMPORTANT: These values must stay in sync with lib/repositories/subscriptions.repository.ts
   return {
-    freemium: {
-      aiMaterialsLimit: 3,
-      reservationsLimit: 1,
-    },
-    starter: {
-      aiMaterialsLimit: 3,
-      reservationsLimit: 1,
-    },
-    basic: {
-      aiMaterialsLimit: -1, // unlimited
-      reservationsLimit: 5,
-    },
-    premium: {
-      aiMaterialsLimit: -1, // unlimited
-      reservationsLimit: -1, // unlimited
-    },
+    free: { hooConversationsLimit: 0 }, // Fixed responses only, no AI
+    basic: { hooConversationsLimit: 150 }, // 150 conversations/month
+    premium: { hooConversationsLimit: -1 }, // Unlimited (BYOK)
   };
 }
 
@@ -88,17 +61,13 @@ export async function getUserUsageLimits(clerkId: string): Promise<UsageLimits> 
     .limit(1);
 
   if (!user) {
-    // Return freemium limits if user not found
+    // Return free tier limits if user not found
     return {
-      aiMaterialsLimit: TIER_LIMITS.freemium.aiMaterialsLimit,
-      aiMaterialsUsed: 0,
-      aiMaterialsRemaining: TIER_LIMITS.freemium.aiMaterialsLimit,
-      reservationsLimit: TIER_LIMITS.freemium.reservationsLimit,
-      reservationsUsed: 0,
-      reservationsRemaining: TIER_LIMITS.freemium.reservationsLimit,
-      tier: 'freemium',
-      canGenerateMaterial: true,
-      canCreateReservation: true,
+      hooConversationsLimit: TIER_LIMITS.free.hooConversationsLimit,
+      hooConversationsUsed: 0,
+      hooConversationsRemaining: 0,
+      tier: 'free',
+      canUseHooAI: false,
     };
   }
 
@@ -110,53 +79,58 @@ export async function getUserUsageLimits(clerkId: string): Promise<UsageLimits> 
     .orderBy(desc(subscriptions.createdAt))
     .limit(1);
 
-  // Default to freemium if no subscription
-  const tier = subscription?.tier || 'freemium';
-  const limits = TIER_LIMITS[tier as keyof typeof TIER_LIMITS] || TIER_LIMITS.freemium;
+  // Default to free if no subscription
+  const tier = subscription?.tier || 'free';
+  const limits = TIER_LIMITS[tier as keyof typeof TIER_LIMITS] || TIER_LIMITS.free;
 
-  const aiMaterialsUsed = subscription?.aiMaterialsUsed || 0;
-  const reservationsUsed = subscription?.reservationsUsed || 0;
+  const hooConversationsUsed = subscription?.hooConversationsUsed || 0;
 
-  const aiMaterialsRemaining =
-    limits.aiMaterialsLimit === -1
+  const hooConversationsRemaining =
+    limits.hooConversationsLimit === -1
       ? -1
-      : Math.max(0, limits.aiMaterialsLimit - aiMaterialsUsed);
+      : limits.hooConversationsLimit === 0
+      ? 0
+      : Math.max(0, limits.hooConversationsLimit - hooConversationsUsed);
 
-  const reservationsRemaining =
-    limits.reservationsLimit === -1
-      ? -1
-      : Math.max(0, limits.reservationsLimit - reservationsUsed);
+  // Can use Hoo AI if:
+  // - Limit is unlimited (-1), OR
+  // - Limit > 0 AND remaining > 0
+  const canUseHooAI =
+    limits.hooConversationsLimit === -1 ||
+    (limits.hooConversationsLimit > 0 && hooConversationsRemaining > 0);
 
   return {
-    aiMaterialsLimit: limits.aiMaterialsLimit,
-    aiMaterialsUsed,
-    aiMaterialsRemaining,
-    reservationsLimit: limits.reservationsLimit,
-    reservationsUsed,
-    reservationsRemaining,
+    hooConversationsLimit: limits.hooConversationsLimit,
+    hooConversationsUsed,
+    hooConversationsRemaining,
     tier,
-    canGenerateMaterial:
-      limits.aiMaterialsLimit === -1 || aiMaterialsRemaining > 0,
-    canCreateReservation:
-      limits.reservationsLimit === -1 || reservationsRemaining > 0,
+    canUseHooAI,
   };
 }
 
 /**
- * Check if user can generate AI material
+ * Check if user can use Hoo AI
  * @param clerkId - Clerk user ID
  */
-export async function checkCanGenerateMaterial(clerkId: string): Promise<{
+export async function checkCanUseHooAI(clerkId: string): Promise<{
   allowed: boolean;
   reason?: string;
   limits: UsageLimits;
 }> {
   const limits = await getUserUsageLimits(clerkId);
 
-  if (!limits.canGenerateMaterial) {
+  if (limits.hooConversationsLimit === 0) {
     return {
       allowed: false,
-      reason: `You've reached your monthly limit of ${limits.aiMaterialsLimit} AI materials. Upgrade to Basic or Premium for unlimited generation.`,
+      reason: 'Hoo AI is not available on the Free plan. Upgrade to Basic for 150 AI conversations per month.',
+      limits,
+    };
+  }
+
+  if (!limits.canUseHooAI) {
+    return {
+      allowed: false,
+      reason: `You've reached your monthly limit of ${limits.hooConversationsLimit} Hoo conversations. Upgrade to Premium for unlimited access.`,
       limits,
     };
   }
@@ -168,35 +142,10 @@ export async function checkCanGenerateMaterial(clerkId: string): Promise<{
 }
 
 /**
- * Check if user can create reservation
+ * Increment Hoo conversation usage counter (atomic operation)
  * @param clerkId - Clerk user ID
  */
-export async function checkCanCreateReservation(clerkId: string): Promise<{
-  allowed: boolean;
-  reason?: string;
-  limits: UsageLimits;
-}> {
-  const limits = await getUserUsageLimits(clerkId);
-
-  if (!limits.canCreateReservation) {
-    return {
-      allowed: false,
-      reason: `You've reached your monthly limit of ${limits.reservationsLimit} reservations. Upgrade to Basic or Premium for more sessions.`,
-      limits,
-    };
-  }
-
-  return {
-    allowed: true,
-    limits,
-  };
-}
-
-/**
- * Increment AI material usage counter (atomic operation)
- * @param clerkId - Clerk user ID
- */
-export async function incrementMaterialUsage(clerkId: string): Promise<void> {
+export async function incrementHooConversationUsage(clerkId: string): Promise<void> {
   // Get user from database
   const [user] = await db
     .select()
@@ -208,64 +157,23 @@ export async function incrementMaterialUsage(clerkId: string): Promise<void> {
     throw new Error('User not found');
   }
 
-  // アトミックなインクリメント操作
-  // UPDATEが影響した行数をチェックして、サブスクリプションが存在するか判定
+  // Atomic increment operation
   const result = await db
     .update(subscriptions)
     .set({
-      aiMaterialsUsed: sql`ai_materials_used + 1`,
+      hooConversationsUsed: sql`hoo_conversations_used + 1`,
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.userId, user.id))
     .returning();
 
-  // サブスクリプションが存在しない場合は作成
+  // Create subscription if it doesn't exist
   if (result.length === 0) {
     await db.insert(subscriptions).values({
       userId: user.id,
-      tier: 'freemium',
+      tier: 'free',
       status: 'active',
-      aiMaterialsUsed: 1,
-      reservationsUsed: 0,
-    });
-  }
-}
-
-/**
- * Increment reservation usage counter (atomic operation)
- * @param clerkId - Clerk user ID
- */
-export async function incrementReservationUsage(clerkId: string): Promise<void> {
-  // Get user from database
-  const [user] = await db
-    .select()
-    .from(users)
-    .where(eq(users.clerkId, clerkId))
-    .limit(1);
-
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  // アトミックなインクリメント操作
-  // UPDATEが影響した行数をチェックして、サブスクリプションが存在するか判定
-  const result = await db
-    .update(subscriptions)
-    .set({
-      reservationsUsed: sql`reservations_used + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(subscriptions.userId, user.id))
-    .returning();
-
-  // サブスクリプションが存在しない場合は作成
-  if (result.length === 0) {
-    await db.insert(subscriptions).values({
-      userId: user.id,
-      tier: 'freemium',
-      status: 'active',
-      aiMaterialsUsed: 0,
-      reservationsUsed: 1,
+      hooConversationsUsed: 1,
     });
   }
 }
@@ -297,8 +205,7 @@ export async function resetMonthlyUsage(clerkId: string): Promise<void> {
     await db
       .update(subscriptions)
       .set({
-        aiMaterialsUsed: 0,
-        reservationsUsed: 0,
+        hooConversationsUsed: 0,
       })
       .where(eq(subscriptions.id, subscription.id));
   }
@@ -308,19 +215,17 @@ export async function resetMonthlyUsage(clerkId: string): Promise<void> {
  * Get tier display info
  */
 export function getTierInfo(tier: string) {
-  const tierConfig = TIER_LIMITS[tier as keyof typeof TIER_LIMITS] || TIER_LIMITS.freemium;
+  const tierConfig = TIER_LIMITS[tier as keyof typeof TIER_LIMITS] || TIER_LIMITS.free;
 
   return {
     tier,
     displayName: tier.charAt(0).toUpperCase() + tier.slice(1),
     price:
-      tier === 'freemium'
+      tier === 'free'
         ? 0
-        : tier === 'starter'
-        ? 9.99
         : tier === 'basic'
-        ? 19.99
-        : 49.99,
+        ? 1980
+        : 2980,
     limits: tierConfig,
     features: getFeaturesList(tier),
   };
@@ -328,37 +233,27 @@ export function getTierInfo(tier: string) {
 
 function getFeaturesList(tier: string): string[] {
   switch (tier) {
-    case 'freemium':
+    case 'free':
       return [
-        '3 AI materials per month',
-        '1 mentor session per month',
-        'Basic analytics',
-        'Community support',
-      ];
-    case 'starter':
-      return [
-        '3 AI materials per month',
-        '1 mentor session per month',
-        'Basic analytics',
-        'Email support',
+        'Voice transcription (Whisper)',
+        'Log storage: 90 days',
+        'Hoo: Fixed responses only',
       ];
     case 'basic':
       return [
-        'Unlimited AI materials',
-        '5 mentor sessions per month',
-        'Advanced analytics',
-        'Priority email support',
-        'Custom study plans',
+        'Voice transcription (Whisper)',
+        'Log storage: Unlimited',
+        'DAW log integration',
+        'Dashboard & Export',
+        'Hoo AI: 150 conversations/month',
       ];
     case 'premium':
       return [
-        'Unlimited AI materials',
-        'Unlimited mentor sessions',
-        'Advanced analytics',
-        '24/7 priority support',
-        'Custom study plans',
-        '1-on-1 learning consultant',
-        'Exclusive webinars',
+        'All Basic features',
+        'Hoo AI: Unlimited (BYOK)',
+        'Choose your own AI model',
+        'System prompt access',
+        'Full customization',
       ];
     default:
       return [];
@@ -369,9 +264,287 @@ function getFeaturesList(tier: string): string[] {
  * Check if tier upgrade is valid
  */
 export function isValidUpgrade(currentTier: string, newTier: string): boolean {
-  const tierHierarchy = ['freemium', 'starter', 'basic', 'premium'];
+  const tierHierarchy = ['free', 'basic', 'premium'];
   const currentIndex = tierHierarchy.indexOf(currentTier);
   const newIndex = tierHierarchy.indexOf(newTier);
 
   return newIndex > currentIndex;
+}
+
+// ============================================
+// Legacy MUED LMS functions (for future integration)
+// These functions support AI Material generation and Lesson Reservations
+// which are planned features for MUED LMS integration.
+// ============================================
+
+const MUED_LMS_LIMITS = {
+  free: { aiMaterialsLimit: 0, reservationsLimit: 0 }, // Not available
+  basic: { aiMaterialsLimit: -1, reservationsLimit: 5 }, // Unlimited AI, 5 reservations
+  premium: { aiMaterialsLimit: -1, reservationsLimit: -1 }, // Unlimited
+};
+
+interface LegacyUsageLimits {
+  aiMaterialsLimit: number;
+  aiMaterialsUsed: number;
+  aiMaterialsRemaining: number;
+  reservationsLimit: number;
+  reservationsUsed: number;
+  reservationsRemaining: number;
+  tier: string;
+  canGenerateMaterial: boolean;
+  canCreateReservation: boolean;
+}
+
+/**
+ * [Legacy] Check if user can generate AI material
+ */
+export async function checkCanGenerateMaterial(clerkId: string): Promise<{
+  allowed: boolean;
+  reason?: string;
+  limits: LegacyUsageLimits;
+}> {
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!user) {
+    return {
+      allowed: false,
+      reason: 'User not found',
+      limits: {
+        aiMaterialsLimit: 0,
+        aiMaterialsUsed: 0,
+        aiMaterialsRemaining: 0,
+        reservationsLimit: 0,
+        reservationsUsed: 0,
+        reservationsRemaining: 0,
+        tier: 'free',
+        canGenerateMaterial: false,
+        canCreateReservation: false,
+      },
+    };
+  }
+
+  const [subscription] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, user.id))
+    .orderBy(desc(subscriptions.createdAt))
+    .limit(1);
+
+  const tier = subscription?.tier || 'free';
+  const tierLimits = MUED_LMS_LIMITS[tier as keyof typeof MUED_LMS_LIMITS] || MUED_LMS_LIMITS.free;
+
+  const aiMaterialsUsed = subscription?.aiMaterialsUsed || 0;
+  const reservationsUsed = subscription?.reservationsUsed || 0;
+
+  const aiMaterialsRemaining =
+    tierLimits.aiMaterialsLimit === -1
+      ? -1
+      : tierLimits.aiMaterialsLimit === 0
+      ? 0
+      : Math.max(0, tierLimits.aiMaterialsLimit - aiMaterialsUsed);
+
+  const reservationsRemaining =
+    tierLimits.reservationsLimit === -1
+      ? -1
+      : tierLimits.reservationsLimit === 0
+      ? 0
+      : Math.max(0, tierLimits.reservationsLimit - reservationsUsed);
+
+  const canGenerateMaterial =
+    tierLimits.aiMaterialsLimit === -1 ||
+    (tierLimits.aiMaterialsLimit > 0 && aiMaterialsRemaining > 0);
+
+  const canCreateReservation =
+    tierLimits.reservationsLimit === -1 ||
+    (tierLimits.reservationsLimit > 0 && reservationsRemaining > 0);
+
+  const limits: LegacyUsageLimits = {
+    aiMaterialsLimit: tierLimits.aiMaterialsLimit,
+    aiMaterialsUsed,
+    aiMaterialsRemaining,
+    reservationsLimit: tierLimits.reservationsLimit,
+    reservationsUsed,
+    reservationsRemaining,
+    tier,
+    canGenerateMaterial,
+    canCreateReservation,
+  };
+
+  if (!canGenerateMaterial) {
+    return {
+      allowed: false,
+      reason: tierLimits.aiMaterialsLimit === 0
+        ? 'AI Material generation is not available on the Free plan. Upgrade to Basic or Premium.'
+        : `You've reached your monthly limit of ${tierLimits.aiMaterialsLimit} AI materials.`,
+      limits,
+    };
+  }
+
+  return { allowed: true, limits };
+}
+
+/**
+ * [Legacy] Check if user can create reservation
+ */
+export async function checkCanCreateReservation(clerkId: string): Promise<{
+  allowed: boolean;
+  reason?: string;
+  limits: LegacyUsageLimits;
+}> {
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!user) {
+    return {
+      allowed: false,
+      reason: 'User not found',
+      limits: {
+        aiMaterialsLimit: 0,
+        aiMaterialsUsed: 0,
+        aiMaterialsRemaining: 0,
+        reservationsLimit: 0,
+        reservationsUsed: 0,
+        reservationsRemaining: 0,
+        tier: 'free',
+        canGenerateMaterial: false,
+        canCreateReservation: false,
+      },
+    };
+  }
+
+  const [subscription] = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, user.id))
+    .orderBy(desc(subscriptions.createdAt))
+    .limit(1);
+
+  const tier = subscription?.tier || 'free';
+  const tierLimits = MUED_LMS_LIMITS[tier as keyof typeof MUED_LMS_LIMITS] || MUED_LMS_LIMITS.free;
+
+  const aiMaterialsUsed = subscription?.aiMaterialsUsed || 0;
+  const reservationsUsed = subscription?.reservationsUsed || 0;
+
+  const aiMaterialsRemaining =
+    tierLimits.aiMaterialsLimit === -1
+      ? -1
+      : tierLimits.aiMaterialsLimit === 0
+      ? 0
+      : Math.max(0, tierLimits.aiMaterialsLimit - aiMaterialsUsed);
+
+  const reservationsRemaining =
+    tierLimits.reservationsLimit === -1
+      ? -1
+      : tierLimits.reservationsLimit === 0
+      ? 0
+      : Math.max(0, tierLimits.reservationsLimit - reservationsUsed);
+
+  const canGenerateMaterial =
+    tierLimits.aiMaterialsLimit === -1 ||
+    (tierLimits.aiMaterialsLimit > 0 && aiMaterialsRemaining > 0);
+
+  const canCreateReservation =
+    tierLimits.reservationsLimit === -1 ||
+    (tierLimits.reservationsLimit > 0 && reservationsRemaining > 0);
+
+  const limits: LegacyUsageLimits = {
+    aiMaterialsLimit: tierLimits.aiMaterialsLimit,
+    aiMaterialsUsed,
+    aiMaterialsRemaining,
+    reservationsLimit: tierLimits.reservationsLimit,
+    reservationsUsed,
+    reservationsRemaining,
+    tier,
+    canGenerateMaterial,
+    canCreateReservation,
+  };
+
+  if (!canCreateReservation) {
+    return {
+      allowed: false,
+      reason: tierLimits.reservationsLimit === 0
+        ? 'Lesson reservations are not available on the Free plan. Upgrade to Basic or Premium.'
+        : `You've reached your monthly limit of ${tierLimits.reservationsLimit} reservations.`,
+      limits,
+    };
+  }
+
+  return { allowed: true, limits };
+}
+
+/**
+ * [Legacy] Increment AI material usage counter
+ */
+export async function incrementMaterialUsage(clerkId: string): Promise<void> {
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const result = await db
+    .update(subscriptions)
+    .set({
+      aiMaterialsUsed: sql`ai_materials_used + 1`,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptions.userId, user.id))
+    .returning();
+
+  if (result.length === 0) {
+    await db.insert(subscriptions).values({
+      userId: user.id,
+      tier: 'free',
+      status: 'active',
+      aiMaterialsUsed: 1,
+      reservationsUsed: 0,
+      hooConversationsUsed: 0,
+    });
+  }
+}
+
+/**
+ * [Legacy] Increment reservation usage counter
+ */
+export async function incrementReservationUsage(clerkId: string): Promise<void> {
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const result = await db
+    .update(subscriptions)
+    .set({
+      reservationsUsed: sql`reservations_used + 1`,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptions.userId, user.id))
+    .returning();
+
+  if (result.length === 0) {
+    await db.insert(subscriptions).values({
+      userId: user.id,
+      tier: 'free',
+      status: 'active',
+      aiMaterialsUsed: 0,
+      reservationsUsed: 1,
+      hooConversationsUsed: 0,
+    });
+  }
 }

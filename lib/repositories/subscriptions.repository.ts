@@ -14,37 +14,50 @@ import { desc, eq, and, sql, gte, lte } from 'drizzle-orm';
 // Type Definitions
 // ========================================
 
-export type SubscriptionTier = 'freemium' | 'starter' | 'basic' | 'premium';
+export type SubscriptionTier = 'free' | 'basic' | 'premium';
 export type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'unpaid';
 
 /**
- * Subscription tier limits
+ * Subscription tier limits for MUEDnote
+ * IMPORTANT: These values must stay in sync with lib/middleware/usage-limiter.ts
+ * -1 = unlimited, 0 = not available
  */
 export const TIER_LIMITS: Record<SubscriptionTier, {
+  hooConversationsLimit: number;
+}> = {
+  free: { hooConversationsLimit: 0 }, // Fixed responses only, no AI
+  basic: { hooConversationsLimit: 150 }, // 150 conversations/month
+  premium: { hooConversationsLimit: -1 }, // Unlimited (BYOK)
+};
+
+/**
+ * Legacy MUED LMS tier limits (for AI Materials & Reservations)
+ * These are planned features for future MUED LMS integration
+ */
+const MUED_LMS_LIMITS: Record<SubscriptionTier, {
   aiMaterialsLimit: number;
   reservationsLimit: number;
 }> = {
-  freemium: { aiMaterialsLimit: 5, reservationsLimit: 1 },
-  starter: { aiMaterialsLimit: 20, reservationsLimit: 5 },
-  basic: { aiMaterialsLimit: 50, reservationsLimit: 15 },
-  premium: { aiMaterialsLimit: -1, reservationsLimit: -1 }, // unlimited
+  free: { aiMaterialsLimit: 0, reservationsLimit: 0 }, // Not available
+  basic: { aiMaterialsLimit: -1, reservationsLimit: 5 }, // Unlimited AI, 5 reservations
+  premium: { aiMaterialsLimit: -1, reservationsLimit: -1 }, // Unlimited
 };
 
 /**
  * Type guard to check if a string is a valid SubscriptionTier
  */
 function isValidTier(tier: string): tier is SubscriptionTier {
-  return ['freemium', 'starter', 'basic', 'premium'].includes(tier);
+  return ['free', 'basic', 'premium'].includes(tier);
 }
 
 /**
- * Get tier with type safety, defaults to freemium if invalid
+ * Get tier with type safety, defaults to free if invalid
  */
 function getTierSafely(tier: string | null | undefined): SubscriptionTier {
   if (tier && isValidTier(tier)) {
     return tier;
   }
-  return 'freemium';
+  return 'free';
 }
 
 /**
@@ -107,7 +120,7 @@ export class SubscriptionRepository {
         userId: input.userId,
         stripeSubscriptionId: input.stripeSubscriptionId,
         stripeCustomerId: input.stripeCustomerId,
-        tier: input.tier ?? 'freemium',
+        tier: input.tier ?? 'free',
         status: input.status ?? 'active',
         currentPeriodStart: input.currentPeriodStart,
         currentPeriodEnd: input.currentPeriodEnd,
@@ -355,11 +368,14 @@ export class SubscriptionRepository {
     }
 
     const tier = getTierSafely(subscription.tier);
-    const limits = TIER_LIMITS[tier];
+    const limits = MUED_LMS_LIMITS[tier];
 
-    // -1 means unlimited
+    // -1 means unlimited, 0 means not available
     if (limits.aiMaterialsLimit === -1) {
       return true;
+    }
+    if (limits.aiMaterialsLimit === 0) {
+      return false;
     }
 
     return subscription.aiMaterialsUsed < limits.aiMaterialsLimit;
@@ -376,32 +392,35 @@ export class SubscriptionRepository {
     }
 
     const tier = getTierSafely(subscription.tier);
-    const limits = TIER_LIMITS[tier];
+    const limits = MUED_LMS_LIMITS[tier];
 
-    // -1 means unlimited
+    // -1 means unlimited, 0 means not available
     if (limits.reservationsLimit === -1) {
       return true;
+    }
+    if (limits.reservationsLimit === 0) {
+      return false;
     }
 
     return subscription.reservationsUsed < limits.reservationsLimit;
   }
 
   /**
-   * Get usage limits for user
+   * Get usage limits for user (Legacy MUED LMS)
    */
   async getUsageLimits(userId: string) {
     const subscription = await this.findActiveByUserId(userId);
 
     if (!subscription) {
       return {
-        tier: 'freemium' as SubscriptionTier,
-        aiMaterials: { used: 0, limit: TIER_LIMITS.freemium.aiMaterialsLimit },
-        reservations: { used: 0, limit: TIER_LIMITS.freemium.reservationsLimit },
+        tier: 'free' as SubscriptionTier,
+        aiMaterials: { used: 0, limit: MUED_LMS_LIMITS.free.aiMaterialsLimit },
+        reservations: { used: 0, limit: MUED_LMS_LIMITS.free.reservationsLimit },
       };
     }
 
     const tier = getTierSafely(subscription.tier);
-    const limits = TIER_LIMITS[tier];
+    const limits = MUED_LMS_LIMITS[tier];
 
     return {
       tier,
@@ -491,8 +510,7 @@ export class SubscriptionRepository {
       .select({
         total: sql<number>`count(*)`,
         active: sql<number>`count(*) filter (where ${subscriptions.status} = 'active')`,
-        freemium: sql<number>`count(*) filter (where ${subscriptions.tier} = 'freemium' and ${subscriptions.status} = 'active')`,
-        starter: sql<number>`count(*) filter (where ${subscriptions.tier} = 'starter' and ${subscriptions.status} = 'active')`,
+        free: sql<number>`count(*) filter (where ${subscriptions.tier} = 'free' and ${subscriptions.status} = 'active')`,
         basic: sql<number>`count(*) filter (where ${subscriptions.tier} = 'basic' and ${subscriptions.status} = 'active')`,
         premium: sql<number>`count(*) filter (where ${subscriptions.tier} = 'premium' and ${subscriptions.status} = 'active')`,
       })

@@ -4,13 +4,11 @@ import { useEffect, useState } from 'react';
 import { useLocale } from '@/lib/i18n/locale-context';
 
 interface UsageLimits {
-  aiMaterialsLimit: number;
-  aiMaterialsUsed: number;
-  aiMaterialsRemaining: number;
-  reservationsLimit: number;
-  reservationsUsed: number;
-  reservationsRemaining: number;
+  hooConversationsLimit: number; // -1 = unlimited, 0 = not available
+  hooConversationsUsed: number;
+  hooConversationsRemaining: number;
   tier: string;
+  canUseHooAI: boolean;
 }
 
 
@@ -27,8 +25,8 @@ export default function SubscriptionPage() {
     try {
       const response = await fetch('/api/subscription/limits');
       const data = await response.json();
-      if (data.success) {
-        setLimits(data.limits);
+      if (data.success && data.data?.limits) {
+        setLimits(data.data.limits);
       }
     } catch (error) {
       console.error('Failed to fetch limits:', error);
@@ -39,29 +37,19 @@ export default function SubscriptionPage() {
 
   const PLANS = [
     {
-      id: 'freemium',
-      name: t.subscription.plans.freemium.name,
+      id: 'free',
+      name: t.subscription.plans.free.name,
       price: 0,
       priceId: null,
       currency: 'JPY',
-      description: t.subscription.plans.freemium.description,
-      features: t.subscription.plans.freemium.features,
-      highlighted: false,
-    },
-    {
-      id: 'starter',
-      name: t.subscription.plans.starter.name,
-      price: 999,
-      priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER?.trim(),
-      currency: 'JPY',
-      description: t.subscription.plans.starter.description,
-      features: t.subscription.plans.starter.features,
+      description: t.subscription.plans.free.description,
+      features: t.subscription.plans.free.features,
       highlighted: false,
     },
     {
       id: 'basic',
       name: t.subscription.plans.basic.name,
-      price: 1999,
+      price: 1980,
       priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_BASIC?.trim(),
       currency: 'JPY',
       description: t.subscription.plans.basic.description,
@@ -71,7 +59,7 @@ export default function SubscriptionPage() {
     {
       id: 'premium',
       name: t.subscription.plans.premium.name,
-      price: 4999,
+      price: 2980,
       priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM?.trim(),
       currency: 'JPY',
       description: t.subscription.plans.premium.description,
@@ -81,7 +69,7 @@ export default function SubscriptionPage() {
   ];
 
   const handleUpgrade = async (planId: string) => {
-    if (planId === 'freemium') return;
+    if (planId === 'free') return;
 
     const plan = PLANS.find(p => p.id === planId);
     if (!plan || !plan.priceId) {
@@ -132,36 +120,20 @@ export default function SubscriptionPage() {
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-blue-700">{t.subscription.aiMaterials}</span>
+                  <span className="text-blue-700">{t.subscription.hooConversations}</span>
                   <span className="font-medium">
-                    {limits.aiMaterialsLimit === -1
+                    {limits.hooConversationsLimit === -1
                       ? t.subscription.unlimited
-                      : `${limits.aiMaterialsUsed} / ${limits.aiMaterialsLimit} ${t.subscription.used}`}
+                      : limits.hooConversationsLimit === 0
+                      ? t.subscription.notAvailable
+                      : `${limits.hooConversationsUsed} / ${limits.hooConversationsLimit} ${t.subscription.used}`}
                   </span>
-                  {limits.aiMaterialsLimit !== -1 && (
+                  {limits.hooConversationsLimit > 0 && (
                     <div className="flex-1 max-w-xs bg-white rounded-full h-2">
                       <div
                         className="bg-blue-600 h-2 rounded-full"
                         style={{
-                          width: `${(limits.aiMaterialsUsed / limits.aiMaterialsLimit) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-blue-700">{t.subscription.reservations}</span>
-                  <span className="font-medium">
-                    {limits.reservationsLimit === -1
-                      ? t.subscription.unlimited
-                      : `${limits.reservationsUsed} / ${limits.reservationsLimit} ${t.subscription.used}`}
-                  </span>
-                  {limits.reservationsLimit !== -1 && (
-                    <div className="flex-1 max-w-xs bg-white rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{
-                          width: `${(limits.reservationsUsed / limits.reservationsLimit) * 100}%`,
+                          width: `${(limits.hooConversationsUsed / limits.hooConversationsLimit) * 100}%`,
                         }}
                       />
                     </div>
@@ -236,7 +208,7 @@ export default function SubscriptionPage() {
                 {isCurrentPlan
                   ? t.subscription.currentPlanBadge
                   : canUpgrade
-                  ? plan.id === 'freemium'
+                  ? plan.id === 'free'
                     ? t.subscription.freeForever
                     : t.subscription.upgrade
                   : t.subscription.downgrade}

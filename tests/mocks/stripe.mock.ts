@@ -158,14 +158,9 @@ export class MockStripe {
       return {
         data: [
           {
-            id: 'prod_freemium',
-            name: 'Freemium',
-            metadata: { tier: 'freemium' },
-          },
-          {
-            id: 'prod_starter',
-            name: 'Starter',
-            metadata: { tier: 'starter' },
+            id: 'prod_free',
+            name: 'Free',
+            metadata: { tier: 'free' },
           },
           {
             id: 'prod_basic',
@@ -199,27 +194,21 @@ export class MockStripe {
       return {
         data: [
           {
-            id: 'price_freemium',
-            product: 'prod_freemium',
+            id: 'price_free',
+            product: 'prod_free',
             unit_amount: 0,
-            currency: 'jpy',
-          },
-          {
-            id: 'price_starter',
-            product: 'prod_starter',
-            unit_amount: 1000,
             currency: 'jpy',
           },
           {
             id: 'price_basic',
             product: 'prod_basic',
-            unit_amount: 2000,
+            unit_amount: 1980,
             currency: 'jpy',
           },
           {
             id: 'price_premium',
             product: 'prod_premium',
-            unit_amount: 5000,
+            unit_amount: 2980,
             currency: 'jpy',
           },
         ],
