@@ -88,6 +88,10 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
                 className="drop-shadow-2xl animate-hoo-bounce"
                 priority
               />
+              {/* Hoo introduction */}
+              <p className="text-center text-slate-400 text-sm mt-4">
+                {t("hooIntro")}
+              </p>
             </div>
           </div>
         </div>
