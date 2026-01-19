@@ -123,6 +123,7 @@ mued_v2/
 | `/commit` | 変更をステージング・コミット・プッシュ |
 | `/pr` | Pull Request作成（タイトル・本文自動生成） |
 | `/security` | セキュリティ監査（認証・API・DB・決済） |
+| `/build-fix` | ビルドエラー自動検出・修正ループ |
 
 ---
 
@@ -133,6 +134,7 @@ mued_v2/
 | スキル | 用途 |
 |-------|------|
 | `tdd` | テスト駆動開発（RED→GREEN→REFACTOR） |
+| `backend-patterns` | APIルート、Repository、バリデーション規約 |
 | `database` | DB操作、マイグレーション、スキーマ変更 |
 | `mcp` | MCPサーバーの作成・修正・使用 |
 | `hooks` | Claude Code Hookの作成・修正 |

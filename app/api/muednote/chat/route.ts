@@ -29,6 +29,21 @@ export const maxDuration = 30; // ストリーミング用のタイムアウト�
  * - フレーミング効果: ポジティブな言葉選びでユーザーを励ます
  */
 export async function POST(req: Request) {
+  // このAPIはdeprecatedのため、新規リクエストは拒否
+  // Edge Runtimeではauth()が使えないため、シンプルに無効化
+  return new Response(
+    JSON.stringify({
+      error: 'This API is deprecated. Please use the MUEDnote v3 desktop app.',
+      code: 'DEPRECATED_ENDPOINT'
+    }),
+    {
+      status: 410, // Gone
+      headers: { 'Content-Type': 'application/json' }
+    }
+  );
+
+  // 以下は参照用に残す（デッドコード）
+  /*
   try {
     const { messages }: { messages: UIMessage[] } = await req.json();
 
@@ -45,6 +60,7 @@ export async function POST(req: Request) {
     console.error('MUEDnote chat error:', error);
     return new Response('Internal Server Error', { status: 500 });
   }
+  */
 }
 
 /**

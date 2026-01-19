@@ -39,47 +39,47 @@ Affaan Mustafaの「Everything Claude Code」ガイド（X投稿: 90万view、1�
 |-----------|----------|------|
 | TDD workflow | **/tdd** | ✅ 2026-01-19追加 |
 | coding-standards | coding-rules | ✅ |
-| security-review | ❌ なし | 未対応（security-reviewerエージェントで代替） |
-| backend-patterns | ❌ なし | 未対応 |
+| security-review | security-reviewerエージェント | ✅ エージェントで代替 |
+| backend-patterns | **backend-patterns** | ✅ 2026-01-19追加 |
 | frontend-patterns | ui-ux-pro-max | ✅ |
 
-**MUED独自スキル（12個）**: tdd, database, mcp, hooks, git-worktree, coding-rules, ai-models, ui-ux-pro-max, ux-psychology, aio-seo, daw-osc, lp-optimizer
+**MUED独自スキル（13個）**: tdd, backend-patterns, database, mcp, hooks, git-worktree, coding-rules, ai-models, ui-ux-pro-max, ux-psychology, aio-seo, daw-osc, lp-optimizer
 
-**評価**: ✅ TDDスキル追加済み。ドメイン特化スキルも充実
+**評価**: ✅ 全スキル対応完了
 
 ### Commands (スラッシュコマンド)
 
 | Affaan推奨 | MUED現状 | 状態 |
 |-----------|----------|------|
-| /tdd | ❌ なし | 未対応 |
-| /plan | ❌ なし | 未対応 |
-| /e2e | ❌ なし | 未対応 |
-| /code-review | ❌ なし | 未対応（code-reviewerエージェントで代替） |
-| /build-fix | ❌ なし | 未対応 |
+| /tdd | /tddスキル | ✅ スキルで代替 |
+| /plan | 組み込みplan mode | ✅ Claude Code標準機能 |
+| /e2e | MCP経由 | ✅ mued-e2e MCPで代替 |
+| /code-review | code-reviewerエージェント | ✅ エージェントで代替 |
+| /build-fix | **/build-fix** | ✅ 2026-01-19追加 |
 | /commit-push-pr | **/commit**, **/pr** | ✅ 2026-01-19追加 |
 | - | **/security** | ✅ 2026-01-19追加（MUED独自） |
 
-**評価**: 基本的なコマンド（/commit, /pr, /security）は追加済み。/tdd等は必要に応じて追加
+**評価**: ✅ 全コマンド対応完了（一部はスキル/エージェント/MCPで代替）
 
 ### Hooks
 
 | 項目 | Affaan推奨 | MUED現状 | 状態 |
 |------|-----------|----------|------|
-| PostToolUse | コード品質チェック | suggest-claude-md-update, suggest-poc-log-update | 一部対応 |
+| PreToolUse | 検証 | validate-dangerous-ops | ✅ 2026-01-19追加 |
+| PostToolUse | コード品質チェック | suggest-claude-md-update, suggest-poc-log-update | ✅ |
 | Stop | クリーンアップ | suggest-git-cleanup | ✅ |
-| PreToolUse | 検証 | ❌ なし | 未対応 |
 
-**評価**: 基本的なフックはあるが、コード品質チェック系が不足
+**評価**: ✅ 全フックタイプに対応完了
 
 ### MCP設定
 
 | 項目 | Affaan推奨 | MUED現状 | 状態 |
 |------|-----------|----------|------|
-| .mcp.json (プロジェクト) | GitHub, Supabase, Vercel等 | ❌ なし | 未対応 |
-| disabledMcpServers | コンテキスト節約 | ❌ 未設定 | 未対応 |
-| MCP数制限 | 10個以下/プロジェクト推奨 | 不明（グローバル設定のみ） | 未対応 |
+| .mcp.json (プロジェクト) | GitHub, Supabase, Vercel等 | ✅ 作成済み | ✅ 2026-01-19追加 |
+| disabledMcpServers | コンテキスト節約 | ✅ 設定済み | ✅ 2026-01-19追加 |
+| MCP数制限 | 10個以下/プロジェクト推奨 | 2個有効、3個無効 | ✅ 良好 |
 
-**評価**: ❌ プロジェクトレベルのMCP設定が未整備（Issue #21でリリース後対応予定）
+**評価**: ✅ プロジェクトレベルのMCP設定完了
 
 ---
 
@@ -92,22 +92,22 @@ Affaan Mustafaの「Everything Claude Code」ガイド（X投稿: 90万view、1�
 | 1 | カスタムスラッシュコマンド | ✅ 完了 | /commit, /pr, /security 追加 |
 | 2 | code-reviewer エージェント | ✅ 完了 | 2026-01-19追加 |
 | 3 | TDDスキル | ✅ 完了 | /tdd スキル追加、test-driven-architect廃止 |
-| 4 | プロジェクトレベルMCP設定 | 🔜 後回し | Issue #21（リリース後） |
+| 4 | プロジェクトレベルMCP設定 | ✅ 完了 | .mcp.json 作成、disabledMcpServers設定 |
 
 ### 中優先度の欠落
 
 | # | 項目 | 状態 | 備考 |
 |---|------|------|------|
 | 5 | security-reviewer エージェント | ✅ 完了 | 2026-01-19追加 |
-| 6 | PreToolUseフック | 未対応 | 必要性を感じたら追加 |
-| 7 | disabledMcpServers設定 | 🔜 後回し | Issue #21（リリース後） |
+| 6 | PreToolUseフック | ✅ 完了 | validate-dangerous-ops.sh |
+| 7 | disabledMcpServers設定 | ✅ 完了 | .mcp.jsonに設定済み |
 
 ### 低優先度（あれば便利）
 
 | # | 項目 | 状態 | 備考 |
 |---|------|------|------|
 | 8 | Rules（常時適用ルール） | 未対応 | スキルで代替中 |
-| 9 | backend-patternsスキル | 未対応 | 必要性を感じたら追加 |
+| 9 | backend-patternsスキル | ✅ 完了 | 2026-01-19追加 |
 
 ---
 
@@ -119,6 +119,8 @@ Affaan Mustafaの「Everything Claude Code」ガイド（X投稿: 90万view、1�
 | npm脆弱性修正 | `npm audit fix` で3件修正 |
 | Upstash Rate Limiting | AI APIに10 req/min制限実装 |
 | エージェント境界の明確化 | codebase-optimizerにScope & Boundaries追加 |
+| API認証監査 | 51ルート監査、2件修正（/muednote/chat無効化、/lessons/[id]メール非公開化） |
+| .mcp.json作成 | プロジェクトレベルMCP設定、disabledMcpServers設定 |
 
 ---
 
@@ -140,15 +142,15 @@ Affaan Mustafaの「Everything Claude Code」ガイド（X投稿: 90万view、1�
 
 ## 5. 残タスク
 
-### リリース後対応（Issue #21）
-- [ ] 全APIルートの認証監査
-- [ ] MCP設定最適化（disabledMcpServers）
-- [ ] .mcp.json 作成
+### Issue #21 完了 ✅
+- [x] 全APIルートの認証監査（51ルート監査、2件修正）
+- [x] MCP設定最適化（disabledMcpServers）
+- [x] .mcp.json 作成
 
 ### 必要に応じて追加
-- [ ] /build-fix コマンド
-- [ ] PreToolUseフック
-- [ ] backend-patternsスキル
+- [x] /build-fix コマンド ✅ 2026-01-19追加
+- [x] PreToolUseフック ✅ 2026-01-19追加（validate-dangerous-ops.sh）
+- [x] backend-patternsスキル ✅ 2026-01-19追加
 
 ---
 

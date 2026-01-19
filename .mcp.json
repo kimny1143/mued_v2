@@ -1,0 +1,29 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/mcp-config.json",
+  "description": "MUED LMS v2 - MCP Server Configuration",
+  "mcpServers": {
+    "mued-unit-test": {
+      "command": "node",
+      "args": ["scripts/mcp/mued-unit-test.js"],
+      "description": "Vitest unit test runner for MUED"
+    },
+    "mued-e2e": {
+      "command": "node",
+      "args": ["scripts/mcp/mued-playwright-e2e.js"],
+      "description": "Playwright E2E test runner for MUED"
+    }
+  },
+  "disabledMcpServers": [
+    "mued-browser-debug",
+    "mued-playwright-screenshot",
+    "mued-material-generator-claude"
+  ],
+  "_comment": {
+    "note": "disabledMcpServers saves context window by not loading tool definitions",
+    "enable_when_needed": [
+      "mued-browser-debug: Enable for debugging browser issues",
+      "mued-playwright-screenshot: Enable for visual regression testing",
+      "mued-material-generator-claude: Enable for AI material generation tasks"
+    ]
+  }
+}

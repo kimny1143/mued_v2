@@ -22,7 +22,7 @@ export async function GET(
         mentor: {
           id: users.id,
           name: users.name,
-          email: users.email,
+          // email is intentionally excluded for privacy (public endpoint)
           profileImageUrl: users.profileImageUrl,
           bio: users.bio,
           skills: users.skills,

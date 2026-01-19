@@ -10,11 +10,24 @@ description: Claude Code Hookの作成、修正、デバッグ、イベントト
 ```
 .claude/
 ├── hooks/
-│   ├── suggest-claude-md-update.sh   # CLAUDE.md 更新提案
-│   ├── suggest-poc-log-update.sh     # PoC ログ更新提案
-│   └── suggest-git-cleanup.sh        # Git 整理提案
+│   ├── validate-dangerous-ops.sh     # 危険操作の事前検証 (PreToolUse)
+│   ├── suggest-claude-md-update.sh   # CLAUDE.md 更新提案 (PostToolUse)
+│   ├── suggest-poc-log-update.sh     # PoC ログ更新提案 (PostToolUse)
+│   └── suggest-git-cleanup.sh        # Git 整理提案 (Stop)
 └── settings.local.json
 ```
+
+## 0. 危険操作の事前検証 Hook
+
+**発火**: `PreToolUse` (Write, Edit, Bash)
+
+| 検知パターン | 動作 |
+|-------------|------|
+| `.env*` ファイル編集 | ⚠️ 警告（許可） |
+| credentials/secrets ファイル編集 | ⚠️ 警告（許可） |
+| `git push --force main/master` | 🚫 ブロック |
+| `rm -rf /` | 🚫 ブロック |
+| `DROP DATABASE/TABLE` | ⚠️ 警告（許可） |
 
 ## 1. CLAUDE.md 育成 Hook
 
