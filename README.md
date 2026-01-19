@@ -1,86 +1,95 @@
-# MUED LMS v2
+# MUEDnote
 
-**次世代型オンライン学習管理システム（Learning Management System）**
+**Your companion in music production.**
 
 [![Production](https://img.shields.io/badge/production-https%3A%2F%2Fmued.jp-brightgreen)](https://mued.jp)
-[![Next.js](https://img.shields.io/badge/Next.js-15.5-black)](https://nextjs.org)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19-blue)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org)
 [![License](https://img.shields.io/badge/license-Proprietary-red)]()
 
 ---
 
-## 📋 プロジェクト概要
+## Overview
 
-MUED LMS v2は、AI技術を活用した革新的なオンライン教育プラットフォームです。メンター（講師）と学生を繋ぎ、パーソナライズされた学習体験を提供します。
+MUEDnote is a companion app for music producers that helps you:
 
-### 主な機能
+- **Rest Reminders** - Get gentle nudges before you burn out
+- **Sound Reactive** - Hoo (the owl mascot) sways along with your music
+- **Voice Memos** - Capture ideas with voice, automatically transcribed
 
-- 🤖 **AI教材生成** - OpenAI GPT-5を活用した自動教材作成
-- 📅 **レッスン予約システム** - リアルタイムのスロット管理と予約機能
-- 💳 **決済統合** - Stripe連携による安全な決済処理
-- 👥 **認証・認可** - Clerk認証による安全なユーザー管理
-- 💰 **レベニューシェア** - 講師への自動収益分配（70%）
-- 📊 **ダッシュボード** - リアルタイムの学習進捗・収益管理
-- 💬 **メッセージング** - メンターと学生のコミュニケーション機能
-
----
-
-## 🚀 技術スタック
-
-### フロントエンド
-- **フレームワーク**: Next.js 15.5 (App Router)
-- **UI**: React 19, TypeScript 5.x
-- **スタイリング**: TailwindCSS 4, Shadcn/UI
-- **状態管理**: React Hooks, Context API
-
-### バックエンド
-- **認証**: Clerk
-- **データベース**: Neon PostgreSQL 17.5
-- **ORM**: Drizzle ORM
-- **決済**: Stripe
-- **AI**: OpenAI API (GPT-5-mini)
-
-### インフラ
-- **ホスティング**: Vercel
-- **データベース**: Neon (Serverless PostgreSQL)
-- **ストレージ**: Vercel Blob Storage
-- **CI/CD**: GitHub Actions
-
-### 開発ツール
-- **テスト**: Vitest (Unit), Playwright (E2E)
-- **リンター**: ESLint (Flat Config)
-- **フォーマッター**: Prettier
-- **型チェック**: TypeScript
+The project includes:
+- **iOS App** - Place your phone nearby during production (App Store submission in progress)
+- **Web Dashboard** - Review your sessions and voice logs
+- **Landing Page** - Multi-language (EN/JA) with subpath routing
 
 ---
 
-## 📦 セットアップ
+## Tech Stack
 
-### 前提条件
+### Frontend
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Next.js | 16 | App Router, Server Components |
+| React | 19 | UI Framework |
+| TypeScript | 5.x | Type Safety |
+| TailwindCSS | 4 | Styling |
+| next-intl | 4.x | i18n (Landing Page) |
 
-- Node.js 20.x 以上
-- npm または pnpm
-- PostgreSQLデータベース（Neon推奨）
+### Backend
+| Technology | Purpose |
+|------------|---------|
+| Clerk | Authentication |
+| Neon PostgreSQL | Database |
+| Drizzle ORM | Database Access |
+| OpenAI API | AI Features |
+| Stripe | Payments (future) |
 
-### インストール
+### Infrastructure
+| Service | Purpose |
+|---------|---------|
+| Vercel | Hosting & Deployment |
+| Neon | Serverless PostgreSQL |
+| Sentry | Error Monitoring |
+
+### Development
+| Tool | Purpose |
+|------|---------|
+| Vitest | Unit Testing |
+| Playwright | E2E Testing |
+| ESLint | Linting |
+| MCP Servers | Claude Code Integration |
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 20.x or higher
+- npm
+
+### Installation
 
 ```bash
-# リポジトリのクローン
+# Clone the repository
 git clone <repository-url>
 cd mued_v2
 
-# 依存関係のインストール
+# Install dependencies
 npm install
 
-# 環境変数の設定
-cp .env.example .env.local
-# .env.local を編集して必要な環境変数を設定
+# Set up environment variables
+cp .env.local.example .env.local
+# Edit .env.local with your credentials
+
+# Start development server
+npm run dev
 ```
 
-### 環境変数
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-`.env.local` に以下の環境変数を設定：
+### Environment Variables
 
 ```bash
 # Database
@@ -89,255 +98,163 @@ DATABASE_URL="postgresql://..."
 # Clerk Authentication
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_..."
 CLERK_SECRET_KEY="sk_..."
-NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
-NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
 
-# Stripe
+# OpenAI (for AI features)
+OPENAI_API_KEY="sk-..."
+
+# Stripe (for payments)
 STRIPE_SECRET_KEY="sk_..."
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-
-# OpenAI
-OPENAI_API_KEY="sk-..."
 
 # App
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-### データベースのセットアップ
-
-```bash
-# マイグレーション実行
-npx drizzle-kit push
-
-# インデックス追加（パフォーマンス最適化）
-npm run db:add-indexes
-```
-
-### 開発サーバーの起動
-
-```bash
-npm run dev
-```
-
-ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
-
 ---
 
-## 🛠️ 開発コマンド
-
-### 開発
-
-```bash
-npm run dev          # 開発サーバー起動
-npm run build        # プロダクションビルド
-npm run start        # プロダクションサーバー起動
-npm run lint         # リント実行
-npm run typecheck    # 型チェック
-```
-
-### テスト
-
-```bash
-npm run test         # ユニットテスト実行
-npm run test:watch   # ユニットテスト（監視モード）
-npm run test:e2e     # E2Eテスト実行
-npm run test:ui      # テストUI起動
-```
-
-### データベース
-
-```bash
-npm run db:push      # スキーマ変更を本番DBに反映
-npm run db:studio    # Drizzle Studioで可視化
-npm run db:add-indexes  # インデックス追加（パフォーマンス最適化）
-```
-
-### Stripe
-
-```bash
-npm run stripe:setup # Stripe商品・価格設定
-npm run stripe:listen # Webhook待受（ローカル開発）
-```
-
----
-
-## 📁 プロジェクト構造
+## Project Structure
 
 ```
 mued_v2/
-├── app/                    # Next.js App Router
-│   ├── (auth)/            # 認証関連ページ
-│   ├── dashboard/         # ダッシュボード
-│   ├── api/               # API Routes
-│   └── globals.css        # グローバルスタイル
-├── components/            # Reactコンポーネント
-│   ├── ui/               # 再利用可能なUIコンポーネント
-│   ├── features/         # 機能別コンポーネント
-│   └── layouts/          # レイアウトコンポーネント
-├── db/                    # データベース
-│   ├── schema.ts         # Drizzleスキーマ定義
-│   └── migrations/       # マイグレーションファイル
-├── lib/                   # ユーティリティ・ヘルパー
-├── hooks/                 # カスタムフック
-├── scripts/               # 開発・運用スクリプト
-│   ├── mcp/              # MCP（Model Context Protocol）サーバー
-│   └── add-indexes.sql   # DBインデックス追加スクリプト
-├── tests/                 # テストファイル
-│   ├── unit/             # ユニットテスト
-│   └── e2e/              # E2Eテスト
-└── docs/                  # ドキュメント
-    ├── implementation/    # 実装ドキュメント
-    ├── architecture/      # アーキテクチャドキュメント
-    └── roadmap/          # ロードマップ
+├── app/                      # Next.js App Router
+│   ├── [locale]/            # Landing page (i18n)
+│   ├── (auth)/              # Sign-in/Sign-up
+│   ├── (public)/            # Privacy, Support pages
+│   ├── api/                 # API Routes
+│   │   └── muednote/        # MUEDnote APIs
+│   └── dashboard/           # Dashboard
+│       └── muednote/        # MUEDnote Dashboard
+├── apps/                     # Sub-applications
+│   ├── muednote-mobile/     # iOS App (Swift)
+│   ├── muednote-hub-macos/  # macOS DAW Hub
+│   └── muednote-poc/        # Proof of Concept
+├── components/               # React Components
+│   ├── ui/                  # Base UI (Button, Card, etc.)
+│   ├── features/            # Feature Components
+│   │   └── landing/         # Landing Page Sections
+│   └── layouts/             # Layout Components
+├── db/                       # Database
+│   ├── schema/              # Drizzle Schemas
+│   └── migrations/          # Migration SQL
+├── lib/                      # Core Logic
+│   ├── i18n/                # Internationalization
+│   ├── repositories/        # Data Access Layer
+│   └── services/            # Business Logic
+├── messages/                 # i18n Translation Files
+│   ├── en.json              # English
+│   └── ja.json              # Japanese
+├── scripts/                  # Development Scripts
+│   └── mcp/                 # MCP Servers
+└── tests/                    # Test Files
 ```
 
 ---
 
-## 🎯 開発ガイドライン
+## Development Commands
 
-### コーディング規約
-
-- **TypeScript**: Strict mode有効、`any`型の使用禁止
-- **React**: 関数コンポーネント + Hooks使用
-- **ファイル構成**: 1ファイル1コンポーネント、200行以下推奨
-- **インポート順序**:
-  1. React/Next.js
-  2. 外部ライブラリ
-  3. 内部モジュール (`@/`)
-  4. 相対パス
-  5. 型定義
-
-### セキュリティ
-
-- 環境変数は `.env.local` で管理（Gitにコミットしない）
-- APIキーやシークレットをコードに直接書かない
-- Clerk認証のミドルウェアを全保護ルートに適用
-
-### パフォーマンス
-
-- Server Components優先使用
-- Client Component (`use client`) は最小限
-- 画像は `next/image` で最適化
-- データベースクエリは必ずインデックスを活用
-
-### アクセシビリティ
-
-- セマンティックHTML使用
-- ARIAラベル適切に設定
-- キーボードナビゲーション対応
-
-詳細は [`CLAUDE.md`](./CLAUDE.md) を参照してください。
-
----
-
-## 🧪 テスト戦略
-
-- **ユニットテスト**: Vitest（カバレッジ目標: 70%）
-- **統合テスト**: APIエンドポイント、DB操作
-- **E2Eテスト**: Playwright（主要ユーザーフロー）
-- **アクセシビリティテスト**: axe-core
-
----
-
-## 🚀 デプロイ
-
-### Vercelへのデプロイ
-
-本番環境は自動的にVercelにデプロイされます。
+### Development
 
 ```bash
-# プレビューデプロイ
+npm run dev          # Start dev server (Turbopack)
+npm run build        # Production build
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run typecheck    # TypeScript check
+```
+
+### Testing
+
+```bash
+npm run test              # Run all tests
+npm run test:unit         # Unit tests only
+npm run test:e2e          # E2E tests (Playwright)
+npm run test:e2e:ui       # E2E with UI
+```
+
+### Database
+
+```bash
+npm run db:push           # Push schema changes
+npm run db:studio         # Open Drizzle Studio
+npm run db:test-connection # Test DB connection
+```
+
+---
+
+## i18n Architecture
+
+### Landing Page
+- Uses `next-intl` with subpath routing
+- Routes: `/en`, `/ja`
+- Translations: `messages/en.json`, `messages/ja.json`
+
+### Dashboard
+- Uses `LocaleProvider` (React Context)
+- Language stored in `localStorage`
+- Translations: `lib/i18n/translations.ts`
+- Language switcher in header
+
+---
+
+## Deployment
+
+### Vercel (Automatic)
+
+```bash
+# Preview deployment
 git push origin feature/xxx
 
-# 本番デプロイ
+# Production deployment
 git push origin main
 ```
 
-### 環境変数の設定
+### Environment Variables
 
-Vercel Dashboard で以下を設定：
+Set in Vercel Dashboard:
 1. Project Settings → Environment Variables
-2. 必要な環境変数を追加（`.env.local` と同じ内容）
+2. Add all variables from `.env.local`
 3. Redeploy
 
 ---
 
-## 📊 パフォーマンス
+## Architecture
 
-### 最適化実施済み
+### Patterns
+- **Server Components** - Default for all pages
+- **Client Components** - Only where needed (`use client`)
+- **Repository Pattern** - Data access abstraction
+- **Service Layer** - Business logic separation
 
-- ✅ データベースインデックス追加（12個、2025-10-19）
-- ✅ Server Components活用
-- ✅ 画像最適化（next/image）
-- ✅ コード分割（動的インポート）
+### Key Principles
+- TypeScript strict mode
+- i18n for all user-facing text
+- Mobile-first responsive design
+- Accessibility (WCAG 2.1)
 
-### 目標指標
-
-- Lighthouse Score: 90+
-- First Contentful Paint (FCP): < 1.5s
-- Largest Contentful Paint (LCP): < 2.5s
-- Time to Interactive (TTI): < 3.5s
-
----
-
-## 🤝 コントリビューション
-
-プロジェクトへの貢献を歓迎します。
-
-1. Issueを確認または新規作成
-2. フィーチャーブランチを作成 (`git checkout -b feature/amazing-feature`)
-3. 変更をコミット (`git commit -m 'Add amazing feature'`)
-4. ブランチをプッシュ (`git push origin feature/amazing-feature`)
-5. Pull Requestを作成
+For detailed guidelines, see [`CLAUDE.md`](./CLAUDE.md).
 
 ---
 
-## 📄 ライセンス
+## Related Apps
 
-Proprietary - 株式会社グラスワークス
-
----
-
-## 📞 サポート
-
-- **公式サイト**: [https://mued.jp](https://mued.jp)
-- **ドキュメント**: `/docs` ディレクトリ参照
-- **Issue報告**: GitHub Issues
+| App | Description | Status |
+|-----|-------------|--------|
+| MUEDnote iOS | Companion app for production | App Store Review |
+| MUEDnote Hub | macOS DAW integration | Development |
 
 ---
 
-## 📈 プロジェクト進捗
+## License
 
-**最終更新**: 2025-11-14
-
-### 最近の主要アップデート
-
-#### ✅ PR #9: API Client Migration Phase 1 (2025-11-13)
-- 統一API Clientの導入（`useApiFetch`, `useApiPost`）
-- エラーハンドリングの標準化
-- 後方互換性の確保
-- 統合テスト: 84/84 passing
-
-#### ✅ PR #11: E2E/Accessibility Test Stabilization (2025-11-14)
-- CI環境でのE2E/Accessibilityテスト安定化
-- Playwright設定の最適化（タイムアウト延長、sequential実行）
-- data-testid属性の追加
-- Mock APIレスポンス形式の統一
-
-### プロジェクト状況
-
-- **現在のフェーズ**: Phase 2 完了、Phase 3 計画中
-- **本番稼働**: 2025年10月10日〜
-- **CI/CD**: 🟢 全テストグリーン化達成
-- **テストカバレッジ**: Unit (243), Component (264), Integration (84), E2E (安定化済み)
-
-### ドキュメント
-
-- **システムアーキテクチャ**: [`docs/architecture/SYSTEM_ARCHITECTURE.md`](./docs/architecture/SYSTEM_ARCHITECTURE.md)
-- **データベース**: [`docs/database/`](./docs/database/)
-- **研究資料**: [`docs/research/`](./docs/research/)
+Proprietary - glasswerks inc.
 
 ---
 
-**Built with ❤️ by MUED Development Team**
+## Links
+
+- **Production**: [https://mued.jp](https://mued.jp)
+- **Company**: [https://glasswerks.jp](https://glasswerks.jp)
+
+---
+
+**Built with care by glasswerks inc.**

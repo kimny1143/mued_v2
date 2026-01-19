@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, List, FileText } from "lucide-react";
+import { Home, List } from "lucide-react";
+import { useLocale } from "@/lib/i18n/locale-context";
 
 /**
  * MUEDnote Navigation Tabs
@@ -10,19 +11,21 @@ import { Home, List, FileText } from "lucide-react";
  * Simple navigation for MUEDnote dashboard
  * - No LMS features
  * - Focus on sessions and logs
+ * - i18n support
  */
 export function MuednoteTabs() {
   const pathname = usePathname();
+  const { t } = useLocale();
 
   const tabs = [
     {
-      name: "ホーム",
+      name: t.muednote.tabs.home,
       href: "/dashboard/muednote",
       icon: Home,
       exact: true,
     },
     {
-      name: "セッション",
+      name: t.muednote.tabs.sessions,
       href: "/dashboard/muednote/sessions",
       icon: List,
     },

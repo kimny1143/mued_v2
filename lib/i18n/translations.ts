@@ -403,6 +403,10 @@ export const translations = {
       header: {
         signOut: 'Log Out',
       },
+      tabs: {
+        home: 'Home',
+        sessions: 'Sessions',
+      },
       welcome: 'Welcome,',
       headline: 'Remember why you made that choice.',
       subtitle: 'Capture your decisions with voice on the iPhone app.\nLook back and apply them to your next session.',
@@ -830,6 +834,10 @@ export const translations = {
     muednote: {
       header: {
         signOut: 'ログアウト',
+      },
+      tabs: {
+        home: 'ホーム',
+        sessions: 'セッション',
       },
       welcome: 'ようこそ、',
       headline: '「なぜそうしたか」を、残しておこう。',
