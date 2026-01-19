@@ -37,15 +37,15 @@ Affaan Mustafaの「Everything Claude Code」ガイド（X投稿: 90万view、1�
 
 | Affaan推奨 | MUED現状 | 状態 |
 |-----------|----------|------|
-| TDD workflow | ❌ なし（専用スキルとして） | 未対応 |
+| TDD workflow | **/tdd** | ✅ 2026-01-19追加 |
 | coding-standards | coding-rules | ✅ |
-| security-review | ❌ なし | 未対応（エージェントで代替） |
+| security-review | ❌ なし | 未対応（security-reviewerエージェントで代替） |
 | backend-patterns | ❌ なし | 未対応 |
 | frontend-patterns | ui-ux-pro-max | ✅ |
 
-**MUED独自スキル（11個）**: database, mcp, hooks, git-worktree, coding-rules, ai-models, ui-ux-pro-max, ux-psychology, aio-seo, daw-osc, lp-optimizer
+**MUED独自スキル（12個）**: tdd, database, mcp, hooks, git-worktree, coding-rules, ai-models, ui-ux-pro-max, ux-psychology, aio-seo, daw-osc, lp-optimizer
 
-**評価**: ドメイン特化スキルは充実。汎用的なTDDスキルは未対応だが、test-driven-architectエージェントで代替可能
+**評価**: ✅ TDDスキル追加済み。ドメイン特化スキルも充実
 
 ### Commands (スラッシュコマンド)
 
@@ -91,7 +91,7 @@ Affaan Mustafaの「Everything Claude Code」ガイド（X投稿: 90万view、1�
 |---|------|------|------|
 | 1 | カスタムスラッシュコマンド | ✅ 完了 | /commit, /pr, /security 追加 |
 | 2 | code-reviewer エージェント | ✅ 完了 | 2026-01-19追加 |
-| 3 | TDDスキル | 未対応 | test-driven-architectエージェントで代替可能 |
+| 3 | TDDスキル | ✅ 完了 | /tdd スキル追加、test-driven-architect廃止 |
 | 4 | プロジェクトレベルMCP設定 | 🔜 後回し | Issue #21（リリース後） |
 
 ### 中優先度の欠落
@@ -130,10 +130,11 @@ Affaan Mustafaの「Everything Claude Code」ガイド（X投稿: 90万view、1�
 | **codebase-optimizer** | コードベース全体の構造・重複 | 機能完成後、定期メンテ |
 | **security-reviewer** | セキュリティ脆弱性 | リリース前、認証/決済実装後 |
 | mued-architect-manager | アーキテクチャ設計 | 設計フェーズ |
-| test-driven-architect | テスト戦略・E2E | テスト実装時 |
 | docs-curator | ドキュメント整理 | ドキュメント作業時 |
 | database-architect | DB設計・マイグレーション | DB作業時 |
 | script-consolidator | スクリプト整理 | スクリプト管理時 |
+
+※ test-driven-architect は `/tdd` スキルに統合して廃止
 
 ---
 
@@ -145,7 +146,6 @@ Affaan Mustafaの「Everything Claude Code」ガイド（X投稿: 90万view、1�
 - [ ] .mcp.json 作成
 
 ### 必要に応じて追加
-- [ ] /tdd コマンド
 - [ ] /build-fix コマンド
 - [ ] PreToolUseフック
 - [ ] backend-patternsスキル
