@@ -16,6 +16,21 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_TEST_MODE: process.env.NODE_ENV === 'test' ? 'true' : 'false',
   },
+  // Redirects for legacy paths
+  async redirects() {
+    return [
+      {
+        source: '/privacy',
+        destination: '/en/privacy',
+        permanent: true,
+      },
+      {
+        source: '/support',
+        destination: '/en/support',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default withNextIntl(nextConfig);
