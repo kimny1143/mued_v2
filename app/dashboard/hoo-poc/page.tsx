@@ -91,6 +91,10 @@ export default function HooPocPage() {
     setIsLoading(true);
 
     try {
+      // Longer timeout for reasoning models (GPT-5-mini)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minutes
+
       const response = await fetch('/api/hoo/poc/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,9 +102,12 @@ export default function HooPocPage() {
           model: selectedModel,
           messages: newMessages,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const result = await response.json();
+      console.log('[HooPoc] API response:', result);
 
       if (result.success) {
         const data = result.data as ApiResponse;
@@ -125,9 +132,12 @@ export default function HooPocPage() {
       }
     } catch (error) {
       console.error('Fetch error:', error);
+      const errorMessage = error instanceof Error && error.name === 'AbortError'
+        ? 'Request timed out (2 min). Try a faster model.'
+        : 'Network error occurred.';
       setMessages([
         ...newMessages,
-        { role: 'assistant', content: 'Network error occurred.' },
+        { role: 'assistant', content: errorMessage },
       ]);
     } finally {
       setIsLoading(false);
