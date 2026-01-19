@@ -23,13 +23,14 @@ export async function sendHooChat(
     case 'claude-sonnet-4':
       return sendClaudeChat(messages, { model: 'claude-sonnet-4-20250514' });
 
+    case 'claude-haiku':
+      return sendClaudeChat(messages, { model: 'claude-haiku-4-20250514' });
+
     case 'gemini-2.0-flash':
       return sendGeminiChat(messages, { model: 'gemini-2.0-flash' });
 
     case 'gemini-2.5-flash':
-      return sendGeminiChat(messages, {
-        model: 'gemini-2.5-flash',
-      });
+      return sendGeminiChat(messages, { model: 'gemini-2.5-flash' });
 
     default:
       throw new Error(`Unknown model: ${modelId}`);

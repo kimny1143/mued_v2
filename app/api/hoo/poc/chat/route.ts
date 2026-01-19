@@ -17,7 +17,7 @@ import { logger } from '@/lib/utils/logger';
 // ========================================
 
 const hooChatRequestSchema = z.object({
-  model: z.enum(['claude-sonnet-4', 'gemini-2.0-flash', 'gemini-2.5-flash']),
+  model: z.enum(['claude-sonnet-4', 'claude-haiku', 'gemini-2.0-flash', 'gemini-2.5-flash']),
   messages: z.array(
     z.object({
       role: z.enum(['user', 'assistant']),

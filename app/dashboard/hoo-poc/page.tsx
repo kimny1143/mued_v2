@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, Loader2, RotateCcw, Clock, Coins, MessageSquare } from 'lucide-react';
 
-type HooModelId = 'claude-sonnet-4' | 'gemini-2.0-flash' | 'gemini-2.5-flash';
+type HooModelId = 'claude-sonnet-4' | 'claude-haiku' | 'gemini-2.0-flash' | 'gemini-2.5-flash';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -48,6 +48,7 @@ interface Stats {
 
 const MODELS: { id: HooModelId; name: string; description: string }[] = [
   { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', description: '~2.5円/会話' },
+  { id: 'claude-haiku', name: 'Claude Haiku', description: '~0.7円/会話' },
   { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: '~0.05円/会話' },
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: '~0.08円/会話' },
 ];

@@ -51,7 +51,7 @@ export interface HooProviderConfig {
 /**
  * Available model identifiers for the PoC
  */
-export type HooModelId = 'claude-sonnet-4' | 'gemini-2.0-flash' | 'gemini-2.5-flash';
+export type HooModelId = 'claude-sonnet-4' | 'claude-haiku' | 'gemini-2.0-flash' | 'gemini-2.5-flash';
 
 /**
  * Model metadata for UI display
@@ -76,6 +76,14 @@ export const HOO_MODELS: HooModelInfo[] = [
     description: 'Balanced performance and cost',
     inputCostPer1M: 3.0,
     outputCostPer1M: 15.0,
+  },
+  {
+    id: 'claude-haiku',
+    name: 'Claude Haiku',
+    provider: 'claude',
+    description: 'Fast and affordable',
+    inputCostPer1M: 0.8,
+    outputCostPer1M: 4.0,
   },
   {
     id: 'gemini-2.0-flash',
