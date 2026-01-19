@@ -10,7 +10,7 @@ import { getHooSystemPrompt } from '../hoo-prompt';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '');
 
-export type GeminiModel = 'gemini-2.0-flash' | 'gemini-2.5-flash-preview-05-20';
+export type GeminiModel = 'gemini-2.0-flash' | 'gemini-2.5-flash';
 
 export interface GeminiProviderConfig extends HooProviderConfig {
   model: GeminiModel;
@@ -34,7 +34,7 @@ const GEMINI_PRICING = {
     input: 0.1 / 1_000_000,
     output: 0.4 / 1_000_000,
   },
-  'gemini-2.5-flash-preview-05-20': {
+  'gemini-2.5-flash': {
     input: 0.15 / 1_000_000,
     output: 0.6 / 1_000_000,
   },

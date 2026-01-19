@@ -28,7 +28,7 @@ export async function sendHooChat(
 
     case 'gemini-2.5-flash':
       return sendGeminiChat(messages, {
-        model: 'gemini-2.5-flash-preview-05-20' as GeminiModel,
+        model: 'gemini-2.5-flash',
       });
 
     default:
