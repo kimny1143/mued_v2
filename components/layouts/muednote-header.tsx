@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { Mic } from "lucide-react";
 
 /**
@@ -11,11 +13,13 @@ import { Mic } from "lucide-react";
  *
  * Simplified header for MUEDnote dashboard
  * - MUEDnote branding (not LMS)
+ * - Language switcher for i18n
  * - No subscription info (handled separately)
  */
 export function MuednoteHeader() {
   const router = useRouter();
   const { signOut } = useClerk();
+  const { t } = useLocale();
 
   const handleSignOut = async () => {
     await signOut();
@@ -36,13 +40,14 @@ export function MuednoteHeader() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-3">
+            <LanguageSwitcher />
             <Button
               variant="ghost"
               size="sm"
               onClick={handleSignOut}
               className="text-slate-400 hover:text-white hover:bg-white/10"
             >
-              ログアウト
+              {t.muednote.header.signOut}
             </Button>
           </div>
         </div>

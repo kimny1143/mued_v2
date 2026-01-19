@@ -397,6 +397,36 @@ export const translations = {
         updateProfile: 'プロフィールを充実させて予約率を向上させましょう',
       },
     },
+
+    // MUEDnote Dashboard
+    muednote: {
+      header: {
+        signOut: 'Log Out',
+      },
+      welcome: 'Welcome,',
+      headline: 'Remember why you made that choice.',
+      subtitle: 'Capture your decisions with voice on the iPhone app.\nLook back and apply them to your next session.',
+      recentSessions: {
+        title: 'Recent Sessions',
+        viewAll: 'View all →',
+        empty: 'No recordings yet',
+        emptyHint: 'Start your first recording with the app',
+        untitled: 'Untitled session',
+      },
+      stats: {
+        totalTime: 'Total Session Time',
+        today: 'Today',
+        thisWeek: 'This Week',
+        thisMonth: 'This Month',
+        hours: 'h',
+        minutes: 'm',
+        weekSessions: 'Sessions This Week',
+        overall: 'Overall Stats',
+        sessions: 'Sessions',
+        voiceLogs: 'Voice Logs',
+      },
+      weekDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    },
   },
 
   ja: {
@@ -794,6 +824,36 @@ export const translations = {
         createMaterials: '教材を作成して生徒の学習をサポートしましょう',
         updateProfile: 'プロフィールを充実させて予約率を向上させましょう',
       },
+    },
+
+    // MUEDnote Dashboard
+    muednote: {
+      header: {
+        signOut: 'ログアウト',
+      },
+      welcome: 'ようこそ、',
+      headline: '「なぜそうしたか」を、残しておこう。',
+      subtitle: '制作中の判断は、iPhoneアプリで声で残す。\n後から振り返って、次の制作に活かそう。',
+      recentSessions: {
+        title: '最近のセッション',
+        viewAll: 'すべて見る →',
+        empty: 'まだ記録がありません',
+        emptyHint: 'アプリで最初の録音をしてみましょう',
+        untitled: '無題のセッション',
+      },
+      stats: {
+        totalTime: '累計セッション時間',
+        today: '今日',
+        thisWeek: '今週',
+        thisMonth: '今月',
+        hours: '時間',
+        minutes: '分',
+        weekSessions: '今週のセッション',
+        overall: '全体統計',
+        sessions: 'セッション',
+        voiceLogs: '音声ログ',
+      },
+      weekDays: ['月', '火', '水', '木', '金', '土', '日'],
     },
   },
 };
