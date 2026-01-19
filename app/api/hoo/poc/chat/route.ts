@@ -1,0 +1,131 @@
+/**
+ * Hoo AI PoC Chat API
+ * POST /api/hoo/poc/chat
+ *
+ * Model comparison endpoint for evaluating Claude vs Gemini
+ */
+
+import { z } from 'zod';
+import { withAuthResolved } from '@/lib/middleware/with-auth';
+import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
+import { rateLimit } from '@/lib/middleware/rate-limit';
+import { sendHooChat, type HooModelId, type HooChatMessage, HOO_MODELS } from '@/lib/ai/providers';
+import { logger } from '@/lib/utils/logger';
+
+// ========================================
+// Request Validation Schema
+// ========================================
+
+const hooChatRequestSchema = z.object({
+  model: z.enum(['claude-sonnet-4', 'gemini-2.0-flash', 'gemini-2.5-flash']),
+  messages: z.array(
+    z.object({
+      role: z.enum(['user', 'assistant']),
+      content: z.string().min(1).max(10000),
+    })
+  ).min(1),
+});
+
+// ========================================
+// Response Type
+// ========================================
+
+interface HooChatApiResponse {
+  content: string;
+  model: string;
+  provider: 'claude' | 'gemini';
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+  cost: {
+    input: number;
+    output: number;
+    total: number;
+    totalJpy: number;
+  };
+  latencyMs: number;
+}
+
+// ========================================
+// POST Handler
+// ========================================
+
+export const POST = withAuthResolved(async ({ internalUserId, request }) => {
+  // Rate limit: 10 requests per minute for AI endpoints
+  const rateLimitResponse = await rateLimit(request, 'ai');
+  if (rateLimitResponse) return rateLimitResponse;
+
+  try {
+    const body = await request.json();
+    const validationResult = hooChatRequestSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      logger.error('[POST /api/hoo/poc/chat] Validation failed', {
+        errors: validationResult.error.errors,
+      });
+      return apiValidationError('Invalid request format', validationResult.error.errors);
+    }
+
+    const { model, messages } = validationResult.data;
+
+    logger.info('[POST /api/hoo/poc/chat] Processing request', {
+      userId: internalUserId,
+      model,
+      messageCount: messages.length,
+    });
+
+    // Send to appropriate provider
+    const response = await sendHooChat(model as HooModelId, messages as HooChatMessage[]);
+
+    // Calculate JPY cost (assuming 150 JPY/USD)
+    const JPY_RATE = 150;
+    const totalJpy = response.cost.total * JPY_RATE;
+
+    const apiResponse: HooChatApiResponse = {
+      content: response.content,
+      model: response.model,
+      provider: response.provider,
+      usage: response.usage,
+      cost: {
+        ...response.cost,
+        totalJpy,
+      },
+      latencyMs: response.latencyMs,
+    };
+
+    logger.info('[POST /api/hoo/poc/chat] Response generated', {
+      userId: internalUserId,
+      model: response.model,
+      provider: response.provider,
+      latencyMs: response.latencyMs,
+      totalTokens: response.usage.totalTokens,
+      costUsd: response.cost.total.toFixed(6),
+    });
+
+    return apiSuccess(apiResponse);
+  } catch (error) {
+    logger.error('[POST /api/hoo/poc/chat] Error', {
+      error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    return apiServerError(
+      error instanceof Error ? error : new Error('Internal server error')
+    );
+  }
+});
+
+// ========================================
+// GET Handler (Available Models)
+// ========================================
+
+export const GET = withAuthResolved(async () => {
+  return apiSuccess({
+    status: 'ok',
+    endpoint: '/api/hoo/poc/chat',
+    description: 'Hoo AI PoC - Model comparison endpoint',
+    availableModels: HOO_MODELS,
+  });
+});
