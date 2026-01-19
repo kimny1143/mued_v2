@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLocale } from "next-intl";
 import {
   HeroSection,
   PhilosophySection,
@@ -27,6 +28,8 @@ import { LocaleSwitcher } from "@/components/ui/locale-switcher";
  * - CTA: 行動喚起
  */
 export function LandingContent() {
+  const locale = useLocale();
+
   return (
     <div className="dark">
       <ParallaxBackground />
@@ -54,16 +57,16 @@ export function LandingContent() {
             </p>
             <nav className="flex items-center gap-6">
               <Link
-                href="/privacy"
+                href={`/${locale}/privacy`}
                 className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
               >
-                Privacy Policy
+                {locale === "ja" ? "プライバシーポリシー" : "Privacy Policy"}
               </Link>
               <Link
-                href="/support"
+                href={`/${locale}/support`}
                 className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
               >
-                Support
+                {locale === "ja" ? "サポート" : "Support"}
               </Link>
             </nav>
           </div>

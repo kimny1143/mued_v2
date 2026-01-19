@@ -83,5 +83,116 @@
   "nav": {
     "dashboard": "Dashboard",
     "signOut": "Sign Out"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: January 8, 2026",
+    "intro": "glasswerks inc. (\"we,\" \"our,\" or \"us\") operates MUEDnote (the \"App\"). This Privacy Policy explains how we collect, use, and protect your information when you use our App.",
+    "section1": {
+      "title": "1. Information We Collect",
+      "description": "We collect the following types of information:",
+      "items": {
+        "account": "Account Information: Email address and authentication credentials",
+        "workLog": "Work Log Data: Focus/break session records and timestamps",
+        "voiceMemo": "Voice Memos: Audio recordings you create and their transcriptions",
+        "usage": "Usage Data: Anonymized data about how you use the App"
+      }
+    },
+    "section2": {
+      "title": "2. How We Use Your Information",
+      "description": "We use the collected information to:",
+      "items": {
+        "provide": "Provide and operate the App's features",
+        "transcribe": "Transcribe voice memos and provide AI-powered analysis",
+        "support": "Provide customer support",
+        "improve": "Improve our services and develop new features"
+      }
+    },
+    "section3": {
+      "title": "3. Third-Party Services",
+      "description": "We use the following third-party services to operate the App. Please review their respective privacy policies:",
+      "clerk": "Clerk (Authentication)",
+      "openai": "OpenAI (Voice transcription - Whisper API)",
+      "vercel": "Vercel (Hosting)",
+      "neon": "Neon (Database)"
+    },
+    "section4": {
+      "title": "4. Data Storage",
+      "description1": "Your data is stored on servers located in the United States. We implement appropriate technical and organizational measures to protect your data.",
+      "description2": "Data is retained until you delete your account or for as long as necessary to provide our services."
+    },
+    "section5": {
+      "title": "5. Your Rights",
+      "description": "You have the right to:",
+      "items": {
+        "access": "Access your personal data",
+        "correction": "Request correction of your data",
+        "deletion": "Request deletion of your data",
+        "export": "Request export of your data"
+      },
+      "contact": "To exercise these rights, please contact us using the information below."
+    },
+    "section6": {
+      "title": "6. Cookies",
+      "description": "The App uses cookies necessary for maintaining authentication state and providing our services."
+    },
+    "section7": {
+      "title": "7. Changes to This Policy",
+      "description": "We may update this Privacy Policy from time to time. We will notify you of any significant changes through the App."
+    },
+    "section8": {
+      "title": "8. Contact Us",
+      "description": "If you have any questions about this Privacy Policy, please contact us:",
+      "company": "glasswerks inc.",
+      "address": "4-7-27-3F Aobadai, Meguro-ku, Tokyo 153-0042, Japan"
+    }
+  },
+  "support": {
+    "title": "Support",
+    "contact": {
+      "title": "Contact Us",
+      "description": "For questions, feedback, or bug reports about MUEDnote, please email us at:",
+      "company": "glasswerks inc."
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "q1": {
+        "question": "Voice recognition isn't working",
+        "answer": "Please check that microphone access is enabled. You can verify MUEDnote's microphone permission in your device's Settings app."
+      },
+      "q2": {
+        "question": "Sessions aren't being saved",
+        "answer": "Please check your internet connection. Data is temporarily stored when offline and synced when connection is restored. If the problem persists, try restarting the app."
+      },
+      "q3": {
+        "question": "Voice memo transcription is inaccurate",
+        "answer": "Transcription accuracy depends on recording conditions. Try to speak clearly in a quiet environment. Technical terms and proper nouns may be difficult to recognize."
+      },
+      "q4": {
+        "question": "Break reminders aren't working",
+        "answer": "Please check that notifications are enabled. Note that Do Not Disturb mode may suppress notifications."
+      },
+      "q5": {
+        "question": "I can't log in",
+        "answer": "Please verify your email address is correct. If you've forgotten your password, tap \"Forgot password\" on the login screen to reset it."
+      },
+      "q6": {
+        "question": "I want to delete my data",
+        "answer": "If you wish to delete your account, please contact support. Please note that deleted data cannot be recovered."
+      },
+      "q7": {
+        "question": "Can I use it offline?",
+        "answer": "Basic features (timer, break reminders) work offline. Internet connection is required for voice memo transcription and syncing."
+      },
+      "q8": {
+        "question": "What devices and OS versions are supported?",
+        "answer": "MUEDnote supports iPhone running iOS 17.0 or later. iPad is not currently supported."
+      }
+    },
+    "company": {
+      "title": "About Us",
+      "name": "glasswerks inc.",
+      "address": "4-7-27-3F Aobadai, Meguro-ku, Tokyo 153-0042, Japan"
+    }
   }
 }
