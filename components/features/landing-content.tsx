@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   HeroSection,
   PhilosophySection,
@@ -46,8 +47,26 @@ export function LandingContent() {
 
       {/* Footer */}
       <footer className="bg-[#0F0F1A] py-8 border-t border-white/10 backdrop-blur-2xl relative">
-        <div className="container mx-auto px-6 text-center text-slate-500">
-          <p>&copy; {new Date().getFullYear()} MUED. All rights reserved.</p>
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-slate-500 text-sm">
+              &copy; {new Date().getFullYear()} MUED. All rights reserved.
+            </p>
+            <nav className="flex items-center gap-6">
+              <Link
+                href="/privacy"
+                className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="/support"
+                className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
+              >
+                Support
+              </Link>
+            </nav>
+          </div>
         </div>
       </footer>
     </div>

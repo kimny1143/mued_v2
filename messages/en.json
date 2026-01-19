@@ -4,8 +4,8 @@
       "title": "MUEDnote",
       "tagline": "Making music visible.",
       "headline": "Your companion in music production.",
-      "description": "Before you get too focused, it reminds you to take a break.\nA production companion that reacts to sound.",
-      "ctaPrimary": "Start with Hoo",
+      "description": "A gentle reminder for music producers.\nStay at your creative best—before burnout kicks in.",
+      "ctaPrimary": "Start Free with Hoo",
       "ctaSecondary": "Log In",
       "hooPhrases": [
         "Ho-Hoo, nice idea!",
@@ -64,10 +64,13 @@
       "badge": "Coming Soon",
       "title": "Start your production\nwith Hoo.",
       "description": "Let Hoo handle the break timing.\nYour production companion.",
-      "button": "Meet Hoo"
+      "button": "Get Started Free"
     },
     "social": {
-      "developedBy": "Developed by"
+      "developedBy": "Developed by",
+      "badge": "App Store Review in Progress",
+      "quote": "\"Hours would pass without me noticing during production\"—that's why we built this.",
+      "author": "From the Developer"
     }
   },
   "common": {

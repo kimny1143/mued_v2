@@ -42,17 +42,17 @@ export function MuednoteSection() {
             {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href="#"
+                href="/sign-up"
                 className="inline-flex items-center justify-center gap-2 bg-white text-[#0F0F1A] px-6 py-3 rounded-lg font-medium hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 {t("ctaPrimary")}
               </a>
-              <a
-                href="#"
-                className="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer"
+              {/* App Store link - will be enabled after approval */}
+              <span
+                className="inline-flex items-center justify-center gap-2 bg-white/5 text-white/50 border border-white/10 px-6 py-3 rounded-lg font-medium cursor-not-allowed"
               >
                 {t("ctaSecondary")}
-              </a>
+              </span>
             </div>
           </div>
 

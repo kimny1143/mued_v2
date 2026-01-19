@@ -4,8 +4,8 @@
       "title": "MUEDnote",
       "tagline": "Making music visible.",
       "headline": "制作のそばに、いつもHoo。",
-      "description": "集中しすぎる前に、休憩の時間を教えてくれる。\n音に反応して動く、制作のおとも。",
-      "ctaPrimary": "Hooと始める",
+      "description": "音楽制作者のための、やさしいリマインダー。\n集中しすぎて疲れる前に、ベストな状態をキープ。",
+      "ctaPrimary": "無料でHooと始める",
       "ctaSecondary": "ログイン",
       "hooPhrases": [
         "Ho-Hoo, そのアイデアいいね",
@@ -64,10 +64,13 @@
       "badge": "近日リリース予定",
       "title": "Hooと一緒に、\n制作を始めよう。",
       "description": "休憩のタイミング、Hooに任せてみない？\n制作のおともに、どうぞ。",
-      "button": "Hooに会う"
+      "button": "無料で始める"
     },
     "social": {
-      "developedBy": "Developed by"
+      "developedBy": "Developed by",
+      "badge": "App Store 審査中",
+      "quote": "「制作中、気づいたら何時間も経ってた」——そんな経験から生まれました。",
+      "author": "開発者より"
     }
   },
   "common": {
