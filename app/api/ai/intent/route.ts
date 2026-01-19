@@ -12,6 +12,7 @@ import {
   apiValidationError,
   apiServerError,
 } from '@/lib/api-response';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 
 /**
  * POST /api/ai/intent
@@ -77,6 +78,10 @@ When users ask about dates:
 Current date: ${new Date().toISOString().split('T')[0]}`;
 
 export const POST = withAuth(async ({ request }) => {
+  // Rate limit: 10 requests per minute for AI endpoints
+  const rateLimitResponse = await rateLimit(request, 'ai');
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     // Parse and validate request
     const body = await request.json();

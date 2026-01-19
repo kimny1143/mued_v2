@@ -14,6 +14,7 @@ import {
   apiServerError,
 } from '@/lib/api-response';
 import { createChatCompletion } from '@/lib/openai';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 import { MENTOR_MATCHING_SYSTEM_PROMPT } from '@/lib/ai/prompts/mentor-matching';
 import type {
   ChatMatchingResponse,
@@ -213,6 +214,10 @@ async function saveMessage(
 // ========================================
 
 export const POST = withAuthResolved(async ({ internalUserId, request }) => {
+  // Rate limit: 10 requests per minute for AI endpoints
+  const rateLimitResponse = await rateLimit(request, 'ai');
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     // Parse and validate request
     const body = await request.json();

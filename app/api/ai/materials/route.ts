@@ -7,6 +7,7 @@ import {
 } from '@/lib/services/ai-material.service';
 import { apiSuccess, apiValidationError, apiForbidden, apiServerError } from '@/lib/api-response';
 import { withAuth } from '@/lib/middleware/with-auth';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 
 /**
  * GET /api/ai/materials
@@ -49,6 +50,10 @@ export const GET = withAuth(async ({ userId: clerkUserId }) => {
  * Generate new AI material
  */
 export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
+  // Rate limit: 10 requests per minute for AI endpoints
+  const rateLimitResponse = await rateLimit(request, 'ai');
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     // Parse request body
     const body = await request.json();

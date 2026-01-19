@@ -10,8 +10,13 @@ import { db } from '@/db';
 import { users, materials, learningMetrics } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { generateWeakDrill } from '@/lib/ai/weak-drill-generator';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 10 requests per minute for AI endpoints
+  const rateLimitResponse = await rateLimit(req, 'ai');
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     // 認証確認
     const { userId: clerkUserId } = await auth();

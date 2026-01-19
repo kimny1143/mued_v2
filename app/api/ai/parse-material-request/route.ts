@@ -6,6 +6,7 @@ import {
   apiValidationError,
   apiServerError,
 } from '@/lib/api-response';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -37,6 +38,10 @@ interface ParsedMaterialRequest {
  * Parse natural language input to extract material generation parameters
  */
 export const POST = withAuth(async ({ request }) => {
+  // Rate limit: 10 requests per minute for AI endpoints
+  const rateLimitResponse = await rateLimit(request, 'ai');
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await request.json();
     const validation = requestSchema.safeParse(body);

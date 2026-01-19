@@ -11,8 +11,13 @@ import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { aggregateClassWeakSpots } from '@/lib/ai/weak-spots-aggregator';
 import { generateQuickTest } from '@/lib/ai/quick-test-generator';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 10 requests per minute for AI endpoints
+  const rateLimitResponse = await rateLimit(req, 'ai');
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     // 認証確認
     const { userId: clerkUserId } = await auth();

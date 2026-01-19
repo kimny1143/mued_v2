@@ -54,19 +54,26 @@ function getPreferredLocale(acceptLanguage: string | null): Locale {
   return defaultLocale;
 }
 
-// Check if we're in E2E test mode (from build-time env or NODE_ENV)
-const isE2ETestMode = process.env.NEXT_PUBLIC_E2E_TEST_MODE === 'true' || process.env.NODE_ENV === 'test';
+// Check if we're in E2E test mode (only in non-production environments)
+const isNonProduction = process.env.NODE_ENV !== 'production';
+const isE2ETestMode = isNonProduction && (
+  process.env.NEXT_PUBLIC_E2E_TEST_MODE === 'true' ||
+  process.env.NODE_ENV === 'test'
+);
 
 export default clerkMiddleware(async (auth, req) => {
   const { pathname } = req.nextUrl;
 
-  // Skip authentication in E2E test mode OR if test header is present
-  const testHeader = req.headers.get('x-test-mode');
-  const testQuery = req.nextUrl.searchParams.get('test');
+  // Skip authentication in E2E test mode (ONLY in non-production environments)
+  // Security: Header/query bypass is restricted to development/test only
+  if (isNonProduction) {
+    const testHeader = req.headers.get('x-test-mode');
+    const testQuery = req.nextUrl.searchParams.get('test');
 
-  if (isE2ETestMode || testHeader === 'true' || testQuery === 'true') {
-    console.log('[E2E Test Mode] Bypassing Clerk authentication');
-    return;
+    if (isE2ETestMode || testHeader === 'true' || testQuery === 'true') {
+      console.log('[E2E Test Mode] Bypassing Clerk authentication (non-production only)');
+      return;
+    }
   }
 
   // Handle root path - redirect to locale-prefixed landing page
