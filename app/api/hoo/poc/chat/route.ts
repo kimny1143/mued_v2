@@ -130,6 +130,14 @@ export const POST = withAuthResolved(async ({ internalUserId, request }) => {
       });
     }
 
+    // Google rate limit / quota errors
+    if (errorMessage.includes('429') || errorMessage.includes('quota') || errorMessage.includes('Too Many Requests')) {
+      return apiError('Google AI quota exceeded. Wait a minute or enable billing at aistudio.google.com', {
+        code: 'RATE_LIMIT',
+        status: 429,
+      });
+    }
+
     return apiServerError(
       error instanceof Error ? error : new Error('Internal server error')
     );
