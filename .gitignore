@@ -57,6 +57,7 @@ apps/muednote-mobile/node_modules/
 
 # Audio files (test recordings)
 docs/audio/
+docs/sounds/
 
 # Swift Package Manager (macOS app)
 apps/muednote-hub-macos/.build/

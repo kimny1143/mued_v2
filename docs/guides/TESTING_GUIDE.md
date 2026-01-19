@@ -1,8 +1,8 @@
-# Testing Guide - MUED LMS v2
+# Testing Guide - MUEDnote & MUED Platform
 
 ## Overview
 
-This guide covers the comprehensive testing infrastructure for MUED LMS v2, with a focus on Phase 2 RAG metrics and provenance tracking features.
+This guide covers the comprehensive testing infrastructure for MUEDnote and the MUED platform (including internal LMS backend).
 
 ## Table of Contents
 
