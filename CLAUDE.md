@@ -132,6 +132,7 @@ mued_v2/
 
 | スキル | 用途 |
 |-------|------|
+| `tdd` | テスト駆動開発（RED→GREEN→REFACTOR） |
 | `database` | DB操作、マイグレーション、スキーマ変更 |
 | `mcp` | MCPサーバーの作成・修正・使用 |
 | `hooks` | Claude Code Hookの作成・修正 |
