@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { withAuthResolved } from '@/lib/middleware/with-auth';
-import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
+import { apiSuccess, apiValidationError, apiServerError, apiError } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { sendHooChat, type HooModelId, type HooChatMessage, HOO_MODELS } from '@/lib/ai/providers';
 import { logger } from '@/lib/utils/logger';
@@ -110,6 +110,25 @@ export const POST = withAuthResolved(async ({ internalUserId, request }) => {
       error,
       stack: error instanceof Error ? error.stack : undefined,
     });
+
+    // Handle specific API errors
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Anthropic billing error
+    if (errorMessage.includes('credit balance is too low')) {
+      return apiError('Anthropic API credit balance is too low. Please add credits at console.anthropic.com', {
+        code: 'BILLING_ERROR',
+        status: 402,
+      });
+    }
+
+    // API key errors
+    if (errorMessage.includes('API key') || errorMessage.includes('authentication')) {
+      return apiError('API key is invalid or not configured. Check your environment variables.', {
+        code: 'API_KEY_ERROR',
+        status: 401,
+      });
+    }
 
     return apiServerError(
       error instanceof Error ? error : new Error('Internal server error')
