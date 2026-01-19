@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 /**
  * Social Proof Section - Landing Page
@@ -8,11 +9,13 @@ import { ExternalLink } from "lucide-react";
  * Simple company attribution with link
  */
 export function SocialProofSection() {
+  const t = useTranslations("landing.social");
+
   return (
     <section className="py-16 bg-[#0F0F1A]/92 backdrop-blur-xl relative">
       <div className="container mx-auto px-6">
         <div className="text-center">
-          <p className="text-slate-500 text-sm mb-2">Developed by</p>
+          <p className="text-slate-500 text-sm mb-2">{t("developedBy")}</p>
           <a
             href="https://www.glasswerks.jp"
             target="_blank"

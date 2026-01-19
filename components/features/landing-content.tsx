@@ -9,6 +9,7 @@ import {
   CtaSection,
   ParallaxBackground,
 } from "@/components/features/landing";
+import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 
 /**
  * Landing Content - MUEDnote Landing Page
@@ -28,6 +29,14 @@ export function LandingContent() {
   return (
     <div className="dark">
       <ParallaxBackground />
+
+      {/* Header with locale switcher */}
+      <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6">
+        <div className="container mx-auto flex justify-end">
+          <LocaleSwitcher />
+        </div>
+      </header>
+
       <HeroSection />
       <PhilosophySection />
       <MuednoteSection />

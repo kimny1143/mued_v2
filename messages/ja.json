@@ -1,0 +1,83 @@
+{
+  "landing": {
+    "hero": {
+      "title": "MUEDnote",
+      "tagline": "Making music visible.",
+      "headline": "制作のそばに、いつもHoo。",
+      "description": "集中しすぎる前に、休憩の時間を教えてくれる。\n音に反応して動く、制作のおとも。",
+      "ctaPrimary": "Hooと始める",
+      "ctaSecondary": "ログイン",
+      "hooPhrases": [
+        "Ho-Hoo, そのアイデアいいね",
+        "Ho-Hoo, そんなアプローチするんだ",
+        "Ho-Hoo, なるほど、そうきたか",
+        "Ho-Hoo, そろそろ休憩しない？"
+      ]
+    },
+    "philosophy": {
+      "title": "Hooができること",
+      "intro": "制作に集中してると、時間を忘れちゃうよね。\nHooがそばにいるから、大丈夫。",
+      "features": {
+        "rest": {
+          "title": "休憩を教えてくれる",
+          "description": "集中しすぎる前に、Hooが「そろそろ休憩しよ？」って教えてくれる。頭がスッキリした状態をキープ。"
+        },
+        "sound": {
+          "title": "音に反応する",
+          "description": "音楽が鳴ると、Hooがゆらゆら動く。制作中、そばにいる感じがする。"
+        },
+        "voice": {
+          "title": "声でメモを残せる",
+          "description": "思いついたことを声で残しておける。後で文字になって見返せる。"
+        }
+      }
+    },
+    "muednote": {
+      "badge": "iOS App",
+      "title": "ポケットの中のHoo",
+      "description": "スマホを置くだけで、Hooがそばにいる。",
+      "highlight": "音に反応して動いたり、休憩を教えてくれたり。\n制作のおともに、どうぞ。",
+      "hint": "声でメモを残すと、自動で文字起こし。後から見返せるよ。",
+      "ctaPrimary": "近日リリース予定",
+      "ctaSecondary": "App Store",
+      "preview": {
+        "greeting": "ほほう",
+        "timer": "休憩まであと 23:45"
+      }
+    },
+    "growth": {
+      "title": "Hooはもっとできるようになるよ",
+      "subtitle": "いま準備してること、ちょっとだけ教えるね。",
+      "badge": "開発中",
+      "daw": {
+        "title": "DAWログ連携",
+        "quote": "「制作中、DAWで何をしたか覚えておけるようになるよ。後で振り返れるから便利だね」",
+        "features": ["DAWの操作ログを自動で記録", "「なぜこうしたか」が後から見返せる"]
+      },
+      "conversation": {
+        "title": "Hooとの会話",
+        "quote": "「いつか、君の話し相手にもなれるかも。制作の相談とか、聞けるようになりたいな。」",
+        "features": ["AIを活用した会話機能", "有料オプションとして提供予定"]
+      }
+    },
+    "cta": {
+      "badge": "近日リリース予定",
+      "title": "Hooと一緒に、\n制作を始めよう。",
+      "description": "休憩のタイミング、Hooに任せてみない？\n制作のおともに、どうぞ。",
+      "button": "Hooに会う"
+    },
+    "social": {
+      "developedBy": "Developed by"
+    }
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "save": "保存",
+    "cancel": "キャンセル"
+  },
+  "nav": {
+    "dashboard": "ダッシュボード",
+    "signOut": "サインアウト"
+  }
+}

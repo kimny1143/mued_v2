@@ -1,0 +1,83 @@
+{
+  "landing": {
+    "hero": {
+      "title": "MUEDnote",
+      "tagline": "Making music visible.",
+      "headline": "Your companion in music production.",
+      "description": "Before you get too focused, it reminds you to take a break.\nA production companion that reacts to sound.",
+      "ctaPrimary": "Start with Hoo",
+      "ctaSecondary": "Log In",
+      "hooPhrases": [
+        "Ho-Hoo, nice idea!",
+        "Ho-Hoo, interesting approach!",
+        "Ho-Hoo, I see what you did there",
+        "Ho-Hoo, time for a break?"
+      ]
+    },
+    "philosophy": {
+      "title": "What Hoo Can Do",
+      "intro": "When you're deep in production, it's easy to lose track of time.\nHoo's got your back.",
+      "features": {
+        "rest": {
+          "title": "Rest Reminders",
+          "description": "Before you get too focused, Hoo will say \"Time for a break?\" Helps you stay sharp."
+        },
+        "sound": {
+          "title": "Sound Reactive",
+          "description": "When music plays, Hoo sways along. It feels like you're not alone during production."
+        },
+        "voice": {
+          "title": "Voice Memos",
+          "description": "Capture your ideas with your voice. They're transcribed for later review."
+        }
+      }
+    },
+    "muednote": {
+      "badge": "iOS App",
+      "title": "Hoo in Your Pocket",
+      "description": "Just place your phone nearby, and Hoo is with you.",
+      "highlight": "Reacts to sound, reminds you to rest.\nYour production companion.",
+      "hint": "Leave voice memos, automatically transcribed. Review them later.",
+      "ctaPrimary": "Coming Soon",
+      "ctaSecondary": "App Store",
+      "preview": {
+        "greeting": "Ho-hoo",
+        "timer": "Next break in 23:45"
+      }
+    },
+    "growth": {
+      "title": "Hoo is Learning New Things",
+      "subtitle": "Here's a sneak peek at what's coming.",
+      "badge": "In Development",
+      "daw": {
+        "title": "DAW Log Integration",
+        "quote": "\"I'll remember what you did in your DAW during production. Handy for looking back later, right?\"",
+        "features": ["Automatically logs your DAW actions", "Review your creative decisions later"]
+      },
+      "conversation": {
+        "title": "Chat with Hoo",
+        "quote": "\"Someday, I might be able to chat with you. I'd love to hear about your production ideas.\"",
+        "features": ["AI-powered conversation", "Available as a premium option"]
+      }
+    },
+    "cta": {
+      "badge": "Coming Soon",
+      "title": "Start your production\nwith Hoo.",
+      "description": "Let Hoo handle the break timing.\nYour production companion.",
+      "button": "Meet Hoo"
+    },
+    "social": {
+      "developedBy": "Developed by"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "signOut": "Sign Out"
+  }
+}
