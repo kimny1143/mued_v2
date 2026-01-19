@@ -7,10 +7,12 @@
 export * from './types';
 export * from './claude';
 export * from './gemini';
+export * from './openai';
 
 import type { HooChatMessage, HooChatResponse, HooModelId } from './types';
 import { sendClaudeChat } from './claude';
-import { sendGeminiChat, type GeminiModel } from './gemini';
+import { sendGeminiChat } from './gemini';
+import { sendOpenAIChat } from './openai';
 
 /**
  * Send a chat message using the specified model
@@ -31,6 +33,12 @@ export async function sendHooChat(
 
     case 'gemini-2.5-flash':
       return sendGeminiChat(messages, { model: 'gemini-2.5-flash' });
+
+    case 'gpt-4.1-mini':
+      return sendOpenAIChat(messages, { model: 'gpt-4.1-mini' });
+
+    case 'gpt-5-mini':
+      return sendOpenAIChat(messages, { model: 'gpt-5-mini' });
 
     default:
       throw new Error(`Unknown model: ${modelId}`);

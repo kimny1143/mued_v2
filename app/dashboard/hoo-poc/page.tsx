@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Send, Loader2, RotateCcw, Clock, Coins, MessageSquare } from 'lucide-react';
 
-type HooModelId = 'claude-sonnet-4' | 'claude-haiku' | 'gemini-2.0-flash' | 'gemini-2.5-flash';
+type HooModelId = 'claude-sonnet-4' | 'claude-haiku' | 'gemini-2.0-flash' | 'gemini-2.5-flash' | 'gpt-4.1-mini' | 'gpt-5-mini';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -51,6 +51,8 @@ const MODELS: { id: HooModelId; name: string; description: string }[] = [
   { id: 'claude-haiku', name: 'Claude Haiku 4.5', description: '~0.9円/会話' },
   { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: '~0.05円/会話' },
   { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: '~0.08円/会話' },
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', description: '~0.3円/会話' },
+  { id: 'gpt-5-mini', name: 'GPT-5 Mini', description: '~0.35円/会話' },
 ];
 
 const TEST_SCENARIOS = [

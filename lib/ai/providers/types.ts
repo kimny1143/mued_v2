@@ -34,7 +34,7 @@ export interface HooCostStats {
 export interface HooChatResponse {
   content: string;
   model: string;
-  provider: 'claude' | 'gemini';
+  provider: 'claude' | 'gemini' | 'openai';
   usage: HooUsageStats;
   cost: HooCostStats;
   latencyMs: number;
@@ -51,7 +51,7 @@ export interface HooProviderConfig {
 /**
  * Available model identifiers for the PoC
  */
-export type HooModelId = 'claude-sonnet-4' | 'claude-haiku' | 'gemini-2.0-flash' | 'gemini-2.5-flash';
+export type HooModelId = 'claude-sonnet-4' | 'claude-haiku' | 'gemini-2.0-flash' | 'gemini-2.5-flash' | 'gpt-4.1-mini' | 'gpt-5-mini';
 
 /**
  * Model metadata for UI display
@@ -59,7 +59,7 @@ export type HooModelId = 'claude-sonnet-4' | 'claude-haiku' | 'gemini-2.0-flash'
 export interface HooModelInfo {
   id: HooModelId;
   name: string;
-  provider: 'claude' | 'gemini';
+  provider: 'claude' | 'gemini' | 'openai';
   description: string;
   inputCostPer1M: number;
   outputCostPer1M: number;
@@ -100,5 +100,21 @@ export const HOO_MODELS: HooModelInfo[] = [
     description: 'Latest Gemini with improved reasoning',
     inputCostPer1M: 0.15,
     outputCostPer1M: 0.6,
+  },
+  {
+    id: 'gpt-4.1-mini',
+    name: 'GPT-4.1 Mini',
+    provider: 'openai',
+    description: 'Fast and efficient',
+    inputCostPer1M: 0.4,
+    outputCostPer1M: 1.6,
+  },
+  {
+    id: 'gpt-5-mini',
+    name: 'GPT-5 Mini',
+    provider: 'openai',
+    description: 'Reasoning model',
+    inputCostPer1M: 0.25,
+    outputCostPer1M: 2.0,
   },
 ];
