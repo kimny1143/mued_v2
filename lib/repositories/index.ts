@@ -70,3 +70,13 @@ export {
   type SlotStatus,
   type RecurringSlotPattern,
 } from './lesson-slots.repository';
+
+// Hoo AI memories
+export {
+  HooMemoriesRepository,
+  hooMemoriesRepository,
+  type HooMemorySettings,
+  type HooAutoMemory,
+  type UpdateCustomInstructionsInput,
+  type ToggleCustomInstructionsInput,
+} from './hoo-memories.repository';

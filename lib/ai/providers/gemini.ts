@@ -14,6 +14,7 @@ export type GeminiModel = 'gemini-2.0-flash' | 'gemini-2.5-flash';
 
 export interface GeminiProviderConfig extends HooProviderConfig {
   model: GeminiModel;
+  systemPrompt?: string;
 }
 
 /**
@@ -40,6 +41,9 @@ const GEMINI_PRICING = {
   },
 };
 
+/** Timeout for AI requests (2 minutes) */
+const AI_REQUEST_TIMEOUT_MS = 120_000;
+
 /**
  * Convert Hoo messages to Gemini format
  */
@@ -62,7 +66,7 @@ export async function sendGeminiChat(
 
   const model = genAI.getGenerativeModel({
     model: mergedConfig.model,
-    systemInstruction: getHooSystemPrompt(),
+    systemInstruction: mergedConfig.systemPrompt ?? getHooSystemPrompt(),
     generationConfig: {
       maxOutputTokens: mergedConfig.maxTokens,
       temperature: mergedConfig.temperature,
@@ -74,7 +78,25 @@ export async function sendGeminiChat(
   });
 
   const lastMessage = messages[messages.length - 1];
-  const result = await chat.sendMessage(lastMessage.content);
+
+  // Setup timeout with AbortController
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
+
+  let result;
+  try {
+    result = await chat.sendMessage(lastMessage.content, {
+      signal: controller.signal,
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('AI request timeout after 2 minutes');
+    }
+    throw error;
+  }
+  clearTimeout(timeoutId);
+
   const response = result.response;
 
   const endTime = performance.now();

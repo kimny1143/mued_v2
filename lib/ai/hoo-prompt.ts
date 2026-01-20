@@ -5,6 +5,11 @@
  * Based on docs/prompt/hoo_core_prompt_level1.md and hoo_extended_prompt_level2.md
  */
 
+import type { SessionContextForHoo } from '@/lib/repositories/sessions.repository';
+
+// Re-export the type for convenience
+export type { SessionContextForHoo };
+
 /**
  * Level 1: Core Hoo Prompt
  * Basic character definition and conversation style
@@ -111,4 +116,153 @@ export function getHooCorePrompt(): string {
  */
 export function getHooExtendedPrompt(): string {
   return HOO_EXTENDED_PROMPT;
+}
+
+/**
+ * Format a date for display in prompts
+ */
+function formatSessionDate(isoDate: string): string {
+  const date = new Date(isoDate);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${month}/${day}`;
+}
+
+/**
+ * Focus area label map
+ */
+const FOCUS_AREA_LABELS: Record<string, string> = {
+  harmony: '和声・コード進行',
+  melody: 'メロディライン',
+  rhythm: 'リズム・グルーブ',
+  mix: 'ミックス・音響',
+  emotion: '感情・表現',
+  image: '音像・空間',
+  structure: '楽曲構造',
+};
+
+/**
+ * Build session context section for the prompt
+ *
+ * @param context - Session context from repository
+ * @returns Formatted string for system prompt
+ */
+export function buildSessionContextPrompt(context: SessionContextForHoo): string {
+  if (!context.hasContext || context.recentSessions.length === 0) {
+    return '';
+  }
+
+  const sessionLines = context.recentSessions.map(session => {
+    const date = formatSessionDate(session.createdAt);
+    const focusLabel = session.analysis?.focusArea
+      ? FOCUS_AREA_LABELS[session.analysis.focusArea] || session.analysis.focusArea
+      : null;
+
+    let sessionInfo = `- **${session.title}** (${date})`;
+
+    if (focusLabel) {
+      sessionInfo += `\n  - フォーカス: ${focusLabel}`;
+    }
+
+    if (session.analysis?.intentHypothesis) {
+      sessionInfo += `\n  - 意図: ${session.analysis.intentHypothesis}`;
+    }
+
+    if (session.qaPairs && session.qaPairs.length > 0) {
+      sessionInfo += '\n  - Q&A:';
+      for (const qa of session.qaPairs) {
+        sessionInfo += `\n    - Q: ${qa.question}`;
+        sessionInfo += `\n      A: ${qa.answer}`;
+      }
+    }
+
+    return sessionInfo;
+  }).join('\n\n');
+
+  return `## ユーザーの制作コンテキスト
+
+以下はユーザーの直近の制作セッションです。参考にしてください。
+聞かれていない限り積極的に言及しないでください。ただし関連する質問があれば活用してください。
+
+### 直近のセッション
+${sessionLines}`;
+}
+
+/**
+ * Get the full Hoo system prompt with optional session context
+ *
+ * @param context - Optional session context to include
+ * @returns Full system prompt string
+ */
+export function getHooSystemPromptWithContext(context?: SessionContextForHoo): string {
+  const basePrompt = getHooSystemPrompt();
+
+  if (!context || !context.hasContext) {
+    return basePrompt;
+  }
+
+  const contextPrompt = buildSessionContextPrompt(context);
+
+  if (!contextPrompt) {
+    return basePrompt;
+  }
+
+  return `${basePrompt}\n\n---\n\n${contextPrompt}`;
+}
+
+// ========================================
+// Memory-enhanced System Prompt (Phase 1)
+// ========================================
+
+/**
+ * Build custom instructions section for the prompt
+ *
+ * @param customInstructions - User's custom instructions text
+ * @returns Formatted string for system prompt
+ */
+export function buildCustomInstructionsPrompt(customInstructions: string): string {
+  return `## ユーザーのカスタム指示
+
+以下はこのユーザーがHooに知っておいてほしいと設定した情報です。
+会話の文脈に応じて適切に活用してください。ただし、関連がない場合は無理に言及する必要はありません。
+
+---
+${customInstructions}
+---`;
+}
+
+/**
+ * Get the full Hoo system prompt with memory and optional session context
+ *
+ * Prompt construction order:
+ * 1. Level 1 Core (basic character)
+ * 2. Level 2 Extended (advanced techniques)
+ * 3. Custom Instructions (user-provided context) ← New
+ * 4. Session Context (recent sessions)
+ *
+ * @param customInstructions - Optional custom instructions from user
+ * @param sessionContext - Optional session context to include
+ * @returns Full system prompt string
+ */
+export function getHooSystemPromptWithMemory(
+  customInstructions?: string | null,
+  sessionContext?: SessionContextForHoo
+): string {
+  const basePrompt = getHooSystemPrompt();
+  const parts: string[] = [basePrompt];
+
+  // Add custom instructions if provided
+  if (customInstructions && customInstructions.trim()) {
+    parts.push(buildCustomInstructionsPrompt(customInstructions));
+  }
+
+  // Add session context if provided
+  if (sessionContext?.hasContext) {
+    const contextPrompt = buildSessionContextPrompt(sessionContext);
+    if (contextPrompt) {
+      parts.push(contextPrompt);
+    }
+  }
+
+  return parts.join('\n\n---\n\n');
 }

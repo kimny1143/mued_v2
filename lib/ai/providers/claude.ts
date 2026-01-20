@@ -16,6 +16,7 @@ export type ClaudeModel = 'claude-sonnet-4-20250514' | 'claude-opus-4-20250514' 
 
 export interface ClaudeProviderConfig extends HooProviderConfig {
   model: ClaudeModel;
+  systemPrompt?: string; // Optional override for system prompt
 }
 
 /**
@@ -47,6 +48,9 @@ const CLAUDE_PRICING = {
   },
 };
 
+/** Timeout for AI requests (2 minutes) */
+const AI_REQUEST_TIMEOUT_MS = 120_000;
+
 /**
  * Send a chat message to Claude and get a response
  */
@@ -57,15 +61,31 @@ export async function sendClaudeChat(
   const mergedConfig = { ...defaultClaudeConfig, ...config };
   const startTime = performance.now();
 
-  const response = await anthropic.messages.create({
-    model: mergedConfig.model,
-    max_tokens: mergedConfig.maxTokens,
-    system: getHooSystemPrompt(),
-    messages: messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    })),
-  });
+  // Setup timeout with AbortController
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
+
+  let response;
+  try {
+    response = await anthropic.messages.create({
+      model: mergedConfig.model,
+      max_tokens: mergedConfig.maxTokens,
+      system: mergedConfig.systemPrompt ?? getHooSystemPrompt(),
+      messages: messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+    }, {
+      signal: controller.signal,
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('AI request timeout after 2 minutes');
+    }
+    throw error;
+  }
+  clearTimeout(timeoutId);
 
   const endTime = performance.now();
   const latencyMs = endTime - startTime;

@@ -36,7 +36,7 @@ export function MuednoteTabs() {
     },
     {
       name: t.muednote.tabs.settings,
-      href: "/dashboard/subscription",
+      href: "/dashboard/settings",
       icon: Settings,
     },
   ];

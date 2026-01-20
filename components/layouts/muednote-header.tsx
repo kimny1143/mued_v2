@@ -6,7 +6,7 @@ import { useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { Mic } from "lucide-react";
+import { Mic, CreditCard } from "lucide-react";
 
 /**
  * MUEDnote Header
@@ -40,12 +40,22 @@ export function MuednoteHeader() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-3">
+            <Link href="/dashboard/subscription">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer"
+              >
+                <CreditCard className="w-4 h-4 mr-1.5" />
+                {t.muednote.header.managePlan || 'Manage Plan'}
+              </Button>
+            </Link>
             <LanguageSwitcher />
             <Button
               variant="ghost"
               size="sm"
               onClick={handleSignOut}
-              className="text-slate-400 hover:text-white hover:bg-white/10"
+              className="text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer"
             >
               {t.muednote.header.signOut}
             </Button>
