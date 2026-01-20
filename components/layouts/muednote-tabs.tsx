@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, List, Sparkles, Settings } from "lucide-react";
+import { Home, List, Settings } from "lucide-react";
+// import { Sparkles } from "lucide-react"; // Hoo feature
 import { useLocale } from "@/lib/i18n/locale-context";
 
 /**
@@ -29,11 +30,12 @@ export function MuednoteTabs() {
       href: "/dashboard/muednote/sessions",
       icon: List,
     },
-    {
-      name: t.muednote.tabs.hoo,
-      href: "/dashboard/muednote/hoo",
-      icon: Sparkles,
-    },
+    // Hoo feature - disabled on main, enabled on feature/hoo-v1
+    // {
+    //   name: t.muednote.tabs.hoo,
+    //   href: "/dashboard/muednote/hoo",
+    //   icon: Sparkles,
+    // },
     {
       name: t.muednote.tabs.settings,
       href: "/dashboard/subscription",
