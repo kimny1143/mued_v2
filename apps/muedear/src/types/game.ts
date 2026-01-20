@@ -62,6 +62,19 @@ export interface PlayLimit {
   bonusGames: number; // From watching ads
 }
 
+// Ad watch limit (daily)
+export interface AdWatchLimit {
+  date: string; // YYYY-MM-DD
+  watchCount: number;
+  maxWatches: number; // 5 per day
+}
+
+// Ad constants
+export const AD_CONFIG = {
+  PLAYS_PER_AD: 3, // Bonus plays per ad watch
+  MAX_WATCHES_PER_DAY: 5, // "そろそろゲームやめて制作しようね"
+} as const;
+
 // Game definitions
 export const GAMES: GameInfo[] = [
   {
@@ -122,4 +135,11 @@ export const DEFAULT_PLAY_LIMIT: PlayLimit = {
   gamesPlayed: 0,
   maxGames: 5,
   bonusGames: 0,
+};
+
+// Default ad watch limit
+export const DEFAULT_AD_WATCH_LIMIT: AdWatchLimit = {
+  date: new Date().toISOString().split('T')[0],
+  watchCount: 0,
+  maxWatches: AD_CONFIG.MAX_WATCHES_PER_DAY,
 };

@@ -1,19 +1,23 @@
 /**
  * MuFreQScreen
- * Frequency identification game
+ * Frequency identification game with A/B audio comparison
+ * Supports both portrait and landscape orientations
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../../components/ui/Button';
+import { InteractiveSpectrum } from '../../components/game/InteractiveSpectrum';
 import { useGameStore } from '../../stores/gameStore';
+import { audioService } from '../../services/audioService';
 import { FREQUENCY_BANDS, FrequencyBand } from '../../types/game';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../constants/theme';
 
@@ -30,54 +34,312 @@ export function MuFreQScreen({ onComplete, onBack }: MuFreQScreenProps) {
     currentFrequency,
     isPlayingA,
     hasAnswered,
-    gameState,
+    isDemoMode,
+    isAudioLoaded,
+    setPlayingA,
     togglePlayback,
     submitAnswer,
     nextRound,
+    setAudioLoaded,
+    setDemoMode,
+    setCurrentTrack,
   } = useGameStore();
 
   const [selectedAnswer, setSelectedAnswer] = useState<FrequencyBand | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [spectrumStyle, setSpectrumStyle] = useState<'bar' | 'line' | 'mirror' | 'glow' | 'dots'>('bar');
 
-  const handleFrequencySelect = (freq: FrequencyBand) => {
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+
+  // Spectrum styles for cycling
+  const spectrumStyles: Array<'bar' | 'line' | 'mirror' | 'glow' | 'dots'> = ['bar', 'line', 'mirror', 'glow', 'dots'];
+
+  // Handle swipe to change spectrum style (landscape only)
+  const handleSpectrumSwipe = useCallback((direction: 'left' | 'right') => {
+    setSpectrumStyle((current) => {
+      const currentIndex = spectrumStyles.indexOf(current);
+      if (direction === 'right') {
+        // Swipe right -> previous style
+        return spectrumStyles[(currentIndex - 1 + spectrumStyles.length) % spectrumStyles.length];
+      } else {
+        // Swipe left -> next style
+        return spectrumStyles[(currentIndex + 1) % spectrumStyles.length];
+      }
+    });
+  }, [spectrumStyles]);
+
+  // Initialize audio system on mount
+  useEffect(() => {
+    const initAudio = async () => {
+      try {
+        await audioService.initAudioSystem();
+        const hasFiles = audioService.hasAudioFiles();
+        setDemoMode(!hasFiles);
+        console.log('[MuFreQScreen] Audio initialized, demo mode:', !hasFiles);
+      } catch (error) {
+        console.error('[MuFreQScreen] Audio init failed:', error);
+        setDemoMode(true);
+      }
+    };
+
+    initAudio();
+
+    return () => {
+      // Full shutdown on unmount to release all memory
+      audioService.shutdown();
+    };
+  }, [setDemoMode]);
+
+  // Load track when round changes - with full cleanup
+  useEffect(() => {
+    const loadTrackForRound = async () => {
+      if (!currentFrequency) return;
+
+      setIsLoading(true);
+      setAudioLoaded(false);
+
+      try {
+        // Full shutdown to release previous track's memory
+        await audioService.shutdown();
+
+        // Re-initialize fresh
+        await audioService.initAudioSystem();
+
+        const trackId = audioService.getRandomTrackId();
+        setCurrentTrack(trackId);
+
+        const loaded = await audioService.loadTrack(trackId, currentFrequency);
+        setAudioLoaded(loaded);
+
+        if (loaded && !isDemoMode) {
+          await audioService.startSyncedPlayback();
+          setPlayingA(true);
+        }
+      } catch (error) {
+        console.error('[MuFreQScreen] Failed to load track:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTrackForRound();
+  }, [currentRound, currentFrequency, isDemoMode, setAudioLoaded, setCurrentTrack, setPlayingA]);
+
+  // Handle pressing A button
+  const handlePlayA = useCallback(async () => {
+    if (isPlayingA) return;
+
+    if (isDemoMode) {
+      setPlayingA(true);
+      return;
+    }
+
+    try {
+      await audioService.playOriginal();
+      setPlayingA(true);
+    } catch (error) {
+      console.error('[MuFreQScreen] Play A failed:', error);
+    }
+  }, [isPlayingA, isDemoMode, setPlayingA]);
+
+  // Handle pressing B button
+  const handlePlayB = useCallback(async () => {
+    if (!isPlayingA) return;
+
+    if (isDemoMode) {
+      setPlayingA(false);
+      return;
+    }
+
+    try {
+      await audioService.playProcessed();
+      setPlayingA(false);
+    } catch (error) {
+      console.error('[MuFreQScreen] Play B failed:', error);
+    }
+  }, [isPlayingA, isDemoMode, setPlayingA]);
+
+  // Handle frequency selection (answer submission)
+  const handleFrequencySelect = useCallback(async (freq: FrequencyBand) => {
     if (hasAnswered) return;
+
+    if (!isDemoMode) {
+      await audioService.stopPlayback();
+    }
 
     setSelectedAnswer(freq);
     const correct = submitAnswer(freq);
     setIsCorrect(correct);
-  };
+  }, [hasAnswered, isDemoMode, submitAnswer]);
 
-  const handleNextRound = () => {
+  // Handle next round
+  const handleNextRound = useCallback(async () => {
     if (currentRound >= totalRounds) {
+      await audioService.cleanup();
       onComplete();
       return;
     }
+
+    await audioService.cleanup();
+
     setSelectedAnswer(null);
     setIsCorrect(null);
     nextRound();
-  };
+  }, [currentRound, totalRounds, nextRound, onComplete]);
 
-  const getButtonStyle = (freq: FrequencyBand) => {
-    if (!hasAnswered) {
-      return styles.freqButton;
-    }
+  // Handle back button
+  const handleBack = useCallback(async () => {
+    await audioService.cleanup();
+    onBack();
+  }, [onBack]);
 
-    if (freq === currentFrequency) {
-      return [styles.freqButton, styles.freqButtonCorrect];
-    }
+  // ============ LANDSCAPE LAYOUT ============
+  if (isLandscape) {
+    return (
+      <View style={styles.landscapeContainer}>
+        {/* Full-screen Interactive Spectrum */}
+        <InteractiveSpectrum
+          isPlaying={!isLoading && isAudioLoaded && !hasAnswered}
+          onFrequencySelect={handleFrequencySelect}
+          selectedFrequency={selectedAnswer}
+          correctFrequency={hasAnswered ? currentFrequency : null}
+          hasAnswered={hasAnswered}
+          disabled={isLoading || hasAnswered}
+          fullscreen
+          style={spectrumStyle}
+          onSwipe={handleSpectrumSwipe}
+        />
 
-    if (freq === selectedAnswer && !isCorrect) {
-      return [styles.freqButton, styles.freqButtonWrong];
-    }
+        {/* Dim overlay when answered */}
+        {hasAnswered && <View style={styles.landscapeDimOverlay} />}
 
-    return [styles.freqButton, styles.freqButtonDisabled];
-  };
+        {/* Overlay UI */}
+        <View style={styles.landscapeOverlay} pointerEvents="box-none">
+          {/* Close button */}
+          <TouchableOpacity
+            style={styles.landscapeCloseButton}
+            onPress={handleBack}
+          >
+            <Ionicons name="close" size={28} color={colors.textLight} />
+          </TouchableOpacity>
 
+          {/* Round & Score info */}
+          <View style={styles.landscapeInfoBar}>
+            <Text style={styles.landscapeRoundText}>
+              Round {currentRound}/{totalRounds}
+            </Text>
+            <Text style={styles.landscapeScoreText}>Score: {score}</Text>
+          </View>
+
+          {/* A/B Buttons */}
+          {!hasAnswered && (
+            <>
+              <TouchableOpacity
+                style={[
+                  styles.landscapeAbButton,
+                  styles.landscapeAbButtonLeft,
+                  isPlayingA && styles.landscapeAbButtonActive,
+                ]}
+                onPress={handlePlayA}
+                disabled={isLoading}
+              >
+                <Text
+                  style={[
+                    styles.landscapeAbText,
+                    isPlayingA && styles.landscapeAbTextActive,
+                  ]}
+                >
+                  A
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.landscapeAbButton,
+                  styles.landscapeAbButtonRight,
+                  !isPlayingA && styles.landscapeAbButtonActive,
+                ]}
+                onPress={handlePlayB}
+                disabled={isLoading}
+              >
+                <Text
+                  style={[
+                    styles.landscapeAbText,
+                    !isPlayingA && styles.landscapeAbTextActive,
+                  ]}
+                >
+                  B
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+
+          {/* Feedback overlay */}
+          {hasAnswered && (
+            <View style={styles.landscapeFeedbackCenter}>
+              <View
+                style={[
+                  styles.landscapeFeedbackBadgeLarge,
+                  isCorrect
+                    ? styles.landscapeFeedbackCorrect
+                    : styles.landscapeFeedbackWrong,
+                ]}
+              >
+                <Ionicons
+                  name={isCorrect ? 'checkmark-circle' : 'close-circle'}
+                  size={48}
+                  color={colors.textLight}
+                />
+                <Text style={styles.landscapeFeedbackTextLarge}>
+                  {isCorrect
+                    ? '+100'
+                    : FREQUENCY_BANDS.find((b) => b.value === currentFrequency)
+                        ?.label || '?'}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Next button (landscape position) */}
+          {hasAnswered && (
+            <TouchableOpacity
+              style={styles.landscapeNextButtonRight}
+              onPress={handleNextRound}
+            >
+              <Text style={styles.landscapeNextButtonText}>
+                {currentRound >= totalRounds ? 'Results' : 'Next'}
+              </Text>
+              <Ionicons name="arrow-forward" size={24} color={colors.textDark} />
+            </TouchableOpacity>
+          )}
+
+          {/* Spectrum style indicator */}
+          {!hasAnswered && (
+            <View style={styles.landscapeStyleIndicator}>
+              {spectrumStyles.map((style) => (
+                <View
+                  key={style}
+                  style={[
+                    styles.styleIndicatorDot,
+                    spectrumStyle === style && styles.styleIndicatorDotActive,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // ============ PORTRAIT LAYOUT ============
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="close" size={24} color={colors.textLight} />
         </TouchableOpacity>
 
@@ -101,64 +363,66 @@ export function MuFreQScreen({ onComplete, onBack }: MuFreQScreenProps) {
         </View>
       </View>
 
+      {/* Demo Mode Banner */}
+      {isDemoMode && (
+        <View style={styles.demoBanner}>
+          <Ionicons name="volume-mute" size={16} color={colors.warning} />
+          <Text style={styles.demoText}>Demo Mode - No audio files</Text>
+        </View>
+      )}
+
       {/* Game Content */}
       <View style={styles.content}>
         {/* Instructions */}
         <Text style={styles.instruction}>
-          Which frequency is boosted?
+          {hasAnswered
+            ? isCorrect
+              ? 'Correct!'
+              : 'Try again next time!'
+            : 'Tap the boosted frequency on the spectrum'}
         </Text>
+
+        {/* Interactive Spectrum Visualization */}
+        <InteractiveSpectrum
+          isPlaying={!isLoading && isAudioLoaded && !hasAnswered}
+          onFrequencySelect={handleFrequencySelect}
+          selectedFrequency={selectedAnswer}
+          correctFrequency={hasAnswered ? currentFrequency : null}
+          hasAnswered={hasAnswered}
+          disabled={isLoading || hasAnswered}
+        />
 
         {/* A/B Toggle */}
         <View style={styles.abContainer}>
           <TouchableOpacity
             style={[styles.abButton, isPlayingA && styles.abButtonActive]}
-            onPress={() => !isPlayingA && togglePlayback()}
+            onPress={handlePlayA}
+            disabled={isLoading || hasAnswered}
           >
             <Ionicons
-              name="play"
+              name="volume-high"
               size={20}
               color={isPlayingA ? colors.textDark : colors.textLight}
             />
             <Text style={[styles.abText, isPlayingA && styles.abTextActive]}>
-              A (Original)
+              A
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.abButton, !isPlayingA && styles.abButtonActive]}
-            onPress={() => isPlayingA && togglePlayback()}
+            onPress={handlePlayB}
+            disabled={isLoading || hasAnswered}
           >
             <Ionicons
-              name="play"
+              name="volume-high"
               size={20}
               color={!isPlayingA ? colors.textDark : colors.textLight}
             />
             <Text style={[styles.abText, !isPlayingA && styles.abTextActive]}>
-              B (Boosted)
+              B
             </Text>
           </TouchableOpacity>
-        </View>
-
-        {/* Frequency Grid */}
-        <View style={styles.freqGrid}>
-          {FREQUENCY_BANDS.map((band) => (
-            <TouchableOpacity
-              key={band.value}
-              style={getButtonStyle(band.value)}
-              onPress={() => handleFrequencySelect(band.value)}
-              disabled={hasAnswered}
-            >
-              <Text
-                style={[
-                  styles.freqText,
-                  hasAnswered && band.value === currentFrequency && styles.freqTextCorrect,
-                  hasAnswered && band.value === selectedAnswer && !isCorrect && styles.freqTextWrong,
-                ]}
-              >
-                {band.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
         </View>
 
         {/* Feedback */}
@@ -203,6 +467,7 @@ export function MuFreQScreen({ onComplete, onBack }: MuFreQScreenProps) {
 }
 
 const styles = StyleSheet.create({
+  // ============ PORTRAIT STYLES ============
   container: {
     flex: 1,
     backgroundColor: colors.backgroundDark,
@@ -250,6 +515,18 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.primary,
   },
+  demoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+  },
+  demoText: {
+    fontSize: fontSize.sm,
+    color: colors.warning,
+  },
   content: {
     flex: 1,
     paddingHorizontal: spacing.lg,
@@ -266,7 +543,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: spacing.md,
-    marginBottom: spacing.xxl,
+    marginTop: spacing.xl,
+    marginBottom: spacing.lg,
   },
   abButton: {
     flexDirection: 'row',
@@ -289,43 +567,8 @@ const styles = StyleSheet.create({
   abTextActive: {
     color: colors.textDark,
   },
-  freqGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  freqButton: {
-    width: '30%',
-    aspectRatio: 1.5,
-    backgroundColor: colors.backgroundCard,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.sm,
-  },
-  freqButtonCorrect: {
-    backgroundColor: colors.success,
-  },
-  freqButtonWrong: {
-    backgroundColor: colors.error,
-  },
-  freqButtonDisabled: {
-    opacity: 0.5,
-  },
-  freqText: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.semibold,
-    color: colors.textLight,
-  },
-  freqTextCorrect: {
-    color: colors.textDark,
-  },
-  freqTextWrong: {
-    color: colors.textLight,
-  },
   feedbackContainer: {
-    marginTop: spacing.xxl,
+    marginTop: spacing.lg,
   },
   feedbackBadge: {
     flexDirection: 'row',
@@ -337,10 +580,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   feedbackCorrect: {
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
   },
   feedbackWrong: {
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
   },
   feedbackText: {
     fontSize: fontSize.base,
@@ -348,5 +591,140 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     marginTop: spacing.md,
+  },
+
+  // ============ LANDSCAPE STYLES ============
+  landscapeContainer: {
+    flex: 1,
+    backgroundColor: '#1a1a2e',
+  },
+  landscapeDimOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  landscapeOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  landscapeCloseButton: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.xl,
+    padding: spacing.sm,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: borderRadius.full,
+  },
+  landscapeInfoBar: {
+    position: 'absolute',
+    top: spacing.sm,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: borderRadius.lg,
+  },
+  landscapeRoundText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.medium,
+    color: colors.textLight,
+  },
+  landscapeScoreText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  landscapeAbButton: {
+    position: 'absolute',
+    top: 50,
+    width: 64,
+    height: 64,
+    borderRadius: borderRadius.xl,
+    backgroundColor: 'rgba(61, 61, 61, 0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  landscapeAbButtonLeft: {
+    left: spacing.xl,
+  },
+  landscapeAbButtonRight: {
+    right: spacing.xl,
+  },
+  landscapeAbButtonActive: {
+    backgroundColor: 'rgba(245, 166, 35, 0.9)',
+  },
+  landscapeAbText: {
+    fontSize: fontSize['2xl'],
+    fontWeight: fontWeight.bold,
+    color: colors.textLight,
+  },
+  landscapeAbTextActive: {
+    color: colors.textDark,
+  },
+  landscapeFeedbackCenter: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  landscapeFeedbackBadgeLarge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xxxl,
+    paddingVertical: spacing.xl,
+    borderRadius: borderRadius.xxl,
+    gap: spacing.lg,
+  },
+  landscapeFeedbackCorrect: {
+    backgroundColor: 'rgba(34, 197, 94, 0.95)',
+  },
+  landscapeFeedbackWrong: {
+    backgroundColor: 'rgba(239, 68, 68, 0.95)',
+  },
+  landscapeFeedbackTextLarge: {
+    fontSize: fontSize['3xl'],
+    fontWeight: fontWeight.bold,
+    color: colors.textLight,
+  },
+  landscapeNextButtonRight: {
+    position: 'absolute',
+    top: 50,
+    right: spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
+    backgroundColor: 'rgba(245, 166, 35, 0.95)',
+    borderRadius: borderRadius.xl,
+    gap: spacing.sm,
+  },
+  landscapeNextButtonText: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.textDark,
+  },
+  landscapeStyleIndicator: {
+    position: 'absolute',
+    bottom: 60,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    borderRadius: borderRadius.full,
+  },
+  styleIndicatorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  styleIndicatorDotActive: {
+    backgroundColor: colors.primary,
   },
 });

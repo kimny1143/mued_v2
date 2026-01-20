@@ -3,7 +3,7 @@
     "name": "MUEDear",
     "slug": "muedear",
     "version": "0.1.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/Gemini_Generated_Image_3ur6243ur6243ur6.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
@@ -32,6 +32,26 @@
       "eas": {
         "projectId": ""
       }
-    }
+    },
+    "plugins": [
+      [
+        "react-native-audio-api",
+        {
+          "iosBackgroundMode": false,
+          "androidPermissions": [
+            "android.permission.MODIFY_AUDIO_SETTINGS"
+          ],
+          "androidForegroundService": false
+        }
+      ],
+      "expo-asset",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-2023025421287631~2935925498",
+          "iosAppId": "ca-app-pub-2023025421287631~2935925498"
+        }
+      ]
+    ]
   }
 }

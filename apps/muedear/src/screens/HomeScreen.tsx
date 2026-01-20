@@ -3,26 +3,45 @@
  * Main landing screen with Hoo and start button
  */
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   SafeAreaView,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { Ionicons } from '@expo/vector-icons';
 import { Hoo } from '../components/Hoo';
 import { Button } from '../components/ui/Button';
+import { AdModal } from '../components/AdModal';
 import { useGameStore } from '../stores/gameStore';
-import { colors, spacing, fontSize, fontWeight } from '../constants/theme';
+import { AD_CONFIG } from '../types/game';
+import { colors, spacing, fontSize, fontWeight, borderRadius } from '../constants/theme';
 
 interface HomeScreenProps {
   onStartTraining: () => void;
 }
 
 export function HomeScreen({ onStartTraining }: HomeScreenProps) {
-  const playLimit = useGameStore((state) => state.playLimit);
-  const remainingPlays = playLimit.maxGames + playLimit.bonusGames - playLimit.gamesPlayed;
+  const { getRemainingPlays, canWatchAd } = useGameStore();
+  const [showAdModal, setShowAdModal] = useState(false);
+
+  const remainingPlays = getRemainingPlays();
+  const hasPlays = remainingPlays > 0;
+  const canGetMorePlays = canWatchAd();
+
+  // Lock to portrait on this screen
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+
+    // Unlock when leaving this screen
+    return () => {
+      ScreenOrientation.unlockAsync();
+    };
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -45,25 +64,44 @@ export function HomeScreen({ onStartTraining }: HomeScreenProps) {
         </Text>
 
         {/* Start Button */}
-        <Button
-          title="Start Training"
-          onPress={onStartTraining}
-          variant="primary"
-          size="lg"
-          fullWidth
-          style={styles.startButton}
-        />
+        {hasPlays ? (
+          <Button
+            title="Start Training"
+            onPress={onStartTraining}
+            variant="primary"
+            size="lg"
+            fullWidth
+            style={styles.startButton}
+          />
+        ) : canGetMorePlays ? (
+          <Button
+            title={`Watch Ad for +${AD_CONFIG.PLAYS_PER_AD} Plays`}
+            onPress={() => setShowAdModal(true)}
+            variant="primary"
+            size="lg"
+            fullWidth
+            style={styles.startButton}
+          />
+        ) : (
+          <View style={styles.noPlaysCard}>
+            <Ionicons name="time" size={24} color={colors.warning} />
+            <Text style={styles.noPlaysText}>Come back tomorrow!</Text>
+            <Text style={styles.noPlaysSubtext}>
+              Daily limit reached. Time to practice what you've learned!
+            </Text>
+          </View>
+        )}
 
         {/* Remaining Plays */}
         <View style={styles.playsContainer}>
-          <Text style={styles.playsText}>
-            {remainingPlays} plays remaining today
+          <Ionicons
+            name={hasPlays ? 'game-controller' : 'alert-circle'}
+            size={16}
+            color={hasPlays ? colors.textMuted : colors.warning}
+          />
+          <Text style={[styles.playsText, !hasPlays && styles.playsTextWarning]}>
+            {remainingPlays} play{remainingPlays !== 1 ? 's' : ''} remaining today
           </Text>
-          {remainingPlays === 0 && (
-            <Text style={styles.watchAdText}>
-              Watch an ad for more plays
-            </Text>
-          )}
         </View>
       </View>
 
@@ -73,6 +111,12 @@ export function HomeScreen({ onStartTraining }: HomeScreenProps) {
           Powered by Hoo the Owl
         </Text>
       </View>
+
+      {/* Ad Modal */}
+      <AdModal
+        visible={showAdModal}
+        onClose={() => setShowAdModal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -117,17 +161,37 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   playsContainer: {
-    marginTop: spacing.xl,
+    flexDirection: 'row',
     alignItems: 'center',
+    marginTop: spacing.xl,
+    gap: spacing.xs,
   },
   playsText: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
   },
-  watchAdText: {
+  playsTextWarning: {
+    color: colors.warning,
+  },
+  noPlaysCard: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    width: '100%',
+  },
+  noPlaysText: {
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.warning,
+    marginTop: spacing.md,
+  },
+  noPlaysSubtext: {
     fontSize: fontSize.sm,
-    color: colors.primary,
-    marginTop: spacing.xs,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
   footer: {
     paddingBottom: spacing.xxl,
