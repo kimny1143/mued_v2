@@ -49,6 +49,7 @@
     "apps/muednote-v3/**/*",
     "apps/muednote-poc/**/*",
     "apps/muednote-mobile/**/*",
+    "apps/muedear/**/*",
     "docs/archive/**/*"
   ]
 }
