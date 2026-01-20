@@ -315,3 +315,8 @@ export * from './schema/muednote-daw-logs';
 // Hoo AI Conversations
 // ========================================
 export * from './schema/hoo-conversations';
+
+// ========================================
+// Hoo Memories (Custom Instructions & Auto Memory)
+// ========================================
+export * from './schema/hoo-memories';

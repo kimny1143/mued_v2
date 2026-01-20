@@ -414,6 +414,7 @@ export const translations = {
     muednote: {
       header: {
         signOut: 'Log Out',
+        managePlan: 'Manage Plan',
       },
       tabs: {
         home: 'Home',
@@ -860,6 +861,7 @@ export const translations = {
     muednote: {
       header: {
         signOut: 'ログアウト',
+        managePlan: 'プラン管理',
       },
       tabs: {
         home: 'ホーム',

@@ -26,8 +26,19 @@ export const TIER_LIMITS: Record<SubscriptionTier, {
   hooConversationsLimit: number;
 }> = {
   free: { hooConversationsLimit: 0 }, // Fixed responses only, no AI
-  basic: { hooConversationsLimit: 150 }, // 150 conversations/month
+  basic: { hooConversationsLimit: 30 }, // 30 conversations/month (soft limit: 10 turns, hard limit: 30 turns per conversation)
   premium: { hooConversationsLimit: -1 }, // Unlimited (BYOK)
+};
+
+/**
+ * Turn limits per conversation
+ * - softLimit: After this, each 10 turns costs +1 conversation
+ * - hardLimit: Maximum turns per conversation
+ */
+export const TURN_LIMITS = {
+  softLimit: 10,
+  hardLimit: 30,
+  turnsPerExtension: 10, // Each extension covers 10 additional turns
 };
 
 /**

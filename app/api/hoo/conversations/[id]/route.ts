@@ -7,6 +7,7 @@
 import { withAuthResolvedParams } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiError } from '@/lib/api-response';
 import { hooConversationsRepository } from '@/lib/repositories/hoo-conversations.repository';
+import { generateConversationTitle } from '@/lib/ai/providers';
 import { logger } from '@/lib/utils/logger';
 
 // ========================================
@@ -32,6 +33,42 @@ export const GET = withAuthResolvedParams<{ id: string }>(async ({ internalUserI
       return apiError('Conversation not found', { status: 404 });
     }
 
+    // Generate title if missing (synchronous - wait for title before responding)
+    // This ensures the title is available when user goes back to history
+    let finalTitle = conversation.title;
+    const hasNoTitle = !conversation.title || conversation.title.startsWith('Conversation') || conversation.title === 'New conversation';
+
+    if (hasNoTitle && conversation.messages && conversation.messages.length >= 2) {
+      const userMessages = conversation.messages.filter(m => m.role === 'user');
+      const assistantMessages = conversation.messages.filter(m => m.role === 'assistant');
+
+      const firstUserMessage = userMessages[0];
+      const firstAssistantMessage = assistantMessages[0];
+      const lastUserMessage = userMessages[userMessages.length - 1];
+      const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
+
+      if (firstUserMessage && firstAssistantMessage) {
+        try {
+          const generatedTitle = await generateConversationTitle(
+            firstUserMessage.content,
+            firstAssistantMessage.content,
+            lastUserMessage?.content,
+            lastAssistantMessage?.content
+          );
+
+          logger.info('[GET /api/hoo/conversations/[id]] Generated missing title', {
+            conversationId: id,
+            title: generatedTitle,
+          });
+
+          await hooConversationsRepository.updateTitle(id, generatedTitle);
+          finalTitle = generatedTitle;
+        } catch (err) {
+          logger.warn('[GET /api/hoo/conversations/[id]] Title generation failed', { err });
+        }
+      }
+    }
+
     logger.info('[GET /api/hoo/conversations/[id]] Fetched conversation', {
       userId: internalUserId,
       conversationId: id,
@@ -40,7 +77,7 @@ export const GET = withAuthResolvedParams<{ id: string }>(async ({ internalUserI
 
     return apiSuccess({
       id: conversation.id,
-      title: conversation.title,
+      title: finalTitle,
       messages: conversation.messages,
       messageCount: conversation.messageCount,
       model: conversation.model,

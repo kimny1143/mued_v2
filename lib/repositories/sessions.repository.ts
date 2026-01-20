@@ -24,7 +24,11 @@ import {
   type SessionAnalysisData,
   type AIInsights,
 } from '@/db/schema/sessions';
-import { desc, eq, and, sql } from 'drizzle-orm';
+import {
+  muednoteMobileSessions,
+  muednoteMobileLogs,
+} from '@/db/schema/muednote-mobile';
+import { desc, eq, and, sql, inArray } from 'drizzle-orm';
 
 // ========================================
 // Type Definitions
@@ -103,6 +107,29 @@ export interface SessionFilters {
   isPublic?: boolean;
   limit?: number;
   offset?: number;
+}
+
+/**
+ * Session context for Hoo AI
+ * Contains recent sessions summary for AI conversation context
+ */
+export interface SessionContextForHoo {
+  hasContext: boolean;
+  recentSessions: Array<{
+    id: string;
+    title: string;
+    type: string;
+    createdAt: string;
+    analysis?: {
+      focusArea: string;
+      intentHypothesis: string;
+      confidence: number;
+    };
+    qaPairs?: Array<{
+      question: string;
+      answer: string;
+    }>;
+  }>;
 }
 
 // ========================================
@@ -472,6 +499,111 @@ export class SessionRepository {
       .where(eq(sessions.userId, userId));
 
     return result[0];
+  }
+
+  // ========================================
+  // Hoo Session Context
+  // ========================================
+
+  /**
+   * Get session context for Hoo AI from mobile sessions
+   * Returns recent mobile sessions with voice logs for AI conversation context
+   *
+   * NOTE: Uses muednote_mobile_sessions table with Clerk user ID (not internal UUID)
+   * Only includes sessions that have at least one voice log.
+   *
+   * @param clerkUserId - Clerk user ID (not internal database UUID!)
+   * @param limit - Number of recent sessions to include (default: 3)
+   * @returns SessionContextForHoo
+   */
+  async getSessionContextForHoo(clerkUserId: string, limit: number = 3): Promise<SessionContextForHoo> {
+    // Get recent mobile sessions that have voice logs (skip empty sessions)
+    // Using subquery to filter sessions with at least one log
+    const recentSessions = await db
+      .select()
+      .from(muednoteMobileSessions)
+      .where(
+        and(
+          eq(muednoteMobileSessions.userId, clerkUserId),
+          sql`EXISTS (
+            SELECT 1 FROM muednote_mobile_logs
+            WHERE session_id = ${muednoteMobileSessions.id}
+          )`
+        )
+      )
+      .orderBy(desc(muednoteMobileSessions.createdAt))
+      .limit(limit);
+
+    if (recentSessions.length === 0) {
+      return {
+        hasContext: false,
+        recentSessions: [],
+      };
+    }
+
+    // Get session IDs for batch queries
+    const sessionIds = recentSessions.map(s => s.id);
+
+    // Batch fetch logs for all sessions
+    const logs = await db
+      .select()
+      .from(muednoteMobileLogs)
+      .where(inArray(muednoteMobileLogs.sessionId, sessionIds))
+      .orderBy(muednoteMobileLogs.timestampSec);
+
+    // Group logs by session
+    const logsBySession = new Map<string, typeof logs>();
+    for (const log of logs) {
+      const existing = logsBySession.get(log.sessionId) || [];
+      existing.push(log);
+      logsBySession.set(log.sessionId, existing);
+    }
+
+    // Helper to format duration
+    const formatDuration = (seconds: number) => {
+      const mins = Math.floor(seconds / 60);
+      return `${mins}分`;
+    };
+
+    // Helper to format date
+    const formatDate = (date: Date | null) => {
+      if (!date) return '';
+      return date.toISOString();
+    };
+
+    // Build context
+    const contextSessions = recentSessions.map(session => {
+      const sessionLogs = logsBySession.get(session.id) || [];
+
+      // Get up to 3 log entries as Q&A style context
+      const qaPairs = sessionLogs
+        .slice(0, 3)
+        .map(log => ({
+          question: `${formatDuration(Math.floor(log.timestampSec))}時点のメモ`,
+          answer: log.text.length > 200
+            ? log.text.slice(0, 200) + '...'
+            : log.text,
+        }))
+        .filter(qa => qa.answer);
+
+      // Generate title from session memo or first log
+      const title = session.sessionMemo
+        || sessionLogs[0]?.text.slice(0, 30)
+        || `${formatDuration(session.durationSec)}セッション`;
+
+      return {
+        id: session.id,
+        title,
+        type: 'mobile_session',
+        createdAt: formatDate(session.createdAt),
+        ...(qaPairs.length > 0 && { qaPairs }),
+      };
+    });
+
+    return {
+      hasContext: contextSessions.length > 0,
+      recentSessions: contextSessions,
+    };
   }
 }
 

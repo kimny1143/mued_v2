@@ -16,6 +16,7 @@ export type OpenAIModel = 'gpt-4.1-mini' | 'gpt-5-mini';
 
 export interface OpenAIProviderConfig extends HooProviderConfig {
   model: OpenAIModel;
+  systemPrompt?: string;
 }
 
 /**
@@ -41,6 +42,9 @@ const OPENAI_PRICING = {
   },
 };
 
+/** Timeout for AI requests (2 minutes) */
+const AI_REQUEST_TIMEOUT_MS = 120_000;
+
 /**
  * Send a chat message to OpenAI and get a response
  */
@@ -51,17 +55,33 @@ export async function sendOpenAIChat(
   const mergedConfig = { ...defaultOpenAIConfig, ...config };
   const startTime = performance.now();
 
-  const response = await openai.chat.completions.create({
-    model: mergedConfig.model,
-    max_completion_tokens: mergedConfig.maxTokens,
-    messages: [
-      { role: 'system', content: getHooSystemPrompt() },
-      ...messages.map((msg) => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-      })),
-    ],
-  });
+  // Setup timeout with AbortController
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
+
+  let response;
+  try {
+    response = await openai.chat.completions.create({
+      model: mergedConfig.model,
+      max_completion_tokens: mergedConfig.maxTokens,
+      messages: [
+        { role: 'system', content: mergedConfig.systemPrompt ?? getHooSystemPrompt() },
+        ...messages.map((msg) => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+        })),
+      ],
+    }, {
+      signal: controller.signal,
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('AI request timeout after 2 minutes');
+    }
+    throw error;
+  }
+  clearTimeout(timeoutId);
 
   const endTime = performance.now();
   const latencyMs = endTime - startTime;

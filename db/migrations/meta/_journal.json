@@ -50,6 +50,13 @@
       "when": 1768207519189,
       "tag": "0006_lethal_cardiac",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1768902324947,
+      "tag": "0007_many_magdalene",
+      "breakpoints": true
     }
   ]
 }
