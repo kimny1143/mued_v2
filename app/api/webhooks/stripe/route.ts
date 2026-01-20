@@ -495,12 +495,14 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           break;
         }
 
-        // 月次使用量をリセット
+        // 月次使用量をリセット（全カウンターをリセット）
         await tx
           .update(subscriptions)
           .set({
             aiMaterialsUsed: 0,
             reservationsUsed: 0,
+            hooConversationsUsed: 0, // Hoo スレッド数リセット
+            hooTurnsUsed: 0,          // Hoo ターン数リセット
             status: 'active', // 支払い成功で必ずアクティブに
             updatedAt: new Date(),
           })

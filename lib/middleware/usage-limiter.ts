@@ -1,20 +1,30 @@
 import { db } from '@/db';
 import { subscriptions, users } from '@/db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
+import { TIER_LIMITS as BASE_TIER_LIMITS } from '@/lib/repositories/subscriptions.repository';
 
 /**
  * Usage Limiter Middleware
  *
  * Enforces subscription tier-based usage limits for MUEDnote:
- * - Hoo AI Conversations
+ * - Hoo AI Threads (soft limit - alert only)
+ * - Hoo AI Turns (hard limit - blocks)
  */
 
 export interface UsageLimits {
-  hooConversationsLimit: number; // -1 = unlimited, 0 = not available
-  hooConversationsUsed: number;
-  hooConversationsRemaining: number;
+  // Thread limits (soft - alert only)
+  hooThreadsLimit: number;      // -1 = unlimited, 0 = not available
+  hooThreadsUsed: number;
+  hooThreadsRemaining: number;
+  hooThreadsExceeded: boolean;  // true if over soft limit (shows alert)
+
+  // Turn limits (hard - blocks)
+  hooTurnsLimit: number;        // -1 = unlimited, 0 = not available
+  hooTurnsUsed: number;
+  hooTurnsRemaining: number;
+
   tier: string;
-  canUseHooAI: boolean;
+  canUseHooAI: boolean;         // Based on hard limit (turns)
   cancelAtPeriodEnd?: boolean;
   currentPeriodEnd?: string | null;
 }
@@ -33,19 +43,14 @@ function getTierLimits() {
   if (UNLIMITED_FOR_TESTING) {
     console.warn('[UsageLimiter] UNLIMITED_FOR_TESTING is enabled - all limits disabled');
     return {
-      free: { hooConversationsLimit: -1 },
-      basic: { hooConversationsLimit: -1 },
-      premium: { hooConversationsLimit: -1 },
+      free: { hooThreadsLimit: -1, hooTurnsLimit: -1 },
+      basic: { hooThreadsLimit: -1, hooTurnsLimit: -1 },
+      premium: { hooThreadsLimit: -1, hooTurnsLimit: -1 },
     };
   }
 
-  // Production tier limits for MUEDnote
-  // IMPORTANT: These values must stay in sync with lib/repositories/subscriptions.repository.ts
-  return {
-    free: { hooConversationsLimit: 0 }, // Fixed responses only, no AI
-    basic: { hooConversationsLimit: 150 }, // 150 conversations/month
-    premium: { hooConversationsLimit: -1 }, // Unlimited (BYOK)
-  };
+  // Use production tier limits from repository
+  return BASE_TIER_LIMITS;
 }
 
 const TIER_LIMITS = getTierLimits();
@@ -65,9 +70,13 @@ export async function getUserUsageLimits(clerkId: string): Promise<UsageLimits> 
   if (!user) {
     // Return free tier limits if user not found
     return {
-      hooConversationsLimit: TIER_LIMITS.free.hooConversationsLimit,
-      hooConversationsUsed: 0,
-      hooConversationsRemaining: 0,
+      hooThreadsLimit: TIER_LIMITS.free.hooThreadsLimit,
+      hooThreadsUsed: 0,
+      hooThreadsRemaining: 0,
+      hooThreadsExceeded: false,
+      hooTurnsLimit: TIER_LIMITS.free.hooTurnsLimit,
+      hooTurnsUsed: 0,
+      hooTurnsRemaining: 0,
       tier: 'free',
       canUseHooAI: false,
     };
@@ -85,26 +94,44 @@ export async function getUserUsageLimits(clerkId: string): Promise<UsageLimits> 
   const tier = subscription?.tier || 'free';
   const limits = TIER_LIMITS[tier as keyof typeof TIER_LIMITS] || TIER_LIMITS.free;
 
-  const hooConversationsUsed = subscription?.hooConversationsUsed || 0;
+  const hooThreadsUsed = subscription?.hooConversationsUsed || 0;
+  const hooTurnsUsed = subscription?.hooTurnsUsed || 0;
 
-  const hooConversationsRemaining =
-    limits.hooConversationsLimit === -1
+  // Calculate remaining threads (soft limit)
+  const hooThreadsRemaining =
+    limits.hooThreadsLimit === -1
       ? -1
-      : limits.hooConversationsLimit === 0
+      : limits.hooThreadsLimit === 0
       ? 0
-      : Math.max(0, limits.hooConversationsLimit - hooConversationsUsed);
+      : Math.max(0, limits.hooThreadsLimit - hooThreadsUsed);
 
-  // Can use Hoo AI if:
-  // - Limit is unlimited (-1), OR
-  // - Limit > 0 AND remaining > 0
+  // Calculate remaining turns (hard limit)
+  const hooTurnsRemaining =
+    limits.hooTurnsLimit === -1
+      ? -1
+      : limits.hooTurnsLimit === 0
+      ? 0
+      : Math.max(0, limits.hooTurnsLimit - hooTurnsUsed);
+
+  // Thread exceeded = over soft limit (shows alert, doesn't block)
+  const hooThreadsExceeded =
+    limits.hooThreadsLimit > 0 && hooThreadsUsed >= limits.hooThreadsLimit;
+
+  // Can use Hoo AI based on HARD limit (turns):
+  // - Turns limit is unlimited (-1), OR
+  // - Turns limit > 0 AND remaining > 0
   const canUseHooAI =
-    limits.hooConversationsLimit === -1 ||
-    (limits.hooConversationsLimit > 0 && hooConversationsRemaining > 0);
+    limits.hooTurnsLimit === -1 ||
+    (limits.hooTurnsLimit > 0 && hooTurnsRemaining > 0);
 
   return {
-    hooConversationsLimit: limits.hooConversationsLimit,
-    hooConversationsUsed,
-    hooConversationsRemaining,
+    hooThreadsLimit: limits.hooThreadsLimit,
+    hooThreadsUsed,
+    hooThreadsRemaining,
+    hooThreadsExceeded,
+    hooTurnsLimit: limits.hooTurnsLimit,
+    hooTurnsUsed,
+    hooTurnsRemaining,
     tier,
     canUseHooAI,
     cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
@@ -120,36 +147,42 @@ export async function checkCanUseHooAI(clerkId: string): Promise<{
   allowed: boolean;
   reason?: string;
   limits: UsageLimits;
+  threadAlert?: boolean; // True if thread soft limit exceeded (alert but don't block)
 }> {
   const limits = await getUserUsageLimits(clerkId);
 
-  if (limits.hooConversationsLimit === 0) {
+  // Free tier: no AI access
+  if (limits.hooTurnsLimit === 0) {
     return {
       allowed: false,
-      reason: 'Hoo AI is not available on the Free plan. Upgrade to Basic for 150 AI conversations per month.',
+      reason: 'Hoo AI is not available on the Free plan. Upgrade to Basic for 150 AI turns per month.',
       limits,
     };
   }
 
+  // Hard limit check (turns)
   if (!limits.canUseHooAI) {
     return {
       allowed: false,
-      reason: `You've reached your monthly limit of ${limits.hooConversationsLimit} Hoo conversations. Upgrade to Premium for unlimited access.`,
+      reason: `You've reached your monthly limit of ${limits.hooTurnsLimit} Hoo turns. Upgrade to Premium for unlimited access.`,
       limits,
     };
   }
 
+  // Soft limit check (threads) - alert but don't block
   return {
     allowed: true,
     limits,
+    threadAlert: limits.hooThreadsExceeded,
   };
 }
 
 /**
- * Increment Hoo conversation usage counter (atomic operation)
+ * Increment Hoo thread (conversation) usage counter (atomic operation)
+ * Called when a NEW conversation is created
  * @param clerkId - Clerk user ID
  */
-export async function incrementHooConversationUsage(clerkId: string): Promise<void> {
+export async function incrementHooThreadUsage(clerkId: string): Promise<void> {
   // Get user from database
   const [user] = await db
     .select()
@@ -178,9 +211,55 @@ export async function incrementHooConversationUsage(clerkId: string): Promise<vo
       tier: 'free',
       status: 'active',
       hooConversationsUsed: 1,
+      hooTurnsUsed: 0,
     });
   }
 }
+
+/**
+ * Increment Hoo turn usage counter (atomic operation)
+ * Called for EVERY user message (regardless of conversation)
+ * @param clerkId - Clerk user ID
+ */
+export async function incrementHooTurnUsage(clerkId: string): Promise<void> {
+  // Get user from database
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.clerkId, clerkId))
+    .limit(1);
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Atomic increment operation
+  const result = await db
+    .update(subscriptions)
+    .set({
+      hooTurnsUsed: sql`hoo_turns_used + 1`,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptions.userId, user.id))
+    .returning();
+
+  // Create subscription if it doesn't exist
+  if (result.length === 0) {
+    await db.insert(subscriptions).values({
+      userId: user.id,
+      tier: 'free',
+      status: 'active',
+      hooConversationsUsed: 0,
+      hooTurnsUsed: 1,
+    });
+  }
+}
+
+/**
+ * @deprecated Use incrementHooThreadUsage instead
+ * Kept for backwards compatibility
+ */
+export const incrementHooConversationUsage = incrementHooThreadUsage;
 
 /**
  * Reset monthly usage counters (call this at the start of each billing period)
@@ -209,7 +288,9 @@ export async function resetMonthlyUsage(clerkId: string): Promise<void> {
     await db
       .update(subscriptions)
       .set({
-        hooConversationsUsed: 0,
+        hooConversationsUsed: 0, // Reset thread count
+        hooTurnsUsed: 0,         // Reset turn count
+        updatedAt: new Date(),
       })
       .where(eq(subscriptions.id, subscription.id));
   }
@@ -249,7 +330,7 @@ function getFeaturesList(tier: string): string[] {
         'Log storage: Unlimited',
         'DAW log integration',
         'Dashboard & Export',
-        'Hoo AI: 150 conversations/month',
+        'Hoo AI: 150 turns/month, 30 threads/month',
       ];
     case 'premium':
       return [

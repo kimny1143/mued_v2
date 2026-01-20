@@ -127,7 +127,8 @@ export const subscriptions = pgTable("subscriptions", {
   currentPeriodStart: timestamp("current_period_start"),
   currentPeriodEnd: timestamp("current_period_end"),
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
-  hooConversationsUsed: integer("hoo_conversations_used").notNull().default(0),
+  hooConversationsUsed: integer("hoo_conversations_used").notNull().default(0), // Thread count (soft limit)
+  hooTurnsUsed: integer("hoo_turns_used").notNull().default(0), // Turn count (hard limit)
   // Legacy columns for future MUED LMS integration
   aiMaterialsUsed: integer("ai_materials_used").notNull().default(0),
   reservationsUsed: integer("reservations_used").notNull().default(0),

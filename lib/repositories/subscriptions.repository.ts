@@ -18,27 +18,32 @@ export type SubscriptionTier = 'free' | 'basic' | 'premium';
 export type SubscriptionStatus = 'active' | 'cancelled' | 'past_due' | 'unpaid';
 
 /**
- * Subscription tier limits for MUEDnote
+ * Subscription tier limits for MUEDnote Hoo AI
  * IMPORTANT: These values must stay in sync with lib/middleware/usage-limiter.ts
  * -1 = unlimited, 0 = not available
+ *
+ * Limits:
+ * - hooThreadsLimit: Number of conversation threads per month (soft limit - shows alert but doesn't block)
+ * - hooTurnsLimit: Total turns across all conversations per month (hard limit - blocks when exceeded)
+ *
+ * A "turn" = one user message (AI response doesn't count separately)
  */
 export const TIER_LIMITS: Record<SubscriptionTier, {
-  hooConversationsLimit: number;
+  hooThreadsLimit: number;
+  hooTurnsLimit: number;
 }> = {
-  free: { hooConversationsLimit: 0 }, // Fixed responses only, no AI
-  basic: { hooConversationsLimit: 30 }, // 30 conversations/month (soft limit: 10 turns, hard limit: 30 turns per conversation)
-  premium: { hooConversationsLimit: -1 }, // Unlimited (BYOK)
-};
-
-/**
- * Turn limits per conversation
- * - softLimit: After this, each 10 turns costs +1 conversation
- * - hardLimit: Maximum turns per conversation
- */
-export const TURN_LIMITS = {
-  softLimit: 10,
-  hardLimit: 30,
-  turnsPerExtension: 10, // Each extension covers 10 additional turns
+  free: {
+    hooThreadsLimit: 0,    // No AI access, template responses only
+    hooTurnsLimit: 0,      // No AI access
+  },
+  basic: {
+    hooThreadsLimit: 30,   // 30 threads/month (soft limit - alert only)
+    hooTurnsLimit: 150,    // 150 turns/month (hard limit - blocks)
+  },
+  premium: {
+    hooThreadsLimit: -1,   // Unlimited (BYOK)
+    hooTurnsLimit: -1,     // Unlimited (BYOK)
+  },
 };
 
 /**
@@ -360,7 +365,8 @@ export class SubscriptionRepository {
       .set({
         aiMaterialsUsed: 0,
         reservationsUsed: 0,
-        hooConversationsUsed: 0,
+        hooConversationsUsed: 0, // Reset thread count
+        hooTurnsUsed: 0,          // Reset turn count
         updatedAt: new Date(),
       })
       .where(eq(subscriptions.id, subscriptionId))
@@ -370,11 +376,12 @@ export class SubscriptionRepository {
   }
 
   // ========================================
-  // Hoo Conversation Usage (MUEDnote)
+  // Hoo Usage Tracking (MUEDnote)
   // ========================================
 
   /**
-   * Increment Hoo conversation usage
+   * Increment Hoo thread (conversation) usage
+   * Called when a NEW conversation is created
    */
   async incrementHooConversationsUsed(userId: string) {
     const [updated] = await db
@@ -390,14 +397,38 @@ export class SubscriptionRepository {
   }
 
   /**
+   * Increment Hoo turn usage
+   * Called for EVERY user message (regardless of conversation)
+   */
+  async incrementHooTurnsUsed(userId: string) {
+    const [updated] = await db
+      .update(subscriptions)
+      .set({
+        hooTurnsUsed: sql`${subscriptions.hooTurnsUsed} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptions.userId, userId))
+      .returning();
+
+    return updated ?? null;
+  }
+
+  /**
    * Check if user can use Hoo AI conversation
-   * Returns: { allowed: boolean, reason?: string, tier: SubscriptionTier }
+   * Checks the HARD limit (turns), not the soft limit (threads)
+   * Returns: { allowed: boolean, reason?: string, tier: SubscriptionTier, threadAlert?: boolean }
    */
   async canUseHooConversation(userId: string): Promise<{
     allowed: boolean;
     reason?: string;
     tier: SubscriptionTier;
-    usage?: { used: number; limit: number };
+    usage?: {
+      threadsUsed: number;
+      threadsLimit: number;
+      turnsUsed: number;
+      turnsLimit: number;
+    };
+    threadAlert?: boolean; // True if thread soft limit exceeded
   }> {
     const subscription = await this.findActiveByUserId(userId);
 
@@ -412,45 +443,66 @@ export class SubscriptionRepository {
     const tier = getTierSafely(subscription.tier);
     const limits = TIER_LIMITS[tier];
 
+    const threadsUsed = subscription.hooConversationsUsed;
+    const turnsUsed = subscription.hooTurnsUsed;
+
     // Free tier: no AI, template only
-    if (limits.hooConversationsLimit === 0) {
+    if (limits.hooTurnsLimit === 0) {
       return {
         allowed: false,
         reason: 'FREE_TIER',
         tier,
-        usage: { used: subscription.hooConversationsUsed, limit: 0 },
+        usage: {
+          threadsUsed,
+          threadsLimit: 0,
+          turnsUsed,
+          turnsLimit: 0,
+        },
       };
     }
 
     // Premium: unlimited (-1)
-    if (limits.hooConversationsLimit === -1) {
+    if (limits.hooTurnsLimit === -1) {
       return {
         allowed: true,
         tier,
-        usage: { used: subscription.hooConversationsUsed, limit: -1 },
-      };
-    }
-
-    // Basic: check limit
-    if (subscription.hooConversationsUsed >= limits.hooConversationsLimit) {
-      return {
-        allowed: false,
-        reason: 'LIMIT_EXCEEDED',
-        tier,
         usage: {
-          used: subscription.hooConversationsUsed,
-          limit: limits.hooConversationsLimit,
+          threadsUsed,
+          threadsLimit: -1,
+          turnsUsed,
+          turnsLimit: -1,
         },
       };
     }
+
+    // Basic: check HARD limit (turns)
+    if (turnsUsed >= limits.hooTurnsLimit) {
+      return {
+        allowed: false,
+        reason: 'TURN_LIMIT_EXCEEDED',
+        tier,
+        usage: {
+          threadsUsed,
+          threadsLimit: limits.hooThreadsLimit,
+          turnsUsed,
+          turnsLimit: limits.hooTurnsLimit,
+        },
+      };
+    }
+
+    // Check soft limit (threads) - alert but don't block
+    const threadAlert = limits.hooThreadsLimit > 0 && threadsUsed >= limits.hooThreadsLimit;
 
     return {
       allowed: true,
       tier,
       usage: {
-        used: subscription.hooConversationsUsed,
-        limit: limits.hooConversationsLimit,
+        threadsUsed,
+        threadsLimit: limits.hooThreadsLimit,
+        turnsUsed,
+        turnsLimit: limits.hooTurnsLimit,
       },
+      threadAlert,
     };
   }
 
@@ -463,7 +515,8 @@ export class SubscriptionRepository {
     if (!subscription) {
       return {
         tier: 'free' as SubscriptionTier,
-        hooConversations: { used: 0, limit: TIER_LIMITS.free.hooConversationsLimit },
+        hooThreads: { used: 0, limit: TIER_LIMITS.free.hooThreadsLimit },
+        hooTurns: { used: 0, limit: TIER_LIMITS.free.hooTurnsLimit },
       };
     }
 
@@ -472,9 +525,13 @@ export class SubscriptionRepository {
 
     return {
       tier,
-      hooConversations: {
+      hooThreads: {
         used: subscription.hooConversationsUsed,
-        limit: limits.hooConversationsLimit,
+        limit: limits.hooThreadsLimit,
+      },
+      hooTurns: {
+        used: subscription.hooTurnsUsed,
+        limit: limits.hooTurnsLimit,
       },
     };
   }

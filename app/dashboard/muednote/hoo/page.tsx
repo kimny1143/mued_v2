@@ -4,8 +4,11 @@
  * Hoo AI Chat Page
  *
  * Thought organization assistant for MUEDnote.
- * Supports: Free (template), Basic (30/month), Premium (unlimited)
- * Turn limits: Soft limit 10, Hard limit 30 per conversation
+ * Supports: Free (template), Basic, Premium (unlimited)
+ *
+ * Basic tier limits:
+ * - 150 turns/month (hard limit - blocks when exceeded)
+ * - 30 threads/month (soft limit - shows alert but doesn't block)
  */
 
 import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
@@ -34,16 +37,12 @@ interface Message {
 }
 
 interface UsageInfo {
-  used: number;
-  limit: number;
-}
-
-interface TurnInfo {
-  current: number;
-  softLimit: number;
-  hardLimit: number;
-  extended: boolean;
-  extensionCost: number;
+  // Thread usage (soft limit)
+  threadsUsed: number;
+  threadsLimit: number;
+  // Turn usage (hard limit)
+  turnsUsed: number;
+  turnsLimit: number;
 }
 
 interface ChatResponse {
@@ -54,12 +53,16 @@ interface ChatResponse {
     model: string;
     provider: string;
     isAiResponse: boolean;
-    usage?: UsageInfo & {
+    usage?: {
       inputTokens: number;
       outputTokens: number;
       totalTokens: number;
+      threadsUsed: number;
+      threadsLimit: number;
+      turnsUsed: number;
+      turnsLimit: number;
     };
-    turnInfo?: TurnInfo;
+    threadAlert?: boolean; // True if thread soft limit exceeded
     latencyMs?: number;
   };
   error?: string;
@@ -119,7 +122,7 @@ function HooChatContent() {
   const [usage, setUsage] = useState<UsageInfo | null>(null);
   const [tier, setTier] = useState<string>('free');
   const [error, setError] = useState<string | null>(null);
-  const [turnInfo, setTurnInfo] = useState<TurnInfo | null>(null);
+  const [threadAlert, setThreadAlert] = useState(false); // Thread soft limit exceeded
   const [sessionContextEnabled, setSessionContextEnabled] = useState(false);
   const [sessionContext, setSessionContext] = useState<SessionContext | null>(null);
   const [isLoadingContext, setIsLoadingContext] = useState(false);
@@ -205,7 +208,13 @@ function HooChatContent() {
         const res = await fetch('/api/hoo/chat');
         const data = await res.json();
         if (data.success) {
-          setUsage(data.data.usage);
+          // Convert API response to UsageInfo format
+          setUsage({
+            threadsUsed: data.data.threads?.used ?? 0,
+            threadsLimit: data.data.threads?.limit ?? 0,
+            turnsUsed: data.data.turns?.used ?? 0,
+            turnsLimit: data.data.turns?.limit ?? 0,
+          });
           setTier(data.data.tier);
         }
       } catch {
@@ -258,13 +267,14 @@ function HooChatContent() {
         ]);
         if (result.data.usage) {
           setUsage({
-            used: result.data.usage.used,
-            limit: result.data.usage.limit,
+            threadsUsed: result.data.usage.threadsUsed,
+            threadsLimit: result.data.usage.threadsLimit,
+            turnsUsed: result.data.usage.turnsUsed,
+            turnsLimit: result.data.usage.turnsLimit,
           });
         }
-        if (result.data.turnInfo) {
-          setTurnInfo(result.data.turnInfo);
-        }
+        // Update thread alert state
+        setThreadAlert(result.data.threadAlert ?? false);
       } else {
         setError(result.error || 'Failed to get response');
         // Remove the user message if failed
@@ -287,12 +297,13 @@ function HooChatContent() {
     setConversationId(null);
     setMessages([]);
     setError(null);
-    setTurnInfo(null);
+    setThreadAlert(false);
     // Keep session context enabled state across new conversations
   };
 
   const isFreeTier = tier === 'free';
-  const isLimitReached = usage && usage.limit > 0 && usage.used >= usage.limit;
+  // Hard limit (turns) determines if user can continue
+  const isTurnLimitReached = usage && usage.turnsLimit > 0 && usage.turnsUsed >= usage.turnsLimit;
 
   return (
     <MuednoteLayout>
@@ -360,26 +371,52 @@ function HooChatContent() {
 
         {/* Usage Banner */}
         {usage && (
-          <div className="flex items-center justify-between bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-sm">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-slate-400" />
-              <span className="text-slate-400">
-                {locale === 'ja' ? '今月の利用:' : 'Monthly usage:'}
-              </span>
-              <span className="font-medium text-white">
-                {usage.limit === -1
-                  ? `${usage.used} (${locale === 'ja' ? '無制限' : 'unlimited'})`
-                  : usage.limit === 0
-                    ? locale === 'ja' ? 'テンプレートのみ' : 'Template only'
-                    : `${usage.used} / ${usage.limit}`}
-              </span>
+          <div className="flex flex-col gap-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {/* Turn usage (hard limit) */}
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4 text-slate-400" />
+                  <span className="text-slate-400">
+                    {locale === 'ja' ? 'ターン:' : 'Turns:'}
+                  </span>
+                  <span className={`font-medium ${isTurnLimitReached ? 'text-red-400' : 'text-white'}`}>
+                    {usage.turnsLimit === -1
+                      ? `${usage.turnsUsed} (${locale === 'ja' ? '無制限' : 'unlimited'})`
+                      : usage.turnsLimit === 0
+                        ? locale === 'ja' ? 'テンプレートのみ' : 'Template only'
+                        : `${usage.turnsUsed} / ${usage.turnsLimit}`}
+                  </span>
+                </div>
+                {/* Thread usage (soft limit) - only show for Basic tier */}
+                {usage.threadsLimit !== 0 && usage.threadsLimit !== -1 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-500">|</span>
+                    <span className="text-slate-400">
+                      {locale === 'ja' ? 'スレッド:' : 'Threads:'}
+                    </span>
+                    <span className={`font-medium ${threadAlert ? 'text-amber-400' : 'text-white'}`}>
+                      {usage.threadsUsed} / {usage.threadsLimit}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {(isFreeTier || isTurnLimitReached) && (
+                <Link href="/dashboard/subscription">
+                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                    {locale === 'ja' ? 'アップグレード' : 'Upgrade'}
+                  </Button>
+                </Link>
+              )}
             </div>
-            {(isFreeTier || isLimitReached) && (
-              <Link href="/dashboard/subscription">
-                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                  {locale === 'ja' ? 'アップグレード' : 'Upgrade'}
-                </Button>
-              </Link>
+            {/* Thread soft limit alert */}
+            {threadAlert && (
+              <div className="flex items-center gap-2 text-xs text-amber-400">
+                <AlertCircle className="w-3 h-3" />
+                {locale === 'ja'
+                  ? 'スレッド数の目安（30/月）を超えました。ターン数が上限（150/月）に達するまで引き続きご利用いただけます。'
+                  : "You've exceeded the recommended thread count (30/month). You can continue until you reach the turn limit (150/month)."}
+              </div>
             )}
           </div>
         )}
@@ -427,37 +464,7 @@ function HooChatContent() {
                   locale === 'ja' ? '新しい会話を始める' : 'Start a new conversation'
                 )}
               </h2>
-              {turnInfo && turnInfo.current > 0 && (
-                <div className="flex items-center gap-2 text-xs">
-                  <span className={`px-2 py-1 rounded-full ${
-                    turnInfo.current >= turnInfo.softLimit
-                      ? 'bg-amber-500/20 text-amber-400'
-                      : 'bg-white/10 text-slate-400'
-                  }`}>
-                    {locale === 'ja'
-                      ? `ターン ${turnInfo.current}/${turnInfo.hardLimit}`
-                      : `Turn ${turnInfo.current}/${turnInfo.hardLimit}`}
-                  </span>
-                </div>
-              )}
             </div>
-            {/* Extension Alert */}
-            {turnInfo && turnInfo.extended && (
-              <div className="mt-2 flex items-center gap-2 text-xs text-amber-400 bg-amber-500/10 rounded-lg px-3 py-2">
-                <AlertCircle className="w-3 h-3" />
-                {locale === 'ja'
-                  ? `この会話は延長されました（${turnInfo.extensionCost + 1}会話分を使用中）`
-                  : `This conversation has been extended (using ${turnInfo.extensionCost + 1} conversation credits)`}
-              </div>
-            )}
-            {/* Approaching Limit Warning */}
-            {turnInfo && turnInfo.current >= turnInfo.softLimit - 2 && turnInfo.current < turnInfo.softLimit && (
-              <div className="mt-2 flex items-center gap-2 text-xs text-slate-400 bg-white/5 rounded-lg px-3 py-2">
-                {locale === 'ja'
-                  ? `あと${turnInfo.softLimit - turnInfo.current}ターンで延長（追加1会話分）になります`
-                  : `${turnInfo.softLimit - turnInfo.current} turns until extension (costs +1 conversation)`}
-              </div>
-            )}
           </div>
 
           {/* Messages */}

@@ -4,8 +4,12 @@
  *
  * Tier-based AI conversation for MUEDnote:
  * - Free: Template responses only
- * - Basic: 150 AI conversations/month (Claude Haiku 4.5)
+ * - Basic: 150 turns/month (hard limit), 30 threads/month (soft limit)
  * - Premium: Unlimited (BYOK)
+ *
+ * Limits:
+ * - Turn = 1 user message (counted across ALL conversations)
+ * - Thread = 1 conversation (soft limit: shows alert, doesn't block)
  */
 
 import { z } from 'zod';
@@ -13,7 +17,7 @@ import { withAuthResolved } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiValidationError, apiServerError, apiError } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { sendHooChat, generateConversationTitle, type HooChatMessage } from '@/lib/ai/providers';
-import { subscriptionRepository, TURN_LIMITS } from '@/lib/repositories/subscriptions.repository';
+import { subscriptionRepository, TIER_LIMITS } from '@/lib/repositories/subscriptions.repository';
 import { sessionRepository } from '@/lib/repositories/sessions.repository';
 import { hooConversationsRepository } from '@/lib/repositories/hoo-conversations.repository';
 import { hooMemoriesRepository } from '@/lib/repositories/hoo-memories.repository';
@@ -77,16 +81,15 @@ interface HooChatApiResponse {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
-    used: number;
-    limit: number;
+    // Thread usage (soft limit)
+    threadsUsed: number;
+    threadsLimit: number;
+    // Turn usage (hard limit)
+    turnsUsed: number;
+    turnsLimit: number;
   };
-  turnInfo?: {
-    current: number;
-    softLimit: number;
-    hardLimit: number;
-    extended: boolean;
-    extensionCost: number;
-  };
+  // Alert if thread soft limit is exceeded (doesn't block, just shows warning)
+  threadAlert?: boolean;
   latencyMs?: number;
 }
 
@@ -182,8 +185,10 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
           inputTokens: 0,
           outputTokens: 0,
           totalTokens: 0,
-          used: usageCheck.usage?.used ?? 0,
-          limit: 0,
+          threadsUsed: usageCheck.usage?.threadsUsed ?? 0,
+          threadsLimit: 0,
+          turnsUsed: usageCheck.usage?.turnsUsed ?? 0,
+          turnsLimit: 0,
         },
       };
 
@@ -191,15 +196,17 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     }
 
     // ========================================
-    // Usage Limit Exceeded
+    // Turn Limit Exceeded (Hard Limit)
     // ========================================
-    if (!usageCheck.allowed && usageCheck.reason === 'LIMIT_EXCEEDED') {
-      return apiError('Monthly Hoo conversation limit reached. Upgrade to Premium for unlimited access.', {
-        code: 'LIMIT_EXCEEDED',
+    if (!usageCheck.allowed && usageCheck.reason === 'TURN_LIMIT_EXCEEDED') {
+      return apiError('Monthly Hoo turn limit reached. Upgrade to Premium for unlimited access.', {
+        code: 'TURN_LIMIT_EXCEEDED',
         status: 429,
         details: {
-          used: usageCheck.usage?.used,
-          limit: usageCheck.usage?.limit,
+          turnsUsed: usageCheck.usage?.turnsUsed,
+          turnsLimit: usageCheck.usage?.turnsLimit,
+          threadsUsed: usageCheck.usage?.threadsUsed,
+          threadsLimit: usageCheck.usage?.threadsLimit,
         },
       });
     }
@@ -208,73 +215,15 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     // Basic/Premium: AI Response
     // ========================================
 
+    // Determine if this is a new conversation
+    const isNewConversation = !conversationId;
+
     // Get or create conversation
     let conversation;
-    let currentTurnCount = 0;
-    let extensionCost = 0;
-    let isExtended = false;
-
     if (conversationId) {
       conversation = await hooConversationsRepository.findById(conversationId);
       if (!conversation || conversation.userId !== internalUserId) {
         return apiError('Conversation not found', { code: 'NOT_FOUND', status: 404 });
-      }
-
-      // Calculate current turn count (messages / 2, since each turn = user + assistant)
-      currentTurnCount = Math.floor((conversation.messageCount ?? 0) / 2);
-
-      // Check hard limit (30 turns)
-      if (currentTurnCount >= TURN_LIMITS.hardLimit) {
-        return apiError('This conversation has reached the maximum turn limit. Please start a new conversation.', {
-          code: 'TURN_LIMIT_EXCEEDED',
-          status: 429,
-          details: {
-            currentTurn: currentTurnCount,
-            hardLimit: TURN_LIMITS.hardLimit,
-          },
-        });
-      }
-
-      // Check if extension is needed (beyond soft limit)
-      if (currentTurnCount >= TURN_LIMITS.softLimit) {
-        // Calculate how many extensions have been used
-        const turnsOverSoftLimit = currentTurnCount - TURN_LIMITS.softLimit;
-        const extensionsUsed = Math.floor(turnsOverSoftLimit / TURN_LIMITS.turnsPerExtension);
-
-        // Check if this turn triggers a new extension
-        const nextTurn = currentTurnCount + 1;
-        const turnsOverSoftLimitAfter = nextTurn - TURN_LIMITS.softLimit;
-        const extensionsNeededAfter = Math.ceil(turnsOverSoftLimitAfter / TURN_LIMITS.turnsPerExtension);
-
-        if (extensionsNeededAfter > extensionsUsed) {
-          // Need to consume an additional conversation credit
-          extensionCost = 1;
-          isExtended = true;
-
-          // Check if user has enough credits for extension
-          if (usageCheck.usage && usageCheck.usage.limit > 0) {
-            if (usageCheck.usage.used + extensionCost > usageCheck.usage.limit) {
-              return apiError('Not enough conversation credits for extension. Please start a new conversation or upgrade to Premium.', {
-                code: 'EXTENSION_LIMIT_EXCEEDED',
-                status: 429,
-                details: {
-                  used: usageCheck.usage.used,
-                  limit: usageCheck.usage.limit,
-                  extensionCost,
-                },
-              });
-            }
-          }
-
-          // Increment usage for extension
-          await subscriptionRepository.incrementHooConversationsUsed(internalUserId);
-          logger.info('[POST /api/hoo/chat] Extension consumed', {
-            userId: internalUserId,
-            conversationId,
-            currentTurn: currentTurnCount,
-            extensionCost,
-          });
-        }
       }
     } else {
       conversation = await hooConversationsRepository.create({
@@ -315,9 +264,11 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
       costUsd: aiResponse.cost.total,
     });
 
-    // Increment usage counter (only count once per conversation session start)
-    // We count when first message is sent in a new conversation
-    const isNewConversation = !conversationId;
+    // Increment usage counters
+    // 1. Turn count: increment for EVERY user message (already validated above)
+    await subscriptionRepository.incrementHooTurnsUsed(internalUserId);
+
+    // 2. Thread count: increment only for NEW conversations
     if (isNewConversation) {
       await subscriptionRepository.incrementHooConversationsUsed(internalUserId);
     }
@@ -325,11 +276,9 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     // Title generation logic:
     // 1. New conversation: generate title
     // 2. Resumed conversation with no title: generate title
-    // 3. Extended conversation (11th turn, 21st turn, etc.): regenerate title to reflect new context
     const needsTitleGeneration = isNewConversation;
-    const needsTitleRegeneration = isExtended; // Regenerate on extension
     const hasNoTitle = !conversation.title || conversation.title.startsWith('Conversation') || conversation.title === 'New conversation';
-    const shouldGenerateTitle = needsTitleGeneration || (hasNoTitle && conversationId) || needsTitleRegeneration;
+    const shouldGenerateTitle = needsTitleGeneration || (hasNoTitle && conversationId);
 
     if (shouldGenerateTitle) {
       // Get first and last messages for better title context
@@ -349,7 +298,7 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
           logger.info('[POST /api/hoo/chat] Generated title', {
             conversationId: conversation.id,
             title,
-            reason: needsTitleGeneration ? 'new' : needsTitleRegeneration ? 'extension' : 'missing',
+            reason: needsTitleGeneration ? 'new' : 'missing',
           });
           return hooConversationsRepository.updateTitle(conversation.id, title);
         })
@@ -369,10 +318,9 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
       latencyMs,
       totalTokens: aiResponse.usage.totalTokens,
       costUsd: aiResponse.cost.total.toFixed(6),
+      turnsUsed: updatedUsage.hooTurns.used,
+      threadsUsed: updatedUsage.hooThreads.used,
     });
-
-    // Calculate the new turn count after this exchange
-    const newTurnCount = currentTurnCount + 1;
 
     const response: HooChatApiResponse = {
       conversationId: conversation.id,
@@ -384,16 +332,12 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
         inputTokens: aiResponse.usage.inputTokens,
         outputTokens: aiResponse.usage.outputTokens,
         totalTokens: aiResponse.usage.totalTokens,
-        used: updatedUsage.hooConversations.used,
-        limit: updatedUsage.hooConversations.limit,
+        threadsUsed: updatedUsage.hooThreads.used,
+        threadsLimit: updatedUsage.hooThreads.limit,
+        turnsUsed: updatedUsage.hooTurns.used,
+        turnsLimit: updatedUsage.hooTurns.limit,
       },
-      turnInfo: {
-        current: newTurnCount,
-        softLimit: TURN_LIMITS.softLimit,
-        hardLimit: TURN_LIMITS.hardLimit,
-        extended: isExtended,
-        extensionCost,
-      },
+      threadAlert: usageCheck.threadAlert,
       latencyMs,
     };
 
@@ -455,7 +399,10 @@ export const GET = withAuthResolved(async ({ internalUserId }) => {
 
   return apiSuccess({
     tier: usageLimits.tier,
-    usage: usageLimits.hooConversations,
+    // Thread usage (soft limit)
+    threads: usageLimits.hooThreads,
+    // Turn usage (hard limit)
+    turns: usageLimits.hooTurns,
     stats,
   });
 });

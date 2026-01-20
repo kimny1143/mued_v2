@@ -44,22 +44,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-apps/muednote-v3/node_modules/
 tests/reports/*.md
 
-# MUEDnote Mobile
-apps/muednote-mobile/ios/build/
-apps/muednote-mobile/ios/Pods/
-apps/muednote-mobile/ios/*.bin
-apps/muednote-mobile/ios/MUEDnote/models/
-apps/muednote-mobile/assets/models/*.bin
-apps/muednote-mobile/node_modules/
+# Native apps (separate git repository)
+apps/
 
 # Audio files (test recordings)
 docs/audio/
 docs/sounds/
-
-# Swift Package Manager (macOS app)
-apps/muednote-hub-macos/.build/
-apps/muednote-hub-macos/.swiftpm/
-apps/muednote-hub-macos/MUEDnoteHub.app/
