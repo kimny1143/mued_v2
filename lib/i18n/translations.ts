@@ -313,6 +313,31 @@ export const translations = {
         q4: 'Can I downgrade my plan?',
         a4: 'Yes, you can downgrade at any time. The change will take effect at the end of your current billing period.',
       },
+      scheduledCancel: 'Scheduled to cancel',
+      reactivate: 'Reactivate',
+      success: {
+        title: 'Welcome to {tier}!',
+        subtitle: 'Your subscription is now active',
+        features: 'You now have access to:',
+        cta: 'Start using Hoo',
+        backToDashboard: 'Back to Dashboard',
+      },
+      cancel: {
+        title: 'Downgrade Plan',
+        confirmTitle: 'Are you sure?',
+        loseAccess: "You'll lose access to:",
+        reason: 'Why are you leaving?',
+        reasons: {
+          price: 'Too expensive',
+          notUsing: 'Not using the features',
+          otherService: 'Found another service',
+          other: 'Other',
+        },
+        finalConfirm: 'Cancel subscription',
+        periodEnd: 'Your subscription will end on',
+        completed: 'Cancellation confirmed',
+        keepUntil: 'You can keep using {tier} until',
+      },
     },
 
     // Lessons Page
@@ -393,6 +418,8 @@ export const translations = {
       tabs: {
         home: 'Home',
         sessions: 'Sessions',
+        hoo: 'Hoo',
+        settings: 'Settings',
       },
       welcome: 'Welcome,',
       headline: 'Remember why you made that choice.',
@@ -732,6 +759,31 @@ export const translations = {
         q4: 'プランをダウングレードできますか？',
         a4: 'はい、いつでもダウングレードできます。変更は現在の請求期間の終了時に有効になります。',
       },
+      scheduledCancel: '解約予定',
+      reactivate: '再アクティブ化',
+      success: {
+        title: '{tier}へようこそ！',
+        subtitle: 'サブスクリプションが有効になりました',
+        features: '以下の機能が利用可能になりました：',
+        cta: 'Hooを使い始める',
+        backToDashboard: 'ダッシュボードに戻る',
+      },
+      cancel: {
+        title: 'プランのダウングレード',
+        confirmTitle: '本当によろしいですか？',
+        loseAccess: '以下の機能が使えなくなります：',
+        reason: '解約理由を教えてください',
+        reasons: {
+          price: '価格が高い',
+          notUsing: '機能を使っていない',
+          otherService: '他のサービスを見つけた',
+          other: 'その他',
+        },
+        finalConfirm: 'サブスクリプションを解約',
+        periodEnd: 'サブスクリプションの終了日',
+        completed: '解約手続きが完了しました',
+        keepUntil: '{tier}は以下の日付まで引き続きご利用いただけます',
+      },
     },
 
     // Lessons Page
@@ -812,6 +864,8 @@ export const translations = {
       tabs: {
         home: 'ホーム',
         sessions: 'セッション',
+        hoo: 'Hoo',
+        settings: '設定',
       },
       welcome: 'ようこそ、',
       headline: '「なぜそうしたか」を、残しておこう。',

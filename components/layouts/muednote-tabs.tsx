@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, List } from "lucide-react";
+import { Home, List, Sparkles, Settings } from "lucide-react";
 import { useLocale } from "@/lib/i18n/locale-context";
 
 /**
@@ -28,6 +28,16 @@ export function MuednoteTabs() {
       name: t.muednote.tabs.sessions,
       href: "/dashboard/muednote/sessions",
       icon: List,
+    },
+    {
+      name: t.muednote.tabs.hoo,
+      href: "/dashboard/muednote/hoo",
+      icon: Sparkles,
+    },
+    {
+      name: t.muednote.tabs.settings,
+      href: "/dashboard/subscription",
+      icon: Settings,
     },
   ];
 

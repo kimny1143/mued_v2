@@ -15,6 +15,8 @@ export interface UsageLimits {
   hooConversationsRemaining: number;
   tier: string;
   canUseHooAI: boolean;
+  cancelAtPeriodEnd?: boolean;
+  currentPeriodEnd?: string | null;
 }
 
 // Tier-based limits configuration
@@ -105,6 +107,8 @@ export async function getUserUsageLimits(clerkId: string): Promise<UsageLimits> 
     hooConversationsRemaining,
     tier,
     canUseHooAI,
+    cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
+    currentPeriodEnd: subscription?.currentPeriodEnd?.toISOString() ?? null,
   };
 }
 

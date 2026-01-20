@@ -310,3 +310,8 @@ export * from './schema/muednote-mobile';
 // MUEDnote DAW Logs (OSC Integration)
 // ========================================
 export * from './schema/muednote-daw-logs';
+
+// ========================================
+// Hoo AI Conversations
+// ========================================
+export * from './schema/hoo-conversations';

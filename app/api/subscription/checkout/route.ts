@@ -110,7 +110,7 @@ export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription?success=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription/success?tier=${tier}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription?canceled=true`,
       metadata: {
         clerkId: clerkUserId,

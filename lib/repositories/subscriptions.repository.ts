@@ -349,12 +349,123 @@ export class SubscriptionRepository {
       .set({
         aiMaterialsUsed: 0,
         reservationsUsed: 0,
+        hooConversationsUsed: 0,
         updatedAt: new Date(),
       })
       .where(eq(subscriptions.id, subscriptionId))
       .returning();
 
     return updated ?? null;
+  }
+
+  // ========================================
+  // Hoo Conversation Usage (MUEDnote)
+  // ========================================
+
+  /**
+   * Increment Hoo conversation usage
+   */
+  async incrementHooConversationsUsed(userId: string) {
+    const [updated] = await db
+      .update(subscriptions)
+      .set({
+        hooConversationsUsed: sql`${subscriptions.hooConversationsUsed} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(subscriptions.userId, userId))
+      .returning();
+
+    return updated ?? null;
+  }
+
+  /**
+   * Check if user can use Hoo AI conversation
+   * Returns: { allowed: boolean, reason?: string, tier: SubscriptionTier }
+   */
+  async canUseHooConversation(userId: string): Promise<{
+    allowed: boolean;
+    reason?: string;
+    tier: SubscriptionTier;
+    usage?: { used: number; limit: number };
+  }> {
+    const subscription = await this.findActiveByUserId(userId);
+
+    if (!subscription) {
+      return {
+        allowed: false,
+        reason: 'NO_SUBSCRIPTION',
+        tier: 'free',
+      };
+    }
+
+    const tier = getTierSafely(subscription.tier);
+    const limits = TIER_LIMITS[tier];
+
+    // Free tier: no AI, template only
+    if (limits.hooConversationsLimit === 0) {
+      return {
+        allowed: false,
+        reason: 'FREE_TIER',
+        tier,
+        usage: { used: subscription.hooConversationsUsed, limit: 0 },
+      };
+    }
+
+    // Premium: unlimited (-1)
+    if (limits.hooConversationsLimit === -1) {
+      return {
+        allowed: true,
+        tier,
+        usage: { used: subscription.hooConversationsUsed, limit: -1 },
+      };
+    }
+
+    // Basic: check limit
+    if (subscription.hooConversationsUsed >= limits.hooConversationsLimit) {
+      return {
+        allowed: false,
+        reason: 'LIMIT_EXCEEDED',
+        tier,
+        usage: {
+          used: subscription.hooConversationsUsed,
+          limit: limits.hooConversationsLimit,
+        },
+      };
+    }
+
+    return {
+      allowed: true,
+      tier,
+      usage: {
+        used: subscription.hooConversationsUsed,
+        limit: limits.hooConversationsLimit,
+      },
+    };
+  }
+
+  /**
+   * Get Hoo usage limits for user
+   */
+  async getHooUsageLimits(userId: string) {
+    const subscription = await this.findActiveByUserId(userId);
+
+    if (!subscription) {
+      return {
+        tier: 'free' as SubscriptionTier,
+        hooConversations: { used: 0, limit: TIER_LIMITS.free.hooConversationsLimit },
+      };
+    }
+
+    const tier = getTierSafely(subscription.tier);
+    const limits = TIER_LIMITS[tier];
+
+    return {
+      tier,
+      hooConversations: {
+        used: subscription.hooConversationsUsed,
+        limit: limits.hooConversationsLimit,
+      },
+    };
   }
 
   /**
