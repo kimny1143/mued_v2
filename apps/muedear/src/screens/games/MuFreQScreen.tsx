@@ -20,6 +20,7 @@ import { useGameStore } from '../../stores/gameStore';
 import { audioService } from '../../services/audioService';
 import { FREQUENCY_BANDS, FrequencyBand } from '../../types/game';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../constants/theme';
+import { logger } from '../../utils/logger';
 
 interface MuFreQScreenProps {
   onComplete: () => void;
@@ -77,9 +78,9 @@ export function MuFreQScreen({ onComplete, onBack }: MuFreQScreenProps) {
         await audioService.initAudioSystem();
         const hasFiles = audioService.hasAudioFiles();
         setDemoMode(!hasFiles);
-        console.log('[MuFreQScreen] Audio initialized, demo mode:', !hasFiles);
+        logger.log('[MuFreQScreen] Audio initialized, demo mode:', !hasFiles);
       } catch (error) {
-        console.error('[MuFreQScreen] Audio init failed:', error);
+        logger.error('[MuFreQScreen] Audio init failed:', error);
         setDemoMode(true);
       }
     };
@@ -92,8 +93,10 @@ export function MuFreQScreen({ onComplete, onBack }: MuFreQScreenProps) {
     };
   }, [setDemoMode]);
 
-  // Load track when round changes - with full cleanup
+  // Load track when round changes - with full cleanup and race condition protection
   useEffect(() => {
+    let isMounted = true;
+
     const loadTrackForRound = async () => {
       if (!currentFrequency) return;
 
@@ -103,28 +106,40 @@ export function MuFreQScreen({ onComplete, onBack }: MuFreQScreenProps) {
       try {
         // Full shutdown to release previous track's memory
         await audioService.shutdown();
+        if (!isMounted) return;
 
         // Re-initialize fresh
         await audioService.initAudioSystem();
+        if (!isMounted) return;
 
         const trackId = audioService.getRandomTrackId();
         setCurrentTrack(trackId);
 
         const loaded = await audioService.loadTrack(trackId, currentFrequency);
+        if (!isMounted) return;
+
         setAudioLoaded(loaded);
 
         if (loaded && !isDemoMode) {
           await audioService.startSyncedPlayback();
-          setPlayingA(true);
+          if (isMounted) {
+            setPlayingA(true);
+          }
         }
       } catch (error) {
-        console.error('[MuFreQScreen] Failed to load track:', error);
+        logger.error('[MuFreQScreen] Failed to load track:', error);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadTrackForRound();
+
+    return () => {
+      isMounted = false;
+    };
   }, [currentRound, currentFrequency, isDemoMode, setAudioLoaded, setCurrentTrack, setPlayingA]);
 
   // Handle pressing A button
@@ -140,7 +155,7 @@ export function MuFreQScreen({ onComplete, onBack }: MuFreQScreenProps) {
       await audioService.playOriginal();
       setPlayingA(true);
     } catch (error) {
-      console.error('[MuFreQScreen] Play A failed:', error);
+      logger.error('[MuFreQScreen] Play A failed:', error);
     }
   }, [isPlayingA, isDemoMode, setPlayingA]);
 
@@ -157,7 +172,7 @@ export function MuFreQScreen({ onComplete, onBack }: MuFreQScreenProps) {
       await audioService.playProcessed();
       setPlayingA(false);
     } catch (error) {
-      console.error('[MuFreQScreen] Play B failed:', error);
+      logger.error('[MuFreQScreen] Play B failed:', error);
     }
   }, [isPlayingA, isDemoMode, setPlayingA]);
 

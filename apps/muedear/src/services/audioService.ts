@@ -16,6 +16,7 @@ import {
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system/legacy';
 import { FrequencyBand } from '../types/game';
+import { logger } from '../utils/logger';
 
 // EQ Configuration for ear training (more prominent than studio standard)
 const EQ_CONFIG = {
@@ -121,7 +122,7 @@ class AudioService {
    */
   async initAudioSystem(): Promise<void> {
     if (this.state.isInitialized) {
-      console.log('[AudioService] Already initialized');
+      logger.log('[AudioService] Already initialized');
       return;
     }
 
@@ -159,9 +160,9 @@ class AudioService {
       this.eqFilter.connect(this.masterGain);
 
       this.state.isInitialized = true;
-      console.log('[AudioService] Initialized with real-time EQ');
+      logger.log('[AudioService] Initialized with real-time EQ');
     } catch (error) {
-      console.error('[AudioService] Failed to initialize:', error);
+      logger.error('[AudioService] Failed to initialize:', error);
       throw error;
     }
   }
@@ -197,7 +198,7 @@ class AudioService {
         sampleRate = dataView.getUint32(offset + 12, true);
         bitsPerSample = dataView.getUint16(offset + 22, true);
         fmtFound = true;
-        console.log('[AudioService] WAV format:', { numChannels, sampleRate, bitsPerSample });
+        logger.log('[AudioService] WAV format:', { numChannels, sampleRate, bitsPerSample });
       }
 
       if (chunkId === 'data') {
@@ -207,7 +208,7 @@ class AudioService {
         const bytesPerSample = bitsPerSample / 8;
         const numSamples = dataSize / bytesPerSample / numChannels;
 
-        console.log('[AudioService] WAV data:', { dataOffset, dataSize, numSamples });
+        logger.log('[AudioService] WAV data:', { dataOffset, dataSize, numSamples });
 
         // Create AudioBuffer
         const audioBuffer = this.audioContext!.createBuffer(
@@ -225,8 +226,8 @@ class AudioService {
           debugSamples.push(raw);
           if (Math.abs(raw) > debugMaxRaw) debugMaxRaw = Math.abs(raw);
         }
-        console.log('[AudioService] Raw WAV samples (first 10):', debugSamples);
-        console.log('[AudioService] Max raw sample in first 10000:', (() => {
+        logger.log('[AudioService] Raw WAV samples (first 10):', debugSamples);
+        logger.log('[AudioService] Max raw sample in first 10000:', (() => {
           let max = 0;
           for (let i = 0; i < 10000; i++) {
             const raw = dataView.getInt16(dataOffset + i * 4, true);
@@ -259,8 +260,8 @@ class AudioService {
 
         // DEBUG: Verify what was written to the buffer
         const verifyData = audioBuffer.getChannelData(0);
-        console.log('[AudioService] Verify buffer (first 10):', Array.from(verifyData.slice(0, 10)));
-        console.log('[AudioService] Verify buffer max in first 10000:', (() => {
+        logger.log('[AudioService] Verify buffer (first 10):', Array.from(verifyData.slice(0, 10)));
+        logger.log('[AudioService] Verify buffer max in first 10000:', (() => {
           let max = 0;
           for (let i = 0; i < Math.min(10000, verifyData.length); i++) {
             if (Math.abs(verifyData[i]) > max) max = Math.abs(verifyData[i]);
@@ -284,14 +285,14 @@ class AudioService {
    */
   private async loadAudioBuffer(trackId: TrackId): Promise<AudioBuffer | null> {
     if (!this.audioContext) {
-      console.error('[AudioService] AudioContext not initialized');
+      logger.error('[AudioService] AudioContext not initialized');
       return null;
     }
 
     try {
       const assetModule = TRACK_ASSETS[trackId];
       if (!assetModule) {
-        console.error('[AudioService] Track not found:', trackId);
+        logger.error('[AudioService] Track not found:', trackId);
         return null;
       }
 
@@ -299,7 +300,7 @@ class AudioService {
       const [asset] = await Asset.loadAsync(assetModule);
       const uri = asset.localUri || asset.uri;
 
-      console.log('[AudioService] Loading audio from:', uri);
+      logger.log('[AudioService] Loading audio from:', uri);
 
       // Read file as base64 using expo-file-system
       const base64Data = await FileSystem.readAsStringAsync(uri, {
@@ -314,19 +315,19 @@ class AudioService {
       }
       const arrayBuffer = bytes.buffer;
 
-      console.log('[AudioService] File read, size:', arrayBuffer.byteLength);
+      logger.log('[AudioService] File read, size:', arrayBuffer.byteLength);
 
       // Try manual WAV parsing first (bypass decodeAudioData bug)
       let audioBuffer: AudioBuffer;
       if (uri.endsWith('.wav')) {
-        console.log('[AudioService] Parsing WAV manually...');
+        logger.log('[AudioService] Parsing WAV manually...');
         audioBuffer = this.parseWavToAudioBuffer(arrayBuffer);
       } else {
         // Fallback to decodeAudioData for other formats
         audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
       }
 
-      console.log('[AudioService] Audio decoded:', {
+      logger.log('[AudioService] Audio decoded:', {
         duration: audioBuffer.duration,
         sampleRate: audioBuffer.sampleRate,
         channels: audioBuffer.numberOfChannels,
@@ -341,7 +342,7 @@ class AudioService {
         if (channelData[i] !== 0) nonZeroCount++;
         if (Math.abs(channelData[i]) > maxSample) maxSample = Math.abs(channelData[i]);
       }
-      console.log('[AudioService] Buffer data check:', {
+      logger.log('[AudioService] Buffer data check:', {
         firstSamples: Array.from(channelData.slice(0, 10)),
         maxSample,
         nonZeroCount,
@@ -350,7 +351,7 @@ class AudioService {
 
       return audioBuffer;
     } catch (error) {
-      console.error('[AudioService] Failed to load audio buffer:', error);
+      logger.error('[AudioService] Failed to load audio buffer:', error);
       return null;
     }
   }
@@ -361,7 +362,7 @@ class AudioService {
    */
   private async createSourceNode(): Promise<AudioBufferSourceNode | null> {
     if (!this.audioContext || !this.audioBuffer) {
-      console.error('[AudioService] Cannot create source node');
+      logger.error('[AudioService] Cannot create source node');
       return null;
     }
 
@@ -370,7 +371,7 @@ class AudioService {
     source.buffer = this.audioBuffer;
     source.loop = true;
 
-    console.log('[AudioService] Source buffer set:', {
+    logger.log('[AudioService] Source buffer set:', {
       duration: source.buffer?.duration,
       channels: source.buffer?.numberOfChannels,
     });
@@ -379,7 +380,7 @@ class AudioService {
     source.connect(this.gainNodeA!);
     source.connect(this.gainNodeB!);
 
-    console.log('[AudioService] Source node created and connected');
+    logger.log('[AudioService] Source node created and connected');
 
     return source;
   }
@@ -388,7 +389,7 @@ class AudioService {
    * Load a track with a specific frequency for EQ
    */
   async loadTrack(trackId: TrackId, frequency: FrequencyBand): Promise<boolean> {
-    console.log('[AudioService] Loading track:', trackId, 'with EQ frequency:', frequency);
+    logger.log('[AudioService] Loading track:', trackId, 'with EQ frequency:', frequency);
 
     try {
       // Cleanup any existing playback
@@ -408,17 +409,17 @@ class AudioService {
       // Set EQ frequency
       if (this.eqFilter) {
         this.eqFilter.frequency.value = frequency;
-        console.log('[AudioService] EQ set to:', frequency, 'Hz at +6dB');
+        logger.log('[AudioService] EQ set to:', frequency, 'Hz at +6dB');
       }
 
       this.state.currentTrackId = trackId;
       this.state.currentFrequency = frequency;
       this.state.isPlayingOriginal = true;
 
-      console.log('[AudioService] Track loaded successfully');
+      logger.log('[AudioService] Track loaded successfully');
       return true;
     } catch (error) {
-      console.error('[AudioService] Failed to load track:', error);
+      logger.error('[AudioService] Failed to load track:', error);
       return false;
     }
   }
@@ -427,20 +428,20 @@ class AudioService {
    * Start synced playback (original audible, EQ muted)
    */
   async startSyncedPlayback(): Promise<void> {
-    console.log('[AudioService] Starting synced playback');
+    logger.log('[AudioService] Starting synced playback');
 
     if (!this.audioContext || !this.audioBuffer) {
-      console.error('[AudioService] Audio not loaded');
+      logger.error('[AudioService] Audio not loaded');
       return;
     }
 
     try {
       // Ensure AudioContext is running (required after user interaction)
       if (this.audioContext.state === 'suspended') {
-        console.log('[AudioService] Resuming suspended AudioContext');
+        logger.log('[AudioService] Resuming suspended AudioContext');
         await this.audioContext.resume();
       }
-      console.log('[AudioService] AudioContext state:', this.audioContext.state);
+      logger.log('[AudioService] AudioContext state:', this.audioContext.state);
 
       // Create TWO separate source nodes (workaround for single-output limitation)
       // Source A: for original path (via AnalyserNode for spectrum visualization)
@@ -461,8 +462,8 @@ class AudioService {
       this.gainNodeA!.gain.value = 1.0;
       this.gainNodeB!.gain.value = 0.0;
 
-      console.log('[AudioService] Dual source approach');
-      console.log('[AudioService] GainA:', this.gainNodeA!.gain.value, 'GainB:', this.gainNodeB!.gain.value);
+      logger.log('[AudioService] Dual source approach');
+      logger.log('[AudioService] GainA:', this.gainNodeA!.gain.value, 'GainB:', this.gainNodeB!.gain.value);
 
       // Start both at the same time for sync
       const startTime = this.audioContext.currentTime;
@@ -477,9 +478,9 @@ class AudioService {
       this.state.isPlayingOriginal = true;
       this.state.isPlaying = true;
 
-      console.log('[AudioService] TEST playback started');
+      logger.log('[AudioService] TEST playback started');
     } catch (error) {
-      console.error('[AudioService] Failed to start playback:', error);
+      logger.error('[AudioService] Failed to start playback:', error);
     }
   }
 
@@ -487,10 +488,10 @@ class AudioService {
    * Switch to original (A) - simple direct assignment
    */
   async playOriginal(): Promise<void> {
-    console.log('[AudioService] Switching to A (original)');
+    logger.log('[AudioService] Switching to A (original)');
 
     if (!this.gainNodeA || !this.gainNodeB) {
-      console.warn('[AudioService] Gain nodes not ready');
+      logger.warn('[AudioService] Gain nodes not ready');
       return;
     }
 
@@ -499,17 +500,17 @@ class AudioService {
     this.gainNodeB.gain.value = 0.0;
 
     this.state.isPlayingOriginal = true;
-    console.log('[AudioService] Now playing A. GainA:', this.gainNodeA.gain.value, 'GainB:', this.gainNodeB.gain.value);
+    logger.log('[AudioService] Now playing A. GainA:', this.gainNodeA.gain.value, 'GainB:', this.gainNodeB.gain.value);
   }
 
   /**
    * Switch to processed/EQ (B) - simple direct assignment
    */
   async playProcessed(): Promise<void> {
-    console.log('[AudioService] Switching to B (EQ boosted)');
+    logger.log('[AudioService] Switching to B (EQ boosted)');
 
     if (!this.gainNodeA || !this.gainNodeB) {
-      console.warn('[AudioService] Gain nodes not ready');
+      logger.warn('[AudioService] Gain nodes not ready');
       return;
     }
 
@@ -518,7 +519,7 @@ class AudioService {
     this.gainNodeB.gain.value = 1.0;
 
     this.state.isPlayingOriginal = false;
-    console.log('[AudioService] Now playing B. GainA:', this.gainNodeA.gain.value, 'GainB:', this.gainNodeB.gain.value);
+    logger.log('[AudioService] Now playing B. GainA:', this.gainNodeA.gain.value, 'GainB:', this.gainNodeB.gain.value);
   }
 
   /**
@@ -538,7 +539,7 @@ class AudioService {
    * Stop playback
    */
   async stopPlayback(): Promise<void> {
-    console.log('[AudioService] Stopping playback');
+    logger.log('[AudioService] Stopping playback');
 
     try {
       // Stop both source nodes
@@ -556,7 +557,7 @@ class AudioService {
 
       this.state.isPlaying = false;
     } catch (error) {
-      console.error('[AudioService] Failed to stop playback:', error);
+      logger.error('[AudioService] Failed to stop playback:', error);
     }
   }
 
@@ -564,7 +565,7 @@ class AudioService {
    * Cleanup and release resources
    */
   async cleanup(): Promise<void> {
-    console.log('[AudioService] Cleaning up');
+    logger.log('[AudioService] Cleaning up');
 
     try {
       // Stop and disconnect both source nodes
@@ -602,9 +603,9 @@ class AudioService {
         this.gainNodeB.gain.value = 0.0;
       }
 
-      console.log('[AudioService] Cleanup complete');
+      logger.log('[AudioService] Cleanup complete');
     } catch (error) {
-      console.error('[AudioService] Cleanup error:', error);
+      logger.error('[AudioService] Cleanup error:', error);
     }
   }
 
@@ -612,7 +613,7 @@ class AudioService {
    * Full shutdown - close audio context
    */
   async shutdown(): Promise<void> {
-    console.log('[AudioService] Shutting down');
+    logger.log('[AudioService] Shutting down');
 
     await this.cleanup();
 

@@ -5,24 +5,24 @@
  * Users can watch ads to earn bonus game plays.
  */
 
+import { Platform } from 'react-native';
 import {
   RewardedAd,
   RewardedAdEventType,
   AdEventType,
   TestIds,
 } from 'react-native-google-mobile-ads';
+import { logger } from '../utils/logger';
 
-// Ad Unit IDs
-const AD_UNIT_IDS = {
-  // Test IDs for development (always show test ads)
+// Environment-based Ad Unit IDs
+// Production IDs are loaded from environment variables (.env.local)
+// In development (__DEV__), always use test IDs
+const getAdUnitIds = () => ({
   REWARDED_TEST: TestIds.REWARDED,
+  REWARDED_IOS: process.env.EXPO_PUBLIC_ADMOB_REWARDED_IOS || TestIds.REWARDED,
+  REWARDED_ANDROID: process.env.EXPO_PUBLIC_ADMOB_REWARDED_ANDROID || TestIds.REWARDED,
+});
 
-  // Production IDs from AdMob console
-  REWARDED_IOS: 'ca-app-pub-2023025421287631/4450341234',
-  REWARDED_ANDROID: 'ca-app-pub-2023025421287631/4450341234', // TODO: Android用に別途作成が必要
-};
-
-// Use test ads in development
 const IS_DEVELOPMENT = __DEV__;
 
 type AdLoadState = 'idle' | 'loading' | 'loaded' | 'showing' | 'error';
@@ -46,13 +46,19 @@ class AdService {
    * Get the appropriate ad unit ID based on platform and environment
    */
   private getAdUnitId(): string {
+    const adUnitIds = getAdUnitIds();
+
+    // Always use test ads in development
     if (IS_DEVELOPMENT) {
-      return AD_UNIT_IDS.REWARDED_TEST;
+      return adUnitIds.REWARDED_TEST;
     }
 
-    // In production, use platform-specific IDs
-    // TODO: Detect platform and return appropriate ID
-    return AD_UNIT_IDS.REWARDED_TEST; // For now, always use test
+    // In production, use platform-specific IDs from environment variables
+    return Platform.select({
+      ios: adUnitIds.REWARDED_IOS,
+      android: adUnitIds.REWARDED_ANDROID,
+      default: adUnitIds.REWARDED_TEST,
+    }) || adUnitIds.REWARDED_TEST;
   }
 
   /**
@@ -60,7 +66,7 @@ class AdService {
    */
   async loadAd(): Promise<boolean> {
     if (this.state.loadState === 'loading' || this.state.loadState === 'loaded') {
-      console.log('[AdService] Ad already loading or loaded');
+      logger.log('[AdService] Ad already loading or loaded');
       return this.state.loadState === 'loaded';
     }
 
@@ -78,7 +84,7 @@ class AdService {
         const unsubscribeLoaded = this.rewardedAd.addAdEventListener(
           RewardedAdEventType.LOADED,
           () => {
-            console.log('[AdService] Rewarded ad loaded');
+            logger.log('[AdService] Rewarded ad loaded');
             this.state.loadState = 'loaded';
             unsubscribeLoaded();
             resolve(true);
@@ -88,7 +94,7 @@ class AdService {
         const unsubscribeError = this.rewardedAd.addAdEventListener(
           AdEventType.ERROR,
           (error) => {
-            console.error('[AdService] Ad load error:', error);
+            logger.error('[AdService] Ad load error:', error);
             this.state.loadState = 'error';
             this.state.error = error.message;
             unsubscribeError();
@@ -98,9 +104,9 @@ class AdService {
 
         // Start loading
         this.rewardedAd.load();
-        console.log('[AdService] Started loading rewarded ad');
+        logger.log('[AdService] Started loading rewarded ad');
       } catch (error) {
-        console.error('[AdService] Failed to create ad request:', error);
+        logger.error('[AdService] Failed to create ad request:', error);
         this.state.loadState = 'error';
         this.state.error = error instanceof Error ? error.message : 'Unknown error';
         resolve(false);
@@ -117,7 +123,7 @@ class AdService {
     onError?: (error: string) => void
   ): Promise<boolean> {
     if (this.state.loadState !== 'loaded' || !this.rewardedAd) {
-      console.log('[AdService] No ad loaded to show');
+      logger.log('[AdService] No ad loaded to show');
       onError?.('No ad loaded');
       return false;
     }
@@ -132,7 +138,7 @@ class AdService {
         const unsubscribeEarned = this.rewardedAd!.addAdEventListener(
           RewardedAdEventType.EARNED_REWARD,
           (reward) => {
-            console.log('[AdService] User earned reward:', reward);
+            logger.log('[AdService] User earned reward:', reward);
             this.onRewardCallback?.();
             unsubscribeEarned();
           }
@@ -142,7 +148,7 @@ class AdService {
         const unsubscribeClosed = this.rewardedAd!.addAdEventListener(
           AdEventType.CLOSED,
           () => {
-            console.log('[AdService] Ad closed');
+            logger.log('[AdService] Ad closed');
             this.state.loadState = 'idle';
             this.onCloseCallback?.();
             unsubscribeClosed();
@@ -157,7 +163,7 @@ class AdService {
         const unsubscribeError = this.rewardedAd!.addAdEventListener(
           AdEventType.ERROR,
           (error) => {
-            console.error('[AdService] Ad show error:', error);
+            logger.error('[AdService] Ad show error:', error);
             this.state.loadState = 'error';
             this.onErrorCallback?.(error.message);
             unsubscribeError();
@@ -168,9 +174,9 @@ class AdService {
         // Show the ad
         this.state.loadState = 'showing';
         this.rewardedAd!.show();
-        console.log('[AdService] Showing rewarded ad');
+        logger.log('[AdService] Showing rewarded ad');
       } catch (error) {
-        console.error('[AdService] Failed to show ad:', error);
+        logger.error('[AdService] Failed to show ad:', error);
         this.state.loadState = 'error';
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         this.state.error = errorMsg;

@@ -79,6 +79,8 @@ export function InteractiveSpectrum({
 
   // Update spectrum visualization from audio analyser
   useEffect(() => {
+    let isMounted = true;
+
     if (!isPlaying) {
       // Fade out bars when not playing
       setBars((prev) => prev.map((v) => v * 0.9));
@@ -86,6 +88,9 @@ export function InteractiveSpectrum({
     }
 
     const updateSpectrum = () => {
+      // Don't update if component unmounted
+      if (!isMounted) return;
+
       const data = audioService.getFrequencyData();
       if (data) {
         const binCount = data.length; // 256 bins for fftSize=512
@@ -122,12 +127,17 @@ export function InteractiveSpectrum({
         }
         setBars(newBars);
       }
-      animationRef.current = requestAnimationFrame(updateSpectrum);
+
+      // Only schedule next frame if still mounted
+      if (isMounted) {
+        animationRef.current = requestAnimationFrame(updateSpectrum);
+      }
     };
 
     animationRef.current = requestAnimationFrame(updateSpectrum);
 
     return () => {
+      isMounted = false;
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;

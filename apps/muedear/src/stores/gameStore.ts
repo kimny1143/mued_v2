@@ -26,6 +26,7 @@ import {
   createFreshPlayLimit,
   createFreshAdWatchLimit,
 } from '../services/storageService';
+import { logger } from '../utils/logger';
 
 interface GameStore {
   // Current game state (not persisted)
@@ -55,7 +56,7 @@ interface GameStore {
   _hasHydrated: boolean;
 
   // Actions
-  startGame: (gameId: GameId) => void;
+  startGame: (gameId: GameId) => boolean;
   endGame: () => GameResult;
   nextRound: () => void;
   submitAnswer: (answer: FrequencyBand | string) => boolean;
@@ -129,10 +130,9 @@ export const useGameStore = create<GameStore>()(
 
       /**
        * Start a new game
+       * @returns true if game started successfully, false if play limit reached
        */
       startGame: (gameId: GameId) => {
-        const { playLimit } = get();
-
         // Check daily reset first
         get().checkDailyReset();
 
@@ -141,8 +141,8 @@ export const useGameStore = create<GameStore>()(
 
         // Check if can play
         if (currentPlayLimit.gamesPlayed >= currentPlayLimit.maxGames + currentPlayLimit.bonusGames) {
-          console.log('[GameStore] Play limit reached');
-          return;
+          logger.log('[GameStore] Play limit reached');
+          return false;
         }
 
         set({
@@ -160,7 +160,8 @@ export const useGameStore = create<GameStore>()(
           },
         });
 
-        console.log('[GameStore] Game started:', gameId);
+        logger.log('[GameStore] Game started:', gameId);
+        return true;
       },
 
       /**
@@ -196,7 +197,7 @@ export const useGameStore = create<GameStore>()(
           stats: newStats,
         });
 
-        console.log('[GameStore] Game ended:', result);
+        logger.log('[GameStore] Game ended:', result);
         return result;
       },
 
@@ -226,6 +227,13 @@ export const useGameStore = create<GameStore>()(
       submitAnswer: (answer: FrequencyBand | string) => {
         const { currentFrequency, score } = get();
 
+        // Input validation: ensure answer is a valid frequency band
+        const validFrequencies = FREQUENCY_BANDS.map((b) => b.value);
+        if (typeof answer === 'number' && !validFrequencies.includes(answer as FrequencyBand)) {
+          logger.warn('[GameStore] Invalid frequency answer:', answer);
+          return false;
+        }
+
         const isCorrect = answer === currentFrequency;
         const points = isCorrect ? 100 : 0;
 
@@ -236,7 +244,7 @@ export const useGameStore = create<GameStore>()(
           correctAnswers: get().correctAnswers + (isCorrect ? 1 : 0),
         });
 
-        console.log('[GameStore] Answer submitted:', { answer, correct: isCorrect });
+        logger.log('[GameStore] Answer submitted:', { answer, correct: isCorrect });
         return isCorrect;
       },
 
@@ -264,7 +272,7 @@ export const useGameStore = create<GameStore>()(
             bonusGames: state.playLimit.bonusGames + count,
           },
         }));
-        console.log('[GameStore] Bonus games added:', count);
+        logger.log('[GameStore] Bonus games added:', count);
       },
 
       /**
@@ -293,7 +301,7 @@ export const useGameStore = create<GameStore>()(
         const { adWatchLimit, playLimit } = get();
 
         if (adWatchLimit.watchCount >= adWatchLimit.maxWatches) {
-          console.log('[GameStore] Ad watch limit reached for today');
+          logger.log('[GameStore] Ad watch limit reached for today');
           return;
         }
 
@@ -308,7 +316,7 @@ export const useGameStore = create<GameStore>()(
           },
         });
 
-        console.log('[GameStore] Ad watched, bonus plays added:', AD_CONFIG.PLAYS_PER_AD);
+        logger.log('[GameStore] Ad watched, bonus plays added:', AD_CONFIG.PLAYS_PER_AD);
       },
 
       /**
@@ -352,7 +360,7 @@ export const useGameStore = create<GameStore>()(
        */
       setCurrentTrack: (trackId: TrackId | null) => {
         set({ currentTrackId: trackId });
-        console.log('[GameStore] Track set:', trackId);
+        logger.log('[GameStore] Track set:', trackId);
       },
 
       /**
@@ -360,7 +368,7 @@ export const useGameStore = create<GameStore>()(
        */
       setAudioLoaded: (loaded: boolean) => {
         set({ isAudioLoaded: loaded });
-        console.log('[GameStore] Audio loaded:', loaded);
+        logger.log('[GameStore] Audio loaded:', loaded);
       },
 
       /**
@@ -368,7 +376,7 @@ export const useGameStore = create<GameStore>()(
        */
       setDemoMode: (demo: boolean) => {
         set({ isDemoMode: demo });
-        console.log('[GameStore] Demo mode:', demo);
+        logger.log('[GameStore] Demo mode:', demo);
       },
 
       /**
@@ -385,7 +393,7 @@ export const useGameStore = create<GameStore>()(
         const { playLimit, adWatchLimit } = get();
 
         if (shouldResetPlayLimit(playLimit.date)) {
-          console.log('[GameStore] Daily reset triggered');
+          logger.log('[GameStore] Daily reset triggered');
           set({
             playLimit: createFreshPlayLimit(),
             adWatchLimit: createFreshAdWatchLimit(),
@@ -407,7 +415,7 @@ export const useGameStore = create<GameStore>()(
           // Check for daily reset after rehydration
           state.checkDailyReset();
           state.setHasHydrated(true);
-          console.log('[GameStore] Rehydrated from storage');
+          logger.log('[GameStore] Rehydrated from storage');
         }
       },
     }
