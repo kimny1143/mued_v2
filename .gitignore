@@ -52,3 +52,16 @@ apps/
 # Audio files (test recordings)
 docs/audio/
 docs/sounds/
+
+# Claude Code symlinks (managed in claude-code-template repository)
+# Ignore all, then whitelist MUED-specific files
+.claude/commands/
+.claude/agents/*
+!.claude/agents/database-architect.md
+!.claude/agents/mued-architect-manager.md
+!.claude/agents/script-consolidator.md
+.claude/skills/*
+!.claude/skills/ai-models/
+!.claude/skills/aio-seo/
+!.claude/skills/database/
+!.claude/skills/daw-osc/
