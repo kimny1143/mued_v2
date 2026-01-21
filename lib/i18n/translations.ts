@@ -353,7 +353,7 @@ export const translations = {
         turnsExhausted: 'Trial turns used up',
         turnsExhaustedDescription: 'Upgrade to Basic for 150 turns/month',
         upgradeNow: 'Upgrade to Basic',
-        features: ['Hoo AI conversations', 'Unlimited log storage', 'DAW log integration', 'Dashboard & Export'],
+        features: ['Hoo AI conversations', 'Unlimited log storage', 'DAW log integration'],
       },
     },
 
@@ -817,7 +817,7 @@ export const translations = {
         turnsExhausted: 'トライアルターン使用済み',
         turnsExhaustedDescription: 'Basicで月150ターン利用可能',
         upgradeNow: 'Basicにアップグレード',
-        features: ['Hoo AI会話', '無制限ログ保存', 'DAWログ連携', 'ダッシュボード・エクスポート'],
+        features: ['Hoo AI会話', '無制限ログ保存', 'DAWログ連携'],
       },
     },
 
