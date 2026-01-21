@@ -283,11 +283,11 @@ describe('i18n Translations', () => {
     });
 
     it('should handle currency symbols correctly', () => {
-      expect(translations.en.landing.pricing.basic.price).toBe('¥2,980');
-      expect(translations.ja.landing.pricing.basic.price).toBe('¥2,980');
+      expect(translations.en.landing.pricing.basic.price).toBe('¥1,980');
+      expect(translations.ja.landing.pricing.basic.price).toBe('¥1,980');
 
-      expect(translations.en.landing.pricing.premium.price).toBe('¥5,980');
-      expect(translations.ja.landing.pricing.premium.price).toBe('¥5,980');
+      expect(translations.en.landing.pricing.premium.price).toBe('¥2,980');
+      expect(translations.ja.landing.pricing.premium.price).toBe('¥2,980');
     });
 
     it('should preserve punctuation in sentences', () => {
