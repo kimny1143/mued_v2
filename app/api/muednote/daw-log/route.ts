@@ -19,6 +19,9 @@ import {
 } from '@/lib/repositories/daw-logs.repository';
 import type { DawType, DawAction } from '@/db/schema/muednote-daw-logs';
 import { MIDI_ACTIONS, OSC_ACTIONS } from '@/db/schema/muednote-daw-logs';
+import { getUserIdFromClerkId } from '@/lib/utils/auth-helpers';
+import { trialService } from '@/lib/services/trial.service';
+import { subscriptionRepository } from '@/lib/repositories/subscriptions.repository';
 
 /** Source filter type for GET requests */
 type SourceFilter = 'osc' | 'midi' | 'all';
@@ -102,6 +105,50 @@ async function getAuthUserId(req: Request): Promise<string | null> {
 }
 
 // ========================================
+// Tier Check for DAW Logs (Basic+ or Trial)
+// ========================================
+
+/**
+ * Check if user can use DAW log feature
+ * Requires: Basic, Premium, or active Trial
+ */
+async function canUseDawLogs(clerkUserId: string): Promise<{ allowed: boolean; reason?: string }> {
+  try {
+    const internalUserId = await getUserIdFromClerkId(clerkUserId);
+    if (!internalUserId) {
+      return { allowed: false, reason: 'USER_NOT_FOUND' };
+    }
+
+    // Check subscription tier
+    const subscription = await subscriptionRepository.findActiveByUserId(internalUserId);
+    if (!subscription) {
+      return { allowed: false, reason: 'NO_SUBSCRIPTION' };
+    }
+
+    const tier = subscription.tier;
+
+    // Basic and Premium can always use DAW logs
+    if (tier === 'basic' || tier === 'premium') {
+      return { allowed: true };
+    }
+
+    // Free tier: check if in active trial
+    if (tier === 'free') {
+      const trialStatus = await trialService.getTrialStatus(internalUserId);
+      if (trialStatus.isInTrial) {
+        return { allowed: true };
+      }
+      return { allowed: false, reason: 'FREE_TIER' };
+    }
+
+    return { allowed: false, reason: 'UNKNOWN_TIER' };
+  } catch (error) {
+    console.error('[canUseDawLogs] Error:', error);
+    return { allowed: false, reason: 'CHECK_FAILED' };
+  }
+}
+
+// ========================================
 // Request Types
 // ========================================
 
@@ -163,6 +210,19 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Valid authentication required' },
         { status: 401 }
+      );
+    }
+
+    // Check tier (Basic+ or Trial required)
+    const tierCheck = await canUseDawLogs(userId);
+    if (!tierCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Upgrade required',
+          message: 'DAW log integration requires Basic plan or higher. Start a free trial or upgrade to access this feature.',
+          code: tierCheck.reason,
+        },
+        { status: 403 }
       );
     }
 
@@ -260,6 +320,19 @@ export async function GET(req: Request) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Valid authentication required' },
         { status: 401 }
+      );
+    }
+
+    // Check tier (Basic+ or Trial required)
+    const tierCheck = await canUseDawLogs(userId);
+    if (!tierCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: 'Upgrade required',
+          message: 'DAW log integration requires Basic plan or higher. Start a free trial or upgrade to access this feature.',
+          code: tierCheck.reason,
+        },
+        { status: 403 }
       );
     }
 
