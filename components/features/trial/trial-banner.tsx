@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Sparkles, Clock, Zap, ArrowRight, Check } from 'lucide-react';
+import { Sparkles, Clock, Zap, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLocale } from '@/lib/i18n/locale-context';
 
@@ -74,17 +74,9 @@ export function TrialBanner({ className = '' }: TrialBannerProps) {
                 {trialT?.title || 'Try Hoo AI free for 3 days'}
               </h3>
             </div>
-            <p className="text-slate-300 text-sm mb-3">
-              {trialT?.description || 'Experience AI-powered music reflection with 50 turns'}
+            <p className="text-slate-300 text-sm">
+              {trialT?.description || '50 turns to experience AI-powered music reflection'}
             </p>
-            <div className="flex flex-wrap gap-2">
-              {(trialT?.features || ['Hoo AI conversations', 'Unlimited log storage', 'DAW log integration', 'Dashboard & Export']).map((feature, i) => (
-                <span key={i} className="inline-flex items-center gap-1 text-xs text-indigo-300 bg-indigo-500/20 px-2 py-1 rounded-full">
-                  <Check className="w-3 h-3" />
-                  {feature}
-                </span>
-              ))}
-            </div>
           </div>
           <Link href="/dashboard/muednote/hoo">
             <Button className="bg-indigo-600 hover:bg-indigo-700 text-white whitespace-nowrap">

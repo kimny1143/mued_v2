@@ -344,7 +344,7 @@ export const translations = {
     trial: {
       banner: {
         title: 'Try Hoo AI free for 3 days',
-        description: 'Experience AI-powered music reflection with 50 turns',
+        description: '50 turns to experience AI-powered music reflection',
         startTrial: 'Start Free Trial',
         inProgress: 'Free Trial Active',
         remaining: '{days} days, {turns} turns remaining',
@@ -353,7 +353,6 @@ export const translations = {
         turnsExhausted: 'Trial turns used up',
         turnsExhaustedDescription: 'Upgrade to Basic for 150 turns/month',
         upgradeNow: 'Upgrade to Basic',
-        features: ['Hoo AI conversations', 'Unlimited log storage', 'DAW log integration'],
       },
     },
 
@@ -808,7 +807,7 @@ export const translations = {
     trial: {
       banner: {
         title: '3日間無料でHoo AIを試す',
-        description: 'AI音楽振り返り機能を50ターンでお試し',
+        description: '50ターンでAI音楽振り返り機能をお試し',
         startTrial: '無料トライアルを開始',
         inProgress: '無料トライアル中',
         remaining: '残り{days}日 / {turns}ターン',
@@ -817,7 +816,6 @@ export const translations = {
         turnsExhausted: 'トライアルターン使用済み',
         turnsExhaustedDescription: 'Basicで月150ターン利用可能',
         upgradeNow: 'Basicにアップグレード',
-        features: ['Hoo AI会話', '無制限ログ保存', 'DAWログ連携'],
       },
     },
 
