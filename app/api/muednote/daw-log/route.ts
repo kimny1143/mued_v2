@@ -5,8 +5,8 @@
  * GET  /api/muednote/daw-log - Get DAW logs by time range
  *
  * Authentication:
- * - X-DAW-API-Key header (CLI/Hub)
- * - Bearer JWT (future desktop app)
+ * - X-DAW-API-Key header (development only, for testing)
+ * - Bearer JWT (desktop app - Clerk OAuth)
  * - Clerk session cookie (web)
  */
 
@@ -32,31 +32,6 @@ type SourceFilter = 'osc' | 'midi' | 'all';
 
 const DAW_API_KEY = process.env.DAW_HUB_API_KEY;
 const DAW_USER_ID = process.env.DAW_HUB_USER_ID;
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
-
-// Development fallbacks (only for local development)
-const DEV_API_KEY = 'dev_daw_key_kimny';
-const DEV_USER_ID = 'user_2wUoGVkTsBdFc0n2qIRxnAWa7Vy';
-
-/**
- * Get effective API key (production requires env var)
- */
-function getApiKey(): string | null {
-  if (IS_PRODUCTION) {
-    return DAW_API_KEY ?? null;
-  }
-  return DAW_API_KEY || DEV_API_KEY;
-}
-
-/**
- * Get effective user ID for API key auth
- */
-function getApiUserId(): string | null {
-  if (IS_PRODUCTION) {
-    return DAW_USER_ID ?? null;
-  }
-  return DAW_USER_ID || DEV_USER_ID;
-}
 
 // ========================================
 // Authentication
@@ -65,22 +40,22 @@ function getApiUserId(): string | null {
 /**
  * DAW Hub Authentication
  * Priority order:
- * 1. X-DAW-API-Key: API key auth (CLI/Hub)
- * 2. Bearer: JWT auth (future desktop app)
+ * 1. X-DAW-API-Key: API key auth (development only, for testing)
+ * 2. Bearer: JWT auth (desktop app)
  * 3. Cookie: Clerk session (web)
  */
 async function getAuthUserId(req: Request): Promise<string | null> {
-  // API Key authentication (CLI/Hub)
+  // API Key authentication - DEVELOPMENT ONLY
+  // In production, users must authenticate via JWT (Clerk OAuth)
+  const IS_DEVELOPMENT = process.env.NODE_ENV !== 'production';
   const apiKey = req.headers.get('X-DAW-API-Key');
-  const expectedKey = getApiKey();
-  const apiUserId = getApiUserId();
 
-  if (apiKey && expectedKey && apiKey === expectedKey) {
-    if (!apiUserId) {
+  if (IS_DEVELOPMENT && apiKey && DAW_API_KEY && apiKey === DAW_API_KEY) {
+    if (!DAW_USER_ID) {
       console.error('[DAW API] API key valid but DAW_HUB_USER_ID not set');
       return null;
     }
-    return apiUserId;
+    return DAW_USER_ID;
   }
 
   // JWT authentication (future desktop app)
