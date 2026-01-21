@@ -13,7 +13,7 @@ import {
   type DawType,
   type DawAction,
 } from '@/db/schema/muednote-daw-logs';
-import { desc, eq, and, gte, lte, sql, inArray } from 'drizzle-orm';
+import { desc, eq, and, gte, lte, sql, inArray, or } from 'drizzle-orm';
 
 // ========================================
 // Type Definitions
@@ -46,6 +46,8 @@ export interface DawLogFilters {
   until?: Date;
   daw?: DawType;
   action?: DawAction;
+  /** Filter by multiple actions (e.g., MIDI or OSC actions) */
+  actions?: DawAction[];
   limit?: number;
   offset?: number;
 }
@@ -160,6 +162,10 @@ export class DawLogsRepository {
     }
     if (filters.action) {
       conditions.push(eq(muednoteDawLogs.action, filters.action));
+    }
+    // Filter by multiple actions (e.g., MIDI or OSC actions)
+    if (filters.actions && filters.actions.length > 0) {
+      conditions.push(inArray(muednoteDawLogs.action, filters.actions));
     }
 
     let query = db
@@ -329,6 +335,10 @@ export class DawLogsRepository {
       track_select: 0,
       clip_trigger: 0,
       device_config_change: 0,
+      midi_note_on: 0,
+      midi_note_off: 0,
+      midi_control_change: 0,
+      midi_pitch_bend: 0,
     };
 
     const byDaw: Record<DawType, number> = {

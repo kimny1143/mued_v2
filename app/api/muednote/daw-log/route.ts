@@ -18,6 +18,10 @@ import {
   type CreateDawLogInput,
 } from '@/lib/repositories/daw-logs.repository';
 import type { DawType, DawAction } from '@/db/schema/muednote-daw-logs';
+import { MIDI_ACTIONS, OSC_ACTIONS } from '@/db/schema/muednote-daw-logs';
+
+/** Source filter type for GET requests */
+type SourceFilter = 'osc' | 'midi' | 'all';
 
 // ========================================
 // Environment Configuration
@@ -263,10 +267,19 @@ export async function GET(req: Request) {
     const since = url.searchParams.get('since');
     const until = url.searchParams.get('until');
     const sessionId = url.searchParams.get('session_id');
+    const source = (url.searchParams.get('source') || 'all') as SourceFilter;
     const limit = Math.min(
       parseInt(url.searchParams.get('limit') || '100'),
       500
     );
+
+    // Determine which actions to filter by source
+    let actions: DawAction[] | undefined;
+    if (source === 'midi') {
+      actions = MIDI_ACTIONS;
+    } else if (source === 'osc') {
+      actions = OSC_ACTIONS;
+    }
 
     // Build filters
     const filters = {
@@ -274,6 +287,7 @@ export async function GET(req: Request) {
       sessionId: sessionId ?? undefined,
       since: since ? new Date(since) : undefined,
       until: until ? new Date(until) : undefined,
+      actions,
       limit,
     };
 

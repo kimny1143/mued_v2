@@ -3,6 +3,7 @@
 import { Mic, Clock, ArrowRight, Calendar, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "@/lib/i18n/locale-context";
+import { TrialBanner } from "@/components/features/trial/trial-banner";
 
 interface Session {
   id: string;
@@ -93,6 +94,9 @@ export function MuednoteDashboardContent({
           {t.muednote.subtitle}
         </p>
       </div>
+
+      {/* Trial Banner (for Free tier users) */}
+      <TrialBanner className="mb-8" />
 
       {/* Overview Tab Content */}
       <div className="grid lg:grid-cols-[1fr,280px] gap-8 lg:gap-12">

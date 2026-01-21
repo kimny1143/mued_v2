@@ -39,7 +39,15 @@ export interface DawStatsForSession {
     parameter_change: number;
     track_volume: number;
     track_pan: number;
+    midi_note_on: number;
+    midi_note_off: number;
+    midi_control_change: number;
+    midi_pitch_bend: number;
   };
+  /** Count of OSC logs (parameter_change, track_volume, track_pan) */
+  oscCount: number;
+  /** Count of MIDI logs (note_on, note_off, control_change, pitch_bend) */
+  midiCount: number;
 }
 
 export interface SessionWithDawLogs {
@@ -117,16 +125,45 @@ export class DawSessionMatcherService {
         parameter_change: 0,
         track_volume: 0,
         track_pan: 0,
+        midi_note_on: 0,
+        midi_note_off: 0,
+        midi_control_change: 0,
+        midi_pitch_bend: 0,
       },
+      oscCount: 0,
+      midiCount: 0,
     };
 
     for (const log of logs) {
-      if (log.action === 'parameter_change') {
-        stats.byAction.parameter_change++;
-      } else if (log.action === 'track_volume') {
-        stats.byAction.track_volume++;
-      } else if (log.action === 'track_pan') {
-        stats.byAction.track_pan++;
+      switch (log.action) {
+        case 'parameter_change':
+          stats.byAction.parameter_change++;
+          stats.oscCount++;
+          break;
+        case 'track_volume':
+          stats.byAction.track_volume++;
+          stats.oscCount++;
+          break;
+        case 'track_pan':
+          stats.byAction.track_pan++;
+          stats.oscCount++;
+          break;
+        case 'midi_note_on':
+          stats.byAction.midi_note_on++;
+          stats.midiCount++;
+          break;
+        case 'midi_note_off':
+          stats.byAction.midi_note_off++;
+          stats.midiCount++;
+          break;
+        case 'midi_control_change':
+          stats.byAction.midi_control_change++;
+          stats.midiCount++;
+          break;
+        case 'midi_pitch_bend':
+          stats.byAction.midi_pitch_bend++;
+          stats.midiCount++;
+          break;
       }
     }
 

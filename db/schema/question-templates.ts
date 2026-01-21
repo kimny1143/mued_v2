@@ -108,19 +108,21 @@ export const ragEmbeddings = pgTable('rag_embeddings', {
   sourceType: text('source_type').notNull(), // 'template' | 'session' | 'log_entry'
   sourceId: uuid('source_id').notNull(),
 
-  // Vector embedding (OpenAI ada-002: 1536 dimensions)
-  // Note: Uses pgvector extension
-  // embedding: vector('embedding', { dimensions: 1536 }),
+  // Vector embedding (stored as text/jsonb since pgvector not available in Drizzle)
+  embedding: text('embedding'), // Vector data as JSON string
+  embeddingModel: text('embedding_model'), // e.g., 'text-embedding-ada-002'
+  embeddingHash: text('embedding_hash'), // Hash for deduplication
+  tokenCount: integer('token_count'), // Token count of source text
 
   // Metadata
   metadata: jsonb('metadata'),
 
   // Timestamps
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => ({
   sourceIdx: index('idx_rag_embeddings_source').on(table.sourceType, table.sourceId),
-  // Vector similarity search index (requires pgvector extension)
-  // vectorIdx: index('idx_rag_embeddings_vector').using('ivfflat', table.embedding),
+  embeddingHashIdx: index('idx_rag_embeddings_hash').on(table.embeddingHash),
 }));
 
 // ========================================

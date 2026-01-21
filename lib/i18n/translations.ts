@@ -340,6 +340,23 @@ export const translations = {
       },
     },
 
+    // Trial
+    trial: {
+      banner: {
+        title: 'Try Hoo AI free for 3 days',
+        description: 'Experience AI-powered music reflection with 50 turns',
+        startTrial: 'Start Free Trial',
+        inProgress: 'Free Trial Active',
+        remaining: '{days} days, {turns} turns remaining',
+        expired: 'Trial ended',
+        expiredDescription: 'Upgrade to Basic for continued Hoo AI access',
+        turnsExhausted: 'Trial turns used up',
+        turnsExhaustedDescription: 'Upgrade to Basic for 150 turns/month',
+        upgradeNow: 'Upgrade to Basic',
+        features: ['Hoo AI conversations', 'Unlimited log storage', 'DAW log integration', 'Dashboard & Export'],
+      },
+    },
+
     // Lessons Page
     lessons: {
       tabs: {
@@ -784,6 +801,23 @@ export const translations = {
         periodEnd: 'サブスクリプションの終了日',
         completed: '解約手続きが完了しました',
         keepUntil: '{tier}は以下の日付まで引き続きご利用いただけます',
+      },
+    },
+
+    // Trial
+    trial: {
+      banner: {
+        title: '3日間無料でHoo AIを試す',
+        description: 'AI音楽振り返り機能を50ターンでお試し',
+        startTrial: '無料トライアルを開始',
+        inProgress: '無料トライアル中',
+        remaining: '残り{days}日 / {turns}ターン',
+        expired: 'トライアル終了',
+        expiredDescription: 'Basicにアップグレードで継続利用',
+        turnsExhausted: 'トライアルターン使用済み',
+        turnsExhaustedDescription: 'Basicで月150ターン利用可能',
+        upgradeNow: 'Basicにアップグレード',
+        features: ['Hoo AI会話', '無制限ログ保存', 'DAWログ連携', 'ダッシュボード・エクスポート'],
       },
     },
 

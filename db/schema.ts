@@ -129,6 +129,10 @@ export const subscriptions = pgTable("subscriptions", {
   cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
   hooConversationsUsed: integer("hoo_conversations_used").notNull().default(0), // Thread count (soft limit)
   hooTurnsUsed: integer("hoo_turns_used").notNull().default(0), // Turn count (hard limit)
+  // Free Trial (3 days, 50 turns for Free tier)
+  trialStartedAt: timestamp("trial_started_at"), // When trial started
+  trialUsed: boolean("trial_used").default(false), // Whether trial has been used (prevents re-use)
+  trialTurnsUsed: integer("trial_turns_used").default(0), // Turns used during trial (limit: 50)
   // Legacy columns for future MUED LMS integration
   aiMaterialsUsed: integer("ai_materials_used").notNull().default(0),
   reservationsUsed: integer("reservations_used").notNull().default(0),

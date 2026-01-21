@@ -17,6 +17,12 @@
         },
         {
             "path": "../../AVID_SDK"
+        },
+        {
+            "path": "../../claude-code-template"
+        },
+        {
+            "path": "../../_LandingPage/glasswerks-lp"
         }
     ],
     "settings": {
