@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { LocaleProviderWrapper } from "@/components/providers/locale-provider-wrapper";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { structuredData } from "@/lib/seo/structured-data";
+import { locales, defaultLocale, type Locale } from "@/lib/i18n/config";
 import "./globals.css";
 import "abcjs/abcjs-audio.css";
 
@@ -49,15 +51,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const localeCookie = cookieStore.get("NEXT_LOCALE")?.value;
+  const locale: Locale = localeCookie && locales.includes(localeCookie as Locale)
+    ? (localeCookie as Locale)
+    : defaultLocale;
+
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang={locale}>
         <head>
+          {/* SEO: hreflang alternate links for international SEO */}
+          <link rel="alternate" hrefLang="en" href="https://mued.jp/en" />
+          <link rel="alternate" hrefLang="ja" href="https://mued.jp/ja" />
+          <link rel="alternate" hrefLang="x-default" href="https://mued.jp/en" />
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{

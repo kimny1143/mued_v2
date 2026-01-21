@@ -120,7 +120,7 @@ export const translations = {
         },
         basic: {
           name: 'Basic Plan',
-          price: '¥2,980',
+          price: '¥1,980',
           perMonth: '/month',
           features: [
             '4 lesson bookings per month',
@@ -131,7 +131,7 @@ export const translations = {
         },
         premium: {
           name: 'Premium Plan',
-          price: '¥5,980',
+          price: '¥2,980',
           perMonth: '/month',
           features: [
             'Unlimited lesson bookings',
@@ -567,7 +567,7 @@ export const translations = {
         },
         basic: {
           name: 'ベーシックプラン',
-          price: '¥2,980',
+          price: '¥1,980',
           perMonth: '/月',
           features: [
             '月4回のレッスン予約',
@@ -578,7 +578,7 @@ export const translations = {
         },
         premium: {
           name: 'プレミアムプラン',
-          price: '¥5,980',
+          price: '¥2,980',
           perMonth: '/月',
           features: [
             '無制限のレッスン予約',

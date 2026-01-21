@@ -80,7 +80,20 @@ export default clerkMiddleware(async (auth, req) => {
   if (pathname === "/") {
     const acceptLanguage = req.headers.get("accept-language");
     const locale = getPreferredLocale(acceptLanguage);
-    return NextResponse.redirect(new URL(`/${locale}`, req.url));
+    const response = NextResponse.redirect(new URL(`/${locale}`, req.url));
+    response.cookies.set("NEXT_LOCALE", locale, { path: "/" });
+    return response;
+  }
+
+  // For locale-prefixed routes, set the locale cookie
+  const pathLocale = getLocaleFromPath(pathname);
+  if (pathLocale) {
+    const response = NextResponse.next();
+    response.cookies.set("NEXT_LOCALE", pathLocale, { path: "/" });
+    // For public routes with locale, return the response with cookie
+    if (isPublicRoute(req)) {
+      return response;
+    }
   }
 
   // Public routes don't require authentication

@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { CancellationModal } from '@/components/features/subscription/cancellation-modal';
 import { MuednoteLayout } from '@/components/layouts/muednote-layout';
-import { Sparkles, Check, AlertTriangle } from 'lucide-react';
+import { Sparkles, Check, AlertTriangle, Tag } from 'lucide-react';
+
+type BillingPeriod = 'monthly' | 'yearly';
 
 interface UsageLimits {
   hooConversationsLimit: number;
@@ -22,6 +24,7 @@ export default function SubscriptionPage() {
   const [loading, setLoading] = useState(true);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [reactivating, setReactivating] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>('monthly');
 
   useEffect(() => {
     fetchUsageLimits();
@@ -75,8 +78,10 @@ export default function SubscriptionPage() {
     {
       id: 'free',
       name: t.subscription.plans.free.name,
-      price: 0,
-      priceId: null,
+      monthlyPrice: 0,
+      yearlyPrice: 0,
+      monthlyPriceId: null,
+      yearlyPriceId: null,
       currency: 'JPY',
       description: t.subscription.plans.free.description,
       features: t.subscription.plans.free.features,
@@ -85,8 +90,10 @@ export default function SubscriptionPage() {
     {
       id: 'basic',
       name: t.subscription.plans.basic.name,
-      price: 1980,
-      priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_BASIC?.trim(),
+      monthlyPrice: 1980,
+      yearlyPrice: 19800, // ~1650/month, save 2 months
+      monthlyPriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_BASIC?.trim(),
+      yearlyPriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_BASIC_YEARLY?.trim(),
       currency: 'JPY',
       description: t.subscription.plans.basic.description,
       features: t.subscription.plans.basic.features,
@@ -95,8 +102,10 @@ export default function SubscriptionPage() {
     {
       id: 'premium',
       name: t.subscription.plans.premium.name,
-      price: 2980,
-      priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM?.trim(),
+      monthlyPrice: 2980,
+      yearlyPrice: 29800, // ~2483/month, save 2 months
+      monthlyPriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM?.trim(),
+      yearlyPriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_YEARLY?.trim(),
       currency: 'JPY',
       description: t.subscription.plans.premium.description,
       features: t.subscription.plans.premium.features,
@@ -104,11 +113,19 @@ export default function SubscriptionPage() {
     },
   ];
 
+  // Helper to get the correct price based on billing period
+  const getPrice = (plan: typeof PLANS[0]) =>
+    billingPeriod === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice;
+
+  const getPriceId = (plan: typeof PLANS[0]) =>
+    billingPeriod === 'yearly' ? plan.yearlyPriceId : plan.monthlyPriceId;
+
   const handleUpgrade = async (planId: string) => {
     if (planId === 'free') return;
 
     const plan = PLANS.find(p => p.id === planId);
-    if (!plan || !plan.priceId) {
+    const priceId = plan ? getPriceId(plan) : null;
+    if (!plan || !priceId) {
       alert('Plan not found');
       return;
     }
@@ -118,7 +135,7 @@ export default function SubscriptionPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          priceId: plan.priceId,
+          priceId,
           tier: planId
         }),
       });
@@ -146,9 +163,36 @@ export default function SubscriptionPage() {
               {t.subscription.title}
             </h1>
           </div>
-          <p className="text-lg text-slate-400">
+          <p className="text-lg text-slate-400 mb-6">
             {t.subscription.subtitle}
           </p>
+
+          {/* Billing Period Toggle */}
+          <div className="inline-flex items-center gap-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-full p-1">
+            <button
+              onClick={() => setBillingPeriod('monthly')}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
+                billingPeriod === 'monthly'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {locale === 'ja' ? '月額' : 'Monthly'}
+            </button>
+            <button
+              onClick={() => setBillingPeriod('yearly')}
+              className={`px-6 py-2 rounded-full text-sm font-medium transition-all cursor-pointer flex items-center gap-2 ${
+                billingPeriod === 'yearly'
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {locale === 'ja' ? '年額' : 'Yearly'}
+              <span className="bg-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full">
+                {locale === 'ja' ? '2ヶ月分お得' : 'Save 2 months'}
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Current Plan Info */}
@@ -256,9 +300,23 @@ export default function SubscriptionPage() {
 
                 <div className="mb-6">
                   <span className="text-4xl font-bold text-white">
-                    {plan.currency === 'JPY' ? '¥' : '$'}{plan.price.toLocaleString()}
+                    {plan.currency === 'JPY' ? '¥' : '$'}{getPrice(plan).toLocaleString()}
                   </span>
-                  <span className="text-slate-400">/month</span>
+                  <span className="text-slate-400">
+                    {billingPeriod === 'yearly'
+                      ? (locale === 'ja' ? '/年' : '/year')
+                      : (locale === 'ja' ? '/月' : '/month')}
+                  </span>
+                  {billingPeriod === 'yearly' && plan.id !== 'free' && (
+                    <div className="flex items-center gap-1 mt-2">
+                      <Tag className="w-3 h-3 text-green-400" />
+                      <span className="text-sm text-green-400">
+                        {locale === 'ja'
+                          ? `月額換算 ¥${Math.round(plan.yearlyPrice / 12).toLocaleString()}`
+                          : `¥${Math.round(plan.yearlyPrice / 12).toLocaleString()}/mo equivalent`}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <ul className="space-y-3 mb-6">

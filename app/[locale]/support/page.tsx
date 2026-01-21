@@ -1,8 +1,9 @@
-import { useTranslations } from "next-intl";
-import { setRequestLocale } from "next-intl/server";
+import { useTranslations, useMessages } from "next-intl";
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
+import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -17,8 +18,11 @@ export async function generateMetadata({ params }: PageProps) {
   return {
     title: locale === "ja" ? "サポート | MUEDnote" : "Support | MUEDnote",
     description: locale === "ja"
-      ? "MUEDnoteのサポートページ"
-      : "MUEDnote Support Page",
+      ? "MUEDnoteのサポートページ - よくある質問とお問い合わせ"
+      : "MUEDnote Support Page - FAQ and Contact",
+    alternates: {
+      languages: generateHreflangAlternates("/support"),
+    },
   };
 }
 
@@ -26,16 +30,46 @@ export default async function SupportPage({ params }: PageProps) {
   const { locale } = await params;
   setRequestLocale(locale as Locale);
 
-  return <SupportContent />;
+  // Get translations for structured data (server-side)
+  const t = await getTranslations("support");
+  const faqKeys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"] as const;
+
+  // Build FAQPage structured data for SEO
+  const faqStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqKeys.map((key) => ({
+      "@type": "Question",
+      "name": t(`faq.${key}.question`),
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": t(`faq.${key}.answer`),
+      },
+    })),
+  };
+
+  return <SupportContent faqStructuredData={faqStructuredData} />;
 }
 
-function SupportContent() {
+interface SupportContentProps {
+  faqStructuredData: object;
+}
+
+function SupportContent({ faqStructuredData }: SupportContentProps) {
   const t = useTranslations("support");
 
   const faqKeys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"] as const;
 
   return (
     <div className="dark min-h-screen bg-[#0F0F1A]">
+      {/* FAQPage Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqStructuredData),
+        }}
+      />
+
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6 bg-[#0F0F1A]/80 backdrop-blur-xl border-b border-white/5">
         <div className="container mx-auto flex justify-between items-center">
