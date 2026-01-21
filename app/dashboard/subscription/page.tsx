@@ -9,9 +9,15 @@ import { Sparkles, Check, AlertTriangle, Tag } from 'lucide-react';
 type BillingPeriod = 'monthly' | 'yearly';
 
 interface UsageLimits {
-  hooConversationsLimit: number;
-  hooConversationsUsed: number;
-  hooConversationsRemaining: number;
+  // Thread limits (soft limit - for display)
+  hooThreadsLimit: number;
+  hooThreadsUsed: number;
+  hooThreadsRemaining: number;
+  hooThreadsExceeded: boolean;
+  // Turn limits (hard limit - for enforcement)
+  hooTurnsLimit: number;
+  hooTurnsUsed: number;
+  hooTurnsRemaining: number;
   tier: string;
   canUseHooAI: boolean;
   cancelAtPeriodEnd?: boolean;
@@ -221,20 +227,20 @@ export default function SubscriptionPage() {
                       {t.subscription.hooConversations}
                     </span>
                     <span className="font-medium text-white">
-                      {limits.hooConversationsLimit === -1
+                      {limits.hooTurnsLimit === -1
                         ? t.subscription.unlimited
-                        : limits.hooConversationsLimit === 0
+                        : limits.hooTurnsLimit === 0
                         ? t.subscription.notAvailable
-                        : `${limits.hooConversationsUsed} / ${limits.hooConversationsLimit} ${t.subscription.used}`}
+                        : `${limits.hooTurnsUsed} / ${limits.hooTurnsLimit} ${t.subscription.used}`}
                     </span>
-                    {limits.hooConversationsLimit > 0 && (
+                    {limits.hooTurnsLimit > 0 && (
                       <div className="flex-1 max-w-xs bg-white/10 rounded-full h-2">
                         <div
                           className={`h-2 rounded-full transition-all ${
                             limits.cancelAtPeriodEnd ? 'bg-orange-500' : 'bg-indigo-500'
                           }`}
                           style={{
-                            width: `${Math.min(100, (limits.hooConversationsUsed / limits.hooConversationsLimit) * 100)}%`,
+                            width: `${Math.min(100, (limits.hooTurnsUsed / limits.hooTurnsLimit) * 100)}%`,
                           }}
                         />
                       </div>
