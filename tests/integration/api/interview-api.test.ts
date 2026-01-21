@@ -400,7 +400,8 @@ describe('Interview API Integration', () => {
       const savedQuestions = await db
         .select()
         .from(interviewQuestions)
-        .where(eq(interviewQuestions.sessionId, TEST_SESSION_ID));
+        .where(eq(interviewQuestions.sessionId, TEST_SESSION_ID))
+        .orderBy(interviewQuestions.order);
 
       expect(savedQuestions.length).toBeGreaterThanOrEqual(2);
       expect(savedQuestions.length).toBe(result.questions.length);
