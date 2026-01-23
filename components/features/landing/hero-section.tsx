@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { HooAnimated } from "./hoo-animated";
 import { ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useIsMobile } from "@/hooks/use-media-query";
 
 interface HeroSectionProps {
   onGetStarted?: () => void;
@@ -23,6 +24,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
   const [phrase, setPhrase] = useState(hooPhrases[0]);
   const [showBubble, setShowBubble] = useState(false);
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isMobile = useIsMobile();
 
   // Get next phrase (called before animation to determine which animation to play)
   const getNextPhrase = useCallback(() => {
@@ -103,7 +105,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           {/* Right: Hoo with speech bubble */}
           <div className="flex-1 flex justify-center lg:justify-end">
             <div className="relative">
-              {/* Speech bubble - appears when Hoo bounces, hidden on mobile */}
+              {/* Speech bubble - appears when Hoo bounces */}
               <AnimatePresence>
                 {showBubble && (
                   <motion.div
@@ -115,11 +117,11 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
                       stiffness: 400,
                       damping: 15,
                     }}
-                    className="hidden lg:block absolute -top-4 right-1/2 translate-x-4 bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/20 origin-bottom"
+                    className="absolute -top-4 left-1/2 -translate-x-1/2 lg:left-auto lg:right-1/2 lg:translate-x-4 bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-2 lg:px-5 lg:py-3 border border-white/20 origin-bottom z-10"
                   >
-                    <p className="text-white text-base font-medium whitespace-nowrap">{phrase}</p>
+                    <p className="text-white text-sm lg:text-base font-medium whitespace-nowrap">{phrase}</p>
                     {/* Bubble tail - points to Hoo's head */}
-                    <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white/10 border-r border-b border-white/20 rotate-45" />
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 lg:left-auto lg:right-4 lg:translate-x-0 w-4 h-4 bg-white/10 border-r border-b border-white/20 rotate-45" />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -132,6 +134,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
                 onBounce={handleBounce}
                 getNextPhrase={getNextPhrase}
                 currentPhrase={showBubble ? phrase : undefined}
+                isMobile={isMobile}
               />
               {/* Hoo introduction */}
               <p className="text-center text-slate-400 text-sm mt-4">

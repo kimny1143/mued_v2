@@ -10,6 +10,7 @@ interface HooAnimatedProps {
   onBounce?: (phrase: string) => void;
   getNextPhrase?: () => string;
   currentPhrase?: string;
+  isMobile?: boolean;
 }
 
 const COLOR = "#FFFFFF";
@@ -23,7 +24,7 @@ const REST_PHRASES = ["そろそろ休憩しない？", "time for a break?"];
 const SURPRISE_PHRASES = ["そんなアプローチするんだ", "interesting approach"];
 const NICE_IDEA_PHRASES = ["そのアイデアいいね", "nice idea"];
 
-export function HooAnimated({ width = 280, height = 280, className, onBounce, getNextPhrase, currentPhrase }: HooAnimatedProps) {
+export function HooAnimated({ width = 280, height = 280, className, onBounce, getNextPhrase, currentPhrase, isMobile = false }: HooAnimatedProps) {
   const controls = useAnimationControls();
   const eyeControls = useAnimationControls();
   const earControls = useAnimationControls();
@@ -32,17 +33,18 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
   const [eyesClosed, setEyesClosed] = useState(false);
 
   const triggerEyeGlance = useCallback(async () => {
-    // Glance left twice (look at DAW on the left)
-    // Quick move to left, hold 1s, back, quick move to left again, hold 1s, back
+    // Glance direction: left on desktop (DAW is on left), right on mobile (background is behind/right)
+    const direction = isMobile ? 4 : -4;
+    // Quick move, hold 1s, back, quick move again, hold 1s, back
     await eyeControls.start({
-      x: [0, -4, -4, 0, 0, -4, -4, 0],
+      x: [0, direction, direction, 0, 0, direction, direction, 0],
       transition: {
         duration: 3,
         times: [0, 0.05, 0.4, 0.45, 0.5, 0.55, 0.9, 1],
         ease: "easeInOut",
       },
     });
-  }, [eyeControls]);
+  }, [eyeControls, isMobile]);
 
   // Surprise animation: enlarge pupils for 1 second
   const triggerSurprise = useCallback(async () => {
