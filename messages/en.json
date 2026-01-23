@@ -147,6 +147,72 @@
       "address": "4-7-27-3F Aobadai, Meguro-ku, Tokyo 153-0042, Japan"
     }
   },
+  "tokushoho": {
+    "title": "Specified Commercial Transactions Act",
+    "lastUpdated": "Last updated: January 23, 2026",
+    "seller": {
+      "title": "Seller",
+      "value": "glasswerks inc."
+    },
+    "representative": {
+      "title": "Representative",
+      "value": "Atsushi Kimura"
+    },
+    "address": {
+      "title": "Address",
+      "value": "4-7-27-3F Aobadai, Meguro-ku, Tokyo 153-0042, Japan"
+    },
+    "phone": {
+      "title": "Phone",
+      "value": "Disclosed without delay upon request."
+    },
+    "email": {
+      "title": "Email",
+      "value": "info@glasswerks.jp"
+    },
+    "url": {
+      "title": "URL",
+      "value": "https://muednote.com"
+    },
+    "price": {
+      "title": "Pricing",
+      "description": "Prices for each plan are as follows (tax included):",
+      "plans": {
+        "free": "Free Plan: ¥0",
+        "basic": "Basic Plan: ¥1,980/month",
+        "premium": "Premium Plan: ¥2,980/month"
+      }
+    },
+    "additionalCost": {
+      "title": "Additional Costs",
+      "value": "Internet connection fees are borne by the customer."
+    },
+    "payment": {
+      "title": "Payment Methods",
+      "value": "Credit card (via Stripe)"
+    },
+    "paymentTiming": {
+      "title": "Payment Timing",
+      "value": "Initial payment at subscription start, then automatically billed monthly on the same date."
+    },
+    "delivery": {
+      "title": "Service Delivery",
+      "value": "Service is available immediately after payment completion."
+    },
+    "cancellation": {
+      "title": "Cancellation Policy",
+      "description": "Subscriptions can be cancelled at any time. After cancellation, you can continue using the service until the end of your paid period. Due to the nature of digital services, refunds are not available after service delivery begins."
+    },
+    "environment": {
+      "title": "System Requirements",
+      "web": "Web Dashboard: Latest Chrome, Safari, Firefox, Edge",
+      "ios": "iOS App: iPhone running iOS 17.0 or later"
+    },
+    "contact": {
+      "title": "Contact",
+      "value": "For inquiries about our services, please contact us at the email address above."
+    }
+  },
   "support": {
     "title": "Support",
     "contact": {
