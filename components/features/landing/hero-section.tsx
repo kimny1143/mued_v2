@@ -61,7 +61,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
   }, []);
 
   return (
-    <section className="min-h-screen flex items-center relative overflow-hidden">
+    <section className="min-h-screen flex items-center relative overflow-hidden pt-16 lg:pt-0">
       {/* Overlay for text readability */}
       <div className="absolute inset-0 bg-black/45 pointer-events-none" />
 
