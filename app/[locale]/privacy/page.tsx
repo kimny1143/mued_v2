@@ -166,6 +166,9 @@ function PrivacyContent() {
               &copy; {new Date().getFullYear()} MUED. All rights reserved.
             </p>
             <nav className="flex items-center gap-6">
+              <Link href="/tokushoho" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+                Legal
+              </Link>
               <Link href="/support" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
                 Support
               </Link>

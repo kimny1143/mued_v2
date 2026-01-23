@@ -140,7 +140,10 @@ function SupportContent({ faqStructuredData }: SupportContentProps) {
             </p>
             <nav className="flex items-center gap-6">
               <Link href="/privacy" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
-                Privacy Policy
+                Privacy
+              </Link>
+              <Link href="/tokushoho" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+                Legal
               </Link>
             </nav>
           </div>
