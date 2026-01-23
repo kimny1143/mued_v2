@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { HooAnimated } from "./hoo-animated";
 import { ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -20,12 +21,42 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
   const t = useTranslations("landing.hero");
   const hooPhrases = t.raw("hooPhrases") as string[];
   const [phrase, setPhrase] = useState(hooPhrases[0]);
+  const [showBubble, setShowBubble] = useState(false);
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    // Random phrase on mount
+  // Get next phrase (called before animation to determine which animation to play)
+  const getNextPhrase = useCallback(() => {
     const randomIndex = Math.floor(Math.random() * hooPhrases.length);
-    setPhrase(hooPhrases[randomIndex]);
+    return hooPhrases[randomIndex];
   }, [hooPhrases]);
+
+  // Show the phrase bubble (called after bounce with pre-determined phrase)
+  const handleBounce = useCallback((selectedPhrase: string) => {
+    // Clear existing timer
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+    }
+
+    // Use the phrase passed from HooAnimated
+    setPhrase(selectedPhrase);
+
+    // Show bubble
+    setShowBubble(true);
+
+    // Hide after 6 seconds
+    hideTimerRef.current = setTimeout(() => {
+      setShowBubble(false);
+    }, 6000);
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <section className="min-h-screen flex items-center relative overflow-hidden">
@@ -72,21 +103,35 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           {/* Right: Hoo with speech bubble */}
           <div className="flex-1 flex justify-center lg:justify-end">
             <div className="relative">
-              {/* Speech bubble - pops in after delay, hidden on mobile */}
-              <div className="hidden lg:block absolute -top-16 right-1/2 translate-x-4 bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/20 animate-bubble-pop">
-                <p className="text-white text-base font-medium whitespace-nowrap">{phrase}</p>
-                {/* Bubble tail - points to Hoo's head */}
-                <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white/10 border-r border-b border-white/20 rotate-45" />
-              </div>
+              {/* Speech bubble - appears when Hoo bounces, hidden on mobile */}
+              <AnimatePresence>
+                {showBubble && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.3, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.5, y: 10 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 15,
+                    }}
+                    className="hidden lg:block absolute -top-4 right-1/2 translate-x-4 bg-white/10 backdrop-blur-sm rounded-2xl px-5 py-3 border border-white/20 origin-bottom"
+                  >
+                    <p className="text-white text-base font-medium whitespace-nowrap">{phrase}</p>
+                    {/* Bubble tail - points to Hoo's head */}
+                    <div className="absolute -bottom-2 right-4 w-4 h-4 bg-white/10 border-r border-b border-white/20 rotate-45" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-              {/* Hoo logo - gentle bounce */}
-              <Image
-                src="/logo.png"
-                alt="Hoo - MUEDnote mascot"
+              {/* Hoo logo - animated SVG */}
+              <HooAnimated
                 width={280}
                 height={280}
-                className="drop-shadow-2xl animate-hoo-bounce"
-                priority
+                className="drop-shadow-2xl"
+                onBounce={handleBounce}
+                getNextPhrase={getNextPhrase}
+                currentPhrase={showBubble ? phrase : undefined}
               />
               {/* Hoo introduction */}
               <p className="text-center text-slate-400 text-sm mt-4">
