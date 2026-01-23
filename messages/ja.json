@@ -87,7 +87,7 @@
   "privacy": {
     "title": "プライバシーポリシー",
     "lastUpdated": "最終更新日: 2026年1月8日",
-    "intro": "glasswerks inc.（以下「当社」）は、MUEDnote（以下「本アプリ」）を運営しています。本プライバシーポリシーは、本アプリご利用時における情報の収集、使用、保護について説明するものです。",
+    "intro": "株式会社グラスワークス（以下「当社」）は、MUEDnote（以下「本アプリ」）を運営しています。本プライバシーポリシーは、本アプリご利用時における情報の収集、使用、保護について説明するものです。",
     "section1": {
       "title": "1. 収集する情報",
       "description": "当社は以下の情報を収集します：",
@@ -143,7 +143,7 @@
     "section8": {
       "title": "8. お問い合わせ",
       "description": "本プライバシーポリシーに関するご質問は、下記までお問い合わせください：",
-      "company": "glasswerks inc.",
+      "company": "株式会社グラスワークス",
       "address": "〒153-0042 東京都目黒区青葉台4-7-27 3F"
     }
   },
@@ -152,7 +152,7 @@
     "lastUpdated": "最終更新日: 2026年1月23日",
     "seller": {
       "title": "販売業者",
-      "value": "glasswerks inc."
+      "value": "株式会社グラスワークス"
     },
     "representative": {
       "title": "代表者",
@@ -218,7 +218,7 @@
     "contact": {
       "title": "お問い合わせ",
       "description": "MUEDnoteに関するご質問、ご要望、不具合のご報告は、以下のメールアドレスまでお問い合わせください。",
-      "company": "glasswerks inc."
+      "company": "株式会社グラスワークス"
     },
     "faq": {
       "title": "よくある質問",
@@ -257,7 +257,7 @@
     },
     "company": {
       "title": "運営会社",
-      "name": "glasswerks inc.",
+      "name": "株式会社グラスワークス",
       "address": "〒153-0042 東京都目黒区青葉台4-7-27 3F"
     }
   }
