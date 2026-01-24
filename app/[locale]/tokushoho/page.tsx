@@ -106,6 +106,9 @@ function TokushohoContent() {
             {/* Delivery */}
             <InfoRow label={t("delivery.title")} value={t("delivery.value")} />
 
+            {/* Contract Establishment */}
+            <InfoRow label={t("contractEstablishment.title")} value={t("contractEstablishment.value")} />
+
             {/* Cancellation */}
             <section className="bg-white/5 border border-white/10 rounded-lg p-4">
               <h2 className="font-semibold text-white mb-2">{t("cancellation.title")}</h2>

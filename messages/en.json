@@ -149,7 +149,7 @@
   },
   "tokushoho": {
     "title": "Specified Commercial Transactions Act",
-    "lastUpdated": "Last updated: January 23, 2026",
+    "lastUpdated": "Last updated: January 24, 2026",
     "seller": {
       "title": "Seller",
       "value": "glasswerks inc."
@@ -171,8 +171,8 @@
       "value": "info@glasswerks.jp"
     },
     "url": {
-      "title": "URL",
-      "value": "https://muednote.com"
+      "title": "Sales URL",
+      "value": "https://mued.jp"
     },
     "price": {
       "title": "Pricing",
@@ -198,6 +198,10 @@
     "delivery": {
       "title": "Service Delivery",
       "value": "Service is available immediately after payment completion."
+    },
+    "contractEstablishment": {
+      "title": "Contract Establishment",
+      "value": "Contract is established upon completion of credit card payment."
     },
     "cancellation": {
       "title": "Cancellation Policy",
