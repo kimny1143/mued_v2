@@ -148,15 +148,11 @@
     }
   },
   "tokushoho": {
-    "title": "Specified Commercial Transactions Act",
-    "lastUpdated": "Last updated: January 23, 2026",
+    "title": "Commerce Disclosure (Specified Commercial Transactions Act)",
+    "lastUpdated": "Last updated: January 24, 2026",
     "seller": {
-      "title": "Seller",
-      "value": "glasswerks inc."
-    },
-    "representative": {
-      "title": "Representative",
-      "value": "Atsushi Kimura"
+      "title": "Business Name",
+      "value": "glasswerks inc. (株式会社グラスワークス)"
     },
     "address": {
       "title": "Address",
@@ -170,9 +166,13 @@
       "title": "Email",
       "value": "info@glasswerks.jp"
     },
-    "url": {
-      "title": "URL",
-      "value": "https://muednote.com"
+    "representative": {
+      "title": "Operations Manager",
+      "value": "Atsushi Kimura"
+    },
+    "serviceName": {
+      "title": "Service Name",
+      "value": "MUEDnote"
     },
     "price": {
       "title": "Pricing",
@@ -189,28 +189,35 @@
     },
     "payment": {
       "title": "Payment Methods",
-      "value": "Credit card (via Stripe)"
+      "value": "Credit card (VISA, Mastercard, American Express, JCB)"
     },
     "paymentTiming": {
       "title": "Payment Timing",
-      "value": "Initial payment at subscription start, then automatically billed monthly on the same date."
+      "value": "Initial payment is processed at subscription start, then automatically billed monthly on the same date."
     },
     "delivery": {
       "title": "Service Delivery",
       "value": "Service is available immediately after payment completion."
     },
-    "cancellation": {
-      "title": "Cancellation Policy",
-      "description": "Subscriptions can be cancelled at any time. After cancellation, you can continue using the service until the end of your paid period. Due to the nature of digital services, refunds are not available after service delivery begins."
+    "returnPolicy": {
+      "title": "Returns and Refunds",
+      "customerReturn": {
+        "subtitle": "Customer-initiated Cancellation",
+        "description": "Subscriptions can be cancelled at any time. After cancellation, you can continue using the service until the end of your paid period. Due to the nature of digital services, refunds are not available after service delivery begins."
+      },
+      "defect": {
+        "subtitle": "Service Defects",
+        "description": "If a significant service defect occurs and the service is unavailable due to our fault, we will provide a pro-rata refund for the affected period or extend your subscription accordingly. Please contact info@glasswerks.jp to report any issues."
+      }
     },
     "environment": {
       "title": "System Requirements",
-      "web": "Web Dashboard: Latest Chrome, Safari, Firefox, Edge",
-      "ios": "iOS App: iPhone running iOS 17.0 or later"
+      "web": "Web Dashboard: Latest version of Google Chrome, Safari, Firefox, Microsoft Edge",
+      "ios": "iOS App: iPhone running iOS 17.0 or later (iPad not supported)"
     },
     "contact": {
       "title": "Contact",
-      "value": "For inquiries about our services, please contact us at the email address above."
+      "value": "For inquiries about our services, please contact us at info@glasswerks.jp."
     }
   },
   "support": {

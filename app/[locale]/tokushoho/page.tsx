@@ -15,10 +15,10 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps) {
   const { locale } = await params;
   return {
-    title: locale === "ja" ? "特定商取引法に基づく表記 | MUEDnote" : "Specified Commercial Transactions Act | MUEDnote",
+    title: locale === "ja" ? "特定商取引法に基づく表記 | MUEDnote" : "Commerce Disclosure | MUEDnote",
     description: locale === "ja"
       ? "MUEDnoteの特定商取引法に基づく表記"
-      : "MUEDnote Specified Commercial Transactions Act Disclosure",
+      : "MUEDnote Commerce Disclosure (Specified Commercial Transactions Act)",
   };
 }
 
@@ -51,11 +51,8 @@ function TokushohoContent() {
           <p className="text-sm text-slate-500 mb-8">{t("lastUpdated")}</p>
 
           <div className="space-y-6">
-            {/* Seller */}
+            {/* Seller / Business Name */}
             <InfoRow label={t("seller.title")} value={t("seller.value")} />
-
-            {/* Representative */}
-            <InfoRow label={t("representative.title")} value={t("representative.value")} />
 
             {/* Address */}
             <InfoRow label={t("address.title")} value={t("address.value")} />
@@ -73,15 +70,11 @@ function TokushohoContent() {
               }
             />
 
-            {/* URL */}
-            <InfoRow
-              label={t("url.title")}
-              value={
-                <a href={t("url.value")} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
-                  {t("url.value")}
-                </a>
-              }
-            />
+            {/* Operations Manager / Representative */}
+            <InfoRow label={t("representative.title")} value={t("representative.value")} />
+
+            {/* Service Name */}
+            <InfoRow label={t("serviceName.title")} value={t("serviceName.value")} />
 
             {/* Price */}
             <section className="bg-white/5 border border-white/10 rounded-lg p-4">
@@ -106,10 +99,21 @@ function TokushohoContent() {
             {/* Delivery */}
             <InfoRow label={t("delivery.title")} value={t("delivery.value")} />
 
-            {/* Cancellation */}
+            {/* Return Policy */}
             <section className="bg-white/5 border border-white/10 rounded-lg p-4">
-              <h2 className="font-semibold text-white mb-2">{t("cancellation.title")}</h2>
-              <p className="text-slate-300">{t("cancellation.description")}</p>
+              <h2 className="font-semibold text-white mb-4">{t("returnPolicy.title")}</h2>
+
+              {/* Customer Return */}
+              <div className="mb-4">
+                <h3 className="font-medium text-slate-200 mb-2">{t("returnPolicy.customerReturn.subtitle")}</h3>
+                <p className="text-slate-300">{t("returnPolicy.customerReturn.description")}</p>
+              </div>
+
+              {/* Defect */}
+              <div>
+                <h3 className="font-medium text-slate-200 mb-2">{t("returnPolicy.defect.subtitle")}</h3>
+                <p className="text-slate-300">{t("returnPolicy.defect.description")}</p>
+              </div>
             </section>
 
             {/* Environment */}
