@@ -25,5 +25,5 @@ export default async function LocaleLandingPage({ params }: PageProps) {
     redirect("/dashboard");
   }
 
-  return <LandingContent />;
+  return await LandingContent();
 }

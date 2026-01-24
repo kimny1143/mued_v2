@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import { Monitor, MessageCircle, Wrench } from "lucide-react";
 import { useTranslations } from "next-intl";

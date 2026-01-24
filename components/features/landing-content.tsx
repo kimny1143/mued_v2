@@ -1,7 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { useLocale } from "next-intl";
+import { getLocale } from "next-intl/server";
 import {
   HeroSection,
   PhilosophySection,
@@ -14,21 +12,19 @@ import {
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 
 /**
- * Landing Content - MUEDnote Landing Page
+ * Landing Content - MUEDnote Landing Page (Server Component)
  *
  * Design philosophy:
  * - Dark mode first
  * - Glassmorphism
  * - MUEDnote: 判断を資産にするツール
  *
- * LP Structure (1/7 launch):
- * - Pain: 判断が消える問題提起
- * - Solution: MUEDnoteの機能紹介
- * - Roadmap: 将来展望
- * - CTA: 行動喚起
+ * Architecture:
+ * - Server Components for static content (Philosophy, MUEDnote, Growth, Social, CTA)
+ * - Client Components only for interactive parts (Hero, ParallaxBackground, LocaleSwitcher)
  */
-export function LandingContent() {
-  const locale = useLocale();
+export async function LandingContent() {
+  const locale = await getLocale();
 
   return (
     <div className="dark">
@@ -61,6 +57,12 @@ export function LandingContent() {
                 className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
               >
                 {locale === "ja" ? "プライバシーポリシー" : "Privacy Policy"}
+              </Link>
+              <Link
+                href={`/${locale}/tokushoho`}
+                className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
+              >
+                {locale === "ja" ? "特定商取引法に基づく表記" : "Legal"}
               </Link>
               <Link
                 href={`/${locale}/support`}

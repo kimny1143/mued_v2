@@ -1,5 +1,3 @@
-"use client";
-
 import { ExternalLink, Smartphone } from "lucide-react";
 import { useTranslations } from "next-intl";
 

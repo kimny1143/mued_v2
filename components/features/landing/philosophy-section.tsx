@@ -1,5 +1,3 @@
-"use client";
-
 import { Clock, Music, Mic } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { GlassCard } from "@/components/ui/glass-card";

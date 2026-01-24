@@ -8,16 +8,17 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { structuredData } from "@/lib/seo/structured-data";
 import { locales, defaultLocale, type Locale } from "@/lib/i18n/config";
 import "./globals.css";
-import "abcjs/abcjs-audio.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import abcjs from 'abcjs';
+import 'abcjs/abcjs-audio.css';
 
 interface AbcNotationRendererProps {
   abcNotation: string;
