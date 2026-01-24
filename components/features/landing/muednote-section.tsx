@@ -17,7 +17,7 @@ export function MuednoteSection() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Description */}
           <div>
-            <div className="inline-block px-3 py-1 bg-indigo-600/20 rounded-full text-indigo-400 text-sm font-medium mb-6">
+            <div className="inline-block px-3 py-1 badge-indigo rounded-full text-sm font-medium mb-6">
               {t("badge")}
             </div>
 
@@ -25,14 +25,14 @@ export function MuednoteSection() {
               {t("title")}
             </h2>
 
-            <div className="text-lg text-slate-400 leading-relaxed mb-8 space-y-4">
+            <div className="text-lg text-white/80 leading-relaxed mb-8 space-y-4">
               <p>{t("description")}</p>
               <p className="text-white/90 whitespace-pre-line">{t("highlight")}</p>
             </div>
 
             {/* Simple feature hints - not a bullet list */}
             <div className="bg-white/5 rounded-xl p-6 mb-8 border border-white/10">
-              <p className="text-slate-300 text-sm leading-relaxed">
+              <p className="text-white/80 text-sm leading-relaxed">
                 💡 {t("hint")}
               </p>
             </div>
@@ -47,7 +47,7 @@ export function MuednoteSection() {
               </a>
               {/* App Store link - will be enabled after approval */}
               <span
-                className="inline-flex items-center justify-center gap-2 bg-white/5 text-white/50 border border-white/10 px-6 py-3 rounded-lg font-medium cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 bg-white/5 text-white/70 border border-white/10 px-6 py-3 rounded-lg font-medium cursor-not-allowed"
               >
                 {t("ctaSecondary")}
               </span>
@@ -67,7 +67,7 @@ export function MuednoteSection() {
                   className="mx-auto mb-4 drop-shadow-lg"
                 />
                 <p className="text-white/80 text-lg font-medium mb-2">{t("preview.greeting")}</p>
-                <p className="text-slate-400 text-sm">{t("preview.timer")}</p>
+                <p className="text-white/80 text-sm">{t("preview.timer")}</p>
               </div>
             </GlassCard>
           </div>

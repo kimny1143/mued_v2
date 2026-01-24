@@ -15,23 +15,23 @@ export function SocialProofSection() {
         <div className="max-w-2xl mx-auto">
           {/* App Store Badge */}
           <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full">
-              <Smartphone className="w-4 h-4 text-green-400" />
-              <span className="text-green-400 text-sm font-medium">{t("badge")}</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 badge-green border border-green-500/20 rounded-full">
+              <Smartphone className="w-4 h-4" />
+              <span className="text-sm font-medium">{t("badge")}</span>
             </div>
           </div>
 
           {/* Developer Quote */}
           <blockquote className="text-center mb-8">
-            <p className="text-lg md:text-xl text-slate-300 italic mb-2">
+            <p className="text-lg md:text-xl text-white/80 italic mb-2">
               {t("quote")}
             </p>
-            <cite className="text-slate-500 text-sm not-italic">— {t("author")}</cite>
+            <cite className="text-subtle text-sm not-italic">— {t("author")}</cite>
           </blockquote>
 
           {/* Company Attribution */}
           <div className="text-center">
-            <p className="text-slate-500 text-sm mb-2">{t("developedBy")}</p>
+            <p className="text-subtle text-sm mb-2">{t("developedBy")}</p>
             <a
               href="https://www.glasswerks.jp"
               target="_blank"

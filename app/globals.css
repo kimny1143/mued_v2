@@ -112,3 +112,40 @@ body {
   animation-delay: 1s;
   opacity: 0;
 }
+
+/* ===========================================
+   WCAG Compliant Text Utilities
+   =========================================== */
+
+/* For solid dark backgrounds (#0f0f1a) */
+.text-muted {
+  color: #cbd5e1; /* slate-300: 7.5:1 contrast on #0f0f1a */
+}
+
+.text-subtle {
+  color: #9ca3af; /* gray-400: 5.0:1 contrast on #0f0f1a */
+}
+
+/* For glass/overlay backgrounds - use text-white/80 instead of these classes */
+
+/* ===========================================
+   WCAG Compliant Badge Utilities
+   =========================================== */
+
+/* Indigo badge - for status indicators */
+.badge-indigo {
+  background-color: rgba(99, 102, 241, 0.4);  /* indigo-500/40 - darker bg */
+  color: #e0e7ff;  /* indigo-100: highest contrast */
+}
+
+/* Amber badge - for "in development" etc */
+.badge-amber {
+  background-color: rgba(217, 119, 6, 0.3);  /* amber-600/30 */
+  color: #fde68a;  /* amber-200: high contrast */
+}
+
+/* Green badge - for success/available */
+.badge-green {
+  background-color: rgba(22, 163, 74, 0.2);  /* green-600/20 */
+  color: #86efac;  /* green-300: high contrast */
+}

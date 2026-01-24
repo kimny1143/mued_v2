@@ -52,9 +52,9 @@ export function RoadmapSection() {
       case "current":
         return <Clock className="w-5 h-5 text-indigo-400" />;
       case "upcoming":
-        return <Sparkles className="w-5 h-5 text-slate-500" />;
+        return <Sparkles className="w-5 h-5 text-white/60" />;
       default:
-        return <Sparkles className="w-5 h-5 text-slate-600" />;
+        return <Sparkles className="w-5 h-5 text-white/50" />;
     }
   };
 
@@ -78,7 +78,7 @@ export function RoadmapSection() {
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
               Roadmap
             </h2>
-            <p className="text-slate-400">
+            <p className="text-white/80">
               MUEDnoteから始まる、判断を資産にする旅
             </p>
           </div>
@@ -92,7 +92,7 @@ export function RoadmapSection() {
               >
                 <div className="flex items-center gap-2 mb-3">
                   {getStatusIcon(item.status)}
-                  <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  <span className="text-xs font-medium text-white/70 uppercase tracking-wider">
                     {item.phase}
                   </span>
                 </div>
@@ -100,15 +100,15 @@ export function RoadmapSection() {
                 <h3 className="text-lg font-semibold text-white mb-1">
                   {item.title}
                 </h3>
-                <p className="text-sm text-slate-500 mb-4">{item.date}</p>
+                <p className="text-sm text-white/70 mb-4">{item.date}</p>
 
                 <ul className="space-y-2">
                   {item.features.map((feature, featureIndex) => (
                     <li
                       key={featureIndex}
-                      className="flex items-center gap-2 text-sm text-slate-400"
+                      className="flex items-center gap-2 text-sm text-white/80"
                     >
-                      <Check className="w-3 h-3 text-slate-600" />
+                      <Check className="w-3 h-3 text-white/60" />
                       {feature}
                     </li>
                   ))}
