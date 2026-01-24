@@ -166,6 +166,10 @@
       "title": "メールアドレス",
       "value": "info@glasswerks.jp"
     },
+    "salesUrl": {
+      "title": "販売URL",
+      "value": "https://mued.jp"
+    },
     "representative": {
       "title": "運営責任者",
       "value": "木村篤史"
@@ -198,6 +202,10 @@
     "delivery": {
       "title": "サービス提供時期",
       "value": "決済完了後、直ちにサービスをご利用いただけます。"
+    },
+    "contractEstablishment": {
+      "title": "契約成立時期",
+      "value": "クレジットカード決済の完了をもって契約が成立します。"
     },
     "returnPolicy": {
       "title": "返品・交換について",

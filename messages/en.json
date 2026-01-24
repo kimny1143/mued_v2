@@ -166,6 +166,10 @@
       "title": "Email",
       "value": "info@glasswerks.jp"
     },
+    "salesUrl": {
+      "title": "Sales URL",
+      "value": "https://mued.jp"
+    },
     "representative": {
       "title": "Operations Manager",
       "value": "Atsushi Kimura"
@@ -198,6 +202,10 @@
     "delivery": {
       "title": "Service Delivery",
       "value": "Service is available immediately after payment completion."
+    },
+    "contractEstablishment": {
+      "title": "Contract Establishment",
+      "value": "Contract is established upon completion of credit card payment."
     },
     "returnPolicy": {
       "title": "Returns and Refunds",

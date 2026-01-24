@@ -70,6 +70,16 @@ function TokushohoContent() {
               }
             />
 
+            {/* Sales URL */}
+            <InfoRow
+              label={t("salesUrl.title")}
+              value={
+                <a href={t("salesUrl.value")} className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  {t("salesUrl.value")}
+                </a>
+              }
+            />
+
             {/* Operations Manager / Representative */}
             <InfoRow label={t("representative.title")} value={t("representative.value")} />
 
@@ -98,6 +108,9 @@ function TokushohoContent() {
 
             {/* Delivery */}
             <InfoRow label={t("delivery.title")} value={t("delivery.value")} />
+
+            {/* Contract Establishment */}
+            <InfoRow label={t("contractEstablishment.title")} value={t("contractEstablishment.value")} />
 
             {/* Return Policy */}
             <section className="bg-white/5 border border-white/10 rounded-lg p-4">
