@@ -20,7 +20,7 @@ export function PhilosophySection() {
             {t("title")}
           </h2>
 
-          <div className="text-lg md:text-xl text-slate-400 leading-relaxed space-y-6">
+          <div className="text-lg md:text-xl text-white/80 leading-relaxed space-y-6">
             <p className="whitespace-pre-line">{t("intro")}</p>
           </div>
         </div>
@@ -34,7 +34,7 @@ export function PhilosophySection() {
               </div>
               <h3 className="text-lg font-semibold text-white">{t("features.rest.title")}</h3>
             </div>
-            <p className="text-slate-400">{t("features.rest.description")}</p>
+            <p className="text-white/80">{t("features.rest.description")}</p>
           </GlassCard>
 
           <GlassCard>
@@ -44,7 +44,7 @@ export function PhilosophySection() {
               </div>
               <h3 className="text-lg font-semibold text-white">{t("features.sound.title")}</h3>
             </div>
-            <p className="text-slate-400">{t("features.sound.description")}</p>
+            <p className="text-white/80">{t("features.sound.description")}</p>
           </GlassCard>
 
           <GlassCard>
@@ -54,7 +54,7 @@ export function PhilosophySection() {
               </div>
               <h3 className="text-lg font-semibold text-white">{t("features.voice.title")}</h3>
             </div>
-            <p className="text-slate-400">{t("features.voice.description")}</p>
+            <p className="text-white/80">{t("features.voice.description")}</p>
           </GlassCard>
         </div>
       </div>

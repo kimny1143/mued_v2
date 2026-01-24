@@ -48,25 +48,25 @@ export async function LandingContent() {
       <footer className="bg-[#0F0F1A] py-8 border-t border-white/10 backdrop-blur-2xl relative">
         <div className="container mx-auto px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-slate-500 text-sm">
+            <p className="text-subtle text-sm">
               &copy; {new Date().getFullYear()} MUED. All rights reserved.
             </p>
             <nav className="flex items-center gap-6">
               <Link
                 href={`/${locale}/privacy`}
-                className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
+                className="text-subtle hover:text-muted text-sm transition-colors"
               >
                 {locale === "ja" ? "プライバシーポリシー" : "Privacy Policy"}
               </Link>
               <Link
                 href={`/${locale}/tokushoho`}
-                className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
+                className="text-subtle hover:text-muted text-sm transition-colors"
               >
                 {locale === "ja" ? "特定商取引法に基づく表記" : "Legal"}
               </Link>
               <Link
                 href={`/${locale}/support`}
-                className="text-slate-500 hover:text-slate-300 text-sm transition-colors"
+                className="text-subtle hover:text-muted text-sm transition-colors"
               >
                 {locale === "ja" ? "サポート" : "Support"}
               </Link>

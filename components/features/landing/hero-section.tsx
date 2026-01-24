@@ -62,8 +62,8 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
 
   return (
     <section className="min-h-screen flex items-center relative overflow-hidden pt-16 lg:pt-0">
-      {/* Overlay for text readability */}
-      <div className="absolute inset-0 bg-black/45 pointer-events-none" />
+      {/* Overlay for text readability - 60% opacity for WCAG contrast */}
+      <div className="absolute inset-0 bg-black/60 pointer-events-none" />
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
@@ -71,7 +71,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           <div className="flex-1 text-center lg:text-left">
             {/* Logo & tagline */}
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">{t("title")}</h1>
-            <p className="text-xl md:text-2xl text-slate-400 mb-8 font-light">
+            <p className="text-xl md:text-2xl text-white/80 mb-8 font-light">
               {t("tagline")}
             </p>
 
@@ -79,7 +79,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
             <p className="text-2xl md:text-3xl text-white/90 max-w-xl mb-6 leading-relaxed">
               {t("headline")}
             </p>
-            <p className="text-lg text-slate-400 max-w-xl mb-12 whitespace-pre-line">
+            <p className="text-lg text-white/80 max-w-xl mb-12 whitespace-pre-line">
               {t("description")}
             </p>
 
@@ -137,7 +137,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
                 isMobile={isMobile}
               />
               {/* Hoo introduction */}
-              <p className="text-center text-slate-400 text-sm mt-4">
+              <p className="text-center text-white text-sm mt-4">
                 {t("hooIntro")}
               </p>
             </div>

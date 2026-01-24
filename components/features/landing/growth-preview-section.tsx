@@ -27,7 +27,7 @@ export function GrowthPreviewSection() {
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
             {t("title")}
           </h2>
-          <p className="text-base text-slate-400 max-w-md">
+          <p className="text-base text-white/80 max-w-md">
             {t("subtitle")}
           </p>
         </div>
@@ -37,7 +37,7 @@ export function GrowthPreviewSection() {
           {/* DAW Log Integration */}
           <GlassCard className="relative">
             <div className="absolute top-3 right-3">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs font-medium rounded-full">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 badge-amber text-xs font-medium rounded-full">
                 <Wrench className="w-3 h-3" />
                 {t("badge")}
               </span>
@@ -50,7 +50,7 @@ export function GrowthPreviewSection() {
               <h3 className="text-lg font-semibold text-white">{t("daw.title")}</h3>
             </div>
 
-            <p className="text-slate-300 text-sm leading-relaxed">
+            <p className="text-white/80 text-sm leading-relaxed">
               {t("daw.quote")}
             </p>
           </GlassCard>
@@ -58,7 +58,7 @@ export function GrowthPreviewSection() {
           {/* Conversation with Hoo */}
           <GlassCard className="relative">
             <div className="absolute top-3 right-3">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs font-medium rounded-full">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 badge-amber text-xs font-medium rounded-full">
                 <Wrench className="w-3 h-3" />
                 {t("badge")}
               </span>
@@ -71,7 +71,7 @@ export function GrowthPreviewSection() {
               <h3 className="text-lg font-semibold text-white">{t("conversation.title")}</h3>
             </div>
 
-            <p className="text-slate-300 text-sm leading-relaxed">
+            <p className="text-white/80 text-sm leading-relaxed">
               {t("conversation.quote")}
             </p>
           </GlassCard>
