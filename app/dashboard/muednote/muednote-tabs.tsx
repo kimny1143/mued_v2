@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Mic } from "lucide-react";
+import { Mic, Smartphone } from "lucide-react";
+import { useLocale } from "@/lib/i18n/locale-context";
 // TODO: v1.1.0 - DAW Logs feature
 // import { Sliders } from "lucide-react";
 
@@ -17,6 +18,8 @@ export function MuednoteTabs({
   // dawLogCount,
   sessionCount,
 }: MuednoteTabsProps) {
+  const { locale } = useLocale();
+
   return (
     <div className="flex gap-2 mb-6 border-b border-white/10 pb-4">
       <Link
@@ -33,6 +36,15 @@ export function MuednoteTabs({
           <span className="ml-1 text-xs text-slate-500">({sessionCount})</span>
         )}
       </Link>
+      <a
+        href="https://apps.apple.com/app/muednote/id6757840889"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border border-indigo-500/30"
+      >
+        <Smartphone className="w-4 h-4" />
+        {locale === "ja" ? "iOSアプリをダウンロード" : "Download iOS App"}
+      </a>
       {/* TODO: v1.1.0 - DAW Logs tab
       <Link
         href="/dashboard/muednote?tab=daw"
