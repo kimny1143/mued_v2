@@ -39,8 +39,7 @@
       "description": "スマホを置くだけで、Hooがそばにいる。",
       "highlight": "音に反応して動いたり、休憩を教えてくれたり。\n制作のおともに、どうぞ。",
       "hint": "声でメモを残すと、自動で文字起こし。後から見返せるよ。",
-      "ctaPrimary": "App Storeでダウンロード",
-      "ctaSecondary": "Webで始める",
+      "ctaPrimary": "無料で始める",
       "preview": {
         "greeting": "ほほう",
         "timer": "休憩まであと 23:45"

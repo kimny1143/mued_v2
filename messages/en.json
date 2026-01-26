@@ -39,8 +39,7 @@
       "description": "Just place your phone nearby, and Hoo is with you.",
       "highlight": "Reacts to sound, reminds you to rest.\nYour production companion.",
       "hint": "Leave voice memos, automatically transcribed. Review them later.",
-      "ctaPrimary": "Download on App Store",
-      "ctaSecondary": "Start on Web",
+      "ctaPrimary": "Get Started Free",
       "preview": {
         "greeting": "Ho-hoo",
         "timer": "Next break in 23:45"
