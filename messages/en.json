@@ -39,8 +39,8 @@
       "description": "Just place your phone nearby, and Hoo is with you.",
       "highlight": "Reacts to sound, reminds you to rest.\nYour production companion.",
       "hint": "Leave voice memos, automatically transcribed. Review them later.",
-      "ctaPrimary": "Coming Soon",
-      "ctaSecondary": "App Store",
+      "ctaPrimary": "Download on App Store",
+      "ctaSecondary": "Start on Web",
       "preview": {
         "greeting": "Ho-hoo",
         "timer": "Next break in 23:45"
@@ -62,14 +62,14 @@
       }
     },
     "cta": {
-      "badge": "Coming Soon",
+      "badge": "Free to Start",
       "title": "Start your production\nwith Hoo.",
       "description": "Let Hoo handle the break timing.\nYour production companion.",
       "button": "Get Started Free"
     },
     "social": {
       "developedBy": "Developed by",
-      "badge": "App Store Review in Progress",
+      "badge": "Live on App Store",
       "quote": "\"Hours would pass without me noticing during production. But I couldn't remember why I made those choices\"—that's why we built this.",
       "author": "From the Developer"
     }

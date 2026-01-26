@@ -39,8 +39,8 @@
       "description": "スマホを置くだけで、Hooがそばにいる。",
       "highlight": "音に反応して動いたり、休憩を教えてくれたり。\n制作のおともに、どうぞ。",
       "hint": "声でメモを残すと、自動で文字起こし。後から見返せるよ。",
-      "ctaPrimary": "近日リリース予定",
-      "ctaSecondary": "App Store",
+      "ctaPrimary": "App Storeでダウンロード",
+      "ctaSecondary": "Webで始める",
       "preview": {
         "greeting": "ほほう",
         "timer": "休憩まであと 23:45"
@@ -62,14 +62,14 @@
       }
     },
     "cta": {
-      "badge": "近日リリース予定",
+      "badge": "無料で始められる",
       "title": "Hooと一緒に、\n制作を始めよう。",
       "description": "休憩のタイミング、Hooに任せてみない？\n制作のおともに、どうぞ。",
       "button": "無料で始める"
     },
     "social": {
       "developedBy": "Developed by",
-      "badge": "App Store 審査中",
+      "badge": "公開中・続々アップデート",
       "quote": "「制作中、気づいたら何時間も経ってた。でも、あの時なぜそうしたのかは覚えていない」——そんな経験から生まれました。",
       "author": "開発者より"
     }

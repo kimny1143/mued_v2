@@ -158,7 +158,7 @@ export function MuednoteDashboardContent({
           {/* iOS App Store Badge */}
           <div className="mt-8">
             <a
-              href="https://apps.apple.com/app/muednote"
+              href="https://apps.apple.com/app/muednote/id6757840889"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block"
