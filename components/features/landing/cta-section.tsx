@@ -1,7 +1,7 @@
-import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Bell } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { CtaButton } from "@/components/ui/cta-button";
 
 /**
  * CTA Section - Landing Page
@@ -42,13 +42,10 @@ export function CtaSection() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/sign-up"
-              className="group inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-lg text-lg font-medium transition-all duration-200 cursor-pointer shadow-lg shadow-indigo-600/25 hover:shadow-indigo-500/40 hover:scale-[1.02]"
-            >
+            <CtaButton variant="indigo" href="/sign-up" className="px-10">
               {t("button")}
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-            </Link>
+            </CtaButton>
           </div>
         </div>
       </div>

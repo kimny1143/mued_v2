@@ -7,6 +7,7 @@ import { HooAnimated } from "./hoo-animated";
 import { ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-media-query";
+import { CtaButton } from "@/components/ui/cta-button";
 
 interface HeroSectionProps {
   onGetStarted?: () => void;
@@ -85,14 +86,10 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
 
             {/* CTA */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Link
-                href="/sign-up"
-                className="group inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-lg text-lg font-medium transition-all duration-200 cursor-pointer shadow-lg shadow-indigo-600/25 hover:shadow-indigo-500/40 hover:scale-[1.02]"
-                onClick={onGetStarted}
-              >
+              <CtaButton variant="indigo" href="/sign-up" onClick={onGetStarted}>
                 {t("ctaPrimary")}
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-              </Link>
+              </CtaButton>
               <Link
                 href="/sign-in"
                 className="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-8 py-4 rounded-lg text-lg font-medium transition-colors cursor-pointer"
