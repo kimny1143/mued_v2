@@ -1,6 +1,7 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser } from "@clerk/nextjs/server";
-import { setRequestLocale } from "next-intl/server";
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import { LandingContent } from "@/components/features/landing-content";
 import { locales, type Locale } from "@/lib/i18n/config";
 
@@ -10,6 +11,23 @@ interface PageProps {
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "landing.brand.hero" });
+
+  const title = `MUED - ${t("tagline")}`;
+  const description = t("description");
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+    },
+  };
 }
 
 export default async function LocaleLandingPage({ params }: PageProps) {
