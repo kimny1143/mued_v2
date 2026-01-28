@@ -1,27 +1,31 @@
 import Link from "next/link";
 import { getLocale } from "next-intl/server";
 import {
-  HeroSection,
-  PhilosophySection,
-  MuednoteSection,
-  GrowthPreviewSection,
+  BrandHeroSection,
+  ProductsShowcaseSection,
   SocialProofSection,
-  CtaSection,
+  BrandCtaSection,
   ParallaxBackground,
 } from "@/components/features/landing";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 
 /**
- * Landing Content - MUEDnote Landing Page (Server Component)
+ * Landing Content - MUED Brand Landing Page (Server Component)
  *
  * Design philosophy:
  * - Dark mode first
  * - Glassmorphism
- * - MUEDnote: 判断を資産にするツール
+ * - MUED: Tools for Music Creators
  *
  * Architecture:
- * - Server Components for static content (Philosophy, MUEDnote, Growth, Social, CTA)
- * - Client Components only for interactive parts (Hero, ParallaxBackground, LocaleSwitcher)
+ * - Server Components for static content (ProductsShowcase, Social, CTA)
+ * - Client Components only for interactive parts (BrandHero, ParallaxBackground, LocaleSwitcher)
+ *
+ * Sections:
+ * 1. BrandHeroSection - Brand intro with dual CTA
+ * 2. ProductsShowcaseSection - MUEDnote & MUEDear side by side
+ * 3. SocialProofSection - Developer quote & company
+ * 4. BrandCtaSection - Final dual CTA
  */
 export async function LandingContent() {
   const locale = await getLocale();
@@ -37,12 +41,10 @@ export async function LandingContent() {
         </div>
       </header>
 
-      <HeroSection />
-      <PhilosophySection />
-      <MuednoteSection />
-      <GrowthPreviewSection />
+      <BrandHeroSection />
+      <ProductsShowcaseSection />
       <SocialProofSection />
-      <CtaSection />
+      <BrandCtaSection />
 
       {/* Footer */}
       <footer className="bg-[#0F0F1A] py-8 border-t border-white/10 backdrop-blur-2xl relative">

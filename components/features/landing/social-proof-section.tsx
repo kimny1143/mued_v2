@@ -1,13 +1,21 @@
 import { ExternalLink, Smartphone } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+interface SocialProofSectionProps {
+  /**
+   * Use brand-level translation keys instead of product-specific ones
+   * @default true
+   */
+  useBrandKeys?: boolean;
+}
+
 /**
  * Social Proof Section - Landing Page
  *
  * App Store status + Developer quote + Company attribution
  */
-export function SocialProofSection() {
-  const t = useTranslations("landing.social");
+export function SocialProofSection({ useBrandKeys = true }: SocialProofSectionProps) {
+  const t = useTranslations(useBrandKeys ? "landing.brand.social" : "landing.social");
 
   return (
     <section className="py-16 bg-[#0F0F1A]/92 backdrop-blur-xl relative">

@@ -1,0 +1,10 @@
+export { MuedearLandingContent } from "./muedear-landing-content";
+export { MuedearHeroSection } from "./muedear-hero-section";
+export { MuedearGamesSection } from "./muedear-games-section";
+export { MuedearFeaturesSection } from "./muedear-features-section";
+export { MuedearAudienceSection } from "./muedear-audience-section";
+export { MuedearPricingSection } from "./muedear-pricing-section";
+export { MuedearMascotSection } from "./muedear-mascot-section";
+export { MuedearFaqSection } from "./muedear-faq-section";
+export { MuedearCtaSection } from "./muedear-cta-section";
+export { MuedearParallaxBackground } from "./muedear-parallax-background";

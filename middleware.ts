@@ -11,12 +11,14 @@ const isPublicRoute = createRouteMatcher([
   "/:locale",
   "/:locale/privacy",
   "/:locale/support",
+  "/:locale/muedear",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/webhooks(.*)",
   "/payment(.*)",
   "/privacy(.*)",
   "/support(.*)",
+  "/muedear(.*)",
 ]);
 
 // Check if path starts with a locale

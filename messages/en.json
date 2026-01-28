@@ -1,5 +1,53 @@
 {
   "landing": {
+    "brand": {
+      "hero": {
+        "title": "MUED",
+        "tagline": "From the Muses — not inspiration, but method.",
+        "description": "Practice. Remember. Create.",
+        "hooIntro": "Hoo will be your guide.",
+        "exploreMuednote": "Explore MUEDnote",
+        "exploreMuedear": "Explore MUEDear"
+      },
+      "products": {
+        "title": "Practice. Remember.",
+        "subtitle": "Two tools for your creative method.",
+        "muednote": {
+          "badge": "Remember",
+          "tagline": "Your decisions, preserved.",
+          "features": {
+            "rest": "Rest Reminders",
+            "voice": "Voice Memos & Transcription",
+            "sound": "Sound-Reactive Hoo"
+          },
+          "ctaLearnMore": "Learn more",
+          "ctaStart": "Get Started Free"
+        },
+        "muedear": {
+          "badge": "Practice",
+          "tagline": "Train your ears, sharpen your method.",
+          "features": {
+            "games": "5 Ear Training Games",
+            "dsp": "Real DSP Processing",
+            "free": "Play Free Every Day"
+          },
+          "ctaLearnMore": "Learn more",
+          "ctaDownload": "Download"
+        }
+      },
+      "cta": {
+        "title": "Ready to create?",
+        "description": "Start with your method.",
+        "muednote": "Start with MUEDnote",
+        "muedear": "Train with MUEDear"
+      },
+      "social": {
+        "developedBy": "Developed by",
+        "badge": "Live on App Store",
+        "quote": "\"Hours would pass without me noticing during production. But I couldn't remember why I made those choices\"—that's why we built this.",
+        "author": "From the Developer"
+      }
+    },
     "hero": {
       "title": "MUEDnote",
       "tagline": "Making music visible.",
@@ -214,6 +262,179 @@
     "contact": {
       "title": "Contact",
       "value": "For inquiries about our services, please contact us at the email address above."
+    }
+  },
+  "muedear": {
+    "hero": {
+      "title": "MUEDear",
+      "tagline": "Train Your Ears While You Create",
+      "hooIntro": "I'm Hoo, your ear training partner",
+      "description": "\"So you want to sharpen your ears too?\nSpend just 2-3 minutes between sessions, and let's train together on EQ, compression, and spatial effects.\"",
+      "ctaPrimary": "Download on the App Store",
+      "appStoreAlt": "Download on the App Store"
+    },
+    "games": {
+      "title": "5 Games to Play with Hoo",
+      "intro": "\"Which one first? They're all free to play.\"",
+      "mufreq": {
+        "name": "MuFreQ",
+        "category": "EQ",
+        "difficulty": "★☆☆",
+        "description": "\"Compare two sounds and guess which frequency band is boosted. From 60Hz to 12kHz, you'll gradually learn to hear the difference.\""
+      },
+      "mucomp": {
+        "name": "MuComp",
+        "category": "Dynamics",
+        "difficulty": "★☆☆",
+        "description": "\"Pick the compressed one. FET punch, Opto smoothness, VCA glue... Once you can tell them apart, it's really fun.\""
+      },
+      "murush": {
+        "name": "MuRush",
+        "category": "EQ",
+        "difficulty": "★★☆",
+        "description": "\"60-second time attack! Identify as many frequencies as you can before time runs out. Speed and accuracy — train both.\""
+      },
+      "muverb": {
+        "name": "MuVerb",
+        "category": "Space",
+        "difficulty": "★★☆",
+        "description": "\"Room, Hall, Plate, Spring, Chamber... Can you tell the 5 reverb types apart? Let's see if you can hear the space.\""
+      },
+      "mupan": {
+        "name": "MuPan",
+        "category": "Space",
+        "difficulty": "★★☆",
+        "description": "\"Where's the sound coming from? Pick the position in the stereo field — 5 levels from Hard Left to Hard Right.\""
+      }
+    },
+    "features": {
+      "title": "Hoo's Commitment to Quality",
+      "intro": "\"This isn't just another quiz app. I built it to really train your ears.\"",
+      "realtime": {
+        "title": "Custom DSP Algorithms",
+        "subtitle": "Beyond Pre-Recorded Samples",
+        "description": "\"Most ear training apps use pre-recorded audio. But MuComp processes in real-time with custom DSP built from hardware research. Other games will follow.\""
+      },
+      "hardware": {
+        "title": "Modeled After Legends",
+        "subtitle": "FET · VCA · Tube · Opto",
+        "description": "\"MuComp's DSP is designed based on the characteristics of legendary studio gear. Let's train your ears to hear each one's personality.\""
+      },
+      "convolution": {
+        "title": "Convolution Reverb",
+        "subtitle": "Diverse Spatial Characteristics",
+        "description": "\"MuVerb uses convolution reverb with impulse responses for various spatial characteristics. Train your ears to distinguish 5 reverb types.\""
+      },
+      "settings": {
+        "title": "Hardware-Style UI",
+        "subtitle": "Available in MuComp",
+        "description": "\"In the settings panel, you can adjust parameters with a UI modeled after real gear. Input/Output, Attack/Release, Ratio... Learn sound design while you play.\""
+      }
+    },
+    "audience": {
+      "title": "Who Is This For?",
+      "intro": "\"Any level is fine. Hoo's here with you.\"",
+      "bedroom": {
+        "title": "Bedroom Producers & Home Studio Artists",
+        "description": "\"You've got the plugins. But when should you use them? Once you can hear the difference, you'll know.\""
+      },
+      "student": {
+        "title": "Music Production Students",
+        "description": "\"Supplement what you learn in class with practical ear training. This is a skill that'll serve your entire career.\""
+      },
+      "pro": {
+        "title": "Professional Engineers",
+        "description": "\"Keep your ears sharp between sessions. Quick training helps maintain the listening acuity you've built over the years.\""
+      }
+    },
+    "pricing": {
+      "title": "Free to Play. Respects Your Time.",
+      "intro": "\"I didn't make this to keep you glued to your phone.\"",
+      "free": {
+        "title": "Free Tier",
+        "games": "5 games per day — Enough to make real progress",
+        "modes": "All 5 game modes — Full access, no paywalls",
+        "ads": "Rewarded ads — Watch an ad to unlock 3 more games (up to 5 times daily)"
+      },
+      "why": {
+        "title": "Why the Limit?",
+        "quote": "\"The daily limit is intentional. Train your ears, then get back to making music. I built MUEDear to help you become a better producer.\""
+      },
+      "antiAddiction": {
+        "title": "Anti-Addiction Design",
+        "noScroll": "No infinite scroll",
+        "noNotifications": "No push notifications",
+        "noStreak": "No streak guilt",
+        "focused": "Just focused ear training"
+      }
+    },
+    "mascot": {
+      "title": "About Hoo",
+      "description": "Hoo is the MUEDear mascot — a wise owl watching over your ear training. Why an owl?",
+      "hearing": {
+        "title": "Sharp Hearing",
+        "description": "Owls are known for exceptional auditory abilities"
+      },
+      "nocturnal": {
+        "title": "Nocturnal",
+        "description": "Your companion for those late-night sessions"
+      },
+      "wise": {
+        "title": "Wise",
+        "description": "A symbol of wisdom and learning"
+      },
+      "future": {
+        "title": "Coming Soon",
+        "description": "In future updates, Hoo will cheer you on during games and share audio engineering tips."
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "q1": {
+        "question": "Is MUEDear really free?",
+        "answer": "Yes! You get 5 free games every day, with access to all game modes. You can optionally watch rewarded ads to play more. There are no locked features or required purchases."
+      },
+      "q2": {
+        "question": "What makes MUEDear different from other ear training apps?",
+        "answer": "Custom DSP algorithms. Most ear training apps use pre-recorded audio samples. MUEDear's MuComp processes audio in real-time using custom DSP modeled after legendary studio gear characteristics."
+      },
+      "q3": {
+        "question": "Do I need music production experience?",
+        "answer": "MUEDear is designed for all skill levels. Beginners will learn to identify fundamental frequency bands and compression characteristics. Experienced producers will sharpen their speed and accuracy."
+      },
+      "q4": {
+        "question": "How long should I train each day?",
+        "answer": "Our free tier gives you 5 games per day — about 15-20 minutes of training. This is enough to make steady progress without taking time away from actual music production."
+      },
+      "q5": {
+        "question": "Why limit how much I can play?",
+        "answer": "We believe ear training should enhance your music production, not replace it. The daily limit encourages you to apply what you've learned in your actual projects."
+      },
+      "q6": {
+        "question": "Will there be a premium subscription?",
+        "answer": "We're considering a premium tier with unlimited plays and detailed analytics for future versions. The free tier will always remain fully functional."
+      },
+      "q7": {
+        "question": "What languages are supported?",
+        "answer": "Currently English and Japanese. More languages coming soon."
+      },
+      "q8": {
+        "question": "Is my progress saved?",
+        "answer": "Yes, your high scores and settings are saved locally on your device."
+      }
+    },
+    "cta": {
+      "title": "Start Training Today",
+      "headline": "\"Your ears are your most valuable tool. Let's train them together.\"",
+      "button": "Download on the App Store",
+      "requirements": {
+        "title": "System Requirements",
+        "ios": "iOS 13.0 or later",
+        "headphones": "Headphones recommended"
+      }
+    },
+    "footer": {
+      "tagline": "MUEDear — Train your ears while you create."
     }
   },
   "support": {

@@ -65,3 +65,6 @@ docs/sounds/
 !.claude/skills/aio-seo/
 !.claude/skills/database/
 !.claude/skills/daw-osc/
+
+# Large binary files
+*.ipa

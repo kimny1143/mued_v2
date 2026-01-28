@@ -1,5 +1,53 @@
 {
   "landing": {
+    "brand": {
+      "hero": {
+        "title": "MUED",
+        "tagline": "ミューズの教え——神秘ではなく、方法論。",
+        "description": "練習して、記憶して、創る。",
+        "hooIntro": "Hooがご案内します。",
+        "exploreMuednote": "MUEDnoteを見る",
+        "exploreMuedear": "MUEDearを見る"
+      },
+      "products": {
+        "title": "練習して、記憶する。",
+        "subtitle": "創作のための2つのメソッド。",
+        "muednote": {
+          "badge": "記憶する",
+          "tagline": "判断を残す、振り返る。",
+          "features": {
+            "rest": "休憩リマインダー",
+            "voice": "音声メモ＆文字起こし",
+            "sound": "音に反応するHoo"
+          },
+          "ctaLearnMore": "詳しく見る",
+          "ctaStart": "無料で始める"
+        },
+        "muedear": {
+          "badge": "練習する",
+          "tagline": "耳を鍛えて、方法論を磨く。",
+          "features": {
+            "games": "5つの耳トレゲーム",
+            "dsp": "本格DSP処理",
+            "free": "毎日無料で遊べる"
+          },
+          "ctaLearnMore": "詳しく見る",
+          "ctaDownload": "ダウンロード"
+        }
+      },
+      "cta": {
+        "title": "創る準備はできた？",
+        "description": "君のメソッドを始めよう。",
+        "muednote": "MUEDnoteで始める",
+        "muedear": "MUEDearで鍛える"
+      },
+      "social": {
+        "developedBy": "Developed by",
+        "badge": "App Store公開中",
+        "quote": "「制作中、気づいたら何時間も経ってた。でも、なぜそうしたのかは覚えていない」——そんな経験から生まれました。",
+        "author": "開発者より"
+      }
+    },
     "hero": {
       "title": "MUEDnote",
       "tagline": "Making music visible.",
@@ -214,6 +262,179 @@
     "contact": {
       "title": "お問い合わせ",
       "value": "サービスに関するお問い合わせは、上記メールアドレスまでご連絡ください。"
+    }
+  },
+  "muedear": {
+    "hero": {
+      "title": "MUEDear",
+      "tagline": "制作しながら、耳を育てる",
+      "hooIntro": "耳トレのパートナー、Hoo（ホー）だよ",
+      "description": "「ほほう、君も耳を鍛えたいんだね。\n制作の合間の2〜3分で、EQやコンプの聴き分けを一緒にトレーニングしよう。」",
+      "ctaPrimary": "App Storeでダウンロード",
+      "appStoreAlt": "App Storeでダウンロード"
+    },
+    "games": {
+      "title": "Hooと遊べる5つのゲーム",
+      "intro": "「どれから始める？全部無料で遊べるよ。」",
+      "mufreq": {
+        "name": "MuFreQ",
+        "category": "EQ",
+        "difficulty": "★☆☆",
+        "description": "「2つの音を聴き比べて、ブーストされた周波数帯を当ててみて。60Hzから12kHzまで、だんだん聴き分けられるようになるよ。」"
+      },
+      "mucomp": {
+        "name": "MuComp",
+        "category": "Dynamics",
+        "difficulty": "★☆☆",
+        "description": "「コンプがかかってる方を当てるゲーム。FET系のパンチ、オプト系のスムーズさ、VCA系のグルー感…違いがわかるようになると楽しいよ。」"
+      },
+      "murush": {
+        "name": "MuRush",
+        "category": "EQ",
+        "difficulty": "★★☆",
+        "description": "「60秒のタイムアタック！制限時間内にできるだけ多くの周波数を当てよう。スピードと正確性、両方鍛えられるよ。」"
+      },
+      "muverb": {
+        "name": "MuVerb",
+        "category": "Space",
+        "difficulty": "★★☆",
+        "description": "「Room、Hall、Plate、Spring、Chamber…5種類のリバーブを聴き分けるゲーム。空間の違い、わかるかな？」"
+      },
+      "mupan": {
+        "name": "MuPan",
+        "category": "Space",
+        "difficulty": "★★☆",
+        "description": "「音がどこから聴こえる？ステレオフィールド上の位置を5段階で当ててみて。」"
+      }
+    },
+    "features": {
+      "title": "Hooのこだわり",
+      "intro": "「ただのクイズアプリじゃないよ。ちゃんと本物の耳を育てるために作ったんだ。」",
+      "realtime": {
+        "title": "独自DSPアルゴリズム",
+        "subtitle": "録音済み音源に頼らない",
+        "description": "「多くの耳トレアプリは録音済みの音源を使ってるけど、MuCompは実機の挙動をリサーチした独自DSPでリアルタイム処理してるんだ。他のゲームも順次対応予定だよ。」"
+      },
+      "hardware": {
+        "title": "伝説の機材をモデルに",
+        "subtitle": "FET・VCA・Tube・Opto",
+        "description": "「MuCompのDSPは、スタジオで使われてきた伝説的な機材の特性をモデルに設計したんだ。それぞれの個性を聴き分ける耳、一緒に育てよう。」"
+      },
+      "convolution": {
+        "title": "コンボリューションリバーブ",
+        "subtitle": "多彩な空間特性",
+        "description": "「MuVerbは、様々な空間特性を持つインパルスレスポンスを使ったコンボリューションリバーブを搭載。5種類のリバーブタイプを聴き分ける力を養おう。」"
+      },
+      "settings": {
+        "title": "ハードウェアスタイルUI",
+        "subtitle": "MuCompで使える",
+        "description": "「設定パネルでは、実機を模したUIでパラメータを調整できるよ。Input/Output、Attack/Release、Ratio…遊びながら音作りを学ぼう。」"
+      }
+    },
+    "audience": {
+      "title": "こんな人におすすめ",
+      "intro": "「どのレベルでも大丈夫。Hooが一緒にいるからね。」",
+      "bedroom": {
+        "title": "宅録ミュージシャン・DTMer",
+        "description": "「プラグインは持ってる。でも、いつ使うべきかわからない？聴き分ける力がつくと、判断できるようになるよ。」"
+      },
+      "student": {
+        "title": "音楽専門学校生・音響学生",
+        "description": "「授業で学んだ理論を、実践的な耳トレで補強しよう。キャリアの基盤になるスキルだよ。」"
+      },
+      "pro": {
+        "title": "プロエンジニア",
+        "description": "「セッションの合間に耳を研ぎ澄ませよう。短時間のトレーニングで、聴覚の鋭さを維持できるよ。」"
+      }
+    },
+    "pricing": {
+      "title": "無料で遊べる。制作時間を尊重する設計。",
+      "intro": "「スマホに釘付けにするために作ったんじゃないよ。」",
+      "free": {
+        "title": "無料プラン",
+        "games": "1日5ゲーム — 着実に上達できる量",
+        "modes": "全5ゲームモード — 課金なしで全機能アクセス",
+        "ads": "リワード広告 — 広告を見て3ゲーム追加（1日最大5回）"
+      },
+      "why": {
+        "title": "なぜ制限があるのか？",
+        "quote": "「1日の制限は意図的なもの。耳を鍛えたら、音楽制作に戻ろう。MUEDearは、君をより良いプロデューサーにするために作ったんだ。」"
+      },
+      "antiAddiction": {
+        "title": "依存症にならない設計",
+        "noScroll": "無限スクロールなし",
+        "noNotifications": "プッシュ通知なし",
+        "noStreak": "連続記録のプレッシャーなし",
+        "focused": "ただ集中した耳トレだけ"
+      }
+    },
+    "mascot": {
+      "title": "Hooについて",
+      "description": "HooはMUEDearのマスコット。耳トレを見守る賢いフクロウだよ。なぜフクロウかって？",
+      "hearing": {
+        "title": "鋭い聴覚",
+        "description": "フクロウは優れた聴覚能力で知られている"
+      },
+      "nocturnal": {
+        "title": "夜行性",
+        "description": "夜中に制作する君の仲間"
+      },
+      "wise": {
+        "title": "賢者",
+        "description": "知恵と学びの象徴"
+      },
+      "future": {
+        "title": "今後のアップデート",
+        "description": "将来のバージョンでは、Hooがゲーム中に励ましたり、豆知識を教えてくれる機能を追加予定です。"
+      }
+    },
+    "faq": {
+      "title": "よくある質問",
+      "q1": {
+        "question": "MUEDearは本当に無料ですか？",
+        "answer": "はい！毎日5ゲームが無料で、すべてのゲームモードにアクセスできます。オプションでリワード広告を見れば追加でプレイ可能。ロックされた機能や必須の課金はありません。"
+      },
+      "q2": {
+        "question": "他の耳トレアプリとの違いは何ですか？",
+        "answer": "独自DSPアルゴリズムです。多くの耳トレアプリは録音済みのサンプルを使っていますが、MUEDearのMuCompは伝説的なスタジオ機材の特性をモデルにした独自DSPでリアルタイム処理を行います。"
+      },
+      "q3": {
+        "question": "音楽制作の経験が必要ですか？",
+        "answer": "MUEDearはすべてのスキルレベル向けに設計されています。初心者は基本的な周波数帯やコンプレッションの特性を学べます。経験者はスピードと正確性を磨けます。"
+      },
+      "q4": {
+        "question": "毎日どのくらいトレーニングすべきですか？",
+        "answer": "無料プランでは1日5ゲーム、約15〜20分のトレーニングができます。実際の音楽制作から時間を奪わずに、着実に上達できる量です。"
+      },
+      "q5": {
+        "question": "なぜプレイ回数に制限があるのですか？",
+        "answer": "耳トレは音楽制作を強化するものであり、置き換えるものではないと考えています。1日の制限は、学んだことを実際のプロジェクトに活かすことを促します。"
+      },
+      "q6": {
+        "question": "有料プランは出ますか？",
+        "answer": "将来のバージョンで、無制限プレイと詳細な分析機能を備えたプレミアムプランを検討中です。無料プランは常に完全に機能し続けます。"
+      },
+      "q7": {
+        "question": "対応言語は？",
+        "answer": "現在、英語と日本語に対応。今後、他の言語も追加予定です。"
+      },
+      "q8": {
+        "question": "進捗は保存されますか？",
+        "answer": "はい、ハイスコアと設定はデバイスにローカル保存されます。"
+      }
+    },
+    "cta": {
+      "title": "今日からトレーニングを始めよう",
+      "headline": "耳は、あなたの最も価値あるツール。鍛えよう。",
+      "button": "App Storeでダウンロード",
+      "requirements": {
+        "title": "システム要件",
+        "ios": "iOS 13.0 以降",
+        "headphones": "ヘッドフォン推奨"
+      }
+    },
+    "footer": {
+      "tagline": "MUEDear — 制作しながら、耳を育てる。"
     }
   },
   "support": {
