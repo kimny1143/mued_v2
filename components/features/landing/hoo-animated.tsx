@@ -11,6 +11,10 @@ interface HooAnimatedProps {
   getNextPhrase?: () => string;
   currentPhrase?: string;
   isMobile?: boolean;
+  /** Disable automatic animations (glance, bounce, etc.) - tape reel still spins */
+  disableAnimations?: boolean;
+  /** MUEDear mode: ear-focused animations instead of eye glance */
+  muedearMode?: boolean;
 }
 
 const COLOR = "#FFFFFF";
@@ -20,17 +24,29 @@ const COLOR = "#FFFFFF";
  * - Reels rotate (left: clockwise, right: counter-clockwise)
  * - Bounce animation (2 quick bounces every 15-20 seconds)
  */
+// MUEDnote phrases
 const REST_PHRASES = ["そろそろ休憩しない？", "time for a break?"];
 const SURPRISE_PHRASES = ["そんなアプローチするんだ", "interesting approach"];
 const NICE_IDEA_PHRASES = ["そのアイデアいいね", "nice idea"];
 
-export function HooAnimated({ width = 280, height = 280, className, onBounce, getNextPhrase, currentPhrase, isMobile = false }: HooAnimatedProps) {
+// MUEDear phrases - ear-focused
+const MUEDEAR_PHRASES = [
+  { ja: "耳トレ、やってみる？", en: "Wanna try some ear training?", animation: "spin" },
+  { ja: "ほほう、いい耳してるね", en: "Ho-hoo, nice ears!", animation: "bounce" },
+  { ja: "実はこれ、耳じゃなくて、\n羽角 うかくなんだよね。", en: "Actually, these aren't ears—\nthey're feather tufts.", animation: "tilt" },
+];
+
+export function HooAnimated({ width = 280, height = 280, className, onBounce, getNextPhrase, currentPhrase, isMobile = false, disableAnimations = false, muedearMode = false }: HooAnimatedProps) {
   const controls = useAnimationControls();
   const eyeControls = useAnimationControls();
   const earControls = useAnimationControls();
+  const earLeftControls = useAnimationControls();
+  const earRightControls = useAnimationControls();
   const animateMotionRef = useRef<SVGAnimateMotionElement>(null);
   const isRestAnimating = useRef(false);
+  const isMounted = useRef(false);
   const [eyesClosed, setEyesClosed] = useState(false);
+  const muedearPhraseIndex = useRef(0);
 
   const triggerEyeGlance = useCallback(async () => {
     // Glance direction: left on desktop (DAW is on left), right on mobile (background is behind/right)
@@ -71,6 +87,34 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
     earControls.set({ rotate: 0 });
   }, [earControls]);
 
+  // MUEDear: Ears bounce (instead of whole body)
+  const triggerEarBounce = useCallback(async () => {
+    await Promise.all([
+      earLeftControls.start({
+        y: [0, -8, 0, -8, 0],
+        transition: { duration: 0.5, times: [0, 0.25, 0.5, 0.75, 1], ease: "easeOut" },
+      }),
+      earRightControls.start({
+        y: [0, -8, 0, -8, 0],
+        transition: { duration: 0.5, times: [0, 0.25, 0.5, 0.75, 1], ease: "easeOut" },
+      }),
+    ]);
+  }, [earLeftControls, earRightControls]);
+
+  // MUEDear: Ears tilt outward (feather tufts joke)
+  const triggerEarTilt = useCallback(async () => {
+    await Promise.all([
+      earLeftControls.start({
+        rotate: [0, -20, -20, 0],
+        transition: { duration: 1.2, times: [0, 0.3, 0.7, 1], ease: "easeInOut" },
+      }),
+      earRightControls.start({
+        rotate: [0, 20, 20, 0],
+        transition: { duration: 1.2, times: [0, 0.3, 0.7, 1], ease: "easeInOut" },
+      }),
+    ]);
+  }, [earLeftControls, earRightControls]);
+
   // Rest animation: stop tape → close eyes → wait 5s → open eyes → resume
   const triggerRestAnimation = useCallback(async () => {
     if (isRestAnimating.current) return;
@@ -102,6 +146,8 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
   }, []);
 
   const triggerSequence = useCallback(async () => {
+    if (!isMounted.current) return;
+
     // 0. Get next phrase first to determine animation
     const nextPhrase = getNextPhrase?.() || "";
     const isSurprise = SURPRISE_PHRASES.some(p => nextPhrase.includes(p));
@@ -119,6 +165,7 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
 
     // 3. Wait a moment, then bounce
     setTimeout(async () => {
+      if (!isMounted.current) return;
       // Call onBounce right after 2nd bounce peak (0.35s)
       setTimeout(() => onBounce?.(nextPhrase), 350);
       await controls.start({
@@ -128,28 +175,70 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
     }, 500);
   }, [controls, onBounce, getNextPhrase, triggerEyeGlance, triggerSurprise, triggerEarSpin]);
 
+  // MUEDear sequence: ear-focused animations
+  const triggerMuedearSequence = useCallback(async () => {
+    if (!isMounted.current) return;
+
+    // Get current phrase (cycle through)
+    const phraseData = MUEDEAR_PHRASES[muedearPhraseIndex.current];
+    muedearPhraseIndex.current = (muedearPhraseIndex.current + 1) % MUEDEAR_PHRASES.length;
+
+    // Determine phrase based on locale (check if Japanese characters exist in document)
+    const isJapanese = typeof document !== "undefined" && document.documentElement.lang === "ja";
+    const phrase = isJapanese ? phraseData.ja : phraseData.en;
+
+    // Trigger ear animation based on phrase type
+    if (phraseData.animation === "spin") {
+      await triggerEarSpin();
+    } else if (phraseData.animation === "bounce") {
+      await triggerEarBounce();
+    } else if (phraseData.animation === "tilt") {
+      await triggerEarTilt();
+    }
+
+    // Show phrase after animation
+    onBounce?.(phrase);
+  }, [triggerEarSpin, triggerEarBounce, triggerEarTilt, onBounce]);
+
+  // Track mounted state for animation safety
   useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Skip automatic animations if disabled
+    if (disableAnimations) return;
+
     let timeoutId: NodeJS.Timeout;
+
+    const sequence = muedearMode ? triggerMuedearSequence : triggerSequence;
 
     const scheduleNextSequence = () => {
       const delay = 15000 + Math.random() * 5000; // 15-20 seconds
       timeoutId = setTimeout(async () => {
-        await triggerSequence();
-        scheduleNextSequence();
+        if (isMounted.current) {
+          await sequence();
+          scheduleNextSequence();
+        }
       }, delay);
     };
 
     // Initial sequence after a short delay
     const initialTimeout = setTimeout(() => {
-      triggerSequence();
-      scheduleNextSequence();
+      if (isMounted.current) {
+        sequence();
+        scheduleNextSequence();
+      }
     }, 2000);
 
     return () => {
       clearTimeout(timeoutId);
       clearTimeout(initialTimeout);
     };
-  }, [triggerSequence]);
+  }, [triggerSequence, triggerMuedearSequence, disableAnimations, muedearMode]);
 
   // Trigger rest animation when phrase contains rest-related text
   useEffect(() => {
@@ -168,20 +257,20 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
       className={className}
       animate={controls}
     >
-      {/* Ears - each rotates around its own center */}
+      {/* Ears - each rotates/bounces around its own center */}
       <g id="ears">
         <motion.path
           id="ear-left"
           d="M169.419 84.4499L154.708 109.93H184.129L169.419 84.4499Z"
           fill={COLOR}
-          animate={earControls}
+          animate={muedearMode ? earLeftControls : earControls}
           style={{ transformOrigin: "169.4px 101.4px" }}
         />
         <motion.path
           id="ear-right"
           d="M353.509 84.4499L338.798 109.93H368.22L353.509 84.4499Z"
           fill={COLOR}
-          animate={earControls}
+          animate={muedearMode ? earRightControls : earControls}
           style={{ transformOrigin: "353.5px 101.4px" }}
         />
       </g>
