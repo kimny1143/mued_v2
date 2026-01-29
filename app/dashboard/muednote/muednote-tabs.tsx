@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Mic, Smartphone } from "lucide-react";
+import { Mic, Smartphone, Monitor } from "lucide-react";
 import { useLocale } from "@/lib/i18n/locale-context";
 // TODO: v1.1.0 - DAW Logs feature
 // import { Sliders } from "lucide-react";
@@ -43,7 +43,15 @@ export function MuednoteTabs({
         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border border-indigo-500/30"
       >
         <Smartphone className="w-4 h-4" />
-        {locale === "ja" ? "iOSアプリをダウンロード" : "Download iOS App"}
+        {locale === "ja" ? "iOSアプリ" : "iOS App"}
+      </a>
+      <a
+        href="/downloads/MUEDnoteHub.zip"
+        download
+        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30"
+      >
+        <Monitor className="w-4 h-4" />
+        {locale === "ja" ? "macOS Hub" : "macOS Hub"}
       </a>
       {/* TODO: v1.1.0 - DAW Logs tab
       <Link

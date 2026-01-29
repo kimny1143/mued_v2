@@ -57,20 +57,18 @@ Vercel デプロイで自動的に配信される。
 | 機能 | 説明 |
 |------|------|
 | DAWパラメータ記録 | Ableton Live のパラメータ変更を自動記録 |
-| MIDIキャプチャ | 外部MIDIデバイスからの入力を記録 |
 | クラウド同期 | MUEDnote サーバーにリアルタイム送信 |
 | メニューバー常駐 | システムに常駐し、接続状態をアイコンで表示 |
 | ログイン時起動 | macOS 起動時に自動起動（設定可） |
 | Clerk認証 | MUEDnote アカウントでログイン |
 
-### 対応DAW/ツール
+### 対応DAW
 
 | ツール | 対応状況 | 備考 |
 |--------|----------|------|
 | Ableton Live | ✅ 対応 | AbletonOSC 経由 |
 | Logic Pro | 🔜 予定 | 将来対応予定 |
 | Pro Tools | 🔜 予定 | 将来対応予定 |
-| 外部MIDI | ✅ 対応 | CoreMIDI 経由 |
 
 ### 必要な追加ツール
 
@@ -144,7 +142,7 @@ Vercel デプロイで自動的に配信される。
 <DownloadButton
   platform="macos"
   version="1.0.0"
-  downloadUrl="https://[配布URL]/MUEDnoteHub.zip"
+  downloadUrl="https://mued.jp/downloads/MUEDnoteHub.zip"
   requirements="macOS 14.0 (Sonoma) 以降"
 />
 ```
