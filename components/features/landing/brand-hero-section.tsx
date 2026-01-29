@@ -9,21 +9,17 @@ import { CtaButton } from "@/components/ui/cta-button";
 /**
  * Brand Hero Section - MUED Brand Landing Page
  *
- * Introduces MUED as a brand with two products:
- * - MUEDnote (Production Companion)
- * - MUEDear (Ear Training)
- *
- * Features small Hoo animation without speech bubble
- * Two CTAs following Hick's Law (2 choices)
+ * Design principles (from MUED_SITE_INSTRUCTIONS.md):
+ * - Hoo is the HERO - large, glowing, animated
+ * - Clear visual hierarchy: Title → Hoo → Primary CTA → Secondary link
+ * - MUEDnote = primary (filled button), MUEDear = secondary (text link)
+ * - Solid dark background (handled by parent), no competing visuals
  */
 export function BrandHeroSection() {
   const t = useTranslations("landing.brand.hero");
 
   return (
     <section className="min-h-[100dvh] flex items-center relative overflow-hidden py-16 lg:py-0">
-      {/* Overlay for text readability - 60% opacity for WCAG contrast */}
-      <div className="absolute inset-0 bg-black/60 pointer-events-none" />
-
       <div className="container mx-auto px-4 sm:px-6 relative z-10">
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
           {/* Brand Title */}
@@ -31,43 +27,34 @@ export function BrandHeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-4xl sm:text-5xl md:text-7xl font-bold text-white mb-2 sm:mb-4"
+            className="text-5xl sm:text-6xl md:text-8xl font-bold text-white mb-2 sm:mb-3"
           >
             {t("title")}
           </motion.h1>
 
-          {/* Tagline */}
+          {/* Tagline - subtle, not competing with Hoo */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-base sm:text-xl md:text-2xl text-white/80 mb-2 sm:mb-4 font-light"
+            className="text-sm sm:text-base md:text-lg text-white/50 mb-8 sm:mb-12 font-light tracking-wide"
           >
             {t("tagline")}
           </motion.p>
 
-          {/* Description */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-sm sm:text-lg text-white/80 mb-4 sm:mb-8"
-          >
-            {t("description")}
-          </motion.p>
-
-          {/* Hoo Logo - static, no animations */}
+          {/* Hoo - THE HERO: large, glowing, with subtle animation */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="mb-2 sm:mb-4"
+            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+            className="mb-4 sm:mb-6 relative"
           >
+            {/* Glow effect behind Hoo */}
+            <div className="absolute inset-0 blur-3xl bg-white/10 rounded-full scale-150" />
             <HooAnimated
-              width={140}
-              height={140}
-              className="drop-shadow-2xl sm:w-[200px] sm:h-[200px]"
-              disableAnimations
+              width={240}
+              height={240}
+              className="relative z-10 drop-shadow-[0_0_40px_rgba(255,255,255,0.15)] sm:w-[320px] sm:h-[320px]"
             />
           </motion.div>
 
@@ -76,39 +63,51 @@ export function BrandHeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-white/80 text-xs sm:text-sm mb-6 sm:mb-10"
+            className="text-white/60 text-sm sm:text-base mb-8 sm:mb-10"
           >
             {t("hooIntro")}
           </motion.p>
 
-          {/* Dual CTA Buttons */}
+          {/* CTA hierarchy: Primary button + Secondary text link */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+            className="flex flex-col items-center gap-4 sm:gap-5"
           >
-            {/* MUEDnote CTA - Primary */}
-            <CtaButton variant="indigo" href="#muednote" className="px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg">
+            {/* MUEDnote CTA - Primary (filled button) */}
+            <CtaButton
+              variant="indigo"
+              href="#muednote"
+              className="px-8 py-4 sm:px-10 sm:py-5 text-base sm:text-lg font-medium"
+            >
               {t("exploreMuednote")}
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1" />
             </CtaButton>
 
-            {/* MUEDear CTA - Secondary */}
-            <CtaButton variant="amber" href="#muedear" className="px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg">
+            {/* MUEDear CTA - Secondary (text link, subtle) */}
+            <a
+              href="#muedear"
+              className="text-white/50 hover:text-white/80 text-sm sm:text-base transition-colors duration-200 flex items-center gap-1 group"
+            >
               {t("exploreMuedear")}
-              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1" />
-            </CtaButton>
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover:translate-x-1" />
+            </a>
           </motion.div>
         </div>
       </div>
 
       {/* Scroll indicator - hidden on mobile */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce hidden sm:block">
-        <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center pt-2">
-          <div className="w-1 h-3 bg-white/50 rounded-full" />
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.8 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce hidden sm:block"
+      >
+        <div className="w-6 h-10 border-2 border-white/20 rounded-full flex justify-center pt-2">
+          <div className="w-1 h-3 bg-white/30 rounded-full" />
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

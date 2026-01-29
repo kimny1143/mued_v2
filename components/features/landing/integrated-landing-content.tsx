@@ -7,7 +7,6 @@ import { HeroSection } from "./hero-section";
 import { PhilosophySection } from "./philosophy-section";
 import { GrowthPreviewSection } from "./growth-preview-section";
 import { SocialProofSection } from "./social-proof-section";
-import { ParallaxBackground } from "./parallax-background";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { MuedearHeroSection } from "@/components/features/muedear-landing/muedear-hero-section";
 import { MuedearGamesSection } from "@/components/features/muedear-landing/muedear-games-section";
@@ -37,7 +36,8 @@ export function IntegratedLandingContent() {
 
   return (
     <div className="dark">
-      <ParallaxBackground />
+      {/* Solid dark background - content is the focus */}
+      <div className="fixed inset-0 -z-10 bg-[#0f0f0f]" />
 
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6">
