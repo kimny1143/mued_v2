@@ -56,7 +56,7 @@ export function BrandHeroSection() {
             {t("description")}
           </motion.p>
 
-          {/* Hoo Animation - smaller, centered */}
+          {/* Hoo Logo - static, no animations */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -67,6 +67,7 @@ export function BrandHeroSection() {
               width={200}
               height={200}
               className="drop-shadow-2xl"
+              disableAnimations
             />
           </motion.div>
 
@@ -88,13 +89,13 @@ export function BrandHeroSection() {
             className="flex flex-col sm:flex-row gap-4"
           >
             {/* MUEDnote CTA - Primary */}
-            <CtaButton variant="indigo" href="#products">
+            <CtaButton variant="indigo" href="#muednote">
               {t("exploreMuednote")}
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </CtaButton>
 
             {/* MUEDear CTA - Secondary */}
-            <CtaButton variant="amber" href="#products">
+            <CtaButton variant="amber" href="#muedear">
               {t("exploreMuedear")}
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </CtaButton>

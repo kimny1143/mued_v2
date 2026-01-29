@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { HooAnimated } from "./hoo-animated";
-import { ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useIsMobile } from "@/hooks/use-media-query";
-import { CtaButton } from "@/components/ui/cta-button";
+import { AppStoreButton } from "@/components/ui/app-store-button";
+import { MUEDNOTE_APP_STORE_URL } from "@/lib/muednote/constants";
 
 interface HeroSectionProps {
   onGetStarted?: () => void;
@@ -86,10 +86,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
 
             {/* CTA */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <CtaButton variant="indigo" href="/sign-up" onClick={onGetStarted}>
-                {t("ctaPrimary")}
-                <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-              </CtaButton>
+              <AppStoreButton href={MUEDNOTE_APP_STORE_URL} variant="indigo" />
               <Link
                 href="/sign-in"
                 className="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-8 py-4 rounded-lg text-lg font-medium transition-colors cursor-pointer"

@@ -2,6 +2,7 @@
 export { BrandHeroSection } from "./brand-hero-section";
 export { ProductsShowcaseSection } from "./products-showcase-section";
 export { BrandCtaSection } from "./brand-cta-section";
+export { IntegratedLandingContent } from "./integrated-landing-content";
 
 // Shared Components
 export { SocialProofSection } from "./social-proof-section";

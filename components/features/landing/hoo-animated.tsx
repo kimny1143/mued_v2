@@ -11,7 +11,7 @@ interface HooAnimatedProps {
   getNextPhrase?: () => string;
   currentPhrase?: string;
   isMobile?: boolean;
-  /** Disable automatic animations (glance, bounce, etc.) - tape reel still spins */
+  /** Disable all animations (glance, bounce, tape reel, etc.) - static logo mode */
   disableAnimations?: boolean;
   /** MUEDear mode: ear-focused animations instead of eye glance */
   muedearMode?: boolean;
@@ -364,26 +364,28 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
       )}
 
       {/* Normal forward animation - BEHIND tape (白塗り黒枠) */}
-      <circle r="5" fill={COLOR} stroke="#000000" strokeWidth="2">
-        <animateMotion
-          ref={animateMotionRef}
-          dur="16s"
-          repeatCount="indefinite"
-          path="
-            M 204.5,215.5
-            A 47,47 0 0,1 204.5,121.5
-            L 317.5,121.5
-            A 47,47 0 1,1 289.2,206.0
-            L 217.7,151.9
-            A 22,22 0 1,0 204.5,191.5
-            L 317.5,191.5
-            A 22,22 0 1,0 304.3,152.0
-            L 232.8,206.0
-            A 47,47 0 0,1 204.5,215.5
-            Z
-          "
-        />
-      </circle>
+      {!disableAnimations && (
+        <circle r="5" fill={COLOR} stroke="#000000" strokeWidth="2">
+          <animateMotion
+            ref={animateMotionRef}
+            dur="16s"
+            repeatCount="indefinite"
+            path="
+              M 204.5,215.5
+              A 47,47 0 0,1 204.5,121.5
+              L 317.5,121.5
+              A 47,47 0 1,1 289.2,206.0
+              L 217.7,151.9
+              A 22,22 0 1,0 204.5,191.5
+              L 317.5,191.5
+              A 22,22 0 1,0 304.3,152.0
+              L 232.8,206.0
+              A 47,47 0 0,1 204.5,215.5
+              Z
+            "
+          />
+        </circle>
+      )}
 
       {/* Tape (connecting reels) */}
       <path

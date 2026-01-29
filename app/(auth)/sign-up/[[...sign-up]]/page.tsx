@@ -76,8 +76,8 @@ export default function SignUpPage() {
         </div>
 
         <SignUp
-          forceRedirectUrl="/dashboard/muednote"
-          signInForceRedirectUrl="/dashboard/muednote"
+          forceRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
+          signInForceRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
           appearance={{
             variables: {
               colorPrimary: "#6366f1",
