@@ -78,7 +78,7 @@ export function MuedearHeroSection() {
           </div>
 
           {/* Right: Hoo mascot with speech bubble */}
-          <div className="flex-1 flex justify-center lg:justify-end">
+          <div className="w-full lg:flex-1 flex justify-center lg:justify-end">
             <div className="relative">
               {/* Speech bubble */}
               <AnimatePresence>

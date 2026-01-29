@@ -97,7 +97,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           </div>
 
           {/* Right: Hoo with speech bubble */}
-          <div className="flex-1 flex justify-center lg:justify-end">
+          <div className="w-full lg:flex-1 flex justify-center lg:justify-end">
             <div className="relative">
               {/* Speech bubble - appears when Hoo bounces */}
               <AnimatePresence>
