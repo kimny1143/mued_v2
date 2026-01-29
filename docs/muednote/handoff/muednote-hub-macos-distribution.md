@@ -24,17 +24,26 @@
 | ファイル | パス | サイズ | 用途 |
 |----------|------|--------|------|
 | アプリ本体 | `apps/muednote-hub-macos/dist/MUEDnoteHub.app` | - | 直接配布可 |
-| ZIP | `apps/muednote-hub-macos/dist/MUEDnoteHub.zip` | 637KB | ダウンロード配布用 |
+| DMG | `apps/muednote-hub-macos/dist/MUEDnoteHub-1.0.0.dmg` | 1.2MB | **推奨** ダウンロード配布用 |
+| ZIP | `apps/muednote-hub-macos/dist/MUEDnoteHub.zip` | 821KB | 代替配布 |
 
 ### ダウンロードリンク
 
+**推奨（DMG形式）**:
+```
+https://mued.jp/downloads/MUEDnoteHub-1.0.0.dmg
+```
+
+代替（ZIP形式）:
 ```
 https://mued.jp/downloads/MUEDnoteHub.zip
 ```
 
-**配置場所**: `mued_v2/public/downloads/MUEDnoteHub.zip`
+**配置場所**: `mued_v2/public/downloads/`
 
 Vercel デプロイで自動的に配信される。
+
+> **Note**: DMG形式はユーザーにApplicationsフォルダへのドラッグ&ドロップを促すため、インストール導線が明確。
 
 ---
 
@@ -82,10 +91,11 @@ Vercel デプロイで自動的に配信される。
 
 ### インストール
 
-1. `MUEDnoteHub.zip` をダウンロード
-2. ZIPを展開
-3. `MUEDnoteHub.app` を `/Applications` にドラッグ
-4. 初回起動時に「開発元を検証」ダイアログ → **開く** をクリック
+1. `MUEDnoteHub-1.0.0.dmg` をダウンロード
+2. DMGをダブルクリックして開く
+3. 表示されたウィンドウで `MUEDnote Hub.app` を `Applications` フォルダにドラッグ
+4. `/Applications` から `MUEDnote Hub` を起動
+5. 初回起動時に「開発元を検証」ダイアログ → **開く** をクリック
 
 ### AbletonOSC セットアップ（Ableton Live ユーザー）
 
@@ -142,7 +152,7 @@ Vercel デプロイで自動的に配信される。
 <DownloadButton
   platform="macos"
   version="1.0.0"
-  downloadUrl="https://mued.jp/downloads/MUEDnoteHub.zip"
+  downloadUrl="https://mued.jp/downloads/MUEDnoteHub-1.0.0.dmg"
   requirements="macOS 14.0 (Sonoma) 以降"
 />
 ```
@@ -178,6 +188,8 @@ Ableton Live + AbletonOSC（推奨）
 
 | 日付 | 変更内容 |
 |------|----------|
+| 2026-01-29 | UIをMUEDダッシュボード風に刷新、DMG配布形式追加 |
+| 2026-01-29 | アプリアイコン追加、再署名・再公証完了 |
 | 2026-01-29 | Staple 完了、配布準備完了 |
 | 2026-01-21 | 公証完了（Apple サーバー障害後に解消） |
 | 2026-01-21 | 署名完了、公証提出 |
