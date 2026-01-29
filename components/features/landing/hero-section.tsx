@@ -62,34 +62,34 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
   }, []);
 
   return (
-    <section className="min-h-screen flex items-center relative overflow-hidden pt-16 lg:pt-0">
+    <section className="min-h-[100dvh] flex items-center relative overflow-hidden py-12 sm:py-16 lg:py-0">
       {/* Overlay for text readability - 60% opacity for WCAG contrast */}
       <div className="absolute inset-0 bg-black/60 pointer-events-none" />
 
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="flex flex-col lg:flex-row items-center gap-6 sm:gap-12 lg:gap-20">
           {/* Left: Copy */}
           <div className="flex-1 text-center lg:text-left">
             {/* Logo & tagline */}
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">{t("title")}</h1>
-            <p className="text-xl md:text-2xl text-white/80 mb-8 font-light">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold text-white mb-2 sm:mb-4">{t("title")}</h1>
+            <p className="text-base sm:text-xl md:text-2xl text-white/80 mb-4 sm:mb-8 font-light">
               {t("tagline")}
             </p>
 
             {/* Hoo-centric copy - rest tracker focus */}
-            <p className="text-2xl md:text-3xl text-white/90 max-w-xl mb-6 leading-relaxed">
+            <p className="text-lg sm:text-2xl md:text-3xl text-white/90 max-w-xl mb-3 sm:mb-6 leading-relaxed">
               {t("headline")}
             </p>
-            <p className="text-lg text-white/80 max-w-xl mb-12 whitespace-pre-line">
+            <p className="text-sm sm:text-lg text-white/80 max-w-xl mb-6 sm:mb-12 whitespace-pre-line">
               {t("description")}
             </p>
 
             {/* CTA */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <AppStoreButton href={MUEDNOTE_APP_STORE_URL} variant="indigo" />
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
+              <AppStoreButton href={MUEDNOTE_APP_STORE_URL} variant="indigo" className="text-sm sm:text-base" />
               <Link
                 href="/sign-in"
-                className="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-8 py-4 rounded-lg text-lg font-medium transition-colors cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 px-6 py-3 sm:px-8 sm:py-4 rounded-lg text-sm sm:text-lg font-medium transition-colors cursor-pointer"
               >
                 {t("ctaSecondary")}
               </Link>
@@ -111,9 +111,9 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
                       stiffness: 400,
                       damping: 15,
                     }}
-                    className="absolute -top-4 left-1/2 -translate-x-1/2 lg:left-auto lg:right-1/2 lg:translate-x-4 bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-2 lg:px-5 lg:py-3 border border-white/20 origin-bottom z-10"
+                    className="absolute -top-4 left-1/2 -translate-x-1/2 lg:left-auto lg:right-1/2 lg:translate-x-4 bg-white/10 backdrop-blur-sm rounded-2xl px-3 py-2 lg:px-5 lg:py-3 border border-white/20 origin-bottom z-10"
                   >
-                    <p className="text-white text-sm lg:text-base font-medium whitespace-nowrap">{phrase}</p>
+                    <p className="text-white text-xs sm:text-sm lg:text-base font-medium whitespace-nowrap">{phrase}</p>
                     {/* Bubble tail - points to Hoo's head */}
                     <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 lg:left-auto lg:right-4 lg:translate-x-0 w-4 h-4 bg-white/10 border-r border-b border-white/20 rotate-45" />
                   </motion.div>
@@ -122,8 +122,8 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
 
               {/* Hoo logo - animated SVG */}
               <HooAnimated
-                width={280}
-                height={280}
+                width={isMobile ? 160 : 280}
+                height={isMobile ? 160 : 280}
                 className="drop-shadow-2xl"
                 onBounce={handleBounce}
                 getNextPhrase={getNextPhrase}
@@ -131,7 +131,7 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
                 isMobile={isMobile}
               />
               {/* Hoo introduction */}
-              <p className="text-center text-white text-sm mt-4">
+              <p className="text-center text-white text-xs sm:text-sm mt-2 sm:mt-4">
                 {t("hooIntro")}
               </p>
             </div>
