@@ -335,10 +335,6 @@ export class DawLogsRepository {
       track_select: 0,
       clip_trigger: 0,
       device_config_change: 0,
-      midi_note_on: 0,
-      midi_note_off: 0,
-      midi_control_change: 0,
-      midi_pitch_bend: 0,
     };
 
     const byDaw: Record<DawType, number> = {

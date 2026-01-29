@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
-import { Mic, Sliders, Volume2, GitMerge, MessageSquare, Music, Piano } from "lucide-react";
+import { Mic, Sliders, Volume2, GitMerge, MessageSquare } from "lucide-react";
 
 interface VoiceLog {
   id: string;
@@ -27,13 +27,11 @@ interface DawStats {
     parameter_change: number;
     track_volume: number;
     track_pan: number;
-    midi_note_on: number;
-    midi_note_off: number;
-    midi_control_change: number;
-    midi_pitch_bend: number;
+    track_select: number;
+    clip_trigger: number;
+    device_config_change: number;
   };
   oscCount: number;
-  midiCount: number;
 }
 
 interface SessionLogTabsProps {
@@ -42,15 +40,7 @@ interface SessionLogTabsProps {
   dawStats: DawStats;
 }
 
-type TabType = "voice" | "daw" | "midi" | "combined";
-
-/** Check if an action is a MIDI action */
-const isMidiAction = (action: string): boolean =>
-  action.startsWith("midi_");
-
-/** Check if an action is an OSC action */
-const isOscAction = (action: string): boolean =>
-  !action.startsWith("midi_");
+type TabType = "voice" | "daw" | "combined";
 
 /**
  * Session Log Tabs - タブ切り替えでログを表示
@@ -68,11 +58,7 @@ export function SessionLogTabs({
     dawLogs.length > 0 ? "combined" : "voice"
   );
 
-  // Filter logs by source
-  const oscLogs = dawLogs.filter((log) => isOscAction(log.action));
-  const midiLogs = dawLogs.filter((log) => isMidiAction(log.action));
-  const hasOscLogs = oscLogs.length > 0;
-  const hasMidiLogs = midiLogs.length > 0;
+  const hasDawLogs = dawLogs.length > 0;
 
   const formatTimestamp = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -82,7 +68,6 @@ export function SessionLogTabs({
 
   const getActionBadge = (action: string) => {
     switch (action) {
-      // OSC actions
       case "track_volume":
         return {
           label: "Volume",
@@ -101,31 +86,6 @@ export function SessionLogTabs({
           label: "Param",
           icon: Sliders,
           color: "bg-amber-600/20 text-amber-400",
-        };
-      // MIDI actions
-      case "midi_note_on":
-        return {
-          label: "Note On",
-          icon: Piano,
-          color: "bg-emerald-600/20 text-emerald-400",
-        };
-      case "midi_note_off":
-        return {
-          label: "Note Off",
-          icon: Piano,
-          color: "bg-slate-600/20 text-slate-400",
-        };
-      case "midi_control_change":
-        return {
-          label: "CC",
-          icon: Sliders,
-          color: "bg-cyan-600/20 text-cyan-400",
-        };
-      case "midi_pitch_bend":
-        return {
-          label: "Pitch",
-          icon: Music,
-          color: "bg-pink-600/20 text-pink-400",
         };
       default:
         return {
@@ -157,8 +117,6 @@ export function SessionLogTabs({
     })),
   ].sort((a, b) => a.time - b.time);
 
-  const hasDawLogs = dawLogs.length > 0;
-
   return (
     <div>
       {/* Tab Buttons */}
@@ -176,7 +134,7 @@ export function SessionLogTabs({
           <span className="text-xs opacity-70">({voiceLogs.length})</span>
         </button>
 
-        {hasOscLogs && (
+        {hasDawLogs && (
           <button
             onClick={() => setActiveTab("daw")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
@@ -188,21 +146,6 @@ export function SessionLogTabs({
             <Sliders className="w-4 h-4" />
             DAWログ
             <span className="text-xs opacity-70">({dawStats.oscCount})</span>
-          </button>
-        )}
-
-        {hasMidiLogs && (
-          <button
-            onClick={() => setActiveTab("midi")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-              activeTab === "midi"
-                ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30"
-                : "bg-white/5 text-slate-400 hover:bg-white/10 border border-transparent"
-            }`}
-          >
-            <Piano className="w-4 h-4" />
-            MIDIログ
-            <span className="text-xs opacity-70">({dawStats.midiCount})</span>
           </button>
         )}
 
@@ -262,13 +205,13 @@ export function SessionLogTabs({
         </div>
       )}
 
-      {/* DAW (OSC) Logs Tab */}
+      {/* DAW Logs Tab */}
       {activeTab === "daw" && (
         <div>
           <p className="text-sm text-slate-500 mb-4">
             DAWで操作したパラメータの変更履歴（OSC経由）
           </p>
-          {oscLogs.length === 0 ? (
+          {dawLogs.length === 0 ? (
             <GlassCard hover={false}>
               <div className="text-center py-8">
                 <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -279,7 +222,7 @@ export function SessionLogTabs({
             </GlassCard>
           ) : (
             <div className="space-y-2">
-              {oscLogs.map((log) => {
+              {dawLogs.map((log) => {
                 const badge = getActionBadge(log.action);
                 const Icon = badge.icon;
                 return (
@@ -314,62 +257,11 @@ export function SessionLogTabs({
         </div>
       )}
 
-      {/* MIDI Logs Tab */}
-      {activeTab === "midi" && (
-        <div>
-          <p className="text-sm text-slate-500 mb-4">
-            DAW停止中に記録されたMIDI演奏データ
-          </p>
-          {midiLogs.length === 0 ? (
-            <GlassCard hover={false}>
-              <div className="text-center py-8">
-                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Piano className="w-6 h-6 text-slate-600" />
-                </div>
-                <p className="text-slate-400">MIDIログがありません</p>
-              </div>
-            </GlassCard>
-          ) : (
-            <div className="space-y-2">
-              {midiLogs.map((log) => {
-                const badge = getActionBadge(log.action);
-                const Icon = badge.icon;
-                return (
-                  <GlassCard key={log.id} hover={false} className="py-3 px-4">
-                    <div className="flex gap-3 items-center">
-                      <div className="flex-shrink-0 w-14 text-right">
-                        <span className="text-sm font-mono text-emerald-400">
-                          {formatTimestamp(log.relativeTimeSec)}
-                        </span>
-                      </div>
-                      <div
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${badge.color}`}
-                      >
-                        <Icon className="w-3 h-3" />
-                        {badge.label}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-slate-400 text-sm">
-                          Ch {log.trackId + 1}
-                        </span>
-                        <span className="text-white ml-2">
-                          {log.valueString}
-                        </span>
-                      </div>
-                    </div>
-                  </GlassCard>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Combined Timeline Tab */}
       {activeTab === "combined" && (
         <div>
           <p className="text-sm text-slate-500 mb-4">
-            思考ログ・DAW操作・MIDI演奏を時系列で統合表示
+            思考ログとDAW操作を時系列で統合表示
           </p>
           {combinedLogs.length === 0 ? (
             <GlassCard hover={false}>
@@ -405,20 +297,16 @@ export function SessionLogTabs({
                 } else {
                   const badge = getActionBadge(log.action);
                   const Icon = badge.icon;
-                  const isMidi = isMidiAction(log.action);
-                  const borderColor = isMidi ? "border-l-emerald-500" : "border-l-amber-500";
-                  const timestampColor = isMidi ? "text-emerald-400" : "text-amber-400";
-                  const trackLabel = isMidi ? `Ch ${log.trackId + 1}` : `Track ${log.trackId}`;
 
                   return (
                     <GlassCard
                       key={`daw-${log.logId}`}
                       hover={false}
-                      className={`py-3 px-4 border-l-2 ${borderColor}`}
+                      className="py-3 px-4 border-l-2 border-l-amber-500"
                     >
                       <div className="flex gap-3 items-center">
                         <div className="flex-shrink-0 w-14 text-right">
-                          <span className={`text-sm font-mono ${timestampColor}`}>
+                          <span className="text-sm font-mono text-amber-400">
                             {formatTimestamp(log.time)}
                           </span>
                         </div>
@@ -430,7 +318,8 @@ export function SessionLogTabs({
                         </div>
                         <div className="flex-1 min-w-0">
                           <span className="text-slate-400 text-sm">
-                            {trackLabel}
+                            Track {log.trackId}
+                            {log.deviceId >= 0 && ` / Device ${log.deviceId}`}
                           </span>
                           <span className="text-white ml-2">
                             {log.valueString}

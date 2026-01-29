@@ -35,18 +35,14 @@ export const dawTypeEnum = pgEnum('muednote_daw_type', [
  * アクション種別
  */
 export const dawActionEnum = pgEnum('muednote_daw_action', [
-  // 既存 OSC アクション
   'parameter_change',     // デバイスパラメータ変更
   'track_volume',         // トラックボリューム変更
   'track_pan',            // トラックパン変更
   'track_select',         // トラック選択（将来）
   'clip_trigger',         // クリップトリガー（将来）
   'device_config_change', // デバイス設定変更（バンド追加/削除等）
-  // 新規 MIDI アクション（停止中のみ記録）
-  'midi_note_on',         // MIDIノートオン
-  'midi_note_off',        // MIDIノートオフ
-  'midi_control_change',  // MIDIコントロールチェンジ
-  'midi_pitch_bend',      // MIDIピッチベンド
+  // Note: MIDI actions removed (2026-01-29)
+  // DB enum values remain but are no longer used
 ]);
 
 // ========================================
@@ -101,29 +97,4 @@ export type DawAction =
   | 'track_pan'
   | 'track_select'
   | 'clip_trigger'
-  | 'device_config_change'
-  | 'midi_note_on'
-  | 'midi_note_off'
-  | 'midi_control_change'
-  | 'midi_pitch_bend';
-
-/** MIDI source identifier for device_id column */
-export const MIDI_DEVICE_ID = -2;
-
-/** OSC actions (parameter changes from DAW) */
-export const OSC_ACTIONS: DawAction[] = [
-  'parameter_change',
-  'track_volume',
-  'track_pan',
-  'track_select',
-  'clip_trigger',
-  'device_config_change',
-];
-
-/** MIDI actions (note/CC/pitchbend from MIDI input) */
-export const MIDI_ACTIONS: DawAction[] = [
-  'midi_note_on',
-  'midi_note_off',
-  'midi_control_change',
-  'midi_pitch_bend',
-];
+  | 'device_config_change';

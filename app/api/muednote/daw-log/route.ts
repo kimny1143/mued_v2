@@ -18,13 +18,12 @@ import {
   type CreateDawLogInput,
 } from '@/lib/repositories/daw-logs.repository';
 import type { DawType, DawAction } from '@/db/schema/muednote-daw-logs';
-import { MIDI_ACTIONS, OSC_ACTIONS } from '@/db/schema/muednote-daw-logs';
 import { getUserIdFromClerkId } from '@/lib/utils/auth-helpers';
 import { trialService } from '@/lib/services/trial.service';
 import { subscriptionRepository } from '@/lib/repositories/subscriptions.repository';
 
 /** Source filter type for GET requests */
-type SourceFilter = 'osc' | 'midi' | 'all';
+type SourceFilter = 'osc' | 'all';
 
 // ========================================
 // Environment Configuration
@@ -322,12 +321,10 @@ export async function GET(req: Request) {
     );
 
     // Determine which actions to filter by source
-    let actions: DawAction[] | undefined;
-    if (source === 'midi') {
-      actions = MIDI_ACTIONS;
-    } else if (source === 'osc') {
-      actions = OSC_ACTIONS;
-    }
+    // Note: 'midi' source removed (2026-01-29) - only OSC actions remain
+    const actions: DawAction[] | undefined = source === 'osc'
+      ? ['parameter_change', 'track_volume', 'track_pan', 'track_select', 'clip_trigger', 'device_config_change']
+      : undefined;
 
     // Build filters
     const filters = {
