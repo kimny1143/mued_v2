@@ -57,19 +57,46 @@ async function getAuthUserId(req: Request): Promise<string | null> {
     return DAW_USER_ID;
   }
 
-  // JWT authentication (future desktop app)
+  // Token authentication (desktop app)
+  // Supports both JWT and opaque tokens (oat_) from Clerk OAuth
   const authHeader = req.headers.get('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
-    try {
-      const payload = await verifyToken(token, {
-        secretKey: process.env.CLERK_SECRET_KEY!,
-      });
-      if (payload?.sub) {
-        return payload.sub;
+
+    // Check if it's an opaque token (starts with oat_)
+    if (token.startsWith('oat_')) {
+      try {
+        // Verify opaque token by calling Clerk's userinfo endpoint
+        const userInfoResponse = await fetch(`https://${process.env.NEXT_PUBLIC_CLERK_DOMAIN}/oauth/userinfo`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (userInfoResponse.ok) {
+          const userInfo = await userInfoResponse.json();
+          // userInfo.sub contains the Clerk user ID
+          if (userInfo.sub) {
+            return userInfo.sub;
+          }
+        } else {
+          console.error('[DAW API] Opaque token verification failed:', userInfoResponse.status);
+        }
+      } catch (error) {
+        console.error('[DAW API] Opaque token verification error:', error);
       }
-    } catch (error) {
-      console.error('[DAW API] JWT verification failed:', error);
+    } else {
+      // Try JWT verification for regular tokens
+      try {
+        const payload = await verifyToken(token, {
+          secretKey: process.env.CLERK_SECRET_KEY!,
+        });
+        if (payload?.sub) {
+          return payload.sub;
+        }
+      } catch (error) {
+        console.error('[DAW API] JWT verification failed:', error);
+      }
     }
   }
 
