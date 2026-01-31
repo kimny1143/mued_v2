@@ -207,9 +207,9 @@ function convertToInput(userId: string, body: DawLogPostBody): CreateDawLogInput
 
 export async function POST(req: Request) {
   try {
-    const userId = await getAuthUserId(req);
+    const clerkUserId = await getAuthUserId(req);
 
-    if (!userId) {
+    if (!clerkUserId) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Valid authentication required' },
         { status: 401 }
@@ -217,7 +217,7 @@ export async function POST(req: Request) {
     }
 
     // Check tier (Basic+ or Trial required)
-    const tierCheck = await canUseDawLogs(userId);
+    const tierCheck = await canUseDawLogs(clerkUserId);
     if (!tierCheck.allowed) {
       return NextResponse.json(
         {
@@ -229,15 +229,24 @@ export async function POST(req: Request) {
       );
     }
 
+    // Convert Clerk ID to internal UUID for database storage
+    const internalUserId = await getUserIdFromClerkId(clerkUserId);
+    if (!internalUserId) {
+      return NextResponse.json(
+        { error: 'User not found', message: 'User account not found in database' },
+        { status: 404 }
+      );
+    }
+
     const body = await req.json();
 
     // Check if batch request
     if (Array.isArray(body.logs)) {
-      return handleBatchPost(userId, body as BatchDawLogPostBody);
+      return handleBatchPost(internalUserId, body as BatchDawLogPostBody);
     }
 
     // Single log request
-    return handleSinglePost(userId, body as DawLogPostBody);
+    return handleSinglePost(internalUserId, body as DawLogPostBody);
   } catch (error) {
     console.error('[POST /api/muednote/daw-log] Error:', error);
     return NextResponse.json(
@@ -317,9 +326,9 @@ async function handleBatchPost(userId: string, body: BatchDawLogPostBody) {
 
 export async function GET(req: Request) {
   try {
-    const userId = await getAuthUserId(req);
+    const clerkUserId = await getAuthUserId(req);
 
-    if (!userId) {
+    if (!clerkUserId) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Valid authentication required' },
         { status: 401 }
@@ -327,7 +336,7 @@ export async function GET(req: Request) {
     }
 
     // Check tier (Basic+ or Trial required)
-    const tierCheck = await canUseDawLogs(userId);
+    const tierCheck = await canUseDawLogs(clerkUserId);
     if (!tierCheck.allowed) {
       return NextResponse.json(
         {
@@ -336,6 +345,15 @@ export async function GET(req: Request) {
           code: tierCheck.reason,
         },
         { status: 403 }
+      );
+    }
+
+    // Convert Clerk ID to internal UUID for database query
+    const internalUserId = await getUserIdFromClerkId(clerkUserId);
+    if (!internalUserId) {
+      return NextResponse.json(
+        { error: 'User not found', message: 'User account not found in database' },
+        { status: 404 }
       );
     }
 
@@ -357,7 +375,7 @@ export async function GET(req: Request) {
 
     // Build filters
     const filters = {
-      userId,
+      userId: internalUserId,
       sessionId: sessionId ?? undefined,
       since: since ? new Date(since) : undefined,
       until: until ? new Date(until) : undefined,
