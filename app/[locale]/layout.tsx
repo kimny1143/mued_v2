@@ -12,6 +12,20 @@ interface LocaleLayoutProps {
   params: Promise<{ locale: string }>;
 }
 
+/**
+ * Client component to set html lang attribute
+ * This ensures the lang attribute matches the URL locale for CSS selectors like html[lang="ja"]
+ */
+function SetHtmlLang({ locale }: { locale: string }) {
+  return (
+    <script
+      dangerouslySetInnerHTML={{
+        __html: `document.documentElement.lang = "${locale}";`,
+      }}
+    />
+  );
+}
+
 export default async function LocaleLayout({
   children,
   params,
@@ -31,6 +45,7 @@ export default async function LocaleLayout({
 
   return (
     <NextIntlClientProvider messages={messages}>
+      <SetHtmlLang locale={locale} />
       {children}
     </NextIntlClientProvider>
   );
