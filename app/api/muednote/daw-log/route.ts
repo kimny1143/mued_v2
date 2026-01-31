@@ -67,7 +67,9 @@ async function getAuthUserId(req: Request): Promise<string | null> {
     if (token.startsWith('oat_')) {
       try {
         // Verify opaque token by calling Clerk's userinfo endpoint
-        const userInfoResponse = await fetch(`https://${process.env.NEXT_PUBLIC_CLERK_DOMAIN}/oauth/userinfo`, {
+        // Domain is clerk.mued.jp (configured in Clerk dashboard)
+        const clerkDomain = process.env.CLERK_DOMAIN || 'clerk.mued.jp';
+        const userInfoResponse = await fetch(`https://${clerkDomain}/oauth/userinfo`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
