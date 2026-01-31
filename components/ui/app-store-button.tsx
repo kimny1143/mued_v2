@@ -53,7 +53,7 @@ export function AppStoreButton({
       className={cn(
         "inline-flex items-center gap-3",
         "bg-transparent border-2",
-        "rounded-xl font-medium transition-all duration-300",
+        "rounded-[var(--radius-lg)] font-medium transition-all duration-300",
         variantStyles[variant],
         isLarge ? "px-8 py-4" : "px-6 py-4",
         className

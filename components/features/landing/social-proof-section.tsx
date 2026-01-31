@@ -31,7 +31,7 @@ export function SocialProofSection({ useBrandKeys = true }: SocialProofSectionPr
 
           {/* Developer Quote */}
           <blockquote className="text-center mb-8">
-            <p className="text-lg md:text-xl text-white/80 italic mb-2">
+            <p className="text-subhead text-white/80 italic mb-2">
               {t("quote")}
             </p>
             <cite className="text-subtle text-sm not-italic">— {t("author")}</cite>
@@ -46,7 +46,7 @@ export function SocialProofSection({ useBrandKeys = true }: SocialProofSectionPr
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-white hover:text-indigo-400 transition-colors cursor-pointer"
             >
-              <span className="text-2xl md:text-3xl font-bold">glasswerks inc.</span>
+              <span className="text-section">glasswerks inc.</span>
               <ExternalLink className="w-5 h-5" />
             </a>
           </div>

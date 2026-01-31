@@ -27,7 +27,7 @@ export function BrandHeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-5xl sm:text-6xl md:text-8xl font-bold text-white mb-2 sm:mb-3"
+            className="text-hero text-white mb-2 sm:mb-3"
           >
             {t("title")}
           </motion.h1>

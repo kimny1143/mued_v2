@@ -149,3 +149,144 @@ body {
   background-color: rgba(22, 163, 74, 0.2);  /* green-600/20 */
   color: #86efac;  /* green-300: high contrast */
 }
+
+/* ===========================================
+   Multi-language Typography System
+
+   Purpose: Japanese text appears visually heavier
+   than English at the same font size due to
+   character complexity. Scale down by 1 step
+   for Japanese to maintain visual balance.
+   =========================================== */
+
+/* Hero - Landing page main titles */
+.text-hero {
+  font-size: 3rem;           /* 48px - mobile */
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+@media (min-width: 640px) {
+  .text-hero {
+    font-size: 3.75rem;      /* 60px - tablet */
+  }
+}
+
+@media (min-width: 768px) {
+  .text-hero {
+    font-size: 6rem;         /* 96px - desktop */
+  }
+}
+
+/* Japanese: scale down by ~20% */
+html[lang="ja"] .text-hero {
+  font-size: 2.5rem;         /* 40px - mobile */
+}
+
+@media (min-width: 640px) {
+  html[lang="ja"] .text-hero {
+    font-size: 3rem;         /* 48px - tablet */
+  }
+}
+
+@media (min-width: 768px) {
+  html[lang="ja"] .text-hero {
+    font-size: 5rem;         /* 80px - desktop */
+  }
+}
+
+/* Section - Section headings (h2) */
+.text-section {
+  font-size: 1.875rem;       /* 30px - mobile */
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .text-section {
+    font-size: 3rem;         /* 48px - desktop */
+  }
+}
+
+/* Japanese: scale down */
+html[lang="ja"] .text-section {
+  font-size: 1.5rem;         /* 24px - mobile */
+}
+
+@media (min-width: 768px) {
+  html[lang="ja"] .text-section {
+    font-size: 2.5rem;       /* 40px - desktop */
+  }
+}
+
+/* Headline - Product headlines, feature titles */
+.text-headline {
+  font-size: 1.125rem;       /* 18px - mobile */
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+@media (min-width: 640px) {
+  .text-headline {
+    font-size: 1.5rem;       /* 24px - tablet */
+  }
+}
+
+@media (min-width: 768px) {
+  .text-headline {
+    font-size: 1.875rem;     /* 30px - desktop */
+  }
+}
+
+/* Japanese: scale down */
+html[lang="ja"] .text-headline {
+  font-size: 1rem;           /* 16px - mobile */
+}
+
+@media (min-width: 640px) {
+  html[lang="ja"] .text-headline {
+    font-size: 1.25rem;      /* 20px - tablet */
+  }
+}
+
+@media (min-width: 768px) {
+  html[lang="ja"] .text-headline {
+    font-size: 1.5rem;       /* 24px - desktop */
+  }
+}
+
+/* Subhead - Taglines, lead paragraphs */
+.text-subhead {
+  font-size: 1rem;           /* 16px - mobile */
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+@media (min-width: 640px) {
+  .text-subhead {
+    font-size: 1.25rem;      /* 20px - tablet */
+  }
+}
+
+@media (min-width: 768px) {
+  .text-subhead {
+    font-size: 1.5rem;       /* 24px - desktop */
+  }
+}
+
+/* Japanese: scale down */
+html[lang="ja"] .text-subhead {
+  font-size: 0.875rem;       /* 14px - mobile */
+}
+
+@media (min-width: 640px) {
+  html[lang="ja"] .text-subhead {
+    font-size: 1.125rem;     /* 18px - tablet */
+  }
+}
+
+@media (min-width: 768px) {
+  html[lang="ja"] .text-subhead {
+    font-size: 1.25rem;      /* 20px - desktop */
+  }
+}

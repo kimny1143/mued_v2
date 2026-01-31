@@ -16,7 +16,7 @@ export function PhilosophySection() {
       <div className="container mx-auto px-6">
         {/* Intro - softer tone */}
         <div className="max-w-3xl mb-20">
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-8 leading-tight">
+          <h2 className="text-section text-white mb-8 leading-tight">
             {t("title")}
           </h2>
 

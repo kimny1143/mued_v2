@@ -71,13 +71,13 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
           {/* Left: Copy */}
           <div className="flex-1 text-center lg:text-left">
             {/* Logo & tagline */}
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold text-white mb-2 sm:mb-4">{t("title")}</h1>
-            <p className="text-base sm:text-xl md:text-2xl text-white/80 mb-4 sm:mb-8 font-light">
+            <h1 className="text-hero text-white mb-2 sm:mb-4">{t("title")}</h1>
+            <p className="text-subhead text-white/80 mb-4 sm:mb-8">
               {t("tagline")}
             </p>
 
             {/* Hoo-centric copy - rest tracker focus */}
-            <p className="text-lg sm:text-2xl md:text-3xl text-white/90 max-w-xl mb-3 sm:mb-6 leading-relaxed">
+            <p className="text-headline text-white/90 max-w-xl mb-3 sm:mb-6 leading-relaxed">
               {t("headline")}
             </p>
             <p className="text-sm sm:text-lg text-white/80 max-w-xl mb-6 sm:mb-12 whitespace-pre-line">

@@ -24,7 +24,7 @@ export function GrowthPreviewSection() {
             height={64}
             className="mb-4 drop-shadow-lg"
           />
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+          <h2 className="text-section text-white mb-3">
             {t("title")}
           </h2>
           <p className="text-base text-white/80 max-w-md">

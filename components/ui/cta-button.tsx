@@ -56,7 +56,7 @@ export function CtaButton({
   const baseStyles = cn(
     "group inline-flex items-center justify-center gap-2",
     "bg-transparent border-2",
-    "px-8 py-4 rounded-lg text-lg font-medium",
+    "px-8 py-4 rounded-[var(--radius-md)] text-lg font-medium",
     "transition-all duration-300",
     variantStyles[variant],
     className
