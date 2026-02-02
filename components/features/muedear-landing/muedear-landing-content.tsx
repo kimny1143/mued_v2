@@ -51,7 +51,7 @@ export function MuedearLandingContent() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#0F0F1A] py-8 border-t border-white/10 backdrop-blur-2xl relative">
+      <footer className="bg-[#0a0a0a] py-8 border-t border-white/5">
         <div className="container mx-auto px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-subtle text-sm">

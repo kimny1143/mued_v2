@@ -46,7 +46,15 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
   const isRestAnimating = useRef(false);
   const isMounted = useRef(false);
   const [eyesClosed, setEyesClosed] = useState(false);
+  const [isBlinking, setIsBlinking] = useState(false);
   const muedearPhraseIndex = useRef(0);
+
+  // Blink animation - quick eye close/open
+  const triggerBlink = useCallback(() => {
+    if (isRestAnimating.current || eyesClosed) return;
+    setIsBlinking(true);
+    setTimeout(() => setIsBlinking(false), 150);
+  }, [eyesClosed]);
 
   const triggerEyeGlance = useCallback(async () => {
     // Glance direction: left on desktop (DAW is on left), right on mobile (background is behind/right)
@@ -208,6 +216,27 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
     };
   }, []);
 
+  // Blink animation interval (every 3-5 seconds)
+  useEffect(() => {
+    if (disableAnimations) return;
+
+    const scheduleNextBlink = () => {
+      const delay = 3000 + Math.random() * 2000; // 3-5 seconds
+      return setTimeout(() => {
+        if (isMounted.current) {
+          triggerBlink();
+          blinkTimeoutId = scheduleNextBlink();
+        }
+      }, delay);
+    };
+
+    let blinkTimeoutId = scheduleNextBlink();
+
+    return () => {
+      clearTimeout(blinkTimeoutId);
+    };
+  }, [disableAnimations, triggerBlink]);
+
   useEffect(() => {
     // Skip automatic animations if disabled
     if (disableAnimations) return;
@@ -294,8 +323,8 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
         strokeWidth="5"
         fill="none"
       />
-      {/* Left eye - open (circle) or closed (downward arc) */}
-      {eyesClosed ? (
+      {/* Left eye - open (circle) or closed/blinking (downward arc) */}
+      {eyesClosed || isBlinking ? (
         <motion.path
           id="eye-left-closed"
           d="M196 166 Q204.5 174 213 166"
@@ -305,7 +334,7 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
           fill="none"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: 0.08 }}
         />
       ) : (
         <motion.circle
@@ -338,8 +367,8 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
         strokeWidth="5"
         fill="none"
       />
-      {/* Right eye - open (circle) or closed (downward arc) */}
-      {eyesClosed ? (
+      {/* Right eye - open (circle) or closed/blinking (downward arc) */}
+      {eyesClosed || isBlinking ? (
         <motion.path
           id="eye-right-closed"
           d="M309 166 Q317.5 174 326 166"
@@ -349,7 +378,7 @@ export function HooAnimated({ width = 280, height = 280, className, onBounce, ge
           fill="none"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: 0.08 }}
         />
       ) : (
         <motion.circle

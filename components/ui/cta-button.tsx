@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-type CtaVariant = "indigo" | "amber";
+type CtaVariant = "white" | "indigo" | "amber";
+type CtaSize = "default" | "large";
 
 interface CtaButtonProps {
-  /** Color variant: indigo (MUEDnote) or amber (MUEDear) */
+  /** Color variant: white (primary), indigo (MUEDnote), or amber (MUEDear) */
   variant: CtaVariant;
+  /** Button size */
+  size?: CtaSize;
   /** Link destination */
   href: string;
   /** External link (opens in new tab) */
@@ -21,32 +24,37 @@ interface CtaButtonProps {
 }
 
 const variantStyles: Record<CtaVariant, string> = {
-  indigo: "border-indigo-500 text-indigo-400 hover:bg-indigo-500 hover:text-white",
-  amber: "border-amber-500 text-amber-400 hover:bg-amber-500 hover:text-white",
+  white: "bg-white text-black hover:bg-white/90",
+  indigo: "bg-transparent border-2 border-indigo-500 text-indigo-400 hover:bg-indigo-500 hover:text-white",
+  amber: "bg-transparent border-2 border-amber-500 text-amber-400 hover:bg-amber-500 hover:text-white",
+};
+
+const sizeStyles: Record<CtaSize, string> = {
+  default: "px-5 py-2.5 text-sm",
+  large: "px-6 py-3 text-base",
 };
 
 /**
- * CTA Button - Plugin Alliance style (outline + fill on hover)
+ * CTA Button - Spitfire style
  *
- * Consistent button design across all landing pages:
- * - Transparent background with brand color border
- * - Brand color text
- * - On hover: brand color background + white text
+ * Primary: white background, black text (Spitfire default)
+ * Secondary: transparent with brand color border
  *
  * @example
- * // Internal link (MUEDnote)
- * <CtaButton variant="indigo" href="/sign-up">
- *   Get Started <ArrowRight />
+ * // Primary CTA (Spitfire style)
+ * <CtaButton variant="white" href="/sign-up" size="large">
+ *   Get Started
  * </CtaButton>
  *
  * @example
- * // External link (MUEDear App Store)
- * <CtaButton variant="amber" href={APP_STORE_URL} external>
- *   <Apple /> Download
+ * // Brand colored CTA
+ * <CtaButton variant="indigo" href="/dashboard">
+ *   Open Dashboard
  * </CtaButton>
  */
 export function CtaButton({
   variant,
+  size = "default",
   href,
   external = false,
   children,
@@ -54,11 +62,11 @@ export function CtaButton({
   onClick,
 }: CtaButtonProps) {
   const baseStyles = cn(
-    "group inline-flex items-center justify-center gap-2",
-    "bg-transparent border-2",
-    "px-8 py-4 rounded-[var(--radius-md)] text-lg font-medium",
-    "transition-all duration-300",
+    "inline-flex items-center justify-center gap-2",
+    "rounded-[var(--radius-md)] font-medium",
+    "transition-colors duration-200 cursor-pointer",
     variantStyles[variant],
+    sizeStyles[size],
     className
   );
 

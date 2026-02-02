@@ -52,31 +52,29 @@ export function IntegratedLandingContent() {
       {/* Floating Navigation */}
       <FloatingNav />
 
+      {/* MUEDear Section - Primary product */}
+      <section id="muedear" className="relative">
+        <MuedearHeroSection />
+        <MuedearGamesSection />
+        <MuedearFeaturesSection />
+        <MuedearPricingSection />
+        <SectionNav
+          prevHref="#"
+          prevLabel={locale === "ja" ? "トップへ" : "Back to Top"}
+          nextHref="#muednote"
+          nextLabel="MUEDnote"
+          showPrevIcon={false}
+        />
+      </section>
+
       {/* MUEDnote Section */}
       <section id="muednote">
         <HeroSection />
         <PhilosophySection />
         <GrowthPreviewSection />
         <SectionNav
-          prevHref="#"
-          prevLabel={locale === "ja" ? "トップへ" : "Back to Top"}
-          nextHref="#muedear"
-          nextLabel="MUEDear"
-          showPrevIcon={false}
-        />
-      </section>
-
-      {/* MUEDear Section */}
-      <section id="muedear" className="relative">
-        {/* Amber tint overlay for MUEDear */}
-        <div className="absolute inset-0 bg-gradient-to-b from-amber-900/10 via-transparent to-transparent pointer-events-none" />
-        <MuedearHeroSection />
-        <MuedearGamesSection />
-        <MuedearFeaturesSection />
-        <MuedearPricingSection />
-        <SectionNav
-          prevHref="#muednote"
-          prevLabel="MUEDnote"
+          prevHref="#muedear"
+          prevLabel="MUEDear"
           nextHref="#"
           nextLabel={locale === "ja" ? "トップへ" : "Back to Top"}
           showNextIcon={false}
@@ -90,7 +88,7 @@ export function IntegratedLandingContent() {
       <FinalCtaSection />
 
       {/* Footer */}
-      <footer className="bg-[#0F0F1A] py-8 border-t border-white/10 backdrop-blur-2xl relative">
+      <footer className="bg-[#0a0a0a] py-8 border-t border-white/5">
         <div className="container mx-auto px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-subtle text-sm">
@@ -166,12 +164,10 @@ function FloatingNav() {
         onClick={scrollToTop}
         className="
           w-10 h-10 rounded-full
-          bg-white/10 backdrop-blur-xl
-          border border-white/20
-          text-white/70 hover:text-white hover:bg-white/20
-          transition-all duration-200
+          bg-[#1a1a1a] border border-white/10
+          text-white/60 hover:text-white hover:bg-[#222]
+          transition-colors duration-200
           flex items-center justify-center
-          shadow-lg
         "
         aria-label="Back to top"
         title="Top"
@@ -184,12 +180,10 @@ function FloatingNav() {
         onClick={() => scrollToSection("muednote")}
         className="
           w-10 h-10 rounded-full
-          bg-indigo-500/20 backdrop-blur-xl
-          border border-indigo-500/40
-          text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/30
-          transition-all duration-200
+          bg-[#1a1a1a] border border-indigo-500/30
+          text-indigo-400 hover:text-indigo-300 hover:bg-[#222]
+          transition-colors duration-200
           flex items-center justify-center
-          shadow-lg
         "
         aria-label="Go to MUEDnote"
         title="MUEDnote"
@@ -202,12 +196,10 @@ function FloatingNav() {
         onClick={() => scrollToSection("muedear")}
         className="
           w-10 h-10 rounded-full
-          bg-amber-500/20 backdrop-blur-xl
-          border border-amber-500/40
-          text-amber-300 hover:text-amber-200 hover:bg-amber-500/30
-          transition-all duration-200
+          bg-[#1a1a1a] border border-amber-500/30
+          text-amber-400 hover:text-amber-300 hover:bg-[#222]
+          transition-colors duration-200
           flex items-center justify-center
-          shadow-lg
         "
         aria-label="Go to MUEDear"
         title="MUEDear"
@@ -239,7 +231,7 @@ function SectionNav({
   showNextIcon = true,
 }: SectionNavProps) {
   return (
-    <div className="py-8 bg-[#0F0F1A]/60 backdrop-blur-sm">
+    <div className="py-8 bg-[#0a0a0a]">
       <div className="container mx-auto px-6">
         <div className="flex justify-between items-center max-w-2xl mx-auto">
           <a
@@ -278,19 +270,24 @@ function FinalCtaSection() {
   const t = useTranslations("landing.brand.cta");
 
   return (
-    <section className="py-24 bg-[#0F0F1A]/85 backdrop-blur-md relative">
-      <div className="container mx-auto px-6">
+    <section className="py-32 bg-[#0a0a0a] relative">
+      {/* Section divider - subtle */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-white/5" />
+
+      <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-section text-white mb-4">
+          <h2 className="text-section text-white mb-4 font-extrabold tracking-tight">
             {t("title")}
           </h2>
           <p className="text-subhead text-white/80 mb-12">
             {t("description")}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <AppStoreButton href={MUEDNOTE_APP_STORE_URL} variant="indigo" label="MUEDnote" />
-            <AppStoreButton href={MUEDEAR_APP_STORE_URL} variant="amber" label="MUEDear" />
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <AppStoreButton href={MUEDEAR_APP_STORE_URL} size="large" />
+            <CtaButton href={MUEDNOTE_APP_STORE_URL} variant="white" size="large">
+              Download MUEDnote
+            </CtaButton>
           </div>
         </div>
       </div>

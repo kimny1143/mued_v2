@@ -3,47 +3,46 @@
 import { Apple } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Variant = "amber" | "indigo";
-
-const variantStyles: Record<Variant, string> = {
-  amber: "border-amber-500 text-amber-400 hover:bg-amber-500 hover:text-white",
-  indigo: "border-indigo-500 text-indigo-400 hover:bg-indigo-500 hover:text-white",
-};
-
 interface AppStoreButtonProps {
   /** App Store URL */
   href: string;
-  /** Color variant */
-  variant?: Variant;
-  /** Custom app label (shown instead of "App Store") */
-  label?: string;
   /** Button size */
-  size?: "default" | "large";
+  size?: "small" | "default" | "large";
   /** Additional className */
   className?: string;
 }
 
 /**
- * App Store Button - Plugin Alliance style (outline + fill on hover)
+ * App Store Button - Spitfire style (clean, minimal)
  *
  * Apple-style button with 2-line text layout:
  * - "Download on the" (small)
- * - App name or "App Store" (large)
+ * - "App Store" (large)
  *
- * @example
- * <AppStoreButton href={MUEDEAR_APP_STORE_URL} />
- *
- * @example
- * <AppStoreButton href={MUEDNOTE_APP_STORE_URL} variant="indigo" label="MUEDnote" />
+ * Hover: subtle brightness increase, no scale or colored shadows.
  */
 export function AppStoreButton({
   href,
-  variant = "amber",
-  label,
   size = "default",
   className,
 }: AppStoreButtonProps) {
-  const isLarge = size === "large";
+  const sizeStyles = {
+    small: "px-3 py-1.5 gap-1.5",
+    default: "px-4 py-2.5 gap-2",
+    large: "px-5 py-3 gap-2.5",
+  };
+
+  const iconSize = {
+    small: "w-4 h-4",
+    default: "w-5 h-5",
+    large: "w-6 h-6",
+  };
+
+  const textSize = {
+    small: "text-xs",
+    default: "text-sm",
+    large: "text-base",
+  };
 
   return (
     <a
@@ -51,19 +50,22 @@ export function AppStoreButton({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "inline-flex items-center gap-3",
-        "bg-transparent border-2",
-        "rounded-[var(--radius-lg)] font-medium transition-all duration-300",
-        variantStyles[variant],
-        isLarge ? "px-8 py-4" : "px-6 py-4",
+        "inline-flex items-center",
+        "bg-transparent border-2 border-amber-500 text-amber-400",
+        "rounded-[var(--radius-lg)] font-medium",
+        "transition-colors duration-200",
+        "hover:bg-amber-500 hover:text-white",
+        sizeStyles[size],
         className
       )}
     >
-      <Apple className={cn(isLarge ? "w-8 h-8" : "w-6 h-6")} />
+      <Apple className={iconSize[size]} />
       <div className="text-left">
-        <div className="text-xs opacity-80">Download on the</div>
-        <div className={cn("font-semibold -mt-0.5", isLarge ? "text-xl" : "text-lg")}>
-          {label || "App Store"}
+        <div className={cn("opacity-80", size === "small" ? "text-[10px]" : "text-xs")}>
+          Download on the
+        </div>
+        <div className={cn("font-semibold -mt-0.5", textSize[size])}>
+          App Store
         </div>
       </div>
     </a>
