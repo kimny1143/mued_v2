@@ -64,7 +64,7 @@ function FaqItem({ faqKey, isOpen, onToggle }: FaqItemProps) {
   const t = useTranslations(`muedear.faq.${faqKey}`);
 
   return (
-    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden">
+    <div className="bg-[#111] border border-white/5 rounded-xl overflow-hidden hover:border-white/10 transition-colors">
       <button
         onClick={onToggle}
         className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-white/5 transition-colors"

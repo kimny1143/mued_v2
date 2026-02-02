@@ -13,7 +13,10 @@ export function MuedearCtaSection() {
   const tFooter = useTranslations("muedear.footer");
 
   return (
-    <section className="py-24 bg-[#0F0F1A]/85 backdrop-blur-md relative">
+    <section className="py-28 bg-[#0a0a0a] relative">
+      {/* Section divider - subtle */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-white/5" />
+
       <div className="container mx-auto px-6">
         <div className="max-w-2xl mx-auto text-center">
           {/* Section title */}
@@ -28,7 +31,7 @@ export function MuedearCtaSection() {
           <AppStoreButton href={MUEDEAR_APP_STORE_URL} size="large" className="mb-12" />
 
           {/* System requirements */}
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 inline-block">
+          <div className="bg-[#111] border border-white/5 rounded-2xl p-6 inline-block">
             <h3 className="text-sm font-semibold text-white/60 mb-4">
               {t("requirements.title")}
             </h3>

@@ -1,5 +1,4 @@
 import { useTranslations } from "next-intl";
-import { GlassCard } from "@/components/ui/glass-card";
 import { Home, GraduationCap, Headphones } from "lucide-react";
 
 const AUDIENCE_ICONS = {
@@ -21,7 +20,10 @@ export function MuedearAudienceSection() {
   const t = useTranslations("muedear.audience");
 
   return (
-    <section className="py-24 bg-[#0F0F1A]/85 backdrop-blur-md relative">
+    <section className="py-28 bg-[#0a0a0a] relative">
+      {/* Section divider - subtle */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-white/5" />
+
       <div className="container mx-auto px-6">
         {/* Section title */}
         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center">
@@ -32,7 +34,7 @@ export function MuedearAudienceSection() {
         </p>
 
         {/* Audience cards */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {AUDIENCES.map((audienceKey) => (
             <AudienceCard key={audienceKey} audienceKey={audienceKey} />
           ))}
@@ -51,19 +53,19 @@ function AudienceCard({ audienceKey }: AudienceCardProps) {
   const Icon = AUDIENCE_ICONS[audienceKey];
 
   return (
-    <GlassCard className="text-center">
+    <div className="bg-[#111] border border-white/5 rounded-xl p-6 text-center hover:border-white/10 transition-colors">
       {/* Icon */}
-      <div className="w-16 h-16 mx-auto bg-indigo-600/20 rounded-2xl flex items-center justify-center mb-6">
-        <Icon className="w-8 h-8 text-indigo-400" />
+      <div className="w-16 h-16 mx-auto bg-white/5 rounded-2xl flex items-center justify-center mb-6">
+        <Icon className="w-8 h-8 text-amber-400" />
       </div>
 
       {/* Title */}
       <h3 className="text-lg font-semibold text-white mb-4">{t("title")}</h3>
 
       {/* Description */}
-      <p className="text-white/80 text-sm leading-relaxed">
+      <p className="text-white/60 text-sm leading-relaxed">
         {t("description")}
       </p>
-    </GlassCard>
+    </div>
   );
 }

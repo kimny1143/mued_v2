@@ -1,5 +1,7 @@
+"use client";
+
 import { useTranslations } from "next-intl";
-import { GlassCard } from "@/components/ui/glass-card";
+import { motion } from "framer-motion";
 import { Check, Ban, Bell, Flame, Target } from "lucide-react";
 
 /**
@@ -11,74 +13,91 @@ export function MuedearPricingSection() {
   const t = useTranslations("muedear.pricing");
 
   return (
-    <section className="py-24 relative">
+    <section className="py-28 bg-[#0a0a0a] relative">
+      {/* Section divider - subtle */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-white/5" />
+
       <div className="container mx-auto px-6">
         {/* Section title */}
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center">
+        <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4 text-center tracking-tight">
           {t("title")}
         </h2>
-        <p className="text-lg text-white/80 mb-16 text-center">
+        <p className="text-lg text-white/80 mb-16 text-center max-w-2xl mx-auto">
           {t("intro")}
         </p>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Free tier details */}
-          <GlassCard>
-            <h3 className="text-xl font-semibold text-white mb-6">
-              {t("free.title")}
-            </h3>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+          >
+            <div className="h-full bg-[#111] border border-white/5 rounded-xl p-6 hover:border-white/10 transition-colors">
+              <h3 className="text-xl font-bold text-white mb-6">
+                {t("free.title")}
+              </h3>
 
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
-                <span className="text-white/80">{t("free.games")}</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
-                <span className="text-white/80">{t("free.modes")}</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
-                <span className="text-white/80">{t("free.ads")}</span>
-              </li>
-            </ul>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
+                  <span className="text-white/70">{t("free.games")}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
+                  <span className="text-white/70">{t("free.modes")}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Check className="w-5 h-5 text-green-400 mt-0.5 shrink-0" />
+                  <span className="text-white/70">{t("free.ads")}</span>
+                </li>
+              </ul>
 
-            {/* Quote */}
-            <div className="mt-8 pt-6 border-t border-white/10">
-              <h4 className="text-sm font-semibold text-white/60 mb-3">
-                {t("why.title")}
-              </h4>
-              <blockquote className="text-white/80 text-sm italic leading-relaxed">
-                {t("why.quote")}
-              </blockquote>
+              {/* Quote */}
+              <div className="mt-8 pt-6 border-t border-white/5">
+                <h4 className="text-sm font-semibold text-white/50 mb-3">
+                  {t("why.title")}
+                </h4>
+                <blockquote className="text-white/70 text-sm italic leading-relaxed">
+                  {t("why.quote")}
+                </blockquote>
+              </div>
             </div>
-          </GlassCard>
+          </motion.div>
 
           {/* Anti-addiction design */}
-          <GlassCard>
-            <h3 className="text-xl font-semibold text-white mb-6">
-              {t("antiAddiction.title")}
-            </h3>
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+          >
+            <div className="h-full bg-[#111] border border-white/5 rounded-xl p-6 hover:border-white/10 transition-colors">
+              <h3 className="text-xl font-bold text-white mb-6">
+                {t("antiAddiction.title")}
+              </h3>
 
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <Ban className="w-5 h-5 text-white/60 mt-0.5 shrink-0" />
-                <span className="text-white/80">{t("antiAddiction.noScroll")}</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Bell className="w-5 h-5 text-white/60 mt-0.5 shrink-0" />
-                <span className="text-white/80">{t("antiAddiction.noNotifications")}</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Flame className="w-5 h-5 text-white/60 mt-0.5 shrink-0" />
-                <span className="text-white/80">{t("antiAddiction.noStreak")}</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Target className="w-5 h-5 text-indigo-400 mt-0.5 shrink-0" />
-                <span className="text-white">{t("antiAddiction.focused")}</span>
-              </li>
-            </ul>
-          </GlassCard>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <Ban className="w-5 h-5 text-white/50 mt-0.5 shrink-0" />
+                  <span className="text-white/70">{t("antiAddiction.noScroll")}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Bell className="w-5 h-5 text-white/50 mt-0.5 shrink-0" />
+                  <span className="text-white/70">{t("antiAddiction.noNotifications")}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Flame className="w-5 h-5 text-white/50 mt-0.5 shrink-0" />
+                  <span className="text-white/70">{t("antiAddiction.noStreak")}</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <Target className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
+                  <span className="text-white">{t("antiAddiction.focused")}</span>
+                </li>
+              </ul>
+            </div>
+          </motion.div>
         </div>
       </div>
     </section>

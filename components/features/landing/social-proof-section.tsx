@@ -1,5 +1,8 @@
+"use client";
+
 import { ExternalLink, Smartphone } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { motion } from "framer-motion";
 
 interface SocialProofSectionProps {
   /**
@@ -18,9 +21,18 @@ export function SocialProofSection({ useBrandKeys = true }: SocialProofSectionPr
   const t = useTranslations(useBrandKeys ? "landing.brand.social" : "landing.social");
 
   return (
-    <section className="py-16 bg-[#0F0F1A]/92 backdrop-blur-xl relative">
+    <section className="py-28 bg-[#0a0a0a] relative">
+      {/* Section divider - subtle */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-white/5" />
+
       <div className="container mx-auto px-6">
-        <div className="max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="max-w-2xl mx-auto"
+        >
           {/* App Store Badge */}
           <div className="flex justify-center mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 badge-green border border-green-500/20 rounded-full">
@@ -46,11 +58,11 @@ export function SocialProofSection({ useBrandKeys = true }: SocialProofSectionPr
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-white hover:text-indigo-400 transition-colors cursor-pointer"
             >
-              <span className="text-section">glasswerks inc.</span>
+              <span className="text-section font-extrabold tracking-tight">glasswerks inc.</span>
               <ExternalLink className="w-5 h-5" />
             </a>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );
