@@ -3,26 +3,41 @@
 import { Apple } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type AppStoreColor = "amber" | "indigo" | "white";
+
 interface AppStoreButtonProps {
   /** App Store URL */
   href: string;
+  /** Color theme: amber (MUEDear), indigo (MUEDnote), white (neutral) */
+  color?: AppStoreColor;
   /** Button size */
   size?: "small" | "default" | "large";
   /** Additional className */
   className?: string;
 }
 
+const colorStyles: Record<AppStoreColor, string> = {
+  amber: "border-amber-500 text-amber-400 hover:bg-amber-500 hover:text-white",
+  indigo: "border-indigo-500 text-indigo-400 hover:bg-indigo-500 hover:text-white",
+  white: "border-white text-white hover:bg-white hover:text-black",
+};
+
 /**
- * App Store Button - Spitfire style (clean, minimal)
+ * App Store Button - Unified download button for iOS apps
  *
  * Apple-style button with 2-line text layout:
  * - "Download on the" (small)
  * - "App Store" (large)
  *
- * Hover: subtle brightness increase, no scale or colored shadows.
+ * Use consistent style for all App Store downloads.
+ * Color variants match brand colors:
+ * - amber: MUEDear
+ * - indigo: MUEDnote
+ * - white: neutral/generic
  */
 export function AppStoreButton({
   href,
+  color = "amber",
   size = "default",
   className,
 }: AppStoreButtonProps) {
@@ -51,10 +66,10 @@ export function AppStoreButton({
       rel="noopener noreferrer"
       className={cn(
         "inline-flex items-center",
-        "bg-transparent border-2 border-amber-500 text-amber-400",
+        "bg-transparent border-2",
         "rounded-[var(--radius-lg)] font-medium",
         "transition-colors duration-200",
-        "hover:bg-amber-500 hover:text-white",
+        colorStyles[color],
         sizeStyles[size],
         className
       )}

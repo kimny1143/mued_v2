@@ -282,10 +282,8 @@ function FinalCtaSection() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <AppStoreButton href={MUEDEAR_APP_STORE_URL} size="large" />
-            <CtaButton href={MUEDNOTE_APP_STORE_URL} variant="white" size="large">
-              Download MUEDnote
-            </CtaButton>
+            <AppStoreButton href={MUEDEAR_APP_STORE_URL} color="amber" size="large" />
+            <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="indigo" size="large" />
           </div>
         </div>
       </div>
