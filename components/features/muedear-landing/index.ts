@@ -1,6 +1,5 @@
 export { MuedearLandingContent } from "./muedear-landing-content";
 export { MuedearHeroSection } from "./muedear-hero-section";
-export { MuedearGamesSection } from "./muedear-games-section";
 export { MuedearFeaturesSection } from "./muedear-features-section";
 export { MuedearAudienceSection } from "./muedear-audience-section";
 export { MuedearPricingSection } from "./muedear-pricing-section";

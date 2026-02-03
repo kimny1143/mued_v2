@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import { MuedearHeroSection } from "./muedear-hero-section";
-import { MuedearGamesSection } from "./muedear-games-section";
 import { MuedearFeaturesSection } from "./muedear-features-section";
 import { MuedearAudienceSection } from "./muedear-audience-section";
 import { MuedearPricingSection } from "./muedear-pricing-section";
@@ -41,7 +40,6 @@ export function MuedearLandingContent() {
 
       <main className="min-h-screen">
         <MuedearHeroSection />
-        <MuedearGamesSection />
         <MuedearFeaturesSection />
         <MuedearAudienceSection />
         <MuedearPricingSection />

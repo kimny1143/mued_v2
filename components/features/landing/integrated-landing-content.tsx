@@ -9,7 +9,6 @@ import { GrowthPreviewSection } from "./growth-preview-section";
 import { SocialProofSection } from "./social-proof-section";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { MuedearHeroSection } from "@/components/features/muedear-landing/muedear-hero-section";
-import { MuedearGamesSection } from "@/components/features/muedear-landing/muedear-games-section";
 import { MuedearFeaturesSection } from "@/components/features/muedear-landing/muedear-features-section";
 import { MuedearPricingSection } from "@/components/features/muedear-landing/muedear-pricing-section";
 import { CtaButton } from "@/components/ui/cta-button";
@@ -55,7 +54,6 @@ export function IntegratedLandingContent() {
       {/* MUEDear Section - Primary product */}
       <section id="muedear" className="relative">
         <MuedearHeroSection />
-        <MuedearGamesSection />
         <MuedearFeaturesSection />
         <MuedearPricingSection />
         <SectionNav
