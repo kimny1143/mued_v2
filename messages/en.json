@@ -268,88 +268,87 @@
     "hero": {
       "title": "MUEDear",
       "tagline": "Train Your Ears While You Create",
-      "hooIntro": "I'm Hoo, your ear training partner",
-      "description": "\"So you want to sharpen your ears too?\nSpend just 2-3 minutes between sessions, and let's train together on EQ, compression, and spatial effects.\"",
+      "description": "Spend 2-3 minutes between sessions.\nTrain your ear for EQ, compression, and spatial effects through gameplay.",
       "ctaPrimary": "Download on the App Store",
       "appStoreAlt": "Download on the App Store"
     },
     "games": {
-      "title": "5 Games to Play with Hoo",
-      "intro": "\"Which one first? They're all free to play.\"",
+      "title": "5 Ear Training Games",
+      "intro": "All game modes free. Start with your strengths.",
       "mufreq": {
         "name": "MuFreQ",
         "category": "EQ",
         "difficulty": "★☆☆",
-        "description": "\"Compare two sounds and guess which frequency band is boosted. From 60Hz to 12kHz, you'll gradually learn to hear the difference.\""
+        "description": "Compare two sounds and identify the boosted frequency band. From 60Hz to 12kHz, develop your frequency recognition skills."
       },
       "mucomp": {
         "name": "MuComp",
         "category": "Dynamics",
         "difficulty": "★☆☆",
-        "description": "\"Pick the compressed one. FET punch, Opto smoothness, VCA glue... Once you can tell them apart, it's really fun.\""
+        "description": "Identify the compressed track. FET punch, Opto smoothness, VCA glue — learn to distinguish each compressor's character."
       },
       "murush": {
         "name": "MuRush",
         "category": "EQ",
         "difficulty": "★★☆",
-        "description": "\"60-second time attack! Identify as many frequencies as you can before time runs out. Speed and accuracy — train both.\""
+        "description": "60-second time attack. Identify as many frequencies as possible before time runs out. Train both speed and accuracy."
       },
       "muverb": {
         "name": "MuVerb",
         "category": "Space",
         "difficulty": "★★☆",
-        "description": "\"Room, Hall, Plate, Spring, Chamber... Can you tell the 5 reverb types apart? Let's see if you can hear the space.\""
+        "description": "Room, Hall, Plate, Spring, Chamber — distinguish between 5 reverb types. Understand spatial characteristics by ear."
       },
       "mupan": {
         "name": "MuPan",
         "category": "Space",
         "difficulty": "★★☆",
-        "description": "\"Where's the sound coming from? Pick the position in the stereo field — 5 levels from Hard Left to Hard Right.\""
+        "description": "Where is the sound coming from? Identify the position in the stereo field across 5 levels."
       }
     },
     "features": {
-      "title": "Hoo's Commitment to Quality",
-      "intro": "\"This isn't just another quiz app. I built it to really train your ears.\"",
+      "title": "Ear Training, Powered by DSP",
+      "intro": "Not just another quiz app. Built to develop real listening skills.",
       "realtime": {
         "title": "Custom DSP Algorithms",
         "subtitle": "Beyond Pre-Recorded Samples",
-        "description": "\"Most ear training apps use pre-recorded audio. But MuComp processes in real-time with custom DSP built from hardware research. Other games will follow.\""
+        "description": "Most ear training apps use pre-recorded audio. MuComp processes in real-time with custom DSP built from hardware research. More games to follow."
       },
       "hardware": {
         "title": "Modeled After Legends",
         "subtitle": "FET · VCA · Tube · Opto",
-        "description": "\"MuComp's DSP is designed based on the characteristics of legendary studio gear. Let's train your ears to hear each one's personality.\""
+        "description": "MuComp's DSP is designed based on legendary studio gear characteristics. Train your ears to recognize each unit's personality."
       },
       "convolution": {
         "title": "Convolution Reverb",
         "subtitle": "Diverse Spatial Characteristics",
-        "description": "\"MuVerb uses convolution reverb with impulse responses for various spatial characteristics. Train your ears to distinguish 5 reverb types.\""
+        "description": "MuVerb uses convolution reverb with various impulse responses for authentic spatial characteristics. Develop skills to distinguish 5 reverb types."
       },
       "settings": {
         "title": "Hardware-Style UI",
         "subtitle": "Available in MuComp",
-        "description": "\"In the settings panel, you can adjust parameters with a UI modeled after real gear. Input/Output, Attack/Release, Ratio... Learn sound design while you play.\""
+        "description": "Adjust parameters with a UI modeled after real gear. Input/Output, Attack/Release, Ratio — learn sound design through hands-on interaction."
       }
     },
     "audience": {
       "title": "Who Is This For?",
-      "intro": "\"Any level is fine. Hoo's here with you.\"",
+      "intro": "For anyone who wants to train their ears, regardless of skill level.",
       "bedroom": {
         "title": "Bedroom Producers & Home Studio Artists",
-        "description": "\"You've got the plugins. But when should you use them? Once you can hear the difference, you'll know.\""
+        "description": "You have the plugins, but when should you use them? Once you can hear the difference, you'll know."
       },
       "student": {
         "title": "Music Production Students",
-        "description": "\"Supplement what you learn in class with practical ear training. This is a skill that'll serve your entire career.\""
+        "description": "Supplement classroom theory with practical ear training. A foundational skill for your entire career."
       },
       "pro": {
         "title": "Professional Engineers",
-        "description": "\"Keep your ears sharp between sessions. Quick training helps maintain the listening acuity you've built over the years.\""
+        "description": "Keep your ears sharp between sessions. Quick training helps maintain the listening acuity you've built over years."
       }
     },
     "pricing": {
       "title": "Free to Play. Respects Your Time.",
-      "intro": "\"I didn't make this to keep you glued to your phone.\"",
+      "intro": "Built to help you get back to creating, not to keep you glued to your phone.",
       "free": {
         "title": "Free Tier",
         "games": "5 games per day — Enough to make real progress",
@@ -358,7 +357,7 @@
       },
       "why": {
         "title": "Why the Limit?",
-        "quote": "\"The daily limit is intentional. Train your ears, then get back to making music. I built MUEDear to help you become a better producer.\""
+        "quote": "The daily limit is intentional. Train your ears, then get back to making music. MUEDear is built to help you become a better producer."
       },
       "antiAddiction": {
         "title": "Anti-Addiction Design",
