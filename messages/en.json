@@ -500,6 +500,10 @@
       "mued": {
         "title": "The True Meaning of MUED",
         "description": "The constraints of 'Music Education'. Tracing the etymology of Muse led to ancient Greek creative theory."
+      },
+      "muedear": {
+        "title": "It Was Supposed to Be Quick",
+        "description": "An 8-week project that turned into custom DSP implementation. What happened to MUEDear."
       }
     },
     "articles": {
@@ -516,6 +520,13 @@
         "author": "kimny × Claude",
         "date": "January 2025",
         "footer": "This article is reconstructed from actual conversations with AI (Claude) during the MUEDnote development process."
+      },
+      "muedear": {
+        "title": "It Was Supposed to Be Quick — What Happened to MUEDear",
+        "description": "An ear training app planned for 8 weeks evolved into 4-type DSP implementation. From batch processing limitations to real-time audio processing.",
+        "author": "kimny × Claude",
+        "date": "February 2025",
+        "footer": "This article is reconstructed from actual conversations with AI (Claude) during the MUEDear development process."
       }
     }
   }

@@ -500,6 +500,10 @@
       "mued": {
         "title": "MUEDの本当の意味",
         "description": "Music Educationの窮屈さ。ミューズの語源を辿ったら、古代ギリシャの創作論に行き着いた。"
+      },
+      "muedear": {
+        "title": "手早く作るはずだった",
+        "description": "8週間で出すはずが、DSP実装に踏み込んでしまった。MUEDearに何が起きたか。"
       }
     },
     "articles": {
@@ -516,6 +520,13 @@
         "author": "kimny × Claude",
         "date": "2025年1月",
         "footer": "この記事は、MUEDnote開発過程でのAI（Claude）との実際の対話をもとに再構成したものです。"
+      },
+      "muedear": {
+        "title": "手早く作るはずだった ― MUEDearに何が起きたか",
+        "description": "8週間で出すはずの耳トレアプリが、4種DSP実装に発展した経緯。バッチ処理の限界からリアルタイム処理への転換。",
+        "author": "kimny × Claude",
+        "date": "2025年2月",
+        "footer": "この記事は、MUEDear開発過程でのAI（Claude）との実際の対話をもとに再構成したものです。"
       }
     }
   }

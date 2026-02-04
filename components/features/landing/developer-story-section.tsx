@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
-const STORY_SLUGS = ["hoo", "mued"] as const;
+const STORY_SLUGS = ["hoo", "mued", "muedear"] as const;
 
 /**
  * Developer Story Section - Editorial Style
@@ -56,7 +56,7 @@ export function DeveloperStorySection() {
 }
 
 interface StoryCardProps {
-  slug: "hoo" | "mued";
+  slug: "hoo" | "mued" | "muedear";
   locale: string;
   index: number;
 }
