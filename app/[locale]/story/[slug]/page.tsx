@@ -1,0 +1,53 @@
+import { notFound } from "next/navigation";
+import { setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
+import { StoryArticle } from "@/components/features/story/story-article";
+import { STORY_SLUGS, getArticleSections, type StorySlug } from "@/lib/story/articles";
+import type { Locale } from "@/lib/i18n/config";
+
+interface PageProps {
+  params: Promise<{
+    locale: Locale;
+    slug: string;
+  }>;
+}
+
+export async function generateStaticParams() {
+  return STORY_SLUGS.map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({ params }: PageProps) {
+  const { locale, slug } = await params;
+  setRequestLocale(locale);
+
+  const t = await getTranslations({ locale, namespace: "story" });
+
+  if (!STORY_SLUGS.includes(slug as StorySlug)) {
+    return {};
+  }
+
+  return {
+    title: t(`articles.${slug}.title`),
+    description: t(`articles.${slug}.description`),
+  };
+}
+
+export default async function StoryPage({ params }: PageProps) {
+  const { locale, slug } = await params;
+  setRequestLocale(locale);
+
+  if (!STORY_SLUGS.includes(slug as StorySlug)) {
+    notFound();
+  }
+
+  const sections = getArticleSections(slug as StorySlug);
+
+  return (
+    <div className="dark">
+      <div className="fixed inset-0 -z-10 bg-[#0f0f0f]" />
+      <main className="min-h-screen py-20 px-6">
+        <StoryArticle slug={slug as StorySlug} sections={sections} />
+      </main>
+    </div>
+  );
+}

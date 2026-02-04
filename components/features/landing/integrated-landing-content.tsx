@@ -7,6 +7,7 @@ import { HeroSection } from "./hero-section";
 import { PhilosophySection } from "./philosophy-section";
 import { GrowthPreviewSection } from "./growth-preview-section";
 import { SocialProofSection } from "./social-proof-section";
+import { DeveloperStorySection } from "./developer-story-section";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { MuedearHeroSection } from "@/components/features/muedear-landing/muedear-hero-section";
 import { MuedearFeaturesSection } from "@/components/features/muedear-landing/muedear-features-section";
@@ -81,6 +82,9 @@ export function IntegratedLandingContent() {
 
       {/* Social Proof */}
       <SocialProofSection />
+
+      {/* Developer Story */}
+      <DeveloperStorySection />
 
       {/* Final CTA - Both Products */}
       <FinalCtaSection />

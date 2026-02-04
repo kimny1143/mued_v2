@@ -484,5 +484,40 @@
       "name": "glasswerks inc.",
       "address": "4-7-27-3F Aobadai, Meguro-ku, Tokyo 153-0042, Japan"
     }
+  },
+  "story": {
+    "section": {
+      "title": "Developer Story",
+      "subtitle": "Conversations between kimny (developer) and Claude (AI)"
+    },
+    "nav": {
+      "backToTop": "Back to Top"
+    },
+    "cards": {
+      "hoo": {
+        "title": "What is Hoo?",
+        "description": "How glasswerks' AI character was born. From logo to character, and the discovery of 'Ho-Hoo'."
+      },
+      "mued": {
+        "title": "The True Meaning of MUED",
+        "description": "The constraints of 'Music Education'. Tracing the etymology of Muse led to ancient Greek creative theory."
+      }
+    },
+    "articles": {
+      "hoo": {
+        "title": "What is Hoo? — The Birth of glasswerks' AI Character",
+        "description": "The story behind MUEDnote's mascot character 'Hoo'. From logo to character, and the discovery of the signature phrase 'Ho-Hoo'.",
+        "author": "kimny × Claude",
+        "date": "January 2025",
+        "footer": "This article is reconstructed from actual conversations with AI (Claude) during the MUEDnote development process."
+      },
+      "mued": {
+        "title": "What AI Questions Revealed About MUED's True Meaning",
+        "description": "From 'Music Education' to 'Muse + Education'. The creative process revealed by the three ancient Greek Muses, and what MUEDnote aims to achieve.",
+        "author": "kimny × Claude",
+        "date": "January 2025",
+        "footer": "This article is reconstructed from actual conversations with AI (Claude) during the MUEDnote development process."
+      }
+    }
   }
 }

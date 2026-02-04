@@ -484,5 +484,40 @@
       "name": "株式会社グラスワークス",
       "address": "〒153-0042 東京都目黒区青葉台4-7-27 3F"
     }
+  },
+  "story": {
+    "section": {
+      "title": "開発ストーリー",
+      "subtitle": "開発者(kimny)とAI(Claude)の対話"
+    },
+    "nav": {
+      "backToTop": "トップに戻る"
+    },
+    "cards": {
+      "hoo": {
+        "title": "Hooって何よ？",
+        "description": "glasswerksのAIキャラクターができるまで。ロゴからキャラクターへ、「ほほう」の発見。"
+      },
+      "mued": {
+        "title": "MUEDの本当の意味",
+        "description": "Music Educationの窮屈さ。ミューズの語源を辿ったら、古代ギリシャの創作論に行き着いた。"
+      }
+    },
+    "articles": {
+      "hoo": {
+        "title": "Hooって何よ？― glasswerksのAIキャラクターができるまで",
+        "description": "MUEDnoteのマスコットキャラクター「Hoo」の誕生秘話。ロゴからキャラクターへの変遷と「ほほう」という決め台詞の発見。",
+        "author": "kimny × Claude",
+        "date": "2025年1月",
+        "footer": "この記事は、MUEDnote開発過程でのAI（Claude）との実際の対話をもとに再構成したものです。"
+      },
+      "mued": {
+        "title": "AIに聞かれて気づいた、MUEDの本当の意味",
+        "description": "「Music Education」から「Muse + Education」へ。古代ギリシャの3人のMuseが示す創作プロセスと、MUEDnoteが目指すもの。",
+        "author": "kimny × Claude",
+        "date": "2025年1月",
+        "footer": "この記事は、MUEDnote開発過程でのAI（Claude）との実際の対話をもとに再構成したものです。"
+      }
+    }
   }
 }

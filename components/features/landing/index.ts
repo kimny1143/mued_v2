@@ -11,4 +11,5 @@ export { GrowthPreviewSection } from "./growth-preview-section";
 
 // Shared Components
 export { SocialProofSection } from "./social-proof-section";
+export { DeveloperStorySection } from "./developer-story-section";
 export { ParallaxBackground } from "./parallax-background";
