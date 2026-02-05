@@ -57,7 +57,7 @@
       "ctaPrimary": "Start Free with Hoo",
       "ctaSecondary": "Log In",
       "hooPhrases": [
-        "Ho-Hoo, nice idea!",
+        "Ho-Hoo, save your thoughts?",
         "Ho-Hoo, interesting approach!",
         "Ho-Hoo, I see what you did there",
         "Ho-Hoo, time for a break?"
@@ -77,7 +77,7 @@
         },
         "voice": {
           "title": "Voice Memos",
-          "description": "Capture your ideas with your voice. They're transcribed for later review."
+          "description": "Your unconscious murmurs get transcribed. Never forget why you made that choice."
         }
       }
     },
