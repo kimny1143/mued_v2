@@ -80,3 +80,9 @@ export {
   type UpdateCustomInstructionsInput,
   type ToggleCustomInstructionsInput,
 } from './hoo-memories.repository';
+
+// MUEDlobe - Cognitive profiling
+export {
+  CognitiveProfileRepository,
+  cognitiveProfileRepository,
+} from './cognitive-profiles.repository';
