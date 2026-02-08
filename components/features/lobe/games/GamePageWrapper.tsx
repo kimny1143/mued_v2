@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import type { GameType } from '@/types/muedlobe';
 import { GAME_META } from '@/lib/muedlobe/constants';
 
@@ -14,10 +14,13 @@ interface GamePageWrapperProps {
 export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
   const router = useRouter();
   const meta = GAME_META[gameType];
+  const [status, setStatus] = useState<'playing' | 'saving' | 'profile-ready'>('playing');
 
   const handleComplete = useCallback(async (result: Record<string, unknown>) => {
+    setStatus('saving');
+
     try {
-      await fetch('/api/lobe/measurement', {
+      const res = await fetch('/api/lobe/measurement', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -26,6 +29,15 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
           calculatedScore: result,
         }),
       });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.data?.profileCalculated) {
+          setStatus('profile-ready');
+          setTimeout(() => router.push('/lobe/results'), 3000);
+          return;
+        }
+      }
     } catch (e) {
       console.error('Failed to save measurement:', e);
     }
@@ -45,7 +57,20 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
         </div>
       </header>
       <main className="flex-1 max-w-4xl mx-auto w-full px-6">
-        {children({ onComplete: handleComplete })}
+        {status === 'profile-ready' ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-3">
+              <p className="text-lg font-semibold text-white">
+                Profile Calculated
+              </p>
+              <p className="text-sm text-white/50">
+                All 7 games complete. Your cognitive profile has been generated.
+              </p>
+            </div>
+          </div>
+        ) : (
+          children({ onComplete: handleComplete })
+        )}
       </main>
     </div>
   );
