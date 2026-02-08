@@ -39,14 +39,14 @@ export const GAME_META: Record<GameType, {
     name: 'Tone Sequence',
     nameJa: '音系列記憶',
     variable: 'WM',
-    duration: '3-4 min',
+    duration: '4-6 min',
   },
   'mental-math': {
     id: 'WM-2',
     name: 'Mental Math',
     nameJa: 'メンタルマス',
     variable: 'WM',
-    duration: '2-3 min',
+    duration: '4-5 min',
   },
   'symbol-match': {
     id: 'PS-1',
@@ -74,7 +74,7 @@ export const GAME_META: Record<GameType, {
     name: 'Pattern Complete',
     nameJa: 'パターンコンプリート',
     variable: 'PR',
-    duration: '3 min',
+    duration: '4-5 min',
   },
   'focus-flow': {
     id: 'ATT-1',
@@ -89,13 +89,33 @@ export const GAME_META: Record<GameType, {
 // Symbol Match (PS-1) Constants
 // ========================================
 
-/** 20 abstract SVG symbols for Symbol Match */
+/** 20 abstract symbols for Symbol Match, organized with confusable pairs */
 export const SYMBOLS = [
-  '◇', '☆', '△', '○', '✕',
-  '□', '⬡', '◎', '⬢', '▽',
-  '◈', '⊕', '⊗', '⊞', '⊠',
-  '◆', '★', '▲', '●', '■',
+  '◇', '◆',   // diamond: outline vs filled
+  '☆', '★',   // star: outline vs filled
+  '△', '▲',   // up-triangle: outline vs filled
+  '▽', '▼',   // down-triangle: outline vs filled
+  '○', '●',   // circle: outline vs filled
+  '□', '■',   // square: outline vs filled
+  '◎', '⊕',   // circle variants: double-circle vs circled-plus
+  '⊗', '⊘',   // circle variants: circled-x vs circled-slash
+  '⬡', '⬢',   // hexagon: outline vs filled
+  '⊞', '⊠',   // square variants: squared-plus vs squared-x
 ];
+
+/** Map each symbol to its confusable partner(s) */
+export const SYMBOL_CONFUSABLES: Record<string, string[]> = {
+  '◇': ['◆'], '◆': ['◇'],
+  '☆': ['★'], '★': ['☆'],
+  '△': ['▲', '▽'], '▲': ['△', '▼'],
+  '▽': ['▼', '△'], '▼': ['▽', '▲'],
+  '○': ['●', '◎'], '●': ['○', '◎'],
+  '□': ['■', '⊞'], '■': ['□', '⊠'],
+  '◎': ['⊕', '○'], '⊕': ['◎', '⊗'],
+  '⊗': ['⊘', '⊕'], '⊘': ['⊗'],
+  '⬡': ['⬢'], '⬢': ['⬡'],
+  '⊞': ['⊠', '□'], '⊠': ['⊞', '■'],
+};
 
 export const SYMBOL_MATCH_CONFIG = {
   targetCount: 2,

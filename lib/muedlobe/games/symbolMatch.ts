@@ -5,7 +5,7 @@
  * ターゲット記号が比較群に含まれるかを判定する。
  */
 
-import { SYMBOLS, SYMBOL_MATCH_CONFIG } from '../constants';
+import { SYMBOLS, SYMBOL_MATCH_CONFIG, SYMBOL_CONFUSABLES } from '../constants';
 import type { SymbolMatchTrial, SymbolMatchResult } from '@/types/muedlobe';
 
 /** Pick n random unique items from array */
@@ -14,10 +14,11 @@ function pickRandom<T>(arr: T[], n: number): T[] {
   return shuffled.slice(0, n);
 }
 
-/** Generate a single trial */
+/** Generate a single trial with confusability injection */
 export function generateTrial(): SymbolMatchTrial {
   const { targetCount, comparisonCount, targetPresenceRate } = SYMBOL_MATCH_CONFIG;
   const hasTarget = Math.random() < targetPresenceRate;
+  const injectConfusable = Math.random() < 0.5;
 
   // Pick target symbols
   const targetSymbols = pickRandom(SYMBOLS, targetCount);
@@ -32,7 +33,23 @@ export function generateTrial(): SymbolMatchTrial {
     const fillers = pickRandom(remaining, comparisonCount - 1);
     comparisonSymbols = [...includedTarget, ...fillers].sort(() => Math.random() - 0.5);
   } else {
-    comparisonSymbols = pickRandom(remaining, comparisonCount);
+    // No target present — optionally inject a confusable symbol to increase difficulty
+    if (injectConfusable) {
+      // Find a confusable for one of the targets that isn't a target itself
+      const confusables = targetSymbols.flatMap(t =>
+        (SYMBOL_CONFUSABLES[t] ?? []).filter(c => !targetSymbols.includes(c))
+      );
+      if (confusables.length > 0) {
+        const confusable = confusables[Math.floor(Math.random() * confusables.length)];
+        const nonConfusableRemaining = remaining.filter(s => s !== confusable);
+        const fillers = pickRandom(nonConfusableRemaining, comparisonCount - 1);
+        comparisonSymbols = [confusable, ...fillers].sort(() => Math.random() - 0.5);
+      } else {
+        comparisonSymbols = pickRandom(remaining, comparisonCount);
+      }
+    } else {
+      comparisonSymbols = pickRandom(remaining, comparisonCount);
+    }
   }
 
   return {

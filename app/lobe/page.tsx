@@ -23,7 +23,7 @@ export default async function LobePage() {
           <h2 className="text-sm text-white/40 uppercase tracking-wider">Games</h2>
           {GAME_ORDER.map((gameType) => {
             const meta = GAME_META[gameType];
-            const isAvailable = gameType === 'symbol-match'; // MVP: only Symbol Match
+            const isAvailable = true; // All games implemented
 
             return (
               <div

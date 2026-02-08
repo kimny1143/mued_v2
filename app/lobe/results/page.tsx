@@ -47,9 +47,9 @@ export default async function LobeResultsPage() {
                     <span className="text-xs text-indigo-400 font-mono uppercase">
                       {m.gameType}
                     </span>
-                    {score?.rawScore !== undefined && (
+                    {(score?.rawScore ?? score?.totalScore) !== undefined && (
                       <p className="text-xl font-bold text-white mt-1">
-                        Score: {score.rawScore}
+                        Score: {score?.rawScore ?? score?.totalScore}
                       </p>
                     )}
                   </div>
