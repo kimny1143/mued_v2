@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { withAuthResolved } from '@/lib/middleware/with-auth';
+import { withAuth } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
 import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
 import { GAME_ORDER } from '@/lib/muedlobe/constants';
@@ -18,7 +18,7 @@ const measurementSchema = z.object({
   calculatedScore: z.record(z.unknown()).optional(),
 });
 
-export const POST = withAuthResolved(async ({ clerkUserId, request }) => {
+export const POST = withAuth(async ({ userId, request }) => {
   try {
     const body = await request.json();
     const parsed = measurementSchema.safeParse(body);
@@ -30,21 +30,22 @@ export const POST = withAuthResolved(async ({ clerkUserId, request }) => {
     const { gameType, rawData, calculatedScore } = parsed.data;
 
     const record = await cognitiveProfileRepository.addMeasurement({
-      userId: clerkUserId,
+      userId,
       gameType,
       rawData,
       calculatedScore,
     });
 
-    // Check if all 7 games are now complete
+    // Lightweight check: do we have all 7 game types?
     let profileCalculated = false;
-    const allMeasurements = await cognitiveProfileRepository.findMeasurementsByUserId(clerkUserId);
-
-    const completedGameTypes = new Set(allMeasurements.map((m) => m.gameType));
-    const allGamesComplete = GAME_ORDER.every((g) => completedGameTypes.has(g));
+    const distinctGameTypes = await cognitiveProfileRepository.findDistinctGameTypesByUserId(userId);
+    const allGamesComplete = GAME_ORDER.every((g) => distinctGameTypes.includes(g));
 
     if (allGamesComplete) {
       try {
+        // Only fetch full measurements when we need to build GameResult[]
+        const allMeasurements = await cognitiveProfileRepository.findMeasurementsByUserId(userId);
+
         // Build GameResult[] from latest measurement per game type
         const latestByGame = new Map<string, typeof allMeasurements[number]>();
         for (const m of allMeasurements) {
@@ -65,7 +66,7 @@ export const POST = withAuthResolved(async ({ clerkUserId, request }) => {
           };
         });
 
-        await calculateAndSaveProfile(clerkUserId, gameResults);
+        await calculateAndSaveProfile(userId, gameResults);
         profileCalculated = true;
       } catch (e) {
         // Profile calculation failure should not fail the measurement save

@@ -34,7 +34,14 @@ export default async function LobePage() {
             <span className="text-white/40">Progress</span>
             <span className="text-white/60 font-mono">{completedCount}/{GAME_ORDER.length}</span>
           </div>
-          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+          <div
+            className="h-1.5 bg-white/10 rounded-full overflow-hidden"
+            role="progressbar"
+            aria-valuenow={completedCount}
+            aria-valuemin={0}
+            aria-valuemax={GAME_ORDER.length}
+            aria-label={`${completedCount} of ${GAME_ORDER.length} games completed`}
+          >
             <div
               className={`h-full rounded-full transition-all ${allComplete ? 'bg-emerald-500' : 'bg-indigo-500'}`}
               style={{ width: `${(completedCount / GAME_ORDER.length) * 100}%` }}

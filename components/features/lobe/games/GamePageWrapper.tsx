@@ -14,7 +14,7 @@ interface GamePageWrapperProps {
 export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
   const router = useRouter();
   const meta = GAME_META[gameType];
-  const [status, setStatus] = useState<'playing' | 'saving' | 'profile-ready'>('playing');
+  const [status, setStatus] = useState<'playing' | 'saving' | 'error' | 'saved' | 'profile-ready'>('playing');
 
   const handleComplete = useCallback(async (result: Record<string, unknown>) => {
     setStatus('saving');
@@ -37,12 +37,16 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
           setTimeout(() => router.push('/lobe/results'), 3000);
           return;
         }
+        setStatus('saved');
+        setTimeout(() => router.push('/lobe'), 2000);
+        return;
       }
+
+      setStatus('error');
     } catch (e) {
       console.error('Failed to save measurement:', e);
+      setStatus('error');
     }
-
-    setTimeout(() => router.push('/lobe/results'), 2000);
   }, [gameType, router]);
 
   return (
@@ -66,6 +70,36 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
               <p className="text-sm text-white/50">
                 All 7 games complete. Your cognitive profile has been generated.
               </p>
+            </div>
+          </div>
+        ) : status === 'saved' ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-3">
+              <p className="text-lg font-semibold text-white">
+                Result Saved
+              </p>
+              <p className="text-sm text-white/50">
+                Returning to game list...
+              </p>
+            </div>
+          </div>
+        ) : status === 'error' ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-4">
+              <p className="text-lg font-semibold text-red-400">
+                Failed to Save
+              </p>
+              <p className="text-sm text-white/50">
+                Your result could not be saved. Please try again.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => router.push('/lobe')}
+                  className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
+                >
+                  Back to Games
+                </button>
+              </div>
             </div>
           </div>
         ) : (

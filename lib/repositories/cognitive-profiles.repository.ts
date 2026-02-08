@@ -84,6 +84,15 @@ export class CognitiveProfileRepository {
       .where(eq(measurementHistory.userId, userId));
   }
 
+  async findDistinctGameTypesByUserId(userId: string): Promise<string[]> {
+    const rows = await db
+      .selectDistinct({ gameType: measurementHistory.gameType })
+      .from(measurementHistory)
+      .where(eq(measurementHistory.userId, userId));
+
+    return rows.map((r) => r.gameType);
+  }
+
   // ========================================
   // Hoo Configurations
   // ========================================

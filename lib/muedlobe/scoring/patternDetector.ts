@@ -13,7 +13,7 @@ import { SIGNIFICANT_DIFFERENCE_THRESHOLD } from '../constants';
 // Types
 // ========================================
 
-type ScoreKey = 'wm' | 'ps' | 'vc' | 'pr';
+type ScoreKey = Exclude<keyof Scores, 'att'>;
 
 // ========================================
 // Level 1: Pairwise Differences
