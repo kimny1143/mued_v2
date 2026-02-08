@@ -125,13 +125,15 @@ export const SYMBOL_MATCH_CONFIG = {
 };
 
 // ========================================
-// Normalization Norms (Initial estimates, N=1)
+// Normalization Norms (PoC-adjusted estimates, N=1)
+// Updated after Phase 2 difficulty tuning + PoC validation (2026-02-07)
+// These need recalibration as more user data is collected.
 // ========================================
 
 export const INITIAL_NORMS = {
-  wm: { mean: 12, sd: 4 },
-  ps: { mean: 30, sd: 10 },
-  vc: { mean: 15, sd: 5 },
-  pr: { mean: 10, sd: 4 },
-  att: { mean: 2.5, sd: 0.8 },
+  wm: { mean: 16, sd: 5 },    // WM composite range wider after Level 6-8 addition
+  ps: { mean: 35, sd: 15 },   // PS composite needs wide SD; pre-tuning ceiling effects observed
+  vc: { mean: 15, sd: 5 },    // Word Bridge performed well in PoC, no change
+  pr: { mean: 12, sd: 5 },    // PR range wider after expert difficulty addition
+  att: { mean: 2.5, sd: 0.8 }, // Focus Flow d'-based score, reasonable range
 };
