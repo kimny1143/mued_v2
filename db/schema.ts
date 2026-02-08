@@ -325,3 +325,8 @@ export * from './schema/hoo-conversations';
 // Hoo Memories (Custom Instructions & Auto Memory)
 // ========================================
 export * from './schema/hoo-memories';
+
+// ========================================
+// MUEDlobe - Cognitive Profiling
+// ========================================
+export * from './schema/cognitive-profiles';
