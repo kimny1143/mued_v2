@@ -7,7 +7,8 @@
         "description": "練習して、記憶して、創る。",
         "hooIntro": "Hooがご案内します。",
         "exploreMuednote": "MUEDnoteを見る",
-        "exploreMuedear": "MUEDearを見る"
+        "exploreMuedear": "MUEDearを見る",
+        "exploreMuedlobe": "MUEDlobeを見る"
       },
       "products": {
         "title": "練習して、記憶する。",
@@ -39,7 +40,8 @@
         "title": "創る準備はできた？",
         "description": "君のメソッドを始めよう。",
         "muednote": "MUEDnoteで始める",
-        "muedear": "MUEDearで鍛える"
+        "muedear": "MUEDearで鍛える",
+        "muedlobe": "MUEDlobeを試す"
       },
       "social": {
         "developedBy": "Developed by",
@@ -435,6 +437,66 @@
     "footer": {
       "tagline": "MUEDear — 制作しながら、耳を育てる。"
     }
+  },
+  "meetHoo": {
+    "title": "Hooとは？",
+    "description": "あなた専属のAI音楽制作パートナー。あなたの思考や学び方に合わせて、サポートを最適化します。"
+  },
+  "muedlobe": {
+    "hero": {
+      "title": "MUEDlobe",
+      "tagline": "あなたの思考スタイルを発見しよう。",
+      "description": "7つのショートゲームで、情報処理のクセがわかる。その結果をHooとのコミュニケーションにも活かせます。",
+      "pilotBadge": "v0.8 パイロット版",
+      "ctaPrimary": "試してみる"
+    },
+    "games": {
+      "title": "7つのショートゲーム",
+      "intro": "それぞれのゲームで、Hooがあなたの違う一面を理解します。合計約25分。",
+      "tone-sequence": {
+        "name": "トーンシーケンス",
+        "variable": "メモリー",
+        "description": "あなたの音の記憶のしかたをHooが学ぶ。"
+      },
+      "mental-math": {
+        "name": "メンタルマス",
+        "variable": "メモリー",
+        "description": "数字の扱い方をHooに教える。"
+      },
+      "symbol-match": {
+        "name": "シンボルマッチ",
+        "variable": "テンポ",
+        "description": "つながりを見つけるテンポを知る。"
+      },
+      "code-fill": {
+        "name": "コードフィル",
+        "variable": "テンポ",
+        "description": "パターンを読み解くスピードを知る。"
+      },
+      "word-bridge": {
+        "name": "ワードブリッジ",
+        "variable": "ワードセンス",
+        "description": "言葉のつながり方をHooが学ぶ。"
+      },
+      "pattern-complete": {
+        "name": "パターンコンプリート",
+        "variable": "パターン",
+        "description": "全体像の捉え方をHooに教える。"
+      },
+      "focus-flow": {
+        "name": "フォーカスフロー",
+        "variable": "フォーカス",
+        "description": "集中の保ち方をHooが学ぶ。"
+      }
+    },
+    "overview": {
+      "title": "仕組み",
+      "step1": "7つのゲームで遊ぶ",
+      "step2": "Hooがあなたのスタイルを学ぶ",
+      "step3": "Hooのサポートがあなた専用になる"
+    },
+    "disclaimer": "MUEDlobeは心理検査ではありません。Hooのパーソナライズのためのツールです。",
+    "gameDisclaimer": "本ゲームは医学的・心理学的な検査ではなく、AIアシスタント「Hoo」の応答スタイルを最適化するためのキャリブレーションツールです。スコアは診断結果ではなく、Hoo専用の調整パラメータです。"
   },
   "support": {
     "title": "サポート",

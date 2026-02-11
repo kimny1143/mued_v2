@@ -48,20 +48,20 @@ const PATTERN_LABELS: Record<string, string> = {
   theorist_type: 'Theorist',
   visualizer_type: 'Visualizer',
   balanced_type: 'Balanced',
-  low_attention_modifier: 'Low Attention',
+  low_attention_modifier: 'Low Focus',
   high_attention_modifier: 'High Focus',
-  high_wm_low_ps: 'High WM / Low PS',
-  low_wm_high_ps: 'Low WM / High PS',
-  high_wm_low_vc: 'High WM / Low VC',
-  low_wm_high_vc: 'Low WM / High VC',
-  high_wm_low_pr: 'High WM / Low PR',
-  low_wm_high_pr: 'Low WM / High PR',
-  high_ps_low_vc: 'High PS / Low VC',
-  low_ps_high_vc: 'Low PS / High VC',
-  high_ps_low_pr: 'High PS / Low PR',
-  low_ps_high_pr: 'Low PS / High PR',
-  high_vc_low_pr: 'High VC / Low PR',
-  low_vc_high_pr: 'Low VC / High PR',
+  high_wm_low_ps: 'High Memory / Low Tempo',
+  low_wm_high_ps: 'Low Memory / High Tempo',
+  high_wm_low_vc: 'High Memory / Low Word Sense',
+  low_wm_high_vc: 'Low Memory / High Word Sense',
+  high_wm_low_pr: 'High Memory / Low Patterns',
+  low_wm_high_pr: 'Low Memory / High Patterns',
+  high_ps_low_vc: 'High Tempo / Low Word Sense',
+  low_ps_high_vc: 'Low Tempo / High Word Sense',
+  high_ps_low_pr: 'High Tempo / Low Patterns',
+  low_ps_high_pr: 'Low Tempo / High Patterns',
+  high_vc_low_pr: 'High Word Sense / Low Patterns',
+  low_vc_high_pr: 'Low Word Sense / High Patterns',
 };
 
 function PatternBadge({ pattern }: { pattern: string }) {
@@ -117,11 +117,11 @@ function PromptParamTag({
 // ========================================
 
 const VARIABLE_LABELS: Record<string, string> = {
-  wm: 'Working Memory',
-  ps: 'Processing Speed',
-  vc: 'Verbal Comprehension',
-  pr: 'Perceptual Reasoning',
-  att: 'Attention',
+  wm: 'Memory',
+  ps: 'Tempo',
+  vc: 'Word Sense',
+  pr: 'Patterns',
+  att: 'Focus',
 };
 
 // ========================================
@@ -142,7 +142,7 @@ export default async function LobeResultsPage() {
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold text-white">No Results Yet</h1>
-          <p className="text-white/50">Complete all 7 games to see your cognitive profile.</p>
+          <p className="text-white/50">Complete all 7 games to discover your thinking style.</p>
           <Link
             href="/lobe"
             className="inline-block px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
@@ -172,7 +172,7 @@ export default async function LobeResultsPage() {
       <div className="max-w-2xl mx-auto space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-white">Cognitive Profile</h1>
+          <h1 className="text-2xl font-bold text-white">Your Thinking Style</h1>
           <p className="text-white/50 mt-1">
             {profile
               ? `Last measured: ${profile.measuredAt ? new Date(profile.measuredAt).toLocaleDateString() : 'Unknown'}`
@@ -215,7 +215,7 @@ export default async function LobeResultsPage() {
         {promptParams && (
           <section className="p-6 bg-white/5 border border-white/10 rounded-xl space-y-3">
             <h2 className="text-sm font-medium text-white/40 uppercase tracking-wider">
-              Hoo Optimization
+              Hoo Tuning
             </h2>
             <div className="grid grid-cols-2 gap-2">
               {(Object.keys(PARAM_LABELS) as (keyof PromptParams)[]).map(

@@ -33,10 +33,9 @@ export default function SymbolMatchPage() {
       <header className="border-b border-white/5 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div>
-            <span className="text-xs text-indigo-400 font-mono">PS-1</span>
+            <span className="text-xs text-violet-400 font-mono">Tempo</span>
             <h1 className="text-lg font-semibold text-white">Symbol Match</h1>
           </div>
-          <span className="text-xs text-white/30">Processing Speed</span>
         </div>
       </header>
 

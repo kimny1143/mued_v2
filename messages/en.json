@@ -7,7 +7,8 @@
         "description": "Practice. Remember. Create.",
         "hooIntro": "Hoo will be your guide.",
         "exploreMuednote": "Explore MUEDnote",
-        "exploreMuedear": "Explore MUEDear"
+        "exploreMuedear": "Explore MUEDear",
+        "exploreMuedlobe": "Explore MUEDlobe"
       },
       "products": {
         "title": "Practice. Remember.",
@@ -39,7 +40,8 @@
         "title": "Ready to create?",
         "description": "Start with your method.",
         "muednote": "Start with MUEDnote",
-        "muedear": "Train with MUEDear"
+        "muedear": "Train with MUEDear",
+        "muedlobe": "Try MUEDlobe"
       },
       "social": {
         "developedBy": "Developed by",
@@ -435,6 +437,66 @@
     "footer": {
       "tagline": "MUEDear — Train your ears while you create."
     }
+  },
+  "meetHoo": {
+    "title": "Meet Hoo",
+    "description": "Your AI music production partner. Hoo adapts to how you think, learn, and create — so its support feels like yours."
+  },
+  "muedlobe": {
+    "hero": {
+      "title": "MUEDlobe",
+      "tagline": "Discover Your Thinking Style.",
+      "description": "7 short games reveal how you process information. Use the results to personalize how Hoo communicates with you.",
+      "pilotBadge": "v0.8 Pilot",
+      "ctaPrimary": "Try Now"
+    },
+    "games": {
+      "title": "7 Short Games",
+      "intro": "Each game helps Hoo understand a different side of you. About 25 minutes total.",
+      "tone-sequence": {
+        "name": "Tone Sequence",
+        "variable": "Memory",
+        "description": "How you hold sounds in mind."
+      },
+      "mental-math": {
+        "name": "Mental Math",
+        "variable": "Memory",
+        "description": "How you juggle numbers."
+      },
+      "symbol-match": {
+        "name": "Symbol Match",
+        "variable": "Tempo",
+        "description": "How fast you spot connections."
+      },
+      "code-fill": {
+        "name": "Code Fill",
+        "variable": "Tempo",
+        "description": "How quickly you decode patterns."
+      },
+      "word-bridge": {
+        "name": "Word Bridge",
+        "variable": "Word Sense",
+        "description": "How you connect words and meaning."
+      },
+      "pattern-complete": {
+        "name": "Pattern Complete",
+        "variable": "Patterns",
+        "description": "How you see the bigger picture."
+      },
+      "focus-flow": {
+        "name": "Focus Flow",
+        "variable": "Focus",
+        "description": "How you stay in the zone."
+      }
+    },
+    "overview": {
+      "title": "How It Works",
+      "step1": "Play 7 short games",
+      "step2": "Hoo learns your style",
+      "step3": "Hoo adapts its support to you"
+    },
+    "disclaimer": "MUEDlobe is not a psychological or medical assessment. It's a calibration tool for personalizing Hoo.",
+    "gameDisclaimer": "These games are not a medical or psychological assessment. They are a calibration tool that helps Hoo adapt its communication style to you. Scores are not diagnostic results — they are tuning parameters for Hoo."
   },
   "support": {
     "title": "Support",

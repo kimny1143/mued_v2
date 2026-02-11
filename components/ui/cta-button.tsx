@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-type CtaVariant = "white" | "indigo" | "amber";
+type CtaVariant = "white" | "indigo" | "amber" | "violet";
 type CtaSize = "default" | "large";
 
 interface CtaButtonProps {
-  /** Color variant: white (primary), indigo (MUEDnote), or amber (MUEDear) */
+  /** Color variant: white (primary), indigo (MUEDnote), amber (MUEDear), or violet (MUEDlobe) */
   variant: CtaVariant;
   /** Button size */
   size?: CtaSize;
@@ -27,6 +27,7 @@ const variantStyles: Record<CtaVariant, string> = {
   white: "bg-white text-black hover:bg-white/90",
   indigo: "bg-transparent border-2 border-indigo-500 text-indigo-400 hover:bg-indigo-500 hover:text-white",
   amber: "bg-transparent border-2 border-amber-500 text-amber-400 hover:bg-amber-500 hover:text-white",
+  violet: "bg-transparent border-2 border-violet-500 text-violet-400 hover:bg-violet-500 hover:text-white",
 };
 
 const sizeStyles: Record<CtaSize, string> = {
