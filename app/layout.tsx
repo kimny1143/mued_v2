@@ -65,7 +65,7 @@ export default async function RootLayout({
 
   return (
     <ClerkProvider>
-      <html lang={locale}>
+      <html lang={locale} className="dark">
         <head>
           {/* SEO: hreflang alternate links for international SEO */}
           <link rel="alternate" hrefLang="en" href="https://mued.jp/en" />
