@@ -8,6 +8,7 @@ import {
   type PatternResponse,
   type PatternCompleteResult,
 } from '@/lib/muedlobe/games/patternComplete';
+import { gameLog } from '@/lib/muedlobe/games/debug';
 
 interface PatternCompleteProps {
   onComplete: (result: PatternCompleteResult) => void;
@@ -35,6 +36,7 @@ export function PatternComplete({ onComplete }: PatternCompleteProps) {
     const responseTime = Date.now() - trialStartRef.current;
     const correct = optionIndex === currentQuestion.correctIndex;
 
+    gameLog('PatternComplete', 'answer', { questionId: currentQuestion.id, difficulty: currentQuestion.difficulty, correct, selectedIndex: optionIndex });
     const response: PatternResponse = {
       questionId: currentQuestion.id,
       correct,
@@ -50,7 +52,9 @@ export function PatternComplete({ onComplete }: PatternCompleteProps) {
     setTimeout(() => {
       if (currentIndex + 1 >= questions.length) {
         setIsFinished(true);
-        onComplete(scorePatternComplete(newResponses));
+        const result = scorePatternComplete(newResponses);
+        gameLog('PatternComplete', 'complete', { totalScore: result.totalScore, correctCount: result.correctCount });
+        onComplete(result);
       } else {
         setCurrentIndex(prev => prev + 1);
         setFeedback(null);

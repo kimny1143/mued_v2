@@ -9,6 +9,7 @@ import {
   type MathResponse,
   type MentalMathResult,
 } from '@/lib/muedlobe/games/mentalMath';
+import { gameLog } from '@/lib/muedlobe/games/debug';
 
 interface MentalMathProps {
   onComplete: (result: MentalMathResult) => void;
@@ -75,6 +76,7 @@ export function MentalMath({ onComplete }: MentalMathProps) {
 
     const responseTime = Date.now() - trialStartRef.current;
     const correct = userAnswer === q.answer;
+    gameLog('MentalMath', 'answer', { level: q.level, userAnswer, expected: q.answer, correct, responseTime });
 
     const response: MathResponse = {
       questionId: q.id,
@@ -93,7 +95,9 @@ export function MentalMath({ onComplete }: MentalMathProps) {
     setTimeout(() => {
       if (currentIndex + 1 >= questions.length) {
         setIsFinished(true);
-        onComplete(scoreMentalMath(newResponses));
+        const result = scoreMentalMath(newResponses);
+        gameLog('MentalMath', 'complete', { totalScore: result.totalScore, correctCount: result.correctCount });
+        onComplete(result);
       } else {
         setCurrentIndex(prev => prev + 1);
         setPhase('idle');

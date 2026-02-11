@@ -9,6 +9,7 @@ import {
   type CodeFillTrial,
   type CodeFillResult,
 } from '@/lib/muedlobe/games/codeFill';
+import { gameLog } from '@/lib/muedlobe/games/debug';
 
 interface CodeFillProps {
   onComplete: (result: CodeFillResult) => void;
@@ -38,7 +39,9 @@ export function CodeFill({ onComplete }: CodeFillProps) {
     setIsRunning(false);
     setIsFinished(true);
     if (timerRef.current) clearInterval(timerRef.current);
-    onComplete(scoreCodeFill(completedTrials));
+    const result = scoreCodeFill(completedTrials);
+    gameLog('CodeFill', 'complete', { correct: result.correct, incorrect: result.incorrect, rawScore: result.rawScore });
+    onComplete(result);
   }, [onComplete]);
 
   useEffect(() => {
@@ -56,6 +59,7 @@ export function CodeFill({ onComplete }: CodeFillProps) {
     if (!currentTrial || !isRunning) return;
     const responseTime = Date.now() - trialStartRef.current;
     const isCorrect = symbol === currentTrial.correctSymbol;
+    gameLog('CodeFill', 'answer', { digit: currentTrial.digit, selected: symbol, expected: currentTrial.correctSymbol, correct: isCorrect, responseTime });
     const completed: CodeFillTrial = {
       ...currentTrial,
       userAnswer: symbol,

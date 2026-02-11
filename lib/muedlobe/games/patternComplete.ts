@@ -9,6 +9,8 @@
  * hard/expert は毎問異なる変換ルールを使用（ルール学習転移を防止）
  */
 
+import { gameLog } from './debug';
+
 export type PatternDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
 
 export interface PatternQuestion {
@@ -431,6 +433,7 @@ function generateExpert4(id: number): PatternQuestion {
 // ========================================
 
 export function scorePatternComplete(responses: PatternResponse[]): PatternCompleteResult {
+  gameLog('PatternComplete', 'scorePatternComplete:input', { responseCount: responses.length });
   let totalScore = 0;
   const breakdown: Record<PatternDifficulty, { correct: number; total: number }> = {
     easy: { correct: 0, total: 0 },
@@ -447,10 +450,12 @@ export function scorePatternComplete(responses: PatternResponse[]): PatternCompl
     }
   }
 
-  return {
+  const result = {
     totalScore: Math.round(totalScore * 100) / 100,
     correctCount: responses.filter(r => r.correct).length,
     totalQuestions: responses.length,
     difficultyBreakdown: breakdown,
   };
+  gameLog('PatternComplete', 'scorePatternComplete:output', { totalScore: result.totalScore, correctCount: result.correctCount });
+  return result;
 }

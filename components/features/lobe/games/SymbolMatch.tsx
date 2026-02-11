@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { generateTrial, scoreSymbolMatch } from '@/lib/muedlobe/games/symbolMatch';
 import { SYMBOL_MATCH_CONFIG } from '@/lib/muedlobe/constants';
 import type { SymbolMatchTrial, SymbolMatchResult } from '@/types/muedlobe';
+import { gameLog } from '@/lib/muedlobe/games/debug';
 
 interface SymbolMatchProps {
   onComplete: (result: SymbolMatchResult) => void;
@@ -35,6 +36,7 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
     setIsFinished(true);
     if (timerRef.current) clearInterval(timerRef.current);
     const result = scoreSymbolMatch(completedTrials);
+    gameLog('SymbolMatch', 'complete', { correct: result.correct, incorrect: result.incorrect, rawScore: result.rawScore });
     onComplete(result);
   }, [onComplete]);
 
@@ -62,10 +64,12 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
     if (!currentTrial || !isRunning) return;
 
     const responseTime = Date.now() - trialStartRef.current;
+    const isCorrect = answer === currentTrial.hasTarget;
+    gameLog('SymbolMatch', 'answer', { answer, hasTarget: currentTrial.hasTarget, correct: isCorrect, responseTime });
     const completed: SymbolMatchTrial = {
       ...currentTrial,
       userAnswer: answer,
-      correct: answer === currentTrial.hasTarget,
+      correct: isCorrect,
       responseTime,
     };
 

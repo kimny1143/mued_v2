@@ -8,6 +8,7 @@ import {
   type WordBridgeTrial,
   type WordBridgeResult,
 } from '@/lib/muedlobe/games/wordBridge';
+import { gameLog } from '@/lib/muedlobe/games/debug';
 
 interface WordBridgeProps {
   onComplete: (result: WordBridgeResult) => void;
@@ -28,6 +29,7 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
 
   const handleAnswer = useCallback((score: number) => {
     const responseTime = Date.now() - trialStartRef.current;
+    gameLog('WordBridge', 'answer', { questionId: shuffledQuestions[currentIndex].id, score, responseTime });
     const trial: WordBridgeTrial = {
       questionId: shuffledQuestions[currentIndex].id,
       selectedScore: score,
@@ -39,7 +41,9 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
 
     if (currentIndex + 1 >= shuffledQuestions.length) {
       setIsFinished(true);
-      onComplete(scoreWordBridge(newTrials));
+      const result = scoreWordBridge(newTrials);
+      gameLog('WordBridge', 'complete', { totalScore: result.totalScore, maxScore: result.maxScore });
+      onComplete(result);
     } else {
       setCurrentIndex(prev => prev + 1);
       trialStartRef.current = Date.now();

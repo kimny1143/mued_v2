@@ -7,6 +7,7 @@
 
 import { SYMBOLS, SYMBOL_MATCH_CONFIG, SYMBOL_CONFUSABLES } from '../constants';
 import type { SymbolMatchTrial, SymbolMatchResult } from '@/types/muedlobe';
+import { gameLog } from './debug';
 
 /** Pick n random unique items from array */
 function pickRandom<T>(arr: T[], n: number): T[] {
@@ -64,6 +65,7 @@ export function generateTrial(): SymbolMatchTrial {
 
 /** Score the completed game */
 export function scoreSymbolMatch(trials: SymbolMatchTrial[]): SymbolMatchResult {
+  gameLog('SymbolMatch', 'scoreSymbolMatch:input', { trialCount: trials.length });
   const answered = trials.filter(t => t.userAnswer !== null);
   let correct = 0;
   let incorrect = 0;
@@ -76,10 +78,12 @@ export function scoreSymbolMatch(trials: SymbolMatchTrial[]): SymbolMatchResult 
     }
   }
 
-  return {
+  const result = {
     correct,
     incorrect,
     totalAttempted: answered.length,
     rawScore: correct - incorrect,
   };
+  gameLog('SymbolMatch', 'scoreSymbolMatch:output', result);
+  return result;
 }

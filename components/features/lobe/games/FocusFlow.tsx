@@ -9,6 +9,7 @@ import {
   type FocusTrial,
   type FocusFlowResult,
 } from '@/lib/muedlobe/games/focusFlow';
+import { gameLog } from '@/lib/muedlobe/games/debug';
 
 interface FocusFlowProps {
   onComplete: (result: FocusFlowResult) => void;
@@ -65,6 +66,7 @@ export function FocusFlow({ onComplete }: FocusFlowProps) {
     if (trial) {
       trial.responded = true;
       trial.responseTime = Date.now() - stimulusStartRef.current;
+      gameLog('FocusFlow', 'response', { index: idx, isTarget: trial.isTarget, responseTime: trial.responseTime });
     }
   }, []);
 
@@ -75,6 +77,7 @@ export function FocusFlow({ onComplete }: FocusFlowProps) {
     if (idx >= sequence.length) {
       // Game over
       const result = scoreFocusFlow(trialsRef.current);
+      gameLog('FocusFlow', 'complete', { rawScore: result.rawScore, dPrime: result.dPrime, hits: result.hits, misses: result.misses });
       resultRef.current = result;
       setIsFinished(true);
       setCurrentSymbol(null);

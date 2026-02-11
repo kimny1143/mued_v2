@@ -5,6 +5,8 @@
  * 2つの単語の共通点を4択から選ぶ。
  */
 
+import { gameLog } from './debug';
+
 export interface WordBridgeQuestion {
   id: number;
   wordA: string;
@@ -157,12 +159,15 @@ export function shuffleOptions(question: WordBridgeQuestion): WordBridgeQuestion
 
 /** Score the completed game */
 export function scoreWordBridge(trials: WordBridgeTrial[]): WordBridgeResult {
+  gameLog('WordBridge', 'scoreWordBridge:input', { trialCount: trials.length });
   const answered = trials.filter(t => t.selectedScore !== null);
   const totalScore = answered.reduce((sum, t) => sum + (t.selectedScore ?? 0), 0);
 
-  return {
+  const result = {
     totalScore,
     maxScore: 24, // 12 questions × 2 points
     questionsAnswered: answered.length,
   };
+  gameLog('WordBridge', 'scoreWordBridge:output', result);
+  return result;
 }
