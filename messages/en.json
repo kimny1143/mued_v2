@@ -496,7 +496,93 @@
       "step3": "Hoo adapts its support to you"
     },
     "disclaimer": "MUEDlobe is not a psychological or medical assessment. It's a calibration tool for personalizing Hoo.",
-    "gameDisclaimer": "These games are not a medical or psychological assessment. They are a calibration tool that helps Hoo adapt its communication style to you. Scores are not diagnostic results — they are tuning parameters for Hoo."
+    "gameDisclaimer": "These games are not a medical or psychological assessment. They are a calibration tool that helps Hoo adapt its communication style to you. Scores are not diagnostic results — they are tuning parameters for Hoo.",
+    "gameUI": {
+      "common": {
+        "start": "Start",
+        "complete": "Complete!",
+        "correct": "Correct!",
+        "incorrect": "Incorrect",
+        "score": "Score",
+        "rawScore": "Raw Score",
+        "submit": "Submit",
+        "undo": "Undo",
+        "listening": "Listening...",
+        "profileCalculated": "Profile Calculated",
+        "profileCalculatedDesc": "All 7 games complete. Your thinking style has been generated.",
+        "resultSaved": "Result Saved",
+        "returning": "Returning to game list...",
+        "savedLocally": "Saved Locally",
+        "savedLocallyDesc": "Your result will sync when you're back online.",
+        "failedToSave": "Failed to Save",
+        "failedToSaveDesc": "Your result could not be saved. Please try again.",
+        "retry": "Retry",
+        "backToGames": "Back to Games",
+        "offlineSynced": "{count} offline result(s) synced"
+      },
+      "toneSequence": {
+        "title": "Tone Sequence",
+        "description": "Listen to a sequence of notes and reproduce them in the specified order. There are 3 modes: Forward, Backward, and Sequencing.",
+        "forward": "Forward",
+        "backward": "Backward",
+        "sequencing": "Sequencing",
+        "mode": "Mode {current}/3",
+        "length": "Length",
+        "playSequence": "Play Sequence",
+        "tapNotes": "Tap the notes ({current}/{total})"
+      },
+      "mentalMath": {
+        "title": "Mental Math",
+        "description": "Answer mental math questions read aloud. Questions are not repeated. 8 levels × 3 questions = 24 total.",
+        "audioWarning": "Uses audio. Please set an appropriate volume.",
+        "level": "Level {level}",
+        "playQuestion": "Play Question",
+        "time": "Time",
+        "answer": "Answer",
+        "correctCount": "{correct} / {total} correct"
+      },
+      "symbolMatch": {
+        "title": "Symbol Match",
+        "description": "If the target symbol appears in the comparison group below, select \"Present\"; if not, select \"Absent\". Time limit: 2 minutes.",
+        "keyboardHint": "Keyboard: ← or A = Present / → or D = Absent",
+        "target": "Target",
+        "comparison": "Comparison",
+        "present": "Present",
+        "absent": "Absent"
+      },
+      "codeFill": {
+        "title": "Code Fill",
+        "description": "When a number appears, look at the reference table and click the matching symbol. Time limit: 2 minutes.",
+        "answered": "{count} answered"
+      },
+      "wordBridge": {
+        "title": "Word Bridge",
+        "description": "Choose what two words have in common from 4 options. More abstract answers score higher. 12 questions total.",
+        "and": "and",
+        "question": "What do these two have in common?",
+        "points": "{score} / {max} points"
+      },
+      "patternComplete": {
+        "title": "Pattern Complete",
+        "description": "Read the pattern in a 3×3 matrix and choose the missing bottom-right piece from 6 options. 20 questions total.",
+        "correctCount": "{correct} / {total} correct",
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard",
+        "expert": "Expert"
+      },
+      "focusFlow": {
+        "title": "Focus Flow",
+        "description": "Symbols appear one after another. Click (or press Space) immediately when you see the target \"{target}\". Do not respond to other symbols.",
+        "duration": "About 3 minutes. Measures your focus.",
+        "targetLabel": "Target",
+        "startingIn": "Starting in 3 seconds...",
+        "hitRate": "Hit Rate",
+        "falseAlarm": "False Alarm",
+        "rtCv": "RT CV",
+        "clickOrSpace": "Click or press Space when you see {target}"
+      }
+    }
   },
   "support": {
     "title": "Support",

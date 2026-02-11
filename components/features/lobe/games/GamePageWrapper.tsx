@@ -2,30 +2,27 @@
 
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { GameType } from '@/types/muedlobe';
-import { GAME_META } from '@/lib/muedlobe/constants';
+import { GAME_META, VARIABLE_DISPLAY } from '@/lib/muedlobe/constants';
 import { savePendingResult, syncPendingResults, getPendingResults } from '@/lib/muedlobe/offline-sync';
 
-/** User-facing display names (non-clinical) */
-const VARIABLE_DISPLAY: Record<string, string> = {
-  WM: 'Memory',
-  PS: 'Tempo',
-  VC: 'Word Sense',
-  PR: 'Patterns',
-  ATT: 'Focus',
-};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type GameResult = Record<string, any>;
 
 interface GamePageWrapperProps {
   gameType: GameType;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  children: (props: { onComplete: (result: any) => void }) => React.ReactNode;
+  children: (props: { onComplete: (result: GameResult) => void }) => React.ReactNode;
 }
 
 export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
   const router = useRouter();
   const meta = GAME_META[gameType];
+  const t = useTranslations('muedlobe.gameUI.common');
+  const tLobe = useTranslations('muedlobe');
   const [status, setStatus] = useState<'playing' | 'saving' | 'error' | 'saved' | 'saved-offline' | 'profile-ready'>('playing');
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<GameResult | null>(null);
 
   // Auto-sync pending results when coming online
   useEffect(() => {
@@ -35,7 +32,7 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
 
       const synced = await syncPendingResults();
       if (synced > 0) {
-        setSyncNotice(`${synced} offline result${synced > 1 ? 's' : ''} synced`);
+        setSyncNotice(t('offlineSynced', { count: synced }));
         setTimeout(() => setSyncNotice(null), 3000);
       }
     };
@@ -44,9 +41,10 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
     // Also try on mount in case we're already online with pending results
     handleOnline();
     return () => window.removeEventListener('online', handleOnline);
-  }, []);
+  }, [t]);
 
-  const handleComplete = useCallback(async (result: Record<string, unknown>) => {
+  const handleComplete = useCallback(async (result: GameResult) => {
+    setLastResult(result);
     setStatus('saving');
 
     try {
@@ -105,10 +103,10 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-3">
               <p className="text-lg font-semibold text-white">
-                Profile Calculated
+                {t('profileCalculated')}
               </p>
               <p className="text-sm text-white/50">
-                All 7 games complete. Your thinking style has been generated.
+                {t('profileCalculatedDesc')}
               </p>
             </div>
           </div>
@@ -116,10 +114,10 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-3">
               <p className="text-lg font-semibold text-white">
-                Result Saved
+                {t('resultSaved')}
               </p>
               <p className="text-sm text-white/50">
-                Returning to game list...
+                {t('returning')}
               </p>
             </div>
           </div>
@@ -127,10 +125,10 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-3">
               <p className="text-lg font-semibold text-violet-300">
-                Saved Locally
+                {t('savedLocally')}
               </p>
               <p className="text-sm text-white/50">
-                Your result will sync when you&apos;re back online.
+                {t('savedLocallyDesc')}
               </p>
             </div>
           </div>
@@ -138,17 +136,25 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-4">
               <p className="text-lg font-semibold text-red-400">
-                Failed to Save
+                {t('failedToSave')}
               </p>
               <p className="text-sm text-white/50">
-                Your result could not be saved. Please try again.
+                {t('failedToSaveDesc')}
               </p>
               <div className="flex gap-3 justify-center">
+                {lastResult && (
+                  <button
+                    onClick={() => handleComplete(lastResult)}
+                    className="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+                  >
+                    {t('retry')}
+                  </button>
+                )}
                 <button
                   onClick={() => router.push('/lobe')}
                   className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
                 >
-                  Back to Games
+                  {t('backToGames')}
                 </button>
               </div>
             </div>
@@ -161,7 +167,7 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
       {status === 'playing' && (
         <footer className="border-t border-white/5 px-6 py-3">
           <p className="max-w-4xl mx-auto text-[10px] text-white/20 text-center leading-relaxed">
-            These games are not a medical or psychological assessment. They are a calibration tool that helps Hoo adapt its communication style to you. Scores are not diagnostic results — they are tuning parameters for Hoo.
+            {tLobe('gameDisclaimer')}
           </p>
         </footer>
       )}

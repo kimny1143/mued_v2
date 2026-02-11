@@ -1,6 +1,7 @@
 {
   "name": "MUEDlobe - Thinking Style",
   "short_name": "MUEDlobe",
+  "description": "Discover your thinking style through 7 short games. A calibration tool for personalizing Hoo.",
   "start_url": "/lobe",
   "scope": "/lobe",
   "display": "standalone",

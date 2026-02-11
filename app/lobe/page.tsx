@@ -1,17 +1,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { GAME_META, GAME_ORDER } from '@/lib/muedlobe/constants';
+import { GAME_META, GAME_ORDER, VARIABLE_DISPLAY } from '@/lib/muedlobe/constants';
 import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
-
-/** User-facing display names (non-clinical) */
-const VARIABLE_DISPLAY: Record<string, string> = {
-  WM: 'Memory',
-  PS: 'Tempo',
-  VC: 'Word Sense',
-  PR: 'Patterns',
-  ATT: 'Focus',
-};
 
 export default async function LobePage() {
   const { userId } = await auth();

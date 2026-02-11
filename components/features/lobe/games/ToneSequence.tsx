@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   TONE_NOTES,
   TONE_MODES,
@@ -20,6 +21,8 @@ interface ToneSequenceProps {
 type Phase = 'idle' | 'playing' | 'answering' | 'feedback';
 
 export function ToneSequence({ onComplete }: ToneSequenceProps) {
+  const t = useTranslations('muedlobe.gameUI.toneSequence');
+  const tc = useTranslations('muedlobe.gameUI.common');
   const [isStarted, setIsStarted] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
@@ -182,13 +185,13 @@ export function ToneSequence({ onComplete }: ToneSequenceProps) {
     return (
       <div className="flex flex-col items-center justify-center gap-8 py-16">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Tone Sequence</h2>
+          <h2 className="text-2xl font-bold text-white">{t('title')}</h2>
           <p className="text-white/60 max-w-md">
-            音の列を聴いて、指定された順序で再現してください。Forward → Backward → Sequencing の3モードがあります。
+            {t('description')}
           </p>
         </div>
         <button onClick={startGame} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors">
-          Start
+          {tc('start')}
         </button>
       </div>
     );
@@ -199,23 +202,23 @@ export function ToneSequence({ onComplete }: ToneSequenceProps) {
     const result = scoreToneSequence(s.forward, s.backward, s.sequencing);
     return (
       <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">Complete!</h2>
+        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
         <div className="space-y-2 text-center">
           <div className="text-4xl font-bold text-white">{result.rawScore.toFixed(1)}</div>
-          <div className="text-sm text-white/50">Raw Score</div>
+          <div className="text-sm text-white/50">{tc('rawScore')}</div>
         </div>
         <div className="flex gap-6 text-sm text-white/60">
-          <div>Forward: <span className="text-white">{s.forward}</span></div>
-          <div>Backward: <span className="text-white">{s.backward}</span></div>
-          <div>Sequencing: <span className="text-white">{s.sequencing}</span></div>
+          <div>{t('forward')}: <span className="text-white">{s.forward}</span></div>
+          <div>{t('backward')}: <span className="text-white">{s.backward}</span></div>
+          <div>{t('sequencing')}: <span className="text-white">{s.sequencing}</span></div>
         </div>
       </div>
     );
   }
 
-  const modeLabel = currentMode.mode === 'forward' ? 'Forward（順方向）'
-    : currentMode.mode === 'backward' ? 'Backward（逆方向）'
-    : 'Sequencing（低→高順）';
+  const modeLabel = currentMode.mode === 'forward' ? t('forward')
+    : currentMode.mode === 'backward' ? t('backward')
+    : t('sequencing');
 
   const expectedLength = sequenceRef.current.length > 0
     ? getExpectedAnswer(sequenceRef.current, currentMode.mode).length
@@ -225,31 +228,31 @@ export function ToneSequence({ onComplete }: ToneSequenceProps) {
     <div className="flex flex-col items-center gap-6 py-8">
       {/* Mode & Progress */}
       <div className="text-center space-y-1">
-        <div className="text-xs text-indigo-400 font-mono">Mode {displayState.modeIndex + 1}/3</div>
+        <div className="text-xs text-indigo-400 font-mono">{t('mode', { current: displayState.modeIndex + 1 })}</div>
         <div className="text-lg font-semibold text-white">{modeLabel}</div>
-        <div className="text-sm text-white/40">Length: {displayState.currentLength}</div>
+        <div className="text-sm text-white/40">{t('length')}: {displayState.currentLength}</div>
       </div>
 
       {/* Phase indicator */}
       <div className="h-8 flex items-center">
         {displayState.phase === 'idle' && (
           <button onClick={playCurrentSequence} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm transition-colors">
-            Play Sequence
+            {t('playSequence')}
           </button>
         )}
         {displayState.phase === 'playing' && (
-          <div className="text-white/60 animate-pulse">Listening...</div>
+          <div className="text-white/60 animate-pulse">{tc('listening')}</div>
         )}
         {displayState.phase === 'answering' && (
           <div className="text-white/60">
-            Tap the notes ({displayState.userInput.length}/{expectedLength})
+            {t('tapNotes', { current: displayState.userInput.length, total: expectedLength })}
           </div>
         )}
         {displayState.phase === 'feedback' && feedback === 'correct' && (
-          <div className="text-green-400">Correct!</div>
+          <div className="text-green-400">{tc('correct')}</div>
         )}
         {displayState.phase === 'feedback' && feedback === 'wrong' && (
-          <div className="text-red-400">Incorrect</div>
+          <div className="text-red-400">{tc('incorrect')}</div>
         )}
       </div>
 
@@ -262,7 +265,7 @@ export function ToneSequence({ onComplete }: ToneSequenceProps) {
             </span>
           ))}
           <button onClick={undoLastNote} className="px-2 py-1 text-white/40 hover:text-white/70 text-xs transition-colors">
-            Undo
+            {tc('undo')}
           </button>
         </div>
       )}

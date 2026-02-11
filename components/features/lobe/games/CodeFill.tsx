@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   CODE_PAIRS,
   CODE_FILL_TIME_LIMIT_MS,
@@ -16,6 +17,8 @@ interface CodeFillProps {
 }
 
 export function CodeFill({ onComplete }: CodeFillProps) {
+  const t = useTranslations('muedlobe.gameUI.codeFill');
+  const tc = useTranslations('muedlobe.gameUI.common');
   const [trials, setTrials] = useState<CodeFillTrial[]>([]);
   const [currentTrial, setCurrentTrial] = useState<CodeFillTrial | null>(null);
   const [timeLeft, setTimeLeft] = useState(CODE_FILL_TIME_LIMIT_MS);
@@ -79,13 +82,13 @@ export function CodeFill({ onComplete }: CodeFillProps) {
     return (
       <div className="flex flex-col items-center justify-center gap-8 py-16">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Code Fill</h2>
+          <h2 className="text-2xl font-bold text-white">{t('title')}</h2>
           <p className="text-white/60 max-w-md">
-            数字が表示されたら、対応表を見て正しい記号をクリックしてください。制限時間は2分です。
+            {t('description')}
           </p>
         </div>
         <button onClick={startGame} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors">
-          Start
+          {tc('start')}
         </button>
       </div>
     );
@@ -95,19 +98,19 @@ export function CodeFill({ onComplete }: CodeFillProps) {
     const result = scoreCodeFill(trials);
     return (
       <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">Complete!</h2>
+        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
         <div className="grid grid-cols-3 gap-6 text-center">
           <div>
             <div className="text-3xl font-bold text-green-400">{result.correct}</div>
-            <div className="text-sm text-white/50">Correct</div>
+            <div className="text-sm text-white/50">{tc('correct')}</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-red-400">{result.incorrect}</div>
-            <div className="text-sm text-white/50">Incorrect</div>
+            <div className="text-sm text-white/50">{tc('incorrect')}</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-white">{result.rawScore.toFixed(1)}</div>
-            <div className="text-sm text-white/50">Score</div>
+            <div className="text-sm text-white/50">{tc('score')}</div>
           </div>
         </div>
       </div>
@@ -118,7 +121,7 @@ export function CodeFill({ onComplete }: CodeFillProps) {
     <div className="flex flex-col items-center gap-8 py-8">
       <div className="flex items-center gap-6 text-white/60">
         <span className="text-lg font-mono">{formatTime(timeLeft)}</span>
-        <span className="text-sm">{trials.length} answered</span>
+        <span className="text-sm">{t('answered', { count: trials.length })}</span>
       </div>
 
       {/* Reference table */}

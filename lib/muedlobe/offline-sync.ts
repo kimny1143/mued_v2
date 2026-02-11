@@ -8,6 +8,7 @@
 import type { GameType } from "@/types/muedlobe";
 
 const STORAGE_KEY = "muedlobe_pending_results";
+const MAX_PENDING_RESULTS = 50;
 
 interface PendingResult {
   gameType: GameType;
@@ -22,6 +23,10 @@ export function savePendingResult(
   calculatedScore: Record<string, unknown>,
 ): void {
   const pending = getPendingResults();
+  if (pending.length >= MAX_PENDING_RESULTS) {
+    // Drop oldest to stay within limit
+    pending.shift();
+  }
   pending.push({
     gameType,
     rawData,

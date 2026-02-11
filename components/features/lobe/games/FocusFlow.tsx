@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   FOCUS_SYMBOLS,
   FOCUS_CONFIG,
@@ -16,6 +17,8 @@ interface FocusFlowProps {
 }
 
 export function FocusFlow({ onComplete }: FocusFlowProps) {
+  const t = useTranslations('muedlobe.gameUI.focusFlow');
+  const tc = useTranslations('muedlobe.gameUI.common');
   const [isStarted, setIsStarted] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [currentSymbol, setCurrentSymbol] = useState<string | null>(null);
@@ -152,14 +155,14 @@ export function FocusFlow({ onComplete }: FocusFlowProps) {
     return (
       <div className="flex flex-col items-center justify-center gap-8 py-16">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Focus Flow</h2>
+          <h2 className="text-2xl font-bold text-white">{t('title')}</h2>
           <p className="text-white/60 max-w-md">
-            画面に記号が次々と表示されます。ターゲット「{FOCUS_SYMBOLS[0]}」が出たらすぐにクリック（またはスペースキー）してください。他の記号には反応しないでください。
+            {t('description', { target: FOCUS_SYMBOLS[0] })}
           </p>
-          <p className="text-xs text-white/40">約3分間。集中力を測定します。</p>
+          <p className="text-xs text-white/40">{t('duration')}</p>
         </div>
         <button onClick={startGame} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors">
-          Start
+          {tc('start')}
         </button>
       </div>
     );
@@ -169,16 +172,16 @@ export function FocusFlow({ onComplete }: FocusFlowProps) {
     const r = resultRef.current;
     return (
       <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">Complete!</h2>
+        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
         <div className="text-center space-y-1">
           <div className="text-4xl font-bold text-white">{r.rawScore}</div>
-          <div className="text-sm text-white/50">Raw Score</div>
+          <div className="text-sm text-white/50">{tc('rawScore')}</div>
         </div>
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm text-white/60">
-          <div>Hit Rate: <span className="text-white">{(r.hitRate * 100).toFixed(0)}%</span></div>
-          <div>False Alarm: <span className="text-white">{(r.falseAlarmRate * 100).toFixed(0)}%</span></div>
+          <div>{t('hitRate')}: <span className="text-white">{(r.hitRate * 100).toFixed(0)}%</span></div>
+          <div>{t('falseAlarm')}: <span className="text-white">{(r.falseAlarmRate * 100).toFixed(0)}%</span></div>
           <div>d&apos;: <span className="text-white">{r.dPrime}</span></div>
-          <div>RT CV: <span className="text-white">{r.rtCv}</span></div>
+          <div>{t('rtCv')}: <span className="text-white">{r.rtCv}</span></div>
         </div>
       </div>
     );
@@ -187,9 +190,9 @@ export function FocusFlow({ onComplete }: FocusFlowProps) {
   if (showTarget) {
     return (
       <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <div className="text-white/60 text-sm">Target:</div>
+        <div className="text-white/60 text-sm">{t('targetLabel')}:</div>
         <div className="text-8xl text-indigo-400">{FOCUS_SYMBOLS[0]}</div>
-        <div className="text-white/40 text-sm">Starting in 3 seconds...</div>
+        <div className="text-white/40 text-sm">{t('startingIn')}</div>
       </div>
     );
   }
@@ -219,7 +222,7 @@ export function FocusFlow({ onComplete }: FocusFlowProps) {
       </div>
 
       <div className="text-xs text-white/20">
-        Click or press Space when you see {FOCUS_SYMBOLS[0]}
+        {t('clickOrSpace', { target: FOCUS_SYMBOLS[0] })}
       </div>
     </div>
   );
