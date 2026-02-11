@@ -497,6 +497,17 @@
     },
     "disclaimer": "MUEDlobe is not a psychological or medical assessment. It's a calibration tool for personalizing Hoo.",
     "gameDisclaimer": "These games are not a medical or psychological assessment. They are a calibration tool that helps Hoo adapt its communication style to you. Scores are not diagnostic results — they are tuning parameters for Hoo.",
+    "list": {
+      "subtitle": "Discover your thinking style through 7 short games.",
+      "progress": "Progress",
+      "progressLabel": "{completed} of {total} games completed",
+      "games": "Games",
+      "done": "Done",
+      "viewResults": "View Your Thinking Style",
+      "profileCalculating": "Profile is being calculated.",
+      "checkResults": "Check results",
+      "completeAll": "Complete all 7 games to discover your thinking style."
+    },
     "gameUI": {
       "common": {
         "start": "Start",

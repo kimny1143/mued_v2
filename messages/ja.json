@@ -497,6 +497,17 @@
     },
     "disclaimer": "MUEDlobeは心理検査ではありません。Hooのパーソナライズのためのツールです。",
     "gameDisclaimer": "本ゲームは医学的・心理学的な検査ではなく、AIアシスタント「Hoo」の応答スタイルを最適化するためのキャリブレーションツールです。スコアは診断結果ではなく、Hoo専用の調整パラメータです。",
+    "list": {
+      "subtitle": "7つのショートゲームで、あなたの思考スタイルを発見しよう。",
+      "progress": "進捗",
+      "progressLabel": "{total}ゲーム中{completed}完了",
+      "games": "ゲーム",
+      "done": "完了",
+      "viewResults": "思考スタイルを見る",
+      "profileCalculating": "プロフィールを生成中です。",
+      "checkResults": "結果を確認",
+      "completeAll": "全7ゲームをプレイして、あなたの思考スタイルを発見しよう。"
+    },
     "gameUI": {
       "common": {
         "start": "スタート",

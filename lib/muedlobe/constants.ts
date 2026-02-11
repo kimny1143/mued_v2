@@ -97,6 +97,14 @@ export const VARIABLE_DISPLAY: Record<string, string> = {
   ATT: 'Focus',
 };
 
+export const VARIABLE_COLORS: Record<string, string> = {
+  WM: 'var(--color-lobe-memory)',
+  PS: 'var(--color-lobe-tempo)',
+  VC: 'var(--color-lobe-wordsense)',
+  PR: 'var(--color-lobe-patterns)',
+  ATT: 'var(--color-lobe-focus)',
+};
+
 // ========================================
 // Symbol Match (PS-1) Constants
 // ========================================

@@ -47,6 +47,13 @@
   --color-success: #08762c;
   --color-toggle-handle: #080f17;
 
+  /* MUEDlobe Cognitive Variable Colors */
+  --color-lobe-memory: #6B8FAD;
+  --color-lobe-tempo: #AD8F6B;
+  --color-lobe-wordsense: #6BAD7E;
+  --color-lobe-patterns: #AD6B6B;
+  --color-lobe-focus: #ADA06B;
+
   /* Border Radius */
   --radius-sm: 8px;
   --radius-md: 12px;

@@ -6,6 +6,8 @@ import { generateTrial, scoreSymbolMatch } from '@/lib/muedlobe/games/symbolMatc
 import { SYMBOL_MATCH_CONFIG } from '@/lib/muedlobe/constants';
 import type { SymbolMatchTrial, SymbolMatchResult } from '@/types/muedlobe';
 import { gameLog } from '@/lib/muedlobe/games/debug';
+import { SymbolMatchSpecimen } from '@/components/features/lobe/specimens/SymbolMatchSpecimen';
+import { GAME_META } from '@/lib/muedlobe/constants';
 
 interface SymbolMatchProps {
   onComplete: (result: SymbolMatchResult) => void;
@@ -106,23 +108,30 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
 
   // Pre-game screen
   if (!isRunning && !isFinished) {
+    const meta = GAME_META['symbol-match'];
     return (
-      <div className="flex flex-col items-center justify-center gap-8 py-16">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">{t('title')}</h2>
-          <p className="text-white/60 max-w-md">
+      <div className="flex flex-col md:flex-row items-center justify-center gap-10 py-16">
+        <div className="flex items-center justify-center md:w-2/5">
+          <SymbolMatchSpecimen />
+        </div>
+        <div className="flex flex-col items-center md:items-start gap-6 md:w-3/5">
+          <div className="text-center md:text-left space-y-1">
+            <h2 className="text-xl font-semibold text-white">{t('title')}</h2>
+            <p className="text-xs text-white/30">{meta.duration}</p>
+          </div>
+          <p className="text-white/50 text-sm max-w-md text-center md:text-left">
             {t('description')}
           </p>
-          <div className="text-sm text-white/40 space-y-1">
-            <p>{t('keyboardHint')}</p>
-          </div>
+          <p className="text-xs text-white/30 text-center md:text-left">
+            {t('keyboardHint')}
+          </p>
+          <button
+            onClick={startGame}
+            className="px-10 py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors"
+          >
+            {tc('start')}
+          </button>
         </div>
-        <button
-          onClick={startGame}
-          className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors"
-        >
-          {tc('start')}
-        </button>
       </div>
     );
   }

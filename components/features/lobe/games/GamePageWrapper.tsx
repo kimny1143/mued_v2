@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { GameType } from '@/types/muedlobe';
-import { GAME_META, VARIABLE_DISPLAY } from '@/lib/muedlobe/constants';
+import { GAME_META, VARIABLE_DISPLAY, VARIABLE_COLORS } from '@/lib/muedlobe/constants';
 import { savePendingResult, syncPendingResults, getPendingResults } from '@/lib/muedlobe/offline-sync';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +19,8 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
   const router = useRouter();
   const meta = GAME_META[gameType];
   const t = useTranslations('muedlobe.gameUI.common');
-  const tLobe = useTranslations('muedlobe');
+  const tGame = useTranslations(`muedlobe.games.${gameType}`);
+  const accentColor = VARIABLE_COLORS[meta.variable] ?? 'var(--color-lobe-memory)';
   const [status, setStatus] = useState<'playing' | 'saving' | 'error' | 'saved' | 'saved-offline' | 'profile-ready'>('playing');
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<GameResult | null>(null);
@@ -81,12 +82,15 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
   }, [gameType, router]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex flex-col">
+    <div className="min-h-screen bg-[#0a0a0f] flex flex-col" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
       <header className="border-b border-white/5 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <span className="text-xs text-violet-400 font-mono">{VARIABLE_DISPLAY[meta.variable] ?? meta.variable}</span>
-            <h1 className="text-lg font-semibold text-white">{meta.name}</h1>
+          <div className="flex items-stretch gap-3">
+            <div className="w-[2px] rounded-full" style={{ backgroundColor: accentColor }} />
+            <div>
+              <span className="text-xs" style={{ color: accentColor }}>{VARIABLE_DISPLAY[meta.variable] ?? meta.variable}</span>
+              <h1 className="text-lg font-semibold text-white">{tGame('name')}</h1>
+            </div>
           </div>
         </div>
       </header>
@@ -164,13 +168,6 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
         )}
       </main>
 
-      {status === 'playing' && (
-        <footer className="border-t border-white/5 px-6 py-3">
-          <p className="max-w-4xl mx-auto text-[10px] text-white/20 text-center leading-relaxed">
-            {tLobe('gameDisclaimer')}
-          </p>
-        </footer>
-      )}
     </div>
   );
 }

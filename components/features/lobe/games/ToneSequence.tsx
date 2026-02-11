@@ -13,6 +13,8 @@ import {
   type ToneSequenceResult,
 } from '@/lib/muedlobe/games/toneSequence';
 import { gameLog } from '@/lib/muedlobe/games/debug';
+import { ToneSequenceSpecimen } from '@/components/features/lobe/specimens/ToneSequenceSpecimen';
+import { GAME_META } from '@/lib/muedlobe/constants';
 
 interface ToneSequenceProps {
   onComplete: (result: ToneSequenceResult) => void;
@@ -182,17 +184,24 @@ export function ToneSequence({ onComplete }: ToneSequenceProps) {
   }, [syncDisplay]);
 
   if (!isStarted) {
+    const meta = GAME_META['tone-sequence'];
     return (
-      <div className="flex flex-col items-center justify-center gap-8 py-16">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">{t('title')}</h2>
-          <p className="text-white/60 max-w-md">
+      <div className="flex flex-col md:flex-row items-center justify-center gap-10 py-16">
+        <div className="flex items-center justify-center md:w-2/5">
+          <ToneSequenceSpecimen />
+        </div>
+        <div className="flex flex-col items-center md:items-start gap-6 md:w-3/5">
+          <div className="text-center md:text-left space-y-1">
+            <h2 className="text-xl font-semibold text-white">{t('title')}</h2>
+            <p className="text-xs text-white/30">{meta.duration}</p>
+          </div>
+          <p className="text-white/50 text-sm max-w-md text-center md:text-left">
             {t('description')}
           </p>
+          <button onClick={startGame} className="px-10 py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors">
+            {tc('start')}
+          </button>
         </div>
-        <button onClick={startGame} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors">
-          {tc('start')}
-        </button>
       </div>
     );
   }
