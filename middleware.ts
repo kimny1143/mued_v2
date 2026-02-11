@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { locales, defaultLocale, type Locale } from "@/lib/i18n/config";
+import { locales, defaultLocale, type Locale, getPreferredLocale } from "@/lib/i18n/config";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -29,31 +29,6 @@ function getLocaleFromPath(pathname: string): Locale | null {
     return potentialLocale as Locale;
   }
   return null;
-}
-
-// Get preferred locale from Accept-Language header
-function getPreferredLocale(acceptLanguage: string | null): Locale {
-  if (!acceptLanguage) return defaultLocale;
-
-  // Parse Accept-Language header (e.g., "ja,en-US;q=0.9,en;q=0.8")
-  const languages = acceptLanguage.split(",").map((lang) => {
-    const [code, q = "q=1"] = lang.trim().split(";");
-    return {
-      code: code.split("-")[0].toLowerCase(),
-      quality: parseFloat(q.replace("q=", "")) || 1,
-    };
-  });
-
-  // Sort by quality and find first matching locale
-  languages.sort((a, b) => b.quality - a.quality);
-
-  for (const { code } of languages) {
-    if (locales.includes(code as Locale)) {
-      return code as Locale;
-    }
-  }
-
-  return defaultLocale;
 }
 
 // Check if we're in E2E test mode (only in non-production environments)

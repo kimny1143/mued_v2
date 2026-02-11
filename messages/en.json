@@ -508,6 +508,59 @@
       "checkResults": "Check results",
       "completeAll": "Complete all 7 games to discover your thinking style."
     },
+    "results": {
+      "title": "Your Thinking Style",
+      "lastMeasured": "Last measured: {date}",
+      "completeAll": "Complete all 7 games to generate your profile",
+      "noResultsTitle": "No Results Yet",
+      "noResultsDesc": "Complete all 7 games to discover your thinking style.",
+      "startMeasurement": "Start Measurement",
+      "normalizedScores": "Normalized Scores",
+      "detectedPatterns": "Detected Patterns",
+      "hooTuning": "Hoo Tuning",
+      "measurementHistory": "Measurement History",
+      "score": "Score: {score}",
+      "hooComment": "Hoo's Analysis",
+      "generating": "Analyzing your thinking style...",
+      "backToLobe": "Back to Lobe",
+      "variables": {
+        "wm": "Memory",
+        "ps": "Tempo",
+        "vc": "Word Sense",
+        "pr": "Patterns",
+        "att": "Focus"
+      },
+      "patterns": {
+        "architect_type": "Architect",
+        "performer_type": "Performer",
+        "theorist_type": "Theorist",
+        "visualizer_type": "Visualizer",
+        "balanced_type": "Balanced",
+        "low_attention_modifier": "Low Focus",
+        "high_attention_modifier": "High Focus",
+        "high_wm_low_ps": "High Memory / Low Tempo",
+        "low_wm_high_ps": "Low Memory / High Tempo",
+        "high_wm_low_vc": "High Memory / Low Word Sense",
+        "low_wm_high_vc": "Low Memory / High Word Sense",
+        "high_wm_low_pr": "High Memory / Low Patterns",
+        "low_wm_high_pr": "Low Memory / High Patterns",
+        "high_ps_low_vc": "High Tempo / Low Word Sense",
+        "low_ps_high_vc": "Low Tempo / High Word Sense",
+        "high_ps_low_pr": "High Tempo / Low Patterns",
+        "low_ps_high_pr": "Low Tempo / High Patterns",
+        "high_vc_low_pr": "High Word Sense / Low Patterns",
+        "low_vc_high_pr": "Low Word Sense / High Patterns"
+      },
+      "params": {
+        "informationDensity": "Info Density",
+        "chunkSize": "Chunk Size",
+        "pacing": "Pacing",
+        "confirmationFrequency": "Confirmation",
+        "modality": "Modality",
+        "abstractionLevel": "Abstraction",
+        "responseLength": "Response Length"
+      }
+    },
     "gameUI": {
       "common": {
         "start": "Start",

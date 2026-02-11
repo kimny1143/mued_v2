@@ -508,6 +508,59 @@
       "checkResults": "結果を確認",
       "completeAll": "全7ゲームをプレイして、あなたの思考スタイルを発見しよう。"
     },
+    "results": {
+      "title": "あなたの思考スタイル",
+      "lastMeasured": "最終計測: {date}",
+      "completeAll": "全7ゲームを完了するとプロフィールが生成されます",
+      "noResultsTitle": "まだ結果がありません",
+      "noResultsDesc": "全7ゲームをプレイして、あなたの思考スタイルを発見しよう。",
+      "startMeasurement": "計測を開始",
+      "normalizedScores": "正規化スコア",
+      "detectedPatterns": "検出パターン",
+      "hooTuning": "Hooチューニング",
+      "measurementHistory": "計測履歴",
+      "score": "スコア: {score}",
+      "hooComment": "Hooの分析",
+      "generating": "あなたの思考スタイルを分析中...",
+      "backToLobe": "Lobeに戻る",
+      "variables": {
+        "wm": "メモリー",
+        "ps": "テンポ",
+        "vc": "ワードセンス",
+        "pr": "パターン",
+        "att": "フォーカス"
+      },
+      "patterns": {
+        "architect_type": "アーキテクト",
+        "performer_type": "パフォーマー",
+        "theorist_type": "セオリスト",
+        "visualizer_type": "ビジュアライザー",
+        "balanced_type": "バランス",
+        "low_attention_modifier": "低フォーカス",
+        "high_attention_modifier": "高フォーカス",
+        "high_wm_low_ps": "高メモリー / 低テンポ",
+        "low_wm_high_ps": "低メモリー / 高テンポ",
+        "high_wm_low_vc": "高メモリー / 低ワードセンス",
+        "low_wm_high_vc": "低メモリー / 高ワードセンス",
+        "high_wm_low_pr": "高メモリー / 低パターン",
+        "low_wm_high_pr": "低メモリー / 高パターン",
+        "high_ps_low_vc": "高テンポ / 低ワードセンス",
+        "low_ps_high_vc": "低テンポ / 高ワードセンス",
+        "high_ps_low_pr": "高テンポ / 低パターン",
+        "low_ps_high_pr": "低テンポ / 高パターン",
+        "high_vc_low_pr": "高ワードセンス / 低パターン",
+        "low_vc_high_pr": "低ワードセンス / 高パターン"
+      },
+      "params": {
+        "informationDensity": "情報密度",
+        "chunkSize": "チャンクサイズ",
+        "pacing": "ペーシング",
+        "confirmationFrequency": "確認頻度",
+        "modality": "モダリティ",
+        "abstractionLevel": "抽象度",
+        "responseLength": "レスポンス長"
+      }
+    },
     "gameUI": {
       "common": {
         "start": "スタート",
