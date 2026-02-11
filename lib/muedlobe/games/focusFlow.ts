@@ -6,6 +6,8 @@
  * ターゲット刺激にだけ反応する。
  */
 
+import { gameLog } from './debug';
+
 export const FOCUS_CONFIG = {
   stimulusDuration: 250,   // ms
   interStimulusInterval: 1000, // ms
@@ -121,6 +123,7 @@ function normalInv(p: number): number {
 
 /** Score the completed game */
 export function scoreFocusFlow(trials: FocusTrial[]): FocusFlowResult {
+  gameLog('FocusFlow', 'scoreFocusFlow:input', { trialCount: trials.length });
   let hits = 0;
   let misses = 0;
   let falseAlarms = 0;
@@ -165,7 +168,7 @@ export function scoreFocusFlow(trials: FocusTrial[]): FocusFlowResult {
   // Raw score: higher d' and lower variability = better
   const rawScore = Math.max(0, dPrime * (1 - Math.min(rtCv, 1)));
 
-  return {
+  const result = {
     rawScore: Math.round(rawScore * 100) / 100,
     dPrime: Math.round(dPrime * 100) / 100,
     rtCv: Math.round(rtCv * 100) / 100,
@@ -177,4 +180,6 @@ export function scoreFocusFlow(trials: FocusTrial[]): FocusFlowResult {
     correctRejections,
     meanRt: Math.round(meanRt),
   };
+  gameLog('FocusFlow', 'scoreFocusFlow:output', { rawScore: result.rawScore, dPrime: result.dPrime, hits, misses });
+  return result;
 }

@@ -71,6 +71,11 @@ export default async function RootLayout({
           <link rel="alternate" hrefLang="en" href="https://mued.jp/en" />
           <link rel="alternate" hrefLang="ja" href="https://mued.jp/ja" />
           <link rel="alternate" hrefLang="x-default" href="https://mued.jp/en" />
+          {/* PWA */}
+          <link rel="manifest" href="/manifest.json" />
+          <meta name="theme-color" content="#8b5cf6" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <link rel="apple-touch-icon" href="/icons/muedlobe-192.png" />
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{

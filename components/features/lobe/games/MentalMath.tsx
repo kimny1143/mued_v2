@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   generateMathQuestions,
   scoreMentalMath,
@@ -9,6 +10,7 @@ import {
   type MathResponse,
   type MentalMathResult,
 } from '@/lib/muedlobe/games/mentalMath';
+import { gameLog } from '@/lib/muedlobe/games/debug';
 
 interface MentalMathProps {
   onComplete: (result: MentalMathResult) => void;
@@ -17,6 +19,8 @@ interface MentalMathProps {
 type Phase = 'idle' | 'speaking' | 'answering' | 'feedback';
 
 export function MentalMath({ onComplete }: MentalMathProps) {
+  const t = useTranslations('muedlobe.gameUI.mentalMath');
+  const tc = useTranslations('muedlobe.gameUI.common');
   const [isStarted, setIsStarted] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [questions] = useState(() => generateMathQuestions());
@@ -75,6 +79,7 @@ export function MentalMath({ onComplete }: MentalMathProps) {
 
     const responseTime = Date.now() - trialStartRef.current;
     const correct = userAnswer === q.answer;
+    gameLog('MentalMath', 'answer', { level: q.level, userAnswer, expected: q.answer, correct, responseTime });
 
     const response: MathResponse = {
       questionId: q.id,
@@ -93,7 +98,9 @@ export function MentalMath({ onComplete }: MentalMathProps) {
     setTimeout(() => {
       if (currentIndex + 1 >= questions.length) {
         setIsFinished(true);
-        onComplete(scoreMentalMath(newResponses));
+        const result = scoreMentalMath(newResponses);
+        gameLog('MentalMath', 'complete', { totalScore: result.totalScore, correctCount: result.correctCount });
+        onComplete(result);
       } else {
         setCurrentIndex(prev => prev + 1);
         setPhase('idle');
@@ -140,16 +147,16 @@ export function MentalMath({ onComplete }: MentalMathProps) {
     return (
       <div className="flex flex-col items-center justify-center gap-8 py-16">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Mental Math</h2>
+          <h2 className="text-2xl font-bold text-white">{t('title')}</h2>
           <p className="text-white/60 max-w-md">
-            音声で読み上げられる暗算問題に答えてください。問題は繰り返されません。8レベル × 3問 = 計24問。
+            {t('description')}
           </p>
           <p className="text-xs text-white/40">
-            音声を使用します。音量を適切に設定してください。
+            {t('audioWarning')}
           </p>
         </div>
         <button onClick={startGame} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors">
-          Start
+          {tc('start')}
         </button>
       </div>
     );
@@ -159,12 +166,12 @@ export function MentalMath({ onComplete }: MentalMathProps) {
     const result = scoreMentalMath(responses);
     return (
       <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">Complete!</h2>
+        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
         <div className="text-center">
           <div className="text-4xl font-bold text-white">{result.correctCount}</div>
-          <div className="text-sm text-white/50">/ {result.totalQuestions} correct</div>
+          <div className="text-sm text-white/50">{t('correctCount', { correct: result.correctCount, total: result.totalQuestions })}</div>
         </div>
-        <div className="text-sm text-white/40">Score: {result.totalScore}</div>
+        <div className="text-sm text-white/40">{tc('score')}: {result.totalScore}</div>
       </div>
     );
   }
@@ -175,7 +182,7 @@ export function MentalMath({ onComplete }: MentalMathProps) {
       <div className="text-sm text-white/40">
         {currentIndex + 1} / {questions.length}
         {currentQuestion && (
-          <span className="ml-2 text-indigo-400">Level {currentQuestion.level}</span>
+          <span className="ml-2 text-indigo-400">{t('level', { level: currentQuestion.level })}</span>
         )}
       </div>
 
@@ -183,16 +190,16 @@ export function MentalMath({ onComplete }: MentalMathProps) {
       <div className="h-20 flex items-center justify-center">
         {phase === 'idle' && (
           <button onClick={startQuestion} className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm transition-colors">
-            Play Question
+            {t('playQuestion')}
           </button>
         )}
         {phase === 'speaking' && (
-          <div className="text-white/60 animate-pulse text-lg">Listening...</div>
+          <div className="text-white/60 animate-pulse text-lg">{tc('listening')}</div>
         )}
         {phase === 'answering' && (
           <div className="text-center space-y-2">
             <div className="text-white/40 text-xs">
-              Time: {Math.ceil(timeLeft / 1000)}s
+              {t('time')}: {Math.ceil(timeLeft / 1000)}s
             </div>
             {/* Progress bar */}
             <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
@@ -206,10 +213,10 @@ export function MentalMath({ onComplete }: MentalMathProps) {
         {phase === 'feedback' && feedback && (
           <div className="text-center space-y-1">
             <div className={feedback.correct ? 'text-green-400' : 'text-red-400'}>
-              {feedback.correct ? 'Correct!' : 'Incorrect'}
+              {feedback.correct ? tc('correct') : tc('incorrect')}
             </div>
             <div className="text-sm text-white/50">
-              Answer: {feedback.answer}
+              {t('answer')}: {feedback.answer}
               {currentQuestion && <span className="ml-2 text-white/30">({currentQuestion.display})</span>}
             </div>
           </div>
@@ -255,7 +262,7 @@ export function MentalMath({ onComplete }: MentalMathProps) {
           }
         `}
       >
-        Submit
+        {tc('submit')}
       </button>
     </div>
   );

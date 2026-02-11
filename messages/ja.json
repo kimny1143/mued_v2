@@ -7,7 +7,8 @@
         "description": "練習して、記憶して、創る。",
         "hooIntro": "Hooがご案内します。",
         "exploreMuednote": "MUEDnoteを見る",
-        "exploreMuedear": "MUEDearを見る"
+        "exploreMuedear": "MUEDearを見る",
+        "exploreMuedlobe": "MUEDlobeを見る"
       },
       "products": {
         "title": "練習して、記憶する。",
@@ -39,7 +40,8 @@
         "title": "創る準備はできた？",
         "description": "君のメソッドを始めよう。",
         "muednote": "MUEDnoteで始める",
-        "muedear": "MUEDearで鍛える"
+        "muedear": "MUEDearで鍛える",
+        "muedlobe": "MUEDlobeを試す"
       },
       "social": {
         "developedBy": "Developed by",
@@ -434,6 +436,152 @@
     },
     "footer": {
       "tagline": "MUEDear — 制作しながら、耳を育てる。"
+    }
+  },
+  "meetHoo": {
+    "title": "Hooとは？",
+    "description": "あなた専属のAI音楽制作パートナー。あなたの思考や学び方に合わせて、サポートを最適化します。"
+  },
+  "muedlobe": {
+    "hero": {
+      "title": "MUEDlobe",
+      "tagline": "あなたの思考スタイルを発見しよう。",
+      "description": "7つのショートゲームで、情報処理のクセがわかる。その結果をHooとのコミュニケーションにも活かせます。",
+      "pilotBadge": "v0.8 パイロット版",
+      "ctaPrimary": "試してみる"
+    },
+    "games": {
+      "title": "7つのショートゲーム",
+      "intro": "それぞれのゲームで、Hooがあなたの違う一面を理解します。合計約25分。",
+      "tone-sequence": {
+        "name": "トーンシーケンス",
+        "variable": "メモリー",
+        "description": "あなたの音の記憶のしかたをHooが学ぶ。"
+      },
+      "mental-math": {
+        "name": "メンタルマス",
+        "variable": "メモリー",
+        "description": "数字の扱い方をHooに教える。"
+      },
+      "symbol-match": {
+        "name": "シンボルマッチ",
+        "variable": "テンポ",
+        "description": "つながりを見つけるテンポを知る。"
+      },
+      "code-fill": {
+        "name": "コードフィル",
+        "variable": "テンポ",
+        "description": "パターンを読み解くスピードを知る。"
+      },
+      "word-bridge": {
+        "name": "ワードブリッジ",
+        "variable": "ワードセンス",
+        "description": "言葉のつながり方をHooが学ぶ。"
+      },
+      "pattern-complete": {
+        "name": "パターンコンプリート",
+        "variable": "パターン",
+        "description": "全体像の捉え方をHooに教える。"
+      },
+      "focus-flow": {
+        "name": "フォーカスフロー",
+        "variable": "フォーカス",
+        "description": "集中の保ち方をHooが学ぶ。"
+      }
+    },
+    "overview": {
+      "title": "仕組み",
+      "step1": "7つのゲームで遊ぶ",
+      "step2": "Hooがあなたのスタイルを学ぶ",
+      "step3": "Hooのサポートがあなた専用になる"
+    },
+    "disclaimer": "MUEDlobeは心理検査ではありません。Hooのパーソナライズのためのツールです。",
+    "gameDisclaimer": "本ゲームは医学的・心理学的な検査ではなく、AIアシスタント「Hoo」の応答スタイルを最適化するためのキャリブレーションツールです。スコアは診断結果ではなく、Hoo専用の調整パラメータです。",
+    "gameUI": {
+      "common": {
+        "start": "スタート",
+        "complete": "完了！",
+        "correct": "正解！",
+        "incorrect": "不正解",
+        "score": "スコア",
+        "rawScore": "スコア",
+        "submit": "回答",
+        "undo": "戻す",
+        "listening": "再生中...",
+        "profileCalculated": "プロフィール生成完了",
+        "profileCalculatedDesc": "全7ゲーム完了。あなたの思考スタイルが生成されました。",
+        "resultSaved": "結果を保存しました",
+        "returning": "ゲーム一覧に戻ります...",
+        "savedLocally": "ローカルに保存しました",
+        "savedLocallyDesc": "オンラインに戻った時に自動で同期されます。",
+        "failedToSave": "保存に失敗しました",
+        "failedToSaveDesc": "結果を保存できませんでした。もう一度お試しください。",
+        "retry": "再試行",
+        "backToGames": "ゲーム一覧へ",
+        "offlineSynced": "{count}件のオフライン結果を同期しました"
+      },
+      "toneSequence": {
+        "title": "トーンシーケンス",
+        "description": "音の列を聴いて、指定された順序で再現してください。Forward → Backward → Sequencing の3モードがあります。",
+        "forward": "フォワード",
+        "backward": "バックワード",
+        "sequencing": "シーケンシング",
+        "mode": "モード {current}/3",
+        "length": "長さ",
+        "playSequence": "再生",
+        "tapNotes": "音をタップ ({current}/{total})"
+      },
+      "mentalMath": {
+        "title": "メンタルマス",
+        "description": "音声で読み上げられる暗算問題に答えてください。問題は繰り返されません。8レベル × 3問 = 計24問。",
+        "audioWarning": "音声を使用します。音量を適切に設定してください。",
+        "level": "レベル {level}",
+        "playQuestion": "問題を再生",
+        "time": "残り時間",
+        "answer": "答え",
+        "correctCount": "{correct} / {total} 正解"
+      },
+      "symbolMatch": {
+        "title": "シンボルマッチ",
+        "description": "ターゲット記号が下の比較群に含まれていれば「ある」、なければ「ない」を選んでください。制限時間は2分です。",
+        "keyboardHint": "キーボード: ← or A = ある / → or D = ない",
+        "target": "ターゲット",
+        "comparison": "比較群",
+        "present": "ある",
+        "absent": "ない"
+      },
+      "codeFill": {
+        "title": "コードフィル",
+        "description": "数字が表示されたら、対応表を見て正しい記号をクリックしてください。制限時間は2分です。",
+        "answered": "{count}問回答"
+      },
+      "wordBridge": {
+        "title": "ワードブリッジ",
+        "description": "2つの単語に共通することを4つの選択肢から選んでください。より抽象的な答えほど高得点です。全12問。",
+        "and": "と",
+        "question": "この2つの共通点は？",
+        "points": "{score} / {max} ポイント"
+      },
+      "patternComplete": {
+        "title": "パターンコンプリート",
+        "description": "3×3マトリクスのパターンを読み取り、欠けている右下のピースを6つの選択肢から選んでください。全20問。",
+        "correctCount": "{correct} / {total} 正解",
+        "easy": "かんたん",
+        "medium": "ふつう",
+        "hard": "むずかしい",
+        "expert": "エキスパート"
+      },
+      "focusFlow": {
+        "title": "フォーカスフロー",
+        "description": "画面に記号が次々と表示されます。ターゲット「{target}」が出たらすぐにクリック（またはスペースキー）してください。他の記号には反応しないでください。",
+        "duration": "約3分間。集中力を測定します。",
+        "targetLabel": "ターゲット",
+        "startingIn": "3秒後にスタート...",
+        "hitRate": "ヒット率",
+        "falseAlarm": "誤反応",
+        "rtCv": "RT CV",
+        "clickOrSpace": "「{target}」が出たらクリックまたはスペース"
+      }
     }
   },
   "support": {

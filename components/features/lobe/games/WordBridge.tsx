@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   WORD_BRIDGE_QUESTIONS,
   shuffleOptions,
@@ -8,12 +9,15 @@ import {
   type WordBridgeTrial,
   type WordBridgeResult,
 } from '@/lib/muedlobe/games/wordBridge';
+import { gameLog } from '@/lib/muedlobe/games/debug';
 
 interface WordBridgeProps {
   onComplete: (result: WordBridgeResult) => void;
 }
 
 export function WordBridge({ onComplete }: WordBridgeProps) {
+  const t = useTranslations('muedlobe.gameUI.wordBridge');
+  const tc = useTranslations('muedlobe.gameUI.common');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [trials, setTrials] = useState<WordBridgeTrial[]>([]);
   const [isStarted, setIsStarted] = useState(false);
@@ -28,6 +32,7 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
 
   const handleAnswer = useCallback((score: number) => {
     const responseTime = Date.now() - trialStartRef.current;
+    gameLog('WordBridge', 'answer', { questionId: shuffledQuestions[currentIndex].id, score, responseTime });
     const trial: WordBridgeTrial = {
       questionId: shuffledQuestions[currentIndex].id,
       selectedScore: score,
@@ -39,7 +44,9 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
 
     if (currentIndex + 1 >= shuffledQuestions.length) {
       setIsFinished(true);
-      onComplete(scoreWordBridge(newTrials));
+      const result = scoreWordBridge(newTrials);
+      gameLog('WordBridge', 'complete', { totalScore: result.totalScore, maxScore: result.maxScore });
+      onComplete(result);
     } else {
       setCurrentIndex(prev => prev + 1);
       trialStartRef.current = Date.now();
@@ -50,13 +57,13 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
     return (
       <div className="flex flex-col items-center justify-center gap-8 py-16">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Word Bridge</h2>
+          <h2 className="text-2xl font-bold text-white">{t('title')}</h2>
           <p className="text-white/60 max-w-md">
-            2つの単語に共通することを4つの選択肢から選んでください。より抽象的な答えほど高得点です。全12問。
+            {t('description')}
           </p>
         </div>
         <button onClick={startGame} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors">
-          Start
+          {tc('start')}
         </button>
       </div>
     );
@@ -66,10 +73,10 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
     const result = scoreWordBridge(trials);
     return (
       <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">Complete!</h2>
+        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
         <div className="text-center">
           <div className="text-4xl font-bold text-white">{result.totalScore}</div>
-          <div className="text-sm text-white/50">/ {result.maxScore} points</div>
+          <div className="text-sm text-white/50">{t('points', { score: result.totalScore, max: result.maxScore })}</div>
         </div>
       </div>
     );
@@ -86,11 +93,11 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
       {/* Word pair */}
       <div className="flex items-center gap-6">
         <span className="text-2xl font-bold text-white">{question.wordA}</span>
-        <span className="text-white/30">と</span>
+        <span className="text-white/30">{t('and')}</span>
         <span className="text-2xl font-bold text-white">{question.wordB}</span>
       </div>
 
-      <p className="text-white/50 text-sm">この2つの共通点は？</p>
+      <p className="text-white/50 text-sm">{t('question')}</p>
 
       {/* Options */}
       <div className="w-full max-w-sm space-y-3">

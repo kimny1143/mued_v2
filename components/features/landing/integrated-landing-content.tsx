@@ -12,9 +12,12 @@ import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { MuedearHeroSection } from "@/components/features/muedear-landing/muedear-hero-section";
 import { MuedearFeaturesSection } from "@/components/features/muedear-landing/muedear-features-section";
 import { MuedearPricingSection } from "@/components/features/muedear-landing/muedear-pricing-section";
+import { MeetHooSection } from "./meet-hoo-section";
+import { MuedlobeHeroSection } from "@/components/features/muedlobe-landing/muedlobe-hero-section";
+import { MuedlobeOverviewSection } from "@/components/features/muedlobe-landing/muedlobe-overview-section";
 import { CtaButton } from "@/components/ui/cta-button";
 import { AppStoreButton } from "@/components/ui/app-store-button";
-import { ArrowRight, ArrowUp, ChevronLeft, ChevronRight, Music, Ear } from "lucide-react";
+import { ArrowRight, ArrowUp, ChevronLeft, ChevronRight, Music, Ear, Brain } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
@@ -60,9 +63,24 @@ export function IntegratedLandingContent() {
         <SectionNav
           prevHref="#"
           prevLabel={locale === "ja" ? "トップへ" : "Back to Top"}
+          nextHref="#muedlobe"
+          nextLabel="MUEDlobe"
+          showPrevIcon={false}
+        />
+      </section>
+
+      {/* Meet Hoo Bridge */}
+      <MeetHooSection />
+
+      {/* MUEDlobe Section */}
+      <section id="muedlobe" className="relative">
+        <MuedlobeHeroSection />
+        <MuedlobeOverviewSection />
+        <SectionNav
+          prevHref="#muedear"
+          prevLabel="MUEDear"
           nextHref="#muednote"
           nextLabel="MUEDnote"
-          showPrevIcon={false}
         />
       </section>
 
@@ -72,8 +90,8 @@ export function IntegratedLandingContent() {
         <PhilosophySection />
         <GrowthPreviewSection />
         <SectionNav
-          prevHref="#muedear"
-          prevLabel="MUEDear"
+          prevHref="#muedlobe"
+          prevLabel="MUEDlobe"
           nextHref="#"
           nextLabel={locale === "ja" ? "トップへ" : "Back to Top"}
           showNextIcon={false}
@@ -193,6 +211,22 @@ function FloatingNav() {
         <Music className="w-4 h-4" />
       </button>
 
+      {/* MUEDlobe button */}
+      <button
+        onClick={() => scrollToSection("muedlobe")}
+        className="
+          w-10 h-10 rounded-full
+          bg-[#1a1a1a] border border-violet-500/30
+          text-violet-400 hover:text-violet-300 hover:bg-[#222]
+          transition-colors duration-200
+          flex items-center justify-center
+        "
+        aria-label="Go to MUEDlobe"
+        title="MUEDlobe"
+      >
+        <Brain className="w-4 h-4" />
+      </button>
+
       {/* MUEDear button */}
       <button
         onClick={() => scrollToSection("muedear")}
@@ -285,8 +319,11 @@ function FinalCtaSection() {
             {t("description")}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <AppStoreButton href={MUEDEAR_APP_STORE_URL} color="amber" size="large" />
+            <CtaButton variant="violet" href="/lobe">
+              {t("muedlobe")}
+            </CtaButton>
             <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="indigo" size="large" />
           </div>
         </div>

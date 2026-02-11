@@ -1,15 +1,19 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { generateTrial, scoreSymbolMatch } from '@/lib/muedlobe/games/symbolMatch';
 import { SYMBOL_MATCH_CONFIG } from '@/lib/muedlobe/constants';
 import type { SymbolMatchTrial, SymbolMatchResult } from '@/types/muedlobe';
+import { gameLog } from '@/lib/muedlobe/games/debug';
 
 interface SymbolMatchProps {
   onComplete: (result: SymbolMatchResult) => void;
 }
 
 export function SymbolMatch({ onComplete }: SymbolMatchProps) {
+  const t = useTranslations('muedlobe.gameUI.symbolMatch');
+  const tc = useTranslations('muedlobe.gameUI.common');
   const [trials, setTrials] = useState<SymbolMatchTrial[]>([]);
   const [currentTrial, setCurrentTrial] = useState<SymbolMatchTrial | null>(null);
   const [timeLeft, setTimeLeft] = useState(SYMBOL_MATCH_CONFIG.timeLimitMs);
@@ -35,6 +39,7 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
     setIsFinished(true);
     if (timerRef.current) clearInterval(timerRef.current);
     const result = scoreSymbolMatch(completedTrials);
+    gameLog('SymbolMatch', 'complete', { correct: result.correct, incorrect: result.incorrect, rawScore: result.rawScore });
     onComplete(result);
   }, [onComplete]);
 
@@ -62,10 +67,12 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
     if (!currentTrial || !isRunning) return;
 
     const responseTime = Date.now() - trialStartRef.current;
+    const isCorrect = answer === currentTrial.hasTarget;
+    gameLog('SymbolMatch', 'answer', { answer, hasTarget: currentTrial.hasTarget, correct: isCorrect, responseTime });
     const completed: SymbolMatchTrial = {
       ...currentTrial,
       userAnswer: answer,
-      correct: answer === currentTrial.hasTarget,
+      correct: isCorrect,
       responseTime,
     };
 
@@ -102,20 +109,19 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
     return (
       <div className="flex flex-col items-center justify-center gap-8 py-16">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Symbol Match</h2>
+          <h2 className="text-2xl font-bold text-white">{t('title')}</h2>
           <p className="text-white/60 max-w-md">
-            ターゲット記号が下の比較群に含まれていれば「ある」、なければ「ない」を選んでください。
-            制限時間は2分です。
+            {t('description')}
           </p>
           <div className="text-sm text-white/40 space-y-1">
-            <p>キーボード: ← or A = ある / → or D = ない</p>
+            <p>{t('keyboardHint')}</p>
           </div>
         </div>
         <button
           onClick={startGame}
           className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors"
         >
-          Start
+          {tc('start')}
         </button>
       </div>
     );
@@ -126,19 +132,19 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
     const result = scoreSymbolMatch(trials);
     return (
       <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">Complete!</h2>
+        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
         <div className="grid grid-cols-3 gap-6 text-center">
           <div>
             <div className="text-3xl font-bold text-green-400">{result.correct}</div>
-            <div className="text-sm text-white/50">Correct</div>
+            <div className="text-sm text-white/50">{tc('correct')}</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-red-400">{result.incorrect}</div>
-            <div className="text-sm text-white/50">Incorrect</div>
+            <div className="text-sm text-white/50">{tc('incorrect')}</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-white">{result.rawScore}</div>
-            <div className="text-sm text-white/50">Score</div>
+            <div className="text-sm text-white/50">{tc('score')}</div>
           </div>
         </div>
       </div>
@@ -158,7 +164,7 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
         <>
           {/* Target symbols */}
           <div className="text-center space-y-2">
-            <div className="text-sm text-white/40 uppercase tracking-wider">Target</div>
+            <div className="text-sm text-white/40 uppercase tracking-wider">{t('target')}</div>
             <div className="flex gap-4 justify-center">
               {currentTrial.targetSymbols.map((s, i) => (
                 <div
@@ -176,7 +182,7 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
 
           {/* Comparison symbols */}
           <div className="text-center space-y-2">
-            <div className="text-sm text-white/40 uppercase tracking-wider">Comparison</div>
+            <div className="text-sm text-white/40 uppercase tracking-wider">{t('comparison')}</div>
             <div className="flex gap-3 justify-center">
               {currentTrial.comparisonSymbols.map((s, i) => (
                 <div
@@ -195,13 +201,13 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
               onClick={() => handleAnswer(true)}
               className="px-10 py-4 bg-green-600/80 hover:bg-green-500 text-white rounded-lg font-medium text-lg transition-colors"
             >
-              ある
+              {t('present')}
             </button>
             <button
               onClick={() => handleAnswer(false)}
               className="px-10 py-4 bg-red-600/80 hover:bg-red-500 text-white rounded-lg font-medium text-lg transition-colors"
             >
-              ない
+              {t('absent')}
             </button>
           </div>
         </>

@@ -5,6 +5,8 @@
  * 音声提示の暗算問題を8レベル×3問=計24問。
  */
 
+import { gameLog } from './debug';
+
 export interface MathQuestion {
   id: number;
   level: number;
@@ -330,6 +332,7 @@ function generateMultiVariableProblems(): { text: string; display: string; answe
 
 /** Score the completed game */
 export function scoreMentalMath(responses: MathResponse[]): MentalMathResult {
+  gameLog('MentalMath', 'scoreMentalMath:input', { responseCount: responses.length });
   let totalScore = 0;
 
   for (const r of responses) {
@@ -341,12 +344,14 @@ export function scoreMentalMath(responses: MathResponse[]): MentalMathResult {
     }
   }
 
-  return {
+  const result = {
     totalScore: Math.round(totalScore * 100) / 100,
     correctCount: responses.filter(r => r.correct).length,
     totalQuestions: responses.length,
     responses,
   };
+  gameLog('MentalMath', 'scoreMentalMath:output', { totalScore: result.totalScore, correctCount: result.correctCount });
+  return result;
 }
 
 /** Speak text using Web Speech API */

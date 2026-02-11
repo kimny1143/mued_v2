@@ -1,22 +1,50 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { GameType } from '@/types/muedlobe';
-import { GAME_META } from '@/lib/muedlobe/constants';
+import { GAME_META, VARIABLE_DISPLAY } from '@/lib/muedlobe/constants';
+import { savePendingResult, syncPendingResults, getPendingResults } from '@/lib/muedlobe/offline-sync';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type GameResult = Record<string, any>;
 
 interface GamePageWrapperProps {
   gameType: GameType;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  children: (props: { onComplete: (result: any) => void }) => React.ReactNode;
+  children: (props: { onComplete: (result: GameResult) => void }) => React.ReactNode;
 }
 
 export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
   const router = useRouter();
   const meta = GAME_META[gameType];
-  const [status, setStatus] = useState<'playing' | 'saving' | 'error' | 'saved' | 'profile-ready'>('playing');
+  const t = useTranslations('muedlobe.gameUI.common');
+  const tLobe = useTranslations('muedlobe');
+  const [status, setStatus] = useState<'playing' | 'saving' | 'error' | 'saved' | 'saved-offline' | 'profile-ready'>('playing');
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<GameResult | null>(null);
 
-  const handleComplete = useCallback(async (result: Record<string, unknown>) => {
+  // Auto-sync pending results when coming online
+  useEffect(() => {
+    const handleOnline = async () => {
+      const pending = getPendingResults();
+      if (pending.length === 0) return;
+
+      const synced = await syncPendingResults();
+      if (synced > 0) {
+        setSyncNotice(t('offlineSynced', { count: synced }));
+        setTimeout(() => setSyncNotice(null), 3000);
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    // Also try on mount in case we're already online with pending results
+    handleOnline();
+    return () => window.removeEventListener('online', handleOnline);
+  }, [t]);
+
+  const handleComplete = useCallback(async (result: GameResult) => {
+    setLastResult(result);
     setStatus('saving');
 
     try {
@@ -45,7 +73,10 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
       setStatus('error');
     } catch (e) {
       console.error('Failed to save measurement:', e);
-      setStatus('error');
+      // Save locally for later sync
+      savePendingResult(gameType, result, result);
+      setStatus('saved-offline');
+      setTimeout(() => router.push('/lobe'), 2000);
     }
   }, [gameType, router]);
 
@@ -54,21 +85,28 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
       <header className="border-b border-white/5 px-6 py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div>
-            <span className="text-xs text-indigo-400 font-mono">{meta.id}</span>
+            <span className="text-xs text-violet-400 font-mono">{VARIABLE_DISPLAY[meta.variable] ?? meta.variable}</span>
             <h1 className="text-lg font-semibold text-white">{meta.name}</h1>
           </div>
-          <span className="text-xs text-white/30">{meta.variable}</span>
         </div>
       </header>
+
+      {/* Sync notification */}
+      {syncNotice && (
+        <div className="bg-violet-500/20 border-b border-violet-500/30 px-6 py-2">
+          <p className="text-xs text-violet-300 text-center">{syncNotice}</p>
+        </div>
+      )}
+
       <main className="flex-1 max-w-4xl mx-auto w-full px-6">
         {status === 'profile-ready' ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-3">
               <p className="text-lg font-semibold text-white">
-                Profile Calculated
+                {t('profileCalculated')}
               </p>
               <p className="text-sm text-white/50">
-                All 7 games complete. Your cognitive profile has been generated.
+                {t('profileCalculatedDesc')}
               </p>
             </div>
           </div>
@@ -76,10 +114,21 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-3">
               <p className="text-lg font-semibold text-white">
-                Result Saved
+                {t('resultSaved')}
               </p>
               <p className="text-sm text-white/50">
-                Returning to game list...
+                {t('returning')}
+              </p>
+            </div>
+          </div>
+        ) : status === 'saved-offline' ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center space-y-3">
+              <p className="text-lg font-semibold text-violet-300">
+                {t('savedLocally')}
+              </p>
+              <p className="text-sm text-white/50">
+                {t('savedLocallyDesc')}
               </p>
             </div>
           </div>
@@ -87,17 +136,25 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-4">
               <p className="text-lg font-semibold text-red-400">
-                Failed to Save
+                {t('failedToSave')}
               </p>
               <p className="text-sm text-white/50">
-                Your result could not be saved. Please try again.
+                {t('failedToSaveDesc')}
               </p>
               <div className="flex gap-3 justify-center">
+                {lastResult && (
+                  <button
+                    onClick={() => handleComplete(lastResult)}
+                    className="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+                  >
+                    {t('retry')}
+                  </button>
+                )}
                 <button
                   onClick={() => router.push('/lobe')}
                   className="px-4 py-2 text-sm text-white/60 hover:text-white transition-colors"
                 >
-                  Back to Games
+                  {t('backToGames')}
                 </button>
               </div>
             </div>
@@ -106,6 +163,14 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
           children({ onComplete: handleComplete })
         )}
       </main>
+
+      {status === 'playing' && (
+        <footer className="border-t border-white/5 px-6 py-3">
+          <p className="max-w-4xl mx-auto text-[10px] text-white/20 text-center leading-relaxed">
+            {tLobe('gameDisclaimer')}
+          </p>
+        </footer>
+      )}
     </div>
   );
 }

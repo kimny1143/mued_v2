@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   generatePatternQuestions,
   scorePatternComplete,
@@ -8,12 +9,15 @@ import {
   type PatternResponse,
   type PatternCompleteResult,
 } from '@/lib/muedlobe/games/patternComplete';
+import { gameLog } from '@/lib/muedlobe/games/debug';
 
 interface PatternCompleteProps {
   onComplete: (result: PatternCompleteResult) => void;
 }
 
 export function PatternComplete({ onComplete }: PatternCompleteProps) {
+  const t = useTranslations('muedlobe.gameUI.patternComplete');
+  const tc = useTranslations('muedlobe.gameUI.common');
   const [isStarted, setIsStarted] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [questions] = useState(() => generatePatternQuestions());
@@ -35,6 +39,7 @@ export function PatternComplete({ onComplete }: PatternCompleteProps) {
     const responseTime = Date.now() - trialStartRef.current;
     const correct = optionIndex === currentQuestion.correctIndex;
 
+    gameLog('PatternComplete', 'answer', { questionId: currentQuestion.id, difficulty: currentQuestion.difficulty, correct, selectedIndex: optionIndex });
     const response: PatternResponse = {
       questionId: currentQuestion.id,
       correct,
@@ -50,7 +55,9 @@ export function PatternComplete({ onComplete }: PatternCompleteProps) {
     setTimeout(() => {
       if (currentIndex + 1 >= questions.length) {
         setIsFinished(true);
-        onComplete(scorePatternComplete(newResponses));
+        const result = scorePatternComplete(newResponses);
+        gameLog('PatternComplete', 'complete', { totalScore: result.totalScore, correctCount: result.correctCount });
+        onComplete(result);
       } else {
         setCurrentIndex(prev => prev + 1);
         setFeedback(null);
@@ -63,13 +70,13 @@ export function PatternComplete({ onComplete }: PatternCompleteProps) {
     return (
       <div className="flex flex-col items-center justify-center gap-8 py-16">
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-white">Pattern Complete</h2>
+          <h2 className="text-2xl font-bold text-white">{t('title')}</h2>
           <p className="text-white/60 max-w-md">
-            3×3マトリクスのパターンを読み取り、欠けている右下のピースを6つの選択肢から選んでください。全20問。
+            {t('description')}
           </p>
         </div>
         <button onClick={startGame} className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-colors">
-          Start
+          {tc('start')}
         </button>
       </div>
     );
@@ -79,21 +86,21 @@ export function PatternComplete({ onComplete }: PatternCompleteProps) {
     const result = scorePatternComplete(responses);
     return (
       <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">Complete!</h2>
+        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
         <div className="text-center">
           <div className="text-4xl font-bold text-white">{result.correctCount}</div>
-          <div className="text-sm text-white/50">/ {result.totalQuestions} correct</div>
+          <div className="text-sm text-white/50">{t('correctCount', { correct: result.correctCount, total: result.totalQuestions })}</div>
         </div>
-        <div className="text-sm text-white/40">Score: {result.totalScore}</div>
+        <div className="text-sm text-white/40">{tc('score')}: {result.totalScore}</div>
       </div>
     );
   }
 
   if (!currentQuestion) return null;
 
-  const difficultyLabel = currentQuestion.difficulty === 'easy' ? 'Easy'
-    : currentQuestion.difficulty === 'medium' ? 'Medium'
-    : currentQuestion.difficulty === 'hard' ? 'Hard' : 'Expert';
+  const difficultyLabel = currentQuestion.difficulty === 'easy' ? t('easy')
+    : currentQuestion.difficulty === 'medium' ? t('medium')
+    : currentQuestion.difficulty === 'hard' ? t('hard') : t('expert');
 
   return (
     <div className="flex flex-col items-center gap-6 py-8">

@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { GAME_META, GAME_ORDER } from '@/lib/muedlobe/constants';
+import { GAME_META, GAME_ORDER, VARIABLE_DISPLAY } from '@/lib/muedlobe/constants';
 import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
 
 export default async function LobePage() {
@@ -24,7 +24,7 @@ export default async function LobePage() {
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-white">MUEDlobe</h1>
           <p className="text-white/50">
-            Measure your cognitive profile to optimize Hoo for your thinking style.
+            Discover your thinking style through 7 short games.
           </p>
         </div>
 
@@ -68,11 +68,11 @@ export default async function LobePage() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className={`text-xs font-mono ${isCompleted ? 'text-emerald-400' : 'text-indigo-400'}`}>
-                      {meta.id}
+                    <span className={`text-xs font-mono ${isCompleted ? 'text-emerald-400' : 'text-violet-400'}`}>
+                      {VARIABLE_DISPLAY[meta.variable] ?? meta.variable}
                     </span>
                     <h3 className="text-white font-medium">{meta.name}</h3>
-                    <p className="text-xs text-white/40">{meta.variable} · {meta.duration}</p>
+                    <p className="text-xs text-white/40">{meta.duration}</p>
                   </div>
                   {isCompleted ? (
                     <span className="text-emerald-400 text-sm" aria-label="Completed">
@@ -93,7 +93,7 @@ export default async function LobePage() {
             href="/lobe/results"
             className="inline-block text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
           >
-            View Cognitive Profile →
+            View Your Thinking Style →
           </Link>
         ) : allComplete ? (
           <p className="text-sm text-white/40">
@@ -101,7 +101,7 @@ export default async function LobePage() {
           </p>
         ) : (
           <p className="text-sm text-white/30">
-            Complete all 7 games to generate your cognitive profile.
+            Complete all 7 games to discover your thinking style.
           </p>
         )}
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Mic, Clock, ArrowRight, Calendar, TrendingUp } from "lucide-react";
+import { Mic, Clock, ArrowRight, Calendar, TrendingUp, Brain } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { TrialBanner } from "@/components/features/trial/trial-banner";
@@ -97,6 +97,32 @@ export function MuednoteDashboardContent({
 
       {/* Trial Banner (for Free tier users) */}
       <TrialBanner className="mb-8" />
+
+      {/* MUEDlobe Card */}
+      <Link
+        href="/lobe"
+        className="group block bg-violet-500/5 hover:bg-violet-500/10 border border-violet-500/20 rounded-xl p-4 mb-8 transition-colors"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+            <Brain className="w-5 h-5 text-violet-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <p className="font-medium text-white">MUEDlobe</p>
+              <span className="px-2 py-0.5 text-[10px] font-mono bg-violet-500/20 text-violet-300 border border-violet-500/30 rounded-full">
+                v0.8 Pilot
+              </span>
+            </div>
+            <p className="text-sm text-white/50 truncate">
+              {locale === "ja"
+                ? "7つのゲームで、あなたの思考スタイルを発見"
+                : "Discover your thinking style with 7 short games"}
+            </p>
+          </div>
+          <ArrowRight className="w-4 h-4 text-violet-400/50 group-hover:text-violet-400 transition-colors shrink-0" />
+        </div>
+      </Link>
 
       {/* Overview Tab Content */}
       <div className="grid lg:grid-cols-[1fr,280px] gap-8 lg:gap-12">

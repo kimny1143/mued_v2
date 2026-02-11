@@ -86,6 +86,18 @@ export const GAME_META: Record<GameType, {
 };
 
 // ========================================
+// User-facing variable display names (non-clinical)
+// ========================================
+
+export const VARIABLE_DISPLAY: Record<string, string> = {
+  WM: 'Memory',
+  PS: 'Tempo',
+  VC: 'Word Sense',
+  PR: 'Patterns',
+  ATT: 'Focus',
+};
+
+// ========================================
 // Symbol Match (PS-1) Constants
 // ========================================
 

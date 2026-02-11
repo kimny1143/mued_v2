@@ -5,6 +5,8 @@
  * 対応表を参照し、数字に対応する記号を選ぶ。
  */
 
+import { gameLog } from './debug';
+
 export const CODE_PAIRS: { digit: number; symbol: string }[] = [
   { digit: 1, symbol: '◇' },
   { digit: 2, symbol: '△' },
@@ -61,6 +63,7 @@ export function generateCodeFillTrial(): CodeFillTrial {
 
 /** Score the completed game */
 export function scoreCodeFill(trials: CodeFillTrial[]): CodeFillResult {
+  gameLog('CodeFill', 'scoreCodeFill:input', { trialCount: trials.length });
   const answered = trials.filter(t => t.userAnswer !== null);
   let correct = 0;
   let incorrect = 0;
@@ -73,10 +76,12 @@ export function scoreCodeFill(trials: CodeFillTrial[]): CodeFillResult {
     }
   }
 
-  return {
+  const result = {
     correct,
     incorrect,
     totalAttempted: answered.length,
     rawScore: Math.max(0, correct - incorrect * 0.5),
   };
+  gameLog('CodeFill', 'scoreCodeFill:output', result);
+  return result;
 }
