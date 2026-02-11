@@ -13,6 +13,7 @@ import {
   apiServerError,
 } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
+import { getIntentSystemPrompt } from '@/lib/ai/prompts/intent';
 
 /**
  * POST /api/ai/intent
@@ -46,37 +47,6 @@ const intentRequestSchema = z.object({
     .default([]),
 });
 
-// System prompt for the AI assistant
-const SYSTEM_PROMPT = `You are MUED, an AI assistant for an online learning management system. Your role is to help students:
-
-1. Search for available lesson slots
-2. Book lessons with mentors
-3. Generate study materials (quizzes, summaries, flashcards, practice problems)
-4. Check subscription status and limits
-5. Upgrade their subscription plan
-
-You have access to the following tools:
-- searchAvailableSlots: Find available lesson slots by date range, subject, or mentor
-- createReservation: Book a lesson slot for the user
-- generateStudyMaterial: Create AI-powered study materials
-- getSubscriptionStatus: Check the user's subscription plan and usage limits
-- upgradeSubscription: Upgrade to a higher subscription tier
-
-Guidelines:
-- Be helpful, friendly, and educational
-- Always confirm important actions (like booking lessons) before executing
-- Explain subscription limits when relevant
-- Suggest appropriate study material formats based on the topic
-- If multiple tools are needed, execute them in logical order
-
-When users ask about dates:
-- "today" = current date
-- "tomorrow" = next day
-- "next week" = 7 days from now
-- "this week" = current week (Monday to Sunday)
-
-Current date: ${new Date().toISOString().split('T')[0]}`;
-
 export const POST = withAuth(async ({ request }) => {
   // Rate limit: 10 requests per minute for AI endpoints
   const rateLimitResponse = await rateLimit(request, 'ai');
@@ -89,7 +59,7 @@ export const POST = withAuth(async ({ request }) => {
 
     // Build conversation messages
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: getIntentSystemPrompt() },
       ...conversationHistory.map((msg) => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content,

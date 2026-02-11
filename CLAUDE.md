@@ -185,6 +185,12 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 - **プレミアムデザインの公式**: `Premium = (画像の質 × サイズ) + 余白 - 装飾`。backdrop-blur、グロー、hover:scale等の効果を足すほどAI生成感が増す。Spitfire/Native Instruments等のプレミアムサイトは「大きな画像 + 最小テキスト + 単色背景」で構成されている (2026-02-02)
 
+- **大規模リファクタは「新規作成→呼び出し元更新→検証」の3段階で**: コードの移動・抽出リファクタは Phase 1（新ファイル作成、既存コードに影響なし）→ Phase 2（importの差し替え）→ Phase 3（typecheck/build/test）の順序で行うと安全。Phase 1では何も壊れないため、安心して並行作成できる (2026-02-11)
+
+- **re-export barrelパターンでimport元を維持**: ファイルを別ディレクトリに移動する際、元のファイルを `export { ... } from './new-location'` のre-export barrelに変換すると、既存のimporter全てが変更不要になる。`hoo-prompt.ts` → `prompts/hoo.ts` 移動時に4箇所のimportを変更せずに済んだ (2026-02-11)
+
+- **AIプロンプトは `lib/ai/prompts/{feature}.ts` に集約する**: 規約として確立。1機能 = 1ファイル、フラット構造、ケバブケース。各ファイルに `*_PROMPT_VERSION` を定義。詳細は `docs/muedlobe/muedlobe-ui-brushup-proposal.md` 参照不要、コード内の `lib/ai/prompts/` が正 (2026-02-11)
+
 ### Gotchas（落とし穴）
 
 - **シンボリックリンクとgit**: ファイル→シンボリックリンクに変更すると `typechange` としてgitに検出される。シンボリックリンク自体をコミットするか、.gitignoreで除外するか事前に決める必要あり (2026-01-21)
@@ -213,6 +219,8 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 - **「もっと良くして」は具体的に分解する**: ユーザーが抽象的な改善要求をした場合、最初に具体的な問題点を列挙してもらうこと。今回「ボタンが大きすぎる」「背景が寂しい」等の具体的フィードバックがあって初めて適切に対応できた (2026-02-02)
 
+- **プロンプトファイル↔サービスの循環依存に注意**: `lib/ai/prompts/interviewer.ts` が `interviewer.service.ts` の型をimportし、サービス側がプロンプトをimportすると循環依存になる。プロンプトファイル側にローカル型（`InterviewerPromptInput`）を定義して回避すること (2026-02-11)
+
 ---
 
-*最終更新: 2026-02-02*
+*最終更新: 2026-02-11*

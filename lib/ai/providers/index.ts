@@ -13,6 +13,10 @@ import type { HooChatMessage, HooChatResponse, HooModelId } from './types';
 import { sendClaudeChat } from './claude';
 import { sendGeminiChat } from './gemini';
 import { sendOpenAIChat } from './openai';
+import {
+  CONVERSATION_TITLE_SYSTEM_PROMPT,
+  buildConversationTitleUserPrompt,
+} from '@/lib/ai/prompts/conversation-title';
 
 /**
  * Generate a short, descriptive title for a conversation
@@ -30,46 +34,22 @@ export async function generateConversationTitle(
   lastAiResponse?: string
 ): Promise<string> {
   try {
-    // Build context based on available messages
-    let conversationContext: string;
-    const hasEndContext = lastUserMessage && lastAiResponse && lastUserMessage !== firstUserMessage;
-
-    if (hasEndContext) {
-      // Include both start and end for better context
-      conversationContext = `【会話の最初】
-User: "${firstUserMessage}"
-Assistant: "${firstAiResponse.slice(0, 150)}"
-
-【会話の最後】
-User: "${lastUserMessage}"
-Assistant: "${lastAiResponse.slice(0, 250)}"`;
-    } else {
-      // Only first exchange available
-      conversationContext = `User: "${firstUserMessage}"
-Assistant: "${firstAiResponse.slice(0, 200)}"`;
-    }
-
     const result = await sendClaudeChat(
       [
         {
           role: 'user',
-          content: `この会話のタイトルを生成してください（最大50文字）。
-
-ルール:
-- 挨拶（こんにちは等）は無視し、本題を捉える
-- 会話の結論や成果があればそれを反映
-- ユーザーの言語でタイトルを書く
-- タイトルのみ出力、説明不要
-
-${conversationContext}
-
-タイトル:`,
+          content: buildConversationTitleUserPrompt(
+            firstUserMessage,
+            firstAiResponse,
+            lastUserMessage,
+            lastAiResponse
+          ),
         },
       ],
       {
         model: 'claude-haiku-4-5-20251001',
         maxTokens: 50,
-        systemPrompt: 'タイトル生成専門。挨拶を無視し本題を捉える。タイトルのみ出力。例: "作曲アイデアの整理", "音楽制作の方向性", "Workflow optimization"',
+        systemPrompt: CONVERSATION_TITLE_SYSTEM_PROMPT,
       }
     );
     const title = result.content.trim().slice(0, 50);
