@@ -83,13 +83,13 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex flex-col" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
-      <header className="border-b border-white/5 px-6 py-4">
+      <header className="border-b border-white/5 px-4 sm:px-6 py-3 sm:py-4">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-stretch gap-3">
             <div className="w-[2px] rounded-full" style={{ backgroundColor: accentColor }} />
             <div>
               <span className="text-xs" style={{ color: accentColor }}>{VARIABLE_DISPLAY[meta.variable] ?? meta.variable}</span>
-              <h1 className="text-lg font-semibold text-white">{tGame('name')}</h1>
+              <h1 className="text-base sm:text-lg font-semibold text-white">{tGame('name')}</h1>
             </div>
           </div>
         </div>
@@ -102,7 +102,7 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
         </div>
       )}
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-6">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6">
         {status === 'profile-ready' ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center space-y-3">

@@ -83,7 +83,7 @@ export function CodeFill({ onComplete }: CodeFillProps) {
   if (!isRunning && !isFinished) {
     const meta = GAME_META['code-fill'];
     return (
-      <div className="flex flex-col md:flex-row items-center justify-center gap-10 py-16">
+      <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 py-8 md:py-16">
         <div className="flex items-center justify-center md:w-2/5">
           <CodeFillSpecimen />
         </div>
@@ -95,7 +95,7 @@ export function CodeFill({ onComplete }: CodeFillProps) {
           <p className="text-white/50 text-sm max-w-md text-center md:text-left">
             {t('description')}
           </p>
-          <button onClick={startGame} className="px-10 py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors">
+          <button onClick={startGame} className="px-6 sm:px-10 py-2 sm:py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors">
             {tc('start')}
           </button>
         </div>
@@ -106,11 +106,11 @@ export function CodeFill({ onComplete }: CodeFillProps) {
   if (isFinished) {
     const result = scoreCodeFill(trials);
     return (
-      <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
-        <div className="grid grid-cols-3 gap-6 text-center">
+      <div className="flex flex-col items-center justify-center gap-6 py-8 md:py-16">
+        <h2 className="text-xl sm:text-2xl font-bold text-white">{tc('complete')}</h2>
+        <div className="grid grid-cols-3 gap-4 sm:gap-6 text-center">
           <div>
-            <div className="text-3xl font-bold text-green-400">{result.correct}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-green-400">{result.correct}</div>
             <div className="text-sm text-white/50">{tc('correct')}</div>
           </div>
           <div>
@@ -134,7 +134,7 @@ export function CodeFill({ onComplete }: CodeFillProps) {
       </div>
 
       {/* Reference table */}
-      <div className="grid grid-cols-9 gap-2 p-3 bg-white/5 rounded-lg border border-white/10">
+      <div className="grid grid-cols-3 sm:grid-cols-9 gap-2 p-3 bg-white/5 rounded-lg border border-white/10">
         {CODE_PAIRS.map(p => (
           <div key={p.digit} className="text-center">
             <div className="text-xs text-white/40">{p.digit}</div>
@@ -146,7 +146,7 @@ export function CodeFill({ onComplete }: CodeFillProps) {
       {currentTrial && (
         <>
           {/* Current digit */}
-          <div className="w-24 h-24 flex items-center justify-center text-5xl font-bold text-white bg-white/10 rounded-xl border border-white/20">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 flex items-center justify-center text-4xl sm:text-5xl font-bold text-white bg-white/10 rounded-xl border border-white/20">
             {currentTrial.digit}
           </div>
 
@@ -156,7 +156,7 @@ export function CodeFill({ onComplete }: CodeFillProps) {
               <button
                 key={symbol}
                 onClick={() => handleAnswer(symbol)}
-                className="w-16 h-16 flex items-center justify-center text-2xl bg-white/5 hover:bg-white/15 border border-white/10 hover:border-indigo-500/50 rounded-lg text-white transition-colors"
+                className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-xl sm:text-2xl bg-white/5 hover:bg-white/15 border border-white/10 hover:border-indigo-500/50 rounded-lg text-white transition-colors"
               >
                 {symbol}
               </button>

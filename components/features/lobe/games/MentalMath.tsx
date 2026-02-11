@@ -148,7 +148,7 @@ export function MentalMath({ onComplete }: MentalMathProps) {
   if (!isStarted) {
     const meta = GAME_META['mental-math'];
     return (
-      <div className="flex flex-col md:flex-row items-center justify-center gap-10 py-16">
+      <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 py-8 md:py-16">
         <div className="flex items-center justify-center md:w-2/5">
           <MentalMathSpecimen />
         </div>
@@ -163,7 +163,7 @@ export function MentalMath({ onComplete }: MentalMathProps) {
           <p className="text-xs text-white/30 text-center md:text-left">
             {t('audioWarning')}
           </p>
-          <button onClick={startGame} className="px-10 py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors">
+          <button onClick={startGame} className="px-6 sm:px-10 py-2 sm:py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors">
             {tc('start')}
           </button>
         </div>
@@ -174,10 +174,10 @@ export function MentalMath({ onComplete }: MentalMathProps) {
   if (isFinished) {
     const result = scoreMentalMath(responses);
     return (
-      <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
+      <div className="flex flex-col items-center justify-center gap-6 py-8 md:py-16">
+        <h2 className="text-xl sm:text-2xl font-bold text-white">{tc('complete')}</h2>
         <div className="text-center">
-          <div className="text-4xl font-bold text-white">{result.correctCount}</div>
+          <div className="text-3xl sm:text-4xl font-bold text-white">{result.correctCount}</div>
           <div className="text-sm text-white/50">{t('correctCount', { correct: result.correctCount, total: result.totalQuestions })}</div>
         </div>
         <div className="text-sm text-white/40">{tc('score')}: {result.totalScore}</div>
@@ -211,7 +211,7 @@ export function MentalMath({ onComplete }: MentalMathProps) {
               {t('time')}: {Math.ceil(timeLeft / 1000)}s
             </div>
             {/* Progress bar */}
-            <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+            <div className="w-full max-w-[12rem] h-1 bg-white/10 rounded-full overflow-hidden">
               <div
                 className="h-full bg-indigo-500 transition-all duration-100"
                 style={{ width: `${currentQuestion ? (timeLeft / currentQuestion.timeLimit) * 100 : 0}%` }}
@@ -233,14 +233,14 @@ export function MentalMath({ onComplete }: MentalMathProps) {
       </div>
 
       {/* Input display */}
-      <div className="w-48 h-14 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center">
+      <div className="w-full max-w-[12rem] h-14 bg-white/5 border border-white/10 rounded-lg flex items-center justify-center">
         <span className="text-2xl font-mono text-white">
           {inputValue || <span className="text-white/20">?</span>}
         </span>
       </div>
 
       {/* Number keypad */}
-      <div className="grid grid-cols-3 gap-2 w-48">
+      <div className="grid grid-cols-3 gap-2 w-full max-w-[12rem]">
         {['7', '8', '9', '4', '5', '6', '1', '2', '3', '-', '0', 'backspace'].map(key => (
           <button
             key={key}
@@ -264,7 +264,7 @@ export function MentalMath({ onComplete }: MentalMathProps) {
         onClick={() => handleKeypadClick('submit')}
         disabled={phase !== 'answering' || inputValue === ''}
         className={`
-          w-48 py-3 rounded-lg font-medium transition-colors
+          w-full max-w-[12rem] py-3 rounded-lg font-medium transition-colors
           ${phase === 'answering' && inputValue
             ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
             : 'bg-white/5 text-white/30 cursor-not-allowed'

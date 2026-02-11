@@ -19,11 +19,11 @@ export function LobeListContent({ completedGames, hasProfile, allComplete }: Lob
   const completedCount = GAME_ORDER.filter((g) => completedSet.has(g)).length;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] px-6 py-12">
-      <div className="max-w-2xl mx-auto space-y-10">
+    <div className="min-h-screen bg-[#0a0a0f] px-4 sm:px-6 py-8 sm:py-12">
+      <div className="max-w-2xl mx-auto space-y-8 sm:space-y-10">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-white">MUEDlobe</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">MUEDlobe</h1>
           <p className="text-white/50">
             {t('subtitle')}
           </p>

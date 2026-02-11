@@ -71,7 +71,7 @@ export function PatternComplete({ onComplete }: PatternCompleteProps) {
   if (!isStarted) {
     const meta = GAME_META['pattern-complete'];
     return (
-      <div className="flex flex-col md:flex-row items-center justify-center gap-10 py-16">
+      <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 py-8 md:py-16">
         <div className="flex items-center justify-center md:w-2/5">
           <PatternCompleteSpecimen />
         </div>
@@ -83,7 +83,7 @@ export function PatternComplete({ onComplete }: PatternCompleteProps) {
           <p className="text-white/50 text-sm max-w-md text-center md:text-left">
             {t('description')}
           </p>
-          <button onClick={startGame} className="px-10 py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors">
+          <button onClick={startGame} className="px-6 sm:px-10 py-2 sm:py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors">
             {tc('start')}
           </button>
         </div>
@@ -94,10 +94,10 @@ export function PatternComplete({ onComplete }: PatternCompleteProps) {
   if (isFinished) {
     const result = scorePatternComplete(responses);
     return (
-      <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
+      <div className="flex flex-col items-center justify-center gap-6 py-8 md:py-16">
+        <h2 className="text-xl sm:text-2xl font-bold text-white">{tc('complete')}</h2>
         <div className="text-center">
-          <div className="text-4xl font-bold text-white">{result.correctCount}</div>
+          <div className="text-3xl sm:text-4xl font-bold text-white">{result.correctCount}</div>
           <div className="text-sm text-white/50">{t('correctCount', { correct: result.correctCount, total: result.totalQuestions })}</div>
         </div>
         <div className="text-sm text-white/40">{tc('score')}: {result.totalScore}</div>
@@ -134,7 +134,7 @@ export function PatternComplete({ onComplete }: PatternCompleteProps) {
           <div
             key={i}
             className={`
-              w-20 h-20 flex items-center justify-center text-2xl rounded-lg
+              w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center text-xl sm:text-2xl rounded-lg
               ${cell === null
                 ? 'border-2 border-dashed border-indigo-500/50 bg-indigo-500/10 text-indigo-400'
                 : 'bg-white/10 border border-white/10 text-white'

@@ -58,7 +58,7 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
   if (!isStarted) {
     const meta = GAME_META['word-bridge'];
     return (
-      <div className="flex flex-col md:flex-row items-center justify-center gap-10 py-16">
+      <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 py-8 md:py-16">
         <div className="flex items-center justify-center md:w-2/5">
           <WordBridgeSpecimen />
         </div>
@@ -70,7 +70,7 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
           <p className="text-white/50 text-sm max-w-md text-center md:text-left">
             {t('description')}
           </p>
-          <button onClick={startGame} className="px-10 py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors">
+          <button onClick={startGame} className="px-6 sm:px-10 py-2 sm:py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors">
             {tc('start')}
           </button>
         </div>
@@ -81,10 +81,10 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
   if (isFinished) {
     const result = scoreWordBridge(trials);
     return (
-      <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
+      <div className="flex flex-col items-center justify-center gap-6 py-8 md:py-16">
+        <h2 className="text-xl sm:text-2xl font-bold text-white">{tc('complete')}</h2>
         <div className="text-center">
-          <div className="text-4xl font-bold text-white">{result.totalScore}</div>
+          <div className="text-3xl sm:text-4xl font-bold text-white">{result.totalScore}</div>
           <div className="text-sm text-white/50">{t('points', { score: result.totalScore, max: result.maxScore })}</div>
         </div>
       </div>
@@ -101,9 +101,9 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
 
       {/* Word pair */}
       <div className="flex items-center gap-6">
-        <span className="text-2xl font-bold text-white">{question.wordA}</span>
+        <span className="text-xl sm:text-2xl font-bold text-white">{question.wordA}</span>
         <span className="text-white/30">{t('and')}</span>
-        <span className="text-2xl font-bold text-white">{question.wordB}</span>
+        <span className="text-xl sm:text-2xl font-bold text-white">{question.wordB}</span>
       </div>
 
       <p className="text-white/50 text-sm">{t('question')}</p>
@@ -114,7 +114,7 @@ export function WordBridge({ onComplete }: WordBridgeProps) {
           <button
             key={i}
             onClick={() => handleAnswer(opt.score)}
-            className="w-full px-6 py-4 text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-500/50 rounded-lg text-white transition-colors"
+            className="w-full px-4 sm:px-6 py-3 sm:py-4 text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-indigo-500/50 rounded-lg text-white transition-colors"
           >
             {opt.text}
           </button>

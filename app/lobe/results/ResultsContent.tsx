@@ -159,8 +159,8 @@ export function ResultsContent({
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] px-6 py-12">
-      <div className="max-w-2xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#0a0a0f] px-4 sm:px-6 py-8 sm:py-12">
+      <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
@@ -173,7 +173,7 @@ export function ResultsContent({
 
         {/* Hoo's Commentary */}
         {hasProfile && (commentaryLoading || commentary) && (
-          <section className="p-6 bg-white/5 border border-white/10 rounded-xl space-y-3">
+          <section className="p-4 sm:p-6 bg-white/5 border border-white/10 rounded-xl space-y-3">
             <h2 className="text-sm font-medium text-white/40 uppercase tracking-wider">
               {t('hooComment')}
             </h2>
@@ -194,7 +194,7 @@ export function ResultsContent({
 
         {/* Profile Summary */}
         {scores && (
-          <section className="p-6 bg-white/5 border border-white/10 rounded-xl space-y-4">
+          <section className="p-4 sm:p-6 bg-white/5 border border-white/10 rounded-xl space-y-4">
             <h2 className="text-sm font-medium text-white/40 uppercase tracking-wider">
               {t('normalizedScores')}
             </h2>
@@ -211,7 +211,7 @@ export function ResultsContent({
 
         {/* Detected Patterns */}
         {patterns.length > 0 && (
-          <section className="p-6 bg-white/5 border border-white/10 rounded-xl space-y-3">
+          <section className="p-4 sm:p-6 bg-white/5 border border-white/10 rounded-xl space-y-3">
             <h2 className="text-sm font-medium text-white/40 uppercase tracking-wider">
               {t('detectedPatterns')}
             </h2>
@@ -225,11 +225,11 @@ export function ResultsContent({
 
         {/* Prompt Parameters */}
         {promptParams && (
-          <section className="p-6 bg-white/5 border border-white/10 rounded-xl space-y-3">
+          <section className="p-4 sm:p-6 bg-white/5 border border-white/10 rounded-xl space-y-3">
             <h2 className="text-sm font-medium text-white/40 uppercase tracking-wider">
               {t('hooTuning')}
             </h2>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {PARAM_KEYS.map((key) => (
                 <PromptParamTag
                   key={key}

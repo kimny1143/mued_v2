@@ -186,7 +186,7 @@ export function ToneSequence({ onComplete }: ToneSequenceProps) {
   if (!isStarted) {
     const meta = GAME_META['tone-sequence'];
     return (
-      <div className="flex flex-col md:flex-row items-center justify-center gap-10 py-16">
+      <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 py-8 md:py-16">
         <div className="flex items-center justify-center md:w-2/5">
           <ToneSequenceSpecimen />
         </div>
@@ -198,7 +198,7 @@ export function ToneSequence({ onComplete }: ToneSequenceProps) {
           <p className="text-white/50 text-sm max-w-md text-center md:text-left">
             {t('description')}
           </p>
-          <button onClick={startGame} className="px-10 py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors">
+          <button onClick={startGame} className="px-6 sm:px-10 py-2 sm:py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors">
             {tc('start')}
           </button>
         </div>
@@ -210,13 +210,13 @@ export function ToneSequence({ onComplete }: ToneSequenceProps) {
     const s = displayState.spans;
     const result = scoreToneSequence(s.forward, s.backward, s.sequencing);
     return (
-      <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
+      <div className="flex flex-col items-center justify-center gap-6 py-8 md:py-16">
+        <h2 className="text-xl sm:text-2xl font-bold text-white">{tc('complete')}</h2>
         <div className="space-y-2 text-center">
-          <div className="text-4xl font-bold text-white">{result.rawScore.toFixed(1)}</div>
+          <div className="text-3xl sm:text-4xl font-bold text-white">{result.rawScore.toFixed(1)}</div>
           <div className="text-sm text-white/50">{tc('rawScore')}</div>
         </div>
-        <div className="flex gap-6 text-sm text-white/60">
+        <div className="flex flex-wrap justify-center gap-3 sm:gap-6 text-sm text-white/60">
           <div>{t('forward')}: <span className="text-white">{s.forward}</span></div>
           <div>{t('backward')}: <span className="text-white">{s.backward}</span></div>
           <div>{t('sequencing')}: <span className="text-white">{s.sequencing}</span></div>
@@ -280,14 +280,14 @@ export function ToneSequence({ onComplete }: ToneSequenceProps) {
       )}
 
       {/* Piano keyboard */}
-      <div className="flex gap-1">
+      <div className="flex gap-1 overflow-x-auto max-w-full pb-2">
         {TONE_NOTES.map((note, i) => (
           <button
             key={note.name}
             onClick={() => handleNoteClick(i)}
             disabled={displayState.phase !== 'answering'}
             className={`
-              w-14 h-24 rounded-b-lg border text-sm font-mono transition-all
+              w-10 sm:w-14 h-16 sm:h-24 shrink-0 rounded-b-lg border text-xs sm:text-sm font-mono transition-all
               ${activeNote === i
                 ? 'bg-indigo-500 border-indigo-400 text-white scale-95'
                 : displayState.phase === 'answering'

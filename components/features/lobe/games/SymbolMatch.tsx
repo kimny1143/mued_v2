@@ -110,7 +110,7 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
   if (!isRunning && !isFinished) {
     const meta = GAME_META['symbol-match'];
     return (
-      <div className="flex flex-col md:flex-row items-center justify-center gap-10 py-16">
+      <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 py-8 md:py-16">
         <div className="flex items-center justify-center md:w-2/5">
           <SymbolMatchSpecimen />
         </div>
@@ -127,7 +127,7 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
           </p>
           <button
             onClick={startGame}
-            className="px-10 py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors"
+            className="px-6 sm:px-10 py-2 sm:py-3 bg-transparent border border-white/20 text-white/70 rounded-[2px] text-sm tracking-wide hover:text-white/95 hover:border-white/35 transition-colors"
           >
             {tc('start')}
           </button>
@@ -140,19 +140,19 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
   if (isFinished) {
     const result = scoreSymbolMatch(trials);
     return (
-      <div className="flex flex-col items-center justify-center gap-6 py-16">
-        <h2 className="text-2xl font-bold text-white">{tc('complete')}</h2>
-        <div className="grid grid-cols-3 gap-6 text-center">
+      <div className="flex flex-col items-center justify-center gap-6 py-8 md:py-16">
+        <h2 className="text-xl sm:text-2xl font-bold text-white">{tc('complete')}</h2>
+        <div className="grid grid-cols-3 gap-4 sm:gap-6 text-center">
           <div>
-            <div className="text-3xl font-bold text-green-400">{result.correct}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-green-400">{result.correct}</div>
             <div className="text-sm text-white/50">{tc('correct')}</div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-red-400">{result.incorrect}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-red-400">{result.incorrect}</div>
             <div className="text-sm text-white/50">{tc('incorrect')}</div>
           </div>
           <div>
-            <div className="text-3xl font-bold text-white">{result.rawScore}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-white">{result.rawScore}</div>
             <div className="text-sm text-white/50">{tc('score')}</div>
           </div>
         </div>
@@ -178,7 +178,7 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
               {currentTrial.targetSymbols.map((s, i) => (
                 <div
                   key={i}
-                  className="w-16 h-16 flex items-center justify-center text-3xl bg-white/10 rounded-lg border border-white/20 text-white"
+                  className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center text-2xl sm:text-3xl bg-white/10 rounded-lg border border-white/20 text-white"
                 >
                   {s}
                 </div>
@@ -196,7 +196,7 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
               {currentTrial.comparisonSymbols.map((s, i) => (
                 <div
                   key={i}
-                  className="w-14 h-14 flex items-center justify-center text-2xl bg-white/5 rounded-lg border border-white/10 text-white"
+                  className="w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center text-xl sm:text-2xl bg-white/5 rounded-lg border border-white/10 text-white"
                 >
                   {s}
                 </div>
@@ -205,16 +205,16 @@ export function SymbolMatch({ onComplete }: SymbolMatchProps) {
           </div>
 
           {/* Answer buttons */}
-          <div className="flex gap-4 mt-4">
+          <div className="flex gap-3 sm:gap-4 mt-4">
             <button
               onClick={() => handleAnswer(true)}
-              className="px-10 py-4 bg-green-600/80 hover:bg-green-500 text-white rounded-lg font-medium text-lg transition-colors"
+              className="px-6 sm:px-10 py-3 sm:py-4 bg-green-600/80 hover:bg-green-500 text-white rounded-lg font-medium text-base sm:text-lg transition-colors"
             >
               {t('present')}
             </button>
             <button
               onClick={() => handleAnswer(false)}
-              className="px-10 py-4 bg-red-600/80 hover:bg-red-500 text-white rounded-lg font-medium text-lg transition-colors"
+              className="px-6 sm:px-10 py-3 sm:py-4 bg-red-600/80 hover:bg-red-500 text-white rounded-lg font-medium text-base sm:text-lg transition-colors"
             >
               {t('absent')}
             </button>
