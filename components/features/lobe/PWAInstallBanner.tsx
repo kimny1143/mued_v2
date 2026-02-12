@@ -5,24 +5,35 @@ import { usePwaInstall } from '@/hooks/use-pwa-install';
 
 export function PWAInstallBanner() {
   const t = useTranslations('muedlobe.pwa');
-  const { shouldShowBanner, canInstallNative, isIOSSafari, promptInstall, dismiss } =
+  const { shouldShowBanner, canInstallNative, isIOS, isIOSSafari, promptInstall, dismiss } =
     usePwaInstall();
 
   if (!shouldShowBanner) return null;
+
+  // Determine description and instructions based on platform
+  const description = canInstallNative
+    ? t('descriptionAndroid')
+    : isIOS
+      ? t('descriptionIOS')
+      : t('descriptionAndroid');
+
+  const instructions = canInstallNative
+    ? null // native install button handles it
+    : isIOS && isIOSSafari
+      ? `${t('iosStep1')} → ${t('iosStep2')}`
+      : isIOS && !isIOSSafari
+        ? t('iosOtherBrowser')
+        : t('androidManual');
 
   return (
     <div className="rounded-lg border border-white/10 bg-white/5 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-medium text-white">{t('title')}</h3>
-          <p className="mt-1 text-xs text-white/50">
-            {canInstallNative ? t('descriptionAndroid') : t('descriptionIOS')}
-          </p>
+          <p className="mt-1 text-xs text-white/50">{description}</p>
 
-          {isIOSSafari && !canInstallNative && (
-            <p className="mt-2 text-xs text-white/40">
-              {t('iosStep1')} → {t('iosStep2')}
-            </p>
+          {instructions && (
+            <p className="mt-2 text-xs text-white/40">{instructions}</p>
           )}
         </div>
 

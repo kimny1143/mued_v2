@@ -502,7 +502,9 @@
       "installButton": "Install",
       "dismiss": "Dismiss",
       "iosStep1": "Tap Share",
-      "iosStep2": "Add to Home Screen"
+      "iosStep2": "Add to Home Screen",
+      "iosOtherBrowser": "Open this page in Safari, then tap Share → Add to Home Screen.",
+      "androidManual": "Tap the browser menu (⋮) → Add to Home Screen."
     },
     "disclaimer": "MUEDlobe is not a psychological or medical assessment. It's a calibration tool for personalizing Hoo.",
     "gameDisclaimer": "These games are not a medical or psychological assessment. They are a calibration tool that helps Hoo adapt its communication style to you. Scores are not diagnostic results — they are tuning parameters for Hoo.",

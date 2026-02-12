@@ -7,7 +7,9 @@ const DISMISSED_KEY = 'muedlobe-pwa-dismissed';
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [isIOSSafari, setIsIOSSafari] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
@@ -20,11 +22,15 @@ export function usePwaInstall() {
     // Check dismissed state
     setIsDismissed(localStorage.getItem(DISMISSED_KEY) === 'true');
 
-    // Detect iOS Safari
+    // Detect platform
     const ua = window.navigator.userAgent;
-    const isIOS = /iPad|iPhone|iPod/.test(ua);
-    const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|Chrome/.test(ua);
-    setIsIOSSafari(isIOS && isSafari);
+    const ios = /iPad|iPhone|iPod/.test(ua);
+    const safari = /Safari/.test(ua) && !/CriOS|FxiOS|Chrome/.test(ua);
+    const mobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+
+    setIsIOS(ios);
+    setIsIOSSafari(ios && safari);
+    setIsMobile(mobile);
 
     // Listen for beforeinstallprompt (Android Chrome / Edge)
     const handler = (e: BeforeInstallPromptEvent) => {
@@ -38,8 +44,9 @@ export function usePwaInstall() {
 
   const canInstallNative = deferredPrompt !== null;
 
+  // Show banner on any mobile browser that isn't already standalone
   const shouldShowBanner =
-    !isStandalone && !isDismissed && (canInstallNative || isIOSSafari);
+    !isStandalone && !isDismissed && (canInstallNative || isMobile);
 
   const promptInstall = useCallback(async () => {
     if (!deferredPrompt) return;
@@ -58,7 +65,9 @@ export function usePwaInstall() {
   return {
     shouldShowBanner,
     canInstallNative,
+    isIOS,
     isIOSSafari,
+    isMobile,
     promptInstall,
     dismiss,
   };
