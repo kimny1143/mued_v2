@@ -495,6 +495,15 @@
       "step2": "Hooがあなたのスタイルを学ぶ",
       "step3": "Hooのサポートがあなた専用になる"
     },
+    "pwa": {
+      "title": "MUEDlobeをホーム画面に追加",
+      "descriptionAndroid": "アプリのように快適に使えます。",
+      "descriptionIOS": "ホーム画面に追加すると、より快適に使えます。",
+      "installButton": "インストール",
+      "dismiss": "閉じる",
+      "iosStep1": "共有をタップ",
+      "iosStep2": "ホーム画面に追加"
+    },
     "disclaimer": "MUEDlobeは心理検査ではありません。Hooのパーソナライズのためのツールです。",
     "gameDisclaimer": "本ゲームは医学的・心理学的な検査ではなく、AIアシスタント「Hoo」の応答スタイルを最適化するためのキャリブレーションツールです。スコアは診断結果ではなく、Hoo専用の調整パラメータです。",
     "list": {

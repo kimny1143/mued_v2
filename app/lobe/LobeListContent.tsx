@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { GAME_META, GAME_ORDER, VARIABLE_DISPLAY, VARIABLE_COLORS } from '@/lib/muedlobe/constants';
+import { PWAInstallBanner } from '@/components/features/lobe/PWAInstallBanner';
 
 interface LobeListContentProps {
   completedGames: string[];
@@ -133,6 +134,9 @@ export function LobeListContent({ completedGames, hasProfile, allComplete }: Lob
             {t('completeAll')}
           </p>
         )}
+
+        {/* PWA Install Banner */}
+        <PWAInstallBanner />
 
         {/* Disclaimer footer */}
         <footer className="pt-6 border-t border-white/5">

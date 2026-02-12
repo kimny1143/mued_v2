@@ -495,6 +495,15 @@
       "step2": "Hoo learns your style",
       "step3": "Hoo adapts its support to you"
     },
+    "pwa": {
+      "title": "Add MUEDlobe to Home Screen",
+      "descriptionAndroid": "Install for a faster, app-like experience.",
+      "descriptionIOS": "Add to your Home Screen for a faster experience.",
+      "installButton": "Install",
+      "dismiss": "Dismiss",
+      "iosStep1": "Tap Share",
+      "iosStep2": "Add to Home Screen"
+    },
     "disclaimer": "MUEDlobe is not a psychological or medical assessment. It's a calibration tool for personalizing Hoo.",
     "gameDisclaimer": "These games are not a medical or psychological assessment. They are a calibration tool that helps Hoo adapt its communication style to you. Scores are not diagnostic results — they are tuning parameters for Hoo.",
     "list": {

@@ -4,6 +4,7 @@ import { locales, defaultLocale, type Locale, getPreferredLocale } from "@/lib/i
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
+  "/lobe(.*)",
 ]);
 
 const isPublicRoute = createRouteMatcher([
