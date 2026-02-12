@@ -6,7 +6,7 @@ import { LobeListContent } from './LobeListContent';
 
 export default async function LobePage() {
   const { userId } = await auth();
-  if (!userId) redirect('/sign-in');
+  if (!userId) redirect('/sign-in?redirect_url=/lobe');
 
   const [measurements, profile] = await Promise.all([
     cognitiveProfileRepository.findMeasurementsByUserId(userId),

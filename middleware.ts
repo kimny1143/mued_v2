@@ -79,7 +79,14 @@ export default clerkMiddleware(async (auth, req) => {
     return;
   }
 
-  if (isProtectedRoute(req)) await auth.protect();
+  if (isProtectedRoute(req)) {
+    const { userId } = await auth();
+    if (!userId) {
+      const signInUrl = new URL('/sign-in', req.url);
+      signInUrl.searchParams.set('redirect_url', pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+  }
 });
 
 export const config = {
