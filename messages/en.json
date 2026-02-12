@@ -731,6 +731,14 @@
       "muedear": {
         "title": "It Was Supposed to Be Quick",
         "description": "An 8-week project that turned into custom DSP implementation. What happened to MUEDear."
+      },
+      "brain01": {
+        "title": "The Brain Is a Playback Device",
+        "description": "A composer's view on the common ground between human cognition and AI. Memory rumination, dreams, and the default mode network."
+      },
+      "brain02": {
+        "title": "An External Prefrontal Cortex",
+        "description": "The MUEDlobe concept: measuring your cognitive profile and optimizing AI behavior to match your brain's strengths and weaknesses."
       }
     },
     "articles": {
@@ -754,6 +762,20 @@
         "author": "kimny × Claude",
         "date": "February 2025",
         "footer": "This article is reconstructed from actual conversations with AI (Claude) during the MUEDear development process."
+      },
+      "brain01": {
+        "title": "The Brain Is a Playback Device — A Composer's View on the Common Ground Between Humans and AI",
+        "description": "A medical student's remark that 'humans only ruminate memories' becomes a composer's creative philosophy. How understanding AI mechanics revealed the nature of musical creation.",
+        "author": "kimny × Claude",
+        "date": "February 2025",
+        "footer": "This article is reconstructed from multiple conversations with AI (Claude)."
+      },
+      "brain02": {
+        "title": "An External Prefrontal Cortex — The MUEDlobe Concept",
+        "description": "From cognitive profiling with WAIS to personalized AI behavior. Building a tool that adapts to your brain's strengths and weaknesses.",
+        "author": "kimny × Claude",
+        "date": "February 2025",
+        "footer": "This article is a sequel to 'The Brain Is a Playback Device', reconstructed from multiple conversations with AI (Claude)."
       }
     }
   }
