@@ -119,22 +119,25 @@ export function ResultsContent({
   const t = useTranslations('muedlobe.results');
   const [commentary, setCommentary] = useState<string | null>(null);
   const [commentaryLoading, setCommentaryLoading] = useState(false);
+  const [commentaryError, setCommentaryError] = useState(false);
 
   useEffect(() => {
     if (!hasProfile) return;
 
     setCommentaryLoading(true);
+    setCommentaryError(false);
     fetch('/api/lobe/commentary')
       .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch');
+        if (!res.ok) throw new Error(`Commentary API ${res.status}`);
         return res.json();
       })
       .then((data) => {
         setCommentary(data.data?.commentary ?? null);
       })
-      .catch(() => {
-        // Silently fail — score display is still available
+      .catch((err) => {
+        console.error('[Commentary]', err);
         setCommentary(null);
+        setCommentaryError(true);
       })
       .finally(() => {
         setCommentaryLoading(false);
@@ -172,7 +175,7 @@ export function ResultsContent({
         </div>
 
         {/* Hoo's Commentary */}
-        {hasProfile && (commentaryLoading || commentary) && (
+        {hasProfile && (commentaryLoading || commentary || commentaryError) && (
           <section className="p-4 sm:p-6 bg-white/5 border border-white/10 rounded-xl space-y-3">
             <h2 className="text-sm font-medium text-white/40 uppercase tracking-wider">
               {t('hooComment')}
@@ -183,6 +186,27 @@ export function ResultsContent({
                 <div className="h-4 bg-white/10 rounded animate-pulse w-5/6" />
                 <div className="h-4 bg-white/10 rounded animate-pulse w-4/6" />
                 <p className="text-xs text-white/30 mt-2">{t('generating')}</p>
+              </div>
+            ) : commentaryError ? (
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-white/30">{t('commentaryFailed')}</p>
+                <button
+                  onClick={() => {
+                    setCommentaryLoading(true);
+                    setCommentaryError(false);
+                    fetch('/api/lobe/commentary')
+                      .then((res) => {
+                        if (!res.ok) throw new Error(`${res.status}`);
+                        return res.json();
+                      })
+                      .then((data) => setCommentary(data.data?.commentary ?? null))
+                      .catch(() => setCommentaryError(true))
+                      .finally(() => setCommentaryLoading(false));
+                  }}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                >
+                  {t('retryCommentary')}
+                </button>
               </div>
             ) : (
               <div className="text-white/70 text-sm leading-relaxed whitespace-pre-line">

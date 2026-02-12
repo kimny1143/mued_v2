@@ -76,6 +76,10 @@ For MUEDlobe's target audience (music creators), **tonal working memory** is mor
 - Non-musicians may score **lower** (tonal encoding is less automatic than verbal)
 - Scores are **not directly comparable** to WAIS standardized norms
 
+### Empirical Validation (2026-02-12)
+
+Pilot comparison against WAIS-III clinical data confirmed: individual with WAIS WM=128 (Superior) scored significantly lower on ToneSequence-based WM estimation (105-115). This empirically validates the tonal vs verbal WM distinction. See `wais-correlation-analysis.md` for full analysis.
+
 ---
 
 ## Three-Mode Structure (Parallels WAIS)

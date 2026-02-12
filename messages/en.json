@@ -533,6 +533,8 @@
       "score": "Score: {score}",
       "hooComment": "Hoo's Analysis",
       "generating": "Analyzing your thinking style...",
+      "commentaryFailed": "Could not generate Hoo's analysis.",
+      "retryCommentary": "Retry",
       "backToLobe": "Back to Lobe",
       "variables": {
         "wm": "Memory",

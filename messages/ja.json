@@ -533,6 +533,8 @@
       "score": "スコア: {score}",
       "hooComment": "Hooの分析",
       "generating": "あなたの思考スタイルを分析中...",
+      "commentaryFailed": "Hooの分析を生成できませんでした。",
+      "retryCommentary": "再試行",
       "backToLobe": "Lobeに戻る",
       "variables": {
         "wm": "メモリー",
