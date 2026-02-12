@@ -503,7 +503,7 @@
       "dismiss": "閉じる",
       "iosStep1": "共有をタップ",
       "iosStep2": "ホーム画面に追加",
-      "iosOtherBrowser": "Safariでこのページを開き、共有 → ホーム画面に追加してください。",
+      "iosOtherBrowser": "共有ボタン（↑）またはメニュー（⋯）→ ホーム画面に追加",
       "androidManual": "ブラウザメニュー（⋮）→ ホーム画面に追加をタップ。"
     },
     "disclaimer": "MUEDlobeは心理検査ではありません。Hooのパーソナライズのためのツールです。",

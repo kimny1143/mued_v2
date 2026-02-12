@@ -503,7 +503,7 @@
       "dismiss": "Dismiss",
       "iosStep1": "Tap Share",
       "iosStep2": "Add to Home Screen",
-      "iosOtherBrowser": "Open this page in Safari, then tap Share → Add to Home Screen.",
+      "iosOtherBrowser": "Tap the share button (↑) or menu (⋯) → Add to Home Screen.",
       "androidManual": "Tap the browser menu (⋮) → Add to Home Screen."
     },
     "disclaimer": "MUEDlobe is not a psychological or medical assessment. It's a calibration tool for personalizing Hoo.",
