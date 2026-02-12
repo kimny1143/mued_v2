@@ -1,121 +1,142 @@
-# MUEDlobe vs WAIS-III: Correlation Analysis & Future Roadmap
+# MUEDlobe vs WAIS-III: 相関分析と今後のロードマップ
 
-**Document Type**: POC Validation Note
-**Date**: 2026-02-12
-**Status**: Internal — anonymized pilot data
-
----
-
-## Background
-
-MUEDlobe pilot data was compared against an actual WAIS-III clinical assessment (conducted ~10 years prior) for the same individual. This provides the first empirical data point for evaluating MUEDlobe's measurement characteristics.
+**文書種別**: POC検証ノート
+**作成日**: 2026-02-12
+**ステータス**: 内部文書 — 開発者 (kimny) パイロットデータ
 
 ---
 
-## Results Comparison
+## 背景
 
-### Index-Level Comparison
+MUEDlobeのパイロットデータを、kimnyが過去に受けたWAIS-III臨床検査（2016年頃、約10年前）の結果と比較し、MUEDlobeの測定特性を評価した。システムにとって最初の実測データポイントとなる。
 
-| Index | MUEDlobe Estimate | WAIS-III Actual | Delta | Direction |
-|-------|-------------------|-----------------|-------|-----------|
-| WM (Working Memory) | 105-115 | **128** | -13 to -23 | Significant underestimate |
-| PS (Processing Speed) | 115-125 | **97** | +18 to +28 | Significant overestimate |
-| VC (Verbal Comprehension) | 110-120 | 104 | +6 to +16 | Moderate overestimate |
-| PO/PR (Perceptual Reasoning) | 120-130 | 116 | +4 to +14 | Closest match |
+### WAIS-III検査時の状況
 
-### WAIS-III Profile (Actual)
+WAIS-IIIは心療内科にてADHD疑いの評価の一環として実施された。検査当時、kimnyはストレス性の軽度うつ状態にあった。これは臨床的に重要な文脈である:
+
+- **うつ状態は認知検査のスコアを全般的に抑制する**（特に時間制限のある課題）
+- **処理速度(PS)が最も影響を受ける** — 精神運動抑制が運動出力速度・持続的努力に直接影響
+- **ワーキングメモリ(WM)は中程度の影響** — 注意資源が減少
+- **言語理解(VC)は最も影響を受けにくい** — 結晶性知能（蓄積された知識）は状態に左右されにくい
+- **全検査IQへの影響**: 文献上、重症度に応じて5-15点程度の低下があり得る
+
+**含意**: WAIS-IIIのスコアはkimnyの真の認知能力の下限値である可能性が高い。特にPSとWMについて。以下のMUEDlobeとの比較分析にはこの点を考慮する必要がある。
+
+---
+
+## 結果の比較
+
+### 指標レベルの比較
+
+| 指標 | MUEDlobe推定 | WAIS-III実測 | 差分 | 方向 |
+|------|-------------|-------------|------|------|
+| WM (ワーキングメモリ) | 105-115 | **128** | -13〜-23 | 大幅な過小評価 |
+| PS (処理速度) | 115-125 | **97** | +18〜+28 | 大幅な過大評価 |
+| VC (言語理解) | 110-120 | 104 | +6〜+16 | やや過大評価 |
+| PO/PR (知覚推理) | 120-130 | 116 | +4〜+14 | 最も近い一致 |
+
+### WAIS-III プロフィール（実測値）
 
 ```
 WM(128) >> PO(116) > VC(104) >= PS(97)
 ```
 
-Notable WAIS-III subtest peaks: Arithmetic=18, Digit Span=15 (WM pair)
+- 全検査IQ: 112（平均の上）
+- 言語性IQ: 109（平均）、動作性IQ: 113（平均の上）
+- 注目すべき下位検査: 算数=18、数唱=15（WMペアが突出）
+- WM-PS間の差: 31点（5%水準で有意）
 
-### MUEDlobe Raw Scores
+### MUEDlobe 生スコア
 
-| Game | Raw Score | Theoretical Max | Achievement |
-|------|-----------|-----------------|-------------|
+| ゲーム | 生スコア | 理論上の最大値 | 達成率 |
+|--------|---------|--------------|--------|
 | Tone Sequence (WM) | 24.6 | ~39.6 | 62% |
 | Mental Math (WM) | 30.1 | ~45.8 | 66% |
-| Symbol Match (PS) | 52 | ~50 practical | >100% |
-| Code Fill (PS) | 57 | ~50 practical | >100% |
+| Symbol Match (PS) | 52 | ~50（実用上限） | >100% |
+| Code Fill (PS) | 57 | ~50（実用上限） | >100% |
 | Word Bridge (VC) | 21 | 24 | 88% |
 | Pattern Complete (PR) | 27 | 28.5 | 95% |
 | Focus Flow (ATT) | 4.08 | ~4.5 | 91% |
 
 ---
 
-## Analysis of Discrepancies
+## 乖離の分析
 
-### 1. WM: Tonal WM vs Verbal WM (Major Finding)
+### 1. WM: トーナルWM vs 言語WM（最重要の発見）
 
-**WAIS WM=128 vs MUEDlobe WM estimate 105-115**
+**WAIS WM=128 vs MUEDlobe WM推定 105-115**
 
-This is the most significant finding. The individual's verbal WM is in the Superior range (Arithmetic=18, Digit Span=15), but tonal WM (ToneSequence=24.6/39.6) did not reach the same level.
+最も重要な発見。言語的WMはSuperior域（算数=18、数唱=15）だが、トーナルWM（ToneSequence=24.6/39.6）は同等レベルに到達しなかった。
 
-**Root cause**: ToneSequence measures tonal working memory (pitch-based encoding), not verbal working memory (phonological loop). These are distinct cognitive systems engaging different neural pathways. See `tone-sequence-cognitive-note.md` for detailed analysis.
+**根本原因**: ToneSequenceは音高ベースのトーナルワーキングメモリを測定しており、WAISの数唱が測る音韻ループ（言語的WM）とは異なる認知システムである。詳細は `tone-sequence-cognitive-note.md` を参照。
 
-**Future direction**: Consider adding a verbal/numeric digit span task (closer to WAIS format) alongside ToneSequence, so that WM composite better captures verbal WM capacity. ToneSequence remains valuable as a music-specific measure, but should not be the sole WM indicator if WAIS-like correlation is desired.
+**状態要因**: WAIS WM=128はうつ状態下で達成されている。うつは注意資源を減少させWMを中程度に抑制するため、128は下限値であり、本来の言語的WMはさらに高い可能性がある。つまりWAISとMUEDlobeのWM乖離は、検査時のコンディション差ではなく、**トーナルvs言語の認知経路の違い**で説明される。
 
-### 2. PS: Motor Component Removal (Structural Difference)
+**今後の方向性**: WAIS的なWM相関を高めるなら、ToneSequenceとは別に言語的・数字的な数唱タスクの追加を検討。ToneSequenceは音楽特化の測定として引き続き有用だが、WM合成スコアの唯一の指標にすべきではない。
 
-**WAIS PS=97 vs MUEDlobe PS estimate 115-125**
+### 2. PS: 運動成分の除去（構造的差異）
 
-MUEDlobe PS tasks (Symbol Match, Code Fill) are screen-tap based, removing the handwriting motor demands of WAIS PS subtests (Coding, Symbol Search). The individual's cognitive processing speed is fast, but paper-and-pencil output speed is average.
+**WAIS PS=97 vs MUEDlobe PS推定 115-125**
 
-**Interpretation**: MUEDlobe measures "pure cognitive processing speed" while WAIS measures "processing speed + motor output." For digital music creators, the MUEDlobe approach may be more ecologically valid.
+MUEDlobeのPS課題（Symbol Match, Code Fill）はタップ操作のみで、WAISのPS下位検査（符号、記号探し）に含まれる手書きの運動負荷がない。認知的処理速度は速いが、紙とペンでの出力速度は平均域。
 
-**Future direction**: Overall score scaling may need adjustment downward. PS scores tend to run high compared to WAIS norms. Consider recalibrating the normalization parameters (mean/SD) after collecting more pilot data. No need to add motor component — the tap-based design is correct for the target audience.
+**解釈**: MUEDlobeは「純粋な認知処理速度」を測っており、WAISは「処理速度 + 運動出力」を測っている。デジタル環境で制作する音楽クリエイターにとっては、MUEDlobeのアプローチの方が生態学的妥当性が高い。
 
-### 3. VC: Missing Vocabulary Subtest (Coverage Gap)
+**状態要因**: WAIS PS=97はうつ状態下で測定された。PSはうつの影響を最も受ける指標（精神運動抑制）であり、本来のベースラインは97より高い可能性が高い。これによりMUEDlobeとの乖離は一部縮小される。残りの乖離は運動成分の除去（タップ vs 手書き）で説明できる。
 
-**WAIS VC=104 vs MUEDlobe VC estimate 110-120**
+**今後の方向性**: 全体的にPSスコアがWAIS基準より高めに出る傾向。パイロットデータの蓄積後、正規化パラメータ（平均/SD）の再調整を検討。運動成分を追加する必要はない — タップベースの設計は対象ユーザーに適している。
 
-WAIS VC is composed of: Information(10), Similarities(11), Vocabulary(7), Comprehension(11). The low Vocabulary score (scaled=7) significantly pulled down the composite. MUEDlobe only has Word Bridge (similar to Similarities), missing the vocabulary dimension entirely.
+### 3. VC: 語彙下位検査の欠落（カバレッジの不足）
 
-**Future direction**: Add a vocabulary-type task to improve VC coverage. Options:
-- **Word definition game**: Given a word, select the best definition from options (closest to WAIS Vocabulary)
-- **Comprehension task**: Social/practical reasoning questions adapted for music context
-- Adding even one more VC subtest would substantially improve VC estimation accuracy
+**WAIS VC=104 vs MUEDlobe VC推定 110-120**
 
-### 4. PO/PR: Best Match (Validation Point)
+WAIS VCの構成: 知識(10)、類似(11)、単語(7)、理解(11)。単語=7の低さが合成スコアを引き下げている。MUEDlobeにはWord Bridge（類似に相当）しかなく、語彙の次元が完全に欠落している。
 
-**WAIS PO=116 vs MUEDlobe PR estimate 120-130**
+**今後の方向性**: VCのカバレッジ向上のため、語彙系タスクの追加を検討:
+- **語義選択ゲーム**: 単語が提示され、最も適切な定義を選ぶ（WAISの「単語」に最も近い）
+- **理解タスク**: 社会的・実践的推論の問題を音楽文脈に適応
+- もう1つVCの下位課題を追加するだけで、VC推定精度は大幅に改善される
 
-Pattern Complete closely mirrors WAIS Matrix Reasoning (actual scaled score=15, which aligns with 95% achievement rate). This is the strongest validation point — when task structure is similar, MUEDlobe and WAIS correlate well.
+### 4. PO/PR: 最も良好な一致（検証ポイント）
 
----
+**WAIS PO=116 vs MUEDlobe PR推定 120-130**
 
-## Summary of Action Items
-
-| Priority | Area | Issue | Proposed Action |
-|----------|------|-------|----------------|
-| **Medium** | WM | Tonal WM ≠ Verbal WM, low WAIS correlation | Consider adding verbal digit span task |
-| **Low** | PS | Scores run high vs WAIS norms | Recalibrate normalization params after more data |
-| **Medium** | VC | Missing vocabulary coverage | Add vocabulary-type game to improve VC accuracy |
-| **None** | PR | Good WAIS correlation | No change needed |
-| **None** | ATT | No WAIS equivalent (CPT domain) | No change needed |
+Pattern CompleteはWAISの行列推理と課題構造が最も近い。WAISの行列推理=15という実測値は、Pattern Complete 27/28.5（達成率95%）とよく整合する。**課題構造が類似している場合、MUEDlobeとWAISは良好な相関を示す**ことの検証ポイントとなった。
 
 ---
 
-## General Assessment
+## アクションアイテムまとめ
 
-The overall game design direction and gamification approach is strong. The discrepancies found are not flaws in the game design but rather expected consequences of:
-1. Measuring different cognitive constructs (tonal vs verbal WM)
-2. Using different modalities (screen tap vs handwriting)
-3. Incomplete coverage of certain domains (VC lacking vocabulary)
-
-UI polish opportunities remain, but the core measurement architecture is sound.
-
----
-
-## Caveats
-
-- N=1 pilot data — patterns may not generalize
-- ~10-year gap between WAIS-III and MUEDlobe assessment
-- WAIS-III (not WAIS-IV/V) — index structure differs slightly
-- MUEDlobe normalization uses provisional norms, not population-based
+| 優先度 | 領域 | 課題 | 提案するアクション |
+|--------|------|------|-------------------|
+| **中** | WM | トーナルWM ≠ 言語WM、WAIS相関が低い | 言語的数唱タスクの追加を検討 |
+| **低** | PS | WAIS基準に対してスコアが高めに出る | パイロットデータ蓄積後に正規化パラメータを再調整 |
+| **中** | VC | 語彙系カバレッジの欠落 | 語彙系ゲームの追加でVC精度を改善 |
+| **なし** | PR | WAISとの相関が良好 | 変更不要 |
+| **なし** | ATT | WAIS相当なし（CPT領域） | 変更不要 |
 
 ---
 
-*Last updated: 2026-02-12*
+## 総合評価
+
+ゲームデザインの方向性とゲーミフィケーションのアプローチは良好。発見された乖離はゲーム設計の欠陥ではなく、以下の想定される結果:
+
+1. 異なる認知構成概念の測定（トーナルWM vs 言語WM）
+2. 異なるモダリティの使用（画面タップ vs 手書き）
+3. 一部領域のカバレッジ不足（VCに語彙がない）
+
+UIのブラッシュアップ余地は残るが、コアの測定アーキテクチャは健全である。
+
+---
+
+## 注意事項
+
+- N=1のパイロットデータ — パターンが一般化できるとは限らない
+- WAIS-IIIとMUEDlobeの間に約10年の間隔がある
+- WAIS-III（WAIS-IV/Vではない）— 指標構造が若干異なる
+- WAIS-III検査時にうつ状態 — スコアが下限値である可能性
+- MUEDlobeの正規化は暫定的なnormを使用（母集団ベースではない）
+
+---
+
+*最終更新: 2026-02-12*

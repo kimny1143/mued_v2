@@ -1,110 +1,110 @@
-# ToneSequence vs WAIS Digit Span: Cognitive Process Differences
+# ToneSequence vs WAIS数唱: 認知プロセスの差異
 
-**Document Type**: Research Note
-**Date**: 2026-02-12
-**Status**: Internal POC Documentation
-
----
-
-## Executive Summary
-
-MUEDlobe's ToneSequence game is structurally inspired by WAIS Digit Span but measures **tonal working memory** rather than **verbal working memory**. This is a deliberate design choice optimized for music creators, not a limitation.
+**文書種別**: リサーチノート
+**作成日**: 2026-02-12
+**ステータス**: 内部POC文書
 
 ---
 
-## Cognitive Pathway Comparison
+## 概要
 
-### WAIS Digit Span (Verbal-Numeric Stimuli)
+MUEDlobeのToneSequenceは構造的にWAIS数唱に着想を得ているが、**言語的ワーキングメモリ**ではなく**トーナルワーキングメモリ**を測定している。これは音楽クリエイター向けに最適化された意図的な設計判断であり、制限ではない。
+
+---
+
+## 認知経路の比較
+
+### WAIS数唱（言語-数字刺激）
 
 ```
-Spoken Numbers → Phonological Loop → Verbal Working Memory → Response
+読み上げられた数字 → 音韻ループ → 言語的ワーキングメモリ → 応答
 ```
 
-- **Encoding**: Linguistic/phonological (言語的符号化)
-- **Storage**: Articulatory rehearsal in phonological loop
-- **Neural substrate**: Left hemisphere language areas (Broca's, Wernicke's)
-- **Measured capacity**: Verbal short-term memory span
+- **符号化**: 言語的/音韻的
+- **保持**: 音韻ループ内での構音的リハーサル
+- **神経基盤**: 左半球の言語領域（ブローカ野、ウェルニッケ野）
+- **測定能力**: 言語的短期記憶スパン
 
-### MUEDlobe ToneSequence (Tonal Stimuli)
+### MUEDlobe ToneSequence（音高刺激）
 
 ```
-Musical Pitches (C4-C5) → Tonal/Acoustic Encoding → Tonal Working Memory → Response
+音高（C4-C5）→ 音響的符号化 → トーナルワーキングメモリ → 応答
 ```
 
-- **Encoding**: Tonal/acoustic (音高的符号化)
-- **Storage**: Pitch contour representation in auditory working memory
-- **Neural substrate**: Right hemisphere auditory cortex + bilateral superior temporal gyrus
-- **Measured capacity**: Tonal short-term memory span
+- **符号化**: 音高/音響的
+- **保持**: 聴覚ワーキングメモリ内でのピッチ輪郭表象
+- **神経基盤**: 右半球の聴覚皮質 + 両側の上側頭回
+- **測定能力**: トーナル短期記憶スパン
 
 ---
 
-## Key Differences
+## 主要な差異
 
-### 1. Stimulus Domain
+### 1. 刺激領域
 
-| Aspect | WAIS | ToneSequence |
-|--------|------|--------------|
-| Stimulus type | Verbal-numeric | Musical pitches |
-| Frequency range | Speech (80-250 Hz) | C4-C5 (261.63-523.25 Hz) |
-| Semantic content | Numbers (0-9) | Pure tones (no semantic meaning) |
+| 側面 | WAIS | ToneSequence |
+|------|------|--------------|
+| 刺激の種類 | 言語-数字 | 音高（楽音） |
+| 周波数帯域 | 音声帯域（80-250 Hz） | C4-C5（261.63-523.25 Hz） |
+| 意味的内容 | 数字（0-9） | 純音（意味的内容なし） |
 
-### 2. Working Memory System Engaged
+### 2. 関与するワーキングメモリシステム
 
-- **WAIS**: Phonological loop (Baddeley's model)
-- **ToneSequence**: Tonal loop / auditory-spatial sketchpad for pitch
+- **WAIS**: 音韻ループ（Baddeleyのモデル）
+- **ToneSequence**: トーナルループ / 音高のための聴覚空間スケッチパッド
 
-### 3. Neural Pathways
+### 3. 神経経路
 
-- **WAIS**: Left-lateralized language network
-- **ToneSequence**: Right-lateralized auditory network + bilateral pitch processing
-
----
-
-## Implications for MUEDlobe
-
-### This is a Feature, Not a Bug
-
-For MUEDlobe's target audience (music creators), **tonal working memory** is more relevant than verbal working memory:
-
-1. **Domain-specific calibration**: Music production requires tracking multiple pitches, harmonies, and melodic patterns simultaneously
-2. **Ecological validity**: Tonal WM directly reflects real-world music cognition tasks
-3. **Hoo AI optimization**: The AI assistant can adapt to the user's tonal memory capacity, not just verbal capacity
-
-### Expected Score Divergence from WAIS Norms
-
-- Musicians may score **higher** on ToneSequence than WAIS Digit Span (due to trained tonal WM)
-- Non-musicians may score **lower** (tonal encoding is less automatic than verbal)
-- Scores are **not directly comparable** to WAIS standardized norms
-
-### Empirical Validation (2026-02-12)
-
-Pilot comparison against WAIS-III clinical data confirmed: individual with WAIS WM=128 (Superior) scored significantly lower on ToneSequence-based WM estimation (105-115). This empirically validates the tonal vs verbal WM distinction. See `wais-correlation-analysis.md` for full analysis.
+- **WAIS**: 左半球優位の言語ネットワーク
+- **ToneSequence**: 右半球優位の聴覚ネットワーク + 両側のピッチ処理
 
 ---
 
-## Three-Mode Structure (Parallels WAIS)
+## MUEDlobeへの含意
 
-| Mode | WAIS Equivalent | ToneSequence Implementation |
-|------|----------------|----------------------------|
-| Forward | Digit Span Forward | Play sequence in original order |
-| Backward | Digit Span Backward | Play sequence in reverse order |
-| Sequencing | Digit Span Sequencing | Reorder by ascending pitch |
+### 欠陥ではなく特徴
 
-While the structure parallels WAIS, the **cognitive load** differs due to tonal vs. verbal encoding.
+MUEDlobeの対象ユーザー（音楽クリエイター）にとって、**トーナルワーキングメモリ**は言語的ワーキングメモリよりも関連性が高い:
+
+1. **領域特異的キャリブレーション**: 音楽制作では複数の音高、和声、旋律パターンを同時に追跡する必要がある
+2. **生態学的妥当性**: トーナルWMは実際の音楽認知タスクを直接反映する
+3. **Hoo AIの最適化**: AIアシスタントはユーザーの音高記憶容量に基づいて適応できる
+
+### WAISとのスコア乖離の予測
+
+- 音楽家はToneSequenceでWAIS数唱より**高い**スコアを出す可能性（訓練されたトーナルWM）
+- 非音楽家は**低い**スコアを出す可能性（音高の符号化が自動的でない）
+- スコアはWAISの標準化されたnormと**直接比較できない**
+
+### 実測データによる検証（2026-02-12）
+
+WAIS-III臨床データとのパイロット比較で確認: WAIS WM=128（Superior域）の個人が、ToneSequenceベースのWM推定では105-115と大幅に低く出た。これはトーナルWMと言語WMの区別を実証的に裏付ける。詳細は `wais-correlation-analysis.md` を参照。
 
 ---
 
-## Clinical Note
+## 3モード構造（WAISとの並行関係）
 
-**MUEDlobe is explicitly NOT a WAIS-compliant diagnostic tool.**
+| モード | WAIS対応 | ToneSequenceでの実装 |
+|--------|---------|---------------------|
+| Forward | 数唱順唱 | 元の順序で再生 |
+| Backward | 数唱逆唱 | 逆順で再生 |
+| Sequencing | 数唱整序 | 音高の昇順に並び替え |
 
-- **Purpose**: Music-focused cognitive calibration for Hoo AI assistant
-- **Scope**: Intra-individual profiling for personalized AI interaction
-- **Not for**: Clinical diagnosis, IQ assessment, or normative comparison
+構造はWAISと並行しているが、**認知負荷**はトーナル符号化と言語的符号化の違いにより異なる。
 
 ---
 
-## References
+## 臨床上の注記
+
+**MUEDlobeはWAIS準拠の診断ツールではない。**
+
+- **目的**: Hoo AIアシスタントのための音楽特化型認知キャリブレーション
+- **範囲**: パーソナライズされたAIインタラクションのための個人内プロファイリング
+- **対象外**: 臨床診断、IQ評価、母集団的な規準比較
+
+---
+
+## 参考文献
 
 - Baddeley, A. D. (2000). The episodic buffer: A new component of working memory? *Trends in Cognitive Sciences*, 4(11), 417-423.
 - Williamson, V. J., et al. (2010). Comparing short-term memory for sequences of verbal and tonal materials. *Memory & Cognition*, 38(6), 762-773.
@@ -112,4 +112,4 @@ While the structure parallels WAIS, the **cognitive load** differs due to tonal 
 
 ---
 
-*Last updated: 2026-02-12*
+*最終更新: 2026-02-12*
