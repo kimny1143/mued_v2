@@ -593,7 +593,9 @@
         "failedToSaveDesc": "Your result could not be saved. Please try again.",
         "retry": "Retry",
         "backToGames": "Back to Games",
-        "offlineSynced": "{count} offline result(s) synced"
+        "offlineSynced": "{count} offline result(s) synced",
+        "rotateLandscape": "Rotate to Landscape",
+        "rotateLandscapeDesc": "This game is designed for landscape mode. Please rotate your device."
       },
       "toneSequence": {
         "title": "Tone Sequence",

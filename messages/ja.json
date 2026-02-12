@@ -593,7 +593,9 @@
         "failedToSaveDesc": "結果を保存できませんでした。もう一度お試しください。",
         "retry": "再試行",
         "backToGames": "ゲーム一覧へ",
-        "offlineSynced": "{count}件のオフライン結果を同期しました"
+        "offlineSynced": "{count}件のオフライン結果を同期しました",
+        "rotateLandscape": "横画面にしてください",
+        "rotateLandscapeDesc": "このゲームは横画面でプレイします。端末を回転してください。"
       },
       "toneSequence": {
         "title": "トーンシーケンス",

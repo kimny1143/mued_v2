@@ -12,15 +12,37 @@ type GameResult = Record<string, any>;
 
 interface GamePageWrapperProps {
   gameType: GameType;
+  requiresLandscape?: boolean;
   children: (props: { onComplete: (result: GameResult) => void }) => React.ReactNode;
 }
 
-export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
+function usePortraitDetection(enabled: boolean) {
+  const [isPortrait, setIsPortrait] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const mq = window.matchMedia('(orientation: portrait)');
+    // Only enforce on mobile-sized screens (≤768px width in landscape)
+    const isMobile = window.screen.width <= 768 || window.screen.height <= 768;
+    if (!isMobile) return;
+
+    const update = () => setIsPortrait(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, [enabled]);
+
+  return isPortrait;
+}
+
+export function GamePageWrapper({ gameType, requiresLandscape = false, children }: GamePageWrapperProps) {
   const router = useRouter();
   const meta = GAME_META[gameType];
   const t = useTranslations('muedlobe.gameUI.common');
   const tGame = useTranslations(`muedlobe.games.${gameType}`);
   const accentColor = VARIABLE_COLORS[meta.variable] ?? 'var(--color-lobe-memory)';
+  const isPortrait = usePortraitDetection(requiresLandscape);
   const [status, setStatus] = useState<'playing' | 'saving' | 'error' | 'saved' | 'saved-offline' | 'profile-ready'>('playing');
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<GameResult | null>(null);
@@ -167,6 +189,17 @@ export function GamePageWrapper({ gameType, children }: GamePageWrapperProps) {
           children({ onComplete: handleComplete })
         )}
       </main>
+
+      {/* Portrait orientation overlay */}
+      {isPortrait && (
+        <div className="fixed inset-0 z-50 bg-[#0a0a0f] flex items-center justify-center p-6">
+          <div className="text-center space-y-4">
+            <div className="text-4xl">📱↔️</div>
+            <p className="text-lg font-semibold text-white">{t('rotateLandscape')}</p>
+            <p className="text-sm text-white/50">{t('rotateLandscapeDesc')}</p>
+          </div>
+        </div>
+      )}
 
     </div>
   );
