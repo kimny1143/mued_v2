@@ -28,18 +28,16 @@ async function getUserId(req: NextRequest) {
   const { userId: clerkUserId } = await auth();
 
   if (!clerkUserId) {
-    const authHeader = req.headers.get('authorization');
-
-    // Check for dev token - validate against environment variable
-    const expectedDevToken = process.env.DEV_AUTH_TOKEN || 'dev_token_kimny';
-    if (authHeader === `Bearer ${expectedDevToken}`) {
-      // In development, use the dev user
-      const users = await sql`
-        SELECT id FROM users WHERE email = 'kimny1143@gmail.com'
-      `;
-
-      if (users.length > 0) {
-        return users[0].id;
+    // Dev token auth: only available in development with explicit env var
+    if (process.env.NODE_ENV === 'development' && process.env.DEV_AUTH_TOKEN) {
+      const authHeader = req.headers.get('authorization');
+      if (authHeader === `Bearer ${process.env.DEV_AUTH_TOKEN}`) {
+        const users = await sql`
+          SELECT id FROM users WHERE email = 'kimny1143@gmail.com'
+        `;
+        if (users.length > 0) {
+          return users[0].id;
+        }
       }
     }
 

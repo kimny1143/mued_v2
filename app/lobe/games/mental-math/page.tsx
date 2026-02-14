@@ -1,7 +1,12 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { GamePageWrapper } from '@/components/features/lobe/games/GamePageWrapper';
-import { MentalMath } from '@/components/features/lobe/games/MentalMath';
+
+const MentalMath = dynamic(
+  () => import('@/components/features/lobe/games/MentalMath').then(mod => mod.MentalMath),
+  { ssr: false }
+);
 
 export default function MentalMathPage() {
   return (

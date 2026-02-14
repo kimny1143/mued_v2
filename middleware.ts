@@ -32,24 +32,21 @@ function getLocaleFromPath(pathname: string): Locale | null {
   return null;
 }
 
-// Check if we're in E2E test mode (only in non-production environments)
+// Check if we're in E2E test mode (strict: requires both non-production AND explicit opt-in)
 const isNonProduction = process.env.NODE_ENV !== 'production';
-const isE2ETestMode = isNonProduction && (
-  process.env.NEXT_PUBLIC_E2E_TEST_MODE === 'true' ||
-  process.env.NODE_ENV === 'test'
-);
+const isE2EBypassEnabled = isNonProduction && process.env.ENABLE_E2E_BYPASS === 'true';
 
 export default clerkMiddleware(async (auth, req) => {
   const { pathname } = req.nextUrl;
 
-  // Skip authentication in E2E test mode (ONLY in non-production environments)
-  // Security: Header/query bypass is restricted to development/test only
-  if (isNonProduction) {
+  // Skip authentication in E2E test mode
+  // Requires: (1) NODE_ENV !== 'production' AND (2) ENABLE_E2E_BYPASS=true
+  if (isE2EBypassEnabled) {
     const testHeader = req.headers.get('x-test-mode');
     const testQuery = req.nextUrl.searchParams.get('test');
 
-    if (isE2ETestMode || testHeader === 'true' || testQuery === 'true') {
-      console.log('[E2E Test Mode] Bypassing Clerk authentication (non-production only)');
+    if (testHeader === 'true' || testQuery === 'true') {
+      console.log('[E2E Test Mode] Bypassing Clerk authentication');
       return;
     }
   }
@@ -90,5 +87,5 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: ["/((?!.*\\..*|_next|api/webhooks).*)", "/", "/(api|trpc)(.*)"],
 };

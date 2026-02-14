@@ -136,10 +136,9 @@ export function withAdminAuth(
         return apiUnauthorized();
       }
 
-      // Check if user has admin role
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const metadata = (sessionClaims as any)?.metadata;
-      const isAdmin = metadata?.role === 'admin';
+      // Check if user has admin role via Clerk public metadata
+      const publicMetadata = sessionClaims?.metadata as Record<string, unknown> | undefined;
+      const isAdmin = publicMetadata?.role === 'admin';
 
       if (!isAdmin) {
         return NextResponse.json(

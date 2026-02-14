@@ -45,7 +45,7 @@ export const GET = withAuthParams<{ id: string }>(
       // Check access permissions
       // In development, allow access to all materials for testing
       const isDevelopment = process.env.NODE_ENV === 'development';
-      const disableAccessCheck = process.env.DISABLE_MATERIAL_ACCESS_CHECK === 'true';
+      const disableAccessCheck = isDevelopment && process.env.DISABLE_MATERIAL_ACCESS_CHECK === 'true';
 
       if (!isDevelopment && !disableAccessCheck) {
         // Production: Check if user owns this material (compare internal UUIDs)

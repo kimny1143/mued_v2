@@ -1,7 +1,12 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { GamePageWrapper } from '@/components/features/lobe/games/GamePageWrapper';
-import { PatternComplete } from '@/components/features/lobe/games/PatternComplete';
+
+const PatternComplete = dynamic(
+  () => import('@/components/features/lobe/games/PatternComplete').then(mod => mod.PatternComplete),
+  { ssr: false }
+);
 
 export default function PatternCompletePage() {
   return (
