@@ -21,5 +21,4 @@ export const GAME_COLORS: Record<GameKey, string> = {
   mupan: MUEDEAR_COLORS.mupan,
 };
 
-// App Store URL (placeholder - update with actual URL)
-export const MUEDEAR_APP_STORE_URL = "https://apps.apple.com/app/muedear/id123456789";
+export const MUEDEAR_APP_STORE_URL = "https://apps.apple.com/app/muedear/id6758307988";
