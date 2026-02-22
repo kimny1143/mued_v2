@@ -26,9 +26,21 @@ export async function generateMetadata({ params }: PageProps) {
     return {};
   }
 
+  const baseUrl = "https://mued.jp";
+
   return {
     title: t(`articles.${slug}.title`),
     description: t(`articles.${slug}.description`),
+    alternates: {
+      canonical: `${baseUrl}/${locale}/story/${slug}`,
+    },
+    openGraph: {
+      title: t(`articles.${slug}.title`),
+      description: t(`articles.${slug}.description`),
+      url: `${baseUrl}/${locale}/story/${slug}`,
+      type: "article",
+      siteName: "MUED",
+    },
   };
 }
 

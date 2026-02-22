@@ -716,10 +716,11 @@
   "story": {
     "section": {
       "title": "開発ストーリー",
-      "subtitle": "開発者(kimny)とAI(Claude)の対話"
+      "subtitle": "開発の裏側を語るインタビューシリーズ"
     },
     "nav": {
-      "backToTop": "トップに戻る"
+      "backToTop": "トップに戻る",
+      "related": "関連する話"
     },
     "cards": {
       "hoo": {

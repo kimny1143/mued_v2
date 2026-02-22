@@ -716,10 +716,11 @@
   "story": {
     "section": {
       "title": "Developer Story",
-      "subtitle": "Conversations between kimny (developer) and Claude (AI)"
+      "subtitle": "Behind-the-scenes interviews on building MUED"
     },
     "nav": {
-      "backToTop": "Back to Top"
+      "backToTop": "Back to Top",
+      "related": "Related"
     },
     "cards": {
       "hoo": {

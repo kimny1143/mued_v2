@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
-const STORY_SLUGS = ["hoo", "mued", "muedear", "brain01", "brain02"] as const;
+const STORY_SLUGS = ["brain01", "brain02", "mued", "muedear", "hoo"] as const;
 
 /**
  * Developer Story Section - Editorial Style

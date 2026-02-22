@@ -7,6 +7,14 @@ import type { SectionBlock } from "@/types/story";
 import { DialogueBlock } from "./dialogue-block";
 import { STORY_SLUGS, type StorySlug } from "@/lib/story/articles";
 
+const RELATED_ARTICLES: Partial<Record<StorySlug, StorySlug[]>> = {
+  brain01: ["brain02"],
+  brain02: ["brain01"],
+  mued: ["muedear"],
+  muedear: ["mued"],
+  hoo: ["brain02"],
+};
+
 interface StoryArticleProps {
   slug: StorySlug;
   sections: SectionBlock[];
@@ -63,6 +71,31 @@ export function StoryArticle({ slug, sections }: StoryArticleProps) {
         <p className="text-sm text-white/40 italic mb-12">
           {t(`articles.${slug}.footer`)}
         </p>
+
+        {/* Related Articles */}
+        {RELATED_ARTICLES[slug] && RELATED_ARTICLES[slug].length > 0 && (
+          <div className="mb-12">
+            <p className="text-xs text-white/30 uppercase tracking-widest mb-4">
+              {t("nav.related")}
+            </p>
+            <div className="space-y-3">
+              {RELATED_ARTICLES[slug]!.map((relatedSlug) => (
+                <Link
+                  key={relatedSlug}
+                  href={`/${locale}/story/${relatedSlug}`}
+                  className="group block border border-white/10 rounded-lg p-4 hover:border-white/20 transition-colors"
+                >
+                  <p className="text-sm font-medium text-white group-hover:text-white/80 transition-colors">
+                    {t(`cards.${relatedSlug}.title`)}
+                  </p>
+                  <p className="text-xs text-white/40 mt-1">
+                    {t(`cards.${relatedSlug}.description`)}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="flex justify-between items-center">

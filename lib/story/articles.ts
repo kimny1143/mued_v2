@@ -1,6 +1,6 @@
 import type { SectionBlock } from "@/types/story";
 
-export const STORY_SLUGS = ["hoo", "mued", "muedear", "brain01", "brain02"] as const;
+export const STORY_SLUGS = ["brain01", "brain02", "mued", "muedear", "hoo"] as const;
 export type StorySlug = (typeof STORY_SLUGS)[number];
 
 /**
