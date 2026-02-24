@@ -11,6 +11,11 @@
       "command": "node",
       "args": ["scripts/mcp/mued-playwright-e2e.js"],
       "description": "Playwright E2E test runner for MUED"
+    },
+    "ga4": {
+      "command": "bash",
+      "args": ["-c", "export $(grep '^GA4_' .env.local | xargs) && GOOGLE_APPLICATION_CREDENTIALS=$GA4_APPLICATION_CREDENTIALS GOOGLE_PROJECT_ID=$GA4_PROJECT_ID pipx run analytics-mcp"],
+      "description": "Google Analytics 4 MCP - query GA4 data"
     }
   },
   "disabledMcpServers": [
