@@ -5,19 +5,19 @@ import { useLocale } from "next-intl";
 import { BrandHeroSection } from "./brand-hero-section";
 import { HeroSection } from "./hero-section";
 import { PhilosophySection } from "./philosophy-section";
-import { GrowthPreviewSection } from "./growth-preview-section";
+// LP簡素化: MUEDlobe/MeetHoo/GrowthPreview非表示 (2026-02-24)
+// import { GrowthPreviewSection } from "./growth-preview-section";
+// import { MeetHooSection } from "./meet-hoo-section";
+// import { MuedlobeHeroSection } from "@/components/features/muedlobe-landing/muedlobe-hero-section";
+// import { MuedlobeOverviewSection } from "@/components/features/muedlobe-landing/muedlobe-overview-section";
 import { SocialProofSection } from "./social-proof-section";
 import { DeveloperStorySection } from "./developer-story-section";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { MuedearHeroSection } from "@/components/features/muedear-landing/muedear-hero-section";
 import { MuedearFeaturesSection } from "@/components/features/muedear-landing/muedear-features-section";
 import { MuedearPricingSection } from "@/components/features/muedear-landing/muedear-pricing-section";
-import { MeetHooSection } from "./meet-hoo-section";
-import { MuedlobeHeroSection } from "@/components/features/muedlobe-landing/muedlobe-hero-section";
-import { MuedlobeOverviewSection } from "@/components/features/muedlobe-landing/muedlobe-overview-section";
-import { CtaButton } from "@/components/ui/cta-button";
 import { AppStoreButton } from "@/components/ui/app-store-button";
-import { ArrowRight, ArrowUp, ChevronLeft, ChevronRight, Music, Ear, Brain } from "lucide-react";
+import { ArrowUp, ChevronLeft, ChevronRight, Music, Ear } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
@@ -63,16 +63,14 @@ export function IntegratedLandingContent() {
         <SectionNav
           prevHref="#"
           prevLabel={locale === "ja" ? "トップへ" : "Back to Top"}
-          nextHref="#muedlobe"
-          nextLabel="MUEDlobe"
+          nextHref="#muednote"
+          nextLabel="MUEDnote"
           showPrevIcon={false}
         />
       </section>
 
-      {/* Meet Hoo Bridge */}
+      {/* LP簡素化: MeetHoo/MUEDlobe/GrowthPreview非表示 (2026-02-24)
       <MeetHooSection />
-
-      {/* MUEDlobe Section */}
       <section id="muedlobe" className="relative">
         <MuedlobeHeroSection />
         <MuedlobeOverviewSection />
@@ -83,15 +81,18 @@ export function IntegratedLandingContent() {
           nextLabel="MUEDnote"
         />
       </section>
+      */}
 
       {/* MUEDnote Section */}
       <section id="muednote">
         <HeroSection />
         <PhilosophySection />
+        {/* LP簡素化: GrowthPreview非表示 (2026-02-24)
         <GrowthPreviewSection />
+        */}
         <SectionNav
-          prevHref="#muedlobe"
-          prevLabel="MUEDlobe"
+          prevHref="#muedear"
+          prevLabel="MUEDear"
           nextHref="#"
           nextLabel={locale === "ja" ? "トップへ" : "Back to Top"}
           showNextIcon={false}
@@ -211,7 +212,7 @@ function FloatingNav() {
         <Music className="w-4 h-4" />
       </button>
 
-      {/* MUEDlobe button */}
+      {/* LP簡素化: MUEDlobe FloatingNav非表示 (2026-02-24)
       <button
         onClick={() => scrollToSection("muedlobe")}
         className="
@@ -226,6 +227,7 @@ function FloatingNav() {
       >
         <Brain className="w-4 h-4" />
       </button>
+      */}
 
       {/* MUEDear button */}
       <button
@@ -321,9 +323,11 @@ function FinalCtaSection() {
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <AppStoreButton href={MUEDEAR_APP_STORE_URL} color="amber" size="large" />
+            {/* LP簡素化: MUEDlobeボタン非表示 (2026-02-24)
             <CtaButton variant="violet" href="/lobe">
               {t("muedlobe")}
             </CtaButton>
+            */}
             <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="indigo" size="large" />
           </div>
         </div>

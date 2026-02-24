@@ -2,11 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { HooAnimated } from "./hoo-animated";
 import { useTranslations } from "next-intl";
-import { CtaButton } from "@/components/ui/cta-button";
 import { AppStoreButton } from "@/components/ui/app-store-button";
 import { MUEDNOTE_APP_STORE_URL } from "@/lib/muednote/constants";
 
@@ -77,12 +75,9 @@ export function HeroSection() {
                 {t("headline")}
               </p>
 
-              {/* CTA - App Store primary, Login secondary */}
+              {/* CTA - App Store only (LP簡素化: ログインボタン削除 2026-02-24) */}
               <div className="flex flex-col sm:flex-row items-center gap-4">
                 <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="white" size="large" />
-                <CtaButton href="/sign-in" variant="white" size="default">
-                  {t("ctaSecondary")}
-                </CtaButton>
               </div>
             </div>
 

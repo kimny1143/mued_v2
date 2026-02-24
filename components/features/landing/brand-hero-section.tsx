@@ -53,7 +53,7 @@ export function BrandHeroSection() {
                 <ArrowRight className="w-4 h-4" />
               </a>
 
-              {/* Secondary CTAs - text links */}
+              {/* LP簡素化: MUEDlobe非表示 (2026-02-24)
               <a
                 href="#muedlobe"
                 className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-sm transition-colors group py-2.5"
@@ -61,6 +61,7 @@ export function BrandHeroSection() {
                 {t("exploreMuedlobe")}
                 <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
               </a>
+              */}
               <a
                 href="#muednote"
                 className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-sm transition-colors group py-2.5"
