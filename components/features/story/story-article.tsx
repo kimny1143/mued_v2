@@ -168,7 +168,7 @@ function SectionBlockRenderer({ block }: SectionBlockRendererProps) {
       return (
         <blockquote className="my-10 py-6 border-l-2 border-white/20 pl-5">
           <p className="text-lg font-light text-white/80 leading-relaxed italic">
-            "{block.text}"
+            &ldquo;{block.text}&rdquo;
           </p>
           {block.speaker && (
             <cite className="block mt-3 text-xs text-white/40 not-italic">

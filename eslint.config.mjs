@@ -24,16 +24,17 @@ const eslintConfig = [
       "coverage/**",
       "playwright-report/**",
       "test-results/**",
-      // Scripts (CommonJS, require() is intentional)
-      "scripts/mcp/*.js",
-      "scripts/test-*.js",
+      // Scripts (CommonJS / standalone, require() is intentional)
+      "scripts/**/*.js",
+      "scripts/**/*.cjs",
+      "scripts/**/*.ts",
       // Generated files
       "*.min.js",
       "*.bundle.js",
+      // Test utilities (CommonJS)
+      "tests/mcp/**/*.js",
       // Sub-apps (separate projects with own configs)
-      "apps/muednote-mobile/**",
-      "apps/muednote-v3/**",
-      "apps/muednote-poc/**",
+      "apps/**",
     ],
   },
   {
