@@ -126,7 +126,7 @@ class TestInterviewOrchestrator {
         threshold: 0.7,
       });
       similarLogs = ragResults.results;
-    } catch (error) {
+    } catch {
       // RAG is optional, continue without it
       similarLogs = [];
     }
@@ -596,7 +596,7 @@ describe('Interview API Integration', () => {
       expect(history.questions.length).toBeGreaterThan(0);
 
       // Just verify we got questions in some order
-      history.questions.forEach((q, index) => {
+      history.questions.forEach((q, _index) => {
         expect(q).toBeDefined();
         expect(q.id).toBeDefined();
       });

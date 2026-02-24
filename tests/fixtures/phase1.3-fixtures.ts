@@ -667,7 +667,7 @@ export const phase13Helpers = {
     groundTruth: RAGGroundTruth
   ): { precision: number; recall: number; f1: number } {
     const expectedSet = new Set(groundTruth.expectedResults);
-    const resultSet = new Set(results);
+    const _resultSet = new Set(results);
 
     const truePositives = results.filter((r) => expectedSet.has(r)).length;
     const precision = results.length > 0 ? truePositives / results.length : 0;

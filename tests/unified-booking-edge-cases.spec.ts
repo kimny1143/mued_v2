@@ -2,8 +2,6 @@ import { test, expect } from "@playwright/test";
 import { AuthHelper, TEST_USERS } from "./helpers/auth.helper";
 import { BookingPageHelper } from "./helpers/booking-page.helper";
 import { DateTimeHelper } from "./helpers/date-time.helper";
-import { edgeCaseData } from "./fixtures/booking.fixtures";
-
 /**
  * Edge Case Test Suite for Unified Booking Page
  * Tests boundary conditions, error states, and unusual scenarios
@@ -29,7 +27,7 @@ test.describe("Unified Booking Page - Edge Cases", () => {
 
     for (let i = 0; i < Math.min(count, 2); i++) {
       const label = mentorLabels.nth(i);
-      const text = await label.textContent();
+      const _text = await label.textContent();
 
       // Check if text is displayed properly (should not break layout)
       const box = await label.boundingBox();
@@ -39,7 +37,7 @@ test.describe("Unified Booking Page - Edge Cases", () => {
     }
   });
 
-  test("EC02: Handle rapid tab switching", async ({ page }) => {
+  test("EC02: Handle rapid tab switching", async ({ page: _page }) => {
     // Rapidly switch between tabs
     for (let i = 0; i < 5; i++) {
       await bookingHelper.switchToMyReservationsTab();
@@ -170,7 +168,7 @@ test.describe("Unified Booking Page - Edge Cases", () => {
     });
   });
 
-  test("EC09: Handle very fast date selections", async ({ page }) => {
+  test("EC09: Handle very fast date selections", async ({ page: _page }) => {
     // Rapidly select different dates
     const dates = [5, 10, 15, 20, 25];
 
@@ -277,7 +275,7 @@ test.describe("Unified Booking Page - Data Validation", () => {
     await page.waitForLoadState("networkidle");
   });
 
-  test("EC13: Verify date boundaries are enforced", async ({ page }) => {
+  test("EC13: Verify date boundaries are enforced", async ({ page: _page }) => {
     // Try to select past dates
     const yesterday = DateTimeHelper.getYesterday().getDate();
 
@@ -317,11 +315,11 @@ test.describe("Unified Booking Page - Data Validation", () => {
 
 test.describe("Unified Booking Page - Responsive Behavior", () => {
   let authHelper: AuthHelper;
-  let bookingHelper: BookingPageHelper;
+  let _bookingHelper: BookingPageHelper;
 
   test.beforeEach(async ({ page }) => {
     authHelper = new AuthHelper(page);
-    bookingHelper = new BookingPageHelper(page);
+    _bookingHelper = new BookingPageHelper(page);
 
     await authHelper.login(TEST_USERS.student);
   });

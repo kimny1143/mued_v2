@@ -6,7 +6,7 @@
 
 import { db } from '@/db/edge';
 import { hooConversations, type HooMessageData } from '@/db/schema';
-import { desc, eq, and, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 
 // ========================================
 // Type Definitions

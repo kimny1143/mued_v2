@@ -15,7 +15,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('MUEDnote Phase 1.0 MVP', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async () => {
     // 認証が必要な場合はここでログイン処理
     // TODO: Clerk認証のセットアップ
   });
@@ -235,7 +235,7 @@ test.describe('MUEDnote Phase 1.1: Tag Filtering', () => {
     await page.goto('/muednote/timeline');
 
     // 初期状態の記録数を確認
-    const initialCount = await page
+    const _initialCount = await page
       .getByText(/全\d+件の記録|絞り込み結果/)
       .textContent();
 
@@ -308,7 +308,7 @@ test.describe('MUEDnote Phase 1.1: AI Personality', () => {
       'できました',
       '進歩',
     ];
-    const hasEncouragement = encouragingWords.some((word) =>
+    const _hasEncouragement = encouragingWords.some((word) =>
       responseText?.includes(word)
     );
 

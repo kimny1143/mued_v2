@@ -7,7 +7,7 @@ async function waitForSlotsToRender(page: any, maxRetries = 5) {
     await page.waitForLoadState('networkidle');
 
     // Check for loading spinner and wait for it to disappear
-    const spinnerGone = await page.waitForFunction(() => {
+    const _spinnerGone = await page.waitForFunction(() => {
       const spinner = document.querySelector('.animate-spin') as HTMLElement | null;
       return !spinner || spinner.style.display === 'none';
     }, { timeout: 5000 }).catch(() => false);

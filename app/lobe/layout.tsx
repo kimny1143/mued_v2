@@ -1,6 +1,6 @@
 import { cookies, headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
-import { locales, defaultLocale, type Locale, getPreferredLocale } from '@/lib/i18n/config';
+import { locales, type Locale, getPreferredLocale } from '@/lib/i18n/config';
 
 export default async function LobeLayout({
   children,

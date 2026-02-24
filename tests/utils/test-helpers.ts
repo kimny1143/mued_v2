@@ -123,17 +123,17 @@ export function findTopKSimilar<T>(
  * @param db - Database connection
  * @param fixtures - Test fixtures to insert
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export async function seedTestDatabase(db: any, fixtures: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   sessions?: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   questionTemplates?: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   embeddings?: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   questions?: any[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   answers?: any[];
 }) {
   // Insert sessions
@@ -239,7 +239,7 @@ export async function clearTestDatabase(
   tables = ['interview_answers', 'interview_questions', 'rag_embeddings', 'question_templates', 'session_analyses', 'sessions']
 ) {
   for (const table of tables) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     await (db as any).execute(`DELETE FROM ${table} WHERE user_id LIKE 'user-test%' OR user_id = 'user-001'`);
   }
 }
@@ -374,7 +374,7 @@ export function delay(ms: number): Promise<void> {
  * @param message - Additional message
  * @returns Formatted assertion message
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export function formatAssertionMessage(actual: any, expected: any, message?: string): string {
   const prefix = message ? `${message}: ` : '';
   return `${prefix}Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(actual)}`;

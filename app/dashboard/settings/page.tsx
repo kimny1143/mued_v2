@@ -305,6 +305,7 @@ export default function SettingsPage() {
                 {isUserLoaded && user ? (
                   <div className="flex items-center gap-4 py-2">
                     {user.imageUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={user.imageUrl}
                         alt=""

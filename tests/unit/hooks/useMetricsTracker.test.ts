@@ -236,7 +236,7 @@ describe('useMetricsTracker', () => {
     });
 
     it('should not prevent unload when not tracking', () => {
-      const { result } = renderHook(() => useMetricsTracker(mockOptions));
+      const { result: _result } = renderHook(() => useMetricsTracker(mockOptions));
 
       const event = new Event('beforeunload') as BeforeUnloadEvent;
       const preventDefaultSpy = vi.spyOn(event, 'preventDefault');

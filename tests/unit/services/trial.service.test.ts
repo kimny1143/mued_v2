@@ -45,7 +45,7 @@ import { db } from '@/db/edge';
 
 describe('TrialService', () => {
   let service: TrialService;
-  let originalDate: typeof Date;
+  let _originalDate: typeof Date;
 
   const mockUserId = 'user-123';
   const mockNow = new Date('2026-02-14T12:00:00Z');
@@ -55,7 +55,7 @@ describe('TrialService', () => {
     vi.clearAllMocks();
 
     // Mock Date.now() to return consistent time
-    originalDate = global.Date;
+    _originalDate = global.Date;
     vi.useFakeTimers();
     vi.setSystemTime(mockNow);
   });

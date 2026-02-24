@@ -235,7 +235,7 @@ export function filterSlots(
 
 // Generate calendar days for a given month
 export function getCalendarDays(year: number, month: number): Date[] {
-  const firstDay = new Date(year, month, 1);
+  const _firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const days: Date[] = [];
 

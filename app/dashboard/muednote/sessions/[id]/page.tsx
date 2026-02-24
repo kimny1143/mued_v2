@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   MessageSquare,
   Sliders,
-  Volume2,
 } from "lucide-react";
 import { db } from "@/db";
 import {

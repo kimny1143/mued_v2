@@ -1,7 +1,6 @@
-import { test, expect, Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { AuthHelper, TEST_USERS } from "./helpers/auth.helper";
 import { BookingPageHelper } from "./helpers/booking-page.helper";
-import { mockLessonSlots, mockReservations } from "./fixtures/booking.fixtures";
 
 /**
  * E2E Test Suite for Unified Booking Page
@@ -322,11 +321,11 @@ test.describe("Unified Booking Page - Time Slot Booking", () => {
 
 test.describe("Unified Booking Page - Booking Confirmation Modal", () => {
   let authHelper: AuthHelper;
-  let bookingHelper: BookingPageHelper;
+  let _bookingHelper: BookingPageHelper;
 
   test.beforeEach(async ({ page }) => {
     authHelper = new AuthHelper(page);
-    bookingHelper = new BookingPageHelper(page);
+    _bookingHelper = new BookingPageHelper(page);
 
     await authHelper.login(TEST_USERS.student);
     await page.goto("/dashboard/lessons");
@@ -608,7 +607,7 @@ test.describe("Unified Booking Page - Accessibility", () => {
 
     // The focus should move through the tabs
     const bookLessonsTab = page.locator('button:has-text("Book Lessons")');
-    const reservationsTab = page.locator('button:has-text("My Reservations")');
+    const _reservationsTab = page.locator('button:has-text("My Reservations")');
 
     // Press Tab multiple times and check focus
     for (let i = 0; i < 5; i++) {

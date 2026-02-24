@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { ragService } from '@/lib/services/rag.service';
 import { db } from '@/db';
-import { ragEmbeddings, sessions } from '@/db/schema';
+import { ragEmbeddings } from '@/db/schema';
 import { sql, eq } from 'drizzle-orm';
 import {
   mockSessions,
@@ -58,7 +58,7 @@ describe('RAG Service - pgvector Integration', () => {
     });
 
     it('should update existing embedding on re-embed', async () => {
-      const firstEmbed = await ragService.embedSession(
+      const _firstEmbed = await ragService.embedSession(
         TEST_SESSION_ID,
         TEST_CONTENT
       );

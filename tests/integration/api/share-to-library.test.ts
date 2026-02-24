@@ -78,7 +78,7 @@ describe('Share to Library API', () => {
       const mockMaterialLimit = vi.fn().mockResolvedValue([mockMaterial]);
       const mockMaterialWhere = vi.fn().mockReturnValue({ limit: mockMaterialLimit });
       const mockMaterialFrom = vi.fn().mockReturnValue({ where: mockMaterialWhere });
-      const mockMaterialSelect = vi.fn().mockReturnValue({ from: mockMaterialFrom });
+      const _mockMaterialSelect = vi.fn().mockReturnValue({ from: mockMaterialFrom });
 
       // First call returns user, second call returns material
       mockDb.select

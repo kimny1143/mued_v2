@@ -13,7 +13,7 @@ import { withAuthResolved } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiValidationError, apiServerError, apiError } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { sendHooChat, generateConversationTitle, type HooChatMessage } from '@/lib/ai/providers';
-import { subscriptionRepository, TIER_LIMITS } from '@/lib/repositories/subscriptions.repository';
+import { subscriptionRepository } from '@/lib/repositories/subscriptions.repository';
 import { sessionRepository } from '@/lib/repositories/sessions.repository';
 import { hooConversationsRepository } from '@/lib/repositories/hoo-conversations.repository';
 import { hooMemoriesRepository } from '@/lib/repositories/hoo-memories.repository';
@@ -24,35 +24,6 @@ import { logger } from '@/lib/utils/logger';
 // ========================================
 // Free Tier Template Responses
 // ========================================
-
-const FREE_TIER_RESPONSES = {
-  greeting: {
-    patterns: ['こんにち', 'hello', 'hi', 'hey', 'おはよう', 'こんばん'],
-    response: 'こんにちは、Hooです。\n\n思考整理のお手伝いをしたいのですが、AIチャット機能はBasicプラン以上でご利用いただけます。\n\nBasicプランではHoo AIと無制限に会話できます。',
-  },
-  upgrade: {
-    patterns: ['アップグレード', 'upgrade', 'プラン', 'plan', 'basic', 'premium'],
-    response: 'プランについてですね。\n\n- **Basic**: 月額1,980円でHoo AI無制限会話 + Whisper文字起こし + DAWログ連携\n- **Premium**: 月額2,980円で上記すべて + Hoo個人化 + MUEDlobe認知プロファイル\n\nダッシュボードの「サブスクリプション」からアップグレードできます。',
-  },
-  default: {
-    response: 'Hooです。\n\nAI会話機能はBasicプラン以上でご利用いただけます。Basicではhooと無制限に会話できます。\n\n現在のFreeプランでは、セッション記録やダッシュボード機能をお試しいただけます。',
-  },
-};
-
-/**
- * Get appropriate template response for Free tier
- */
-function getFreeTierResponse(userMessage: string): string {
-  const lowerMsg = userMessage.toLowerCase();
-
-  for (const [, config] of Object.entries(FREE_TIER_RESPONSES)) {
-    if ('patterns' in config && config.patterns.some(p => lowerMsg.includes(p))) {
-      return config.response;
-    }
-  }
-
-  return FREE_TIER_RESPONSES.default.response;
-}
 
 // ========================================
 // Request Validation Schema

@@ -10,7 +10,7 @@
  * the actual question generation service is implemented.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { PerformanceMeasurement, ThroughputMeasurement } from '@/lib/utils/test-performance';
 import '@/tests/setup/custom-matchers';
 

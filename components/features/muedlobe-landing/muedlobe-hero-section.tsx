@@ -51,7 +51,7 @@ export function MuedlobeHeroSection() {
 
         {/* Game selector - 7 cards */}
         <div className="grid grid-cols-4 sm:grid-cols-7 gap-3 md:gap-4 mb-12">
-          {GAMES.map((type, index) => {
+          {GAMES.map((type) => {
             const selected = selectedGame === type;
             return (
               <button

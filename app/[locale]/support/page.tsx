@@ -1,4 +1,4 @@
-import { useTranslations, useMessages } from "next-intl";
+import { useTranslations } from "next-intl";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { locales, type Locale } from "@/lib/i18n/config";

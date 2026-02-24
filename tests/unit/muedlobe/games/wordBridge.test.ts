@@ -4,7 +4,6 @@ import {
   shuffleOptions,
   scoreWordBridge,
   type WordBridgeTrial,
-  type WordBridgeQuestion,
 } from '@/lib/muedlobe/games/wordBridge';
 
 // ========================================

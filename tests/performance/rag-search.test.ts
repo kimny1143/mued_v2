@@ -10,10 +10,9 @@
  * the actual RAG service is implemented.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { PerformanceMeasurement } from '@/lib/utils/test-performance';
 import {
-  calculateRAGMetrics,
   evaluateRAGQuery,
   aggregateRAGMetrics,
   type RAGEvaluationResult,

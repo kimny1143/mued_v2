@@ -148,7 +148,7 @@ export function createMockResponse<T>(data: T, options: MockApiOptions = {}) {
 }
 
 export function mockFetchResponses(responses: Map<string | RegExp, any>) {
-  global.fetch = vi.fn().mockImplementation((url: string, init?: RequestInit) => {
+  global.fetch = vi.fn().mockImplementation((url: string, _init?: RequestInit) => {
     // Check exact matches first
     if (responses.has(url)) {
       const response = responses.get(url);
@@ -539,7 +539,7 @@ export function createMockImageFile(
 // Export all mocks
 // ============================================================
 
-export default {
+const commonMocks = {
   mockClerkAuth,
   mockNextRouter,
   mockUseSearchParams,
@@ -562,3 +562,4 @@ export default {
   createMockFile,
   createMockImageFile,
 };
+export default commonMocks;

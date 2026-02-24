@@ -4,7 +4,7 @@
  * Testing the metrics saving endpoint with mocked database
  */
 
-import { describe, it, expect, beforeEach, vi, type MockedFunction } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { POST } from '@/app/api/metrics/save-session/route';
 import { NextRequest } from 'next/server';
 import type { PracticeSession } from '@/lib/metrics/learning-tracker';

@@ -218,7 +218,7 @@ export class MockStripe {
 
   // Mock webhooks
   webhooks = {
-    constructEvent: vi.fn().mockImplementation((payload, sig, secret) => {
+    constructEvent: vi.fn().mockImplementation((_payload, _sig, _secret) => {
       // Return a mock event based on the payload
       return {
         id: 'evt_mock_' + Date.now(),

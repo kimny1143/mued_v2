@@ -39,16 +39,28 @@ const eslintConfig = [
   },
   {
     rules: {
-      "@typescript-eslint/no-explicit-any": "warn", // Change any type errors to warnings
+      "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {
-          argsIgnorePattern: "^_", // Ignore unused args that start with underscore
-          varsIgnorePattern: "^_", // Ignore unused vars that start with underscore
-          destructuredArrayIgnorePattern: "^_", // Ignore unused destructured items that start with underscore
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          destructuredArrayIgnorePattern: "^_",
         },
       ],
-      "react-hooks/exhaustive-deps": "warn", // Change hook deps to warnings
+      "react-hooks/exhaustive-deps": "warn",
+    },
+  },
+  // Test files: allow `any` (mocks/stubs need flexible typing)
+  {
+    files: [
+      "**/*.test.{ts,tsx}",
+      "**/*.spec.{ts,tsx}",
+      "tests/**/*.{ts,tsx}",
+      "e2e/**/*.{ts,tsx}",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
 ];

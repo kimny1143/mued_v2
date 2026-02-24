@@ -9,11 +9,10 @@ import { db } from '@/db';
 import {
   muednoteDawLogs,
   type DawLog,
-  type NewDawLog,
   type DawType,
   type DawAction,
 } from '@/db/schema/muednote-daw-logs';
-import { desc, eq, and, gte, lte, sql, inArray, or } from 'drizzle-orm';
+import { desc, eq, and, gte, lte, sql, inArray } from 'drizzle-orm';
 
 // ========================================
 // Type Definitions

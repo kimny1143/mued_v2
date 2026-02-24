@@ -8,8 +8,6 @@ import { describe, it, expect, beforeEach, vi, afterEach, Mock } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/content/route';
 import { getContainer } from '@/lib/di';
-import type { ContentFetcherRegistry } from '@/lib/content';
-import type { PluginLoader } from '@/lib/plugins';
 import type { UnifiedContent } from '@/types/unified-content';
 import { auth } from '@clerk/nextjs/server';
 

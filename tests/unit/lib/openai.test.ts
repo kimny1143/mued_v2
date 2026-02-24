@@ -8,13 +8,13 @@ import { createMockOpenAI, mockOpenAIErrors } from '@/tests/mocks/openai.mock';
 
 // Mock the openai module
 vi.mock('openai', () => ({
-  default: vi.fn().mockImplementation((config) => {
+  default: vi.fn().mockImplementation((_config) => {
     return createMockOpenAI();
   }),
 }));
 
 describe('OpenAI Client', () => {
-  let openAIClient: any;
+  let _openAIClient: any;
 
   beforeEach(() => {
     // Reset all mocks
@@ -262,7 +262,7 @@ describe('OpenAI Client', () => {
   describe('Safety and Moderation', () => {
     it('should handle content moderation', async () => {
       // Test content moderation logic
-      const inappropriateContent = 'Some inappropriate content';
+      const _inappropriateContent = 'Some inappropriate content';
 
       // Once moderation is implemented:
       // const isSafe = await openAIClient.checkContentSafety(inappropriateContent);

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { z } from 'zod';
 
 /**
@@ -25,11 +25,11 @@ const GenerateStudyMaterialSchema = z.object({
   format: z.enum(['explanation', 'exercises', 'quiz']).optional(),
 });
 
-const GetSubscriptionStatusSchema = z.object({
+const _GetSubscriptionStatusSchema = z.object({
   userId: z.string().optional(),
 });
 
-const UpgradeSubscriptionSchema = z.object({
+const _UpgradeSubscriptionSchema = z.object({
   tier: z.enum(['starter', 'basic', 'premium']),
 });
 

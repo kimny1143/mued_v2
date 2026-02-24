@@ -16,7 +16,7 @@ export class AuthHelper {
    * Login with Clerk authentication
    * Uses mock authentication to bypass OAuth for testing
    */
-  async login(credentials: AuthCredentials): Promise<void> {
+  async login(_credentials: AuthCredentials): Promise<void> {
     console.log('Using mock authentication for E2E tests (bypassing Clerk OAuth)');
 
     // Set mock Clerk session directly in the browser

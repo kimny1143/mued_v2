@@ -37,7 +37,7 @@ export function getTestDb() {
  * Creates necessary tables and seeds initial data for tests.
  */
 export async function setupTestDatabase() {
-  const db = getTestDb();
+  const _db = getTestDb();
 
   // Note: In production, you would run migrations here
   // For now, we assume tables exist from drizzle-kit push
@@ -51,7 +51,7 @@ export async function setupTestDatabase() {
  * Cleans up test data and resets database state.
  */
 export async function teardownTestDatabase() {
-  const db = getTestDb();
+  const _db = getTestDb();
 
   // Clean up test data in reverse dependency order
   // Note: Add actual cleanup queries based on your schema
@@ -65,10 +65,10 @@ export async function teardownTestDatabase() {
  * Inserts mock data for testing.
  */
 export async function seedTestData() {
-  const db = getTestDb();
+  const _db = getTestDb();
 
   // Insert test users
-  const testUsers = [
+  const _testUsers = [
     {
       clerkId: 'test_user_123',
       email: 'test@example.com',
@@ -99,7 +99,7 @@ export async function seedTestData() {
  * Clean specific tables
  */
 export async function cleanTables(tableNames: string[]) {
-  const db = getTestDb();
+  const _db = getTestDb();
 
   for (const tableName of tableNames) {
     // Note: Add actual delete statements
@@ -144,7 +144,7 @@ export async function waitForDb(ms: number = 100): Promise<void> {
  */
 export async function isDatabaseReady(): Promise<boolean> {
   try {
-    const db = getTestDb();
+    const _db = getTestDb();
     // Try a simple query
     // await db.select().from(schema.users).limit(1);
     return true;
@@ -185,7 +185,7 @@ export const testDataBuilders = {
   /**
    * Create test material
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   createMaterial(overrides?: any) {
     return {
       creatorId: 'test_user_123',
@@ -205,7 +205,7 @@ export const dbAssertions = {
   /**
    * Assert record exists
    */
-  async assertRecordExists(tableName: string, id: string): Promise<boolean> {
+  async assertRecordExists(_tableName: string, _id: string): Promise<boolean> {
     // Note: Implement actual query
     return true;
   },
@@ -213,7 +213,7 @@ export const dbAssertions = {
   /**
    * Assert record count
    */
-  async assertRecordCount(tableName: string, expectedCount: number): Promise<boolean> {
+  async assertRecordCount(_tableName: string, _expectedCount: number): Promise<boolean> {
     // Note: Implement actual query
     return true;
   },
@@ -221,8 +221,8 @@ export const dbAssertions = {
   /**
    * Get record by ID
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async getRecordById(tableName: string, id: string): Promise<any> {
+   
+  async getRecordById(_tableName: string, _id: string): Promise<any> {
     // Note: Implement actual query
     return null;
   },

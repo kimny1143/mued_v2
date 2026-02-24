@@ -11,9 +11,9 @@
 
 import { db } from '@/db';
 import { muednoteMobileSessions } from '@/db/schema/muednote-mobile';
-import { muednoteDawLogs, type DawAction, type DawType } from '@/db/schema/muednote-daw-logs';
+import { type DawAction, type DawType } from '@/db/schema/muednote-daw-logs';
 import { dawLogsRepository } from '@/lib/repositories/daw-logs.repository';
-import { eq, and, gte, lte, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 // ========================================
 // Types

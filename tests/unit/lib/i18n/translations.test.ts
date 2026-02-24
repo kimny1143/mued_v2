@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { translations, type Locale } from '@/lib/i18n/translations';
+import { translations } from '@/lib/i18n/translations';
 
 describe('i18n Translations', () => {
   describe('Supported Locales', () => {

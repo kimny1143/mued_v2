@@ -4,7 +4,7 @@
  * Critical test coverage for the ABC notation analysis engine
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   analyzeAbc,
   calculatePlayabilityScore,

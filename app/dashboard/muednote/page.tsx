@@ -30,13 +30,13 @@ export default async function MuednoteDashboardPage({
     redirect("/sign-in");
   }
 
-  const params = await searchParams;
+  const _params = await searchParams;
   // TODO: v1.1.0 - DAW Logs tab
-  // const activeTab = params.tab === "daw" ? "daw" : "overview";
+  // const activeTab = _params.tab === "daw" ? "daw" : "overview";
   const activeTab = "overview";
 
   // Fetch real stats from DB
-  const [sessionsResult, logsResult, durationResult, recentSessions] = await Promise.all([
+  const [sessionsResult, logsResult, _durationResult, recentSessions] = await Promise.all([
     db
       .select({ count: sql<number>`count(*)` })
       .from(muednoteMobileSessions)

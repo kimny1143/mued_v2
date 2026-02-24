@@ -71,6 +71,7 @@ export function MentalMath({ onComplete }: MentalMathProps) {
         submitAnswer(null, q);
       }
     }, 100);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- submitAnswer is captured intentionally at timer creation
   }, [currentIndex, questions]);
 
   const submitAnswer = useCallback((userAnswer: number | null, question?: MathQuestion) => {

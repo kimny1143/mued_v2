@@ -184,7 +184,7 @@ class MetricsCalculator {
   }
 
   private standardDeviation(values: number[]): number {
-    const mean = this.average(values);
+    const _mean = this.average(values);
     const variance = this.calculateVariance(values);
     return Math.sqrt(variance);
   }

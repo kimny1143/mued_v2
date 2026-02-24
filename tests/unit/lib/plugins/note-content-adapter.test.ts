@@ -6,7 +6,6 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { NoteContentAdapter } from '@/lib/plugins/note/note-content-adapter';
-import type { UnifiedContent } from '@/types/unified-content';
 
 describe('NoteContentAdapter', () => {
   let adapter: NoteContentAdapter;

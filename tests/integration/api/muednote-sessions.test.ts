@@ -17,15 +17,15 @@ vi.mock('@clerk/nextjs/server', () => ({
 }));
 
 // Mock database operations
-const mockDbSelect = vi.fn();
-const mockDbInsert = vi.fn();
-const mockDbFrom = vi.fn();
-const mockDbWhere = vi.fn();
-const mockDbOrderBy = vi.fn();
-const mockDbLimit = vi.fn();
-const mockDbOffset = vi.fn();
-const mockDbReturning = vi.fn();
-const mockDbValues = vi.fn();
+const _mockDbSelect = vi.fn();
+const _mockDbInsert = vi.fn();
+const _mockDbFrom = vi.fn();
+const _mockDbWhere = vi.fn();
+const _mockDbOrderBy = vi.fn();
+const _mockDbLimit = vi.fn();
+const _mockDbOffset = vi.fn();
+const _mockDbReturning = vi.fn();
+const _mockDbValues = vi.fn();
 
 // Create chainable mock objects
 const createSelectChain = () => ({
@@ -104,7 +104,7 @@ const SESSION_UUID = '550e8400-e29b-41d4-a716-446655440101';
 const PROJECT_UUID = '550e8400-e29b-41d4-a716-446655440102';
 const ANALYSIS_UUID = '550e8400-e29b-41d4-a716-446655440103';
 
-const mockUser = {
+const _mockUser = {
   id: USER_UUID,
   clerkId: 'clerk-user-123',
   email: 'test@example.com',

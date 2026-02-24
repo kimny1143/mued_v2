@@ -137,7 +137,6 @@ export function TrialBanner({ className = '' }: TrialBannerProps) {
   }
 
   // Trial expired or turns exhausted - Show upgrade CTA
-  const isExpired = trial.trialUsed || trial.daysRemaining === 0;
   const isTurnsExhausted = trial.turnsRemaining === 0;
 
   return (

@@ -441,7 +441,7 @@ describe('RAGService', () => {
 
       mockExecute.mockResolvedValue(mockResults);
 
-      const results = await ragService.findSimilarLogs('test', 5, 0.9);
+      await ragService.findSimilarLogs('test', 5, 0.9);
 
       // Verify execute was called with correct threshold parameter
       expect(mockExecute).toHaveBeenCalledWith(

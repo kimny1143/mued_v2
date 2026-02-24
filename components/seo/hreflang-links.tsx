@@ -7,7 +7,7 @@
  * For static hreflang links (root paths), the root layout already includes them.
  */
 
-import { locales, type Locale } from "@/lib/i18n/config";
+import { locales } from "@/lib/i18n/config";
 
 interface HreflangLinksProps {
   /** Base path for the page (e.g., "/support", "/privacy") */

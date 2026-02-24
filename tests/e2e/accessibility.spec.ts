@@ -263,7 +263,7 @@ test.describe('Screen Reader Support', () => {
     for (let i = 0; i < inputCount; i++) {
       const input = inputs.nth(i);
       const inputId = await input.getAttribute('id');
-      const inputName = await input.getAttribute('name');
+      const _inputName = await input.getAttribute('name');
       const ariaLabel = await input.getAttribute('aria-label');
       const ariaLabelledby = await input.getAttribute('aria-labelledby');
 
@@ -358,7 +358,7 @@ test.describe('Color Contrast', () => {
       if (!elem) return null;
 
       const styles = window.getComputedStyle(elem);
-      const focusStyles = window.getComputedStyle(elem, ':focus');
+      const _focusStyles = window.getComputedStyle(elem, ':focus');
 
       return {
         outline: styles.outline,

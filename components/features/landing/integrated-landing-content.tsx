@@ -35,7 +35,6 @@ import { MUEDNOTE_APP_STORE_URL } from "@/lib/muednote/constants";
  */
 export function IntegratedLandingContent() {
   const locale = useLocale();
-  const t = useTranslations("landing");
 
   return (
     <div className="dark">

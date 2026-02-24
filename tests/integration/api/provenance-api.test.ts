@@ -6,8 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach, Mock } from 'vitest';
-import { NextRequest } from 'next/server';
-import type { ProvenanceRecord, GenerationTrace, SourceAttribution } from '@/types/provenance';
+import type { ProvenanceRecord } from '@/types/provenance';
 
 // Mock Clerk auth
 vi.mock('@clerk/nextjs/server', () => ({
@@ -271,7 +270,7 @@ describe.skip('Provenance API (NOT IMPLEMENTED YET)', () => {
     it('should validate required fields', async () => {
       mockAuth.mockResolvedValue({ userId: 'user-123' });
 
-      const invalidProvenance = {
+      const _invalidProvenance = {
         contentId: 'content-2',
         // Missing required fields
       };
@@ -292,7 +291,7 @@ describe.skip('Provenance API (NOT IMPLEMENTED YET)', () => {
     it('should validate source attribution format', async () => {
       mockAuth.mockResolvedValue({ userId: 'user-123' });
 
-      const invalidProvenance = {
+      const _invalidProvenance = {
         contentId: 'content-2',
         generationTrace: { model: 'gpt-4' },
         sourceAttribution: [

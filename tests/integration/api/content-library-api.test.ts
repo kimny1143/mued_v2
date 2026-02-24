@@ -8,7 +8,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET, POST } from '@/app/api/content/route';
-import type { ContentFetchParams, UnifiedContent } from '@/types/unified-content';
+import type { UnifiedContent } from '@/types/unified-content';
 
 // Mock DI container and registry
 const mockRegister = vi.fn();
@@ -173,7 +173,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
@@ -195,7 +195,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(mockFetch).toHaveBeenCalledWith('note', expect.any(Object));
@@ -215,7 +215,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(mockFetchAll).toHaveBeenCalledWith(
@@ -238,7 +238,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(mockFetchAll).toHaveBeenCalledWith(
@@ -261,7 +261,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(mockFetchAll).toHaveBeenCalledWith(
@@ -286,7 +286,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(mockFetchAll).toHaveBeenCalledWith(
@@ -312,7 +312,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(mockFetchAll).toHaveBeenCalledWith(
@@ -337,7 +337,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(mockFetchAll).toHaveBeenCalledWith(
@@ -363,7 +363,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(mockFetchAll).toHaveBeenCalledWith(
@@ -387,7 +387,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(mockFetchAll).toHaveBeenCalledWith(
@@ -420,7 +420,7 @@ describe('Content Library API', () => {
       );
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(mockFetchAll).toHaveBeenCalledWith(
@@ -441,7 +441,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(401);
       expect(data.success).toBe(false);
@@ -460,7 +460,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.data.contents).toHaveLength(0);
@@ -476,7 +476,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
@@ -492,7 +492,7 @@ describe('Content Library API', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
@@ -506,7 +506,7 @@ describe('Content Library API', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
@@ -524,7 +524,7 @@ describe('Content Library API', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data.success).toBe(false);
@@ -538,7 +538,7 @@ describe('Content Library API', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
@@ -554,7 +554,7 @@ describe('Content Library API', () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(401);
       expect(data.success).toBe(false);
@@ -581,7 +581,7 @@ describe('Content Library API', () => {
       );
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.data.contents.every((c: UnifiedContent) =>
@@ -604,7 +604,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.data.contents.some((c: UnifiedContent) =>
@@ -628,7 +628,7 @@ describe('Content Library API', () => {
       );
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.data.contents.every((c: UnifiedContent) =>
@@ -655,7 +655,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
@@ -673,7 +673,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
@@ -691,7 +691,7 @@ describe('Content Library API', () => {
       });
 
       const response = await GET(request);
-      const data = await response.json();
+      const _data = await response.json();
 
       expect(response.status).toBe(500);
       expect(data.error).toContain('Timeout');
