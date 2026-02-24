@@ -103,22 +103,22 @@ describe('SubscriptionRepository', () => {
   describe('TIER_LIMITS', () => {
     it('should have correct limits for free', () => {
       expect(TIER_LIMITS.free).toEqual({
-        aiMaterialsLimit: 3,
-        reservationsLimit: 1,
+        hooThreadsLimit: 0,
+        hooTurnsLimit: 0,
       });
     });
 
-    it('should have correct limits for basic', () => {
+    it('should have correct limits for basic (unlimited)', () => {
       expect(TIER_LIMITS.basic).toEqual({
-        aiMaterialsLimit: -1,
-        reservationsLimit: 5,
+        hooThreadsLimit: -1,
+        hooTurnsLimit: -1,
       });
     });
 
     it('should have unlimited for premium', () => {
       expect(TIER_LIMITS.premium).toEqual({
-        aiMaterialsLimit: -1,
-        reservationsLimit: -1,
+        hooThreadsLimit: -1,
+        hooTurnsLimit: -1,
       });
     });
   });
@@ -265,8 +265,8 @@ describe('SubscriptionRepository', () => {
 
       expect(result).toEqual({
         tier: 'free',
-        aiMaterials: { used: 0, limit: 3 },
-        reservations: { used: 0, limit: 1 },
+        aiMaterials: { used: 0, limit: 0 },
+        reservations: { used: 0, limit: 0 },
       });
     });
   });

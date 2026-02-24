@@ -3,13 +3,9 @@
  * POST /api/hoo/chat
  *
  * Tier-based AI conversation for MUEDnote:
- * - Free: Template responses only
- * - Basic: 150 turns/month (hard limit), 30 threads/month (soft limit)
- * - Premium: Unlimited (BYOK)
- *
- * Limits:
- * - Turn = 1 user message (counted across ALL conversations)
- * - Thread = 1 conversation (soft limit: shows alert, doesn't block)
+ * - Free: Template responses only (3-day trial available: 50 turns)
+ * - Basic: Unlimited Hoo AI conversation
+ * - Premium: Personalized Hoo AI (accumulated data + MUEDlobe cognitive profile)
  */
 
 import { z } from 'zod';
@@ -32,14 +28,14 @@ import { logger } from '@/lib/utils/logger';
 const FREE_TIER_RESPONSES = {
   greeting: {
     patterns: ['こんにち', 'hello', 'hi', 'hey', 'おはよう', 'こんばん'],
-    response: 'こんにちは、Hooです。\n\n思考整理のお手伝いをしたいのですが、AIチャット機能はBasicプラン以上でご利用いただけます。\n\nBasicプランでは月30回のAI会話が可能です。',
+    response: 'こんにちは、Hooです。\n\n思考整理のお手伝いをしたいのですが、AIチャット機能はBasicプラン以上でご利用いただけます。\n\nBasicプランではHoo AIと無制限に会話できます。',
   },
   upgrade: {
     patterns: ['アップグレード', 'upgrade', 'プラン', 'plan', 'basic', 'premium'],
-    response: 'プランについてですね。\n\n- **Basic**: 月額980円で30回/月のAI会話\n- **Premium**: 月額2,980円で無制限AI会話（お持ちのAPIキー利用）\n\nダッシュボードの「サブスクリプション」からアップグレードできます。',
+    response: 'プランについてですね。\n\n- **Basic**: 月額1,980円でHoo AI無制限会話 + Whisper文字起こし + DAWログ連携\n- **Premium**: 月額2,980円で上記すべて + Hoo個人化 + MUEDlobe認知プロファイル\n\nダッシュボードの「サブスクリプション」からアップグレードできます。',
   },
   default: {
-    response: 'Hooです。\n\nAI会話機能はBasicプラン以上でご利用いただけます。\n\n現在のFreeプランでは、セッション記録やダッシュボード機能をお試しいただけます。',
+    response: 'Hooです。\n\nAI会話機能はBasicプラン以上でご利用いただけます。Basicではhooと無制限に会話できます。\n\n現在のFreeプランでは、セッション記録やダッシュボード機能をお試しいただけます。',
   },
 };
 
@@ -191,8 +187,8 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
 
 Hoo AIとの会話を続けるには、Basicプランへのアップグレードをご検討ください。
 
-- **Basic**: 月額980円で150ターン/月のAI会話
-- **Premium**: 月額2,980円で無制限AI会話（お持ちのAPIキー利用）
+- **Basic**: 月額1,980円でHoo AI無制限会話 + Whisper + DAWログ連携
+- **Premium**: 月額2,980円で上記すべて + Hoo個人化 + MUEDlobe認知プロファイル
 
 ダッシュボードの「サブスクリプション」からアップグレードできます。
 
@@ -202,8 +198,8 @@ Your 3-day free trial has ended.
 
 To continue conversations with Hoo AI, please consider upgrading to Basic.
 
-- **Basic**: $9.80/month for 150 turns/month
-- **Premium**: $29.80/month for unlimited (BYOK)
+- **Basic**: ¥1,980/month for unlimited Hoo AI + Whisper + DAW log integration
+- **Premium**: ¥2,980/month for all Basic features + personalized Hoo + MUEDlobe
 
 You can upgrade from "Subscription" in your dashboard.`;
 
@@ -279,7 +275,7 @@ You can upgrade from "Subscription" in your dashboard.`;
     // ========================================
     if (trialCheck.isInTrial && trialCheck.trialStatus) {
       if (trialCheck.trialStatus.turnsRemaining <= 0) {
-        return apiError('Trial turn limit reached. Upgrade to Basic for 150 turns/month.', {
+        return apiError('Trial turn limit reached. Upgrade to Basic for unlimited Hoo AI.', {
           code: 'TRIAL_LIMIT_EXCEEDED',
           status: 429,
           details: {

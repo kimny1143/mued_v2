@@ -9,7 +9,16 @@
  *
  * After trial:
  * - Hoo AI becomes unavailable
- * - User must upgrade to Basic for continued access
+ * - User must upgrade to Basic for continued access (unlimited Hoo AI)
+ *
+ * ---
+ * iOS Trial Flow (Phase 1 - to be implemented in apps/muednote-mobile):
+ * 1. Free user finishes recording session
+ * 2. App presents "Review with Hoo (3-day free trial)" CTA
+ * 3. User signs in (Sign in with Apple) → trial auto-starts via this service
+ * 4. After 3 days or 50 turns → Basic upgrade prompt
+ * 5. App Review Notes: "Core features (recording, playback) available without login.
+ *    Hoo AI chat is an additional feature with a 3-day free trial."
  */
 
 import { db } from '@/db/edge';
