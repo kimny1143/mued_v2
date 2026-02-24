@@ -146,7 +146,7 @@ export function RAGMetricsHistory() {
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
                   }}
-                  formatter={(value: number) => [`${Number(value).toFixed(1)}%`, t.ragMetrics.historical.citationRateLabel]}
+                  formatter={(value) => [`${Number(value ?? 0).toFixed(1)}%`, t.ragMetrics.historical.citationRateLabel]}
                 />
                 <Line
                   type="monotone"
@@ -186,8 +186,8 @@ export function RAGMetricsHistory() {
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
                   }}
-                  formatter={(value: number, name: string) => [
-                    `${Number(value).toFixed(0)}ms`,
+                  formatter={(value, name) => [
+                    `${Number(value ?? 0).toFixed(0)}ms`,
                     name === 'latencyP50Ms' ? t.ragMetrics.historical.latencyP50Label : t.ragMetrics.historical.latencyP95Label,
                   ]}
                 />
@@ -246,8 +246,8 @@ export function RAGMetricsHistory() {
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
                   }}
-                  formatter={(value: number, name: string) => [
-                    name === 'costPerAnswer' ? `¥${Number(value).toFixed(2)}` : value,
+                  formatter={(value, name) => [
+                    name === 'costPerAnswer' ? `¥${Number(value ?? 0).toFixed(2)}` : value,
                     name === 'costPerAnswer' ? t.ragMetrics.historical.costLabel : t.ragMetrics.historical.queriesLabel,
                   ]}
                 />
