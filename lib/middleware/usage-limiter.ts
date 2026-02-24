@@ -155,7 +155,7 @@ export async function checkCanUseHooAI(clerkId: string): Promise<{
   if (limits.hooTurnsLimit === 0) {
     return {
       allowed: false,
-      reason: 'Hoo AI is not available on the Free plan. Upgrade to Basic for 150 AI turns per month.',
+      reason: 'Hoo AI is not available on the Free plan. Upgrade to Basic for unlimited Hoo AI conversation.',
       limits,
     };
   }
@@ -164,7 +164,7 @@ export async function checkCanUseHooAI(clerkId: string): Promise<{
   if (!limits.canUseHooAI) {
     return {
       allowed: false,
-      reason: `You've reached your monthly limit of ${limits.hooTurnsLimit} Hoo turns. Upgrade to Premium for unlimited access.`,
+      reason: `You've reached your monthly limit of ${limits.hooTurnsLimit} Hoo turns. Upgrade to Premium for personalized AI conversation.`,
       limits,
     };
   }
@@ -326,19 +326,18 @@ function getFeaturesList(tier: string): string[] {
       ];
     case 'basic':
       return [
+        'Hoo AI conversation (unlimited)',
         'Voice transcription (Whisper)',
-        'Log storage: Unlimited',
+        'Cloud sync & unlimited log storage',
         'DAW log integration',
-        'Dashboard & Export',
-        'Hoo AI: 150 turns/month, 30 threads/month',
+        'Practice data visualization',
       ];
     case 'premium':
       return [
         'All Basic features',
-        'Hoo AI: Unlimited (BYOK)',
-        'Choose your own AI model',
-        'System prompt access',
-        'Full customization',
+        'Hoo personalized conversation',
+        'MUEDlobe cognitive profile',
+        'Accumulated data analysis',
       ];
     default:
       return [];

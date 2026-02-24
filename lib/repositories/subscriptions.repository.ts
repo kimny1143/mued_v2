@@ -37,12 +37,12 @@ export const TIER_LIMITS: Record<SubscriptionTier, {
     hooTurnsLimit: 0,      // No AI access
   },
   basic: {
-    hooThreadsLimit: 30,   // 30 threads/month (soft limit - alert only)
-    hooTurnsLimit: 150,    // 150 turns/month (hard limit - blocks)
+    hooThreadsLimit: -1,   // Unlimited
+    hooTurnsLimit: -1,     // Unlimited
   },
   premium: {
-    hooThreadsLimit: -1,   // Unlimited (BYOK)
-    hooTurnsLimit: -1,     // Unlimited (BYOK)
+    hooThreadsLimit: -1,   // Unlimited (personalized AI + MUEDlobe)
+    hooTurnsLimit: -1,     // Unlimited (personalized AI + MUEDlobe)
   },
 };
 
