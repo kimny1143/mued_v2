@@ -9,6 +9,7 @@ import { AppStoreButton } from "@/components/ui/app-store-button";
 const GAMES: { key: GameKey; screenshot: string }[] = [
   { key: "mufreq", screenshot: "/images/muedear/mufreq.png" },
   { key: "mucomp", screenshot: "/images/muedear/mucomp-settings.png" },
+  { key: "muhorse", screenshot: "/images/muedear/muhorse.png" },
   { key: "muverb", screenshot: "/images/muedear/muverb.png" },
   { key: "mupan", screenshot: "/images/muedear/mupan.png" },
   { key: "murush", screenshot: "/images/muedear/mufreq.png" }, // murush uses mufreq image as placeholder
@@ -41,8 +42,8 @@ export function MuedearHeroSection() {
           {t("hero.tagline")}
         </p>
 
-        {/* Game selector - 5 thumbnails */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 md:gap-4 mb-12">
+        {/* Game selector - 6 thumbnails */}
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 md:gap-4 mb-12">
           {GAMES.map(({ key, screenshot }) => (
             <GameThumbnail
               key={key}

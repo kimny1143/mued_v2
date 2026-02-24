@@ -275,7 +275,7 @@
       "appStoreAlt": "Download on the App Store"
     },
     "games": {
-      "title": "5 Ear Training Games",
+      "title": "6 Ear Training Games",
       "intro": "All game modes free. Start with your strengths.",
       "mufreq": {
         "name": "MuFreQ",
@@ -306,6 +306,12 @@
         "category": "Space",
         "difficulty": "★★☆",
         "description": "Where is the sound coming from? Identify the position in the stereo field across 5 levels."
+      },
+      "muhorse": {
+        "name": "MuHorse",
+        "category": "Dynamics",
+        "difficulty": "★★☆",
+        "description": "Replicate the reference compression. Adjust compressor parameters to match the target sound. Train your hands as well as your ears."
       }
     },
     "features": {

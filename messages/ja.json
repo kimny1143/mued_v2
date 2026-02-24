@@ -275,7 +275,7 @@
       "appStoreAlt": "App Storeでダウンロード"
     },
     "games": {
-      "title": "5つの耳トレゲーム",
+      "title": "6つの耳トレゲーム",
       "intro": "全ゲームモード無料。得意な分野から始められます。",
       "mufreq": {
         "name": "MuFreQ",
@@ -306,6 +306,12 @@
         "category": "Space",
         "difficulty": "★★☆",
         "description": "音がどこから聴こえるか。ステレオフィールド上の位置を5段階で判定します。"
+      },
+      "muhorse": {
+        "name": "MuHorse",
+        "category": "Dynamics",
+        "difficulty": "★★☆",
+        "description": "お手本のコンプを再現せよ。コンプレッサーのパラメータを操作して、ターゲットの音に近づけるゲーム。耳だけでなく手も鍛えます。"
       }
     },
     "features": {
