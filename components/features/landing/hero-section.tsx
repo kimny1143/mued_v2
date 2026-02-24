@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { HooAnimated } from "./hoo-animated";
 import { useTranslations } from "next-intl";
 import { CtaButton } from "@/components/ui/cta-button";
+import { AppStoreButton } from "@/components/ui/app-store-button";
+import { MUEDNOTE_APP_STORE_URL } from "@/lib/muednote/constants";
 
 /**
  * MUEDnote Hero Section
@@ -75,9 +77,10 @@ export function HeroSection() {
                 {t("headline")}
               </p>
 
-              {/* CTA - compact */}
-              <div className="flex flex-col sm:flex-row items-start gap-3">
-                <CtaButton href="/sign-in" variant="white">
+              {/* CTA - App Store primary, Login secondary */}
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="white" size="large" />
+                <CtaButton href="/sign-in" variant="white" size="default">
                   {t("ctaSecondary")}
                 </CtaButton>
               </div>
