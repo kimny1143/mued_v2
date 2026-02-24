@@ -159,9 +159,8 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 | ドキュメント | 内容 |
 |-------------|------|
-| [docs/guides/figma-workflow.md](docs/guides/figma-workflow.md) | Figma → コード実装手順 |
-| [docs/mcp/mcp-implementation-guide.md](docs/mcp/mcp-implementation-guide.md) | MCP サーバー実装詳細 |
-| [docs/database/database-operations.md](docs/database/database-operations.md) | DB マイグレーション詳細 |
+| [docs/guides/mcp-implementation-guide.md](docs/guides/mcp-implementation-guide.md) | MCP サーバー実装詳細 |
+| [docs/guides/database-operations.md](docs/guides/database-operations.md) | DB マイグレーション詳細 |
 
 ---
 

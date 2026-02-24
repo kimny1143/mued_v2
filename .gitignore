@@ -49,9 +49,8 @@ tests/reports/*.md
 # Native apps (separate git repository)
 apps/
 
-# Audio files (test recordings)
-docs/audio/
-docs/sounds/
+# Docs assets (large binary files kept locally)
+docs/assets/
 
 # Claude Code symlinks (managed in claude-code-template repository)
 # Ignore all, then whitelist MUED-specific files
@@ -74,6 +73,3 @@ public/swe-worker-*.js
 # Large binary files
 *.ipa
 
-# Large design assets (originals kept locally)
-docs/image/MUEDlobe_LP/
-docs/image/screenshots/
