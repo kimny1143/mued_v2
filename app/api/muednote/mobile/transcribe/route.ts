@@ -22,6 +22,14 @@ const MAX_FILE_SIZE = 4.5 * 1024 * 1024;
 // Whisper API cost: $0.006 per minute
 const WHISPER_COST_PER_MINUTE = 0.006;
 
+// Hallucination filter thresholds
+// Whisper verbose_json segments include no_speech_prob and compression_ratio.
+// High no_speech_prob = silence filled with hallucinated text.
+// High compression_ratio = repetitive text (e.g. "よし よし よし...").
+const NO_SPEECH_PROB_THRESHOLD = 0.6;
+const COMPRESSION_RATIO_THRESHOLD = 2.4;
+const AVG_LOGPROB_THRESHOLD = -1.0;
+
 // ========================================
 // POST /api/muednote/mobile/transcribe
 // ========================================
@@ -88,11 +96,28 @@ export const POST = withAuth(async ({ userId, request }: AuthContext) => {
 
   const elapsed = Date.now() - startTime;
 
-  // Extract segments and apply chunk offset
+  // Extract segments, apply chunk offset, and filter hallucinations
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawSegments = (transcription as any).segments || [];
+  let filteredCount = 0;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const segments = rawSegments.map((seg: any) => ({
+  const segments = rawSegments.filter((seg: any) => {
+    const noSpeechProb = seg.no_speech_prob ?? 0;
+    const compressionRatio = seg.compression_ratio ?? 0;
+    const avgLogprob = seg.avg_logprob ?? 0;
+
+    // Filter: high no_speech_prob AND (high compression OR low confidence)
+    // Both conditions together = almost certainly hallucination
+    if (noSpeechProb > NO_SPEECH_PROB_THRESHOLD &&
+        (compressionRatio > COMPRESSION_RATIO_THRESHOLD || avgLogprob < AVG_LOGPROB_THRESHOLD)) {
+      filteredCount++;
+      logger.info(`[Transcribe] Filtered hallucination: "${seg.text?.trim().slice(0, 40)}" (no_speech=${noSpeechProb.toFixed(2)}, cr=${compressionRatio.toFixed(2)}, logp=${avgLogprob.toFixed(2)})`);
+      return false;
+    }
+    return true;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }).map((seg: any) => ({
     text: seg.text?.trim() || '',
     t0: Math.round((seg.start || 0) * 1000) + chunkOffsetMs,
     t1: Math.round((seg.end || 0) * 1000) + chunkOffsetMs,
@@ -103,10 +128,13 @@ export const POST = withAuth(async ({ userId, request }: AuthContext) => {
   const durationSeconds = (transcription as any).duration || 0;
   const estimatedCost = (durationSeconds / 60) * WHISPER_COST_PER_MINUTE;
 
-  logger.info(`[Transcribe] Done in ${elapsed}ms, duration: ${durationSeconds}s, cost: $${estimatedCost.toFixed(4)}, segments: ${segments.length}`);
+  logger.info(`[Transcribe] Done in ${elapsed}ms, duration: ${durationSeconds}s, cost: $${estimatedCost.toFixed(4)}, segments: ${segments.length} (filtered: ${filteredCount})`);
+
+  // Rebuild text from filtered segments (original text may contain hallucinations)
+  const filteredText = segments.map((s: { text: string }) => s.text).join(' ');
 
   return apiSuccess({
-    text: transcription.text,
+    text: filteredText,
     segments,
     usage: {
       duration_seconds: durationSeconds,
