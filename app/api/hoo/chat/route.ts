@@ -17,9 +17,11 @@ import { subscriptionRepository } from '@/lib/repositories/subscriptions.reposit
 import { sessionRepository } from '@/lib/repositories/sessions.repository';
 import { hooConversationsRepository } from '@/lib/repositories/hoo-conversations.repository';
 import { hooMemoriesRepository } from '@/lib/repositories/hoo-memories.repository';
+import { dawLogsRepository } from '@/lib/repositories/daw-logs.repository';
 import { getHooSystemPromptWithMemory } from '@/lib/ai/hoo-prompt';
 import { trialService, TRIAL_TURNS_LIMIT } from '@/lib/services/trial.service';
 import { logger } from '@/lib/utils/logger';
+import type { DawAction } from '@/db/schema/muednote-daw-logs';
 
 // ========================================
 // Free Tier Template Responses
@@ -71,6 +73,113 @@ interface HooChatApiResponse {
 }
 
 // ========================================
+// DAW Log Context Builder
+// ========================================
+
+const ACTION_LABELS: Record<DawAction, string> = {
+  parameter_change: 'パラメータ変更',
+  track_volume: 'トラックボリューム',
+  track_pan: 'トラックパン',
+  track_select: 'トラック選択',
+  clip_trigger: 'クリップトリガー',
+  device_config_change: 'デバイス設定変更',
+};
+
+const DAW_LABELS: Record<string, string> = {
+  ableton: 'Ableton Live',
+  protools: 'Pro Tools',
+  logic: 'Logic Pro',
+  other: 'DAW',
+};
+
+/**
+ * Build a human-readable summary of recent DAW logs for Hoo context.
+ * Returns null if no logs found.
+ */
+async function buildDawLogContext(internalUserId: string): Promise<string | null> {
+  // Fetch last 3 hours of DAW logs
+  const since = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  const until = new Date();
+  const logs = await dawLogsRepository.getByTimeRange(internalUserId, since, until, 200);
+
+  if (logs.length === 0) return null;
+
+  // Determine DAW type
+  const dawCounts: Record<string, number> = {};
+  for (const log of logs) {
+    const daw = log.daw || 'other';
+    dawCounts[daw] = (dawCounts[daw] || 0) + 1;
+  }
+  const primaryDaw = Object.entries(dawCounts).sort((a, b) => b[1] - a[1])[0][0];
+
+  // Time range (getByTimeRange sorts asc, so first = oldest, last = newest)
+  const oldest = logs[0].ts;
+  const newest = logs[logs.length - 1].ts;
+  const formatTime = (d: Date) => `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
+  // Group by action
+  const byAction: Record<string, number> = {};
+  for (const log of logs) {
+    const action = log.action || 'parameter_change';
+    byAction[action] = (byAction[action] || 0) + 1;
+  }
+
+  // Extract unique track/device names from metadata
+  const trackNames = new Set<string>();
+  const deviceNames = new Set<string>();
+  for (const log of logs) {
+    const meta = log.metadata as Record<string, unknown> | null;
+    if (meta) {
+      if (typeof meta.trackName === 'string' && meta.trackName) trackNames.add(meta.trackName);
+      if (typeof meta.deviceName === 'string' && meta.deviceName) deviceNames.add(meta.deviceName);
+    }
+  }
+
+  // Build summary
+  let summary = `## DAWログ（直近の制作アクティビティ）\n\n`;
+  summary += `ユーザーはDAWで制作作業を行っています。以下はDAWから自動取得した操作ログのサマリーです。\n`;
+  summary += `ユーザーの制作状況を把握するために活用してください。\n\n`;
+  summary += `- **DAW**: ${DAW_LABELS[primaryDaw] || primaryDaw}\n`;
+  summary += `- **期間**: ${formatTime(oldest)}〜${formatTime(newest)}\n`;
+  summary += `- **操作数**: ${logs.length}件\n`;
+
+  // Action breakdown
+  summary += `- **操作内訳**:\n`;
+  for (const [action, count] of Object.entries(byAction).sort((a, b) => b[1] - a[1])) {
+    const label = ACTION_LABELS[action as DawAction] || action;
+    summary += `  - ${label}: ${count}件\n`;
+  }
+
+  // Track/device names
+  if (trackNames.size > 0) {
+    summary += `- **使用トラック**: ${[...trackNames].slice(0, 8).join(', ')}\n`;
+  }
+  if (deviceNames.size > 0) {
+    summary += `- **使用デバイス/プラグイン**: ${[...deviceNames].slice(0, 8).join(', ')}\n`;
+  }
+
+  // Recent notable changes (last 5 with valueString)
+  const recentLogs = logs.slice(-10).reverse().filter(l => l.valueString);
+  if (recentLogs.length > 0) {
+    summary += `\n### 直近の操作（新しい順）\n`;
+    for (const log of recentLogs.slice(0, 5)) {
+      const meta = log.metadata as Record<string, unknown> | null;
+      const trackName = meta?.trackName as string || '';
+      const deviceName = meta?.deviceName as string || '';
+      const actionLabel = ACTION_LABELS[log.action as DawAction] || log.action;
+      const time = formatTime(log.ts);
+      const parts = [time, actionLabel];
+      if (trackName) parts.push(`Track: ${trackName}`);
+      if (deviceName) parts.push(`Device: ${deviceName}`);
+      parts.push(`→ ${log.valueString}`);
+      summary += `- ${parts.join(' / ')}\n`;
+    }
+  }
+
+  return summary;
+}
+
+// ========================================
 // POST Handler
 // ========================================
 
@@ -104,8 +213,21 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
       ? await sessionRepository.getSessionContextForHoo(clerkUserId, 3)
       : undefined;
 
+    // Fetch DAW log context (uses internal user ID)
+    let dawLogContext: string | null = null;
+    try {
+      dawLogContext = await buildDawLogContext(internalUserId);
+    } catch (err) {
+      logger.warn('[POST /api/hoo/chat] DAW log context fetch failed', { err });
+    }
+
     // Build system prompt with memory and optional session context
     let systemPrompt = getHooSystemPromptWithMemory(customInstructions, sessionContext);
+
+    // Append DAW log context
+    if (dawLogContext) {
+      systemPrompt += `\n\n---\n\n${dawLogContext}`;
+    }
 
     // Append local device session context (includes unsynced transcriptions/memos)
     if (localSessionContext) {
@@ -117,6 +239,7 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
       hasCustomInstructions: !!customInstructions,
       hasSessionContext: sessionContext?.hasContext ?? false,
       sessionCount: sessionContext?.recentSessions?.length ?? 0,
+      hasDawLogContext: !!dawLogContext,
       hasLocalContext: !!localSessionContext,
       localContextLength: localSessionContext?.length ?? 0,
     });
