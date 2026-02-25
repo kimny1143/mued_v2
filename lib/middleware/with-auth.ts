@@ -219,31 +219,39 @@ export function withAuthResolved(
   handler: AuthenticatedHandlerResolved
 ): (request: NextRequest) => Promise<NextResponse> {
   return async (request: NextRequest): Promise<NextResponse> => {
+    // Step 1: Authenticate
+    let clerkUserId: string | null;
     try {
-      // Authenticate user with Clerk (Bearer JWT or Cookie)
-      const clerkUserId = await resolveClerkUserId(request);
+      clerkUserId = await resolveClerkUserId(request);
+    } catch (error) {
+      logger.error('[withAuthResolved] resolveClerkUserId threw:', { error });
+      return apiUnauthorized('Auth resolution failed');
+    }
 
-      if (!clerkUserId) {
-        return apiUnauthorized();
-      }
+    if (!clerkUserId) {
+      return apiUnauthorized();
+    }
 
-      // Resolve internal user ID from database
-      let internalUserId: string;
-      try {
-        internalUserId = await getUserIdFromClerkId(clerkUserId);
-      } catch (error) {
-        logger.error('[withAuthResolved] Failed to resolve user ID', { error, clerkUserId });
-        return apiServerError(new Error('User not found in database'));
-      }
+    // Step 2: Resolve internal user ID
+    let internalUserId: string;
+    try {
+      internalUserId = await getUserIdFromClerkId(clerkUserId);
+    } catch (error) {
+      logger.error('[withAuthResolved] Failed to resolve user ID', { error, clerkUserId });
+      return apiServerError(new Error('User not found in database'));
+    }
 
+    // Step 3: Run handler (errors here should NOT become 401)
+    try {
       return await handler({
         clerkUserId,
         internalUserId,
         request,
       });
     } catch (error) {
-      logger.error('[withAuthResolved] Authentication error:', { error });
-      return apiUnauthorized();
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.error('[withAuthResolved] Handler error:', { error, clerkUserId });
+      return apiServerError(new Error(`Handler error: ${msg}`));
     }
   };
 }
@@ -267,21 +275,27 @@ export function withAuthResolvedParams<P = Record<string, string>>(
     request: NextRequest,
     context: { params: Promise<P> }
   ): Promise<NextResponse> => {
+    let clerkUserId: string | null;
     try {
-      const clerkUserId = await resolveClerkUserId(request);
+      clerkUserId = await resolveClerkUserId(request);
+    } catch (error) {
+      logger.error('[withAuthResolvedParams] resolveClerkUserId threw:', { error });
+      return apiUnauthorized('Auth resolution failed');
+    }
 
-      if (!clerkUserId) {
-        return apiUnauthorized();
-      }
+    if (!clerkUserId) {
+      return apiUnauthorized();
+    }
 
-      let internalUserId: string;
-      try {
-        internalUserId = await getUserIdFromClerkId(clerkUserId);
-      } catch (error) {
-        logger.error('[withAuthResolvedParams] Failed to resolve user ID', { error, clerkUserId });
-        return apiServerError(new Error('User not found in database'));
-      }
+    let internalUserId: string;
+    try {
+      internalUserId = await getUserIdFromClerkId(clerkUserId);
+    } catch (error) {
+      logger.error('[withAuthResolvedParams] Failed to resolve user ID', { error, clerkUserId });
+      return apiServerError(new Error('User not found in database'));
+    }
 
+    try {
       const resolvedParams = await context.params;
 
       return await handler({
@@ -291,8 +305,9 @@ export function withAuthResolvedParams<P = Record<string, string>>(
         params: resolvedParams,
       });
     } catch (error) {
-      logger.error('[withAuthResolvedParams] Authentication error:', { error });
-      return apiUnauthorized();
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.error('[withAuthResolvedParams] Handler error:', { error });
+      return apiServerError(new Error(`Handler error: ${msg}`));
     }
   };
 }
