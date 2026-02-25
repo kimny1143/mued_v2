@@ -351,7 +351,7 @@ export async function executeGetSubscriptionStatus(
   if (!subscription) {
     return {
       success: true,
-      tier: 'freemium',
+      tier: 'free',
       status: 'active',
       usage: {
         aiMaterials: 0,

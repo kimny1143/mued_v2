@@ -12,7 +12,9 @@ import { logger } from '@/lib/utils/logger';
 /**
  * POST /api/subscription/checkout
  *
- * Create a Stripe Checkout session for subscription purchase
+ * Create a Stripe Checkout session for subscription purchase.
+ * Accepts either { priceId, tier } (Web) or { tier } (iOS).
+ * When priceId is omitted, it is resolved from NEXT_PUBLIC_STRIPE_PRICE_* env vars.
  */
 
 // 環境変数の検証
@@ -21,9 +23,17 @@ const stripe = new Stripe(stripeConfig.secretKey, {
   apiVersion: '2025-08-27.basil',
 });
 
+// Tier → Stripe Price ID mapping (server-side resolution for mobile clients)
+const TIER_PRICE_MAP: Record<string, string | undefined> = {
+  basic: process.env.NEXT_PUBLIC_STRIPE_PRICE_BASIC,
+  premium: process.env.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM,
+};
+
 const checkoutSchema = z.object({
-  priceId: z.string().min(1),
+  priceId: z.string().min(1).optional(),
   tier: z.enum(['basic', 'premium']),
+  successUrl: z.string().url().optional(),
+  cancelUrl: z.string().url().optional(),
 });
 
 export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
@@ -39,8 +49,18 @@ export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
       return apiValidationError('Invalid request', validation.error.errors);
     }
 
-    const { priceId, tier } = validation.data;
-    logger.debug('[Checkout] Parsed:', { priceId, tier });
+    const { tier, successUrl, cancelUrl } = validation.data;
+
+    // Resolve priceId: use provided value or look up from tier
+    const priceId = validation.data.priceId || TIER_PRICE_MAP[tier];
+    if (!priceId) {
+      logger.error('[Checkout] No priceId for tier:', tier);
+      return apiValidationError(
+        `Stripe price not configured for tier: ${tier}. Set NEXT_PUBLIC_STRIPE_PRICE_${tier.toUpperCase()} env var.`,
+        []
+      );
+    }
+    logger.debug('[Checkout] Parsed:', { priceId, tier, source: validation.data.priceId ? 'client' : 'server' });
 
     // Get user from database
     let [user] = await db
@@ -110,8 +130,8 @@ export const POST = withAuth(async ({ userId: clerkUserId, request }) => {
         },
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription/success?tier=${tier}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription?canceled=true`,
+      success_url: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription/success?tier=${tier}`,
+      cancel_url: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription?canceled=true`,
       metadata: {
         clerkId: clerkUserId,
         userId: user.id,

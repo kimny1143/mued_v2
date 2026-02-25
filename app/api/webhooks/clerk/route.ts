@@ -39,7 +39,7 @@ async function createUserWithSubscription(
     // Freemiumプランのサブスクリプションを自動作成
     await tx.insert(subscriptions).values({
       userId: newUser.id,
-      tier: "freemium",
+      tier: "free",
       status: "active",
     });
     logger.debug(`Freemium subscription created for user: ${id}`);
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
           // Freemiumプランのサブスクリプションを自動作成（トランザクション内）
           await tx.insert(subscriptions).values({
             userId: newUser.id,
-            tier: "freemium",
+            tier: "free",
             status: "active",
           });
           logger.debug(`Freemium subscription created for user: ${id}`);
