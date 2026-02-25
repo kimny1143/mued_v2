@@ -33,6 +33,7 @@ const hooChatRequestSchema = z.object({
   conversationId: z.string().uuid().optional(), // Existing conversation or new
   message: z.string().min(1).max(10000),
   includeSessionContext: z.boolean().optional(), // Include recent session context in prompt
+  localSessionContext: z.string().max(10000).optional(), // Local device session data (transcriptions, memos not yet synced)
 });
 
 // ========================================
@@ -89,7 +90,7 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
       return apiValidationError('Invalid request format', validationResult.error.errors);
     }
 
-    const { conversationId, message, includeSessionContext } = validationResult.data;
+    const { conversationId, message, includeSessionContext, localSessionContext } = validationResult.data;
 
     // Check subscription tier and usage (including trial)
     const usageCheck = await subscriptionRepository.canUseHooConversation(internalUserId);
@@ -104,13 +105,20 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
       : undefined;
 
     // Build system prompt with memory and optional session context
-    const systemPrompt = getHooSystemPromptWithMemory(customInstructions, sessionContext);
+    let systemPrompt = getHooSystemPromptWithMemory(customInstructions, sessionContext);
+
+    // Append local device session context (includes unsynced transcriptions/memos)
+    if (localSessionContext) {
+      systemPrompt += `\n\n---\n\n## モバイルデバイスからの最新セッション情報\n\n以下はユーザーのデバイスから直接送られた最新のセッションデータです。サーバーにまだ同期されていない情報（文字起こし結果やメモ）を含みます。\nこのデータを会話の文脈として活用してください。\n\n${localSessionContext}`;
+    }
 
     logger.info('[POST /api/hoo/chat] System prompt built', {
       clerkUserId,
       hasCustomInstructions: !!customInstructions,
       hasSessionContext: sessionContext?.hasContext ?? false,
       sessionCount: sessionContext?.recentSessions?.length ?? 0,
+      hasLocalContext: !!localSessionContext,
+      localContextLength: localSessionContext?.length ?? 0,
     });
 
     logger.info('[POST /api/hoo/chat] Processing request', {
