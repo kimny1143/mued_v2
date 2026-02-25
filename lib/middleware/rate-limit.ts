@@ -126,31 +126,37 @@ export async function rateLimit(
   request: Request,
   type: RateLimitType = "api"
 ): Promise<NextResponse | null> {
-  const identifier = await getRateLimitIdentifier(request);
-  const result = await checkRateLimit(type, identifier);
+  try {
+    const identifier = await getRateLimitIdentifier(request);
+    const result = await checkRateLimit(type, identifier);
 
-  // If rate limiting is not configured, allow the request
-  if (!result) return null;
+    // If rate limiting is not configured, allow the request
+    if (!result) return null;
 
-  if (!result.success) {
-    return NextResponse.json(
-      {
-        error: "Too Many Requests",
-        message: "Rate limit exceeded. Please try again later.",
-        retryAfter: Math.ceil((result.reset - Date.now()) / 1000),
-      },
-      {
-        status: 429,
-        headers: {
-          "X-RateLimit-Limit": result.limit.toString(),
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset": result.reset.toString(),
-          "Retry-After": Math.ceil((result.reset - Date.now()) / 1000).toString(),
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          error: "Too Many Requests",
+          message: "Rate limit exceeded. Please try again later.",
+          retryAfter: Math.ceil((result.reset - Date.now()) / 1000),
         },
-      }
-    );
-  }
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": result.limit.toString(),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": result.reset.toString(),
+            "Retry-After": Math.ceil((result.reset - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
 
-  // Request allowed
-  return null;
+    // Request allowed
+    return null;
+  } catch (error) {
+    // Fail open: if rate limiting fails (Redis down, network error), allow the request
+    console.error('[rateLimit] Rate limit check failed, allowing request:', error);
+    return null;
+  }
 }
