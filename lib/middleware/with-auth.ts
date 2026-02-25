@@ -1,8 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { verifyToken } from '@clerk/backend';
 import { apiUnauthorized, apiServerError } from '@/lib/api-response';
 import { getUserIdFromClerkId } from '@/lib/utils/auth-helpers';
 import { logger } from '@/lib/utils/logger';
+
+// ========================================
+// Shared Auth Helper (Cookie + Bearer JWT)
+// ========================================
+
+/**
+ * Resolve Clerk user ID from request.
+ * Tries Bearer JWT first (mobile apps), then falls back to cookie-based auth (web).
+ */
+async function resolveClerkUserId(request: NextRequest): Promise<string | null> {
+  // 1. Bearer JWT token (mobile apps)
+  const authHeader = request.headers.get('Authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const payload = await verifyToken(token, {
+        secretKey: process.env.CLERK_SECRET_KEY!,
+      });
+      if (payload?.sub) {
+        return payload.sub;
+      }
+    } catch (error) {
+      logger.warn('[resolveClerkUserId] Bearer JWT verification failed, trying cookie auth');
+    }
+  }
+
+  // 2. Cookie-based auth (web)
+  const { userId } = await auth();
+  return userId;
+}
 
 /**
  * Authentication context passed to authenticated route handlers
@@ -40,15 +71,13 @@ export function withAuth(
 ): (request: NextRequest) => Promise<NextResponse> {
   return async (request: NextRequest): Promise<NextResponse> => {
     try {
-      // Authenticate user with Clerk
-      const { userId } = await auth();
+      // Authenticate user with Clerk (Bearer JWT or Cookie)
+      const userId = await resolveClerkUserId(request);
 
-      // Check if user is authenticated
       if (!userId) {
         return apiUnauthorized();
       }
 
-      // Call the handler with auth context
       return await handler({
         userId,
         request,
@@ -88,18 +117,14 @@ export function withAuthParams<P = Record<string, string>>(
     context: { params: Promise<P> }
   ): Promise<NextResponse> => {
     try {
-      // Authenticate user with Clerk
-      const { userId } = await auth();
+      const userId = await resolveClerkUserId(request);
 
-      // Check if user is authenticated
       if (!userId) {
         return apiUnauthorized();
       }
 
-      // Await params (Next.js 15 compatibility)
       const resolvedParams = await context.params;
 
-      // Call the handler with auth context and resolved params
       return await handler({
         userId,
         request,
@@ -128,15 +153,13 @@ export function withAdminAuth(
 ): (request: NextRequest) => Promise<NextResponse> {
   return async (request: NextRequest): Promise<NextResponse> => {
     try {
-      // Authenticate user with Clerk
+      // Admin routes: cookie-only (admin is always web)
       const { userId, sessionClaims } = await auth();
 
-      // Check if user is authenticated
       if (!userId) {
         return apiUnauthorized();
       }
 
-      // Check if user has admin role via Clerk public metadata
       const publicMetadata = sessionClaims?.metadata as Record<string, unknown> | undefined;
       const isAdmin = publicMetadata?.role === 'admin';
 
@@ -147,7 +170,6 @@ export function withAdminAuth(
         );
       }
 
-      // Call the handler with auth context
       return await handler({
         userId,
         request,
@@ -198,8 +220,8 @@ export function withAuthResolved(
 ): (request: NextRequest) => Promise<NextResponse> {
   return async (request: NextRequest): Promise<NextResponse> => {
     try {
-      // Authenticate user with Clerk
-      const { userId: clerkUserId } = await auth();
+      // Authenticate user with Clerk (Bearer JWT or Cookie)
+      const clerkUserId = await resolveClerkUserId(request);
 
       if (!clerkUserId) {
         return apiUnauthorized();
@@ -214,7 +236,6 @@ export function withAuthResolved(
         return apiServerError(new Error('User not found in database'));
       }
 
-      // Call the handler with resolved auth context
       return await handler({
         clerkUserId,
         internalUserId,
@@ -247,7 +268,7 @@ export function withAuthResolvedParams<P = Record<string, string>>(
     context: { params: Promise<P> }
   ): Promise<NextResponse> => {
     try {
-      const { userId: clerkUserId } = await auth();
+      const clerkUserId = await resolveClerkUserId(request);
 
       if (!clerkUserId) {
         return apiUnauthorized();
