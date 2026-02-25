@@ -35,6 +35,7 @@ export const POST = withAuth(async ({ userId, request }: AuthContext) => {
   const formData = await request.formData();
   const audioFile = formData.get('audio') as File | null;
   const language = (formData.get('language') as string) || 'ja';
+  const prompt = (formData.get('prompt') as string) || undefined;
   const chunkIndex = parseInt((formData.get('chunk_index') as string) || '0', 10);
   const chunkOffsetMs = parseInt((formData.get('chunk_offset_ms') as string) || '0', 10);
 
@@ -81,6 +82,8 @@ export const POST = withAuth(async ({ userId, request }: AuthContext) => {
     language,
     response_format: 'verbose_json',
     timestamp_granularities: ['segment'],
+    temperature: 0,
+    ...(prompt ? { prompt } : {}),
   });
 
   const elapsed = Date.now() - startTime;
