@@ -46,7 +46,7 @@ export function MuednoteTabs({
         {locale === "ja" ? "iOSアプリ" : "iOS App"}
       </a>
       <a
-        href="/downloads/MUEDnoteHub-0.8.0.dmg"
+        href="/downloads/MUEDnoteHub-0.8.1.dmg"
         download
         className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30"
       >
