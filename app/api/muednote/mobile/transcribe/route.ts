@@ -49,12 +49,28 @@ export const POST = withAuth(async ({ userId, request }: AuthContext) => {
     );
   }
 
-  logger.info(`[Transcribe] User: ${userId}, chunk: ${chunkIndex}, size: ${(audioFile.size / 1024).toFixed(0)}KB, lang: ${language}`);
+  logger.info(`[Transcribe] User: ${userId}, chunk: ${chunkIndex}, size: ${(audioFile.size / 1024).toFixed(0)}KB, lang: ${language}, type: ${audioFile.type}, name: ${audioFile.name}`);
 
   // Convert File to OpenAI-compatible format
   const buffer = Buffer.from(await audioFile.arrayBuffer());
+
+  // Validate audio: M4A/MP4 files have 'ftyp' at byte offset 4
+  const header = buffer.slice(0, 12);
+  const headerHex = header.toString('hex');
+  const ftypMarker = header.slice(4, 8).toString('ascii');
+  logger.info(`[Transcribe] Audio header: ${headerHex}, ftyp check: "${ftypMarker}", buffer size: ${buffer.length}`);
+
+  if (buffer.length < 100) {
+    return apiError('Audio file is too small or empty', { status: 400 });
+  }
+
+  if (ftypMarker !== 'ftyp') {
+    logger.warn(`[Transcribe] Invalid M4A: expected 'ftyp' at offset 4, got '${ftypMarker}'`);
+    // Don't reject — Whisper can handle various formats — but log the warning
+  }
+
   const file = await toFile(buffer, audioFile.name || 'audio.m4a', {
-    type: audioFile.type || 'audio/m4a',
+    type: 'audio/mp4',
   });
 
   // Call OpenAI Whisper API
