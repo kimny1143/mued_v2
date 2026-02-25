@@ -190,7 +190,23 @@ export const POST = withAuth(async ({ userId, request }: AuthContext) => {
 
   // Rebuild text from filtered segments, then apply Layer 3 text cleanup
   const rawFilteredText = segments.map((s: { text: string }) => s.text).join(' ');
-  const filteredText = cleanRepetitiveText(rawFilteredText);
+  let filteredText = cleanRepetitiveText(rawFilteredText);
+
+  // Layer 4: Echo detection — if output closely matches the prompt, it's fake
+  if (prompt && filteredText) {
+    const promptNorm = prompt.replace(/[\s、。？！]/g, '');
+    const textNorm = filteredText.replace(/[\s、。？！]/g, '');
+    // If >70% of the output is contained in the prompt, discard
+    if (promptNorm.length > 0 && textNorm.length > 0) {
+      const overlap = textNorm.length <= promptNorm.length
+        ? (promptNorm.includes(textNorm) ? 1.0 : 0)
+        : 0;
+      if (overlap > 0.7 || promptNorm.includes(textNorm)) {
+        logger.info(`[Transcribe] Filtered echo: output matches prompt (${textNorm.slice(0, 40)})`);
+        filteredText = '';
+      }
+    }
+  }
 
   if (rawFilteredText.length !== filteredText.length) {
     logger.info(`[Transcribe] Layer 3 cleanup removed ${rawFilteredText.length - filteredText.length} chars of repetition`);
