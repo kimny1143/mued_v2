@@ -227,10 +227,10 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
       ? await sessionRepository.getSessionContextForHoo(clerkUserId, 3)
       : undefined;
 
-    // Fetch DAW log context (uses internal user ID)
+    // Fetch DAW log context (uses Clerk ID — DAW logs store Clerk ID)
     let dawLogContext: string | null = null;
     try {
-      dawLogContext = await buildDawLogContext(internalUserId);
+      dawLogContext = await buildDawLogContext(clerkUserId);
     } catch (err) {
       logger.warn('[POST /api/hoo/chat] DAW log context fetch failed', { err });
     }
