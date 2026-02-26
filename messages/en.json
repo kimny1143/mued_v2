@@ -59,10 +59,10 @@
       "ctaPrimary": "Start Free with Hoo",
       "ctaSecondary": "Log In",
       "hooPhrases": [
-        "Ho-Hoo, save your thoughts?",
-        "Ho-Hoo, interesting approach!",
-        "Ho-Hoo, I see what you did there",
-        "Ho-Hoo, time for a break?"
+        "Ho-Hoo, time for a break?",
+        "Ho-Hoo, want to talk about your session?",
+        "Ho-Hoo, I noticed something interesting",
+        "Ho-Hoo, let's review what you did"
       ]
     },
     "philosophy": {
@@ -78,8 +78,12 @@
           "description": "When music plays, Hoo sways along. It feels like you're not alone during production."
         },
         "voice": {
-          "title": "Voice Memos",
-          "description": "Your unconscious murmurs get transcribed. Never forget why you made that choice."
+          "title": "Cloud Transcription",
+          "description": "Your voice memos are automatically transcribed in the cloud. Never forget why you made that choice."
+        },
+        "chat": {
+          "title": "Chat with Hoo",
+          "description": "After a session, talk it over with Hoo. It understands what you recorded and helps you reflect."
         }
       }
     },
@@ -299,7 +303,7 @@
         "name": "MuVerb",
         "category": "Space",
         "difficulty": "★★☆",
-        "description": "Room, Hall, Plate, Spring, Chamber — distinguish between 5 reverb types. Understand spatial characteristics by ear."
+        "description": "Compare two reverbs side by side — which is which? Room, Hall, Plate, Spring, Chamber. Learn to distinguish spatial characteristics by ear."
       },
       "mupan": {
         "name": "MuPan",
@@ -311,7 +315,7 @@
         "name": "MuHorse",
         "category": "Dynamics",
         "difficulty": "★★☆",
-        "description": "Replicate the reference compression. Adjust compressor parameters to match the target sound. Train your hands as well as your ears."
+        "description": "Match compressor parameters across FET, VCA, and Opto types. Adjust settings to replicate the reference sound. Train your hands as well as your ears."
       }
     },
     "features": {

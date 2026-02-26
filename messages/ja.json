@@ -59,10 +59,10 @@
       "ctaPrimary": "無料でHooと始める",
       "ctaSecondary": "ログイン",
       "hooPhrases": [
-        "Ho-Hoo, 今の考え、残しとく？",
-        "Ho-Hoo, そんなアプローチするんだ",
-        "Ho-Hoo, なるほど、そうきたか",
-        "Ho-Hoo, そろそろ休憩しない？"
+        "Ho-Hoo, そろそろ休憩しない？",
+        "Ho-Hoo, さっきのセッション、振り返ってみる？",
+        "Ho-Hoo, ちょっと気づいたことがあるんだけど",
+        "Ho-Hoo, 今日やったこと、一緒に整理しよっか"
       ]
     },
     "philosophy": {
@@ -78,8 +78,12 @@
           "description": "音楽が鳴ると、Hooがゆらゆら動く。制作中、そばにいる感じがする。"
         },
         "voice": {
-          "title": "声でメモを残せる",
-          "description": "無意識につぶやいていたことが、後で文字になって見返せる。「なんでこうしたんだっけ」がなくなる。"
+          "title": "クラウド文字起こし",
+          "description": "録音した声メモが自動で文字になる。「なんでこうしたんだっけ」がなくなる。"
+        },
+        "chat": {
+          "title": "Hooと振り返り",
+          "description": "セッション後、Hooと会話しよう。録音内容を理解した上で、一緒に振り返ってくれる。"
         }
       }
     },
@@ -299,7 +303,7 @@
         "name": "MuVerb",
         "category": "Space",
         "difficulty": "★★☆",
-        "description": "Room、Hall、Plate、Spring、Chamber——5種類のリバーブタイプを聴き分けるゲーム。空間特性の違いを耳で理解します。"
+        "description": "2つのリバーブをA/B比較——どっちがどれ？ Room、Hall、Plate、Spring、Chamberの空間特性を耳で聴き分けます。"
       },
       "mupan": {
         "name": "MuPan",
@@ -311,7 +315,7 @@
         "name": "MuHorse",
         "category": "Dynamics",
         "difficulty": "★★☆",
-        "description": "お手本のコンプを再現せよ。コンプレッサーのパラメータを操作して、ターゲットの音に近づけるゲーム。耳だけでなく手も鍛えます。"
+        "description": "FET、VCA、Optoの各タイプでコンプのパラメータをマッチング。お手本の音に近づけて、耳だけでなく手も鍛えます。"
       }
     },
     "features": {
