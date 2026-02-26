@@ -2,20 +2,30 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, List, History, Settings } from "lucide-react";
+import { Home, List, History, Settings, Brain, Lock } from "lucide-react";
 import { useLocale } from "@/lib/i18n/locale-context";
+import { useState, useEffect } from "react";
 
 /**
  * MUEDnote Navigation Tabs
  *
- * Simple navigation for MUEDnote dashboard
- * - No LMS features
- * - Focus on sessions and logs
- * - i18n support
+ * Includes MUEDlobe tab (Premium-only, grayed out for other tiers)
  */
 export function MuednoteTabs() {
   const pathname = usePathname();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const [tier, setTier] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/subscription/limits")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setTier(data.data.limits.tier);
+      })
+      .catch(() => {});
+  }, []);
+
+  const isPremium = tier === "premium";
 
   const tabs = [
     {
@@ -35,6 +45,12 @@ export function MuednoteTabs() {
       icon: History,
     },
     {
+      name: "MUEDlobe",
+      href: "/lobe",
+      icon: Brain,
+      premiumOnly: true,
+    },
+    {
       name: t.muednote.tabs.settings,
       href: "/dashboard/settings",
       icon: Settings,
@@ -45,6 +61,8 @@ export function MuednoteTabs() {
     <div className="border-b border-white/10 mb-8">
       <div className="flex gap-6 overflow-x-auto">
         {tabs.map((tab) => {
+          const isPremiumTab = "premiumOnly" in tab && tab.premiumOnly;
+          const isLocked = isPremiumTab && !isPremium;
           const isActive = tab.exact
             ? pathname === tab.href
             : pathname.startsWith(tab.href);
@@ -52,16 +70,26 @@ export function MuednoteTabs() {
 
           return (
             <Link
-              key={tab.href}
+              key={tab.name}
               href={tab.href}
               className={`pb-3 px-1 border-b-2 text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${
-                isActive
-                  ? "border-indigo-500 text-white"
-                  : "border-transparent text-slate-400 hover:text-white"
+                isLocked
+                  ? "border-transparent text-slate-600 cursor-default"
+                  : isActive
+                    ? "border-indigo-500 text-white"
+                    : "border-transparent text-slate-400 hover:text-white"
               }`}
+              title={
+                isLocked
+                  ? locale === "ja"
+                    ? "Premiumプランで利用可能"
+                    : "Available on Premium plan"
+                  : undefined
+              }
             >
               <Icon className="w-4 h-4" />
               {tab.name}
+              {isLocked && <Lock className="w-3 h-3" />}
             </Link>
           );
         })}

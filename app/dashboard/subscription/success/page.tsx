@@ -16,9 +16,9 @@ const PLAN_FEATURES: Record<string, string[]> = {
   premium: [
     'All Basic features',
     'Hoo AI: Unlimited (BYOK)',
-    'Choose your own AI model',
-    'System prompt access',
-    'Full customization',
+    'MUEDlobe cognitive profile',
+    'Personalized Hoo conversation',
+    'Accumulated data analysis',
   ],
 };
 
@@ -33,9 +33,9 @@ const PLAN_FEATURES_JA: Record<string, string[]> = {
   premium: [
     'ベーシックの全機能',
     'Hoo AI：無制限（BYOK）',
-    'AIモデル選択可能',
-    'システムプロンプト開放',
-    'フルカスタマイズ',
+    'MUEDlobe認知プロファイル',
+    'Hoo個人化会話',
+    '蓄積データ分析',
   ],
 };
 
@@ -94,6 +94,16 @@ function SuccessPageContent() {
             >
               {t.subscription.success?.cta || 'Start using Hoo'}
             </Link>
+            {tier === 'premium' && (
+              <Link
+                href="/lobe"
+                className="block w-full bg-violet-50 text-violet-700 text-center py-3 rounded-xl font-medium hover:bg-violet-100 transition-colors border border-violet-200"
+              >
+                {locale === 'ja'
+                  ? 'MUEDlobeを受けてみる（後からでもOK）'
+                  : 'Try MUEDlobe now (or anytime later)'}
+              </Link>
+            )}
             <Link
               href="/dashboard"
               className="block w-full bg-gray-100 text-gray-700 text-center py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"
