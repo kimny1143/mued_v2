@@ -94,41 +94,49 @@ const DAW_LABELS: Record<string, string> = {
 };
 
 /**
- * Build a human-readable summary of recent DAW logs for Hoo context.
+ * Build a human-readable summary of ALL DAW logs for Hoo context.
+ * Groups by date, shows action breakdown per day, and recent operation details.
  * Returns null if no logs found.
  */
-async function buildDawLogContext(internalUserId: string): Promise<string | null> {
-  // Fetch last 3 hours of DAW logs
-  const since = new Date(Date.now() - 3 * 60 * 60 * 1000);
-  const until = new Date();
-  const logs = await dawLogsRepository.getByTimeRange(internalUserId, since, until, 200);
+async function buildDawLogContext(userId: string): Promise<string | null> {
+  // Fetch ALL DAW logs (up to 1000)
+  const logs = await dawLogsRepository.getLogs({
+    userId,
+    limit: 1000,
+  });
 
   if (logs.length === 0) return null;
 
-  // Determine DAW type
+  // Sort ascending by timestamp for grouping
+  const sorted = [...logs].sort((a, b) => a.ts.getTime() - b.ts.getTime());
+
+  // Determine primary DAW
   const dawCounts: Record<string, number> = {};
-  for (const log of logs) {
+  for (const log of sorted) {
     const daw = log.daw || 'other';
     dawCounts[daw] = (dawCounts[daw] || 0) + 1;
   }
   const primaryDaw = Object.entries(dawCounts).sort((a, b) => b[1] - a[1])[0][0];
 
-  // Time range (getByTimeRange sorts asc, so first = oldest, last = newest)
-  const oldest = logs[0].ts;
-  const newest = logs[logs.length - 1].ts;
-  const formatTime = (d: Date) => `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-
-  // Group by action
-  const byAction: Record<string, number> = {};
-  for (const log of logs) {
-    const action = log.action || 'parameter_change';
-    byAction[action] = (byAction[action] || 0) + 1;
+  // Group by date
+  const byDate = new Map<string, typeof sorted>();
+  for (const log of sorted) {
+    const dateKey = log.ts.toISOString().slice(0, 10); // YYYY-MM-DD
+    if (!byDate.has(dateKey)) byDate.set(dateKey, []);
+    byDate.get(dateKey)!.push(log);
   }
 
-  // Extract unique track/device names from metadata
+  // Overall action breakdown
+  const totalByAction: Record<string, number> = {};
+  for (const log of sorted) {
+    const action = log.action || 'parameter_change';
+    totalByAction[action] = (totalByAction[action] || 0) + 1;
+  }
+
+  // Extract unique track/device names
   const trackNames = new Set<string>();
   const deviceNames = new Set<string>();
-  for (const log of logs) {
+  for (const log of sorted) {
     const meta = log.metadata as Record<string, unknown> | null;
     if (meta) {
       if (typeof meta.trackName === 'string' && meta.trackName) trackNames.add(meta.trackName);
@@ -137,39 +145,57 @@ async function buildDawLogContext(internalUserId: string): Promise<string | null
   }
 
   // Build summary
-  let summary = `## DAWログ（直近の制作アクティビティ）\n\n`;
-  summary += `ユーザーはDAWで制作作業を行っています。以下はDAWから自動取得した操作ログのサマリーです。\n`;
-  summary += `ユーザーの制作状況を把握するために活用してください。\n\n`;
+  let summary = `## DAW操作ログ（制作アクティビティ全履歴）\n\n`;
+  summary += `ユーザーのDAW操作ログです。制作の傾向・進捗・作業パターンの把握に活用してください。\n\n`;
   summary += `- **DAW**: ${DAW_LABELS[primaryDaw] || primaryDaw}\n`;
-  summary += `- **期間**: ${formatTime(oldest)}〜${formatTime(newest)}\n`;
-  summary += `- **操作数**: ${logs.length}件\n`;
+  summary += `- **総操作数**: ${sorted.length}件\n`;
+  summary += `- **記録期間**: ${sorted[0].ts.toISOString().slice(0, 10)} 〜 ${sorted[sorted.length - 1].ts.toISOString().slice(0, 10)}\n`;
 
-  // Action breakdown
+  // Overall action breakdown
   summary += `- **操作内訳**:\n`;
-  for (const [action, count] of Object.entries(byAction).sort((a, b) => b[1] - a[1])) {
+  for (const [action, count] of Object.entries(totalByAction).sort((a, b) => b[1] - a[1])) {
     const label = ACTION_LABELS[action as DawAction] || action;
     summary += `  - ${label}: ${count}件\n`;
   }
 
-  // Track/device names
   if (trackNames.size > 0) {
-    summary += `- **使用トラック**: ${[...trackNames].slice(0, 8).join(', ')}\n`;
+    summary += `- **使用トラック**: ${[...trackNames].slice(0, 10).join(', ')}\n`;
   }
   if (deviceNames.size > 0) {
-    summary += `- **使用デバイス/プラグイン**: ${[...deviceNames].slice(0, 8).join(', ')}\n`;
+    summary += `- **使用デバイス/プラグイン**: ${[...deviceNames].slice(0, 10).join(', ')}\n`;
   }
 
-  // Recent notable changes (last 5 with valueString)
-  const recentLogs = logs.slice(-10).reverse().filter(l => l.valueString);
+  // Daily breakdown (newest first)
+  const formatTime = (d: Date) => `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  const dateKeys = [...byDate.keys()].sort().reverse();
+
+  summary += `\n### 日別サマリー\n`;
+  for (const dateKey of dateKeys) {
+    const dayLogs = byDate.get(dateKey)!;
+    const dayActions: Record<string, number> = {};
+    for (const l of dayLogs) {
+      const a = l.action || 'parameter_change';
+      dayActions[a] = (dayActions[a] || 0) + 1;
+    }
+    const actionParts = Object.entries(dayActions)
+      .sort((a, b) => b[1] - a[1])
+      .map(([a, c]) => `${ACTION_LABELS[a as DawAction] || a}${c}`)
+      .join(', ');
+    const timeRange = `${formatTime(dayLogs[0].ts)}〜${formatTime(dayLogs[dayLogs.length - 1].ts)}`;
+    summary += `- **${dateKey}** (${timeRange}): ${dayLogs.length}件 — ${actionParts}\n`;
+  }
+
+  // Recent operation details (last 10)
+  const recentLogs = sorted.slice(-10).reverse().filter(l => l.valueString);
   if (recentLogs.length > 0) {
-    summary += `\n### 直近の操作（新しい順）\n`;
-    for (const log of recentLogs.slice(0, 5)) {
+    summary += `\n### 直近の操作詳細（新しい順）\n`;
+    for (const log of recentLogs) {
       const meta = log.metadata as Record<string, unknown> | null;
       const trackName = meta?.trackName as string || '';
       const deviceName = meta?.deviceName as string || '';
       const actionLabel = ACTION_LABELS[log.action as DawAction] || log.action;
-      const time = formatTime(log.ts);
-      const parts = [time, actionLabel];
+      const dateTime = `${log.ts.toISOString().slice(0, 10)} ${formatTime(log.ts)}`;
+      const parts = [dateTime, actionLabel];
       if (trackName) parts.push(`Track: ${trackName}`);
       if (deviceName) parts.push(`Device: ${deviceName}`);
       parts.push(`→ ${log.valueString}`);
