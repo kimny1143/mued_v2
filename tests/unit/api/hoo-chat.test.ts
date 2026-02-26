@@ -84,11 +84,11 @@ describe('Hoo Chat API - Request Validation', () => {
 const FREE_TIER_RESPONSES = {
   greeting: {
     patterns: ['こんにち', 'hello', 'hi', 'hey', 'おはよう', 'こんばん'],
-    response: 'こんにちは、Hooです。\n\n思考整理のお手伝いをしたいのですが、AIチャット機能はBasicプラン以上でご利用いただけます。\n\nBasicプランでは月150回のAI会話が可能です。',
+    response: 'こんにちは、Hooです。\n\n思考整理のお手伝いをしたいのですが、AIチャット機能はBasicプラン以上でご利用いただけます。\n\nBasicプランでは無制限のHoo AI会話が可能です。',
   },
   upgrade: {
     patterns: ['アップグレード', 'upgrade', 'プラン', 'plan', 'basic', 'premium'],
-    response: 'プランについてですね。\n\n- **Basic**: 月額980円で150回/月のAI会話\n- **Premium**: 月額2,980円で無制限AI会話（お持ちのAPIキー利用）\n\nダッシュボードの「サブスクリプション」からアップグレードできます。',
+    response: 'プランについてですね。\n\n- **Basic**: 月額1,980円でHoo AI無制限会話 + Whisper + DAWログ連携\n- **Premium**: 月額2,980円で上記すべて + Hoo個人化 + MUEDlobe認知プロファイル\n\nダッシュボードの「サブスクリプション」からアップグレードできます。',
   },
   default: {
     response: 'Hooです。\n\nAI会話機能はBasicプラン以上でご利用いただけます。\n\n現在のFreeプランでは、セッション記録やダッシュボード機能をお試しいただけます。',

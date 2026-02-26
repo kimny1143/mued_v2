@@ -22,12 +22,12 @@ const CANCEL_REASONS = [
 
 const FEATURES_LOST = {
   basic: {
-    en: ['Hoo AI conversations (150/month)', 'Unlimited log storage', 'DAW log integration', 'Dashboard & Export'],
-    ja: ['Hoo AI会話（月150回）', '無制限のログ保存', 'DAWログ連携', 'ダッシュボード・エクスポート'],
+    en: ['Hoo AI conversation (unlimited)', 'Cloud sync & unlimited log storage', 'DAW log integration', 'Practice data visualization'],
+    ja: ['Hoo AI会話（無制限）', 'クラウド同期・ログ保存無制限', 'DAWログ連携', '練習データの見える化'],
   },
   premium: {
-    en: ['Unlimited Hoo AI (BYOK)', 'Custom AI model selection', 'System prompt access', 'Full customization'],
-    ja: ['無制限Hoo AI（BYOK）', 'AIモデル選択', 'システムプロンプトアクセス', 'フルカスタマイズ'],
+    en: ['Hoo personalized conversation', 'MUEDlobe cognitive profile', 'Accumulated data analysis'],
+    ja: ['Hoo個人化会話', 'MUEDlobe認知プロファイル', '蓄積データ分析'],
   },
 };
 

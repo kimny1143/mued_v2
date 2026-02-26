@@ -7,34 +7,32 @@ import { Suspense } from 'react';
 
 const PLAN_FEATURES: Record<string, string[]> = {
   basic: [
+    'Hoo AI conversation (unlimited)',
     'Voice transcription (Whisper)',
-    'Unlimited log storage',
+    'Cloud sync & unlimited log storage',
     'DAW log integration',
-    'Dashboard & Export',
-    'Hoo AI: 150 conversations/month',
+    'Practice data visualization',
   ],
   premium: [
     'All Basic features',
-    'Hoo AI: Unlimited (BYOK)',
+    'Hoo personalized conversation',
     'MUEDlobe cognitive profile',
-    'Personalized Hoo conversation',
     'Accumulated data analysis',
   ],
 };
 
 const PLAN_FEATURES_JA: Record<string, string[]> = {
   basic: [
+    'Hoo AI会話（無制限）',
     '音声文字起こし（Whisper）',
-    'ログ保存：無制限',
+    'クラウド同期・ログ保存無制限',
     'DAWログ連携',
-    'ダッシュボード・エクスポート',
-    'Hoo AI：月150回まで',
+    '練習データの見える化',
   ],
   premium: [
     'ベーシックの全機能',
-    'Hoo AI：無制限（BYOK）',
-    'MUEDlobe認知プロファイル',
     'Hoo個人化会話',
+    'MUEDlobe認知プロファイル',
     '蓄積データ分析',
   ],
 };
