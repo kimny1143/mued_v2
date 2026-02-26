@@ -2,23 +2,23 @@
 
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
-import { Zap, Cpu, Waves, Sliders } from "lucide-react";
+import { Timer, Layers, SlidersHorizontal, Target } from "lucide-react";
 
 const FEATURE_ICONS = {
-  realtime: Zap,
-  hardware: Cpu,
-  convolution: Waves,
-  settings: Sliders,
+  quickPlay: Timer,
+  coverage: Layers,
+  difficulty: SlidersHorizontal,
+  practical: Target,
 } as const;
 
 type FeatureKey = keyof typeof FEATURE_ICONS;
 
-const FEATURES: FeatureKey[] = ["realtime", "hardware", "convolution", "settings"];
+const FEATURES: FeatureKey[] = ["quickPlay", "coverage", "difficulty", "practical"];
 
 /**
  * MUEDear Features Section
  *
- * Highlights the DSP capabilities and professional features.
+ * User-experience focused: quick play, coverage, difficulty, practical value.
  */
 export function MuedearFeaturesSection() {
   const t = useTranslations("muedear.features");

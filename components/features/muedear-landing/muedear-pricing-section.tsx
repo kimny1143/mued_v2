@@ -2,12 +2,12 @@
 
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
-import { Check, Ban, Bell, Flame, Target } from "lucide-react";
+import { Check, TrendingUp } from "lucide-react";
 
 /**
  * MUEDear Pricing Section
  *
- * Free tier details and anti-addiction design philosophy.
+ * Free tier details and ear profile vision.
  */
 export function MuedearPricingSection() {
   const t = useTranslations("muedear.pricing");
@@ -66,36 +66,26 @@ export function MuedearPricingSection() {
             </div>
           </motion.div>
 
-          {/* Anti-addiction design */}
+          {/* Ear Profile vision */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
           >
-            <div className="h-full bg-[#111] border border-white/5 rounded-xl p-6 hover:border-white/10 transition-colors">
-              <h3 className="text-xl font-bold text-white mb-6">
-                {t("antiAddiction.title")}
-              </h3>
+            <div className="h-full bg-[#111] border border-white/5 rounded-xl p-6 hover:border-white/10 transition-colors flex flex-col">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-amber-400/10 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-amber-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white">
+                  {t("earProfile.title")}
+                </h3>
+              </div>
 
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3">
-                  <Ban className="w-5 h-5 text-white/50 mt-0.5 shrink-0" />
-                  <span className="text-white/70">{t("antiAddiction.noScroll")}</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Bell className="w-5 h-5 text-white/50 mt-0.5 shrink-0" />
-                  <span className="text-white/70">{t("antiAddiction.noNotifications")}</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Flame className="w-5 h-5 text-white/50 mt-0.5 shrink-0" />
-                  <span className="text-white/70">{t("antiAddiction.noStreak")}</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Target className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
-                  <span className="text-white">{t("antiAddiction.focused")}</span>
-                </li>
-              </ul>
+              <p className="text-white/70 leading-relaxed flex-1">
+                {t("earProfile.description")}
+              </p>
             </div>
           </motion.div>
         </div>
