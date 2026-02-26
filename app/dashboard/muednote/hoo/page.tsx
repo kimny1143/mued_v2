@@ -4,11 +4,7 @@
  * Hoo AI Chat Page
  *
  * Thought organization assistant for MUEDnote.
- * Supports: Free (template), Basic, Premium (unlimited)
- *
- * Basic tier limits:
- * - 150 turns/month (hard limit - blocks when exceeded)
- * - 30 threads/month (soft limit - shows alert but doesn't block)
+ * Supports: Free (template/trial), Basic (unlimited), Premium (unlimited)
  */
 
 import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
@@ -409,13 +405,13 @@ function HooChatContent() {
                 </Link>
               )}
             </div>
-            {/* Thread soft limit alert */}
-            {threadAlert && (
+            {/* Thread soft limit alert (only relevant if limits are finite) */}
+            {threadAlert && usage && usage.threadsLimit > 0 && (
               <div className="flex items-center gap-2 text-xs text-amber-400">
                 <AlertCircle className="w-3 h-3" />
                 {locale === 'ja'
-                  ? 'スレッド数の目安（30/月）を超えました。ターン数が上限（150/月）に達するまで引き続きご利用いただけます。'
-                  : "You've exceeded the recommended thread count (30/month). You can continue until you reach the turn limit (150/month)."}
+                  ? `スレッド数の目安（${usage.threadsLimit}/月）を超えました。引き続きご利用いただけます。`
+                  : `You've exceeded the recommended thread count (${usage.threadsLimit}/month). You can continue using Hoo.`}
               </div>
             )}
           </div>
