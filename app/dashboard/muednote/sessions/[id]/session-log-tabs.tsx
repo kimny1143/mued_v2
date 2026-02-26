@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
-import { Mic, Sliders, Volume2, GitMerge, MessageSquare } from "lucide-react";
+import {
+  Mic,
+  Sliders,
+  Volume2,
+  GitMerge,
+  MessageSquare,
+} from "lucide-react";
 
 interface VoiceLog {
   id: string;
@@ -40,24 +45,31 @@ interface SessionLogTabsProps {
   dawStats: DawStats;
 }
 
-type TabType = "voice" | "daw" | "combined";
+type TimelineEntry =
+  | { type: "voice"; logId: string; time: number; text: string; confidence: number | null }
+  | {
+      type: "daw";
+      logId: string;
+      time: number;
+      action: string;
+      trackId: number;
+      deviceId: number;
+      paramId: number;
+      valueString: string;
+    };
 
 /**
- * Session Log Tabs - タブ切り替えでログを表示
+ * Session Log Tabs - 2列タイムライン同期表示
  *
- * - Voice: 音声ログのみ
- * - DAW: DAWパラメータログのみ
- * - Combined: 時系列で統合表示
+ * Desktop: 左=Voice, 右=DAW, 中央タイムラインで時間同期
+ * Mobile: 1列統合タイムライン（左ボーダー色分け）
+ * DAWログなし: Voiceのみ表示
  */
 export function SessionLogTabs({
   voiceLogs,
   dawLogs,
   dawStats,
 }: SessionLogTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabType>(
-    dawLogs.length > 0 ? "combined" : "voice"
-  );
-
   const hasDawLogs = dawLogs.length > 0;
 
   const formatTimestamp = (seconds: number) => {
@@ -96,8 +108,57 @@ export function SessionLogTabs({
     }
   };
 
-  // Combined timeline: merge and sort by timestamp
-  const combinedLogs = [
+  // Voice-only layout (no DAW logs)
+  if (!hasDawLogs) {
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <Mic className="w-4 h-4 text-indigo-400" />
+          <span className="text-sm font-medium text-slate-400">
+            思考ログ
+          </span>
+          <span className="text-xs text-slate-500">
+            ({voiceLogs.length})
+          </span>
+        </div>
+        {voiceLogs.length === 0 ? (
+          <GlassCard hover={false}>
+            <div className="text-center py-8">
+              <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
+                <MessageSquare className="w-6 h-6 text-slate-600" />
+              </div>
+              <p className="text-slate-400">音声ログがありません</p>
+            </div>
+          </GlassCard>
+        ) : (
+          <div className="space-y-2">
+            {voiceLogs.map((log) => (
+              <GlassCard key={log.id} hover={false} className="py-3 px-4">
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0 w-14 text-right">
+                    <span className="text-sm font-mono text-indigo-400">
+                      {formatTimestamp(log.timestampSec)}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white leading-relaxed">{log.text}</p>
+                    {log.confidence !== null && log.confidence < 0.7 && (
+                      <span className="text-xs text-amber-500 mt-1 inline-block">
+                        低信頼度
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </GlassCard>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Merge and sort timeline entries
+  const timeline: TimelineEntry[] = [
     ...voiceLogs.map((log) => ({
       type: "voice" as const,
       logId: log.id,
@@ -119,221 +180,196 @@ export function SessionLogTabs({
 
   return (
     <div>
-      {/* Tab Buttons */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <button
-          onClick={() => setActiveTab("voice")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-            activeTab === "voice"
-              ? "bg-indigo-600/20 text-indigo-400 border border-indigo-500/30"
-              : "bg-white/5 text-slate-400 hover:bg-white/10 border border-transparent"
-          }`}
-        >
-          <Mic className="w-4 h-4" />
-          思考ログ
-          <span className="text-xs opacity-70">({voiceLogs.length})</span>
-        </button>
-
-        {hasDawLogs && (
-          <button
-            onClick={() => setActiveTab("daw")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-              activeTab === "daw"
-                ? "bg-amber-600/20 text-amber-400 border border-amber-500/30"
-                : "bg-white/5 text-slate-400 hover:bg-white/10 border border-transparent"
-            }`}
-          >
-            <Sliders className="w-4 h-4" />
-            DAWログ
-            <span className="text-xs opacity-70">({dawStats.oscCount})</span>
-          </button>
-        )}
-
-        {hasDawLogs && (
-          <button
-            onClick={() => setActiveTab("combined")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-              activeTab === "combined"
-                ? "bg-teal-600/20 text-teal-400 border border-teal-500/30"
-                : "bg-white/5 text-slate-400 hover:bg-white/10 border border-transparent"
-            }`}
-          >
-            <GitMerge className="w-4 h-4" />
-            タイムライン
-          </button>
-        )}
+      {/* Column Headers - Desktop */}
+      <div className="hidden md:grid md:grid-cols-[1fr_40px_1fr] gap-0 mb-4">
+        <div className="flex items-center gap-2">
+          <Mic className="w-4 h-4 text-indigo-400" />
+          <span className="text-sm font-medium text-indigo-400">思考ログ</span>
+          <span className="text-xs text-slate-500">({voiceLogs.length})</span>
+        </div>
+        <div />
+        <div className="flex items-center gap-2">
+          <Sliders className="w-4 h-4 text-amber-400" />
+          <span className="text-sm font-medium text-amber-400">DAWログ</span>
+          <span className="text-xs text-slate-500">({dawStats.oscCount})</span>
+        </div>
       </div>
 
-      {/* Voice Logs Tab */}
-      {activeTab === "voice" && (
-        <div>
-          <p className="text-sm text-slate-500 mb-4">
-            セッション中に記録された独り言・思考の断片
-          </p>
-          {voiceLogs.length === 0 ? (
-            <GlassCard hover={false}>
-              <div className="text-center py-8">
-                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <MessageSquare className="w-6 h-6 text-slate-600" />
-                </div>
-                <p className="text-slate-400">音声ログがありません</p>
-              </div>
-            </GlassCard>
-          ) : (
-            <div className="space-y-2">
-              {voiceLogs.map((log) => (
-                <GlassCard key={log.id} hover={false} className="py-3 px-4">
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 w-14 text-right">
-                      <span className="text-sm font-mono text-indigo-400">
-                        {formatTimestamp(log.timestampSec)}
-                      </span>
+      {/* Column Headers - Mobile */}
+      <div className="flex md:hidden items-center gap-4 mb-4">
+        <div className="flex items-center gap-2">
+          <Mic className="w-4 h-4 text-indigo-400" />
+          <span className="text-xs text-slate-400">{voiceLogs.length}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Sliders className="w-4 h-4 text-amber-400" />
+          <span className="text-xs text-slate-400">{dawStats.oscCount}</span>
+        </div>
+      </div>
+
+      {/* Two-column Timeline - Desktop */}
+      <div className="hidden md:block">
+        <div className="relative">
+          {/* Central timeline line */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/10 -translate-x-1/2" />
+
+          <div className="space-y-2">
+            {timeline.map((entry) => {
+              if (entry.type === "voice") {
+                return (
+                  <div
+                    key={`voice-${entry.logId}`}
+                    className="grid grid-cols-[1fr_40px_1fr] gap-0 items-start"
+                  >
+                    {/* Left column: Voice */}
+                    <div className="pr-3">
+                      <div className="bg-white/5 border border-white/10 rounded-xl py-3 px-4">
+                        <div className="flex gap-3">
+                          <div className="flex-shrink-0">
+                            <span className="text-sm font-mono text-indigo-400">
+                              {formatTimestamp(entry.time)}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-sm leading-relaxed">
+                              {entry.text}
+                            </p>
+                            {entry.confidence !== null &&
+                              entry.confidence < 0.7 && (
+                                <span className="text-xs text-amber-500 mt-1 inline-block">
+                                  低信頼度
+                                </span>
+                              )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white leading-relaxed">{log.text}</p>
-                      {log.confidence !== null && log.confidence < 0.7 && (
-                        <span className="text-xs text-amber-500 mt-1 inline-block">
-                          低信頼度
-                        </span>
-                      )}
+
+                    {/* Center: Timeline dot */}
+                    <div className="flex justify-center pt-3">
+                      <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-slate-900 z-10" />
+                    </div>
+
+                    {/* Right column: empty */}
+                    <div />
+                  </div>
+                );
+              } else {
+                const badge = getActionBadge(entry.action);
+                const Icon = badge.icon;
+
+                return (
+                  <div
+                    key={`daw-${entry.logId}`}
+                    className="grid grid-cols-[1fr_40px_1fr] gap-0 items-start"
+                  >
+                    {/* Left column: empty */}
+                    <div />
+
+                    {/* Center: Timeline dot */}
+                    <div className="flex justify-center pt-3">
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-500 border-2 border-slate-900 z-10" />
+                    </div>
+
+                    {/* Right column: DAW */}
+                    <div className="pl-3">
+                      <div className="bg-white/5 border border-white/10 rounded-xl py-3 px-4">
+                        <div className="flex gap-2 items-start">
+                          <div className="flex-shrink-0">
+                            <span className="text-sm font-mono text-amber-400">
+                              {formatTimestamp(entry.time)}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div
+                                className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${badge.color}`}
+                              >
+                                <Icon className="w-3 h-3" />
+                                {badge.label}
+                              </div>
+                              <span className="text-slate-500 text-xs">
+                                Track {entry.trackId}
+                                {entry.deviceId >= 0 &&
+                                  ` / Dev ${entry.deviceId}`}
+                              </span>
+                            </div>
+                            <p className="text-white text-sm">
+                              {entry.valueString}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </GlassCard>
-              ))}
-            </div>
-          )}
+                );
+              }
+            })}
+          </div>
         </div>
-      )}
+      </div>
 
-      {/* DAW Logs Tab */}
-      {activeTab === "daw" && (
-        <div>
-          <p className="text-sm text-slate-500 mb-4">
-            DAWで操作したパラメータの変更履歴（OSC経由）
-          </p>
-          {dawLogs.length === 0 ? (
-            <GlassCard hover={false}>
-              <div className="text-center py-8">
-                <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Sliders className="w-6 h-6 text-slate-600" />
+      {/* Single-column Timeline - Mobile */}
+      <div className="md:hidden space-y-2">
+        {timeline.map((entry) => {
+          if (entry.type === "voice") {
+            return (
+              <GlassCard
+                key={`m-voice-${entry.logId}`}
+                hover={false}
+                className="py-3 px-4 border-l-2 border-l-indigo-500"
+              >
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0 w-12 text-right">
+                    <span className="text-xs font-mono text-indigo-400">
+                      {formatTimestamp(entry.time)}
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    <Mic className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-white text-sm leading-relaxed">
+                      {entry.text}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-slate-400">DAWログがありません</p>
-              </div>
-            </GlassCard>
-          ) : (
-            <div className="space-y-2">
-              {dawLogs.map((log) => {
-                const badge = getActionBadge(log.action);
-                const Icon = badge.icon;
-                return (
-                  <GlassCard key={log.id} hover={false} className="py-3 px-4">
-                    <div className="flex gap-3 items-center">
-                      <div className="flex-shrink-0 w-14 text-right">
-                        <span className="text-sm font-mono text-amber-400">
-                          {formatTimestamp(log.relativeTimeSec)}
-                        </span>
-                      </div>
+              </GlassCard>
+            );
+          } else {
+            const badge = getActionBadge(entry.action);
+            const Icon = badge.icon;
+
+            return (
+              <GlassCard
+                key={`m-daw-${entry.logId}`}
+                hover={false}
+                className="py-3 px-4 border-l-2 border-l-amber-500"
+              >
+                <div className="flex gap-3 items-start">
+                  <div className="flex-shrink-0 w-12 text-right">
+                    <span className="text-xs font-mono text-amber-400">
+                      {formatTimestamp(entry.time)}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
                       <div
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${badge.color}`}
+                        className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${badge.color}`}
                       >
                         <Icon className="w-3 h-3" />
                         {badge.label}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-slate-400 text-sm">
-                          Track {log.trackId}
-                          {log.deviceId >= 0 && ` / Device ${log.deviceId}`}
-                        </span>
-                        <span className="text-white ml-2">
-                          {log.valueString}
-                        </span>
-                      </div>
+                      <span className="text-slate-500 text-xs">
+                        T{entry.trackId}
+                      </span>
                     </div>
-                  </GlassCard>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Combined Timeline Tab */}
-      {activeTab === "combined" && (
-        <div>
-          <p className="text-sm text-slate-500 mb-4">
-            思考ログとDAW操作を時系列で統合表示
-          </p>
-          {combinedLogs.length === 0 ? (
-            <GlassCard hover={false}>
-              <div className="text-center py-8">
-                <p className="text-slate-400">ログがありません</p>
-              </div>
-            </GlassCard>
-          ) : (
-            <div className="space-y-2">
-              {combinedLogs.map((log) => {
-                if (log.type === "voice") {
-                  return (
-                    <GlassCard
-                      key={`voice-${log.logId}`}
-                      hover={false}
-                      className="py-3 px-4 border-l-2 border-l-indigo-500"
-                    >
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-14 text-right">
-                          <span className="text-sm font-mono text-indigo-400">
-                            {formatTimestamp(log.time)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Mic className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                          <p className="text-white leading-relaxed">
-                            {log.text}
-                          </p>
-                        </div>
-                      </div>
-                    </GlassCard>
-                  );
-                } else {
-                  const badge = getActionBadge(log.action);
-                  const Icon = badge.icon;
-
-                  return (
-                    <GlassCard
-                      key={`daw-${log.logId}`}
-                      hover={false}
-                      className="py-3 px-4 border-l-2 border-l-amber-500"
-                    >
-                      <div className="flex gap-3 items-center">
-                        <div className="flex-shrink-0 w-14 text-right">
-                          <span className="text-sm font-mono text-amber-400">
-                            {formatTimestamp(log.time)}
-                          </span>
-                        </div>
-                        <div
-                          className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${badge.color}`}
-                        >
-                          <Icon className="w-3 h-3" />
-                          {badge.label}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-slate-400 text-sm">
-                            Track {log.trackId}
-                            {log.deviceId >= 0 && ` / Device ${log.deviceId}`}
-                          </span>
-                          <span className="text-white ml-2">
-                            {log.valueString}
-                          </span>
-                        </div>
-                      </div>
-                    </GlassCard>
-                  );
-                }
-              })}
-            </div>
-          )}
-        </div>
-      )}
+                    <p className="text-white text-sm">{entry.valueString}</p>
+                  </div>
+                </div>
+              </GlassCard>
+            );
+          }
+        })}
+      </div>
     </div>
   );
 }
