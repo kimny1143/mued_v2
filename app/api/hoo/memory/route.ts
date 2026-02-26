@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { withAuthResolved } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
 import { hooMemoriesRepository } from '@/lib/repositories/hoo-memories.repository';
+import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
+import { subscriptionRepository } from '@/lib/repositories/subscriptions.repository';
 import { logger } from '@/lib/utils/logger';
 
 // ========================================
@@ -22,13 +24,30 @@ const updateCustomInstructionsSchema = z.object({
 // GET Handler - Get memory settings
 // ========================================
 
-export const GET = withAuthResolved(async ({ internalUserId }) => {
+export const GET = withAuthResolved(async ({ internalUserId, clerkUserId }) => {
   try {
     const settings = await hooMemoriesRepository.getMemorySettings(internalUserId);
+
+    // Fetch MUEDlobe profile instructions for Premium users
+    let muedlobeInstructions: string[] | null = null;
+    let hasMuedlobeProfile = false;
+    try {
+      const usageLimits = await subscriptionRepository.getHooUsageLimits(internalUserId);
+      if (usageLimits.tier === 'premium') {
+        const hooConfig = await cognitiveProfileRepository.findHooConfig(clerkUserId);
+        if (hooConfig?.specialInstructions) {
+          muedlobeInstructions = hooConfig.specialInstructions as string[];
+          hasMuedlobeProfile = true;
+        }
+      }
+    } catch (err) {
+      logger.warn('[GET /api/hoo/memory] MUEDlobe config fetch failed', { err });
+    }
 
     logger.info('[GET /api/hoo/memory] Retrieved settings', {
       userId: internalUserId,
       hasSettings: !!settings,
+      hasMuedlobeProfile,
     });
 
     return apiSuccess({
@@ -36,6 +55,8 @@ export const GET = withAuthResolved(async ({ internalUserId }) => {
       customInstructionsEnabled: settings?.customInstructionsEnabled ?? true,
       autoMemoryEnabled: settings?.autoMemoryEnabled ?? true,
       autoMemoriesCount: settings?.autoMemories?.length ?? 0,
+      muedlobeInstructions,
+      hasMuedlobeProfile,
     });
   } catch (error) {
     logger.error('[GET /api/hoo/memory] Error', {

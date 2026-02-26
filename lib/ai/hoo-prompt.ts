@@ -11,6 +11,7 @@ export {
   buildSessionContextPrompt,
   getHooSystemPromptWithContext,
   buildCustomInstructionsPrompt,
+  buildMuedlobeInstructionsPrompt,
   getHooSystemPromptWithMemory,
 } from './prompts/hoo';
 
