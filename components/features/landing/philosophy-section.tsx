@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Music, Mic, MessageCircle } from "lucide-react";
+import { Clock, Music, Mic } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 
@@ -36,13 +36,12 @@ export function PhilosophySection() {
           </div>
         </motion.div>
 
-        {/* Four features */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {/* Three features - MVP accurate */}
+        <div className="grid md:grid-cols-3 gap-8">
           {[
             { icon: Clock, key: "rest" },
             { icon: Music, key: "sound" },
             { icon: Mic, key: "voice" },
-            { icon: MessageCircle, key: "chat" },
           ].map(({ icon: Icon, key }, index) => (
             <motion.div
               key={key}
