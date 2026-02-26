@@ -46,7 +46,7 @@ export function MuednoteTabs() {
     },
     {
       name: "MUEDlobe",
-      href: "/lobe",
+      href: "/dashboard/muednote/lobe",
       icon: Brain,
       premiumOnly: true,
     },
@@ -73,10 +73,10 @@ export function MuednoteTabs() {
               key={tab.name}
               href={tab.href}
               className={`pb-3 px-1 border-b-2 text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${
-                isLocked
-                  ? "border-transparent text-slate-600 cursor-default"
-                  : isActive
-                    ? "border-indigo-500 text-white"
+                isActive
+                  ? "border-indigo-500 text-white"
+                  : isLocked
+                    ? "border-transparent text-slate-600 hover:text-slate-400"
                     : "border-transparent text-slate-400 hover:text-white"
               }`}
               title={
