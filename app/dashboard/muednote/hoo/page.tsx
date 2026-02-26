@@ -1,30 +1,31 @@
 'use client';
 
 /**
- * Hoo AI Chat Page
+ * Hoo Conversation History Page
  *
- * Thought organization assistant for MUEDnote.
- * Supports: Free (template/trial), Basic (unlimited), Premium (unlimited)
+ * Read-only viewer for Hoo AI conversations.
+ * Active chat is now on the iOS app — this page shows past conversations.
+ *
+ * - Default view: conversation list
+ * - ?id=xxx: read-only message detail
  */
 
-import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { MuednoteLayout } from '@/components/layouts/muednote-layout';
 import { Button } from '@/components/ui/button';
 import {
-  Send,
   Loader2,
-  RotateCcw,
   MessageSquare,
-  History,
   Sparkles,
   AlertCircle,
-  FileText,
-  X,
-  Settings,
+  Trash2,
+  ChevronRight,
+  ArrowLeft,
+  Smartphone,
+  History,
 } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-context';
-import Link from 'next/link';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -32,275 +33,270 @@ interface Message {
   timestamp?: string;
 }
 
-interface UsageInfo {
-  // Thread usage (soft limit)
-  threadsUsed: number;
-  threadsLimit: number;
-  // Turn usage (hard limit)
-  turnsUsed: number;
-  turnsLimit: number;
+interface Conversation {
+  id: string;
+  title: string;
+  messageCount: number;
+  model: string;
+  provider: string;
+  startedAt: string;
+  lastMessageAt: string;
 }
 
-interface ChatResponse {
+interface ConversationDetail {
+  id: string;
+  title: string;
+  messages: Message[];
+  messageCount: number;
+  model: string;
+  provider: string;
+  startedAt: string;
+  lastMessageAt: string;
+}
+
+interface ConversationsResponse {
   success: boolean;
   data?: {
-    conversationId: string;
-    content: string;
-    model: string;
-    provider: string;
-    isAiResponse: boolean;
-    usage?: {
-      inputTokens: number;
-      outputTokens: number;
-      totalTokens: number;
-      threadsUsed: number;
-      threadsLimit: number;
-      turnsUsed: number;
-      turnsLimit: number;
+    conversations: Conversation[];
+    pagination: {
+      total: number;
+      limit: number;
+      offset: number;
+      hasMore: boolean;
     };
-    threadAlert?: boolean; // True if thread soft limit exceeded
-    latencyMs?: number;
   };
   error?: string;
 }
 
-interface QuickPrompt {
-  label: string;
-  text: string;
-}
-
-interface ConversationData {
-  id: string;
-  title: string;
-  messages: Array<{
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp?: string;
-  }>;
-}
-
-interface SessionContext {
-  hasContext: boolean;
-  recentSessions: Array<{
-    id: string;
-    title: string;
-    type: string;
-    createdAt: string;
-  }>;
-  summary?: string;
-}
-
-const QUICK_PROMPTS: Record<'en' | 'ja', QuickPrompt[]> = {
-  en: [
-    { label: 'Organize thoughts', text: "I've been thinking about a lot of things but can't organize them." },
-    { label: 'Creative block', text: "I can't finish my songs. I always get stuck partway through." },
-    { label: 'Prioritize', text: "I have too many things to do and don't know where to start." },
-    { label: 'Summarize', text: 'Can you summarize what we talked about?' },
-  ],
-  ja: [
-    { label: '思考整理', text: '最近考えてることがバラバラで整理できてない。' },
-    { label: '制作の悩み', text: '曲が完成しないんだよね。途中まではいいんだけど、いつも最後まで作れない。' },
-    { label: '優先順位', text: 'やることが多すぎてどこから手をつけていいかわからない。' },
-    { label: 'まとめて', text: 'ここまでの話をまとめて' },
-  ],
-};
-
-function HooChatContent() {
+function HooHistoryContent() {
   const { locale } = useLocale();
   const searchParams = useSearchParams();
-  const resumeId = searchParams.get('id');
+  const router = useRouter();
+  const viewId = searchParams.get('id');
 
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isResuming, setIsResuming] = useState(false);
-  const [usage, setUsage] = useState<UsageInfo | null>(null);
-  const [tier, setTier] = useState<string>('free');
+  // List state
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isLoadingList, setIsLoadingList] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
+
+  // Detail state
+  const [detail, setDetail] = useState<ConversationDetail | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [threadAlert, setThreadAlert] = useState(false); // Thread soft limit exceeded
-  const [sessionContextEnabled, setSessionContextEnabled] = useState(false);
-  const [sessionContext, setSessionContext] = useState<SessionContext | null>(null);
-  const [isLoadingContext, setIsLoadingContext] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const quickPrompts = QUICK_PROMPTS[locale] || QUICK_PROMPTS.en;
+  // Fetch conversation list
+  const fetchConversations = useCallback(async (newOffset = 0) => {
+    setIsLoadingList(true);
+    try {
+      const res = await fetch(`/api/hoo/conversations?limit=20&offset=${newOffset}`);
+      const data: ConversationsResponse = await res.json();
+      if (data.success && data.data) {
+        if (newOffset === 0) {
+          setConversations(data.data.conversations);
+        } else {
+          setConversations((prev) => [...prev, ...data.data!.conversations]);
+        }
+        setHasMore(data.data.pagination.hasMore);
+        setOffset(newOffset);
+        setTotal(data.data.pagination.total);
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setIsLoadingList(false);
+    }
+  }, []);
 
-  // Load conversation from URL param (resume feature)
-  const loadConversation = useCallback(async (id: string) => {
-    setIsResuming(true);
+  // Fetch single conversation detail
+  const fetchDetail = useCallback(async (id: string) => {
+    setIsLoadingDetail(true);
     setError(null);
     try {
       const res = await fetch(`/api/hoo/conversations/${id}`);
       const data = await res.json();
       if (data.success && data.data) {
-        const conv: ConversationData = data.data;
-        setConversationId(conv.id);
-        setMessages(
-          conv.messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-            timestamp: m.timestamp,
-          }))
-        );
+        setDetail(data.data);
       } else {
-        setError(data.error || 'Failed to load conversation');
+        setError(data.error || (locale === 'ja' ? '会話の読み込みに失敗しました' : 'Failed to load conversation'));
       }
     } catch {
-      setError('Failed to load conversation');
+      setError(locale === 'ja' ? '会話の読み込みに失敗しました' : 'Failed to load conversation');
     } finally {
-      setIsResuming(false);
+      setIsLoadingDetail(false);
     }
-  }, []);
+  }, [locale]);
 
-  // Resume conversation from URL param on mount
+  // Load list on mount
   useEffect(() => {
-    if (resumeId && !conversationId) {
-      loadConversation(resumeId);
-    }
-  }, [resumeId, conversationId, loadConversation]);
+    fetchConversations();
+  }, [fetchConversations]);
 
-  // Fetch session context for Hoo
-  const fetchSessionContext = useCallback(async () => {
-    setIsLoadingContext(true);
-    try {
-      const res = await fetch('/api/hoo/sessions/context?limit=3');
-      const data = await res.json();
-      if (data.success && data.data) {
-        setSessionContext(data.data);
-        return data.data as SessionContext;
-      }
-    } catch {
-      // Silently fail, session context is optional
-    } finally {
-      setIsLoadingContext(false);
-    }
-    return null;
-  }, []);
-
-  // Toggle session context
-  const handleToggleSessionContext = useCallback(async () => {
-    if (!sessionContextEnabled) {
-      // Enabling - fetch context first
-      const context = await fetchSessionContext();
-      if (context?.hasContext) {
-        setSessionContextEnabled(true);
-      }
+  // Load detail when ?id changes
+  useEffect(() => {
+    if (viewId) {
+      fetchDetail(viewId);
     } else {
-      // Disabling
-      setSessionContextEnabled(false);
+      setDetail(null);
     }
-  }, [sessionContextEnabled, fetchSessionContext]);
+  }, [viewId, fetchDetail]);
 
-  // Fetch session context on initial load to check availability
-  useEffect(() => {
-    fetchSessionContext();
-  }, [fetchSessionContext]);
+  const handleLoadMore = () => {
+    fetchConversations(offset + 20);
+  };
 
-  // Fetch initial usage info
-  useEffect(() => {
-    const fetchUsage = async () => {
-      try {
-        const res = await fetch('/api/hoo/chat');
-        const data = await res.json();
-        if (data.success) {
-          // Convert API response to UsageInfo format
-          setUsage({
-            threadsUsed: data.data.threads?.used ?? 0,
-            threadsLimit: data.data.threads?.limit ?? 0,
-            turnsUsed: data.data.turns?.used ?? 0,
-            turnsLimit: data.data.turns?.limit ?? 0,
-          });
-          setTier(data.data.tier);
-        }
-      } catch {
-        // Silently fail, will show on first message
-      }
-    };
-    fetchUsage();
-  }, []);
+  const handleDelete = async (id: string, e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
 
-  // Auto-scroll to bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || isLoading) return;
-
-    setError(null);
-    const userMessage: Message = {
-      role: 'user',
-      content: text.trim(),
-      timestamp: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput('');
-    setIsLoading(true);
+    const confirmed = window.confirm(
+      locale === 'ja' ? 'この会話を削除しますか？' : 'Delete this conversation?'
+    );
+    if (!confirmed) return;
 
     try {
-      const response = await fetch('/api/hoo/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...(conversationId && { conversationId }),
-          message: text.trim(),
-          ...(sessionContextEnabled && { includeSessionContext: true }),
-        }),
-      });
-
-      const result: ChatResponse = await response.json();
-
-      if (result.success && result.data) {
-        setConversationId(result.data.conversationId);
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: result.data!.content,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-        if (result.data.usage) {
-          setUsage({
-            threadsUsed: result.data.usage.threadsUsed,
-            threadsLimit: result.data.usage.threadsLimit,
-            turnsUsed: result.data.usage.turnsUsed,
-            turnsLimit: result.data.usage.turnsLimit,
-          });
+      const res = await fetch(`/api/hoo/conversations/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setConversations((prev) => prev.filter((c) => c.id !== id));
+        setTotal((prev) => prev - 1);
+        // If viewing this conversation, go back to list
+        if (viewId === id) {
+          router.push('/dashboard/muednote/hoo');
         }
-        // Update thread alert state
-        setThreadAlert(result.data.threadAlert ?? false);
-      } else {
-        setError(result.error || 'Failed to get response');
-        // Remove the user message if failed
-        setMessages((prev) => prev.slice(0, -1));
       }
     } catch {
-      setError('Network error. Please try again.');
-      setMessages((prev) => prev.slice(0, -1));
-    } finally {
-      setIsLoading(false);
+      // Silently fail
     }
-  }, [conversationId, isLoading, sessionContextEnabled]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sendMessage(input);
   };
 
-  const handleReset = () => {
-    setConversationId(null);
-    setMessages([]);
-    setError(null);
-    setThreadAlert(false);
-    // Keep session context enabled state across new conversations
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
-  const isFreeTier = tier === 'free';
-  // Hard limit (turns) determines if user can continue
-  const isTurnLimitReached = usage && usage.turnsLimit > 0 && usage.turnsUsed >= usage.turnsLimit;
+  const formatTimestamp = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleTimeString(locale === 'ja' ? 'ja-JP' : 'en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
+  // ========================
+  // Detail View (read-only)
+  // ========================
+  if (viewId) {
+    return (
+      <MuednoteLayout>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/dashboard/muednote/hoo')}
+                className="bg-white/10 hover:bg-white/20 text-white border-0 cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-white">
+                  {detail?.title || (locale === 'ja' ? '会話詳細' : 'Conversation')}
+                </h1>
+                {detail && (
+                  <p className="text-slate-400 text-sm mt-1">
+                    {detail.messageCount} {locale === 'ja' ? 'メッセージ' : 'messages'} ·{' '}
+                    {formatDate(detail.startedAt)}
+                  </p>
+                )}
+              </div>
+            </div>
+            {detail && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleDelete(detail.id)}
+                className="text-red-400 hover:text-red-500 hover:bg-red-500/10"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+
+          {/* Error */}
+          {error && (
+            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400">
+              <AlertCircle className="w-4 h-4" />
+              {error}
+            </div>
+          )}
+
+          {/* Messages (read-only) */}
+          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
+            <div className="p-6 space-y-4 max-h-[600px] overflow-y-auto">
+              {isLoadingDetail ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                </div>
+              ) : detail?.messages.length === 0 ? (
+                <div className="text-center py-12 text-slate-400">
+                  {locale === 'ja' ? 'メッセージがありません' : 'No messages'}
+                </div>
+              ) : (
+                detail?.messages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                        msg.role === 'user'
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-white/10 text-white'
+                      }`}
+                    >
+                      <pre className="whitespace-pre-wrap font-sans text-sm">
+                        {msg.content}
+                      </pre>
+                      {msg.timestamp && (
+                        <p className="text-xs mt-1 opacity-50">
+                          {formatTimestamp(msg.timestamp)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* iOS App CTA */}
+            <div className="px-6 py-4 border-t border-white/10">
+              <div className="flex items-center gap-3 text-sm text-slate-400">
+                <Smartphone className="w-4 h-4 text-indigo-400 shrink-0" />
+                <span>
+                  {locale === 'ja'
+                    ? 'この会話を続けるには、iOSアプリのHooチャットをご利用ください。'
+                    : 'To continue this conversation, use Hoo Chat in the iOS app.'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </MuednoteLayout>
+    );
+  }
+
+  // ========================
+  // List View (default)
+  // ========================
   return (
     <MuednoteLayout>
       <div className="space-y-6">
@@ -308,269 +304,129 @@ function HooChatContent() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-indigo-400" />
-              {locale === 'ja' ? 'Hoo - 思考整理' : 'Hoo - Thought Organizer'}
+              <History className="w-6 h-6 text-indigo-400" />
+              {locale === 'ja' ? 'Hoo - 会話履歴' : 'Hoo - Conversation History'}
             </h1>
             <p className="text-slate-400 text-sm mt-1">
               {locale === 'ja'
-                ? 'アイデアや考えを整理するお手伝いをします'
-                : 'Your AI assistant for organizing thoughts and ideas'}
+                ? 'iOSアプリでの会話を振り返る'
+                : 'Review your conversations from the iOS app'}
             </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Session Context Toggle */}
-            {sessionContext?.hasContext && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleToggleSessionContext}
-                disabled={isLoadingContext}
-                className={`border-0 ${
-                  sessionContextEnabled
-                    ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                    : 'bg-white/10 hover:bg-white/20 text-white'
-                }`}
-              >
-                {isLoadingContext ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <FileText className="w-4 h-4" />
-                )}
-                {locale === 'ja' ? 'セッション参照' : 'Session Context'}
-              </Button>
-            )}
-            <Link href="/dashboard/settings">
-              <Button variant="secondary" size="sm" className="bg-white/10 hover:bg-white/20 text-white border-0 cursor-pointer">
-                <Settings className="w-4 h-4" />
-                {locale === 'ja' ? '設定' : 'Settings'}
-              </Button>
-            </Link>
-            <Link href="/dashboard/muednote/hoo/history">
-              <Button variant="secondary" size="sm" className="bg-white/10 hover:bg-white/20 text-white border-0">
-                <History className="w-4 h-4" />
-                {locale === 'ja' ? '履歴' : 'History'}
-              </Button>
-            </Link>
-            {messages.length > 0 && (
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleReset}
-                className="bg-white/10 hover:bg-white/20 text-white border-0"
-              >
-                <RotateCcw className="w-4 h-4" />
-                {locale === 'ja' ? '新規' : 'New'}
-              </Button>
-            )}
           </div>
         </div>
 
-        {/* Usage Banner */}
-        {usage && (
-          <div className="flex flex-col gap-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-4 py-3 text-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {/* Turn usage (hard limit) */}
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-slate-400" />
-                  <span className="text-slate-400">
-                    {locale === 'ja' ? 'ターン:' : 'Turns:'}
-                  </span>
-                  <span className={`font-medium ${isTurnLimitReached ? 'text-red-400' : 'text-white'}`}>
-                    {usage.turnsLimit === -1
-                      ? `${usage.turnsUsed} (${locale === 'ja' ? '無制限' : 'unlimited'})`
-                      : usage.turnsLimit === 0
-                        ? locale === 'ja' ? 'テンプレートのみ' : 'Template only'
-                        : `${usage.turnsUsed} / ${usage.turnsLimit}`}
-                  </span>
-                </div>
-                {/* Thread usage (soft limit) - only show for Basic tier */}
-                {usage.threadsLimit !== 0 && usage.threadsLimit !== -1 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500">|</span>
-                    <span className="text-slate-400">
-                      {locale === 'ja' ? 'スレッド:' : 'Threads:'}
-                    </span>
-                    <span className={`font-medium ${threadAlert ? 'text-amber-400' : 'text-white'}`}>
-                      {usage.threadsUsed} / {usage.threadsLimit}
-                    </span>
+        {/* iOS App CTA Banner */}
+        <div className="flex items-center gap-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl px-4 py-3">
+          <Smartphone className="w-5 h-5 text-indigo-400 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm text-white">
+              {locale === 'ja'
+                ? 'Hooとの新しい会話はiOSアプリで'
+                : 'Start new conversations with Hoo on the iOS app'}
+            </p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {locale === 'ja'
+                ? 'セッション後の振り返りに最適です'
+                : 'Perfect for reflecting after your sessions'}
+            </p>
+          </div>
+        </div>
+
+        {/* Conversations List */}
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
+          <div className="px-6 py-4 border-b border-white/10">
+            <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+              <MessageSquare className="w-5 h-5" />
+              {locale === 'ja' ? `会話一覧（${total}件）` : `Conversations (${total})`}
+            </h2>
+          </div>
+          <div className="p-6">
+            {isLoadingList && conversations.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+              </div>
+            ) : conversations.length === 0 ? (
+              <div className="text-center py-12">
+                <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50 text-slate-400" />
+                <p className="text-slate-400">
+                  {locale === 'ja'
+                    ? 'まだ会話履歴がありません'
+                    : 'No conversation history yet'}
+                </p>
+                <p className="text-sm text-slate-500 mt-2">
+                  {locale === 'ja'
+                    ? 'iOSアプリでHooと会話すると、ここに履歴が表示されます'
+                    : 'Chat with Hoo on the iOS app and your history will appear here'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {conversations.map((conv) => (
+                  <div
+                    key={conv.id}
+                    className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition group cursor-pointer"
+                    onClick={() => router.push(`/dashboard/muednote/hoo?id=${conv.id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        router.push(`/dashboard/muednote/hoo?id=${conv.id}`);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <MessageSquare className="w-5 h-5 text-slate-400 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-white truncate">
+                          {conv.title}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {conv.messageCount} {locale === 'ja' ? 'メッセージ' : 'messages'} ·{' '}
+                          {formatDate(conv.lastMessageAt)}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-slate-400 opacity-0 group-hover:opacity-100 transition shrink-0" />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => handleDelete(conv.id, e)}
+                      className="ml-2 opacity-0 group-hover:opacity-100 transition text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                {hasMore && (
+                  <div className="text-center pt-4">
+                    <Button
+                      variant="secondary"
+                      onClick={handleLoadMore}
+                      disabled={isLoadingList}
+                      className="bg-white/10 hover:bg-white/20 text-white border-0"
+                    >
+                      {isLoadingList ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : locale === 'ja' ? (
+                        'もっと見る'
+                      ) : (
+                        'Load more'
+                      )}
+                    </Button>
                   </div>
                 )}
               </div>
-              {(isFreeTier || isTurnLimitReached) && (
-                <Link href="/dashboard/subscription">
-                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                    {locale === 'ja' ? 'アップグレード' : 'Upgrade'}
-                  </Button>
-                </Link>
-              )}
-            </div>
-            {/* Thread soft limit alert (only relevant if limits are finite) */}
-            {threadAlert && usage && usage.threadsLimit > 0 && (
-              <div className="flex items-center gap-2 text-xs text-amber-400">
-                <AlertCircle className="w-3 h-3" />
-                {locale === 'ja'
-                  ? `スレッド数の目安（${usage.threadsLimit}/月）を超えました。引き続きご利用いただけます。`
-                  : `You've exceeded the recommended thread count (${usage.threadsLimit}/month). You can continue using Hoo.`}
-              </div>
             )}
           </div>
-        )}
-
-        {/* Session Context Banner */}
-        {sessionContextEnabled && sessionContext?.hasContext && (
-          <div className="flex items-center justify-between bg-indigo-500/10 backdrop-blur-xl border border-indigo-500/20 rounded-xl px-4 py-3 text-sm">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-indigo-400" />
-              <span className="text-indigo-300">
-                {locale === 'ja' ? 'セッション参照: ON' : 'Session Context: ON'}
-              </span>
-              <span className="text-slate-400">
-                {locale === 'ja' ? '直近:' : 'Recent:'} {sessionContext.summary}
-              </span>
-            </div>
-            <button
-              onClick={() => setSessionContextEnabled(false)}
-              className="text-slate-400 hover:text-white transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Error Banner */}
-        {error && (
-          <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400">
-            <AlertCircle className="w-4 h-4" />
-            {error}
-          </div>
-        )}
-
-        {/* Chat Area */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col min-h-[500px]">
-          {/* Chat Header */}
-          <div className="px-6 py-4 border-b border-white/10">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                {conversationId ? (
-                  <span className="text-slate-400 text-sm font-normal">
-                    {locale === 'ja' ? '会話中' : 'In conversation'}
-                  </span>
-                ) : (
-                  locale === 'ja' ? '新しい会話を始める' : 'Start a new conversation'
-                )}
-              </h2>
-            </div>
-          </div>
-
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto space-y-4 p-6 max-h-[400px]">
-            {messages.length === 0 && (
-              <div className="text-center text-slate-400 py-8">
-                <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="mb-4">
-                  {locale === 'ja'
-                    ? 'Hooに話しかけてみましょう'
-                    : 'Start talking with Hoo'}
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  {quickPrompts.map((prompt) => (
-                    <button
-                      key={prompt.label}
-                      onClick={() => sendMessage(prompt.text)}
-                      className="px-3 py-1.5 text-sm rounded-full bg-white/10 hover:bg-white/20 text-white transition cursor-pointer"
-                    >
-                      {prompt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
-                    msg.role === 'user'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-white/10 text-white'
-                  }`}
-                >
-                  <pre className="whitespace-pre-wrap font-sans text-sm">
-                    {msg.content}
-                  </pre>
-                </div>
-              </div>
-            ))}
-
-            {(isLoading || isResuming) && (
-              <div className="flex justify-start">
-                <div className="bg-white/10 rounded-2xl px-4 py-3">
-                  <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Quick Actions */}
-          {messages.length > 0 && (
-            <div className="flex flex-wrap gap-2 px-6 pb-4">
-              {quickPrompts.map((prompt) => (
-                <button
-                  key={prompt.label}
-                  onClick={() => sendMessage(prompt.text)}
-                  disabled={isLoading}
-                  className="px-2 py-1 text-xs rounded-full bg-white/10 hover:bg-white/20 text-slate-300 transition disabled:opacity-50 cursor-pointer"
-                >
-                  {prompt.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Input */}
-          <form onSubmit={handleSubmit} className="flex gap-3 p-6 border-t border-white/10">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={
-                locale === 'ja'
-                  ? 'メッセージを入力...'
-                  : 'Type your message...'
-              }
-              className="flex-1 resize-none bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              rows={2}
-              onKeyDown={(e) => {
-                // Don't send during IME composition (Japanese input etc.)
-                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-            />
-            <Button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 self-end cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
-          </form>
         </div>
       </div>
     </MuednoteLayout>
   );
 }
 
-export default function HooChatPage() {
+export default function HooHistoryPage() {
   return (
     <Suspense
       fallback={
@@ -581,7 +437,7 @@ export default function HooChatPage() {
         </MuednoteLayout>
       }
     >
-      <HooChatContent />
+      <HooHistoryContent />
     </Suspense>
   );
 }
