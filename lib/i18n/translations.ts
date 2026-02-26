@@ -434,7 +434,7 @@ export const translations = {
       tabs: {
         home: 'Home',
         sessions: 'Sessions',
-        hoo: 'Hoo',
+        hoo: 'Hoo History',
         settings: 'Settings',
       },
       welcome: 'Welcome,',
@@ -896,7 +896,7 @@ export const translations = {
       tabs: {
         home: 'ホーム',
         sessions: 'セッション',
-        hoo: 'Hoo',
+        hoo: 'Hoo 履歴',
         settings: '設定',
       },
       welcome: 'ようこそ、',

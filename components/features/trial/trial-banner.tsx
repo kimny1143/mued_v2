@@ -154,7 +154,7 @@ export function TrialBanner({ className = '' }: TrialBannerProps) {
             </h3>
             <p className="text-xs text-slate-400">
               {isTurnsExhausted
-                ? (trialT?.turnsExhaustedDescription || 'Upgrade to Basic for 150 turns/month')
+                ? (trialT?.turnsExhaustedDescription || 'Upgrade to Basic for unlimited Hoo AI')
                 : (trialT?.expiredDescription || 'Upgrade to Basic for continued Hoo AI access')}
             </p>
           </div>

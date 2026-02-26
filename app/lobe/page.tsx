@@ -1,12 +1,12 @@
 import { auth } from '@clerk/nextjs/server';
-import { redirect } from 'next/navigation';
 import { GAME_ORDER } from '@/lib/muedlobe/constants';
 import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
 import { LobeListContent } from './LobeListContent';
 
 export default async function LobePage() {
+  // Auth + Premium check handled in layout.tsx
   const { userId } = await auth();
-  if (!userId) redirect('/sign-in?redirect_url=/lobe');
+  if (!userId) return null; // guarded by layout, satisfies TS
 
   const [measurements, profile] = await Promise.all([
     cognitiveProfileRepository.findMeasurementsByUserId(userId),

@@ -216,23 +216,41 @@ ${customInstructions}
 }
 
 /**
+ * Build MUEDlobe cognitive profile instructions section for the prompt
+ */
+export function buildMuedlobeInstructionsPrompt(specialInstructions: string[]): string {
+  return `## MUEDlobe 認知プロファイル
+
+以下はこのユーザーのMUEDlobe認知ゲーム結果から導き出された指示です。
+このユーザーの認知特性に基づいて会話スタイルを調整してください。
+
+${specialInstructions.map(i => `- ${i}`).join('\n')}`;
+}
+
+/**
  * Get the full Hoo system prompt with memory and optional session context
  *
  * Prompt construction order:
  * 1. Level 1 Core (basic character)
  * 2. Level 2 Extended (advanced techniques)
  * 3. Custom Instructions (user-provided context)
- * 4. Session Context (recent sessions)
+ * 4. MUEDlobe Instructions (cognitive profile, Premium only)
+ * 5. Session Context (recent sessions)
  */
 export function getHooSystemPromptWithMemory(
   customInstructions?: string | null,
-  sessionContext?: SessionContextForHoo
+  sessionContext?: SessionContextForHoo,
+  muedlobeInstructions?: string[] | null
 ): string {
   const basePrompt = getHooSystemPrompt();
   const parts: string[] = [basePrompt];
 
   if (customInstructions && customInstructions.trim()) {
     parts.push(buildCustomInstructionsPrompt(customInstructions));
+  }
+
+  if (muedlobeInstructions && muedlobeInstructions.length > 0) {
+    parts.push(buildMuedlobeInstructionsPrompt(muedlobeInstructions));
   }
 
   if (sessionContext?.hasContext) {

@@ -237,6 +237,29 @@ export class DawLogsRepository {
     return Number(result?.count ?? 0);
   }
 
+  /**
+   * Get orphan DAW logs (not within any session's time range)
+   * Used for building virtual DAW-only sessions
+   */
+  async getOrphanLogs(userId: string, limit: number = 1000): Promise<DawLog[]> {
+    return await db
+      .select()
+      .from(muednoteDawLogs)
+      .where(
+        and(
+          eq(muednoteDawLogs.userId, userId),
+          sql`NOT EXISTS (
+            SELECT 1 FROM muednote_mobile_sessions ms
+            WHERE ms.user_id = ${muednoteDawLogs.userId}
+              AND ms.started_at <= ${muednoteDawLogs.ts}
+              AND ms.ended_at >= ${muednoteDawLogs.ts}
+          )`
+        )
+      )
+      .orderBy(muednoteDawLogs.ts)
+      .limit(limit);
+  }
+
   // ========================================
   // Update Operations
   // ========================================

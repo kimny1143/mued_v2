@@ -7,35 +7,33 @@ import { Suspense } from 'react';
 
 const PLAN_FEATURES: Record<string, string[]> = {
   basic: [
+    'Hoo AI conversation (unlimited)',
     'Voice transcription (Whisper)',
-    'Unlimited log storage',
+    'Cloud sync & unlimited log storage',
     'DAW log integration',
-    'Dashboard & Export',
-    'Hoo AI: 150 conversations/month',
+    'Practice data visualization',
   ],
   premium: [
     'All Basic features',
-    'Hoo AI: Unlimited (BYOK)',
-    'Choose your own AI model',
-    'System prompt access',
-    'Full customization',
+    'Hoo personalized conversation',
+    'MUEDlobe cognitive profile',
+    'Accumulated data analysis',
   ],
 };
 
 const PLAN_FEATURES_JA: Record<string, string[]> = {
   basic: [
+    'Hoo AI会話（無制限）',
     '音声文字起こし（Whisper）',
-    'ログ保存：無制限',
+    'クラウド同期・ログ保存無制限',
     'DAWログ連携',
-    'ダッシュボード・エクスポート',
-    'Hoo AI：月150回まで',
+    '練習データの見える化',
   ],
   premium: [
     'ベーシックの全機能',
-    'Hoo AI：無制限（BYOK）',
-    'AIモデル選択可能',
-    'システムプロンプト開放',
-    'フルカスタマイズ',
+    'Hoo個人化会話',
+    'MUEDlobe認知プロファイル',
+    '蓄積データ分析',
   ],
 };
 
@@ -94,6 +92,16 @@ function SuccessPageContent() {
             >
               {t.subscription.success?.cta || 'Start using Hoo'}
             </Link>
+            {tier === 'premium' && (
+              <Link
+                href="/lobe"
+                className="block w-full bg-violet-50 text-violet-700 text-center py-3 rounded-xl font-medium hover:bg-violet-100 transition-colors border border-violet-200"
+              >
+                {locale === 'ja'
+                  ? 'MUEDlobeを受けてみる（後からでもOK）'
+                  : 'Try MUEDlobe now (or anytime later)'}
+              </Link>
+            )}
             <Link
               href="/dashboard"
               className="block w-full bg-gray-100 text-gray-700 text-center py-3 rounded-xl font-medium hover:bg-gray-200 transition-colors"

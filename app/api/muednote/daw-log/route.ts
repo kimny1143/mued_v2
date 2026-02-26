@@ -229,24 +229,17 @@ export async function POST(req: Request) {
       );
     }
 
-    // Convert Clerk ID to internal UUID for database storage
-    const internalUserId = await getUserIdFromClerkId(clerkUserId);
-    if (!internalUserId) {
-      return NextResponse.json(
-        { error: 'User not found', message: 'User account not found in database' },
-        { status: 404 }
-      );
-    }
-
+    // Store with Clerk ID (matches muednote_mobile_sessions.user_id)
+    // so DAW logs can be time-matched to sessions by the same user_id
     const body = await req.json();
 
     // Check if batch request
     if (Array.isArray(body.logs)) {
-      return handleBatchPost(internalUserId, body as BatchDawLogPostBody);
+      return handleBatchPost(clerkUserId, body as BatchDawLogPostBody);
     }
 
     // Single log request
-    return handleSinglePost(internalUserId, body as DawLogPostBody);
+    return handleSinglePost(clerkUserId, body as DawLogPostBody);
   } catch (error) {
     console.error('[POST /api/muednote/daw-log] Error:', error);
     return NextResponse.json(
@@ -348,15 +341,7 @@ export async function GET(req: Request) {
       );
     }
 
-    // Convert Clerk ID to internal UUID for database query
-    const internalUserId = await getUserIdFromClerkId(clerkUserId);
-    if (!internalUserId) {
-      return NextResponse.json(
-        { error: 'User not found', message: 'User account not found in database' },
-        { status: 404 }
-      );
-    }
-
+    // Query with Clerk ID (matches how logs are now stored)
     const url = new URL(req.url);
     const since = url.searchParams.get('since');
     const until = url.searchParams.get('until');
@@ -375,7 +360,7 @@ export async function GET(req: Request) {
 
     // Build filters
     const filters = {
-      userId: internalUserId,
+      userId: clerkUserId,
       sessionId: sessionId ?? undefined,
       since: since ? new Date(since) : undefined,
       until: until ? new Date(until) : undefined,

@@ -24,6 +24,8 @@ import {
   Bell,
   CreditCard,
   ExternalLink,
+  Brain,
+  Lock,
 } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-context';
 
@@ -34,6 +36,8 @@ import { useLocale } from '@/lib/i18n/locale-context';
 interface MemorySettings {
   customInstructions: string | null;
   customInstructionsEnabled: boolean;
+  muedlobeInstructions: string[] | null;
+  hasMuedlobeProfile: boolean;
 }
 
 const MAX_INSTRUCTIONS_LENGTH = 2000;
@@ -92,16 +96,24 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [tier, setTier] = useState<string | null>(null);
 
-  // Fetch Hoo settings
+  // Fetch Hoo settings + tier
   const fetchHooSettings = useCallback(async () => {
     try {
-      const res = await fetch('/api/hoo/memory');
-      const data = await res.json();
-      if (data.success && data.data) {
-        setHooSettings(data.data);
-        setCustomInstructions(data.data.customInstructions ?? '');
-        setHooEnabled(data.data.customInstructionsEnabled);
+      const [memRes, tierRes] = await Promise.all([
+        fetch('/api/hoo/memory'),
+        fetch('/api/subscription/limits'),
+      ]);
+      const memData = await memRes.json();
+      if (memData.success && memData.data) {
+        setHooSettings(memData.data);
+        setCustomInstructions(memData.data.customInstructions ?? '');
+        setHooEnabled(memData.data.customInstructionsEnabled);
+      }
+      const tierData = await tierRes.json();
+      if (tierData.success) {
+        setTier(tierData.data.limits.tier);
       }
     } catch {
       // Silent fail on initial load
@@ -288,6 +300,76 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               </div>
+            </SettingsSection>
+
+            {/* MUEDlobe Cognitive Profile (Premium only) */}
+            <SettingsSection
+              title={locale === 'ja' ? 'MUEDlobe 認知プロファイル' : 'MUEDlobe Cognitive Profile'}
+              description={
+                locale === 'ja'
+                  ? 'MUEDlobeの結果から生成された、Hoo向けの認知特性指示'
+                  : 'Cognitive profile instructions for Hoo, derived from MUEDlobe results'
+              }
+              icon={<Brain className="w-5 h-5 text-violet-400" />}
+            >
+              {tier === 'premium' ? (
+                hooSettings?.hasMuedlobeProfile && hooSettings.muedlobeInstructions ? (
+                  <div className="space-y-3">
+                    <div className="bg-violet-500/5 border border-violet-500/10 rounded-xl px-4 py-3">
+                      <ul className="space-y-2 text-sm text-slate-300">
+                        {hooSettings.muedlobeInstructions.map((instruction, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-violet-400 mt-0.5 flex-shrink-0">•</span>
+                            {instruction}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {locale === 'ja'
+                        ? 'これらの指示はMUEDlobeの結果に基づいて自動生成され、すべてのHoo会話に適用されます。'
+                        : 'These instructions are auto-generated from your MUEDlobe results and applied to all Hoo conversations.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="py-4 text-center">
+                    <p className="text-sm text-slate-400">
+                      {locale === 'ja'
+                        ? 'MUEDlobeのゲームを完了してプロファイルを作成すると、ここに認知特性の指示が表示されます。'
+                        : 'Complete MUEDlobe games and generate your profile to see cognitive instructions here.'}
+                    </p>
+                    <Link href="/dashboard/muednote/lobe">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="mt-3 bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border-0 cursor-pointer"
+                      >
+                        <Brain className="w-4 h-4 mr-1.5" />
+                        {locale === 'ja' ? 'MUEDlobeへ' : 'Go to MUEDlobe'}
+                      </Button>
+                    </Link>
+                  </div>
+                )
+              ) : (
+                <div className="py-4 text-center">
+                  <Lock className="w-6 h-6 text-slate-600 mx-auto mb-2" />
+                  <p className="text-sm text-slate-500">
+                    {locale === 'ja'
+                      ? 'Premiumプランで利用できます。MUEDlobeの認知プロファイルに基づいて、Hooの会話があなた専用にパーソナライズされます。'
+                      : 'Available on Premium plan. Your Hoo conversations will be personalized based on your MUEDlobe cognitive profile.'}
+                  </p>
+                  <Link href="/dashboard/subscription">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3 bg-white/10 hover:bg-white/20 text-white border-0 cursor-pointer"
+                    >
+                      <CreditCard className="w-4 h-4 mr-1.5" />
+                      {locale === 'ja' ? 'プランを見る' : 'View Plans'}
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </SettingsSection>
 
             {/* Account Settings */}

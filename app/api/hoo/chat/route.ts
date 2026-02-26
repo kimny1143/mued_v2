@@ -18,6 +18,7 @@ import { sessionRepository } from '@/lib/repositories/sessions.repository';
 import { hooConversationsRepository } from '@/lib/repositories/hoo-conversations.repository';
 import { hooMemoriesRepository } from '@/lib/repositories/hoo-memories.repository';
 import { dawLogsRepository } from '@/lib/repositories/daw-logs.repository';
+import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
 import { getHooSystemPromptWithMemory } from '@/lib/ai/hoo-prompt';
 import { trialService, TRIAL_TURNS_LIMIT } from '@/lib/services/trial.service';
 import { logger } from '@/lib/utils/logger';
@@ -208,21 +209,34 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     // Fetch custom instructions (memory)
     const customInstructions = await hooMemoriesRepository.getCustomInstructions(internalUserId);
 
+    // Fetch MUEDlobe special instructions for Premium users
+    let muedlobeInstructions: string[] | null = null;
+    if (usageCheck.tier === 'premium') {
+      try {
+        const hooConfig = await cognitiveProfileRepository.findHooConfig(clerkUserId);
+        if (hooConfig?.specialInstructions) {
+          muedlobeInstructions = hooConfig.specialInstructions as string[];
+        }
+      } catch (err) {
+        logger.warn('[POST /api/hoo/chat] MUEDlobe config fetch failed', { err });
+      }
+    }
+
     // Fetch session context if requested (uses Clerk ID for mobile sessions)
     const sessionContext = includeSessionContext
       ? await sessionRepository.getSessionContextForHoo(clerkUserId, 3)
       : undefined;
 
-    // Fetch DAW log context (uses internal user ID)
+    // Fetch DAW log context (uses Clerk ID — DAW logs store Clerk ID)
     let dawLogContext: string | null = null;
     try {
-      dawLogContext = await buildDawLogContext(internalUserId);
+      dawLogContext = await buildDawLogContext(clerkUserId);
     } catch (err) {
       logger.warn('[POST /api/hoo/chat] DAW log context fetch failed', { err });
     }
 
-    // Build system prompt with memory and optional session context
-    let systemPrompt = getHooSystemPromptWithMemory(customInstructions, sessionContext);
+    // Build system prompt with memory, MUEDlobe profile, and optional session context
+    let systemPrompt = getHooSystemPromptWithMemory(customInstructions, sessionContext, muedlobeInstructions);
 
     // Append DAW log context
     if (dawLogContext) {
@@ -237,6 +251,8 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     logger.info('[POST /api/hoo/chat] System prompt built', {
       clerkUserId,
       hasCustomInstructions: !!customInstructions,
+      hasMuedlobeInstructions: !!muedlobeInstructions,
+      muedlobeInstructionsCount: muedlobeInstructions?.length ?? 0,
       hasSessionContext: sessionContext?.hasContext ?? false,
       sessionCount: sessionContext?.recentSessions?.length ?? 0,
       hasDawLogContext: !!dawLogContext,
