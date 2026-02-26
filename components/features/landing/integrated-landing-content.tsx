@@ -17,7 +17,7 @@ import { MuedearHeroSection } from "@/components/features/muedear-landing/muedea
 import { MuedearFeaturesSection } from "@/components/features/muedear-landing/muedear-features-section";
 import { MuedearPricingSection } from "@/components/features/muedear-landing/muedear-pricing-section";
 import { AppStoreButton } from "@/components/ui/app-store-button";
-import { ArrowUp, ChevronLeft, ChevronRight, Music, Ear } from "lucide-react";
+import { ArrowUp, ChevronLeft, ChevronRight, Music, Ear, LogIn } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
@@ -43,7 +43,14 @@ export function IntegratedLandingContent() {
 
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6">
-        <div className="container mx-auto flex justify-end">
+        <div className="container mx-auto flex items-center justify-end gap-4">
+          <Link
+            href="/sign-in"
+            className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            {locale === "ja" ? "ログイン" : "Log In"}
+          </Link>
           <LocaleSwitcher />
         </div>
       </header>
