@@ -108,6 +108,57 @@ export function SessionLogTabs({
     }
   };
 
+  const hasVoiceLogs = voiceLogs.length > 0;
+
+  // DAW-only layout (no voice logs)
+  if (hasDawLogs && !hasVoiceLogs) {
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <Sliders className="w-4 h-4 text-amber-400" />
+          <span className="text-sm font-medium text-amber-400">
+            DAWログ
+          </span>
+          <span className="text-xs text-slate-500">
+            ({dawStats.oscCount})
+          </span>
+        </div>
+        <div className="space-y-2">
+          {dawLogs.map((log) => {
+            const badge = getActionBadge(log.action);
+            const Icon = badge.icon;
+            return (
+              <GlassCard key={log.id} hover={false} className="py-3 px-4">
+                <div className="flex gap-3 items-start">
+                  <div className="flex-shrink-0 w-14 text-right">
+                    <span className="text-sm font-mono text-amber-400">
+                      {formatTimestamp(log.relativeTimeSec)}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div
+                        className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${badge.color}`}
+                      >
+                        <Icon className="w-3 h-3" />
+                        {badge.label}
+                      </div>
+                      <span className="text-slate-500 text-xs">
+                        Track {log.trackId}
+                        {log.deviceId >= 0 && ` / Device ${log.deviceId}`}
+                      </span>
+                    </div>
+                    <p className="text-white text-sm">{log.valueString}</p>
+                  </div>
+                </div>
+              </GlassCard>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   // Voice-only layout (no DAW logs)
   if (!hasDawLogs) {
     return (
