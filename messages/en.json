@@ -55,40 +55,44 @@
       "tagline": "Making music visible.",
       "hooIntro": "Meet Hoo, your MUEDnote companion",
       "headline": "Your companion in music production.",
-      "description": "A gentle reminder for music producers.\nStay at your creative best—before burnout kicks in.",
+      "description": "A recording and reflection tool for music producers.\nStay at your creative best — before burnout kicks in.",
       "ctaPrimary": "Start Free with Hoo",
       "ctaSecondary": "Log In",
       "hooPhrases": [
-        "Ho-Hoo, save your thoughts?",
-        "Ho-Hoo, interesting approach!",
-        "Ho-Hoo, I see what you did there",
-        "Ho-Hoo, time for a break?"
+        "Ho-Hoo, time for a break?",
+        "Ho-Hoo, want to talk about your session?",
+        "Ho-Hoo, I noticed something interesting",
+        "Ho-Hoo, let's review what you did"
       ]
     },
     "philosophy": {
-      "title": "What Hoo Can Do",
-      "intro": "When you're deep in production, it's easy to lose track of time.\nHoo's got your back.",
+      "title": "What MUEDnote Does",
+      "intro": "When you're deep in production, it's easy to lose track of time.\nMUEDnote keeps you on track.",
       "features": {
         "rest": {
-          "title": "Rest Reminders",
-          "description": "Before you get too focused, Hoo will say \"Time for a break?\" Helps you stay sharp."
+          "title": "Break Reminders",
+          "description": "Timed reminders prevent burnout and keep you in your creative zone."
         },
         "sound": {
-          "title": "Sound Reactive",
-          "description": "When music plays, Hoo sways along. It feels like you're not alone during production."
+          "title": "Sound Detection",
+          "description": "Hoo responds to audio from your DAW. A subtle presence while you work."
         },
         "voice": {
-          "title": "Voice Memos",
-          "description": "Your unconscious murmurs get transcribed. Never forget why you made that choice."
+          "title": "Cloud Transcription",
+          "description": "Your voice memos are automatically transcribed in the cloud. Never forget why you made that choice."
+        },
+        "chat": {
+          "title": "AI-Powered Reflection",
+          "description": "After a session, AI reviews your recordings and helps you reflect. Discover perspectives you might have missed."
         }
       }
     },
     "muednote": {
       "badge": "iOS App",
-      "title": "Hoo in Your Pocket",
-      "description": "Just place your phone nearby, and Hoo is with you.",
-      "highlight": "Reacts to sound, reminds you to rest.\nYour production companion.",
-      "hint": "Leave voice memos, automatically transcribed. Review them later.",
+      "title": "Your Sessions, Captured on iPhone",
+      "description": "Place your phone nearby and recording begins.",
+      "highlight": "Sound detection, break reminders, voice memo transcription.\nEverything you need to stay focused, in one app.",
+      "hint": "Voice memos, automatically transcribed. Review them anytime.",
       "ctaPrimary": "Get Started Free",
       "preview": {
         "greeting": "Ho-hoo",
@@ -96,24 +100,24 @@
       }
     },
     "growth": {
-      "title": "Hoo is Learning New Things",
-      "subtitle": "Here's a sneak peek at what's coming.",
-      "badge": "In Development",
+      "title": "MUEDnote, Evolving",
+      "subtitle": "Recent updates and what's ahead.",
+      "badge": "Latest Features",
       "daw": {
         "title": "DAW Log Integration",
-        "quote": "\"I'll remember what you did in your DAW during production. Handy for looking back later, right?\"",
-        "features": ["Automatically logs your DAW actions", "Review your creative decisions later"]
+        "quote": "Your DAW actions are automatically recorded during sessions. Review what you did and why — after the fact.",
+        "features": ["Automatic DAW action logging", "Viewable in session details"]
       },
       "conversation": {
-        "title": "Chat with Hoo",
-        "quote": "\"Someday, I might be able to chat with you. I'd love to hear about your production ideas.\"",
-        "features": ["AI-powered conversation", "Available as a premium option"]
+        "title": "AI-Powered Reflection",
+        "quote": "After a session, AI uses your recordings and logs to support a reflective conversation. Available on the Basic plan.",
+        "features": ["Context-aware dialogue based on your recordings", "Unlimited on Basic plan"]
       }
     },
     "cta": {
       "badge": "Free to Start",
-      "title": "Start your production\nwith Hoo.",
-      "description": "Let Hoo handle the break timing.\nYour production companion.",
+      "title": "Record your sessions.\nReflect. Improve.",
+      "description": "MUEDnote is free to start.\nJust place your iPhone nearby and begin.",
       "button": "Get Started Free"
     },
     "social": {
