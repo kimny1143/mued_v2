@@ -21,8 +21,8 @@ import { dawLogsRepository } from '@/lib/repositories/daw-logs.repository';
 import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
 import { getHooSystemPromptWithMemory } from '@/lib/ai/hoo-prompt';
 import { trialService, TRIAL_TURNS_LIMIT } from '@/lib/services/trial.service';
+import { buildMusicalDawContext } from '@/lib/services/daw-log-interpreter.service';
 import { logger } from '@/lib/utils/logger';
-import type { DawAction } from '@/db/schema/muednote-daw-logs';
 
 // ========================================
 // Free Tier Template Responses
@@ -74,136 +74,12 @@ interface HooChatApiResponse {
 }
 
 // ========================================
-// DAW Log Context Builder
+// DAW Log Context Builder (via daw-log-interpreter service)
 // ========================================
 
-const ACTION_LABELS: Record<DawAction, string> = {
-  parameter_change: 'パラメータ変更',
-  track_volume: 'トラックボリューム',
-  track_pan: 'トラックパン',
-  track_select: 'トラック選択',
-  clip_trigger: 'クリップトリガー',
-  device_config_change: 'デバイス設定変更',
-};
-
-const DAW_LABELS: Record<string, string> = {
-  ableton: 'Ableton Live',
-  protools: 'Pro Tools',
-  logic: 'Logic Pro',
-  other: 'DAW',
-};
-
-/**
- * Build a human-readable summary of ALL DAW logs for Hoo context.
- * Groups by date, shows action breakdown per day, and recent operation details.
- * Returns null if no logs found.
- */
-async function buildDawLogContext(userId: string): Promise<string | null> {
-  // Fetch ALL DAW logs (up to 1000)
-  const logs = await dawLogsRepository.getLogs({
-    userId,
-    limit: 1000,
-  });
-
-  if (logs.length === 0) return null;
-
-  // Sort ascending by timestamp for grouping
-  const sorted = [...logs].sort((a, b) => a.ts.getTime() - b.ts.getTime());
-
-  // Determine primary DAW
-  const dawCounts: Record<string, number> = {};
-  for (const log of sorted) {
-    const daw = log.daw || 'other';
-    dawCounts[daw] = (dawCounts[daw] || 0) + 1;
-  }
-  const primaryDaw = Object.entries(dawCounts).sort((a, b) => b[1] - a[1])[0][0];
-
-  // Group by date
-  const byDate = new Map<string, typeof sorted>();
-  for (const log of sorted) {
-    const dateKey = log.ts.toISOString().slice(0, 10); // YYYY-MM-DD
-    if (!byDate.has(dateKey)) byDate.set(dateKey, []);
-    byDate.get(dateKey)!.push(log);
-  }
-
-  // Overall action breakdown
-  const totalByAction: Record<string, number> = {};
-  for (const log of sorted) {
-    const action = log.action || 'parameter_change';
-    totalByAction[action] = (totalByAction[action] || 0) + 1;
-  }
-
-  // Extract unique track/device names
-  const trackNames = new Set<string>();
-  const deviceNames = new Set<string>();
-  for (const log of sorted) {
-    const meta = log.metadata as Record<string, unknown> | null;
-    if (meta) {
-      if (typeof meta.trackName === 'string' && meta.trackName) trackNames.add(meta.trackName);
-      if (typeof meta.deviceName === 'string' && meta.deviceName) deviceNames.add(meta.deviceName);
-    }
-  }
-
-  // Build summary
-  let summary = `## DAW操作ログ（制作アクティビティ全履歴）\n\n`;
-  summary += `ユーザーのDAW操作ログです。制作の傾向・進捗・作業パターンの把握に活用してください。\n\n`;
-  summary += `- **DAW**: ${DAW_LABELS[primaryDaw] || primaryDaw}\n`;
-  summary += `- **総操作数**: ${sorted.length}件\n`;
-  summary += `- **記録期間**: ${sorted[0].ts.toISOString().slice(0, 10)} 〜 ${sorted[sorted.length - 1].ts.toISOString().slice(0, 10)}\n`;
-
-  // Overall action breakdown
-  summary += `- **操作内訳**:\n`;
-  for (const [action, count] of Object.entries(totalByAction).sort((a, b) => b[1] - a[1])) {
-    const label = ACTION_LABELS[action as DawAction] || action;
-    summary += `  - ${label}: ${count}件\n`;
-  }
-
-  if (trackNames.size > 0) {
-    summary += `- **使用トラック**: ${[...trackNames].slice(0, 10).join(', ')}\n`;
-  }
-  if (deviceNames.size > 0) {
-    summary += `- **使用デバイス/プラグイン**: ${[...deviceNames].slice(0, 10).join(', ')}\n`;
-  }
-
-  // Daily breakdown (newest first)
-  const formatTime = (d: Date) => `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-  const dateKeys = [...byDate.keys()].sort().reverse();
-
-  summary += `\n### 日別サマリー\n`;
-  for (const dateKey of dateKeys) {
-    const dayLogs = byDate.get(dateKey)!;
-    const dayActions: Record<string, number> = {};
-    for (const l of dayLogs) {
-      const a = l.action || 'parameter_change';
-      dayActions[a] = (dayActions[a] || 0) + 1;
-    }
-    const actionParts = Object.entries(dayActions)
-      .sort((a, b) => b[1] - a[1])
-      .map(([a, c]) => `${ACTION_LABELS[a as DawAction] || a}${c}`)
-      .join(', ');
-    const timeRange = `${formatTime(dayLogs[0].ts)}〜${formatTime(dayLogs[dayLogs.length - 1].ts)}`;
-    summary += `- **${dateKey}** (${timeRange}): ${dayLogs.length}件 — ${actionParts}\n`;
-  }
-
-  // Recent operation details (last 10)
-  const recentLogs = sorted.slice(-10).reverse().filter(l => l.valueString);
-  if (recentLogs.length > 0) {
-    summary += `\n### 直近の操作詳細（新しい順）\n`;
-    for (const log of recentLogs) {
-      const meta = log.metadata as Record<string, unknown> | null;
-      const trackName = meta?.trackName as string || '';
-      const deviceName = meta?.deviceName as string || '';
-      const actionLabel = ACTION_LABELS[log.action as DawAction] || log.action;
-      const dateTime = `${log.ts.toISOString().slice(0, 10)} ${formatTime(log.ts)}`;
-      const parts = [dateTime, actionLabel];
-      if (trackName) parts.push(`Track: ${trackName}`);
-      if (deviceName) parts.push(`Device: ${deviceName}`);
-      parts.push(`→ ${log.valueString}`);
-      summary += `- ${parts.join(' / ')}\n`;
-    }
-  }
-
-  return summary;
+async function buildDawLogContextForUser(userId: string): Promise<string | null> {
+  const logs = await dawLogsRepository.getLogs({ userId, limit: 1000 });
+  return buildMusicalDawContext(logs);
 }
 
 // ========================================
@@ -256,7 +132,7 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     // Fetch DAW log context (uses Clerk ID — DAW logs store Clerk ID)
     let dawLogContext: string | null = null;
     try {
-      dawLogContext = await buildDawLogContext(clerkUserId);
+      dawLogContext = await buildDawLogContextForUser(clerkUserId);
     } catch (err) {
       logger.warn('[POST /api/hoo/chat] DAW log context fetch failed', { err });
     }
