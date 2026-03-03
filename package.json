@@ -93,7 +93,8 @@
     "zod": "^3.25.76"
   },
   "overrides": {
-    "esbuild": "^0.27.0"
+    "esbuild": "^0.27.0",
+    "serialize-javascript": "^7.0.3"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
