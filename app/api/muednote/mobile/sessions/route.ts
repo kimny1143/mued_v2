@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { duration_sec, started_at, ended_at, session_memo, device_id } = body;
+    const { duration_sec, started_at, ended_at, session_memo, memo, device_id } = body;
 
     // Validate required fields
     if (!duration_sec || !started_at) {
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
         durationSec: duration_sec,
         startedAt: new Date(started_at),
         endedAt: ended_at ? new Date(ended_at) : null,
-        sessionMemo: session_memo || null,
+        sessionMemo: session_memo || memo || null,
         deviceId: device_id || null,
         status: 'completed',
       })
