@@ -1,3 +1,10 @@
+/**
+ * @deprecated Use messages/{en,ja}.json instead.
+ * This file is kept for reference only. All translations have been
+ * migrated to the messages JSON files (single source of truth).
+ * The LocaleProvider now reads from messages JSON directly.
+ * Delete this file once all references are confirmed removed.
+ */
 export type Locale = 'en' | 'ja';
 
 export const translations = {

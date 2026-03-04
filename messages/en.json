@@ -51,7 +51,7 @@
       }
     },
     "hero": {
-      "title": "MUEDnote",
+      "title": "Music Lessons Made Easy",
       "tagline": "Making music visible.",
       "hooIntro": "Meet Hoo, your MUEDnote companion",
       "headline": "Your companion in music production.",
@@ -63,7 +63,11 @@
         "Ho-Hoo, want to talk about your session?",
         "Ho-Hoo, I noticed something interesting",
         "Ho-Hoo, let's review what you did"
-      ]
+      ],
+      "subtitle": "MUED LMS connects students with expert mentors through a next-generation learning management system",
+      "cta": "Get Started Free Today",
+      "login": "Log In",
+      "getStarted": "Get Started Free"
     },
     "philosophy": {
       "title": "What MUEDnote Does",
@@ -106,12 +110,18 @@
       "daw": {
         "title": "DAW Log Integration",
         "quote": "Your DAW actions are automatically recorded during sessions. Review what you did and why — after the fact.",
-        "features": ["Automatic DAW action logging", "Viewable in session details"]
+        "features": [
+          "Automatic DAW action logging",
+          "Viewable in session details"
+        ]
       },
       "conversation": {
         "title": "AI-Powered Reflection",
         "quote": "After a session, AI uses your recordings and logs to support a reflective conversation. Available on the Basic plan.",
-        "features": ["Context-aware dialogue based on your recordings", "Unlimited on Basic plan"]
+        "features": [
+          "Context-aware dialogue based on your recordings",
+          "Unlimited on Basic plan"
+        ]
       }
     },
     "cta": {
@@ -125,17 +135,80 @@
       "badge": "Live on App Store",
       "quote": "\"Hours would pass without me noticing during production. But I couldn't remember why I made those choices\"—that's why we built this.",
       "author": "From the Developer"
+    },
+    "features": {
+      "scheduling": {
+        "title": "Flexible Scheduling",
+        "description": "Schedule lessons that work for both mentors and students"
+      },
+      "library": {
+        "title": "Rich Material Library",
+        "description": "AI-generated personalized materials for efficient learning"
+      },
+      "communication": {
+        "title": "Real-Time Communication",
+        "description": "Chat features for real-time interaction between mentors and students"
+      }
+    },
+    "pricing": {
+      "title": "Pricing Plans",
+      "free": {
+        "name": "Free Plan",
+        "price": "¥0",
+        "perMonth": "/month",
+        "features": [
+          "1 lesson booking per month",
+          "Access to basic materials",
+          "Messaging features"
+        ],
+        "cta": "Get Started Free"
+      },
+      "basic": {
+        "name": "Basic Plan",
+        "price": "¥1,980",
+        "perMonth": "/month",
+        "features": [
+          "4 lesson bookings per month",
+          "Access to all materials",
+          "Priority support"
+        ],
+        "cta": "Choose Plan"
+      },
+      "premium": {
+        "name": "Premium Plan",
+        "price": "¥2,980",
+        "perMonth": "/month",
+        "features": [
+          "Unlimited lesson bookings",
+          "AI material generation",
+          "1-on-1 coaching"
+        ],
+        "cta": "Choose Plan"
+      }
+    },
+    "footer": {
+      "copyright": "© 2025 MUED LMS - glasswerks inc. All rights reserved."
     }
   },
   "common": {
     "loading": "Loading...",
     "error": "Error",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "retry": "Retry"
   },
   "nav": {
     "dashboard": "Dashboard",
-    "signOut": "Sign Out"
+    "signOut": "Sign Out",
+    "lessons": "Lessons",
+    "materials": "Materials",
+    "library": "Library",
+    "admin": "Admin",
+    "settings": "Settings"
   },
   "privacy": {
     "title": "Privacy Policy",
@@ -788,5 +861,353 @@
         "footer": "This article is a sequel to 'The Brain Is a Playback Device', reconstructed from multiple conversations with AI (Claude)."
       }
     }
+  },
+  "ragMetrics": {
+    "title": "RAG Metrics Dashboard",
+    "subtitle": "Monitor AI dialogue performance, citation rates, and SLO compliance",
+    "sloStatus": {
+      "title": "SLO Status Overview",
+      "allMet": "All SLOs Met",
+      "someNotMet": "Some SLOs Not Met",
+      "citationRate": "Citation Rate",
+      "latency": "Latency (P50)",
+      "cost": "Cost per Answer",
+      "target": "Target",
+      "current": "Current"
+    },
+    "currentMetrics": {
+      "title": "Current Metrics Overview",
+      "last7Days": "Last 7 Days",
+      "totalQueries": "Total Queries",
+      "avgCitationRate": "Avg Citation Rate",
+      "avgLatency": "Avg Latency (P50)",
+      "avgCost": "Avg Cost per Answer",
+      "uniqueUsers": "Unique Users",
+      "positiveVotes": "Positive Votes"
+    },
+    "historical": {
+      "title": "Historical Trends",
+      "period7d": "7 Days",
+      "period30d": "30 Days",
+      "noData": "No historical data available yet. Data will be collected daily.",
+      "citationRateChart": "Citation Rate Over Time",
+      "latencyChart": "Latency Over Time",
+      "costChart": "Cost per Answer & Query Volume",
+      "citationRateLabel": "Citation Rate",
+      "latencyP50Label": "P50 Latency",
+      "latencyP95Label": "P95 Latency",
+      "costLabel": "Cost",
+      "queriesLabel": "Queries",
+      "citationRateAxis": "Citation Rate (%)",
+      "latencyAxis": "Latency (ms)",
+      "costAxis": "Cost (¥)",
+      "queriesAxis": "Queries"
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome back,",
+    "subtitle": "Here's what's happening with your learning journey today.",
+    "overview": "Overview",
+    "quickActions": {
+      "title": "Quick Actions",
+      "createMaterial": "Create Material",
+      "createMaterialDesc": "AI-powered generation",
+      "bookLesson": "Book Lesson",
+      "bookLessonDesc": "Schedule with mentor",
+      "myMaterials": "My Materials",
+      "myMaterialsDesc": "View all materials",
+      "upgradePlan": "Upgrade Plan",
+      "upgradePlanDesc": "Unlock more features"
+    },
+    "stats": {
+      "totalMaterials": "Total Materials",
+      "totalLessons": "Total Lessons",
+      "completed": "Completed",
+      "inProgress": "In Progress"
+    },
+    "recentMaterials": {
+      "title": "Recent Materials",
+      "viewAll": "View All",
+      "noMaterials": "No materials yet",
+      "createFirst": "Create Your First Material"
+    },
+    "upcomingLessons": {
+      "title": "Upcoming Lessons",
+      "viewAll": "View All",
+      "noLessons": "No upcoming lessons",
+      "bookFirst": "Book Your First Lesson",
+      "lessonWith": "Lesson with",
+      "payment": "Payment:"
+    }
+  },
+  "materials": {
+    "title": "🎵 Music Material Library",
+    "subtitle": "AI-powered music learning materials tailored to your needs",
+    "generate": "Generate Music Material",
+    "monthlyUsage": "Monthly Usage",
+    "emptyState": {
+      "title": "Your Music Library Awaits",
+      "description": "Create personalized practice routines, sheet music, exercises, and theory lessons tailored to your instrument and skill level",
+      "cta": "Generate Your First Music Material"
+    },
+    "deleteConfirm": "Are you sure you want to delete this material?",
+    "deleteFailed": "Failed to delete material"
+  },
+  "library": {
+    "title": "Content Library",
+    "subtitle": "Browse educational materials from note.com and other curated sources",
+    "loadingContent": "Loading library content...",
+    "errorLoading": "Error loading content",
+    "noContent": "No content found",
+    "noContentDesc": "Try adjusting your filters or check back later"
+  },
+  "plugins": {
+    "title": "Plugin Management",
+    "subtitle": "Manage content source plugins and monitor their health",
+    "registered": "Registered Plugins",
+    "noPlugins": "No plugins registered",
+    "noPluginsDesc": "Plugins will appear here once registered",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "healthy": "Healthy",
+      "unhealthy": "Unhealthy",
+      "unknown": "Unknown"
+    },
+    "actions": {
+      "enable": "Enable",
+      "disable": "Disable",
+      "checkHealth": "Check Health",
+      "configure": "Configure",
+      "viewDetails": "View Details"
+    },
+    "health": {
+      "title": "Health Status",
+      "lastCheck": "Last Check",
+      "checkAll": "Check All",
+      "checking": "Checking...",
+      "message": "Message"
+    },
+    "capabilities": {
+      "title": "Capabilities",
+      "list": "List Content",
+      "search": "Search",
+      "filter": "Filter",
+      "fetch": "Fetch Individual Items",
+      "transform": "Transform Content"
+    },
+    "details": {
+      "name": "Name",
+      "source": "Source",
+      "version": "Version",
+      "description": "Description",
+      "apiEndpoint": "API Endpoint",
+      "lastUpdated": "Last Updated"
+    }
+  },
+  "subscription": {
+    "title": "Choose Your Plan",
+    "subtitle": "Unlock the full power of MUEDnote with Hoo AI assistant",
+    "currentPlan": "Current Plan:",
+    "hooConversations": "Hoo AI:",
+    "notAvailable": "Not available",
+    "unlimited": "Unlimited",
+    "used": "used",
+    "mostPopular": "Most Popular",
+    "currentPlanBadge": "Current Plan",
+    "upgrade": "Upgrade",
+    "downgrade": "Downgrade",
+    "freeForever": "Free Forever",
+    "plans": {
+      "free": {
+        "name": "Free",
+        "description": "Try MUEDnote for free",
+        "features": [
+          "Voice transcription (Whisper)",
+          "Log storage: 90 days",
+          "Hoo: Fixed responses only"
+        ]
+      },
+      "basic": {
+        "name": "Basic",
+        "description": "Full features with unlimited Hoo AI",
+        "features": [
+          "Hoo AI conversation (unlimited)",
+          "Voice transcription (Whisper)",
+          "Cloud sync & unlimited log storage",
+          "DAW log integration",
+          "Practice data visualization"
+        ]
+      },
+      "premium": {
+        "name": "Premium",
+        "description": "Personalized AI with cognitive profile",
+        "features": [
+          "All Basic features",
+          "Hoo personalized conversation",
+          "MUEDlobe cognitive profile",
+          "Accumulated data analysis"
+        ]
+      }
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "q1": "Can I cancel anytime?",
+      "a1": "Yes, you can cancel anytime. You will continue to have access until the end of your billing period.",
+      "q2": "What is the difference between Basic and Premium?",
+      "a2": "Both plans include unlimited Hoo AI conversation. Premium adds personalized Hoo (using your accumulated data and cognitive profile from MUEDlobe).",
+      "q3": "How does the free trial work?",
+      "a3": "Free users can try Hoo AI for 3 days (up to 50 turns). After the trial, upgrade to Basic for unlimited access.",
+      "q4": "Can I downgrade my plan?",
+      "a4": "Yes, you can downgrade at any time. The change will take effect at the end of your current billing period."
+    },
+    "scheduledCancel": "Scheduled to cancel",
+    "reactivate": "Reactivate",
+    "success": {
+      "title": "Welcome to {tier}!",
+      "subtitle": "Your subscription is now active",
+      "features": "You now have access to:",
+      "cta": "Start using Hoo",
+      "backToDashboard": "Back to Dashboard"
+    },
+    "cancel": {
+      "title": "Downgrade Plan",
+      "confirmTitle": "Are you sure?",
+      "loseAccess": "You'll lose access to:",
+      "reason": "Why are you leaving?",
+      "reasons": {
+        "price": "Too expensive",
+        "notUsing": "Not using the features",
+        "otherService": "Found another service",
+        "other": "Other"
+      },
+      "finalConfirm": "Cancel subscription",
+      "periodEnd": "Your subscription will end on",
+      "completed": "Cancellation confirmed",
+      "keepUntil": "You can keep using {tier} until"
+    }
+  },
+  "trial": {
+    "banner": {
+      "title": "Try Basic features free for 3 days",
+      "description": "Hoo AI (50 turns) + DAW log integration",
+      "startTrial": "Start Free Trial",
+      "inProgress": "Free Trial Active",
+      "remaining": "{days} days, {turns} turns remaining",
+      "expired": "Trial ended",
+      "expiredDescription": "Upgrade to Basic for continued access",
+      "turnsExhausted": "Trial turns used up",
+      "turnsExhaustedDescription": "Upgrade to Basic for unlimited Hoo AI",
+      "upgradeNow": "Upgrade to Basic"
+    }
+  },
+  "lessons": {
+    "tabs": {
+      "chatMatching": "💬 Chat AI",
+      "aiMatching": "✨ AI Matching",
+      "booking": "Book Lesson",
+      "reservations": "My Reservations"
+    },
+    "payment": {
+      "success": "Payment Completed!",
+      "successDesc": "Your lesson booking is confirmed. Please wait for contact from your mentor.",
+      "cancelled": "Payment Cancelled",
+      "cancelledDesc": "Your reservation is pending. Please complete payment later."
+    },
+    "aiMatching": {
+      "title": "AI Mentor Matching",
+      "subtitle": "Find the perfect mentor based on your learning style, goals, and schedule",
+      "perfectMatches": "Perfect Matches",
+      "recommendedMentors": "Recommended Mentors",
+      "otherMentors": "Other Mentors",
+      "noMatches": "No Matching Mentors Found",
+      "noMatchesDesc": "Try adjusting your search criteria",
+      "resetPreferences": "Reset Preferences",
+      "yourProfile": "Your Profile",
+      "skillLevel": "Skill Level:",
+      "learningGoals": "Learning Goals:",
+      "budget": "Budget:"
+    },
+    "filters": {
+      "mentors": "Mentors",
+      "price": "Price",
+      "timeSlot": "Time Slot",
+      "filterByTags": "Filter by Tags",
+      "clearTags": "Clear Tags",
+      "selectedTags": "selected",
+      "resetFilters": "Reset Filters",
+      "timeSlots": {
+        "all": "All",
+        "morning": "Morning (9:00-12:00)",
+        "afternoon": "Afternoon (12:00-18:00)",
+        "evening": "Evening (18:00-21:00)"
+      }
+    },
+    "slots": {
+      "noSlots": "No Available Slots on This Day",
+      "noSlotsDesc": "Select a different date or adjust your filters",
+      "reserved": "✓ Reserved",
+      "pending": "⏳ Pending",
+      "bookNow": "Book Now",
+      "viewDetails": "View Details"
+    },
+    "reservations": {
+      "noReservations": "No Reservations Yet",
+      "noReservationsDesc": "Book your first lesson to get started",
+      "bookLesson": "Book a Lesson"
+    }
+  },
+  "teacher": {
+    "title": "講師ダッシュボード",
+    "subtitle": "レッスン状況と収益を確認できます",
+    "nextSteps": {
+      "title": "次のステップ",
+      "createSlots": "レッスンスロットを作成して予約を受け付けましょう",
+      "createMaterials": "教材を作成して生徒の学習をサポートしましょう",
+      "updateProfile": "プロフィールを充実させて予約率を向上させましょう"
+    }
+  },
+  "muednote": {
+    "header": {
+      "signOut": "Log Out",
+      "managePlan": "Manage Plan"
+    },
+    "tabs": {
+      "home": "Home",
+      "sessions": "Sessions",
+      "hoo": "Hoo History",
+      "settings": "Settings"
+    },
+    "welcome": "Welcome,",
+    "headline": "Remember why you made that choice.",
+    "subtitle": "Capture your decisions with voice on the iPhone app.\nLook back and apply them to your next session.",
+    "recentSessions": {
+      "title": "Recent Sessions",
+      "viewAll": "View all →",
+      "empty": "No recordings yet",
+      "emptyHint": "Start your first recording with the app",
+      "untitled": "Untitled session"
+    },
+    "stats": {
+      "totalTime": "Total Session Time",
+      "today": "Today",
+      "thisWeek": "This Week",
+      "thisMonth": "This Month",
+      "hours": "h",
+      "minutes": "m",
+      "weekSessions": "Sessions This Week",
+      "overall": "Overall Stats",
+      "sessions": "Sessions",
+      "voiceLogs": "Voice Logs"
+    },
+    "weekDays": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+    ]
   }
 }

@@ -9,20 +9,10 @@ import { db } from '@/db';
 import { interviewQuestions, interviewAnswers, sessions } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 import { logger } from '@/lib/utils/logger';
 import { verifySessionOwnership } from '@/lib/utils/auth-helpers';
 import { authenticateApiRequest, isAuthenticated } from '@/lib/utils/api-auth';
-
-// ========================================
-// Input Validation Schema
-// ========================================
-
-const SaveAnswerRequestSchema = z.object({
-  sessionId: z.string().uuid('Invalid session ID format'),
-  questionId: z.string().uuid('Invalid question ID format'),
-  answerText: z.string().min(1, 'Answer cannot be empty').max(5000, 'Answer too long (max 5000 chars)'),
-});
+import { saveAnswerRequestSchema as SaveAnswerRequestSchema } from '@/db/validation/api-schemas';
 
 // ========================================
 // Helper: Verify question belongs to session

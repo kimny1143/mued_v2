@@ -35,15 +35,18 @@ vi.mock('next/navigation', () => ({
   redirect: vi.fn(),
 }));
 
-// Mock Locale Context
-vi.mock('@/lib/i18n/locale-context', () => ({
-  LocaleProvider: vi.fn(({ children }: { children: any }) => children),
-  useLocale: vi.fn(() => ({
-    locale: 'en',
-    setLocale: vi.fn(),
-    t: vi.fn((key: string) => key),
-  })),
-}));
+// Mock Locale Context - t is the messages object from en.json
+vi.mock('@/lib/i18n/locale-context', async () => {
+  const enMessages = await import('../../messages/en.json');
+  return {
+    LocaleProvider: vi.fn(({ children }: { children: any }) => children),
+    useLocale: vi.fn(() => ({
+      locale: 'en',
+      setLocale: vi.fn(),
+      t: enMessages.default,
+    })),
+  };
+});
 
 // Mock Clerk (Client-side)
 vi.mock('@clerk/nextjs', () => ({

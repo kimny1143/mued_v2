@@ -29,7 +29,20 @@
   --color-glass-border: rgba(255, 255, 255, 0.1);
   --color-glass-bg-hover: rgba(255, 255, 255, 0.08);
 
-  /* Figma Design System Colors (Legacy) */
+  /* Semantic Action Colors */
+  --color-error: #dc2626;
+  --color-error-hover: #b91c1c;
+  --color-error-active: #991b1b;
+  --color-warning: #ca8a04;
+  --color-warning-hover: #a16207;
+  --color-warning-active: #854d0e;
+  --color-info: #9333ea;
+  --color-info-hover: #7e22ce;
+  --color-info-active: #6b21a8;
+  --color-disabled-bg: #d1d5db;
+  --color-disabled-text: #6b7280;
+
+  /* Figma Design System Colors (Legacy - migrate to semantic tokens) */
 
   /* Primary Brand */
   --color-brand-green: #75bc11;
