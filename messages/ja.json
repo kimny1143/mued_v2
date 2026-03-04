@@ -51,7 +51,7 @@
       }
     },
     "hero": {
-      "title": "MUEDnote",
+      "title": "音楽レッスンをもっと簡単に",
       "tagline": "Making music visible.",
       "hooIntro": "MUEDnoteのマスコット、Hoo（ホー）",
       "headline": "制作のそばに、いつもHoo。",
@@ -63,7 +63,11 @@
         "Ho-Hoo, さっきのセッション、振り返ってみる？",
         "Ho-Hoo, ちょっと気づいたことがあるんだけど",
         "Ho-Hoo, 今日やったこと、一緒に整理しよっか"
-      ]
+      ],
+      "subtitle": "MUED LMSは、次世代の学習管理システムで生徒と専門メンターをつなぎます",
+      "cta": "今すぐ無料で始める",
+      "login": "ログイン",
+      "getStarted": "無料で始める"
     },
     "philosophy": {
       "title": "MUEDnoteでできること",
@@ -106,12 +110,18 @@
       "daw": {
         "title": "DAWログ連携",
         "quote": "制作中のDAW操作を自動で記録。セッション後に「なぜそうしたか」を振り返れる。",
-        "features": ["DAWの操作ログを自動記録", "セッション詳細から確認可能"]
+        "features": [
+          "DAWの操作ログを自動記録",
+          "セッション詳細から確認可能"
+        ]
       },
       "conversation": {
         "title": "AIで振り返り",
         "quote": "セッション後、AIが録音・操作ログをもとに対話形式で振り返りをサポート。Basicプランで利用可能。",
-        "features": ["録音内容を踏まえた対話", "Basicプランで無制限"]
+        "features": [
+          "録音内容を踏まえた対話",
+          "Basicプランで無制限"
+        ]
       }
     },
     "cta": {
@@ -125,17 +135,80 @@
       "badge": "公開中・続々アップデート",
       "quote": "「制作中、気づいたら何時間も経ってた。でも、あの時なぜそうしたのかは覚えていない」——そんな経験から生まれました。",
       "author": "開発者より"
+    },
+    "features": {
+      "scheduling": {
+        "title": "柔軟なスケジューリング",
+        "description": "メンターと生徒の両方に合うレッスンスケジュールを設定"
+      },
+      "library": {
+        "title": "豊富な教材ライブラリ",
+        "description": "AI生成によるパーソナライズされた教材で効率的な学習"
+      },
+      "communication": {
+        "title": "リアルタイムコミュニケーション",
+        "description": "メンターと生徒のリアルタイムなやり取りを可能にするチャット機能"
+      }
+    },
+    "pricing": {
+      "title": "料金プラン",
+      "free": {
+        "name": "無料プラン",
+        "price": "¥0",
+        "perMonth": "/月",
+        "features": [
+          "月1回のレッスン予約",
+          "基本教材へのアクセス",
+          "メッセージング機能"
+        ],
+        "cta": "無料で始める"
+      },
+      "basic": {
+        "name": "ベーシックプラン",
+        "price": "¥1,980",
+        "perMonth": "/月",
+        "features": [
+          "月4回のレッスン予約",
+          "すべての教材へのアクセス",
+          "優先サポート"
+        ],
+        "cta": "プランを選択"
+      },
+      "premium": {
+        "name": "プレミアムプラン",
+        "price": "¥2,980",
+        "perMonth": "/月",
+        "features": [
+          "無制限のレッスン予約",
+          "AI教材生成",
+          "1対1コーチング"
+        ],
+        "cta": "プランを選択"
+      }
+    },
+    "footer": {
+      "copyright": "© 2025 MUED LMS - glasswerks inc. All rights reserved."
     }
   },
   "common": {
     "loading": "読み込み中...",
     "error": "エラー",
     "save": "保存",
-    "cancel": "キャンセル"
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "search": "検索",
+    "filter": "フィルター",
+    "retry": "再試行"
   },
   "nav": {
     "dashboard": "ダッシュボード",
-    "signOut": "サインアウト"
+    "signOut": "サインアウト",
+    "lessons": "レッスン",
+    "materials": "教材",
+    "library": "ライブラリ",
+    "admin": "管理",
+    "settings": "設定"
   },
   "privacy": {
     "title": "プライバシーポリシー",
@@ -788,5 +861,353 @@
         "footer": "この記事は「脳は再生装置である」の続編として、複数回にわたるAI（Claude）との対話をもとに再構成したものです。"
       }
     }
+  },
+  "ragMetrics": {
+    "title": "RAGメトリクスダッシュボード",
+    "subtitle": "AI対話のパフォーマンス、引用率、SLO準拠状況を監視",
+    "sloStatus": {
+      "title": "SLOステータス概要",
+      "allMet": "すべてのSLO達成",
+      "someNotMet": "一部のSLO未達成",
+      "citationRate": "引用率",
+      "latency": "レイテンシ（P50）",
+      "cost": "回答あたりコスト",
+      "target": "目標",
+      "current": "現在"
+    },
+    "currentMetrics": {
+      "title": "現在のメトリクス概要",
+      "last7Days": "過去7日間",
+      "totalQueries": "総クエリ数",
+      "avgCitationRate": "平均引用率",
+      "avgLatency": "平均レイテンシ（P50）",
+      "avgCost": "平均回答コスト",
+      "uniqueUsers": "ユニークユーザー数",
+      "positiveVotes": "ポジティブ評価数"
+    },
+    "historical": {
+      "title": "履歴トレンド",
+      "period7d": "7日間",
+      "period30d": "30日間",
+      "noData": "履歴データはまだありません。データは毎日収集されます。",
+      "citationRateChart": "引用率の推移",
+      "latencyChart": "レイテンシの推移",
+      "costChart": "回答あたりコストとクエリ数",
+      "citationRateLabel": "引用率",
+      "latencyP50Label": "P50レイテンシ",
+      "latencyP95Label": "P95レイテンシ",
+      "costLabel": "コスト",
+      "queriesLabel": "クエリ数",
+      "citationRateAxis": "引用率 (%)",
+      "latencyAxis": "レイテンシ (ms)",
+      "costAxis": "コスト (¥)",
+      "queriesAxis": "クエリ数"
+    }
+  },
+  "dashboard": {
+    "welcome": "おかえりなさい、",
+    "subtitle": "今日の学習状況をご覧ください。",
+    "overview": "概要",
+    "quickActions": {
+      "title": "クイックアクション",
+      "createMaterial": "教材を作成",
+      "createMaterialDesc": "AI自動生成",
+      "bookLesson": "レッスン予約",
+      "bookLessonDesc": "メンターと予約",
+      "myMaterials": "マイ教材",
+      "myMaterialsDesc": "すべての教材を見る",
+      "upgradePlan": "プランアップグレード",
+      "upgradePlanDesc": "さらに多くの機能を解放"
+    },
+    "stats": {
+      "totalMaterials": "総教材数",
+      "totalLessons": "総レッスン数",
+      "completed": "完了",
+      "inProgress": "進行中"
+    },
+    "recentMaterials": {
+      "title": "最近の教材",
+      "viewAll": "すべて見る",
+      "noMaterials": "まだ教材がありません",
+      "createFirst": "最初の教材を作成"
+    },
+    "upcomingLessons": {
+      "title": "今後のレッスン",
+      "viewAll": "すべて見る",
+      "noLessons": "予定されたレッスンはありません",
+      "bookFirst": "最初のレッスンを予約",
+      "lessonWith": "レッスン：",
+      "payment": "支払い状況："
+    }
+  },
+  "materials": {
+    "title": "🎵 音楽教材ライブラリ",
+    "subtitle": "あなたのニーズに合わせたAI音楽学習教材",
+    "generate": "音楽教材を生成",
+    "monthlyUsage": "月間使用状況",
+    "emptyState": {
+      "title": "あなたの音楽ライブラリが待っています",
+      "description": "楽器とスキルレベルに合わせた練習ルーティン、楽譜、エクササイズ、理論レッスンをカスタマイズして作成",
+      "cta": "最初の音楽教材を生成"
+    },
+    "deleteConfirm": "この教材を削除してもよろしいですか？",
+    "deleteFailed": "教材の削除に失敗しました"
+  },
+  "library": {
+    "title": "コンテンツライブラリ",
+    "subtitle": "note.comやその他の厳選されたソースから教育教材を閲覧",
+    "loadingContent": "ライブラリコンテンツを読み込み中...",
+    "errorLoading": "コンテンツの読み込みエラー",
+    "noContent": "コンテンツが見つかりません",
+    "noContentDesc": "フィルターを調整するか、後でもう一度確認してください"
+  },
+  "plugins": {
+    "title": "プラグイン管理",
+    "subtitle": "コンテンツソースプラグインを管理し、ヘルス状態を監視",
+    "registered": "登録済みプラグイン",
+    "noPlugins": "登録されたプラグインはありません",
+    "noPluginsDesc": "登録されるとここに表示されます",
+    "status": {
+      "active": "有効",
+      "inactive": "無効",
+      "healthy": "正常",
+      "unhealthy": "異常",
+      "unknown": "不明"
+    },
+    "actions": {
+      "enable": "有効化",
+      "disable": "無効化",
+      "checkHealth": "ヘルスチェック",
+      "configure": "設定",
+      "viewDetails": "詳細を表示"
+    },
+    "health": {
+      "title": "ヘルス状態",
+      "lastCheck": "最終チェック",
+      "checkAll": "全てチェック",
+      "checking": "チェック中...",
+      "message": "メッセージ"
+    },
+    "capabilities": {
+      "title": "機能",
+      "list": "コンテンツ一覧",
+      "search": "検索",
+      "filter": "フィルター",
+      "fetch": "個別アイテム取得",
+      "transform": "コンテンツ変換"
+    },
+    "details": {
+      "name": "名前",
+      "source": "ソース",
+      "version": "バージョン",
+      "description": "説明",
+      "apiEndpoint": "APIエンドポイント",
+      "lastUpdated": "最終更新"
+    }
+  },
+  "subscription": {
+    "title": "プランを選択",
+    "subtitle": "Hoo AIアシスタントでMUEDnoteをフル活用",
+    "currentPlan": "現在のプラン：",
+    "hooConversations": "Hoo AI：",
+    "notAvailable": "利用不可",
+    "unlimited": "無制限",
+    "used": "使用済み",
+    "mostPopular": "人気",
+    "currentPlanBadge": "現在のプラン",
+    "upgrade": "アップグレード",
+    "downgrade": "ダウングレード",
+    "freeForever": "永久無料",
+    "plans": {
+      "free": {
+        "name": "フリー",
+        "description": "MUEDnoteを無料でお試し",
+        "features": [
+          "音声文字起こし（Whisper）",
+          "ログ保存：90日間",
+          "Hoo：定型文のみ"
+        ]
+      },
+      "basic": {
+        "name": "ベーシック",
+        "description": "Hoo AI無制限のフル機能",
+        "features": [
+          "Hoo AI会話（無制限）",
+          "音声文字起こし（Whisper）",
+          "クラウド同期・ログ保存無制限",
+          "DAWログ連携",
+          "練習データの見える化"
+        ]
+      },
+      "premium": {
+        "name": "プレミアム",
+        "description": "認知プロファイルで個人化AI",
+        "features": [
+          "ベーシックの全機能",
+          "Hoo個人化会話",
+          "MUEDlobe認知プロファイル",
+          "蓄積データ分析"
+        ]
+      }
+    },
+    "faq": {
+      "title": "よくある質問",
+      "q1": "いつでもキャンセルできますか？",
+      "a1": "はい、いつでもキャンセルできます。請求期間の終了まで引き続きアクセスできます。",
+      "q2": "ベーシックとプレミアムの違いは？",
+      "a2": "どちらもHoo AI会話は無制限です。プレミアムでは蓄積データと認知プロファイル（MUEDlobe）に基づくHooの個人化が加わります。",
+      "q3": "無料トライアルの仕組みは？",
+      "a3": "Freeユーザーは3日間（最大50ターン）Hoo AIをお試しいただけます。トライアル終了後はBasicへのアップグレードで無制限利用が可能です。",
+      "q4": "プランをダウングレードできますか？",
+      "a4": "はい、いつでもダウングレードできます。変更は現在の請求期間の終了時に有効になります。"
+    },
+    "scheduledCancel": "解約予定",
+    "reactivate": "再アクティブ化",
+    "success": {
+      "title": "{tier}へようこそ！",
+      "subtitle": "サブスクリプションが有効になりました",
+      "features": "以下の機能が利用可能になりました：",
+      "cta": "Hooを使い始める",
+      "backToDashboard": "ダッシュボードに戻る"
+    },
+    "cancel": {
+      "title": "プランのダウングレード",
+      "confirmTitle": "本当によろしいですか？",
+      "loseAccess": "以下の機能が使えなくなります：",
+      "reason": "解約理由を教えてください",
+      "reasons": {
+        "price": "価格が高い",
+        "notUsing": "機能を使っていない",
+        "otherService": "他のサービスを見つけた",
+        "other": "その他"
+      },
+      "finalConfirm": "サブスクリプションを解約",
+      "periodEnd": "サブスクリプションの終了日",
+      "completed": "解約手続きが完了しました",
+      "keepUntil": "{tier}は以下の日付まで引き続きご利用いただけます"
+    }
+  },
+  "trial": {
+    "banner": {
+      "title": "3日間無料でBasic機能をお試し",
+      "description": "Hoo AI（50ターン）+ DAWログ連携",
+      "startTrial": "無料トライアルを開始",
+      "inProgress": "無料トライアル中",
+      "remaining": "残り{days}日 / {turns}ターン",
+      "expired": "トライアル終了",
+      "expiredDescription": "Basicにアップグレードで継続利用",
+      "turnsExhausted": "トライアルターン使用済み",
+      "turnsExhaustedDescription": "BasicでHoo AI無制限",
+      "upgradeNow": "Basicにアップグレード"
+    }
+  },
+  "lessons": {
+    "tabs": {
+      "chatMatching": "💬 チャットAI",
+      "aiMatching": "✨ AIマッチング",
+      "booking": "レッスン予約",
+      "reservations": "マイ予約"
+    },
+    "payment": {
+      "success": "支払い完了！",
+      "successDesc": "レッスン予約が確定しました。メンターからの連絡をお待ちください。",
+      "cancelled": "支払いがキャンセルされました",
+      "cancelledDesc": "予約は保留中です。後で支払いを完了してください。"
+    },
+    "aiMatching": {
+      "title": "AIメンターマッチング",
+      "subtitle": "学習スタイル、目標、スケジュールに基づいて最適なメンターを見つける",
+      "perfectMatches": "完璧なマッチ",
+      "recommendedMentors": "おすすめメンター",
+      "otherMentors": "その他のメンター",
+      "noMatches": "マッチするメンターが見つかりません",
+      "noMatchesDesc": "検索条件を調整してみてください",
+      "resetPreferences": "設定をリセット",
+      "yourProfile": "あなたのプロフィール",
+      "skillLevel": "スキルレベル：",
+      "learningGoals": "学習目標：",
+      "budget": "予算："
+    },
+    "filters": {
+      "mentors": "メンター",
+      "price": "価格",
+      "timeSlot": "時間帯",
+      "filterByTags": "タグで絞り込み",
+      "clearTags": "タグをクリア",
+      "selectedTags": "選択中",
+      "resetFilters": "フィルターをリセット",
+      "timeSlots": {
+        "all": "すべて",
+        "morning": "午前 (9:00-12:00)",
+        "afternoon": "午後 (12:00-18:00)",
+        "evening": "夜 (18:00-21:00)"
+      }
+    },
+    "slots": {
+      "noSlots": "この日に空きスロットはありません",
+      "noSlotsDesc": "別の日を選択するか、フィルターを調整してください",
+      "reserved": "✓ 予約済み",
+      "pending": "⏳ 保留中",
+      "bookNow": "今すぐ予約",
+      "viewDetails": "詳細を見る"
+    },
+    "reservations": {
+      "noReservations": "まだ予約はありません",
+      "noReservationsDesc": "最初のレッスンを予約して始めましょう",
+      "bookLesson": "レッスンを予約"
+    }
+  },
+  "teacher": {
+    "title": "講師ダッシュボード",
+    "subtitle": "レッスン状況と収益を確認できます",
+    "nextSteps": {
+      "title": "次のステップ",
+      "createSlots": "レッスンスロットを作成して予約を受け付けましょう",
+      "createMaterials": "教材を作成して生徒の学習をサポートしましょう",
+      "updateProfile": "プロフィールを充実させて予約率を向上させましょう"
+    }
+  },
+  "muednote": {
+    "header": {
+      "signOut": "ログアウト",
+      "managePlan": "プラン管理"
+    },
+    "tabs": {
+      "home": "ホーム",
+      "sessions": "セッション",
+      "hoo": "Hoo 履歴",
+      "settings": "設定"
+    },
+    "welcome": "ようこそ、",
+    "headline": "「なぜそうしたか」を、残しておこう。",
+    "subtitle": "制作中の判断は、iPhoneアプリで声で残す。\n後から振り返って、次の制作に活かそう。",
+    "recentSessions": {
+      "title": "最近のセッション",
+      "viewAll": "すべて見る →",
+      "empty": "まだ記録がありません",
+      "emptyHint": "アプリで最初の録音をしてみましょう",
+      "untitled": "無題のセッション"
+    },
+    "stats": {
+      "totalTime": "累計セッション時間",
+      "today": "今日",
+      "thisWeek": "今週",
+      "thisMonth": "今月",
+      "hours": "時間",
+      "minutes": "分",
+      "weekSessions": "今週のセッション",
+      "overall": "全体統計",
+      "sessions": "セッション",
+      "voiceLogs": "音声ログ"
+    },
+    "weekDays": [
+      "月",
+      "火",
+      "水",
+      "木",
+      "金",
+      "土",
+      "日"
+    ]
   }
 }

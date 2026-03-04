@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 import createNextIntlPlugin from "next-intl/plugin";
 import withSerwistInit from "@serwist/next";
 
@@ -40,4 +41,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSerwist(withNextIntl(nextConfig));
+export default withSentryConfig(withSerwist(withNextIntl(nextConfig)), {
+  // Suppresses all Sentry SDK build logs
+  silent: true,
+  // Disable source map upload (enable when SENTRY_AUTH_TOKEN is configured)
+  sourcemaps: {
+    disable: true,
+  },
+});

@@ -1,17 +1,29 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Locale, translations, TranslationKeys } from './translations';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
+import { type Locale } from './config';
+import enMessages from '../../messages/en.json';
+import jaMessages from '../../messages/ja.json';
+
+/**
+ * Translation data sourced from messages/{en,ja}.json (single source of truth).
+ * This replaces the old translations.ts import.
+ */
+const messages = { en: enMessages, ja: jaMessages } as const;
+
+type Messages = typeof enMessages;
 
 interface LocaleContextType {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: TranslationKeys;
+  t: Messages;
 }
 
 const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [locale, setLocaleState] = useState<Locale>('en');
 
   // Load locale from localStorage on mount
@@ -22,13 +34,16 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Save locale to localStorage when it changes
-  const setLocale = (newLocale: Locale) => {
+  // Save locale to localStorage + cookie when it changes
+  const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
     localStorage.setItem('locale', newLocale);
-  };
+    // Set cookie so server components (dashboard layout) can read it
+    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
+    router.refresh();
+  }, [router]);
 
-  const t = translations[locale];
+  const t = messages[locale];
 
   return (
     <LocaleContext.Provider value={{ locale, setLocale, t }}>
@@ -44,3 +59,8 @@ export function useLocale() {
   }
   return context;
 }
+
+/**
+ * @deprecated Use `Locale` from '@/lib/i18n/config' instead
+ */
+export type { Locale };

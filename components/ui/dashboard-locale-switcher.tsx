@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from "@/lib/i18n/locale-context";
-import { type Locale } from "@/lib/i18n/translations";
+import { type Locale } from "@/lib/i18n/config";
 
 const localeNames: Record<Locale, string> = {
   ja: "日本語",
