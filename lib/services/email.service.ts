@@ -105,6 +105,18 @@ export interface PaymentFailedEmailData {
   updatePaymentUrl: string;
 }
 
+export interface DialPurchaseConfirmedEmailData {
+  email: string;
+  purchaseType: string;
+  sessionUrl: string;
+}
+
+export interface DialResultsReadyEmailData {
+  email: string;
+  purchaseType: string;
+  downloadUrl: string;
+}
+
 // ========================================
 // Template Generators
 // ========================================
@@ -428,6 +440,73 @@ ${data.studentName} 様
   },
 
   /**
+   * MUEDial purchase confirmed — sent after checkout
+   */
+  dialPurchaseConfirmed(data: DialPurchaseConfirmedEmailData): { subject: string; html: string; text: string } {
+    const subject = 'Your MUEDial mix is being prepared';
+
+    const html = baseTemplate(`
+      <h2 style="color: #059669; margin-top: 0;">Payment Confirmed</h2>
+      <p>Thank you for your purchase!</p>
+      <p>Your <strong>${data.purchaseType}</strong> mix session is ready. Upload your tracks to get started.</p>
+
+      <p style="text-align: center;">
+        <a href="${data.sessionUrl}" class="button">Go to Your Session</a>
+      </p>
+
+      <p style="color: #6b7280; font-size: 14px;">
+        Your session link is valid for 7 days. Bookmark it to access your mix anytime.
+      </p>
+    `);
+
+    const text = `
+Payment Confirmed
+
+Thank you for your MUEDial purchase!
+
+Your ${data.purchaseType} mix session is ready. Upload your tracks to get started.
+
+Session: ${data.sessionUrl}
+
+Your session link is valid for 7 days.
+    `.trim();
+
+    return { subject, html, text };
+  },
+
+  /**
+   * MUEDial results ready — sent when mix is completed
+   */
+  dialResultsReady(data: DialResultsReadyEmailData): { subject: string; html: string; text: string } {
+    const subject = 'Your MUEDial mix is ready!';
+
+    const html = baseTemplate(`
+      <h2 style="color: #059669; margin-top: 0;">Your Mix is Ready!</h2>
+      <p>Great news — your <strong>${data.purchaseType}</strong> mix has been completed.</p>
+
+      <p style="text-align: center;">
+        <a href="${data.downloadUrl}" class="button">Download Your Mix</a>
+      </p>
+
+      <p style="color: #6b7280; font-size: 14px;">
+        Download links are available for 7 days. If you need help, contact us at ${SUPPORT_EMAIL}.
+      </p>
+    `);
+
+    const text = `
+Your MUEDial Mix is Ready!
+
+Your ${data.purchaseType} mix has been completed.
+
+Download: ${data.downloadUrl}
+
+Download links are available for 7 days.
+    `.trim();
+
+    return { subject, html, text };
+  },
+
+  /**
    * Payment failed notification
    */
   paymentFailed(data: PaymentFailedEmailData): { subject: string; html: string; text: string } {
@@ -609,6 +688,36 @@ class EmailService {
       to,
       ...template,
       tags: [{ name: 'type', value: 'reminder' }],
+    });
+  }
+
+  /**
+   * Send MUEDial purchase confirmation
+   */
+  async sendDialPurchaseConfirmed(
+    to: EmailRecipient,
+    data: DialPurchaseConfirmedEmailData
+  ): Promise<EmailResult> {
+    const template = emailTemplates.dialPurchaseConfirmed(data);
+    return this.send({
+      to,
+      ...template,
+      tags: [{ name: 'type', value: 'dial_purchase_confirmed' }],
+    });
+  }
+
+  /**
+   * Send MUEDial results ready notification
+   */
+  async sendDialResultsReady(
+    to: EmailRecipient,
+    data: DialResultsReadyEmailData
+  ): Promise<EmailResult> {
+    const template = emailTemplates.dialResultsReady(data);
+    return this.send({
+      to,
+      ...template,
+      tags: [{ name: 'type', value: 'dial_results_ready' }],
     });
   }
 

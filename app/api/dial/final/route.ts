@@ -9,8 +9,9 @@
 
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
-import { withAuth } from '@/lib/middleware/with-auth';
-import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
+import { withDialAuth } from '@/lib/middleware/with-dial-auth';
+import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
+import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { createRoExClient, mixFinalBasic, mixFinalAdvanced } from '@/lib/roex';
 import { db } from '@/db';
 import { dialTasks, dialSessions } from '@/db/schema';
@@ -45,9 +46,9 @@ const finalRequestSchema = z.object({
   trackData: z.array(z.union([basicTrackSchema, advancedTrackSchema])).min(1),
 });
 
-export const POST = withAuth(async ({ userId, request }) => {
+export const POST = withDialAuth(async (auth) => {
   try {
-    const body = await request.json();
+    const body = await auth.request.json();
     const parsed = finalRequestSchema.safeParse(body);
     if (!parsed.success) {
       return apiValidationError('Invalid request', parsed.error.errors);
@@ -55,17 +56,17 @@ export const POST = withAuth(async ({ userId, request }) => {
 
     const { previewTaskId, mode, trackData } = parsed.data;
 
-    // Find preview task to get roexTaskId
-    const previewTask = await db.query.dialTasks.findFirst({
-      where: eq(dialTasks.id, previewTaskId),
-    });
-    if (!previewTask) {
-      return apiServerError('Preview task not found');
+    // Verify task ownership (preview task → session → user)
+    const result = await verifyDialTaskOwnership(previewTaskId, auth);
+    if (!result) {
+      return apiNotFound('Preview task not found');
     }
+
+    const { task: previewTask } = result;
 
     const client = createRoExClient();
 
-    const result = mode === 'basic'
+    const mixResult = mode === 'basic'
       ? await mixFinalBasic(client, {
           taskId: previewTask.roexTaskId,
           trackData: trackData.map((t) => ({
@@ -82,17 +83,17 @@ export const POST = withAuth(async ({ userId, request }) => {
     const taskType = mode === 'basic' ? 'final_basic' as const : 'final_advanced' as const;
     const [task] = await db.insert(dialTasks).values({
       sessionId: previewTask.sessionId,
-      roexTaskId: result.taskId || previewTask.roexTaskId,
+      roexTaskId: mixResult.taskId || previewTask.roexTaskId,
       taskType,
-      status: result.finalUrl ? 'completed' : 'processing',
-      finalUrl: result.finalUrl,
-      fxSettings: result.fxSettings ?? null,
-      stemsUrls: result.stemsUrl ?? null,
-      completedAt: result.finalUrl ? new Date() : null,
+      status: mixResult.finalUrl ? 'completed' : 'processing',
+      finalUrl: mixResult.finalUrl,
+      fxSettings: mixResult.fxSettings ?? null,
+      stemsUrls: mixResult.stemsUrl ?? null,
+      completedAt: mixResult.finalUrl ? new Date() : null,
     }).returning();
 
     // Update session status
-    if (result.finalUrl) {
+    if (mixResult.finalUrl) {
       await db.update(dialSessions)
         .set({ status: 'completed', updatedAt: new Date() })
         .where(eq(dialSessions.id, previewTask.sessionId));
@@ -105,9 +106,9 @@ export const POST = withAuth(async ({ userId, request }) => {
     return apiSuccess({
       taskId: task.id,
       status: task.status,
-      finalUrl: result.finalUrl,
-      stemsUrls: result.stemsUrl,
-      fxSettings: result.fxSettings,
+      finalUrl: mixResult.finalUrl,
+      stemsUrls: mixResult.stemsUrl,
+      fxSettings: mixResult.fxSettings,
     });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Final mix failed');

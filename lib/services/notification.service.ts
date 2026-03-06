@@ -20,6 +20,8 @@ import {
   type CancellationEmailData,
   type ReminderEmailData,
   type PaymentFailedEmailData,
+  type DialPurchaseConfirmedEmailData,
+  type DialResultsReadyEmailData,
 } from './email.service';
 import { formatInTimeZone } from 'date-fns-tz';
 
@@ -76,6 +78,19 @@ export interface PaymentFailedNotificationData {
   userId: string;
   tier: string;
   errorMessage?: string;
+}
+
+export interface DialPurchaseNotificationData {
+  sessionId: string;
+  purchaseId: string;
+  purchaseType: string;
+  email: string;
+}
+
+export interface DialResultsNotificationData {
+  sessionId: string;
+  purchaseType: string;
+  email: string;
 }
 
 interface NotificationResult {
@@ -434,6 +449,90 @@ class NotificationService {
         error,
         subscriptionId: data.subscriptionId,
         userId: data.userId,
+      });
+      return {
+        success: false,
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
+      };
+    }
+  }
+
+  /**
+   * Send notification when a MUEDial purchase is completed
+   */
+  async onDialPurchaseCompleted(data: DialPurchaseNotificationData): Promise<NotificationResult> {
+    if (!data.email) {
+      return { success: false, errors: ['No email provided'] };
+    }
+
+    try {
+      const emailData: DialPurchaseConfirmedEmailData = {
+        email: data.email,
+        purchaseType: data.purchaseType,
+        sessionUrl: `${APP_URL}/dial/session/${data.sessionId}`,
+      };
+
+      const result = await emailService.sendDialPurchaseConfirmed(
+        { email: data.email },
+        emailData,
+      );
+
+      logger.info('[NotificationService] Dial purchase notification sent', {
+        sessionId: data.sessionId,
+        success: result.success,
+      });
+
+      return {
+        success: result.success,
+        studentEmailSent: result.success,
+        errors: result.error ? [result.error] : undefined,
+      };
+    } catch (error) {
+      logger.error('[NotificationService] Failed to send dial purchase notification', {
+        error,
+        sessionId: data.sessionId,
+      });
+      return {
+        success: false,
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
+      };
+    }
+  }
+
+  /**
+   * Send notification when MUEDial mix results are ready
+   */
+  async onDialResultsReady(data: DialResultsNotificationData): Promise<NotificationResult> {
+    if (!data.email) {
+      return { success: false, errors: ['No email provided'] };
+    }
+
+    try {
+      const emailData: DialResultsReadyEmailData = {
+        email: data.email,
+        purchaseType: data.purchaseType,
+        downloadUrl: `${APP_URL}/dial/session/${data.sessionId}`,
+      };
+
+      const result = await emailService.sendDialResultsReady(
+        { email: data.email },
+        emailData,
+      );
+
+      logger.info('[NotificationService] Dial results notification sent', {
+        sessionId: data.sessionId,
+        success: result.success,
+      });
+
+      return {
+        success: result.success,
+        studentEmailSent: result.success,
+        errors: result.error ? [result.error] : undefined,
+      };
+    } catch (error) {
+      logger.error('[NotificationService] Failed to send dial results notification', {
+        error,
+        sessionId: data.sessionId,
       });
       return {
         success: false,

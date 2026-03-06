@@ -86,3 +86,16 @@ export {
   CognitiveProfileRepository,
   cognitiveProfileRepository,
 } from './cognitive-profiles.repository';
+
+// MUEDial - Mixing/Mastering
+export {
+  DialRepository,
+  dialRepository,
+  type DialSession,
+  type DialPurchase,
+  type DialSubscription,
+  type DialTrack,
+  type DialTask,
+  type CreateDialSessionInput,
+  type CreateDialPurchaseInput,
+} from './dial.repository';

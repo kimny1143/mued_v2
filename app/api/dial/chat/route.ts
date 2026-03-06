@@ -1,6 +1,7 @@
 /**
  * MUEDial Chat API (Dialogue Mode)
  * POST /api/dial/chat
+ * GET  /api/dial/chat
  *
  * Hoo guides the user through mixing parameter adjustments.
  * Parses structured `parameter_changes` from Hoo's response.
@@ -13,12 +14,13 @@
 
 import { z } from 'zod';
 import { eq, asc, desc } from 'drizzle-orm';
-import { withAuth } from '@/lib/middleware/with-auth';
-import { apiSuccess, apiValidationError, apiServerError, apiError } from '@/lib/api-response';
+import { withDialAuth } from '@/lib/middleware/with-dial-auth';
+import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
+import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { sendHooChat, type HooChatMessage } from '@/lib/ai/providers';
 import { buildDialSystemPrompt, type DialPromptInput } from '@/lib/ai/prompts/dial';
 import { db } from '@/db';
-import { dialSessions, dialTracks, dialMessages, dialTasks } from '@/db/schema';
+import { dialTracks, dialMessages, dialTasks } from '@/db/schema';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -42,12 +44,7 @@ const chatRequestSchema = z.object({
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-/**
- * Extract parameter_changes JSON from Hoo's response.
- * Hoo embeds a JSON block at the end of the message.
- */
 function extractParameterChanges(content: string): ParameterChange[] | null {
-  // Match ```json ... ``` block containing parameter_changes
   const jsonBlockMatch = content.match(/```json\s*\n?([\s\S]*?)\n?```/);
   if (!jsonBlockMatch) return null;
 
@@ -57,25 +54,21 @@ function extractParameterChanges(content: string): ParameterChange[] | null {
       return parsed.parameter_changes;
     }
   } catch {
-    // JSON parse failed — not a valid parameter_changes block
+    // JSON parse failed
   }
 
   return null;
 }
 
-/**
- * Build current FX summary from the latest completed task.
- */
 function buildFxSummary(fxSettings: unknown): string | undefined {
   if (!fxSettings || typeof fxSettings !== 'object') return undefined;
 
-  // fxSettings is the full RoEx FX response — summarize key parameters
   try {
     const settings = fxSettings as Record<string, unknown>;
     const entries = Object.entries(settings);
     if (entries.length === 0) return undefined;
 
-    return JSON.stringify(fxSettings, null, 2).slice(0, 2000); // Truncate for prompt
+    return JSON.stringify(fxSettings, null, 2).slice(0, 2000);
   } catch {
     return undefined;
   }
@@ -83,9 +76,9 @@ function buildFxSummary(fxSettings: unknown): string | undefined {
 
 // ─── POST Handler ───────────────────────────────────────────────────────────
 
-export const POST = withAuth(async ({ userId, request }) => {
+export const POST = withDialAuth(async (auth) => {
   try {
-    const body = await request.json();
+    const body = await auth.request.json();
     const parsed = chatRequestSchema.safeParse(body);
     if (!parsed.success) {
       return apiValidationError('Invalid request', parsed.error.errors);
@@ -93,12 +86,10 @@ export const POST = withAuth(async ({ userId, request }) => {
 
     const { sessionId, message } = parsed.data;
 
-    // Load session with tracks
-    const session = await db.query.dialSessions.findFirst({
-      where: eq(dialSessions.id, sessionId),
-    });
-    if (!session || session.userId !== userId) {
-      return apiError('Session not found', { code: 'NOT_FOUND', status: 404 });
+    // Verify session ownership
+    const session = await verifyDialSessionOwnership(sessionId, auth);
+    if (!session) {
+      return apiNotFound('Session not found');
     }
 
     if (session.mode !== 'dialogue') {
@@ -157,7 +148,7 @@ export const POST = withAuth(async ({ userId, request }) => {
         content: m.content,
       }));
 
-    // Send to AI (Claude Haiku for cost efficiency)
+    // Send to AI
     const startTime = Date.now();
     const aiResponse = await sendHooChat('claude-haiku', chatMessages, {
       systemPrompt,
@@ -195,20 +186,18 @@ export const POST = withAuth(async ({ userId, request }) => {
 
 // ─── GET: Load message history ──────────────────────────────────────────────
 
-export const GET = withAuth(async ({ userId, request }) => {
+export const GET = withDialAuth(async (auth) => {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(auth.request.url);
     const sessionId = searchParams.get('sessionId');
     if (!sessionId) {
       return apiValidationError('sessionId is required');
     }
 
     // Verify session ownership
-    const session = await db.query.dialSessions.findFirst({
-      where: eq(dialSessions.id, sessionId),
-    });
-    if (!session || session.userId !== userId) {
-      return apiError('Session not found', { code: 'NOT_FOUND', status: 404 });
+    const session = await verifyDialSessionOwnership(sessionId, auth);
+    if (!session) {
+      return apiNotFound('Session not found');
     }
 
     const messages = await db.query.dialMessages.findMany({

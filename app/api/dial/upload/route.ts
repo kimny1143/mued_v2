@@ -7,14 +7,16 @@
  *
  * Flow:
  *   1. Client → POST /api/dial/upload { sessionId, fileName, instrumentGroup }
- *   2. Server → RoEx /upload → { signedUrl, readableUrl }
- *   3. Server → saves dial_tracks row with readableUrl
- *   4. Client → PUT file to signedUrl directly
+ *   2. Server → verifies session ownership + payment
+ *   3. Server → RoEx /upload → { signedUrl, readableUrl }
+ *   4. Server → saves dial_tracks row with readableUrl
+ *   5. Client → PUT file to signedUrl directly
  */
 
 import { z } from 'zod';
-import { withAuth } from '@/lib/middleware/with-auth';
-import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
+import { withDialAuth } from '@/lib/middleware/with-dial-auth';
+import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
+import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiForbidden } from '@/lib/api-response';
 import { createRoExClient, getUploadUrl } from '@/lib/roex';
 import { db } from '@/db';
 import { dialTracks } from '@/db/schema';
@@ -28,15 +30,26 @@ const uploadRequestSchema = z.object({
   reverbPreference: z.string().optional(),
 });
 
-export const POST = withAuth(async ({ userId, request }) => {
+export const POST = withDialAuth(async (auth) => {
   try {
-    const body = await request.json();
+    const body = await auth.request.json();
     const parsed = uploadRequestSchema.safeParse(body);
     if (!parsed.success) {
       return apiValidationError('Invalid request', parsed.error.errors);
     }
 
     const { sessionId, fileName, instrumentGroup, presenceSetting, panPreference, reverbPreference } = parsed.data;
+
+    // Verify session ownership
+    const session = await verifyDialSessionOwnership(sessionId, auth);
+    if (!session) {
+      return apiNotFound('Session not found');
+    }
+
+    // Verify payment completed
+    if (session.paymentStatus !== 'paid') {
+      return apiForbidden('Payment required before uploading');
+    }
 
     // Get signed URL from RoEx
     const client = createRoExClient();

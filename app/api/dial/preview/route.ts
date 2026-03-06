@@ -9,8 +9,9 @@
 
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
-import { withAuth } from '@/lib/middleware/with-auth';
-import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
+import { withDialAuth } from '@/lib/middleware/with-dial-auth';
+import { verifyDialSessionOwnership, verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
+import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { createRoExClient, mixPreview, pollMixPreview } from '@/lib/roex';
 import type { MixTrackInput } from '@/lib/roex';
 import { db } from '@/db';
@@ -23,9 +24,9 @@ const previewRequestSchema = z.object({
   retrieveFxSettings: z.boolean().optional(),
 });
 
-export const POST = withAuth(async ({ userId, request }) => {
+export const POST = withDialAuth(async (auth) => {
   try {
-    const body = await request.json();
+    const body = await auth.request.json();
     const parsed = previewRequestSchema.safeParse(body);
     if (!parsed.success) {
       return apiValidationError('Invalid request', parsed.error.errors);
@@ -33,12 +34,10 @@ export const POST = withAuth(async ({ userId, request }) => {
 
     const { sessionId, retrieveFxSettings } = parsed.data;
 
-    // Load session and its tracks
-    const session = await db.query.dialSessions.findFirst({
-      where: eq(dialSessions.id, sessionId),
-    });
+    // Verify session ownership
+    const session = await verifyDialSessionOwnership(sessionId, auth);
     if (!session) {
-      return apiServerError('Session not found');
+      return apiNotFound('Session not found');
     }
 
     const tracks = await db.query.dialTracks.findMany({
@@ -94,21 +93,21 @@ export const POST = withAuth(async ({ userId, request }) => {
 
 // ─── GET: Poll preview status ───────────────────────────────────────────────
 
-export const GET = withAuth(async ({ userId, request }) => {
+export const GET = withDialAuth(async (auth) => {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(auth.request.url);
     const taskId = searchParams.get('taskId');
     if (!taskId) {
       return apiValidationError('taskId is required');
     }
 
-    // Find the task
-    const task = await db.query.dialTasks.findFirst({
-      where: eq(dialTasks.id, taskId),
-    });
-    if (!task) {
-      return apiServerError('Task not found');
+    // Verify task ownership
+    const result = await verifyDialTaskOwnership(taskId, auth);
+    if (!result) {
+      return apiNotFound('Task not found');
     }
+
+    const { task } = result;
 
     // Already completed? Return cached result.
     if (task.status === 'completed') {
@@ -122,28 +121,28 @@ export const GET = withAuth(async ({ userId, request }) => {
 
     // Poll RoEx
     const client = createRoExClient();
-    const result = await pollMixPreview(client, task.roexTaskId, {
+    const pollResult = await pollMixPreview(client, task.roexTaskId, {
       retrieveFxSettings: true,
     });
 
-    const isCompleted = !!result.previewUrl;
+    const isCompleted = !!pollResult.previewUrl;
 
     if (isCompleted) {
       // Update task with results
       await db.update(dialTasks).set({
         status: 'completed',
-        previewUrl: result.previewUrl,
-        fxSettings: result.fxSettings ?? null,
-        stemsUrls: result.stemsUrl ?? null,
+        previewUrl: pollResult.previewUrl,
+        fxSettings: pollResult.fxSettings ?? null,
+        stemsUrls: pollResult.stemsUrl ?? null,
         completedAt: new Date(),
       }).where(eq(dialTasks.id, taskId));
     }
 
     return apiSuccess({
       status: isCompleted ? 'completed' : 'processing',
-      previewUrl: result.previewUrl,
-      fxSettings: isCompleted ? result.fxSettings : undefined,
-      stemsUrls: isCompleted ? result.stemsUrl : undefined,
+      previewUrl: pollResult.previewUrl,
+      fxSettings: isCompleted ? pollResult.fxSettings : undefined,
+      stemsUrls: isCompleted ? pollResult.stemsUrl : undefined,
     });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Poll failed');

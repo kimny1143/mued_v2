@@ -13,7 +13,7 @@ import { logger } from '@/lib/utils/logger';
  * Resolve Clerk user ID from request.
  * Tries Bearer JWT first (mobile apps), then falls back to cookie-based auth (web).
  */
-async function resolveClerkUserId(request: NextRequest): Promise<string | null> {
+export async function resolveClerkUserId(request: NextRequest): Promise<string | null> {
   // 1. Bearer JWT token (mobile apps)
   const authHeader = request.headers.get('Authorization');
   if (authHeader?.startsWith('Bearer ')) {

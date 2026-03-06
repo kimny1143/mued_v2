@@ -1,13 +1,15 @@
 /**
  * MUEDial Schema - RoEx-based Mixing/Mastering Service
  *
- * 6 tables for the MUEDial mixing/mastering workflow:
- * - dial_sessions: User mixing sessions
+ * Tables:
+ * - dial_sessions: User mixing sessions (guest + logged-in)
  * - dial_tracks: Uploaded audio stems
  * - dial_tasks: RoEx API task tracking
  * - dial_messages: Hoo conversation log
  * - dial_fx_sheets: FX parameter sheets (paid download)
  * - dial_credit_ledger: RoEx credit accounting
+ * - dial_purchases: One-time purchases
+ * - dial_subscriptions: Monthly mix credit packs
  */
 
 import {
@@ -19,6 +21,7 @@ import {
   jsonb,
   integer,
   serial,
+  boolean,
   index,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
@@ -68,17 +71,25 @@ export const dialCreditActionEnum = pgEnum('dial_credit_action', [
 /** MUEDial session — one per mixing project */
 export const dialSessions = pgTable('dial_sessions', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: text('user_id').notNull().references(() => users.clerkId),
+  userId: text('user_id').references(() => users.clerkId), // nullable for guests
   mode: dialModeEnum('mode').notNull(),
   status: dialSessionStatusEnum('status').notNull().default('uploading'),
   musicalStyle: text('musical_style').notNull(), // MusicalStyle enum value
   title: text('title'), // User-given project name
+  // Guest access fields
+  guestEmail: text('guest_email'),
+  guestToken: text('guest_token').unique(), // 64-char hex for session access
+  guestTokenExpiresAt: timestamp('guest_token_expires_at'), // 7 days
+  // Payment fields
+  stripeCheckoutSessionId: text('stripe_checkout_session_id'),
+  paymentStatus: text('payment_status').notNull().default('pending'), // pending/paid/failed/refunded
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
   userIdIdx: index('idx_dial_sessions_user_id').on(table.userId),
   statusIdx: index('idx_dial_sessions_status').on(table.status),
   userStatusIdx: index('idx_dial_sessions_user_status').on(table.userId, table.status),
+  guestTokenIdx: index('idx_dial_sessions_guest_token').on(table.guestToken),
 }));
 
 /** Uploaded audio stems */
@@ -157,6 +168,70 @@ export const dialCreditLedger = pgTable('dial_credit_ledger', {
 }));
 
 // ========================================
+// Purchase & Subscription Tables
+// ========================================
+
+export const dialPurchaseTypeEnum = pgEnum('dial_purchase_type', [
+  'omakase',
+  'dialogue',
+  'dialogue_mastering',
+  'fx_sheet',
+]);
+
+export const dialPurchaseStatusEnum = pgEnum('dial_purchase_status', [
+  'pending',
+  'completed',
+  'failed',
+  'refunded',
+]);
+
+export const dialSubTierEnum = pgEnum('dial_sub_tier', [
+  'monthly_5',
+  'studio_15',
+]);
+
+/** One-time MUEDial purchases */
+export const dialPurchases = pgTable('dial_purchases', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionId: uuid('session_id').notNull().references(() => dialSessions.id, { onDelete: 'cascade' }),
+  userId: text('user_id').references(() => users.clerkId), // nullable for guests
+  guestEmail: text('guest_email'),
+  purchaseType: dialPurchaseTypeEnum('purchase_type').notNull(),
+  status: dialPurchaseStatusEnum('status').notNull().default('pending'),
+  amountCents: integer('amount_cents').notNull(),
+  currency: text('currency').notNull().default('usd'),
+  stripeCheckoutSessionId: text('stripe_checkout_session_id'),
+  stripePaymentIntentId: text('stripe_payment_intent_id'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  completedAt: timestamp('completed_at'),
+}, (table) => ({
+  sessionIdIdx: index('idx_dial_purchases_session_id').on(table.sessionId),
+  userIdIdx: index('idx_dial_purchases_user_id').on(table.userId),
+  statusIdx: index('idx_dial_purchases_status').on(table.status),
+}));
+
+/** Monthly MUEDial mix credit subscriptions */
+export const dialSubscriptions = pgTable('dial_subscriptions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => users.clerkId), // login required
+  tier: dialSubTierEnum('tier').notNull(),
+  status: text('status').notNull().default('active'), // active/cancelled/past_due
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  stripeCustomerId: text('stripe_customer_id'),
+  mixCreditsRemaining: integer('mix_credits_remaining').notNull(),
+  mixCreditsTotal: integer('mix_credits_total').notNull(),
+  currentPeriodStart: timestamp('current_period_start'),
+  currentPeriodEnd: timestamp('current_period_end'),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index('idx_dial_subscriptions_user_id').on(table.userId),
+  statusIdx: index('idx_dial_subscriptions_status').on(table.status),
+  stripeSubIdx: index('idx_dial_subscriptions_stripe_sub_id').on(table.stripeSubscriptionId),
+}));
+
+// ========================================
 // Relations
 // ========================================
 
@@ -165,6 +240,7 @@ export const dialSessionsRelations = relations(dialSessions, ({ many }) => ({
   tasks: many(dialTasks),
   messages: many(dialMessages),
   fxSheets: many(dialFxSheets),
+  purchases: many(dialPurchases),
 }));
 
 export const dialTracksRelations = relations(dialTracks, ({ one }) => ({
@@ -206,4 +282,16 @@ export const dialCreditLedgerRelations = relations(dialCreditLedger, ({ one }) =
     fields: [dialCreditLedger.taskId],
     references: [dialTasks.id],
   }),
+}));
+
+export const dialPurchasesRelations = relations(dialPurchases, ({ one }) => ({
+  session: one(dialSessions, {
+    fields: [dialPurchases.sessionId],
+    references: [dialSessions.id],
+  }),
+}));
+
+export const dialSubscriptionsRelations = relations(dialSubscriptions, () => ({
+  // userId references users.clerkId, but drizzle relations use table references
+  // Access via direct query with userId filter
 }));

@@ -9,10 +9,11 @@
 
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
-import { withAuth } from '@/lib/middleware/with-auth';
-import { apiSuccess, apiValidationError, apiServerError, apiError } from '@/lib/api-response';
+import { withDialAuth } from '@/lib/middleware/with-dial-auth';
+import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
+import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { db } from '@/db';
-import { dialTracks, dialSessions } from '@/db/schema';
+import { dialTracks } from '@/db/schema';
 
 // ─── PATCH: Update track parameters ────────────────────────────────────────
 
@@ -29,9 +30,9 @@ const batchUpdateSchema = z.object({
   updates: z.array(trackUpdateSchema).min(1).max(50),
 });
 
-export const PATCH = withAuth(async ({ userId, request }) => {
+export const PATCH = withDialAuth(async (auth) => {
   try {
-    const body = await request.json();
+    const body = await auth.request.json();
     const parsed = batchUpdateSchema.safeParse(body);
     if (!parsed.success) {
       return apiValidationError('Invalid request', parsed.error.errors);
@@ -40,11 +41,9 @@ export const PATCH = withAuth(async ({ userId, request }) => {
     const { sessionId, updates } = parsed.data;
 
     // Verify session ownership
-    const session = await db.query.dialSessions.findFirst({
-      where: eq(dialSessions.id, sessionId),
-    });
-    if (!session || session.userId !== userId) {
-      return apiError('Session not found', { code: 'NOT_FOUND', status: 404 });
+    const session = await verifyDialSessionOwnership(sessionId, auth);
+    if (!session) {
+      return apiNotFound('Session not found');
     }
 
     // Apply each update
@@ -88,20 +87,18 @@ export const PATCH = withAuth(async ({ userId, request }) => {
 
 // ─── GET: List tracks for a session ─────────────────────────────────────────
 
-export const GET = withAuth(async ({ userId, request }) => {
+export const GET = withDialAuth(async (auth) => {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(auth.request.url);
     const sessionId = searchParams.get('sessionId');
     if (!sessionId) {
       return apiValidationError('sessionId is required');
     }
 
     // Verify session ownership
-    const session = await db.query.dialSessions.findFirst({
-      where: eq(dialSessions.id, sessionId),
-    });
-    if (!session || session.userId !== userId) {
-      return apiError('Session not found', { code: 'NOT_FOUND', status: 404 });
+    const session = await verifyDialSessionOwnership(sessionId, auth);
+    if (!session) {
+      return apiNotFound('Session not found');
     }
 
     const tracks = await db.query.dialTracks.findMany({
