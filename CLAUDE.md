@@ -234,4 +234,37 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 ---
 
-*最終更新: 2026-02-11*
+## MUEDial (RoEx Tonn API)
+
+### 概要
+AIミキシング/マスタリングサービス。RoEx Tonn APIを使用。ゲストアクセス対応（ログイン不要で単品購入可能）。
+
+### アーキテクチャ
+- **認証**: `withDialAuth` — Clerk auth と `X-Dial-Guest-Token` ヘッダーの両対応
+- **ミドルウェア**: `/dial` と `/api/dial` は Clerk middleware matcher から**完全除外**（`clerkMiddleware`はpublicルートでもCookie存在時にハンドシェイクリダイレクトするため）
+- **決済**: Stripe先払い → webhook (`metadata.service === 'dial'`) → `paymentStatus: paid` → Upload解放
+- **クライアント**: `lib/roex/` — upload, mixing, mastering, analysis
+
+### RoEx Tonn API
+- **認証**: Google API key をクエリパラメータで渡す (`?key=API_KEY`)。Bearer tokenではない
+- **全エンドポイントPOST only**（GETは405）
+- **devキー**: ダミーデータ返却。**prodキー**: 実オーディオ処理（クレジット消費）
+
+| 操作 | エンドポイント | ボディのラッパーキー |
+|------|-------------|-------------------|
+| Upload URL | `/upload` | なし (`{ filename, contentType }`) |
+| Mix Preview 投入 | `/mixpreview` | `multitrackData` |
+| Mix Preview 取得 | `/retrievepreviewmix` | `multitrackData` |
+| Final Mix 投入 | `/applyaudioeffects` | `applyAudioEffectsData` |
+| Final Mix 取得 | `/retrievefinalmix` | `applyAudioEffectsData` (trackData min 2) |
+| Mastering Preview 投入 | `/masteringpreview` | `masteringData` |
+| Mastering Preview 取得 | `/retrievepreviewmaster` | `masteringData` |
+| Mastering Final 取得 | `/retrievefinalmaster` | `masteringData` |
+
+### Enum マッピング（UI → RoEx）
+- **Musical Style**: `pop`→`POP`, `rock`→`ROCK_INDIE`, `hiphop`→`HIPHOP_GRIME`, `electronic`→`ELECTRONIC`, `classical`→`ORCHESTRAL`, `metal`→`METAL`, etc.
+- **Instrument Group**: `VOCAL`→`VOCAL_GROUP`, `BASS`→`BASS_GROUP`, `DRUMS`→`DRUMS_GROUP`, `GUITAR`→`ACOUSTIC_GUITAR_GROUP`, `KEYS`→`KEYS_GROUP`, etc.
+
+---
+
+*最終更新: 2026-03-07*
