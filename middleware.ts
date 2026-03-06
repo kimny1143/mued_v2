@@ -20,6 +20,8 @@ const isPublicRoute = createRouteMatcher([
   "/privacy(.*)",
   "/support(.*)",
   "/muedear(.*)",
+  "/dial(.*)",
+  "/api/dial(.*)",
 ]);
 
 // Check if path starts with a locale
@@ -87,5 +89,5 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next|api/webhooks).*)", "/", "/(api|trpc)(.*)"],
+  matcher: ["/((?!.*\\..*|_next|api/webhooks|api/dial|dial).*)", "/", "/(api(?!/dial)|trpc)(.*)"],
 };
