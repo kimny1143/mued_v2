@@ -121,6 +121,18 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 **核心: 「全部ちゃんとやる」がAI生成感の正体。「何を捨てるか」がデザイン。**
 
+### Video Branding (MUEDear)
+
+- Primary: #F5A623 (Hoo amber)
+- Background: #1A1A2E (app dark)
+- Accent: #4f46e5 (MUED CTA indigo)
+- Text: #FFFFFF
+- Muted: #94a3b8
+- Game Colors: mufreq=#F5A623, mucomp=#7D9B76, murush=#EF4444, muverb=#3B82F6, mupan=#8B5CF6, muhorse=#14B8A6
+- Font Heading: Geist Sans
+- Font Body: Geist Sans
+- Mascot: Hoo (owl, public/hoo-animated.svg)
+
 ---
 
 ## Commands（スラッシュコマンド）

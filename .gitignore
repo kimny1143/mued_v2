@@ -73,3 +73,6 @@ public/swe-worker-*.js
 # Large binary files
 *.ipa
 
+# Remotion video projects (separate repository)
+videos/
+
