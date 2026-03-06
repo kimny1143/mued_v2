@@ -14,3 +14,4 @@ export { MATERIAL_REQUEST_PARSER_PROMPT_VERSION } from './material-request-parse
 export { CONVERSATION_TITLE_PROMPT_VERSION } from './conversation-title';
 export { LOBE_COMMENTARY_PROMPT_VERSION } from './lobe-commentary';
 export { PROMPT_VERSION as MENTOR_MATCHING_PROMPT_VERSION } from './mentor-matching';
+export { DIAL_PROMPT_VERSION } from './dial';
