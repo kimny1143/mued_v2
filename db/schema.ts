@@ -330,3 +330,8 @@ export * from './schema/hoo-memories';
 // MUEDlobe - Cognitive Profiling
 // ========================================
 export * from './schema/cognitive-profiles';
+
+// ========================================
+// MUEDial - Mixing/Mastering Service
+// ========================================
+export * from './schema/dial';
