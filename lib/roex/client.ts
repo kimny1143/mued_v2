@@ -15,11 +15,11 @@ export class RoExClient {
   }
 
   async post<T = unknown>(path: string, body: unknown): Promise<T> {
-    const res = await fetch(`${this.baseUrl}${path}`, {
+    const url = `${this.baseUrl}${path}?key=${this.apiKey}`;
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${this.apiKey}`,
       },
       body: JSON.stringify(body),
     });
@@ -33,9 +33,9 @@ export class RoExClient {
   }
 
   async get<T = unknown>(path: string): Promise<T> {
-    const res = await fetch(`${this.baseUrl}${path}`, {
-      headers: { Authorization: `Bearer ${this.apiKey}` },
-    });
+    const separator = path.includes('?') ? '&' : '?';
+    const url = `${this.baseUrl}${path}${separator}key=${this.apiKey}`;
+    const res = await fetch(url);
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');

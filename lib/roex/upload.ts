@@ -12,12 +12,23 @@ export async function getUploadUrl(
   client: RoExClient,
   fileName: string,
 ): Promise<UploadUrlResponse> {
+  // Infer content type from extension
+  const ext = fileName.split('.').pop()?.toLowerCase() ?? 'wav';
+  const contentTypeMap: Record<string, string> = {
+    wav: 'audio/wav',
+    mp3: 'audio/mpeg',
+    flac: 'audio/flac',
+    aiff: 'audio/aiff',
+    aif: 'audio/x-aiff',
+  };
+  const contentType = contentTypeMap[ext] ?? 'audio/wav';
+
   const res = await client.post<{
     signedUrl?: string;
     signed_url?: string;
     readableUrl?: string;
     readable_url?: string;
-  }>('/upload', { fileName });
+  }>('/upload', { filename: fileName, contentType });
 
   const signedUrl = res.signedUrl ?? res.signed_url;
   const readableUrl = res.readableUrl ?? res.readable_url;
