@@ -17,6 +17,35 @@ import type { MixTrackInput } from '@/lib/roex';
 import { db } from '@/db';
 import { dialTracks, dialTasks, dialSessions } from '@/db/schema';
 
+// ─── Mappings ────────────────────────────────────────────────────────────────
+
+/** Map UI musical style values to RoEx API enum values */
+const MUSICAL_STYLE_MAP: Record<string, string> = {
+  pop: 'POP',
+  rock: 'ROCK_INDIE',
+  hiphop: 'HIPHOP_GRIME',
+  electronic: 'ELECTRONIC',
+  jazz: 'OTHER',
+  classical: 'ORCHESTRAL',
+  rnb: 'POP',
+  country: 'ACOUSTIC',
+  metal: 'METAL',
+  other: 'OTHER',
+};
+
+/** Map UI instrument group values to RoEx API enum values */
+const INSTRUMENT_GROUP_MAP: Record<string, string> = {
+  VOCAL: 'VOCAL_GROUP',
+  GUITAR: 'ACOUSTIC_GUITAR_GROUP',
+  BASS: 'BASS_GROUP',
+  DRUMS: 'DRUMS_GROUP',
+  KEYS: 'KEYS_GROUP',
+  SYNTH: 'SYNTH_GROUP',
+  STRINGS: 'STRINGS_GROUP',
+  BRASS: 'BRASS_GROUP',
+  OTHER: 'OTHER_GROUP1',
+};
+
 // ─── POST: Submit preview request ───────────────────────────────────────────
 
 const previewRequestSchema = z.object({
@@ -47,19 +76,21 @@ export const POST = withDialAuth(async (auth) => {
       return apiServerError('No tracks uploaded');
     }
 
-    // Build RoEx preview request
+    // Build RoEx preview request with mapped enum values
     const trackInputs: MixTrackInput[] = tracks.map((t) => ({
       trackUrl: t.roexUploadUrl,
-      instrumentGroup: t.instrumentGroup as MixTrackInput['instrumentGroup'],
+      instrumentGroup: (INSTRUMENT_GROUP_MAP[t.instrumentGroup] ?? 'OTHER_GROUP') as MixTrackInput['instrumentGroup'],
       presenceSetting: t.presenceSetting as MixTrackInput['presenceSetting'],
       panPreference: t.panPreference as MixTrackInput['panPreference'],
       reverbPreference: t.reverbPreference as MixTrackInput['reverbPreference'],
     }));
 
+    const roexMusicalStyle = MUSICAL_STYLE_MAP[session.musicalStyle] ?? 'OTHER';
+
     const client = createRoExClient();
     const result = await mixPreview(client, {
       tracks: trackInputs,
-      musicalStyle: session.musicalStyle as Parameters<typeof mixPreview>[1]['musicalStyle'],
+      musicalStyle: roexMusicalStyle as Parameters<typeof mixPreview>[1]['musicalStyle'],
       returnStems: true,
       retrieveFxSettings,
     });

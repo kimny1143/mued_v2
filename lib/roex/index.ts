@@ -10,6 +10,7 @@ export {
   pollMixPreview,
   mixFinalBasic,
   mixFinalAdvanced,
+  pollMixFinal,
 } from './mixing';
 
 // Mastering

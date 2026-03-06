@@ -98,59 +98,90 @@ export async function pollMixPreview(
   taskId: string,
   options?: { retrieveFxSettings?: boolean },
 ): Promise<MixResult> {
-  const params = new URLSearchParams({ task_id: taskId });
-  if (options?.retrieveFxSettings) {
-    params.set('retrieve_fx_settings', 'true');
-  }
+  const body = {
+    multitrackData: {
+      multitrackTaskId: taskId,
+      retrieveFXSettings: options?.retrieveFxSettings ?? false,
+    },
+  };
 
-  const raw = await client.get<Record<string, unknown>>(
-    `/mixpreview?${params}`,
+  const raw = await client.post<Record<string, unknown>>(
+    '/retrievepreviewmix',
+    body,
   );
   return parseMixResponse(raw);
 }
 
 /**
  * Request a basic final mix (gain_db adjustments only).
- * Costs 175cr (if FX purchased) or 300cr.
+ * Uses /applyaudioeffects endpoint.
  */
 export async function mixFinalBasic(
   client: RoExClient,
   req: MixFinalRequest,
 ): Promise<MixResult> {
   const body = {
-    multitrack_task_id: req.taskId,
-    track_data: req.trackData.map((t) => ({
-      track_url: t.trackUrl,
-      gain_db: t.gainDb,
-    })),
+    applyAudioEffectsData: {
+      multitrackTaskId: req.taskId,
+      returnStems: false,
+      trackData: req.trackData.map((t) => ({
+        trackURL: t.trackUrl,
+        gainDb: t.gainDb,
+      })),
+      webhookURL: 'https://httpbin.org/post',
+    },
   };
 
-  const raw = await client.post<Record<string, unknown>>('/mixfinal', body);
+  const raw = await client.post<Record<string, unknown>>('/applyaudioeffects', body);
   return parseMixResponse(raw);
 }
 
 /**
  * Request an advanced final mix (EQ, compressor, pan adjustments).
- * Note: Submitted values are treated as "hints" — RoEx may override.
+ * Uses /applyaudioeffects endpoint.
  */
 export async function mixFinalAdvanced(
   client: RoExClient,
   req: MixAdvancedFinalRequest,
 ): Promise<MixResult> {
   const body = {
-    multitrack_task_id: req.taskId,
-    track_data: req.trackData.map((t) => ({
-      track_url: t.trackUrl,
-      gain_db: t.gainDb,
-      eq_bands: t.eqBands,
-      compressor: t.compressor,
-      pan_angle_degrees: t.panAngleDegrees,
-    })),
+    applyAudioEffectsData: {
+      multitrackTaskId: req.taskId,
+      returnStems: false,
+      trackData: req.trackData.map((t) => ({
+        trackURL: t.trackUrl,
+        gainDb: t.gainDb,
+        eq_settings: t.eqBands,
+        compression_settings: t.compressor,
+        panning_settings: t.panAngleDegrees != null
+          ? { panning_angle: t.panAngleDegrees }
+          : undefined,
+      })),
+      webhookURL: 'https://httpbin.org/post',
+    },
   };
 
-  const raw = await client.post<Record<string, unknown>>(
-    '/mixfinaladvanced',
-    body,
-  );
+  const raw = await client.post<Record<string, unknown>>('/applyaudioeffects', body);
+  return parseMixResponse(raw);
+}
+
+/**
+ * Poll for final mix result.
+ * Requires trackData (same tracks used in submission, min 2).
+ */
+export async function pollMixFinal(
+  client: RoExClient,
+  taskId: string,
+  trackUrls: string[],
+): Promise<MixResult> {
+  const body = {
+    applyAudioEffectsData: {
+      multitrackTaskId: taskId,
+      returnStems: false,
+      trackData: trackUrls.map((url) => ({ trackURL: url })),
+    },
+  };
+
+  const raw = await client.post<Record<string, unknown>>('/retrievefinalmix', body);
   return parseMixResponse(raw);
 }

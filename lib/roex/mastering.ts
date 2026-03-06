@@ -52,7 +52,11 @@ export async function pollMasterPreview(
   client: RoExClient,
   taskId: string,
 ): Promise<MasteringResult> {
-  const raw = await client.get(`/masteringpreview?task_id=${taskId}`);
+  const raw = await client.post('/retrievepreviewmaster', {
+    masteringData: {
+      masteringTaskId: taskId,
+    },
+  });
   return parseMasteringResponse(raw);
 }
 
@@ -64,7 +68,11 @@ export async function masterFinal(
   client: RoExClient,
   taskId: string,
 ): Promise<MasteringResult> {
-  const body = { mastering_task_id: taskId };
-  const raw = await client.post('/masteringfinal', body);
+  const body = {
+    masteringData: {
+      masteringTaskId: taskId,
+    },
+  };
+  const raw = await client.post('/retrievefinalmaster', body);
   return parseMasteringResponse(raw);
 }

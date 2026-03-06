@@ -12,38 +12,12 @@ import { eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
-import { createRoExClient, mixFinalBasic, mixFinalAdvanced } from '@/lib/roex';
+import { createRoExClient, mixFinalBasic } from '@/lib/roex';
 import { db } from '@/db';
-import { dialTasks, dialSessions } from '@/db/schema';
-
-const eqBandSchema = z.object({
-  frequency: z.number(),
-  gain: z.number(),
-  q: z.number(),
-});
-
-const compressorSchema = z.object({
-  attack: z.number(),
-  release: z.number(),
-  threshold: z.number(),
-  ratio: z.number(),
-});
-
-const basicTrackSchema = z.object({
-  trackUrl: z.string().url(),
-  gainDb: z.number(),
-});
-
-const advancedTrackSchema = basicTrackSchema.extend({
-  eqBands: z.array(eqBandSchema).optional(),
-  compressor: compressorSchema.optional(),
-  panAngleDegrees: z.number().optional(),
-});
+import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
 
 const finalRequestSchema = z.object({
-  previewTaskId: z.string().uuid(), // The dial_tasks.id of the preview
-  mode: z.enum(['basic', 'advanced']),
-  trackData: z.array(z.union([basicTrackSchema, advancedTrackSchema])).min(1),
+  taskId: z.string().uuid(), // The dial_tasks.id of the completed preview
 });
 
 export const POST = withDialAuth(async (auth) => {
@@ -54,37 +28,45 @@ export const POST = withDialAuth(async (auth) => {
       return apiValidationError('Invalid request', parsed.error.errors);
     }
 
-    const { previewTaskId, mode, trackData } = parsed.data;
+    const { taskId } = parsed.data;
 
     // Verify task ownership (preview task → session → user)
-    const result = await verifyDialTaskOwnership(previewTaskId, auth);
+    const result = await verifyDialTaskOwnership(taskId, auth);
     if (!result) {
       return apiNotFound('Preview task not found');
     }
 
     const { task: previewTask } = result;
 
-    const client = createRoExClient();
+    if (previewTask.status !== 'completed') {
+      return apiValidationError('Preview must be completed before generating final mix');
+    }
 
-    const mixResult = mode === 'basic'
-      ? await mixFinalBasic(client, {
-          taskId: previewTask.roexTaskId,
-          trackData: trackData.map((t) => ({
-            trackUrl: t.trackUrl,
-            gainDb: t.gainDb,
-          })),
-        })
-      : await mixFinalAdvanced(client, {
-          taskId: previewTask.roexTaskId,
-          trackData: trackData as z.infer<typeof advancedTrackSchema>[],
-        });
+    // Get tracks for the session to build trackData with FX settings
+    const tracks = await db.query.dialTracks.findMany({
+      where: eq(dialTracks.sessionId, previewTask.sessionId),
+    });
+
+    // Build trackData from tracks — use gainDb from FX settings if available
+    const fxSettings = previewTask.fxSettings as Record<string, Record<string, unknown>> | null;
+    const trackData = tracks.map((t) => {
+      const urlKey = t.roexUploadUrl.split('/').pop()?.split('?')[0] ?? '';
+      const fx = fxSettings?.[urlKey];
+      const gainDb = (fx?.gain_settings as Record<string, number>)?.gain_db ?? 0;
+      return { trackUrl: t.roexUploadUrl, gainDb };
+    });
+
+    const client = createRoExClient();
+    const mixResult = await mixFinalBasic(client, {
+      taskId: previewTask.roexTaskId,
+      trackData,
+    });
 
     // Save final task
-    const taskType = mode === 'basic' ? 'final_basic' as const : 'final_advanced' as const;
     const [task] = await db.insert(dialTasks).values({
       sessionId: previewTask.sessionId,
       roexTaskId: mixResult.taskId || previewTask.roexTaskId,
-      taskType,
+      taskType: 'final_basic',
       status: mixResult.finalUrl ? 'completed' : 'processing',
       finalUrl: mixResult.finalUrl,
       fxSettings: mixResult.fxSettings ?? null,
