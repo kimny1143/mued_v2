@@ -29,6 +29,14 @@ export interface HooCostStats {
 }
 
 /**
+ * Tool call extracted from AI response
+ */
+export interface HooToolCall {
+  name: string;
+  input: unknown;
+}
+
+/**
  * Response from a chat completion
  */
 export interface HooChatResponse {
@@ -38,6 +46,7 @@ export interface HooChatResponse {
   usage: HooUsageStats;
   cost: HooCostStats;
   latencyMs: number;
+  toolCalls?: HooToolCall[];
 }
 
 /**
@@ -46,6 +55,8 @@ export interface HooChatResponse {
 export interface HooProviderConfig {
   maxTokens: number;
   temperature?: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tools?: any[];
 }
 
 /**

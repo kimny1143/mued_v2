@@ -4,12 +4,12 @@
  * GET  /api/dial/chat
  *
  * Hoo guides the user through mixing parameter adjustments.
- * Parses structured `parameter_changes` from Hoo's response.
+ * Uses tool calling for structured parameter changes (no JSON in text).
  *
  * Flow:
  *   1. User sends message ("ボーカルもう少し前に出して")
- *   2. Hoo responds with advice + parameter_changes JSON
- *   3. Client applies changes → submits new Preview
+ *   2. Hoo responds with text + tool call (propose_mix_action)
+ *   3. Client receives action + parameterChanges separately from text
  */
 
 import { z } from 'zod';
@@ -18,35 +18,21 @@ import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { sendHooChat, type HooChatMessage } from '@/lib/ai/providers';
-import { buildDialSystemPrompt, type DialPromptInput } from '@/lib/ai/prompts/dial';
+import { buildDialSystemPrompt, DIAL_MIX_ACTION_TOOL, DIAL_SET_STYLE_TOOL, type DialPromptInput } from '@/lib/ai/prompts/dial';
 import { db } from '@/db';
-import { dialTracks, dialMessages, dialTasks } from '@/db/schema';
+import { dialSessions, dialTracks, dialMessages, dialTasks } from '@/db/schema';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-interface EqBand {
-  freq: number;
-  gainDb: number;
-  q: number;
-}
-
 interface ParameterChange {
   track: string;
-  changes: {
-    // Preview params (applied immediately, reflected in next preview)
-    presenceSetting?: string;
-    panPreference?: string;
-    reverbPreference?: string;
-    // Final params (stored for final mix generation)
-    gainDb?: number;
-    compRatio?: number;
-    compThresholdDb?: number;
-    compAttackMs?: number;
-    compReleaseMs?: number;
-    eqBands?: EqBand[];
-    panAngleDegrees?: number;
-  };
+  changes: Record<string, unknown>;
   reason: string;
+}
+
+interface MixActionInput {
+  action: 'adjust_preview' | 'request_mix_check' | 'request_final';
+  parameter_changes?: ParameterChange[];
 }
 
 // ─── Request Validation ─────────────────────────────────────────────────────
@@ -57,22 +43,6 @@ const chatRequestSchema = z.object({
 });
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-function extractParameterChanges(content: string): ParameterChange[] | null {
-  const jsonBlockMatch = content.match(/```json\s*\n?([\s\S]*?)\n?```/);
-  if (!jsonBlockMatch) return null;
-
-  try {
-    const parsed = JSON.parse(jsonBlockMatch[1]);
-    if (parsed.parameter_changes && Array.isArray(parsed.parameter_changes)) {
-      return parsed.parameter_changes;
-    }
-  } catch {
-    // JSON parse failed
-  }
-
-  return null;
-}
 
 function buildFxSummary(fxSettings: unknown): string | undefined {
   if (!fxSettings || typeof fxSettings !== 'object') return undefined;
@@ -127,15 +97,15 @@ export const POST = withDialAuth(async (auth) => {
     // Determine current phase based on session state
     const hasMixCheck = session.mixCheckCount > 0;
     const hasFinal = latestTask?.taskType === 'final_advanced' || latestTask?.taskType === 'final_basic';
+
+    // Check if any completed preview exists (latestTask is ordered by createdAt desc)
+    const hasPreview = latestTask?.taskType === 'preview' && latestTask?.status === 'completed'
+      || session.mixCheckCount > 0;
     let phase: 1 | 2 | 3;
     if (hasFinal) {
-      phase = 3; // Already have final — shouldn't normally chat here, but handle gracefully
+      phase = 3;
     } else if (hasMixCheck) {
-      phase = 3; // Mix Check done — user is providing feedback for final
-    } else if (latestTask?.taskType === 'preview' && latestTask?.status === 'completed') {
-      // Has completed preview — could be Phase 1 (still adjusting) or Phase 2 (ready for mix check)
-      // Phase transition happens when user says "OK" in chat — Hoo handles this via conversation
-      phase = 1; // Default to Phase 1; Hoo will propose Phase 2 when user says "OK"
+      phase = 3;
     } else {
       phase = 1;
     }
@@ -154,6 +124,7 @@ export const POST = withDialAuth(async (auth) => {
         ? buildFxSummary(latestTask.fxSettings)
         : undefined,
       previewUrl: latestTask?.previewUrl ?? undefined,
+      hasPreview: !!hasPreview,
       phase,
       mixCheckCount: session.mixCheckCount,
     };
@@ -180,17 +151,35 @@ export const POST = withDialAuth(async (auth) => {
         content: m.content,
       }));
 
-    // Send to AI
+    // Send to AI with tool definitions
     const startTime = Date.now();
     const aiResponse = await sendHooChat('claude-haiku', chatMessages, {
       systemPrompt,
+      tools: [DIAL_MIX_ACTION_TOOL, DIAL_SET_STYLE_TOOL],
     });
     const latencyMs = Date.now() - startTime;
 
-    // Extract parameter_changes from response
-    const parameterChanges = extractParameterChanges(aiResponse.content);
+    // Extract tool call results (structured, not regex)
+    const mixToolCall = aiResponse.toolCalls?.find((t) => t.name === 'propose_mix_action');
+    const mixToolInput = mixToolCall?.input as MixActionInput | undefined;
 
-    // Save assistant message with parameter_changes
+    const action = mixToolInput?.action ?? null;
+    const parameterChanges = mixToolInput?.parameter_changes ?? null;
+
+    // Handle set_musical_style tool call — update session directly
+    const styleToolCall = aiResponse.toolCalls?.find((t) => t.name === 'set_musical_style');
+    let styleSet: string | null = null;
+    if (styleToolCall) {
+      const styleInput = styleToolCall.input as { style: string; reason?: string };
+      if (styleInput.style) {
+        await db.update(dialSessions)
+          .set({ musicalStyle: styleInput.style, updatedAt: new Date() })
+          .where(eq(dialSessions.id, sessionId));
+        styleSet = styleInput.style;
+      }
+    }
+
+    // Save assistant message (text only, no JSON in content)
     await db.insert(dialMessages).values({
       sessionId,
       role: 'assistant',
@@ -200,7 +189,9 @@ export const POST = withDialAuth(async (auth) => {
 
     return apiSuccess({
       content: aiResponse.content,
+      action,
       parameterChanges,
+      styleSet,
       model: aiResponse.model,
       usage: {
         inputTokens: aiResponse.usage.inputTokens,
