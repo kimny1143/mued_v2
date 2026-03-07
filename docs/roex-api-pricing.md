@@ -140,17 +140,22 @@ MUEDialで本格利用する際に実測で確定させること。
 
 ### Dialogue Mode (user adjusts via Hoo chat)
 
+3-phase flow: Preview → Mix Check → Final
+
 | Step                          | Endpoint              | Credits |
 |-------------------------------|-----------------------|---------|
 | Upload tracks                 | `/upload`             | 0       |
-| Generate preview              | `/mixpreview`         | 0       |
+| Preview × unlimited           | `/mixpreview`         | 0       |
 | Poll preview (no FX)          | `/retrievepreviewmix` | 0       |
-| Re-generate preview (after chat adjustments) | `/mixpreview` | 0 |
-| Poll again (still no FX)      | `/retrievepreviewmix` | 0       |
-| ... (user can iterate previews unlimited times for FREE) |  | 0 |
-| Retrieve FX settings (for final) | `/retrievepreviewmix` (retrieveFXSettings=true) | **125** |
-| Generate final mix            | `/retrievefinalmix`   | **125** (250-125) |
-| **Total**                     |                       | **250** |
+| **Mix Check** (EQ/comp applied, WAV) | `/retrievefinalmix` | **250** |
+| User listens, provides feedback to Hoo |              | 0       |
+| **Final Mix** (micro-adjustments + stems) | `/retrievefinalmix` | **250** |
+| **Typical Total**             |                       | **500** |
+
+Max 2 Mix Checks per session (worst case: 750cr for 2 checks + 1 final).
+Stems included in Final at +50cr = **800cr max**.
+
+Pricing is set at $23/session, covering up to 800cr ($6.40 at Large pkg) with healthy margin.
 
 ### Optional Add-ons
 
@@ -162,12 +167,11 @@ MUEDialで本格利用する際に実測で確定させること。
 
 ### Cost in USD (per session)
 
-| Mode      | Small pkg ($0.01/cr) | Large pkg ($0.008/cr) |
-|-----------|----------------------|-----------------------|
-| Mix only  | $2.50                | $2.00                 |
-| + Stems   | $3.00                | $2.40                 |
-| + Master  | $4.70                | $3.76                 |
-| + Both    | $5.20                | $4.16                 |
+| Mode           | Credits (typical) | Credits (max) | Large pkg ($0.008/cr) |
+|----------------|-------------------|---------------|-----------------------|
+| Omakase        | 250               | 250           | $2.00                 |
+| Dialogue       | 500               | 800           | $4.00–$6.40           |
+| + Mastering    | +220              |               | +$1.76                |
 
 ---
 

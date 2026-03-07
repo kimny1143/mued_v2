@@ -43,6 +43,7 @@ interface Session {
   musicalStyle: string;
   title: string | null;
   paymentStatus: string;
+  mixCheckCount: number;
   tracks: Track[];
   tasks: Task[];
 }
@@ -75,7 +76,7 @@ function guessInstrumentGroup(filename: string): string {
   if (/vocal|vox|voice|sing/i.test(name)) return 'VOCAL';
   if (/drum|kit|snare|kick|hat|cymbal|tom/i.test(name)) return 'DRUMS';
   if (/bass/i.test(name)) return 'BASS';
-  if (/guitar|gtr|guit/i.test(name)) return 'GUITAR';
+  if (/guitar|gtr|guit|\bag\b/i.test(name)) return 'GUITAR';
   if (/key|piano|organ|rhodes/i.test(name)) return 'KEYS';
   if (/synth|pad|lead/i.test(name)) return 'SYNTH';
   if (/string|violin|cello|viola/i.test(name)) return 'STRINGS';
@@ -387,24 +388,24 @@ export default function DialSessionPage() {
     }
   };
 
-  const handleFinal = async (taskId: string) => {
+  const handleMixGenerate = async (taskId: string, type: 'mix_check' | 'final' = 'final') => {
     setError(null);
     try {
       const res = await fetch('/api/dial/final', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ taskId }),
+        body: JSON.stringify({ taskId, type }),
       });
 
       const data = await res.json();
       if (!data.success) {
-        setError(data.error || 'Final mix request failed');
+        setError(data.error || 'Mix generation failed');
         return;
       }
 
       await fetchSession();
     } catch {
-      setError('Final mix error');
+      setError('Mix generation error');
     }
   };
 
@@ -435,9 +436,14 @@ export default function DialSessionPage() {
   const hasCompletedPreview = session.tasks.some(
     (t) => t.taskType === 'preview' && t.status === 'completed',
   );
+  const hasMixCheck = session.tasks.some(
+    (t) => t.taskType === 'mix_check' && (t.finalUrl || t.status === 'completed'),
+  );
   const hasFinal = session.tasks.some(
     (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.finalUrl,
   );
+  // In dialogue mode, chat stays open until actual Final is done
+  const showChat = session.mode === 'dialogue' && hasTracks && hasCompletedPreview && !hasFinal;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -631,14 +637,15 @@ export default function DialSessionPage() {
           </div>
         )}
 
-        {/* Dialogue Chat Panel — only in dialogue mode, after tracks uploaded, before final */}
-        {session.mode === 'dialogue' && hasTracks && hasCompletedPreview && !hasFinal && (
+        {/* Dialogue Chat Panel — visible until actual Final is generated */}
+        {showChat && (
           <div className="mb-8">
             <ChatPanel
               sessionId={session.id}
               tracks={session.tracks}
               headers={headers}
               onParametersApplied={fetchSession}
+              onPreviewRequested={handlePreview}
             />
           </div>
         )}
@@ -779,7 +786,9 @@ export default function DialSessionPage() {
                     <span className="text-sm font-medium capitalize">
                       {task.taskType === 'preview' && previewNumber > 0
                         ? `Take ${previewNumber}`
-                        : task.taskType.replace('_', ' ')}
+                        : task.taskType === 'mix_check'
+                          ? 'Mix Check'
+                          : task.taskType.replace('_', ' ')}
                     </span>
                     {pp && (
                       <span className="text-xs text-zinc-500">
@@ -814,22 +823,51 @@ export default function DialSessionPage() {
                 )}
 
                 {task.finalUrl && (
-                  <a
-                    href={task.finalUrl}
-                    download
-                    className="inline-block mt-2 px-4 py-2 bg-green-700 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors"
-                  >
-                    Download Final Mix
-                  </a>
+                  <div className="mt-2">
+                    {/* Mix Check: show audio player for listening */}
+                    {task.taskType === 'mix_check' && (
+                      <audio controls src={task.finalUrl} className="w-full mb-2" />
+                    )}
+                    <a
+                      href={task.finalUrl}
+                      download
+                      className="inline-block px-4 py-2 bg-green-700 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      {task.taskType === 'mix_check' ? 'Download Mix Check (.wav)' : 'Download Final Mix (.wav)'}
+                    </a>
+                  </div>
                 )}
 
-                {task.status === 'completed' && task.previewUrl && !task.finalUrl && !hasFinal && (
+                {/* Omakase: single Final button */}
+                {task.status === 'completed' && task.previewUrl && !task.finalUrl && !hasFinal && session.mode === 'omakase' && (
                   <button
-                    onClick={() => handleFinal(task.id)}
+                    onClick={() => handleMixGenerate(task.id, 'final')}
                     className="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition-colors"
                   >
-                    Use This Take for Final Mix
+                    Generate Final Mix
                   </button>
+                )}
+
+                {/* Dialogue: Mix Check or Final button */}
+                {task.status === 'completed' && task.previewUrl && !task.finalUrl && !hasFinal && session.mode === 'dialogue' && (
+                  <div className="mt-2 flex gap-2">
+                    {!hasMixCheck && session.mixCheckCount < 2 && (
+                      <button
+                        onClick={() => handleMixGenerate(task.id, 'mix_check')}
+                        className="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-sm font-medium text-black transition-colors"
+                      >
+                        Generate Mix Check
+                      </button>
+                    )}
+                    {hasMixCheck && (
+                      <button
+                        onClick={() => handleMixGenerate(task.id, 'final')}
+                        className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Generate Final Mix
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             );

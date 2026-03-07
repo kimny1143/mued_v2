@@ -46,8 +46,9 @@ export const dialSessionStatusEnum = pgEnum('dial_session_status', [
 
 export const dialTaskTypeEnum = pgEnum('dial_task_type', [
   'preview',
-  'final_basic',
-  'final_advanced',
+  'mix_check',       // Advanced preview with EQ/comp (250cr, WAV) — user listens & provides feedback
+  'final_basic',     // Omakase final (gain only)
+  'final_advanced',  // Dialogue final with EQ/comp adjustments
   'mastering',
 ]);
 
@@ -83,6 +84,7 @@ export const dialSessions = pgTable('dial_sessions', {
   // Payment fields
   stripeCheckoutSessionId: text('stripe_checkout_session_id'),
   paymentStatus: text('payment_status').notNull().default('pending'), // pending/paid/failed/refunded
+  mixCheckCount: integer('mix_check_count').notNull().default(0), // Max 2 mix checks per session
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({

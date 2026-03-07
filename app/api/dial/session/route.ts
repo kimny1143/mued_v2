@@ -112,7 +112,7 @@ export const GET = withDialAuth(async (auth) => {
                   status: 'failed',
                 }).where(eq(dialTasks.id, task.id));
               }
-            } else if (task.taskType === 'final_basic' || task.taskType === 'final_advanced') {
+            } else if (task.taskType === 'final_basic' || task.taskType === 'final_advanced' || task.taskType === 'mix_check') {
               // Dev key: dummy track URLs cause /retrievefinalmix to fail — skip polling
               if (isRoExDevKey()) continue;
 
@@ -130,8 +130,10 @@ export const GET = withDialAuth(async (auth) => {
                   completedAt: new Date(),
                 }).where(eq(dialTasks.id, task.id));
 
+                // Mix check: stay in mixing state. Final: mark completed.
+                const newStatus = task.taskType === 'mix_check' ? 'mixing' : 'completed';
                 await db.update(dialSessions).set({
-                  status: 'completed',
+                  status: newStatus,
                   updatedAt: new Date(),
                 }).where(eq(dialSessions.id, sessionId));
               } else if (result.status === 'failed') {

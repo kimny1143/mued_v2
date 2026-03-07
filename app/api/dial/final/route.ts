@@ -2,26 +2,114 @@
  * MUEDial Final Mix API
  * POST /api/dial/final
  *
- * Submits a final mix request (basic or advanced).
- * RoEx credit costs (per tonn-portal.roexaudio.com/pricing):
- * - Preview: FREE (for accounts with purchased credits)
- * - Settings Only (FX retrieval): 125 cr
- * - Full Track (final mix): 250 cr
- * - Processed Stems: 50 cr
+ * Handles both Mix Check and Final Mix generation.
+ *
+ * Dialogue mode flow:
+ *   Mix Check (type: 'mix_check')  — 250cr, WAV, EQ/comp applied, user listens
+ *   Final Mix (type: 'final')      — 250cr, WAV + stems, micro-adjustments
+ *
+ * Omakase mode:
+ *   Final Basic (type: 'final')    — 250cr, WAV, gain-only
+ *
+ * Max 2 mix checks per session. 3rd call must be type: 'final'.
  */
 
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
-import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
-import { createRoExClient, isRoExDevKey, mixFinalBasic, pollMixPreview } from '@/lib/roex';
+import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
+import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMixPreview } from '@/lib/roex';
+import type { AdvancedTrackAdjustment } from '@/lib/roex';
 import { db } from '@/db';
-import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
+import { dialTasks, dialSessions, dialTracks, dialMessages } from '@/db/schema';
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface EqBand {
+  freq: number;
+  gainDb: number;
+  q: number;
+}
+
+interface ParameterChanges {
+  track: string;
+  changes: {
+    gainDb?: number;
+    compRatio?: number;
+    compThresholdDb?: number;
+    compAttackMs?: number;
+    compReleaseMs?: number;
+    eqBands?: EqBand[];
+    panAngleDegrees?: number;
+  };
+}
+
+// ─── Validation ─────────────────────────────────────────────────────────────
 
 const finalRequestSchema = z.object({
-  taskId: z.string().uuid(), // The dial_tasks.id of the completed preview
+  taskId: z.string().uuid(),          // The dial_tasks.id of the completed preview
+  type: z.enum(['mix_check', 'final']).default('final'),
+  parameterChanges: z.any().optional(), // Advanced params from Hoo chat (Phase 2/3)
 });
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Find the latest assistant message with parameterChanges for this session.
+ * Used as fallback when client doesn't send parameterChanges explicitly.
+ */
+async function getLatestParameterChanges(sessionId: string): Promise<ParameterChanges[] | null> {
+  const messages = await db.query.dialMessages.findMany({
+    where: eq(dialMessages.sessionId, sessionId),
+  });
+
+  // Walk backwards to find the latest assistant message with parameter_changes
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg.role === 'assistant' && msg.parameterChanges) {
+      return msg.parameterChanges as ParameterChanges[];
+    }
+  }
+  return null;
+}
+
+/**
+ * Build advanced track data from Hoo's parameter changes + track info.
+ */
+function buildAdvancedTrackData(
+  tracks: { roexUploadUrl: string; originalFilename: string }[],
+  paramChanges: ParameterChanges[],
+): AdvancedTrackAdjustment[] {
+  return tracks.map((t) => {
+    // Match parameter changes to track by filename
+    const pc = paramChanges.find((p) =>
+      t.originalFilename.toLowerCase().includes(p.track.toLowerCase()) ||
+      p.track.toLowerCase().includes(t.originalFilename.toLowerCase().replace(/\.[^.]+$/, '')),
+    );
+
+    const changes = pc?.changes ?? {};
+
+    return {
+      trackUrl: t.roexUploadUrl,
+      gainDb: changes.gainDb ?? 0,
+      eqBands: changes.eqBands?.map((b) => ({
+        frequency: b.freq,
+        gain: b.gainDb,
+        q: b.q,
+      })),
+      compressor: changes.compRatio != null ? {
+        ratio: changes.compRatio,
+        threshold: changes.compThresholdDb ?? -20,
+        attack: changes.compAttackMs ?? 10,
+        release: changes.compReleaseMs ?? 100,
+      } : undefined,
+      panAngleDegrees: changes.panAngleDegrees,
+    };
+  });
+}
+
+// ─── POST Handler ───────────────────────────────────────────────────────────
 
 export const POST = withDialAuth(async (auth) => {
   try {
@@ -31,7 +119,7 @@ export const POST = withDialAuth(async (auth) => {
       return apiValidationError('Invalid request', parsed.error.errors);
     }
 
-    const { taskId } = parsed.data;
+    const { taskId, type, parameterChanges: clientParams } = parsed.data;
 
     // Verify task ownership (preview task → session → user)
     const result = await verifyDialTaskOwnership(taskId, auth);
@@ -42,57 +130,85 @@ export const POST = withDialAuth(async (auth) => {
     const { task: previewTask } = result;
 
     if (previewTask.status !== 'completed') {
-      return apiValidationError('Preview must be completed before generating final mix');
+      return apiValidationError('Preview must be completed before generating mix');
     }
 
-    // Get tracks for the session
+    // Get session
+    const sessionRow = await db.query.dialSessions.findFirst({
+      where: eq(dialSessions.id, previewTask.sessionId),
+    });
+    if (!sessionRow) {
+      return apiNotFound('Session not found');
+    }
+
+    // Enforce mix check limit (max 2)
+    if (type === 'mix_check' && sessionRow.mixCheckCount >= 2) {
+      return apiError('Mix check limit reached (max 2). Please generate Final Mix instead.', {
+        code: 'MIX_CHECK_LIMIT',
+        status: 400,
+      });
+    }
+
+    // Get tracks
     const tracks = await db.query.dialTracks.findMany({
       where: eq(dialTracks.sessionId, previewTask.sessionId),
     });
 
-    // Get session to check mode
-    const sessionRow = await db.query.dialSessions.findFirst({
-      where: eq(dialSessions.id, previewTask.sessionId),
-    });
+    // ─── Build mix request ────────────────────────────────────────────────
 
-    // For dialogue mode: retrieve FX settings if not already stored (125 cr per RoEx pricing)
-    // For omakase mode: skip FX retrieval, use gainDb: 0 (RoEx applies preview settings)
-    let fxSettings = previewTask.fxSettings as Record<string, Record<string, unknown>> | null;
+    const isDialogue = sessionRow.mode === 'dialogue';
+    const isAdvanced = isDialogue && (type === 'mix_check' || type === 'final');
 
-    if (!fxSettings && sessionRow?.mode === 'dialogue' && !isRoExDevKey()) {
-      const client2 = createRoExClient();
-      const fxResult = await pollMixPreview(client2, previewTask.roexTaskId, {
-        retrieveFxSettings: true,
-      });
-      fxSettings = fxResult.fxSettings ?? null;
-
-      // Cache FX settings on the preview task for future use
-      if (fxSettings) {
-        await db.update(dialTasks).set({ fxSettings }).where(eq(dialTasks.id, previewTask.id));
-      }
-    }
-
-    // Build trackData — use gainDb from FX settings if available (dialogue), otherwise 0 (omakase)
-    const trackData = tracks.map((t) => {
-      const urlKey = t.roexUploadUrl.split('/').pop()?.split('?')[0] ?? '';
-      const fx = fxSettings?.[urlKey];
-      const gainDb = (fx?.gain_settings as Record<string, number>)?.gain_db ?? 0;
-      return { trackUrl: t.roexUploadUrl, gainDb };
-    });
-
-    // Dev key returns dummy URLs that RoEx can't process for final mix.
-    // Mock the response so UI flow can be tested without real credits.
-    // On production (no ROEX_DEV_API_KEY), this is always false.
     let mixResult;
+
     if (isRoExDevKey()) {
+      // Dev key mock
       mixResult = {
-        taskId: `dev-final-${Date.now()}`,
-        finalUrl: 'https://example.com/dev-final-mix.wav',
+        taskId: `dev-${type}-${Date.now()}`,
+        finalUrl: `https://example.com/dev-${type}.wav`,
         previewUrl: null,
         fxSettings: null,
-        stemsUrl: null,
+        stemsUrl: type === 'final' ? { stem1: 'https://example.com/dev-stem1.wav' } : null,
       };
+    } else if (isAdvanced) {
+      // Dialogue mode: use advanced params from Hoo chat
+      const paramChanges = (clientParams as ParameterChanges[] | undefined)
+        ?? await getLatestParameterChanges(previewTask.sessionId);
+
+      if (!paramChanges || paramChanges.length === 0) {
+        return apiValidationError('No parameter changes found. Ask Hoo for mixing suggestions first.');
+      }
+
+      const advancedTrackData = buildAdvancedTrackData(tracks, paramChanges);
+
+      const client = createRoExClient();
+      mixResult = await mixFinalAdvanced(client, {
+        taskId: previewTask.roexTaskId,
+        trackData: advancedTrackData,
+      });
     } else {
+      // Omakase mode: basic final (gain only)
+      // Retrieve FX settings for gain values if not cached
+      let fxSettings = previewTask.fxSettings as Record<string, Record<string, unknown>> | null;
+
+      if (!fxSettings) {
+        const client2 = createRoExClient();
+        const fxResult = await pollMixPreview(client2, previewTask.roexTaskId, {
+          retrieveFxSettings: true,
+        });
+        fxSettings = fxResult.fxSettings ?? null;
+        if (fxSettings) {
+          await db.update(dialTasks).set({ fxSettings }).where(eq(dialTasks.id, previewTask.id));
+        }
+      }
+
+      const trackData = tracks.map((t) => {
+        const urlKey = t.roexUploadUrl.split('/').pop()?.split('?')[0] ?? '';
+        const fx = fxSettings?.[urlKey];
+        const gainDb = (fx?.gain_settings as Record<string, number>)?.gain_db ?? 0;
+        return { trackUrl: t.roexUploadUrl, gainDb };
+      });
+
       const client = createRoExClient();
       mixResult = await mixFinalBasic(client, {
         taskId: previewTask.roexTaskId,
@@ -100,11 +216,14 @@ export const POST = withDialAuth(async (auth) => {
       });
     }
 
-    // Save final task
+    // ─── Save task & update session ───────────────────────────────────────
+
+    const taskType = type === 'mix_check' ? 'mix_check' as const : (isAdvanced ? 'final_advanced' as const : 'final_basic' as const);
+
     const [task] = await db.insert(dialTasks).values({
       sessionId: previewTask.sessionId,
       roexTaskId: mixResult.taskId || previewTask.roexTaskId,
-      taskType: 'final_basic',
+      taskType,
       status: mixResult.finalUrl ? 'completed' : 'processing',
       finalUrl: mixResult.finalUrl,
       fxSettings: mixResult.fxSettings ?? null,
@@ -112,8 +231,17 @@ export const POST = withDialAuth(async (auth) => {
       completedAt: mixResult.finalUrl ? new Date() : null,
     }).returning();
 
-    // Update session status
-    if (mixResult.finalUrl) {
+    // Update session
+    if (type === 'mix_check') {
+      // Increment mix check count, stay in mixing state
+      await db.update(dialSessions)
+        .set({
+          mixCheckCount: sessionRow.mixCheckCount + 1,
+          status: 'mixing',
+          updatedAt: new Date(),
+        })
+        .where(eq(dialSessions.id, previewTask.sessionId));
+    } else if (mixResult.finalUrl) {
       await db.update(dialSessions)
         .set({ status: 'completed', updatedAt: new Date() })
         .where(eq(dialSessions.id, previewTask.sessionId));
@@ -125,12 +253,13 @@ export const POST = withDialAuth(async (auth) => {
 
     return apiSuccess({
       taskId: task.id,
+      type: taskType,
       status: task.status,
       finalUrl: mixResult.finalUrl,
       stemsUrls: mixResult.stemsUrl,
       fxSettings: mixResult.fxSettings,
     });
   } catch (error) {
-    return apiServerError(error instanceof Error ? error.message : 'Final mix failed');
+    return apiServerError(error instanceof Error ? error.message : 'Mix generation failed');
   }
 });

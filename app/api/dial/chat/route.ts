@@ -124,6 +124,22 @@ export const POST = withDialAuth(async (auth) => {
       orderBy: [desc(dialTasks.createdAt)],
     });
 
+    // Determine current phase based on session state
+    const hasMixCheck = session.mixCheckCount > 0;
+    const hasFinal = latestTask?.taskType === 'final_advanced' || latestTask?.taskType === 'final_basic';
+    let phase: 1 | 2 | 3;
+    if (hasFinal) {
+      phase = 3; // Already have final — shouldn't normally chat here, but handle gracefully
+    } else if (hasMixCheck) {
+      phase = 3; // Mix Check done — user is providing feedback for final
+    } else if (latestTask?.taskType === 'preview' && latestTask?.status === 'completed') {
+      // Has completed preview — could be Phase 1 (still adjusting) or Phase 2 (ready for mix check)
+      // Phase transition happens when user says "OK" in chat — Hoo handles this via conversation
+      phase = 1; // Default to Phase 1; Hoo will propose Phase 2 when user says "OK"
+    } else {
+      phase = 1;
+    }
+
     // Build system prompt with session context
     const promptInput: DialPromptInput = {
       musicalStyle: session.musicalStyle,
@@ -138,6 +154,8 @@ export const POST = withDialAuth(async (auth) => {
         ? buildFxSummary(latestTask.fxSettings)
         : undefined,
       previewUrl: latestTask?.previewUrl ?? undefined,
+      phase,
+      mixCheckCount: session.mixCheckCount,
     };
 
     const systemPrompt = buildDialSystemPrompt(promptInput);

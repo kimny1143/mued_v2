@@ -51,6 +51,7 @@ interface ChatPanelProps {
   tracks: Track[];
   headers: Record<string, string>;
   onParametersApplied: () => void;
+  onPreviewRequested?: () => void;
 }
 
 const VALID_PRESENCE = ['NORMAL', 'LEAD', 'BACKGROUND'];
@@ -83,7 +84,7 @@ function splitChanges(changes: ParameterChange['changes']) {
   return { preview, final: final_ };
 }
 
-export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: ChatPanelProps) {
+export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onPreviewRequested }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -196,10 +197,19 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: C
 
       const parameterChanges: ParameterChange[] | null = data.data.parameterChanges;
 
-      // Auto-apply parameter changes immediately
+      // Auto-apply preview parameter changes immediately
       let applied = false;
       if (parameterChanges && parameterChanges.length > 0) {
         applied = await applyChanges(parameterChanges);
+        // If preview params were applied, auto-trigger preview regeneration
+        if (applied && onPreviewRequested) {
+          const hasPreviewChanges = parameterChanges.some((pc) =>
+            Object.keys(pc.changes).some((k) => PREVIEW_KEYS.has(k)),
+          );
+          if (hasPreviewChanges) {
+            onPreviewRequested();
+          }
+        }
       }
 
       // Add assistant response
