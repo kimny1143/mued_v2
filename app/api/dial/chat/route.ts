@@ -24,13 +24,27 @@ import { dialTracks, dialMessages, dialTasks } from '@/db/schema';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
+interface EqBand {
+  freq: number;
+  gainDb: number;
+  q: number;
+}
+
 interface ParameterChange {
   track: string;
   changes: {
+    // Preview params (applied immediately, reflected in next preview)
     presenceSetting?: string;
-    gainDb?: number;
     panPreference?: string;
     reverbPreference?: string;
+    // Final params (stored for final mix generation)
+    gainDb?: number;
+    compRatio?: number;
+    compThresholdDb?: number;
+    compAttackMs?: number;
+    compReleaseMs?: number;
+    eqBands?: EqBand[];
+    panAngleDegrees?: number;
   };
   reason: string;
 }

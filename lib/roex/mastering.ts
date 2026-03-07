@@ -24,7 +24,7 @@ function parseMasteringResponse(raw: unknown): MasteringResult {
 // ─── API Methods ────────────────────────────────────────────────────────────
 
 /**
- * Submit a mastering preview request.
+ * Submit a mastering preview request (FREE - 0 credits).
  * Bypasses roex-python controller's webhookURL:null bug.
  */
 export async function masterPreview(

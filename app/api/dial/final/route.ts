@@ -3,8 +3,11 @@
  * POST /api/dial/final
  *
  * Submits a final mix request (basic or advanced).
- * - Basic: gain_db adjustments only (175-300cr)
- * - Advanced: gain + EQ + compressor + pan (175-300cr)
+ * RoEx credit costs (per tonn-portal.roexaudio.com/pricing):
+ * - Preview: FREE (for accounts with purchased credits)
+ * - Settings Only (FX retrieval): 125 cr
+ * - Full Track (final mix): 250 cr
+ * - Processed Stems: 50 cr
  */
 
 import { z } from 'zod';
@@ -52,7 +55,7 @@ export const POST = withDialAuth(async (auth) => {
       where: eq(dialSessions.id, previewTask.sessionId),
     });
 
-    // For dialogue mode: retrieve FX settings if not already stored (125cr one-time)
+    // For dialogue mode: retrieve FX settings if not already stored (125 cr per RoEx pricing)
     // For omakase mode: skip FX retrieval, use gainDb: 0 (RoEx applies preview settings)
     let fxSettings = previewTask.fxSettings as Record<string, Record<string, unknown>> | null;
 

@@ -2,16 +2,33 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+interface EqBand {
+  freq: number;
+  gainDb: number;
+  q: number;
+}
+
 interface ParameterChange {
   track: string;
   changes: {
+    // Preview params
     presenceSetting?: string;
-    gainDb?: number;
     panPreference?: string;
     reverbPreference?: string;
+    // Final params
+    gainDb?: number;
+    compRatio?: number;
+    compThresholdDb?: number;
+    compAttackMs?: number;
+    compReleaseMs?: number;
+    eqBands?: EqBand[];
+    panAngleDegrees?: number;
   };
   reason: string;
 }
+
+const PREVIEW_KEYS = new Set(['presenceSetting', 'panPreference', 'reverbPreference']);
+const FINAL_KEYS = new Set(['gainDb', 'compRatio', 'compThresholdDb', 'compAttackMs', 'compReleaseMs', 'eqBands', 'panAngleDegrees']);
 
 interface ChatMessage {
   id: string;
@@ -39,6 +56,32 @@ interface ChatPanelProps {
 const VALID_PRESENCE = ['NORMAL', 'LEAD', 'BACKGROUND'];
 const VALID_PAN = ['NO_PREFERENCE', 'LEFT', 'CENTRE', 'RIGHT'];
 const VALID_REVERB = ['NONE', 'LOW', 'MEDIUM', 'HIGH'];
+
+function formatParamValue(key: string, value: unknown): string {
+  if (key === 'eqBands' && Array.isArray(value)) {
+    return value
+      .map((b: EqBand) => `${b.freq >= 1000 ? `${b.freq / 1000}k` : b.freq}Hz ${b.gainDb > 0 ? '+' : ''}${b.gainDb}dB`)
+      .join(', ');
+  }
+  if (key === 'panAngleDegrees') return `${value}°`;
+  if (key === 'gainDb') return `${value}dB`;
+  if (key === 'compRatio') return `${value}:1`;
+  if (key === 'compThresholdDb') return `${value}dB`;
+  if (key === 'compAttackMs') return `${value}ms`;
+  if (key === 'compReleaseMs') return `${value}ms`;
+  return String(value);
+}
+
+function splitChanges(changes: ParameterChange['changes']) {
+  const preview: [string, unknown][] = [];
+  const final_: [string, unknown][] = [];
+  for (const [k, v] of Object.entries(changes)) {
+    if (v === undefined || v === null) continue;
+    if (PREVIEW_KEYS.has(k)) preview.push([k, v]);
+    else if (FINAL_KEYS.has(k)) final_.push([k, v]);
+  }
+  return { preview, final: final_ };
+}
 
 export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -219,39 +262,77 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: C
                     : msg.content}
                 </div>
 
-                {/* Parameter changes card — auto-applied */}
-                {msg.role === 'assistant' && msg.parameterChanges && msg.parameterChanges.length > 0 && (
-                  <div className={`mt-2 p-3 rounded-lg ${
-                    msg.applied
-                      ? 'bg-green-900/10 border border-green-800/30'
-                      : 'bg-zinc-800/50 border border-zinc-700/30'
-                  }`}>
-                    <div className={`text-xs font-medium mb-2 flex items-center gap-1.5 ${
-                      msg.applied ? 'text-green-400' : 'text-zinc-500'
-                    }`}>
-                      {msg.applied && (
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                      {msg.applied ? 'Applied' : 'No valid changes'}
-                    </div>
-                    <div className="space-y-1.5">
-                      {msg.parameterChanges.map((pc, i) => (
-                        <div key={i} className="text-xs">
-                          <span className="text-white font-medium">{pc.track}</span>
-                          <span className="text-zinc-500 mx-1">&rarr;</span>
-                          <span className="text-zinc-400">
-                            {Object.entries(pc.changes)
-                              .filter(([k]) => k !== 'gainDb')
-                              .map(([k, v]) => `${k}: ${v}`)
-                              .join(', ')}
-                          </span>
+                {/* Parameter changes card */}
+                {msg.role === 'assistant' && msg.parameterChanges && msg.parameterChanges.length > 0 && (() => {
+                  const hasPreview = msg.parameterChanges.some((pc) => splitChanges(pc.changes).preview.length > 0);
+                  const hasFinal = msg.parameterChanges.some((pc) => splitChanges(pc.changes).final.length > 0);
+
+                  return (
+                    <div className="mt-2 space-y-2">
+                      {/* Preview params — auto-applied */}
+                      {hasPreview && (
+                        <div className={`p-3 rounded-lg ${
+                          msg.applied
+                            ? 'bg-green-900/10 border border-green-800/30'
+                            : 'bg-zinc-800/50 border border-zinc-700/30'
+                        }`}>
+                          <div className={`text-xs font-medium mb-2 flex items-center gap-1.5 ${
+                            msg.applied ? 'text-green-400' : 'text-zinc-500'
+                          }`}>
+                            {msg.applied && (
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                            {msg.applied ? 'Preview Applied' : 'No valid changes'}
+                          </div>
+                          <div className="space-y-1.5">
+                            {msg.parameterChanges.map((pc, i) => {
+                              const { preview } = splitChanges(pc.changes);
+                              if (preview.length === 0) return null;
+                              return (
+                                <div key={i} className="text-xs">
+                                  <span className="text-white font-medium">{pc.track}</span>
+                                  <span className="text-zinc-500 mx-1">&rarr;</span>
+                                  <span className="text-zinc-400">
+                                    {preview.map(([k, v]) => `${k}: ${formatParamValue(k, v)}`).join(', ')}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      ))}
+                      )}
+
+                      {/* Final mix params — stored for final generation */}
+                      {hasFinal && (
+                        <div className="p-3 rounded-lg bg-amber-900/10 border border-amber-800/30">
+                          <div className="text-xs font-medium mb-2 flex items-center gap-1.5 text-amber-400">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Final Mix Settings
+                          </div>
+                          <div className="space-y-1.5">
+                            {msg.parameterChanges.map((pc, i) => {
+                              const { final: finalParams } = splitChanges(pc.changes);
+                              if (finalParams.length === 0) return null;
+                              return (
+                                <div key={i} className="text-xs">
+                                  <span className="text-white font-medium">{pc.track}</span>
+                                  <span className="text-zinc-500 mx-1">&rarr;</span>
+                                  <span className="text-amber-300/70">
+                                    {finalParams.map(([k, v]) => `${k}: ${formatParamValue(k, v)}`).join(', ')}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           ))

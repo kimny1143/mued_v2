@@ -67,7 +67,7 @@ function parseMixResponse(raw: Record<string, unknown>): MixResult {
 // ─── API Methods ────────────────────────────────────────────────────────────
 
 /**
- * Submit a mix preview request.
+ * Submit a mix preview request (FREE - 0 credits).
  * Bypasses roex-python controller's webhookURL:null bug by POSTing directly.
  */
 export async function mixPreview(
@@ -91,6 +91,7 @@ export async function mixPreview(
 
 /**
  * Poll for mix preview completion.
+ * FREE without FX settings; 125 credits with retrieveFxSettings=true.
  * Returns updated MixResult when status changes.
  */
 export async function pollMixPreview(
@@ -114,7 +115,7 @@ export async function pollMixPreview(
 
 /**
  * Request a basic final mix (gain_db adjustments only).
- * Uses /applyaudioeffects endpoint.
+ * Uses /retrievefinalmix endpoint (250 credits, or 125 if FX settings already retrieved).
  */
 export async function mixFinalBasic(
   client: RoExClient,
@@ -132,13 +133,13 @@ export async function mixFinalBasic(
     },
   };
 
-  const raw = await client.post<Record<string, unknown>>('/applyaudioeffects', body);
+  const raw = await client.post<Record<string, unknown>>('/retrievefinalmix', body);
   return parseMixResponse(raw);
 }
 
 /**
  * Request an advanced final mix (EQ, compressor, pan adjustments).
- * Uses /applyaudioeffects endpoint.
+ * Uses /retrievefinalmix endpoint.
  */
 export async function mixFinalAdvanced(
   client: RoExClient,
@@ -161,7 +162,7 @@ export async function mixFinalAdvanced(
     },
   };
 
-  const raw = await client.post<Record<string, unknown>>('/applyaudioeffects', body);
+  const raw = await client.post<Record<string, unknown>>('/retrievefinalmix', body);
   return parseMixResponse(raw);
 }
 

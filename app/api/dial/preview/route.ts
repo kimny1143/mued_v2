@@ -164,10 +164,11 @@ export const GET = withDialAuth(async (auth) => {
       });
     }
 
-    // Poll RoEx
+    // Poll RoEx — do NOT request FX settings here (costs 125 credits).
+    // FX settings are retrieved separately in /api/dial/final when needed (dialogue mode).
     const client = createRoExClient();
     const pollResult = await pollMixPreview(client, task.roexTaskId, {
-      retrieveFxSettings: true,
+      retrieveFxSettings: false,
     });
 
     const isCompleted = !!pollResult.previewUrl;

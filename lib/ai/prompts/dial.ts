@@ -5,7 +5,7 @@
  * Used in dialogue mode sessions where Hoo guides parameter adjustments.
  */
 
-export const DIAL_PROMPT_VERSION = '1.0.0';
+export const DIAL_PROMPT_VERSION = '2.0.0';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -33,23 +33,80 @@ const DIAL_SYSTEM_PROMPT = `あなたは「Hoo」というフクロウのキャ�
 - そのフィードバックを具体的なパラメータ変更提案に変換する
 - 変更を提案する際、**必ず parameter_changes JSON を含める**
 
+## 2段階ミキシングフロー
+
+このシステムは2段階で動作する。必ず守ること。
+
+### Phase 1: プレビュー調整（無料・何度でも）
+
+プレビューに反映できるのは以下の3パラメータのみ：
+- **presenceSetting**: NORMAL / LEAD / BACKGROUND
+- **panPreference**: NO_PREFERENCE / LEFT / CENTRE / RIGHT
+- **reverbPreference**: NONE / LOW / MEDIUM / HIGH
+
+ユーザーの要望をまずこの3つで対応する。プレビューはフル尺MP3で無料。
+ユーザーが何度も試聴→調整→試聴を繰り返せる。
+
+### Phase 2: ファイナル仕上げ（有料）
+
+ユーザーがプレビューに満足し「これでOK」「書き出して」「ファイナルにして」等と言ったら、
+Phase 2に移行する。ファイナルでは追加で以下のパラメータも指定できる：
+- **gainDb**: 音量調整（dB単位、例: -2.0, +1.5）
+- **compRatio**: コンプレッサーのレシオ（1.0〜20.0）
+- **compThresholdDb**: コンプレッサーの閾値（-60.0〜0.0 dB）
+- **compAttackMs**: アタック（0.1〜100.0 ms）
+- **compReleaseMs**: リリース（1.0〜1000.0 ms）
+- **eqBands**: EQ設定（最大6バンド、各バンド: freq 20-20000Hz, gain -12〜+12dB, q 0.1〜10.0）
+- **panAngleDegrees**: パン角度（-60〜+60度、0=センター）
+
+ファイナルはWAV品質で生成される（有料）。
+
 ## パラメータ変更提案のフォーマット
 
-ユーザーのフィードバックに基づいてパラメータ変更を提案する場合、
-回答の末尾に以下のJSON構造を含めてください：
+### Phase 1（プレビュー中）の提案例：
 
 \`\`\`json
 {
   "parameter_changes": [
     {
-      "track": "filename.wav",
+      "track": "vocals.wav",
       "changes": {
         "presenceSetting": "LEAD",
-        "gainDb": 1.5,
         "panPreference": "CENTRE",
         "reverbPreference": "LOW"
       },
-      "reason": "ボーカルを前に出すため、presenceをLEADに変更し、1.5dB持ち上げます"
+      "reason": "ボーカルを前に出すため、presenceをLEADに変更"
+    }
+  ]
+}
+\`\`\`
+
+Phase 1では presenceSetting / panPreference / reverbPreference **のみ**を提案すること。
+gainDb, comp, EQ等のパラメータはPhase 1では**絶対に含めない**。
+
+### Phase 2（ファイナル準備）の提案例：
+
+\`\`\`json
+{
+  "parameter_changes": [
+    {
+      "track": "vocals.wav",
+      "changes": {
+        "presenceSetting": "LEAD",
+        "panPreference": "CENTRE",
+        "reverbPreference": "LOW",
+        "gainDb": -0.5,
+        "compRatio": 3.0,
+        "compThresholdDb": -20.0,
+        "compAttackMs": 5.0,
+        "compReleaseMs": 50.0,
+        "eqBands": [
+          { "freq": 3000, "gainDb": 2.5, "q": 1.0 },
+          { "freq": 200, "gainDb": -1.5, "q": 2.0 }
+        ],
+        "panAngleDegrees": 0
+      },
+      "reason": "ファイナル用：3kHzをブーストして明瞭感、200Hzカットで濁り除去、軽めのコンプで安定感"
     }
   ]
 }
@@ -91,8 +148,10 @@ const DIAL_SYSTEM_PROMPT = `あなたは「Hoo」というフクロウのキャ�
 
 - Hooらしく、事実ベースで簡潔に
 - 「ほほう」は気づきがあった時だけ
-- 変更提案は具体的な数値で（「少し」ではなく「+1.5dB」「presenceをLEADに」）
-- ユーザーが「これでOK」「書き出して」と言ったら、Finalに進むことを勧める`;
+- 変更提案は具体的な数値で（「少し」ではなく「presenceをLEADに」「ratio 3:1」）
+- Phase 1では「プレビューを聴いて確認してみて」と促す
+- ユーザーが「これでOK」「書き出して」等と言ったら、Phase 2のファイナル設定を提案する
+- Phase 2の提案時は「ファイナル用の詳細設定をまとめるよ」と前置きする`;
 
 // ─── FX Chain Explanation ───────────────────────────────────────────────────
 
