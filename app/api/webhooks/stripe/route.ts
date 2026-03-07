@@ -147,7 +147,11 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
 
       // ─── MUEDial: Route dial-specific checkouts ───────────────
       if (session.metadata?.service === 'dial') {
-        await handleDialCheckoutCompleted(tx, session);
+        if (session.metadata.purchaseType === 'additional_cycle') {
+          await handleDialAdditionalCycle(tx, session);
+        } else {
+          await handleDialCheckoutCompleted(tx, session);
+        }
         break;
       }
 
@@ -889,6 +893,59 @@ async function handleDialCheckoutCompleted(
 
     logger.info(`[Dial Webhook] Subscription created: ${stripeSubscriptionId} for user: ${userId}`);
   }
+}
+
+async function handleDialAdditionalCycle(
+  tx: Transaction,
+  session: Stripe.Checkout.Session,
+) {
+  const { dialSessionId, purchaseId } = session.metadata || {};
+
+  if (!dialSessionId || !purchaseId) {
+    logger.error('[Dial Webhook] Missing metadata for additional cycle purchase');
+    return;
+  }
+
+  // Update purchase status
+  await tx
+    .update(dialPurchases)
+    .set({
+      status: 'completed',
+      stripePaymentIntentId: session.payment_intent as string,
+      completedAt: new Date(),
+    })
+    .where(eq(dialPurchases.id, purchaseId));
+
+  // Increment additionalCyclesPurchased on the session
+  const [dialSession] = await tx
+    .select()
+    .from(dialSessions)
+    .where(eq(dialSessions.id, dialSessionId))
+    .limit(1);
+
+  if (dialSession) {
+    await tx
+      .update(dialSessions)
+      .set({
+        additionalCyclesPurchased: dialSession.additionalCyclesPurchased + 1,
+        updatedAt: new Date(),
+      })
+      .where(eq(dialSessions.id, dialSessionId));
+  }
+
+  logger.info(`[Dial Webhook] Additional cycle purchased for session: ${dialSessionId}`);
+
+  // Send email notification (async, non-blocking)
+  setImmediate(async () => {
+    try {
+      await notificationService.onDialAdditionalCyclePurchased({
+        sessionId: dialSessionId,
+        email: session.customer_email || session.customer_details?.email || '',
+      });
+    } catch (error) {
+      logger.error('[Dial Webhook] Failed to send additional cycle notification', { error });
+    }
+  });
 }
 
 async function handleDialSubscriptionUpdated(

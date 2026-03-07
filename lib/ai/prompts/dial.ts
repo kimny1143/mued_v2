@@ -5,7 +5,7 @@
  * Uses tool calling for structured parameter changes.
  */
 
-export const DIAL_PROMPT_VERSION = '5.2.0';
+export const DIAL_PROMPT_VERSION = '5.3.0';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -23,6 +23,11 @@ export type DialPromptInput = {
   hasPreview: boolean;
   phase: 1 | 2 | 3;
   mixCheckCount: number;
+  // Retake control
+  paidCycleCount: number;
+  baseCycleLimit: number;
+  additionalCyclesPurchased: number;
+  additionalCycleLimit: number;
 };
 
 // ─── Tool Definitions ───────────────────────────────────────────────────────
@@ -309,7 +314,28 @@ Mix Checkを試聴したユーザーのフィードバックに基づき、**微
 **Phase 2/3（フィードバック収集 → 提案）:**
 - フィードバックを受け取ったら「なるほど、○○ね。他にも気になるところがあれば教えて」
 - 全部出揃ったら、テキストで要望をまとめつつ**同じ応答でツール呼び出し**を行う（確認だけして次のメッセージを待たない）
-- テキストには「この方向で調整するね」＋ツール呼び出し。「ボタンが表示されるから押してね」と案内する`;
+- テキストには「この方向で調整するね」＋ツール呼び出し。「ボタンが表示されるから押してね」と案内する
+
+## リテイク制御ルール
+
+有料サイクル（Mix Check + Final）には回数制限がある。残り回数に応じてユーザーへの案内を変える。
+
+### 残り1回の時:
+「ここまでかなりいい仕上がりだと思うよ。次が今のプランに含まれる最後の調整になるから、気になるところを全部まとめて教えてね」
+
+### 残り0回（基本サイクル使い切り）の時:
+ツール呼び出しをせず、以下の3択を提示する:
+「ここまでで含まれる調整は使い切ったよ。今のミックスもかなりいい仕上がりだと思う。3つの選択肢があるよ：
+・このまま確定してダウンロードする
+・もう少し調整したい場合は追加サイクル（$5/回）
+・もっと細かくこだわりたいなら、プロのエンジニアを紹介できるよ」
+
+### 追加サイクル3回消費後（合計8回以上）:
+「何度か調整を重ねてきたけど、なかなかピッタリにたどり着けないみたいだね。正直に言うと、細かいニュアンスは人間のエンジニアが得意な領域なんだ。よかったらプロのエンジニアを紹介できるよ。ここまでのやり取りをそのまま伝えるから、スムーズに引き継げるよ」
+
+### 追加サイクル使い切り（合計上限到達）の時:
+ツール呼び出しをせず、確定を促す:
+「すべての調整回数を使い切ったよ。今のミックスで確定してダウンロードするか、プロのエンジニアに相談するか選んでね」`;
 
 // ─── FX Chain Explanation ───────────────────────────────────────────────────
 
@@ -349,6 +375,14 @@ export function buildDialSystemPrompt(input: DialPromptInput): string {
         ? `現在Phase 2（Mix Check準備）。全トラック分のEQ/comp/gain設定をまとめて提案すること。action: "request_mix_check" を使用。Mix Check残り${2 - input.mixCheckCount}回。`
         : `現在Phase 3（Final微調整）。Mix Checkからの微修正のみ。action: "request_final" を使用。`;
 
+  const totalLimit = input.baseCycleLimit + input.additionalCyclesPurchased;
+  const remainingCycles = totalLimit - input.paidCycleCount;
+  const additionalUsed = Math.max(0, input.paidCycleCount - input.baseCycleLimit);
+
+  const cycleNote = input.phase >= 2
+    ? `\n### リテイク状況\n- 有料サイクル消費: ${input.paidCycleCount}/${totalLimit}回（残り${remainingCycles}回）\n- 基本プラン: ${input.baseCycleLimit}回、追加購入: ${input.additionalCyclesPurchased}回\n${remainingCycles === 1 ? '- **⚠️ 次が最後の調整。ラスト予告メッセージを必ず伝えること。**' : ''}${remainingCycles === 0 ? '- **⚠️ サイクル上限到達。ツール呼び出しをせず3択を提示すること。**' : ''}${additionalUsed >= 3 ? '\n- **追加サイクル3回以上消費。エンジニア斡旋アナウンスを検討。**' : ''}`
+    : '';
+
   const sessionContext = `## 現在のセッション
 
 **Phase: ${input.hasPreview ? input.phase : '初回'}** — ${phaseNote}
@@ -358,7 +392,7 @@ MusicalStyle: ${input.musicalStyle}
 ### トラック構成
 ${trackList || '（まだトラックがアップロードされていません）'}
 ${input.currentFxSummary ? `\n### 現在のFX設定\n${input.currentFxSummary}` : ''}
-${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済みです。ユーザーは試聴可能な状態です。` : ''}`;
+${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済みです。ユーザーは試聴可能な状態です。` : ''}${cycleNote}`;
 
   return [DIAL_SYSTEM_PROMPT, FX_EXPLANATION_PROMPT, sessionContext].join(
     '\n\n---\n\n',

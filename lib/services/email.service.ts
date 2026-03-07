@@ -117,6 +117,11 @@ export interface DialResultsReadyEmailData {
   downloadUrl: string;
 }
 
+export interface DialAdditionalCycleEmailData {
+  email: string;
+  sessionUrl: string;
+}
+
 // ========================================
 // Template Generators
 // ========================================
@@ -507,6 +512,32 @@ Download links are available for 7 days.
   },
 
   /**
+   * MUEDial additional cycle purchased
+   */
+  dialAdditionalCyclePurchased(data: DialAdditionalCycleEmailData): { subject: string; html: string; text: string } {
+    const subject = 'Your additional mix cycle is ready';
+
+    const html = baseTemplate(`
+      <h2 style="color: #059669; margin-top: 0;">Additional Cycle Activated</h2>
+      <p>Your additional retake cycle has been added to your session. You can now continue adjusting your mix.</p>
+
+      <p style="text-align: center;">
+        <a href="${data.sessionUrl}" class="button">Continue Your Session</a>
+      </p>
+    `);
+
+    const text = `
+Additional Cycle Activated
+
+Your additional retake cycle has been added to your session.
+
+Continue: ${data.sessionUrl}
+    `.trim();
+
+    return { subject, html, text };
+  },
+
+  /**
    * Payment failed notification
    */
   paymentFailed(data: PaymentFailedEmailData): { subject: string; html: string; text: string } {
@@ -703,6 +734,21 @@ class EmailService {
       to,
       ...template,
       tags: [{ name: 'type', value: 'dial_purchase_confirmed' }],
+    });
+  }
+
+  /**
+   * Send MUEDial additional cycle purchased notification
+   */
+  async sendDialAdditionalCyclePurchased(
+    to: EmailRecipient,
+    data: DialAdditionalCycleEmailData
+  ): Promise<EmailResult> {
+    const template = emailTemplates.dialAdditionalCyclePurchased(data);
+    return this.send({
+      to,
+      ...template,
+      tags: [{ name: 'type', value: 'dial_additional_cycle' }],
     });
   }
 

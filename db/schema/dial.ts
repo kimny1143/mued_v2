@@ -85,6 +85,11 @@ export const dialSessions = pgTable('dial_sessions', {
   stripeCheckoutSessionId: text('stripe_checkout_session_id'),
   paymentStatus: text('payment_status').notNull().default('pending'), // pending/paid/failed/refunded
   mixCheckCount: integer('mix_check_count').notNull().default(0), // Max 2 mix checks per session
+  // Retake control
+  paidCycleCount: integer('paid_cycle_count').notNull().default(0), // Total paid cycles consumed (mix_check + final)
+  baseCycleLimit: integer('base_cycle_limit').notNull().default(5), // Base plan paid cycle limit
+  additionalCyclesPurchased: integer('additional_cycles_purchased').notNull().default(0), // Additional cycles bought
+  additionalCycleLimit: integer('additional_cycle_limit').notNull().default(5), // Max additional cycles allowed
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -179,6 +184,7 @@ export const dialPurchaseTypeEnum = pgEnum('dial_purchase_type', [
   'dialogue',
   'dialogue_mastering',
   'fx_sheet',
+  'additional_cycle',
 ]);
 
 export const dialPurchaseStatusEnum = pgEnum('dial_purchase_status', [

@@ -149,6 +149,22 @@ export const POST = withDialAuth(async (auth) => {
       });
     }
 
+    // Enforce paid cycle limit (mix_check + final count toward paidCycleCount)
+    const totalCycleLimit = sessionRow.baseCycleLimit + sessionRow.additionalCyclesPurchased;
+    if (sessionRow.paidCycleCount >= totalCycleLimit) {
+      return apiError('Cycle limit reached. Purchase additional cycles or finalize.', {
+        code: 'CYCLE_LIMIT_REACHED',
+        status: 402,
+        details: {
+          paidCycleCount: sessionRow.paidCycleCount,
+          baseCycleLimit: sessionRow.baseCycleLimit,
+          additionalCyclesPurchased: sessionRow.additionalCyclesPurchased,
+          additionalCycleLimit: sessionRow.additionalCycleLimit,
+          canPurchaseMore: sessionRow.additionalCyclesPurchased < sessionRow.additionalCycleLimit,
+        },
+      });
+    }
+
     // Get tracks
     const tracks = await db.query.dialTracks.findMany({
       where: eq(dialTracks.sessionId, previewTask.sessionId),
@@ -162,13 +178,18 @@ export const POST = withDialAuth(async (auth) => {
     let mixResult;
 
     if (isRoExDevKey()) {
-      // Dev key mock
+      // Dev key mock — generate stem URLs from actual track names
+      const mockStems: Record<string, string> = {};
+      for (const t of tracks) {
+        const name = t.originalFilename.replace(/\.[^.]+$/, '');
+        mockStems[name] = `https://example.com/dev-stem-${name}.wav`;
+      }
       mixResult = {
         taskId: `dev-${type}-${Date.now()}`,
         finalUrl: `https://example.com/dev-${type}.wav`,
         previewUrl: null,
         fxSettings: null,
-        stemsUrl: type === 'final' ? { stem1: 'https://example.com/dev-stem1.wav' } : null,
+        stemsUrl: mockStems,
       };
     } else if (isAdvanced) {
       // Dialogue mode: use advanced params from Hoo chat
@@ -231,25 +252,36 @@ export const POST = withDialAuth(async (auth) => {
       completedAt: mixResult.finalUrl ? new Date() : null,
     }).returning();
 
-    // Update session
+    // Update session — increment paid cycle count + type-specific counters
     if (type === 'mix_check') {
-      // Increment mix check count, stay in mixing state
       await db.update(dialSessions)
         .set({
           mixCheckCount: sessionRow.mixCheckCount + 1,
+          paidCycleCount: sessionRow.paidCycleCount + 1,
           status: 'mixing',
           updatedAt: new Date(),
         })
         .where(eq(dialSessions.id, previewTask.sessionId));
     } else if (mixResult.finalUrl) {
       await db.update(dialSessions)
-        .set({ status: 'completed', updatedAt: new Date() })
+        .set({
+          paidCycleCount: sessionRow.paidCycleCount + 1,
+          status: 'completed',
+          updatedAt: new Date(),
+        })
         .where(eq(dialSessions.id, previewTask.sessionId));
     } else {
       await db.update(dialSessions)
-        .set({ status: 'mixing', updatedAt: new Date() })
+        .set({
+          paidCycleCount: sessionRow.paidCycleCount + 1,
+          status: 'mixing',
+          updatedAt: new Date(),
+        })
         .where(eq(dialSessions.id, previewTask.sessionId));
     }
+
+    const newPaidCycleCount = sessionRow.paidCycleCount + 1;
+    const newTotalLimit = sessionRow.baseCycleLimit + sessionRow.additionalCyclesPurchased;
 
     return apiSuccess({
       taskId: task.id,
@@ -258,6 +290,12 @@ export const POST = withDialAuth(async (auth) => {
       finalUrl: mixResult.finalUrl,
       stemsUrls: mixResult.stemsUrl,
       fxSettings: mixResult.fxSettings,
+      retake: {
+        paidCycleCount: newPaidCycleCount,
+        totalLimit: newTotalLimit,
+        remaining: newTotalLimit - newPaidCycleCount,
+        canPurchaseMore: sessionRow.additionalCyclesPurchased < sessionRow.additionalCycleLimit,
+      },
     });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Mix generation failed');

@@ -110,7 +110,7 @@ export const POST = withDialAuth(async (auth) => {
       phase = 1;
     }
 
-    // Build system prompt with session context
+    // Build system prompt with session context (including retake info)
     const promptInput: DialPromptInput = {
       musicalStyle: session.musicalStyle,
       tracks: tracks.map((t) => ({
@@ -127,6 +127,10 @@ export const POST = withDialAuth(async (auth) => {
       hasPreview: !!hasPreview,
       phase,
       mixCheckCount: session.mixCheckCount,
+      paidCycleCount: session.paidCycleCount,
+      baseCycleLimit: session.baseCycleLimit,
+      additionalCyclesPurchased: session.additionalCyclesPurchased,
+      additionalCycleLimit: session.additionalCycleLimit,
     };
 
     const systemPrompt = buildDialSystemPrompt(promptInput);

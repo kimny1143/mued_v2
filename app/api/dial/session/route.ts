@@ -127,6 +127,7 @@ export const GET = withDialAuth(async (auth) => {
                 await db.update(dialTasks).set({
                   status: 'completed',
                   finalUrl: result.finalUrl,
+                  stemsUrls: result.stemsUrl ?? null,
                   completedAt: new Date(),
                 }).where(eq(dialTasks.id, task.id));
 

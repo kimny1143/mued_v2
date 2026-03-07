@@ -22,6 +22,7 @@ import {
   type PaymentFailedEmailData,
   type DialPurchaseConfirmedEmailData,
   type DialResultsReadyEmailData,
+  type DialAdditionalCycleEmailData,
 } from './email.service';
 import { formatInTimeZone } from 'date-fns-tz';
 
@@ -90,6 +91,11 @@ export interface DialPurchaseNotificationData {
 export interface DialResultsNotificationData {
   sessionId: string;
   purchaseType: string;
+  email: string;
+}
+
+export interface DialAdditionalCycleNotificationData {
+  sessionId: string;
   email: string;
 }
 
@@ -531,6 +537,47 @@ class NotificationService {
       };
     } catch (error) {
       logger.error('[NotificationService] Failed to send dial results notification', {
+        error,
+        sessionId: data.sessionId,
+      });
+      return {
+        success: false,
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
+      };
+    }
+  }
+
+  /**
+   * Send notification when a MUEDial additional cycle is purchased
+   */
+  async onDialAdditionalCyclePurchased(data: DialAdditionalCycleNotificationData): Promise<NotificationResult> {
+    if (!data.email) {
+      return { success: false, errors: ['No email provided'] };
+    }
+
+    try {
+      const emailData: DialAdditionalCycleEmailData = {
+        email: data.email,
+        sessionUrl: `${APP_URL}/dial/session/${data.sessionId}`,
+      };
+
+      const result = await emailService.sendDialAdditionalCyclePurchased(
+        { email: data.email },
+        emailData,
+      );
+
+      logger.info('[NotificationService] Dial additional cycle notification sent', {
+        sessionId: data.sessionId,
+        success: result.success,
+      });
+
+      return {
+        success: result.success,
+        studentEmailSent: result.success,
+        errors: result.error ? [result.error] : undefined,
+      };
+    } catch (error) {
+      logger.error('[NotificationService] Failed to send dial additional cycle notification', {
         error,
         sessionId: data.sessionId,
       });

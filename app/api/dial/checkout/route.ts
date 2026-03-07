@@ -33,8 +33,8 @@ const stripe = new Stripe(stripeConfig.secretKey, {
 
 const DIAL_PRICES: Record<string, { amountCents: number; label: string }> = {
   omakase: { amountCents: 1200, label: 'MUEDial Omakase Mix' },
-  dialogue: { amountCents: 2300, label: 'MUEDial Dialogue Mix' },
-  dialogue_mastering: { amountCents: 3000, label: 'MUEDial Dialogue + Mastering' },
+  dialogue: { amountCents: 3500, label: 'MUEDial Dialogue Mix' },
+  dialogue_mastering: { amountCents: 4200, label: 'MUEDial Dialogue + Mastering' },
   fx_sheet: { amountCents: 500, label: 'MUEDial FX Sheet' },
 };
 
