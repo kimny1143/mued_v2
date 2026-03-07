@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 
 interface Track {
   id: string;
@@ -10,12 +11,18 @@ interface Track {
   presenceSetting: string;
 }
 
+interface PreviewParams {
+  musicalStyle: string;
+  tracks: { id: string; filename: string; instrumentGroup: string }[];
+}
+
 interface Task {
   id: string;
   taskType: string;
   status: string;
   previewUrl: string | null;
   finalUrl: string | null;
+  previewParams: PreviewParams | null;
   createdAt: string;
 }
 
@@ -34,9 +41,42 @@ const INSTRUMENT_GROUPS = [
   'VOCAL', 'GUITAR', 'BASS', 'DRUMS', 'KEYS', 'SYNTH', 'STRINGS', 'BRASS', 'OTHER',
 ];
 
+const MUSICAL_STYLES = [
+  { value: 'pop', label: 'Pop' },
+  { value: 'rock', label: 'Rock / Indie' },
+  { value: 'hiphop', label: 'Hip-Hop / Grime' },
+  { value: 'electronic', label: 'Electronic' },
+  { value: 'acoustic', label: 'Acoustic' },
+  { value: 'jazz', label: 'Jazz' },
+  { value: 'classical', label: 'Classical / Orchestral' },
+  { value: 'rnb', label: 'R&B' },
+  { value: 'metal', label: 'Metal' },
+  { value: 'reggae', label: 'Reggae / Dub' },
+  { value: 'other', label: 'Other' },
+];
+
+interface StagedFile {
+  file: File;
+  instrumentGroup: string;
+}
+
+function guessInstrumentGroup(filename: string): string {
+  const name = filename.toLowerCase();
+  if (/vocal|vox|voice|sing/i.test(name)) return 'VOCAL';
+  if (/drum|kit|snare|kick|hat|cymbal|tom/i.test(name)) return 'DRUMS';
+  if (/bass/i.test(name)) return 'BASS';
+  if (/guitar|gtr|guit/i.test(name)) return 'GUITAR';
+  if (/key|piano|organ|rhodes/i.test(name)) return 'KEYS';
+  if (/synth|pad|lead/i.test(name)) return 'SYNTH';
+  if (/string|violin|cello|viola/i.test(name)) return 'STRINGS';
+  if (/brass|trumpet|horn|trombone|sax/i.test(name)) return 'BRASS';
+  return 'OTHER';
+}
+
 export default function DialSessionPage() {
   const params = useParams();
   const sessionId = params.id as string;
+  const { isSignedIn } = useAuth();
 
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,10 +84,18 @@ export default function DialSessionPage() {
 
   // Upload state
   const [uploading, setUploading] = useState(false);
-  const [uploadGroup, setUploadGroup] = useState('VOCAL');
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
 
   // Preview state
   const [previewing, setPreviewing] = useState(false);
+
+  // Track whether params changed since last preview
+  const [dirty, setDirty] = useState(false);
+  const lastPreviewSnapshotRef = useRef<string>('');
+
+  // Take folding — show only latest 3, collapse older
+  const [showOlderTakes, setShowOlderTakes] = useState(false);
 
   const guestToken = typeof window !== 'undefined'
     ? localStorage.getItem('dial_guest_token')
@@ -87,49 +135,195 @@ export default function DialSessionPage() {
     return () => clearInterval(interval);
   }, [session, fetchSession]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !session) return;
+  // Auto-link: if user just signed up/in and guestToken exists, link session to account
+  const [linked, setLinked] = useState(false);
+  useEffect(() => {
+    if (!isSignedIn || !guestToken || linked) return;
+    fetch('/api/dial/link-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ guestToken }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          localStorage.removeItem('dial_guest_token');
+          setLinked(true);
+          fetchSession();
+        }
+      })
+      .catch(() => {});
+  }, [isSignedIn, guestToken, linked, fetchSession]);
+
+  // Snapshot current params to detect changes after preview
+  const buildSnapshot = useCallback((s: Session) => {
+    const trackPart = s.tracks
+      .map((t) => `${t.id}:${t.instrumentGroup}`)
+      .sort()
+      .join(',');
+    return `${s.musicalStyle}|${trackPart}`;
+  }, []);
+
+  // Update snapshot when a preview task completes
+  useEffect(() => {
+    if (!session) return;
+    const hasCompletedPreview = session.tasks.some(
+      (t) => t.taskType === 'preview' && t.status === 'completed',
+    );
+    if (hasCompletedPreview && !lastPreviewSnapshotRef.current) {
+      lastPreviewSnapshotRef.current = buildSnapshot(session);
+    }
+  }, [session, buildSnapshot]);
+
+  // Check dirty whenever session changes
+  useEffect(() => {
+    if (!session || !lastPreviewSnapshotRef.current) {
+      setDirty(false);
+      return;
+    }
+    setDirty(buildSnapshot(session) !== lastPreviewSnapshotRef.current);
+  }, [session, buildSnapshot]);
+
+  // ─── Handlers ───────────────────────────────────────────────────────────────
+
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newStaged: StagedFile[] = Array.from(files).map((file) => ({
+      file,
+      instrumentGroup: guessInstrumentGroup(file.name),
+    }));
+
+    setStagedFiles((prev) => [...prev, ...newStaged]);
+    e.target.value = '';
+  };
+
+  const updateStagedGroup = (index: number, group: string) => {
+    setStagedFiles((prev) => prev.map((f, i) => i === index ? { ...f, instrumentGroup: group } : f));
+  };
+
+  const removeStagedFile = (index: number) => {
+    setStagedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUploadAll = async () => {
+    if (!session || stagedFiles.length === 0) return;
 
     setUploading(true);
+    setUploadProgress({ current: 0, total: stagedFiles.length });
+    setError(null);
+
+    for (let i = 0; i < stagedFiles.length; i++) {
+      const { file, instrumentGroup } = stagedFiles[i];
+      setUploadProgress({ current: i + 1, total: stagedFiles.length });
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('sessionId', session.id);
+        formData.append('instrumentGroup', instrumentGroup);
+
+        const uploadHeaders: Record<string, string> = guestToken
+          ? { 'X-Dial-Guest-Token': guestToken }
+          : {};
+
+        const res = await fetch('/api/dial/upload', {
+          method: 'POST',
+          headers: uploadHeaders,
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          setError(`Upload failed for "${file.name}": ${data.error || 'Unknown error'}`);
+          setUploading(false);
+          setUploadProgress(null);
+          return;
+        }
+      } catch {
+        setError(`Upload error for "${file.name}"`);
+        setUploading(false);
+        setUploadProgress(null);
+        return;
+      }
+    }
+
+    setStagedFiles([]);
+    setUploadProgress(null);
+    setUploading(false);
+    await fetchSession();
+  };
+
+  const handleDeleteTrack = async (trackId: string) => {
+    if (!session) return;
     setError(null);
 
     try {
-      // Step 1: Get signed URL from server
-      const res = await fetch('/api/dial/upload', {
-        method: 'POST',
+      const res = await fetch('/api/dial/tracks', {
+        method: 'DELETE',
+        headers,
+        body: JSON.stringify({ sessionId: session.id, trackId }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error || 'Failed to delete track');
+        return;
+      }
+
+      await fetchSession();
+    } catch {
+      setError('Delete error');
+    }
+  };
+
+  const handleTrackGroupChange = async (trackId: string, newGroup: string) => {
+    if (!session) return;
+    setError(null);
+
+    try {
+      const res = await fetch('/api/dial/tracks', {
+        method: 'PATCH',
         headers,
         body: JSON.stringify({
           sessionId: session.id,
-          fileName: file.name,
-          instrumentGroup: uploadGroup,
+          updates: [{ trackId, instrumentGroup: newGroup }],
         }),
       });
 
       const data = await res.json();
       if (!data.success) {
-        setError(data.error || 'Upload failed');
+        setError(data.error || 'Failed to update track');
         return;
       }
 
-      // Step 2: PUT file directly to signed URL
-      const uploadRes = await fetch(data.data.signedUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type || 'audio/wav' },
-        body: file,
-      });
-
-      if (!uploadRes.ok) {
-        setError('File upload to storage failed');
-        return;
-      }
-
-      // Refresh session to show new track
       await fetchSession();
     } catch {
-      setError('Upload error');
-    } finally {
-      setUploading(false);
+      setError('Update error');
+    }
+  };
+
+  const handleStyleChange = async (newStyle: string) => {
+    if (!session) return;
+    setError(null);
+
+    try {
+      const res = await fetch('/api/dial/session', {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ id: session.id, musicalStyle: newStyle }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error || 'Failed to update style');
+        return;
+      }
+
+      await fetchSession();
+    } catch {
+      setError('Update error');
     }
   };
 
@@ -150,6 +344,10 @@ export default function DialSessionPage() {
         setError(data.error || 'Preview request failed');
         return;
       }
+
+      // Reset dirty state — new preview is based on current params
+      lastPreviewSnapshotRef.current = buildSnapshot(session);
+      setDirty(false);
 
       await fetchSession();
     } catch {
@@ -180,6 +378,8 @@ export default function DialSessionPage() {
     }
   };
 
+  // ─── Render ─────────────────────────────────────────────────────────────────
+
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
@@ -202,6 +402,12 @@ export default function DialSessionPage() {
   const hasTracks = session.tracks.length > 0;
   const latestTask = session.tasks[0];
   const isProcessing = latestTask?.status === 'processing' || latestTask?.status === 'pending';
+  const hasCompletedPreview = session.tasks.some(
+    (t) => t.taskType === 'preview' && t.status === 'completed',
+  );
+  const hasFinal = session.tasks.some(
+    (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.finalUrl,
+  );
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -214,10 +420,20 @@ export default function DialSessionPage() {
               {session.mode === 'omakase' ? 'Omakase' : 'Dialogue'} Mix
             </span>
           </h1>
-          <div className="flex gap-3 mt-2 text-sm text-zinc-500">
-            <span>Style: {session.musicalStyle}</span>
-            <span>Status: {session.status}</span>
-            <span>Payment: {session.paymentStatus}</span>
+          <div className="flex items-center gap-3 mt-3">
+            <label className="text-sm text-zinc-400">Style:</label>
+            <select
+              value={session.musicalStyle}
+              onChange={(e) => handleStyleChange(e.target.value)}
+              disabled={hasFinal}
+              className="px-3 py-1.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm disabled:opacity-50"
+            >
+              {MUSICAL_STYLES.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+            <span className="text-xs text-zinc-600">|</span>
+            <span className="text-xs text-zinc-500">Payment: {session.paymentStatus}</span>
           </div>
         </div>
 
@@ -236,38 +452,85 @@ export default function DialSessionPage() {
         )}
 
         {/* Upload Section */}
-        {session.paymentStatus === 'paid' && (
+        {session.paymentStatus === 'paid' && !hasFinal && (
           <div className="mb-8">
             <h2 className="text-lg font-medium mb-4">Upload Stems</h2>
-            <div className="flex gap-3 items-end">
-              <div className="flex-1">
-                <label htmlFor="group" className="block text-sm text-zinc-400 mb-1">
-                  Instrument Group
-                </label>
-                <select
-                  id="group"
-                  value={uploadGroup}
-                  onChange={(e) => setUploadGroup(e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white text-sm"
-                >
-                  {INSTRUMENT_GROUPS.map((g) => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg cursor-pointer text-sm transition-colors">
-                  {uploading ? 'Uploading...' : 'Choose File'}
-                  <input
-                    type="file"
-                    accept=".wav,.flac,.aiff,.mp3"
-                    onChange={handleFileUpload}
+
+            {/* File picker */}
+            <label className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg cursor-pointer text-sm transition-colors">
+              + Add Files
+              <input
+                type="file"
+                accept=".wav,.flac,.aiff,.mp3"
+                multiple
+                onChange={handleFilesSelected}
+                disabled={uploading}
+                className="hidden"
+              />
+            </label>
+
+            {/* Staged files table */}
+            {stagedFiles.length > 0 && (
+              <div className="mt-4 border border-zinc-800 rounded-xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-zinc-900 text-zinc-400 text-left">
+                      <th className="px-4 py-2 font-medium">File</th>
+                      <th className="px-4 py-2 font-medium w-44">Instrument Group</th>
+                      <th className="px-4 py-2 font-medium w-12"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stagedFiles.map((staged, i) => (
+                      <tr key={i} className="border-t border-zinc-800/50">
+                        <td className="px-4 py-2 text-white truncate max-w-[200px]">
+                          {staged.file.name}
+                          <span className="ml-2 text-xs text-zinc-500">
+                            {(staged.file.size / 1024 / 1024).toFixed(1)} MB
+                          </span>
+                        </td>
+                        <td className="px-4 py-2">
+                          <select
+                            value={staged.instrumentGroup}
+                            onChange={(e) => updateStagedGroup(i, e.target.value)}
+                            className="w-full px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-white text-sm"
+                          >
+                            {INSTRUMENT_GROUPS.map((g) => (
+                              <option key={g} value={g}>{g}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <button
+                            onClick={() => removeStagedFile(i)}
+                            className="text-zinc-500 hover:text-red-400 transition-colors"
+                            title="Remove"
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Upload all button */}
+                <div className="px-4 py-3 bg-zinc-900/50 border-t border-zinc-800 flex items-center justify-between">
+                  <span className="text-xs text-zinc-500">
+                    {stagedFiles.length} file{stagedFiles.length !== 1 ? 's' : ''} ready
+                  </span>
+                  <button
+                    onClick={handleUploadAll}
                     disabled={uploading}
-                    className="hidden"
-                  />
-                </label>
+                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    {uploading && uploadProgress
+                      ? `Uploading ${uploadProgress.current}/${uploadProgress.total}...`
+                      : `Upload All (${stagedFiles.length})`}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -283,93 +546,281 @@ export default function DialSessionPage() {
                   key={track.id}
                   className="flex items-center justify-between p-3 bg-zinc-900 border border-zinc-800 rounded-lg"
                 >
-                  <div>
-                    <span className="text-sm">{track.originalFilename}</span>
-                    <span className="ml-2 text-xs text-zinc-500 px-2 py-0.5 bg-zinc-800 rounded">
-                      {track.instrumentGroup}
-                    </span>
+                  <span className="text-sm truncate max-w-[200px]">{track.originalFilename}</span>
+                  <div className="flex items-center gap-3">
+                    {hasFinal ? (
+                      <span className="text-xs text-zinc-500 px-2 py-0.5 bg-zinc-800 rounded">
+                        {track.instrumentGroup}
+                      </span>
+                    ) : (
+                      <select
+                        value={track.instrumentGroup}
+                        onChange={(e) => handleTrackGroupChange(track.id, e.target.value)}
+                        className="px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-white text-xs"
+                      >
+                        {INSTRUMENT_GROUPS.map((g) => (
+                          <option key={g} value={g}>{g}</option>
+                        ))}
+                      </select>
+                    )}
+                    {!hasFinal && (
+                      <button
+                        onClick={() => handleDeleteTrack(track.id)}
+                        className="text-zinc-600 hover:text-red-400 text-xs transition-colors"
+                        title="Delete track"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
-                  <span className="text-xs text-zinc-500">{track.presenceSetting}</span>
                 </div>
               ))}
             </div>
 
+            {/* Dirty banner */}
+            {dirty && hasCompletedPreview && !isProcessing && (
+              <div className="mt-3 p-3 bg-amber-900/20 border border-amber-800/50 rounded-lg text-sm text-amber-300">
+                Settings changed since last preview. Re-generate to hear updated mix.
+              </div>
+            )}
+
             {/* Preview Button */}
-            {!isProcessing && (
+            {!isProcessing && !hasFinal && (
               <button
                 onClick={handlePreview}
                 disabled={previewing}
                 className="mt-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 rounded-lg text-sm font-medium transition-colors"
               >
-                {previewing ? 'Requesting...' : 'Generate Preview Mix'}
+                {previewing
+                  ? 'Requesting...'
+                  : dirty && hasCompletedPreview
+                    ? 'Re-generate Preview'
+                    : 'Generate Preview Mix'}
               </button>
             )}
           </div>
         )}
 
-        {/* Tasks / Results */}
-        {session.tasks.length > 0 && (
-          <div>
-            <h2 className="text-lg font-medium mb-3">Mix Results</h2>
-            <div className="space-y-3">
-              {session.tasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium capitalize">
-                      {task.taskType.replace('_', ' ')}
+        {/* Completed — Final mix ready */}
+        {hasFinal && (() => {
+          const finalTask = session.tasks.find(
+            (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.finalUrl,
+          );
+          const allPreviews = session.tasks.filter((t) => t.taskType === 'preview');
+          const styleLabel = MUSICAL_STYLES.find((s) => s.value === session.musicalStyle)?.label ?? session.musicalStyle;
+
+          return (
+            <div className="space-y-6">
+              {/* Completion banner */}
+              <div className="p-8 bg-gradient-to-b from-green-900/20 to-zinc-900 border border-green-800/40 rounded-2xl text-center">
+                <div className="text-4xl mb-3">&#10003;</div>
+                <h2 className="text-2xl font-bold mb-1">Your mix is ready</h2>
+                <p className="text-zinc-400 text-sm">
+                  {styleLabel} &middot; {session.tracks.length} tracks &middot; {allPreviews.length} take{allPreviews.length !== 1 ? 's' : ''} explored
+                </p>
+              </div>
+
+              {/* Download card */}
+              {finalTask && (
+                <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-zinc-400 capitalize">
+                      {finalTask.taskType.replace('_', ' ')}
                     </span>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      task.status === 'completed'
-                        ? 'bg-green-900/50 text-green-300'
-                        : task.status === 'processing'
-                          ? 'bg-amber-900/50 text-amber-300'
-                          : task.status === 'failed'
-                            ? 'bg-red-900/50 text-red-300'
-                            : 'bg-zinc-800 text-zinc-400'
-                    }`}>
-                      {task.status}
+                    <span className="text-xs px-2 py-1 rounded bg-green-900/50 text-green-300">
+                      completed
                     </span>
                   </div>
+                  <a
+                    href={finalTask.finalUrl!}
+                    download
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-base font-semibold transition-colors"
+                  >
+                    Download Final Mix (.wav)
+                  </a>
+                </div>
+              )}
 
-                  {task.status === 'processing' && (
-                    <div className="flex items-center gap-2 text-sm text-zinc-400">
-                      <div className="h-3 w-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-                      Processing... this may take a few minutes.
+              {/* Navigation */}
+              <div className="flex gap-3">
+                <a
+                  href="/dial"
+                  className="flex-1 py-3 text-center bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-medium transition-colors"
+                >
+                  Start New Session
+                </a>
+                {guestToken && !linked ? (
+                  <a
+                    href={`/sign-up?redirect_url=/dial/session/${session.id}`}
+                    className="flex-1 py-3 text-center bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-medium transition-colors"
+                  >
+                    Save to Account
+                  </a>
+                ) : (
+                  <a
+                    href="/dashboard/dial"
+                    className="flex-1 py-3 text-center bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-medium transition-colors"
+                  >
+                    Back to Dashboard
+                  </a>
+                )}
+              </div>
+
+              {/* Preview takes — collapsed by default */}
+              {allPreviews.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setShowOlderTakes(!showOlderTakes)}
+                    className="w-full py-2 text-sm text-zinc-500 hover:text-zinc-300 border border-zinc-800 border-dashed rounded-lg transition-colors"
+                  >
+                    {showOlderTakes
+                      ? 'Hide preview takes'
+                      : `Show ${allPreviews.length} preview take${allPreviews.length !== 1 ? 's' : ''}`}
+                  </button>
+                  {showOlderTakes && (
+                    <div className="mt-3 space-y-3">
+                      {allPreviews.map((task) => {
+                        const pp = task.previewParams;
+                        const takeStyleLabel = pp
+                          ? MUSICAL_STYLES.find((s) => s.value === pp.musicalStyle)?.label ?? pp.musicalStyle
+                          : null;
+                        const previewNumber = allPreviews.length - allPreviews.findIndex((t) => t.id === task.id);
+                        return (
+                          <div key={task.id} className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-sm font-medium">Take {previewNumber}</span>
+                              {pp && (
+                                <span className="text-xs text-zinc-500">
+                                  {takeStyleLabel} / {pp.tracks?.length} tracks
+                                </span>
+                              )}
+                            </div>
+                            {task.previewUrl && (
+                              <audio controls src={task.previewUrl} className="w-full" />
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
-
-                  {task.previewUrl && (
-                    <div className="mt-2">
-                      <audio controls src={task.previewUrl} className="w-full" />
-                    </div>
-                  )}
-
-                  {task.finalUrl && (
-                    <a
-                      href={task.finalUrl}
-                      download
-                      className="inline-block mt-2 px-4 py-2 bg-green-700 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      Download Final Mix
-                    </a>
-                  )}
-
-                  {task.status === 'completed' && task.previewUrl && !task.finalUrl && (
-                    <button
-                      onClick={() => handleFinal(task.id)}
-                      className="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      Generate Final Mix
-                    </button>
                   )}
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
+
+        {/* In-progress — Preview takes & working state */}
+        {!hasFinal && session.tasks.length > 0 && (() => {
+          const allPreviews = session.tasks.filter((t) => t.taskType === 'preview');
+          const nonPreviews = session.tasks.filter((t) => t.taskType !== 'preview');
+          // allPreviews is desc by createdAt — [0] is newest
+          const recentTakes = allPreviews.slice(0, 3);
+          const olderTakes = allPreviews.slice(3);
+
+          const renderTask = (task: Task) => {
+            const pp = task.previewParams;
+            const taskStyleLabel = pp
+              ? MUSICAL_STYLES.find((s) => s.value === pp.musicalStyle)?.label ?? pp.musicalStyle
+              : null;
+            const trackCount = pp?.tracks?.length;
+            const previewNumber = allPreviews.length > 0 && task.taskType === 'preview'
+              ? allPreviews.length - allPreviews.findIndex((t) => t.id === task.id)
+              : 0;
+
+            return (
+              <div
+                key={task.id}
+                className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium capitalize">
+                      {task.taskType === 'preview' && previewNumber > 0
+                        ? `Take ${previewNumber}`
+                        : task.taskType.replace('_', ' ')}
+                    </span>
+                    {pp && (
+                      <span className="text-xs text-zinc-500">
+                        {taskStyleLabel} / {trackCount} tracks
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded ${
+                    task.status === 'completed'
+                      ? 'bg-green-900/50 text-green-300'
+                      : task.status === 'processing'
+                        ? 'bg-amber-900/50 text-amber-300'
+                        : task.status === 'failed'
+                          ? 'bg-red-900/50 text-red-300'
+                          : 'bg-zinc-800 text-zinc-400'
+                  }`}>
+                    {task.status}
+                  </span>
+                </div>
+
+                {task.status === 'processing' && (
+                  <div className="flex items-center gap-2 text-sm text-zinc-400">
+                    <div className="h-3 w-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                    Processing... this may take a few minutes.
+                  </div>
+                )}
+
+                {task.previewUrl && (
+                  <div className="mt-2">
+                    <audio controls src={task.previewUrl} className="w-full" />
+                  </div>
+                )}
+
+                {task.finalUrl && (
+                  <a
+                    href={task.finalUrl}
+                    download
+                    className="inline-block mt-2 px-4 py-2 bg-green-700 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Download Final Mix
+                  </a>
+                )}
+
+                {task.status === 'completed' && task.previewUrl && !task.finalUrl && !hasFinal && (
+                  <button
+                    onClick={() => handleFinal(task.id)}
+                    className="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Use This Take for Final Mix
+                  </button>
+                )}
+              </div>
+            );
+          };
+
+          return (
+            <div>
+              <h2 className="text-lg font-medium mb-3">Mix Results</h2>
+              <div className="space-y-3">
+                {/* Non-preview tasks (final mix etc.) always shown */}
+                {nonPreviews.map(renderTask)}
+
+                {/* Recent takes — always visible */}
+                {recentTakes.map(renderTask)}
+
+                {/* Older takes — collapsed */}
+                {olderTakes.length > 0 && (
+                  <>
+                    <button
+                      onClick={() => setShowOlderTakes(!showOlderTakes)}
+                      className="w-full py-2 text-sm text-zinc-500 hover:text-zinc-300 border border-zinc-800 border-dashed rounded-lg transition-colors"
+                    >
+                      {showOlderTakes
+                        ? 'Hide older takes'
+                        : `Show ${olderTakes.length} older take${olderTakes.length !== 1 ? 's' : ''}`}
+                    </button>
+                    {showOlderTakes && olderTakes.map(renderTask)}
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

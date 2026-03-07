@@ -12,7 +12,7 @@ import { eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
-import { createRoExClient, mixFinalBasic } from '@/lib/roex';
+import { createRoExClient, isRoExDevKey, mixFinalBasic, pollMixPreview } from '@/lib/roex';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
 
@@ -42,13 +42,34 @@ export const POST = withDialAuth(async (auth) => {
       return apiValidationError('Preview must be completed before generating final mix');
     }
 
-    // Get tracks for the session to build trackData with FX settings
+    // Get tracks for the session
     const tracks = await db.query.dialTracks.findMany({
       where: eq(dialTracks.sessionId, previewTask.sessionId),
     });
 
-    // Build trackData from tracks — use gainDb from FX settings if available
-    const fxSettings = previewTask.fxSettings as Record<string, Record<string, unknown>> | null;
+    // Get session to check mode
+    const sessionRow = await db.query.dialSessions.findFirst({
+      where: eq(dialSessions.id, previewTask.sessionId),
+    });
+
+    // For dialogue mode: retrieve FX settings if not already stored (125cr one-time)
+    // For omakase mode: skip FX retrieval, use gainDb: 0 (RoEx applies preview settings)
+    let fxSettings = previewTask.fxSettings as Record<string, Record<string, unknown>> | null;
+
+    if (!fxSettings && sessionRow?.mode === 'dialogue' && !isRoExDevKey()) {
+      const client2 = createRoExClient();
+      const fxResult = await pollMixPreview(client2, previewTask.roexTaskId, {
+        retrieveFxSettings: true,
+      });
+      fxSettings = fxResult.fxSettings ?? null;
+
+      // Cache FX settings on the preview task for future use
+      if (fxSettings) {
+        await db.update(dialTasks).set({ fxSettings }).where(eq(dialTasks.id, previewTask.id));
+      }
+    }
+
+    // Build trackData — use gainDb from FX settings if available (dialogue), otherwise 0 (omakase)
     const trackData = tracks.map((t) => {
       const urlKey = t.roexUploadUrl.split('/').pop()?.split('?')[0] ?? '';
       const fx = fxSettings?.[urlKey];
@@ -56,11 +77,25 @@ export const POST = withDialAuth(async (auth) => {
       return { trackUrl: t.roexUploadUrl, gainDb };
     });
 
-    const client = createRoExClient();
-    const mixResult = await mixFinalBasic(client, {
-      taskId: previewTask.roexTaskId,
-      trackData,
-    });
+    // Dev key returns dummy URLs that RoEx can't process for final mix.
+    // Mock the response so UI flow can be tested without real credits.
+    // On production (no ROEX_DEV_API_KEY), this is always false.
+    let mixResult;
+    if (isRoExDevKey()) {
+      mixResult = {
+        taskId: `dev-final-${Date.now()}`,
+        finalUrl: 'https://example.com/dev-final-mix.wav',
+        previewUrl: null,
+        fxSettings: null,
+        stemsUrl: null,
+      };
+    } else {
+      const client = createRoExClient();
+      mixResult = await mixFinalBasic(client, {
+        taskId: previewTask.roexTaskId,
+        trackData,
+      });
+    }
 
     // Save final task
     const [task] = await db.insert(dialTasks).values({

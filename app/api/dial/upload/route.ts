@@ -2,43 +2,38 @@
  * MUEDial Upload API
  * POST /api/dial/upload
  *
- * Returns a RoEx signed URL for direct client-side upload.
- * Browser PUTs the WAV/FLAC file directly to GCS (bypasses Vercel 4.5MB limit).
+ * Accepts audio file via FormData and uploads to RoEx GCS via server-side proxy.
+ * (Direct browser→GCS PUT fails due to CORS on RoEx's bucket.)
  *
  * Flow:
- *   1. Client → POST /api/dial/upload { sessionId, fileName, instrumentGroup }
+ *   1. Client → POST /api/dial/upload (FormData: file + sessionId + instrumentGroup)
  *   2. Server → verifies session ownership + payment
  *   3. Server → RoEx /upload → { signedUrl, readableUrl }
- *   4. Server → saves dial_tracks row with readableUrl
- *   5. Client → PUT file to signedUrl directly
+ *   4. Server → PUT file to signedUrl
+ *   5. Server → saves dial_tracks row
  */
 
-import { z } from 'zod';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiForbidden } from '@/lib/api-response';
-import { createRoExClient, getUploadUrl } from '@/lib/roex';
+import { createRoExClient, getUploadUrl, uploadToSignedUrl } from '@/lib/roex';
 import { db } from '@/db';
 import { dialTracks } from '@/db/schema';
 
-const uploadRequestSchema = z.object({
-  sessionId: z.string().uuid(),
-  fileName: z.string().min(1),
-  instrumentGroup: z.string(),
-  presenceSetting: z.string().optional(),
-  panPreference: z.string().optional(),
-  reverbPreference: z.string().optional(),
-});
-
 export const POST = withDialAuth(async (auth) => {
   try {
-    const body = await auth.request.json();
-    const parsed = uploadRequestSchema.safeParse(body);
-    if (!parsed.success) {
-      return apiValidationError('Invalid request', parsed.error.errors);
-    }
+    const formData = await auth.request.formData();
 
-    const { sessionId, fileName, instrumentGroup, presenceSetting, panPreference, reverbPreference } = parsed.data;
+    const file = formData.get('file') as File | null;
+    const sessionId = formData.get('sessionId') as string | null;
+    const instrumentGroup = formData.get('instrumentGroup') as string | null;
+    const presenceSetting = (formData.get('presenceSetting') as string) || 'NORMAL';
+    const panPreference = (formData.get('panPreference') as string) || 'NO_PREFERENCE';
+    const reverbPreference = (formData.get('reverbPreference') as string) || 'NONE';
+
+    if (!file || !sessionId || !instrumentGroup) {
+      return apiValidationError('file, sessionId, and instrumentGroup are required');
+    }
 
     // Verify session ownership
     const session = await verifyDialSessionOwnership(sessionId, auth);
@@ -53,22 +48,26 @@ export const POST = withDialAuth(async (auth) => {
 
     // Get signed URL from RoEx
     const client = createRoExClient();
-    const { signedUrl, readableUrl } = await getUploadUrl(client, fileName);
+    const { signedUrl, readableUrl } = await getUploadUrl(client, file.name);
 
-    // Save track record with readableUrl (file not yet uploaded)
+    // Upload file to GCS via signed URL (server-side)
+    const contentType = file.type || 'audio/wav';
+    const buffer = await file.arrayBuffer();
+    await uploadToSignedUrl(signedUrl, buffer, contentType);
+
+    // Save track record
     const [track] = await db.insert(dialTracks).values({
       sessionId,
-      originalFilename: fileName,
+      originalFilename: file.name,
       roexUploadUrl: readableUrl,
       instrumentGroup,
-      presenceSetting: presenceSetting ?? 'NORMAL',
-      panPreference: panPreference ?? 'NO_PREFERENCE',
-      reverbPreference: reverbPreference ?? 'NONE',
+      presenceSetting,
+      panPreference,
+      reverbPreference,
     }).returning();
 
     return apiSuccess({
       trackId: track.id,
-      signedUrl,
       readableUrl,
     });
   } catch (error) {

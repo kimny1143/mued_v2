@@ -1,7 +1,8 @@
 /**
  * MUEDial Session API
- * POST /api/dial/session     — Create new session (guest or logged-in)
- * GET  /api/dial/session      — List/get sessions
+ * POST  /api/dial/session     — Create new session (guest or logged-in)
+ * GET   /api/dial/session     — List/get sessions
+ * PATCH /api/dial/session     — Update session parameters (musicalStyle, title)
  */
 
 import { randomBytes } from 'crypto';
@@ -10,8 +11,9 @@ import { eq, desc } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
+import { createRoExClient, isRoExDevKey, pollMixPreview, pollMixFinal } from '@/lib/roex';
 import { db } from '@/db';
-import { dialSessions, dialTasks } from '@/db/schema';
+import { dialSessions, dialTasks, dialTracks } from '@/db/schema';
 
 // ─── POST: Create session ───────────────────────────────────────────────────
 
@@ -79,6 +81,83 @@ export const GET = withDialAuth(async (auth) => {
         },
       });
 
+      // Poll RoEx for any processing tasks and update DB
+      if (full?.tasks) {
+        const processingTasks = full.tasks.filter(
+          (t) => t.status === 'processing' || t.status === 'pending',
+        );
+
+        for (const task of processingTasks) {
+          try {
+            const client = createRoExClient();
+
+            if (task.taskType === 'preview') {
+              const result = await pollMixPreview(client, task.roexTaskId, {
+                retrieveFxSettings: false,
+              });
+
+              if (result.previewUrl || result.status === 'completed') {
+                await db.update(dialTasks).set({
+                  status: 'completed',
+                  previewUrl: result.previewUrl,
+                  completedAt: new Date(),
+                }).where(eq(dialTasks.id, task.id));
+
+                await db.update(dialSessions).set({
+                  status: 'uploading',
+                  updatedAt: new Date(),
+                }).where(eq(dialSessions.id, sessionId));
+              } else if (result.status === 'failed') {
+                await db.update(dialTasks).set({
+                  status: 'failed',
+                }).where(eq(dialTasks.id, task.id));
+              }
+            } else if (task.taskType === 'final_basic' || task.taskType === 'final_advanced') {
+              // Dev key: dummy track URLs cause /retrievefinalmix to fail — skip polling
+              if (isRoExDevKey()) continue;
+
+              const tracks = await db.query.dialTracks.findMany({
+                where: eq(dialTracks.sessionId, sessionId),
+              });
+              const trackUrls = tracks.map((t) => t.roexUploadUrl);
+
+              const result = await pollMixFinal(client, task.roexTaskId, trackUrls);
+
+              if (result.finalUrl || result.status === 'completed') {
+                await db.update(dialTasks).set({
+                  status: 'completed',
+                  finalUrl: result.finalUrl,
+                  completedAt: new Date(),
+                }).where(eq(dialTasks.id, task.id));
+
+                await db.update(dialSessions).set({
+                  status: 'completed',
+                  updatedAt: new Date(),
+                }).where(eq(dialSessions.id, sessionId));
+              } else if (result.status === 'failed') {
+                await db.update(dialTasks).set({
+                  status: 'failed',
+                }).where(eq(dialTasks.id, task.id));
+              }
+            }
+          } catch {
+            // RoEx poll failed — leave task as processing, retry next poll
+          }
+        }
+
+        // Re-fetch after updates
+        if (processingTasks.length > 0) {
+          const updated = await db.query.dialSessions.findFirst({
+            where: eq(dialSessions.id, sessionId),
+            with: {
+              tracks: true,
+              tasks: { orderBy: [desc(dialTasks.createdAt)] },
+            },
+          });
+          return apiSuccess(updated);
+        }
+      }
+
       return apiSuccess(full);
     }
 
@@ -95,5 +174,43 @@ export const GET = withDialAuth(async (auth) => {
     return apiSuccess(sessions);
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Failed to fetch sessions');
+  }
+});
+
+// ─── PATCH: Update session parameters ────────────────────────────────────────
+
+const updateSessionSchema = z.object({
+  id: z.string().uuid(),
+  musicalStyle: z.string().optional(),
+  title: z.string().optional(),
+});
+
+export const PATCH = withDialAuth(async (auth) => {
+  try {
+    const body = await auth.request.json();
+    const parsed = updateSessionSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiValidationError('Invalid request', parsed.error.errors);
+    }
+
+    const { id, musicalStyle, title } = parsed.data;
+
+    const session = await verifyDialSessionOwnership(id, auth);
+    if (!session) {
+      return apiNotFound('Session not found');
+    }
+
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (musicalStyle !== undefined) updateData.musicalStyle = musicalStyle;
+    if (title !== undefined) updateData.title = title;
+
+    const [updated] = await db.update(dialSessions)
+      .set(updateData)
+      .where(eq(dialSessions.id, id))
+      .returning();
+
+    return apiSuccess(updated);
+  } catch (error) {
+    return apiServerError(error instanceof Error ? error.message : 'Session update failed');
   }
 });

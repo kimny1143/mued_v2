@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth, useUser } from '@clerk/nextjs';
 
 const PLANS = [
   {
@@ -29,15 +30,21 @@ const PLANS = [
 
 export default function DialPage() {
   const router = useRouter();
+  const { isSignedIn } = useAuth();
+  const { user } = useUser();
+  const clerkEmail = user?.primaryEmailAddress?.emailAddress ?? '';
+
   const [email, setEmail] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [musicalStyle, setMusicalStyle] = useState('pop');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const effectiveEmail = isSignedIn ? clerkEmail : email;
+
   const handleCheckout = async () => {
-    if (!selectedPlan || !email) {
-      setError('Please select a plan and enter your email.');
+    if (!selectedPlan || !effectiveEmail) {
+      setError(isSignedIn ? 'Please select a plan.' : 'Please select a plan and enter your email.');
       return;
     }
 
@@ -51,7 +58,7 @@ export default function DialPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           purchaseType: selectedPlan,
-          email,
+          email: effectiveEmail,
           musicalStyle,
           mode: plan?.mode,
         }),
@@ -64,8 +71,10 @@ export default function DialPage() {
         return;
       }
 
-      // Store guest token for later access
-      localStorage.setItem('dial_guest_token', data.data.guestToken);
+      // Store guest token for later access (only for guests)
+      if (!isSignedIn) {
+        localStorage.setItem('dial_guest_token', data.data.guestToken);
+      }
       localStorage.setItem('dial_session_id', data.data.sessionId);
 
       // Redirect to Stripe Checkout
@@ -114,22 +123,29 @@ export default function DialPage() {
 
         {/* Checkout Form */}
         <div className="max-w-md mx-auto space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm text-zinc-400 mb-1"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
-            />
-          </div>
+          {isSignedIn ? (
+            <div className="flex items-center gap-2 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg">
+              <span className="text-sm text-zinc-400">Signed in as</span>
+              <span className="text-sm text-white">{clerkEmail}</span>
+            </div>
+          ) : (
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm text-zinc-400 mb-1"
+              >
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          )}
 
           <div>
             <label
@@ -163,14 +179,16 @@ export default function DialPage() {
 
           <button
             onClick={handleCheckout}
-            disabled={loading || !selectedPlan || !email}
+            disabled={loading || !selectedPlan || !effectiveEmail}
             className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-600 rounded-lg font-medium transition-colors"
           >
             {loading ? 'Processing...' : 'Continue to Payment'}
           </button>
 
           <p className="text-xs text-zinc-600 text-center">
-            No account required. Secure payment via Stripe.
+            {isSignedIn
+              ? 'Secure payment via Stripe.'
+              : 'No account required. Secure payment via Stripe.'}
           </p>
         </div>
 

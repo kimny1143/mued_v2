@@ -1,5 +1,5 @@
 // Client
-export { RoExClient, createRoExClient } from './client';
+export { RoExClient, createRoExClient, isRoExDevKey } from './client';
 
 // Upload
 export { getUploadUrl, uploadToSignedUrl } from './upload';

@@ -95,6 +95,16 @@ export const POST = withDialAuth(async (auth) => {
       retrieveFxSettings,
     });
 
+    // Snapshot params used for this preview (for comparison UI)
+    const previewParams = {
+      musicalStyle: session.musicalStyle,
+      tracks: tracks.map((t) => ({
+        id: t.id,
+        filename: t.originalFilename,
+        instrumentGroup: t.instrumentGroup,
+      })),
+    };
+
     // Save task record
     const [task] = await db.insert(dialTasks).values({
       sessionId,
@@ -104,6 +114,7 @@ export const POST = withDialAuth(async (auth) => {
       previewUrl: result.previewUrl,
       fxSettings: result.fxSettings ?? null,
       stemsUrls: result.stemsUrl ?? null,
+      previewParams,
     }).returning();
 
     // Update session status

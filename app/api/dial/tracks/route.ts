@@ -85,6 +85,52 @@ export const PATCH = withDialAuth(async (auth) => {
   }
 });
 
+// ─── DELETE: Remove a track ──────────────────────────────────────────────────
+
+const trackDeleteSchema = z.object({
+  sessionId: z.string().uuid(),
+  trackId: z.string().uuid(),
+});
+
+export const DELETE = withDialAuth(async (auth) => {
+  try {
+    const body = await auth.request.json();
+    const parsed = trackDeleteSchema.safeParse(body);
+    if (!parsed.success) {
+      return apiValidationError('Invalid request', parsed.error.errors);
+    }
+
+    const { sessionId, trackId } = parsed.data;
+
+    // Verify session ownership
+    const session = await verifyDialSessionOwnership(sessionId, auth);
+    if (!session) {
+      return apiNotFound('Session not found');
+    }
+
+    // Delete track (only if it belongs to this session)
+    const [deleted] = await db
+      .delete(dialTracks)
+      .where(
+        and(
+          eq(dialTracks.id, trackId),
+          eq(dialTracks.sessionId, sessionId),
+        ),
+      )
+      .returning();
+
+    if (!deleted) {
+      return apiNotFound('Track not found');
+    }
+
+    return apiSuccess({ deletedTrackId: deleted.id });
+  } catch (error) {
+    return apiServerError(
+      error instanceof Error ? error.message : 'Track delete failed',
+    );
+  }
+});
+
 // ─── GET: List tracks for a session ─────────────────────────────────────────
 
 export const GET = withDialAuth(async (auth) => {

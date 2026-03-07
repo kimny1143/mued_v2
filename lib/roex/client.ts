@@ -54,3 +54,20 @@ export function createRoExClient(): RoExClient {
   }
   return new RoExClient({ apiKey });
 }
+
+/**
+ * Check if the current RoEx API key is the dev key.
+ *
+ * Dev key behavior:
+ * - Upload/Preview/Poll all work but return dummy URLs (example.com)
+ * - Final mix (/applyaudioeffects) fails because RoEx tries to read dummy track URLs
+ * - No credit consumption
+ *
+ * When true, callers should mock final mix responses for UI testing.
+ * On Vercel production, ROEX_DEV_API_KEY should not be set — this always returns false.
+ */
+export function isRoExDevKey(): boolean {
+  const devKey = process.env.ROEX_DEV_API_KEY;
+  if (!devKey) return false;
+  return process.env.ROEX_API_KEY === devKey;
+}

@@ -119,6 +119,7 @@ export const dialTasks = pgTable('dial_tasks', {
   finalUrl: text('final_url'),           // WAV final URL
   fxSettings: jsonb('fx_settings'),      // 9-node FX chain per track
   stemsUrls: jsonb('stems_urls'),        // Processed stem URL map
+  previewParams: jsonb('preview_params'), // Snapshot of params at submit time (musicalStyle, tracks)
   createdAt: timestamp('created_at').notNull().defaultNow(),
   completedAt: timestamp('completed_at'),
 }, (table) => ({
