@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface ParameterChange {
   track: string;
@@ -18,6 +18,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   parameterChanges?: ParameterChange[] | null;
+  applied?: boolean;
   createdAt: string;
 }
 
@@ -35,14 +36,61 @@ interface ChatPanelProps {
   onParametersApplied: () => void;
 }
 
+const VALID_PRESENCE = ['NORMAL', 'LEAD', 'BACKGROUND'];
+const VALID_PAN = ['NO_PREFERENCE', 'LEFT', 'CENTRE', 'RIGHT'];
+const VALID_REVERB = ['NONE', 'LOW', 'MEDIUM', 'HIGH'];
+
 export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
-  const [applying, setApplying] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Apply parameter changes to tracks via PATCH
+  const applyChanges = useCallback(async (changes: ParameterChange[]): Promise<boolean> => {
+    const updates = changes
+      .map((change) => {
+        const track = tracks.find((t) =>
+          t.originalFilename.toLowerCase().includes(change.track.toLowerCase()) ||
+          change.track.toLowerCase().includes(t.originalFilename.toLowerCase().replace(/\.[^.]+$/, ''))
+        );
+        if (!track) return null;
+
+        const update: Record<string, string> = { trackId: track.id };
+        if (change.changes.presenceSetting && VALID_PRESENCE.includes(change.changes.presenceSetting)) {
+          update.presenceSetting = change.changes.presenceSetting;
+        }
+        if (change.changes.panPreference && VALID_PAN.includes(change.changes.panPreference)) {
+          update.panPreference = change.changes.panPreference;
+        }
+        if (change.changes.reverbPreference && VALID_REVERB.includes(change.changes.reverbPreference)) {
+          update.reverbPreference = change.changes.reverbPreference;
+        }
+
+        return Object.keys(update).length > 1 ? update : null;
+      })
+      .filter(Boolean);
+
+    if (updates.length === 0) return false;
+
+    try {
+      const res = await fetch('/api/dial/tracks', {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ sessionId, updates }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        onParametersApplied();
+        return true;
+      }
+    } catch {
+      // Silent — changes card will show without checkmark
+    }
+    return false;
+  }, [tracks, headers, sessionId, onParametersApplied]);
 
   // Load message history on mount
   useEffect(() => {
@@ -53,7 +101,11 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: C
         });
         const data = await res.json();
         if (data.success) {
-          setMessages(data.data.messages);
+          // Mark all historical messages with parameterChanges as already applied
+          setMessages(data.data.messages.map((m: ChatMessage) => ({
+            ...m,
+            applied: m.parameterChanges && m.parameterChanges.length > 0 ? true : undefined,
+          })));
         }
       } catch {
         // Silent fail — empty chat is fine
@@ -95,9 +147,16 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: C
 
       if (!data.success) {
         setError(data.error || 'Chat failed');
-        // Remove optimistic message
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         return;
+      }
+
+      const parameterChanges: ParameterChange[] | null = data.data.parameterChanges;
+
+      // Auto-apply parameter changes immediately
+      let applied = false;
+      if (parameterChanges && parameterChanges.length > 0) {
+        applied = await applyChanges(parameterChanges);
       }
 
       // Add assistant response
@@ -107,7 +166,8 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: C
           id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: data.data.content,
-          parameterChanges: data.data.parameterChanges,
+          parameterChanges,
+          applied,
           createdAt: new Date().toISOString(),
         },
       ]);
@@ -116,67 +176,6 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: C
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
     } finally {
       setSending(false);
-    }
-  };
-
-  const handleApplyChanges = async (changes: ParameterChange[]) => {
-    setApplying(true);
-    setError(null);
-
-    const VALID_PRESENCE = ['NORMAL', 'LEAD', 'BACKGROUND'];
-    const VALID_PAN = ['NO_PREFERENCE', 'LEFT', 'CENTRE', 'RIGHT'];
-    const VALID_REVERB = ['NONE', 'LOW', 'MEDIUM', 'HIGH'];
-
-    // Map parameter changes to track updates using filename matching
-    const updates = changes
-      .map((change) => {
-        const track = tracks.find((t) =>
-          t.originalFilename.toLowerCase().includes(change.track.toLowerCase()) ||
-          change.track.toLowerCase().includes(t.originalFilename.toLowerCase().replace(/\.[^.]+$/, ''))
-        );
-        if (!track) return null;
-
-        // Only include valid track-level parameters (filter out gainDb etc.)
-        const update: Record<string, string> = { trackId: track.id };
-        if (change.changes.presenceSetting && VALID_PRESENCE.includes(change.changes.presenceSetting)) {
-          update.presenceSetting = change.changes.presenceSetting;
-        }
-        if (change.changes.panPreference && VALID_PAN.includes(change.changes.panPreference)) {
-          update.panPreference = change.changes.panPreference;
-        }
-        if (change.changes.reverbPreference && VALID_REVERB.includes(change.changes.reverbPreference)) {
-          update.reverbPreference = change.changes.reverbPreference;
-        }
-
-        // Skip if no valid changes remain
-        return Object.keys(update).length > 1 ? update : null;
-      })
-      .filter(Boolean);
-
-    if (updates.length === 0) {
-      setError('Could not match parameter changes to tracks');
-      setApplying(false);
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/dial/tracks', {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({ sessionId, updates }),
-      });
-      const data = await res.json();
-
-      if (!data.success) {
-        setError(data.error || 'Failed to apply changes');
-        return;
-      }
-
-      onParametersApplied();
-    } catch {
-      setError('Failed to apply changes');
-    } finally {
-      setApplying(false);
     }
   };
 
@@ -220,11 +219,22 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: C
                     : msg.content}
                 </div>
 
-                {/* Parameter changes card */}
+                {/* Parameter changes card — auto-applied */}
                 {msg.role === 'assistant' && msg.parameterChanges && msg.parameterChanges.length > 0 && (
-                  <div className="mt-2 p-3 bg-amber-900/10 border border-amber-800/30 rounded-lg">
-                    <div className="text-xs text-amber-400 font-medium mb-2">
-                      Suggested Changes
+                  <div className={`mt-2 p-3 rounded-lg ${
+                    msg.applied
+                      ? 'bg-green-900/10 border border-green-800/30'
+                      : 'bg-zinc-800/50 border border-zinc-700/30'
+                  }`}>
+                    <div className={`text-xs font-medium mb-2 flex items-center gap-1.5 ${
+                      msg.applied ? 'text-green-400' : 'text-zinc-500'
+                    }`}>
+                      {msg.applied && (
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                      {msg.applied ? 'Applied' : 'No valid changes'}
                     </div>
                     <div className="space-y-1.5">
                       {msg.parameterChanges.map((pc, i) => (
@@ -233,22 +243,13 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: C
                           <span className="text-zinc-500 mx-1">&rarr;</span>
                           <span className="text-zinc-400">
                             {Object.entries(pc.changes)
+                              .filter(([k]) => k !== 'gainDb')
                               .map(([k, v]) => `${k}: ${v}`)
                               .join(', ')}
                           </span>
-                          {pc.reason && (
-                            <span className="text-zinc-600 ml-1">({pc.reason})</span>
-                          )}
                         </div>
                       ))}
                     </div>
-                    <button
-                      onClick={() => handleApplyChanges(msg.parameterChanges!)}
-                      disabled={applying}
-                      className="mt-2 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-zinc-700 rounded text-xs font-medium text-black transition-colors"
-                    >
-                      {applying ? 'Applying...' : 'Apply Changes'}
-                    </button>
                   </div>
                 )}
               </div>
@@ -282,7 +283,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied }: C
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && handleSend()}
             placeholder="Describe what you want to change..."
             disabled={sending}
             className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 disabled:opacity-50"

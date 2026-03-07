@@ -89,5 +89,11 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next|api/webhooks).*)", "/", "/(api|trpc)(.*)"],
+  // Exclude /api/dial/upload from middleware — large FormData bodies
+  // fail to parse when Edge Runtime middleware processes the request.
+  matcher: [
+    "/((?!.*\\..*|_next|api/webhooks|api/dial/upload).*)",
+    "/",
+    "/(api(?!/dial/upload)|trpc)(.*)",
+  ],
 };

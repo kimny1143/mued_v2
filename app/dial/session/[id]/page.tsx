@@ -86,7 +86,7 @@ function guessInstrumentGroup(filename: string): string {
 export default function DialSessionPage() {
   const params = useParams();
   const sessionId = params.id as string;
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, getToken } = useAuth();
 
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -248,9 +248,15 @@ export default function DialSessionPage() {
         formData.append('sessionId', session.id);
         formData.append('instrumentGroup', instrumentGroup);
 
-        const uploadHeaders: Record<string, string> = guestToken
-          ? { 'X-Dial-Guest-Token': guestToken }
-          : {};
+        // Upload route is excluded from Clerk middleware (large FormData bodies
+        // fail in Edge Runtime). Send auth explicitly via Bearer token or guest header.
+        const uploadHeaders: Record<string, string> = {};
+        if (guestToken) {
+          uploadHeaders['X-Dial-Guest-Token'] = guestToken;
+        } else if (isSignedIn) {
+          const token = await getToken();
+          if (token) uploadHeaders['Authorization'] = `Bearer ${token}`;
+        }
 
         const res = await fetch('/api/dial/upload', {
           method: 'POST',
