@@ -36,7 +36,6 @@ export default function DialPage() {
 
   const [email, setEmail] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [musicalStyle, setMusicalStyle] = useState('pop');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +58,6 @@ export default function DialPage() {
         body: JSON.stringify({
           purchaseType: selectedPlan,
           email: effectiveEmail,
-          musicalStyle,
           mode: plan?.mode,
         }),
       });
@@ -146,32 +144,6 @@ export default function DialPage() {
               />
             </div>
           )}
-
-          <div>
-            <label
-              htmlFor="style"
-              className="block text-sm text-zinc-400 mb-1"
-            >
-              Musical Style
-            </label>
-            <select
-              id="style"
-              value={musicalStyle}
-              onChange={(e) => setMusicalStyle(e.target.value)}
-              className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:border-indigo-500"
-            >
-              <option value="pop">Pop</option>
-              <option value="rock">Rock</option>
-              <option value="hiphop">Hip Hop</option>
-              <option value="electronic">Electronic</option>
-              <option value="jazz">Jazz</option>
-              <option value="classical">Classical</option>
-              <option value="rnb">R&B</option>
-              <option value="country">Country</option>
-              <option value="metal">Metal</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
 
           {error && (
             <p className="text-sm text-red-400">{error}</p>
