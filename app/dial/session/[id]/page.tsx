@@ -3,17 +3,27 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
+import { ChatPanel } from '@/components/dial/chat-panel';
 
 interface Track {
   id: string;
   originalFilename: string;
   instrumentGroup: string;
   presenceSetting: string;
+  panPreference: string;
+  reverbPreference: string;
 }
 
 interface PreviewParams {
   musicalStyle: string;
-  tracks: { id: string; filename: string; instrumentGroup: string }[];
+  tracks: {
+    id: string;
+    filename: string;
+    instrumentGroup: string;
+    presenceSetting?: string;
+    panPreference?: string;
+    reverbPreference?: string;
+  }[];
 }
 
 interface Task {
@@ -158,22 +168,36 @@ export default function DialSessionPage() {
   // Snapshot current params to detect changes after preview
   const buildSnapshot = useCallback((s: Session) => {
     const trackPart = s.tracks
-      .map((t) => `${t.id}:${t.instrumentGroup}`)
+      .map((t) => `${t.id}:${t.instrumentGroup}:${t.presenceSetting}:${t.panPreference}:${t.reverbPreference}`)
       .sort()
       .join(',');
     return `${s.musicalStyle}|${trackPart}`;
   }, []);
 
-  // Update snapshot when a preview task completes
+  // Build snapshot from previewParams (persisted at preview-generation time)
+  const buildSnapshotFromParams = useCallback((pp: PreviewParams) => {
+    const trackPart = pp.tracks
+      .map((t) => `${t.id}:${t.instrumentGroup}:${t.presenceSetting ?? 'NORMAL'}:${t.panPreference ?? 'NO_PREFERENCE'}:${t.reverbPreference ?? 'NONE'}`)
+      .sort()
+      .join(',');
+    return `${pp.musicalStyle}|${trackPart}`;
+  }, []);
+
+  // Restore snapshot from the latest completed preview's previewParams
   useEffect(() => {
     if (!session) return;
-    const hasCompletedPreview = session.tasks.some(
-      (t) => t.taskType === 'preview' && t.status === 'completed',
-    );
-    if (hasCompletedPreview && !lastPreviewSnapshotRef.current) {
-      lastPreviewSnapshotRef.current = buildSnapshot(session);
+    const latestPreview = session.tasks
+      .filter((t) => t.taskType === 'preview' && t.status === 'completed')
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+    if (latestPreview && !lastPreviewSnapshotRef.current) {
+      if (latestPreview.previewParams) {
+        lastPreviewSnapshotRef.current = buildSnapshotFromParams(latestPreview.previewParams);
+      } else {
+        // Fallback for older previews without full params
+        lastPreviewSnapshotRef.current = buildSnapshot(session);
+      }
     }
-  }, [session, buildSnapshot]);
+  }, [session, buildSnapshot, buildSnapshotFromParams]);
 
   // Check dirty whenever session changes
   useEffect(() => {
@@ -598,6 +622,18 @@ export default function DialSessionPage() {
                     : 'Generate Preview Mix'}
               </button>
             )}
+          </div>
+        )}
+
+        {/* Dialogue Chat Panel — only in dialogue mode, after tracks uploaded, before final */}
+        {session.mode === 'dialogue' && hasTracks && hasCompletedPreview && !hasFinal && (
+          <div className="mb-8">
+            <ChatPanel
+              sessionId={session.id}
+              tracks={session.tracks}
+              headers={headers}
+              onParametersApplied={fetchSession}
+            />
           </div>
         )}
 

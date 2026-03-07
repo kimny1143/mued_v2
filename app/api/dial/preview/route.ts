@@ -95,13 +95,16 @@ export const POST = withDialAuth(async (auth) => {
       retrieveFxSettings,
     });
 
-    // Snapshot params used for this preview (for comparison UI)
+    // Snapshot params used for this preview (for dirty-state comparison UI)
     const previewParams = {
       musicalStyle: session.musicalStyle,
       tracks: tracks.map((t) => ({
         id: t.id,
         filename: t.originalFilename,
         instrumentGroup: t.instrumentGroup,
+        presenceSetting: t.presenceSetting,
+        panPreference: t.panPreference,
+        reverbPreference: t.reverbPreference,
       })),
     };
 
