@@ -121,6 +121,8 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 **核心: 「全部ちゃんとやる」がAI生成感の正体。「何を捨てるか」がデザイン。**
 
+**デザイン・レイアウトの鉄則: 一般的に寄るな。意図を持った方向に鋭く尖れ。** Claudeはデザインで無難・汎用的な選択をしがち。MUEDは音楽制作ツールであり、ユーザーはクリエイター。DAWやプロオーディオ機器のUIのように、目的に特化した尖ったデザインを選べ。迷ったら「安全な中央値」ではなく「このUIは何のために存在するか」から逆算して決断せよ。
+
 ### Video Branding (MUEDear)
 
 - Primary: #F5A623 (Hoo amber)
@@ -164,6 +166,7 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 | `coding-rules` | コード実装、レビュー |
 | `ai-models` | AIモデル使用、OpenAI API呼び出し |
 | `web-performance` | Core Web Vitals最適化、パフォーマンス改善 |
+| `mued-onboarding` | オンボーディング設計・改善、Aha Moment定義、リテンション |
 
 ---
 

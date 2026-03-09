@@ -141,6 +141,14 @@ export const POST = withDialAuth(async (auth) => {
       return apiNotFound('Session not found');
     }
 
+    // Omakase mode: Mix Check is not available
+    if (type === 'mix_check' && sessionRow.mode === 'omakase') {
+      return apiError('Mix Check is not available in Omakase mode.', {
+        code: 'INVALID_MODE',
+        status: 400,
+      });
+    }
+
     // Enforce mix check limit (max 2)
     if (type === 'mix_check' && sessionRow.mixCheckCount >= 2) {
       return apiError('Mix check limit reached (max 2). Please generate Final Mix instead.', {

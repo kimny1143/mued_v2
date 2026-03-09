@@ -31,11 +31,13 @@ const stripe = new Stripe(stripeConfig.secretKey, {
 
 // ─── Price mapping (cents) ──────────────────────────────────────────────────
 
-const DIAL_PRICES: Record<string, { amountCents: number; label: string }> = {
+const MIX_PRICES: Record<string, { amountCents: number; label: string }> = {
   omakase: { amountCents: 1200, label: 'MUEDial Omakase Mix' },
   dialogue: { amountCents: 3500, label: 'MUEDial Dialogue Mix' },
-  dialogue_mastering: { amountCents: 4200, label: 'MUEDial Dialogue + Mastering' },
-  fx_sheet: { amountCents: 500, label: 'MUEDial FX Sheet' },
+};
+
+const MASTERING_PRICES: Record<string, { amountCents: number; label: string }> = {
+  omakase: { amountCents: 500, label: 'MUEDial Mastering' },
 };
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
@@ -43,12 +45,15 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
 // ─── Validation ─────────────────────────────────────────────────────────────
 
 const checkoutSchema = z.object({
-  purchaseType: z.enum(['omakase', 'dialogue', 'dialogue_mastering', 'fx_sheet']),
+  mixType: z.enum(['omakase', 'dialogue']).nullable().optional(),
+  masteringType: z.enum(['omakase']).nullable().optional(),
   email: z.string().email(),
   musicalStyle: z.string().optional(),
   title: z.string().optional(),
-  mode: z.enum(['omakase', 'dialogue']).optional(),
-});
+}).refine(
+  (d) => d.mixType || d.masteringType,
+  'At least one service must be selected',
+);
 
 // ─── POST Handler ───────────────────────────────────────────────────────────
 
@@ -60,78 +65,120 @@ export async function POST(request: NextRequest) {
       return apiValidationError('Invalid request', parsed.error.errors);
     }
 
-    const { purchaseType, email, musicalStyle, title, mode } = parsed.data;
-    const price = DIAL_PRICES[purchaseType];
+    const { mixType, masteringType, email, musicalStyle, title } = parsed.data;
 
     // Try to resolve Clerk user (optional — not required)
     const clerkUserId = await resolveClerkUserId(request).catch(() => null);
 
-    // Derive session mode from purchaseType if not explicitly provided
-    const sessionMode = mode ?? (purchaseType === 'omakase' ? 'omakase' : 'dialogue');
+    // Derive session mode: null when mastering-only (no mix purchased)
+    const sessionMode = mixType ?? null;
 
     // Generate guest token (always — link to account later if logged in)
     const guestToken = randomBytes(32).toString('hex');
     const guestTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    // Create dial session + purchase in a transaction
+    // Build Stripe line items
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    if (mixType) {
+      const mp = MIX_PRICES[mixType];
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: { name: mp.label, description: `MUEDial mixing service — ${mixType}` },
+          unit_amount: mp.amountCents,
+        },
+        quantity: 1,
+      });
+    }
+    if (masteringType) {
+      const mp = MASTERING_PRICES[masteringType];
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: { name: mp.label, description: 'MUEDial mastering service' },
+          unit_amount: mp.amountCents,
+        },
+        quantity: 1,
+      });
+    }
+
+    const totalCents = lineItems.reduce((sum, li) => sum + (li.price_data?.unit_amount ?? 0), 0);
+
+    // Create dial session + purchase(s) in a transaction
     const result = await db.transaction(async (tx) => {
       const [session] = await tx.insert(dialSessions).values({
         userId: clerkUserId ?? undefined,
-        mode: sessionMode,
-        musicalStyle: musicalStyle ?? 'pop',
+        mode: sessionMode ?? undefined,
+        masteringMode: masteringType ?? undefined,
+        musicalStyle: musicalStyle ?? 'other',
         title,
         guestEmail: email,
         guestToken,
         guestTokenExpiresAt,
         paymentStatus: 'pending',
+        ...(sessionMode === 'omakase' ? {
+          baseCycleLimit: 1,
+          additionalCycleLimit: 0,
+        } : {}),
       }).returning();
 
-      const [purchase] = await tx.insert(dialPurchases).values({
-        sessionId: session.id,
-        userId: clerkUserId ?? undefined,
-        guestEmail: email,
-        purchaseType,
-        amountCents: price.amountCents,
-        currency: 'usd',
-      }).returning();
+      // Create separate purchase records for mix and mastering
+      const purchases = [];
+      if (mixType) {
+        const [p] = await tx.insert(dialPurchases).values({
+          sessionId: session.id,
+          userId: clerkUserId ?? undefined,
+          guestEmail: email,
+          purchaseType: mixType,
+          amountCents: MIX_PRICES[mixType].amountCents,
+          currency: 'usd',
+        }).returning();
+        purchases.push(p);
+      }
+      if (masteringType) {
+        const masteringPurchaseType = 'omakase_mastering';
+        const [p] = await tx.insert(dialPurchases).values({
+          sessionId: session.id,
+          userId: clerkUserId ?? undefined,
+          guestEmail: email,
+          purchaseType: masteringPurchaseType as 'omakase_mastering' | 'mastering_dialogue',
+          amountCents: MASTERING_PRICES[masteringType].amountCents,
+          currency: 'usd',
+        }).returning();
+        purchases.push(p);
+      }
 
-      return { session, purchase };
+      return { session, purchases };
     });
 
     // Create Stripe Checkout Session
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: email,
-      line_items: [{
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: price.label,
-            description: `MUEDial mixing service — ${purchaseType}`,
-          },
-          unit_amount: price.amountCents,
-        },
-        quantity: 1,
-      }],
+      line_items: lineItems,
       metadata: {
         service: 'dial',
-        purchaseType,
+        mixType: mixType ?? '',
+        masteringType: masteringType ?? '',
         dialSessionId: result.session.id,
-        purchaseId: result.purchase.id,
+        purchaseIds: result.purchases.map((p) => p.id).join(','),
         guestToken,
+        totalCents: String(totalCents),
       },
       success_url: `${APP_URL}/dial/session/${result.session.id}?payment=success`,
       cancel_url: `${APP_URL}/dial?payment=cancelled`,
     });
 
-    // Update session with Stripe checkout ID
+    // Update session + purchases with Stripe checkout ID
     await db.transaction(async (tx) => {
       await tx.update(dialSessions)
         .set({ stripeCheckoutSessionId: checkoutSession.id })
         .where(eq(dialSessions.id, result.session.id));
-      await tx.update(dialPurchases)
-        .set({ stripeCheckoutSessionId: checkoutSession.id })
-        .where(eq(dialPurchases.id, result.purchase.id));
+      for (const p of result.purchases) {
+        await tx.update(dialPurchases)
+          .set({ stripeCheckoutSessionId: checkoutSession.id })
+          .where(eq(dialPurchases.id, p.id));
+      }
     });
 
     return apiSuccess({

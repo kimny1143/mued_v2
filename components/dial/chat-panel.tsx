@@ -30,7 +30,8 @@ interface ParameterChange {
 const PREVIEW_KEYS = new Set(['presenceSetting', 'panPreference', 'reverbPreference']);
 const FINAL_KEYS = new Set(['gainDb', 'compRatio', 'compThresholdDb', 'compAttackMs', 'compReleaseMs', 'eqBands', 'panAngleDegrees']);
 
-type MixAction = 'adjust_preview' | 'request_mix_check' | 'request_final';
+type MixAction = 'adjust_preview' | 'request_mix_check' | 'request_final'
+  | 'set_mastering_params' | 'request_mastering_final';
 
 interface ChatMessage {
   id: string;
@@ -57,10 +58,16 @@ interface ChatPanelProps {
   onPreviewRequested?: () => void;
   onMixCheckRequested?: () => void;
   onFinalRequested?: () => void;
+  onMasteringPreviewRequested?: (desiredLoudness?: string) => void;
+  onMasteringFinalRequested?: () => void;
   generating?: boolean;
   className?: string;
   /** Current mixing phase — prevents preview regeneration in Phase 3 */
   phase?: 1 | 2 | 3;
+  mode?: 'omakase' | 'dialogue';
+  previewCount?: number;
+  previewLimit?: number;
+  isMasteringPhase?: boolean;
 }
 
 const VALID_PRESENCE = ['NORMAL', 'LEAD', 'BACKGROUND'];
@@ -93,7 +100,7 @@ function splitChanges(changes: ParameterChange['changes']) {
   return { preview, final: final_ };
 }
 
-export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onPreviewRequested, onMixCheckRequested, onFinalRequested, generating = false, className, phase = 1 }: ChatPanelProps) {
+export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onPreviewRequested, onMixCheckRequested, onFinalRequested, onMasteringPreviewRequested, onMasteringFinalRequested, generating = false, className, phase = 1, mode = 'dialogue', previewCount = 0, previewLimit = 0, isMasteringPhase = false }: ChatPanelProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -154,10 +161,10 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
         });
         const data = await res.json();
         if (data.success) {
-          // Mark all historical messages with parameterChanges as already applied
+          // Mark all historical messages as already applied (actions already executed)
           setMessages(data.data.messages.map((m: ChatMessage) => ({
             ...m,
-            applied: m.parameterChanges && m.parameterChanges.length > 0 ? true : undefined,
+            applied: (m.parameterChanges && m.parameterChanges.length > 0) || m.action ? true : undefined,
           })));
         }
       } catch {
@@ -207,17 +214,20 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
 
       const parameterChanges: ParameterChange[] | null = data.data.parameterChanges;
       const action: MixAction | null = data.data.action ?? null;
+      const desiredLoudness: string | null = data.data.desiredLoudness ?? null;
 
       // Action-based handling (from tool call):
       // - adjust_preview: auto-apply preview params + regenerate (Phase 1 only)
       // - request_mix_check / request_final: show action button, don't auto-apply
+      // - set_mastering_params: auto-trigger mastering preview
+      // - request_mastering_final: show action button
       //
       // Phase 3 guard: if Hoo mistakenly sends adjust_preview after Mix Check,
       // treat it as request_final instead of regenerating a preview.
       let applied = false;
       let effectiveAction = action;
 
-      if (action === 'adjust_preview' && phase === 3) {
+      if (action === 'adjust_preview' && phase === 3 && !isMasteringPhase) {
         // AI sent wrong action for Phase 3 — upgrade to request_final
         effectiveAction = 'request_final';
       }
@@ -227,6 +237,12 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
         if (applied && onPreviewRequested) {
           onPreviewRequested();
         }
+      }
+
+      // Mastering: auto-trigger preview on set_mastering_params
+      if (effectiveAction === 'set_mastering_params' && onMasteringPreviewRequested) {
+        onMasteringPreviewRequested(desiredLoudness ?? undefined);
+        applied = true;
       }
 
       // If Hoo set the musical style, refresh session data
@@ -265,7 +281,9 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
   };
 
   // Auto-greeting: when tracks exist but no conversation yet, trigger Hoo's intro
+  // Also triggers when transitioning to mastering phase
   const greetingSentRef = useRef(false);
+  const masteringGreetingSentRef = useRef(false);
   useEffect(() => {
     if (
       tracks.length > 0 &&
@@ -275,9 +293,32 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
       !greetingSentRef.current
     ) {
       greetingSentRef.current = true;
-      sendMessage('トラックをアップロードしました。ミックスの相談をお願いします。', { showInChat: false });
+      let greeting: string;
+      if (isMasteringPhase && masteringGreetingSentRef.current === false) {
+        // Mastering-only: skip mix greeting, go straight to mastering
+        masteringGreetingSentRef.current = true;
+        greeting = '2-Mixをアップロードしました。マスタリングをお願いします。';
+      } else if (mode === 'omakase') {
+        greeting = 'トラックをアップロードしました。Omakaseミックスをお願いします。';
+      } else {
+        greeting = 'トラックをアップロードしました。ミックスの相談をお願いします。';
+      }
+      sendMessage(greeting, { showInChat: false });
     }
-  }, [tracks.length, messages.length, loadingHistory, sending, sendMessage]);
+  }, [tracks.length, messages.length, loadingHistory, sending, sendMessage, isMasteringPhase]);
+
+  // Auto-trigger mastering phase greeting (mix+mastering transition only)
+  useEffect(() => {
+    if (
+      isMasteringPhase &&
+      !masteringGreetingSentRef.current &&
+      !sending &&
+      messages.length > 0
+    ) {
+      masteringGreetingSentRef.current = true;
+      sendMessage('ミックスが完了しました。マスタリングに進みたいです。', { showInChat: false });
+    }
+  }, [isMasteringPhase, sending, messages.length, sendMessage]);
 
   // Strip JSON code block from display content
   const formatContent = (content: string) => {
@@ -291,7 +332,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
       if (
         msg.role === 'assistant' &&
         !msg.applied &&
-        (msg.action === 'request_mix_check' || msg.action === 'request_final')
+        (msg.action === 'request_mix_check' || msg.action === 'request_final' || msg.action === 'request_mastering_final')
       ) {
         return msg.id;
       }
@@ -304,7 +345,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
       <div className="px-4 py-3 bg-zinc-900 border-b border-zinc-800">
         <h3 className="text-sm font-medium flex items-center gap-2">
           <span className="text-amber-400">Hoo</span>
-          <span className="text-zinc-500">Mixing Assistant</span>
+          <span className="text-zinc-500">{isMasteringPhase ? 'Mastering Assistant' : 'Mixing Assistant'}</span>
         </h3>
       </div>
 
@@ -318,10 +359,14 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
               <>
                 <span className="text-amber-400 text-base">Hoo</span>
                 <p className="mt-2 text-zinc-400">
-                  Upload your stems from the sidebar to get started.
+                  {isMasteringPhase
+                    ? 'Upload your 2-mix from the sidebar to get started.'
+                    : 'Upload your stems from the sidebar to get started.'}
                 </p>
                 <p className="mt-1 text-zinc-600 text-xs">
-                  Once uploaded, tell me how you want your mix to sound.
+                  {isMasteringPhase
+                    ? 'Once uploaded, tell me how you want your master to sound.'
+                    : 'Once uploaded, tell me how you want your mix to sound.'}
                 </p>
               </>
             ) : (
@@ -357,8 +402,10 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                   const hasParams = msg.parameterChanges && msg.parameterChanges.length > 0;
                   const isPreviewAction = msg.action === 'adjust_preview';
                   const isMixAction = msg.action === 'request_mix_check' || msg.action === 'request_final';
+                  const isMasteringPreviewAction = msg.action === 'set_mastering_params';
+                  const isMasteringFinalAction = msg.action === 'request_mastering_final';
 
-                  if (!hasParams && !isMixAction) return null;
+                  if (!hasParams && !isMixAction && !isMasteringPreviewAction && !isMasteringFinalAction) return null;
 
                   return (
                     <div className="mt-2 space-y-2">
@@ -464,6 +511,60 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                           )}
                         </div>
                       )}
+
+                      {/* Mastering preview — auto-applied */}
+                      {isMasteringPreviewAction && (
+                        <div className={`p-3 rounded-lg ${
+                          msg.applied
+                            ? 'bg-green-900/10 border border-green-800/30'
+                            : 'bg-zinc-800/50 border border-zinc-700/30'
+                        }`}>
+                          <div className={`text-xs font-medium mb-1 flex items-center gap-1.5 ${
+                            msg.applied ? 'text-green-400' : 'text-zinc-500'
+                          }`}>
+                            {msg.applied && (
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                            {msg.applied ? 'Mastering Preview Generating' : 'Mastering Settings'}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Mastering final — action button */}
+                      {isMasteringFinalAction && (
+                        <div className="p-3 rounded-lg bg-amber-900/10 border border-amber-800/30">
+                          <div className="text-xs font-medium mb-2 flex items-center gap-1.5 text-amber-400">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Final Mastering
+                          </div>
+                          {msg.id === lastActionableId && (
+                            <button
+                              onClick={() => {
+                                onMasteringFinalRequested?.();
+                                setMessages((prev) => prev.map((m) =>
+                                  m.id === msg.id ? { ...m, applied: true } : m,
+                                ));
+                              }}
+                              disabled={generating}
+                              className="mt-2 w-full px-4 py-2.5 bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 rounded-lg text-sm font-medium text-white transition-colors"
+                            >
+                              {generating ? 'Generating...' : 'Generate Mastered Track'}
+                            </button>
+                          )}
+                          {msg.applied && (
+                            <div className="mt-2 text-xs text-green-400 flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                              Submitted
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
@@ -493,13 +594,19 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
 
       {/* Input */}
       <div className="px-4 py-3 bg-zinc-900 border-t border-zinc-800">
+        {mode === 'omakase' && previewLimit > 0 && (
+          <div className="text-xs text-zinc-500 mb-2">
+            Preview {previewCount}/{previewLimit}
+            {previewCount >= previewLimit && <span className="text-red-400 ml-1">Limit reached</span>}
+          </div>
+        )}
         <div className="flex gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && handleSend()}
-            placeholder={tracks.length === 0 ? 'Upload stems first...' : 'Describe what you want to change...'}
+            placeholder={tracks.length === 0 ? (isMasteringPhase ? 'Upload your 2-mix first...' : 'Upload stems first...') : 'Describe what you want to change...'}
             disabled={sending || tracks.length === 0}
             className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 disabled:opacity-50"
           />

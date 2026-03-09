@@ -40,16 +40,18 @@ export const dialSessionStatusEnum = pgEnum('dial_session_status', [
   'uploading',   // Tracks being uploaded
   'previewing',  // Preview mix in progress
   'mixing',      // Final mix in progress
+  'mastering',   // Mastering in progress
   'completed',   // All done
   'archived',    // User archived
 ]);
 
 export const dialTaskTypeEnum = pgEnum('dial_task_type', [
   'preview',
-  'mix_check',       // Advanced preview with EQ/comp (250cr, WAV) — user listens & provides feedback
-  'final_basic',     // Omakase final (gain only)
-  'final_advanced',  // Dialogue final with EQ/comp adjustments
-  'mastering',
+  'mix_check',           // Advanced preview with EQ/comp (250cr, WAV) — user listens & provides feedback
+  'final_basic',         // Omakase final (gain only)
+  'final_advanced',      // Dialogue final with EQ/comp adjustments
+  'mastering_preview',   // Mastering preview (FREE)
+  'mastering',           // Mastering final (220cr)
 ]);
 
 export const dialTaskStatusEnum = pgEnum('dial_task_status', [
@@ -73,7 +75,8 @@ export const dialCreditActionEnum = pgEnum('dial_credit_action', [
 export const dialSessions = pgTable('dial_sessions', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: text('user_id').references(() => users.clerkId), // nullable for guests
-  mode: dialModeEnum('mode').notNull(),
+  mode: dialModeEnum('mode'), // null = mastering-only (no mix)
+  masteringMode: text('mastering_mode'), // 'omakase' | 'dialogue' | null
   status: dialSessionStatusEnum('status').notNull().default('uploading'),
   musicalStyle: text('musical_style').notNull(), // MusicalStyle enum value
   title: text('title'), // User-given project name
@@ -90,6 +93,8 @@ export const dialSessions = pgTable('dial_sessions', {
   baseCycleLimit: integer('base_cycle_limit').notNull().default(5), // Base plan paid cycle limit
   additionalCyclesPurchased: integer('additional_cycles_purchased').notNull().default(0), // Additional cycles bought
   additionalCycleLimit: integer('additional_cycle_limit').notNull().default(5), // Max additional cycles allowed
+  previewCount: integer('preview_count').notNull().default(0), // Preview count (omakase: max 5)
+  analysisResult: jsonb('analysis_result'), // RoEx mix analysis (LUFS, peak, stereo, etc.)
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -142,6 +147,7 @@ export const dialMessages = pgTable('dial_messages', {
   role: text('role').notNull(), // 'user' | 'assistant' | 'system'
   content: text('content').notNull(),
   parameterChanges: jsonb('parameter_changes'), // Structured parameter adjustments
+  action: text('action'), // Tool call action: adjust_preview, request_mix_check, request_final, etc.
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (table) => ({
   sessionIdIdx: index('idx_dial_messages_session_id').on(table.sessionId),
@@ -183,6 +189,9 @@ export const dialPurchaseTypeEnum = pgEnum('dial_purchase_type', [
   'omakase',
   'dialogue',
   'dialogue_mastering',
+  'omakase_mastering',
+  'mastering_omakase',
+  'mastering_dialogue',
   'fx_sheet',
   'additional_cycle',
 ]);

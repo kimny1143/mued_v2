@@ -39,7 +39,7 @@ export default function DialDashboardLayout({
                   className="text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer"
                 >
                   <ArrowLeft className="w-4 h-4 mr-1.5" />
-                  New Mix
+                  New Session
                 </Button>
               </Link>
               <LanguageSwitcher />

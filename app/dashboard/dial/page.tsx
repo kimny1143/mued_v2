@@ -10,14 +10,15 @@ const STATUS_CONFIG = {
   uploading: { label: "Uploading", icon: Upload, color: "text-slate-400" },
   previewing: { label: "Previewing", icon: Loader2, color: "text-blue-400" },
   mixing: { label: "Mixing", icon: Loader2, color: "text-amber-400" },
+  mastering: { label: "Mastering", icon: Loader2, color: "text-purple-400" },
   completed: { label: "Completed", icon: CheckCircle, color: "text-green-400" },
   archived: { label: "Archived", icon: Clock, color: "text-slate-500" },
 } as const;
 
-const MODE_LABELS = {
+const MODE_LABELS: Record<string, string> = {
   omakase: "Omakase",
   dialogue: "Dialogue",
-} as const;
+};
 
 export default async function DialDashboardPage() {
   const user = await currentUser();
@@ -63,7 +64,7 @@ export default async function DialDashboardPage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-medium rounded-lg transition-colors text-sm"
         >
           <Headphones className="w-4 h-4" />
-          New Mix
+          New Session
         </Link>
       </div>
 
@@ -110,7 +111,7 @@ export default async function DialDashboardPage() {
                       {session.title || session.musicalStyle}
                     </span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-slate-400 flex-shrink-0">
-                      {MODE_LABELS[session.mode]}
+                      {session.mode ? MODE_LABELS[session.mode] : 'Mastering'}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">

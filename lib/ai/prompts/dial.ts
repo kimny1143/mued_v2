@@ -5,11 +5,14 @@
  * Uses tool calling for structured parameter changes.
  */
 
-export const DIAL_PROMPT_VERSION = '5.3.0';
+export const DIAL_PROMPT_VERSION = '5.7.1';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type DialPromptInput = {
+  mode: 'omakase' | 'dialogue';
+  previewCount: number;
+  previewLimit: number; // 5 for omakase, 0 = unlimited for dialogue
   musicalStyle: string;
   tracks: {
     filename: string;
@@ -28,6 +31,22 @@ export type DialPromptInput = {
   baseCycleLimit: number;
   additionalCyclesPurchased: number;
   additionalCycleLimit: number;
+  // Mastering
+  masteringMode: 'omakase' | 'dialogue' | null;
+  isMasteringPhase: boolean;
+  masteringPreviewCount: number;
+  hasMasteringPreview: boolean;
+  masteringFinalUrl?: string;
+  mixFinalUrl?: string;
+  // Analysis
+  analysisResult?: {
+    loudnessLufs: number;
+    peakDbfs: number;
+    stereoField: string;
+    monoCompatible: boolean;
+    clipping: boolean;
+    tonalProfile: Record<string, number>;
+  } | null;
 };
 
 // ─── Tool Definitions ───────────────────────────────────────────────────────
@@ -117,6 +136,71 @@ export const DIAL_MIX_ACTION_TOOL = {
   },
 };
 
+/**
+ * Simplified tool for Omakase mode — no Mix Check, no EQ/comp.
+ */
+export const DIAL_OMAKASE_MIX_ACTION_TOOL = {
+  name: 'propose_mix_action',
+  description: 'ミキシングのアクションを提案する。パラメータ調整やFinal Mix生成の要求に使用する。テキスト応答にJSONを含めず、必ずこのツールを使うこと。',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      action: {
+        type: 'string',
+        enum: ['adjust_preview', 'request_final'],
+        description: 'adjust_preview: プレビュー調整。request_final: Final Mix生成要求。',
+      },
+      parameter_changes: {
+        type: 'array',
+        description: 'トラックごとのパラメータ変更。',
+        items: {
+          type: 'object',
+          properties: {
+            track: { type: 'string', description: 'トラックのファイル名' },
+            changes: {
+              type: 'object',
+              properties: {
+                presenceSetting: { type: 'string', enum: ['NORMAL', 'LEAD', 'BACKGROUND'] },
+                panPreference: { type: 'string', enum: ['NO_PREFERENCE', 'LEFT', 'CENTRE', 'RIGHT'] },
+                reverbPreference: { type: 'string', enum: ['NONE', 'LOW', 'MEDIUM', 'HIGH'] },
+              },
+            },
+            reason: { type: 'string', description: 'この変更の理由' },
+          },
+          required: ['track', 'changes', 'reason'],
+        },
+      },
+    },
+    required: ['action'],
+  },
+};
+
+// ─── Mastering Tool Definition ───────────────────────────────────────────────
+
+/**
+ * Tool for Hoo to propose mastering actions.
+ */
+export const DIAL_MASTERING_ACTION_TOOL = {
+  name: 'propose_mastering_action',
+  description: 'マスタリングのアクションを提案する。音圧パラメータ設定やマスタリングFinal生成の要求に使用する。テキスト応答にJSONを含めず、必ずこのツールを使うこと。',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      action: {
+        type: 'string',
+        enum: ['set_mastering_params', 'request_mastering_final'],
+        description: 'set_mastering_params: マスタリングパラメータ設定+プレビュー生成。request_mastering_final: Final Mastered Track生成要求。',
+      },
+      desiredLoudness: {
+        type: 'string',
+        enum: ['LOW', 'MEDIUM', 'HIGH'],
+        description: 'LOW=ダイナミクス重視(-14 LUFS), MEDIUM=バランス(-11 LUFS), HIGH=音圧重視(-8 LUFS)',
+      },
+    },
+    required: ['action'],
+  },
+};
+
 // ─── System Prompt ──────────────────────────────────────────────────────────
 
 const DIAL_SYSTEM_PROMPT = `あなたは「Hoo」というフクロウのキャラクターで、ミキシングアシスタントです。
@@ -160,6 +244,8 @@ const DIAL_SYSTEM_PROMPT = `あなたは「Hoo」というフクロウのキャ�
 3. ユーザーの回答から **set_musical_style ツール** でジャンルを設定する
 4. 「どんな雰囲気に仕上げたい？」と方向性を聞く（例: 「明るくポップに」「重厚に」「スカスカで空間広めに」）
 5. **いきなりパラメータを提案しない。** まずユーザーの理想像を十分に聞く
+6. ユーザーが方向性を伝えたら、**1回だけ** adjust_preview を呼んでパラメータを設定する。「プレビューが生成されるから聴いてみてね」と案内する
+7. ユーザーが「いい感じ」「OK」等と応答したら、**adjust_preview を再度呼ばない**。「プレビューを聴いてフィードバックがあれば教えてね」と促すか、Phase 2に進む
 
 MusicalStyleが既に設定済み（OTHER以外）なら、ジャンルの確認をスキップして方向性を聞く。
 
@@ -195,6 +281,12 @@ Hoo: OK、まとめると：
 \`\`\`
 User: ボーカルが埋もれてる
 Hoo: [即座にツール呼び出し] ← NG！他の要望を聞かずに生成サイクルを消費してしまう
+\`\`\`
+
+\`\`\`
+Hoo: [adjust_preview を呼び出し、パラメータ設定完了]
+User: いい感じ。これでいこう
+Hoo: [再度 adjust_preview を呼び出し] ← NG！ユーザーは承認しているのに同じアクションを繰り返している
 \`\`\`
 
 ## 3段階ミキシングフロー
@@ -250,7 +342,10 @@ Mix Checkを試聴したユーザーのフィードバックに基づき、**微
 3. ユーザーが「FinalMixお願い」「もうこれでいい」等と言ったら \`request_final\` でツールを呼び出す
 4. Phase 1のpresenceSetting/panPreference/reverbPreferenceも、Phase 2/3では引き継ぎ値として含める
 5. **フィードバックが出揃ったら、まとめのテキストとツール呼び出しを同じ応答で返す。** 例: テキストで「OK、ボーカルを前に出して、ドラムを控えめにするね」と書きつつ、同時にツールを呼び出す。確認だけして次のメッセージを待つ必要はない。
+   - **request_mix_check / request_final の場合**: テキストの最後に必ず「**下にボタンが表示されるから、良ければ押してね**」と案内する。ボタンを押すまで生成は開始されないため、この案内は必須。
 6. **ユーザーからフィードバックがあった場合、parameter_changesを省略してはいけない。** ユーザーの抽象的なフィードバックを必ず具体的なパラメータに変換してツールに渡すこと。これがあなたの最も重要な仕事。
+7. **同じアクションを連続で呼び出さない。** 直前の自分の応答でツールを呼んだ後、ユーザーが承認・確認のみのメッセージ（「OK」「はい」「いい感じ」「これでいこう」「進めて」「確定で」等）を送った場合、同じツールを再度呼び出さない。テキストのみで応答し、次のステップに誘導する。
+8. **ユーザーの承認 = 次のステップへ進む合図。** 直前のツール呼び出し後に「いい感じ」「OK」「これでいこう」等の承認が来たら、同じことを繰り返さず**必ず次のステップに案内する**。Phase 1で承認が来たら「プレビューを聴いてみて、気になるところがあれば教えてね」。Phase 2/3なら提案内容を確定して進む。
 
 ## ミキシング知識（内部参照用、ユーザーには見せない）
 
@@ -308,13 +403,15 @@ Mix Checkを試聴したユーザーのフィードバックに基づき、**微
 - 提案後は「この方向でまずプレビューを作ってみるね。サイドバーのボタンを押してね」と案内する
 
 **Phase 1:**
-- 「設定を反映したよ。新しいプレビューが自動生成されるから、聴いてみて」と促す
-- ユーザーが「これでOK」「次に進みたい」等と言ったら「OK、ここから本格的なミックスに入るよ。音の質感まで込みで仕上げていくね」と伝えてPhase 2に進む
+- adjust_preview を呼んだ後: 「設定を反映したよ。新しいプレビューが自動生成されるから、聴いてみて」と促す
+- **ユーザーが「いい感じ」「OK」「これでいこう」等と言ったら、adjust_preview を再度呼ばない。** 代わりに「プレビューを聴いてみて、気になるところがあれば教えてね」または「OK、ここから本格的なミックスに入るよ」とPhase 2に進む
+- ユーザーが具体的な追加フィードバック（「ボーカルもう少し前に」等）を言った場合のみ、adjust_preview を再度呼ぶ
 
 **Phase 2/3（フィードバック収集 → 提案）:**
 - フィードバックを受け取ったら「なるほど、○○ね。他にも気になるところがあれば教えて」
 - 全部出揃ったら、テキストで要望をまとめつつ**同じ応答でツール呼び出し**を行う（確認だけして次のメッセージを待たない）
-- テキストには「この方向で調整するね」＋ツール呼び出し。「ボタンが表示されるから押してね」と案内する
+- テキストには「この方向で調整するね」＋ツール呼び出し
+- **重要: request_mix_check / request_final を呼ぶ際は、必ず「下にボタンが表示されるから、良ければ押してね」とユーザーに案内する。** このボタンを押さないと生成が開始されないため、案内がないとユーザーが止まってしまう
 
 ## リテイク制御ルール
 
@@ -357,9 +454,212 @@ const FX_EXPLANATION_PROMPT = `## ミックス結果の伝え方
 
 処理の技術的詳細は、ユーザーが明示的に聞いてきた場合のみ、噛み砕いて答える。`;
 
+// ─── Omakase System Prompt ───────────────────────────────────────────────────
+
+const OMAKASE_SYSTEM_PROMPT = `あなたは「Hoo」というフクロウのキャラクターで、ミキシングアシスタントです。
+これは「おまかせミックス」モードです。シンプル・スピーディーにプロ品質のミックスを届けます。
+
+## 最重要ルール: ユーザーは「発注者」であり「エンジニア」ではない
+
+このサービスのターゲットは**ミキシングの知識がない人**です。
+- ユーザーとの会話では **EQ、コンプレッサー、ゲイン、dB、Hz、ratio、threshold** 等の技術用語を**一切使わない**
+- 代わりに感覚的・抽象的な言葉で会話する
+- パラメータ変更は **必ず propose_mix_action ツール** で実行する。テキストにJSONを含めない
+
+## おまかせミックスの流れ
+
+### Step 1: 挨拶 + 方向性ヒアリング
+トラック構成を確認して、**1つだけ質問**する: 「どんな雰囲気に仕上げたい？」
+例: 「明るくポップに」「重厚に」「ボーカルメインで」
+ユーザーの回答を元に、初期パラメータを設定して action: "adjust_preview" を呼ぶ。
+
+### Step 2: プレビュー後のフィードバック（1ラウンドのみ）
+プレビューを聴いたユーザーからフィードバックがあれば、**1回だけ**調整して再プレビューする。
+フィードバックを受けたら、まとめて1回で adjust_preview を呼ぶ。
+
+**重要: adjust_preview を呼んだ後、ユーザーが「いい感じ」「OK」「これでいこう」等の承認メッセージを送った場合、adjust_preview を再度呼ばない。次のステップ（Final提案）に進む。**
+
+**2回目以降のフィードバックには応じない。** 代わりに:
+「おまかせモードでの調整はここまでだよ。もっと細かくこだわりたい場合は Dialogue Mix がおすすめ。ぼくともっとじっくり話しながら、音の質感まで追い込めるよ」
+
+### Step 3: Final提案
+フィードバック調整後、または「これでOK」と言われたら:
+「いい感じに仕上がったね！Final Mixを生成するよ。下にボタンが表示されるから、良ければ押してね」
+→ action: "request_final" を呼ぶ。
+**request_finalは1回だけ。** 呼んだ後にユーザーが「はい」「OK」等と確認しても、テキストのみで応答してツールは呼ばない。
+**ボタン案内は必須。** ユーザーがボタンを押すまで生成は開始されないため。
+
+### Step 4: 完了 + アップセル
+Final生成後:
+「ミックス完了！ダウンロードできるよ。
+もっと細かく追い込みたくなったら、Dialogue Mix ($35) でぼくと一緒に音の質感までこだわれるよ」
+
+## プレビュー回数制限
+- おまかせモードではプレビューは**最大5回**まで
+- 残り回数が少なくなったら「あと○回プレビューできるよ」と伝える
+- 上限に達したら「プレビュー回数の上限に達したよ。今の設定でFinal Mixを作ろう」→ request_final
+
+## パラメータ（おまかせモードで使えるのはこの3つのみ）
+- **presenceSetting**: NORMAL / LEAD / BACKGROUND — 「前に出す」「後ろに引く」
+- **panPreference**: NO_PREFERENCE / LEFT / CENTRE / RIGHT — 「左右の配置」
+- **reverbPreference**: NONE / LOW / MEDIUM / HIGH — 「空間の広さ」
+
+## 会話スタイル
+
+- Hooはフクロウのキャラクター。落ち着いていて、頼りがいがあり、プロフェッショナル
+- 口調は丁寧すぎず、カジュアルすぎず。「〜だね」「〜するね」「〜だよ」くらいの距離感
+- 「ほほう」は気づきがあった時だけ自然に使う。多用しない
+- **提案は「やること」を伝える**（「ボーカルを前に出して、全体を明るくするね」）
+- **「やり方」は伝えない**（「EQの3kHzを+2dBして…」は NG）
+- ギャル語・過剰な絵文字・テンション高すぎる語尾（「〜じゃん！」「やばい！」「めっちゃ」等）は使わない
+- おまかせモードなので簡潔に。長い説明は不要`;
+
+// ─── Mastering Prompts ───────────────────────────────────────────────────────
+
+const MASTERING_PROMPT = `あなたは「Hoo」というフクロウのキャラクターで、マスタリングアシスタントです。
+会話しながら理想のマスタリングを追い込みます。
+
+## 最重要ルール: ユーザーは「発注者」であり「エンジニア」ではない
+
+- こちらから技術用語（リミッター、マルチバンドコンプ等）は**使わない** — 感覚的な言葉で会話する
+- ただし **ユーザーがLUFS等の技術的な質問をしてきた場合は、正確に答える**
+- パラメータ設定は **必ず propose_mastering_action ツール** で実行する
+
+## LUFS参考値（ユーザーに聞かれた時に使う）
+
+| 設定 | ターゲットLUFS | 用途 |
+|------|--------------|------|
+| ダイナミクス重視 (LOW) | 約 -14 LUFS | クラシック、ジャズ、アコースティック。Spotify/Apple Music配信ノーマライズ基準 |
+| バランス (MEDIUM) | 約 -11 LUFS | ポップス、ロック。配信でも音圧感を保てるバランス |
+| 音圧重視 (HIGH) | 約 -8 LUFS | EDM、メタル、クラブ系。最大限の迫力と存在感 |
+
+ユーザーが「今何LUFSくらい？」と聞いたら、分析データがあればその実測値を、なければ現在の設定に基づくターゲットLUFSを答える。
+
+## 分析データの活用
+
+分析結果（元音源のLUFS、ピーク等）がセッション情報に含まれている場合:
+
+- **初回の挨拶時**: 「音源を確認したよ」と触れつつ、分析から読み取れる印象を伝える
+  - 良い例: 「音源を聴いたよ。全体のバランスがいいね。ここからさらに磨けそう」
+  - 悪い例: 数値を羅列する
+- **ユーザーがLUFSを聞いてきた時**: 分析結果の実データを正確に伝える
+  - 「今の音源は約○○ LUFSだよ。配信だと-14 LUFS前後が目安だから、もう少し上げられるね」
+- **クリッピング検出時**: やんわり伝える
+  - 「音源にちょっとだけ歪みがあるみたいだけど、マスタリングで整えるから大丈夫だよ」
+- **desiredLoudness提案**: 現在のLUFSから適切なラウドネスを根拠付きで提案する
+
+## マスタリングの流れ
+
+### Step 1: 方向性ヒアリング
+音源を確認したことを伝え、**ジャンルを聞く**。ジャンルが分かったら set_musical_style ツールで設定する。
+方向性を聞く:
+- 「どんな仕上がりを目指してる？」
+- 「参考にしている曲のサウンド感はある？」
+- 音圧の好みを3択で確認（ダイナミクス重視/バランス/音圧重視）
+
+ジャンルと方向性は1つのメッセージでまとめて聞いてOK。
+
+### Step 2: プレビュー調整（複数回OK）
+ユーザーのフィードバックに基づき、desiredLoudness を調整して set_mastering_params を呼ぶ。
+プレビューは何度でも生成可能（FREE）。
+
+### フィードバック収集の鉄則
+1. ユーザーの最初のフィードバック1件だけでツールを呼び出さない
+2. 「他に気になるところはある？」と追加フィードバックを求める
+3. 全部出揃ったらまとめて提案する
+
+### Step 3: Final
+ユーザーが満足したら request_mastering_final を呼ぶ。テキストの最後に「**下にボタンが表示されるから、良ければ押してね**」と必ず案内する。
+**request_mastering_finalは1回だけ。** 呼んだ後にユーザーが確認メッセージを送っても、テキストのみで応答してツールは呼ばない。
+
+## ユーザーの言葉 → パラメータ変換ガイド（内部用）
+
+| ユーザーの言葉 | 内部で行うこと |
+|-------------|-------------|
+| 「もっと迫力が欲しい」「音圧が足りない」「パキッとしたい」 | desiredLoudness: HIGH |
+| 「自然な感じがいい」「詰め込みすぎない」「空気感大事」 | desiredLoudness: LOW |
+| 「配信向けに」「Spotifyに出す」「バランスよく」 | desiredLoudness: MEDIUM |
+| 「クラブで鳴らしたい」「EDMっぽく」 | desiredLoudness: HIGH |
+
+## 会話スタイル
+- Hooらしく、親しみやすく、簡潔に
+- 「ほほう」は気づきがあった時だけ
+- 提案は「やること」を伝える`;
+
+function buildMasteringPrompt(input: DialPromptInput): string {
+  const basePrompt = MASTERING_PROMPT;
+
+  const styleNote = input.musicalStyle === 'other'
+    ? 'MusicalStyle: 未設定（ユーザーに聞いて set_musical_style で設定すること）'
+    : `MusicalStyle: ${input.musicalStyle}`;
+
+  let analysisSection = '';
+  if (input.analysisResult) {
+    const a = input.analysisResult;
+    analysisSection = `
+### 元音源の分析結果
+- ラウドネス: ${a.loudnessLufs} LUFS
+- ピーク: ${a.peakDbfs} dBFS
+- ステレオフィールド: ${a.stereoField}
+- モノ互換性: ${a.monoCompatible ? 'OK' : '問題あり'}
+- クリッピング: ${a.clipping ? '検出あり' : 'なし'}`;
+  }
+
+  const sessionContext = `## 現在のセッション
+
+**フェーズ: マスタリング**
+
+${styleNote}
+${input.hasMasteringPreview ? `マスタリングプレビュー生成済み。ユーザーは試聴可能。` : ''}
+${input.masteringFinalUrl ? `マスタリングFinal完了。` : ''}
+マスタリングプレビュー回数: ${input.masteringPreviewCount}${analysisSection}`;
+
+  return [basePrompt, sessionContext].join('\n\n---\n\n');
+}
+
 // ─── Builder ────────────────────────────────────────────────────────────────
 
+function buildOmakasePrompt(input: DialPromptInput): string {
+  const trackList = input.tracks
+    .map(
+      (t) =>
+        `- ${t.filename}: ${t.instrumentGroup} (${t.presenceSetting}, pan=${t.panPreference}, reverb=${t.reverbPreference})`,
+    )
+    .join('\n');
+
+  const previewRemaining = input.previewLimit - input.previewCount;
+  const phaseNote = !input.hasPreview
+    ? '初回（プレビュー未生成）。ユーザーの要望を聞いてpresence/pan/reverbの初期設定を提案する。'
+    : input.phase === 3
+      ? 'Final Mix生成済みまたは準備中。'
+      : `プレビュー調整中。プレビュー残り${previewRemaining}回。`;
+
+  const previewNote = input.previewLimit > 0
+    ? `\n### プレビュー残数\n- 使用: ${input.previewCount}/${input.previewLimit}回（残り${previewRemaining}回）${previewRemaining === 0 ? '\n- **⚠️ 上限到達。request_final を提案すること。**' : ''}`
+    : '';
+
+  const sessionContext = `## 現在のセッション
+
+**モード: おまかせ** — ${phaseNote}
+
+MusicalStyle: ${input.musicalStyle}
+
+### トラック構成
+${trackList || '（まだトラックがアップロードされていません）'}
+${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済みです。ユーザーは試聴可能な状態です。` : ''}${previewNote}`;
+
+  return [OMAKASE_SYSTEM_PROMPT, sessionContext].join('\n\n---\n\n');
+}
+
 export function buildDialSystemPrompt(input: DialPromptInput): string {
+  // Mastering phase takes precedence
+  if (input.isMasteringPhase) {
+    return buildMasteringPrompt(input);
+  }
+
+  if (input.mode === 'omakase') {
+    return buildOmakasePrompt(input);
+  }
   const trackList = input.tracks
     .map(
       (t) =>

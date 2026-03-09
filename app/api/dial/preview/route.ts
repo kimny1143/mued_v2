@@ -11,7 +11,7 @@ import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership, verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
-import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
+import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { createRoExClient, mixPreview, pollMixPreview } from '@/lib/roex';
 import type { MixTrackInput } from '@/lib/roex';
 import { db } from '@/db';
@@ -69,6 +69,14 @@ export const POST = withDialAuth(async (auth) => {
       return apiNotFound('Session not found');
     }
 
+    // Omakase preview limit check
+    if (session.mode === 'omakase' && (session.previewCount ?? 0) >= 5) {
+      return apiError('Preview limit reached (max 5). Generate your final mix.', {
+        code: 'PREVIEW_LIMIT',
+        status: 400,
+      });
+    }
+
     const tracks = await db.query.dialTracks.findMany({
       where: eq(dialTracks.sessionId, sessionId),
     });
@@ -120,9 +128,13 @@ export const POST = withDialAuth(async (auth) => {
       previewParams,
     }).returning();
 
-    // Update session status
+    // Update session status + increment preview count
     await db.update(dialSessions)
-      .set({ status: 'previewing', updatedAt: new Date() })
+      .set({
+        status: 'previewing',
+        previewCount: (session.previewCount ?? 0) + 1,
+        updatedAt: new Date(),
+      })
       .where(eq(dialSessions.id, sessionId));
 
     return apiSuccess({

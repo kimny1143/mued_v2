@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import { ChatPanel } from '@/components/dial/chat-panel';
+import { AudioAnalyzerProvider, useAudioAnalyzerContext } from '@/hooks/use-audio-analyzer-context';
+import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
 
 interface Track {
   id: string;
@@ -39,14 +41,17 @@ interface Task {
 
 interface Session {
   id: string;
-  mode: 'omakase' | 'dialogue';
+  mode: 'omakase' | 'dialogue' | null; // null = mastering-only
+  masteringMode: 'omakase' | 'dialogue' | null;
   status: string;
   musicalStyle: string;
   title: string | null;
   paymentStatus: string;
   mixCheckCount: number;
+  previewCount: number;
   tracks: Track[];
   tasks: Task[];
+  analysisResult?: Record<string, unknown> | null;
 }
 
 const INSTRUMENT_GROUPS = [
@@ -86,6 +91,14 @@ function guessInstrumentGroup(filename: string): string {
 }
 
 export default function DialSessionPage() {
+  return (
+    <AudioAnalyzerProvider>
+      <DialSessionContent />
+    </AudioAnalyzerProvider>
+  );
+}
+
+function DialSessionContent() {
   const params = useParams();
   const sessionId = params.id as string;
   const { isSignedIn, getToken } = useAuth();
@@ -98,6 +111,7 @@ export default function DialSessionPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
 
   // Preview state
   const [previewing, setPreviewing] = useState(false);
@@ -108,6 +122,25 @@ export default function DialSessionPage() {
   // Sidebar player — selected take
   const [selectedTakeId, setSelectedTakeId] = useState<string | null>(null);
   const prevCompletedCountRef = useRef(0);
+
+  // Audio analyzer (from context)
+  const { audioRef } = useAudioAnalyzerContext();
+
+  // Dev-mode local audio for testing analyzer
+  const [devAudioUrl, setDevAudioUrl] = useState<string | null>(null);
+  const [devDragOver, setDevDragOver] = useState(false);
+  const isDev = process.env.NODE_ENV === 'development';
+  const devFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDevDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDevDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file?.type.startsWith('audio/')) {
+      setDevAudioUrl(URL.createObjectURL(file));
+    }
+  }, []);
 
   // Track whether params changed since last preview
   const [dirty, setDirty] = useState(false);
@@ -120,10 +153,10 @@ export default function DialSessionPage() {
     ? localStorage.getItem('dial_guest_token')
     : null;
 
-  const headers: Record<string, string> = {
+  const headers: Record<string, string> = useMemo(() => ({
     'Content-Type': 'application/json',
     ...(guestToken ? { 'X-Dial-Guest-Token': guestToken } : {}),
-  };
+  }), [guestToken]);
 
   const fetchSession = useCallback(async () => {
     try {
@@ -232,7 +265,7 @@ export default function DialSessionPage() {
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
-  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -240,6 +273,16 @@ export default function DialSessionPage() {
       file,
       instrumentGroup: guessInstrumentGroup(file.name),
     }));
+
+    // Mastering: single file — skip staging, upload immediately
+    const isMasteringOnly = !session?.mode && !!session?.masteringMode;
+    if (isMasteringOnly && newStaged.length > 0) {
+      e.target.value = '';
+      setStagedFiles(newStaged);
+      // Trigger upload directly
+      await uploadFiles(newStaged);
+      return;
+    }
 
     setStagedFiles((prev) => [...prev, ...newStaged]);
     e.target.value = '';
@@ -253,16 +296,16 @@ export default function DialSessionPage() {
     setStagedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleUploadAll = async () => {
-    if (!session || stagedFiles.length === 0) return;
+  const uploadFiles = async (files: StagedFile[]) => {
+    if (!session || files.length === 0) return;
 
     setUploading(true);
-    setUploadProgress({ current: 0, total: stagedFiles.length });
+    setUploadProgress({ current: 0, total: files.length });
     setError(null);
 
-    for (let i = 0; i < stagedFiles.length; i++) {
-      const { file, instrumentGroup } = stagedFiles[i];
-      setUploadProgress({ current: i + 1, total: stagedFiles.length });
+    for (let i = 0; i < files.length; i++) {
+      const { file, instrumentGroup } = files[i];
+      setUploadProgress({ current: i + 1, total: files.length });
 
       try {
         const formData = new FormData();
@@ -305,7 +348,32 @@ export default function DialSessionPage() {
     setUploadProgress(null);
     setUploading(false);
     await fetchSession();
+
+    // Auto-analyze for mastering sessions after upload
+    const isMasterOnly = !session.mode && !!session.masteringMode;
+    if (isMasterOnly) {
+      await runAnalysis();
+    }
   };
+
+  const runAnalysis = async () => {
+    if (!session || analyzing) return;
+    setAnalyzing(true);
+    try {
+      await fetch('/api/dial/analyze', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ sessionId: session.id }),
+      });
+      await fetchSession();
+    } catch {
+      // Analysis failure is non-blocking
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleUploadAll = () => uploadFiles(stagedFiles);
 
   const handleDeleteTrack = async (trackId: string) => {
     if (!session) return;
@@ -448,6 +516,63 @@ export default function DialSessionPage() {
     if (latestPreview) handleMixGenerate(latestPreview.id, 'final');
   };
 
+  // Mastering handlers
+  const handleMasteringPreview = async (desiredLoudness?: string) => {
+    if (!session) return;
+    setMixGenerating(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/dial/mastering/preview', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          sessionId: session.id,
+          desiredLoudness: desiredLoudness ?? 'MEDIUM',
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error || 'Mastering preview failed');
+        return;
+      }
+      await fetchSession();
+    } catch {
+      setError('Mastering preview error');
+    } finally {
+      setMixGenerating(false);
+    }
+  };
+
+  const handleMasteringFinal = async () => {
+    if (!session) return;
+    setMixGenerating(true);
+    setError(null);
+    try {
+      const masteringPreviewTask = session.tasks.find(
+        (t) => t.taskType === 'mastering_preview' && t.status === 'completed',
+      );
+      if (!masteringPreviewTask) {
+        setError('No completed mastering preview found');
+        return;
+      }
+      const res = await fetch('/api/dial/mastering/final', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ taskId: masteringPreviewTask.id }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error || 'Mastering final failed');
+        return;
+      }
+      await fetchSession();
+    } catch {
+      setError('Mastering final error');
+    } finally {
+      setMixGenerating(false);
+    }
+  };
+
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -478,12 +603,31 @@ export default function DialSessionPage() {
   const hasMixCheck = session.tasks.some(
     (t) => t.taskType === 'mix_check' && (t.finalUrl || t.status === 'completed'),
   );
-  const hasFinal = session.tasks.some(
+  const hasMixFinal = session.tasks.some(
     (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.finalUrl,
   );
-  // In dialogue mode, chat is always visible (the primary UI)
-  const showChat = session.mode === 'dialogue' && session.paymentStatus === 'paid' && !hasFinal;
-  const phase: 1 | 2 | 3 = hasFinal ? 3 : session.mixCheckCount > 0 ? 3 : 1;
+  const hasMasteringFinal = session.tasks.some(
+    (t) => t.taskType === 'mastering' && t.finalUrl,
+  );
+  const hasMasteringPreview = session.tasks.some(
+    (t) => t.taskType === 'mastering_preview' && t.status === 'completed',
+  );
+  const isMasteringOnly = !session.mode && !!session.masteringMode;
+  const isMasteringPhase = isMasteringOnly
+    ? !hasMasteringFinal // mastering-only: always in mastering phase until done
+    : (!!(session.masteringMode) && hasMixFinal && !hasMasteringFinal); // mix+mastering: after mix final
+
+  // Fully completed = (no mix or mix done) AND (no mastering or mastering done)
+  const hasFinal = isMasteringOnly
+    ? hasMasteringFinal
+    : hasMixFinal && (!session.masteringMode || hasMasteringFinal);
+
+  // Chat is visible: during mixing, during mastering phase, or mastering-only (always until done)
+  const showChat = session.paymentStatus === 'paid'
+    && (isMasteringOnly
+      ? !hasMasteringFinal
+      : (!hasMixFinal || (session.masteringMode && !hasMasteringFinal)));
+  const phase: 1 | 2 | 3 = hasMixFinal ? 3 : session.mixCheckCount > 0 ? 3 : 1;
 
   // Sidebar player — derive from selected take
   const selectedTask = session.tasks.find((t) => t.id === selectedTakeId);
@@ -501,14 +645,14 @@ export default function DialSessionPage() {
 
   const uploadSection = session.paymentStatus === 'paid' && !hasFinal && (
     <div>
-      <h2 className="text-lg font-medium mb-4">Upload Stems</h2>
+      <h2 className="text-lg font-medium mb-4">{isMasteringOnly ? 'Upload 2-Mix' : 'Upload Stems'}</h2>
 
       <label className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg cursor-pointer text-sm transition-colors">
         + Add Files
         <input
           type="file"
           accept=".wav,.flac,.aiff,.mp3"
-          multiple
+          multiple={!isMasteringOnly}
           onChange={handleFilesSelected}
           disabled={uploading}
           className="hidden"
@@ -521,7 +665,7 @@ export default function DialSessionPage() {
             <thead>
               <tr className="bg-zinc-900 text-zinc-400 text-left">
                 <th className="px-4 py-2 font-medium">File</th>
-                <th className="px-4 py-2 font-medium w-44">Instrument Group</th>
+                {!isMasteringOnly && <th className="px-4 py-2 font-medium w-44">Instrument Group</th>}
                 <th className="px-4 py-2 font-medium w-12"></th>
               </tr>
             </thead>
@@ -534,17 +678,19 @@ export default function DialSessionPage() {
                       {(staged.file.size / 1024 / 1024).toFixed(1)} MB
                     </span>
                   </td>
-                  <td className="px-4 py-2">
-                    <select
-                      value={staged.instrumentGroup}
-                      onChange={(e) => updateStagedGroup(i, e.target.value)}
-                      className="w-full px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-white text-sm"
-                    >
-                      {INSTRUMENT_GROUPS.map((g) => (
-                        <option key={g} value={g}>{g}</option>
-                      ))}
-                    </select>
-                  </td>
+                  {!isMasteringOnly && (
+                    <td className="px-4 py-2">
+                      <select
+                        value={staged.instrumentGroup}
+                        onChange={(e) => updateStagedGroup(i, e.target.value)}
+                        className="w-full px-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-white text-sm"
+                      >
+                        {INSTRUMENT_GROUPS.map((g) => (
+                          <option key={g} value={g}>{g}</option>
+                        ))}
+                      </select>
+                    </td>
+                  )}
                   <td className="px-4 py-2 text-center">
                     <button
                       onClick={() => removeStagedFile(i)}
@@ -591,20 +737,22 @@ export default function DialSessionPage() {
           >
             <span className="text-sm truncate max-w-[200px]">{track.originalFilename}</span>
             <div className="flex items-center gap-3">
-              {hasFinal ? (
-                <span className="text-xs text-zinc-500 px-2 py-0.5 bg-zinc-800 rounded">
-                  {track.instrumentGroup}
-                </span>
-              ) : (
-                <select
-                  value={track.instrumentGroup}
-                  onChange={(e) => handleTrackGroupChange(track.id, e.target.value)}
-                  className="px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-white text-xs"
-                >
-                  {INSTRUMENT_GROUPS.map((g) => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
+              {!isMasteringOnly && (
+                hasFinal ? (
+                  <span className="text-xs text-zinc-500 px-2 py-0.5 bg-zinc-800 rounded">
+                    {track.instrumentGroup}
+                  </span>
+                ) : (
+                  <select
+                    value={track.instrumentGroup}
+                    onChange={(e) => handleTrackGroupChange(track.id, e.target.value)}
+                    className="px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-white text-xs"
+                  >
+                    {INSTRUMENT_GROUPS.map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                )
               )}
               {!hasFinal && (
                 <button
@@ -621,14 +769,14 @@ export default function DialSessionPage() {
       </div>
 
       {/* Dirty banner */}
-      {dirty && hasCompletedPreview && !isProcessing && (
+      {dirty && hasCompletedPreview && !isProcessing && !isMasteringOnly && (
         <div className="mt-3 p-3 bg-amber-900/20 border border-amber-800/50 rounded-lg text-sm text-amber-300">
           Settings changed since last preview. Re-generate to hear updated mix.
         </div>
       )}
 
-      {/* Preview Button */}
-      {!isProcessing && !hasFinal && (
+      {/* Preview Button (mix only — mastering-only uses chat-driven flow) */}
+      {!isProcessing && !hasFinal && !isMasteringOnly && (
         <button
           onClick={handlePreview}
           disabled={previewing}
@@ -667,7 +815,11 @@ export default function DialSessionPage() {
                 ? `Take ${previewNumber}`
                 : task.taskType === 'mix_check'
                   ? 'Mix Check'
-                  : task.taskType.replace('_', ' ')}
+                  : task.taskType === 'mastering_preview'
+                    ? 'Master Preview'
+                    : task.taskType === 'mastering'
+                      ? 'Master Final'
+                      : task.taskType.replace('_', ' ')}
             </span>
             {pp && (
               <span className="text-xs text-zinc-500">
@@ -711,22 +863,16 @@ export default function DialSessionPage() {
               download
               className="inline-block px-4 py-2 bg-green-700 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors"
             >
-              {task.taskType === 'mix_check' ? 'Download Mix Check (.wav)' : 'Download Final Mix (.wav)'}
+              {task.taskType === 'mix_check'
+                ? 'Download Mix Check (.wav)'
+                : task.taskType === 'mastering'
+                  ? 'Download Mastered Track (.wav)'
+                  : 'Download Final Mix (.wav)'}
             </a>
           </div>
         )}
 
-        {/* Omakase: single Final button */}
-        {task.status === 'completed' && task.previewUrl && !task.finalUrl && !hasFinal && session.mode === 'omakase' && (
-          <button
-            onClick={() => handleMixGenerate(task.id, 'final')}
-            className="mt-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition-colors"
-          >
-            Generate Final Mix
-          </button>
-        )}
-
-        {/* Dialogue: NO standalone buttons — actions are driven through chat */}
+        {/* NO standalone buttons — actions are driven through chat for both modes */}
       </div>
     );
   };
@@ -765,8 +911,11 @@ export default function DialSessionPage() {
   // ─── Completed banner ───────────────────────────────────────────────────────
 
   const completedSection = hasFinal && (() => {
-    const finalTask = session.tasks.find(
+    const mixFinalTask = session.tasks.find(
       (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.finalUrl,
+    );
+    const masteringFinalTask = session.tasks.find(
+      (t) => t.taskType === 'mastering' && t.finalUrl,
     );
     const allPreviews = session.tasks.filter((t) => t.taskType === 'preview');
     const styleLabel = MUSICAL_STYLES.find((s) => s.value === session.musicalStyle)?.label ?? session.musicalStyle;
@@ -775,17 +924,37 @@ export default function DialSessionPage() {
       <div className="space-y-6">
         <div className="p-8 bg-gradient-to-b from-green-900/20 to-zinc-900 border border-green-800/40 rounded-2xl text-center">
           <div className="text-4xl mb-3">&#10003;</div>
-          <h2 className="text-2xl font-bold mb-1">Your mix is ready</h2>
+          <h2 className="text-2xl font-bold mb-1">
+            {masteringFinalTask ? 'Your mastered track is ready' : 'Your mix is ready'}
+          </h2>
           <p className="text-zinc-400 text-sm">
             {styleLabel} &middot; {session.tracks.length} tracks &middot; {allPreviews.length} take{allPreviews.length !== 1 ? 's' : ''} explored
           </p>
         </div>
 
-        {finalTask && (
+        {/* Mastered final — primary download */}
+        {masteringFinalTask && (
+          <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-medium text-zinc-400">Mastered Track</span>
+              <span className="text-xs px-2 py-1 rounded bg-green-900/50 text-green-300">completed</span>
+            </div>
+            <a
+              href={masteringFinalTask.finalUrl!}
+              download
+              className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-base font-semibold transition-colors"
+            >
+              Download Mastered Track (.wav)
+            </a>
+          </div>
+        )}
+
+        {/* Mix final */}
+        {mixFinalTask && (
           <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-medium text-zinc-400 capitalize">
-                {finalTask.taskType.replace('_', ' ')}
+                {mixFinalTask.taskType.replace('_', ' ')}
               </span>
               <span className="text-xs px-2 py-1 rounded bg-green-900/50 text-green-300">
                 completed
@@ -793,21 +962,25 @@ export default function DialSessionPage() {
             </div>
             <div className="flex flex-wrap gap-3">
               <a
-                href={finalTask.finalUrl!}
+                href={mixFinalTask.finalUrl!}
                 download
-                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-base font-semibold transition-colors"
+                className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-base font-semibold transition-colors ${
+                  masteringFinalTask
+                    ? 'bg-zinc-700 hover:bg-zinc-600 font-medium'
+                    : 'bg-green-600 hover:bg-green-500'
+                }`}
               >
                 Download Final Mix (.wav)
               </a>
-              {finalTask.stemsUrls && Object.keys(finalTask.stemsUrls).length > 0 && (
+              {mixFinalTask.stemsUrls && Object.keys(mixFinalTask.stemsUrls).length > 0 && (
                 <a
-                  href={`/api/dial/stems?taskId=${finalTask.id}`}
+                  href={`/api/dial/stems?taskId=${mixFinalTask.id}`}
                   download
                   className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-700 hover:bg-zinc-600 rounded-xl text-base font-medium transition-colors"
                 >
                   Download Stems (.zip)
                   <span className="text-sm text-zinc-400">
-                    {Object.keys(finalTask.stemsUrls).length} tracks
+                    {Object.keys(mixFinalTask.stemsUrls).length} tracks
                   </span>
                 </a>
               )}
@@ -892,29 +1065,16 @@ export default function DialSessionPage() {
             <h1 className={`font-bold ${showChat ? 'text-xl' : 'text-3xl'}`}>
               MUED<span className="text-indigo-400">ial</span>
               <span className={`font-normal text-zinc-400 ml-3 ${showChat ? 'text-sm' : 'text-lg'}`}>
-                {session.mode === 'omakase' ? 'Omakase' : 'Dialogue'} Mix
+                {isMasteringPhase || isMasteringOnly
+                  ? 'Mastering'
+                  : `${session.mode === 'omakase' ? 'Omakase' : 'Dialogue'} Mix`}
               </span>
             </h1>
             <div className="flex items-center gap-3">
-              {showChat ? (
-                // Dialogue: genre is set through chat — show as label only
-                session.musicalStyle && session.musicalStyle !== 'other' && (
-                  <span className="text-xs text-zinc-500 px-2 py-1 bg-zinc-900 rounded-lg">
-                    {MUSICAL_STYLES.find((s) => s.value === session.musicalStyle)?.label ?? session.musicalStyle}
-                  </span>
-                )
-              ) : (
-                // Omakase: genre selector
-                <select
-                  value={session.musicalStyle}
-                  onChange={(e) => handleStyleChange(e.target.value)}
-                  disabled={hasFinal}
-                  className="px-3 py-1.5 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm disabled:opacity-50"
-                >
-                  {MUSICAL_STYLES.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </select>
+              {!isMasteringOnly && session.musicalStyle && session.musicalStyle !== 'other' && (
+                <span className="text-xs text-zinc-500 px-2 py-1 bg-zinc-900 rounded-lg">
+                  {MUSICAL_STYLES.find((s) => s.value === session.musicalStyle)?.label ?? session.musicalStyle}
+                </span>
               )}
             </div>
           </div>
@@ -952,8 +1112,14 @@ export default function DialSessionPage() {
                     onPreviewRequested={handlePreview}
                     onMixCheckRequested={handleMixCheckFromChat}
                     onFinalRequested={handleFinalFromChat}
+                    onMasteringPreviewRequested={handleMasteringPreview}
+                    onMasteringFinalRequested={handleMasteringFinal}
                     generating={mixGenerating}
                     phase={phase}
+                    mode={session.mode ?? session.masteringMode ?? 'omakase'}
+                    previewCount={session.previewCount}
+                    previewLimit={isMasteringOnly ? 0 : session.mode === 'omakase' ? 5 : 0}
+                    isMasteringPhase={isMasteringPhase}
                   />
                 </div>
               </div>
@@ -961,42 +1127,125 @@ export default function DialSessionPage() {
               {/* Right: Sidebar — player, take history, tracks, upload */}
               <div className="lg:w-80 shrink-0 space-y-5 overflow-y-auto lg:max-h-[calc(100vh-14rem)]">
                 {/* Shared Player */}
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <div
+                  className={`bg-zinc-900 border rounded-xl p-4 transition-colors ${
+                    devDragOver ? 'border-indigo-500 bg-indigo-950/20' : 'border-zinc-800'
+                  }`}
+                  {...(isDev ? {
+                    onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDevDragOver(true); },
+                    onDragEnter: (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDevDragOver(true); },
+                    onDragLeave: (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDevDragOver(false); },
+                    onDrop: handleDevDrop,
+                  } : {})}
+                >
                   <h3 className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">Now Playing</h3>
-                  {selectedAudioUrl ? (
-                    <>
-                      <div className="text-sm text-white font-medium mb-2">{selectedTakeLabel}</div>
-                      <audio controls src={selectedAudioUrl} className="w-full" key={selectedAudioUrl} />
-                      <a
-                        href={selectedAudioUrl}
-                        download
-                        className="mt-2 inline-block text-xs text-zinc-400 hover:text-white transition-colors"
+                  {(() => {
+                    const effectiveUrl = devAudioUrl || selectedAudioUrl;
+                    const isDevOverride = !!devAudioUrl;
+                    return effectiveUrl ? (
+                      <>
+                        <div className="text-sm text-white font-medium mb-2">
+                          {isDevOverride ? '🔧 Dev Audio' : selectedTakeLabel}
+                        </div>
+                        <audio
+                          ref={audioRef}
+                          controls
+                          src={effectiveUrl}
+                          className="w-full"
+                          key={effectiveUrl}
+                        />
+                        {!isDevOverride && selectedAudioUrl && (
+                          <button
+                            onClick={() => {
+                              const a = document.createElement('a');
+                              a.href = selectedAudioUrl;
+                              a.download = `mix${selectedTask?.finalUrl ? '.wav' : '.mp3'}`;
+                              a.target = '_blank';
+                              a.rel = 'noopener noreferrer';
+                              a.click();
+                            }}
+                            className="mt-2 inline-block text-xs text-zinc-400 hover:text-white transition-colors"
+                          >
+                            Download {selectedTask?.finalUrl ? '.wav' : '.mp3'}
+                          </button>
+                        )}
+                        {isDevOverride && (
+                          <button
+                            onClick={() => { setDevAudioUrl(null); }}
+                            className="mt-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                          >
+                            Remove dev audio
+                          </button>
+                        )}
+                        <div className="mt-3 border-t border-zinc-800 pt-3">
+                          <AudioAnalyzer compact />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-zinc-600 py-4 text-center">
+                        {analyzing
+                          ? 'Analyzing your audio...'
+                          : hasTracks
+                            ? (isMasteringOnly ? 'Chat with Hoo to start mastering' : 'Generate a preview to hear your mix')
+                            : (isMasteringOnly ? 'Upload your 2-mix to get started' : 'Upload stems to get started')}
+                      </div>
+                    );
+                  })()}
+                  {/* Dev-mode: always show file picker for local audio testing */}
+                  {isDev && (
+                    <div className="mt-3 border-t border-zinc-800 pt-3">
+                      <div className="text-[10px] text-zinc-600 mb-2">
+                        {devDragOver ? '↓ Drop here' : '🔧 Dev: drag audio onto this card, or'}
+                      </div>
+                      <button
+                        onClick={() => devFileInputRef.current?.click()}
+                        className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
                       >
-                        Download {selectedTask?.finalUrl ? '.wav' : '.mp3'}
-                      </a>
-                    </>
-                  ) : (
-                    <div className="text-sm text-zinc-600 py-4 text-center">
-                      {hasTracks
-                        ? 'Generate a preview to hear your mix'
-                        : 'Upload stems to get started'}
+                        Select file
+                      </button>
+                      <input
+                        ref={devFileInputRef}
+                        type="file"
+                        accept="audio/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setDevAudioUrl(URL.createObjectURL(file));
+                          }
+                        }}
+                      />
                     </div>
                   )}
                 </div>
 
+                {/* Mastering Phase Banner */}
+                {isMasteringPhase && !isMasteringOnly && (
+                  <div className="p-4 bg-indigo-900/20 border border-indigo-800/40 rounded-xl text-center">
+                    <p className="text-sm text-indigo-300 font-medium">Mix complete! Mastering phase</p>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Mastering
+                    </p>
+                  </div>
+                )}
+
                 {/* Take History */}
-                {session.tasks.some((t) => t.taskType === 'preview' || t.taskType === 'mix_check') && (
+                {session.tasks.some((t) => t.taskType === 'preview' || t.taskType === 'mix_check' || t.taskType === 'mastering_preview' || t.taskType === 'mastering') && (
                   <div>
                     <h3 className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">Takes</h3>
                     <div className="space-y-1">
                       {session.tasks
-                        .filter((t) => t.taskType === 'preview' || t.taskType === 'mix_check')
+                        .filter((t) => t.taskType === 'preview' || t.taskType === 'mix_check' || t.taskType === 'mastering_preview' || t.taskType === 'mastering')
                         .map((task) => {
                           const isSelected = task.id === selectedTakeId;
                           const hasAudio = !!(task.previewUrl || task.finalUrl);
                           const label = task.taskType === 'mix_check'
                             ? 'Mix Check'
-                            : `Take ${allPreviewTasks.length - allPreviewTasks.findIndex((t) => t.id === task.id)}`;
+                            : task.taskType === 'mastering_preview'
+                              ? 'Master Preview'
+                              : task.taskType === 'mastering'
+                                ? 'Master Final'
+                                : `Take ${allPreviewTasks.length - allPreviewTasks.findIndex((t) => t.id === task.id)}`;
 
                           return (
                             <button
@@ -1033,13 +1282,6 @@ export default function DialSessionPage() {
                 {tracksSection}
                 {uploadSection}
               </div>
-            </div>
-          ) : session.mode === 'omakase' ? (
-            // Omakase: Single column (upload → tracks → preview → results)
-            <div className="space-y-8">
-              {uploadSection}
-              {tracksSection}
-              {resultsSection}
             </div>
           ) : null
         )}

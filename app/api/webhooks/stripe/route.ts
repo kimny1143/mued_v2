@@ -799,24 +799,33 @@ async function handleDialCheckoutCompleted(
   tx: Transaction,
   session: Stripe.Checkout.Session,
 ) {
-  const { purchaseType, dialSessionId, purchaseId, tier, userId, credits } = session.metadata || {};
+  const { dialSessionId, tier, userId, credits } = session.metadata || {};
+  // Support both old (purchaseId) and new (purchaseIds) metadata formats
+  const purchaseIds = session.metadata?.purchaseIds
+    ? session.metadata.purchaseIds.split(',')
+    : session.metadata?.purchaseId
+      ? [session.metadata.purchaseId]
+      : [];
+  const mixType = session.metadata?.mixType || session.metadata?.purchaseType || '';
 
   if (session.mode === 'payment') {
     // One-time purchase
-    if (!dialSessionId || !purchaseId) {
+    if (!dialSessionId || purchaseIds.length === 0) {
       logger.error('[Dial Webhook] Missing metadata for one-time purchase');
       return;
     }
 
-    // Update purchase status
-    await tx
-      .update(dialPurchases)
-      .set({
-        status: 'completed',
-        stripePaymentIntentId: session.payment_intent as string,
-        completedAt: new Date(),
-      })
-      .where(eq(dialPurchases.id, purchaseId));
+    // Update all purchase records
+    for (const pid of purchaseIds) {
+      await tx
+        .update(dialPurchases)
+        .set({
+          status: 'completed',
+          stripePaymentIntentId: session.payment_intent as string,
+          completedAt: new Date(),
+        })
+        .where(eq(dialPurchases.id, pid));
+    }
 
     // Update session payment status
     await tx
@@ -828,15 +837,15 @@ async function handleDialCheckoutCompleted(
       })
       .where(eq(dialSessions.id, dialSessionId));
 
-    logger.info(`[Dial Webhook] Purchase completed: ${purchaseId} (${purchaseType})`);
+    logger.info(`[Dial Webhook] Purchase completed: ${purchaseIds.join(',')} (mix=${mixType})`);
 
     // Send email notification (async, non-blocking)
     setImmediate(async () => {
       try {
         await notificationService.onDialPurchaseCompleted({
           sessionId: dialSessionId,
-          purchaseId,
-          purchaseType: purchaseType || 'omakase',
+          purchaseId: purchaseIds[0],
+          purchaseType: mixType || 'omakase',
           email: session.customer_email || session.customer_details?.email || '',
         });
       } catch (error) {

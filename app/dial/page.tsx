@@ -4,29 +4,13 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@clerk/nextjs';
 
-const PLANS = [
-  {
-    id: 'omakase',
-    name: 'Omakase Mix',
-    price: '$12',
-    description: 'AI auto-mix — upload stems, get a polished mix back.',
-    mode: 'omakase' as const,
-  },
-  {
-    id: 'dialogue',
-    name: 'Dialogue Mix',
-    price: '$23',
-    description: 'Chat with Hoo to fine-tune your mix interactively.',
-    mode: 'dialogue' as const,
-  },
-  {
-    id: 'dialogue_mastering',
-    name: 'Dialogue + Mastering',
-    price: '$30',
-    description: 'Full dialogue mix plus professional mastering.',
-    mode: 'dialogue' as const,
-  },
-] as const;
+type ServiceTier = 'omakase' | 'dialogue';
+
+const MIX_OPTIONS = [
+  { id: 'omakase' as ServiceTier, name: 'Omakase Mix', price: 12, description: 'AI auto-mix — upload stems, get a polished mix back.' },
+  { id: 'dialogue' as ServiceTier, name: 'Dialogue Mix', price: 35, description: 'Chat with Hoo to fine-tune your mix interactively.' },
+];
+
 
 export default function DialPage() {
   const router = useRouter();
@@ -35,15 +19,19 @@ export default function DialPage() {
   const clerkEmail = user?.primaryEmailAddress?.emailAddress ?? '';
 
   const [email, setEmail] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [mixType, setMixType] = useState<ServiceTier | null>(null);
+  const [masteringType, setMasteringType] = useState<ServiceTier | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const effectiveEmail = isSignedIn ? clerkEmail : email;
+  const hasSelection = mixType || masteringType;
+  const totalPrice = (mixType ? MIX_OPTIONS.find((o) => o.id === mixType)!.price : 0)
+    + (masteringType ? 5 : 0);
 
   const handleCheckout = async () => {
-    if (!selectedPlan || !effectiveEmail) {
-      setError(isSignedIn ? 'Please select a plan.' : 'Please select a plan and enter your email.');
+    if (!hasSelection || !effectiveEmail) {
+      setError(isSignedIn ? 'Please select at least one service.' : 'Please select a service and enter your email.');
       return;
     }
 
@@ -51,14 +39,13 @@ export default function DialPage() {
     setError(null);
 
     try {
-      const plan = PLANS.find((p) => p.id === selectedPlan);
       const res = await fetch('/api/dial/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          purchaseType: selectedPlan,
+          mixType,
+          masteringType,
           email: effectiveEmail,
-          mode: plan?.mode,
         }),
       });
 
@@ -98,26 +85,52 @@ export default function DialPage() {
           </p>
         </div>
 
-        {/* Plan Selection */}
-        <div className="grid md:grid-cols-3 gap-4 mb-12">
-          {PLANS.map((plan) => (
-            <button
-              key={plan.id}
-              onClick={() => setSelectedPlan(plan.id)}
-              className={`text-left p-6 rounded-xl border transition-all ${
-                selectedPlan === plan.id
-                  ? 'border-indigo-500 bg-indigo-500/10'
-                  : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'
-              }`}
-            >
-              <div className="text-2xl font-bold mb-1">{plan.price}</div>
-              <div className="text-sm font-medium text-white mb-2">
-                {plan.name}
-              </div>
-              <div className="text-sm text-zinc-400">{plan.description}</div>
-            </button>
-          ))}
+        {/* Step 1: Mix */}
+        <div className="mb-8">
+          <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-3">Step 1: Mixing</h2>
+          <div className="grid md:grid-cols-2 gap-3">
+            {MIX_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => setMixType(mixType === opt.id ? null : opt.id)}
+                className={`text-left p-5 rounded-xl border transition-all ${
+                  mixType === opt.id
+                    ? 'border-indigo-500 bg-indigo-500/10'
+                    : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'
+                }`}
+              >
+                <div className="text-xl font-bold mb-1">${opt.price}</div>
+                <div className="text-sm font-medium text-white mb-1">{opt.name}</div>
+                <div className="text-xs text-zinc-400">{opt.description}</div>
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Step 2: Mastering */}
+        <div className="mb-8">
+          <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-3">Step 2: Mastering</h2>
+          <button
+            onClick={() => setMasteringType(masteringType ? null : 'omakase')}
+            className={`w-full text-left p-5 rounded-xl border transition-all ${
+              masteringType
+                ? 'border-indigo-500 bg-indigo-500/10'
+                : 'border-zinc-800 bg-zinc-900 hover:border-zinc-700'
+            }`}
+          >
+            <div className="text-xl font-bold mb-1">$5</div>
+            <div className="text-sm font-medium text-white mb-1">Mastering</div>
+            <div className="text-xs text-zinc-400">AI auto-master — optimized loudness and polish for release.</div>
+          </button>
+        </div>
+
+        {/* Total */}
+        {hasSelection && (
+          <div className="mb-8 text-center">
+            <span className="text-3xl font-bold">${totalPrice}</span>
+            <span className="text-zinc-400 ml-2 text-sm">total</span>
+          </div>
+        )}
 
         {/* Checkout Form */}
         <div className="max-w-md mx-auto space-y-4">
@@ -151,10 +164,10 @@ export default function DialPage() {
 
           <button
             onClick={handleCheckout}
-            disabled={loading || !selectedPlan || !effectiveEmail}
+            disabled={loading || !hasSelection || !effectiveEmail}
             className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-600 rounded-lg font-medium transition-colors"
           >
-            {loading ? 'Processing...' : 'Continue to Payment'}
+            {loading ? 'Processing...' : hasSelection ? `Continue to Payment — $${totalPrice}` : 'Select a service'}
           </button>
 
           <p className="text-xs text-zinc-600 text-center">

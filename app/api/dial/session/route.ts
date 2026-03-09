@@ -11,7 +11,7 @@ import { eq, desc } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
-import { createRoExClient, isRoExDevKey, pollMixPreview, pollMixFinal } from '@/lib/roex';
+import { createRoExClient, isRoExDevKey, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
 import { db } from '@/db';
 import { dialSessions, dialTasks, dialTracks } from '@/db/schema';
 
@@ -131,10 +131,75 @@ export const GET = withDialAuth(async (auth) => {
                   completedAt: new Date(),
                 }).where(eq(dialTasks.id, task.id));
 
-                // Mix check: stay in mixing state. Final: mark completed.
-                const newStatus = task.taskType === 'mix_check' ? 'mixing' : 'completed';
+                // Mix check: stay in mixing state. Final: check if mastering follows.
+                const sessionRow = await db.query.dialSessions.findFirst({
+                  where: eq(dialSessions.id, sessionId),
+                });
+                const newStatus = task.taskType === 'mix_check'
+                  ? 'mixing' as const
+                  : sessionRow?.masteringMode
+                    ? 'mastering' as const
+                    : 'completed' as const;
                 await db.update(dialSessions).set({
                   status: newStatus,
+                  updatedAt: new Date(),
+                }).where(eq(dialSessions.id, sessionId));
+              } else if (result.status === 'failed') {
+                await db.update(dialTasks).set({
+                  status: 'failed',
+                }).where(eq(dialTasks.id, task.id));
+              }
+            } else if (task.taskType === 'mastering_preview') {
+              // Dev key: dummy URLs cause mastering preview poll to never complete
+              if (isRoExDevKey()) {
+                await db.update(dialTasks).set({
+                  status: 'completed',
+                  previewUrl: 'https://dev-dummy.roexaudio.com/mastering-preview.mp3',
+                  completedAt: new Date(),
+                }).where(eq(dialTasks.id, task.id));
+                continue;
+              }
+
+              const result = await pollMasterPreview(client, task.roexTaskId);
+
+              if (result.previewUrl || result.status === 'completed') {
+                await db.update(dialTasks).set({
+                  status: 'completed',
+                  previewUrl: result.previewUrl,
+                  completedAt: new Date(),
+                }).where(eq(dialTasks.id, task.id));
+              } else if (result.status === 'failed') {
+                await db.update(dialTasks).set({
+                  status: 'failed',
+                }).where(eq(dialTasks.id, task.id));
+              }
+            } else if (task.taskType === 'mastering') {
+              // Dev key: auto-complete with dummy URL to allow full flow testing
+              if (isRoExDevKey()) {
+                await db.update(dialTasks).set({
+                  status: 'completed',
+                  finalUrl: 'https://dev-dummy.roexaudio.com/mastering-final.wav',
+                  completedAt: new Date(),
+                }).where(eq(dialTasks.id, task.id));
+
+                await db.update(dialSessions).set({
+                  status: 'completed',
+                  updatedAt: new Date(),
+                }).where(eq(dialSessions.id, sessionId));
+                continue;
+              }
+
+              const result = await masterFinal(client, task.roexTaskId);
+
+              if (result.finalUrl || result.status === 'completed') {
+                await db.update(dialTasks).set({
+                  status: 'completed',
+                  finalUrl: result.finalUrl,
+                  completedAt: new Date(),
+                }).where(eq(dialTasks.id, task.id));
+
+                await db.update(dialSessions).set({
+                  status: 'completed',
                   updatedAt: new Date(),
                 }).where(eq(dialSessions.id, sessionId));
               } else if (result.status === 'failed') {
