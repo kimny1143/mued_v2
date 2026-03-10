@@ -20,30 +20,9 @@ import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMixPreview } from '@/lib/roex';
-import type { AdvancedTrackAdjustment } from '@/lib/roex';
+import { buildAdvancedTrackData, type ParameterChanges } from '@/lib/dial/track-data';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks, dialMessages } from '@/db/schema';
-
-// ─── Types ──────────────────────────────────────────────────────────────────
-
-interface EqBand {
-  freq: number;
-  gainDb: number;
-  q: number;
-}
-
-interface ParameterChanges {
-  track: string;
-  changes: {
-    gainDb?: number;
-    compRatio?: number;
-    compThresholdDb?: number;
-    compAttackMs?: number;
-    compReleaseMs?: number;
-    eqBands?: EqBand[];
-    panAngleDegrees?: number;
-  };
-}
 
 // ─── Validation ─────────────────────────────────────────────────────────────
 
@@ -72,41 +51,6 @@ async function getLatestParameterChanges(sessionId: string): Promise<ParameterCh
     }
   }
   return null;
-}
-
-/**
- * Build advanced track data from Hoo's parameter changes + track info.
- */
-function buildAdvancedTrackData(
-  tracks: { roexUploadUrl: string; originalFilename: string }[],
-  paramChanges: ParameterChanges[],
-): AdvancedTrackAdjustment[] {
-  return tracks.map((t) => {
-    // Match parameter changes to track by filename
-    const pc = paramChanges.find((p) =>
-      t.originalFilename.toLowerCase().includes(p.track.toLowerCase()) ||
-      p.track.toLowerCase().includes(t.originalFilename.toLowerCase().replace(/\.[^.]+$/, '')),
-    );
-
-    const changes = pc?.changes ?? {};
-
-    return {
-      trackUrl: t.roexUploadUrl,
-      gainDb: changes.gainDb ?? 0,
-      eqBands: changes.eqBands?.map((b) => ({
-        frequency: b.freq,
-        gain: b.gainDb,
-        q: b.q,
-      })),
-      compressor: changes.compRatio != null ? {
-        ratio: changes.compRatio,
-        threshold: changes.compThresholdDb ?? -20,
-        attack: changes.compAttackMs ?? 10,
-        release: changes.compReleaseMs ?? 100,
-      } : undefined,
-      panAngleDegrees: changes.panAngleDegrees,
-    };
-  });
 }
 
 // ─── POST Handler ───────────────────────────────────────────────────────────

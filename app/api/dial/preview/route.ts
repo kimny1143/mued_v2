@@ -12,41 +12,10 @@ import { eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership, verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
-import { createRoExClient, mixPreview, pollMixPreview } from '@/lib/roex';
+import { createRoExClient, mixPreview, pollMixPreview, mapMusicalStyle, mapInstrumentGroup } from '@/lib/roex';
 import type { MixTrackInput } from '@/lib/roex';
 import { db } from '@/db';
 import { dialTracks, dialTasks, dialSessions } from '@/db/schema';
-
-// ─── Mappings ────────────────────────────────────────────────────────────────
-
-/** Map UI musical style values to RoEx API enum values */
-const MUSICAL_STYLE_MAP: Record<string, string> = {
-  pop: 'POP',
-  rock: 'ROCK_INDIE',
-  hiphop: 'HIPHOP_GRIME',
-  electronic: 'ELECTRONIC',
-  acoustic: 'ACOUSTIC',
-  jazz: 'OTHER',
-  classical: 'ORCHESTRAL',
-  rnb: 'POP',
-  country: 'ACOUSTIC',
-  metal: 'METAL',
-  reggae: 'REGGAE_DUB',
-  other: 'OTHER',
-};
-
-/** Map UI instrument group values to RoEx API enum values */
-const INSTRUMENT_GROUP_MAP: Record<string, string> = {
-  VOCAL: 'VOCAL_GROUP',
-  GUITAR: 'GUITAR_GROUP',
-  BASS: 'BASS_GROUP',
-  DRUMS: 'DRUM_GROUP',
-  KEYS: 'KEYS_GROUP',
-  SYNTH: 'SYNTH_GROUP',
-  STRINGS: 'STRINGS_GROUP',
-  BRASS: 'BRASS_GROUP',
-  OTHER: 'OTHER_GROUP',
-};
 
 // ─── POST: Submit preview request ───────────────────────────────────────────
 
@@ -89,13 +58,13 @@ export const POST = withDialAuth(async (auth) => {
     // Build RoEx preview request with mapped enum values
     const trackInputs: MixTrackInput[] = tracks.map((t) => ({
       trackUrl: t.roexUploadUrl,
-      instrumentGroup: (INSTRUMENT_GROUP_MAP[t.instrumentGroup] ?? 'OTHER_GROUP') as MixTrackInput['instrumentGroup'],
+      instrumentGroup: mapInstrumentGroup(t.instrumentGroup) as MixTrackInput['instrumentGroup'],
       presenceSetting: t.presenceSetting as MixTrackInput['presenceSetting'],
       panPreference: t.panPreference as MixTrackInput['panPreference'],
       reverbPreference: t.reverbPreference as MixTrackInput['reverbPreference'],
     }));
 
-    const roexMusicalStyle = MUSICAL_STYLE_MAP[session.musicalStyle] ?? 'OTHER';
+    const roexMusicalStyle = mapMusicalStyle(session.musicalStyle);
 
     const client = createRoExClient();
     const result = await mixPreview(client, {

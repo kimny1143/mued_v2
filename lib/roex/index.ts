@@ -19,6 +19,14 @@ export { masterPreview, pollMasterPreview, masterFinal } from './mastering';
 // Analysis
 export { analyzeMix, compareMixes } from './analysis';
 
+// Mappings (UI → RoEx enum)
+export {
+  MUSICAL_STYLE_MAP,
+  INSTRUMENT_GROUP_MAP,
+  mapMusicalStyle,
+  mapInstrumentGroup,
+} from './mappings';
+
 // Types & Enums
 export type {
   RoExConfig,

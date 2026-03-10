@@ -11,25 +11,9 @@ import { eq, desc } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
-import { createRoExClient, masterPreview, isRoExDevKey } from '@/lib/roex';
+import { createRoExClient, masterPreview, isRoExDevKey, mapMusicalStyle } from '@/lib/roex';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
-
-/** Map UI musical style values to RoEx API enum values */
-const MUSICAL_STYLE_MAP: Record<string, string> = {
-  pop: 'POP',
-  rock: 'ROCK_INDIE',
-  hiphop: 'HIPHOP_GRIME',
-  electronic: 'ELECTRONIC',
-  acoustic: 'ACOUSTIC',
-  jazz: 'OTHER',
-  classical: 'ORCHESTRAL',
-  rnb: 'POP',
-  country: 'ACOUSTIC',
-  metal: 'METAL',
-  reggae: 'REGGAE_DUB',
-  other: 'OTHER',
-};
 
 const masteringPreviewSchema = z.object({
   sessionId: z.string().uuid(),
@@ -87,7 +71,7 @@ export const POST = withDialAuth(async (auth) => {
       });
     }
 
-    const roexMusicalStyle = MUSICAL_STYLE_MAP[session.musicalStyle] ?? 'OTHER';
+    const roexMusicalStyle = mapMusicalStyle(session.musicalStyle);
 
     let result: { taskId: string; previewUrl?: string | null };
 

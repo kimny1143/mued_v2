@@ -12,25 +12,10 @@ import { eq, desc } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
-import { createRoExClient, isRoExDevKey, analyzeMix } from '@/lib/roex';
+import { createRoExClient, isRoExDevKey, analyzeMix, mapMusicalStyle } from '@/lib/roex';
 import type { MusicalStyle } from '@/lib/roex';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
-
-const MUSICAL_STYLE_MAP: Record<string, string> = {
-  pop: 'POP',
-  rock: 'ROCK_INDIE',
-  hiphop: 'HIPHOP_GRIME',
-  electronic: 'ELECTRONIC',
-  acoustic: 'ACOUSTIC',
-  jazz: 'OTHER',
-  classical: 'ORCHESTRAL',
-  rnb: 'POP',
-  country: 'ACOUSTIC',
-  metal: 'METAL',
-  reggae: 'REGGAE_DUB',
-  other: 'OTHER',
-};
 
 const analyzeSchema = z.object({
   sessionId: z.string().uuid(),
@@ -107,7 +92,7 @@ export const POST = withDialAuth(async (auth) => {
     }
 
     // Use OTHER for analysis — LUFS/peak/stereo are genre-independent
-    const roexStyle = MUSICAL_STYLE_MAP[session.musicalStyle] ?? 'OTHER';
+    const roexStyle = mapMusicalStyle(session.musicalStyle);
 
     const client = createRoExClient();
     const result = await analyzeMix(client, {

@@ -18,7 +18,8 @@ import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { sendHooChat, type HooChatMessage } from '@/lib/ai/providers';
-import { buildDialSystemPrompt, DIAL_MIX_ACTION_TOOL, DIAL_SET_STYLE_TOOL, DIAL_OMAKASE_MIX_ACTION_TOOL, DIAL_MASTERING_ACTION_TOOL, type DialPromptInput } from '@/lib/ai/prompts/dial';
+import { buildDialSystemPrompt, type DialPromptInput } from '@/lib/ai/prompts/dial';
+import { detectPhase, selectTools } from '@/lib/dial/phase';
 import { db } from '@/db';
 import { dialSessions, dialTracks, dialMessages, dialTasks } from '@/db/schema';
 
@@ -81,7 +82,6 @@ export const POST = withDialAuth(async (auth) => {
       return apiNotFound('Session not found');
     }
 
-    const isMasteringOnly = !session.mode && !!session.masteringMode;
     const isOmakase = session.mode === 'omakase';
 
     // Load tracks for context
@@ -100,42 +100,13 @@ export const POST = withDialAuth(async (auth) => {
       where: eq(dialTasks.sessionId, sessionId),
     });
 
-    // Determine current phase based on session state
-    const hasMixCheck = session.mixCheckCount > 0;
-    const hasMixFinal = allTasks.some(
-      (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.finalUrl,
-    );
-    const hasMasteringPreview = allTasks.some(
-      (t) => t.taskType === 'mastering_preview' && t.status === 'completed',
-    );
-    const hasMasteringFinal = allTasks.some(
-      (t) => t.taskType === 'mastering' && t.finalUrl,
-    );
-    const masteringPreviewCount = allTasks.filter(
-      (t) => t.taskType === 'mastering_preview',
-    ).length;
-    const mixFinalTask = allTasks.find(
-      (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.finalUrl,
-    );
-
-    // Mastering phase: mastering-only (always until done), or mix+mastering (after mix final)
-    const isMasteringPhase = isMasteringOnly
-      ? !hasMasteringFinal
-      : (!!(session.masteringMode) && hasMixFinal && !hasMasteringFinal);
+    // Detect phase using extracted pure function
+    const phaseResult = detectPhase(session, allTasks);
+    const { phase, isMasteringPhase, hasMasteringPreview, masteringPreviewCount, mixFinalTask } = phaseResult;
 
     // Check if any completed preview exists (latestTask is ordered by createdAt desc)
     const hasPreview = latestTask?.taskType === 'preview' && latestTask?.status === 'completed'
       || session.mixCheckCount > 0;
-    let phase: 1 | 2 | 3;
-    if (isOmakase) {
-      phase = hasMixFinal ? 3 : 1; // omakase has no Phase 2
-    } else if (hasMixFinal) {
-      phase = 3;
-    } else if (hasMixCheck) {
-      phase = 3;
-    } else {
-      phase = 1;
-    }
 
     // Build system prompt with session context (including retake info)
     const promptInput: DialPromptInput = {
@@ -195,14 +166,7 @@ export const POST = withDialAuth(async (auth) => {
       }));
 
     // Send to AI with tool definitions
-    let tools;
-    if (isMasteringPhase) {
-      tools = [DIAL_MASTERING_ACTION_TOOL, DIAL_SET_STYLE_TOOL];
-    } else if (isOmakase) {
-      tools = [DIAL_OMAKASE_MIX_ACTION_TOOL];
-    } else {
-      tools = [DIAL_MIX_ACTION_TOOL, DIAL_SET_STYLE_TOOL];
-    }
+    const tools = selectTools({ isMasteringPhase, isOmakase });
 
     const startTime = Date.now();
     const aiResponse = await sendHooChat('claude-haiku', chatMessages, {
