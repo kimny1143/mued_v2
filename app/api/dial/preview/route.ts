@@ -36,14 +36,14 @@ const MUSICAL_STYLE_MAP: Record<string, string> = {
 /** Map UI instrument group values to RoEx API enum values */
 const INSTRUMENT_GROUP_MAP: Record<string, string> = {
   VOCAL: 'VOCAL_GROUP',
-  GUITAR: 'ACOUSTIC_GUITAR_GROUP',
+  GUITAR: 'GUITAR_GROUP',
   BASS: 'BASS_GROUP',
-  DRUMS: 'DRUMS_GROUP',
+  DRUMS: 'DRUM_GROUP',
   KEYS: 'KEYS_GROUP',
   SYNTH: 'SYNTH_GROUP',
   STRINGS: 'STRINGS_GROUP',
   BRASS: 'BRASS_GROUP',
-  OTHER: 'OTHER_GROUP1',
+  OTHER: 'OTHER_GROUP',
 };
 
 // ─── POST: Submit preview request ───────────────────────────────────────────

@@ -266,8 +266,8 @@ AIミキシング/マスタリングサービス。RoEx Tonn APIを使用。ゲ�
 
 ### Enum マッピング（UI → RoEx）
 - **Musical Style**: `pop`→`POP`, `rock`→`ROCK_INDIE`, `hiphop`→`HIPHOP_GRIME`, `electronic`→`ELECTRONIC`, `classical`→`ORCHESTRAL`, `metal`→`METAL`, etc.
-- **Instrument Group**: `VOCAL`→`VOCAL_GROUP`, `BASS`→`BASS_GROUP`, `DRUMS`→`DRUMS_GROUP`, `GUITAR`→`ACOUSTIC_GUITAR_GROUP`, `KEYS`→`KEYS_GROUP`, etc.
+- **Instrument Group**: `VOCAL`→`VOCAL_GROUP`, `BASS`→`BASS_GROUP`, `DRUMS`→`DRUM_GROUP`, `GUITAR`→`GUITAR_GROUP`, `KEYS`→`KEYS_GROUP`, etc.
 
 ---
 
-*最終更新: 2026-03-07*
+*最終更新: 2026-03-10*
