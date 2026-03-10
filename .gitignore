@@ -51,6 +51,10 @@ apps/
 
 # Docs assets (large binary files kept locally)
 docs/assets/
+docs/nanogen_images/
+
+# Temporary/one-off scripts (dev-only, not for commit)
+scripts/tmp/
 
 # Claude Code symlinks (managed in claude-code-template repository)
 # Ignore all, then whitelist MUED-specific files
