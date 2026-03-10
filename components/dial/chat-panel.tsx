@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useLocale } from '@/lib/i18n/locale-context';
 
 interface EqBand {
   freq: number;
@@ -101,6 +102,7 @@ function splitChanges(changes: ParameterChange['changes']) {
 }
 
 export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onPreviewRequested, onMixCheckRequested, onFinalRequested, onMasteringPreviewRequested, onMasteringFinalRequested, generating = false, className, phase = 1, mode = 'dialogue', previewCount = 0, previewLimit = 0, isMasteringPhase = false }: ChatPanelProps) {
+  const { t } = useLocale();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -264,14 +266,14 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
         },
       ]);
     } catch {
-      setError('Network error');
+      setError(t.dial.chat.networkError);
       if (showInChat) {
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
       }
     } finally {
       setSending(false);
     }
-  }, [sending, sessionId, headers, phase, applyChanges, onPreviewRequested]);
+  }, [sending, sessionId, headers, phase, applyChanges, onPreviewRequested, isMasteringPhase, onMasteringPreviewRequested, onParametersApplied, t]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -344,39 +346,39 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
     <div className={`border border-zinc-800 rounded-xl overflow-hidden flex flex-col ${className ?? ''}`}>
       <div className="px-4 py-3 bg-zinc-900 border-b border-zinc-800">
         <h3 className="text-sm font-medium flex items-center gap-2">
-          <span className="text-amber-400">Hoo</span>
-          <span className="text-zinc-500">{isMasteringPhase ? 'Mastering Assistant' : 'Mixing Assistant'}</span>
+          <span className="text-amber-400">{t.dial.chat.hooName}</span>
+          <span className="text-zinc-500">{isMasteringPhase ? t.dial.chat.masteringAssistant : t.dial.chat.mixingAssistant}</span>
         </h3>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 min-h-[320px] overflow-y-auto px-4 py-3 space-y-4 bg-zinc-950/50">
+      <div className="flex-1 min-h-[320px] overflow-y-auto px-4 py-3 space-y-4 bg-zinc-950/50" role="log" aria-live="polite" aria-label="Chat messages">
         {loadingHistory ? (
-          <div className="text-center text-zinc-600 text-sm py-8">Loading...</div>
+          <div className="text-center text-zinc-600 text-sm py-8">{t.dial.chat.loading}</div>
         ) : messages.length === 0 ? (
           <div className="text-center text-zinc-600 text-sm py-8">
             {tracks.length === 0 ? (
               <>
-                <span className="text-amber-400 text-base">Hoo</span>
+                <span className="text-amber-400 text-base">{t.dial.chat.hooName}</span>
                 <p className="mt-2 text-zinc-400">
                   {isMasteringPhase
-                    ? 'Upload your 2-mix from the sidebar to get started.'
-                    : 'Upload your stems from the sidebar to get started.'}
+                    ? t.dial.chat.upload2mix
+                    : t.dial.chat.uploadStems}
                 </p>
                 <p className="mt-1 text-zinc-600 text-xs">
                   {isMasteringPhase
-                    ? 'Once uploaded, tell me how you want your master to sound.'
-                    : 'Once uploaded, tell me how you want your mix to sound.'}
+                    ? t.dial.chat.tellMasterSound
+                    : t.dial.chat.tellMixSound}
                 </p>
               </>
             ) : (
               <>
-                <span className="text-amber-400 text-base">Hoo</span>
+                <span className="text-amber-400 text-base">{t.dial.chat.hooName}</span>
                 <p className="mt-2 text-zinc-400">
-                  Tell me how you want to adjust your mix.
+                  {t.dial.chat.adjustMix}
                 </p>
                 <p className="mt-1 text-zinc-600 text-xs">
-                  e.g. &quot;Bring the vocals forward&quot; or &quot;More reverb on guitars&quot;
+                  e.g. &quot;{t.dial.chat.exampleVocals}&quot; or &quot;{t.dial.chat.exampleReverb}&quot;
                 </p>
               </>
             )}
@@ -424,7 +426,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
                             )}
-                            {msg.applied ? 'Preview Applied' : 'No valid changes'}
+                            {msg.applied ? t.dial.chat.previewApplied : t.dial.chat.noValidChanges}
                           </div>
                           <div className="space-y-1.5">
                             {msg.parameterChanges!.map((pc, i) => {
@@ -451,7 +453,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
-                            {msg.action === 'request_final' ? 'Final Mix' : 'Mix Check Settings'}
+                            {msg.action === 'request_final' ? t.dial.chat.finalMix : t.dial.chat.mixCheckSettings}
                           </div>
                           {hasParams && (
                             <div className="space-y-1.5">
@@ -472,7 +474,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                           )}
                           {!hasParams && msg.action === 'request_final' && (
                             <div className="text-xs text-zinc-400">
-                              Mix Check settings will be applied as-is.
+                              {t.dial.chat.mixCheckAppliedAsIs}
                             </div>
                           )}
                           {msg.id === lastActionableId && (
@@ -495,10 +497,10 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                               }`}
                             >
                               {generating
-                                ? 'Generating...'
+                                ? t.dial.chat.generating
                                 : msg.action === 'request_final'
-                                  ? 'Generate Final Mix'
-                                  : 'Generate Mix Check'}
+                                  ? t.dial.chat.generateFinal
+                                  : t.dial.chat.generateMixCheck}
                             </button>
                           )}
                           {msg.applied && (
@@ -506,7 +508,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
-                              Submitted
+                              {t.dial.chat.submitted}
                             </div>
                           )}
                         </div>
@@ -527,7 +529,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
                             )}
-                            {msg.applied ? 'Mastering Preview Generating' : 'Mastering Settings'}
+                            {msg.applied ? t.dial.chat.masteringPreviewGenerating : t.dial.chat.masteringSettings}
                           </div>
                         </div>
                       )}
@@ -539,7 +541,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
-                            Final Mastering
+                            {t.dial.chat.finalMastering}
                           </div>
                           {msg.id === lastActionableId && (
                             <button
@@ -552,7 +554,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                               disabled={generating}
                               className="mt-2 w-full px-4 py-2.5 bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 rounded-lg text-sm font-medium text-white transition-colors"
                             >
-                              {generating ? 'Generating...' : 'Generate Mastered Track'}
+                              {generating ? t.dial.chat.generating : t.dial.chat.generateMasteredTrack}
                             </button>
                           )}
                           {msg.applied && (
@@ -560,7 +562,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
-                              Submitted
+                              {t.dial.chat.submitted}
                             </div>
                           )}
                         </div>
@@ -577,7 +579,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
             <div className="px-3 py-2 bg-zinc-800 rounded-xl text-sm text-zinc-400">
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                Hoo is thinking...
+                {t.dial.chat.thinking}
               </div>
             </div>
           </div>
@@ -606,16 +608,18 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && handleSend()}
-            placeholder={tracks.length === 0 ? (isMasteringPhase ? 'Upload your 2-mix first...' : 'Upload stems first...') : 'Describe what you want to change...'}
+            placeholder={tracks.length === 0 ? (isMasteringPhase ? t.dial.chat.upload2mixFirst : t.dial.chat.uploadStemsFirst) : t.dial.chat.placeholder}
             disabled={sending || tracks.length === 0}
+            aria-label={t.dial.chat.placeholder}
             className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 disabled:opacity-50"
           />
           <button
             onClick={handleSend}
             disabled={sending || !input.trim() || tracks.length === 0}
+            aria-label={t.dial.chat.send}
             className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-zinc-700 rounded-lg text-sm font-medium text-black transition-colors"
           >
-            Send
+            {t.dial.chat.send}
           </button>
         </div>
       </div>

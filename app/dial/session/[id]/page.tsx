@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
+import { useLocale } from '@/lib/i18n/locale-context';
+import Link from 'next/link';
 import { ChatPanel } from '@/components/dial/chat-panel';
 import { AudioAnalyzerProvider, useAudioAnalyzerContext } from '@/hooks/use-audio-analyzer-context';
 import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
@@ -102,6 +104,7 @@ function DialSessionContent() {
   const params = useParams();
   const sessionId = params.id as string;
   const { isSignedIn, getToken } = useAuth();
+  const { t } = useLocale();
 
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -578,7 +581,7 @@ function DialSessionContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
-        <div className="animate-pulse text-zinc-400">Loading session...</div>
+        <div className="animate-pulse text-zinc-400" role="status">{t.dial.session.loadingSession}</div>
       </div>
     );
   }
@@ -587,7 +590,7 @@ function DialSessionContent() {
     return (
       <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-bold mb-2">Session not found</h2>
+          <h2 className="text-xl font-bold mb-2">{t.dial.session.sessionNotFound}</h2>
           <p className="text-zinc-400">{error || 'This session may have expired.'}</p>
         </div>
       </div>
@@ -645,7 +648,7 @@ function DialSessionContent() {
 
   const uploadSection = session.paymentStatus === 'paid' && !hasFinal && (
     <div>
-      <h2 className="text-lg font-medium mb-4">{isMasteringOnly ? 'Upload 2-Mix' : 'Upload Stems'}</h2>
+      <h2 className="text-lg font-medium mb-4">{isMasteringOnly ? t.dial.session.upload2mix : t.dial.session.uploadStems}</h2>
 
       <label className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg cursor-pointer text-sm transition-colors">
         + Add Files
@@ -656,6 +659,7 @@ function DialSessionContent() {
           onChange={handleFilesSelected}
           disabled={uploading}
           className="hidden"
+          aria-label={isMasteringOnly ? t.dial.session.upload2mix : t.dial.session.uploadStems}
         />
       </label>
 
@@ -665,7 +669,7 @@ function DialSessionContent() {
             <thead>
               <tr className="bg-zinc-900 text-zinc-400 text-left">
                 <th className="px-4 py-2 font-medium">File</th>
-                {!isMasteringOnly && <th className="px-4 py-2 font-medium w-44">Instrument Group</th>}
+                {!isMasteringOnly && <th className="px-4 py-2 font-medium w-44">{t.dial.session.instrumentGroup}</th>}
                 <th className="px-4 py-2 font-medium w-12"></th>
               </tr>
             </thead>
@@ -695,7 +699,8 @@ function DialSessionContent() {
                     <button
                       onClick={() => removeStagedFile(i)}
                       className="text-zinc-500 hover:text-red-400 transition-colors"
-                      title="Remove"
+                      title={t.dial.session.delete}
+                      aria-label={`${t.dial.session.delete} ${staged.file.name}`}
                     >
                       ✕
                     </button>
@@ -715,7 +720,7 @@ function DialSessionContent() {
               className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 rounded-lg text-sm font-medium transition-colors"
             >
               {uploading && uploadProgress
-                ? `Uploading ${uploadProgress.current}/${uploadProgress.total}...`
+                ? `${t.dial.session.uploading} ${uploadProgress.current}/${uploadProgress.total}`
                 : `Upload All (${stagedFiles.length})`}
             </button>
           </div>
@@ -727,7 +732,7 @@ function DialSessionContent() {
   const tracksSection = hasTracks && (
     <div>
       <h2 className="text-lg font-medium mb-3">
-        Tracks ({session.tracks.length})
+        {t.dial.session.tracks} ({session.tracks.length})
       </h2>
       <div className="space-y-2">
         {session.tracks.map((track) => (
@@ -758,7 +763,8 @@ function DialSessionContent() {
                 <button
                   onClick={() => handleDeleteTrack(track.id)}
                   className="text-zinc-600 hover:text-red-400 text-xs transition-colors"
-                  title="Delete track"
+                  title={t.dial.session.delete}
+                  aria-label={`${t.dial.session.delete} ${track.originalFilename}`}
                 >
                   ✕
                 </button>
@@ -771,7 +777,7 @@ function DialSessionContent() {
       {/* Dirty banner */}
       {dirty && hasCompletedPreview && !isProcessing && !isMasteringOnly && (
         <div className="mt-3 p-3 bg-amber-900/20 border border-amber-800/50 rounded-lg text-sm text-amber-300">
-          Settings changed since last preview. Re-generate to hear updated mix.
+          {t.dial.session.settingsChanged}
         </div>
       )}
 
@@ -783,10 +789,10 @@ function DialSessionContent() {
           className="mt-4 w-full px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 rounded-lg text-sm font-medium transition-colors"
         >
           {previewing
-            ? 'Requesting...'
+            ? t.dial.session.processing
             : dirty && hasCompletedPreview
-              ? 'Re-generate Preview'
-              : 'Generate Preview Mix'}
+              ? t.dial.session.regeneratePreview
+              : t.dial.session.generatePreview}
         </button>
       )}
     </div>
@@ -812,7 +818,7 @@ function DialSessionContent() {
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium capitalize">
               {task.taskType === 'preview' && previewNumber > 0
-                ? `Take ${previewNumber}`
+                ? `${t.dial.session.take} ${previewNumber}`
                 : task.taskType === 'mix_check'
                   ? 'Mix Check'
                   : task.taskType === 'mastering_preview'
@@ -823,7 +829,7 @@ function DialSessionContent() {
             </span>
             {pp && (
               <span className="text-xs text-zinc-500">
-                {taskStyleLabel} / {trackCount} tracks
+                {taskStyleLabel} / {trackCount} {t.dial.session.tracks.toLowerCase()}
               </span>
             )}
           </div>
@@ -841,9 +847,9 @@ function DialSessionContent() {
         </div>
 
         {task.status === 'processing' && (
-          <div className="flex items-center gap-2 text-sm text-zinc-400">
+          <div className="flex items-center gap-2 text-sm text-zinc-400" role="status">
             <div className="h-3 w-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
-            Processing... this may take a few minutes.
+            {t.dial.session.processing}
           </div>
         )}
 
@@ -867,7 +873,7 @@ function DialSessionContent() {
                 ? 'Download Mix Check (.wav)'
                 : task.taskType === 'mastering'
                   ? 'Download Mastered Track (.wav)'
-                  : 'Download Final Mix (.wav)'}
+                  : `${t.dial.session.downloadFinal} (.wav)`}
             </a>
           </div>
         )}
@@ -897,8 +903,8 @@ function DialSessionContent() {
                 className="w-full py-2 text-sm text-zinc-500 hover:text-zinc-300 border border-zinc-800 border-dashed rounded-lg transition-colors"
               >
                 {showOlderTakes
-                  ? 'Hide older takes'
-                  : `Show ${olderTakes.length} older take${olderTakes.length !== 1 ? 's' : ''}`}
+                  ? `Hide ${t.dial.session.previousTakes.toLowerCase()}`
+                  : `Show ${olderTakes.length} ${t.dial.session.previousTakes.toLowerCase()}`}
               </button>
               {showOlderTakes && olderTakes.map((t) => renderTask(t, allPreviews))}
             </>
@@ -925,10 +931,10 @@ function DialSessionContent() {
         <div className="p-8 bg-gradient-to-b from-green-900/20 to-zinc-900 border border-green-800/40 rounded-2xl text-center">
           <div className="text-4xl mb-3">&#10003;</div>
           <h2 className="text-2xl font-bold mb-1">
-            {masteringFinalTask ? 'Your mastered track is ready' : 'Your mix is ready'}
+            {t.dial.session.yourMixReady}
           </h2>
           <p className="text-zinc-400 text-sm">
-            {styleLabel} &middot; {session.tracks.length} tracks &middot; {allPreviews.length} take{allPreviews.length !== 1 ? 's' : ''} explored
+            {styleLabel} &middot; {session.tracks.length} {t.dial.session.tracks.toLowerCase()} &middot; {allPreviews.length} {t.dial.session.take.toLowerCase()}{allPreviews.length !== 1 ? 's' : ''}
           </p>
         </div>
 
@@ -944,7 +950,7 @@ function DialSessionContent() {
               download
               className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-base font-semibold transition-colors"
             >
-              Download Mastered Track (.wav)
+              {t.dial.session.downloadFinal} (.wav)
             </a>
           </div>
         )}
@@ -970,7 +976,7 @@ function DialSessionContent() {
                     : 'bg-green-600 hover:bg-green-500'
                 }`}
               >
-                Download Final Mix (.wav)
+                {t.dial.session.downloadFinal} (.wav)
               </a>
               {mixFinalTask.stemsUrls && Object.keys(mixFinalTask.stemsUrls).length > 0 && (
                 <a
@@ -978,9 +984,9 @@ function DialSessionContent() {
                   download
                   className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-700 hover:bg-zinc-600 rounded-xl text-base font-medium transition-colors"
                 >
-                  Download Stems (.zip)
+                  {t.dial.session.downloadStems}
                   <span className="text-sm text-zinc-400">
-                    {Object.keys(mixFinalTask.stemsUrls).length} tracks
+                    {Object.keys(mixFinalTask.stemsUrls).length} {t.dial.session.tracks.toLowerCase()}
                   </span>
                 </a>
               )}
@@ -989,26 +995,26 @@ function DialSessionContent() {
         )}
 
         <div className="flex gap-3">
-          <a
+          <Link
             href="/dial"
             className="flex-1 py-3 text-center bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-medium transition-colors"
           >
-            Start New Session
-          </a>
+            {t.dial.session.startNewSession}
+          </Link>
           {guestToken && !linked ? (
-            <a
+            <Link
               href={`/sign-up?redirect_url=/dial/session/${session.id}`}
               className="flex-1 py-3 text-center bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-medium transition-colors"
             >
-              Save to Account
-            </a>
+              {t.dial.session.saveToAccount}
+            </Link>
           ) : (
-            <a
+            <Link
               href="/dashboard/dial"
               className="flex-1 py-3 text-center bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-medium transition-colors"
             >
-              Back to Dashboard
-            </a>
+              {t.dial.session.backToDashboard}
+            </Link>
           )}
         </div>
 
@@ -1019,8 +1025,8 @@ function DialSessionContent() {
               className="w-full py-2 text-sm text-zinc-500 hover:text-zinc-300 border border-zinc-800 border-dashed rounded-lg transition-colors"
             >
               {showOlderTakes
-                ? 'Hide preview takes'
-                : `Show ${allPreviews.length} preview take${allPreviews.length !== 1 ? 's' : ''}`}
+                ? `Hide ${t.dial.session.previousTakes.toLowerCase()}`
+                : `Show ${allPreviews.length} ${t.dial.session.take.toLowerCase()}${allPreviews.length !== 1 ? 's' : ''}`}
             </button>
             {showOlderTakes && (
               <div className="mt-3 space-y-3">
@@ -1033,10 +1039,10 @@ function DialSessionContent() {
                   return (
                     <div key={task.id} className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-medium">Take {previewNumber}</span>
+                        <span className="text-sm font-medium">{t.dial.session.take} {previewNumber}</span>
                         {pp && (
                           <span className="text-xs text-zinc-500">
-                            {takeStyleLabel} / {pp.tracks?.length} tracks
+                            {takeStyleLabel} / {pp.tracks?.length} {t.dial.session.tracks.toLowerCase()}
                           </span>
                         )}
                       </div>
@@ -1089,8 +1095,8 @@ function DialSessionContent() {
         {/* Payment pending */}
         {session.paymentStatus !== 'paid' && (
           <div className="p-6 bg-amber-900/20 border border-amber-800 rounded-xl text-center">
-            <h2 className="text-lg font-medium text-amber-300 mb-2">Payment Required</h2>
-            <p className="text-zinc-400">Complete payment to start uploading tracks.</p>
+            <h2 className="text-lg font-medium text-amber-300 mb-2">{t.dial.session.paymentRequired}</h2>
+            <p className="text-zinc-400">{t.dial.session.completePayment}</p>
           </div>
         )}
 
@@ -1245,7 +1251,7 @@ function DialSessionContent() {
                               ? 'Master Preview'
                               : task.taskType === 'mastering'
                                 ? 'Master Final'
-                                : `Take ${allPreviewTasks.length - allPreviewTasks.findIndex((t) => t.id === task.id)}`;
+                                : `${t.dial.session.take} ${allPreviewTasks.length - allPreviewTasks.findIndex((tt) => tt.id === task.id)}`;
 
                           return (
                             <button
@@ -1267,7 +1273,7 @@ function DialSessionContent() {
                                 <span>{label}</span>
                               </div>
                               {task.status === 'processing' && (
-                                <div className="h-3 w-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                                <div className="h-3 w-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" role="status" aria-label={t.dial.session.processing} />
                               )}
                               {task.status === 'failed' && (
                                 <span className="text-xs text-red-400">failed</span>

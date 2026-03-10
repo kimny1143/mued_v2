@@ -21,11 +21,13 @@ const MUSICAL_STYLE_MAP: Record<string, string> = {
   rock: 'ROCK_INDIE',
   hiphop: 'HIPHOP_GRIME',
   electronic: 'ELECTRONIC',
+  acoustic: 'ACOUSTIC',
   jazz: 'OTHER',
   classical: 'ORCHESTRAL',
   rnb: 'POP',
   country: 'ACOUSTIC',
   metal: 'METAL',
+  reggae: 'REGGAE_DUB',
   other: 'OTHER',
 };
 

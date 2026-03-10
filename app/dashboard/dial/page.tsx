@@ -1,26 +1,27 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { db } from "@/db";
 import { dialSessions } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
 import { Headphones, Music, Clock, CheckCircle, Loader2, Upload, ArrowRight } from "lucide-react";
 
-const STATUS_CONFIG = {
-  uploading: { label: "Uploading", icon: Upload, color: "text-slate-400" },
-  previewing: { label: "Previewing", icon: Loader2, color: "text-blue-400" },
-  mixing: { label: "Mixing", icon: Loader2, color: "text-amber-400" },
-  mastering: { label: "Mastering", icon: Loader2, color: "text-purple-400" },
-  completed: { label: "Completed", icon: CheckCircle, color: "text-green-400" },
-  archived: { label: "Archived", icon: Clock, color: "text-slate-500" },
+const STATUS_ICONS = {
+  uploading: { icon: Upload, color: "text-white/60" },
+  previewing: { icon: Loader2, color: "text-blue-400" },
+  mixing: { icon: Loader2, color: "text-amber-400" },
+  mastering: { icon: Loader2, color: "text-purple-400" },
+  completed: { icon: CheckCircle, color: "text-green-400" },
+  archived: { icon: Clock, color: "text-white/40" },
 } as const;
 
-const MODE_LABELS: Record<string, string> = {
-  omakase: "Omakase",
-  dialogue: "Dialogue",
-};
-
 export default async function DialDashboardPage() {
+  const cookieStore = await cookies();
+  const locale = (cookieStore.get('NEXT_LOCALE')?.value ?? 'en') as 'en' | 'ja';
+  const messages = (await import(`../../../messages/${locale}.json`)).default;
+  const t = messages;
+
   const user = await currentUser();
   if (!user) {
     redirect("/sign-in");
@@ -52,11 +53,11 @@ export default async function DialDashboardPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-white">Mix History</h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-white">{t.dial.dashboard.mixHistory}</h1>
+          <p className="text-white/60 text-sm mt-1">
             {sessions.length > 0
-              ? `${sessions.length} session${sessions.length !== 1 ? "s" : ""}`
-              : "No sessions yet"}
+              ? `${sessions.length} ${t.dial.dashboard.sessions}`
+              : t.dial.dashboard.noSessionsYet}
           </p>
         </div>
         <Link
@@ -64,37 +65,42 @@ export default async function DialDashboardPage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-medium rounded-lg transition-colors text-sm"
         >
           <Headphones className="w-4 h-4" />
-          New Session
+          {t.dial.dashboard.newSession}
         </Link>
       </div>
 
       {sessions.length === 0 ? (
         <div className="text-center py-20">
           <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Music className="w-8 h-8 text-slate-600" />
+            <Music className="w-8 h-8 text-white/30" />
           </div>
-          <p className="text-slate-400 mb-6">
-            Upload your stems and let AI mix your track.
+          <p className="text-white/60 mb-6">
+            {t.dial.dashboard.uploadStemsPrompt}
           </p>
           <Link
             href="/dial"
             className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-medium rounded-lg transition-colors"
           >
-            Start Your First Mix
+            {t.dial.dashboard.startFirstMix}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       ) : (
         <div className="space-y-3">
           {sessions.map((session) => {
-            const status = STATUS_CONFIG[session.status] ?? STATUS_CONFIG.uploading;
+            const statusKey = session.status as keyof typeof STATUS_ICONS;
+            const status = STATUS_ICONS[statusKey] ?? STATUS_ICONS.uploading;
             const StatusIcon = status.icon;
             const date = new Date(session.createdAt);
-            const dateStr = date.toLocaleDateString("en-US", {
+            const dateStr = date.toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-US', {
               month: "short",
               day: "numeric",
               year: "numeric",
             });
+            const statusLabel = t.dial.dashboard.status[statusKey] ?? t.dial.dashboard.status.uploading;
+            const modeLabel = session.mode
+              ? (t.dial.dashboard.mode[session.mode as keyof typeof t.dial.dashboard.mode] ?? session.mode)
+              : t.dial.dashboard.mode.mastering;
 
             return (
               <Link
@@ -110,23 +116,23 @@ export default async function DialDashboardPage() {
                     <span className="text-white font-medium truncate">
                       {session.title || session.musicalStyle}
                     </span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-slate-400 flex-shrink-0">
-                      {session.mode ? MODE_LABELS[session.mode] : 'Mastering'}
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-white/60 flex-shrink-0">
+                      {modeLabel}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                  <div className="flex items-center gap-3 text-xs text-white/40 mt-1">
                     <span>{dateStr}</span>
-                    <span>{session.trackCount} tracks</span>
+                    <span>{session.trackCount} {t.dial.dashboard.tracks}</span>
                     {session.hasFinal && (
-                      <span className="text-green-500">Final ready</span>
+                      <span className="text-green-500">{t.dial.dashboard.finalReady}</span>
                     )}
                   </div>
                 </div>
                 <div className={`flex items-center gap-1.5 text-xs ${status.color} flex-shrink-0`}>
                   <StatusIcon className={`w-3.5 h-3.5 ${session.status === "previewing" || session.status === "mixing" ? "animate-spin" : ""}`} />
-                  {status.label}
+                  {statusLabel}
                 </div>
-                <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 transition-colors flex-shrink-0" />
+                <ArrowRight className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors flex-shrink-0" />
               </Link>
             );
           })}

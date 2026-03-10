@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useEffect, useCallback, useContext } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import type { AnalyzerData } from '@/hooks/use-audio-analyzer';
 import { useAudioAnalyzerContext } from '@/hooks/use-audio-analyzer-context';
+import { useLocale } from '@/lib/i18n/locale-context';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,13 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
   } catch {
     // No provider — props are required
   }
+
+  // i18n translations — useLocale is safe here because AudioAnalyzer
+  // is always rendered within LocaleProviderWrapper (root layout).
+  // Context fallback above is for AudioAnalyzerContext only.
+  const { t: localeT } = useLocale();
+  const dialT = localeT.dial.analyzer;
+
   const data = dataProp !== undefined ? dataProp : ctxData;
   const isActive = isActiveProp !== undefined ? isActiveProp : ctxActive;
   const onConnect = onConnectProp ?? ctxConnect;
@@ -439,8 +447,9 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
       <button
         onClick={onConnect}
         className="w-full text-xs text-zinc-500 hover:text-zinc-300 transition-colors py-2 text-center"
+        aria-label={dialT?.enableAnalyzer ?? 'Enable Analyzer'}
       >
-        Enable Analyzer
+        {dialT?.enableAnalyzer ?? 'Enable Analyzer'}
       </button>
     );
   }
@@ -450,18 +459,21 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
       {/* ── Top: Spectrum (large) ── */}
       <div>
         <div className="flex items-center justify-between mb-0.5">
-          <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Spectrum</span>
+          <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{dialT?.spectrum ?? 'Spectrum'}</span>
           {compact && (
             <button
               onClick={handlePopOut}
               className="text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors"
+              aria-label={dialT?.popOut ?? 'Pop Out'}
             >
-              ↗ Pop Out
+              ↗ {dialT?.popOut ?? 'Pop Out'}
             </button>
           )}
         </div>
         <canvas
           ref={spectrumRef}
+          role="img"
+          aria-label="Frequency spectrum analyzer"
           className={`w-full rounded bg-zinc-950 ${compact ? 'h-40' : 'h-64'}`}
         />
       </div>
@@ -470,6 +482,8 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
       <div>
         <canvas
           ref={spectrogramRef}
+          role="img"
+          aria-label="Audio spectrogram"
           className={`w-full rounded ${compact ? 'h-10' : 'h-16'}`}
         />
       </div>
@@ -478,9 +492,11 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
       <div className={`flex gap-2 ${compact ? 'min-h-[112px]' : 'min-h-[152px]'}`}>
         {/* Left column: Level meter (narrow) */}
         <div className="flex flex-col" style={{ width: compact ? 144 : 168 }}>
-          <span className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">Level</span>
+          <span className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">{dialT?.level ?? 'Level'}</span>
           <canvas
             ref={meterRef}
+            role="img"
+            aria-label="Audio level meter"
             className="w-full flex-1 rounded"
           />
         </div>
@@ -489,7 +505,7 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
         <div className="flex-1 flex flex-col gap-1.5 min-w-0">
           {/* Loudness — 3 rows vertical */}
           <div>
-            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Loudness</span>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{dialT?.loudness ?? 'Loudness'}</span>
             <div className="mt-0.5 space-y-0.5">
               {([
                 ['M', 'Momentary', data?.momentaryLufs],
@@ -511,12 +527,14 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
 
           {/* Phase / Stereo Field */}
           <div className="flex-1 flex flex-col min-h-0">
-            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Stereo Field</span>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wider">{dialT?.stereoField ?? 'Stereo Field'}</span>
 
             {/* Goniometer — fills available space */}
             <div className="flex-1 flex items-center justify-center mt-0.5 min-h-0">
               <canvas
                 ref={gonioRef}
+                role="img"
+                aria-label="Stereo phase scope"
                 className="rounded bg-zinc-950 aspect-square"
                 style={{ maxWidth: compact ? 160 : 240, maxHeight: '100%', width: '100%' }}
               />
@@ -526,7 +544,7 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
             <div className="mt-1.5">
               <div className="flex items-center justify-between text-[8px] text-zinc-600 mb-0.5">
                 <span>-1</span>
-                <span className="text-zinc-500">Correlation</span>
+                <span className="text-zinc-500">{dialT?.correlation ?? 'Correlation'}</span>
                 <span>+1</span>
               </div>
               <div className="relative h-1.5 bg-zinc-900 rounded overflow-hidden">
@@ -551,7 +569,7 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
             <div className="mt-1">
               <div className="flex items-center justify-between text-[8px] text-zinc-600 mb-0.5">
                 <span>M</span>
-                <span className="text-zinc-500">Width</span>
+                <span className="text-zinc-500">{dialT?.width ?? 'Width'}</span>
                 <span>S</span>
               </div>
               <div className="relative h-1.5 bg-zinc-900 rounded overflow-hidden">
@@ -571,7 +589,7 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
             <div className="mt-1">
               <div className="flex items-center justify-between text-[8px] text-zinc-600 mb-0.5">
                 <span>L</span>
-                <span className="text-zinc-500">Balance</span>
+                <span className="text-zinc-500">{dialT?.balance ?? 'Balance'}</span>
                 <span>R</span>
               </div>
               <div className="relative h-1.5 bg-zinc-900 rounded overflow-hidden">

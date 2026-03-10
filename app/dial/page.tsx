@@ -3,20 +3,22 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@clerk/nextjs';
+import { useLocale } from '@/lib/i18n/locale-context';
 
 type ServiceTier = 'omakase' | 'dialogue';
-
-const MIX_OPTIONS = [
-  { id: 'omakase' as ServiceTier, name: 'Omakase Mix', price: 12, description: 'AI auto-mix — upload stems, get a polished mix back.' },
-  { id: 'dialogue' as ServiceTier, name: 'Dialogue Mix', price: 35, description: 'Chat with Hoo to fine-tune your mix interactively.' },
-];
 
 
 export default function DialPage() {
   const router = useRouter();
   const { isSignedIn } = useAuth();
   const { user } = useUser();
+  const { t } = useLocale();
   const clerkEmail = user?.primaryEmailAddress?.emailAddress ?? '';
+
+  const MIX_OPTIONS = [
+    { id: 'omakase' as ServiceTier, name: t.dial.checkout.omakaseName, price: 12, description: t.dial.checkout.omakaseDesc },
+    { id: 'dialogue' as ServiceTier, name: t.dial.checkout.dialogueName, price: 35, description: t.dial.checkout.dialogueDesc },
+  ];
 
   const [email, setEmail] = useState('');
   const [mixType, setMixType] = useState<ServiceTier | null>(null);
@@ -31,7 +33,7 @@ export default function DialPage() {
 
   const handleCheckout = async () => {
     if (!hasSelection || !effectiveEmail) {
-      setError(isSignedIn ? 'Please select at least one service.' : 'Please select a service and enter your email.');
+      setError(isSignedIn ? t.dial.checkout.errorSelectService : t.dial.checkout.errorSelectServiceEmail);
       return;
     }
 
@@ -52,7 +54,7 @@ export default function DialPage() {
       const data = await res.json();
 
       if (!data.success) {
-        setError(data.error || 'Checkout failed');
+        setError(data.error || t.dial.checkout.checkoutFailed);
         return;
       }
 
@@ -65,7 +67,7 @@ export default function DialPage() {
       // Redirect to Stripe Checkout
       window.location.href = data.data.url;
     } catch {
-      setError('Network error. Please try again.');
+      setError(t.dial.checkout.networkError);
     } finally {
       setLoading(false);
     }
@@ -80,19 +82,19 @@ export default function DialPage() {
             MUED<span className="text-indigo-400">ial</span>
           </h1>
           <p className="text-lg text-zinc-400 max-w-xl mx-auto">
-            AI-powered mixing and mastering. Upload your stems, get a
-            professional mix — no account required.
+            {t.dial.checkout.tagline}
           </p>
         </div>
 
         {/* Step 1: Mix */}
         <div className="mb-8">
-          <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-3">Step 1: Mixing</h2>
-          <div className="grid md:grid-cols-2 gap-3">
+          <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-3">{t.dial.checkout.step1}</h2>
+          <div className="grid md:grid-cols-2 gap-3" role="radiogroup" aria-label={t.dial.checkout.step1}>
             {MIX_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
                 onClick={() => setMixType(mixType === opt.id ? null : opt.id)}
+                aria-pressed={mixType === opt.id}
                 className={`text-left p-5 rounded-xl border transition-all ${
                   mixType === opt.id
                     ? 'border-indigo-500 bg-indigo-500/10'
@@ -109,9 +111,10 @@ export default function DialPage() {
 
         {/* Step 2: Mastering */}
         <div className="mb-8">
-          <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-3">Step 2: Mastering</h2>
+          <h2 className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-3">{t.dial.checkout.step2}</h2>
           <button
             onClick={() => setMasteringType(masteringType ? null : 'omakase')}
+            aria-pressed={!!masteringType}
             className={`w-full text-left p-5 rounded-xl border transition-all ${
               masteringType
                 ? 'border-indigo-500 bg-indigo-500/10'
@@ -119,8 +122,8 @@ export default function DialPage() {
             }`}
           >
             <div className="text-xl font-bold mb-1">$5</div>
-            <div className="text-sm font-medium text-white mb-1">Mastering</div>
-            <div className="text-xs text-zinc-400">AI auto-master — optimized loudness and polish for release.</div>
+            <div className="text-sm font-medium text-white mb-1">{t.dial.checkout.masteringName}</div>
+            <div className="text-xs text-zinc-400">{t.dial.checkout.masteringDesc}</div>
           </button>
         </div>
 
@@ -128,7 +131,7 @@ export default function DialPage() {
         {hasSelection && (
           <div className="mb-8 text-center">
             <span className="text-3xl font-bold">${totalPrice}</span>
-            <span className="text-zinc-400 ml-2 text-sm">total</span>
+            <span className="text-zinc-400 ml-2 text-sm">{t.dial.checkout.total}</span>
           </div>
         )}
 
@@ -136,7 +139,7 @@ export default function DialPage() {
         <div className="max-w-md mx-auto space-y-4">
           {isSignedIn ? (
             <div className="flex items-center gap-2 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-lg">
-              <span className="text-sm text-zinc-400">Signed in as</span>
+              <span className="text-sm text-zinc-400">{t.dial.checkout.signedInAs}</span>
               <span className="text-sm text-white">{clerkEmail}</span>
             </div>
           ) : (
@@ -145,7 +148,7 @@ export default function DialPage() {
                 htmlFor="email"
                 className="block text-sm text-zinc-400 mb-1"
               >
-                Email
+                {t.dial.checkout.email}
               </label>
               <input
                 id="email"
@@ -167,13 +170,13 @@ export default function DialPage() {
             disabled={loading || !hasSelection || !effectiveEmail}
             className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 disabled:text-zinc-600 rounded-lg font-medium transition-colors"
           >
-            {loading ? 'Processing...' : hasSelection ? `Continue to Payment — $${totalPrice}` : 'Select a service'}
+            {loading ? t.dial.checkout.processing : hasSelection ? `${t.dial.checkout.continueToPayment} — $${totalPrice}` : t.dial.checkout.selectService}
           </button>
 
           <p className="text-xs text-zinc-600 text-center">
             {isSignedIn
-              ? 'Secure payment via Stripe.'
-              : 'No account required. Secure payment via Stripe.'}
+              ? t.dial.checkout.securePayment
+              : t.dial.checkout.noAccountRequired}
           </p>
         </div>
 
@@ -188,7 +191,7 @@ export default function DialPage() {
             }}
             className="text-sm text-zinc-500 hover:text-zinc-300 underline"
           >
-            Return to existing session
+            {t.dial.checkout.returnToSession}
           </button>
         </div>
       </div>
