@@ -554,7 +554,7 @@ export const translations = {
     // Landing Page
     landing: {
       hero: {
-        title: '音楽レッスンをもっと簡単に',
+        title: 'MUEDnote',
         subtitle: 'MUED LMSは、次世代の学習管理システムで生徒と専門メンターをつなぎます',
         cta: '今すぐ無料で始める',
         login: 'ログイン',
