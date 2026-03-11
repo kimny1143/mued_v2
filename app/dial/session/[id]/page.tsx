@@ -9,6 +9,13 @@ import { ChatPanel } from '@/components/dial/chat-panel';
 import { AudioAnalyzerProvider, useAudioAnalyzerContext } from '@/hooks/use-audio-analyzer-context';
 import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
 
+/** Proxy GCS audio URLs through our Worker to add CORS headers (needed for Web Audio API analyzer) */
+function proxyAudioUrl(url: string): string {
+  const proxyBase = process.env.NEXT_PUBLIC_UPLOAD_PROXY_URL;
+  if (!proxyBase || !url.includes('storage.googleapis.com')) return url;
+  return `${proxyBase}?url=${encodeURIComponent(url)}`;
+}
+
 interface Track {
   id: string;
   originalFilename: string;
@@ -918,14 +925,14 @@ function DialSessionContent() {
 
         {task.previewUrl && (
           <div className="mt-2">
-            <audio controls src={task.previewUrl} className="w-full" />
+            <audio controls src={proxyAudioUrl(task.previewUrl)} crossOrigin="anonymous" className="w-full" />
           </div>
         )}
 
         {task.finalUrl && (
           <div className="mt-2">
             {task.taskType === 'mix_check' && (
-              <audio controls src={task.finalUrl} className="w-full mb-2" />
+              <audio controls src={proxyAudioUrl(task.finalUrl)} crossOrigin="anonymous" className="w-full mb-2" />
             )}
             <a
               href={task.finalUrl}
@@ -1110,7 +1117,7 @@ function DialSessionContent() {
                         )}
                       </div>
                       {task.previewUrl && (
-                        <audio controls src={task.previewUrl} className="w-full" />
+                        <audio controls src={proxyAudioUrl(task.previewUrl)} crossOrigin="anonymous" className="w-full" />
                       )}
                     </div>
                   );
@@ -1247,7 +1254,8 @@ function DialSessionContent() {
                         <audio
                           ref={audioRef}
                           controls
-                          src={effectiveUrl}
+                          src={proxyAudioUrl(effectiveUrl)}
+                          crossOrigin="anonymous"
                           className="w-full"
                           key={effectiveUrl}
                         />

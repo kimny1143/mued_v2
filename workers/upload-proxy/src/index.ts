@@ -1,13 +1,16 @@
 /**
- * MUEDial Upload Proxy — Cloudflare Worker
+ * MUEDial Audio Proxy — Cloudflare Worker
  *
- * Streams audio files from the browser to RoEx GCS signed URLs.
- * Exists solely to bypass CORS restrictions on RoEx's GCS bucket
- * and Vercel's 4.5MB serverless function body size limit.
+ * Two jobs, both solving CORS on RoEx's GCS bucket:
  *
- * Flow:
- *   Browser --PUT (60MB WAV)--> Worker --stream--> RoEx GCS
- *   (no buffering, no storage, just a pipe)
+ * 1. PUT (upload):
+ *    Browser --PUT (60MB WAV)--> Worker --stream--> RoEx GCS
+ *    Bypasses Vercel's 4.5MB body limit. No buffering, no storage.
+ *
+ * 2. GET (playback):
+ *    Browser --GET--> Worker --fetch--> RoEx GCS --stream--> Browser
+ *    Adds CORS headers so Web Audio API (analyzer) doesn't mute audio.
+ *    Target URL passed as ?url= query parameter.
  */
 
 interface Env {
@@ -21,15 +24,19 @@ const DEFAULT_ORIGINS = [
   'http://localhost:3000',
 ];
 
-function getCorsHeaders(request: Request, env: Env): Record<string, string> {
-  const origin = request.headers.get('Origin') || '';
-  const allowed = env.ALLOWED_ORIGINS
+function getAllowedOrigins(env: Env): string[] {
+  return env.ALLOWED_ORIGINS
     ? env.ALLOWED_ORIGINS.split(',').map((s) => s.trim())
     : DEFAULT_ORIGINS;
+}
+
+function getCorsHeaders(request: Request, env: Env): Record<string, string> {
+  const origin = request.headers.get('Origin') || '';
+  const allowed = getAllowedOrigins(env);
 
   return {
     'Access-Control-Allow-Origin': allowed.includes(origin) ? origin : '',
-    'Access-Control-Allow-Methods': 'PUT, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Upload-Target',
     'Access-Control-Max-Age': '86400',
   };
@@ -54,32 +61,68 @@ export default {
       return new Response(null, { status: 204, headers: cors });
     }
 
-    if (request.method !== 'PUT') {
-      return new Response('Method not allowed', { status: 405, headers: cors });
+    // ── GET: Audio playback proxy ──────────────────────────────────────────
+    if (request.method === 'GET') {
+      const url = new URL(request.url);
+      const targetUrl = url.searchParams.get('url');
+      if (!targetUrl) {
+        return new Response('Missing ?url= parameter', { status: 400, headers: cors });
+      }
+      if (!isAllowedTarget(targetUrl)) {
+        return new Response('Invalid target URL', { status: 403, headers: cors });
+      }
+
+      // Forward Range header for seeking support
+      const gcsHeaders: Record<string, string> = {};
+      const range = request.headers.get('Range');
+      if (range) gcsHeaders['Range'] = range;
+
+      const gcsResponse = await fetch(targetUrl, { headers: gcsHeaders });
+
+      // Stream GCS response back with CORS headers
+      const responseHeaders: Record<string, string> = {
+        ...cors,
+        'Content-Type': gcsResponse.headers.get('Content-Type') || 'audio/mpeg',
+        'Cache-Control': 'public, max-age=3600',
+      };
+      // Preserve Content-Length and range headers
+      const cl = gcsResponse.headers.get('Content-Length');
+      if (cl) responseHeaders['Content-Length'] = cl;
+      const cr = gcsResponse.headers.get('Content-Range');
+      if (cr) responseHeaders['Content-Range'] = cr;
+      const ar = gcsResponse.headers.get('Accept-Ranges');
+      if (ar) responseHeaders['Accept-Ranges'] = ar;
+
+      return new Response(gcsResponse.body, {
+        status: gcsResponse.status,
+        headers: responseHeaders,
+      });
     }
 
-    // Target GCS signed URL passed via header
-    const targetUrl = request.headers.get('X-Upload-Target');
-    if (!targetUrl) {
-      return new Response('Missing X-Upload-Target header', { status: 400, headers: cors });
+    // ── PUT: Upload proxy ──────────────────────────────────────────────────
+    if (request.method === 'PUT') {
+      const targetUrl = request.headers.get('X-Upload-Target');
+      if (!targetUrl) {
+        return new Response('Missing X-Upload-Target header', { status: 400, headers: cors });
+      }
+      if (!isAllowedTarget(targetUrl)) {
+        return new Response('Invalid target URL', { status: 403, headers: cors });
+      }
+
+      const gcsResponse = await fetch(targetUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': request.headers.get('Content-Type') || 'audio/wav',
+        },
+        body: request.body,
+      });
+
+      return new Response(null, {
+        status: gcsResponse.ok ? 200 : gcsResponse.status,
+        headers: cors,
+      });
     }
 
-    if (!isAllowedTarget(targetUrl)) {
-      return new Response('Invalid target URL', { status: 403, headers: cors });
-    }
-
-    // Stream request body directly to GCS — no buffering
-    const gcsResponse = await fetch(targetUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': request.headers.get('Content-Type') || 'audio/wav',
-      },
-      body: request.body,
-    });
-
-    return new Response(null, {
-      status: gcsResponse.ok ? 200 : gcsResponse.status,
-      headers: cors,
-    });
+    return new Response('Method not allowed', { status: 405, headers: cors });
   },
 };
