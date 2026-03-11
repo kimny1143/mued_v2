@@ -17,7 +17,7 @@ const stripe = new Stripe(stripeConfig.secretKey, {
   apiVersion: '2025-08-27.basil',
 });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
+const FALLBACK_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
 
 // Stripe Price IDs (configured in Stripe Dashboard)
 const DIAL_SUB_PRICES: Record<string, { priceId: string; label: string; credits: number }> = {
@@ -52,6 +52,11 @@ export const POST = withAuth(async ({ userId, request }) => {
       return apiServerError('Subscription pricing not configured');
     }
 
+    // Derive base URL from request origin (preserves subdomain for localStorage)
+    const origin = request.headers.get('origin')
+      || `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('host')}`
+      || FALLBACK_URL;
+
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [{
@@ -72,8 +77,8 @@ export const POST = withAuth(async ({ userId, request }) => {
           credits: plan.credits.toString(),
         },
       },
-      success_url: `${APP_URL}/dial/dashboard?subscription=success`,
-      cancel_url: `${APP_URL}/dial/pricing?subscription=cancelled`,
+      success_url: `${origin}/dial/dashboard?subscription=success`,
+      cancel_url: `${origin}/dial/pricing?subscription=cancelled`,
     });
 
     return apiSuccess({ url: checkoutSession.url });

@@ -29,7 +29,7 @@ const stripe = new Stripe(stripeConfig.secretKey, {
   apiVersion: '2025-08-27.basil',
 });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
+const FALLBACK_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
 
 const ADDITIONAL_CYCLE_CENTS = 500; // $5
 
@@ -75,6 +75,11 @@ export const POST = withDialAuth(async (auth) => {
       currency: 'usd',
     }).returning();
 
+    // Derive base URL from request origin (preserves subdomain for localStorage)
+    const origin = auth.request.headers.get('origin')
+      || `${auth.request.headers.get('x-forwarded-proto') || 'https'}://${auth.request.headers.get('host')}`
+      || FALLBACK_URL;
+
     // Create Stripe Checkout Session
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -96,8 +101,8 @@ export const POST = withDialAuth(async (auth) => {
         dialSessionId: sessionId,
         purchaseId: purchase.id,
       },
-      success_url: `${APP_URL}/dial/session/${sessionId}?additional=success`,
-      cancel_url: `${APP_URL}/dial/session/${sessionId}?additional=cancelled`,
+      success_url: `${origin}/dial/session/${sessionId}?additional=success`,
+      cancel_url: `${origin}/dial/session/${sessionId}?additional=cancelled`,
     });
 
     // Save Stripe checkout ID on purchase

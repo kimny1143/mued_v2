@@ -40,7 +40,7 @@ const MASTERING_PRICES: Record<string, { amountCents: number; label: string }> =
   omakase: { amountCents: 500, label: 'MUEDial Mastering' },
 };
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
+const FALLBACK_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
 
 // ─── Validation ─────────────────────────────────────────────────────────────
 
@@ -151,6 +151,11 @@ export async function POST(request: NextRequest) {
       return { session, purchases };
     });
 
+    // Derive base URL from request origin (preserves subdomain for localStorage)
+    const origin = request.headers.get('origin')
+      || `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('host')}`
+      || FALLBACK_URL;
+
     // Create Stripe Checkout Session
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -165,8 +170,8 @@ export async function POST(request: NextRequest) {
         guestToken,
         totalCents: String(totalCents),
       },
-      success_url: `${APP_URL}/dial/session/${result.session.id}?payment=success`,
-      cancel_url: `${APP_URL}/dial?payment=cancelled`,
+      success_url: `${origin}/dial/session/${result.session.id}?payment=success`,
+      cancel_url: `${origin}/dial?payment=cancelled`,
     });
 
     // Update session + purchases with Stripe checkout ID
