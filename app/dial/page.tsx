@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
 import Image from 'next/image';
@@ -56,12 +56,105 @@ function ChatMockup({ t }: { t: Record<string, unknown> }) {
   );
 }
 
+// ─── Video Promo Modal ──────────────────────────────────────────────────────
+
+function VideoPromo({ lp, locale }: { lp: Record<string, string>; locale: string }) {
+  const [open, setOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [open, close]);
+
+  const videoSrc = locale === 'ja'
+    ? '/videos/muedial-promo-30-ja.mp4'
+    : '/videos/muedial-promo-30-en.mp4';
+
+  return (
+    <>
+      <section className="py-20 px-6 border-t border-zinc-900">
+        <div className="max-w-lg mx-auto text-center">
+          <p className="text-xs text-white/50 uppercase tracking-wider mb-8">{lp.promoLabel}</p>
+
+          {/* Thumbnail with play button */}
+          <button
+            onClick={() => setOpen(true)}
+            className="group relative w-full aspect-[9/16] max-w-[280px] mx-auto rounded-[var(--radius-lg)] overflow-hidden border border-zinc-800 hover:border-zinc-600 transition-colors cursor-pointer"
+          >
+            <Image
+              src="/muedial-hoo-mixing-console.jpg"
+              alt=""
+              fill
+              className="object-cover brightness-75 group-hover:brightness-90 transition-all"
+            />
+            {/* Play icon */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </div>
+            {/* Label */}
+            <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+              <span className="text-sm text-white/90">{lp.promoPlay}</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      {/* Modal */}
+      {open && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+          onClick={close}
+        >
+          <div
+            className="relative w-full max-w-[360px] mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button
+              onClick={close}
+              className="absolute -top-10 right-0 text-white/60 hover:text-white transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <video
+              ref={videoRef}
+              src={videoSrc}
+              controls
+              autoPlay
+              playsInline
+              className="w-full rounded-[var(--radius-lg)]"
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 export default function DialPage() {
   const { isSignedIn } = useAuth();
   const { user } = useUser();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const clerkEmail = user?.primaryEmailAddress?.emailAddress ?? '';
 
   const lp = t.dial.lp;
@@ -295,6 +388,9 @@ export default function DialPage() {
             <p className="text-xs text-white/40 text-center mt-4">{lp.comingSoon}</p>
           </div>
         </section>
+
+        {/* ─── Video Promo ────────────────────────────────────────────── */}
+        <VideoPromo lp={lp as unknown as Record<string, string>} locale={locale} />
 
         {/* ─── Footer ─────────────────────────────────────────────────── */}
         <div className="border-t border-zinc-900 py-6 px-6">

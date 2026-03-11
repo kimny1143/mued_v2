@@ -1226,7 +1226,9 @@
       "beforeAfterLabel": "ミックス前 → 後",
       "before": "Before",
       "after": "After",
-      "comingSoon": "デモ音源 準備中"
+      "comingSoon": "デモ音源 準備中",
+      "promoLabel": "使い方を見る",
+      "promoPlay": "30秒でわかるMUEDial"
     },
     "checkout": {
       "tagline": "AIミキシング＆マスタリング。ステムをアップロードするだけ。アカウント不要。",

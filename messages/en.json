@@ -1226,7 +1226,9 @@
       "beforeAfterLabel": "Before → After",
       "before": "Before",
       "after": "After",
-      "comingSoon": "Demo audio coming soon"
+      "comingSoon": "Demo audio coming soon",
+      "promoLabel": "See how it works",
+      "promoPlay": "Watch the 30-second version"
     },
     "checkout": {
       "tagline": "AI-powered mixing and mastering. Upload your stems, get a professional mix — no account required.",
