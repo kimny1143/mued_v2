@@ -153,7 +153,14 @@ export async function mixFinalAdvanced(
         trackURL: t.trackUrl,
         gainDb: t.gainDb,
         eq_settings: t.eqBands,
-        compression_settings: t.compressor,
+        compression_settings: t.compressor
+          ? {
+              attack_ms: t.compressor.attack,
+              release_ms: t.compressor.release,
+              threshold: t.compressor.threshold,
+              ratio: t.compressor.ratio,
+            }
+          : undefined,
         panning_settings: t.panAngleDegrees != null
           ? { panning_angle: t.panAngleDegrees }
           : undefined,
