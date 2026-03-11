@@ -355,6 +355,25 @@ export default function DialPage() {
         {/* ─── Video Promo ────────────────────────────────────────────── */}
         <VideoPromo lp={lp as unknown as Record<string, string>} locale={locale} />
 
+        {/* ─── FAQ ──────────────────────────────────────────────────── */}
+        <section className="py-20 px-6 border-t border-zinc-900">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold mb-10 text-center">{lp.faqTitle}</h2>
+            <dl className="space-y-6">
+              {([1, 2, 3, 4, 5, 6] as const).map((n) => (
+                <div key={n} className="border-b border-zinc-800 pb-6 last:border-0">
+                  <dt className="text-base font-medium text-white mb-2">
+                    {lp[`faq${n}q` as keyof typeof lp]}
+                  </dt>
+                  <dd className="text-sm text-white/60 leading-relaxed">
+                    {lp[`faq${n}a` as keyof typeof lp]}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
+
         {/* ─── Footer ─────────────────────────────────────────────────── */}
         <div className="border-t border-zinc-900 py-6 px-6">
           <div className="max-w-6xl mx-auto flex items-center justify-between">

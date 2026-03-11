@@ -1267,7 +1267,20 @@
       "after": "After",
       "comingSoon": "Demo audio coming soon",
       "promoLabel": "See how it works",
-      "promoPlay": "Watch the 30-second version"
+      "promoPlay": "Watch the 30-second version",
+      "faqTitle": "FAQ",
+      "faq1q": "What files do I need?",
+      "faq1a": "Stem files — each track exported individually. WAV, FLAC, AIFF, and MP3 are supported. At least 2 tracks required.",
+      "faq2q": "How long does it take?",
+      "faq2a": "Previews are usually ready within minutes. Final mixes and masters vary by track count but are completed same-day.",
+      "faq3q": "What genres are supported?",
+      "faq3a": "Pop, rock, hip-hop, electronic, metal, acoustic, classical, and more. A genre-matched processing profile is applied automatically.",
+      "faq4q": "Can I get revisions?",
+      "faq4a": "Dialogue Mix lets you revise previews unlimited times during your session. Omakase Mix allows up to 5 previews.",
+      "faq5q": "What format is the final file?",
+      "faq5a": "Final mixes and masters are delivered as WAV. Previews are MP3.",
+      "faq6q": "Do I need an account?",
+      "faq6a": "No. Just an email and a credit card. If you create an account later, your session history carries over."
     },
     "checkout": {
       "tagline": "AI-powered mixing and mastering. Upload your stems, get a professional mix — no account required.",
