@@ -40,6 +40,17 @@ const isE2EBypassEnabled = isNonProduction && process.env.ENABLE_E2E_BYPASS === 
 
 export default clerkMiddleware(async (auth, req) => {
   const { pathname } = req.nextUrl;
+  const hostname = req.headers.get('host') ?? '';
+
+  // Subdomain routing: dial.mued.jp → serve /dial page
+  if (hostname.startsWith('dial.')) {
+    if (pathname === '/') {
+      return NextResponse.rewrite(new URL('/dial', req.url));
+    }
+    // All other paths on dial subdomain pass through normally
+    // (e.g. /dial/session/[id], /api/dial/*, /api/webhooks/stripe)
+    if (isPublicRoute(req)) return;
+  }
 
   // Skip authentication in E2E test mode
   // Requires: (1) NODE_ENV !== 'production' AND (2) ENABLE_E2E_BYPASS=true
