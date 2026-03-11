@@ -114,6 +114,7 @@ function DialSessionContent() {
   // Upload state
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [fileUploadPercent, setFileUploadPercent] = useState(0);
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -314,43 +315,82 @@ function DialSessionContent() {
 
     setUploading(true);
     setUploadProgress({ current: 0, total: files.length });
+    setFileUploadPercent(0);
     setError(null);
+
+    // Build auth headers (reused for presign + confirm calls)
+    const authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (guestToken) {
+      authHeaders['X-Dial-Guest-Token'] = guestToken;
+    } else if (isSignedIn) {
+      const token = await getToken();
+      if (token) authHeaders['Authorization'] = `Bearer ${token}`;
+    }
 
     for (let i = 0; i < files.length; i++) {
       const { file, instrumentGroup } = files[i];
       setUploadProgress({ current: i + 1, total: files.length });
+      setFileUploadPercent(0);
 
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('sessionId', session.id);
-        formData.append('instrumentGroup', instrumentGroup);
-
-        // Upload route is excluded from Clerk middleware (large FormData bodies
-        // fail in Edge Runtime). Send auth explicitly via Bearer token or guest header.
-        const uploadHeaders: Record<string, string> = {};
-        if (guestToken) {
-          uploadHeaders['X-Dial-Guest-Token'] = guestToken;
-        } else if (isSignedIn) {
-          const token = await getToken();
-          if (token) uploadHeaders['Authorization'] = `Bearer ${token}`;
-        }
-
-        const res = await fetch('/api/dial/upload', {
+        // Step 1: Get presigned URL (metadata only — no file body)
+        const presignRes = await fetch('/api/dial/upload/presign', {
           method: 'POST',
-          headers: uploadHeaders,
-          body: formData,
+          headers: authHeaders,
+          body: JSON.stringify({ fileName: file.name, sessionId: session.id }),
         });
-
-        const data = await res.json();
-        if (!data.success) {
-          setError(`Upload failed for "${file.name}": ${data.error || 'Unknown error'}`);
+        const presignData = await presignRes.json();
+        if (!presignData.success) {
+          setError(`Presign failed for "${file.name}": ${presignData.error || 'Unknown error'}`);
           setUploading(false);
           setUploadProgress(null);
           return;
         }
-      } catch {
-        setError(`Upload error for "${file.name}"`);
+        const { signedUrl, readableUrl } = presignData.data;
+
+        // Step 2: PUT file directly to GCS signed URL (bypasses Vercel)
+        // Use XMLHttpRequest for upload progress tracking
+        const contentType = file.type || 'audio/wav';
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', signedUrl, true);
+          xhr.setRequestHeader('Content-Type', contentType);
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              setFileUploadPercent(Math.round((e.loaded / e.total) * 100));
+            }
+          };
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve();
+            } else {
+              reject(new Error(`GCS upload failed (${xhr.status})`));
+            }
+          };
+          xhr.onerror = () => reject(new Error('Network error during upload'));
+          xhr.send(file);
+        });
+
+        // Step 3: Confirm upload — save track record in DB
+        const confirmRes = await fetch('/api/dial/upload/confirm', {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify({
+            sessionId: session.id,
+            fileName: file.name,
+            readableUrl,
+            instrumentGroup,
+          }),
+        });
+        const confirmData = await confirmRes.json();
+        if (!confirmData.success) {
+          setError(`Confirm failed for "${file.name}": ${confirmData.error || 'Unknown error'}`);
+          setUploading(false);
+          setUploadProgress(null);
+          return;
+        }
+      } catch (err) {
+        setError(`Upload error for "${file.name}": ${err instanceof Error ? err.message : 'Unknown error'}`);
         setUploading(false);
         setUploadProgress(null);
         return;
@@ -359,6 +399,7 @@ function DialSessionContent() {
 
     setStagedFiles([]);
     setUploadProgress(null);
+    setFileUploadPercent(0);
     setUploading(false);
     await fetchSession();
 
@@ -738,7 +779,7 @@ function DialSessionContent() {
               className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 rounded-lg text-sm font-medium transition-colors"
             >
               {uploading && uploadProgress
-                ? `${t.dial.session.uploading} ${uploadProgress.current}/${uploadProgress.total}`
+                ? `${t.dial.session.uploading} ${uploadProgress.current}/${uploadProgress.total} (${fileUploadPercent}%)`
                 : `Upload All (${stagedFiles.length})`}
             </button>
           </div>
