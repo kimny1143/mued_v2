@@ -78,5 +78,5 @@ public/swe-worker-*.js
 *.ipa
 
 # Remotion video projects (separate repository)
-videos/
+/videos/
 
