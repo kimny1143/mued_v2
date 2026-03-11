@@ -152,7 +152,14 @@ export async function mixFinalAdvanced(
       trackData: req.trackData.map((t) => ({
         trackURL: t.trackUrl,
         gainDb: t.gainDb,
-        eq_settings: t.eqBands,
+        eq_settings: t.eqBands?.length
+          ? Object.fromEntries(
+              t.eqBands.slice(0, 6).map((b, i) => [
+                `band_${i + 1}`,
+                { centre_freq: b.frequency, gain: b.gain, q: b.q },
+              ]),
+            )
+          : undefined,
         compression_settings: t.compressor
           ? {
               attack_ms: t.compressor.attack,
