@@ -348,13 +348,17 @@ function DialSessionContent() {
         }
         const { signedUrl, readableUrl } = presignData.data;
 
-        // Step 2: PUT file directly to GCS signed URL (bypasses Vercel)
+        // Step 2: PUT file via Cloudflare Worker proxy → RoEx GCS
+        // Worker streams the body through (no buffering, no CORS issue)
         // Use XMLHttpRequest for upload progress tracking
+        const proxyUrl = process.env.NEXT_PUBLIC_UPLOAD_PROXY_URL;
+        if (!proxyUrl) throw new Error('Upload proxy URL not configured');
         const contentType = file.type || 'audio/wav';
         await new Promise<void>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
-          xhr.open('PUT', signedUrl, true);
+          xhr.open('PUT', proxyUrl, true);
           xhr.setRequestHeader('Content-Type', contentType);
+          xhr.setRequestHeader('X-Upload-Target', signedUrl);
           xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) {
               setFileUploadPercent(Math.round((e.loaded / e.total) * 100));
@@ -364,7 +368,7 @@ function DialSessionContent() {
             if (xhr.status >= 200 && xhr.status < 300) {
               resolve();
             } else {
-              reject(new Error(`GCS upload failed (${xhr.status})`));
+              reject(new Error(`Upload proxy failed (${xhr.status})`));
             }
           };
           xhr.onerror = () => reject(new Error('Network error during upload'));
