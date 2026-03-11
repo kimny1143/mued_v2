@@ -280,7 +280,7 @@
   },
   "tokushoho": {
     "title": "Specified Commercial Transactions Act",
-    "lastUpdated": "Last updated: January 24, 2026",
+    "lastUpdated": "Last updated: March 11, 2026",
     "seller": {
       "title": "Seller",
       "value": "glasswerks inc."
@@ -301,19 +301,6 @@
       "title": "Email",
       "value": "info@glasswerks.jp"
     },
-    "url": {
-      "title": "Sales URL",
-      "value": "https://mued.jp"
-    },
-    "price": {
-      "title": "Pricing",
-      "description": "Prices for each plan are as follows (tax included):",
-      "plans": {
-        "free": "Free Plan: ¥0",
-        "basic": "Basic Plan: ¥1,980/month",
-        "premium": "Premium Plan: ¥2,980/month"
-      }
-    },
     "additionalCost": {
       "title": "Additional Costs",
       "value": "Internet connection fees are borne by the customer."
@@ -322,30 +309,82 @@
       "title": "Payment Methods",
       "value": "Credit card (via Stripe)"
     },
-    "paymentTiming": {
-      "title": "Payment Timing",
-      "value": "Initial payment at subscription start, then automatically billed monthly on the same date."
-    },
-    "delivery": {
-      "title": "Service Delivery",
-      "value": "Service is available immediately after payment completion."
-    },
     "contractEstablishment": {
       "title": "Contract Establishment",
       "value": "Contract is established upon completion of credit card payment."
     },
-    "cancellation": {
-      "title": "Cancellation Policy",
-      "description": "Subscriptions can be cancelled at any time. After cancellation, you can continue using the service until the end of your paid period. Due to the nature of digital services, refunds are not available after service delivery begins."
-    },
-    "environment": {
-      "title": "System Requirements",
-      "web": "Web Dashboard: Latest Chrome, Safari, Firefox, Edge",
-      "ios": "iOS App: iPhone running iOS 17.0 or later"
-    },
     "contact": {
       "title": "Contact",
       "value": "For inquiries about our services, please contact us at the email address above."
+    },
+    "servicesSectionTitle": "Service-Specific Terms",
+    "muednote": {
+      "name": "MUEDnote",
+      "description": "Music education platform",
+      "url": {
+        "title": "Sales URL",
+        "value": "https://mued.jp"
+      },
+      "price": {
+        "title": "Pricing",
+        "description": "Prices for each plan are as follows (tax included):",
+        "plans": {
+          "free": "Free Plan: ¥0",
+          "basic": "Basic Plan: ¥1,980/month",
+          "premium": "Premium Plan: ¥2,980/month"
+        }
+      },
+      "paymentTiming": {
+        "title": "Payment Timing",
+        "value": "Initial payment at subscription start, then automatically billed monthly on the same date."
+      },
+      "delivery": {
+        "title": "Service Delivery",
+        "value": "Service is available immediately after payment completion."
+      },
+      "cancellation": {
+        "title": "Cancellation Policy",
+        "description": "Subscriptions can be cancelled at any time. After cancellation, you can continue using the service until the end of your paid period. Due to the nature of digital services, refunds are not available after service delivery begins."
+      },
+      "environment": {
+        "title": "System Requirements",
+        "web": "Web Dashboard: Latest Chrome, Safari, Firefox, Edge",
+        "ios": "iOS App: iPhone running iOS 17.0 or later"
+      }
+    },
+    "muedial": {
+      "name": "MUEDial",
+      "description": "AI mixing & mastering service",
+      "url": {
+        "title": "Sales URL",
+        "value": "https://dial.mued.jp"
+      },
+      "price": {
+        "title": "Pricing",
+        "description": "Prices for each option are as follows (tax included):",
+        "plans": {
+          "omakase": "Omakase Mix: $12 (approx. ¥1,800)",
+          "dialogue": "Dialogue Mix: $35 (approx. ¥5,300)",
+          "mastering": "Mastering add-on: $5 (approx. ¥750)",
+          "additionalCycle": "Additional retake cycle: $5 (approx. ¥750)"
+        }
+      },
+      "paymentTiming": {
+        "title": "Payment Timing",
+        "value": "Per-transaction purchase. Payment is charged immediately via credit card at time of purchase."
+      },
+      "delivery": {
+        "title": "Service Delivery",
+        "value": "Audio file upload and AI mixing are available immediately after payment completion."
+      },
+      "cancellation": {
+        "title": "Cancellation & Refund Policy",
+        "description": "Cancellation is available before AI audio processing begins. Due to the nature of digital services, refunds are not available after processing has started."
+      },
+      "environment": {
+        "title": "System Requirements",
+        "web": "Web Browser: Latest Chrome, Safari, Firefox, Edge"
+      }
     }
   },
   "muedear": {
