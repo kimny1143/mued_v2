@@ -1245,7 +1245,9 @@
       "noAccountRequired": "アカウント不要。Stripeによる安全な決済。",
       "networkError": "ネットワークエラー。もう一度お試しください。",
       "checkoutFailed": "決済に失敗しました",
-      "returnToSession": "既存のセッションに戻る"
+      "returnToSession": "既存のセッションに戻る",
+      "tokushoho": "特定商取引法に基づく表記",
+      "privacy": "プライバシーポリシー"
     },
     "analyzer": {
       "title": "MUEDial アナライザー",

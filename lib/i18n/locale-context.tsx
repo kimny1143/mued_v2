@@ -26,11 +26,21 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [locale, setLocaleState] = useState<Locale>('en');
 
-  // Load locale from localStorage on mount
+  // Load locale from localStorage or cookie on mount
   useEffect(() => {
     const savedLocale = localStorage.getItem('locale') as Locale | null;
     if (savedLocale && (savedLocale === 'en' || savedLocale === 'ja')) {
       setLocaleState(savedLocale);
+      return;
+    }
+    // Fallback: read NEXT_LOCALE cookie (set by middleware for subdomain routing)
+    const cookieLocale = document.cookie
+      .split('; ')
+      .find((c) => c.startsWith('NEXT_LOCALE='))
+      ?.split('=')[1] as Locale | undefined;
+    if (cookieLocale && (cookieLocale === 'en' || cookieLocale === 'ja')) {
+      setLocaleState(cookieLocale);
+      localStorage.setItem('locale', cookieLocale);
     }
   }, []);
 

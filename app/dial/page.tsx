@@ -287,17 +287,35 @@ export default function DialPage() {
         <div className="border-t border-zinc-900 py-6 px-6">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <span className="text-xs text-white/30">MUED</span>
-            <button
-              onClick={() => {
-                const sessionId = localStorage.getItem('dial_session_id');
-                if (sessionId) {
-                  window.location.href = `/dial/session/${sessionId}`;
-                }
-              }}
-              className="text-xs text-white/30 hover:text-white/50 transition-colors cursor-pointer"
-            >
-              {t.dial.checkout.returnToSession}
-            </button>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://mued.jp/ja/tokushoho"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-white/30 hover:text-white/50 transition-colors"
+              >
+                {t.dial.checkout.tokushoho}
+              </a>
+              <a
+                href="https://mued.jp/ja/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-white/30 hover:text-white/50 transition-colors"
+              >
+                {t.dial.checkout.privacy}
+              </a>
+              <button
+                onClick={() => {
+                  const sessionId = localStorage.getItem('dial_session_id');
+                  if (sessionId) {
+                    window.location.href = `/dial/session/${sessionId}`;
+                  }
+                }}
+                className="text-xs text-white/30 hover:text-white/50 transition-colors cursor-pointer"
+              >
+                {t.dial.checkout.returnToSession}
+              </button>
+            </div>
           </div>
         </div>
       </main>

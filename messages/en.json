@@ -1245,7 +1245,9 @@
       "noAccountRequired": "No account required. Secure payment via Stripe.",
       "networkError": "Network error. Please try again.",
       "checkoutFailed": "Checkout failed",
-      "returnToSession": "Return to existing session"
+      "returnToSession": "Return to existing session",
+      "tokushoho": "Legal Notice",
+      "privacy": "Privacy Policy"
     },
     "analyzer": {
       "title": "MUEDial Analyzer",

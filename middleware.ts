@@ -44,12 +44,17 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Subdomain routing: dial.mued.jp → serve /dial page
   if (hostname.startsWith('dial.')) {
+    // Set locale cookie from Accept-Language (dial subdomain has no /ja prefix)
+    const acceptLanguage = req.headers.get('accept-language');
+    const locale = getPreferredLocale(acceptLanguage);
     if (pathname === '/') {
-      return NextResponse.rewrite(new URL('/dial', req.url));
+      const response = NextResponse.rewrite(new URL('/dial', req.url));
+      response.cookies.set('NEXT_LOCALE', locale, { path: '/' });
+      return response;
     }
-    // All other paths on dial subdomain pass through normally
-    // (e.g. /dial/session/[id], /api/dial/*, /api/webhooks/stripe)
-    if (isPublicRoute(req)) return;
+    const response = NextResponse.next();
+    response.cookies.set('NEXT_LOCALE', locale, { path: '/' });
+    return response;
   }
 
   // Skip authentication in E2E test mode
