@@ -160,12 +160,12 @@ export default function DialPage() {
   const lp = t.dial.lp;
 
   const MIX_OPTIONS = [
-    { id: 'omakase' as ServiceTier, name: t.dial.checkout.omakaseName, price: 12, description: t.dial.checkout.omakaseDesc },
-    { id: 'dialogue' as ServiceTier, name: t.dial.checkout.dialogueName, price: 35, description: t.dial.checkout.dialogueDesc },
+    { id: 'omakase' as ServiceTier, name: t.dial.checkout.omakaseName, price: 12, yenApprox: '約1,800円', description: t.dial.checkout.omakaseDesc },
+    { id: 'dialogue' as ServiceTier, name: t.dial.checkout.dialogueName, price: 35, yenApprox: '約5,300円', description: t.dial.checkout.dialogueDesc },
   ];
 
   const [email, setEmail] = useState('');
-  const [mixType, setMixType] = useState<ServiceTier | null>(null);
+  const [mixType, setMixType] = useState<ServiceTier | null>('omakase');
   const [masteringType, setMasteringType] = useState<ServiceTier | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -274,7 +274,10 @@ export default function DialPage() {
                   >
                     <div className="flex items-baseline justify-between mb-1">
                       <span className="text-base font-medium text-white">{opt.name}</span>
-                      <span className="text-2xl font-bold">${opt.price}</span>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold">${opt.price}</span>
+                        {locale === 'ja' && <span className="text-xs text-white/40 ml-1.5">({opt.yenApprox})</span>}
+                      </div>
                     </div>
                     <div className="text-sm text-white/60">{opt.description}</div>
                   </button>
@@ -293,6 +296,7 @@ export default function DialPage() {
               >
                 <div className="flex items-baseline gap-3">
                   <span className="text-lg font-bold">+$5</span>
+                  {locale === 'ja' && <span className="text-xs text-white/40">(約750円)</span>}
                   <span className="text-sm font-medium">{t.dial.checkout.masteringName}</span>
                 </div>
                 <div className="text-xs text-white/60 mt-1">{t.dial.checkout.masteringDesc}</div>
@@ -313,6 +317,7 @@ export default function DialPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t.dial.checkout.email}
                     aria-label={t.dial.checkout.email}
+                    required
                     className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-[var(--radius-md)] text-white placeholder-zinc-500 focus:outline-none focus:border-white/40 transition-colors"
                   />
                 </div>
@@ -345,49 +350,7 @@ export default function DialPage() {
           </div>
         </div>
 
-        {/* ─── Before / After ─────────────────────────────────────────── */}
-        <section className="py-20 px-6 border-t border-zinc-900">
-          <div className="max-w-2xl mx-auto">
-            <p className="text-xs text-white/50 uppercase tracking-wider mb-8 text-center">{lp.beforeAfterLabel}</p>
-            <div className="grid grid-cols-2 gap-4">
-              {/* Before */}
-              <div className="p-4 rounded-[var(--radius-lg)] border border-zinc-800 bg-zinc-950">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-white/60 font-medium">{lp.before}</span>
-                  <button disabled className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center cursor-not-allowed" aria-label="Play before">
-                    <svg className="w-3 h-3 text-zinc-600 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </button>
-                </div>
-                {/* Waveform placeholder */}
-                <div className="flex items-end gap-[2px] h-10">
-                  {[3, 5, 4, 7, 6, 4, 8, 5, 3, 6, 9, 7, 5, 4, 6, 8, 5, 3, 7, 4, 6, 5, 3, 4, 7, 5, 3, 6, 4, 5, 3, 4].map((h, i) => (
-                    <div key={i} className="flex-1 bg-zinc-700 rounded-sm" style={{ height: `${h * 10}%` }} />
-                  ))}
-                </div>
-              </div>
-              {/* After */}
-              <div className="p-4 rounded-[var(--radius-lg)] border border-zinc-800 bg-zinc-950">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-amber-400 font-medium">{lp.after}</span>
-                  <button disabled className="w-8 h-8 rounded-full border border-zinc-700 flex items-center justify-center cursor-not-allowed" aria-label="Play after">
-                    <svg className="w-3 h-3 text-zinc-600 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </button>
-                </div>
-                {/* Waveform placeholder — more dynamic shape */}
-                <div className="flex items-end gap-[2px] h-10">
-                  {[4, 7, 6, 9, 8, 6, 10, 7, 5, 8, 10, 9, 7, 6, 8, 10, 7, 5, 9, 6, 8, 7, 5, 6, 9, 7, 5, 8, 6, 7, 5, 6].map((h, i) => (
-                    <div key={i} className="flex-1 bg-amber-400/40 rounded-sm" style={{ height: `${h * 10}%` }} />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <p className="text-xs text-white/40 text-center mt-4">{lp.comingSoon}</p>
-          </div>
-        </section>
+        {/* Before/After — hidden until demo audio is ready */}
 
         {/* ─── Video Promo ────────────────────────────────────────────── */}
         <VideoPromo lp={lp as unknown as Record<string, string>} locale={locale} />
