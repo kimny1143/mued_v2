@@ -121,7 +121,7 @@ export default function DialPage() {
     <div className="min-h-screen bg-black text-white">
 
       {/* ─── Nav ──────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm border-b border-zinc-900">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/60 backdrop-blur-md border-b border-white/5">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center">
           <div className="flex items-center gap-2">
             <Image src="/hoo-animated.svg" alt="" width={28} height={28} />
@@ -134,15 +134,28 @@ export default function DialPage() {
 
       {/* ─── Main: Hook + Checkout ────────────────────────────────────── */}
       <main className="pt-14">
-        <div className="min-h-[calc(100vh-3.5rem)] flex items-center px-6 py-16 lg:py-0">
-          <div className="max-w-6xl mx-auto w-full grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        <div className="relative min-h-[calc(100vh-3.5rem)] flex items-center px-6 py-16 lg:py-0">
+          {/* Background image */}
+          <Image
+            src="/muedial-hoo-mixing-console.jpg"
+            alt=""
+            fill
+            className="object-cover object-[center_30%]"
+            priority
+          />
+          {/* Dark overlay — heavier on right (checkout side) */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/45 to-black/65" />
+          {/* Bottom fade to solid black (seamless transition to next section) */}
+          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black to-transparent" />
+
+          <div className="relative z-10 max-w-6xl mx-auto w-full grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
 
             {/* Left: Hook */}
             <div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
                 {lp.heroTitle}
               </h1>
-              <p className="text-lg text-white/60 mb-16 max-w-md">
+              <p className="text-lg text-white/70 mb-16 max-w-md">
                 {lp.heroSub}
               </p>
               {/* ChatMockup — desktop only (mobile shows after checkout) */}
@@ -152,7 +165,7 @@ export default function DialPage() {
             </div>
 
             {/* Right: Checkout */}
-            <div className="lg:max-w-md lg:ml-auto">
+            <div className="lg:max-w-md lg:ml-auto bg-black/50 backdrop-blur-sm rounded-[var(--radius-lg)] p-6 lg:p-8 border border-white/5">
               {/* Mix options */}
               <div className="space-y-3 mb-4" role="radiogroup" aria-label={t.dial.checkout.step1}>
                 {MIX_OPTIONS.map((opt) => (
@@ -162,15 +175,15 @@ export default function DialPage() {
                     aria-pressed={mixType === opt.id}
                     className={`w-full text-left p-5 rounded-[var(--radius-lg)] border-2 transition-colors cursor-pointer ${
                       mixType === opt.id
-                        ? 'border-white bg-white/5'
-                        : 'border-zinc-800 hover:border-zinc-600'
+                        ? 'border-white bg-white/10'
+                        : 'border-white/10 hover:border-white/30'
                     }`}
                   >
                     <div className="flex items-baseline justify-between mb-1">
                       <span className="text-base font-medium text-white">{opt.name}</span>
                       <span className="text-2xl font-bold">${opt.price}</span>
                     </div>
-                    <div className="text-sm text-white/50">{opt.description}</div>
+                    <div className="text-sm text-white/60">{opt.description}</div>
                   </button>
                 ))}
               </div>
@@ -181,20 +194,20 @@ export default function DialPage() {
                 aria-pressed={!!masteringType}
                 className={`w-full text-left p-4 rounded-[var(--radius-lg)] border-2 transition-colors cursor-pointer mb-6 ${
                   masteringType
-                    ? 'border-white bg-white/5'
-                    : 'border-zinc-800 hover:border-zinc-600'
+                    ? 'border-white bg-white/10'
+                    : 'border-white/10 hover:border-white/30'
                 }`}
               >
                 <div className="flex items-baseline gap-3">
                   <span className="text-lg font-bold">+$5</span>
                   <span className="text-sm font-medium">{t.dial.checkout.masteringName}</span>
                 </div>
-                <div className="text-xs text-white/50 mt-1">{t.dial.checkout.masteringDesc}</div>
+                <div className="text-xs text-white/60 mt-1">{t.dial.checkout.masteringDesc}</div>
               </button>
 
               {/* Email (guest) or signed-in indicator */}
               {isSignedIn ? (
-                <div className="flex items-center gap-2 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-[var(--radius-md)] mb-4">
+                <div className="flex items-center gap-2 px-4 py-3 bg-black/30 border border-white/10 rounded-[var(--radius-md)] mb-4">
                   <span className="text-sm text-zinc-400">{t.dial.checkout.signedInAs}</span>
                   <span className="text-sm text-white">{clerkEmail}</span>
                 </div>
@@ -207,7 +220,7 @@ export default function DialPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t.dial.checkout.email}
                     aria-label={t.dial.checkout.email}
-                    className="w-full px-4 py-3 bg-black border border-zinc-800 rounded-[var(--radius-md)] text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-colors"
+                    className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-[var(--radius-md)] text-white placeholder-zinc-500 focus:outline-none focus:border-white/40 transition-colors"
                   />
                 </div>
               )}
