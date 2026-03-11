@@ -41,7 +41,12 @@
         "description": "Start with your method.",
         "muednote": "Start with MUEDnote",
         "muedear": "Train with MUEDear",
-        "muedlobe": "Try MUEDlobe"
+        "muedlobe": "Try MUEDlobe",
+        "muedial": {
+          "tagline": "Let AI handle your mix.",
+          "description": "Professional AI mixing from $12. Upload stems, chat with Hoo, get your mix.",
+          "button": "Try MUEDial"
+        }
       },
       "social": {
         "developedBy": "Developed by",

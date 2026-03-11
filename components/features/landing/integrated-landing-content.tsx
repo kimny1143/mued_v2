@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useLocale } from "next-intl";
 import { BrandHeroSection } from "./brand-hero-section";
 import { HeroSection } from "./hero-section";
@@ -336,6 +337,32 @@ function FinalCtaSection() {
             */}
             <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="indigo" size="large" />
           </div>
+
+          {/* MUEDial Card */}
+          <a
+            href="https://dial.mued.jp"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-16 block max-w-lg mx-auto group"
+          >
+            <div className="rounded-[var(--radius-lg)] overflow-hidden border border-white/10 hover:border-amber-500/30 transition-colors">
+              <div className="relative aspect-[16/9]">
+                <Image
+                  src="/muedial-hoo-mixing-console.jpg"
+                  alt="MUEDial - AI Mixing"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="px-5 py-4 bg-black">
+                <p className="text-white font-medium mb-1">
+                  MUED<span className="text-amber-400">ial</span>
+                  <span className="text-white/50 text-sm ml-3">{t("muedial.tagline")}</span>
+                </p>
+                <p className="text-white/40 text-sm">{t("muedial.description")}</p>
+              </div>
+            </div>
+          </a>
         </div>
       </div>
     </section>

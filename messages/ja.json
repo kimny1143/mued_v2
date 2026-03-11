@@ -41,7 +41,12 @@
         "description": "君のメソッドを始めよう。",
         "muednote": "MUEDnoteで始める",
         "muedear": "MUEDearで鍛える",
-        "muedlobe": "MUEDlobeを試す"
+        "muedlobe": "MUEDlobeを試す",
+        "muedial": {
+          "tagline": "ミックスはAIに任せよう。",
+          "description": "AIミキシング、$12から。ステムをアップロードして、Hooとチャットするだけ。",
+          "button": "MUEDialを試す"
+        }
       },
       "social": {
         "developedBy": "Developed by",
