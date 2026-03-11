@@ -1211,6 +1211,18 @@
     ]
   },
   "dial": {
+    "lp": {
+      "heroTitle": "How many tracks are stuck at mixing?",
+      "heroSub": "Upload stems. Talk to AI. From $12.",
+      "chatMockUser1": "Bring the vocals forward. Drums are too loud.",
+      "chatMockHoo1": "On it! Pulled the vocals up and eased the drums. Have a listen.",
+      "chatMockUser2": "Perfect. Finalize this one.",
+      "chatMockLabel": "What it looks like",
+      "beforeAfterLabel": "Before → After",
+      "before": "Before",
+      "after": "After",
+      "comingSoon": "Demo audio coming soon"
+    },
     "checkout": {
       "tagline": "AI-powered mixing and mastering. Upload your stems, get a professional mix — no account required.",
       "step1": "Step 1: Mixing",

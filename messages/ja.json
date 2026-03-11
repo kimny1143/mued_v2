@@ -1211,6 +1211,18 @@
     ]
   },
   "dial": {
+    "lp": {
+      "heroTitle": "ミックスで止まってる曲、何曲ある？",
+      "heroSub": "ステムを上げて、AIと話すだけ。$12から。",
+      "chatMockUser1": "ボーカルもう少し前に出して。ドラムちょっとうるさい。",
+      "chatMockHoo1": "ほほう、了解。ボーカル持ち上げて、ドラム控えめにしたよ。聴いてみて。",
+      "chatMockUser2": "いい感じ。これでファイナルお願い。",
+      "chatMockLabel": "実際の会話イメージ",
+      "beforeAfterLabel": "ミックス前 → 後",
+      "before": "Before",
+      "after": "After",
+      "comingSoon": "デモ音源 準備中"
+    },
     "checkout": {
       "tagline": "AIミキシング＆マスタリング。ステムをアップロードするだけ。アカウント不要。",
       "step1": "ステップ1: ミキシング",
