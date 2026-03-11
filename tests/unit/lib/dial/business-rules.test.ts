@@ -85,9 +85,9 @@ describe('Dialogue mode business rules', () => {
     // Phase 1: no mix check, no final
     expect(detectPhase(session, []).phase).toBe(1);
 
-    // Phase 3: after mix check
+    // Phase 2: after mix check (feedback phase)
     const sessionWithMC = makeSession({ mode: 'dialogue', mixCheckCount: 1 });
-    expect(detectPhase(sessionWithMC, []).phase).toBe(3);
+    expect(detectPhase(sessionWithMC, []).phase).toBe(2);
 
     // Phase 3: after final
     const tasks = [makeTask({ taskType: 'final_advanced', finalUrl: 'url' })];
@@ -150,13 +150,13 @@ describe('Mastering mode business rules', () => {
 // ─── Phase Transition Edge Cases ────────────────────────────────────────────
 
 describe('Phase transition edge cases', () => {
-  it('multiple mix checks: phase stays 3 after first mix check', () => {
+  it('multiple mix checks: phase stays 2 until final', () => {
     const session = makeSession({ mode: 'dialogue', mixCheckCount: 2 });
     const tasks = [
       makeTask({ taskType: 'mix_check', status: 'completed' }),
       makeTask({ taskType: 'mix_check', status: 'completed' }),
     ];
-    expect(detectPhase(session, tasks).phase).toBe(3);
+    expect(detectPhase(session, tasks).phase).toBe(2);
   });
 
   it('final_basic and final_advanced both count as mix final', () => {
@@ -190,7 +190,7 @@ describe('Phase transition edge cases', () => {
 
     // Phase 1 → preview
     const t1 = [makeTask({ taskType: 'preview', status: 'completed' })];
-    expect(detectPhase(session, t1).phase).toBe(3); // mixCheckCount > 0
+    expect(detectPhase(session, t1).phase).toBe(2); // mixCheckCount > 0 → Phase 2 (MC feedback)
 
     // Phase 2/3 → mix check + final
     const t2 = [

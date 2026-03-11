@@ -8,8 +8,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useMetricsTracker } from '@/hooks/useMetricsTracker';
 
-// Mock fetch globally
-global.fetch = vi.fn();
+// Mock api-client module — the hook uses apiClient.post() not raw fetch
+const mockPost = vi.fn();
+vi.mock('@/lib/api-client', () => ({
+  useApiClient: () => ({ post: mockPost }),
+  getErrorMessage: (err: unknown) =>
+    err instanceof Error ? err.message : String(err),
+}));
 
 describe('useMetricsTracker', () => {
   const mockOptions = {
@@ -23,11 +28,7 @@ describe('useMetricsTracker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    // Mock successful API response
-    (global.fetch as any).mockResolvedValue({
-      ok: true,
-      json: async () => ({ success: true }),
-    });
+    mockPost.mockResolvedValue({ success: true, data: {}, status: 200 });
   });
 
   afterEach(() => {
@@ -64,20 +65,16 @@ describe('useMetricsTracker', () => {
 
       expect(result.current.isTracking).toBe(true);
 
-      act(() => {
-        result.current.stopTracking();
+      await act(async () => {
+        await result.current.stopTracking();
       });
 
-      await waitFor(() => {
-        expect(result.current.isTracking).toBe(false);
-      });
-
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(result.current.isTracking).toBe(false);
+      expect(mockPost).toHaveBeenCalledWith(
         '/api/metrics/save-session',
         expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: expect.stringContaining('materialId'),
+          materialId: mockOptions.materialId,
+          userId: mockOptions.userId,
         })
       );
     });
@@ -85,12 +82,11 @@ describe('useMetricsTracker', () => {
     it('should handle stop without active session', async () => {
       const { result } = renderHook(() => useMetricsTracker(mockOptions));
 
-      // Stop without starting
-      act(() => {
-        result.current.stopTracking();
+      await act(async () => {
+        await result.current.stopTracking();
       });
 
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockPost).not.toHaveBeenCalled();
     });
   });
 
@@ -118,7 +114,6 @@ describe('useMetricsTracker', () => {
 
       act(() => {
         result.current.startTracking();
-        // Try to complete more than total
         for (let i = 0; i < 10; i++) {
           result.current.markSectionCompleted();
         }
@@ -171,25 +166,20 @@ describe('useMetricsTracker', () => {
         result.current.startTracking();
       });
 
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockPost).not.toHaveBeenCalled();
 
-      // Fast-forward 5 minutes
-      act(() => {
-        vi.advanceTimersByTime(5 * 60 * 1000);
+      // advanceTimersByTimeAsync flushes both timers and microtasks (promises)
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
       });
 
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(mockPost).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
       });
 
-      // Fast-forward another 5 minutes
-      act(() => {
-        vi.advanceTimersByTime(5 * 60 * 1000);
-      });
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalledTimes(2);
-      });
+      expect(mockPost).toHaveBeenCalledTimes(2);
     });
 
     it('should stop auto-save when tracking stops', async () => {
@@ -199,20 +189,19 @@ describe('useMetricsTracker', () => {
         result.current.startTracking();
       });
 
-      act(() => {
-        result.current.stopTracking();
+      await act(async () => {
+        await result.current.stopTracking();
       });
 
-      // Clear fetch calls from stop
+      // Clear calls from stopTracking save
       vi.clearAllMocks();
 
       // Fast-forward 5 minutes after stopping
-      act(() => {
-        vi.advanceTimersByTime(5 * 60 * 1000);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
       });
 
-      // Should not have called fetch for auto-save
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockPost).not.toHaveBeenCalled();
     });
   });
 
@@ -232,7 +221,7 @@ describe('useMetricsTracker', () => {
       });
 
       expect(preventDefaultSpy).toHaveBeenCalled();
-      expect(global.fetch).toHaveBeenCalled();
+      expect(mockPost).toHaveBeenCalled();
     });
 
     it('should not prevent unload when not tracking', () => {
@@ -246,14 +235,14 @@ describe('useMetricsTracker', () => {
       });
 
       expect(preventDefaultSpy).not.toHaveBeenCalled();
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockPost).not.toHaveBeenCalled();
     });
   });
 
   describe('Error Handling', () => {
     it('should handle API save failure gracefully', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+      mockPost.mockRejectedValueOnce(new Error('Network error'));
 
       const { result } = renderHook(() => useMetricsTracker(mockOptions));
 
@@ -261,18 +250,15 @@ describe('useMetricsTracker', () => {
         result.current.startTracking();
       });
 
-      act(() => {
-        result.current.stopTracking();
+      await act(async () => {
+        await result.current.stopTracking();
       });
 
-      await waitFor(() => {
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-          '[MetricsTracker] Error saving session:',
-          expect.any(Error)
-        );
-      });
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[MetricsTracker] Error saving session',
+        'Network error'
+      );
 
-      // Hook should still reset state despite error
       expect(result.current.isTracking).toBe(false);
 
       consoleErrorSpy.mockRestore();
@@ -280,7 +266,7 @@ describe('useMetricsTracker', () => {
 
     it('should handle auto-save failure gracefully', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+      mockPost.mockRejectedValueOnce(new Error('Network error'));
 
       const { result } = renderHook(() => useMetricsTracker(mockOptions));
 
@@ -288,18 +274,15 @@ describe('useMetricsTracker', () => {
         result.current.startTracking();
       });
 
-      act(() => {
-        vi.advanceTimersByTime(5 * 60 * 1000);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
       });
 
-      await waitFor(() => {
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-          '[MetricsTracker] Auto-save failed:',
-          expect.any(Error)
-        );
-      });
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[MetricsTracker] Auto-save failed',
+        'Network error'
+      );
 
-      // Should continue tracking despite auto-save failure
       expect(result.current.isTracking).toBe(true);
 
       consoleErrorSpy.mockRestore();
@@ -321,19 +304,21 @@ describe('useMetricsTracker', () => {
 
       // Advance time to create duration
       act(() => {
-        vi.advanceTimersByTime(60 * 1000); // 1 minute
+        vi.advanceTimersByTime(60 * 1000);
       });
 
-      act(() => {
-        result.current.stopTracking();
+      await act(async () => {
+        await result.current.stopTracking();
       });
 
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalled();
-      });
+      expect(mockPost).toHaveBeenCalled();
 
-      const callArgs = (global.fetch as any).mock.calls[0];
-      const body = JSON.parse(callArgs[1].body);
+      // Find the stopTracking call (not the auto-save cleanup call)
+      const saveCall = mockPost.mock.calls.find(
+        (call: unknown[]) => call[0] === '/api/metrics/save-session'
+      );
+      expect(saveCall).toBeDefined();
+      const body = saveCall![1];
 
       expect(body).toMatchObject({
         materialId: mockOptions.materialId,
@@ -365,11 +350,11 @@ describe('useMetricsTracker', () => {
 
       expect(result.current.isTracking).toBe(true);
 
-      unmount();
-
-      await waitFor(() => {
-        expect(global.fetch).toHaveBeenCalled();
+      await act(async () => {
+        unmount();
       });
+
+      expect(mockPost).toHaveBeenCalled();
     });
 
     it('should not save on unmount when not tracking', () => {
@@ -377,7 +362,7 @@ describe('useMetricsTracker', () => {
 
       unmount();
 
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockPost).not.toHaveBeenCalled();
     });
   });
 });

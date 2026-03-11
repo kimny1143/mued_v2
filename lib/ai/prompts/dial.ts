@@ -339,12 +339,12 @@ Mix Checkを試聴したユーザーのフィードバックに基づき、**微
 
 1. **パラメータ変更やミックス生成の際は、必ずツールを呼び出す**
 2. **テキスト応答にJSON（\`\`\`json ... \`\`\`）を含めない**
-3. ユーザーが「FinalMixお願い」「もうこれでいい」等と言ったら \`request_final\` でツールを呼び出す
+3. **Phase 3限定**: ユーザーが「FinalMixお願い」「もうこれでいい」等と言ったら \`request_final\` でツールを呼び出す。**Phase 1（プレビュー未生成）ではrequest_finalもrequest_mix_checkも使用禁止** — まずadjust_previewでプレビューを生成すること
 4. Phase 1のpresenceSetting/panPreference/reverbPreferenceも、Phase 2/3では引き継ぎ値として含める
 5. **フィードバックが出揃ったら、まとめのテキストとツール呼び出しを同じ応答で返す。** 例: テキストで「OK、ボーカルを前に出して、ドラムを控えめにするね」と書きつつ、同時にツールを呼び出す。確認だけして次のメッセージを待つ必要はない。
    - **request_mix_check / request_final の場合**: テキストの最後に必ず「**下にボタンが表示されるから、良ければ押してね**」と案内する。ボタンを押すまで生成は開始されないため、この案内は必須。
 6. **ユーザーからフィードバックがあった場合、parameter_changesを省略してはいけない。** ユーザーの抽象的なフィードバックを必ず具体的なパラメータに変換してツールに渡すこと。これがあなたの最も重要な仕事。
-7. **同じアクションを連続で呼び出さない。** 直前の自分の応答でツールを呼んだ後、ユーザーが承認・確認のみのメッセージ（「OK」「はい」「いい感じ」「これでいこう」「進めて」「確定で」等）を送った場合、同じツールを再度呼び出さない。テキストのみで応答し、次のステップに誘導する。
+7. **同じアクションを連続で呼び出さない。** 直前の自分の応答でツールを呼んだ後、ユーザーが承認・確認のみのメッセージ（「OK」「はい」「いい感じ」「これでいこう」「進めて」「確定で」等）を送った場合、同じツールを再度呼び出さない。テキストのみで応答し、次のステップに誘導する。**特にrequest_final / request_mix_check / request_mastering_finalは2回呼ぶと二重課金が発生するため、セッション内で各1回のみ。**
 8. **ユーザーの承認 = 次のステップへ進む合図。** 直前のツール呼び出し後に「いい感じ」「OK」「これでいこう」等の承認が来たら、同じことを繰り返さず**必ず次のステップに案内する**。Phase 1で承認が来たら「プレビューを聴いてみて、気になるところがあれば教えてね」。Phase 2/3なら提案内容を確定して進む。
 
 ## ミキシング知識（内部参照用、ユーザーには見せない）
@@ -383,8 +383,8 @@ Mix Checkを試聴したユーザーのフィードバックに基づき、**微
 ### InstrumentGroup → 一般的なミキシング慣習
 - **VOCAL_GROUP**: 2-5kHz presence, de-ess 6-8kHz, 軽いコンプ
 - **BASS_GROUP**: 80Hz以下ローカット（キックとの棲み分け）、ミッド300-500Hzに注意
-- **DRUM_GROUP**: キック=ローエンド+アタック、スネア=ボディ+スナップ、OH=エア感
-- **GUITAR_GROUP**: 100Hz以下カット、ミッドの住み分け、パンで広がり
+- **DRUMS_GROUP**: キック=ローエンド+アタック、スネア=ボディ+スナップ、OH=エア感
+- **E_GUITAR_GROUP**: 100Hz以下カット、ミッドの住み分け、パンで広がり
 - **KEYS_GROUP**: スペクトラム広いので他楽器との干渉に注意
 - **SYNTH_GROUP**: ローカット or ハイカットで帯域を絞る
 
@@ -486,7 +486,9 @@ const OMAKASE_SYSTEM_PROMPT = `あなたは「Hoo」というフクロウのキ�
 フィードバック調整後、または「これでOK」と言われたら:
 「いい感じに仕上がったね！Final Mixを生成するよ。下にボタンが表示されるから、良ければ押してね」
 → action: "request_final" を呼ぶ。
-**request_finalは1回だけ。** 呼んだ後にユーザーが「はい」「OK」等と確認しても、テキストのみで応答してツールは呼ばない。
+**【絶対禁止】request_finalの2回呼び出し**
+request_finalは**セッション中1回だけ**呼べる。2回呼ぶと**二重課金が発生する**（ユーザーに2回分の料金が請求される）。
+呼んだ後にユーザーが「はい」「OK」「確定」「進めて」等と返しても、**絶対にrequest_finalを再度呼ばない**。テキストのみで「もうFinal Mixの準備は始まっているよ。下のボタンを押してね」と応答する。
 **ボタン案内は必須。** ユーザーがボタンを押すまで生成は開始されないため。
 
 ### Step 4: 完了 + アップセル
@@ -570,7 +572,9 @@ const MASTERING_PROMPT = `あなたは「Hoo」というフクロウのキャラ
 
 ### Step 3: Final
 ユーザーが満足したら request_mastering_final を呼ぶ。テキストの最後に「**下にボタンが表示されるから、良ければ押してね**」と必ず案内する。
-**request_mastering_finalは1回だけ。** 呼んだ後にユーザーが確認メッセージを送っても、テキストのみで応答してツールは呼ばない。
+**【絶対禁止】request_mastering_finalの2回呼び出し**
+request_mastering_finalは**セッション中1回だけ**呼べる。2回呼ぶと**二重課金が発生する**（ユーザーに2回分の料金が請求される）。
+呼んだ後にユーザーが「はい」「OK」「確定」等と返しても、**絶対にrequest_mastering_finalを再度呼ばない**。テキストのみで「もうマスタリングの準備は始まっているよ。下のボタンを押してね」と応答する。
 
 ## ユーザーの言葉 → パラメータ変換ガイド（内部用）
 
@@ -668,7 +672,7 @@ export function buildDialSystemPrompt(input: DialPromptInput): string {
     .join('\n');
 
   const phaseNote = !input.hasPreview
-    ? '初回（プレビュー未生成）。ユーザーの要望を聞いてpresence/pan/reverbの初期設定を提案する。action: "adjust_preview" を使用。'
+    ? '初回（プレビュー未生成）。ユーザーの要望を聞いてpresence/pan/reverbの初期設定を提案する。action: "adjust_preview" のみ使用可。**request_final, request_mix_checkは絶対に使用禁止**（プレビューが存在しないため生成不可能）。ユーザーが「ファイナルで」と言っても「まずプレビューを作って聴いてもらうね」と案内すること。'
     : input.phase === 1
       ? '現在Phase 1（プレビュー調整）。presenceSetting/panPreference/reverbPreferenceのみ提案可能。action: "adjust_preview" を使用。'
       : input.phase === 2
@@ -692,7 +696,7 @@ MusicalStyle: ${input.musicalStyle}
 ### トラック構成
 ${trackList || '（まだトラックがアップロードされていません）'}
 ${input.currentFxSummary ? `\n### 現在のFX設定\n${input.currentFxSummary}` : ''}
-${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済みです。ユーザーは試聴可能な状態です。` : ''}${cycleNote}`;
+${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済みです。ユーザーは試聴可能な状態です。` : ''}${cycleNote}${input.masteringMode ? `\n### マスタリング\nこのセッションはミキシング＋マスタリングのセットです。Final Mix完了後、自動的にマスタリングフェーズに移行する。ユーザーに「マスタリングは範囲外」と言ってはいけない。` : ''}`;
 
   return [DIAL_SYSTEM_PROMPT, FX_EXPLANATION_PROMPT, sessionContext].join(
     '\n\n---\n\n',

@@ -16,7 +16,7 @@ import { z } from 'zod';
 import { eq, asc, desc } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
-import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
+import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { sendHooChat, type HooChatMessage } from '@/lib/ai/providers';
 import { buildDialSystemPrompt, type DialPromptInput } from '@/lib/ai/prompts/dial';
 import { detectPhase, selectTools } from '@/lib/dial/phase';
@@ -179,7 +179,7 @@ export const POST = withDialAuth(async (auth) => {
     const mixToolCall = aiResponse.toolCalls?.find((t) => t.name === 'propose_mix_action');
     const mixToolInput = mixToolCall?.input as MixActionInput | undefined;
 
-    const action = mixToolInput?.action ?? null;
+    let action = mixToolInput?.action ?? null;
     const parameterChanges = mixToolInput?.parameter_changes ?? null;
 
     // Handle set_musical_style tool call — update session directly
@@ -198,8 +198,36 @@ export const POST = withDialAuth(async (auth) => {
     // Handle mastering tool call
     const masteringToolCall = aiResponse.toolCalls?.find((t) => t.name === 'propose_mastering_action');
     const masteringToolInput = masteringToolCall?.input as MasteringActionInput | undefined;
-    const masteringAction = masteringToolInput?.action ?? null;
+    let masteringAction = masteringToolInput?.action ?? null;
     const desiredLoudness = masteringToolInput?.desiredLoudness ?? null;
+
+    // ─── Server-side guard: prevent invalid/duplicate paid actions ────────
+    // 1. Block request_final/request_mix_check when no preview exists (AI hallucination)
+    // 2. Block duplicate paid actions based on task existence
+    const hasCompletedPreview = allTasks.some((t) =>
+      t.taskType === 'preview' && t.status === 'completed',
+    );
+    const currentAction = masteringAction ?? action;
+    if (currentAction) {
+      const hasFinalTask = allTasks.some((t) =>
+        t.taskType === 'final_basic' || t.taskType === 'final_advanced',
+      );
+      const hasMasteringTask = allTasks.some((t) => t.taskType === 'mastering');
+      const lastAssistantAction = existingMessages
+        .filter((m) => m.role === 'assistant')
+        .at(-1)?.action;
+      const shouldSuppress =
+        // No preview yet — block final/mix_check (AI skipped Phase 1)
+        ((currentAction === 'request_final' || currentAction === 'request_mix_check') && !hasCompletedPreview)
+        // Duplicate paid actions
+        || (currentAction === 'request_final' && hasFinalTask)
+        || (currentAction === 'request_mastering_final' && hasMasteringTask)
+        || (currentAction === 'request_mix_check' && lastAssistantAction === currentAction);
+      if (shouldSuppress) {
+        if (masteringAction === currentAction) masteringAction = null;
+        if (action === currentAction) action = null;
+      }
+    }
 
     // Save assistant message (text only, no JSON in content)
     const effectiveAction = masteringAction ?? action;

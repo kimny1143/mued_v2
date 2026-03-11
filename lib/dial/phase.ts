@@ -75,7 +75,7 @@ export function detectPhase(session: SessionState, tasks: TaskRecord[]): PhaseRe
   } else if (hasMixFinal) {
     phase = 3;
   } else if (hasMixCheck) {
-    phase = 3;
+    phase = 2;
   } else {
     phase = 1;
   }

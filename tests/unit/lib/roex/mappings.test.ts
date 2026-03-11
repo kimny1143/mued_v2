@@ -78,11 +78,10 @@ describe('INSTRUMENT_GROUP_MAP', () => {
     }
   });
 
-  it('maps specific groups correctly (regression: previously had wrong values)', () => {
-    // These 3 were fixed in commit 7bbb063e
-    expect(INSTRUMENT_GROUP_MAP.DRUMS).toBe('DRUM_GROUP');       // was DRUMS_GROUP
-    expect(INSTRUMENT_GROUP_MAP.GUITAR).toBe('GUITAR_GROUP');    // was ACOUSTIC_GUITAR_GROUP
-    expect(INSTRUMENT_GROUP_MAP.OTHER).toBe('OTHER_GROUP');      // was OTHER_GROUP1
+  it('maps specific groups correctly (verified against RoEx API enum)', () => {
+    expect(INSTRUMENT_GROUP_MAP.DRUMS).toBe('DRUMS_GROUP');
+    expect(INSTRUMENT_GROUP_MAP.GUITAR).toBe('E_GUITAR_GROUP');
+    expect(INSTRUMENT_GROUP_MAP.OTHER).toBe('OTHER_GROUP1');
   });
 
   it('maps all groups correctly', () => {
@@ -98,13 +97,13 @@ describe('INSTRUMENT_GROUP_MAP', () => {
 describe('mapInstrumentGroup', () => {
   it('returns mapped value for known groups', () => {
     expect(mapInstrumentGroup('VOCAL')).toBe('VOCAL_GROUP');
-    expect(mapInstrumentGroup('DRUMS')).toBe('DRUM_GROUP');
-    expect(mapInstrumentGroup('GUITAR')).toBe('GUITAR_GROUP');
+    expect(mapInstrumentGroup('DRUMS')).toBe('DRUMS_GROUP');
+    expect(mapInstrumentGroup('GUITAR')).toBe('E_GUITAR_GROUP');
   });
 
-  it('returns OTHER_GROUP for unknown groups', () => {
-    expect(mapInstrumentGroup('UNKNOWN')).toBe('OTHER_GROUP');
-    expect(mapInstrumentGroup('')).toBe('OTHER_GROUP');
-    expect(mapInstrumentGroup('FLUTE')).toBe('OTHER_GROUP');
+  it('returns UNKNOWN_GROUP for unknown groups', () => {
+    expect(mapInstrumentGroup('UNKNOWN')).toBe('UNKNOWN_GROUP');
+    expect(mapInstrumentGroup('')).toBe('UNKNOWN_GROUP');
+    expect(mapInstrumentGroup('FLUTE')).toBe('UNKNOWN_GROUP');
   });
 });

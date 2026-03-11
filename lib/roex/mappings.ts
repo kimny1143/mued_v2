@@ -35,17 +35,17 @@ export function mapMusicalStyle(uiStyle: string): MusicalStyle {
 /** Map UI instrument group keys to RoEx API InstrumentGroup enum values */
 export const INSTRUMENT_GROUP_MAP: Record<string, InstrumentGroup> = {
   VOCAL: 'VOCAL_GROUP',
-  GUITAR: 'GUITAR_GROUP',
+  GUITAR: 'E_GUITAR_GROUP',
   BASS: 'BASS_GROUP',
-  DRUMS: 'DRUM_GROUP',
+  DRUMS: 'DRUMS_GROUP',
   KEYS: 'KEYS_GROUP',
   SYNTH: 'SYNTH_GROUP',
   STRINGS: 'STRINGS_GROUP',
   BRASS: 'BRASS_GROUP',
-  OTHER: 'OTHER_GROUP',
+  OTHER: 'OTHER_GROUP1',
 };
 
-/** Resolve a UI instrument group string to RoEx InstrumentGroup. Defaults to 'OTHER_GROUP'. */
+/** Resolve a UI instrument group string to RoEx InstrumentGroup. Defaults to 'UNKNOWN_GROUP'. */
 export function mapInstrumentGroup(uiGroup: string): InstrumentGroup {
-  return INSTRUMENT_GROUP_MAP[uiGroup] ?? 'OTHER_GROUP';
+  return INSTRUMENT_GROUP_MAP[uiGroup] ?? 'UNKNOWN_GROUP';
 }

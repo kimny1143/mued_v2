@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
 import Link from 'next/link';
@@ -102,6 +102,7 @@ export default function DialSessionPage() {
 
 function DialSessionContent() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const sessionId = params.id as string;
   const { isSignedIn, getToken } = useAuth();
   const { t } = useLocale();
@@ -189,6 +190,15 @@ function DialSessionContent() {
     const interval = setInterval(fetchSession, 5000);
     return () => clearInterval(interval);
   }, [session, fetchSession]);
+
+  // Poll for payment confirmation after Stripe redirect
+  const isPaymentRedirect = searchParams.get('payment') === 'success';
+  useEffect(() => {
+    if (!isPaymentRedirect || !session || session.paymentStatus === 'paid') return;
+    const interval = setInterval(fetchSession, 2000);
+    const timeout = setTimeout(() => clearInterval(interval), 30000); // Stop after 30s
+    return () => { clearInterval(interval); clearTimeout(timeout); };
+  }, [isPaymentRedirect, session, fetchSession]);
 
   // Auto-link: if user just signed up/in and guestToken exists, link session to account
   const [linked, setLinked] = useState(false);
@@ -509,14 +519,22 @@ function DialSessionContent() {
     const latestPreview = session?.tasks.find(
       (t) => t.taskType === 'preview' && t.status === 'completed',
     );
-    if (latestPreview) handleMixGenerate(latestPreview.id, 'mix_check');
+    if (!latestPreview) {
+      setError('Preview required before mix check. Please generate a preview first.');
+      return;
+    }
+    handleMixGenerate(latestPreview.id, 'mix_check');
   };
 
   const handleFinalFromChat = () => {
     const latestPreview = session?.tasks.find(
       (t) => t.taskType === 'preview' && t.status === 'completed',
     );
-    if (latestPreview) handleMixGenerate(latestPreview.id, 'final');
+    if (!latestPreview) {
+      setError('Preview required before generating final mix. Please generate a preview first.');
+      return;
+    }
+    handleMixGenerate(latestPreview.id, 'final');
   };
 
   // Mastering handlers
@@ -630,7 +648,7 @@ function DialSessionContent() {
     && (isMasteringOnly
       ? !hasMasteringFinal
       : (!hasMixFinal || (session.masteringMode && !hasMasteringFinal)));
-  const phase: 1 | 2 | 3 = hasMixFinal ? 3 : session.mixCheckCount > 0 ? 3 : 1;
+  const phase: 1 | 2 | 3 = hasMixFinal ? 3 : session.mixCheckCount > 0 ? 2 : 1;
 
   // Sidebar player — derive from selected take
   const selectedTask = session.tasks.find((t) => t.id === selectedTakeId);
@@ -646,7 +664,7 @@ function DialSessionContent() {
 
   // ─── Shared Sections (used in both layouts) ─────────────────────────────────
 
-  const uploadSection = session.paymentStatus === 'paid' && !hasFinal && (
+  const uploadSection = session.paymentStatus === 'paid' && !hasFinal && !(isMasteringPhase && !isMasteringOnly) && (
     <div>
       <h2 className="text-lg font-medium mb-4">{isMasteringOnly ? t.dial.session.upload2mix : t.dial.session.uploadStems}</h2>
 
@@ -729,7 +747,7 @@ function DialSessionContent() {
     </div>
   );
 
-  const tracksSection = hasTracks && (
+  const tracksSection = hasTracks && !(isMasteringPhase && !isMasteringOnly) && (
     <div>
       <h2 className="text-lg font-medium mb-3">
         {t.dial.session.tracks} ({session.tracks.length})
@@ -781,8 +799,8 @@ function DialSessionContent() {
         </div>
       )}
 
-      {/* Preview Button (mix only — mastering-only uses chat-driven flow) */}
-      {!isProcessing && !hasFinal && !isMasteringOnly && (
+      {/* Preview Button (mix only — mastering uses chat-driven flow) */}
+      {!isProcessing && !hasFinal && !isMasteringOnly && !isMasteringPhase && (
         <button
           onClick={handlePreview}
           disabled={previewing}
@@ -1095,8 +1113,20 @@ function DialSessionContent() {
         {/* Payment pending */}
         {session.paymentStatus !== 'paid' && (
           <div className="p-6 bg-amber-900/20 border border-amber-800 rounded-xl text-center">
-            <h2 className="text-lg font-medium text-amber-300 mb-2">{t.dial.session.paymentRequired}</h2>
-            <p className="text-zinc-400">{t.dial.session.completePayment}</p>
+            {isPaymentRedirect ? (
+              <>
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <div className="h-5 w-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" role="status" />
+                  <h2 className="text-lg font-medium text-amber-300">Confirming payment...</h2>
+                </div>
+                <p className="text-zinc-400">This usually takes a few seconds.</p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-lg font-medium text-amber-300 mb-2">{t.dial.session.paymentRequired}</h2>
+                <p className="text-zinc-400">{t.dial.session.completePayment}</p>
+              </>
+            )}
           </div>
         )}
 
@@ -1107,8 +1137,24 @@ function DialSessionContent() {
             // 2-column layout: Chat dominant (left) + Sidebar (right)
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Left: Chat panel */}
-              <div className="flex-1 min-w-0">
-                <div className="h-[calc(100vh-14rem)]">
+              <div className="flex-1 min-w-0 flex flex-col">
+                {/* Processing banner — visible when task is being processed server-side */}
+                {isProcessing && latestTask && (
+                  <div className="mb-2 px-4 py-3 bg-amber-900/20 border border-amber-800/40 rounded-xl flex items-center gap-3">
+                    <div className="h-4 w-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" role="status" />
+                    <div className="text-sm">
+                      <span className="text-amber-300 font-medium">
+                        {latestTask.taskType === 'mastering' ? 'Generating mastered track...'
+                          : latestTask.taskType === 'mastering_preview' ? 'Generating master preview...'
+                          : latestTask.taskType === 'mix_check' ? 'Generating mix check...'
+                          : latestTask.taskType === 'preview' ? 'Generating preview...'
+                          : 'Processing...'}
+                      </span>
+                      <span className="text-zinc-500 ml-2 text-xs">This may take a few minutes</span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex-1 min-h-0">
                   <ChatPanel
                     className="h-full"
                     sessionId={session.id}
@@ -1131,7 +1177,7 @@ function DialSessionContent() {
               </div>
 
               {/* Right: Sidebar — player, take history, tracks, upload */}
-              <div className="lg:w-80 shrink-0 space-y-5 overflow-y-auto lg:max-h-[calc(100vh-14rem)]">
+              <div className="lg:w-80 shrink-0 space-y-5 overflow-y-auto lg:max-h-[calc(100vh-14rem)] lg:sticky lg:top-24 lg:self-start">
                 {/* Shared Player */}
                 <div
                   className={`bg-zinc-900 border rounded-xl p-4 transition-colors ${

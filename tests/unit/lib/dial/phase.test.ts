@@ -44,11 +44,11 @@ describe('detectPhase', () => {
       expect(result.phase).toBe(1);
     });
 
-    it('returns phase 3 after mix check', () => {
+    it('returns phase 2 after mix check', () => {
       const session = makeSession({ mixCheckCount: 1 });
       const tasks = [makeTask({ taskType: 'mix_check', status: 'completed' })];
       const result = detectPhase(session, tasks);
-      expect(result.phase).toBe(3);
+      expect(result.phase).toBe(2);
       expect(result.hasMixCheck).toBe(true);
     });
 

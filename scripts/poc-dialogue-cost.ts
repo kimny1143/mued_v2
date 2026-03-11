@@ -36,10 +36,10 @@ const CREDIT_COSTS: Record<string, number> = {
 
 const MOCK_TRACKS: DialPromptInput['tracks'] = [
   { filename: 'vocal_main.wav', instrumentGroup: 'VOCAL_GROUP', presenceSetting: 'NORMAL', panPreference: 'NO_PREFERENCE', reverbPreference: 'MEDIUM' },
-  { filename: 'guitar_rhythm.wav', instrumentGroup: 'GUITAR_GROUP', presenceSetting: 'NORMAL', panPreference: 'NO_PREFERENCE', reverbPreference: 'LOW' },
-  { filename: 'guitar_lead.wav', instrumentGroup: 'GUITAR_GROUP', presenceSetting: 'NORMAL', panPreference: 'NO_PREFERENCE', reverbPreference: 'LOW' },
+  { filename: 'guitar_rhythm.wav', instrumentGroup: 'E_GUITAR_GROUP', presenceSetting: 'NORMAL', panPreference: 'NO_PREFERENCE', reverbPreference: 'LOW' },
+  { filename: 'guitar_lead.wav', instrumentGroup: 'E_GUITAR_GROUP', presenceSetting: 'NORMAL', panPreference: 'NO_PREFERENCE', reverbPreference: 'LOW' },
   { filename: 'bass.wav', instrumentGroup: 'BASS_GROUP', presenceSetting: 'NORMAL', panPreference: 'CENTRE', reverbPreference: 'NONE' },
-  { filename: 'drums.wav', instrumentGroup: 'DRUM_GROUP', presenceSetting: 'NORMAL', panPreference: 'CENTRE', reverbPreference: 'NONE' },
+  { filename: 'drums.wav', instrumentGroup: 'DRUMS_GROUP', presenceSetting: 'NORMAL', panPreference: 'CENTRE', reverbPreference: 'NONE' },
 ];
 
 // ─── Conversation Scenario ─────────────────────────────────────────────────

@@ -163,11 +163,23 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
         });
         const data = await res.json();
         if (data.success) {
-          // Mark all historical messages as already applied (actions already executed)
-          setMessages(data.data.messages.map((m: ChatMessage) => ({
-            ...m,
-            applied: (m.parameterChanges && m.parameterChanges.length > 0) || m.action ? true : undefined,
-          })));
+          // Mark historical messages as applied — but NOT button actions
+          // that haven't been acted on yet (so the button re-appears on reload)
+          const BUTTON_ACTIONS = new Set(['request_mix_check', 'request_final', 'request_mastering_final']);
+          const msgs = data.data.messages as ChatMessage[];
+          setMessages(msgs.map((m: ChatMessage, idx: number) => {
+            const isButtonAction = m.role === 'assistant' && m.action && BUTTON_ACTIONS.has(m.action);
+            if (isButtonAction) {
+              // Only mark button actions as applied if there are subsequent user messages
+              // (indicating the user moved past this action)
+              const hasSubsequentUserMsg = msgs.slice(idx + 1).some(sub => sub.role === 'user');
+              return { ...m, applied: hasSubsequentUserMsg ? true : false };
+            }
+            return {
+              ...m,
+              applied: (m.parameterChanges && m.parameterChanges.length > 0) || m.action ? true : undefined,
+            };
+          }));
         }
       } catch {
         // Silent fail — empty chat is fine

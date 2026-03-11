@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import type { AnalyzerData } from '@/hooks/use-audio-analyzer';
 import { useAudioAnalyzerContext } from '@/hooks/use-audio-analyzer-context';
 import { useLocale } from '@/lib/i18n/locale-context';
@@ -434,13 +434,32 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
     ctx.fillText(`r=${corr.toFixed(2)}`, ps - 4 * dpr, ps - 4 * dpr);
   }, [data, compact]);
 
+  const [poppedOut, setPoppedOut] = useState(false);
+  const popupRef = useRef<Window | null>(null);
+
   const handlePopOut = useCallback(() => {
-    window.open(
+    const popup = window.open(
       '/dial/analyzer',
       'mued-analyzer',
       'width=520,height=640,menubar=no,toolbar=no,location=no,status=no',
     );
+    if (popup) {
+      popupRef.current = popup;
+      setPoppedOut(true);
+    }
   }, []);
+
+  // Detect when popup window is closed and restore inline analyzer
+  useEffect(() => {
+    if (!poppedOut) return;
+    const timer = setInterval(() => {
+      if (popupRef.current?.closed) {
+        setPoppedOut(false);
+        popupRef.current = null;
+      }
+    }, 500);
+    return () => clearInterval(timer);
+  }, [poppedOut]);
 
   if (!isActive) {
     return (
@@ -451,6 +470,25 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
       >
         {dialT?.enableAnalyzer ?? 'Enable Analyzer'}
       </button>
+    );
+  }
+
+  // When popped out in compact mode, hide canvases and show a minimal indicator
+  if (poppedOut && compact) {
+    return (
+      <div className="flex items-center justify-between py-1">
+        <span className="text-[10px] text-zinc-500">Analyzer: popped out</span>
+        <button
+          onClick={() => {
+            popupRef.current?.close();
+            setPoppedOut(false);
+            popupRef.current = null;
+          }}
+          className="text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors"
+        >
+          ↙ Pop In
+        </button>
+      </div>
     );
   }
 
