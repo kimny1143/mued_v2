@@ -121,6 +121,8 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 **核心: 「全部ちゃんとやる」がAI生成感の正体。「何を捨てるか」がデザイン。**
 
+**デザイン・レイアウトの鉄則: 一般的に寄るな。意図を持った方向に鋭く尖れ。** Claudeはデザインで無難・汎用的な選択をしがち。MUEDは音楽制作ツールであり、ユーザーはクリエイター。DAWやプロオーディオ機器のUIのように、目的に特化した尖ったデザインを選べ。迷ったら「安全な中央値」ではなく「このUIは何のために存在するか」から逆算して決断せよ。
+
 ### Video Branding (MUEDear)
 
 - Primary: #F5A623 (Hoo amber)
@@ -164,6 +166,7 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 | `coding-rules` | コード実装、レビュー |
 | `ai-models` | AIモデル使用、OpenAI API呼び出し |
 | `web-performance` | Core Web Vitals最適化、パフォーマンス改善 |
+| `mued-onboarding` | オンボーディング設計・改善、Aha Moment定義、リテンション |
 
 ---
 
@@ -234,4 +237,46 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 ---
 
-*最終更新: 2026-02-11*
+## MUEDial (RoEx Tonn API)
+
+### 概要
+AIミキシング/マスタリングサービス。RoEx Tonn APIを使用。ゲストアクセス対応（ログイン不要で単品購入可能）。
+
+### アーキテクチャ
+- **認証**: `withDialAuth` — Clerk auth と `X-Dial-Guest-Token` ヘッダーの両対応
+- **ミドルウェア**: `/dial` と `/api/dial` は Clerk middleware matcher から**完全除外**（`clerkMiddleware`はpublicルートでもCookie存在時にハンドシェイクリダイレクトするため）
+- **決済**: Stripe先払い → webhook (`metadata.service === 'dial'`) → `paymentStatus: paid` → Upload解放
+- **クライアント**: `lib/roex/` — upload, mixing, mastering, analysis
+
+### RoEx Tonn API
+- **認証**: Google API key をクエリパラメータで渡す (`?key=API_KEY`)。Bearer tokenではない
+- **全エンドポイントPOST only**（GETは405）
+- **devキー**: ダミーデータ返却。**prodキー**: 実オーディオ処理（クレジット消費）
+
+| 操作 | エンドポイント | ボディのラッパーキー |
+|------|-------------|-------------------|
+| Upload URL | `/upload` | なし (`{ filename, contentType }`) |
+| Mix Preview 投入 | `/mixpreview` | `multitrackData` |
+| Mix Preview 取得 | `/retrievepreviewmix` | `multitrackData` |
+| Final Mix 投入 | `/applyaudioeffects` | `applyAudioEffectsData` |
+| Final Mix 取得 | `/retrievefinalmix` | `applyAudioEffectsData` (trackData min 2) |
+| Mastering Preview 投入 | `/masteringpreview` | `masteringData` |
+| Mastering Preview 取得 | `/retrievepreviewmaster` | `masteringData` |
+| Mastering Final 取得 | `/retrievefinalmaster` | `masteringData` |
+
+### Enum マッピング（UI → RoEx）
+- **Musical Style**: `pop`→`POP`, `rock`→`ROCK_INDIE`, `hiphop`→`HIPHOP_GRIME`, `electronic`→`ELECTRONIC`, `classical`→`ORCHESTRAL`, `metal`→`METAL`, etc.
+- **Instrument Group**: `VOCAL`→`VOCAL_GROUP`, `BASS`→`BASS_GROUP`, `DRUMS`→`DRUM_GROUP`, `GUITAR`→`GUITAR_GROUP`, `KEYS`→`KEYS_GROUP`, etc.
+
+---
+
+## Threads Insight 抽出
+
+作業セッション中に、記事にするほどではないが Threads の短文投稿（insight）になりそうな気づきが出たら、会話の区切りで提案すること。
+
+**対象:** 実装中の発見、ハマりから得た教訓、AI活用の実感など。kimnyの一人称で語れるもの。
+**トーン:** 砕けた口語体（「〜なんだよね」「〜なわけ」）。論文調・格言調・上から目線にしない。
+**保存先:** `/Users/kimny/Dropbox/_DevProjects/_cowork/20260222/threads-api/insights.json` に追記（直接編集 or ユーザーに提示してthreads-apiワークスペースで追加）。
+**頻度:** バッチ量産しない。セッション中に自然に出たものだけ。
+
+*最終更新: 2026-03-10*

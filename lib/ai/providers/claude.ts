@@ -16,7 +16,7 @@ export type ClaudeModel = 'claude-sonnet-4-20250514' | 'claude-opus-4-20250514' 
 
 export interface ClaudeProviderConfig extends HooProviderConfig {
   model: ClaudeModel;
-  systemPrompt?: string; // Optional override for system prompt
+  systemPrompt?: string;
 }
 
 /**
@@ -24,7 +24,7 @@ export interface ClaudeProviderConfig extends HooProviderConfig {
  */
 export const defaultClaudeConfig: ClaudeProviderConfig = {
   model: 'claude-sonnet-4-20250514',
-  maxTokens: 1024,
+  maxTokens: 4096,
   temperature: 0.7,
 };
 
@@ -65,17 +65,25 @@ export async function sendClaudeChat(
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
 
+  // Build request params
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const requestParams: any = {
+    model: mergedConfig.model,
+    max_tokens: mergedConfig.maxTokens,
+    system: mergedConfig.systemPrompt ?? getHooSystemPrompt(),
+    messages: messages.map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    })),
+  };
+
+  if (mergedConfig.tools?.length) {
+    requestParams.tools = mergedConfig.tools;
+  }
+
   let response;
   try {
-    response = await anthropic.messages.create({
-      model: mergedConfig.model,
-      max_tokens: mergedConfig.maxTokens,
-      system: mergedConfig.systemPrompt ?? getHooSystemPrompt(),
-      messages: messages.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      })),
-    }, {
+    response = await anthropic.messages.create(requestParams, {
       signal: controller.signal,
     });
   } catch (error) {
@@ -93,6 +101,17 @@ export async function sendClaudeChat(
   // Extract text from response
   const textContent = response.content.find((c) => c.type === 'text');
   const content = textContent?.type === 'text' ? textContent.text : '';
+
+  // Extract tool calls
+  const toolCalls = response.content
+    .filter((c) => c.type === 'tool_use')
+    .map((c) => {
+      if (c.type === 'tool_use') {
+        return { name: c.name, input: c.input };
+      }
+      return null;
+    })
+    .filter(Boolean) as { name: string; input: unknown }[];
 
   // Calculate cost
   const pricing = CLAUDE_PRICING[mergedConfig.model];
@@ -115,6 +134,7 @@ export async function sendClaudeChat(
       total: totalCost,
     },
     latencyMs,
+    toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
   };
 }
 

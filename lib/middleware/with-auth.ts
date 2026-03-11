@@ -13,7 +13,7 @@ import { logger } from '@/lib/utils/logger';
  * Resolve Clerk user ID from request.
  * Tries Bearer JWT first (mobile apps), then falls back to cookie-based auth (web).
  */
-async function resolveClerkUserId(request: NextRequest): Promise<string | null> {
+export async function resolveClerkUserId(request: NextRequest): Promise<string | null> {
   // 1. Bearer JWT token (mobile apps)
   const authHeader = request.headers.get('Authorization');
   if (authHeader?.startsWith('Bearer ')) {
@@ -30,9 +30,27 @@ async function resolveClerkUserId(request: NextRequest): Promise<string | null> 
     }
   }
 
-  // 2. Cookie-based auth (web)
+  // 2. Cookie-based auth (web) — requires Clerk middleware to have run
   const { userId } = await auth();
-  return userId;
+  if (userId) return userId;
+
+  // 3. Direct session cookie verification (fallback when middleware is bypassed,
+  //    e.g. /api/dial/upload excluded from matcher for large FormData support)
+  const sessionCookie = request.cookies.get('__session')?.value;
+  if (sessionCookie) {
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const payload = await verifyToken(sessionCookie, {
+        secretKey: process.env.CLERK_SECRET_KEY!,
+        authorizedParties: [appUrl, 'http://localhost:3000'],
+      });
+      if (payload?.sub) return payload.sub;
+    } catch (err) {
+      logger.warn('[resolveClerkUserId] Session cookie verification failed:', { error: err });
+    }
+  }
+
+  return null;
 }
 
 /**

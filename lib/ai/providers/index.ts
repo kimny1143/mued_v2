@@ -66,6 +66,8 @@ export async function generateConversationTitle(
  */
 export interface HooChatOptions {
   systemPrompt?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tools?: any[];
 }
 
 /**
@@ -81,12 +83,14 @@ export async function sendHooChat(
       return sendClaudeChat(messages, {
         model: 'claude-sonnet-4-20250514',
         systemPrompt: options?.systemPrompt,
+        tools: options?.tools,
       });
 
     case 'claude-haiku':
       return sendClaudeChat(messages, {
         model: 'claude-haiku-4-5-20251001',
         systemPrompt: options?.systemPrompt,
+        tools: options?.tools,
       });
 
     case 'gemini-2.0-flash':

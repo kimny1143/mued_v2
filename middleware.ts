@@ -20,6 +20,8 @@ const isPublicRoute = createRouteMatcher([
   "/privacy(.*)",
   "/support(.*)",
   "/muedear(.*)",
+  "/dial(.*)",
+  "/api/dial(.*)",
 ]);
 
 // Check if path starts with a locale
@@ -38,6 +40,17 @@ const isE2EBypassEnabled = isNonProduction && process.env.ENABLE_E2E_BYPASS === 
 
 export default clerkMiddleware(async (auth, req) => {
   const { pathname } = req.nextUrl;
+  const hostname = req.headers.get('host') ?? '';
+
+  // Subdomain routing: dial.mued.jp → serve /dial page
+  if (hostname.startsWith('dial.')) {
+    if (pathname === '/') {
+      return NextResponse.rewrite(new URL('/dial', req.url));
+    }
+    // All other paths on dial subdomain pass through normally
+    // (e.g. /dial/session/[id], /api/dial/*, /api/webhooks/stripe)
+    if (isPublicRoute(req)) return;
+  }
 
   // Skip authentication in E2E test mode
   // Requires: (1) NODE_ENV !== 'production' AND (2) ENABLE_E2E_BYPASS=true
@@ -87,5 +100,11 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
-  matcher: ["/((?!.*\\..*|_next|api/webhooks).*)", "/", "/(api|trpc)(.*)"],
+  // Exclude /api/dial/upload from middleware — large FormData bodies
+  // fail to parse when Edge Runtime middleware processes the request.
+  matcher: [
+    "/((?!.*\\..*|_next|api/webhooks|api/dial/upload).*)",
+    "/",
+    "/(api(?!/dial/upload)|trpc)(.*)",
+  ],
 };

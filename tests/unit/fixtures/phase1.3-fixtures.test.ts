@@ -115,7 +115,7 @@ describe('Phase 1.3 Fixtures', () => {
         expect(gt.expectedResults.length).toBeGreaterThan(0);
 
         gt.expectedResults.forEach((sessionId) => {
-          expect(sessionId).toMatch(/^session-\d{3}$/);
+          expect(sessionId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
         });
       });
     });
@@ -232,7 +232,7 @@ describe('Phase 1.3 Fixtures', () => {
       });
 
       // First result should be the same session (similarity = 1)
-      expect(similar[0].sessionId).toBe('session-001');
+      expect(similar[0].sessionId).toBe('550e8400-e29b-41d4-a716-446655440001');
       expect(similar[0].similarity).toBeCloseTo(1, 5);
     });
 
