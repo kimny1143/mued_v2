@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useAuth, useUser } from '@clerk/nextjs';
+import { useAuth, useUser, SignInButton, UserButton } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
 import Image from 'next/image';
 
@@ -215,12 +215,23 @@ export default function DialPage() {
 
       {/* ─── Nav ──────────────────────────────────────────────────────── */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-black/60 backdrop-blur-md border-b border-white/5">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center">
+        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Image src="/hoo-animated.svg" alt="" width={28} height={28} />
             <span className="text-lg font-bold tracking-tight">
               MUED<span className="text-amber-400">ial</span>
             </span>
+          </div>
+          <div>
+            {isSignedIn ? (
+              <UserButton afterSignOutUrl="/dial" />
+            ) : (
+              <SignInButton mode="modal">
+                <button className="text-sm text-zinc-400 hover:text-white transition-colors">
+                  Sign in
+                </button>
+              </SignInButton>
+            )}
           </div>
         </div>
       </nav>

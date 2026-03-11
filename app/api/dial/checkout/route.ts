@@ -77,6 +77,36 @@ export async function POST(request: NextRequest) {
     const guestToken = randomBytes(32).toString('hex');
     const guestTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
+    // ── Dev bypass: skip Stripe for allowed accounts ──
+    const DEV_BYPASS_EMAILS = (process.env.DIAL_DEV_BYPASS_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean);
+    if (DEV_BYPASS_EMAILS.includes(email)) {
+      const [session] = await db.insert(dialSessions).values({
+        userId: clerkUserId ?? undefined,
+        mode: sessionMode ?? undefined,
+        masteringMode: masteringType ?? undefined,
+        musicalStyle: musicalStyle ?? 'other',
+        title,
+        guestEmail: email,
+        guestToken,
+        guestTokenExpiresAt,
+        paymentStatus: 'paid',
+        ...(sessionMode === 'omakase' ? {
+          baseCycleLimit: 1,
+          additionalCycleLimit: 0,
+        } : {}),
+      }).returning();
+
+      const origin = request.headers.get('origin')
+        || `${request.headers.get('x-forwarded-proto') || 'https'}://${request.headers.get('host')}`
+        || FALLBACK_URL;
+
+      return apiSuccess({
+        url: `${origin}/dial/session/${session.id}?payment=success`,
+        sessionId: session.id,
+        guestToken,
+      });
+    }
+
     // Build Stripe line items
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
     if (mixType) {
