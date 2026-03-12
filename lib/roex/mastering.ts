@@ -9,11 +9,15 @@ function parseMasteringResponse(raw: unknown): MasteringResult {
     return { taskId: '', status: 'completed', finalUrl: raw };
   }
 
-  const data = raw as Record<string, unknown>;
+  const top = raw as Record<string, unknown>;
+
+  // Handle nesting: responses may be wrapped in previewMasterTaskResults or finalMasterTaskResults
+  const data = (top.previewMasterTaskResults ?? top.finalMasterTaskResults ?? top) as Record<string, unknown>;
 
   const taskId =
-    (data.mastering_task_id as string) ?? (data.taskId as string) ?? '';
-  const status = (data.status as string) ?? '';
+    (data.mastering_task_id as string) ?? (data.taskId as string) ??
+    (top.mastering_task_id as string) ?? '';
+  const status = (data.status as string) ?? (top.status as string) ?? '';
   const previewUrl =
     (data.download_url_mastered_preview as string) ?? undefined;
   const finalUrl = (data.download_url_mastered as string) ?? undefined;
