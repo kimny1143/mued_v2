@@ -325,19 +325,19 @@ function DialSessionContent() {
     setFileUploadPercent(0);
     setError(null);
 
-    // Build auth headers (reused for presign + confirm calls)
-    const authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (guestToken) {
-      authHeaders['X-Dial-Guest-Token'] = guestToken;
-    } else if (isSignedIn) {
-      const token = await getToken();
-      if (token) authHeaders['Authorization'] = `Bearer ${token}`;
-    }
-
     for (let i = 0; i < files.length; i++) {
       const { file, instrumentGroup } = files[i];
       setUploadProgress({ current: i + 1, total: files.length });
       setFileUploadPercent(0);
+
+      // Refresh auth headers per file (Clerk JWT expires in ~60s, WAV uploads take longer)
+      const authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (guestToken) {
+        authHeaders['X-Dial-Guest-Token'] = guestToken;
+      } else if (isSignedIn) {
+        const token = await getToken();
+        if (token) authHeaders['Authorization'] = `Bearer ${token}`;
+      }
 
       try {
         // Step 1: Get presigned URL (metadata only — no file body)
