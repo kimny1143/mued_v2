@@ -86,6 +86,7 @@ export interface DialPurchaseNotificationData {
   purchaseId: string;
   purchaseType: string;
   email: string;
+  guestToken?: string;
 }
 
 export interface DialResultsNotificationData {
@@ -472,10 +473,14 @@ class NotificationService {
     }
 
     try {
+      const sessionUrl = data.guestToken
+        ? `${APP_URL}/dial/session/${data.sessionId}?token=${data.guestToken}`
+        : `${APP_URL}/dial/session/${data.sessionId}`;
+
       const emailData: DialPurchaseConfirmedEmailData = {
         email: data.email,
         purchaseType: data.purchaseType,
-        sessionUrl: `${APP_URL}/dial/session/${data.sessionId}`,
+        sessionUrl,
       };
 
       const result = await emailService.sendDialPurchaseConfirmed(

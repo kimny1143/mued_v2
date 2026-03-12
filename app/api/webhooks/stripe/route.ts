@@ -839,6 +839,13 @@ async function handleDialCheckoutCompleted(
 
     logger.info(`[Dial Webhook] Purchase completed: ${purchaseIds.join(',')} (mix=${mixType})`);
 
+    // Fetch guest token for email session link (so guest can re-access from any browser)
+    const [dialSession] = await tx
+      .select({ guestToken: dialSessions.guestToken })
+      .from(dialSessions)
+      .where(eq(dialSessions.id, dialSessionId))
+      .limit(1);
+
     // Send email notification (async, non-blocking)
     setImmediate(async () => {
       try {
@@ -847,6 +854,7 @@ async function handleDialCheckoutCompleted(
           purchaseId: purchaseIds[0],
           purchaseType: mixType || 'omakase',
           email: session.customer_email || session.customer_details?.email || '',
+          guestToken: dialSession?.guestToken ?? undefined,
         });
       } catch (error) {
         logger.error('[Dial Webhook] Failed to send purchase notification', { error });

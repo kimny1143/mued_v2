@@ -167,9 +167,18 @@ function DialSessionContent() {
     setDownloadedItems(prev => new Set(prev).add(item));
   };
 
-  const guestToken = typeof window !== 'undefined'
-    ? localStorage.getItem('dial_guest_token')
-    : null;
+  // Restore guest token from URL query param (email recovery link)
+  const guestToken = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    const urlToken = new URLSearchParams(window.location.search).get('token');
+    if (urlToken) {
+      localStorage.setItem('dial_guest_token', urlToken);
+      // Clean URL without reload
+      window.history.replaceState({}, '', window.location.pathname);
+      return urlToken;
+    }
+    return localStorage.getItem('dial_guest_token');
+  }, []);
 
   const headers: Record<string, string> = useMemo(() => ({
     'Content-Type': 'application/json',
