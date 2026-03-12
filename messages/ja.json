@@ -1332,6 +1332,9 @@
       "startFirstMix": "最初のミックスを始める",
       "tracks": "トラック",
       "finalReady": "完成済み",
+      "downloadReady": "ダウンロード",
+      "expiresIn": "あと{days}日",
+      "expired": "期限切れ",
       "logOut": "ログアウト",
       "allRightsReserved": "All rights reserved.",
       "status": {

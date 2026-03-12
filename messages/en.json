@@ -1332,6 +1332,9 @@
       "startFirstMix": "Start Your First Mix",
       "tracks": "tracks",
       "finalReady": "Final ready",
+      "downloadReady": "Download",
+      "expiresIn": "Expires in {days}d",
+      "expired": "Expired",
       "logOut": "Log Out",
       "allRightsReserved": "All rights reserved.",
       "status": {

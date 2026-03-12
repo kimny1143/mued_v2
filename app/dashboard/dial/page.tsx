@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { dialSessions } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
-import { Headphones, Music, Clock, CheckCircle, Loader2, Upload, ArrowRight } from "lucide-react";
+import { Headphones, Music, Clock, CheckCircle, Loader2, Upload, ArrowRight, Download } from "lucide-react";
 
 const STATUS_ICONS = {
   uploading: { icon: Upload, color: "text-white/60" },
@@ -32,22 +32,42 @@ export default async function DialDashboardPage() {
     orderBy: [desc(dialSessions.createdAt)],
     with: {
       tracks: { columns: { id: true } },
-      tasks: { columns: { id: true, taskType: true, status: true } },
+      tasks: { columns: { id: true, taskType: true, status: true, r2FinalUrl: true, r2ExpiresAt: true } },
     },
   });
 
-  const sessions = rawSessions.map((s) => ({
-    id: s.id,
-    mode: s.mode,
-    status: s.status,
-    musicalStyle: s.musicalStyle,
-    title: s.title,
-    createdAt: s.createdAt,
-    trackCount: s.tracks.length,
-    hasFinal: s.tasks.some(
-      (t) => (t.taskType === "final_basic" || t.taskType === "final_advanced") && t.status === "completed"
-    ),
-  }));
+  const now = new Date();
+  const sessions = rawSessions.map((s) => {
+    const downloadableTasks = s.tasks.filter(
+      (t) => t.r2FinalUrl && t.r2ExpiresAt && t.status === "completed"
+        && (t.taskType === "final_basic" || t.taskType === "final_advanced" || t.taskType === "mastering"),
+    );
+    const earliestExpiry = downloadableTasks.length > 0
+      ? downloadableTasks.reduce((min, t) => {
+          const exp = new Date(t.r2ExpiresAt!);
+          return exp < min ? exp : min;
+        }, new Date(downloadableTasks[0].r2ExpiresAt!))
+      : null;
+    const daysRemaining = earliestExpiry
+      ? Math.ceil((earliestExpiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+
+    return {
+      id: s.id,
+      mode: s.mode,
+      status: s.status,
+      musicalStyle: s.musicalStyle,
+      title: s.title,
+      createdAt: s.createdAt,
+      trackCount: s.tracks.length,
+      hasFinal: s.tasks.some(
+        (t) => (t.taskType === "final_basic" || t.taskType === "final_advanced") && t.status === "completed",
+      ),
+      hasDownload: downloadableTasks.length > 0,
+      daysRemaining,
+      downloadTaskIds: downloadableTasks.map((t) => t.id),
+    };
+  });
 
   return (
     <div>
@@ -126,8 +146,25 @@ export default async function DialDashboardPage() {
                     {session.hasFinal && (
                       <span className="text-green-500">{t.dial.dashboard.finalReady}</span>
                     )}
+                    {session.hasDownload && session.daysRemaining !== null && (
+                      <span className={`${session.daysRemaining > 7 ? "text-white/50" : session.daysRemaining > 0 ? "text-amber-400" : "text-red-400"}`}>
+                        {session.daysRemaining > 0
+                          ? t.dial.dashboard.expiresIn.replace("{days}", String(session.daysRemaining))
+                          : t.dial.dashboard.expired}
+                      </span>
+                    )}
                   </div>
                 </div>
+                {session.hasDownload && session.daysRemaining !== null && session.daysRemaining > 0 && (
+                  <a
+                    href={`/dial/session/${session.id}`}
+                    className="flex items-center gap-1 px-2.5 py-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-xs rounded-md transition-colors flex-shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Download className="w-3 h-3" />
+                    {t.dial.dashboard.downloadReady}
+                  </a>
+                )}
                 <div className={`flex items-center gap-1.5 text-xs ${status.color} flex-shrink-0`}>
                   <StatusIcon className={`w-3.5 h-3.5 ${session.status === "previewing" || session.status === "mixing" ? "animate-spin" : ""}`} />
                   {statusLabel}
