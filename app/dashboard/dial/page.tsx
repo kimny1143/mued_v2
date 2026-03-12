@@ -156,14 +156,12 @@ export default async function DialDashboardPage() {
                   </div>
                 </div>
                 {session.hasDownload && session.daysRemaining !== null && session.daysRemaining > 0 && (
-                  <a
-                    href={`/dial/session/${session.id}`}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-xs rounded-md transition-colors flex-shrink-0"
-                    onClick={(e) => e.stopPropagation()}
+                  <span
+                    className="flex items-center gap-1 px-2.5 py-1 bg-green-500/10 text-green-400 text-xs rounded-md flex-shrink-0"
                   >
                     <Download className="w-3 h-3" />
                     {t.dial.dashboard.downloadReady}
-                  </a>
+                  </span>
                 )}
                 <div className={`flex items-center gap-1.5 text-xs ${status.color} flex-shrink-0`}>
                   <StatusIcon className={`w-3.5 h-3.5 ${session.status === "previewing" || session.status === "mixing" ? "animate-spin" : ""}`} />
