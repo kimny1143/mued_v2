@@ -1335,8 +1335,9 @@
       "tracks": "トラック",
       "finalReady": "完成済み",
       "downloadReady": "ダウンロード",
-      "expiresIn": "あと{days}日",
-      "expired": "期限切れ",
+      "expiresIn": "DL期限: あと{days}日",
+      "expiresSoon": "DL期限: あと{days}日 — 今すぐダウンロード",
+      "expired": "ファイルは削除されました",
       "logOut": "ログアウト",
       "allRightsReserved": "All rights reserved.",
       "status": {

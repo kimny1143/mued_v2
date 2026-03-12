@@ -1335,8 +1335,9 @@
       "tracks": "tracks",
       "finalReady": "Final ready",
       "downloadReady": "Download",
-      "expiresIn": "Expires in {days}d",
-      "expired": "Expired",
+      "expiresIn": "DL expires in {days}d",
+      "expiresSoon": "DL expires in {days}d — download now",
+      "expired": "Files have been deleted",
       "logOut": "Log Out",
       "allRightsReserved": "All rights reserved.",
       "status": {

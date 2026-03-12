@@ -147,11 +147,17 @@ export default async function DialDashboardPage() {
                       <span className="text-green-500">{t.dial.dashboard.finalReady}</span>
                     )}
                     {session.hasDownload && session.daysRemaining !== null && (
-                      <span className={`${session.daysRemaining > 7 ? "text-white/50" : session.daysRemaining > 0 ? "text-amber-400" : "text-red-400"}`}>
-                        {session.daysRemaining > 0
-                          ? t.dial.dashboard.expiresIn.replace("{days}", String(session.daysRemaining))
-                          : t.dial.dashboard.expired}
-                      </span>
+                      session.daysRemaining > 7
+                        ? <span className="text-white/50">
+                            {t.dial.dashboard.expiresIn.replace("{days}", String(session.daysRemaining))}
+                          </span>
+                        : session.daysRemaining > 0
+                          ? <span className="text-amber-400 font-medium">
+                              {t.dial.dashboard.expiresSoon.replace("{days}", String(session.daysRemaining))}
+                            </span>
+                          : <span className="text-red-400">
+                              {t.dial.dashboard.expired}
+                            </span>
                     )}
                   </div>
                 </div>
