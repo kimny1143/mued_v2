@@ -210,6 +210,15 @@ function DialSessionContent() {
           await fetch(`/api/dial/final?taskId=${finalTask.id}`, { headers });
         } catch { /* ignore */ }
       }
+      // For mastering preview tasks, poll RoEx mastering endpoint
+      const masteringPreviewTask = processingTasks.find(
+        (t) => t.taskType === 'mastering_preview',
+      );
+      if (masteringPreviewTask) {
+        try {
+          await fetch(`/api/dial/mastering/preview?taskId=${masteringPreviewTask.id}`, { headers });
+        } catch { /* ignore */ }
+      }
       // Then refresh session data from DB
       await fetchSession();
     };

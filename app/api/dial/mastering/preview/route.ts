@@ -1,6 +1,7 @@
 /**
  * MUEDial Mastering Preview API
  * POST /api/dial/mastering/preview — Submit mastering preview request (FREE)
+ * GET  /api/dial/mastering/preview — Poll mastering preview status
  *
  * Input: mix final URL (from completed mix) or uploaded 2-mix file
  * Output: mastering preview task
@@ -10,8 +11,9 @@ import { z } from 'zod';
 import { eq, desc } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
+import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
-import { createRoExClient, masterPreview, isRoExDevKey, mapMusicalStyle } from '@/lib/roex';
+import { createRoExClient, masterPreview, pollMasterPreview, isRoExDevKey, mapMusicalStyle } from '@/lib/roex';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
 
@@ -112,5 +114,64 @@ export const POST = withDialAuth(async (auth) => {
     });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Mastering preview failed');
+  }
+});
+
+// ─── GET: Poll mastering preview status ──────────────────────────────────────
+
+export const GET = withDialAuth(async (auth) => {
+  try {
+    const { searchParams } = new URL(auth.request.url);
+    const taskId = searchParams.get('taskId');
+    if (!taskId) {
+      return apiValidationError('taskId is required');
+    }
+
+    const result = await verifyDialTaskOwnership(taskId, auth);
+    if (!result) {
+      return apiNotFound('Task not found');
+    }
+
+    const { task } = result;
+
+    if (task.status === 'completed') {
+      return apiSuccess({
+        status: 'completed',
+        previewUrl: task.previewUrl,
+      });
+    }
+
+    if (task.status === 'failed') {
+      return apiSuccess({ status: 'failed' });
+    }
+
+    if (isRoExDevKey()) {
+      return apiSuccess({ status: task.status });
+    }
+
+    // Poll RoEx for mastering preview result
+    const client = createRoExClient();
+    const pollResult = await pollMasterPreview(client, task.roexTaskId);
+
+    const isCompleted = !!pollResult.previewUrl;
+
+    if (isCompleted) {
+      await db.update(dialTasks).set({
+        status: 'completed',
+        previewUrl: pollResult.previewUrl,
+        completedAt: new Date(),
+      }).where(eq(dialTasks.id, taskId));
+    } else if (pollResult.status === 'failed') {
+      await db.update(dialTasks).set({
+        status: 'failed',
+      }).where(eq(dialTasks.id, taskId));
+    }
+
+    return apiSuccess({
+      status: isCompleted ? 'completed' : (pollResult.status === 'failed' ? 'failed' : 'processing'),
+      previewUrl: pollResult.previewUrl,
+    });
+  } catch (error) {
+    return apiServerError(error instanceof Error ? error.message : 'Poll failed');
   }
 });
