@@ -28,8 +28,8 @@ function buildTrackData(req: MixPreviewRequest) {
  * and alternative key names for download URLs.
  */
 function parseMixResponse(raw: Record<string, unknown>): MixResult {
-  // Handle nesting inconsistency
-  const results = (raw.previewMixTaskResults ?? raw) as Record<string, unknown>;
+  // Handle nesting inconsistency across different endpoints
+  const results = (raw.previewMixTaskResults ?? raw.applyAudioEffectsResults ?? raw) as Record<string, unknown>;
 
   // Task ID
   const taskId =
