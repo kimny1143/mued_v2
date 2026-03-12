@@ -224,7 +224,7 @@ export default function DialPage() {
           </div>
           <div>
             {isSignedIn ? (
-              <UserButton afterSignOutUrl="/dial" />
+              <UserButton />
             ) : (
               <SignInButton mode="modal">
                 <button className="text-sm text-zinc-400 hover:text-white transition-colors">

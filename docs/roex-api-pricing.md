@@ -208,6 +208,19 @@ a drop-in replacement.
 | Sample rates            | 44100 (16-bit), 48000 (24-bit) |
 | Credit expiry           | 12 months after purchase |
 
+### URL Expiry Details (Confirmed 2026-03-12)
+
+- **Upload signed_url**: 1 hour. `X-Goog-Expires=3600` on GCS signed URL.
+- **Upload readable_url**: OpenAPI spec says 1 hour, same as signed_url. In practice, RoEx may resolve it internally — but prod testing confirms it expires. After expiry, `/mixpreview` returns 400: "Error checking file type for URL".
+- **Download URLs (preview/final/master)**: 24 hours. After that, stored URLs in DB become dead links.
+- **File deletion**: ToS says "processed and deleted after completion". Exact timing undocumented.
+- **Re-download**: No documented API to regenerate expired download URLs.
+
+**Impact on MUEDial**:
+- Sessions that take >1 hour between upload and final mix will fail (upload URL expired).
+- Users returning after 24 hours will see broken audio links.
+- TODO: Contact support@roexaudio.com to clarify readable_url actual expiry and re-download options.
+
 ## Webhook vs Polling
 
 - `webhookURL` is **mandatory** in `/mixpreview` and `/retrievefinalmix` requests
