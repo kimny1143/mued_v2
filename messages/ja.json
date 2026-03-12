@@ -1338,6 +1338,7 @@
       "expiresIn": "DL期限: あと{days}日",
       "expiresSoon": "DL期限: あと{days}日 — 今すぐダウンロード",
       "expired": "ファイルは削除されました",
+      "untitled": "無題",
       "logOut": "ログアウト",
       "allRightsReserved": "All rights reserved.",
       "status": {

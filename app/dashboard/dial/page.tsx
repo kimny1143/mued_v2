@@ -6,6 +6,7 @@ import { dialSessions } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
 import { Headphones, Music, Clock, CheckCircle, Loader2, Upload, ArrowRight, Download } from "lucide-react";
+import { SessionTitle } from "./session-title";
 
 const STATUS_ICONS = {
   uploading: { icon: Upload, color: "text-white/60" },
@@ -133,9 +134,11 @@ export default async function DialDashboardPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-white font-medium truncate">
-                      {session.title || session.musicalStyle}
-                    </span>
+                    <SessionTitle
+                      sessionId={session.id}
+                      currentTitle={session.title || ""}
+                      placeholder={session.musicalStyle || "Untitled"}
+                    />
                     <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-white/60 flex-shrink-0">
                       {modeLabel}
                     </span>
