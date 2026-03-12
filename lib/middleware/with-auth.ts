@@ -42,7 +42,7 @@ export async function resolveClerkUserId(request: NextRequest): Promise<string |
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
       const payload = await verifyToken(sessionCookie, {
         secretKey: process.env.CLERK_SECRET_KEY!,
-        authorizedParties: [appUrl, 'http://localhost:3000'],
+        authorizedParties: [appUrl, 'http://localhost:3000', 'https://dial.mued.jp', 'https://mued.jp', 'https://www.mued.jp'],
       });
       if (payload?.sub) return payload.sub;
     } catch (err) {

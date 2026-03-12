@@ -198,7 +198,7 @@ export default function DialPage() {
         return;
       }
 
-      if (!isSignedIn) {
+      if (data.data.guestToken) {
         localStorage.setItem('dial_guest_token', data.data.guestToken);
       }
       localStorage.setItem('dial_session_id', data.data.sessionId);
