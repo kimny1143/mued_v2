@@ -186,9 +186,6 @@ function BeforeAfterDemo({ lp }: { lp: Record<string, string> }) {
           <audio ref={audioRef} src={DEMO_TRACKS[0].src} preload="metadata" />
         </div>
 
-        <p className="text-xs text-white/30 text-center mt-4">
-          &quot;Liberation&quot; — SNOW STUDIO
-        </p>
       </div>
     </section>
   );
