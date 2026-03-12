@@ -296,6 +296,14 @@ function DialSessionContent() {
     prevCompletedCountRef.current = count;
   }, [session]);
 
+  // Reconnect analyzer when selected take changes (audio element is recreated via React key)
+  useEffect(() => {
+    if (!analyzerActive || !selectedTakeId) return;
+    const timer = setTimeout(() => analyzerConnect(), 150);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTakeId, analyzerActive]);
+
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
   const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -737,16 +745,6 @@ function DialSessionContent() {
     if (idx >= 0) return `Take ${allPreviewTasks.length - idx}`;
     return selectedTask.taskType.replace('_', ' ');
   })();
-
-  // Reconnect analyzer when audio element changes (Take switch)
-  const effectiveAudioUrl = devAudioUrl || selectedAudioUrl;
-  useEffect(() => {
-    if (!analyzerActive || !effectiveAudioUrl) return;
-    // Small delay to let React render the new <audio> element and update audioRef
-    const timer = setTimeout(() => analyzerConnect(), 100);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectiveAudioUrl, analyzerActive]);
 
   // ─── Shared Sections (used in both layouts) ─────────────────────────────────
 
