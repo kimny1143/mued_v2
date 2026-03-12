@@ -37,7 +37,7 @@ const MIX_PRICES: Record<string, { amountCents: number; label: string }> = {
 };
 
 const MASTERING_PRICES: Record<string, { amountCents: number; label: string }> = {
-  omakase: { amountCents: 500, label: 'MUEDial Mastering' },
+  omakase: { amountCents: 900, label: 'MUEDial Mastering' },
 };
 
 const FALLBACK_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';

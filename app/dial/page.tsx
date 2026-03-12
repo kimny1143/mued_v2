@@ -306,8 +306,8 @@ export default function DialPage() {
                 }`}
               >
                 <div className="flex items-baseline gap-3">
-                  <span className="text-lg font-bold">+$5</span>
-                  {locale === 'ja' && <span className="text-xs text-white/40">(約750円)</span>}
+                  <span className="text-lg font-bold">+$9</span>
+                  {locale === 'ja' && <span className="text-xs text-white/40">(約1,350円)</span>}
                   <span className="text-sm font-medium">{t.dial.checkout.masteringName}</span>
                 </div>
                 <div className="text-xs text-white/60 mt-1">{t.dial.checkout.masteringDesc}</div>

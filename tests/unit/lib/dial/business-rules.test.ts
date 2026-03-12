@@ -27,7 +27,7 @@ describe('MUEDial pricing rules', () => {
   };
 
   const MASTERING_PRICES = {
-    omakase: { amountCents: 500, label: 'MUEDial Mastering' },
+    omakase: { amountCents: 900, label: 'MUEDial Mastering' },
   };
 
   it('Omakase Mix = $12', () => {
@@ -38,16 +38,16 @@ describe('MUEDial pricing rules', () => {
     expect(MIX_PRICES.dialogue.amountCents).toBe(3500);
   });
 
-  it('Mastering = $5', () => {
-    expect(MASTERING_PRICES.omakase.amountCents).toBe(500);
+  it('Mastering = $9', () => {
+    expect(MASTERING_PRICES.omakase.amountCents).toBe(900);
   });
 
-  it('Dialogue + Mastering = $40', () => {
-    expect(MIX_PRICES.dialogue.amountCents + MASTERING_PRICES.omakase.amountCents).toBe(4000);
+  it('Dialogue + Mastering = $44', () => {
+    expect(MIX_PRICES.dialogue.amountCents + MASTERING_PRICES.omakase.amountCents).toBe(4400);
   });
 
-  it('Omakase + Mastering = $17', () => {
-    expect(MIX_PRICES.omakase.amountCents + MASTERING_PRICES.omakase.amountCents).toBe(1700);
+  it('Omakase + Mastering = $21', () => {
+    expect(MIX_PRICES.omakase.amountCents + MASTERING_PRICES.omakase.amountCents).toBe(2100);
   });
 });
 
