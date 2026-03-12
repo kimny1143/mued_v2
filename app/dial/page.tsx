@@ -308,7 +308,7 @@ export default function DialPage() {
   const effectiveEmail = isSignedIn ? clerkEmail : email;
   const hasSelection = mixType || masteringType;
   const totalPrice = (mixType ? MIX_OPTIONS.find((o) => o.id === mixType)!.price : 0)
-    + (masteringType ? 5 : 0);
+    + (masteringType ? 9 : 0);
 
   const handleCheckout = async () => {
     if (!hasSelection || !effectiveEmail) {
