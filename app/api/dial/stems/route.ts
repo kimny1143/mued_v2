@@ -9,9 +9,12 @@
 import { NextResponse } from 'next/server';
 import { PassThrough } from 'stream';
 import archiver from 'archiver';
+import { eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiValidationError, apiNotFound, apiError } from '@/lib/api-response';
+import { db } from '@/db';
+import { dialTracks } from '@/db/schema';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120; // 2 min for large stem sets
@@ -39,6 +42,19 @@ export const GET = withDialAuth(async (auth) => {
     return apiError('No stems available for this task', { code: 'NO_STEMS', status: 404 });
   }
 
+  // Build UUID → original filename mapping from dial_tracks
+  const tracks = await db.query.dialTracks.findMany({
+    where: eq(dialTracks.sessionId, task.sessionId),
+  });
+  const uuidToName = new Map<string, string>();
+  for (const t of tracks) {
+    // Extract UUID from roex_upload_url: ".../tonn-user-upload/{uuid}.wav?..."
+    const match = t.roexUploadUrl.match(/\/([0-9a-f-]{36})\.wav/i);
+    if (match) {
+      uuidToName.set(match[1], t.originalFilename);
+    }
+  }
+
   // Create streaming ZIP archive (store mode — no compression for WAV files)
   const archive = archiver('zip', { store: true });
   const passthrough = new PassThrough();
@@ -63,7 +79,12 @@ export const GET = withDialAuth(async (auth) => {
       };
       pump().catch(() => nodeStream.destroy());
 
-      const filename = name.endsWith('.wav') ? name : `${name}.wav`;
+      // Resolve UUID stem name to original track filename
+      const stemUuid = name.replace(/\.wav$/i, '');
+      const originalName = uuidToName.get(stemUuid);
+      const filename = originalName
+        ? (originalName.endsWith('.wav') ? originalName : `${originalName}.wav`)
+        : (name.endsWith('.wav') ? name : `${name}.wav`);
       archive.append(nodeStream, { name: filename });
     } catch {
       // Skip failed stems — don't break the entire ZIP
