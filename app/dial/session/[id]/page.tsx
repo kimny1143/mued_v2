@@ -281,6 +281,27 @@ function DialSessionContent() {
       .catch(() => {});
   }, [isSignedIn, guestToken, linked, fetchSession]);
 
+  // Warn before leaving if stems haven't been downloaded
+  useEffect(() => {
+    if (!session) return;
+    const hasFinalTask = session.tasks.some(
+      (t) => ((t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.finalUrl)
+        || (t.taskType === 'mastering' && t.finalUrl),
+    );
+    if (!hasFinalTask) return;
+    const finalTask = session.tasks.find(
+      (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.stemsUrls,
+    );
+    if (!finalTask?.stemsUrls || downloadedItems.has('stems')) return;
+
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [session, downloadedItems]);
+
   // Snapshot current params to detect changes after preview
   const buildSnapshot = useCallback((s: Session) => {
     const trackPart = s.tracks
@@ -786,22 +807,6 @@ function DialSessionContent() {
     if (idx >= 0) return `Take ${allPreviewTasks.length - idx}`;
     return selectedTask.taskType.replace('_', ' ');
   })();
-
-  // Warn before leaving if stems haven't been downloaded
-  useEffect(() => {
-    if (!hasFinal) return;
-    const finalTask = session?.tasks?.find(
-      (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.stemsUrls,
-    );
-    if (!finalTask?.stemsUrls || downloadedItems.has('stems')) return;
-
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [hasFinal, session, downloadedItems]);
 
   // Navigation guard for stems download
   const handleNavigation = (e: React.MouseEvent, _href: string) => {
