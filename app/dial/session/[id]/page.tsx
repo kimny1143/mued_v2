@@ -218,17 +218,15 @@ function DialSessionContent() {
     return () => clearInterval(interval);
   }, [session, fetchSession, headers]);
 
-  // Clear mixGenerating flag when the processing final/mix_check task completes
+  // Sync mixGenerating state with session task status (handles page reload)
   useEffect(() => {
-    if (!mixGenerating || !session?.tasks) return;
+    if (!session?.tasks) return;
     const hasFinalProcessing = session.tasks.some(
       (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced' || t.taskType === 'mix_check')
         && (t.status === 'processing' || t.status === 'pending'),
     );
-    if (!hasFinalProcessing) {
-      setMixGenerating(false);
-    }
-  }, [session, mixGenerating]);
+    setMixGenerating(hasFinalProcessing);
+  }, [session]);
 
   // Poll for payment confirmation after Stripe redirect
   const isPaymentRedirect = searchParams.get('payment') === 'success';
