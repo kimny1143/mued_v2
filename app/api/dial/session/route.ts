@@ -12,6 +12,7 @@ import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { createRoExClient, isRoExDevKey, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
+import { copyToR2 } from '@/lib/dial/r2-storage';
 import { db } from '@/db';
 import { dialSessions, dialTasks, dialTracks } from '@/db/schema';
 
@@ -131,6 +132,23 @@ export const GET = withDialAuth(async (auth) => {
                   completedAt: new Date(),
                 }).where(eq(dialTasks.id, task.id));
 
+                // Fire-and-forget: copy deliverable to R2 for stable download URL
+                if (result.finalUrl) {
+                  copyToR2({
+                    sourceUrl: result.finalUrl,
+                    sessionId: sessionId,
+                    taskId: task.id,
+                    taskType: task.taskType,
+                  }).then((r2Result) => {
+                    if (r2Result) {
+                      db.update(dialTasks).set({
+                        r2FinalUrl: r2Result.r2Url,
+                        r2ExpiresAt: r2Result.expiresAt,
+                      }).where(eq(dialTasks.id, task.id));
+                    }
+                  }).catch(() => {});
+                }
+
                 // Mix check: stay in mixing state. Final: check if mastering follows.
                 const sessionRow = await db.query.dialSessions.findFirst({
                   where: eq(dialSessions.id, sessionId),
@@ -197,6 +215,23 @@ export const GET = withDialAuth(async (auth) => {
                   finalUrl: result.finalUrl,
                   completedAt: new Date(),
                 }).where(eq(dialTasks.id, task.id));
+
+                // Fire-and-forget: copy deliverable to R2 for stable download URL
+                if (result.finalUrl) {
+                  copyToR2({
+                    sourceUrl: result.finalUrl,
+                    sessionId: sessionId,
+                    taskId: task.id,
+                    taskType: 'mastering',
+                  }).then((r2Result) => {
+                    if (r2Result) {
+                      db.update(dialTasks).set({
+                        r2FinalUrl: r2Result.r2Url,
+                        r2ExpiresAt: r2Result.expiresAt,
+                      }).where(eq(dialTasks.id, task.id));
+                    }
+                  }).catch(() => {});
+                }
 
                 await db.update(dialSessions).set({
                   status: 'completed',

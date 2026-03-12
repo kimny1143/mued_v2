@@ -26,6 +26,7 @@ import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMixPreview, pollMixFinal } from '@/lib/roex';
 import { buildAdvancedTrackData, type ParameterChanges } from '@/lib/dial/track-data';
+import { copyToR2 } from '@/lib/dial/r2-storage';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks, dialMessages } from '@/db/schema';
 
@@ -212,6 +213,23 @@ export const POST = withDialAuth(async (auth) => {
       completedAt: mixResult.finalUrl ? new Date() : null,
     }).returning();
 
+    // Fire-and-forget: copy deliverable to R2 for stable download URL
+    if (mixResult.finalUrl && task.id) {
+      copyToR2({
+        sourceUrl: mixResult.finalUrl,
+        sessionId: previewTask.sessionId,
+        taskId: task.id,
+        taskType: taskType,
+      }).then((r2Result) => {
+        if (r2Result) {
+          db.update(dialTasks).set({
+            r2FinalUrl: r2Result.r2Url,
+            r2ExpiresAt: r2Result.expiresAt,
+          }).where(eq(dialTasks.id, task.id));
+        }
+      }).catch(() => {});
+    }
+
     // Update session — increment paid cycle count + type-specific counters
     if (type === 'mix_check') {
       await db.update(dialSessions)
@@ -320,6 +338,23 @@ export const GET = withDialAuth(async (auth) => {
         fxSettings: pollResult.fxSettings ?? null,
         completedAt: new Date(),
       }).where(eq(dialTasks.id, taskId));
+
+      // Fire-and-forget: copy deliverable to R2 for stable download URL
+      if (pollResult.finalUrl) {
+        copyToR2({
+          sourceUrl: pollResult.finalUrl,
+          sessionId: task.sessionId,
+          taskId: taskId,
+          taskType: task.taskType,
+        }).then((r2Result) => {
+          if (r2Result) {
+            db.update(dialTasks).set({
+              r2FinalUrl: r2Result.r2Url,
+              r2ExpiresAt: r2Result.expiresAt,
+            }).where(eq(dialTasks.id, taskId));
+          }
+        }).catch(() => {});
+      }
 
       // Update session status
       const sessionRow = await db.query.dialSessions.findFirst({

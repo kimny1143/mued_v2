@@ -132,6 +132,8 @@ export const dialTasks = pgTable('dial_tasks', {
   fxSettings: jsonb('fx_settings'),      // 9-node FX chain per track
   stemsUrls: jsonb('stems_urls'),        // Processed stem URL map
   previewParams: jsonb('preview_params'), // Snapshot of params at submit time (musicalStyle, tracks)
+  r2FinalUrl: text('r2_final_url'),           // R2 download URL for the deliverable
+  r2ExpiresAt: timestamp('r2_expires_at'),     // When the R2 file expires (completion + 30 days)
   createdAt: timestamp('created_at').notNull().defaultNow(),
   completedAt: timestamp('completed_at'),
 }, (table) => ({

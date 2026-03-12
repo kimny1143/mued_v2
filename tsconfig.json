@@ -50,6 +50,7 @@
     "apps/muednote-poc/**/*",
     "apps/muednote-mobile/**/*",
     "apps/muedear/**/*",
-    "docs/archive/**/*"
+    "docs/archive/**/*",
+    "workers/**/*"
   ]
 }

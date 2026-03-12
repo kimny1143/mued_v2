@@ -1,0 +1,10 @@
+name = "muedial-r2"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[[r2_buckets]]
+binding = "DELIVERABLES"
+bucket_name = "muedial-deliverables"
+
+[vars]
+ALLOWED_ORIGINS = "https://dial.mued.jp,https://mued.jp,https://www.mued.jp,http://localhost:3000"

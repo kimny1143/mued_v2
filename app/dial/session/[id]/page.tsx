@@ -161,6 +161,12 @@ function DialSessionContent() {
   // Take folding — show only latest 3, collapse older
   const [showOlderTakes, setShowOlderTakes] = useState(false);
 
+  // Download tracking for completion section
+  const [downloadedItems, setDownloadedItems] = useState<Set<string>>(new Set());
+  const markDownloaded = (item: string) => {
+    setDownloadedItems(prev => new Set(prev).add(item));
+  };
+
   const guestToken = typeof window !== 'undefined'
     ? localStorage.getItem('dial_guest_token')
     : null;
@@ -772,6 +778,37 @@ function DialSessionContent() {
     return selectedTask.taskType.replace('_', ' ');
   })();
 
+  // Warn before leaving if stems haven't been downloaded
+  useEffect(() => {
+    if (!hasFinal) return;
+    const finalTask = session?.tasks?.find(
+      (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.stemsUrls,
+    );
+    if (!finalTask?.stemsUrls || downloadedItems.has('stems')) return;
+
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasFinal, session, downloadedItems]);
+
+  // Navigation guard for stems download
+  const handleNavigation = (e: React.MouseEvent, _href: string) => {
+    const finalTask = session?.tasks?.find(
+      (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.stemsUrls,
+    );
+    if (finalTask?.stemsUrls && !downloadedItems.has('stems')) {
+      const confirmed = window.confirm(
+        'ステムファイルがまだダウンロードされていません。このページを離れるとダウンロードできなくなります。続けますか？',
+      );
+      if (!confirmed) {
+        e.preventDefault();
+      }
+    }
+  };
+
   // ─── Shared Sections (used in both layouts) ─────────────────────────────────
 
   const uploadSection = session.paymentStatus === 'paid' && !hasFinal && !(isMasteringPhase && !isMasteringOnly) && (
@@ -1073,13 +1110,18 @@ function DialSessionContent() {
               <span className="text-sm font-medium text-zinc-400">Mastered Track</span>
               <span className="text-xs px-2 py-1 rounded bg-green-900/50 text-green-300">completed</span>
             </div>
-            <a
-              href={masteringFinalTask.finalUrl!}
-              download
-              className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-base font-semibold transition-colors"
-            >
-              {t.dial.session.downloadFinal} (.wav)
-            </a>
+            <div className="flex items-center gap-3">
+              <a
+                href={`/api/dial/download?taskId=${masteringFinalTask.id}`}
+                download
+                onClick={() => markDownloaded('mastered')}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-base font-semibold transition-colors"
+              >
+                {downloadedItems.has('mastered') && <span className="text-white">&#10003;</span>}
+                {t.dial.session.downloadFinal} (.wav)
+              </a>
+              <span className="text-xs text-zinc-500">30日間再ダウンロード可能</span>
+            </div>
           </div>
         )}
 
@@ -1094,37 +1136,50 @@ function DialSessionContent() {
                 completed
               </span>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <a
-                href={mixFinalTask.finalUrl!}
+                href={`/api/dial/download?taskId=${mixFinalTask.id}`}
                 download
+                onClick={() => markDownloaded('finalMix')}
                 className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-base font-semibold transition-colors ${
                   masteringFinalTask
                     ? 'bg-zinc-700 hover:bg-zinc-600 font-medium'
                     : 'bg-green-600 hover:bg-green-500'
                 }`}
               >
+                {downloadedItems.has('finalMix') && <span className="text-white">&#10003;</span>}
                 {t.dial.session.downloadFinal} (.wav)
               </a>
-              {mixFinalTask.stemsUrls && Object.keys(mixFinalTask.stemsUrls).length > 0 && (
+              <span className="text-xs text-zinc-500">30日間再ダウンロード可能</span>
+            </div>
+            {mixFinalTask.stemsUrls && Object.keys(mixFinalTask.stemsUrls).length > 0 && (
+              <div className="mt-4 space-y-3">
+                <div className="p-3 bg-amber-900/30 border border-amber-700 rounded-lg">
+                  <p className="text-sm text-amber-300">
+                    &#9888; ステムファイルはこのページでのみダウンロード可能です。ページを離れると再ダウンロードできません。
+                  </p>
+                </div>
                 <a
                   href={`/api/dial/stems?taskId=${mixFinalTask.id}`}
                   download
+                  onClick={() => markDownloaded('stems')}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-700 hover:bg-zinc-600 rounded-xl text-base font-medium transition-colors"
                 >
+                  {downloadedItems.has('stems') && <span className="text-white">&#10003;</span>}
                   {t.dial.session.downloadStems}
                   <span className="text-sm text-zinc-400">
                     {Object.keys(mixFinalTask.stemsUrls).length} {t.dial.session.tracks.toLowerCase()}
                   </span>
                 </a>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
         <div className="flex gap-3">
           <Link
             href="/dial"
+            onClick={(e) => handleNavigation(e, '/dial')}
             className="flex-1 py-3 text-center bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-medium transition-colors"
           >
             {t.dial.session.startNewSession}
@@ -1132,6 +1187,7 @@ function DialSessionContent() {
           {guestToken && !linked ? (
             <Link
               href={`/sign-up?redirect_url=/dial/session/${session.id}`}
+              onClick={(e) => handleNavigation(e, `/sign-up?redirect_url=/dial/session/${session.id}`)}
               className="flex-1 py-3 text-center bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-medium transition-colors"
             >
               {t.dial.session.saveToAccount}
@@ -1139,6 +1195,7 @@ function DialSessionContent() {
           ) : (
             <Link
               href="/dashboard/dial"
+              onClick={(e) => handleNavigation(e, '/dashboard/dial')}
               className="flex-1 py-3 text-center bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-medium transition-colors"
             >
               {t.dial.session.backToDashboard}

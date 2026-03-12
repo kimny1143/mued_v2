@@ -11,6 +11,7 @@ import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { createRoExClient, masterFinal, isRoExDevKey } from '@/lib/roex';
+import { copyToR2 } from '@/lib/dial/r2-storage';
 import { db } from '@/db';
 import { dialTasks, dialSessions } from '@/db/schema';
 
@@ -73,6 +74,23 @@ export const POST = withDialAuth(async (auth) => {
       finalUrl: masterResult.finalUrl,
       completedAt: masterResult.finalUrl ? new Date() : null,
     }).returning();
+
+    // Fire-and-forget: copy deliverable to R2 for stable download URL
+    if (masterResult.finalUrl && task.id) {
+      copyToR2({
+        sourceUrl: masterResult.finalUrl,
+        sessionId: previewTask.sessionId,
+        taskId: task.id,
+        taskType: 'mastering',
+      }).then((r2Result) => {
+        if (r2Result) {
+          db.update(dialTasks).set({
+            r2FinalUrl: r2Result.r2Url,
+            r2ExpiresAt: r2Result.expiresAt,
+          }).where(eq(dialTasks.id, task.id));
+        }
+      }).catch(() => {});
+    }
 
     // Update session status to completed
     if (masterResult.finalUrl) {
