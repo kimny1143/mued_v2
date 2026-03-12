@@ -50,6 +50,7 @@ function buildKWeightTable(binCount: number, sampleRate: number): Float32Array {
 export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
   const ctxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const connectedElRef = useRef<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const analyserLRef = useRef<AnalyserNode | null>(null);
   const analyserRRef = useRef<AnalyserNode | null>(null);
@@ -63,49 +64,75 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
 
   const connect = useCallback(() => {
     const el = audioRef.current;
-    if (!el || sourceRef.current) return;
+    if (!el) return;
+
+    // Same element already connected — nothing to do
+    if (sourceRef.current && connectedElRef.current === el) return;
+
+    // Different element (e.g. Take switch) — disconnect old source, reuse AudioContext
+    if (sourceRef.current) {
+      try { sourceRef.current.disconnect(); } catch { /* already disconnected */ }
+      sourceRef.current = null;
+      connectedElRef.current = null;
+    }
 
     try {
-      const ctx = new AudioContext();
+      // Reuse existing AudioContext or create new one
+      const ctx = ctxRef.current?.state !== 'closed' ? ctxRef.current! : new AudioContext();
       const source = ctx.createMediaElementSource(el);
 
-      // Main analyser (spectrum)
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = FFT_SIZE;
-      analyser.smoothingTimeConstant = 0.8;
+      // Main analyser (spectrum) — reuse existing or create
+      let analyser = analyserRef.current;
+      if (!analyser || !ctxRef.current || ctxRef.current.state === 'closed') {
+        analyser = ctx.createAnalyser();
+        analyser.fftSize = FFT_SIZE;
+        analyser.smoothingTimeConstant = 0.8;
+        analyserRef.current = analyser;
+      }
       source.connect(analyser);
       analyser.connect(ctx.destination);
 
-      // Stereo split for phase/goniometer
-      const splitter = ctx.createChannelSplitter(2);
-      const analyserL = ctx.createAnalyser();
-      const analyserR = ctx.createAnalyser();
-      analyserL.fftSize = FFT_SIZE;
-      analyserR.fftSize = FFT_SIZE;
-      analyserL.smoothingTimeConstant = 0;
-      analyserR.smoothingTimeConstant = 0;
+      // Stereo split for phase/goniometer — reuse existing or create
+      let analyserL = analyserLRef.current;
+      let analyserR = analyserRRef.current;
+      if (!analyserL || !analyserR || !ctxRef.current || ctxRef.current.state === 'closed') {
+        const splitter = ctx.createChannelSplitter(2);
+        analyserL = ctx.createAnalyser();
+        analyserR = ctx.createAnalyser();
+        analyserL.fftSize = FFT_SIZE;
+        analyserR.fftSize = FFT_SIZE;
+        analyserL.smoothingTimeConstant = 0;
+        analyserR.smoothingTimeConstant = 0;
 
-      source.connect(splitter);
-      splitter.connect(analyserL, 0);
-      splitter.connect(analyserR, 1);
+        source.connect(splitter);
+        splitter.connect(analyserL, 0);
+        splitter.connect(analyserR, 1);
 
-      // Keep L/R analysers alive via silent output
-      const silence = ctx.createGain();
-      silence.gain.value = 0;
-      analyserL.connect(silence);
-      analyserR.connect(silence);
-      silence.connect(ctx.destination);
+        // Keep L/R analysers alive via silent output
+        const silence = ctx.createGain();
+        silence.gain.value = 0;
+        analyserL.connect(silence);
+        analyserR.connect(silence);
+        silence.connect(ctx.destination);
+
+        analyserLRef.current = analyserL;
+        analyserRRef.current = analyserR;
+      } else {
+        // Reconnect source to existing splitter chain
+        const splitter = ctx.createChannelSplitter(2);
+        source.connect(splitter);
+        splitter.connect(analyserL, 0);
+        splitter.connect(analyserR, 1);
+      }
 
       kWeightRef.current = buildKWeightTable(analyser.frequencyBinCount, ctx.sampleRate);
 
       ctxRef.current = ctx;
       sourceRef.current = source;
-      analyserRef.current = analyser;
-      analyserLRef.current = analyserL;
-      analyserRRef.current = analyserR;
+      connectedElRef.current = el;
       setIsActive(true);
     } catch {
-      // MediaElementSourceNode already created
+      // MediaElementSourceNode already created for this element
     }
   }, [audioRef]);
 

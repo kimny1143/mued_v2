@@ -23,6 +23,9 @@ import { detectPhase, selectTools } from '@/lib/dial/phase';
 import { db } from '@/db';
 import { dialSessions, dialTracks, dialMessages, dialTasks } from '@/db/schema';
 
+// Allow up to 60s for AI responses (Vercel Pro limit)
+export const maxDuration = 60;
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface ParameterChange {

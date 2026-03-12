@@ -136,7 +136,7 @@ function DialSessionContent() {
   const prevCompletedCountRef = useRef(0);
 
   // Audio analyzer (from context)
-  const { audioRef } = useAudioAnalyzerContext();
+  const { audioRef, isActive: analyzerActive, connect: analyzerConnect } = useAudioAnalyzerContext();
 
   // Dev-mode local audio for testing analyzer
   const [devAudioUrl, setDevAudioUrl] = useState<string | null>(null);
@@ -198,6 +198,18 @@ function DialSessionContent() {
     const interval = setInterval(fetchSession, 5000);
     return () => clearInterval(interval);
   }, [session, fetchSession]);
+
+  // Clear mixGenerating flag when the processing final/mix_check task completes
+  useEffect(() => {
+    if (!mixGenerating || !session?.tasks) return;
+    const hasFinalProcessing = session.tasks.some(
+      (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced' || t.taskType === 'mix_check')
+        && (t.status === 'processing' || t.status === 'pending'),
+    );
+    if (!hasFinalProcessing) {
+      setMixGenerating(false);
+    }
+  }, [session, mixGenerating]);
 
   // Poll for payment confirmation after Stripe redirect
   const isPaymentRedirect = searchParams.get('payment') === 'success';
@@ -555,13 +567,25 @@ function DialSessionContent() {
       const data = await res.json();
       if (!data.success) {
         setError(data.error || 'Mix generation failed');
+        setMixGenerating(false);
         return;
       }
 
+      // If already completed (dev key or fast response), update immediately
+      if (data.data?.status === 'completed') {
+        await fetchSession();
+        setMixGenerating(false);
+        return;
+      }
+
+      // Task is processing — session polling (every 5s) will detect completion.
+      // Trigger one immediate fetch to get the processing task into state,
+      // then let the polling interval handle the rest.
       await fetchSession();
+      // Note: mixGenerating stays true until session polling detects the
+      // final/mix_check task has completed (handled in useEffect below)
     } catch {
       setError('Mix generation error');
-    } finally {
       setMixGenerating(false);
     }
   };
@@ -713,6 +737,16 @@ function DialSessionContent() {
     if (idx >= 0) return `Take ${allPreviewTasks.length - idx}`;
     return selectedTask.taskType.replace('_', ' ');
   })();
+
+  // Reconnect analyzer when audio element changes (Take switch)
+  const effectiveAudioUrl = devAudioUrl || selectedAudioUrl;
+  useEffect(() => {
+    if (!analyzerActive || !effectiveAudioUrl) return;
+    // Small delay to let React render the new <audio> element and update audioRef
+    const timer = setTimeout(() => analyzerConnect(), 100);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveAudioUrl, analyzerActive]);
 
   // ─── Shared Sections (used in both layouts) ─────────────────────────────────
 

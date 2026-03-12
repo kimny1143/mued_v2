@@ -1,6 +1,7 @@
 /**
  * MUEDial Final Mix API
- * POST /api/dial/final
+ * POST /api/dial/final     — Submit final mix request (returns immediately)
+ * GET  /api/dial/final      — Poll final mix status
  *
  * Handles both Mix Check and Final Mix generation.
  *
@@ -12,6 +13,10 @@
  *   Final Basic (type: 'final')    — 250cr, WAV, gain-only
  *
  * Max 2 mix checks per session. 3rd call must be type: 'final'.
+ *
+ * The POST handler submits the job to RoEx and returns immediately with
+ * { taskId, status: 'processing' }. Client polls via GET or session fetch
+ * picks up completion automatically.
  */
 
 import { z } from 'zod';
@@ -19,10 +24,13 @@ import { eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
-import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMixPreview } from '@/lib/roex';
+import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMixPreview, pollMixFinal } from '@/lib/roex';
 import { buildAdvancedTrackData, type ParameterChanges } from '@/lib/dial/track-data';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks, dialMessages } from '@/db/schema';
+
+// Allow up to 60s for RoEx API calls (Vercel Pro limit)
+export const maxDuration = 60;
 
 // ─── Validation ─────────────────────────────────────────────────────────────
 
@@ -251,5 +259,94 @@ export const POST = withDialAuth(async (auth) => {
     });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Mix generation failed');
+  }
+});
+
+// ─── GET: Poll final mix status ──────────────────────────────────────────────
+
+export const GET = withDialAuth(async (auth) => {
+  try {
+    const { searchParams } = new URL(auth.request.url);
+    const taskId = searchParams.get('taskId');
+    if (!taskId) {
+      return apiValidationError('taskId is required');
+    }
+
+    // Verify task ownership
+    const result = await verifyDialTaskOwnership(taskId, auth);
+    if (!result) {
+      return apiNotFound('Task not found');
+    }
+
+    const { task } = result;
+
+    // Already completed? Return cached result.
+    if (task.status === 'completed') {
+      return apiSuccess({
+        status: 'completed',
+        finalUrl: task.finalUrl,
+        stemsUrls: task.stemsUrls,
+        fxSettings: task.fxSettings,
+      });
+    }
+
+    // Already failed? Return error status.
+    if (task.status === 'failed') {
+      return apiSuccess({ status: 'failed' });
+    }
+
+    // Dev key: dummy track URLs cause /retrievefinalmix to fail — skip polling
+    if (isRoExDevKey()) {
+      return apiSuccess({ status: task.status });
+    }
+
+    // Poll RoEx for final mix result
+    const tracks = await db.query.dialTracks.findMany({
+      where: eq(dialTracks.sessionId, task.sessionId),
+    });
+    const trackUrls = tracks.map((t) => t.roexUploadUrl);
+
+    const client = createRoExClient();
+    const pollResult = await pollMixFinal(client, task.roexTaskId, trackUrls);
+
+    const isCompleted = !!pollResult.finalUrl;
+
+    if (isCompleted) {
+      // Update task with results
+      await db.update(dialTasks).set({
+        status: 'completed',
+        finalUrl: pollResult.finalUrl,
+        stemsUrls: pollResult.stemsUrl ?? null,
+        fxSettings: pollResult.fxSettings ?? null,
+        completedAt: new Date(),
+      }).where(eq(dialTasks.id, taskId));
+
+      // Update session status
+      const sessionRow = await db.query.dialSessions.findFirst({
+        where: eq(dialSessions.id, task.sessionId),
+      });
+      const newStatus = task.taskType === 'mix_check'
+        ? 'mixing' as const
+        : sessionRow?.masteringMode
+          ? 'mastering' as const
+          : 'completed' as const;
+      await db.update(dialSessions).set({
+        status: newStatus,
+        updatedAt: new Date(),
+      }).where(eq(dialSessions.id, task.sessionId));
+    } else if (pollResult.status === 'failed') {
+      await db.update(dialTasks).set({
+        status: 'failed',
+      }).where(eq(dialTasks.id, taskId));
+    }
+
+    return apiSuccess({
+      status: isCompleted ? 'completed' : (pollResult.status === 'failed' ? 'failed' : 'processing'),
+      finalUrl: pollResult.finalUrl,
+      stemsUrls: isCompleted ? pollResult.stemsUrl : undefined,
+      fxSettings: isCompleted ? pollResult.fxSettings : undefined,
+    });
+  } catch (error) {
+    return apiServerError(error instanceof Error ? error.message : 'Poll failed');
   }
 });
