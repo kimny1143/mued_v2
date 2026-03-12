@@ -193,11 +193,30 @@ function DialSessionContent() {
   }, [fetchSession]);
 
   // Poll for task updates when tasks are processing
+  // Also triggers GET /api/dial/final to poll RoEx for final/mix_check tasks
   useEffect(() => {
-    if (!session?.tasks?.some((t) => t.status === 'processing' || t.status === 'pending')) return;
-    const interval = setInterval(fetchSession, 5000);
+    const processingTasks = session?.tasks?.filter(
+      (t) => t.status === 'processing' || t.status === 'pending',
+    ) ?? [];
+    if (processingTasks.length === 0) return;
+
+    const poll = async () => {
+      // For final/mix_check tasks, poll the RoEx result endpoint first
+      const finalTask = processingTasks.find(
+        (t) => t.taskType === 'final_basic' || t.taskType === 'final_advanced' || t.taskType === 'mix_check',
+      );
+      if (finalTask) {
+        try {
+          await fetch(`/api/dial/final?taskId=${finalTask.id}`, { headers });
+        } catch { /* ignore */ }
+      }
+      // Then refresh session data from DB
+      await fetchSession();
+    };
+
+    const interval = setInterval(poll, 5000);
     return () => clearInterval(interval);
-  }, [session, fetchSession]);
+  }, [session, fetchSession, headers]);
 
   // Clear mixGenerating flag when the processing final/mix_check task completes
   useEffect(() => {
