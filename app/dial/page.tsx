@@ -56,6 +56,144 @@ function ChatMockup({ t }: { t: Record<string, unknown> }) {
   );
 }
 
+// ─── Before/After Audio Demo ────────────────────────────────────────────────
+
+const DEMO_TRACKS = [
+  { key: 'before', src: '/audio/demo/Liberation_Before.mp3' },
+  { key: 'after', src: '/audio/demo/Liberation_After.mp3' },
+  { key: 'mastered', src: '/audio/demo/Liberation_RoEx_Final_Master.mp3' },
+] as const;
+
+function BeforeAfterDemo({ lp }: { lp: Record<string, string> }) {
+  const [activeTrack, setActiveTrack] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [progress, setProgress] = useState(0);
+
+  const switchTrack = useCallback((idx: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const wasPlaying = !audio.paused;
+    const currentTime = audio.currentTime;
+    setActiveTrack(idx);
+    audio.src = DEMO_TRACKS[idx].src;
+    audio.currentTime = currentTime;
+    if (wasPlaying) audio.play();
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      audio.play();
+    } else {
+      audio.pause();
+    }
+  }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onPlay = () => setIsPlaying(true);
+    const onPause = () => setIsPlaying(false);
+    const onTime = () => {
+      if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100);
+    };
+    const onEnded = () => { setIsPlaying(false); setProgress(0); };
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('timeupdate', onTime);
+    audio.addEventListener('ended', onEnded);
+    return () => {
+      audio.removeEventListener('play', onPlay);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('timeupdate', onTime);
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, []);
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = audioRef.current;
+    if (!audio || !audio.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * audio.duration;
+  };
+
+  const labels: Record<string, string> = {
+    before: lp.before,
+    after: lp.after,
+    mastered: lp.mastered,
+  };
+
+  return (
+    <section className="py-20 px-6 border-t border-zinc-900">
+      <div className="max-w-lg mx-auto">
+        <h2 className="text-2xl font-bold text-center mb-2">{lp.beforeAfterLabel}</h2>
+        <p className="text-sm text-white/50 text-center mb-10">{lp.beforeAfterSub}</p>
+
+        {/* Track selector */}
+        <div className="flex rounded-xl overflow-hidden border border-zinc-800 mb-6">
+          {DEMO_TRACKS.map((track, i) => (
+            <button
+              key={track.key}
+              onClick={() => switchTrack(i)}
+              className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                activeTrack === i
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800'
+              }`}
+            >
+              {labels[track.key]}
+            </button>
+          ))}
+        </div>
+
+        {/* Player */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={togglePlay}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors shrink-0"
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+            >
+              {isPlaying ? (
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <rect x="6" y="4" width="4" height="16" rx="1" />
+                  <rect x="14" y="4" width="4" height="16" rx="1" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              )}
+            </button>
+            <div className="flex-1">
+              <div className="text-sm font-medium text-white mb-2">
+                Liberation — <span className="text-indigo-400">{labels[DEMO_TRACKS[activeTrack].key]}</span>
+              </div>
+              <div
+                className="h-1.5 bg-zinc-800 rounded-full cursor-pointer"
+                onClick={handleSeek}
+              >
+                <div
+                  className="h-full bg-indigo-500 rounded-full transition-[width] duration-100"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          <audio ref={audioRef} src={DEMO_TRACKS[0].src} preload="metadata" />
+        </div>
+
+        <p className="text-xs text-white/30 text-center mt-4">
+          &quot;Liberation&quot; — SNOW STUDIO
+        </p>
+      </div>
+    </section>
+  );
+}
+
 // ─── Video Promo Modal ──────────────────────────────────────────────────────
 
 function VideoPromo({ lp, locale }: { lp: Record<string, string>; locale: string }) {
@@ -361,7 +499,8 @@ export default function DialPage() {
           </div>
         </div>
 
-        {/* Before/After — hidden until demo audio is ready */}
+        {/* ─── Before/After Audio Demo ─────────────────────────────── */}
+        <BeforeAfterDemo lp={lp} />
 
         {/* ─── Video Promo ────────────────────────────────────────────── */}
         <VideoPromo lp={lp as unknown as Record<string, string>} locale={locale} />
