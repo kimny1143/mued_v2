@@ -108,8 +108,8 @@ export const config = {
   // Exclude /api/dial/upload from middleware — large FormData bodies
   // fail to parse when Edge Runtime middleware processes the request.
   matcher: [
-    "/((?!.*\\..*|_next|api/webhooks|api/dial/upload).*)",
+    "/((?!.*\\..*|_next|api/webhooks|api/dial/upload|api/line-webhook).*)",
     "/",
-    "/(api(?!/dial/upload)|trpc)(.*)",
+    "/(api(?!/dial/upload|/line-webhook)|trpc)(.*)",
   ],
 };
