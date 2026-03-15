@@ -6,7 +6,11 @@
  * Processes kimny's LINE replies to trigger Threads reply via GitHub Actions.
  *
  * Flow:
- *   LINE message → signature verify → parse text → dispatch GitHub Action or reply
+ *   LINE message → signature verify → parse text:
+ *     - Threads URL → store context
+ *     - Free text (with context) → save-pending-reply dispatch
+ *     - Number (1-9) → threads-reply dispatch (v1 compat)
+ *     - "0" → skip
  */
 
 import crypto from "crypto";
@@ -48,11 +52,7 @@ async function replyToLine(replyToken: string, text: string) {
 
 // ─── GitHub repository_dispatch ──────────────────────────────────────────────
 
-async function dispatchGitHub(payload: {
-  thread_id: string;
-  reply_text: string;
-  line_user_id: string;
-}) {
+async function dispatchGitHub(eventType: string, payload: Record<string, string>) {
   const res = await fetch(
     `https://api.github.com/repos/${GITHUB_REPO}/dispatches`,
     {
@@ -63,7 +63,7 @@ async function dispatchGitHub(payload: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        event_type: "threads-reply",
+        event_type: eventType,
         client_payload: payload,
       }),
     },
@@ -73,13 +73,25 @@ async function dispatchGitHub(payload: {
 
 // ─── In-memory state (per-instance, sufficient for single-user) ──────────────
 
-interface PendingReply {
+interface PendingContext {
   threadId: string;
+  threadUrl: string;
+  threadAuthor: string;
   candidates: string[];
   timestamp: number;
 }
 
-let pendingReply: PendingReply | null = null;
+let pending: PendingContext | null = null;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const THREADS_URL_RE = /threads\.net\/(@[\w.]+)\/post\/([\w-]+)/;
+
+function parseThreadsUrl(text: string) {
+  const m = text.match(THREADS_URL_RE);
+  if (!m) return null;
+  return { author: m[1], threadId: m[2], url: text.trim() };
+}
 
 // ─── POST Handler ────────────────────────────────────────────────────────────
 
@@ -99,13 +111,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // Log user IDs for debugging
-  for (const ev of events) {
-    if (ev.source?.userId) {
-      console.log(`[LINE] userId=${ev.source.userId} type=${ev.type}`);
-    }
-  }
-
   for (const event of events) {
     if (event.type !== "message" || event.message?.type !== "text") continue;
 
@@ -113,32 +118,34 @@ export async function POST(request: NextRequest) {
     const replyToken = event.replyToken as string;
     const userId = event.source?.userId as string;
 
-    // ── "0" → Skip ────────────────────────────────────────────────────────
+    console.log(`[LINE] userId=${userId} text="${text.slice(0, 50)}"`);
+
+    // ── "0" → Skip & reset ──────────────────────────────────────────────
     if (text === "0") {
-      pendingReply = null;
+      pending = null;
       await replyToLine(replyToken, "スキップしました");
       continue;
     }
 
-    // ── Number (1-9) → Execute reply with candidate ───────────────────────
+    // ── Number (1-9) → v1 compat: execute reply with candidate ──────────
     const num = parseInt(text, 10);
     if (!isNaN(num) && num >= 1 && num <= 9) {
-      if (!pendingReply) {
+      if (!pending) {
         await replyToLine(replyToken, "リプライ候補がありません。通知を待ってください。");
         continue;
       }
 
-      const candidate = pendingReply.candidates[num - 1];
+      const candidate = pending.candidates[num - 1];
       if (!candidate) {
         await replyToLine(
           replyToken,
-          `候補 ${num} は存在しません（${pendingReply.candidates.length}件中）`,
+          `候補 ${num} は存在しません（${pending.candidates.length}件中）`,
         );
         continue;
       }
 
-      const ok = await dispatchGitHub({
-        thread_id: pendingReply.threadId,
+      const ok = await dispatchGitHub("threads-reply", {
+        thread_id: pending.threadId,
         reply_text: candidate,
         line_user_id: userId,
       });
@@ -149,35 +156,49 @@ export async function POST(request: NextRequest) {
         await replyToLine(replyToken, "GitHub Actions の起動に失敗しました");
       }
 
-      pendingReply = null;
+      pending = null;
       continue;
     }
 
-    // ── Threads URL → Extract media ID ────────────────────────────────────
-    const threadsUrlMatch = text.match(
-      /threads\.net\/@[\w.]+\/post\/([\w-]+)/,
-    );
-    if (threadsUrlMatch) {
-      const mediaId = threadsUrlMatch[1];
-      pendingReply = {
-        threadId: mediaId,
+    // ── Threads URL → Store context ─────────────────────────────────────
+    const parsed = parseThreadsUrl(text);
+    if (parsed) {
+      pending = {
+        threadId: parsed.threadId,
+        threadUrl: parsed.url,
+        threadAuthor: parsed.author,
         candidates: [],
         timestamp: Date.now(),
       };
       await replyToLine(
         replyToken,
-        `Thread ID: ${mediaId}\nリプライ候補を受け付けます。`,
+        `投稿URLを受け取りました（${parsed.author}）\nリプライ草案を送ってください。`,
       );
       continue;
     }
 
-    // ── Free text while pending → Store as candidate ──────────────────────
-    if (pendingReply && text.length > 0) {
-      pendingReply.candidates.push(text);
-      await replyToLine(
-        replyToken,
-        `候補 ${pendingReply.candidates.length} 登録:\n「${text.slice(0, 50)}${text.length > 50 ? "..." : ""}」\n\n数字で送信 / 0でスキップ`,
-      );
+    // ── Free text with pending context → Save draft via dispatch ─────────
+    if (pending && text.length > 0) {
+      pending.candidates.push(text);
+
+      const ok = await dispatchGitHub("save-pending-reply", {
+        thread_id: pending.threadId,
+        thread_url: pending.threadUrl,
+        thread_text: "",
+        thread_author: pending.threadAuthor,
+        reply_draft: text,
+        line_user_id: userId,
+        timestamp: new Date().toISOString(),
+      });
+
+      if (ok) {
+        await replyToLine(
+          replyToken,
+          `草案を保存しました（${pending.candidates.length}件目）\n「${text.slice(0, 50)}${text.length > 50 ? "..." : ""}」\n\n続けて草案を送る / 別のURL / 0でリセット`,
+        );
+      } else {
+        await replyToLine(replyToken, "草案の保存に失敗しました");
+      }
       continue;
     }
 
