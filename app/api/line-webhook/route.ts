@@ -68,6 +68,10 @@ async function dispatchGitHub(eventType: string, payload: Record<string, string>
       }),
     },
   );
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`[GitHub dispatch] ${res.status} ${eventType}: ${body}`);
+  }
   return res.ok;
 }
 
