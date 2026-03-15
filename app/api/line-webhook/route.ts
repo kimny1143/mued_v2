@@ -99,6 +99,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  // Log user IDs for debugging
+  for (const ev of events) {
+    if (ev.source?.userId) {
+      console.log(`[LINE] userId=${ev.source.userId} type=${ev.type}`);
+    }
+  }
+
   for (const event of events) {
     if (event.type !== "message" || event.message?.type !== "text") continue;
 
