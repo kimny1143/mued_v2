@@ -85,7 +85,7 @@ let pending: PendingContext | null = null;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const THREADS_URL_RE = /threads\.net\/(@[\w.]+)\/post\/([\w-]+)/;
+const THREADS_URL_RE = /threads\.(?:net|com)\/(@[\w.]+)\/post\/([\w-]+)/;
 
 function parseThreadsUrl(text: string) {
   const m = text.match(THREADS_URL_RE);
