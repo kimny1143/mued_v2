@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /lobe/
+Disallow: /dial/session/
+
+Sitemap: https://www.mued.jp/sitemap.xml
