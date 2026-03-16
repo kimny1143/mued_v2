@@ -206,6 +206,61 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
+    // ── Free text without context → Auto-fetch from reply-candidates.json ─
+    if (!pending && text.length > 0) {
+      try {
+        const ghRes = await fetch(
+          `https://api.github.com/repos/${GITHUB_REPO}/contents/reply-candidates.json`,
+          {
+            headers: {
+              Authorization: `token ${GITHUB_PAT}`,
+              Accept: "application/vnd.github.v3+json",
+            },
+          },
+        );
+        if (ghRes.ok) {
+          const ghData = await ghRes.json();
+          const content = Buffer.from(ghData.content, "base64").toString("utf8");
+          const candidates = JSON.parse(content);
+
+          if (Array.isArray(candidates) && candidates.length > 0) {
+            const latest = candidates[0];
+            const parsedUrl = parseThreadsUrl(latest.url ?? "");
+
+            pending = {
+              threadId: parsedUrl?.threadId || "",
+              threadUrl: latest.url || "",
+              threadAuthor: latest.author || parsedUrl?.author || "",
+              candidates: [text],
+              timestamp: Date.now(),
+            };
+
+            const ok = await dispatchGitHub("save-pending-reply", {
+              thread_id: pending.threadId,
+              thread_url: pending.threadUrl,
+              thread_text: latest.text || "",
+              thread_author: pending.threadAuthor,
+              reply_draft: text,
+              line_user_id: userId,
+              timestamp: new Date().toISOString(),
+            });
+
+            if (ok) {
+              await replyToLine(
+                replyToken,
+                `草案を保存しました\n${pending.threadAuthor} への返信\n「${text.slice(0, 50)}${text.length > 50 ? "..." : ""}」`,
+              );
+            } else {
+              await replyToLine(replyToken, "草案の保存に失敗しました");
+            }
+            continue;
+          }
+        }
+      } catch (e) {
+        console.error("[Webhook] Failed to fetch candidates:", e);
+      }
+    }
+
     // ── Otherwise → Ignore silently ──────────────────────────────────────
   }
 
