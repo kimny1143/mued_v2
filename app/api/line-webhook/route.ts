@@ -81,6 +81,7 @@ interface PendingContext {
   threadId: string;
   threadUrl: string;
   threadAuthor: string;
+  threadText: string;
   candidates: string[];
   timestamp: number;
 }
@@ -171,6 +172,7 @@ export async function POST(request: NextRequest) {
         threadId: parsed.threadId,
         threadUrl: parsed.url,
         threadAuthor: parsed.author,
+        threadText: "",
         candidates: [],
         timestamp: Date.now(),
       };
@@ -188,7 +190,7 @@ export async function POST(request: NextRequest) {
       const ok = await dispatchGitHub("save-pending-reply", {
         thread_id: pending.threadId,
         thread_url: pending.threadUrl,
-        thread_text: "",
+        thread_text: pending.threadText,
         thread_author: pending.threadAuthor,
         reply_draft: text,
         line_user_id: userId,
@@ -227,19 +229,20 @@ export async function POST(request: NextRequest) {
             const latest = candidates[0];
             const parsedUrl = parseThreadsUrl(latest.url ?? "");
 
+            const threadText = (latest.thread_context ? latest.thread_context + "\n\n---\n" : "") + (latest.text || "");
             pending = {
               threadId: parsedUrl?.threadId || "",
               threadUrl: latest.url || "",
               threadAuthor: latest.author || parsedUrl?.author || "",
+              threadText,
               candidates: [text],
               timestamp: Date.now(),
             };
 
-            const threadText = (latest.thread_context ? latest.thread_context + "\n\n---\n" : "") + (latest.text || "");
             const ok = await dispatchGitHub("save-pending-reply", {
               thread_id: pending.threadId,
               thread_url: pending.threadUrl,
-              thread_text: threadText,
+              thread_text: pending.threadText,
               thread_author: pending.threadAuthor,
               reply_draft: text,
               line_user_id: userId,
