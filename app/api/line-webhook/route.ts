@@ -235,10 +235,11 @@ export async function POST(request: NextRequest) {
               timestamp: Date.now(),
             };
 
+            const threadText = (latest.thread_context ? latest.thread_context + "\n\n---\n" : "") + (latest.text || "");
             const ok = await dispatchGitHub("save-pending-reply", {
               thread_id: pending.threadId,
               thread_url: pending.threadUrl,
-              thread_text: latest.text || "",
+              thread_text: threadText,
               thread_author: pending.threadAuthor,
               reply_draft: text,
               line_user_id: userId,
