@@ -125,26 +125,48 @@ export async function POST(request: NextRequest) {
 
     console.log(`[LINE] userId=${userId} text="${text.slice(0, 50)}"`);
 
-    // ── "OK" → Approve pending Threads post ───────────────────────────
-    if (text.toUpperCase() === "OK") {
-      const ok = await dispatchGitHub("approve-post", {
-        action: "approve",
-        line_user_id: userId,
-        timestamp: new Date().toISOString(),
-      });
-      await replyToLine(replyToken, ok ? "投稿を承認しました" : "承認の送信に失敗しました");
-      continue;
-    }
+    // ── "OK" / "NG" → Post approval (only when approval is pending) ────
+    if (text.toUpperCase() === "OK" || text.toUpperCase() === "NG") {
+      try {
+        const ghRes = await fetch(
+          `https://api.github.com/repos/${GITHUB_REPO}/contents/approval-status.json`,
+          {
+            headers: {
+              Authorization: `token ${GITHUB_PAT}`,
+              Accept: "application/vnd.github.v3+json",
+            },
+          },
+        );
+        if (ghRes.ok) {
+          const ghData = await ghRes.json();
+          const content = Buffer.from(ghData.content, "base64").toString("utf8");
+          const approval = JSON.parse(content);
 
-    // ── "NG" → Reject and request alternative ───────────────────────────
-    if (text.toUpperCase() === "NG") {
-      const ok = await dispatchGitHub("approve-post", {
-        action: "reject",
-        line_user_id: userId,
-        timestamp: new Date().toISOString(),
-      });
-      await replyToLine(replyToken, ok ? "別案を生成中..." : "却下の送信に失敗しました");
-      continue;
+          if (approval.status === "pending") {
+            const action = text.toUpperCase() === "OK" ? "approve" : "reject";
+            const ok = await dispatchGitHub("approve-post", {
+              action,
+              line_user_id: userId,
+              timestamp: new Date().toISOString(),
+            });
+
+            if (ok) {
+              await replyToLine(
+                replyToken,
+                action === "approve"
+                  ? "投稿を承認しました。まもなく投稿されます。"
+                  : "別案を生成中...",
+              );
+            } else {
+              await replyToLine(replyToken, "承認処理に失敗しました");
+            }
+            continue;
+          }
+        }
+      } catch (e) {
+        console.error("[Webhook] Approval check failed:", e);
+      }
+      // Fall through to normal text processing if no pending approval
     }
 
     // ── "0" → Skip & reset ──────────────────────────────────────────────
