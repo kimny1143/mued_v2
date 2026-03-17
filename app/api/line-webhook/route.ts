@@ -125,6 +125,28 @@ export async function POST(request: NextRequest) {
 
     console.log(`[LINE] userId=${userId} text="${text.slice(0, 50)}"`);
 
+    // ── "OK" → Approve pending Threads post ───────────────────────────
+    if (text.toUpperCase() === "OK") {
+      const ok = await dispatchGitHub("approve-post", {
+        action: "approve",
+        line_user_id: userId,
+        timestamp: new Date().toISOString(),
+      });
+      await replyToLine(replyToken, ok ? "投稿を承認しました" : "承認の送信に失敗しました");
+      continue;
+    }
+
+    // ── "NG" → Reject and request alternative ───────────────────────────
+    if (text.toUpperCase() === "NG") {
+      const ok = await dispatchGitHub("approve-post", {
+        action: "reject",
+        line_user_id: userId,
+        timestamp: new Date().toISOString(),
+      });
+      await replyToLine(replyToken, ok ? "別案を生成中..." : "却下の送信に失敗しました");
+      continue;
+    }
+
     // ── "0" → Skip & reset ──────────────────────────────────────────────
     if (text === "0") {
       pending = null;
