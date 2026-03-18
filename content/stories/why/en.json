@@ -1,0 +1,366 @@
+{
+  "sections": [
+    {
+      "type": "heading",
+      "text": "作曲家がアプリを作っている"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "単刀直入に聞きます。作曲家がなぜアプリを作っているんですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "よく聞かれるんだけど、毎回うまく答えられないんだよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "じゃあ順番に聞きます。まず、何を作っているんですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "MUEDっていうブランドで、音楽制作まわりのツールをいくつか作ってる。制作ログを記録するMUEDnote、耳トレのMUEDear、認知傾向テストのMUEDlobe、オンラインミックスのMUEDial。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "全部MUEDがつく。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そう、機能ごとに名前をつけてる。メインはMUEDnoteで、自分が制作中にやった判断——なぜこのテンポにしたか、なぜこのコードを選んだか——を記録していくもの。"
+    },
+    {
+      "type": "heading",
+      "text": "もともとは全然違うものだった"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "MUEDnoteは最初からログアプリだったんですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "全然違う。最初は音楽レッスン用のLMS——Learning Management Systemっていう、オンライン学習プラットフォームを作ろうとしてた。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "なぜ音楽レッスンを？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "「音楽」で仕事として成立してるものって、まずレッスンかなと思って。音楽制作会社として次に何をやるかを考えたときに、一旦そこを検討してみようと。で、当時プログラミングレッスンの講師を副業でやってたんだけど、そこでLMSっていう仕組みを知ったのよ。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "LMSを知ったのは音楽の現場じゃなくて、プログラミング講師の経験から。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そう。「誰でも一定の水準で講義ができるようにするシステムか」と。これ、うちの音楽レッスンにも入れたら仕組み化できるんじゃないかって。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "でも、そこから方向が変わった。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "正直に言うと、音楽レッスンそのものにあまり高い価値があると思ってないのよ。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "……教育サービスを作ろうとしてた人の発言としてはかなり攻めてますね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "レッスンが無駄とは言ってない。ただ、僕自身が独学でプロになった人間だから。学校にも行ってないし、師匠もいない。必要だったのはレッスンじゃなくて、「自分で学ぶのに寄り添ってくれる仕組み」だった。"
+    },
+    {
+      "type": "heading",
+      "text": "削っていったら、これしか残らなかった"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "LMSからどう変わっていったんですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "LMSの方はどんどん機能を削ることになった。認証いるよね、サーバーいるよね、決済いるよね、って足していったものを、2〜3年かけて全部外した。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "なぜ？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "自前で作る必要がない機能ばっかりだったから。文字起こしはWhisper、決済はStripe、スケジュール管理はOS標準——既にあるものに乗ればいい。自分で作るべきは「替えの効かないもの」だけ。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "結果、何が残った？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "耳トレとブログ。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "……それだけ？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "それだけ。でもこの2つはAIに代替できないんだよ。耳トレは身体スキルだから、AIに「俺の耳を鍛えて」と言っても鍛わらない。ブログ——制作ログは、自分の判断の記録だから、書くこと自体に意味がある。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "2〜3年かけて壮大な構想を削ぎ落として、替えの効かないものだけが残った。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "かっこよく言うなよ。2〜3年迷走してただけだから。"
+    },
+    {
+      "type": "heading",
+      "text": "MUEDnoteの現在地"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "で、今そのMUEDnoteはどういう状態なんですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "正直に言うと、失敗してる部分が多い。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "どういう失敗ですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "最初に作ったアプリだから、「制作ログを記録する意味」とか「なぜ言語化が必要か」みたいな思想の部分に力が入りすぎてて、実装が追いついてない。哲学は語れるけど、「で、触ってどうなの」って聞かれると弱い。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "それは痛い。"
+    },
+    {
+      "type": "pullquote",
+      "text": "あ、こうすればよかったのか、っていうのが1個作るごとに見えてくるんだよね。",
+      "speaker": "kimny"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "痛いよ。でもMUEDnoteで失敗したからこそ、次に作ったMUEDearでは「AとBを聴いて当てる」だけのシンプルな体験に振り切れた。MUEDialも「チャットでミックスする」っていう一文で伝わる形にできた。あ、こうすればよかったのか、っていうのが1個作るごとに見えてくるんだよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "プロダクトが4つもあるのは、そのあたりと関係ある？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "ある。MUEDnoteだけ作ってたら、ずっと哲学を磨いて実装が追いつかない状態が続いてたと思う。別のアプリを作ってみて初めて、「ユーザーに届く形ってこういうことか」ってわかった。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "MUEDnoteはこのままですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "いや、他のアプリで失敗して学んだことを、MUEDnoteに戻していく。MUEDearで「体験をシンプルにしないと伝わらない」って学んだし、MUEDialで「UIにコンセプトをそのまま出す」ってやり方を覚えた。全部MUEDnoteに還ってくる。時間はかかるけど。"
+    },
+    {
+      "type": "heading",
+      "text": "なぜ自分で作るのか"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "音楽系のアプリなんて世の中にたくさんありますよね。作曲家が作ると何が違うんですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "「なんか違う」がわかる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "もう少し具体的に。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "たとえば耳トレの問題で、EQのブースト量を設定するときに「これ、現場だと気づくレベルだな」「これは聴き比べないとわからないレベルだな」っていう判断ができる。もう何年もスタジオで聴いてきた耳がある。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "エンジニアが作ったアプリとの違い。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "技術的に正確なんだけど、「現場でこの差が意味を持つか」の判断は入ってない。そこは作り手の経験がないと設計できない。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "ドメイン知識を持つ人がプロダクトを作る。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "PatreonのJack Conteなんか、もともとPomplamooseっていうバンドをやってたミュージシャンで。「YouTubeで凝った動画作っても全然食えない」っていう自分の痛みから、クリエイター向けの課金プラットフォームを作った。Conteの場合はStanfordの同級生のエンジニアと組んだ。僕の場合はAIにその役割をやってもらってる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "やってることの構造は同じ。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "現場を知ってる人間が「これが要る、これは要らない」を判断して、実装は別の力を借りる。コードは書けないけど、「ここはこうあるべき」の判断は全部自分でしてる。"
+    },
+    {
+      "type": "heading",
+      "text": "ものつくりの人間"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "もう少し根っこの話をしていいですか。なぜ「音楽を作る」だけじゃなくて、「ツールを作る」にまで手を広げたんですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "本質的に、ものつくりが好きなんだと思う。作る対象は音楽に限らない。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "バンドマン時代も、音楽以外のことをやっていた。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "副業でネットワーク系のエンジニアをやってた。昔からパソコンいじるのが好きで。バンドマンの副業がネットワークエンジニアって意味わかんないでしょ。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "確かに珍しい組み合わせです。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "で、プログラミング講師もやった。そこでLMSを知って、MUEDの原型ができた。音楽の専門知識とプログラミングの理解が交差したところに、MUEDがある。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "音楽だけ、技術だけ、どちらでもない場所。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "汎用ツールは大企業が作ればいい。でも「この帯域のEQは現場で意味があるか」「このコンプのかかり方はプロが聴いてどうか」っていう判断は、現場にいた人間にしかできない。そこに賭けてる。"
+    },
+    {
+      "type": "heading",
+      "text": "なぜこういう記事を書いているのか"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "ところで、なぜこうやってAIとの対話を記事にしてるんですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "宣伝。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "……直球ですね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "MUEDnoteって結構わけわかんないアプリなのよ。「音楽制作のログを取る」って言っても、ほとんどの人は「？」でしょ。だからちゃんと意図を伝える場所が必要で。自分で「すごいアプリです」って書くと宣伝臭くなるから、聞かれて答える形にしてる。……まあ、それ自体が狡猾な宣伝なんだけど。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "言っちゃうんですね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "言っとかないと後でバレた時ダサいから。でもね、こうやってAIに「なんでそうしたの？」って聞かれると、考えてもみなかった答えが出てくるんだよ。さっきの「失敗してる」って話も、聞かれなきゃ言語化できてなかった。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "それ、MUEDnoteのログと同じ構造ですね。聞かれて答えることで、自分の判断が言語化される。"
+    },
+    {
+      "type": "pullquote",
+      "text": "この対話のほうが、今のMUEDnoteより上手くそれをやれてる。皮肉だよね。",
+      "speaker": "kimny"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "……そうなんだよ。しかもこの対話のほうが、今のMUEDnoteより上手くそれをやれてる。皮肉だよね。アプリの実装が追いついてないって言ったけど、この記事がまさにMUEDnoteでやりたかったことのプロトタイプになってる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "宣伝のつもりで始めたものが、プロダクトの原型になっていた。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "うん。だからこの記事で失敗を認めてること自体が、MUEDnoteの次のアップデートに繋がるんだと思う。たぶん。"
+    },
+    {
+      "type": "meta",
+      "text": "この記事は、複数回にわたるAI（Claude）との対話をもとに再構成したものです。"
+    }
+  ]
+}

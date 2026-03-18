@@ -866,6 +866,18 @@
       "brain02": {
         "title": "An External Prefrontal Cortex",
         "description": "The MUEDlobe concept: measuring your cognitive profile and optimizing AI behavior to match your brain's strengths and weaknesses."
+      },
+      "muedial": {
+        "title": "Mixing Without Faders",
+        "description": "Why we built a chat-based mixing service. The price cliff, the awkwardness of retakes, and $12 democratization."
+      },
+      "why": {
+        "title": "Why a Composer Makes Apps",
+        "description": "From LMS to log app. Years of wandering, honest failures, and how a maker arrived at MUED."
+      },
+      "ear": {
+        "title": "Ears First, Theory Later",
+        "description": "Why ear training matters more as AI improves. The gap between knowledge and hearing, and ears as a physical skill."
       }
     },
     "articles": {
@@ -903,6 +915,27 @@
         "author": "kimny × Claude",
         "date": "February 2025",
         "footer": "This article is a sequel to 'The Brain Is a Playback Device', reconstructed from multiple conversations with AI (Claude)."
+      },
+      "muedial": {
+        "title": "Mixing Without Faders — Why We Built a Chat-Based Mixing Service",
+        "description": "The price cliff in mixing outsourcing, the awkwardness of retakes, and how MUEDial's chat UI removes the barrier.",
+        "author": "kimny × Claude",
+        "date": "March 2026",
+        "footer": "This article is reconstructed from multiple conversations with AI (Claude)."
+      },
+      "why": {
+        "title": "Why a Composer Makes Apps — The Entry Point to MUED",
+        "description": "From an LMS concept through years of wandering to what remained. MUEDnote's honest failures, lessons from later apps, and where a maker ended up.",
+        "author": "kimny × Claude",
+        "date": "March 2026",
+        "footer": "This article is reconstructed from multiple conversations with AI (Claude)."
+      },
+      "ear": {
+        "title": "Ears First, Theory Later — Why an Ear Training App Is Needed",
+        "description": "As AI advances, the ability to listen critically matters more. The gap between knowledge and hearing, ear training as a physical skill, and MUEDear's philosophy.",
+        "author": "kimny × Claude",
+        "date": "March 2026",
+        "footer": "This article is reconstructed from multiple conversations with AI (Claude)."
       }
     }
   },

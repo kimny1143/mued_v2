@@ -1,0 +1,326 @@
+{
+  "sections": [
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "MUEDnoteには「Hoo」というフクロウのキャラクターがいますよね。これ、何者なんですか？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "もともとglasswerksのロゴがフクロウなんだよね。で、MUEDnoteを作るにあたって、このロゴをキャラクター化しようと。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "ロゴにはどんな意味が込められてるんですか？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "フクロウ、アナログテレコのリール、メガネ。この3つが組み合わさってる。フクロウは知識の象徴、テレコは音楽のルーツ、メガネは分析者の佇まい。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "MUEDnoteが「分析」「記録」をやるサービスだから、ロゴと機能が一致してる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そう。だから新しくキャラ作るんじゃなくて、このロゴをそのまま動かせばいいじゃん、と。"
+    },
+    {
+      "type": "heading",
+      "text": "なぜキャラクターが必要だったか"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "そもそも、なぜキャラクターを立てようと思ったんですか？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "バンドってさ、アーティスト自身がキャラクターになれるじゃん。でも制作会社はそれができない。裏方だから。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "顔が見えない。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そう。で、僕自身は創作に特化してて、営業とかマーケティングとか、そういうのは特性的に消耗が大きいのよ。でも人を雇うと、その人のビジョンに引っ張られたりする。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "自分のフィールドを守りながら、でも外に出ていく必要がある。"
+    },
+    {
+      "type": "pullquote",
+      "text": "AIを「仮想の自社スタッフ」にしようと思った。創作以外の部分をAIキャラクターに担わせる。",
+      "speaker": "kimny"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "だからAIを「仮想の自社スタッフ」にしようと思った。創作以外の部分をAIキャラクターに担わせる。僕は仕組みを作ることに集中して、運用はAIに任せる。"
+    },
+    {
+      "type": "heading",
+      "text": "名前が「Hoo」になるまで"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "「Hoo」という名前、どうやって決まったんですか？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "最初は色々考えたんだよ。フクロウの知恵の象徴からミネルヴァとか、glasswerksの「グラ」とか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "いくつか候補を出してみましょうか。鳴き声由来で「ホー」「フク」、知恵の女神から「ミネル」「アテナ」、音楽機材から「リール」..."
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "「ホー（Hoo）」、ピンときた。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "でもそれ、犬のワンちゃん並みに安易じゃないですか？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "確かに。フクロウのホーくん、みたいな。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "ただ、「ホーくん」「ホーちゃん」と呼ぶから安易に聞こえるんであって、「Hoo」単体で敬称なしなら、スタッフの名前として成立しませんか。「担当のHooがご案内します」とか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "たしかに。なんかコードネームっぽくもあるし。"
+    },
+    {
+      "type": "heading",
+      "text": "「ほほう（Ho Hoo）」の発見"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "口調とかキャラクター性はどうイメージしてます？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "「ほほう（Ho Hoo）、ここでこの処理をするのですね」みたいな。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "......これ、すごくないですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "え？"
+    },
+    {
+      "type": "pullquote",
+      "text": "「ほほう」って、フクロウの鳴き声でもあり、日本語の感心・納得の相槌でもある。",
+      "speaker": "claude"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "「ほほう」って、フクロウの鳴き声でもあり、日本語の感心・納得の相槌でもある。Hooという名前とも一貫してる。しかも知識人っぽい響きがある。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "あー、確かに。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "C-3POの「Oh my」みたいな決め台詞になり得ますよ。「ほほう、この曲はサビ前の転調が効いていますね」とか。丁寧語だけど堅すぎない、分析者として冷静、でも「ほほう」で愛嬌が出る。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "やべー、けっこういい。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "しかも今、自然に出てきましたよね。作り込んだんじゃなくて。"
+    },
+    {
+      "type": "heading",
+      "text": "どうぶつの森方式"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "Hooの音声はどうする予定ですか？AIの音声合成を使う？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "いや、「あつまれ どうぶつの森」方式で行こうと思ってる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "というと？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "喋るのはテキストで、音は「Ho Hoo」のみ。TTS回す必要がないからサーバー負荷もほぼゼロ。文字を読む体験を邪魔しないし、でも音が鳴ることで「Hooが喋ってる感」は出る。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "タイマーのアラーム音も「Ho Hoo」にすればサウンドロゴになりますね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そうそう。最新技術の誇示じゃなくて、UX優先で設計してる。"
+    },
+    {
+      "type": "heading",
+      "text": "なぜ「リアルな人間」じゃないか"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "最近、リアルな人間の姿をしたAIアバターも増えてますよね。そっちにしようとは思わなかった？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "動画で動くリアルな営業AIって「不気味の谷」に落ちやすいんだよね。C-3POとか、どうぶつの森のキャラクターって、最初から「人間ではない」ことが明確だから受け入れられる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "フクロウならその問題がない。最初から「人間ではない」ことが明確だから、変な期待を持たれない。"
+    },
+    {
+      "type": "heading",
+      "text": "最初から完璧じゃなくていい"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "Hooのデザイン、今の時点で完成形ですか？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "いや、正直まだ「絶対的に可愛い」とは言えないかもしれない。でも、動かしたり拡張させることで、なんとなく可愛さが出てくるといいなと思ってる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "ふなっしーも静止画だと「なんだこれ」でしたけど、動いて喋って暴れて、愛されましたもんね。"
+    },
+    {
+      "type": "pullquote",
+      "text": "最初から完成された可愛さより、使ってるうちに可愛く見えてくる方が、長く続く関係になると思う。",
+      "speaker": "kimny"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そう。最初から完成された可愛さより、使ってるうちに可愛く見えてくる方が、長く続く関係になると思う。"
+    },
+    {
+      "type": "heading",
+      "text": "外付け前頭葉の具現化"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "Hooの話を聞いてて、「外付けの前頭葉」の記事を思い出したんですが。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "あー、繋がるね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "「外付けの前頭葉」では、MUEDlobeで認知特性を測って、その結果に基づいてAIの振る舞いを最適化するという話でした。Hooはその「最適化されたAI」の具体的な姿ということですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そういうこと。MUEDlobeのCortex Editorで設定した認知プロファイルが、Hooの振る舞いを決める。作業記憶が高くて処理速度が低い人にはScribe Mode、逆のプロファイルにはNavigator Mode。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "抽象的な概念だった「外付け前頭葉」に、Hooという名前と顔がついた。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "しかもフクロウの顔。ロゴから自然に生まれたキャラクターが、結果的に「脳の補助装置」のインターフェースになってる。最初からそう設計したわけじゃないんだけど。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "裏方の制作会社が「顔」を持つことの意味も変わってきますよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "うん。さっき「バンドはアーティスト自身がキャラクターになれるけど、制作会社は裏方だから顔がない」って言ったでしょ。でも考えてみたら、Hooが顔になることで、裏方のままでいられるのよ。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "というと？"
+    },
+    {
+      "type": "pullquote",
+      "text": "僕が前に出なくていい。Hooが窓口になる。でもHooの中身は全部僕が決めてる。裏方の人間が、裏方のまま、でもプロダクトには顔がある。",
+      "speaker": "kimny"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "僕が前に出なくていい。Hooが窓口になる。でもHooの中身——振る舞いの設計、判断基準——は全部僕が決めてる。裏方の人間が、裏方のまま、でもプロダクトには顔がある。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "「システムは人間、運用はAI」のブランド版。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そう。「外付けの前頭葉」で言ったあのフレーズ、プロダクト設計だけじゃなくてブランド運営にもそのまま当てはまるんだよね。"
+    },
+    {
+      "type": "meta",
+      "text": "この記事は、MUEDnote開発過程でのAI（Claude）との実際の対話をもとに再構成したものです。"
+    }
+  ]
+}

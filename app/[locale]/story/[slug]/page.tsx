@@ -52,7 +52,7 @@ export default async function StoryPage({ params }: PageProps) {
     notFound();
   }
 
-  const sections = getArticleSections(slug as StorySlug);
+  const sections = getArticleSections(slug as StorySlug, locale);
 
   return (
     <div className="dark">

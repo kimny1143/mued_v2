@@ -10,9 +10,12 @@ import { STORY_SLUGS, type StorySlug } from "@/lib/story/articles";
 const RELATED_ARTICLES: Partial<Record<StorySlug, StorySlug[]>> = {
   brain01: ["brain02"],
   brain02: ["brain01"],
-  mued: ["muedear"],
-  muedear: ["mued"],
+  mued: ["muedear", "why"],
+  muedear: ["mued", "ear"],
   hoo: ["brain02"],
+  muedial: ["muedear", "brain01", "ear"],
+  why: ["mued", "muedear", "hoo"],
+  ear: ["muedear", "brain01", "muedial"],
 };
 
 interface StoryArticleProps {

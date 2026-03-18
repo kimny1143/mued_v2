@@ -81,3 +81,4 @@ public/swe-worker-*.js
 # Remotion video projects (separate repository)
 /videos/
 
+docs/sunogen_audio/

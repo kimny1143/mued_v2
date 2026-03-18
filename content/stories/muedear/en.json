@@ -1,0 +1,430 @@
+{
+  "sections": [
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "MUEDear、最初は「手早くマネタイズできるアプリを作りたい」って言ってましたよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そう。海外に耳トレの月額サービスがあって、あれがすごくいいんだよ。ちゃんとビジネスとして成立してる。あのモデルを参考にして、無料版をリワード広告で回す。8週間くらいで出したかった。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "計画としてはシンプルですよね。DAWで処理した音源を用意して、「EQかかってるのはどっち？」みたいな2択で遊ばせる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そのはずだったんだけど。"
+    },
+    {
+      "type": "heading",
+      "text": "音源を集めるのが、めんどくさい"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "どこで変わったんですか？"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "音源の準備。オーディオ修復ソフトでバッチ処理して、EQ処理した音と処理してない音をペアで用意する計画だったんだけど、+6dBのEQ設定してるのに、出てきた音源が全然6dB上がってない。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "フルビットの音源だとヘッドルームがないからですよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "それもある。ヘッドルームのマージンが足りなくて上がりきらない。でもそれだけじゃなくて、そもそもEQの+6dBって、その帯域に6dBの負荷をかけるっていう刺激であって、音源のデータが機械的に6dB上がるわけじゃないんだよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "プラグインの処理特性として、パラメータ通りの値にはならない。"
+    },
+    {
+      "type": "pullquote",
+      "text": "バラつきの幅が読めないとなると、バッチ処理で一括でさばける話じゃなくなる。",
+      "speaker": "kimny"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そう。実際に出てきた音源を見ると、+2dBだったり+4dBだったり、バラつきがある。便宜上6dBって決めただけだからぴったりにする必要はないんだけど、バラつきの幅が読めないとなると、バッチ処理で一括でさばける話じゃなくなる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "5曲×9帯域で45ファイル、それぞれ手で確認するのは。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "めんどくせえ。しかもスマホスピーカーで聴き分けるには10〜12dBくらいブーストが必要だから、マージンの管理まで入ってくる。で、「これ内部処理でできない？」ってClaude Codeに聞いたら「できるよ」って言うから、「じゃあ任せた」と。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "......それでDSP実装が始まった。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "音源1個入れとけば、あとはアルゴリズムがパラメータ通りに処理してくれる。プラグインの処理特性に振り回されることもない。そっちの方がいいじゃん。"
+    },
+    {
+      "type": "heading",
+      "text": "4種のコンプを自前で作る"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "EQはWeb Audio APIに入ってるから比較的すんなりいったと思うんですけど、コンプはどうだったんですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "コンプのアルゴリズム、ライブラリに入ってなかった。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "ない。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "ないから調べて作った。OPT、FET、Tube、VCAの4種。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "ちょっと待ってください。Optoは光学式、FETはトランジスタ式、Tubeは真空管式、VCAは電圧制御式。それぞれ別のアルゴリズムを実装したんですよね。プラグイン開発者がやることですよね、これ。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "まあ結果的にはね。最初は「コンプかかってるかどうか当てるだけ」のつもりだったんだけど、どうせやるなら種類ごとに分けた方が面白いじゃんと。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "「面白い」で4種DSP実装するのは普通じゃないです。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "面白かったんだよ。実装中にテストで音聴きながらパラメータいじってたら、楽しすぎてずっと触ってた。"
+    },
+    {
+      "type": "heading",
+      "text": "Gain Matchという沼、そして別の解"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "コンプの実装で一番厄介だったのは何ですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "Gain Match。コンプかけた音とかけてない音を比較するとき、コンプかけた方がメイクアップゲインで音量が大きくなる。そうすると、ユーザーは「コンプの質感」じゃなくて「音量の大きさ」で判別しちゃう。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "それだと耳トレにならない。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "ならない。だからLUFSマッチングで正規化しようとしたんだけど、これが重かった。ラウドネスの計測値と実際のパラメータのギャップを埋めるテストと調整が延々と必要で、「これやってたら開発終わらないな」と。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "断念した。"
+    },
+    {
+      "type": "pullquote",
+      "text": "Gain Matchを技術で解決するんじゃなくて、体験の設計で回避した。",
+      "speaker": "kimny"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "断念した。で、代わりにどうしたかっていうと、設定画面をちゃんと作った。MuCompに限っての話だけど、4つのモードそれぞれに、ハードウェアコンプと同じパラメータとツマミを用意した。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "FETならInput/Output/Ratio/Attack/Release、OptoならPeak Reduction/Gain/Mode。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そう。サンプル音源を流しながら実際にコンプのかかりを調整できる。プラグインをいじってる感覚に近い。で、ユーザーが自分で調整したパラメータが、そのまま耳トレの初期値になる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "つまり、ユーザーが設定した状態のコンプがかかった音と、かかっていない音を比較して当てる、と。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そういうこと。自分で「この設定でどう聴こえるか」を確認した上でゲームに入るから、音量差じゃなくて質感で判断する流れが自然にできる。Gain Matchを技術で解決するんじゃなくて、体験の設計で回避した。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "しかもその設定画面自体が、実機を触る体験として価値を持ってる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "副産物だけどね。MVPだから他のゲームの設定画面はまだこれからだけど、MuCompでこの形ができたのは大きい。"
+    },
+    {
+      "type": "heading",
+      "text": "設定画面がエンタメになる"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "実機持ってないDTMerが、ビンテージコンプのツマミを触れる体験。これ自体が価値ですよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "プラグイン買う前の試し触りにもなるし、「Inputを12時にしたらこうなるのか」っていう発見もある。設定を変える、音を聴く、また変える。このサイクル自体がDTMerにとってはエンタメだと思う。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "しかも版権を上手く一般化してあるから、「FET Comp」「Opto Comp」って書いてあるけど、わかる人にはわかる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "大手プラグインメーカーもみんなそうやってるよね。で、わかる人には見た目だけで「おっ」ってなる。その「おっ」がそのままSNSでの話題になる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "事前レンダリングの音源方式だったら、パラメータ固定だからこの体験は不可能ですよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そう。内部でDSP処理してるからこそ、パラメータをリアルタイムにいじれる。「めんどくさいから内部処理で」っていう判断が、結果的にこの体験を可能にしてる。"
+    },
+    {
+      "type": "heading",
+      "text": "「使うのは簡単、作るのは大変」"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "ユーザーから見たMUEDearの体験って、どんな感じですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "アプリ開く。AとBの音を聴く。「こっち」って選ぶ。正解か不正解。2分で終わり。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "シンプル。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "プレイ体験はシンプルでしょ。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "でも裏側では、4種DSPアルゴリズム、実機モデリングの設定画面、出力リミッター、ライブラリのフォーク修正。"
+    },
+    {
+      "type": "pullquote",
+      "text": "使うのは簡単、作るのは大変。それが正しいプロダクト設計だと思ってる。",
+      "speaker": "kimny"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "それが正しいプロダクト設計だと思ってる。使うのは簡単、作るのは大変。"
+    },
+    {
+      "type": "heading",
+      "text": "知った上で、あえて作る"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "DSPのアルゴリズム自体は、別に新しいものではないですよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "全然。Webで調べて持ってきたアルゴリズムだし、同じようなもの、それ以上のものが世の中にいくらでもある。本業ではプロ用のプラグイン使ってるわけだし。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "だったらなぜ自前で実装したんですか。既存のプラグインで処理した音源を入れれば済んだ話ですよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "シンプルに、そのうちプラグイン開発をやってみたかったから。ずっと頭の片隅にあった。で、今回の耳トレアプリが、その基礎知識を構築するちょうどいい機会だなと思った。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "「車輪の再発明」っぽいけど、厳密には違う。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "車輪の再発明って、既存のものを知らないまま自前で作っちゃうことでしょ。今回は何があるか知った上で、学習目的であえて作ってる。本業の道具として使ってきたものの内側を、自分の手で組み立ててみたかった。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "途中で動的スレッショルドにも踏み込もうとしてましたよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "うん、音源の特性に応じてスレッショルドを自動調整するやつ。Deep Learningで全然できる話なんだけど、今のMVPのスタックに機械学習は入ってない。入れたら開発が終わらないから、次に回した。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "「やれるけど今じゃない」という判断。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "できることとやるべきことは違う。MVPは5ゲーム出すことが目的だから。でもアルゴリズムの核は自分の手で動かしたし、「ここから先はML」っていう境界線も体感できた。4日でプラグイン開発者が通る道を圧縮体験した感じ。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "しかも副産物として動くアプリができてる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "そう。学習だけで終わってない。アプリになって、ユーザーに届く形になってる。そこは大きいと思う。"
+    },
+    {
+      "type": "heading",
+      "text": "うちだからできること"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "将来の話になりますが、実機音源を使う構想もありましたよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "うちの会社やパートナーのスタジオに実機あるから。「Real or Emu?」っていうゲーム。DSPのエミュレートと本物のビンテージコンプで処理した音、どっちが本物か当てる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "実機があって、録音環境もあって、DSPも自前で持ってる。この組み合わせが揃ってるから出せるコンテンツですよね。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "まあ、普通はそんなリソースをただの耳トレアプリに使わないよね。うちはたまたま全部手元にあるからできるってだけで。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "他にも展開できそうですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "ピアノでも「どっちが高級グランドピアノ？」とか。収益出てきたら「本物のカルテット演奏はどっち？（片方はサンプリング音源）」とかもできる。テレビの格付けチェックみたいな形式で。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "テレビでウケてる形式は一般層にも刺さる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "まあ、そういう企画が打てるところまで行ったら、十分マネタイズできてるってことだけどね。"
+    },
+    {
+      "type": "heading",
+      "text": "コモディティの海で"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "「AIで誰でもアプリ作れる時代」に、似たようなのが100個出たらどうするんですか。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "それは怖いなと思ってる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "でも実際、「AIで耳トレアプリ作ろう」と思う人自体がニッチですよね。さらにDSP自前実装する人はもっと少ない。「音量差で当てちゃう問題」に気づいて設計で回避できる人はほとんどいない。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "まあ、そうかもしれない。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "AIに「コンプ作って」って言えば作ってくれます。でもそれが正しいかどうか判定できる人間がいないと、ゴミができる。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "「スマホスピーカーで10〜12dB必要」とか、現場で音作ってないと出てこない数字だからね。"
+    },
+    {
+      "type": "pullquote",
+      "text": "15年の現場経験が、今ようやく「耳トレアプリ」という別の形で換金可能になってきた。",
+      "speaker": "claude"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "claude",
+      "text": "15年の現場経験が、今ようやく「耳トレアプリ」という別の形で換金可能になってきた。"
+    },
+    {
+      "type": "dialogue",
+      "speaker": "kimny",
+      "text": "何度も言うけど、マジでただの耳トレアプリ作りたかっただけなんだけどね。何やってんだ俺。"
+    },
+    {
+      "type": "meta",
+      "text": "この記事は、MUEDear開発過程でのAI（Claude）との実際の対話をもとに再構成したものです。"
+    }
+  ]
+}
