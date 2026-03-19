@@ -235,6 +235,18 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 - **プロンプトファイル↔サービスの循環依存に注意**: `lib/ai/prompts/interviewer.ts` が `interviewer.service.ts` の型をimportし、サービス側がプロンプトをimportすると循環依存になる。プロンプトファイル側にローカル型（`InterviewerPromptInput`）を定義して回避すること (2026-02-11)
 
+### Mistakes（避けるべきパターン）
+
+- **Vercel CLIで直接デプロイしない**: `vercel --prod=false` を実行したらfeatureブランチがProductionにデプロイされ本番が壊れた。デプロイは `git push` 経由の自動デプロイのみ使う。環境変数反映の再デプロイはVercelダッシュボードからRedeployする (2026-03-19)
+
+- **`echo` でVercel環境変数を設定すると末尾改行が混入する**: `echo "value" | vercel env add` は `\n` が入る。`printf 'value' | vercel env add` を使うこと。R2 Worker URL に改行が入り、RoEx APIが `\n` 入りURLを受け取ってエラーになった (2026-03-19)
+
+- **RoEx APIのリクエスト形式はドキュメントを信用せず実測で確認**: `/mixanalysis` は `mixDiagnosisData` ラッパーが必要、フィールド名はキャメルケース（`audioFileLocation`）、レスポンスは `{ mixDiagnosisResults: { payload: { ... } } }` の2段ネスト。`musicalStyle` の enum も mixing API とは異なる（`OTHER` → `BALANCED`）。APIごとに実レスポンスをログで確認してから実装すること (2026-03-19)
+
+- **GCS signed URLは1時間で期限切れ**: RoEx `/upload` が返す `readableUrl` は `X-Goog-Expires=3600` の signed URL。DBに保存して後で使うと期限切れでRoEx APIが失敗する。対策: アップロード直後にR2にコピーして永続URLに差し替える (`copyToR2`) (2026-03-19)
+
+- **PoCは全フロー通るまで完了と言わない**: 参考音源のアップロード・分析が動いただけでPR提案して指摘された。プレビュー生成→Hoo言及→比較まで通して初めてPoC完了 (2026-03-19)
+
 ---
 
 ## MUEDial (RoEx Tonn API)
