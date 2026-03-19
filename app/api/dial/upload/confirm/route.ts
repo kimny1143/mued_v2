@@ -6,11 +6,9 @@
  * Saves the track record in the database, then copies to R2 for permanent URL.
  */
 
-import { eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiForbidden } from '@/lib/api-response';
-import { copyToR2 } from '@/lib/dial/r2-storage';
 import { db } from '@/db';
 import { dialTracks } from '@/db/schema';
 
@@ -61,26 +59,11 @@ export const POST = withDialAuth(async (auth) => {
       reverbPreference,
     }).returning();
 
-    // Copy to R2 for permanent URL (GCS signed URLs expire in 1h)
-    const r2Result = await copyToR2({
-      sourceUrl: readableUrl,
-      sessionId,
-      taskId: track.id,
-      taskType: 'stem',
-      originalFilename: fileName,
-    });
+    // TODO: R2 copy disabled — RoEx has trouble downloading from R2 Worker URLs
+    // (テイク2: 17min, テイク3: 30min+ stalled vs テイク1 GCS: 8min)
+    // Re-enable after investigating R2 Worker download performance for RoEx.
+    // For now, use GCS signed URL directly (1h expiry).
 
-    if (r2Result) {
-      // Replace GCS URL with permanent R2 URL
-      await db.update(dialTracks)
-        .set({ roexUploadUrl: r2Result.r2Url })
-        .where(eq(dialTracks.id, track.id));
-
-      return apiSuccess({ trackId: track.id, readableUrl: r2Result.r2Url });
-    }
-
-    // R2 copy failed — fall back to GCS URL (will expire in 1h)
-    console.warn('[upload/confirm] R2 copy failed, using GCS URL (1h expiry)');
     return apiSuccess({ trackId: track.id, readableUrl });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Confirm failed');
