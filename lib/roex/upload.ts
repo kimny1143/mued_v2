@@ -31,11 +31,15 @@ export async function getUploadUrl(
   }>('/upload', { filename: fileName, contentType });
 
   const signedUrl = res.signedUrl ?? res.signed_url;
-  const readableUrl = res.readableUrl ?? res.readable_url;
+  const rawReadableUrl = res.readableUrl ?? res.readable_url;
 
-  if (!signedUrl || !readableUrl) {
+  if (!signedUrl || !rawReadableUrl) {
     throw new Error('RoEx /upload did not return expected URLs');
   }
+
+  // Strip GCS signed URL query params — RoEx's own servers can access
+  // their bucket without signing, and signed URLs expire in 1 hour.
+  const readableUrl = rawReadableUrl.split('?')[0];
 
   return { signedUrl, readableUrl };
 }
