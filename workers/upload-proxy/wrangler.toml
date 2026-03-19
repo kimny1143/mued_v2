@@ -3,4 +3,4 @@ main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
 [vars]
-ALLOWED_ORIGINS = "https://dial.mued.jp,https://mued.jp,https://www.mued.jp,http://localhost:3000"
+ALLOWED_ORIGINS = "https://dial.mued.jp,https://mued.jp,https://www.mued.jp,http://localhost:3000,https://*.vercel.app"

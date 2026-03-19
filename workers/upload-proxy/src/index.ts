@@ -30,12 +30,22 @@ function getAllowedOrigins(env: Env): string[] {
     : DEFAULT_ORIGINS;
 }
 
+function isOriginAllowed(origin: string, allowed: string[]): boolean {
+  return allowed.some((pattern) => {
+    if (pattern.includes('*')) {
+      const regex = new RegExp('^' + pattern.replace(/\./g, '\\.').replace(/\*/g, '[^.]+') + '$');
+      return regex.test(origin);
+    }
+    return pattern === origin;
+  });
+}
+
 function getCorsHeaders(request: Request, env: Env): Record<string, string> {
   const origin = request.headers.get('Origin') || '';
   const allowed = getAllowedOrigins(env);
 
   return {
-    'Access-Control-Allow-Origin': allowed.includes(origin) ? origin : '',
+    'Access-Control-Allow-Origin': isOriginAllowed(origin, allowed) ? origin : '',
     'Access-Control-Allow-Methods': 'GET, PUT, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, X-Upload-Target',
     'Access-Control-Max-Age': '86400',
