@@ -49,6 +49,8 @@ export const POST = withDialAuth(async (auth) => {
       isMaster: false,
     });
 
+    console.log('[reference/confirm] Raw analysis result:', JSON.stringify(analysisResult.raw, null, 2));
+
     // Save to session
     await db.update(dialSessions)
       .set({
