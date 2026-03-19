@@ -95,6 +95,10 @@ export const dialSessions = pgTable('dial_sessions', {
   additionalCycleLimit: integer('additional_cycle_limit').notNull().default(5), // Max additional cycles allowed
   previewCount: integer('preview_count').notNull().default(0), // Preview count (omakase: max 5)
   analysisResult: jsonb('analysis_result'), // RoEx mix analysis (LUFS, peak, stereo, etc.)
+  // Reference track (optional)
+  referenceTrackUrl: text('reference_track_url'), // RoEx readable URL
+  referenceTrackFilename: text('reference_track_filename'), // Original filename
+  referenceAnalysisResult: jsonb('reference_analysis_result'), // analyzeMix result cache
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({

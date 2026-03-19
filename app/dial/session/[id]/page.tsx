@@ -6,6 +6,7 @@ import { useAuth } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
 import Link from 'next/link';
 import { ChatPanel } from '@/components/dial/chat-panel';
+import { ReferenceTrack } from '@/components/dial/reference-track';
 import { AudioAnalyzerProvider, useAudioAnalyzerContext } from '@/hooks/use-audio-analyzer-context';
 import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
 
@@ -61,6 +62,14 @@ interface Session {
   tracks: Track[];
   tasks: Task[];
   analysisResult?: Record<string, unknown> | null;
+  referenceTrackUrl?: string | null;
+  referenceTrackFilename?: string | null;
+  referenceAnalysisResult?: {
+    loudnessLufs: number;
+    peakDbfs: number;
+    stereoField: string;
+    tonalProfile: Record<string, number>;
+  } | null;
 }
 
 const INSTRUMENT_GROUPS = [
@@ -1511,6 +1520,17 @@ function DialSessionContent() {
                         })}
                     </div>
                   </div>
+                )}
+
+                {/* Reference Track */}
+                {session.paymentStatus === 'paid' && !isMasteringPhase && (
+                  <ReferenceTrack
+                    sessionId={session.id}
+                    referenceFilename={session.referenceTrackFilename ?? null}
+                    referenceAnalysis={session.referenceAnalysisResult ?? null}
+                    headers={headers}
+                    onUpdate={fetchSession}
+                  />
                 )}
 
                 {tracksSection}

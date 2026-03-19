@@ -258,3 +258,9 @@ export type AnalysisResult = {
   tonalProfile: Record<string, number>;
   raw: Record<string, unknown>;
 };
+
+// ─── Comparison ────────────────────────────────────────────────────────────
+
+export type ComparisonResult = {
+  raw: Record<string, unknown>;
+};

@@ -5,7 +5,7 @@
  * Uses tool calling for structured parameter changes.
  */
 
-export const DIAL_PROMPT_VERSION = '5.7.1';
+export const DIAL_PROMPT_VERSION = '5.8.0';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -47,6 +47,17 @@ export type DialPromptInput = {
     clipping: boolean;
     tonalProfile: Record<string, number>;
   } | null;
+  // Reference track
+  referenceAnalysis?: {
+    loudnessLufs: number;
+    peakDbfs: number;
+    stereoField: string;
+    monoCompatible: boolean;
+    clipping: boolean;
+    tonalProfile: Record<string, number>;
+  } | null;
+  referenceFilename?: string | null;
+  comparisonResult?: { raw: Record<string, unknown> } | null;
 };
 
 // ─── Tool Definitions ───────────────────────────────────────────────────────
@@ -617,9 +628,42 @@ function buildMasteringPrompt(input: DialPromptInput): string {
 ${styleNote}
 ${input.hasMasteringPreview ? `マスタリングプレビュー生成済み。ユーザーは試聴可能。` : ''}
 ${input.masteringFinalUrl ? `マスタリングFinal完了。` : ''}
-マスタリングプレビュー回数: ${input.masteringPreviewCount}${analysisSection}`;
+マスタリングプレビュー回数: ${input.masteringPreviewCount}${analysisSection}${buildReferenceSection(input)}`;
 
   return [basePrompt, sessionContext].join('\n\n---\n\n');
+}
+
+// ─── Reference Track Section ─────────────────────────────────────────────────
+
+function buildReferenceSection(input: DialPromptInput): string {
+  const parts: string[] = [];
+
+  if (input.referenceAnalysis && input.referenceFilename) {
+    const a = input.referenceAnalysis;
+    const tonalStr = Object.entries(a.tonalProfile)
+      .map(([band, val]) => `${band}: ${val}`)
+      .join(', ');
+    parts.push(`### 参考音源の分析結果
+ユーザーが参考音源「${input.referenceFilename}」をアップロードしている。
+- ラウドネス: ${a.loudnessLufs} LUFS
+- ピーク: ${a.peakDbfs} dBFS
+- ステレオフィールド: ${a.stereoField}
+- トーナルプロファイル: ${tonalStr}
+
+この特徴を目標方向として、ミックスの方針に反映すること。
+完全一致は不要。方向性のガイドとして使う。`);
+  }
+
+  if (input.comparisonResult) {
+    const rawStr = JSON.stringify(input.comparisonResult.raw, null, 2).slice(0, 1500);
+    parts.push(`### 参考音源 vs プレビューミックスの比較
+${rawStr}
+
+この差分を元に、次の調整で参考音源に近づける方向を提案すること。
+技術的な数値差分はユーザーに見せず、感覚的に伝える。`);
+  }
+
+  return parts.length > 0 ? '\n\n' + parts.join('\n\n') : '';
 }
 
 // ─── Builder ────────────────────────────────────────────────────────────────
@@ -651,7 +695,7 @@ MusicalStyle: ${input.musicalStyle}
 
 ### トラック構成
 ${trackList || '（まだトラックがアップロードされていません）'}
-${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済みです。ユーザーは試聴可能な状態です。` : ''}${previewNote}`;
+${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済みです。ユーザーは試聴可能な状態です。` : ''}${previewNote}${buildReferenceSection(input)}`;
 
   return [OMAKASE_SYSTEM_PROMPT, sessionContext].join('\n\n---\n\n');
 }
@@ -697,7 +741,7 @@ MusicalStyle: ${input.musicalStyle}
 ### トラック構成
 ${trackList || '（まだトラックがアップロードされていません）'}
 ${input.currentFxSummary ? `\n### 現在のFX設定\n${input.currentFxSummary}` : ''}
-${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済みです。ユーザーは試聴可能な状態です。` : ''}${cycleNote}${input.masteringMode ? `\n### マスタリング\nこのセッションはミキシング＋マスタリングのセットです。Final Mix完了後、自動的にマスタリングフェーズに移行する。ユーザーに「マスタリングは範囲外」と言ってはいけない。` : ''}`;
+${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済みです。ユーザーは試聴可能な状態です。` : ''}${cycleNote}${input.masteringMode ? `\n### マスタリング\nこのセッションはミキシング＋マスタリングのセットです。Final Mix完了後、自動的にマスタリングフェーズに移行する。ユーザーに「マスタリングは範囲外」と言ってはいけない。` : ''}${buildReferenceSection(input)}`;
 
   return [DIAL_SYSTEM_PROMPT, FX_EXPLANATION_PROMPT, sessionContext].join(
     '\n\n---\n\n',
