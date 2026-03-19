@@ -93,6 +93,16 @@ export function ReferenceTrack({
     setErrorMsg(null);
   }, []);
 
+  const formatStereoField = (field: string): string => {
+    const map: Record<string, string> = {
+      STEREO: 'Stereo',
+      STEREO_UPMIX: 'Wide stereo',
+      MONO: 'Mono',
+      MID_SIDE: 'Mid/Side',
+    };
+    return map[field] ?? (field || 'n/a');
+  };
+
   // Tonal profile mini-bar visualization
   const TONAL_LEVEL_MAP: Record<string, number> = { LOW: 0.25, MEDIUM: 0.55, HIGH: 0.85, VERY_HIGH: 1 };
   const renderTonalBars = (profile: Record<string, string>) => {
@@ -177,9 +187,9 @@ export function ReferenceTrack({
           </div>
           {referenceAnalysis && (
             <div className="flex items-center gap-2 text-xs text-zinc-500 mt-1">
-              <span>{referenceAnalysis.loudnessLufs} LUFS</span>
+              <span>{Math.round(referenceAnalysis.loudnessLufs * 10) / 10} LUFS</span>
               <span>|</span>
-              <span>stereo: {referenceAnalysis.stereoField || 'n/a'}</span>
+              <span>{formatStereoField(referenceAnalysis.stereoField)}</span>
               <span>|</span>
               {renderTonalBars(referenceAnalysis.tonalProfile)}
             </div>

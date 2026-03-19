@@ -55,6 +55,7 @@ export type DialPromptInput = {
     monoCompatible: boolean;
     clipping: string;
     tonalProfile: Record<string, string>;
+    raw: Record<string, unknown>;
   } | null;
   referenceFilename?: string | null;
   comparisonResult?: { raw: Record<string, unknown> } | null;
@@ -640,16 +641,23 @@ function buildReferenceSection(input: DialPromptInput): string {
 
   if (input.referenceAnalysis && input.referenceFilename) {
     const a = input.referenceAnalysis;
+    const lufs = Math.round(a.loudnessLufs * 10) / 10;
     const tonalStr = Object.entries(a.tonalProfile)
       .map(([band, val]) => `${band}: ${val}`)
       .join(', ');
+
+    // Extract summary text from raw if available
+    const summary = a.raw?.summary as Record<string, string> | undefined;
+    const summaryText = summary?.summary;
+
     parts.push(`### 参考音源の分析結果
 ユーザーが参考音源「${input.referenceFilename}」をアップロードしている。
-- ラウドネス: ${a.loudnessLufs} LUFS
+- ラウドネス: ${lufs} LUFS
 - ピーク: ${a.peakDbfs} dBFS
 - ステレオフィールド: ${a.stereoField}
+- クリッピング: ${a.clipping === 'NONE' ? 'なし' : a.clipping}
 - トーナルプロファイル: ${tonalStr}
-
+${summaryText ? `\n**RoEx分析サマリー（内部参考用、ユーザーには技術用語を見せない）:**\n${summaryText}` : ''}
 この特徴を目標方向として、ミックスの方針に反映すること。
 完全一致は不要。方向性のガイドとして使う。`);
   }
