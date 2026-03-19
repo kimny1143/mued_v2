@@ -254,8 +254,8 @@ export type AnalysisResult = {
   peakDbfs: number;
   stereoField: string;
   monoCompatible: boolean;
-  clipping: boolean;
-  tonalProfile: Record<string, number>;
+  clipping: string; // "NONE" | "MINOR" | "MAJOR" etc.
+  tonalProfile: Record<string, string>; // e.g. { bass_frequency: "HIGH", high_frequency: "MEDIUM" }
   raw: Record<string, unknown>;
 };
 

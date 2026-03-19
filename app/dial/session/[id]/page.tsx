@@ -68,7 +68,7 @@ interface Session {
     loudnessLufs: number;
     peakDbfs: number;
     stereoField: string;
-    tonalProfile: Record<string, number>;
+    tonalProfile: Record<string, string>;
   } | null;
 }
 

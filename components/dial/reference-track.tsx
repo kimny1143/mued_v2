@@ -6,7 +6,7 @@ interface ReferenceAnalysis {
   loudnessLufs: number;
   peakDbfs: number;
   stereoField: string;
-  tonalProfile: Record<string, number>;
+  tonalProfile: Record<string, string>;
 }
 
 interface ReferenceTrackProps {
@@ -94,18 +94,18 @@ export function ReferenceTrack({
   }, []);
 
   // Tonal profile mini-bar visualization
-  const renderTonalBars = (profile: Record<string, number>) => {
+  const TONAL_LEVEL_MAP: Record<string, number> = { LOW: 0.25, MEDIUM: 0.55, HIGH: 0.85, VERY_HIGH: 1 };
+  const renderTonalBars = (profile: Record<string, string>) => {
     const bands = Object.entries(profile);
     if (bands.length === 0) return null;
-    const max = Math.max(...bands.map(([, v]) => v), 0.01);
     return (
       <div className="flex items-end gap-0.5 h-3">
-        {bands.map(([band, val]) => (
+        {bands.map(([band, level]) => (
           <div
             key={band}
             className="w-1.5 bg-amber-500/60 rounded-sm"
-            style={{ height: `${(val / max) * 100}%` }}
-            title={`${band}: ${val}`}
+            style={{ height: `${(TONAL_LEVEL_MAP[level] ?? 0.5) * 100}%` }}
+            title={`${band}: ${level}`}
           />
         ))}
       </div>

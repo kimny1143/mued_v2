@@ -44,8 +44,8 @@ export type DialPromptInput = {
     peakDbfs: number;
     stereoField: string;
     monoCompatible: boolean;
-    clipping: boolean;
-    tonalProfile: Record<string, number>;
+    clipping: string;
+    tonalProfile: Record<string, string>;
   } | null;
   // Reference track
   referenceAnalysis?: {
@@ -53,8 +53,8 @@ export type DialPromptInput = {
     peakDbfs: number;
     stereoField: string;
     monoCompatible: boolean;
-    clipping: boolean;
-    tonalProfile: Record<string, number>;
+    clipping: string;
+    tonalProfile: Record<string, string>;
   } | null;
   referenceFilename?: string | null;
   comparisonResult?: { raw: Record<string, unknown> } | null;
@@ -618,7 +618,7 @@ function buildMasteringPrompt(input: DialPromptInput): string {
 - ピーク: ${a.peakDbfs} dBFS
 - ステレオフィールド: ${a.stereoField}
 - モノ互換性: ${a.monoCompatible ? 'OK' : '問題あり'}
-- クリッピング: ${a.clipping ? '検出あり' : 'なし'}`;
+- クリッピング: ${a.clipping === 'NONE' ? 'なし' : a.clipping}`;
   }
 
   const sessionContext = `## 現在のセッション

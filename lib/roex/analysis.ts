@@ -7,23 +7,16 @@ import type { AnalysisRequest, AnalysisResult, ComparisonResult } from './types'
 const DEV_ANALYSIS_RESULT: AnalysisResult = {
   loudnessLufs: -11.2,
   peakDbfs: -0.8,
-  stereoField: 'wide',
+  stereoField: 'STEREO',
   monoCompatible: true,
-  clipping: false,
+  clipping: 'NONE',
   tonalProfile: {
-    low: 0.35,
-    mid: 0.45,
-    high: 0.2,
+    bass_frequency: 'MEDIUM',
+    low_mid_frequency: 'MEDIUM',
+    high_mid_frequency: 'MEDIUM',
+    high_frequency: 'MEDIUM',
   },
-  raw: {
-    _dev: true,
-    loudness_lufs: -11.2,
-    peak_dbfs: -0.8,
-    stereo_field: 'wide',
-    mono_compatible: true,
-    clipping: false,
-    tonal_profile: { low: 0.35, mid: 0.45, high: 0.2 },
-  },
+  raw: { _dev: true },
 };
 
 const DEV_COMPARISON_RESULT: ComparisonResult = {
@@ -89,16 +82,16 @@ export async function analyzeMix(
     body,
   );
 
-  // Response may nest results under "mixDiagnosisResults" or "payload"
-  const payload = (raw.mixDiagnosisResults ?? raw.payload ?? raw) as Record<string, unknown>;
+  // Response nests results under "payload"
+  const payload = (raw.payload ?? raw) as Record<string, unknown>;
 
   return {
-    loudnessLufs: ((payload.loudness_lufs ?? payload.loudnessLufs) as number) ?? 0,
-    peakDbfs: ((payload.peak_dbfs ?? payload.peakDbfs) as number) ?? 0,
-    stereoField: ((payload.stereo_field ?? payload.stereoField) as string) ?? '',
-    monoCompatible: ((payload.mono_compatible ?? payload.monoCompatible) as boolean) ?? false,
-    clipping: (payload.clipping as boolean) ?? false,
-    tonalProfile: ((payload.tonal_profile ?? payload.tonalProfile) as Record<string, number>) ?? {},
+    loudnessLufs: (payload.integrated_loudness_lufs as number) ?? 0,
+    peakDbfs: (payload.peak_loudness_dbfs as number) ?? 0,
+    stereoField: (payload.stereo_field as string) ?? '',
+    monoCompatible: (payload.mono_compatible as boolean) ?? false,
+    clipping: (payload.clipping as string) ?? 'NONE',
+    tonalProfile: (payload.tonal_profile as Record<string, string>) ?? {},
     raw: payload,
   };
 }
