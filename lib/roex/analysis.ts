@@ -82,8 +82,9 @@ export async function analyzeMix(
     body,
   );
 
-  // Response nests results under "payload"
-  const payload = (raw.payload ?? raw) as Record<string, unknown>;
+  // Response: { mixDiagnosisResults: { payload: { ... } } }
+  const diagResults = (raw.mixDiagnosisResults ?? raw) as Record<string, unknown>;
+  const payload = (diagResults.payload ?? diagResults) as Record<string, unknown>;
 
   return {
     loudnessLufs: (payload.integrated_loudness_lufs as number) ?? 0,
