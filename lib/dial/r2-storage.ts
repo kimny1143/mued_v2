@@ -16,8 +16,8 @@ export async function copyToR2(params: {
   taskType: string;
   originalFilename?: string;
 }): Promise<{ r2Url: string; expiresAt: Date } | null> {
-  const workerUrl = process.env.DIAL_R2_WORKER_URL;
-  const secret = process.env.DIAL_R2_SECRET;
+  const workerUrl = process.env.DIAL_R2_WORKER_URL?.trim();
+  const secret = process.env.DIAL_R2_SECRET?.trim();
 
   if (!workerUrl || !secret) {
     console.error('[r2-storage] Missing DIAL_R2_WORKER_URL or DIAL_R2_SECRET env vars');
