@@ -1222,11 +1222,6 @@ function DialSessionContent() {
             </div>
             {mixFinalTask.stemsUrls && Object.keys(mixFinalTask.stemsUrls).length > 0 && (
               <div className="mt-4 space-y-3">
-                <div className="p-3 bg-amber-900/30 border border-amber-700 rounded-lg">
-                  <p className="text-sm text-amber-300">
-                    &#9888; ステムファイルはこのページでのみダウンロード可能です。ページを離れると再ダウンロードできません。
-                  </p>
-                </div>
                 <a
                   href={downloadUrl(mixFinalTask.id, 'stems')}
                   download
