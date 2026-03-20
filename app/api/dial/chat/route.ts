@@ -251,16 +251,12 @@ export const POST = withDialAuth(async (auth) => {
         t.taskType === 'final_basic' || t.taskType === 'final_advanced',
       );
       const hasMasteringTask = allTasks.some((t) => t.taskType === 'mastering');
-      const lastAssistantAction = existingMessages
-        .filter((m) => m.role === 'assistant')
-        .at(-1)?.action;
       const shouldSuppress =
         // No preview yet — block final/mix_check (AI skipped Phase 1)
         ((currentAction === 'request_final' || currentAction === 'request_mix_check') && !hasCompletedPreview)
-        // Duplicate paid actions
+        // Duplicate paid actions (max limits enforced in respective API endpoints)
         || (currentAction === 'request_final' && hasFinalTask)
-        || (currentAction === 'request_mastering_final' && hasMasteringTask)
-        || (currentAction === 'request_mix_check' && lastAssistantAction === currentAction);
+        || (currentAction === 'request_mastering_final' && hasMasteringTask);
       if (shouldSuppress) {
         if (masteringAction === currentAction) masteringAction = null;
         if (action === currentAction) action = null;
