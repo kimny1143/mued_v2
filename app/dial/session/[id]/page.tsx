@@ -1523,7 +1523,7 @@ function DialSessionContent() {
                 )}
 
                 {/* Reference Track */}
-                {session.paymentStatus === 'paid' && !isMasteringPhase && (
+                {session.paymentStatus === 'paid' && (
                   <ReferenceTrack
                     sessionId={session.id}
                     referenceFilename={session.referenceTrackFilename ?? null}
