@@ -6,6 +6,7 @@ import { useAuth } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
 import Link from 'next/link';
 import { ChatPanel } from '@/components/dial/chat-panel';
+import { ReferenceTrack } from '@/components/dial/reference-track';
 import { AudioAnalyzerProvider, useAudioAnalyzerContext } from '@/hooks/use-audio-analyzer-context';
 import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
 
@@ -61,6 +62,14 @@ interface Session {
   tracks: Track[];
   tasks: Task[];
   analysisResult?: Record<string, unknown> | null;
+  referenceTrackUrl?: string | null;
+  referenceTrackFilename?: string | null;
+  referenceAnalysisResult?: {
+    loudnessLufs: number;
+    peakDbfs: number;
+    stereoField: string;
+    tonalProfile: Record<string, string>;
+  } | null;
 }
 
 const INSTRUMENT_GROUPS = [
@@ -161,6 +170,10 @@ function DialSessionContent() {
   // Take folding — show only latest 3, collapse older
   const [showOlderTakes, setShowOlderTakes] = useState(false);
 
+  // Elapsed time tracking for processing tasks
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const processingStartRef = useRef<number | null>(null);
+
   // Download tracking for completion section
   const [downloadedItems, setDownloadedItems] = useState<Set<string>>(new Set());
   const markDownloaded = (item: string) => {
@@ -184,6 +197,12 @@ function DialSessionContent() {
     'Content-Type': 'application/json',
     ...(guestToken ? { 'X-Dial-Guest-Token': guestToken } : {}),
   }), [guestToken]);
+
+  // Build download URL with guest token for browser link clicks
+  const downloadUrl = useCallback((taskId: string, api: 'download' | 'stems' = 'download') => {
+    const base = `/api/dial/${api}?taskId=${taskId}`;
+    return guestToken ? `${base}&token=${guestToken}` : base;
+  }, [guestToken]);
 
   const fetchSession = useCallback(async () => {
     try {
@@ -356,6 +375,28 @@ function DialSessionContent() {
       if (completedTasks[0]) setSelectedTakeId(completedTasks[0].id);
     }
     prevCompletedCountRef.current = count;
+  }, [session]);
+
+  // Track elapsed time while processing
+  useEffect(() => {
+    const hasProcessing = session?.tasks?.some(
+      (t) => t.status === 'processing' || t.status === 'pending',
+    );
+    if (hasProcessing) {
+      if (!processingStartRef.current) {
+        processingStartRef.current = Date.now();
+        setElapsedSeconds(0);
+      }
+      const interval = setInterval(() => {
+        if (processingStartRef.current) {
+          setElapsedSeconds(Math.floor((Date.now() - processingStartRef.current) / 1000));
+        }
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      processingStartRef.current = null;
+      setElapsedSeconds(0);
+    }
   }, [session]);
 
   // Reconnect analyzer when selected take changes (audio element is recreated via React key)
@@ -655,8 +696,21 @@ function DialSessionContent() {
       // Note: mixGenerating stays true until session polling detects the
       // final/mix_check task has completed (handled in useEffect below)
     } catch {
-      setError('Mix generation error');
-      setMixGenerating(false);
+      // Timeout or network error — the task may have been submitted to RoEx successfully.
+      // Check session state to see if a processing task exists.
+      try {
+        await fetchSession();
+      } catch { /* ignore */ }
+      // If a processing task was found, polling will pick it up.
+      // Only show error if no processing task exists after refresh.
+      if (!session?.tasks?.some(
+        (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced' || t.taskType === 'mix_check')
+          && (t.status === 'processing' || t.status === 'pending'),
+      )) {
+        setError('Mix generation request timed out. Please try again.');
+        setMixGenerating(false);
+      }
+      // else: mixGenerating stays true, polling will detect completion
     }
   };
 
@@ -1044,7 +1098,7 @@ function DialSessionContent() {
               <audio controls src={proxyAudioUrl(task.finalUrl)} crossOrigin="anonymous" className="w-full mb-2" />
             )}
             <a
-              href={task.finalUrl}
+              href={downloadUrl(task.id)}
               download
               className="inline-block px-4 py-2 bg-green-700 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors"
             >
@@ -1126,7 +1180,7 @@ function DialSessionContent() {
             </div>
             <div className="flex items-center gap-3">
               <a
-                href={`/api/dial/download?taskId=${masteringFinalTask.id}`}
+                href={downloadUrl(masteringFinalTask.id)}
                 download
                 onClick={() => markDownloaded('mastered')}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-base font-semibold transition-colors"
@@ -1152,7 +1206,7 @@ function DialSessionContent() {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <a
-                href={`/api/dial/download?taskId=${mixFinalTask.id}`}
+                href={downloadUrl(mixFinalTask.id)}
                 download
                 onClick={() => markDownloaded('finalMix')}
                 className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-base font-semibold transition-colors ${
@@ -1168,13 +1222,8 @@ function DialSessionContent() {
             </div>
             {mixFinalTask.stemsUrls && Object.keys(mixFinalTask.stemsUrls).length > 0 && (
               <div className="mt-4 space-y-3">
-                <div className="p-3 bg-amber-900/30 border border-amber-700 rounded-lg">
-                  <p className="text-sm text-amber-300">
-                    &#9888; ステムファイルはこのページでのみダウンロード可能です。ページを離れると再ダウンロードできません。
-                  </p>
-                </div>
                 <a
-                  href={`/api/dial/stems?taskId=${mixFinalTask.id}`}
+                  href={downloadUrl(mixFinalTask.id, 'stems')}
                   download
                   onClick={() => markDownloaded('stems')}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-700 hover:bg-zinc-600 rounded-xl text-base font-medium transition-colors"
@@ -1320,21 +1369,50 @@ function DialSessionContent() {
               {/* Left: Chat panel */}
               <div className="flex-1 min-w-0 flex flex-col">
                 {/* Processing banner — visible when task is being processed server-side */}
-                {isProcessing && latestTask && (
-                  <div className="mb-2 px-4 py-3 bg-amber-900/20 border border-amber-800/40 rounded-xl flex items-center gap-3">
-                    <div className="h-4 w-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" role="status" />
-                    <div className="text-sm">
-                      <span className="text-amber-300 font-medium">
-                        {latestTask.taskType === 'mastering' ? 'Generating mastered track...'
-                          : latestTask.taskType === 'mastering_preview' ? 'Generating master preview...'
-                          : latestTask.taskType === 'mix_check' ? 'Generating mix check...'
-                          : latestTask.taskType === 'preview' ? 'Generating preview...'
-                          : 'Processing...'}
-                      </span>
-                      <span className="text-zinc-500 ml-2 text-xs">This may take a few minutes</span>
+                {isProcessing && latestTask && (() => {
+                  const trackCount = session.tracks.length;
+                  const elapsedMin = Math.floor(elapsedSeconds / 60);
+                  const elapsedSec = elapsedSeconds % 60;
+                  const elapsed = elapsedMin > 0
+                    ? `${elapsedMin}:${String(elapsedSec).padStart(2, '0')}`
+                    : `0:${String(elapsedSec).padStart(2, '0')}`;
+
+                  const { label, estimate } = (() => {
+                    switch (latestTask.taskType) {
+                      case 'preview':
+                        return {
+                          label: 'Generating preview...',
+                          estimate: trackCount > 8 ? '5\u201320 min' : '2\u201310 min',
+                        };
+                      case 'mix_check':
+                        return { label: 'Generating mix check...', estimate: '3\u201310 min' };
+                      case 'final_basic':
+                      case 'final_advanced':
+                        return { label: 'Generating final mix...', estimate: '3\u201310 min' };
+                      case 'mastering_preview':
+                        return { label: 'Generating master preview...', estimate: '1\u20135 min' };
+                      case 'mastering':
+                        return { label: 'Generating mastered track...', estimate: '1\u20135 min' };
+                      default:
+                        return { label: 'Processing...', estimate: '' };
+                    }
+                  })();
+
+                  return (
+                    <div className="mb-2 px-4 py-3 bg-amber-900/20 border border-amber-800/40 rounded-xl flex items-center gap-3">
+                      <div className="h-4 w-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" role="status" />
+                      <div className="text-sm flex-1">
+                        <span className="text-amber-300 font-medium">{label}</span>
+                        {estimate && (
+                          <span className="text-zinc-500 ml-2 text-xs">
+                            est. {estimate}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-zinc-500 text-xs font-mono tabular-nums">{elapsed}</span>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
                 <div className="flex-1 min-h-0">
                   <ChatPanel
                     className="h-full"
@@ -1388,20 +1466,14 @@ function DialSessionContent() {
                           className="w-full"
                           key={effectiveUrl}
                         />
-                        {!isDevOverride && selectedAudioUrl && (
-                          <button
-                            onClick={() => {
-                              const a = document.createElement('a');
-                              a.href = selectedAudioUrl;
-                              a.download = `mix${selectedTask?.finalUrl ? '.wav' : '.mp3'}`;
-                              a.target = '_blank';
-                              a.rel = 'noopener noreferrer';
-                              a.click();
-                            }}
+                        {!isDevOverride && selectedTask && (
+                          <a
+                            href={downloadUrl(selectedTask.id)}
+                            download
                             className="mt-2 inline-block text-xs text-zinc-400 hover:text-white transition-colors"
                           >
-                            Download {selectedTask?.finalUrl ? '.wav' : '.mp3'}
-                          </button>
+                            Download {selectedTask.finalUrl ? '.wav' : '.mp3'}
+                          </a>
                         )}
                         {isDevOverride && (
                           <button
@@ -1511,6 +1583,17 @@ function DialSessionContent() {
                         })}
                     </div>
                   </div>
+                )}
+
+                {/* Reference Track */}
+                {session.paymentStatus === 'paid' && (
+                  <ReferenceTrack
+                    sessionId={session.id}
+                    referenceFilename={session.referenceTrackFilename ?? null}
+                    referenceAnalysis={session.referenceAnalysisResult ?? null}
+                    headers={headers}
+                    onUpdate={fetchSession}
+                  />
                 )}
 
                 {tracksSection}

@@ -49,8 +49,11 @@ export function withDialAuth(
         });
       }
 
-      // 2. Try guest token from header
-      const guestToken = request.headers.get('X-Dial-Guest-Token');
+      // 2. Try guest token from header or query parameter
+      // Query param fallback needed for browser link clicks (e.g. download links)
+      // where custom headers cannot be sent
+      const guestToken = request.headers.get('X-Dial-Guest-Token')
+        || new URL(request.url).searchParams.get('token');
       if (guestToken) {
         // Validate token against DB
         const session = await db.query.dialSessions.findFirst({

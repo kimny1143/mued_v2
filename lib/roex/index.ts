@@ -52,6 +52,7 @@ export type {
   MasteringResult,
   AnalysisRequest,
   AnalysisResult,
+  ComparisonResult,
 } from './types';
 
 export {

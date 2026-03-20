@@ -27,11 +27,12 @@ import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError }
 import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMixPreview, pollMixFinal } from '@/lib/roex';
 import { buildAdvancedTrackData, type ParameterChanges } from '@/lib/dial/track-data';
 import { copyToR2 } from '@/lib/dial/r2-storage';
+import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks, dialMessages } from '@/db/schema';
 
-// Allow up to 60s for RoEx API calls (Vercel Pro limit)
-export const maxDuration = 60;
+// Allow up to 300s for RoEx API calls — /applyaudioeffects can take 60s+ to respond
+export const maxDuration = 300;
 
 // ─── Validation ─────────────────────────────────────────────────────────────
 
@@ -188,7 +189,11 @@ export const POST = withDialAuth(async (auth) => {
         const urlKey = t.roexUploadUrl.split('/').pop()?.split('?')[0] ?? '';
         const fx = fxSettings?.[urlKey];
         const gainDb = (fx?.gain_settings as Record<string, number>)?.gain_db ?? 0;
-        return { trackUrl: t.roexUploadUrl, gainDb };
+        const trackUrl = resolveTrackUrl(t);
+        if (!trackUrl) {
+          throw new Error(`Stem URL expired for "${t.originalFilename}". Please re-upload your stems.`);
+        }
+        return { trackUrl, gainDb };
       });
 
       const client = createRoExClient();
@@ -220,14 +225,16 @@ export const POST = withDialAuth(async (auth) => {
         sessionId: previewTask.sessionId,
         taskId: task.id,
         taskType: taskType,
-      }).then((r2Result) => {
+      }).then(async (r2Result) => {
         if (r2Result) {
-          db.update(dialTasks).set({
+          await db.update(dialTasks).set({
             r2FinalUrl: r2Result.r2Url,
             r2ExpiresAt: r2Result.expiresAt,
           }).where(eq(dialTasks.id, task.id));
         }
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error('[final/POST] R2 copy failed:', err);
+      });
     }
 
     // Update session — increment paid cycle count + type-specific counters
@@ -322,7 +329,7 @@ export const GET = withDialAuth(async (auth) => {
     const tracks = await db.query.dialTracks.findMany({
       where: eq(dialTracks.sessionId, task.sessionId),
     });
-    const trackUrls = tracks.map((t) => t.roexUploadUrl);
+    const trackUrls = tracks.map((t) => resolveTrackUrl(t) ?? t.roexUploadUrl);
 
     const client = createRoExClient();
     const pollResult = await pollMixFinal(client, task.roexTaskId, trackUrls);
@@ -346,14 +353,16 @@ export const GET = withDialAuth(async (auth) => {
           sessionId: task.sessionId,
           taskId: taskId,
           taskType: task.taskType,
-        }).then((r2Result) => {
+        }).then(async (r2Result) => {
           if (r2Result) {
-            db.update(dialTasks).set({
+            await db.update(dialTasks).set({
               r2FinalUrl: r2Result.r2Url,
               r2ExpiresAt: r2Result.expiresAt,
             }).where(eq(dialTasks.id, taskId));
           }
-        }).catch(() => {});
+        }).catch((err) => {
+          console.error('[final/GET] R2 copy failed:', err);
+        });
       }
 
       // Update session status

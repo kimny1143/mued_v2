@@ -3,9 +3,12 @@
  * POST /api/dial/upload/confirm
  *
  * Called after the client successfully PUTs the file to GCS.
- * Saves the track record in the database.
+ * Saves the track record in the database, then copies to R2 for permanent URL.
+ *
+ * Strategy: roexUploadUrl = GCS (for RoEx API), r2Url = R2 /stream/ (fallback when GCS expires)
  */
 
+import { eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiForbidden } from '@/lib/api-response';
@@ -48,7 +51,7 @@ export const POST = withDialAuth(async (auth) => {
       return apiForbidden('Payment required before uploading');
     }
 
-    // Save track record
+    // Save track record with GCS URL first
     const [track] = await db.insert(dialTracks).values({
       sessionId,
       originalFilename: fileName,
@@ -59,7 +62,39 @@ export const POST = withDialAuth(async (auth) => {
       reverbPreference,
     }).returning();
 
-    return apiSuccess({ trackId: track.id, readableUrl });
+    // Copy stem to R2 for permanent URL (GCS signed URLs expire in 1h)
+    // Uses /stream/ path (no Content-Disposition) so RoEx can fetch it directly
+    const workerUrl = process.env.DIAL_R2_WORKER_URL?.trim();
+    const secret = process.env.DIAL_R2_SECRET?.trim();
+    let r2Url: string | null = null;
+
+    if (workerUrl && secret) {
+      const r2Key = `stems/${sessionId}/${fileName}`;
+      try {
+        const res = await fetch(`${workerUrl}/copy`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-R2-Secret': secret,
+          },
+          body: JSON.stringify({ sourceUrl: readableUrl, key: r2Key }),
+        });
+        if (res.ok) {
+          r2Url = `${workerUrl}/stream/${r2Key}`;
+          await db.update(dialTracks)
+            .set({ r2Url })
+            .where(eq(dialTracks.id, track.id));
+        } else {
+          const text = await res.text().catch(() => 'unknown');
+          console.error(`[upload/confirm] R2 copy failed: ${res.status} ${text}`);
+        }
+      } catch (err) {
+        console.error('[upload/confirm] R2 copy error:', err);
+        // Non-fatal: GCS URL still works for ~1h, continue without R2
+      }
+    }
+
+    return apiSuccess({ trackId: track.id, readableUrl, r2Url });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Confirm failed');
   }

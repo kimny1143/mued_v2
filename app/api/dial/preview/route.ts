@@ -14,6 +14,7 @@ import { verifyDialSessionOwnership, verifyDialTaskOwnership } from '@/lib/middl
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { createRoExClient, mixPreview, pollMixPreview, mapMusicalStyle, mapInstrumentGroup } from '@/lib/roex';
 import type { MixTrackInput } from '@/lib/roex';
+import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { db } from '@/db';
 import { dialTracks, dialTasks, dialSessions } from '@/db/schema';
 
@@ -56,13 +57,20 @@ export const POST = withDialAuth(async (auth) => {
     }
 
     // Build RoEx preview request with mapped enum values
-    const trackInputs: MixTrackInput[] = tracks.map((t) => ({
-      trackUrl: t.roexUploadUrl,
-      instrumentGroup: mapInstrumentGroup(t.instrumentGroup) as MixTrackInput['instrumentGroup'],
-      presenceSetting: t.presenceSetting as MixTrackInput['presenceSetting'],
-      panPreference: t.panPreference as MixTrackInput['panPreference'],
-      reverbPreference: t.reverbPreference as MixTrackInput['reverbPreference'],
-    }));
+    // Resolve track URLs with GCS→R2 fallback for expired signed URLs
+    const trackInputs: MixTrackInput[] = tracks.map((t) => {
+      const trackUrl = resolveTrackUrl(t);
+      if (!trackUrl) {
+        throw new Error(`Stem URL expired and no R2 fallback for "${t.originalFilename}". Please re-upload your stems.`);
+      }
+      return {
+        trackUrl,
+        instrumentGroup: mapInstrumentGroup(t.instrumentGroup) as MixTrackInput['instrumentGroup'],
+        presenceSetting: t.presenceSetting as MixTrackInput['presenceSetting'],
+        panPreference: t.panPreference as MixTrackInput['panPreference'],
+        reverbPreference: t.reverbPreference as MixTrackInput['reverbPreference'],
+      };
+    });
 
     const roexMusicalStyle = mapMusicalStyle(session.musicalStyle);
 

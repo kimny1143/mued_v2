@@ -95,6 +95,10 @@ export const dialSessions = pgTable('dial_sessions', {
   additionalCycleLimit: integer('additional_cycle_limit').notNull().default(5), // Max additional cycles allowed
   previewCount: integer('preview_count').notNull().default(0), // Preview count (omakase: max 5)
   analysisResult: jsonb('analysis_result'), // RoEx mix analysis (LUFS, peak, stereo, etc.)
+  // Reference track (optional)
+  referenceTrackUrl: text('reference_track_url'), // RoEx readable URL
+  referenceTrackFilename: text('reference_track_filename'), // Original filename
+  referenceAnalysisResult: jsonb('reference_analysis_result'), // analyzeMix result cache
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -109,7 +113,8 @@ export const dialTracks = pgTable('dial_tracks', {
   id: uuid('id').primaryKey().defaultRandom(),
   sessionId: uuid('session_id').notNull().references(() => dialSessions.id, { onDelete: 'cascade' }),
   originalFilename: text('original_filename').notNull(),
-  roexUploadUrl: text('roex_upload_url').notNull(), // RoEx readable URL after upload
+  roexUploadUrl: text('roex_upload_url').notNull(), // RoEx readable URL after upload (GCS signed, 1h expiry)
+  r2Url: text('r2_url'), // Permanent R2 copy for fallback when GCS expires
   instrumentGroup: text('instrument_group').notNull(), // InstrumentGroup enum value
   presenceSetting: text('presence_setting').notNull().default('NORMAL'),
   panPreference: text('pan_preference').notNull().default('NO_PREFERENCE'),

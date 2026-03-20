@@ -82,14 +82,16 @@ export const POST = withDialAuth(async (auth) => {
         sessionId: previewTask.sessionId,
         taskId: task.id,
         taskType: 'mastering',
-      }).then((r2Result) => {
+      }).then(async (r2Result) => {
         if (r2Result) {
-          db.update(dialTasks).set({
+          await db.update(dialTasks).set({
             r2FinalUrl: r2Result.r2Url,
             r2ExpiresAt: r2Result.expiresAt,
           }).where(eq(dialTasks.id, task.id));
         }
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error('[mastering/final] R2 copy failed:', err);
+      });
     }
 
     // Update session status to completed

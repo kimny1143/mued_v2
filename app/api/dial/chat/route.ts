@@ -20,6 +20,8 @@ import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/l
 import { sendHooChat, type HooChatMessage } from '@/lib/ai/providers';
 import { buildDialSystemPrompt, type DialPromptInput } from '@/lib/ai/prompts/dial';
 import { detectPhase, selectTools } from '@/lib/dial/phase';
+import { createRoExClient, compareMixes } from '@/lib/roex';
+import type { AnalysisResult, ComparisonResult } from '@/lib/roex';
 import { db } from '@/db';
 import { dialSessions, dialTracks, dialMessages, dialTasks } from '@/db/schema';
 
@@ -144,7 +146,27 @@ export const POST = withDialAuth(async (auth) => {
       mixFinalUrl: mixFinalTask?.finalUrl ?? undefined,
       // Analysis
       analysisResult: session.analysisResult as DialPromptInput['analysisResult'] ?? null,
+      // Reference track
+      referenceAnalysis: session.referenceAnalysisResult as AnalysisResult | null ?? null,
+      referenceFilename: session.referenceTrackFilename ?? null,
+      comparisonResult: null as ComparisonResult | null, // populated below if applicable
     };
+
+    // If reference track exists and a preview is available, run comparison inline
+    if (session.referenceTrackUrl && latestTask?.previewUrl) {
+      try {
+        const roexClient = createRoExClient();
+        const comparison = await compareMixes(
+          roexClient,
+          session.referenceTrackUrl,
+          latestTask.previewUrl,
+          session.musicalStyle,
+        );
+        promptInput.comparisonResult = comparison;
+      } catch {
+        // Comparison is best-effort — don't block chat if it fails
+      }
+    }
 
     const systemPrompt = buildDialSystemPrompt(promptInput);
 
