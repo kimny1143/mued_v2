@@ -207,7 +207,7 @@ export const POST = withDialAuth(async (auth) => {
     const tools = selectTools({ isMasteringPhase, isOmakase });
 
     const startTime = Date.now();
-    const aiResponse = await sendHooChat('claude-haiku', chatMessages, {
+    const aiResponse = await sendHooChat('claude-sonnet-4', chatMessages, {
       systemPrompt,
       tools,
     });

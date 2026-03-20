@@ -20,7 +20,7 @@
  */
 
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
@@ -241,13 +241,13 @@ export const POST = withDialAuth(async (auth) => {
       }
     }
 
-    // Update session — increment paid cycle count + type-specific counters
+    // Update session — atomic increment to prevent race conditions
     const taskCompleted = !!mixResult.finalUrl;
     if (type === 'mix_check') {
       await db.update(dialSessions)
         .set({
-          mixCheckCount: sessionRow.mixCheckCount + 1,
-          paidCycleCount: sessionRow.paidCycleCount + 1,
+          mixCheckCount: sql`${dialSessions.mixCheckCount} + 1`,
+          paidCycleCount: sql`${dialSessions.paidCycleCount} + 1`,
           status: 'mixing',
           updatedAt: new Date(),
         })
@@ -255,7 +255,7 @@ export const POST = withDialAuth(async (auth) => {
     } else if (taskCompleted) {
       await db.update(dialSessions)
         .set({
-          paidCycleCount: sessionRow.paidCycleCount + 1,
+          paidCycleCount: sql`${dialSessions.paidCycleCount} + 1`,
           status: 'completed',
           updatedAt: new Date(),
         })
@@ -263,7 +263,7 @@ export const POST = withDialAuth(async (auth) => {
     } else {
       await db.update(dialSessions)
         .set({
-          paidCycleCount: sessionRow.paidCycleCount + 1,
+          paidCycleCount: sql`${dialSessions.paidCycleCount} + 1`,
           status: 'mixing',
           updatedAt: new Date(),
         })
