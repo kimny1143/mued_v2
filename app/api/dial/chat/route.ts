@@ -248,9 +248,12 @@ export const POST = withDialAuth(async (auth) => {
     const currentAction = masteringAction ?? action;
     if (currentAction) {
       const hasFinalTask = allTasks.some((t) =>
-        t.taskType === 'final_basic' || t.taskType === 'final_advanced',
+        (t.taskType === 'final_basic' || t.taskType === 'final_advanced')
+        && t.status !== 'failed',
       );
-      const hasMasteringTask = allTasks.some((t) => t.taskType === 'mastering');
+      const hasMasteringTask = allTasks.some((t) =>
+        t.taskType === 'mastering' && t.status !== 'failed',
+      );
       const shouldSuppress =
         // No preview yet — block final/mix_check (AI skipped Phase 1)
         ((currentAction === 'request_final' || currentAction === 'request_mix_check') && !hasCompletedPreview)
@@ -266,21 +269,24 @@ export const POST = withDialAuth(async (auth) => {
     // ─── Auto-inject: if Hoo wrote about a button but forgot the tool call ──
     // haiku sometimes writes "下にボタンが表示されるから" without actually calling
     // the tool. Detect this and inject the appropriate action based on phase.
+    // Regex is narrow to avoid false positives from explanatory text.
     if (!action && !masteringAction && aiResponse.content) {
       const text = aiResponse.content;
-      const mentionsButton = /ボタン|確定|ファイナル|生成する/.test(text);
-      if (mentionsButton) {
+      // Only match the specific "button will appear" pattern Hoo uses when proposing actions
+      const proposesAction = /ボタン.{0,5}(表示|押して|出る)|生成するね|生成するよ/.test(text);
+      if (proposesAction) {
         const hasFinalTask = allTasks.some((t) =>
-          t.taskType === 'final_basic' || t.taskType === 'final_advanced',
+          (t.taskType === 'final_basic' || t.taskType === 'final_advanced')
+          && t.status !== 'failed',
         );
-        const hasMasteringTask = allTasks.some((t) => t.taskType === 'mastering');
+        const hasMasteringTask = allTasks.some((t) =>
+          t.taskType === 'mastering' && t.status !== 'failed',
+        );
 
         if (isMasteringPhase && hasMasteringPreview && !hasMasteringTask) {
           masteringAction = 'request_mastering_final';
         } else if (!isMasteringPhase && hasCompletedPreview && !hasFinalTask) {
           if (phase >= 2) {
-            // Phase 2→3: request_final, Phase 2 retake: request_mix_check
-            // If text mentions "ファイナル" or "確定", it's request_final
             action = /ファイナル|確定|final/i.test(text) ? 'request_final' : 'request_mix_check';
           }
         }
