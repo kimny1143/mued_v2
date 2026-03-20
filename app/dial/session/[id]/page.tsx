@@ -1545,8 +1545,10 @@ function DialSessionContent() {
                         .map((task) => {
                           const isSelected = task.id === selectedTakeId;
                           const hasAudio = !!(task.previewUrl || task.finalUrl);
+                          const allMixChecks = session.tasks.filter((tt) => tt.taskType === 'mix_check');
+                          const mixCheckIndex = allMixChecks.findIndex((tt) => tt.id === task.id);
                           const label = task.taskType === 'mix_check'
-                            ? 'Mix Check'
+                            ? `Mix Check${allMixChecks.length > 1 ? ` ${allMixChecks.length - mixCheckIndex}` : ''}`
                             : task.taskType === 'mastering_preview'
                               ? 'Master Preview'
                               : task.taskType === 'mastering'

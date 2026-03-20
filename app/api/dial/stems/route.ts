@@ -60,11 +60,11 @@ export const GET = withDialAuth(async (auth) => {
   const passthrough = new PassThrough();
   archive.pipe(passthrough);
 
-  // Fetch each stem and pipe into the archive
-  const fetchPromises = Object.entries(stemsUrls).map(async ([name, url]) => {
+  // Fetch stems sequentially to avoid OOM (14 × 80MB = 1.1GB concurrent)
+  for (const [name, url] of Object.entries(stemsUrls)) {
     try {
       const res = await fetch(url);
-      if (!res.ok || !res.body) return;
+      if (!res.ok || !res.body) continue;
 
       // Convert web ReadableStream to Node Readable with backpressure
       const reader = res.body.getReader();
@@ -90,9 +90,8 @@ export const GET = withDialAuth(async (auth) => {
     } catch {
       // Skip failed stems — don't break the entire ZIP
     }
-  });
+  }
 
-  await Promise.all(fetchPromises);
   archive.finalize();
 
   // Convert Node PassThrough to Web ReadableStream
