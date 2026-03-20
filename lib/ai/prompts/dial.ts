@@ -3,7 +3,7 @@
  *
  * Extends Hoo's character with mixing/mastering domain knowledge.
  * Uses tool calling for structured parameter changes.
- * Common Hoo personality blocks imported from hoo-core.ts.
+ * Common Hoo personality blocks imported from hoo-dial-core.ts.
  */
 
 import {

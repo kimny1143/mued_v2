@@ -15,11 +15,10 @@
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { dialTasks, dialSessions } from '@/db/schema';
+import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
-import { dialTracks } from '@/db/schema';
 
 // Allow up to 120s for R2 copy
 export const maxDuration = 120;
