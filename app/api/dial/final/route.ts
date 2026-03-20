@@ -225,14 +225,16 @@ export const POST = withDialAuth(async (auth) => {
         sessionId: previewTask.sessionId,
         taskId: task.id,
         taskType: taskType,
-      }).then((r2Result) => {
+      }).then(async (r2Result) => {
         if (r2Result) {
-          db.update(dialTasks).set({
+          await db.update(dialTasks).set({
             r2FinalUrl: r2Result.r2Url,
             r2ExpiresAt: r2Result.expiresAt,
           }).where(eq(dialTasks.id, task.id));
         }
-      }).catch(() => {});
+      }).catch((err) => {
+        console.error('[final/POST] R2 copy failed:', err);
+      });
     }
 
     // Update session — increment paid cycle count + type-specific counters
@@ -351,14 +353,16 @@ export const GET = withDialAuth(async (auth) => {
           sessionId: task.sessionId,
           taskId: taskId,
           taskType: task.taskType,
-        }).then((r2Result) => {
+        }).then(async (r2Result) => {
           if (r2Result) {
-            db.update(dialTasks).set({
+            await db.update(dialTasks).set({
               r2FinalUrl: r2Result.r2Url,
               r2ExpiresAt: r2Result.expiresAt,
             }).where(eq(dialTasks.id, taskId));
           }
-        }).catch(() => {});
+        }).catch((err) => {
+          console.error('[final/GET] R2 copy failed:', err);
+        });
       }
 
       // Update session status

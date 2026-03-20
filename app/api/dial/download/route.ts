@@ -37,19 +37,10 @@ export const GET = withDialAuth(async (auth) => {
     : 'final-mix';
   const filename = `MUEDial_${taskLabel}_${taskId.slice(0, 8)}.wav`;
 
-  // Determine the source URL — prefer R2 (permanent), fall back to GCS (signed, may expire)
-  const workerUrl = process.env.DIAL_R2_WORKER_URL?.trim();
-
-  // If R2 copy exists, redirect to R2 Worker /download/ (fast, Content-Disposition handled by Worker)
-  if (task.r2FinalUrl && workerUrl) {
-    // Extract the R2 key from the stored URL (e.g. "https://worker.dev/stream/sessions/abc/file.wav" → "sessions/abc/file.wav")
-    // r2FinalUrl may be a /stream/ URL; we need the /download/ path for Content-Disposition
-    const r2KeyMatch = task.r2FinalUrl.match(/\/stream\/(.+)$/);
-    if (r2KeyMatch) {
-      const r2Key = r2KeyMatch[1];
-      const downloadUrl = `${workerUrl}/download/${r2Key}`;
-      return NextResponse.redirect(downloadUrl, 302);
-    }
+  // Prefer R2 (permanent), fall back to GCS (signed, may expire)
+  // r2FinalUrl is already a /download/ URL from copyToR2() — redirect directly
+  if (task.r2FinalUrl) {
+    return NextResponse.redirect(task.r2FinalUrl, 302);
   }
 
   // Fallback: stream through our server (GCS or any direct URL)
