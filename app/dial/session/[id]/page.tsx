@@ -198,6 +198,12 @@ function DialSessionContent() {
     ...(guestToken ? { 'X-Dial-Guest-Token': guestToken } : {}),
   }), [guestToken]);
 
+  // Build download URL with guest token for browser link clicks
+  const downloadUrl = useCallback((taskId: string, api: 'download' | 'stems' = 'download') => {
+    const base = `/api/dial/${api}?taskId=${taskId}`;
+    return guestToken ? `${base}&token=${guestToken}` : base;
+  }, [guestToken]);
+
   const fetchSession = useCallback(async () => {
     try {
       const res = await fetch(`/api/dial/session?id=${sessionId}`, {
@@ -1092,7 +1098,7 @@ function DialSessionContent() {
               <audio controls src={proxyAudioUrl(task.finalUrl)} crossOrigin="anonymous" className="w-full mb-2" />
             )}
             <a
-              href={`/api/dial/download?taskId=${task.id}`}
+              href={downloadUrl(task.id)}
               download
               className="inline-block px-4 py-2 bg-green-700 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors"
             >
@@ -1174,7 +1180,7 @@ function DialSessionContent() {
             </div>
             <div className="flex items-center gap-3">
               <a
-                href={`/api/dial/download?taskId=${masteringFinalTask.id}`}
+                href={downloadUrl(masteringFinalTask.id)}
                 download
                 onClick={() => markDownloaded('mastered')}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-base font-semibold transition-colors"
@@ -1200,7 +1206,7 @@ function DialSessionContent() {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <a
-                href={`/api/dial/download?taskId=${mixFinalTask.id}`}
+                href={downloadUrl(mixFinalTask.id)}
                 download
                 onClick={() => markDownloaded('finalMix')}
                 className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-base font-semibold transition-colors ${
@@ -1222,7 +1228,7 @@ function DialSessionContent() {
                   </p>
                 </div>
                 <a
-                  href={`/api/dial/stems?taskId=${mixFinalTask.id}`}
+                  href={downloadUrl(mixFinalTask.id, 'stems')}
                   download
                   onClick={() => markDownloaded('stems')}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-700 hover:bg-zinc-600 rounded-xl text-base font-medium transition-colors"
@@ -1467,7 +1473,7 @@ function DialSessionContent() {
                         />
                         {!isDevOverride && selectedTask && (
                           <a
-                            href={`/api/dial/download?taskId=${selectedTask.id}`}
+                            href={downloadUrl(selectedTask.id)}
                             download
                             className="mt-2 inline-block text-xs text-zinc-400 hover:text-white transition-colors"
                           >
