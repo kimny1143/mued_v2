@@ -90,9 +90,12 @@ export default {
       const gcsResponse = await fetch(targetUrl, { headers: gcsHeaders });
 
       // Stream GCS response back with CORS headers
+      const ct = gcsResponse.headers.get('Content-Type') || 'audio/mpeg';
+      const ext = ct.includes('wav') ? 'wav' : 'mp3';
       const responseHeaders: Record<string, string> = {
         ...cors,
-        'Content-Type': gcsResponse.headers.get('Content-Type') || 'audio/mpeg',
+        'Content-Type': ct,
+        'Content-Disposition': `inline; filename="MUEDial-preview.${ext}"`,
         'Cache-Control': 'public, max-age=3600',
       };
       // Preserve Content-Length and range headers

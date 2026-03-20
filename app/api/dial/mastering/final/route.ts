@@ -70,28 +70,32 @@ export const POST = withDialAuth(async (auth) => {
       sessionId: previewTask.sessionId,
       roexTaskId: masterResult.taskId || previewTask.roexTaskId,
       taskType: 'mastering',
-      status: masterResult.finalUrl ? 'completed' : 'processing',
+      status: 'processing',
       finalUrl: masterResult.finalUrl,
-      completedAt: masterResult.finalUrl ? new Date() : null,
+      completedAt: null,
     }).returning();
 
-    // Fire-and-forget: copy deliverable to R2 for stable download URL
+    // Await R2 copy before returning (Vercel serverless terminates after response)
     if (masterResult.finalUrl && task.id) {
-      copyToR2({
-        sourceUrl: masterResult.finalUrl,
-        sessionId: previewTask.sessionId,
-        taskId: task.id,
-        taskType: 'mastering',
-      }).then(async (r2Result) => {
-        if (r2Result) {
-          await db.update(dialTasks).set({
-            r2FinalUrl: r2Result.r2Url,
-            r2ExpiresAt: r2Result.expiresAt,
-          }).where(eq(dialTasks.id, task.id));
-        }
-      }).catch((err) => {
+      try {
+        const r2Result = await copyToR2({
+          sourceUrl: masterResult.finalUrl,
+          sessionId: previewTask.sessionId,
+          taskId: task.id,
+          taskType: 'mastering',
+        });
+        await db.update(dialTasks).set({
+          status: 'completed',
+          completedAt: new Date(),
+          ...(r2Result ? { r2FinalUrl: r2Result.r2Url, r2ExpiresAt: r2Result.expiresAt } : {}),
+        }).where(eq(dialTasks.id, task.id));
+      } catch (err) {
         console.error('[mastering/final] R2 copy failed:', err);
-      });
+        await db.update(dialTasks).set({
+          status: 'completed',
+          completedAt: new Date(),
+        }).where(eq(dialTasks.id, task.id));
+      }
     }
 
     // Update session status to completed
@@ -103,7 +107,7 @@ export const POST = withDialAuth(async (auth) => {
 
     return apiSuccess({
       taskId: task.id,
-      status: task.status,
+      status: masterResult.finalUrl ? 'completed' : 'processing',
       finalUrl: masterResult.finalUrl,
     });
   } catch (error) {

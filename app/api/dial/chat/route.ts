@@ -168,7 +168,7 @@ export const POST = withDialAuth(async (auth) => {
       }
     }
 
-    const systemPrompt = buildDialSystemPrompt(promptInput);
+    let systemPrompt = buildDialSystemPrompt(promptInput);
 
     // Save user message
     await db.insert(dialMessages).values({
@@ -182,6 +182,19 @@ export const POST = withDialAuth(async (auth) => {
       where: eq(dialMessages.sessionId, sessionId),
       orderBy: [asc(dialMessages.createdAt)],
     });
+
+    // Inject last assistant action context for session restoration
+    // This helps Hoo understand what UI state the user sees after page reload
+    const lastAssistantMsg = existingMessages
+      .filter((m) => m.role === 'assistant')
+      .at(-1);
+    if (lastAssistantMsg?.action) {
+      const taskForAction = allTasks
+        .filter((t) => t.status === 'processing' || t.status === 'completed')
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+      const taskStatus = taskForAction?.status ?? 'unknown';
+      systemPrompt += `\n\n---\n\n## セッション復元コンテキスト\n直前のアシスタントアクション: ${lastAssistantMsg.action}（タスク状態: ${taskStatus}）。\n${taskStatus === 'processing' ? 'タスクは処理中。ボタンの再送信は不要。「処理中だよ、もう少し待ってね」等で対応。' : taskStatus === 'completed' ? '前回のアクションは完了済み。結果について会話を続ける。同じツールの再呼び出しは不要。' : ''}`;
+    }
 
     const chatMessages: HooChatMessage[] = existingMessages
       .filter((m) => m.role === 'user' || m.role === 'assistant')
@@ -235,22 +248,48 @@ export const POST = withDialAuth(async (auth) => {
     const currentAction = masteringAction ?? action;
     if (currentAction) {
       const hasFinalTask = allTasks.some((t) =>
-        t.taskType === 'final_basic' || t.taskType === 'final_advanced',
+        (t.taskType === 'final_basic' || t.taskType === 'final_advanced')
+        && t.status !== 'failed',
       );
-      const hasMasteringTask = allTasks.some((t) => t.taskType === 'mastering');
-      const lastAssistantAction = existingMessages
-        .filter((m) => m.role === 'assistant')
-        .at(-1)?.action;
+      const hasMasteringTask = allTasks.some((t) =>
+        t.taskType === 'mastering' && t.status !== 'failed',
+      );
       const shouldSuppress =
         // No preview yet — block final/mix_check (AI skipped Phase 1)
         ((currentAction === 'request_final' || currentAction === 'request_mix_check') && !hasCompletedPreview)
-        // Duplicate paid actions
+        // Duplicate paid actions (max limits enforced in respective API endpoints)
         || (currentAction === 'request_final' && hasFinalTask)
-        || (currentAction === 'request_mastering_final' && hasMasteringTask)
-        || (currentAction === 'request_mix_check' && lastAssistantAction === currentAction);
+        || (currentAction === 'request_mastering_final' && hasMasteringTask);
       if (shouldSuppress) {
         if (masteringAction === currentAction) masteringAction = null;
         if (action === currentAction) action = null;
+      }
+    }
+
+    // ─── Auto-inject: if Hoo wrote about a button but forgot the tool call ──
+    // haiku sometimes writes "下にボタンが表示されるから" without actually calling
+    // the tool. Detect this and inject the appropriate action based on phase.
+    // Regex is narrow to avoid false positives from explanatory text.
+    if (!action && !masteringAction && aiResponse.content) {
+      const text = aiResponse.content;
+      // Only match the specific "button will appear" pattern Hoo uses when proposing actions
+      const proposesAction = /ボタン.{0,5}(表示|押して|出る)|生成するね|生成するよ/.test(text);
+      if (proposesAction) {
+        const hasFinalTask = allTasks.some((t) =>
+          (t.taskType === 'final_basic' || t.taskType === 'final_advanced')
+          && t.status !== 'failed',
+        );
+        const hasMasteringTask = allTasks.some((t) =>
+          t.taskType === 'mastering' && t.status !== 'failed',
+        );
+
+        if (isMasteringPhase && hasMasteringPreview && !hasMasteringTask) {
+          masteringAction = 'request_mastering_final';
+        } else if (!isMasteringPhase && hasCompletedPreview && !hasFinalTask) {
+          if (phase >= 2) {
+            action = /ファイナル|確定|final/i.test(text) ? 'request_final' : 'request_mix_check';
+          }
+        }
       }
     }
 

@@ -17,7 +17,7 @@ import { db } from '@/db';
 import { dialTracks } from '@/db/schema';
 
 export const runtime = 'nodejs';
-export const maxDuration = 120; // 2 min for large stem sets
+export const maxDuration = 300; // 5 min for large stem sets (14 × 80MB)
 
 export const GET = withDialAuth(async (auth) => {
   const { searchParams } = new URL(auth.request.url);
@@ -66,15 +66,16 @@ export const GET = withDialAuth(async (auth) => {
       const res = await fetch(url);
       if (!res.ok || !res.body) return;
 
-      // Convert web ReadableStream to Node Readable
+      // Convert web ReadableStream to Node Readable with backpressure
       const reader = res.body.getReader();
       const nodeStream = new PassThrough();
       const pump = async () => {
-        // eslint-disable-next-line no-constant-condition
         while (true) {
           const { done, value } = await reader.read();
           if (done) { nodeStream.end(); break; }
-          nodeStream.write(value);
+          if (!nodeStream.write(value)) {
+            await new Promise<void>(resolve => nodeStream.once('drain', resolve));
+          }
         }
       };
       pump().catch(() => nodeStream.destroy());
