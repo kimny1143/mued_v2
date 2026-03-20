@@ -119,6 +119,11 @@ export const POST = withDialAuth(async (auth) => {
 });
 
 // ─── GET: Poll mastering preview status ──────────────────────────────────────
+//
+// DB-first: returns cached result if webhook already updated the task.
+// Fallback: if task has been processing for 30s+, polls RoEx directly.
+
+const POLLING_FALLBACK_THRESHOLD_MS = 30_000;
 
 export const GET = withDialAuth(async (auth) => {
   try {
@@ -150,7 +155,13 @@ export const GET = withDialAuth(async (auth) => {
       return apiSuccess({ status: task.status });
     }
 
-    // Poll RoEx for mastering preview result
+    // Check if task has been processing long enough to warrant RoEx fallback
+    const elapsed = Date.now() - new Date(task.createdAt).getTime();
+    if (elapsed < POLLING_FALLBACK_THRESHOLD_MS) {
+      return apiSuccess({ status: 'processing' });
+    }
+
+    // Fallback: poll RoEx for mastering preview result
     const client = createRoExClient();
     const pollResult = await pollMasterPreview(client, task.roexTaskId);
 

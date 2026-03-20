@@ -128,6 +128,11 @@ export const POST = withDialAuth(async (auth) => {
 });
 
 // ─── GET: Poll preview status ───────────────────────────────────────────────
+//
+// DB-first: returns cached result if webhook already updated the task.
+// Fallback: if task has been processing for 30s+, polls RoEx directly.
+
+const POLLING_FALLBACK_THRESHOLD_MS = 30_000;
 
 export const GET = withDialAuth(async (auth) => {
   try {
@@ -155,8 +160,19 @@ export const GET = withDialAuth(async (auth) => {
       });
     }
 
-    // Poll RoEx — do NOT request FX settings here (costs 125 credits).
-    // FX settings are retrieved separately in /api/dial/final when needed (dialogue mode).
+    if (task.status === 'failed') {
+      return apiSuccess({ status: 'failed' });
+    }
+
+    // Check if task has been processing long enough to warrant RoEx fallback
+    const elapsed = Date.now() - new Date(task.createdAt).getTime();
+    if (elapsed < POLLING_FALLBACK_THRESHOLD_MS) {
+      // Trust webhook — too early to poll RoEx
+      return apiSuccess({ status: 'processing' });
+    }
+
+    // Fallback: poll RoEx directly
+    // Do NOT request FX settings here (costs 125 credits).
     const client = createRoExClient();
     const pollResult = await pollMixPreview(client, task.roexTaskId, {
       retrieveFxSettings: false,
@@ -165,7 +181,6 @@ export const GET = withDialAuth(async (auth) => {
     const isCompleted = !!pollResult.previewUrl;
 
     if (isCompleted) {
-      // Update task with results
       await db.update(dialTasks).set({
         status: 'completed',
         previewUrl: pollResult.previewUrl,

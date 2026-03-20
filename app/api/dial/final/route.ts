@@ -293,6 +293,11 @@ export const POST = withDialAuth(async (auth) => {
 });
 
 // ─── GET: Poll final mix status ──────────────────────────────────────────────
+//
+// DB-first: returns cached result if webhook already updated the task.
+// Fallback: if task has been processing for 30s+, polls RoEx directly.
+
+const POLLING_FALLBACK_THRESHOLD_MS = 30_000;
 
 export const GET = withDialAuth(async (auth) => {
   try {
@@ -330,7 +335,14 @@ export const GET = withDialAuth(async (auth) => {
       return apiSuccess({ status: task.status });
     }
 
-    // Poll RoEx for final mix result
+    // Check if task has been processing long enough to warrant RoEx fallback
+    const elapsed = Date.now() - new Date(task.createdAt).getTime();
+    if (elapsed < POLLING_FALLBACK_THRESHOLD_MS) {
+      // Trust webhook — too early to poll RoEx
+      return apiSuccess({ status: 'processing' });
+    }
+
+    // Fallback: poll RoEx for final mix result
     const tracks = await db.query.dialTracks.findMany({
       where: eq(dialTracks.sessionId, task.sessionId),
     });
@@ -342,7 +354,6 @@ export const GET = withDialAuth(async (auth) => {
     const isCompleted = !!pollResult.finalUrl;
 
     if (isCompleted) {
-      // Update task with results
       await db.update(dialTasks).set({
         status: 'completed',
         finalUrl: pollResult.finalUrl,
@@ -351,7 +362,7 @@ export const GET = withDialAuth(async (auth) => {
         completedAt: new Date(),
       }).where(eq(dialTasks.id, taskId));
 
-      // Await R2 copy before returning (Vercel serverless terminates after response)
+      // R2 copy
       if (pollResult.finalUrl) {
         try {
           const r2Result = await copyToR2({
