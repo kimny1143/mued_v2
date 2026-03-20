@@ -211,33 +211,38 @@ export const POST = withDialAuth(async (auth) => {
       sessionId: previewTask.sessionId,
       roexTaskId: mixResult.taskId || previewTask.roexTaskId,
       taskType,
-      status: mixResult.finalUrl ? 'completed' : 'processing',
+      status: 'processing',
       finalUrl: mixResult.finalUrl,
       fxSettings: mixResult.fxSettings ?? null,
       stemsUrls: mixResult.stemsUrl ?? null,
-      completedAt: mixResult.finalUrl ? new Date() : null,
+      completedAt: null,
     }).returning();
 
-    // Fire-and-forget: copy deliverable to R2 for stable download URL
+    // Await R2 copy before returning (Vercel serverless terminates after response)
     if (mixResult.finalUrl && task.id) {
-      copyToR2({
-        sourceUrl: mixResult.finalUrl,
-        sessionId: previewTask.sessionId,
-        taskId: task.id,
-        taskType: taskType,
-      }).then(async (r2Result) => {
-        if (r2Result) {
-          await db.update(dialTasks).set({
-            r2FinalUrl: r2Result.r2Url,
-            r2ExpiresAt: r2Result.expiresAt,
-          }).where(eq(dialTasks.id, task.id));
-        }
-      }).catch((err) => {
+      try {
+        const r2Result = await copyToR2({
+          sourceUrl: mixResult.finalUrl,
+          sessionId: previewTask.sessionId,
+          taskId: task.id,
+          taskType: taskType,
+        });
+        await db.update(dialTasks).set({
+          status: 'completed',
+          completedAt: new Date(),
+          ...(r2Result ? { r2FinalUrl: r2Result.r2Url, r2ExpiresAt: r2Result.expiresAt } : {}),
+        }).where(eq(dialTasks.id, task.id));
+      } catch (err) {
         console.error('[final/POST] R2 copy failed:', err);
-      });
+        await db.update(dialTasks).set({
+          status: 'completed',
+          completedAt: new Date(),
+        }).where(eq(dialTasks.id, task.id));
+      }
     }
 
     // Update session — increment paid cycle count + type-specific counters
+    const taskCompleted = !!mixResult.finalUrl;
     if (type === 'mix_check') {
       await db.update(dialSessions)
         .set({
@@ -247,7 +252,7 @@ export const POST = withDialAuth(async (auth) => {
           updatedAt: new Date(),
         })
         .where(eq(dialSessions.id, previewTask.sessionId));
-    } else if (mixResult.finalUrl) {
+    } else if (taskCompleted) {
       await db.update(dialSessions)
         .set({
           paidCycleCount: sessionRow.paidCycleCount + 1,
@@ -271,7 +276,7 @@ export const POST = withDialAuth(async (auth) => {
     return apiSuccess({
       taskId: task.id,
       type: taskType,
-      status: task.status,
+      status: taskCompleted ? 'completed' : 'processing',
       finalUrl: mixResult.finalUrl,
       stemsUrls: mixResult.stemsUrl,
       fxSettings: mixResult.fxSettings,
@@ -346,23 +351,24 @@ export const GET = withDialAuth(async (auth) => {
         completedAt: new Date(),
       }).where(eq(dialTasks.id, taskId));
 
-      // Fire-and-forget: copy deliverable to R2 for stable download URL
+      // Await R2 copy before returning (Vercel serverless terminates after response)
       if (pollResult.finalUrl) {
-        copyToR2({
-          sourceUrl: pollResult.finalUrl,
-          sessionId: task.sessionId,
-          taskId: taskId,
-          taskType: task.taskType,
-        }).then(async (r2Result) => {
+        try {
+          const r2Result = await copyToR2({
+            sourceUrl: pollResult.finalUrl,
+            sessionId: task.sessionId,
+            taskId: taskId,
+            taskType: task.taskType,
+          });
           if (r2Result) {
             await db.update(dialTasks).set({
               r2FinalUrl: r2Result.r2Url,
               r2ExpiresAt: r2Result.expiresAt,
             }).where(eq(dialTasks.id, taskId));
           }
-        }).catch((err) => {
+        } catch (err) {
           console.error('[final/GET] R2 copy failed:', err);
-        });
+        }
       }
 
       // Update session status

@@ -1249,20 +1249,20 @@ function DialSessionContent() {
           </Link>
           {guestToken && !linked ? (
             <a
-              href={`${process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp'}/sign-up?redirect_url=/dial/session/${session.id}`}
-              onClick={(e) => handleNavigation(e, `/sign-up?redirect_url=/dial/session/${session.id}`)}
+              href={`/sign-in?redirect_url=/dial/session/${session.id}`}
+              onClick={(e) => handleNavigation(e, `/sign-in?redirect_url=/dial/session/${session.id}`)}
               className="flex-1 py-3 text-center bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-medium transition-colors"
             >
               {t.dial.session.saveToAccount}
             </a>
           ) : (
-            <a
-              href={`${process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp'}/dashboard/dial`}
+            <Link
+              href="/dashboard/dial"
               onClick={(e) => handleNavigation(e, '/dashboard/dial')}
               className="flex-1 py-3 text-center bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-medium transition-colors"
             >
               {t.dial.session.backToDashboard}
-            </a>
+            </Link>
           )}
         </div>
 

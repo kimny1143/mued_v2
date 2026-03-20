@@ -168,7 +168,7 @@ export const POST = withDialAuth(async (auth) => {
       }
     }
 
-    const systemPrompt = buildDialSystemPrompt(promptInput);
+    let systemPrompt = buildDialSystemPrompt(promptInput);
 
     // Save user message
     await db.insert(dialMessages).values({
@@ -182,6 +182,19 @@ export const POST = withDialAuth(async (auth) => {
       where: eq(dialMessages.sessionId, sessionId),
       orderBy: [asc(dialMessages.createdAt)],
     });
+
+    // Inject last assistant action context for session restoration
+    // This helps Hoo understand what UI state the user sees after page reload
+    const lastAssistantMsg = existingMessages
+      .filter((m) => m.role === 'assistant')
+      .at(-1);
+    if (lastAssistantMsg?.action) {
+      const taskForAction = allTasks
+        .filter((t) => t.status === 'processing' || t.status === 'completed')
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+      const taskStatus = taskForAction?.status ?? 'unknown';
+      systemPrompt += `\n\n---\n\n## セッション復元コンテキスト\n直前のアシスタントアクション: ${lastAssistantMsg.action}（タスク状態: ${taskStatus}）。\n${taskStatus === 'processing' ? 'タスクは処理中。ボタンの再送信は不要。「処理中だよ、もう少し待ってね」等で対応。' : taskStatus === 'completed' ? '前回のアクションは完了済み。結果について会話を続ける。同じツールの再呼び出しは不要。' : ''}`;
+    }
 
     const chatMessages: HooChatMessage[] = existingMessages
       .filter((m) => m.role === 'user' || m.role === 'assistant')
