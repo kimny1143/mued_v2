@@ -139,7 +139,7 @@ export default {
       }, 200);
     }
 
-    // ── GET /download/* — public download from R2 ─────────────────────────
+    // ── GET /download/* — public download from R2 (attachment) ─────────────
     if (request.method === 'GET' && url.pathname.startsWith('/download/')) {
       const key = decodeURIComponent(url.pathname.slice('/download/'.length));
       if (!key) {
@@ -158,6 +158,33 @@ export default {
         'Content-Type':
           object.httpMetadata?.contentType || 'application/octet-stream',
         'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'public, max-age=86400',
+      };
+
+      if (object.size) {
+        headers['Content-Length'] = String(object.size);
+      }
+
+      return new Response(object.body, { status: 200, headers });
+    }
+
+    // ── GET /stream/* — inline streaming from R2 (no Content-Disposition) ──
+    // Used by RoEx API to fetch stems. No attachment header = no download issues.
+    if (request.method === 'GET' && url.pathname.startsWith('/stream/')) {
+      const key = decodeURIComponent(url.pathname.slice('/stream/'.length));
+      if (!key) {
+        return jsonResponse({ error: 'Missing key' }, 400, cors);
+      }
+
+      const object = await env.DELIVERABLES.get(key);
+      if (!object) {
+        return jsonResponse({ error: 'Not found' }, 404, cors);
+      }
+
+      const headers: Record<string, string> = {
+        ...cors,
+        'Content-Type':
+          object.httpMetadata?.contentType || 'audio/wav',
         'Cache-Control': 'public, max-age=86400',
       };
 

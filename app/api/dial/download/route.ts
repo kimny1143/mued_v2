@@ -2,14 +2,20 @@
  * MUEDial Download API
  * GET /api/dial/download?taskId=xxx
  *
- * Provides stable download links for completed deliverables.
+ * Streams the deliverable file through our server with Content-Disposition: attachment.
+ * This avoids cross-origin issues where browser `download` attribute is ignored
+ * and GCS returns inline content causing broken downloads.
+ *
  * Prefers R2 URL (if available and not expired), falls back to GCS URL.
  */
 
 import { NextResponse } from 'next/server';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
-import { apiValidationError, apiNotFound } from '@/lib/api-response';
+import { apiValidationError, apiNotFound, apiServerError } from '@/lib/api-response';
+
+// Allow longer duration for large WAV file streaming
+export const maxDuration = 120;
 
 export const GET = withDialAuth(async (auth) => {
   const { searchParams } = new URL(auth.request.url);
@@ -25,15 +31,49 @@ export const GET = withDialAuth(async (auth) => {
 
   const { task } = result;
 
-  // Prefer R2 URL if available and not expired
-  if (task.r2FinalUrl && task.r2ExpiresAt && new Date(task.r2ExpiresAt) > new Date()) {
-    return NextResponse.redirect(task.r2FinalUrl, 302);
+  // Build a meaningful filename
+  const taskLabel = task.taskType === 'mastering' ? 'mastered'
+    : task.taskType === 'mix_check' ? 'mix-check'
+    : 'final-mix';
+  const filename = `MUEDial_${taskLabel}_${taskId.slice(0, 8)}.wav`;
+
+  // Determine the source URL — prefer R2 (permanent), fall back to GCS (signed, may expire)
+  const workerUrl = process.env.DIAL_R2_WORKER_URL?.trim();
+
+  // If R2 copy exists, redirect to R2 Worker /download/ (fast, Content-Disposition handled by Worker)
+  if (task.r2FinalUrl && workerUrl) {
+    // Extract the R2 key from the stored URL (e.g. "https://worker.dev/stream/sessions/abc/file.wav" → "sessions/abc/file.wav")
+    // r2FinalUrl may be a /stream/ URL; we need the /download/ path for Content-Disposition
+    const r2KeyMatch = task.r2FinalUrl.match(/\/stream\/(.+)$/);
+    if (r2KeyMatch) {
+      const r2Key = r2KeyMatch[1];
+      const downloadUrl = `${workerUrl}/download/${r2Key}`;
+      return NextResponse.redirect(downloadUrl, 302);
+    }
   }
 
-  // Fallback to GCS URL
-  if (task.finalUrl) {
-    return NextResponse.redirect(task.finalUrl, 302);
+  // Fallback: stream through our server (GCS or any direct URL)
+  const sourceUrl = task.finalUrl;
+  if (!sourceUrl) {
+    return apiNotFound('No download available for this task');
   }
 
-  return apiNotFound('No download available for this task');
+  try {
+    const sourceRes = await fetch(sourceUrl);
+    if (!sourceRes.ok || !sourceRes.body) {
+      return apiServerError(`Source file fetch failed (${sourceRes.status})`);
+    }
+
+    const resHeaders = new Headers();
+    resHeaders.set('Content-Type', sourceRes.headers.get('Content-Type') || 'audio/wav');
+    resHeaders.set('Content-Disposition', `attachment; filename="${filename}"`);
+    if (sourceRes.headers.get('Content-Length')) {
+      resHeaders.set('Content-Length', sourceRes.headers.get('Content-Length')!);
+    }
+    resHeaders.set('Cache-Control', 'private, no-cache');
+
+    return new NextResponse(sourceRes.body, { status: 200, headers: resHeaders });
+  } catch (error) {
+    return apiServerError(error instanceof Error ? error.message : 'Download failed');
+  }
 });

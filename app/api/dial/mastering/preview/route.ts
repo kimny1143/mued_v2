@@ -14,6 +14,7 @@ import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { createRoExClient, masterPreview, pollMasterPreview, isRoExDevKey, mapMusicalStyle } from '@/lib/roex';
+import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
 
@@ -62,7 +63,7 @@ export const POST = withDialAuth(async (auth) => {
         where: eq(dialTracks.sessionId, sessionId),
       });
       if (tracks.length > 0) {
-        trackUrl = tracks[0].roexUploadUrl;
+        trackUrl = resolveTrackUrl(tracks[0]);
       }
     }
 

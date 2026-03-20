@@ -113,7 +113,8 @@ export const dialTracks = pgTable('dial_tracks', {
   id: uuid('id').primaryKey().defaultRandom(),
   sessionId: uuid('session_id').notNull().references(() => dialSessions.id, { onDelete: 'cascade' }),
   originalFilename: text('original_filename').notNull(),
-  roexUploadUrl: text('roex_upload_url').notNull(), // RoEx readable URL after upload
+  roexUploadUrl: text('roex_upload_url').notNull(), // RoEx readable URL after upload (GCS signed, 1h expiry)
+  r2Url: text('r2_url'), // Permanent R2 copy for fallback when GCS expires
   instrumentGroup: text('instrument_group').notNull(), // InstrumentGroup enum value
   presenceSetting: text('presence_setting').notNull().default('NORMAL'),
   panPreference: text('pan_preference').notNull().default('NO_PREFERENCE'),
