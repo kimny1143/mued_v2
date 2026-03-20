@@ -41,7 +41,7 @@ export async function masterPreview(
       musicalStyle: req.musicalStyle,
       desiredLoudness: req.desiredLoudness ?? 'MEDIUM',
       sampleRate: req.sampleRate ?? '44100',
-      webhookURL: 'https://httpbin.org/post',
+      webhookURL: process.env.ROEX_WEBHOOK_URL || 'https://httpbin.org/post',
     },
   };
 

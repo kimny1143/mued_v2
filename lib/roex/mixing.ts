@@ -81,7 +81,7 @@ export async function mixPreview(
       returnStems: req.returnStems ?? true,
       sampleRate: req.sampleRate ?? '44100',
       // Dummy webhook — RoEx requires this field but we poll instead
-      webhookURL: 'https://httpbin.org/post',
+      webhookURL: process.env.ROEX_WEBHOOK_URL || 'https://httpbin.org/post',
     },
   };
 
@@ -129,7 +129,7 @@ export async function mixFinalBasic(
         trackURL: t.trackUrl,
         gainDb: t.gainDb,
       })),
-      webhookURL: 'https://httpbin.org/post',
+      webhookURL: process.env.ROEX_WEBHOOK_URL || 'https://httpbin.org/post',
     },
   };
 
@@ -172,7 +172,7 @@ export async function mixFinalAdvanced(
           ? { panning_angle: t.panAngleDegrees }
           : undefined,
       })),
-      webhookURL: 'https://httpbin.org/post',
+      webhookURL: process.env.ROEX_WEBHOOK_URL || 'https://httpbin.org/post',
     },
   };
 

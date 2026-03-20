@@ -1,0 +1,169 @@
+/**
+ * RoEx Webhook Handler
+ * POST /api/webhooks/roex
+ *
+ * Receives completion notifications from RoEx Tonn API.
+ * Updates task status in DB and copies result to R2.
+ *
+ * Authentication: RoEx has no webhook signing — we verify by checking
+ * that the roexTaskId exists in our dial_tasks table.
+ *
+ * Fallback: If webhook doesn't fire, client-side polling via GET handlers
+ * will still work (with 30s delay before falling back to RoEx polling).
+ */
+
+import { eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
+import { db } from '@/db';
+import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
+import { copyToR2 } from '@/lib/dial/r2-storage';
+import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview } from '@/lib/roex';
+import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+
+// Allow up to 120s for R2 copy
+export const maxDuration = 120;
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+
+    // RoEx webhook payload shape is not fully documented.
+    // Extract taskId from known fields — try multiple possible field names.
+    const roexTaskId =
+      (body.multitrack_task_id as string) ??
+      (body.mastering_task_id as string) ??
+      (body.taskId as string) ??
+      (body.task_id as string);
+
+    if (!roexTaskId) {
+      // Log the full payload for debugging (first deploy)
+      console.warn('[webhook/roex] No taskId found in payload:', JSON.stringify(body).slice(0, 500));
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+
+    console.log(`[webhook/roex] Received callback for taskId: ${roexTaskId}`);
+
+    // Find the task by roexTaskId
+    const task = await db.query.dialTasks.findFirst({
+      where: eq(dialTasks.roexTaskId, roexTaskId),
+    });
+
+    if (!task) {
+      // Not our task — ignore silently (could be stale or from another env)
+      console.warn(`[webhook/roex] Unknown roexTaskId: ${roexTaskId}`);
+      return NextResponse.json({ received: true }, { status: 200 });
+    }
+
+    // Already completed — idempotent, skip
+    if (task.status === 'completed') {
+      return NextResponse.json({ received: true, already: 'completed' }, { status: 200 });
+    }
+
+    // ─── Fetch result from RoEx based on task type ──────────────────────────
+
+    const client = createRoExClient();
+    let resultUrl: string | undefined;
+    let stemsUrl: Record<string, string> | undefined;
+    let fxSettings: Record<string, unknown> | undefined;
+
+    if (task.taskType === 'preview') {
+      const result = await pollMixPreview(client, roexTaskId, { retrieveFxSettings: false });
+      resultUrl = result.previewUrl;
+      stemsUrl = result.stemsUrl;
+      fxSettings = result.fxSettings as Record<string, unknown> | undefined;
+    } else if (task.taskType === 'mastering_preview') {
+      const result = await pollMasterPreview(client, roexTaskId);
+      resultUrl = result.previewUrl;
+    } else if (task.taskType === 'mastering') {
+      // Mastering final — the finalUrl may already be in the webhook body
+      resultUrl = (body.download_url_mastered as string) ?? undefined;
+    } else {
+      // Mix final (final_basic, final_advanced, mix_check)
+      const tracks = await db.query.dialTracks.findMany({
+        where: eq(dialTracks.sessionId, task.sessionId),
+      });
+      const trackUrls = tracks.map((t) => resolveTrackUrl(t) ?? t.roexUploadUrl);
+      const result = await pollMixFinal(client, roexTaskId, trackUrls);
+      resultUrl = result.finalUrl;
+      stemsUrl = result.stemsUrl;
+      fxSettings = result.fxSettings as Record<string, unknown> | undefined;
+    }
+
+    if (!resultUrl) {
+      // Not ready yet — RoEx may send webhook before processing completes
+      console.log(`[webhook/roex] Task ${roexTaskId} not ready yet, will rely on polling`);
+      return NextResponse.json({ received: true, status: 'not_ready' }, { status: 200 });
+    }
+
+    // ─── Update task in DB ──────────────────────────────────────────────────
+
+    const isPreviewType = task.taskType === 'preview' || task.taskType === 'mastering_preview';
+    const urlField = isPreviewType ? 'previewUrl' : 'finalUrl';
+
+    await db.update(dialTasks).set({
+      status: 'completed',
+      [urlField]: resultUrl,
+      ...(stemsUrl ? { stemsUrls: stemsUrl } : {}),
+      ...(fxSettings ? { fxSettings } : {}),
+      completedAt: new Date(),
+    }).where(eq(dialTasks.id, task.id));
+
+    // ─── R2 copy for final deliverables ─────────────────────────────────────
+
+    if (!isPreviewType && resultUrl) {
+      try {
+        const r2Result = await copyToR2({
+          sourceUrl: resultUrl,
+          sessionId: task.sessionId,
+          taskId: task.id,
+          taskType: task.taskType,
+        });
+        if (r2Result) {
+          await db.update(dialTasks).set({
+            r2FinalUrl: r2Result.r2Url,
+            r2ExpiresAt: r2Result.expiresAt,
+          }).where(eq(dialTasks.id, task.id));
+        }
+      } catch (err) {
+        console.error('[webhook/roex] R2 copy failed:', err);
+      }
+    }
+
+    // ─── Update session status ──────────────────────────────────────────────
+
+    const session = await db.query.dialSessions.findFirst({
+      where: eq(dialSessions.id, task.sessionId),
+    });
+
+    if (session) {
+      type SessionStatus = 'uploading' | 'previewing' | 'mixing' | 'mastering' | 'completed' | 'archived';
+      let newStatus: SessionStatus | undefined;
+      if (task.taskType === 'preview') {
+        newStatus = 'previewing';
+      } else if (task.taskType === 'mastering_preview') {
+        newStatus = 'mastering';
+      } else if (task.taskType === 'mastering') {
+        newStatus = 'completed';
+      } else if (task.taskType === 'mix_check') {
+        newStatus = 'mixing';
+      } else {
+        // final_basic, final_advanced
+        newStatus = session.masteringMode ? 'mastering' : 'completed';
+      }
+
+      if (newStatus) {
+        await db.update(dialSessions).set({
+          status: newStatus,
+          updatedAt: new Date(),
+        }).where(eq(dialSessions.id, task.sessionId));
+      }
+    }
+
+    console.log(`[webhook/roex] Task ${roexTaskId} completed successfully`);
+    return NextResponse.json({ received: true, status: 'completed' }, { status: 200 });
+  } catch (error) {
+    console.error('[webhook/roex] Error processing webhook:', error);
+    // Return 200 to prevent RoEx from retrying (if they support retries)
+    return NextResponse.json({ received: true, error: 'processing_failed' }, { status: 200 });
+  }
+}
