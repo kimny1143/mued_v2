@@ -31,32 +31,38 @@ export const GET = withDialAuth(async (auth) => {
 
   const { task } = result;
 
-  // Build a meaningful filename
-  const taskLabel = task.taskType === 'mastering' ? 'mastered'
-    : task.taskType === 'mix_check' ? 'mix-check'
-    : 'final-mix';
-  const filename = `MUEDial_${taskLabel}_${taskId.slice(0, 8)}.wav`;
+  // Determine source URL and file metadata
+  // Priority: r2FinalUrl > finalUrl > previewUrl
+  const isPreview = !task.finalUrl && !!task.previewUrl;
+  const sourceUrl = task.r2FinalUrl || task.finalUrl || task.previewUrl;
 
-  // Prefer R2 (permanent), fall back to GCS (signed, may expire)
-  // r2FinalUrl is already a /download/ URL from copyToR2() — redirect directly
-  if (task.r2FinalUrl) {
-    return NextResponse.redirect(task.r2FinalUrl, 302);
-  }
-
-  // Fallback: stream through our server (GCS or any direct URL)
-  const sourceUrl = task.finalUrl;
   if (!sourceUrl) {
     return apiNotFound('No download available for this task');
   }
 
+  // Build a meaningful filename
+  const taskLabelMap: Record<string, string> = {
+    mastering: 'mastered',
+    mastering_preview: 'master-preview',
+    mix_check: 'mix-check',
+    final_advanced: 'final-mix',
+    final_basic: 'final-mix',
+    preview: 'preview',
+  };
+  const taskLabel = taskLabelMap[task.taskType] || 'mix';
+  const ext = isPreview ? 'mp3' : 'wav';
+  const filename = `MUEDial_${taskLabel}_${taskId.slice(0, 8)}.${ext}`;
+  const contentType = isPreview ? 'audio/mpeg' : 'audio/wav';
+
   try {
+    // Stream through our server with Content-Disposition for correct filename
     const sourceRes = await fetch(sourceUrl);
     if (!sourceRes.ok || !sourceRes.body) {
       return apiServerError(`Source file fetch failed (${sourceRes.status})`);
     }
 
     const resHeaders = new Headers();
-    resHeaders.set('Content-Type', sourceRes.headers.get('Content-Type') || 'audio/wav');
+    resHeaders.set('Content-Type', sourceRes.headers.get('Content-Type') || contentType);
     resHeaders.set('Content-Disposition', `attachment; filename="${filename}"`);
     if (sourceRes.headers.get('Content-Length')) {
       resHeaders.set('Content-Length', sourceRes.headers.get('Content-Length')!);
