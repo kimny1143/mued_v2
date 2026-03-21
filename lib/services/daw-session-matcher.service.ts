@@ -280,8 +280,8 @@ export class DawSessionMatcherService {
 
     const epoch = parseInt(match[1], 10);
     // Query a window around the epoch to find the cluster
-    const windowStart = new Date(epoch - CLUSTER_GAP_MS);
-    const windowEnd = new Date(epoch + 24 * 60 * 60 * 1000); // +24h generous window
+    const _windowStart = new Date(epoch - CLUSTER_GAP_MS);
+    const _windowEnd = new Date(epoch + 24 * 60 * 60 * 1000); // +24h generous window
 
     const logs = await dawLogsRepository.getOrphanLogs(userId, 5000);
     if (logs.length === 0) return null;

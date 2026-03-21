@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useMetricsTracker } from '@/hooks/useMetricsTracker';
 
 // Mock api-client module — the hook uses apiClient.post() not raw fetch

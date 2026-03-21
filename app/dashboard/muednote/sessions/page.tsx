@@ -8,7 +8,6 @@ import { muednoteMobileSessions } from "@/db/schema/muednote-mobile";
 import { eq, desc, sql } from "drizzle-orm";
 import Link from "next/link";
 import { dawSessionMatcher } from "@/lib/services/daw-session-matcher.service";
-import type { VirtualDawSession } from "@/lib/services/daw-session-matcher.service";
 
 // Unified session type for rendering
 type UnifiedSession =
