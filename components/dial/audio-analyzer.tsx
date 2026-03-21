@@ -549,7 +549,7 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
                 ['M', 'Momentary', data?.momentaryLufs],
                 ['S', 'Short', data?.shortTermLufs],
                 ['I', 'Integrated', data?.integratedLufs],
-              ] as const).map(([label, sublabel, value]) => (
+              ] as const).map(([label, _sublabel, value]) => (
                 <div key={label} className="bg-zinc-900/60 rounded px-2 py-1 text-center">
                   <div className="text-[7px] text-zinc-600 tracking-widest">{label}</div>
                   <div

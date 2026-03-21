@@ -61,7 +61,7 @@ function filenameFromKey(key: string): string {
   return parts[parts.length - 1] || key;
 }
 
-export default {
+const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const cors = getCorsHeaders(request, env);
@@ -198,3 +198,5 @@ export default {
     return jsonResponse({ error: 'Method not allowed' }, 405, cors);
   },
 };
+
+export default worker;

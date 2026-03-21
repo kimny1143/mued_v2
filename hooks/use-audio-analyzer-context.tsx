@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useCallback, useState, useRef, type ReactNode, type RefObject } from 'react';
+import { createContext, useContext, useRef, type ReactNode, type RefObject } from 'react';
 import { useAudioAnalyzer, type AnalyzerData } from './use-audio-analyzer';
 
 // ─── Context ─────────────────────────────────────────────────────────────────

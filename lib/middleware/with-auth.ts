@@ -25,7 +25,7 @@ export async function resolveClerkUserId(request: NextRequest): Promise<string |
       if (payload?.sub) {
         return payload.sub;
       }
-    } catch (error) {
+    } catch {
       logger.warn('[resolveClerkUserId] Bearer JWT verification failed, trying cookie auth');
     }
   }

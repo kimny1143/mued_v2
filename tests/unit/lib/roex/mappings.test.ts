@@ -12,7 +12,7 @@ import { MusicalStyle, InstrumentGroup } from '@/lib/roex/types';
 describe('MUSICAL_STYLE_MAP', () => {
   it('maps all UI styles to valid RoEx MusicalStyle values', () => {
     const validValues = Object.values(MusicalStyle);
-    for (const [uiKey, roexValue] of Object.entries(MUSICAL_STYLE_MAP)) {
+    for (const [_uiKey, roexValue] of Object.entries(MUSICAL_STYLE_MAP)) {
       expect(validValues).toContain(roexValue);
     }
   });

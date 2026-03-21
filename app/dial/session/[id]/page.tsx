@@ -612,7 +612,7 @@ function DialSessionContent() {
     }
   };
 
-  const handleStyleChange = async (newStyle: string) => {
+  const _handleStyleChange = async (newStyle: string) => {
     if (!session) return;
     setError(null);
 
@@ -821,7 +821,7 @@ function DialSessionContent() {
   const hasCompletedPreview = session.tasks.some(
     (t) => t.taskType === 'preview' && t.status === 'completed',
   );
-  const hasMixCheck = session.tasks.some(
+  const _hasMixCheck = session.tasks.some(
     (t) => t.taskType === 'mix_check' && (t.finalUrl || t.status === 'completed'),
   );
   const hasMixFinal = session.tasks.some(
@@ -830,7 +830,7 @@ function DialSessionContent() {
   const hasMasteringFinal = session.tasks.some(
     (t) => t.taskType === 'mastering' && t.finalUrl,
   );
-  const hasMasteringPreview = session.tasks.some(
+  const _hasMasteringPreview = session.tasks.some(
     (t) => t.taskType === 'mastering_preview' && t.status === 'completed',
   );
   const isMasteringOnly = !session.mode && !!session.masteringMode;
@@ -1116,7 +1116,7 @@ function DialSessionContent() {
     );
   };
 
-  const resultsSection = !hasFinal && session.tasks.length > 0 && (() => {
+  const _resultsSection = !hasFinal && session.tasks.length > 0 && (() => {
     const allPreviews = session.tasks.filter((t) => t.taskType === 'preview');
     const nonPreviews = session.tasks.filter((t) => t.taskType !== 'preview');
     const recentTakes = allPreviews.slice(0, 3);

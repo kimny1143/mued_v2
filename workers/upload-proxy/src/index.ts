@@ -62,7 +62,7 @@ function isAllowedTarget(url: string): boolean {
   }
 }
 
-export default {
+const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const cors = getCorsHeaders(request, env);
 
@@ -139,3 +139,5 @@ export default {
     return new Response('Method not allowed', { status: 405, headers: cors });
   },
 };
+
+export default worker;

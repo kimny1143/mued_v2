@@ -319,7 +319,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
       }
       sendMessage(greeting, { showInChat: false });
     }
-  }, [tracks.length, messages.length, loadingHistory, sending, sendMessage, isMasteringPhase]);
+  }, [tracks.length, messages.length, loadingHistory, sending, sendMessage, isMasteringPhase, mode]);
 
   // Auto-trigger mastering phase greeting (mix+mastering transition only)
   useEffect(() => {
