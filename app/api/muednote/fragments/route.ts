@@ -31,7 +31,7 @@ async function getUserId(req: NextRequest) {
       const authHeader = req.headers.get('authorization');
       if (authHeader === `Bearer ${process.env.DEV_AUTH_TOKEN}`) {
         const users = await sql`
-          SELECT id FROM users WHERE email = 'kimny1143@gmail.com'
+          SELECT id FROM users WHERE email = ${process.env.DEV_USER_EMAIL}
         `;
         if (users.length > 0) {
           return users[0].id;

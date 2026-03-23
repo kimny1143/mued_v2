@@ -6,7 +6,7 @@
  * Upgrades a user to premium tier with all features unlocked.
  *
  * Usage:
- *   npx tsx scripts/upgrade-dev-account.ts                    # Default: kimny1143@gmail.com
+ *   npx tsx scripts/upgrade-dev-account.ts                    # Default: DEV_USER_EMAIL env var
  *   npx tsx scripts/upgrade-dev-account.ts user@example.com   # Specify email
  */
 
@@ -17,7 +17,7 @@ import { db } from '../db';
 import { users, subscriptions } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
-const DEFAULT_EMAIL = 'kimny1143@gmail.com';
+const DEFAULT_EMAIL = process.env.DEV_USER_EMAIL || 'dev@example.com';
 const targetEmail = process.argv[2] || DEFAULT_EMAIL;
 
 async function main() {
