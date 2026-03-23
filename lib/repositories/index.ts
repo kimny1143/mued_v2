@@ -21,21 +21,6 @@ export {
   type UserRole,
 } from './users.repository';
 
-// Educational materials
-export {
-  MaterialRepository,
-  materialRepository,
-  type CreateMaterialInput,
-  type UpdateMaterialInput,
-  type MaterialFilters,
-  type CreateLearningMetricsInput,
-  type UpdateLearningMetricsInput,
-  type MaterialType,
-  type DifficultyLevel,
-  type QualityStatus,
-  type AbcAnalysis,
-} from './materials.repository';
-
 // Subscriptions & billing
 export {
   SubscriptionRepository,
@@ -59,17 +44,6 @@ export {
   type CreateInterviewAnswerInput,
   type SessionFilters,
 } from './sessions.repository';
-
-// Lesson slots (mentor availability)
-export {
-  LessonSlotsRepository,
-  lessonSlotsRepository,
-  type CreateSlotInput,
-  type UpdateSlotInput,
-  type SlotFilters,
-  type SlotStatus,
-  type RecurringSlotPattern,
-} from './lesson-slots.repository';
 
 // Hoo AI memories
 export {
