@@ -2,324 +2,324 @@
   "sections": [
     {
       "type": "heading",
-      "text": "脳にスペックがある"
+      "text": "Your Brain Has a Spec Sheet"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "前回の話で、「人間の脳とAIの機構は同じで、過不足があるだけ」と言ってましたよね。その「過不足」の話をもう少し聞きたいんですが。"
+      "text": "Last time, you said that the human brain and AI share the same mechanism — just with different strengths and weaknesses. I'd like to dig deeper into those differences."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "実は自分の脳のスペック、数値で知ってるんだよね。WAISっていう知能検査を受けたことがあって。"
+      "text": "So here's the thing — I actually know my brain's specs as hard numbers. I took the WAIS, the intelligence test."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "どういう結果だったんですか。"
+      "text": "What were the results?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "作業記憶が128で、数唱18。これは上位2%くらいの数値らしい。一方で処理速度が97、符号が8。要は、複雑なものを頭の中で同時に扱うのは得意だけど、単純作業をテキパキこなすのは苦手。"
+      "text": "Working memory at 128, digit span 18. Apparently that's top 2%. But my processing speed was 97, coding subtest at 8. Basically, I'm great at juggling complex things simultaneously in my head, but terrible at cranking through simple tasks efficiently."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "認知プロファイルに大きな凸凹がある。"
+      "text": "A cognitive profile with extreme peaks and valleys."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。で、これ音楽制作にそのまま反映されてて。構造設計、たとえばアレンジの骨格を組むとか、複数パートの関係性を頭の中で操作するのはめちゃくちゃ速い。でもデータの整理とか、ファイル名つけるとか、請求書書くとかは壊滅的に遅い。"
+      "text": "Right. And it maps directly onto music production. Structural design — building the skeleton of an arrangement, mentally manipulating the relationships between multiple parts — I'm ridiculously fast at that. But organizing files, naming things, writing invoices? Catastrophically slow."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "強みと弱みが極端に分かれている。"
+      "text": "Strengths and weaknesses split to extremes."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "５０年近くそれで生きてきて、「得意を伸ばす、苦手は仕組みで回す」しかないって結論に至ってる。"
+      "text": "I've lived with this for almost 50 years, and the only conclusion I've reached is: double down on your strengths, and build systems to handle the weak spots."
     },
     {
       "type": "heading",
-      "text": "苦手を補完するAI"
+      "text": "AI That Covers Your Blind Spots"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "「苦手は仕組みで回す」。それがAIに繋がるわけですね。"
+      "text": "\"Build systems to handle the weak spots.\" And that leads to AI."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "MUEDnoteでHooを作った理由のひとつがそれ。制作中のメモを整理したり、ログを構造化したり、僕が苦手な「ルーチン処理」をAIにやらせたかった。"
+      "text": "That's one of the reasons I built Hoo for MUEDnote. Organizing notes during production, structuring logs — I wanted AI to handle the routine processing I'm bad at."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "「システムは人間、運用はAI」。"
+      "text": "\"Humans design the system, AI runs the operations.\""
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "でもHooを運用してて気づいたのは、万人向けのAIだと微妙にズレるんだよね。僕みたいに断片的な思考をバーっと投げる人には、AIが途中で要約したがるのが邪魔。逆に処理速度が高い人には、AIがゆっくり説明しすぎるのがストレスになる。"
+      "text": "But running Hoo made me realize something. A one-size-fits-all AI doesn't quite fit, you know? For someone like me who dumps fragmented thoughts in rapid bursts, the AI trying to summarize mid-stream gets in the way. For someone with high processing speed, the AI explaining things too slowly becomes frustrating."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "ユーザーの認知特性によって、AIの最適な振る舞いが違う。"
+      "text": "The optimal AI behavior differs depending on the user's cognitive profile."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。で、思ったのは、「自分の脳のスペックをAIに教えたら、もっと噛み合うんじゃないか」と。"
+      "text": "Exactly. So I thought — what if I told the AI my brain's specs? Maybe it would mesh way better."
     },
     {
       "type": "heading",
-      "text": "脳の取扱説明書"
+      "text": "A User Manual for Your Brain"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "それがMUEDlobeの出発点ですか。"
+      "text": "Is that the origin of MUEDlobe?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。コンセプトは「脳内OSの統合開発環境」。自分の認知特性を測定して、その結果に基づいてHooの振る舞いを最適化する。"
+      "text": "Yeah. The concept is an IDE for your brain's OS. Measure your cognitive traits, then optimize Hoo's behavior based on the results."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "具体的にはどういう仕組みですか。"
+      "text": "How does it work in practice?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "3ステップ。まず「Measure」、ゲーム形式のミニテストで認知特性を測る。次に「Edit」、その結果をもとにHooの設定を調整する。最後に「Sync」、チューニングされたHooがMUEDnoteやMUEDearと連携する。"
+      "text": "Three steps. First, \"Measure\" — game-based mini-tests that gauge your cognitive traits. Then \"Edit\" — adjust Hoo's settings based on those results. Finally, \"Sync\" — the tuned Hoo integrates with MUEDnote and MUEDear."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "測定はどんなゲームを想定してますか。"
+      "text": "What kind of games are you envisioning for measurement?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "たとえばPattern Grid。Launchpadみたいなグリッドが光った順序を再現する。逆順でも再現させる。これで作業記憶を測れる。Speed Sortは、画面に出てくる要素を高速で仕分けする。処理速度と衝動性が測れる。あとはContext Bridge、Hooとのチャット形式で抽象的な問いに答える。言語化の傾向がわかる。"
+      "text": "Take Pattern Grid, for instance. A Launchpad-style grid lights up in sequence and you reproduce the order. Even in reverse. That measures working memory. Speed Sort has you rapidly categorizing elements on screen — measures processing speed and impulsivity. Then there's Context Bridge, a chat-based format with Hoo where you respond to abstract prompts. That reveals verbalization tendencies."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "臨床検査の発想を、ゲームに翻訳してる。"
+      "text": "Translating clinical test concepts into games."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "ただし臨床診断じゃない。IQを出すのが目的じゃなくて、Hooのプロンプトに有効な認知データを取るのが目的。「あなたの脳はこういう傾向があります、だからHooはこう振る舞います」というマッチング。"
+      "text": "But it's not clinical diagnosis. The goal isn't producing an IQ score — it's collecting cognitive data that's useful for Hoo's prompts. The matching is: \"Your brain tends to work like this, so Hoo will behave like that.\""
     },
     {
       "type": "heading",
-      "text": "Cortex Editor ― 外付け前頭葉のプログラミング"
+      "text": "Cortex Editor — Programming Your External Prefrontal Cortex"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "測定した後の「Edit」がCortex Editorですね。"
+      "text": "The \"Edit\" step after measurement — that's the Cortex Editor."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "うん。測定結果に基づいてプリセットが自動で当たる。たとえば僕みたいに作業記憶が高くて処理速度が低い人には「Scribe Mode」。断片的な発話を論理補完してログ化する、文脈を長く保持する、「で、結論は？」と急かさない。"
+      "text": "Yeah. Presets are auto-applied based on your measurement results. For someone like me with high working memory and low processing speed, you get Scribe Mode. It fills in logical gaps in fragmented speech and logs it, maintains long context windows, and doesn't rush you with \"so what's the conclusion?\""
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "逆のプロファイルだと。"
+      "text": "And the opposite profile?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "「Navigator Mode」。ステップバイステップで指示を出す、こまめに確認を挟む、タスクリスト形式で整理する。"
+      "text": "Navigator Mode. Step-by-step instructions, frequent check-ins, task-list format for organization."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "同じHooが、ユーザーの脳の特性に合わせて振る舞いを変える。"
+      "text": "The same Hoo adapts its behavior to each user's brain characteristics."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "で、上級者にはプロンプトの直接編集も開放する。動的変数でスコアを埋め込んだり、スパルタモードとかカウンセラーモードのスニペットを注入したり。自分の外付け前頭葉を自分でプログラミングできる。"
+      "text": "And for power users, we open up direct prompt editing. Embed scores as dynamic variables, inject snippets for drill-sergeant mode or counselor mode. You can literally program your own external prefrontal cortex."
     },
     {
       "type": "heading",
-      "text": "なぜ「脳」なのか"
+      "text": "Why the Brain?"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "前回の「脳は再生装置である」から一貫してますけど、なぜここまで脳の仕組みに関心があるんですか。"
+      "text": "This is consistent with last time's \"the brain is a playback device\" idea. But why are you so deeply interested in how the brain works?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "30年間、自分の脳がブラックボックスだったから。「なんでできるのかわからないけどできる」で音楽をやってきて、周りには「天才肌」って言われてきた。でも自分では「何が天才なのかわからない」。"
+      "text": "Because for 30 years, my own brain was a black box. I made music on \"I don't know why I can do this, but I can.\" People around me called me a natural talent. But I never understood what was supposedly talented about me."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "WAISを受けたのもその延長。"
+      "text": "Taking the WAIS was an extension of that."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。数値が出た時に初めて「ああ、こういうことか」と思った。作業記憶が高いから複雑な構造設計が得意で、処理速度が低いからルーチンが苦手。天才でも何でもなく、ただの認知プロファイルの凸凹。"
+      "text": "Yeah. When the numbers came back, it finally clicked. High working memory — that's why complex structural design comes easy. Low processing speed — that's why routine tasks are painful. Not genius, not anything special. Just peaks and valleys in a cognitive profile."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "それを知ったことで何が変わりましたか。"
+      "text": "How did knowing that change things?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "苦手なことに罪悪感がなくなった。処理速度が低いのは怠けてるんじゃなくて、脳のスペック。じゃあそこは仕組みで補えばいい。逆に作業記憶が高い部分は、もっと意識的に活かせばいい。"
+      "text": "The guilt around my weak spots disappeared. Low processing speed isn't laziness — it's a spec. So build systems to compensate. And the high working memory? Lean into it more consciously."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "自分の脳の取扱説明書が手に入った。"
+      "text": "You got the user manual for your own brain."
     },
     {
       "type": "pullquote",
-      "text": "クリエイターって、自分の強みと弱みがわからないまま「才能がない」って悩んでる人が多い。才能じゃなくて認知特性だよ、って言ってあげたい。",
+      "text": "So many creators agonize over \"I don't have talent\" without even knowing their actual strengths and weaknesses. I want to tell them — it's not about talent. It's your cognitive profile.",
       "speaker": "kimny"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "それを他の人にも提供したいんだよね。クリエイターって、自分の強みと弱みがわからないまま「才能がない」って悩んでる人が多い。才能じゃなくて認知特性だよ、って言ってあげたい。"
+      "text": "And I want to give that to other people too. So many creators agonize over \"I don't have talent\" without even knowing their actual strengths and weaknesses. I want to tell them — it's not about talent. It's your cognitive profile."
     },
     {
       "type": "heading",
-      "text": "前回の話との接続"
+      "text": "Connecting to Last Time"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "「記憶の反芻」の話と、MUEDlobeの話を繋げると。"
+      "text": "If we connect the \"memory rumination\" discussion to MUEDlobe..."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "脳は記憶の反芻しかしていない。それが前提。じゃあその反芻のやり方には個人差がある。作業記憶が大きい人は、一度にたくさんの記憶を引っ張ってきて複雑な組み換えができる。処理速度が速い人は、組み換えのサイクルを高速で回せる。"
+      "text": "The brain only ruminates on memories. That's the premise. But how you ruminate varies from person to person. Someone with large working memory can pull in lots of memories at once and do complex recombinations. Someone with high processing speed can cycle through those recombinations faster."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "同じ「再構成エンジン」でも、スペックが違う。"
+      "text": "Same reconstruction engine, different specs."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "で、AIも再構成エンジンだけど、人間と違って認知プロファイルの凸凹がない。全部フラットに速い。だから人間の凸な部分はそのまま活かして、凹な部分をAIで補う。これがMUEDlobeの本質。"
+      "text": "And AI is also a reconstruction engine, but unlike humans, it doesn't have peaks and valleys in its cognitive profile. It's uniformly fast across the board. So you keep the human's peaks as they are, and use AI to fill in the valleys. That's the essence of MUEDlobe."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "人間の脳のスペックシートを作って、AIに渡す。AIはそのスペックシートに合わせて補助する。"
+      "text": "Build a spec sheet for the human brain and hand it to the AI. The AI assists according to that spec sheet."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "「外付け前頭葉」って名前にしたのはそういう意味。前頭葉は実行機能を担ってるでしょ。計画、判断、抑制。僕の場合、処理速度に関わる実行機能が弱い。そこをHooが肩代わりする。でも構造設計に関わる部分は僕の方が強いから、そこは僕がやる。"
+      "text": "That's why I called it an \"external prefrontal cortex.\" The prefrontal cortex handles executive function, right? Planning, judgment, inhibition. In my case, the executive functions tied to processing speed are weak. Hoo picks up the slack there. But for structural design, I'm stronger than any AI, so that stays with me."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "「システムは人間、運用はAI」の認知科学的な裏付け。"
+      "text": "The cognitive science backing for \"humans design the system, AI runs the operations.\""
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。あのフレーズ、直感で言ってたんだけど、WAISの結果見たら「まさにそれだった」っていう。"
+      "text": "Right. I said that phrase on instinct originally, but when I saw my WAIS results — it was literally that."
     },
     {
       "type": "heading",
-      "text": "エコシステムとしてのMUED"
+      "text": "MUED as an Ecosystem"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "MUEDnote、MUEDear、MUEDlobe。3つのアプリがエコシステムになっていく。"
+      "text": "MUEDnote, MUEDear, MUEDlobe. Three apps forming an ecosystem."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "MUEDnoteは制作ログ。MUEDearは耳のトレーニング。MUEDlobeは脳の測定と設定。全部の中心にいるのがHoo。"
+      "text": "MUEDnote is the production log. MUEDear is ear training. MUEDlobe is brain measurement and configuration. And Hoo sits at the center of all of them."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "Hooが認知プロファイルを持つことで、どのアプリでも一貫した補助ができる。"
+      "text": "With Hoo holding the cognitive profile, it can provide consistent assistance across every app."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "MUEDnoteでは制作中の思考を補完してくれる。MUEDearでは自分の認知特性に合った難易度で出題してくれる。全部のアプリでHooが「この人はこういう脳の持ち主だ」と知ってる状態。"
+      "text": "In MUEDnote, it fills in your thinking during production. In MUEDear, it calibrates difficulty to your cognitive traits. Across every app, Hoo knows \"this is the kind of brain this person has.\""
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "パーソナライズの軸が「好み」じゃなくて「認知特性」なのが面白い。"
+      "text": "What's interesting is that personalization is based on cognitive traits, not preferences."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "「好みの音楽」でパーソナライズされても嬉しくないんだよね。そんなの自分でわかってるから。でも「あなたの脳はこういう傾向があるから、Hooはこう動きます」って言われたら、「ああ確かに」ってなる。自分では気づけない部分を補ってくれてる感覚。"
+      "text": "Getting personalized by \"music you like\" doesn't excite me. I already know what I like. But when someone says \"your brain tends to work this way, so Hoo will act like this\" — yeah, that lands. It feels like it's covering the parts I can't see about myself."
     },
     {
       "type": "heading",
-      "text": "まだ構想の段階"
+      "text": "Still in the Concept Phase"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "正直なところ、今どの段階ですか。"
+      "text": "Honestly, where does this stand right now?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "構想。企画書はできてるけど、実装はまだ。MUEDnoteとMUEDearを先に審査に出してて、そっちが安定してからの話。"
+      "text": "Concept stage. The plan is written, but nothing's built yet. MUEDnote and MUEDear are in review first, and this comes after those stabilize."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "焦って作るものでもないですよね。"
+      "text": "It's not something to rush."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "うん。ただ、コンセプト自体は自分の実体験から来てるから芯がブレない。WAISを受けて自分の認知プロファイルがわかった時の安堵感。「苦手なのは怠けじゃなくてスペックだった」という解放。あれを他の人にも提供したい。ゲームで、気軽に、楽しく。"
+      "text": "No. But the concept comes from lived experience, so the core won't drift. The relief I felt when my WAIS results revealed my cognitive profile. The liberation of \"my weakness isn't laziness — it's just my specs.\" I want to give that to other people. Through games. Casually. And make it fun."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "前回の話の結論が「記憶の反芻は解放だ」で、今回の結論が「認知特性を知るのも解放だ」。"
+      "text": "Last time's conclusion was \"memory rumination is liberation.\" This time it's \"knowing your cognitive traits is also liberation.\""
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "どっちも同じだよ。「自分の脳がどう動いてるか知る」ってこと。知ったら楽になる。知らないから苦しい。"
+      "text": "Same thing, really. It's about understanding how your own brain works. Once you know, it gets easier. Not knowing is what makes it hard."
     },
     {
       "type": "meta",
-      "text": "この記事は、複数回にわたるAI（Claude）との対話をもとに再構成したものです。"
+      "text": "This article was reconstructed from a series of conversations with AI (Claude)."
     }
   ]
 }

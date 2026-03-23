@@ -3,428 +3,428 @@
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "MUEDear、最初は「手早くマネタイズできるアプリを作りたい」って言ってましたよね。"
+      "text": "With MUEDear, you originally said you wanted to build an app you could monetize quickly, right?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。海外に耳トレの月額サービスがあって、あれがすごくいいんだよ。ちゃんとビジネスとして成立してる。あのモデルを参考にして、無料版をリワード広告で回す。8週間くらいで出したかった。"
+      "text": "Yeah. There's a subscription-based ear training service overseas that's really solid. It actually works as a business. I wanted to model it after that — free tier with rewarded ads. Figured I'd ship it in about eight weeks."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "計画としてはシンプルですよね。DAWで処理した音源を用意して、「EQかかってるのはどっち？」みたいな2択で遊ばせる。"
+      "text": "The plan was straightforward. Prepare audio processed in a DAW and have users play a simple A/B game — 'Which one has EQ applied?'"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そのはずだったんだけど。"
+      "text": "That was the plan, anyway."
     },
     {
       "type": "heading",
-      "text": "音源を集めるのが、めんどくさい"
+      "text": "Preparing Audio Is a Pain"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "どこで変わったんですか？"
+      "text": "Where did things change?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "音源の準備。オーディオ修復ソフトでバッチ処理して、EQ処理した音と処理してない音をペアで用意する計画だったんだけど、+6dBのEQ設定してるのに、出てきた音源が全然6dB上がってない。"
+      "text": "Audio prep. The plan was to batch-process with audio restoration software — make pairs of EQ'd and untouched audio. But I'd set +6dB of EQ and the output wasn't anywhere near 6dB louder."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "フルビットの音源だとヘッドルームがないからですよね。"
+      "text": "Because full-bit audio has no headroom left."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "それもある。ヘッドルームのマージンが足りなくて上がりきらない。でもそれだけじゃなくて、そもそもEQの+6dBって、その帯域に6dBの負荷をかけるっていう刺激であって、音源のデータが機械的に6dB上がるわけじゃないんだよね。"
+      "text": "That's part of it. Not enough headroom margin, so it can't boost all the way. But beyond that, +6dB on an EQ band isn't mechanically raising the data by 6dB — it's applying 6dB of stimulus to that frequency range. The actual result depends on the source material."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "プラグインの処理特性として、パラメータ通りの値にはならない。"
+      "text": "Due to the processing characteristics of plugins, the output doesn't match the parameter values exactly."
     },
     {
       "type": "pullquote",
-      "text": "バラつきの幅が読めないとなると、バッチ処理で一括でさばける話じゃなくなる。",
+      "text": "If you can't predict how much the output will vary, batch processing is off the table.",
       "speaker": "kimny"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。実際に出てきた音源を見ると、+2dBだったり+4dBだったり、バラつきがある。便宜上6dBって決めただけだからぴったりにする必要はないんだけど、バラつきの幅が読めないとなると、バッチ処理で一括でさばける話じゃなくなる。"
+      "text": "Right. Looking at the actual output, some came out at +2dB, others at +4dB — all over the place. It didn't need to be exactly 6dB since that was just a convenient target, but if you can't predict how much the output will vary, batch processing is off the table."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "5曲×9帯域で45ファイル、それぞれ手で確認するのは。"
+      "text": "5 tracks times 9 frequency bands is 45 files. Checking each one by hand..."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "めんどくせえ。しかもスマホスピーカーで聴き分けるには10〜12dBくらいブーストが必要だから、マージンの管理まで入ってくる。で、「これ内部処理でできない？」ってClaude Codeに聞いたら「できるよ」って言うから、「じゃあ任せた」と。"
+      "text": "Way too tedious. Plus, to make differences audible on phone speakers, you need 10–12dB of boost, which means headroom management on top of everything. So I asked Claude Code, 'Can you handle this with internal processing?' and it said 'Sure,' so I said, 'Go for it.'"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "......それでDSP実装が始まった。"
+      "text": "...And that's how the DSP implementation started."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "音源1個入れとけば、あとはアルゴリズムがパラメータ通りに処理してくれる。プラグインの処理特性に振り回されることもない。そっちの方がいいじゃん。"
+      "text": "Drop in one audio source and the algorithm processes it exactly to spec. No more getting jerked around by plugin behavior. Way better, right?"
     },
     {
       "type": "heading",
-      "text": "4種のコンプを自前で作る"
+      "text": "Building Four Compressor Types from Scratch"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "EQはWeb Audio APIに入ってるから比較的すんなりいったと思うんですけど、コンプはどうだったんですか。"
+      "text": "EQ was relatively smooth since it's built into the Web Audio API. How did the compressor go?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "コンプのアルゴリズム、ライブラリに入ってなかった。"
+      "text": "The compressor algorithm wasn't in the library."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "ない。"
+      "text": "It wasn't there."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "ないから調べて作った。OPT、FET、Tube、VCAの4種。"
+      "text": "Nope. So I researched it and built them. OPT, FET, Tube, VCA — all four types."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "ちょっと待ってください。Optoは光学式、FETはトランジスタ式、Tubeは真空管式、VCAは電圧制御式。それぞれ別のアルゴリズムを実装したんですよね。プラグイン開発者がやることですよね、これ。"
+      "text": "Hold on. Opto is optical, FET is transistor-based, Tube is vacuum tube, VCA is voltage-controlled. You implemented a separate algorithm for each one. That's what plugin developers do."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "まあ結果的にはね。最初は「コンプかかってるかどうか当てるだけ」のつもりだったんだけど、どうせやるなら種類ごとに分けた方が面白いじゃんと。"
+      "text": "Well, that's what it turned into. Originally it was just going to be 'Guess if compression is applied or not,' but I figured if I'm doing it anyway, separating by type would be way more interesting."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "「面白い」で4種DSP実装するのは普通じゃないです。"
+      "text": "Implementing four DSP algorithms because it's 'more interesting' is not normal."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "面白かったんだよ。実装中にテストで音聴きながらパラメータいじってたら、楽しすぎてずっと触ってた。"
+      "text": "It was fun though. I was tweaking parameters while testing with actual audio and I couldn't stop. Just kept going."
     },
     {
       "type": "heading",
-      "text": "Gain Matchという沼、そして別の解"
+      "text": "The Gain Match Rabbit Hole — and a Different Way Out"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "コンプの実装で一番厄介だったのは何ですか。"
+      "text": "What was the trickiest part of the compressor implementation?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "Gain Match。コンプかけた音とかけてない音を比較するとき、コンプかけた方がメイクアップゲインで音量が大きくなる。そうすると、ユーザーは「コンプの質感」じゃなくて「音量の大きさ」で判別しちゃう。"
+      "text": "Gain match. When you compare compressed audio to uncompressed, the compressed version is louder because of makeup gain. Users end up judging by volume instead of the actual character of the compression."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "それだと耳トレにならない。"
+      "text": "That defeats the purpose of ear training."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "ならない。だからLUFSマッチングで正規化しようとしたんだけど、これが重かった。ラウドネスの計測値と実際のパラメータのギャップを埋めるテストと調整が延々と必要で、「これやってたら開発終わらないな」と。"
+      "text": "Exactly. So I tried normalizing with LUFS matching, but it was heavy. Endless testing and tweaking to close the gap between measured loudness and the actual parameters. I realized if I kept at it, the project would never ship."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "断念した。"
+      "text": "So you gave up on it."
     },
     {
       "type": "pullquote",
-      "text": "Gain Matchを技術で解決するんじゃなくて、体験の設計で回避した。",
+      "text": "Instead of solving gain match with engineering, I designed around it with the user experience.",
       "speaker": "kimny"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "断念した。で、代わりにどうしたかっていうと、設定画面をちゃんと作った。MuCompに限っての話だけど、4つのモードそれぞれに、ハードウェアコンプと同じパラメータとツマミを用意した。"
+      "text": "Gave up on it. What I did instead was build a proper settings screen. Specifically for MuComp — I gave each of the four modes the same parameters and knobs as the real hardware compressors."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "FETならInput/Output/Ratio/Attack/Release、OptoならPeak Reduction/Gain/Mode。"
+      "text": "So for FET you'd have Input/Output/Ratio/Attack/Release, for Opto it's Peak Reduction/Gain/Mode."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。サンプル音源を流しながら実際にコンプのかかりを調整できる。プラグインをいじってる感覚に近い。で、ユーザーが自分で調整したパラメータが、そのまま耳トレの初期値になる。"
+      "text": "Exactly. You play a sample track and adjust the compression in real time. It feels close to tweaking an actual plugin. And the parameters the user dials in become the starting values for the ear training game."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "つまり、ユーザーが設定した状態のコンプがかかった音と、かかっていない音を比較して当てる、と。"
+      "text": "So the user compares the compressed sound — using their own settings — against the dry signal, and guesses which is which."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そういうこと。自分で「この設定でどう聴こえるか」を確認した上でゲームに入るから、音量差じゃなくて質感で判断する流れが自然にできる。Gain Matchを技術で解決するんじゃなくて、体験の設計で回避した。"
+      "text": "That's it. You've already heard what your settings sound like before entering the game, so you naturally judge by tonal character instead of volume. Instead of solving gain match with engineering, I designed around it with the user experience."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "しかもその設定画面自体が、実機を触る体験として価値を持ってる。"
+      "text": "And the settings screen itself becomes a valuable experience — getting hands-on with hardware-modeled gear."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "副産物だけどね。MVPだから他のゲームの設定画面はまだこれからだけど、MuCompでこの形ができたのは大きい。"
+      "text": "That was a side effect. Since this is the MVP, settings screens for the other games are still to come. But having this pattern established in MuComp is a big deal."
     },
     {
       "type": "heading",
-      "text": "設定画面がエンタメになる"
+      "text": "When the Settings Screen Becomes the Entertainment"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "実機持ってないDTMerが、ビンテージコンプのツマミを触れる体験。これ自体が価値ですよね。"
+      "text": "For producers who don't own hardware, getting to turn the knobs of a vintage compressor — that's valuable on its own."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "プラグイン買う前の試し触りにもなるし、「Inputを12時にしたらこうなるのか」っていう発見もある。設定を変える、音を聴く、また変える。このサイクル自体がDTMerにとってはエンタメだと思う。"
+      "text": "It's like a test drive before buying a plugin. You discover things like, 'Oh, so that's what happens when Input is at 12 o'clock.' Change a setting, listen, change again. That loop itself is entertainment for producers."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "しかも版権を上手く一般化してあるから、「FET Comp」「Opto Comp」って書いてあるけど、わかる人にはわかる。"
+      "text": "And you've cleverly genericized the branding — they say 'FET Comp' and 'Opto Comp,' but people in the know get exactly what they are."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "大手プラグインメーカーもみんなそうやってるよね。で、わかる人には見た目だけで「おっ」ってなる。その「おっ」がそのままSNSでの話題になる。"
+      "text": "That's what all the major plugin makers do, right? And for people who know, the look alone gets an instant reaction. That reaction is what drives social media buzz."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "事前レンダリングの音源方式だったら、パラメータ固定だからこの体験は不可能ですよね。"
+      "text": "With the pre-rendered audio approach, parameters would be fixed — this kind of experience would've been impossible."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。内部でDSP処理してるからこそ、パラメータをリアルタイムにいじれる。「めんどくさいから内部処理で」っていう判断が、結果的にこの体験を可能にしてる。"
+      "text": "Right. Real-time parameter tweaking is only possible because we're doing DSP internally. The decision to go with internal processing because 'preparing audio is a pain' is what made this whole experience possible."
     },
     {
       "type": "heading",
-      "text": "「使うのは簡単、作るのは大変」"
+      "text": "Simple to Use, Hard to Build"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "ユーザーから見たMUEDearの体験って、どんな感じですか。"
+      "text": "What does the MUEDear experience look like from the user's side?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "アプリ開く。AとBの音を聴く。「こっち」って選ぶ。正解か不正解。2分で終わり。"
+      "text": "Open the app. Listen to A and B. Pick one. Right or wrong. Done in two minutes."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "シンプル。"
+      "text": "Simple."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "プレイ体験はシンプルでしょ。"
+      "text": "The play experience is simple, yeah."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "でも裏側では、4種DSPアルゴリズム、実機モデリングの設定画面、出力リミッター、ライブラリのフォーク修正。"
+      "text": "But under the hood — four DSP algorithms, hardware-modeled settings screens, output limiter, forked library patches."
     },
     {
       "type": "pullquote",
-      "text": "使うのは簡単、作るのは大変。それが正しいプロダクト設計だと思ってる。",
+      "text": "Simple to use, hard to build. That's what good product design looks like.",
       "speaker": "kimny"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "それが正しいプロダクト設計だと思ってる。使うのは簡単、作るのは大変。"
+      "text": "That's what good product design looks like. Simple to use, hard to build."
     },
     {
       "type": "heading",
-      "text": "知った上で、あえて作る"
+      "text": "Knowing What Exists, Then Building It Anyway"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "DSPのアルゴリズム自体は、別に新しいものではないですよね。"
+      "text": "The DSP algorithms themselves aren't new, are they?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "全然。Webで調べて持ってきたアルゴリズムだし、同じようなもの、それ以上のものが世の中にいくらでもある。本業ではプロ用のプラグイン使ってるわけだし。"
+      "text": "Not at all. I pulled algorithms I found online, and there are plenty of implementations out there — many better than mine. I use professional plugins in my actual work."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "だったらなぜ自前で実装したんですか。既存のプラグインで処理した音源を入れれば済んだ話ですよね。"
+      "text": "Then why build them yourself? You could've just used processed audio from existing plugins."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "シンプルに、そのうちプラグイン開発をやってみたかったから。ずっと頭の片隅にあった。で、今回の耳トレアプリが、その基礎知識を構築するちょうどいい機会だなと思った。"
+      "text": "Honestly, I've always wanted to try plugin development. It's been in the back of my mind for a while. This ear training app felt like the right opportunity to build that foundational knowledge."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "「車輪の再発明」っぽいけど、厳密には違う。"
+      "text": "It looks like reinventing the wheel, but it's not exactly that."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "車輪の再発明って、既存のものを知らないまま自前で作っちゃうことでしょ。今回は何があるか知った上で、学習目的であえて作ってる。本業の道具として使ってきたものの内側を、自分の手で組み立ててみたかった。"
+      "text": "Reinventing the wheel is when you don't know what already exists and build it from scratch. Here, I knew what was out there and built it deliberately to learn. I wanted to take apart the tools I've used professionally and put them back together with my own hands."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "途中で動的スレッショルドにも踏み込もうとしてましたよね。"
+      "text": "You also started looking into dynamic threshold at one point, right?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "うん、音源の特性に応じてスレッショルドを自動調整するやつ。Deep Learningで全然できる話なんだけど、今のMVPのスタックに機械学習は入ってない。入れたら開発が終わらないから、次に回した。"
+      "text": "Yeah, auto-adjusting the threshold based on the audio characteristics. Totally doable with deep learning, but the MVP stack doesn't include ML. Adding it would mean the project never ships, so I pushed it to the next phase."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "「やれるけど今じゃない」という判断。"
+      "text": "A 'can do it, but not now' decision."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "できることとやるべきことは違う。MVPは5ゲーム出すことが目的だから。でもアルゴリズムの核は自分の手で動かしたし、「ここから先はML」っていう境界線も体感できた。4日でプラグイン開発者が通る道を圧縮体験した感じ。"
+      "text": "What you can do and what you should do are different things. The MVP goal is shipping five games. But I got hands-on with the core algorithms, and I now have a feel for where the line is between traditional DSP and ML territory. Four days to speed-run the path a plugin developer takes."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "しかも副産物として動くアプリができてる。"
+      "text": "And as a side effect, you ended up with a working app."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。学習だけで終わってない。アプリになって、ユーザーに届く形になってる。そこは大きいと思う。"
+      "text": "Exactly. It didn't end as just a learning exercise. It became an app that ships to actual users. That's what matters."
     },
     {
       "type": "heading",
-      "text": "うちだからできること"
+      "text": "What Only We Can Do"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "将来の話になりますが、実機音源を使う構想もありましたよね。"
+      "text": "Looking ahead — you had plans for using real hardware recordings, right?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "うちの会社やパートナーのスタジオに実機あるから。「Real or Emu?」っていうゲーム。DSPのエミュレートと本物のビンテージコンプで処理した音、どっちが本物か当てる。"
+      "text": "Our company and our partner studios have the actual hardware. The game would be called 'Real or Emu?' — you hear audio processed through a DSP emulation and through a real vintage compressor, and you guess which is the real thing."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "実機があって、録音環境もあって、DSPも自前で持ってる。この組み合わせが揃ってるから出せるコンテンツですよね。"
+      "text": "You have the hardware, the recording environment, and your own DSP. That combination is what makes this kind of content possible."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "まあ、普通はそんなリソースをただの耳トレアプリに使わないよね。うちはたまたま全部手元にあるからできるってだけで。"
+      "text": "I mean, most people wouldn't pour those kinds of resources into a simple ear training app. We just happen to have it all on hand, so we can."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "他にも展開できそうですか。"
+      "text": "Any other directions you could take this?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "ピアノでも「どっちが高級グランドピアノ？」とか。収益出てきたら「本物のカルテット演奏はどっち？（片方はサンプリング音源）」とかもできる。テレビの格付けチェックみたいな形式で。"
+      "text": "With piano, you could do 'Which one is the concert grand?' Once revenue picks up, maybe 'Which is the live string quartet?' where one is sampled. Like those TV shows where people try to tell real from fake."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "テレビでウケてる形式は一般層にも刺さる。"
+      "text": "A format that works on TV has mass-market appeal."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "まあ、そういう企画が打てるところまで行ったら、十分マネタイズできてるってことだけどね。"
+      "text": "Well, if we're at the point where we can pull off content like that, it means we're already monetizing just fine."
     },
     {
       "type": "heading",
-      "text": "コモディティの海で"
+      "text": "In a Sea of Commodities"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "「AIで誰でもアプリ作れる時代」に、似たようなのが100個出たらどうするんですか。"
+      "text": "In an era where 'anyone can build an app with AI,' what happens if a hundred similar ones show up?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "それは怖いなと思ってる。"
+      "text": "That does scare me, honestly."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "でも実際、「AIで耳トレアプリ作ろう」と思う人自体がニッチですよね。さらにDSP自前実装する人はもっと少ない。「音量差で当てちゃう問題」に気づいて設計で回避できる人はほとんどいない。"
+      "text": "But realistically, the pool of people who think 'let me build an ear training app with AI' is already niche. Even fewer would implement their own DSP. And almost nobody would notice the volume-bias problem and design around it."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "まあ、そうかもしれない。"
+      "text": "Maybe you're right."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "AIに「コンプ作って」って言えば作ってくれます。でもそれが正しいかどうか判定できる人間がいないと、ゴミができる。"
+      "text": "You can tell AI to 'build a compressor' and it will. But without a human who can judge whether the output is actually correct, you end up with garbage."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "「スマホスピーカーで10〜12dB必要」とか、現場で音作ってないと出てこない数字だからね。"
+      "text": "Knowing you need 10–12dB of boost for phone speakers — that's a number you only get from years of actually making music in the field."
     },
     {
       "type": "pullquote",
-      "text": "15年の現場経験が、今ようやく「耳トレアプリ」という別の形で換金可能になってきた。",
+      "text": "Fifteen years of hands-on production experience is finally becoming monetizable — in the form of an ear training app.",
       "speaker": "claude"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "15年の現場経験が、今ようやく「耳トレアプリ」という別の形で換金可能になってきた。"
+      "text": "Fifteen years of hands-on production experience is finally becoming monetizable — in the form of an ear training app."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "何度も言うけど、マジでただの耳トレアプリ作りたかっただけなんだけどね。何やってんだ俺。"
+      "text": "I keep saying this, but I seriously just wanted to make a simple ear training app. What am I even doing."
     },
     {
       "type": "meta",
-      "text": "この記事は、MUEDear開発過程でのAI（Claude）との実際の対話をもとに再構成したものです。"
+      "text": "This article is a reconstruction based on actual conversations with AI (Claude) during the development of MUEDear."
     }
   ]
 }

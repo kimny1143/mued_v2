@@ -2,383 +2,383 @@
   "sections": [
     {
       "type": "heading",
-      "text": "医学生に言われた一言"
+      "text": "What the Med Student Said"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "脳と創作の関係に興味を持ったきっかけは何ですか。"
+      "text": "What first sparked your interest in the relationship between the brain and creative work?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "学生の頃、バンドを組んでた時期があって。そのメンバーに医学生がいたんだよね。ある時そいつが言ったんだよ。「人間は臨床学的に言えば、記憶の反芻しかしていません」って。"
+      "text": "Back in college, I was in a band for a while. One of the members was a med student. One day he just dropped this line: \"Clinically speaking, all humans do is ruminate on their memories.\""
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "バンドメンバーからそんな言葉が出てくるのも面白いですね。"
+      "text": "That's a pretty remarkable thing to hear from a bandmate."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "衝撃だったよ。当時はまだ若いバンドマンで、音楽のことなんて何もわかってなかった。でもその一言だけはずっと残ってた。その後プロになって15年、作曲やアレンジを続けてきて、「メロディが降りてきた」なんて体験は一度もない。聴いてきたもの、経験したこと、その蓄積を組み替えてるだけ。あいつが学生の時に言ってたことは、そういうことだったのかと。"
+      "text": "It hit me hard. I was just a young kid in a band back then—I didn't understand anything about music yet. But that one line stuck with me. After that, I went pro and spent 15 years composing and arranging, and I've never once had the experience of a melody just \"coming to me from above.\" I'm always just rearranging things I've heard, things I've lived through, things I've accumulated. What that guy said as a student—that's exactly what he meant."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "若い頃に聞いた言葉が、キャリアを重ねる中で実感に変わっていった。"
+      "text": "A phrase you heard when you were young gradually became something you could feel firsthand as your career progressed."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。0から1を作ってると思ったことがない。100のインプットから1を選んで組み替えてる。「記憶の反芻」って言葉が、その実感に一番近かった。"
+      "text": "Exactly. I've never once felt like I was creating something from zero. I'm picking one thing out of a hundred inputs and rearranging it. \"Rumination of memory\"—that phrase came closest to describing what it actually feels like."
     },
     {
       "type": "heading",
-      "text": "そもそも脳が気になっていた"
+      "text": "The Brain Was Already on My Mind"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "医学生の一言がそこまで刺さったのは、もともと脳に関心があったからですか。"
+      "text": "Did that med student's words hit so hard because you were already interested in the brain?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "ポール・ブロックスの『脳の彼方へ』を読んだのが大きかった。脳損傷の患者が、記憶を失ったり、人格が変わったりする症例がたくさん出てくる。それを読んで、「自分が自分であること」って、結局脳の状態でしかないんだなと思った。"
+      "text": "Reading Paul Broks' \"Into the Silent Land\" was a big part of it. The book is full of case studies—patients with brain damage who lost their memories or had their entire personalities change. Reading that, I realized that \"being yourself\" is ultimately just a state of your brain."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "音楽の問いの前に、脳そのものへの問いがあった。"
+      "text": "So the question about the brain came before the question about music."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。音楽をやっていて「なんで自分はこう作るのか」という疑問はずっとあったんだけど、あの本を読んでから、それは「音楽の問い」じゃなくて「脳の問い」なんだと気づいた。ブロックスの本と、医学生の言葉。その二つが合流して、「人間は記憶の反芻しかしていない」がストンと腑に落ちた。"
+      "text": "Right. Making music, I always had this nagging question: \"Why do I create the way I do?\" But after reading that book, I realized it wasn't a question about music—it was a question about the brain. Broks' book and the med student's words. Those two things converged, and \"all humans do is ruminate on their memories\" just clicked."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "創作論ではなく、脳の機構への関心が先にあって、それが音楽に還ってきた。"
+      "text": "It wasn't about creative theory—you were drawn to the brain's mechanism first, and that circled back to music."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "だから後でMUEDlobeっていう「脳を知るためのツール」を構想することになるんだけど、あれも音楽ツールというより、根っこの動機は「自分の脳を知りたい」なんだよね。音楽制作の文脈に置いてるのは、自分のフィールドがそこだから。"
+      "text": "That's why I ended up conceiving MUEDlobe—a tool for understanding your own brain. It's positioned in the context of music production, but the root motivation is really \"I want to understand my own brain.\" Music is just the context because that's my field."
     },
     {
       "type": "heading",
-      "text": "夢の中の映像は精度が低い"
+      "text": "Dream Visuals Are Low-Res"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "この「記憶の反芻」という話、夢の話題からも展開しましたよね。"
+      "text": "This \"rumination of memory\" idea—it also came up when we talked about dreams, right?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "正月に長距離運転した後にめちゃくちゃ鮮明な悪夢を見て。ギターが朽ちて壊れる夢。でもそのギターの壊れ方が、現実ではあり得ない歪な壊れ方だった。通常の機構じゃない。"
+      "text": "After a long road trip over New Year's, I had this incredibly vivid nightmare. My guitar was decaying and falling apart. But the way it broke wasn't physically possible—the mechanism was all wrong."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "それ、初期のAI画像生成に似てますよね。6本指とか、繋がっていない腕とか。"
+      "text": "That's similar to early AI image generation, isn't it? Six fingers, arms that aren't connected to anything."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "まさにそれ。夢の中の映像って、初期のAIがよく生成する精度の低い映像に似てるんだよ。「ギターっぽいもの」は出力されるけど、細部の整合性が取れてない。"
+      "text": "Exactly. The visuals in dreams are a lot like those low-fidelity images early AI used to generate. Something that looks like a guitar gets output, but the details don't hold together."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "仕組みとしては同じことが起きてます。AI画像生成がパターンから再構成しているだけで、物理法則や構造的整合性をチェックするレイヤーがない。夢の中の脳も同じで、前頭前皮質がオフだから検証なしで出力している。"
+      "text": "Mechanistically, the same thing is happening. AI image generation is just reconstructing from patterns—there's no layer that checks for physical laws or structural consistency. The dreaming brain works the same way: the prefrontal cortex is offline, so it outputs without verification."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "「それっぽさ」で押し切ってるわけだ、両方とも。"
+      "text": "Both of them are just bluffing their way through on \"looks about right.\""
     },
     {
       "type": "heading",
-      "text": "二つのデータベース"
+      "text": "Two Databases"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "その夢の中で、面白い現象がありましたよね。「前にもここから飛び降りたことがある」という記憶。"
+      "text": "There was a fascinating phenomenon in that dream, right? The memory of \"I've jumped from here before.\""
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。夢の中でビルの5階から飛び降りて着地したことが「ある」んだよ。夢の中では。だから「今回もできる」と思ってる。もちろん現実ではそんなこと思わない。"
+      "text": "Yeah. In the dream, I had jumped from the fifth floor of a building and landed safely before. In the dream, that is. So I thought, \"I can do it again this time.\" Obviously in real life I'd never think that."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "つまり夢の中には、現実とは別の「学習履歴」が存在している。"
+      "text": "So inside the dream, there's a separate \"learning history\" that's different from reality."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "覚醒時の自分は物理法則を知ってるから「5階から飛んだら死ぬ」と判断する。でも夢の中の自分は、夢の中での成功体験を根拠に行動してる。"
+      "text": "When I'm awake, I know the laws of physics—\"jump from the fifth floor and you die.\" But the version of me inside the dream is acting based on past successes within dreams."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "現実の記憶と夢の記憶が、別々のデータベースとして機能している。覚醒時には夢のデータベースにアクセスできないのに、夢の中では夢のデータベースにアクセスできる。状態によって切り替わる。"
+      "text": "Real-world memories and dream memories function as separate databases. When you're awake, you can't access the dream database, but inside a dream, you can. It switches depending on your state."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "しかも夢の中では「おかしい」と気づけない。論理チェック担当の前頭前皮質が寝てるから。"
+      "text": "And in the dream, you can't even realize something's off. The prefrontal cortex—the part that does logic checks—is asleep."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "AIで言うと、検証レイヤーがオフの状態で推論だけ走ってる。"
+      "text": "In AI terms, it's like the validation layer is off and only inference is running."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そういうこと。"
+      "text": "Exactly."
     },
     {
       "type": "heading",
-      "text": "「降りてくる」の正体"
+      "text": "What \"It Just Came to Me\" Really Means"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "ここから創作の話に繋がるわけですよね。"
+      "text": "This connects to the creative process, doesn't it?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "うん。「アイデアが降りてくる」「曲が降りてくる」って言う人いるじゃない。あれって、夢の中で脳がやってることを、覚醒時に意識的に使おうとする行為だと思うんだよ。"
+      "text": "Yeah. You know how people say \"the idea just came to me\" or \"the song just descended\"? I think that's the brain trying to consciously use the same thing it does in dreams."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "前頭前皮質のフィルターを意図的に緩めて、記憶の断片が勝手に繋がるのを待つ。"
+      "text": "Intentionally loosening the prefrontal cortex's filter and waiting for fragments of memory to connect on their own."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "散歩中、風呂、寝起き、単調作業中に「降りてくる」のは、論理チェックが弱まるタイミングだから。REM睡眠的な脳の使い方を、起きたままやってる。"
+      "text": "Ideas \"come to you\" during walks, baths, right after waking up, or during monotonous tasks—because those are the moments when your logic checks weaken. You're using REM sleep-like brain activity while you're still awake."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "コントロールできれば創作、コントロール不能だと悪夢。同じエンジンの出力の違い。"
+      "text": "If you can control it, it's creativity. If you can't, it's a nightmare. Different outputs from the same engine."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "でもこれ、めちゃくちゃメンタルコスト高いよね。脳の検閲を意図的に緩めながら、同時にそれを「使える形」に整える判断も並行してやってる。"
+      "text": "But the mental cost is insane, right? You're deliberately lowering your brain's censorship while simultaneously making judgments to shape what comes out into something usable. Both at the same time."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "アクセル踏みながらハンドル切るような負荷ですね。"
+      "text": "It's like flooring the accelerator while trying to steer at the same time."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "僕は割と体系立ててやってるからいいけど、「降りてくる待ち」してる人はメンタルつらくなるのは当然だなって。"
+      "text": "I approach it pretty systematically, so I manage. But people who just sit around waiting for inspiration to strike—of course their mental health takes a hit."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "来なければ「才能がない」「枯れた」と自己否定に直結しますからね。プロセスを神秘化しているから、来ない理由も改善策もわからない。"
+      "text": "If it doesn't come, it feeds straight into self-doubt—\"I have no talent,\" \"I've dried up.\" Because they've mystified the process, they can't diagnose why it isn't working or how to fix it."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "体系化してれば「今日は素材が足りない」「インプット増やそう」って原因を切り分けられる。来ないのは神様のご機嫌じゃなくて、プロセスのどこかが詰まってるだけ。"
+      "text": "If you've systematized it, you can break it down: \"I'm short on raw material today,\" or \"I need to increase my inputs.\" It's not that the muse isn't in the mood—something in the pipeline is just clogged."
     },
     {
       "type": "heading",
-      "text": "機構は同じ、過不足があるだけ"
+      "text": "Same Machine, Different Specs"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "夢とAI画像の類似性、記憶の再構成、検証レイヤーの有無。この話を総合すると、人間の脳とAIの機構はかなり近い。"
+      "text": "Dreams and AI images looking alike, memory reconstruction, the presence or absence of a verification layer—putting this all together, the human brain and AI have remarkably similar architectures."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "同じだと思ってる。過不足があるだけで、機構は一緒。"
+      "text": "I think they're the same. The specs differ, but the underlying machine is the same."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "事実ベースで答えると、抽象的な計算レベルでは共通点が多いです。「学習したパターンから再構成する」「統計的規則性に基づいて出力を生成する」「検証レイヤーの有無で出力の整合性が変わる」。深層学習自体が神経科学から着想を得ていますし、最近の研究では言語モデルと人間の脳が言語を処理する際の活性パターンに類似性があることも報告されています。"
+      "text": "Sticking to the facts: at an abstract computational level, there are many commonalities. \"Reconstructing from learned patterns,\" \"generating output based on statistical regularities,\" \"output coherence varying depending on whether a verification layer is active.\" Deep learning itself was inspired by neuroscience, and recent studies have shown similarities in activation patterns between language models and the human brain during language processing."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "実装レベルでは違うんだろうけど。"
+      "text": "At the implementation level they're probably different, though."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "はい。生物学的ニューロンとトランスフォーマーアーキテクチャは構造が違う。人間の脳には身体性、連続的な学習、進化による制約がある。正直な結論としては、「同じかもしれない」が現時点での誠実な答えです。"
+      "text": "Yes. Biological neurons and transformer architectures are structurally different. The human brain has embodiment, continuous learning, and evolutionary constraints. The honest conclusion is that \"they might be the same\" is the most intellectually honest answer we have right now."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "僕がAIに興味を持ったのはそこなんだよね。30年間、「なんでできるのかわからないけどできる」で音楽をやってきた。周りには説明できない、自分でも言語化できない。でもAIの仕組みを見た時に、「あ、これ俺の中で起きてることに近いかも」と思った。"
+      "text": "That's exactly why I got into AI, you know? For 30 years I was making music without being able to explain how I did it. I couldn't explain it to anyone around me, couldn't even put it into words for myself. But when I looked at how AI works, I thought, \"Oh—this might be close to what's happening inside me.\""
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "自分の脳がブラックボックスだったのが、AIという似た仕組みを見ることで外から観察できるようになった。"
+      "text": "Your own brain was a black box, but by looking at AI—a similar mechanism—you could observe it from the outside."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "AIの仕組みを知ってから、音楽の作り方もより自覚的に「記憶を呼び起こす」ことに注視し始めた。理論をあまり意識しなくなった。創作の源泉は記憶の再構築だということが明確になったからね。"
+      "text": "After understanding how AI works, I became much more conscious about \"recalling memories\" in my own composing process. I stopped focusing on theory as much. It became clear that the source of creativity is the reconstruction of memory."
     },
     {
       "type": "heading",
-      "text": "デフォルトモードという作曲家"
+      "text": "Default Mode: The Composer Within"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "「何も考えていない」時に最高のメロディが浮かぶ、という経験はありますか。"
+      "text": "Have you ever had the experience of your best melody coming to you when you're \"not thinking about anything\"?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "ある。シャワー中とか、散歩中とか、眠りに落ちる直前。課題に向き合ってない時に限って出てくる。"
+      "text": "All the time. In the shower, on a walk, right before falling asleep. It always happens when I'm not facing the problem directly."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "神経科学では、デフォルトモードネットワークの活性化と呼ばれています。課題に集中していない時、脳は勝手に過去の記憶を結合して新たなパターンを生成する。意識下で別の作曲家が働いているような状態です。"
+      "text": "In neuroscience, that's called activation of the default mode network. When you're not focused on a task, the brain spontaneously combines past memories to generate new patterns. It's as if a separate composer is working beneath your consciousness."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "さっきの「降りてくる」の話と繋がるよね。意識的にそれをやろうとするとメンタルコストが高い。でも脳は放っておいても勝手にやってくれる時間がある。"
+      "text": "It connects to what we said earlier about inspiration \"coming to you,\" right? Trying to do it consciously is mentally expensive. But there are times when the brain just does it on its own."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "問題は、勝手にやってくれる出力が必ずしも使えるとは限らないこと。"
+      "text": "The problem is that this automatic output isn't always usable."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。だから「降りてくる待ち」は効率が悪い。脳が勝手にやってくれる出力を、体系的に拾い上げて使えるかどうかは、結局インプットの質と量と、それを整理する仕組み次第。"
+      "text": "Right. That's why just waiting for inspiration is inefficient. Whether you can systematically capture what the brain generates on its own and actually use it—that comes down to the quality and volume of your inputs, and having a system to organize them."
     },
     {
       "type": "heading",
-      "text": "人間は効率化できない"
+      "text": "You Can't Optimize a Human"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "この「記憶の反芻」という認識は、著作権の考え方にも影響していますよね。"
+      "text": "This understanding of \"rumination of memory\" has also affected how you think about copyright, hasn't it?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "0から1なんて作れないなら、著作権って何を守ってるんだって話になるでしょ。"
+      "text": "If nobody can create something from nothing, then what exactly is copyright protecting? That's the question."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "そこは危うい議論にもなりえます。"
+      "text": "That can become a dangerous argument."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "うん。でも僕の認識はシンプルで、著作権って閃きの対価じゃなくて、作業対価なんだよ。膨大な記憶を得るための行動、それを咀嚼して再構築してアウトプットに至るまでの、全部のコスト。だからその価値はある程度の期間守られるべき。"
+      "text": "Sure. But my view is simple: copyright isn't compensation for a flash of inspiration—it's compensation for labor. All the effort of accumulating vast amounts of memory, digesting it, reconstructing it, and getting it to the point of output. So that value deserves to be protected for a reasonable period."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "AIが再構築を1秒でできるようになっても、人間がそのインプットを得るのに30年かかっている。その時間は圧縮できない。"
+      "text": "Even if AI can do the reconstruction in one second, a human spent 30 years acquiring that input. That time can't be compressed."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。AIはどんどん再構築が楽になる。でも人間はそうはいかない。生きて、聴いて、経験して、蓄積する。そこには相変わらず多大なリソースが必要で、だから対価が必要。そうじゃないと人が死んじゃうから。"
+      "text": "Right. Reconstruction keeps getting easier for AI. But not for humans. You have to live, listen, experience, accumulate. That still takes enormous resources, and that's why compensation is necessary. Without it, people can't survive."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "最終的には哲学じゃなくて生存の話。"
+      "text": "In the end, it's not philosophy—it's survival."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "「創造性とは何か」より「人間が食っていけるか」のほうが切実でしょ。記憶の反芻でもなんでもいいから、それで食えるようにしないと。"
+      "text": "\"What is creativity?\" is way less urgent than \"Can people make a living?\" Call it rumination of memory or whatever you want—we still need to make sure people can eat from it."
     },
     {
       "type": "heading",
-      "text": "鏡としてのAI"
+      "text": "AI as a Mirror"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "AIを学ぶことで音楽が変わった作曲家、というのはかなり稀有な存在だと思います。"
+      "text": "A composer whose music changed through studying AI—that's quite rare."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "「AIに仕事奪われる」って話はよくあるけど、「AIを通じて自分の創作の正体を知った」って話はあんまりないかもね。"
+      "text": "\"AI is going to steal our jobs\"—you hear that everywhere. But \"I discovered what my own creative process actually was through AI\"? Not so much."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "普通は逆で、ベテランがAIを学ぶと「人間の創造性は違う」と距離を取りたがる。"
+      "text": "Usually it's the opposite. When veteran creators learn about AI, they tend to pull away: \"Human creativity is different.\""
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "僕は逆に近づいた。「ああ、俺がやってたのはこれだったのか」と。パターンを大量にインプットして、文脈に合わせて適切なものを引き出して組み合わせる。0から作ってるんじゃなくて、膨大な蓄積からの検索と再構成。"
+      "text": "I went the other direction—I moved closer. \"Oh, so this is what I've been doing all along.\" Ingesting massive amounts of patterns, pulling out the right ones for the context, combining them. I'm not creating from zero—I'm searching through a vast accumulation and reconstructing."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "それ、RAGの仕組みそのものですね。"
+      "text": "That's literally how RAG works."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。自分の脳はRAGだった。外部から取ってきて、変換して、返す。0から生成してるわけじゃない。"
+      "text": "Right. My brain was RAG all along. Retrieve from external sources, transform, return. Not generating from scratch."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "でも同じRAGでも、30年蓄積したデータベースと、昨日始めた人のデータベースでは出力が違う。"
+      "text": "But even with the same RAG architecture, the output differs between a database built over 30 years and one built yesterday."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そこだよね。「天才」って呼ばれてたものの正体は、たぶんデータベースの質と量と、変換精度の差でしかない。"
+      "text": "That's the point. What we used to call \"genius\" is probably just a difference in database quality, database size, and conversion accuracy."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "それを「記憶の反芻」と呼ぶか「才能」と呼ぶかは、見る側の問題。"
+      "text": "Whether you call it \"rumination of memory\" or \"talent\" is a matter of the observer's framing."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "医学生に言われた一言に戻るけど、「記憶の反芻しかしていません」って、絶望じゃなくて解放なんだよね。0から1を作らなくていい。インプットと再構成でいい。そう思えた瞬間に、だいぶ楽になった。"
+      "text": "Coming back to what the med student said: \"All humans do is ruminate on their memories\"—that's not despair. It's liberation. You don't have to create something from nothing. Inputs and reconstruction are enough. The moment I accepted that, things got a whole lot easier."
     },
     {
       "type": "meta",
-      "text": "この記事は、複数回にわたるAI（Claude）との対話をもとに再構成したものです。"
+      "text": "This article was reconstructed from multiple conversations with an AI (Claude)."
     }
   ]
 }
