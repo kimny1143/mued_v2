@@ -77,9 +77,9 @@ export async function POST(request: NextRequest) {
     const guestToken = randomBytes(32).toString('hex');
     const guestTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    // ── Dev bypass: skip Stripe for allowed accounts ──
-    const DEV_BYPASS_EMAILS = (process.env.DIAL_DEV_BYPASS_EMAILS ?? '').split(',').map(e => e.trim()).filter(Boolean);
-    if (DEV_BYPASS_EMAILS.includes(email)) {
+    // ── Admin bypass: skip Stripe for admin accounts (testing) ──
+    const { isAdmin } = await import('@/lib/middleware/admin');
+    if (await isAdmin()) {
       const [session] = await db.insert(dialSessions).values({
         userId: clerkUserId ?? undefined,
         mode: sessionMode ?? undefined,
