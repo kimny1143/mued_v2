@@ -95,6 +95,14 @@ export const POST = withDialAuth(async (auth) => {
       return apiNotFound('Session not found');
     }
 
+    // Payment check — prevent unpaid sessions from consuming RoEx credits
+    if (sessionRow.paymentStatus !== 'paid') {
+      return apiError('Payment required before generating mix.', {
+        code: 'PAYMENT_REQUIRED',
+        status: 402,
+      });
+    }
+
     // Omakase mode: Mix Check is not available
     if (type === 'mix_check' && sessionRow.mode === 'omakase') {
       return apiError('Mix Check is not available in Omakase mode.', {

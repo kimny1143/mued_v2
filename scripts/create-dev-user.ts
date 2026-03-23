@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 /**
  * 開発用ユーザーをデータベースに作成するスクリプト
- * kimny1143@gmail.com を開発用ユーザーとして登録
+ * DEV_USER_EMAIL 環境変数のユーザーを開発用として登録
  */
 
 import { neon } from '@neondatabase/serverless';
@@ -9,6 +9,8 @@ import { config } from 'dotenv';
 
 // Load environment variables
 config({ path: '.env.local' });
+
+const DEV_EMAIL = process.env.DEV_USER_EMAIL || 'dev@example.com';
 
 if (!process.env.DATABASE_URL) {
   console.error('❌ DATABASE_URL is not set in environment variables');
@@ -25,7 +27,7 @@ async function createDevUser() {
     const existingUser = await sql`
       SELECT id, email, role, created_at
       FROM users
-      WHERE email = 'kimny1143@gmail.com'
+      WHERE email = ${DEV_EMAIL}
     `;
 
     if (existingUser.length > 0) {
@@ -50,7 +52,7 @@ async function createDevUser() {
         subscription_status
       ) VALUES (
         'dev_clerk_kimny',
-        'kimny1143@gmail.com',
+        ${DEV_EMAIL},
         'Development User',
         'admin',
         'studio',
@@ -151,9 +153,9 @@ async function createDevUser() {
 
       console.log('\n🎉 Development environment setup complete!');
       console.log('\n📌 You can now:');
-      console.log('   1. Login with kimny1143@gmail.com in the Tauri app');
+      console.log(`   1. Login with ${DEV_EMAIL} in the Tauri app`);
       console.log('   2. Create and save Fragments');
-      console.log('   3. Use the API with dev_token_kimny');
+      console.log('   3. Use the API with DEV_AUTH_TOKEN from .env.local');
 
       return newUser[0];
     }

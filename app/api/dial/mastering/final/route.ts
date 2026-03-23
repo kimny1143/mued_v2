@@ -52,6 +52,14 @@ export const POST = withDialAuth(async (auth) => {
       return apiNotFound('Session not found');
     }
 
+    // Payment check
+    if (session.paymentStatus !== 'paid') {
+      return apiError('Payment required before mastering.', {
+        code: 'PAYMENT_REQUIRED',
+        status: 402,
+      });
+    }
+
     let masterResult;
 
     if (isRoExDevKey()) {

@@ -13,8 +13,8 @@ import { auth } from '@clerk/nextjs/server';
 import { verifyToken } from '@clerk/backend';
 
 // 開発用トークン認証（本番では無効化）
-const DEV_TOKEN = process.env.NODE_ENV === 'development' ? 'dev_token_kimny' : null;
-const DEV_USER_ID = 'dev_user_kimny';
+const DEV_TOKEN = process.env.NODE_ENV === 'development' ? process.env.DEV_AUTH_TOKEN : null;
+const DEV_USER_ID = process.env.DEV_USER_ID ?? '';
 
 async function getAuthUserId(req: Request): Promise<string | null> {
   const authHeader = req.headers.get('Authorization');
