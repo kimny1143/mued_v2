@@ -2,335 +2,335 @@
   "sections": [
     {
       "type": "heading",
-      "text": "ミックスで止まる人たち"
+      "text": "People Who Get Stuck at the Mix"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "曲は作れるのにミックスで止まるって、よく聞く話ですよね。"
+      "text": "You hear it a lot — people who can write songs but get stuck at the mixing stage."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "聞くっていうか、身近で見てきた。曲自体はすごくいいのに、ミックスが詰め切れなくて塩漬けになってるトラックメイカー、めちゃくちゃ多い。"
+      "text": "More than hear it — I've seen it up close. Trackmakers with genuinely great songs sitting on their hard drives because they can't nail the mix. There are so many of them."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "なぜ自分でミックスしないんですか。"
+      "text": "Why don't they mix it themselves?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "ミキシングって、作曲とは全然別のスキルなのよ。曲を書くのは「何を伝えるか」の判断で、ミックスは「どう聴こえるか」の調整。画家に額縁の選定をやらせるみたいなもの。できなくはないけど、得意とは限らない。"
+      "text": "Mixing is a completely different skill from songwriting. Writing a song is about deciding what to say. Mixing is about adjusting how it sounds. It's like asking a painter to pick the frame. Not impossible, but not necessarily their strength."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "じゃあ外注すればいい。"
+      "text": "Then outsource it."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そこに問題がある。"
+      "text": "That's where the problem is."
     },
     {
       "type": "heading",
-      "text": "価格の崖"
+      "text": "The Price Cliff"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "どういう問題ですか。"
+      "text": "What kind of problem?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "ミックスの外注って、価格の崖があるんだよね。ココナラとかで数千円で受けてる人がいる一方で、プロのミキシングエンジニアに頼むと桁が変わる。"
+      "text": "There's a price cliff in mix outsourcing, right? On one end, you've got people on platforms like Coconala (a Japanese freelance marketplace) or Fiverr doing it for tens of dollars. On the other end, a professional mixing engineer costs an order of magnitude more."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "具体的にはどのくらい違う？"
+      "text": "How big is the gap, specifically?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "数千円か、数万円か。間がない。で、数千円のほうは何が問題かっていうと、品質が博打なのよ。頼んでみないとわからない。返ってきた音が微妙でも、「いやこれ全然違うんですけど」って言いにくい。"
+      "text": "Tens of dollars or hundreds of dollars. Nothing in between. And the problem with the cheap end? Quality is a total gamble. You don't know what you're getting until it comes back. And if the result is mediocre, it's hard to say \"hey, this isn't what I wanted at all.\""
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "言いにくい？"
+      "text": "Hard to say?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "だって相手も人間だから。数千円で引き受けてくれてる人に「やり直してください」って何回も言えないでしょ。リテイクが気まずい。これ、ミックスの外注で一番見落とされてる問題だと思う。"
+      "text": "Because the other person is human, right? You can't keep telling someone who took the job for a few bucks to \"redo it\" over and over. Revisions get awkward. I think this is the most overlooked problem in mix outsourcing."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "技術の問題じゃなくて、コミュニケーションの問題。"
+      "text": "It's not a technical problem — it's a communication problem."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。ミックスって本来、何回もやり取りして詰めていくものなんだよ。Popsでも広告系でも制作の現場だと「ボーカルもうちょい前に」「キックの輪郭もう少し出して」って、何往復もする。でもそのコミュニケーションコストが、低価格帯だと成立しない。"
+      "text": "Exactly. Mixing is supposed to be an iterative process. Even in pop or commercial production, you go back and forth — \"push the vocal forward a bit,\" \"bring out more kick definition\" — multiple rounds. But that communication cost doesn't work at the budget tier."
     },
     {
       "type": "heading",
-      "text": "リテイクが気まずくない"
+      "text": "Revisions Without the Awkwardness"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "そこでMUEDialが出てくる。"
+      "text": "And that's where MUEDial comes in."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "うん。MUEDialのコンセプトはシンプルで、「チャットでミックスする」。フェーダーもスライダーも一切ない。テキストで「ボーカルをもっと前に」って書くだけ。"
+      "text": "Yeah. MUEDial's concept is dead simple: mix by chatting. No faders, no sliders, nothing. You just type \"bring the vocal more forward\" and that's it."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "UIにフェーダーがないミキシングサービスって、ありそうでなかった。"
+      "text": "A mixing service with no faders in the UI — that's surprisingly rare."
     },
     {
       "type": "pullquote",
-      "text": "ミックスを外注する人がスライダー触りたいと思う？ 思わないでしょ。",
+      "text": "Does someone outsourcing their mix want to touch sliders? Of course not.",
       "speaker": "kimny"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "ミックスを外注する人がスライダー触りたいと思う？ 思わないでしょ。頼む側は「こうしてほしい」を伝えたいだけ。今までのミキシングサービスにスライダーがあったのは、作り手がエンジニア目線だったから。"
+      "text": "Does someone outsourcing their mix want to touch sliders? Of course not. They just want to communicate what they want. The reason past mixing services had sliders is because they were built from an engineer's perspective."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "発想が逆。"
+      "text": "The thinking is inverted."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "ユーザーは「もうちょっとキラキラした感じにして」って言いたいだけなのよ。で、それを技術パラメータに翻訳するのはAIの仕事。"
+      "text": "The user just wants to say \"make it a bit more sparkly, you know?\" And translating that into technical parameters — that's the AI's job."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "で、リテイクは？"
+      "text": "And revisions?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "何回でもできる。気まずくない。「やっぱ違う、もう1回」って、AIに対しては遠慮がゼロでしょ。しかも頼むたびに自分のミックスの好みが言語化されていく。"
+      "text": "As many as you want. Zero awkwardness. \"Nah, that's not it, one more time\" — with AI, there's no guilt whatsoever. And every time you ask, you're getting better at articulating your own taste."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "副産物として自分の好みがわかってくる。"
+      "text": "As a side effect, you start understanding your own preferences."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。「もうちょい低音が欲しい」って何回か言ってるうちに、「自分はローが厚い音が好きなんだな」って気づく。ミックスを通じた自己理解。MUEDnoteの制作ログと同じ構造なんだよね。"
+      "text": "Right. After saying \"I want more low end\" a few times, you realize, \"oh, I guess I like bass-heavy mixes.\" Self-discovery through mixing. It's the same structure as MUEDnote's production logs, you know?"
     },
     {
       "type": "heading",
-      "text": "1000円カットの話"
+      "text": "The Budget Haircut Analogy"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "価格はどうなってるんですか。"
+      "text": "What about pricing?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "$12。"
+      "text": "$12."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "安い。"
+      "text": "That's cheap."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "1000円カットが出ても美容室は潰れなかっただろ。同じことが起きると思ってる。"
+      "text": "Budget haircut chains didn't kill salons, right? I think the same thing will happen here."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "というと？"
+      "text": "Meaning?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "数千円でミックスを受けてる人って、正直もうやめた方がいいと思うのよ。その金額で人が疲弊するくらいなら、AIに任せればいい。人間はもっと、人間にしかできないことに時間を使った方がいい。"
+      "text": "People doing mixes for tens of dollars on freelance platforms — honestly, I think they should stop. If that price point is burning people out, let AI handle it. Humans should spend their time on things only humans can do."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "プロのエンジニアの仕事を奪うわけではない。"
+      "text": "So it's not taking work from professional engineers."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "全然違う。プロのミキシングエンジニアがやってることは、もっと高度な判断の連続だから。曲のコンテキストを理解して、アーティストの意図を汲んで、音楽的な判断をする。それは$12のAIミックスとは別の世界。"
+      "text": "Not at all. What a professional mixing engineer does is a continuous stream of high-level decisions. Understanding the context of a song, reading the artist's intent, making musical judgments. That's a completely different world from a $12 AI mix."
     },
     {
       "type": "pullquote",
-      "text": "自分でやるには難しくて、プロに頼むには高い。その間を埋める。",
+      "text": "Too hard to do yourself, too expensive for a pro. We fill that gap.",
       "speaker": "kimny"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "MUEDialがカバーするのは「間」のゾーン。"
+      "text": "MUEDial covers the zone in between."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。自分でやるには難しくて、プロに頼むには高い。その間を埋める。"
+      "text": "Exactly. Too hard to do yourself, too expensive for a pro. We fill that gap."
     },
     {
       "type": "heading",
-      "text": "なぜ自前で作らなかったか"
+      "text": "Why We Didn't Build Our Own Engine"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "MUEDearではDSPを自前で実装してましたよね。MUEDialのミキシングエンジンは？"
+      "text": "With MUEDear, you built the DSP in-house. What about MUEDial's mixing engine?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "RoExのエンジンを使ってる。"
+      "text": "We use RoEx's engine."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "自前で作ろうとは思わなかった？"
+      "text": "You never considered building your own?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "思わなかった。ミキシングエンジンって、EQとコンプを個別に実装する話じゃなくて、トラック間のバランスとか空間処理とか、もっと統合的な判断が必要なのよ。MUEDearのDSPは「1つの処理を正確にかける」だった。MUEDialは「全体をどう聴こえさせるか」。次元が違う。"
+      "text": "Nope. A mixing engine isn't about implementing EQ and compression individually — it requires integrated decisions about inter-track balance, spatial processing, the whole picture. MUEDear's DSP was about applying one process accurately. MUEDial is about how the entire thing sounds together. Totally different dimension."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "使い分けの判断。"
+      "text": "A deliberate choice of what to build and what not to."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "何でも自前で作ればいいわけじゃない。MUEDearのDSPは耳トレの精度に直結するから自前でやる必要があった。MUEDialのミキシングエンジンは、既に良いものがある。だったらそこに乗って、自分たちはUIとUXに集中する方が合理的。"
+      "text": "You don't have to build everything yourself. MUEDear's DSP needed to be in-house because it directly affects ear training accuracy. For MUEDial's mixing engine, great solutions already exist. So it makes way more sense to ride on that and focus our energy on UI and UX."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "「作れるけど作らない」という判断。"
+      "text": "\"Could build it, but chose not to.\""
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "MUEDearの記事で「知った上で、あえて作る」って言ったでしょ。今回は「知った上で、あえて作らない」。判断の軸は同じで、「ユーザーにとってどっちがいいか」。"
+      "text": "In the MUEDear article I said \"know the landscape, then deliberately build.\" This time it's \"know the landscape, then deliberately don't build.\" Same decision axis — what's better for the user."
     },
     {
       "type": "heading",
-      "text": "ミキシングの判断は耳に依存する"
+      "text": "Mixing Judgment Depends on Your Ears"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "ミキシングの話を聞いてると、「脳は再生装置である」で語った「記憶の反芻」の話に繋がりますね。"
+      "text": "Hearing you talk about mixing, it connects to the \"memory recall\" concept from the \"The Brain Is a Playback Device\" piece."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そうなんだよ。ミキシングって結局、「この音はこう聴こえるべき」っていう基準を持ってるかどうかなの。その基準は何千曲も聴いてきた記憶の蓄積から来てる。"
+      "text": "That's the thing. Mixing ultimately comes down to whether you have a reference point for \"this sound should sound like this.\" That reference comes from the accumulated memory of listening to thousands of songs."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "AIミキシングも同じことをやっている。"
+      "text": "AI mixing works the same way."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "大量の音源を学習して、「この組み合わせならこういうバランスが適切」という判断をしてる。機構は同じ。でも決定的に違うのは、AIには「好み」がない。"
+      "text": "It's learned from a massive amount of audio and makes judgments like \"for this combination, this balance works.\" Same mechanism. But the critical difference? AI has no taste."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "好みがない。"
+      "text": "No taste."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "「このアーティストはこういう方向性が合う」とか「この曲のムードにはこの空気感」みたいな判断は、今のAIにはまだ難しい。だからチャットで伝える。ユーザーの言葉がAIの「好み」の代わりになる。"
+      "text": "Judgments like \"this direction suits this artist\" or \"this mood calls for this atmosphere\" — current AI still can't do that well. So you tell it through chat. The user's words become a stand-in for the AI's missing taste."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "ユーザーが耳を持ってないと、結局AIに「いい感じで」としか言えない。"
+      "text": "If the user doesn't have trained ears, they'll just end up saying \"make it sound good\" with nothing more specific."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "そう。だからMUEDearなのよ。"
+      "text": "Right. And that's why MUEDear exists."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "え？"
+      "text": "Wait, what?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "耳が鍛えられてれば、「もっとボーカルの2kHzあたりをクリアにして」って具体的に言える。耳が鍛えられてなければ、「なんかモヤモヤする」としか言えない。MUEDearで耳を鍛えて、MUEDialで使う。繋がってるんだよ。"
+      "text": "If your ears are trained, you can say something specific like \"clear up the vocal around 2kHz.\" If they're not, all you can say is \"it sounds kind of muddy.\" Train your ears with MUEDear, put them to work with MUEDial. They're connected."
     },
     {
       "type": "heading",
-      "text": "フェーダーの先にあるもの"
+      "text": "Beyond the Faders"
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "MUEDialは何を目指してるんですか。"
+      "text": "What's MUEDial ultimately aiming for?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "究極的には、ミックスの民主化。曲を作る能力とミックスの能力が分離してる現状を、AIで解消する。"
+      "text": "Ultimately, democratizing mixing. Using AI to close the gap between the ability to write songs and the ability to mix them."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "「ミックスに人が要らなくなる日」が来る？"
+      "text": "Will there come a day when mixing doesn't need humans at all?"
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "プロのエンジニアが要らなくなるとは思ってない。でも「ミックスが壁になって曲を出せない人」は確実に減る。その壁を取り除くのがMUEDialの仕事。"
+      "text": "I don't think professional engineers will become unnecessary. But there will definitely be fewer people who can't release music because mixing is the bottleneck. Removing that wall — that's MUEDial's job."
     },
     {
       "type": "dialogue",
       "speaker": "claude",
-      "text": "プロの現場で培った判断が、設計に活きてる。"
+      "text": "The judgment you built up in professional settings is showing up in the product design."
     },
     {
       "type": "dialogue",
       "speaker": "kimny",
-      "text": "ミキシングの「リテイクが何往復も必要」っていう感覚、現場にいないとわからないからね。チャットUIにしたのも、「テキストベースの指示→修正→確認」のサイクルが音楽のディレクションにマッチすると思ったから。あの現場のワークフローを、そのままプロダクトに翻訳した。"
+      "text": "The feel that mixing needs multiple rounds of back-and-forth — you only get that from being in the room. The reason I went with a chat UI is because the cycle of \"text-based direction, revision, confirmation\" maps perfectly onto how music direction actually works. I translated that real-world workflow directly into the product."
     },
     {
       "type": "meta",
-      "text": "この記事は、複数回にわたるAI（Claude）との対話をもとに再構成したものです。"
+      "text": "This article has been reconstructed from multiple conversations with an AI (Claude)."
     }
   ]
 }
