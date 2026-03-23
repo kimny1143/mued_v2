@@ -1,6 +1,6 @@
-# MUEDnote
+# MUED
 
-**Your companion in music production.**
+**Product suite for music creators.**
 
 [![Production](https://img.shields.io/badge/production-https%3A%2F%2Fmued.jp-brightgreen)](https://mued.jp)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
@@ -12,26 +12,23 @@
 
 ## Overview
 
-MUEDnote is a music education and production companion platform. The web dashboard serves as the central hub connecting multiple apps and AI-driven features for music producers and learners.
+MUED is a product suite for music creators — from ear training to AI-powered mixing to production logging. The platform is built around **Hoo**, an AI owl companion that guides users through every stage of music production.
 
 ### Core Products
 
 | Product | Description | Status |
 |---------|-------------|--------|
-| **MUEDnote Web** | Dashboard for session logs, materials, and AI features | Production |
-| **MUEDnote iOS** | Companion app for voice memos, rest reminders, and sound-reactive Hoo | App Store Review |
-| **MUEDnote Hub** | macOS app for DAW integration via OSC (Ableton Live) | Development |
-| **MUEDear** | Free ear training mobile app with 5 game modes | Development |
+| **MUEDial** | AI mixing & mastering powered by Hoo — chat-based, no engineering knowledge required | Production |
+| **MUEDear** | Ear training mobile app with gamified frequency/compression/reverb exercises | Production |
+| **MUEDnote** | Production companion — session logs, voice memos, DAW integration | Production |
 | **MUEDlobe** | Cognitive training PWA with 8 brain games | Production |
 
 ### Key Features
 
-- **Hoo** - AI owl companion with persistent memory, contextual conversations, and DAW session awareness
-- **AI Materials** - Generate, analyze, and manage music education materials with AI
-- **Mentor Matching** - Chat-based AI mentor recommendation system
+- **Hoo** - AI owl companion. In MUEDial, Hoo acts as your mixing director — translating "make the vocals brighter" into professional mix decisions
+- **MUEDial** - Upload stems, chat with Hoo, get a pro-quality mix. Omakase (quick) and Dialogue (detailed) modes. Guest access (no login required)
+- **MUEDear** - 6 ear training games (MuFreQ, MuComp, MuVerb, MuPan, MuRush, MuHorse)
 - **Session Tracking** - Log and review DAW sessions with parameter capture
-- **MUEDlobe Games** - 8 cognitive training games (Mental Math, Pattern Complete, Tone Sequence, etc.)
-- **Subscription Tiers** - Free trial, standard, and premium plans via Stripe
 - **Multi-language** - Full English and Japanese support
 
 ---
