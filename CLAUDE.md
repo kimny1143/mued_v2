@@ -57,6 +57,7 @@ MUEDの創業者は作曲家派生のクリエイターであり、生粋のエ�
 | **Payments** | Stripe |
 | **AI** | OpenAI (本番), Claude (開発/MCP経由) |
 | **Testing** | Vitest (unit), Playwright (E2E) |
+| **Analytics** | GA4 (gtag.js + `lib/analytics/gtag.ts`), Vercel Analytics |
 
 ### アーキテクチャ
 
@@ -101,6 +102,12 @@ mued_v2/
 ├── e2e/                    # E2Eテスト (Playwright)
 └── types/                  # TypeScript型定義
 ```
+
+---
+
+## 作業ルール
+
+- **自己終了禁止**: ユーザーが明示的に終了を指示するまで、残タスクがある限り作業を続行すること。自己判断で「今日は終わりましょう」「ここまでにしましょう」と切り上げない。ブロッカーがある場合はユーザーに報告して指示を仰ぐ。
 
 ---
 
@@ -222,6 +229,10 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 - **re-export barrelパターンでimport元を維持**: ファイルを別ディレクトリに移動する際、元のファイルを `export { ... } from './new-location'` のre-export barrelに変換すると、既存のimporter全てが変更不要になる。`hoo-prompt.ts` → `prompts/hoo.ts` 移動時に4箇所のimportを変更せずに済んだ (2026-02-11)
 
 - **AIプロンプトは `lib/ai/prompts/{feature}.ts` に集約する**: 規約として確立。1機能 = 1ファイル、フラット構造、ケバブケース。各ファイルに `*_PROMPT_VERSION` を定義。詳細は `docs/muedlobe/muedlobe-ui-brushup-proposal.md` 参照不要、コード内の `lib/ai/prompts/` が正 (2026-02-11)
+
+- **GA4はgtag.jsのUTMパラメータ自動キャプチャを活用**: UTMパラメータ付きURLでページを開くだけでGA4が自動的にソース/メディア/キャンペーンを記録する。追加実装は不要。カスタムイベント（CTAクリック等）だけ `lib/analytics/gtag.ts` で明示的にトラッキングする (2026-03-24)
+
+- **ピア間会議は「議長が叩き台→各ピアがフィードバック→収束」が最速**: 3者会議でオープンディスカッションすると発散する。議長が仮説と優先順位を先に提示し、各ピアに「異論あるか」「工数感は」と具体的に聞く方が収束が早い (2026-03-24)
 
 ### Gotchas（落とし穴）
 
