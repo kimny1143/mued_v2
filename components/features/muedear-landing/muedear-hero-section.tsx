@@ -95,7 +95,7 @@ export function MuedearHeroSection() {
 
         {/* CTA */}
         <div className="flex flex-col sm:flex-row items-start gap-6">
-          <AppStoreButton href={MUEDEAR_APP_STORE_URL} size="large" />
+          <AppStoreButton href={MUEDEAR_APP_STORE_URL} size="large" product="muedear" ctaLocation="hero" />
           <p className="text-white/50 text-sm max-w-md">
             {t("hero.description")}
           </p>

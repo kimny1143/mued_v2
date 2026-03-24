@@ -17,12 +17,14 @@ import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { MuedearHeroSection } from "@/components/features/muedear-landing/muedear-hero-section";
 import { MuedearFeaturesSection } from "@/components/features/muedear-landing/muedear-features-section";
 import { MuedearPricingSection } from "@/components/features/muedear-landing/muedear-pricing-section";
+import { MuedearEarRankingSection } from "@/components/features/muedear-landing/muedear-ear-ranking-section";
 import { AppStoreButton } from "@/components/ui/app-store-button";
 import { ArrowUp, ChevronLeft, ChevronRight, Music, Ear, LogIn } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
 import { MUEDNOTE_APP_STORE_URL } from "@/lib/muednote/constants";
+import { trackCtaClick } from "@/lib/analytics/gtag";
 
 /**
  * Integrated Landing Page - Single page with all products
@@ -66,6 +68,7 @@ export function IntegratedLandingContent() {
       <section id="muedear" className="relative">
         <MuedearHeroSection />
         <MuedearFeaturesSection />
+        <MuedearEarRankingSection />
         <MuedearPricingSection />
         <SectionNav
           prevHref="#"
@@ -329,13 +332,13 @@ function FinalCtaSection() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-            <AppStoreButton href={MUEDEAR_APP_STORE_URL} color="amber" size="large" />
+            <AppStoreButton href={MUEDEAR_APP_STORE_URL} color="amber" size="large" product="muedear" ctaLocation="final_cta" />
             {/* LP簡素化: MUEDlobeボタン非表示 (2026-02-24)
             <CtaButton variant="violet" href="/lobe">
               {t("muedlobe")}
             </CtaButton>
             */}
-            <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="indigo" size="large" />
+            <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="indigo" size="large" product="muednote" ctaLocation="final_cta" />
           </div>
 
           {/* MUEDial Card */}
@@ -343,6 +346,7 @@ function FinalCtaSection() {
             href="https://dial.mued.jp"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackCtaClick("muedial", "final_cta")}
             className="mt-16 block max-w-lg mx-auto group"
           >
             <div className="rounded-[var(--radius-lg)] overflow-hidden border border-white/10 hover:border-amber-500/30 transition-colors">

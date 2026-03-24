@@ -77,7 +77,7 @@ export function HeroSection() {
 
               {/* CTA - App Store only (LP簡素化: ログインボタン削除 2026-02-24) */}
               <div className="flex flex-col sm:flex-row items-center gap-4">
-                <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="white" size="large" />
+                <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="white" size="large" product="muednote" ctaLocation="hero" />
               </div>
             </div>
 

@@ -459,6 +459,38 @@
         "description": "聴こえるようになれば、直せるようになる。ミックスの判断力を直接鍛える耳トレ。"
       }
     },
+    "earRanking": {
+      "title": "あなたの Ear Rank は？",
+      "intro": "ゲームのスコアが、あなたの耳を評価する。続けるほど、ランクが上がる。",
+      "cta": "自分のランクを確かめる",
+      "ranks": {
+        "goldenEar": {
+          "name": "Golden Ear",
+          "score": "95+",
+          "description": "ほとんどの人が聴こえない音が聴こえる。スタジオ級の精度。"
+        },
+        "sharpEar": {
+          "name": "Sharp Ear",
+          "score": "85+",
+          "description": "頼れる耳。大事なディテールを聴き逃さない。"
+        },
+        "goodEar": {
+          "name": "Good Ear",
+          "score": "70+",
+          "description": "しっかりした土台。直感が育ちつつある。"
+        },
+        "learning": {
+          "name": "Learning",
+          "score": "50+",
+          "description": "1セッションごとに聴覚が研ぎ澄まされていく。"
+        },
+        "keepTrying": {
+          "name": "Keep Trying",
+          "score": "<50",
+          "description": "誰もがここから始まる。上がるしかない。"
+        }
+      }
+    },
     "audience": {
       "title": "こんな人におすすめ",
       "intro": "スキルレベルを問わず、耳を鍛えたいすべての人に。",

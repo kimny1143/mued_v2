@@ -459,6 +459,38 @@
         "description": "When you can hear it, you can fix it. Ear training that directly improves your mixing decisions."
       }
     },
+    "earRanking": {
+      "title": "What's Your Ear Rank?",
+      "intro": "Every game scores your ears. Play consistently and climb the ranks.",
+      "cta": "Find out yours",
+      "ranks": {
+        "goldenEar": {
+          "name": "Golden Ear",
+          "score": "95+",
+          "description": "You hear what most can't. Studio-grade precision."
+        },
+        "sharpEar": {
+          "name": "Sharp Ear",
+          "score": "85+",
+          "description": "Reliable ears. You catch the details that matter."
+        },
+        "goodEar": {
+          "name": "Good Ear",
+          "score": "70+",
+          "description": "Solid foundation. Your instincts are forming."
+        },
+        "learning": {
+          "name": "Learning",
+          "score": "50+",
+          "description": "Every session sharpens your hearing. Keep going."
+        },
+        "keepTrying": {
+          "name": "Keep Trying",
+          "score": "<50",
+          "description": "Everyone starts here. The only way is up."
+        }
+      }
+    },
     "audience": {
       "title": "Who Is This For?",
       "intro": "For anyone who wants to train their ears, regardless of skill level.",

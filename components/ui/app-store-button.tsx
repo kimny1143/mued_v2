@@ -2,6 +2,7 @@
 
 import { Apple } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { trackCtaClick } from "@/lib/analytics/gtag";
 
 type AppStoreColor = "amber" | "indigo" | "white";
 
@@ -12,6 +13,10 @@ interface AppStoreButtonProps {
   color?: AppStoreColor;
   /** Button size */
   size?: "small" | "default" | "large";
+  /** Product name for analytics (e.g., "muedear", "muednote") */
+  product?: string;
+  /** CTA location for analytics (e.g., "hero", "final_cta") */
+  ctaLocation?: string;
   /** Additional className */
   className?: string;
 }
@@ -39,6 +44,8 @@ export function AppStoreButton({
   href,
   color = "amber",
   size = "default",
+  product,
+  ctaLocation,
   className,
 }: AppStoreButtonProps) {
   const sizeStyles = {
@@ -59,11 +66,18 @@ export function AppStoreButton({
     large: "text-base",
   };
 
+  const handleClick = () => {
+    if (product && ctaLocation) {
+      trackCtaClick(product, ctaLocation);
+    }
+  };
+
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={handleClick}
       className={cn(
         "inline-flex items-center",
         "bg-transparent border-2",

@@ -28,7 +28,7 @@ export function MuedearCtaSection() {
           </p>
 
           {/* App Store Button */}
-          <AppStoreButton href={MUEDEAR_APP_STORE_URL} size="large" className="mb-12" />
+          <AppStoreButton href={MUEDEAR_APP_STORE_URL} size="large" product="muedear" ctaLocation="pricing" className="mb-12" />
 
           {/* System requirements */}
           <div className="bg-[#111] border border-white/5 rounded-2xl p-6 inline-block">
