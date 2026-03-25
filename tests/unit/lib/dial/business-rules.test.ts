@@ -22,32 +22,32 @@ function makeTask(overrides: Partial<TaskRecord> = {}): TaskRecord {
 describe('MUEDial pricing rules', () => {
   // These constants should match checkout/route.ts
   const MIX_PRICES = {
-    omakase: { amountCents: 1200, label: 'MUEDial Omakase Mix' },
-    dialogue: { amountCents: 3500, label: 'MUEDial Dialogue Mix' },
+    omakase: { amountCents: 800, label: 'MUEDial Omakase Mix' },
+    dialogue: { amountCents: 1500, label: 'MUEDial Dialogue Mix' },
   };
 
   const MASTERING_PRICES = {
-    omakase: { amountCents: 900, label: 'MUEDial Mastering' },
+    omakase: { amountCents: 600, label: 'MUEDial Mastering' },
   };
 
-  it('Omakase Mix = $12', () => {
-    expect(MIX_PRICES.omakase.amountCents).toBe(1200);
+  it('Omakase Mix = $8', () => {
+    expect(MIX_PRICES.omakase.amountCents).toBe(800);
   });
 
-  it('Dialogue Mix = $35', () => {
-    expect(MIX_PRICES.dialogue.amountCents).toBe(3500);
+  it('Dialogue Mix = $15', () => {
+    expect(MIX_PRICES.dialogue.amountCents).toBe(1500);
   });
 
-  it('Mastering = $9', () => {
-    expect(MASTERING_PRICES.omakase.amountCents).toBe(900);
+  it('Mastering = $6', () => {
+    expect(MASTERING_PRICES.omakase.amountCents).toBe(600);
   });
 
-  it('Dialogue + Mastering = $44', () => {
-    expect(MIX_PRICES.dialogue.amountCents + MASTERING_PRICES.omakase.amountCents).toBe(4400);
+  it('Dialogue + Mastering = $21', () => {
+    expect(MIX_PRICES.dialogue.amountCents + MASTERING_PRICES.omakase.amountCents).toBe(2100);
   });
 
-  it('Omakase + Mastering = $21', () => {
-    expect(MIX_PRICES.omakase.amountCents + MASTERING_PRICES.omakase.amountCents).toBe(2100);
+  it('Omakase + Mastering = $14', () => {
+    expect(MIX_PRICES.omakase.amountCents + MASTERING_PRICES.omakase.amountCents).toBe(1400);
   });
 });
 

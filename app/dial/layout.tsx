@@ -3,14 +3,14 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "MUEDial — ミックス、フェーダーに触らなくていい。",
   description:
-    "ステムを上げて、AIと話すだけ。おまかせミックス$12から。スライダーもプラグインもなし。チャットでミックスが仕上がる。",
+    "ステムを上げて、AIと話すだけ。おまかせミックス$8から。スライダーもプラグインもなし。チャットでミックスが仕上がる。",
   alternates: {
     canonical: "https://dial.mued.jp/",
   },
   openGraph: {
     title: "MUEDial — ミックス、フェーダーに触らなくていい。",
     description:
-      "ステムを上げて、AIと話すだけ。おまかせミックス$12から。",
+      "ステムを上げて、AIと話すだけ。おまかせミックス$8から。",
     url: "https://dial.mued.jp",
     siteName: "MUEDial",
     images: [
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "MUEDial — ミックス、フェーダーに触らなくていい。",
     description:
-      "ステムを上げて、AIと話すだけ。おまかせミックス$12から。",
+      "ステムを上げて、AIと話すだけ。おまかせミックス$8から。",
   },
 };
 

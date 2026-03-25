@@ -32,12 +32,12 @@ const stripe = new Stripe(stripeConfig.secretKey, {
 // ─── Price mapping (cents) ──────────────────────────────────────────────────
 
 const MIX_PRICES: Record<string, { amountCents: number; label: string }> = {
-  omakase: { amountCents: 1200, label: 'MUEDial Omakase Mix' },
-  dialogue: { amountCents: 3500, label: 'MUEDial Dialogue Mix' },
+  omakase: { amountCents: 800, label: 'MUEDial Omakase Mix' },
+  dialogue: { amountCents: 1500, label: 'MUEDial Dialogue Mix' },
 };
 
 const MASTERING_PRICES: Record<string, { amountCents: number; label: string }> = {
-  omakase: { amountCents: 900, label: 'MUEDial Mastering' },
+  omakase: { amountCents: 600, label: 'MUEDial Mastering' },
 };
 
 const FALLBACK_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';

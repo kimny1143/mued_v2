@@ -44,7 +44,7 @@
         "muedlobe": "Try MUEDlobe",
         "muedial": {
           "tagline": "Let AI handle your mix.",
-          "description": "Professional AI mixing from $12. Upload stems, chat with Hoo, get your mix.",
+          "description": "Professional AI mixing from $8. Upload stems, chat with Hoo, get your mix.",
           "button": "Try MUEDial"
         }
       },
@@ -363,10 +363,10 @@
         "title": "Pricing",
         "description": "Prices for each option are as follows (tax included):",
         "plans": {
-          "omakase": "Omakase Mix: $12 (approx. ¥1,800)",
-          "dialogue": "Dialogue Mix: $35 (approx. ¥5,300)",
-          "mastering": "Mastering add-on: $9 (approx. ¥1,350)",
-          "additionalCycle": "Additional retake cycle: $5 (approx. ¥750)"
+          "omakase": "Omakase Mix: $8 (approx. ¥1,200)",
+          "dialogue": "Dialogue Mix: $15 (approx. ¥2,200)",
+          "mastering": "Mastering add-on: $6 (approx. ¥900)",
+          "additionalCycle": "Additional retake cycle: $10 (approx. ¥1,500)"
         }
       },
       "paymentTiming": {
@@ -901,7 +901,7 @@
       },
       "muedial": {
         "title": "Mixing Without Faders",
-        "description": "Why we built a chat-based mixing service. The price cliff, the awkwardness of retakes, and $12 democratization."
+        "description": "Why we built a chat-based mixing service. The price cliff, the awkwardness of retakes, and $8 democratization."
       },
       "why": {
         "title": "Why a Composer Makes Apps",
@@ -1322,7 +1322,7 @@
   "dial": {
     "lp": {
       "heroTitle": "How many tracks are stuck at mixing?",
-      "heroSub": "Upload stems. Talk to AI. From $12.",
+      "heroSub": "Upload stems. Talk to AI. From $8.",
       "chatMockUser1": "Bring the vocals forward. Drums are too loud.",
       "chatMockHoo1": "On it! Pulled the vocals up and eased the drums. Have a listen.",
       "chatMockUser2": "Perfect. Finalize this one.",

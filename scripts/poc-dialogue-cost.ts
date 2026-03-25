@@ -6,7 +6,7 @@
  * - Conversation turns per cycle (feedback gathering behavior)
  * - LLM token costs (Claude Haiku 4.5)
  * - RoEx credit costs (calculated, not consumed)
- * - Total cost ratio against $35 session price
+ * - Total cost ratio against $15 session price
  *
  * Usage: npx tsx scripts/poc-dialogue-cost.ts
  */
@@ -19,7 +19,7 @@ type DialPromptInput = import('../lib/ai/prompts/dial').DialPromptInput;
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 
-const PRICE_PER_SESSION = 35.0;
+const PRICE_PER_SESSION = 15.0;
 const ROEX_COST_PER_CREDIT = 0.008; // Large package
 const HAIKU_INPUT_COST = 1.0 / 1_000_000;
 const HAIKU_OUTPUT_COST = 5.0 / 1_000_000;

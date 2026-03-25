@@ -44,7 +44,7 @@
         "muedlobe": "MUEDlobeを試す",
         "muedial": {
           "tagline": "そのミックス、Hooにお願いしてみない？",
-          "description": "AIミキシング、$12から。ステムをアップロードして、Hooとチャットするだけ。",
+          "description": "AIミキシング、$8から。ステムをアップロードして、Hooとチャットするだけ。",
           "button": "MUEDialを試す"
         }
       },
@@ -363,10 +363,10 @@
         "title": "販売価格",
         "description": "各メニューの料金は以下の通りです（税込）：",
         "plans": {
-          "omakase": "Omakase Mix: $12（約1,800円）",
-          "dialogue": "Dialogue Mix: $35（約5,300円）",
-          "mastering": "マスタリング追加: $9（約1,350円）",
-          "additionalCycle": "追加リテイクサイクル: $5（約750円）"
+          "omakase": "Omakase Mix: $8（約1,200円）",
+          "dialogue": "Dialogue Mix: $15（約2,200円）",
+          "mastering": "マスタリング追加: $6（約900円）",
+          "additionalCycle": "追加リテイクサイクル: $10（約1,500円）"
         }
       },
       "paymentTiming": {
@@ -901,7 +901,7 @@
       },
       "muedial": {
         "title": "フェーダーに触らないミキシング",
-        "description": "なぜ「チャットでミックスする」サービスを作ったのか。価格の崖、リテイクの気まずさ、$12の民主化。"
+        "description": "なぜ「チャットでミックスする」サービスを作ったのか。価格の崖、リテイクの気まずさ、$8の民主化。"
       },
       "why": {
         "title": "作曲家がなぜアプリを作っているのか",
@@ -1322,7 +1322,7 @@
   "dial": {
     "lp": {
       "heroTitle": "ミックスで止まってる曲、何曲ある？",
-      "heroSub": "ステムを上げて、AIと話すだけ。$12から。",
+      "heroSub": "ステムを上げて、AIと話すだけ。$8から。",
       "chatMockUser1": "ボーカルもう少し前に出して。ドラムちょっとうるさい。",
       "chatMockHoo1": "ほほう、了解。ボーカル持ち上げて、ドラム控えめにしたよ。聴いてみて。",
       "chatMockUser2": "いい感じ。これでファイナルお願い。",
