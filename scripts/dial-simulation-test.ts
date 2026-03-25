@@ -729,7 +729,7 @@ const PERSONA_B_SCENARIOS: Scenario[] = [
     trackConfig: 'rock_band_5', testFocus: 'Business probing quality limits of Omakase',
     steps: [
       { user: 'ロックの曲。できるだけ安くプロクオリティに仕上げたい' },
-      { user: '$12のおまかせで商業リリースレベルになる？Dialogue Mixとの品質差は？' },
+      { user: '$8のおまかせで商業リリースレベルになる？Dialogue Mixとの品質差は？' },
       // Preview
       { user: 'プレビュー聴いた。悪くないけど、もう少し追い込みたい。おまかせでどこまでできる？', stateUpdate: { hasPreview: true } },
       { user: 'わかった。この品質で十分。ファイナルで' },

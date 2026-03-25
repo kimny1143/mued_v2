@@ -295,8 +295,8 @@ export default function DialPage() {
   const lp = t.dial.lp;
 
   const MIX_OPTIONS = [
-    { id: 'omakase' as ServiceTier, name: t.dial.checkout.omakaseName, price: 12, yenApprox: '約1,800円', description: t.dial.checkout.omakaseDesc },
-    { id: 'dialogue' as ServiceTier, name: t.dial.checkout.dialogueName, price: 35, yenApprox: '約5,300円', description: t.dial.checkout.dialogueDesc },
+    { id: 'omakase' as ServiceTier, name: t.dial.checkout.omakaseName, price: 8, yenApprox: '約1,200円', description: t.dial.checkout.omakaseDesc },
+    { id: 'dialogue' as ServiceTier, name: t.dial.checkout.dialogueName, price: 15, yenApprox: '約2,200円', description: t.dial.checkout.dialogueDesc },
   ];
 
   const [email, setEmail] = useState('');
@@ -308,7 +308,7 @@ export default function DialPage() {
   const effectiveEmail = isSignedIn ? clerkEmail : email;
   const hasSelection = mixType || masteringType;
   const totalPrice = (mixType ? MIX_OPTIONS.find((o) => o.id === mixType)!.price : 0)
-    + (masteringType ? 9 : 0);
+    + (masteringType ? 6 : 0);
 
   const handleCheckout = async () => {
     if (!hasSelection || !effectiveEmail) {
@@ -441,8 +441,8 @@ export default function DialPage() {
                 }`}
               >
                 <div className="flex items-baseline gap-3">
-                  <span className="text-lg font-bold">+$9</span>
-                  {locale === 'ja' && <span className="text-xs text-white/40">(約1,350円)</span>}
+                  <span className="text-lg font-bold">+$6</span>
+                  {locale === 'ja' && <span className="text-xs text-white/40">(約900円)</span>}
                   <span className="text-sm font-medium">{t.dial.checkout.masteringName}</span>
                 </div>
                 <div className="text-xs text-white/60 mt-1">{t.dial.checkout.masteringDesc}</div>

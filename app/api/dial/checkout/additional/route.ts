@@ -2,7 +2,7 @@
  * MUEDial Additional Cycle Purchase API
  * POST /api/dial/checkout/additional
  *
- * Purchases one additional retake cycle ($5) for an existing session.
+ * Purchases one additional retake cycle ($10) for an existing session.
  * Requires session ownership (withDialAuth).
  *
  * Flow:
@@ -31,7 +31,7 @@ const stripe = new Stripe(stripeConfig.secretKey, {
 
 const FALLBACK_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
 
-const ADDITIONAL_CYCLE_CENTS = 500; // $5
+const ADDITIONAL_CYCLE_CENTS = 1000; // $10
 
 const additionalSchema = z.object({
   sessionId: z.string().uuid(),
