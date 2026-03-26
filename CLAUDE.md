@@ -234,6 +234,10 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 - **ピア間会議は「議長が叩き台→各ピアがフィードバック→収束」が最速**: 3者会議でオープンディスカッションすると発散する。議長が仮説と優先順位を先に提示し、各ピアに「異論あるか」「工数感は」と具体的に聞く方が収束が早い (2026-03-24)
 
+- **Measurement Protocol v2はGA4リアルタイムレポートに反映されない**: Google公式仕様。Validation Server (`/debug/mp/collect`) + HTTP 204で実装正常確認はできるが、データ到着は通常レポート（24-48h）でしか確認できない。DebugViewも非対応 (2026-03-25)
+
+- **価格改定は全レイヤーを網羅する**: Stripe API定数 → UI表示 → 翻訳(EN/JA) → AIプロンプト(upsell文) → ストーリーコンテンツ → SEOメタデータ → テスト期待値 → シミュレーションスクリプト。grepで旧価格を一掃してから型チェック・テスト・ビルドで検証 (2026-03-25)
+
 ### Gotchas（落とし穴）
 
 - **シンボリックリンクとgit**: ファイル→シンボリックリンクに変更すると `typechange` としてgitに検出される。シンボリックリンク自体をコミットするか、.gitignoreで除外するか事前に決める必要あり (2026-01-21)
@@ -287,6 +291,7 @@ AIミキシング/マスタリングサービス。RoEx Tonn APIを使用。ゲ�
 - **認証**: `withDialAuth` — Clerk auth と `X-Dial-Guest-Token` ヘッダーの両対応
 - **ミドルウェア**: `/dial` と `/api/dial` は Clerk middleware matcher から**完全除外**（`clerkMiddleware`はpublicルートでもCookie存在時にハンドシェイクリダイレクトするため）
 - **決済**: Stripe先払い → webhook (`metadata.service === 'dial'`) → `paymentStatus: paid` → Upload解放
+- **価格 (2026-03-25改定, 原価率33%統一)**: Omakase $8/¥1,200 | Dialogue $15/¥2,200 | Mastering +$6/¥900 | Retake $10/¥1,500
 - **クライアント**: `lib/roex/` — upload, mixing, mastering, analysis
 
 ### RoEx Tonn API
@@ -320,4 +325,4 @@ AIミキシング/マスタリングサービス。RoEx Tonn APIを使用。ゲ�
 **保存先:** `/Users/kimny/Dropbox/_DevProjects/_cowork/20260222/threads-api/insights.json` に追記（直接編集 or ユーザーに提示してthreads-apiワークスペースで追加）。
 **頻度:** バッチ量産しない。セッション中に自然に出たものだけ。
 
-*最終更新: 2026-03-10*
+*最終更新: 2026-03-25*
