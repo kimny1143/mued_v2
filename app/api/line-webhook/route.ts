@@ -7,6 +7,8 @@
  *
  * Flow:
  *   LINE message → signature verify → parse text:
+ *     - "このまま送信"/"採用"/"送信" → threads-reply dispatch (execute draft as-is)
+ *     - "無視"/"スキップ"/"パス" → skip without dispatch
  *     - Threads URL → store context
  *     - Free text (with context) → save-pending-reply dispatch
  *     - Number (1-9) → threads-reply dispatch (v1 compat)
@@ -98,6 +100,51 @@ function parseThreadsUrl(text: string) {
   return { author: m[1], threadId: m[2], url: text.trim() };
 }
 
+// ─── Command Matchers ────────────────────────────────────────────────────────
+
+const SEND_COMMANDS = ["このまま送信", "採用", "送信"];
+const SKIP_COMMANDS = ["無視", "スキップ", "パス"];
+
+// ─── Fetch latest draft from reply-candidates.json (GitHub API fallback) ─────
+
+async function fetchLatestDraft(): Promise<{
+  threadUrl: string;
+  threadAuthor: string;
+  replyDraft: string;
+} | null> {
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO}/contents/reply-candidates.json`,
+      {
+        headers: {
+          Authorization: `token ${GITHUB_PAT}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+      },
+    );
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const content = Buffer.from(data.content, "base64").toString("utf8");
+    const candidates = JSON.parse(content);
+
+    if (!Array.isArray(candidates) || candidates.length === 0) return null;
+
+    const latest = candidates[0];
+    if (!latest.reply_draft || !latest.url) return null;
+
+    const parsed = parseThreadsUrl(latest.url);
+    return {
+      threadUrl: latest.url,
+      threadAuthor: latest.author || parsed?.author || "",
+      replyDraft: latest.reply_draft,
+    };
+  } catch (e) {
+    console.error("[Webhook] Failed to fetch draft from reply-candidates:", e);
+    return null;
+  }
+}
+
 // ─── POST Handler ────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
@@ -171,6 +218,53 @@ export async function POST(request: NextRequest) {
 
     // ── "0" → Skip & reset ──────────────────────────────────────────────
     if (text === "0") {
+      pending = null;
+      await replyToLine(replyToken, "スキップしました");
+      continue;
+    }
+
+    // ── "このまま送信"/"採用"/"送信" → Execute draft reply ────────────────
+    if (SEND_COMMANDS.includes(text)) {
+      // Try in-memory pending first, fallback to GitHub API
+      let draftText = pending?.candidates[pending.candidates.length - 1];
+      let threadUrl = pending?.threadUrl;
+      let threadAuthor = pending?.threadAuthor;
+
+      if (!draftText) {
+        const fetched = await fetchLatestDraft();
+        if (fetched) {
+          draftText = fetched.replyDraft;
+          threadUrl = fetched.threadUrl;
+          threadAuthor = fetched.threadAuthor;
+        }
+      }
+
+      if (!draftText || !threadUrl) {
+        await replyToLine(replyToken, "送信する草案がありません。先に草案を送ってください。");
+        continue;
+      }
+
+      const ok = await dispatchGitHub("threads-reply", {
+        thread_url: threadUrl,
+        reply_text: draftText,
+        line_user_id: userId,
+      });
+
+      if (ok) {
+        await replyToLine(
+          replyToken,
+          `リプライ送信中...\n${threadAuthor} へ\n「${draftText.slice(0, 60)}${draftText.length > 60 ? "..." : ""}」`,
+        );
+      } else {
+        await replyToLine(replyToken, "リプライ送信に失敗しました");
+      }
+
+      pending = null;
+      continue;
+    }
+
+    // ── "無視"/"スキップ"/"パス" → Skip without dispatch ──────────────────
+    if (SKIP_COMMANDS.includes(text)) {
       pending = null;
       await replyToLine(replyToken, "スキップしました");
       continue;
