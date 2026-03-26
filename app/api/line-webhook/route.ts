@@ -104,6 +104,7 @@ function parseThreadsUrl(text: string) {
 
 const SEND_COMMANDS = ["このまま送信", "採用", "送信"];
 const SKIP_COMMANDS = ["無視", "スキップ", "パス"];
+const OWN_ACCOUNTS = ["@muednote", "@ookimnyoo"];
 
 // ─── Fetch latest draft from reply-candidates.json (GitHub API fallback) ─────
 
@@ -223,7 +224,7 @@ export async function POST(request: NextRequest) {
       continue;
     }
 
-    // ── "このまま送信"/"採用"/"送信" → Execute draft reply ────────────────
+    // ── "このまま送信"/"採用"/"送信" → Execute or copy draft ─────────────
     if (SEND_COMMANDS.includes(text)) {
       // Try in-memory pending first, fallback to GitHub API
       let draftText = pending?.candidates[pending.candidates.length - 1];
@@ -244,19 +245,32 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const ok = await dispatchGitHub("threads-reply", {
-        thread_url: threadUrl,
-        reply_text: draftText,
-        line_user_id: userId,
-      });
+      const isOwnAccount = OWN_ACCOUNTS.some(
+        (acct) => threadAuthor?.toLowerCase() === acct.toLowerCase(),
+      );
 
-      if (ok) {
+      if (isOwnAccount) {
+        // Own account → API dispatch
+        const ok = await dispatchGitHub("threads-reply", {
+          thread_url: threadUrl,
+          reply_text: draftText,
+          line_user_id: userId,
+        });
+
+        if (ok) {
+          await replyToLine(
+            replyToken,
+            `リプライ送信中...\n${threadAuthor} へ\n「${draftText.slice(0, 60)}${draftText.length > 60 ? "..." : ""}」`,
+          );
+        } else {
+          await replyToLine(replyToken, "リプライ送信に失敗しました");
+        }
+      } else {
+        // Others → copy-paste format (Threads API blocks replies to others)
         await replyToLine(
           replyToken,
-          `リプライ送信中...\n${threadAuthor} へ\n「${draftText.slice(0, 60)}${draftText.length > 60 ? "..." : ""}」`,
+          `📋 コピペ用（${threadAuthor} への返信）:\n\n${draftText}`,
         );
-      } else {
-        await replyToLine(replyToken, "リプライ送信に失敗しました");
       }
 
       pending = null;
