@@ -1,7 +1,8 @@
 /**
- * POST /api/lobe/measurement
- * Save a game measurement result.
- * If all 7 games are now complete, auto-calculate cognitive profile.
+ * GET  /api/lobe/measurement — Get user's measurement progress (which games completed)
+ * POST /api/lobe/measurement — Save a game measurement result
+ *
+ * If all 7 games are complete on POST, auto-calculate cognitive profile.
  */
 
 import { z } from 'zod';
@@ -11,6 +12,55 @@ import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profile
 import { GAME_ORDER } from '@/lib/muedlobe/constants';
 import { calculateAndSaveProfile } from '@/lib/muedlobe/scoring/profileService';
 import type { GameResult } from '@/types/muedlobe';
+
+// ========================================
+// GET — Measurement progress
+// ========================================
+
+export const GET = withAuth(async ({ userId }) => {
+  try {
+    const measurements = await cognitiveProfileRepository.findMeasurementsByUserId(userId);
+    const distinctGameTypes = await cognitiveProfileRepository.findDistinctGameTypesByUserId(userId);
+
+    // Latest measurement per game type
+    const latestByGame = new Map<string, typeof measurements[number]>();
+    for (const m of measurements) {
+      const existing = latestByGame.get(m.gameType);
+      if (!existing || (m.measuredAt && existing.measuredAt && m.measuredAt > existing.measuredAt)) {
+        latestByGame.set(m.gameType, m);
+      }
+    }
+
+    const games = GAME_ORDER.map((gameType) => {
+      const measurement = latestByGame.get(gameType);
+      return {
+        gameType,
+        completed: distinctGameTypes.includes(gameType),
+        latestResult: measurement
+          ? {
+              id: measurement.id,
+              rawData: measurement.rawData,
+              calculatedScore: measurement.calculatedScore,
+              measuredAt: measurement.measuredAt?.toISOString() ?? null,
+            }
+          : null,
+      };
+    });
+
+    return apiSuccess({
+      games,
+      completedCount: distinctGameTypes.length,
+      totalCount: GAME_ORDER.length,
+      allComplete: distinctGameTypes.length >= GAME_ORDER.length,
+    });
+  } catch (error) {
+    return apiServerError(error instanceof Error ? error.message : 'Unknown error');
+  }
+});
+
+// ========================================
+// POST — Save measurement
+// ========================================
 
 const measurementSchema = z.object({
   gameType: z.string(),
