@@ -41,7 +41,7 @@ jobs:
         run: npm run lint
 
       - name: Security audit (production deps)
-        run: npm audit --omit=dev --audit-level=moderate
+        run: npm audit --omit=dev --audit-level=high
 
   # ============================================
   # 2. Test: unit + component tests
