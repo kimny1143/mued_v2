@@ -75,7 +75,7 @@ export function SubscriptionBadge() {
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
             <span className={`${colors.badge} text-white text-sm font-bold px-4 py-1.5 rounded-full`}>
-              Free Plan
+              {limits.tier.charAt(0).toUpperCase() + limits.tier.slice(1)} Plan
             </span>
           </div>
 
