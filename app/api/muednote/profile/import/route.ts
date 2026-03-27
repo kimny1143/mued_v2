@@ -20,8 +20,8 @@ import { z } from 'zod';
 // ========================================
 
 const importSchema = z.object({
-  /** Raw conversation text (plain text, markdown, or JSON) */
-  text: z.string().min(50, 'Conversation text too short').max(100000, 'Text exceeds 100K character limit'),
+  /** Raw conversation text (plain text, markdown, or JSON). Max 10K chars — longer texts are not fully processed by LLM. */
+  text: z.string().min(50, 'Conversation text too short').max(10000, 'Text exceeds 10K character limit. Please paste the most relevant parts of the conversation.'),
   /** Source of the conversation */
   source: z.enum(['claude', 'chatgpt', 'gemini', 'other']).optional().default('other'),
 });
