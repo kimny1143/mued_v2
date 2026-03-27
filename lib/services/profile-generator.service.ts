@@ -228,6 +228,58 @@ export class ProfileGeneratorService {
     return merged;
   }
 
+  /**
+   * Extract profile data from externally imported AI conversation text
+   * (Claude, ChatGPT, Gemini, etc.)
+   */
+  async extractFromExternalConversation(
+    internalUserId: string,
+    text: string,
+    source: string
+  ): Promise<UserProfileData | null> {
+    const existing = await userProfileRepository.findByUserId(internalUserId);
+    if (!existing) return null;
+
+    const prompt = INCREMENTAL_UPDATE_PROMPT
+      .replace('{CURRENT_PROFILE}', JSON.stringify(existing.profileData, null, 2))
+      .replace('{CONVERSATION}', `[Imported from ${source}]\n\n${text.slice(0, 8000)}`);
+
+    const patch = await this.extractWithLLM(prompt, '');
+
+    if (!patch || Object.keys(patch).length === 0) {
+      return null;
+    }
+
+    const merged: UserProfileData = {
+      musical: {
+        genres: patch.musical?.genres ?? existing.profileData.musical.genres,
+        instruments: patch.musical?.instruments ?? existing.profileData.musical.instruments,
+        influences: patch.musical?.influences ?? existing.profileData.musical.influences,
+        productionStyle: patch.musical?.productionStyle ?? existing.profileData.musical.productionStyle,
+        mixingPreferences: patch.musical?.mixingPreferences ?? existing.profileData.musical.mixingPreferences,
+      },
+      creative: {
+        focusAreas: patch.creative?.focusAreas ?? existing.profileData.creative.focusAreas,
+        strengths: patch.creative?.strengths ?? existing.profileData.creative.strengths,
+        growthAreas: patch.creative?.growthAreas ?? existing.profileData.creative.growthAreas,
+        workPatterns: patch.creative?.workPatterns ?? existing.profileData.creative.workPatterns,
+      },
+      cognitive: existing.profileData.cognitive,
+      bio: patch.bio ?? existing.profileData.bio,
+      lastExtractedFromConversation: existing.profileData.lastExtractedFromConversation,
+      lastExtractedFromDawLog: existing.profileData.lastExtractedFromDawLog,
+    };
+
+    await userProfileRepository.upsert(internalUserId, merged, PROFILE_MODEL);
+    logger.info('[ProfileGenerator] External conversation imported', {
+      source,
+      textLength: text.length,
+      patchKeys: Object.keys(patch),
+    });
+
+    return merged;
+  }
+
   // ========================================
   // Private Helpers
   // ========================================
