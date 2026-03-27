@@ -29,11 +29,18 @@ import { logger } from '@/lib/utils/logger';
 // Request Validation Schema
 // ========================================
 
+/**
+ * Context types for Hoo conversations:
+ * - profile: Discussing the user's musical profile, preferences, or growth
+ * - care: Timer break reminders, wellness check-ins, rest suggestions
+ * - general: Default — open conversation about music creation
+ */
 const hooChatRequestSchema = z.object({
-  conversationId: z.string().uuid().optional(), // Existing conversation or new
+  conversationId: z.string().uuid().optional(),
   message: z.string().min(1).max(10000),
-  includeSessionContext: z.boolean().optional(), // Include recent session context in prompt
-  localSessionContext: z.string().max(10000).optional(), // Local device session data (transcriptions, memos not yet synced)
+  context: z.enum(['profile', 'care', 'general']).optional().default('general'),
+  includeSessionContext: z.boolean().optional(),
+  localSessionContext: z.string().max(10000).optional(),
 });
 
 // ========================================
@@ -44,28 +51,16 @@ interface HooChatApiResponse {
   conversationId: string;
   content: string;
   model: string;
-  provider: 'claude' | 'gemini' | 'openai' | 'template';
+  provider: 'claude' | 'gemini' | 'openai';
   isAiResponse: boolean;
   usage?: {
     inputTokens: number;
     outputTokens: number;
     totalTokens: number;
-    // Thread usage (soft limit)
     threadsUsed: number;
     threadsLimit: number;
-    // Turn usage (hard limit)
     turnsUsed: number;
     turnsLimit: number;
-  };
-  // Alert if thread soft limit is exceeded (doesn't block, just shows warning)
-  threadAlert?: boolean;
-  // Trial info (for Free tier users)
-  trial?: {
-    isInTrial: boolean;
-    turnsUsed: number;
-    turnsRemaining: number;
-    daysRemaining: number;
-    trialEndsAt: string | null;
   };
   latencyMs?: number;
 }
@@ -99,7 +94,7 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
       return apiValidationError('Invalid request format', validationResult.error.errors);
     }
 
-    const { conversationId, message, includeSessionContext, localSessionContext } = validationResult.data;
+    const { conversationId, message, context, includeSessionContext, localSessionContext } = validationResult.data;
 
     // Check subscription tier and usage
     const usageCheck = await subscriptionRepository.canUseHooConversation(internalUserId);
@@ -133,6 +128,13 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
 
     // Build system prompt with memory, MUEDlobe profile, and optional session context
     let systemPrompt = getHooSystemPromptWithMemory(customInstructions, sessionContext, muedlobeInstructions);
+
+    // Append conversation context directive
+    if (context === 'profile') {
+      systemPrompt += `\n\n---\n\n## 会話コンテキスト: プロファイル\nこの会話はユーザーの音楽的プロファイル（好み・傾向・成長領域）について話しています。プロファイルの確認・修正・深掘りに集中してください。`;
+    } else if (context === 'care') {
+      systemPrompt += `\n\n---\n\n## 会話コンテキスト: ケア\nこの会話はタイマー休憩やウェルネスチェックインの文脈です。短く優しいトーンで、休憩を促したり、制作のペースについてケアしてください。長い回答は不要です。`;
+    }
 
     // Append DAW log context
     if (dawLogContext) {
