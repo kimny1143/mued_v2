@@ -2,10 +2,7 @@
  * Hoo AI Chat API (Production)
  * POST /api/hoo/chat
  *
- * Tier-based AI conversation for MUEDnote:
- * - Free: Template responses only (3-day trial available: 50 turns)
- * - Basic: Unlimited Hoo AI conversation
- * - Premium: Personalized Hoo AI (accumulated data + MUEDlobe cognitive profile)
+ * All tiers: Unlimited Hoo AI conversation (MUEDnote free-ified)
  */
 
 import { z } from 'zod';
@@ -21,6 +18,7 @@ import { dawLogsRepository } from '@/lib/repositories/daw-logs.repository';
 import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
 import { getHooSystemPromptWithMemory } from '@/lib/ai/hoo-prompt';
 import { buildMusicalDawContext } from '@/lib/services/daw-log-interpreter.service';
+import { profileGeneratorService } from '@/lib/services/profile-generator.service';
 import { logger } from '@/lib/utils/logger';
 
 // ========================================
@@ -259,6 +257,11 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
         })
         .catch((err) => logger.warn('[POST /api/hoo/chat] Title generation failed', { err }));
     }
+
+    // Fire-and-forget: incremental profile update from this conversation
+    profileGeneratorService
+      .updateFromConversation(internalUserId, conversation.id)
+      .catch((err) => logger.warn('[POST /api/hoo/chat] Profile update failed', { err }));
 
     // Get updated usage
     const updatedUsage = await subscriptionRepository.getHooUsageLimits(internalUserId);

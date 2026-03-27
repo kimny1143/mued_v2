@@ -277,6 +277,11 @@ export const learningMetricsRelations = relations(learningMetrics, ({ one }) => 
 export * from './schema/sessions';
 
 // ========================================
+// User Profiles (Phase 4: Auto-profile)
+// ========================================
+export * from './schema/user-profiles';
+
+// ========================================
 // Question Templates & RAG (Phase 1.3)
 // ========================================
 export * from './schema/question-templates';
