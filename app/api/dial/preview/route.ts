@@ -12,6 +12,7 @@ import { eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership, verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, mixPreview, pollMixPreview, mapMusicalStyle, mapInstrumentGroup } from '@/lib/roex';
 import type { MixTrackInput } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
@@ -27,6 +28,10 @@ const previewRequestSchema = z.object({
 
 export const POST = withDialAuth(async (auth) => {
   try {
+    // Rate limit: 5 preview requests per minute (RoEx credit operations)
+    const rateLimitResponse = await rateLimit(auth.request, "dial-process");
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await auth.request.json();
     const parsed = previewRequestSchema.safeParse(body);
     if (!parsed.success) {

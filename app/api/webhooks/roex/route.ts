@@ -5,8 +5,9 @@
  * Receives completion notifications from RoEx Tonn API.
  * Updates task status in DB and copies result to R2.
  *
- * Authentication: RoEx has no webhook signing — we verify by checking
- * that the roexTaskId exists in our dial_tasks table.
+ * Authentication: RoEx has no webhook signing. We use two layers:
+ *   1. Secret token in webhook URL query param (?secret=xxx)
+ *   2. roexTaskId must exist in our dial_tasks table
  *
  * Fallback: If webhook doesn't fire, client-side polling via GET handlers
  * will still work (with 30s delay before falling back to RoEx polling).
@@ -25,6 +26,17 @@ export const maxDuration = 120;
 
 export async function POST(request: Request) {
   try {
+    // ── Verify webhook secret token ────────────────────────────────────
+    const expectedSecret = process.env.ROEX_WEBHOOK_SECRET;
+    if (expectedSecret) {
+      const url = new URL(request.url);
+      const secret = url.searchParams.get('secret');
+      if (secret !== expectedSecret) {
+        console.warn('[webhook/roex] Invalid or missing webhook secret');
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    }
+
     const body = await request.json();
 
     // RoEx webhook payload shape is not fully documented.

@@ -65,6 +65,28 @@ const limiters = {
       prefix: "ratelimit:strict",
     });
   },
+
+  // Dial chat: 20 requests per minute (LLM calls are expensive)
+  dial: () => {
+    const r = getRedis();
+    if (!r) return null;
+    return new Ratelimit({
+      redis: r,
+      limiter: Ratelimit.slidingWindow(20, "1 m"),
+      prefix: "ratelimit:dial",
+    });
+  },
+
+  // Dial processing: 5 requests per minute (RoEx credit-consuming operations)
+  "dial-process": () => {
+    const r = getRedis();
+    if (!r) return null;
+    return new Ratelimit({
+      redis: r,
+      limiter: Ratelimit.slidingWindow(5, "1 m"),
+      prefix: "ratelimit:dial-process",
+    });
+  },
 };
 
 export type RateLimitType = keyof typeof limiters;

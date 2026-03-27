@@ -24,6 +24,7 @@ import { eq, sql } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMixPreview, pollMixFinal } from '@/lib/roex';
 import { buildAdvancedTrackData, type ParameterChanges } from '@/lib/dial/track-data';
 import { copyToR2 } from '@/lib/dial/r2-storage';
@@ -67,6 +68,10 @@ async function getLatestParameterChanges(sessionId: string): Promise<ParameterCh
 
 export const POST = withDialAuth(async (auth) => {
   try {
+    // Rate limit: 5 final mix requests per minute (RoEx credit operations)
+    const rateLimitResponse = await rateLimit(auth.request, "dial-process");
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await auth.request.json();
     const parsed = finalRequestSchema.safeParse(body);
     if (!parsed.success) {
