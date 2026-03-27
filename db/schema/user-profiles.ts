@@ -70,7 +70,7 @@ export interface UserProfileData {
 
 export const userProfiles = pgTable('user_profiles', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: text('user_id').notNull().references(() => users.id),
+  userId: uuid('user_id').notNull().references(() => users.id),
 
   /** Structured profile data */
   profileData: jsonb('profile_data').$type<UserProfileData>().notNull(),
