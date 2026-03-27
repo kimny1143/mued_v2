@@ -35,6 +35,8 @@ export async function POST(request: Request) {
         console.warn('[webhook/roex] Invalid or missing webhook secret');
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
+    } else if (process.env.NODE_ENV === 'production') {
+      console.error('[webhook/roex] CRITICAL: ROEX_WEBHOOK_SECRET not configured in production — webhook authentication is DISABLED');
     }
 
     const body = await request.json();
