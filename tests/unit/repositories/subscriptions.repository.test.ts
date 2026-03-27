@@ -101,10 +101,10 @@ describe('SubscriptionRepository', () => {
   });
 
   describe('TIER_LIMITS', () => {
-    it('should have correct limits for free', () => {
+    it('should have correct limits for free (unlimited after free-ification)', () => {
       expect(TIER_LIMITS.free).toEqual({
-        hooThreadsLimit: 0,
-        hooTurnsLimit: 0,
+        hooThreadsLimit: -1,
+        hooTurnsLimit: -1,
       });
     });
 

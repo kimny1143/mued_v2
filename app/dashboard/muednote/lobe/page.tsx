@@ -1,13 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { MuednoteLayout } from '@/components/layouts/muednote-layout';
 import { Button } from '@/components/ui/button';
 import {
   Brain,
-  Lock,
   ArrowRight,
-  Loader2,
   Sparkles,
   BarChart3,
   MessageCircle,
@@ -54,20 +51,6 @@ const LOBE_FEATURES = {
 
 export default function LobeIntroPage() {
   const { locale } = useLocale();
-  const [tier, setTier] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/subscription/limits')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setTier(data.data.limits.tier);
-      })
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  const isPremium = tier === 'premium';
   const features = LOBE_FEATURES[locale] || LOBE_FEATURES.en;
 
   return (
@@ -87,7 +70,7 @@ export default function LobeIntroPage() {
         </div>
 
         {/* Feature Cards */}
-        <div className={`grid md:grid-cols-3 gap-6 ${!isPremium && !isLoading ? 'opacity-40' : ''} transition-opacity`}>
+        <div className="grid md:grid-cols-3 gap-6">
           {features.map((feature, idx) => {
             const Icon = feature.icon;
             return (
@@ -106,48 +89,23 @@ export default function LobeIntroPage() {
         </div>
 
         {/* CTA Area */}
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
-          </div>
-        ) : isPremium ? (
-          /* Premium: Go to MUEDlobe */
-          <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl p-6 text-center">
-            <Sparkles className="w-8 h-8 text-violet-400 mx-auto mb-3" />
-            <h2 className="text-lg font-bold text-white mb-2">
-              {locale === 'ja' ? '準備完了' : 'Ready to Go'}
-            </h2>
-            <p className="text-white/60 text-sm mb-4">
-              {locale === 'ja'
-                ? '7つのゲームをプレイして、あなたの認知プロファイルを作成しましょう。'
-                : 'Play 7 games and build your cognitive profile.'}
-            </p>
-            <Link href="/lobe">
-              <Button className="bg-violet-600 hover:bg-violet-700 text-white cursor-pointer">
-                {locale === 'ja' ? 'MUEDlobeを始める' : 'Start MUEDlobe'}
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-          </div>
-        ) : (
-          /* Free/Basic: Upgrade prompt */
-          <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center">
-            <Lock className="w-8 h-8 text-slate-500 mx-auto mb-3" />
-            <h2 className="text-lg font-bold text-white mb-2">
-              {locale === 'ja' ? 'Premiumプラン限定' : 'Premium Plan Only'}
-            </h2>
-            <p className="text-white/60 text-sm mb-4">
-              {locale === 'ja'
-                ? 'MUEDlobeはPremiumプランで利用できます。認知プロファイルを作成し、Hooの会話をパーソナライズ。'
-                : 'MUEDlobe is available on the Premium plan. Build your cognitive profile and personalize Hoo.'}
-            </p>
-            <Link href="/dashboard/subscription">
-              <Button className="bg-violet-600 hover:bg-violet-700 text-white cursor-pointer">
-                {locale === 'ja' ? 'プランを見る' : 'View Plans'}
-              </Button>
-            </Link>
-          </div>
-        )}
+        <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl p-6 text-center">
+          <Sparkles className="w-8 h-8 text-violet-400 mx-auto mb-3" />
+          <h2 className="text-lg font-bold text-white mb-2">
+            {locale === 'ja' ? '準備完了' : 'Ready to Go'}
+          </h2>
+          <p className="text-white/60 text-sm mb-4">
+            {locale === 'ja'
+              ? '7つのゲームをプレイして、あなたの認知プロファイルを作成しましょう。'
+              : 'Play 7 games and build your cognitive profile.'}
+          </p>
+          <Link href="/lobe">
+            <Button className="bg-violet-600 hover:bg-violet-700 text-white cursor-pointer">
+              {locale === 'ja' ? 'MUEDlobeを始める' : 'Start MUEDlobe'}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
+        </div>
       </div>
     </MuednoteLayout>
   );
