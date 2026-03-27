@@ -30,15 +30,14 @@ import { logger } from '@/lib/utils/logger';
 // ========================================
 
 /**
- * Context types for Hoo conversations:
- * - profile: Discussing the user's musical profile, preferences, or growth
+ * Context types for Hoo conversations (v1.1.0: no free chat):
+ * - profile: Discussing the user's musical profile, structured questions, preferences
  * - care: Timer break reminders, wellness check-ins, rest suggestions
- * - general: Default — open conversation about music creation
  */
 const hooChatRequestSchema = z.object({
   conversationId: z.string().uuid().optional(),
   message: z.string().min(1).max(10000),
-  context: z.enum(['profile', 'care', 'general']).optional().default('general'),
+  context: z.enum(['profile', 'care']),
   includeSessionContext: z.boolean().optional(),
   localSessionContext: z.string().max(10000).optional(),
 });
@@ -129,10 +128,10 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     // Build system prompt with memory, MUEDlobe profile, and optional session context
     let systemPrompt = getHooSystemPromptWithMemory(customInstructions, sessionContext, muedlobeInstructions);
 
-    // Append conversation context directive
+    // Append conversation context directive (v1.1.0: profile or care only, no free chat)
     if (context === 'profile') {
-      systemPrompt += `\n\n---\n\n## 会話コンテキスト: プロファイル\nこの会話はユーザーの音楽的プロファイル（好み・傾向・成長領域）について話しています。プロファイルの確認・修正・深掘りに集中してください。`;
-    } else if (context === 'care') {
+      systemPrompt += `\n\n---\n\n## 会話コンテキスト: プロファイル\nこの会話はユーザーの音楽的プロファイル（好み・傾向・成長領域）について話しています。プロファイルの確認・修正・深掘りに集中してください。汎用的なチャットボットとして振る舞わないこと。`;
+    } else {
       systemPrompt += `\n\n---\n\n## 会話コンテキスト: ケア\nこの会話はタイマー休憩やウェルネスチェックインの文脈です。短く優しいトーンで、休憩を促したり、制作のペースについてケアしてください。長い回答は不要です。`;
     }
 
