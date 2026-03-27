@@ -272,11 +272,6 @@ export const learningMetricsRelations = relations(learningMetrics, ({ one }) => 
   }),
 }));
 // ========================================
-// MUEDnote Log Entries (Phase 1)
-// ========================================
-export * from './schema/log-entries';
-
-// ========================================
 // MUEDnote Sessions (Phase 2)
 // ========================================
 export * from './schema/sessions';
