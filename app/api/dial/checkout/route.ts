@@ -23,6 +23,7 @@ import { db } from '@/db';
 import { dialSessions, dialPurchases } from '@/db/schema';
 import { validateStripeConfig } from '@/lib/utils/env';
 import { NextRequest } from 'next/server';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 
 const stripeConfig = validateStripeConfig();
 const stripe = new Stripe(stripeConfig.secretKey, {
@@ -59,6 +60,10 @@ const checkoutSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 checkout requests per minute
+    const rateLimitResponse = await rateLimit(request, "strict");
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await request.json();
     const parsed = checkoutSchema.safeParse(body);
     if (!parsed.success) {

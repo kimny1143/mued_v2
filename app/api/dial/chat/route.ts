@@ -17,6 +17,7 @@ import { eq, asc, desc } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 import { sendHooChat, type HooChatMessage } from '@/lib/ai/providers';
 import { buildDialSystemPrompt, type DialPromptInput } from '@/lib/ai/prompts/dial';
 import { detectPhase, selectTools } from '@/lib/dial/phase';
@@ -73,6 +74,10 @@ function buildFxSummary(fxSettings: unknown): string | undefined {
 
 export const POST = withDialAuth(async (auth) => {
   try {
+    // Rate limit: 20 chat messages per minute
+    const rateLimitResponse = await rateLimit(auth.request, "dial");
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await auth.request.json();
     const parsed = chatRequestSchema.safeParse(body);
     if (!parsed.success) {

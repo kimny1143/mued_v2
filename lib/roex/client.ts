@@ -66,6 +66,18 @@ export function createRoExClient(): RoExClient {
  * When true, callers should mock final mix responses for UI testing.
  * On Vercel production, ROEX_DEV_API_KEY should not be set — this always returns false.
  */
+/** Build the webhook URL with optional secret token for verification. */
+export function getRoExWebhookUrl(): string {
+  const base = process.env.ROEX_WEBHOOK_URL || 'https://httpbin.org/post';
+  const secret = process.env.ROEX_WEBHOOK_SECRET;
+  if (secret && base !== 'https://httpbin.org/post') {
+    const url = new URL(base);
+    url.searchParams.set('secret', secret);
+    return url.toString();
+  }
+  return base;
+}
+
 export function isRoExDevKey(): boolean {
   const devKey = process.env.ROEX_DEV_API_KEY;
   if (!devKey) return false;

@@ -13,6 +13,7 @@ import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterPreview, pollMasterPreview, isRoExDevKey, mapMusicalStyle } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { db } from '@/db';
@@ -25,6 +26,10 @@ const masteringPreviewSchema = z.object({
 
 export const POST = withDialAuth(async (auth) => {
   try {
+    // Rate limit: 5 mastering requests per minute (RoEx credit operations)
+    const rateLimitResponse = await rateLimit(auth.request, "dial-process");
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await auth.request.json();
     const parsed = masteringPreviewSchema.safeParse(body);
     if (!parsed.success) {
