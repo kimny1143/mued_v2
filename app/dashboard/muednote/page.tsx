@@ -1,208 +1,201 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { MuednoteLayout } from "@/components/layouts/muednote-layout";
-// TODO: v1.1.0 - DAW Logs feature
-// import { Sliders } from "lucide-react";
 import { db } from "@/db";
-import { muednoteMobileSessions, muednoteMobileLogs } from "@/db/schema/muednote-mobile";
-// TODO: v1.1.0 - DAW Logs feature
-// import { muednoteDawLogs } from "@/db/schema/muednote-daw-logs";
+import { muednoteMobileSessions } from "@/db/schema/muednote-mobile";
+import { cognitiveProfiles } from "@/db/schema/cognitive-profiles";
+import { hooConversations } from "@/db/schema";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
 import { MuednoteTabs } from "./muednote-tabs";
 import { MuednoteDashboardContent } from "./muednote-dashboard-content";
+import { hooMemoriesRepository } from "@/lib/repositories/hoo-memories.repository";
 
 /**
- * MUEDnote Dashboard - Main Page
+ * MUEDnote Dashboard - "Hoo's View of You"
  *
- * UX Psychology:
- * - Progress indication (stats cards)
- * - Clear onboarding path (numbered steps)
- * - Empty state with actionable guidance
+ * Profile-first dashboard centered on Hoo's understanding of the user.
+ * Data sources: MUEDlobe scores, Hoo conversations, custom instructions, timer stats.
  */
-export default async function MuednoteDashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string }>;
-}) {
+export default async function MuednoteDashboardPage() {
   const user = await currentUser();
+  if (!user) redirect("/sign-in");
 
-  if (!user) {
-    redirect("/sign-in");
-  }
+  // Fetch all data sources in parallel
+  const [
+    cognitiveProfile,
+    hooStats,
+    recentConversations,
+    customInstructions,
+    sessionsResult,
+    recentSessions,
+    todayResult,
+    weekResult,
+    monthResult,
+  ] = await Promise.all([
+    // MUEDlobe cognitive profile
+    db
+      .select()
+      .from(cognitiveProfiles)
+      .where(eq(cognitiveProfiles.userId, user.id))
+      .limit(1)
+      .then((rows) => rows[0] ?? null),
 
-  const _params = await searchParams;
-  // TODO: v1.1.0 - DAW Logs tab
-  // const activeTab = _params.tab === "daw" ? "daw" : "overview";
-  const activeTab = "overview";
+    // Hoo conversation stats
+    db
+      .select({
+        totalConversations: sql<number>`count(*)`,
+        totalMessages: sql<number>`COALESCE(sum(message_count), 0)`,
+      })
+      .from(hooConversations)
+      .where(eq(hooConversations.userId, user.id))
+      .then((rows) => ({
+        totalConversations: Number(rows[0]?.totalConversations ?? 0),
+        totalMessages: Number(rows[0]?.totalMessages ?? 0),
+      })),
 
-  // Fetch real stats from DB
-  const [sessionsResult, logsResult, _durationResult, recentSessions] = await Promise.all([
+    // Recent Hoo conversations (last 3 with titles)
+    db
+      .select({
+        id: hooConversations.id,
+        title: hooConversations.title,
+        messageCount: hooConversations.messageCount,
+        updatedAt: hooConversations.updatedAt,
+      })
+      .from(hooConversations)
+      .where(eq(hooConversations.userId, user.id))
+      .orderBy(desc(hooConversations.updatedAt))
+      .limit(3),
+
+    // Custom instructions (Hoo memory)
+    hooMemoriesRepository.getCustomInstructions(user.id),
+
+    // Session count
     db
       .select({ count: sql<number>`count(*)` })
       .from(muednoteMobileSessions)
       .where(eq(muednoteMobileSessions.userId, user.id)),
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(muednoteMobileLogs)
-      .innerJoin(
-        muednoteMobileSessions,
-        eq(muednoteMobileLogs.sessionId, muednoteMobileSessions.id)
-      )
-      .where(eq(muednoteMobileSessions.userId, user.id)),
-    db
-      .select({ total: sql<number>`COALESCE(SUM(duration_sec), 0)` })
-      .from(muednoteMobileSessions)
-      .where(eq(muednoteMobileSessions.userId, user.id)),
+
+    // Recent sessions
     db
       .select()
       .from(muednoteMobileSessions)
       .where(eq(muednoteMobileSessions.userId, user.id))
       .orderBy(desc(muednoteMobileSessions.createdAt))
       .limit(3),
-    // TODO: v1.1.0 - DAW Logs feature
-    // // DAW logs count
-    // db
-    //   .select({ count: sql<number>`count(*)` })
-    //   .from(muednoteDawLogs)
-    //   .where(eq(muednoteDawLogs.userId, user.id)),
-    // // Recent DAW logs
-    // db
-    //   .select()
-    //   .from(muednoteDawLogs)
-    //   .where(eq(muednoteDawLogs.userId, user.id))
-    //   .orderBy(desc(muednoteDawLogs.ts))
-    //   .limit(50),
-  ]);
 
-  // 累計時間クエリ（今日/今週/今月）
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // Today's time
+    (() => {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      return db
+        .select({
+          total: sql<number>`COALESCE(SUM(EXTRACT(EPOCH FROM (ended_at - started_at))), 0)`,
+        })
+        .from(muednoteMobileSessions)
+        .where(
+          and(
+            eq(muednoteMobileSessions.userId, user.id),
+            gte(muednoteMobileSessions.startedAt, todayStart),
+            sql`ended_at IS NOT NULL`
+          )
+        );
+    })(),
 
-  // 今週の開始日（月曜日）
-  const dayOfWeek = now.getDay();
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+    // Week's time
+    (() => {
+      const now = new Date();
+      const dayOfWeek = now.getDay();
+      const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const weekStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate() + mondayOffset
+      );
+      return db
+        .select({
+          total: sql<number>`COALESCE(SUM(EXTRACT(EPOCH FROM (ended_at - started_at))), 0)`,
+        })
+        .from(muednoteMobileSessions)
+        .where(
+          and(
+            eq(muednoteMobileSessions.userId, user.id),
+            gte(muednoteMobileSessions.startedAt, weekStart),
+            sql`ended_at IS NOT NULL`
+          )
+        );
+    })(),
 
-  // 今月の開始日
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  // 実時間 = ended_at - started_at（ended_atがnullの場合は除外）
-  const actualTimeExpr = sql<number>`COALESCE(SUM(EXTRACT(EPOCH FROM (ended_at - started_at))), 0)`;
-
-  const [todayResult, weekResult, monthResult, weekSessions] = await Promise.all([
-    db.select({ total: actualTimeExpr })
-      .from(muednoteMobileSessions)
-      .where(and(
-        eq(muednoteMobileSessions.userId, user.id),
-        gte(muednoteMobileSessions.startedAt, todayStart),
-        sql`ended_at IS NOT NULL`
-      )),
-    db.select({ total: actualTimeExpr })
-      .from(muednoteMobileSessions)
-      .where(and(
-        eq(muednoteMobileSessions.userId, user.id),
-        gte(muednoteMobileSessions.startedAt, weekStart),
-        sql`ended_at IS NOT NULL`
-      )),
-    db.select({ total: actualTimeExpr })
-      .from(muednoteMobileSessions)
-      .where(and(
-        eq(muednoteMobileSessions.userId, user.id),
-        gte(muednoteMobileSessions.startedAt, monthStart),
-        sql`ended_at IS NOT NULL`
-      )),
-    // 週間セッション（日別集計用）- 実時間ベース
-    db.select({
-      date: sql<string>`DATE(started_at)`,
-      count: sql<number>`COUNT(*)`,
-      totalSec: sql<number>`SUM(EXTRACT(EPOCH FROM (ended_at - started_at)))`,
-    })
-      .from(muednoteMobileSessions)
-      .where(and(
-        eq(muednoteMobileSessions.userId, user.id),
-        gte(muednoteMobileSessions.startedAt, weekStart),
-        sql`ended_at IS NOT NULL`
-      ))
-      .groupBy(sql`DATE(started_at)`),
+    // Month's time
+    (() => {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      return db
+        .select({
+          total: sql<number>`COALESCE(SUM(EXTRACT(EPOCH FROM (ended_at - started_at))), 0)`,
+        })
+        .from(muednoteMobileSessions)
+        .where(
+          and(
+            eq(muednoteMobileSessions.userId, user.id),
+            gte(muednoteMobileSessions.startedAt, monthStart),
+            sql`ended_at IS NOT NULL`
+          )
+        );
+    })(),
   ]);
 
   const sessionCount = Number(sessionsResult[0]?.count) || 0;
-  const logCount = Number(logsResult[0]?.count) || 0;
-  // TODO: v1.1.0 - DAW Logs feature
-  // const dawLogCount = Number(dawLogsResult[0]?.count) || 0;
-  const dawLogCount = 0;
 
-  // 累計時間（秒→時間:分 形式）
-  const todaySeconds = Number(todayResult[0]?.total) || 0;
-  const weekSeconds = Number(weekResult[0]?.total) || 0;
-  const monthSeconds = Number(monthResult[0]?.total) || 0;
-
-  const formatHoursMinutes = (seconds: number) => {
+  const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-      return { value: hours, unit: "時間", sub: `${mins}分` };
-    }
-    return { value: mins, unit: "分", sub: null };
+    if (hours > 0) return { value: hours, unit: "h", sub: `${mins}m` };
+    return { value: mins, unit: "m", sub: null };
   };
 
-  const todayTime = formatHoursMinutes(todaySeconds);
-  const weekTime = formatHoursMinutes(weekSeconds);
-  const monthTime = formatHoursMinutes(monthSeconds);
-
-  // 週間カレンダーデータ
-  const weekDays = ["月", "火", "水", "木", "金", "土", "日"];
-  const sessionsByDate = new Map(
-    weekSessions.map((s) => [s.date, { count: Number(s.count), totalSec: Number(s.totalSec) }])
-  );
-
-  const weekCalendar = weekDays.map((label, index) => {
-    const date = new Date(weekStart);
-    date.setDate(weekStart.getDate() + index);
-    const dateStr = date.toISOString().split("T")[0];
-    const session = sessionsByDate.get(dateStr);
-    const isToday = dateStr === todayStart.toISOString().split("T")[0];
-    const isFuture = date > now;
-
-    return {
-      label,
-      date: date.getDate(),
-      dateStr,
-      isToday,
-      isFuture,
-      hasSession: !!session,
-      sessionCount: session?.count || 0,
-      totalMinutes: session ? Math.floor(session.totalSec / 60) : 0,
-    };
-  });
-
-  // Prepare session data for client component
-  const sessionsForClient = recentSessions.map((session) => ({
-    id: session.id,
-    sessionMemo: session.sessionMemo,
-    durationSec: session.durationSec,
-    createdAt: session.createdAt,
-  }));
+  // Build profile data for client
+  const profileData = {
+    cognitiveScores: cognitiveProfile
+      ? {
+          wm: cognitiveProfile.wmScore ?? 0,
+          ps: cognitiveProfile.psScore ?? 0,
+          vc: cognitiveProfile.vcScore ?? 0,
+          pr: cognitiveProfile.prScore ?? 0,
+          att: cognitiveProfile.attScore ?? 0,
+          measuredAt: cognitiveProfile.measuredAt?.toISOString() ?? null,
+        }
+      : null,
+    hooStats: {
+      totalConversations: hooStats.totalConversations,
+      totalMessages: hooStats.totalMessages,
+    },
+    recentConversations: recentConversations.map((c) => ({
+      id: c.id,
+      title: c.title,
+      messageCount: c.messageCount,
+      updatedAt: c.updatedAt?.toISOString() ?? null,
+    })),
+    customInstructions,
+    timerStats: {
+      sessionCount,
+      todayTime: formatTime(Number(todayResult[0]?.total) || 0),
+      weekTime: formatTime(Number(weekResult[0]?.total) || 0),
+      monthTime: formatTime(Number(monthResult[0]?.total) || 0),
+    },
+    recentSessions: recentSessions.map((s) => ({
+      id: s.id,
+      sessionMemo: s.sessionMemo,
+      durationSec: s.durationSec,
+      createdAt: s.createdAt?.toISOString() ?? null,
+    })),
+  };
 
   const userName = user.firstName || user.username || "Creator";
 
   return (
     <MuednoteLayout>
-      {/* Tabs */}
-      <MuednoteTabs activeTab={activeTab} dawLogCount={dawLogCount} sessionCount={sessionCount} />
-
-      {activeTab === "overview" ? (
-        <MuednoteDashboardContent
-          userName={userName}
-          recentSessions={sessionsForClient}
-          sessionCount={sessionCount}
-          logCount={logCount}
-          todayTime={todayTime}
-          weekTime={weekTime}
-          monthTime={monthTime}
-          weekCalendar={weekCalendar}
-        />
-      ) : null}
+      <MuednoteTabs />
+      <MuednoteDashboardContent userName={userName} profile={profileData} />
     </MuednoteLayout>
   );
 }
