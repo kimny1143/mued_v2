@@ -68,17 +68,17 @@ export async function getUserUsageLimits(clerkId: string): Promise<UsageLimits> 
     .limit(1);
 
   if (!user) {
-    // Return free tier limits if user not found
+    // Return free tier limits if user not found (all unlimited since free-ification)
     return {
       hooThreadsLimit: TIER_LIMITS.free.hooThreadsLimit,
       hooThreadsUsed: 0,
-      hooThreadsRemaining: 0,
+      hooThreadsRemaining: -1,
       hooThreadsExceeded: false,
       hooTurnsLimit: TIER_LIMITS.free.hooTurnsLimit,
       hooTurnsUsed: 0,
-      hooTurnsRemaining: 0,
+      hooTurnsRemaining: -1,
       tier: 'free',
-      canUseHooAI: false,
+      canUseHooAI: true,
     };
   }
 
@@ -151,29 +151,11 @@ export async function checkCanUseHooAI(clerkId: string): Promise<{
 }> {
   const limits = await getUserUsageLimits(clerkId);
 
-  // Free tier: no AI access
-  if (limits.hooTurnsLimit === 0) {
-    return {
-      allowed: false,
-      reason: 'Hoo AI is not available on the Free plan. Upgrade to Basic for unlimited Hoo AI conversation.',
-      limits,
-    };
-  }
-
-  // Hard limit check (turns)
-  if (!limits.canUseHooAI) {
-    return {
-      allowed: false,
-      reason: `You've reached your monthly limit of ${limits.hooTurnsLimit} Hoo turns. Upgrade to Premium for personalized AI conversation.`,
-      limits,
-    };
-  }
-
-  // Soft limit check (threads) - alert but don't block
+  // MUEDnote free-ified: all tiers have unlimited access
   return {
     allowed: true,
     limits,
-    threadAlert: limits.hooThreadsExceeded,
+    threadAlert: false,
   };
 }
 
@@ -320,24 +302,27 @@ function getFeaturesList(tier: string): string[] {
   switch (tier) {
     case 'free':
       return [
-        'Voice transcription (Whisper)',
-        'Log storage: 90 days',
-        'Hoo: Fixed responses only',
+        'Hoo AI conversation (unlimited)',
+        'MUEDlobe cognitive profile',
+        'Cloud sync & unlimited log storage',
+        'DAW log integration',
+        'Practice data visualization',
       ];
     case 'basic':
       return [
         'Hoo AI conversation (unlimited)',
-        'Voice transcription (Whisper)',
+        'MUEDlobe cognitive profile',
         'Cloud sync & unlimited log storage',
         'DAW log integration',
         'Practice data visualization',
       ];
     case 'premium':
       return [
-        'All Basic features',
-        'Hoo personalized conversation',
+        'Hoo AI conversation (unlimited)',
         'MUEDlobe cognitive profile',
-        'Accumulated data analysis',
+        'Hoo personalized conversation',
+        'Cloud sync & unlimited log storage',
+        'DAW log integration',
       ];
     default:
       return [];

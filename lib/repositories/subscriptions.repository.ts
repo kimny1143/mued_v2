@@ -33,8 +33,8 @@ export const TIER_LIMITS: Record<SubscriptionTier, {
   hooTurnsLimit: number;
 }> = {
   free: {
-    hooThreadsLimit: 0,    // No AI access, template responses only
-    hooTurnsLimit: 0,      // No AI access
+    hooThreadsLimit: -1,   // Unlimited (MUEDnote free-ified 2026-03-27)
+    hooTurnsLimit: -1,     // Unlimited (MUEDnote free-ified 2026-03-27)
   },
   basic: {
     hooThreadsLimit: -1,   // Unlimited
@@ -441,68 +441,20 @@ export class SubscriptionRepository {
     }
 
     const tier = getTierSafely(subscription.tier);
-    const limits = TIER_LIMITS[tier];
 
     const threadsUsed = subscription.hooConversationsUsed;
     const turnsUsed = subscription.hooTurnsUsed;
 
-    // Free tier: no AI, template only
-    if (limits.hooTurnsLimit === 0) {
-      return {
-        allowed: false,
-        reason: 'FREE_TIER',
-        tier,
-        usage: {
-          threadsUsed,
-          threadsLimit: 0,
-          turnsUsed,
-          turnsLimit: 0,
-        },
-      };
-    }
-
-    // Premium: unlimited (-1)
-    if (limits.hooTurnsLimit === -1) {
-      return {
-        allowed: true,
-        tier,
-        usage: {
-          threadsUsed,
-          threadsLimit: -1,
-          turnsUsed,
-          turnsLimit: -1,
-        },
-      };
-    }
-
-    // Basic: check HARD limit (turns)
-    if (turnsUsed >= limits.hooTurnsLimit) {
-      return {
-        allowed: false,
-        reason: 'TURN_LIMIT_EXCEEDED',
-        tier,
-        usage: {
-          threadsUsed,
-          threadsLimit: limits.hooThreadsLimit,
-          turnsUsed,
-          turnsLimit: limits.hooTurnsLimit,
-        },
-      };
-    }
-
-    // Check soft limit (threads) - alert but don't block
-    const threadAlert = limits.hooThreadsLimit > 0 && threadsUsed >= limits.hooThreadsLimit;
-
+    // MUEDnote free-ified: all tiers have unlimited access
     return {
       allowed: true,
       tier,
       usage: {
         threadsUsed,
-        threadsLimit: limits.hooThreadsLimit,
+        threadsLimit: -1,
         turnsUsed,
-        turnsLimit: limits.hooTurnsLimit,
+        turnsLimit: -1,
       },
-      threadAlert,
     };
   }
 

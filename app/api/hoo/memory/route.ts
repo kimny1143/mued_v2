@@ -9,7 +9,7 @@ import { withAuthResolved } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
 import { hooMemoriesRepository } from '@/lib/repositories/hoo-memories.repository';
 import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
-import { subscriptionRepository } from '@/lib/repositories/subscriptions.repository';
+
 import { logger } from '@/lib/utils/logger';
 
 // ========================================
@@ -28,17 +28,14 @@ export const GET = withAuthResolved(async ({ internalUserId, clerkUserId }) => {
   try {
     const settings = await hooMemoriesRepository.getMemorySettings(internalUserId);
 
-    // Fetch MUEDlobe profile instructions for Premium users
+    // Fetch MUEDlobe profile instructions for all users (free-ified)
     let muedlobeInstructions: string[] | null = null;
     let hasMuedlobeProfile = false;
     try {
-      const usageLimits = await subscriptionRepository.getHooUsageLimits(internalUserId);
-      if (usageLimits.tier === 'premium') {
-        const hooConfig = await cognitiveProfileRepository.findHooConfig(clerkUserId);
-        if (hooConfig?.specialInstructions) {
-          muedlobeInstructions = hooConfig.specialInstructions as string[];
-          hasMuedlobeProfile = true;
-        }
+      const hooConfig = await cognitiveProfileRepository.findHooConfig(clerkUserId);
+      if (hooConfig?.specialInstructions) {
+        muedlobeInstructions = hooConfig.specialInstructions as string[];
+        hasMuedlobeProfile = true;
       }
     } catch (err) {
       logger.warn('[GET /api/hoo/memory] MUEDlobe config fetch failed', { err });

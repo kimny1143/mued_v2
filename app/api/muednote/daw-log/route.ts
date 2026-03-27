@@ -19,8 +19,6 @@ import {
 } from '@/lib/repositories/daw-logs.repository';
 import type { DawType, DawAction } from '@/db/schema/muednote-daw-logs';
 import { getUserIdFromClerkId } from '@/lib/utils/auth-helpers';
-import { trialService } from '@/lib/services/trial.service';
-import { subscriptionRepository } from '@/lib/repositories/subscriptions.repository';
 
 /** Source filter type for GET requests */
 type SourceFilter = 'osc' | 'all';
@@ -122,29 +120,8 @@ async function canUseDawLogs(clerkUserId: string): Promise<{ allowed: boolean; r
       return { allowed: false, reason: 'USER_NOT_FOUND' };
     }
 
-    // Check subscription tier
-    const subscription = await subscriptionRepository.findActiveByUserId(internalUserId);
-    if (!subscription) {
-      return { allowed: false, reason: 'NO_SUBSCRIPTION' };
-    }
-
-    const tier = subscription.tier;
-
-    // Basic and Premium can always use DAW logs
-    if (tier === 'basic' || tier === 'premium') {
-      return { allowed: true };
-    }
-
-    // Free tier: check if in active trial
-    if (tier === 'free') {
-      const trialStatus = await trialService.getTrialStatus(internalUserId);
-      if (trialStatus.isInTrial) {
-        return { allowed: true };
-      }
-      return { allowed: false, reason: 'FREE_TIER' };
-    }
-
-    return { allowed: false, reason: 'UNKNOWN_TIER' };
+    // All tiers can use DAW logs (MUEDnote free-ified)
+    return { allowed: true };
   } catch (error) {
     console.error('[canUseDawLogs] Error:', error);
     return { allowed: false, reason: 'CHECK_FAILED' };

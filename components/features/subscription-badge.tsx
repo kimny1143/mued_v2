@@ -75,16 +75,8 @@ export function SubscriptionBadge() {
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-3">
             <span className={`${colors.badge} text-white text-sm font-bold px-4 py-1.5 rounded-full`}>
-              {limits.tier.charAt(0).toUpperCase() + limits.tier.slice(1)} Plan
+              Free Plan
             </span>
-            {limits.tier === 'free' && (
-              <Link
-                href="/dashboard/subscription"
-                className="text-sm font-medium text-blue-600 hover:text-blue-700 underline"
-              >
-                Upgrade to unlock more
-              </Link>
-            )}
           </div>
 
           {/* Hoo AI Usage */}

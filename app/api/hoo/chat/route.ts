@@ -20,7 +20,6 @@ import { hooMemoriesRepository } from '@/lib/repositories/hoo-memories.repositor
 import { dawLogsRepository } from '@/lib/repositories/daw-logs.repository';
 import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
 import { getHooSystemPromptWithMemory } from '@/lib/ai/hoo-prompt';
-import { trialService, TRIAL_TURNS_LIMIT } from '@/lib/services/trial.service';
 import { buildMusicalDawContext } from '@/lib/services/daw-log-interpreter.service';
 import { logger } from '@/lib/utils/logger';
 
@@ -104,24 +103,21 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
 
     const { conversationId, message, includeSessionContext, localSessionContext } = validationResult.data;
 
-    // Check subscription tier and usage (including trial)
+    // Check subscription tier and usage
     const usageCheck = await subscriptionRepository.canUseHooConversation(internalUserId);
-    const trialCheck = await trialService.canUseHooAI(internalUserId);
 
     // Fetch custom instructions (memory)
     const customInstructions = await hooMemoriesRepository.getCustomInstructions(internalUserId);
 
-    // Fetch MUEDlobe special instructions for Premium users
+    // Fetch MUEDlobe special instructions for all users (free-ified)
     let muedlobeInstructions: string[] | null = null;
-    if (usageCheck.tier === 'premium') {
-      try {
-        const hooConfig = await cognitiveProfileRepository.findHooConfig(clerkUserId);
-        if (hooConfig?.specialInstructions) {
-          muedlobeInstructions = hooConfig.specialInstructions as string[];
-        }
-      } catch (err) {
-        logger.warn('[POST /api/hoo/chat] MUEDlobe config fetch failed', { err });
+    try {
+      const hooConfig = await cognitiveProfileRepository.findHooConfig(clerkUserId);
+      if (hooConfig?.specialInstructions) {
+        muedlobeInstructions = hooConfig.specialInstructions as string[];
       }
+    } catch (err) {
+      logger.warn('[POST /api/hoo/chat] MUEDlobe config fetch failed', { err });
     }
 
     // Fetch session context if requested (uses Clerk ID for mobile sessions)
@@ -171,144 +167,7 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     });
 
     // ========================================
-    // Free Tier: Auto-start trial or return trial expired message
-    // ========================================
-    if (!usageCheck.allowed && usageCheck.reason === 'FREE_TIER') {
-      // Check if user can use trial
-      if (trialCheck.isInTrial) {
-        // User is in trial - proceed with AI response (handled below)
-        logger.info('[POST /api/hoo/chat] User in active trial', {
-          userId: internalUserId,
-          trialStatus: trialCheck.trialStatus,
-        });
-      } else if (trialCheck.reason === 'TRIAL_NOT_STARTED') {
-        // Auto-start trial on first Hoo use
-        const startResult = await trialService.startTrial(internalUserId);
-        if (startResult.success) {
-          logger.info('[POST /api/hoo/chat] Trial auto-started', {
-            userId: internalUserId,
-            trialStartedAt: startResult.trialStartedAt,
-          });
-          // Refresh trial check after starting
-          const refreshedTrialCheck = await trialService.canUseHooAI(internalUserId);
-          Object.assign(trialCheck, refreshedTrialCheck);
-        } else {
-          logger.error('[POST /api/hoo/chat] Failed to start trial', {
-            userId: internalUserId,
-            error: startResult.error,
-          });
-          // Fall through to template response
-        }
-      } else {
-        // Trial expired or exhausted - return upgrade message
-        const trialExpiredResponse = `Hooです。
-
-3日間の無料トライアルが終了しました。
-
-Hoo AIとの会話を続けるには、Basicプランへのアップグレードをご検討ください。
-
-- **Basic**: 月額1,980円でHoo AI無制限会話 + Whisper + DAWログ連携
-- **Premium**: 月額2,980円で上記すべて + Hoo個人化 + MUEDlobe認知プロファイル
-
-ダッシュボードの「サブスクリプション」からアップグレードできます。
-
----
-
-Your 3-day free trial has ended.
-
-To continue conversations with Hoo AI, please consider upgrading to Basic.
-
-- **Basic**: ¥1,980/month for unlimited Hoo AI + Whisper + DAW log integration
-- **Premium**: ¥2,980/month for all Basic features + personalized Hoo + MUEDlobe
-
-You can upgrade from "Subscription" in your dashboard.`;
-
-        // Create/update conversation for history
-        let convId = conversationId;
-        if (!convId) {
-          const newConv = await hooConversationsRepository.create({
-            userId: internalUserId,
-            model: 'template',
-            provider: 'claude',
-          });
-          convId = newConv.id;
-        }
-
-        await hooConversationsRepository.addMessage({
-          conversationId: convId,
-          role: 'user',
-          content: message,
-        });
-
-        await hooConversationsRepository.addMessage({
-          conversationId: convId,
-          role: 'assistant',
-          content: trialExpiredResponse,
-        });
-
-        const response: HooChatApiResponse = {
-          conversationId: convId,
-          content: trialExpiredResponse,
-          model: 'template',
-          provider: 'template',
-          isAiResponse: false,
-          usage: {
-            inputTokens: 0,
-            outputTokens: 0,
-            totalTokens: 0,
-            threadsUsed: 0,
-            threadsLimit: 0,
-            turnsUsed: 0,
-            turnsLimit: 0,
-          },
-          trial: {
-            isInTrial: false,
-            turnsUsed: trialCheck.trialStatus?.turnsUsed ?? TRIAL_TURNS_LIMIT,
-            turnsRemaining: 0,
-            daysRemaining: 0,
-            trialEndsAt: trialCheck.trialStatus?.trialEndsAt?.toISOString() ?? null,
-          },
-        };
-
-        return apiSuccess(response);
-      }
-    }
-
-    // ========================================
-    // Turn Limit Exceeded (Hard Limit) - Basic/Premium
-    // ========================================
-    if (!usageCheck.allowed && usageCheck.reason === 'TURN_LIMIT_EXCEEDED') {
-      return apiError('Monthly Hoo turn limit reached. Upgrade to Premium for unlimited access.', {
-        code: 'TURN_LIMIT_EXCEEDED',
-        status: 429,
-        details: {
-          turnsUsed: usageCheck.usage?.turnsUsed,
-          turnsLimit: usageCheck.usage?.turnsLimit,
-          threadsUsed: usageCheck.usage?.threadsUsed,
-          threadsLimit: usageCheck.usage?.threadsLimit,
-        },
-      });
-    }
-
-    // ========================================
-    // Trial Turn Limit Check (for trial users)
-    // ========================================
-    if (trialCheck.isInTrial && trialCheck.trialStatus) {
-      if (trialCheck.trialStatus.turnsRemaining <= 0) {
-        return apiError('Trial turn limit reached. Upgrade to Basic for unlimited Hoo AI.', {
-          code: 'TRIAL_LIMIT_EXCEEDED',
-          status: 429,
-          details: {
-            turnsUsed: trialCheck.trialStatus.turnsUsed,
-            turnsLimit: TRIAL_TURNS_LIMIT,
-            daysRemaining: trialCheck.trialStatus.daysRemaining,
-          },
-        });
-      }
-    }
-
-    // ========================================
-    // Basic/Premium: AI Response
+    // AI Response (all tiers — MUEDnote free-ified)
     // ========================================
 
     // Determine if this is a new conversation
@@ -360,26 +219,10 @@ You can upgrade from "Subscription" in your dashboard.`;
       costUsd: aiResponse.cost.total,
     });
 
-    // Increment usage counters
-    let trialUsageResult: { turnsUsed: number; turnsRemaining: number } | undefined;
-
-    if (trialCheck.isInTrial) {
-      // Trial user: increment trial turns (not regular subscription turns)
-      trialUsageResult = await trialService.incrementTrialTurns(internalUserId);
-      logger.info('[POST /api/hoo/chat] Trial turn incremented', {
-        userId: internalUserId,
-        turnsUsed: trialUsageResult.turnsUsed,
-        turnsRemaining: trialUsageResult.turnsRemaining,
-      });
-    } else {
-      // Paid user: increment regular subscription turns
-      // 1. Turn count: increment for EVERY user message (already validated above)
-      await subscriptionRepository.incrementHooTurnsUsed(internalUserId);
-
-      // 2. Thread count: increment only for NEW conversations
-      if (isNewConversation) {
-        await subscriptionRepository.incrementHooConversationsUsed(internalUserId);
-      }
+    // Increment usage counters (for analytics tracking)
+    await subscriptionRepository.incrementHooTurnsUsed(internalUserId);
+    if (isNewConversation) {
+      await subscriptionRepository.incrementHooConversationsUsed(internalUserId);
     }
 
     // Title generation logic:
@@ -431,48 +274,21 @@ You can upgrade from "Subscription" in your dashboard.`;
       threadsUsed: updatedUsage.hooThreads.used,
     });
 
-    // Build trial info if applicable
-    let trialInfo: HooChatApiResponse['trial'] | undefined;
-    if (trialCheck.isInTrial && trialUsageResult) {
-      // Refresh trial status for accurate remaining count
-      const updatedTrialStatus = await trialService.getTrialStatus(internalUserId);
-      trialInfo = {
-        isInTrial: true,
-        turnsUsed: trialUsageResult.turnsUsed,
-        turnsRemaining: trialUsageResult.turnsRemaining,
-        daysRemaining: updatedTrialStatus.daysRemaining,
-        trialEndsAt: updatedTrialStatus.trialEndsAt?.toISOString() ?? null,
-      };
-    }
-
     const response: HooChatApiResponse = {
       conversationId: conversation.id,
       content: aiResponse.content,
       model: aiResponse.model,
       provider: aiResponse.provider,
       isAiResponse: true,
-      usage: trialCheck.isInTrial
-        ? {
-            // Trial users: show trial usage instead of subscription usage
-            inputTokens: aiResponse.usage.inputTokens,
-            outputTokens: aiResponse.usage.outputTokens,
-            totalTokens: aiResponse.usage.totalTokens,
-            threadsUsed: 0,
-            threadsLimit: 0,
-            turnsUsed: trialUsageResult?.turnsUsed ?? 0,
-            turnsLimit: TRIAL_TURNS_LIMIT,
-          }
-        : {
-            inputTokens: aiResponse.usage.inputTokens,
-            outputTokens: aiResponse.usage.outputTokens,
-            totalTokens: aiResponse.usage.totalTokens,
-            threadsUsed: updatedUsage.hooThreads.used,
-            threadsLimit: updatedUsage.hooThreads.limit,
-            turnsUsed: updatedUsage.hooTurns.used,
-            turnsLimit: updatedUsage.hooTurns.limit,
-          },
-      threadAlert: usageCheck.threadAlert,
-      trial: trialInfo,
+      usage: {
+        inputTokens: aiResponse.usage.inputTokens,
+        outputTokens: aiResponse.usage.outputTokens,
+        totalTokens: aiResponse.usage.totalTokens,
+        threadsUsed: updatedUsage.hooThreads.used,
+        threadsLimit: updatedUsage.hooThreads.limit,
+        turnsUsed: updatedUsage.hooTurns.used,
+        turnsLimit: updatedUsage.hooTurns.limit,
+      },
       latencyMs,
     };
 
@@ -531,31 +347,12 @@ You can upgrade from "Subscription" in your dashboard.`;
 export const GET = withAuthResolved(async ({ internalUserId }) => {
   const usageLimits = await subscriptionRepository.getHooUsageLimits(internalUserId);
   const stats = await hooConversationsRepository.getUserStats(internalUserId);
-  const trialStatus = await trialService.getTrialStatus(internalUserId);
-
-  // Determine effective tier (basic if in trial)
-  const effectiveTier = trialStatus.isInTrial ? 'basic' : usageLimits.tier;
 
   return apiSuccess({
     tier: usageLimits.tier,
-    effectiveTier,
-    // Thread usage (soft limit) - not applicable for trial
+    effectiveTier: usageLimits.tier,
     threads: usageLimits.hooThreads,
-    // Turn usage (hard limit) - shows trial usage if in trial
-    turns: trialStatus.isInTrial
-      ? { used: trialStatus.turnsUsed, limit: TRIAL_TURNS_LIMIT }
-      : usageLimits.hooTurns,
-    // Trial info
-    trial: {
-      isInTrial: trialStatus.isInTrial,
-      hasTrialStarted: trialStatus.hasTrialStarted,
-      trialUsed: trialStatus.trialUsed,
-      turnsUsed: trialStatus.turnsUsed,
-      turnsRemaining: trialStatus.turnsRemaining,
-      daysRemaining: trialStatus.daysRemaining,
-      trialStartedAt: trialStatus.trialStartedAt?.toISOString() ?? null,
-      trialEndsAt: trialStatus.trialEndsAt?.toISOString() ?? null,
-    },
+    turns: usageLimits.hooTurns,
     stats,
   });
 });
