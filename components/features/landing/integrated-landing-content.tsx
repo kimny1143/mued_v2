@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useLocale } from "next-intl";
 import { BrandHeroSection } from "./brand-hero-section";
 import { HeroSection } from "./hero-section";
@@ -18,8 +17,9 @@ import { MuedearHeroSection } from "@/components/features/muedear-landing/muedea
 import { MuedearFeaturesSection } from "@/components/features/muedear-landing/muedear-features-section";
 import { MuedearPricingSection } from "@/components/features/muedear-landing/muedear-pricing-section";
 import { MuedearEarRankingSection } from "@/components/features/muedear-landing/muedear-ear-ranking-section";
+import { MuedialHeroSection } from "@/components/features/muedial-landing/muedial-hero-section";
 import { AppStoreButton } from "@/components/ui/app-store-button";
-import { ArrowUp, ChevronLeft, ChevronRight, Music, Ear, LogIn } from "lucide-react";
+import { ArrowUp, ChevronLeft, ChevronRight, Music, Ear, Headphones, LogIn } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
@@ -64,7 +64,7 @@ export function IntegratedLandingContent() {
       {/* Floating Navigation */}
       <FloatingNav />
 
-      {/* MUEDear Section - Primary product */}
+      {/* MUEDear Section */}
       <section id="muedear" className="relative">
         <MuedearHeroSection />
         <MuedearFeaturesSection />
@@ -73,17 +73,15 @@ export function IntegratedLandingContent() {
         <SectionNav
           prevHref="#"
           prevLabel={locale === "ja" ? "トップへ" : "Back to Top"}
-          nextHref="#muednote"
-          nextLabel="MUEDnote"
+          nextHref="#muedial"
+          nextLabel="MUEDial"
           showPrevIcon={false}
         />
       </section>
 
-      {/* LP簡素化: MeetHoo/MUEDlobe/GrowthPreview非表示 (2026-02-24)
-      <MeetHooSection />
-      <section id="muedlobe" className="relative">
-        <MuedlobeHeroSection />
-        <MuedlobeOverviewSection />
+      {/* MUEDial Section */}
+      <section id="muedial" className="relative">
+        <MuedialHeroSection />
         <SectionNav
           prevHref="#muedear"
           prevLabel="MUEDear"
@@ -91,18 +89,14 @@ export function IntegratedLandingContent() {
           nextLabel="MUEDnote"
         />
       </section>
-      */}
 
       {/* MUEDnote Section */}
       <section id="muednote">
         <HeroSection />
         <PhilosophySection />
-        {/* LP簡素化: GrowthPreview非表示 (2026-02-24)
-        <GrowthPreviewSection />
-        */}
         <SectionNav
-          prevHref="#muedear"
-          prevLabel="MUEDear"
+          prevHref="#muedial"
+          prevLabel="MUEDial"
           nextHref="#"
           nextLabel={locale === "ja" ? "トップへ" : "Back to Top"}
           showNextIcon={false}
@@ -222,22 +216,21 @@ function FloatingNav() {
         <Music className="w-4 h-4" />
       </button>
 
-      {/* LP簡素化: MUEDlobe FloatingNav非表示 (2026-02-24)
+      {/* MUEDial button */}
       <button
-        onClick={() => scrollToSection("muedlobe")}
+        onClick={() => scrollToSection("muedial")}
         className="
           w-10 h-10 rounded-full
-          bg-[#1a1a1a] border border-violet-500/30
-          text-violet-400 hover:text-violet-300 hover:bg-[#222]
+          bg-[#1a1a1a] border border-amber-500/30
+          text-amber-400/70 hover:text-amber-300 hover:bg-[#222]
           transition-colors duration-200
           flex items-center justify-center
         "
-        aria-label="Go to MUEDlobe"
-        title="MUEDlobe"
+        aria-label="Go to MUEDial"
+        title="MUEDial"
       >
-        <Brain className="w-4 h-4" />
+        <Headphones className="w-4 h-4" />
       </button>
-      */}
 
       {/* MUEDear button */}
       <button
@@ -333,40 +326,17 @@ function FinalCtaSection() {
 
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <AppStoreButton href={MUEDEAR_APP_STORE_URL} color="amber" size="large" product="muedear" ctaLocation="final_cta" />
-            {/* LP簡素化: MUEDlobeボタン非表示 (2026-02-24)
-            <CtaButton variant="violet" href="/lobe">
-              {t("muedlobe")}
-            </CtaButton>
-            */}
+            <a
+              href="https://dial.mued.jp"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackCtaClick("muedial", "final_cta")}
+              className="inline-flex items-center px-5 py-3 bg-transparent border-2 border-amber-400 text-amber-400 hover:bg-amber-400 hover:text-black font-medium rounded-[var(--radius-lg)] transition-colors duration-200"
+            >
+              {t("muedial.button")}
+            </a>
             <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="indigo" size="large" product="muednote" ctaLocation="final_cta" />
           </div>
-
-          {/* MUEDial Card */}
-          <a
-            href="https://dial.mued.jp"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackCtaClick("muedial", "final_cta")}
-            className="mt-16 block max-w-lg mx-auto group"
-          >
-            <div className="rounded-[var(--radius-lg)] overflow-hidden border border-white/10 hover:border-amber-500/30 transition-colors">
-              <div className="relative aspect-[16/9]">
-                <Image
-                  src="/muedial-hoo-mixing-console.jpg"
-                  alt="MUEDial - AI Mixing"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="px-5 py-4 bg-black">
-                <p className="text-white font-medium mb-1">
-                  MUED<span className="text-amber-400">ial</span>
-                  <span className="text-white/50 text-sm ml-3">{t("muedial.tagline")}</span>
-                </p>
-                <p className="text-white/40 text-sm">{t("muedial.description")}</p>
-              </div>
-            </div>
-          </a>
         </div>
       </div>
     </section>
