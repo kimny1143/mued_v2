@@ -318,7 +318,13 @@ export class ProfileGeneratorService {
       const content = completion.choices[0]?.message?.content;
       if (!content) return {};
 
-      return JSON.parse(content) as Partial<UserProfileData>;
+      // Strip markdown code fences that LLMs sometimes add
+      const cleaned = content
+        .replace(/^```(?:json)?\n?/m, '')
+        .replace(/\n?```$/m, '')
+        .trim();
+
+      return JSON.parse(cleaned) as Partial<UserProfileData>;
     } catch (error) {
       logger.error('[ProfileGenerator] LLM extraction failed', { error });
       return {};

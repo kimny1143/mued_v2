@@ -3,8 +3,8 @@
  */
 
 import { db } from '@/db/edge';
-import { userProfiles, type UserProfileData, type NewUserProfile } from '@/db/schema/user-profiles';
-import { eq } from 'drizzle-orm';
+import { userProfiles, type UserProfileData } from '@/db/schema/user-profiles';
+import { eq, sql } from 'drizzle-orm';
 
 export class UserProfileRepository {
   async findByUserId(userId: string) {
@@ -17,35 +17,28 @@ export class UserProfileRepository {
     return profile ?? null;
   }
 
+  /** Atomic upsert — safe for concurrent fire-and-forget calls */
   async upsert(userId: string, data: UserProfileData, model?: string) {
-    const existing = await this.findByUserId(userId);
-
-    if (existing) {
-      const [updated] = await db
-        .update(userProfiles)
-        .set({
-          profileData: data,
-          updateCount: (existing.updateCount ?? 0) + 1,
-          generationModel: model ?? existing.generationModel,
-          updatedAt: new Date(),
-        })
-        .where(eq(userProfiles.userId, userId))
-        .returning();
-
-      return updated;
-    }
-
-    const [created] = await db
+    const [result] = await db
       .insert(userProfiles)
       .values({
         userId,
         profileData: data,
         generatedBy: 'system',
         generationModel: model,
-      } satisfies NewUserProfile)
+      })
+      .onConflictDoUpdate({
+        target: userProfiles.userId,
+        set: {
+          profileData: data,
+          updateCount: sql`${userProfiles.updateCount} + 1`,
+          generationModel: model ? sql`${model}` : userProfiles.generationModel,
+          updatedAt: new Date(),
+        },
+      })
       .returning();
 
-    return created;
+    return result;
   }
 
   async applyUserCorrections(userId: string, corrections: Partial<UserProfileData>) {
