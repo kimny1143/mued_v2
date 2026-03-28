@@ -96,13 +96,33 @@ export const POST = withAuth(async ({ userId, request }) => {
         // Only fetch full measurements when we need to build GameResult[]
         const allMeasurements = await cognitiveProfileRepository.findMeasurementsByUserId(userId);
 
-        // Build GameResult[] from latest measurement per game type
+        // Build GameResult[] from latest measurement per game type.
+        // Full-version results take priority over shortened versions
+        // (onboarding/break mode) to avoid profile degradation.
         const latestByGame = new Map<string, typeof allMeasurements[number]>();
         for (const m of allMeasurements) {
+          const rd = m.rawData as Record<string, unknown> | null;
+          const isShortened = rd?.isOnboarding === true || rd?.isBreak === true;
           const existing = latestByGame.get(m.gameType);
-          if (!existing || (m.measuredAt && existing.measuredAt && m.measuredAt > existing.measuredAt)) {
+
+          if (!existing) {
             latestByGame.set(m.gameType, m);
+            continue;
           }
+
+          const existingRd = existing.rawData as Record<string, unknown> | null;
+          const existingIsShortened = existingRd?.isOnboarding === true || existingRd?.isBreak === true;
+
+          if (existingIsShortened && !isShortened) {
+            // Current is full version, existing is shortened → prefer full
+            latestByGame.set(m.gameType, m);
+          } else if (existingIsShortened === isShortened) {
+            // Same type → prefer latest
+            if (m.measuredAt && existing.measuredAt && m.measuredAt > existing.measuredAt) {
+              latestByGame.set(m.gameType, m);
+            }
+          }
+          // else: existing is full, current is shortened → keep existing
         }
 
         const gameResults: GameResult[] = GAME_ORDER.map((gt) => {
