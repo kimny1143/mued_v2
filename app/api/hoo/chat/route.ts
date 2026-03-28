@@ -16,7 +16,7 @@ import { hooConversationsRepository } from '@/lib/repositories/hoo-conversations
 import { hooMemoriesRepository } from '@/lib/repositories/hoo-memories.repository';
 import { dawLogsRepository } from '@/lib/repositories/daw-logs.repository';
 import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
-import { getHooSystemPromptWithMemory, buildLobeContextPrompt } from '@/lib/ai/hoo-prompt';
+import { getHooSystemPrompt, getHooSystemPromptWithMemory, buildLobeContextPrompt } from '@/lib/ai/hoo-prompt';
 import { buildMusicalDawContext } from '@/lib/services/daw-log-interpreter.service';
 import { profileGeneratorService } from '@/lib/services/profile-generator.service';
 import { logger } from '@/lib/utils/logger';
@@ -31,14 +31,15 @@ import { logger } from '@/lib/utils/logger';
 
 /**
  * Context types for Hoo conversations (v1.2.0):
- * - profile: Discussing the user's musical profile, structured questions, preferences
+ * - profile: Discussing the user's musical profile with full context (DAW logs, sessions, MUEDlobe)
+ * - profile-collect: Lightweight profile collection — just ask about music preferences, no extra context
  * - care: Timer break reminders, wellness check-ins, rest suggestions
  * - lobe: Discussing MUEDlobe cognitive scores, strengths/growth areas, learning advice
  */
 const hooChatRequestSchema = z.object({
   conversationId: z.string().uuid().optional(),
   message: z.string().min(1).max(10000),
-  context: z.enum(['profile', 'care', 'lobe']),
+  context: z.enum(['profile', 'profile-collect', 'care', 'lobe']),
   includeSessionContext: z.boolean().optional(),
   localSessionContext: z.string().max(10000).optional(),
 });
@@ -99,84 +100,86 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     // Check subscription tier and usage
     const usageCheck = await subscriptionRepository.canUseHooConversation(internalUserId);
 
-    // Fetch custom instructions (memory)
-    const customInstructions = await hooMemoriesRepository.getCustomInstructions(internalUserId);
+    // ========================================
+    // Build system prompt (context-dependent)
+    // ========================================
 
-    // Fetch MUEDlobe special instructions for all users (free-ified)
-    let muedlobeInstructions: string[] | null = null;
-    try {
-      const hooConfig = await cognitiveProfileRepository.findHooConfig(clerkUserId);
-      if (hooConfig?.specialInstructions) {
-        muedlobeInstructions = hooConfig.specialInstructions as string[];
-      }
-    } catch (err) {
-      logger.warn('[POST /api/hoo/chat] MUEDlobe config fetch failed', { err });
-    }
+    let systemPrompt: string;
 
-    // Fetch session context if requested (uses Clerk ID for mobile sessions)
-    const sessionContext = includeSessionContext
-      ? await sessionRepository.getSessionContextForHoo(clerkUserId, 3)
-      : undefined;
+    if (context === 'profile-collect') {
+      // Lightweight: Hoo core personality only. No DAW logs, sessions, or MUEDlobe data.
+      // Used by mobile to collect music preferences via simple conversation.
+      systemPrompt = getHooSystemPrompt();
+      systemPrompt += `\n\n---\n\n## 会話コンテキスト: プロファイル収集\nユーザーの音楽的な好み・スタイル・経験を自然な会話で聞き出してください。\n\n### ルール\n- 1回の質問は1つだけ。矢継ぎ早に聞かない\n- 回答を深掘りしてから次の話題に移る\n- DAWの使用状況やセッションデータには言及しない（持っていない）\n- 認知スコアやテスト結果には言及しない\n- 短く親しみやすいトーンで`;
+    } else {
+      // Full context: custom instructions, MUEDlobe, sessions, DAW logs
+      const customInstructions = await hooMemoriesRepository.getCustomInstructions(internalUserId);
 
-    // Fetch DAW log context (uses Clerk ID — DAW logs store Clerk ID)
-    let dawLogContext: string | null = null;
-    try {
-      dawLogContext = await buildDawLogContextForUser(clerkUserId);
-    } catch (err) {
-      logger.warn('[POST /api/hoo/chat] DAW log context fetch failed', { err });
-    }
-
-    // Build system prompt with memory, MUEDlobe profile, and optional session context
-    let systemPrompt = getHooSystemPromptWithMemory(customInstructions, sessionContext, muedlobeInstructions);
-
-    // Append conversation context directive
-    if (context === 'profile') {
-      systemPrompt += `\n\n---\n\n## 会話コンテキスト: プロファイル\nこの会話はユーザーの音楽的プロファイル（好み・傾向・成長領域）について話しています。プロファイルの確認・修正・深掘りに集中してください。汎用的なチャットボットとして振る舞わないこと。`;
-    } else if (context === 'lobe') {
-      // Fetch cognitive profile for lobe context
+      let muedlobeInstructions: string[] | null = null;
       try {
-        const cogProfile = await cognitiveProfileRepository.findByUserId(clerkUserId);
-        if (cogProfile && cogProfile.wmScore != null) {
-          const lobePrompt = buildLobeContextPrompt(
-            {
-              wm: cogProfile.wmScore,
-              ps: cogProfile.psScore ?? 50,
-              vc: cogProfile.vcScore ?? 50,
-              pr: cogProfile.prScore ?? 50,
-              att: cogProfile.attScore ?? 50,
-            },
-            (cogProfile.significantPatterns ?? []) as string[]
-          );
-          systemPrompt += `\n\n---\n\n${lobePrompt}`;
-        } else {
-          systemPrompt += `\n\n---\n\n## 会話コンテキスト: MUEDlobe認知プロファイル\nこのユーザーはまだMUEDlobeの認知テストを完了していません。テストについて聞かれたら、7つのミニゲームで認知特性を測定できることを伝え、興味があればMUEDlobeページを案内してください。スコアがないことをネガティブに伝えないこと。`;
+        const hooConfig = await cognitiveProfileRepository.findHooConfig(clerkUserId);
+        if (hooConfig?.specialInstructions) {
+          muedlobeInstructions = hooConfig.specialInstructions as string[];
         }
       } catch (err) {
-        logger.warn('[POST /api/hoo/chat] Lobe context fetch failed', { err });
-        systemPrompt += `\n\n---\n\n## 会話コンテキスト: MUEDlobe認知プロファイル\n認知プロファイルの取得に失敗しました。ユーザーの質問には一般的な認知特性の知識で対応してください。`;
+        logger.warn('[POST /api/hoo/chat] MUEDlobe config fetch failed', { err });
       }
-    } else {
-      systemPrompt += `\n\n---\n\n## 会話コンテキスト: ケア\nこの会話はタイマー休憩やウェルネスチェックインの文脈です。短く優しいトーンで、休憩を促したり、制作のペースについてケアしてください。長い回答は不要です。`;
-    }
 
-    // Append DAW log context
-    if (dawLogContext) {
-      systemPrompt += `\n\n---\n\n${dawLogContext}`;
-    }
+      const sessionContext = includeSessionContext
+        ? await sessionRepository.getSessionContextForHoo(clerkUserId, 3)
+        : undefined;
 
-    // Append local device session context (includes unsynced transcriptions/memos)
-    if (localSessionContext) {
-      systemPrompt += `\n\n---\n\n## モバイルデバイスからの最新セッション情報\n\n以下はユーザーのデバイスから直接送られた最新のセッションデータです。サーバーにまだ同期されていない情報（文字起こし結果やメモ）を含みます。\nこのデータを会話の文脈として活用してください。\n\n${localSessionContext}`;
+      let dawLogContext: string | null = null;
+      try {
+        dawLogContext = await buildDawLogContextForUser(clerkUserId);
+      } catch (err) {
+        logger.warn('[POST /api/hoo/chat] DAW log context fetch failed', { err });
+      }
+
+      systemPrompt = getHooSystemPromptWithMemory(customInstructions, sessionContext, muedlobeInstructions);
+
+      // Append conversation context directive
+      if (context === 'profile') {
+        systemPrompt += `\n\n---\n\n## 会話コンテキスト: プロファイル\nこの会話はユーザーの音楽的プロファイル（好み・傾向・成長領域）について話しています。プロファイルの確認・修正・深掘りに集中してください。汎用的なチャットボットとして振る舞わないこと。`;
+      } else if (context === 'lobe') {
+        try {
+          const cogProfile = await cognitiveProfileRepository.findByUserId(clerkUserId);
+          if (cogProfile && cogProfile.wmScore != null) {
+            const lobePrompt = buildLobeContextPrompt(
+              {
+                wm: cogProfile.wmScore,
+                ps: cogProfile.psScore ?? 50,
+                vc: cogProfile.vcScore ?? 50,
+                pr: cogProfile.prScore ?? 50,
+                att: cogProfile.attScore ?? 50,
+              },
+              (cogProfile.significantPatterns ?? []) as string[]
+            );
+            systemPrompt += `\n\n---\n\n${lobePrompt}`;
+          } else {
+            systemPrompt += `\n\n---\n\n## 会話コンテキスト: MUEDlobe認知プロファイル\nこのユーザーはまだMUEDlobeの認知テストを完了していません。テストについて聞かれたら、7つのミニゲームで認知特性を測定できることを伝え、興味があればMUEDlobeページを案内してください。スコアがないことをネガティブに伝えないこと。`;
+          }
+        } catch (err) {
+          logger.warn('[POST /api/hoo/chat] Lobe context fetch failed', { err });
+          systemPrompt += `\n\n---\n\n## 会話コンテキスト: MUEDlobe認知プロファイル\n認知プロファイルの取得に失敗しました。ユーザーの質問には一般的な認知特性の知識で対応してください。`;
+        }
+      } else {
+        // care
+        systemPrompt += `\n\n---\n\n## 会話コンテキスト: ケア\nこの会話はタイマー休憩やウェルネスチェックインの文脈です。短く優しいトーンで、休憩を促したり、制作のペースについてケアしてください。長い回答は不要です。`;
+      }
+
+      if (dawLogContext) {
+        systemPrompt += `\n\n---\n\n${dawLogContext}`;
+      }
+
+      if (localSessionContext) {
+        systemPrompt += `\n\n---\n\n## モバイルデバイスからの最新セッション情報\n\n以下はユーザーのデバイスから直接送られた最新のセッションデータです。サーバーにまだ同期されていない情報（文字起こし結果やメモ）を含みます。\nこのデータを会話の文脈として活用してください。\n\n${localSessionContext}`;
+      }
     }
 
     logger.info('[POST /api/hoo/chat] System prompt built', {
       clerkUserId,
-      hasCustomInstructions: !!customInstructions,
-      hasMuedlobeInstructions: !!muedlobeInstructions,
-      muedlobeInstructionsCount: muedlobeInstructions?.length ?? 0,
-      hasSessionContext: sessionContext?.hasContext ?? false,
-      sessionCount: sessionContext?.recentSessions?.length ?? 0,
-      hasDawLogContext: !!dawLogContext,
+      context,
       hasLocalContext: !!localSessionContext,
       localContextLength: localSessionContext?.length ?? 0,
     });
