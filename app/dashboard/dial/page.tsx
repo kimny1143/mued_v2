@@ -7,6 +7,7 @@ import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
 import { Headphones, Music, Clock, CheckCircle, Loader2, Upload, ArrowRight, Download } from "lucide-react";
 import { SessionTitle } from "./session-title";
+import { CreditBalance } from "./credit-balance";
 
 const STATUS_ICONS = {
   uploading: { icon: Upload, color: "text-white/60" },
@@ -72,6 +73,8 @@ export default async function DialDashboardPage() {
 
   return (
     <div>
+      <CreditBalance t={t.dial.creditsBalance} />
+
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-white">{t.dial.dashboard.mixHistory}</h1>

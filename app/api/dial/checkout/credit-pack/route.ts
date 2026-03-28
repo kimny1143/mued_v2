@@ -82,7 +82,7 @@ export const POST = withAuth(async ({ userId, request }) => {
         credits: pack.credits.toString(),
       },
       billing_address_collection: 'required',
-      success_url: `${origin}/dial/dashboard?credit_pack=success`,
+      success_url: `${origin}/dashboard/dial?credit_pack=success`,
       cancel_url: `${origin}/dial/pricing?credit_pack=cancelled`,
     });
 
