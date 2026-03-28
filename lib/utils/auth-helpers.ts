@@ -8,15 +8,18 @@
  */
 
 import { db } from '@/db';
-import { users, sessions } from '@/db/schema';
+import { users, sessions, subscriptions } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { clerkClient } from '@clerk/nextjs/server';
+import { logger } from '@/lib/utils/logger';
 
 /**
- * Get internal user UUID from Clerk ID
+ * Get internal user UUID from Clerk ID.
+ * If the user doesn't exist in DB (webhook missed or DB record deleted),
+ * fetches user info from Clerk and creates the record automatically.
  *
  * @param clerkId - Clerk user ID from auth()
  * @returns Internal user UUID
- * @throws Error if user not found (webhook not configured)
  */
 export async function getUserIdFromClerkId(clerkId: string): Promise<string> {
   const [user] = await db
@@ -25,13 +28,38 @@ export async function getUserIdFromClerkId(clerkId: string): Promise<string> {
     .where(eq(users.clerkId, clerkId))
     .limit(1);
 
-  if (!user) {
-    throw new Error(
-      `User ${clerkId} not found in database. Please ensure Clerk webhooks are properly configured.`
-    );
+  if (user) {
+    return user.id;
   }
 
-  return user.id;
+  // Auto-create: fetch from Clerk and insert
+  logger.info('[getUserIdFromClerkId] User not in DB, auto-creating', { clerkId });
+
+  const clerk = await clerkClient();
+  const clerkUser = await clerk.users.getUser(clerkId);
+  const email = clerkUser.emailAddresses?.[0]?.emailAddress ?? 'unknown';
+  const name = `${clerkUser.firstName ?? ''} ${clerkUser.lastName ?? ''}`.trim() || 'Unknown';
+
+  const [newUser] = await db.transaction(async (tx) => {
+    const created = await tx.insert(users).values({
+      clerkId,
+      email,
+      name,
+      profileImageUrl: clerkUser.imageUrl,
+      role: 'student',
+    }).returning();
+
+    await tx.insert(subscriptions).values({
+      userId: created[0].id,
+      tier: 'free',
+      status: 'active',
+    });
+
+    return created;
+  });
+
+  logger.info('[getUserIdFromClerkId] User auto-created', { clerkId, internalId: newUser.id, email });
+  return newUser.id;
 }
 
 /**
