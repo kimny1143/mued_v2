@@ -114,8 +114,29 @@ const WORD_BRIDGE_QUESTIONS_JA = [
   { id: 12, wordA: '敵', wordB: '味方', options: [{ text: '関係性の分類', score: 2 }, { text: '人間関係', score: 1 }, { text: '戦いに関係する', score: 0 }, { text: 'スポーツにいる', score: 0 }] },
 ];
 
-const WORD_BRIDGE_CONFIG = {
+const WORD_BRIDGE_QUESTIONS_EN = [
+  { id: 1, wordA: 'Piano', wordB: 'Guitar', options: [{ text: 'Musical instrument', score: 2 }, { text: 'Makes sound', score: 1 }, { text: 'Made of wood', score: 0 }, { text: 'Expensive', score: 0 }] },
+  { id: 2, wordA: 'Poetry', wordB: 'Sculpture', options: [{ text: 'Work of art', score: 2 }, { text: 'Creative expression', score: 1 }, { text: 'Old', score: 0 }, { text: 'Studied in school', score: 0 }] },
+  { id: 3, wordA: 'Seed', wordB: 'Egg', options: [{ text: 'Origin of life', score: 2 }, { text: 'Something that grows', score: 1 }, { text: 'Small', score: 0 }, { text: 'Edible', score: 0 }] },
+  { id: 4, wordA: 'Mountain', wordB: 'Ocean', options: [{ text: 'Natural landform', score: 2 }, { text: 'Vast in scale', score: 1 }, { text: 'Travel destination', score: 0 }, { text: 'Seen in photos', score: 0 }] },
+  { id: 5, wordA: 'Anger', wordB: 'Joy', options: [{ text: 'Emotion', score: 2 }, { text: 'Human state', score: 1 }, { text: 'Shows on your face', score: 0 }, { text: 'Comes suddenly', score: 0 }] },
+  { id: 6, wordA: 'Clock', wordB: 'Calendar', options: [{ text: 'Time-keeping tool', score: 2 }, { text: 'Has numbers', score: 1 }, { text: 'Hangs on a wall', score: 0 }, { text: 'Checked daily', score: 0 }] },
+  { id: 7, wordA: 'Butterfly', wordB: 'Airplane', options: [{ text: 'Something that flies', score: 2 }, { text: 'Has wings', score: 1 }, { text: 'Fast', score: 0 }, { text: 'Found outdoors', score: 0 }] },
+  { id: 8, wordA: 'Democracy', wordB: 'Dictatorship', options: [{ text: 'Political system', score: 2 }, { text: 'Way of governing', score: 1 }, { text: 'Complicated', score: 0 }, { text: 'Heard in the news', score: 0 }] },
+  { id: 9, wordA: 'Memory', wordB: 'Imagination', options: [{ text: 'Mental faculty', score: 2 }, { text: 'Happens in your mind', score: 1 }, { text: 'Invisible', score: 0 }, { text: 'Unique to humans', score: 0 }] },
+  { id: 10, wordA: 'Reward', wordB: 'Punishment', options: [{ text: 'Consequence of action', score: 2 }, { text: 'Means of discipline', score: 1 }, { text: 'Exists in school', score: 0 }, { text: 'Happy or sad', score: 0 }] },
+  { id: 11, wordA: 'Beginning', wordB: 'End', options: [{ text: 'Temporal boundary', score: 2 }, { text: 'Opposing concept', score: 1 }, { text: 'A dividing point', score: 0 }, { text: 'Found in stories', score: 0 }] },
+  { id: 12, wordA: 'Enemy', wordB: 'Ally', options: [{ text: 'Category of relationship', score: 2 }, { text: 'Interpersonal role', score: 1 }, { text: 'Related to conflict', score: 0 }, { text: 'Found in sports', score: 0 }] },
+];
+
+const WORD_BRIDGE_CONFIG_JA = {
   questions: WORD_BRIDGE_QUESTIONS_JA,
+  maxScorePerQuestion: 2,
+  totalQuestions: 12,
+};
+
+const WORD_BRIDGE_CONFIG_EN = {
+  questions: WORD_BRIDGE_QUESTIONS_EN,
   maxScorePerQuestion: 2,
   totalQuestions: 12,
 };
@@ -177,8 +198,8 @@ export async function GET(request: NextRequest) {
 
   // Word Bridge questions are locale-dependent
   const wordBridgeConfig = locale === 'ja'
-    ? WORD_BRIDGE_CONFIG
-    : WORD_BRIDGE_CONFIG; // TODO: add English questions in Phase 3
+    ? WORD_BRIDGE_CONFIG_JA
+    : WORD_BRIDGE_CONFIG_EN;
 
   const config = {
     version: CONFIG_VERSION,
