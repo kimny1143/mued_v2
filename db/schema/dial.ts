@@ -211,8 +211,14 @@ export const dialPurchaseStatusEnum = pgEnum('dial_purchase_status', [
 ]);
 
 export const dialSubTierEnum = pgEnum('dial_sub_tier', [
-  'monthly_5',
-  'studio_15',
+  'basic',
+  'pro',
+  'studio',
+]);
+
+export const dialCreditPackSizeEnum = pgEnum('dial_credit_pack_size', [
+  'small',
+  'large',
 ]);
 
 /** One-time MUEDial purchases */
@@ -225,6 +231,7 @@ export const dialPurchases = pgTable('dial_purchases', {
   status: dialPurchaseStatusEnum('status').notNull().default('pending'),
   amountCents: integer('amount_cents').notNull(),
   currency: text('currency').notNull().default('usd'),
+  customerCountry: text('customer_country'), // ISO 3166-1 alpha-2 (e.g. "JP") — for tax classification
   stripeCheckoutSessionId: text('stripe_checkout_session_id'),
   stripePaymentIntentId: text('stripe_payment_intent_id'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -235,7 +242,7 @@ export const dialPurchases = pgTable('dial_purchases', {
   statusIdx: index('idx_dial_purchases_status').on(table.status),
 }));
 
-/** Monthly MUEDial mix credit subscriptions */
+/** Monthly MUEDial credit subscriptions */
 export const dialSubscriptions = pgTable('dial_subscriptions', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: text('user_id').notNull().references(() => users.clerkId), // login required
@@ -243,6 +250,7 @@ export const dialSubscriptions = pgTable('dial_subscriptions', {
   status: text('status').notNull().default('active'), // active/cancelled/past_due
   stripeSubscriptionId: text('stripe_subscription_id'),
   stripeCustomerId: text('stripe_customer_id'),
+  customerCountry: text('customer_country'), // ISO 3166-1 alpha-2 — for tax classification
   mixCreditsRemaining: integer('mix_credits_remaining').notNull(),
   mixCreditsTotal: integer('mix_credits_total').notNull(),
   currentPeriodStart: timestamp('current_period_start'),
@@ -254,6 +262,39 @@ export const dialSubscriptions = pgTable('dial_subscriptions', {
   userIdIdx: index('idx_dial_subscriptions_user_id').on(table.userId),
   statusIdx: index('idx_dial_subscriptions_status').on(table.status),
   stripeSubIdx: index('idx_dial_subscriptions_stripe_sub_id').on(table.stripeSubscriptionId),
+}));
+
+/** One-time credit pack purchases (overage, no rollover) */
+export const dialCreditPacks = pgTable('dial_credit_packs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => users.clerkId),
+  packSize: dialCreditPackSizeEnum('pack_size').notNull(),
+  credits: integer('credits').notNull(),
+  creditsRemaining: integer('credits_remaining').notNull(),
+  amountCents: integer('amount_cents').notNull(),
+  currency: text('currency').notNull().default('usd'),
+  customerCountry: text('customer_country'),
+  stripeCheckoutSessionId: text('stripe_checkout_session_id'),
+  stripePaymentIntentId: text('stripe_payment_intent_id'),
+  status: dialPurchaseStatusEnum('status').notNull().default('pending'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  completedAt: timestamp('completed_at'),
+}, (table) => ({
+  userIdIdx: index('idx_dial_credit_packs_user_id').on(table.userId),
+  statusIdx: index('idx_dial_credit_packs_status').on(table.status),
+}));
+
+/** Subscription credit grants with expiry (FIFO consumption) */
+export const dialCreditExpiry = pgTable('dial_credit_expiry', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  subscriptionId: uuid('subscription_id').notNull().references(() => dialSubscriptions.id, { onDelete: 'cascade' }),
+  credits: integer('credits').notNull(),        // Original grant amount
+  creditsRemaining: integer('credits_remaining').notNull(), // Remaining after consumption
+  grantedAt: timestamp('granted_at').notNull().defaultNow(),
+  expiresAt: timestamp('expires_at').notNull(),  // grantedAt + 3 months
+}, (table) => ({
+  subIdIdx: index('idx_dial_credit_expiry_sub_id').on(table.subscriptionId),
+  expiresAtIdx: index('idx_dial_credit_expiry_expires_at').on(table.expiresAt),
 }));
 
 // ========================================
@@ -316,7 +357,17 @@ export const dialPurchasesRelations = relations(dialPurchases, ({ one }) => ({
   }),
 }));
 
-export const dialSubscriptionsRelations = relations(dialSubscriptions, () => ({
-  // userId references users.clerkId, but drizzle relations use table references
-  // Access via direct query with userId filter
+export const dialSubscriptionsRelations = relations(dialSubscriptions, ({ many }) => ({
+  creditGrants: many(dialCreditExpiry),
+}));
+
+export const dialCreditPacksRelations = relations(dialCreditPacks, () => ({
+  // userId references users.clerkId — access via direct query
+}));
+
+export const dialCreditExpiryRelations = relations(dialCreditExpiry, ({ one }) => ({
+  subscription: one(dialSubscriptions, {
+    fields: [dialCreditExpiry.subscriptionId],
+    references: [dialSubscriptions.id],
+  }),
 }));
