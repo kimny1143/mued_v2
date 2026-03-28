@@ -9,6 +9,7 @@ import { eq, desc, sql, and, gte } from "drizzle-orm";
 import { MuednoteTabs } from "./muednote-tabs";
 import { MuednoteDashboardContent } from "./muednote-dashboard-content";
 import { hooMemoriesRepository } from "@/lib/repositories/hoo-memories.repository";
+import { getUserIdFromClerkId } from "@/lib/utils/auth-helpers";
 
 /**
  * MUEDnote Dashboard - "Hoo's View of You"
@@ -19,6 +20,10 @@ import { hooMemoriesRepository } from "@/lib/repositories/hoo-memories.repositor
 export default async function MuednoteDashboardPage() {
   const user = await currentUser();
   if (!user) redirect("/sign-in");
+
+  // Resolve internal UUID for tables that reference users.id (UUID)
+  // cognitiveProfiles and muednoteMobileSessions use Clerk ID (text) directly
+  const internalUserId = await getUserIdFromClerkId(user.id);
 
   // Fetch all data sources in parallel
   const [
@@ -40,14 +45,14 @@ export default async function MuednoteDashboardPage() {
       .limit(1)
       .then((rows) => rows[0] ?? null),
 
-    // Hoo conversation stats
+    // Hoo conversation stats (hooConversations.userId is UUID)
     db
       .select({
         totalConversations: sql<number>`count(*)`,
         totalMessages: sql<number>`COALESCE(sum(message_count), 0)`,
       })
       .from(hooConversations)
-      .where(eq(hooConversations.userId, user.id))
+      .where(eq(hooConversations.userId, internalUserId))
       .then((rows) => ({
         totalConversations: Number(rows[0]?.totalConversations ?? 0),
         totalMessages: Number(rows[0]?.totalMessages ?? 0),
@@ -62,12 +67,12 @@ export default async function MuednoteDashboardPage() {
         updatedAt: hooConversations.updatedAt,
       })
       .from(hooConversations)
-      .where(eq(hooConversations.userId, user.id))
+      .where(eq(hooConversations.userId, internalUserId))
       .orderBy(desc(hooConversations.updatedAt))
       .limit(3),
 
-    // Custom instructions (Hoo memory)
-    hooMemoriesRepository.getCustomInstructions(user.id),
+    // Custom instructions (hooMemories.userId is UUID)
+    hooMemoriesRepository.getCustomInstructions(internalUserId),
 
     // Session count
     db
