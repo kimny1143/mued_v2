@@ -1451,7 +1451,8 @@
       "creditPackSmall": "スモールパック",
       "creditPackLarge": "ラージパック",
       "buyCredits": "購入する",
-      "noRollover": "繰越不可・即時利用"
+      "noRollover": "繰越不可・即時利用",
+      "creditUsage": "クレジット消費量"
     },
     "creditsBalance": {
       "title": "クレジット",

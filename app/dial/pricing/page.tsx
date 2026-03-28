@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { useUser } from '@clerk/nextjs';
-import { Check, Zap, CreditCard, ArrowRight } from 'lucide-react';
+import { Check, Zap, CreditCard, ArrowRight, AlertCircle } from 'lucide-react';
 import {
   DIAL_SUB_PLANS,
   DIAL_CREDIT_PACKS,
@@ -34,10 +34,16 @@ export default function DialPricingPage() {
   const { t } = useLocale();
   const { isSignedIn } = useUser();
   const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const p = t.dial.pricing;
+
+  const clearError = useCallback(() => {
+    if (error) setTimeout(() => setError(null), 5000);
+  }, [error]);
 
   async function handleSubscribe(tier: DialSubTier) {
     setLoading(tier);
+    setError(null);
     try {
       const res = await fetch('/api/dial/checkout/subscription', {
         method: 'POST',
@@ -47,7 +53,13 @@ export default function DialPricingPage() {
       const data = await res.json();
       if (data.success && data.data?.url) {
         window.location.href = data.data.url;
+      } else {
+        setError(data.error?.message || 'Checkout failed. Please try again.');
+        clearError();
       }
+    } catch {
+      setError('Network error. Please try again.');
+      clearError();
     } finally {
       setLoading(null);
     }
@@ -55,6 +67,7 @@ export default function DialPricingPage() {
 
   async function handleBuyCreditPack(packSize: DialCreditPackSize) {
     setLoading(packSize);
+    setError(null);
     try {
       const res = await fetch('/api/dial/checkout/credit-pack', {
         method: 'POST',
@@ -64,7 +77,13 @@ export default function DialPricingPage() {
       const data = await res.json();
       if (data.success && data.data?.url) {
         window.location.href = data.data.url;
+      } else {
+        setError(data.error?.message || 'Checkout failed. Please try again.');
+        clearError();
       }
+    } catch {
+      setError('Network error. Please try again.');
+      clearError();
     } finally {
       setLoading(null);
     }
@@ -89,6 +108,14 @@ export default function DialPricingPage() {
           )}
         </div>
       </nav>
+
+      {/* Error toast */}
+      {error && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 bg-red-500/90 backdrop-blur-sm text-white text-sm rounded-xl shadow-lg">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
 
       <div className="max-w-6xl mx-auto px-4 py-16">
         {/* Header */}
@@ -186,7 +213,7 @@ export default function DialPricingPage() {
 
         {/* Credit Usage Table */}
         <div className="mb-20">
-          <h3 className="text-lg font-bold text-center mb-6">Credit Usage</h3>
+          <h3 className="text-lg font-bold text-center mb-6">{p.creditUsage}</h3>
           <div className="max-w-md mx-auto bg-white/[0.03] rounded-xl border border-white/10 overflow-hidden">
             {Object.entries(DIAL_CREDIT_COSTS).map(([op, cr]) => (
               <div key={op} className="flex items-center justify-between px-5 py-3 border-b border-white/5 last:border-0">

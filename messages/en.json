@@ -1451,7 +1451,8 @@
       "creditPackSmall": "Small Pack",
       "creditPackLarge": "Large Pack",
       "buyCredits": "Buy Credits",
-      "noRollover": "No rollover — use immediately"
+      "noRollover": "No rollover — use immediately",
+      "creditUsage": "Credit Usage"
     },
     "creditsBalance": {
       "title": "Credits",
