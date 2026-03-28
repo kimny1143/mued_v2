@@ -12,6 +12,7 @@ export {
   getHooSystemPromptWithContext,
   buildCustomInstructionsPrompt,
   buildMuedlobeInstructionsPrompt,
+  buildLobeContextPrompt,
   getHooSystemPromptWithMemory,
 } from './prompts/hoo';
 

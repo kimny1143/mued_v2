@@ -229,13 +229,62 @@ ${specialInstructions.map(i => `- ${i}`).join('\n')}`;
 }
 
 /**
+ * Build MUEDlobe cognitive score context for "lobe" conversation context.
+ * Provides Hoo with the user's scores and guidance on how to discuss them.
+ */
+export function buildLobeContextPrompt(scores: {
+  wm: number;
+  ps: number;
+  vc: number;
+  pr: number;
+  att: number;
+}, patterns: string[]): string {
+  const scoreLabels: Record<string, string> = {
+    wm: 'ワーキングメモリ（情報を保持・操作する力）',
+    ps: '処理速度（素早く正確に反応する力）',
+    vc: '言語理解（言葉で概念を捉える力）',
+    pr: '知覚推理（パターンを見抜く力）',
+    att: '注意力（集中を維持する力）',
+  };
+
+  const tierLabel = (score: number): string => {
+    if (score >= 70) return '高め';
+    if (score >= 40) return '標準的';
+    return '伸びしろあり';
+  };
+
+  const scoreLines = Object.entries(scores)
+    .map(([key, value]) => `- **${scoreLabels[key]}**: ${value}/100（${tierLabel(value)}）`)
+    .join('\n');
+
+  const patternSection = patterns.length > 0
+    ? `\n\n### 特徴的なパターン\n${patterns.map(p => `- ${p}`).join('\n')}`
+    : '';
+
+  return `## 会話コンテキスト: MUEDlobe認知プロファイル
+
+この会話ではユーザーのMUEDlobe認知テスト結果について話しています。
+
+### ユーザーの認知スコア
+${scoreLines}${patternSection}
+
+### Hooの振る舞い
+- スコアを「良い/悪い」で判断しない。認知特性に優劣はない
+- 音楽制作との関連で解釈する（例: ワーキングメモリが高い→複雑なアレンジを同時に把握しやすい）
+- ユーザーの強みを具体的な制作場面に結びつける
+- 伸びしろがある領域は、DAWの機能やワークフローの工夫で補える方法を提案する
+- 「テストの数値が全てではない」というスタンスを持つ。実際の制作経験の方が重要
+- ユーザーが質問したことに答える。スコアの全項目を一方的に解説しない`;
+}
+
+/**
  * Get the full Hoo system prompt with memory and optional session context
  *
  * Prompt construction order:
  * 1. Level 1 Core (basic character)
  * 2. Level 2 Extended (advanced techniques)
  * 3. Custom Instructions (user-provided context)
- * 4. MUEDlobe Instructions (cognitive profile, Premium only)
+ * 4. MUEDlobe Instructions (cognitive profile)
  * 5. Session Context (recent sessions)
  */
 export function getHooSystemPromptWithMemory(
