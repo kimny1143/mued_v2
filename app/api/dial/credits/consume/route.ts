@@ -7,16 +7,25 @@
  *   1. Subscription grants — FIFO by expiry date (earliest first)
  *   2. Credit packs — FIFO by purchase date (earliest first)
  *
+ * Uses SELECT FOR UPDATE to prevent double-consumption on concurrent requests.
+ * Throws inside transaction to rollback on insufficient credits.
+ *
  * Requires Clerk authentication.
  */
 
 import { z } from 'zod';
-import { and, eq, gt, asc } from 'drizzle-orm';
+import { and, eq, gt, asc, sql } from 'drizzle-orm';
 import { withAuth } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
 import { db } from '@/db';
 import { dialCreditExpiry, dialCreditPacks, dialSubscriptions } from '@/db/schema/dial';
 import { DIAL_CREDIT_COSTS, type DialCreditOperation } from '@/lib/dial/pricing';
+
+class InsufficientCreditsError extends Error {
+  constructor(public cost: number, public shortfall: number) {
+    super(`Insufficient credits. Need ${cost}cr, short by ${shortfall}cr.`);
+  }
+}
 
 const consumeSchema = z.object({
   operation: z.enum([
@@ -37,10 +46,11 @@ export const POST = withAuth(async ({ userId, request }) => {
     const { operation } = parsed.data;
     const cost = DIAL_CREDIT_COSTS[operation as DialCreditOperation];
     const now = new Date();
-    let remaining = cost;
 
-    // Use a transaction to ensure atomicity
-    const result = await db.transaction(async (tx) => {
+    // Transaction with rollback on insufficient credits
+    await db.transaction(async (tx) => {
+      let remaining = cost;
+
       // 1. Get active subscription
       const [subscription] = await tx
         .select({ id: dialSubscriptions.id })
@@ -51,7 +61,7 @@ export const POST = withAuth(async ({ userId, request }) => {
         ))
         .limit(1);
 
-      // 2. Consume from subscription grants (FIFO by expiry)
+      // 2. Consume from subscription grants (FIFO by expiry, with row lock)
       if (subscription && remaining > 0) {
         const grants = await tx
           .select()
@@ -61,7 +71,8 @@ export const POST = withAuth(async ({ userId, request }) => {
             gt(dialCreditExpiry.creditsRemaining, 0),
             gt(dialCreditExpiry.expiresAt, now),
           ))
-          .orderBy(asc(dialCreditExpiry.expiresAt));
+          .orderBy(asc(dialCreditExpiry.expiresAt))
+          .for('update');
 
         for (const grant of grants) {
           if (remaining <= 0) break;
@@ -74,7 +85,7 @@ export const POST = withAuth(async ({ userId, request }) => {
         }
       }
 
-      // 3. Consume from credit packs (FIFO by purchase date)
+      // 3. Consume from credit packs (FIFO by purchase date, with row lock)
       if (remaining > 0) {
         const packs = await tx
           .select()
@@ -84,7 +95,8 @@ export const POST = withAuth(async ({ userId, request }) => {
             eq(dialCreditPacks.status, 'completed'),
             gt(dialCreditPacks.creditsRemaining, 0),
           ))
-          .orderBy(asc(dialCreditPacks.completedAt));
+          .orderBy(asc(dialCreditPacks.completedAt))
+          .for('update');
 
         for (const pack of packs) {
           if (remaining <= 0) break;
@@ -97,14 +109,15 @@ export const POST = withAuth(async ({ userId, request }) => {
         }
       }
 
+      // Insufficient credits — throw to rollback entire transaction
       if (remaining > 0) {
-        return { success: false, shortfall: remaining };
+        throw new InsufficientCreditsError(cost, remaining);
       }
 
       // 4. Update subscription's aggregate counter
       if (subscription) {
         const totalSubCredits = await tx
-          .select()
+          .select({ cr: sql<number>`COALESCE(SUM(${dialCreditExpiry.creditsRemaining}), 0)` })
           .from(dialCreditExpiry)
           .where(and(
             eq(dialCreditExpiry.subscriptionId, subscription.id),
@@ -112,34 +125,27 @@ export const POST = withAuth(async ({ userId, request }) => {
             gt(dialCreditExpiry.expiresAt, now),
           ));
 
-        const newRemaining = totalSubCredits.reduce(
-          (sum, g) => sum + g.creditsRemaining, 0
-        );
-
         await tx
           .update(dialSubscriptions)
           .set({
-            mixCreditsRemaining: newRemaining,
+            mixCreditsRemaining: totalSubCredits[0]?.cr ?? 0,
             updatedAt: now,
           })
           .where(eq(dialSubscriptions.id, subscription.id));
       }
-
-      return { success: true, shortfall: 0 };
     });
-
-    if (!result.success) {
-      return apiValidationError(
-        `Insufficient credits. Need ${cost}cr, short by ${result.shortfall}cr.`,
-        [{ path: ['credits'], message: `Insufficient credits` }]
-      );
-    }
 
     return apiSuccess({
       operation,
       creditsConsumed: cost,
     });
   } catch (error) {
+    if (error instanceof InsufficientCreditsError) {
+      return apiValidationError(
+        error.message,
+        [{ path: ['credits'], message: `Need ${error.cost}cr, short by ${error.shortfall}cr` }]
+      );
+    }
     return apiServerError(error instanceof Error ? error.message : 'Failed to consume credits');
   }
 });

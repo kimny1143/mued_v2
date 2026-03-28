@@ -9,6 +9,10 @@ ALTER TYPE "dial_sub_tier" ADD VALUE IF NOT EXISTS 'basic';
 ALTER TYPE "dial_sub_tier" ADD VALUE IF NOT EXISTS 'pro';
 ALTER TYPE "dial_sub_tier" ADD VALUE IF NOT EXISTS 'studio';
 
+-- 1b. Migrate existing records from old tier values to new ones
+UPDATE "dial_subscriptions" SET "tier" = 'basic' WHERE "tier" = 'monthly_5';
+UPDATE "dial_subscriptions" SET "tier" = 'studio' WHERE "tier" = 'studio_15';
+
 -- 2. Create credit pack size enum
 DO $$ BEGIN
   CREATE TYPE "dial_credit_pack_size" AS ENUM ('small', 'large');

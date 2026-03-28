@@ -1032,7 +1032,7 @@ async function handleDialCreditPackCompleted(
 
   const customerCountry = session.customer_details?.address?.country || null;
 
-  await tx
+  const result = await tx
     .update(dialCreditPacks)
     .set({
       status: 'completed',
@@ -1040,7 +1040,13 @@ async function handleDialCreditPackCompleted(
       stripePaymentIntentId: session.payment_intent as string,
       completedAt: new Date(),
     })
-    .where(eq(dialCreditPacks.id, creditPackId));
+    .where(eq(dialCreditPacks.id, creditPackId))
+    .returning({ id: dialCreditPacks.id });
+
+  if (result.length === 0) {
+    logger.error(`[Dial Webhook] Credit pack not found: ${creditPackId} for user: ${userId}`);
+    return;
+  }
 
   logger.info(`[Dial Webhook] Credit pack completed: ${creditPackId} for user: ${userId} (country: ${customerCountry})`);
 }
