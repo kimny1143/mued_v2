@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { db } from "@/db";
-import { reservations, subscriptions, users, webhookEvents, lessonSlots, dialSessions, dialPurchases, dialSubscriptions } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { reservations, subscriptions, users, webhookEvents, lessonSlots, dialSessions, dialPurchases, dialSubscriptions, dialCreditPacks, dialCreditExpiry } from "@/db/schema";
+import { eq, sql, and, gt } from "drizzle-orm";
+import { DIAL_SUB_PLANS, CREDIT_EXPIRY_MONTHS, type DialSubTier } from '@/lib/dial/pricing';
 import { validateStripeConfig } from "@/lib/utils/env";
 import { logger } from "@/lib/utils/logger";
 import { notificationService } from "@/lib/services/notification.service";
@@ -149,6 +150,8 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
       if (session.metadata?.service === 'dial') {
         if (session.metadata.purchaseType === 'additional_cycle') {
           await handleDialAdditionalCycle(tx, session);
+        } else if (session.metadata.purchaseType === 'credit_pack') {
+          await handleDialCreditPackCompleted(tx, session);
         } else {
           await handleDialCheckoutCompleted(tx, session);
         }
@@ -514,16 +517,43 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         .limit(1);
 
       if (dialSub) {
+        // Grant new credits with 3-month expiry (don't wipe existing unexpired grants)
+        const grantedAt = new Date();
+        const expiresAt = new Date(grantedAt);
+        expiresAt.setMonth(expiresAt.getMonth() + CREDIT_EXPIRY_MONTHS);
+
+        await tx.insert(dialCreditExpiry).values({
+          subscriptionId: dialSub.id,
+          credits: dialSub.mixCreditsTotal,
+          creditsRemaining: dialSub.mixCreditsTotal,
+          grantedAt,
+          expiresAt,
+        });
+
+        // Recalculate total remaining (all non-expired grants)
+        const validGrants = await tx
+          .select()
+          .from(dialCreditExpiry)
+          .where(and(
+            eq(dialCreditExpiry.subscriptionId, dialSub.id),
+            gt(dialCreditExpiry.creditsRemaining, 0),
+            gt(dialCreditExpiry.expiresAt, grantedAt),
+          ));
+
+        const totalRemaining = validGrants.reduce(
+          (sum, g) => sum + g.creditsRemaining, 0
+        );
+
         await tx
           .update(dialSubscriptions)
           .set({
-            mixCreditsRemaining: dialSub.mixCreditsTotal,
+            mixCreditsRemaining: totalRemaining,
             status: 'active',
-            updatedAt: new Date(),
+            updatedAt: grantedAt,
           })
           .where(eq(dialSubscriptions.id, dialSub.id));
 
-        logger.debug(`MUEDial credits reset for subscription: ${subscriptionId}`);
+        logger.debug(`MUEDial ${dialSub.mixCreditsTotal}cr granted for subscription: ${subscriptionId} (total remaining: ${totalRemaining}cr, expires: ${expiresAt.toISOString()})`);
         break;
       }
 
@@ -790,9 +820,11 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
 // MUEDial Webhook Handlers
 // ========================================
 
+// Credit amounts per tier — sourced from pricing constants
 const DIAL_SUB_CREDITS: Record<string, number> = {
-  monthly_5: 5,
-  studio_15: 15,
+  basic: DIAL_SUB_PLANS.basic.credits,
+  pro: DIAL_SUB_PLANS.pro.credits,
+  studio: DIAL_SUB_PLANS.studio.credits,
 };
 
 async function handleDialCheckoutCompleted(
@@ -816,11 +848,13 @@ async function handleDialCheckoutCompleted(
     }
 
     // Update all purchase records
+    const customerCountry = session.customer_details?.address?.country || null;
     for (const pid of purchaseIds) {
       await tx
         .update(dialPurchases)
         .set({
           status: 'completed',
+          customerCountry,
           stripePaymentIntentId: session.payment_intent as string,
           completedAt: new Date(),
         })
@@ -869,7 +903,8 @@ async function handleDialCheckoutCompleted(
 
     const stripeSubscriptionId = session.subscription as string;
     const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId) as unknown as StripeSubscriptionWithPeriods;
-    const totalCredits = parseInt(credits || '0') || DIAL_SUB_CREDITS[tier] || 5;
+    const totalCredits = parseInt(credits || '0') || DIAL_SUB_CREDITS[tier] || 1000;
+    const customerCountry = session.customer_details?.address?.country || null;
 
     // Upsert dial subscription
     const [existingSub] = await tx
@@ -878,14 +913,17 @@ async function handleDialCheckoutCompleted(
       .where(eq(dialSubscriptions.userId, userId))
       .limit(1);
 
+    let subscriptionId: string;
+
     if (existingSub) {
       await tx
         .update(dialSubscriptions)
         .set({
-          tier: tier as 'monthly_5' | 'studio_15',
+          tier: tier as DialSubTier,
           status: 'active',
           stripeSubscriptionId,
           stripeCustomerId: session.customer as string,
+          customerCountry,
           mixCreditsRemaining: totalCredits,
           mixCreditsTotal: totalCredits,
           currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
@@ -894,21 +932,37 @@ async function handleDialCheckoutCompleted(
           updatedAt: new Date(),
         })
         .where(eq(dialSubscriptions.id, existingSub.id));
+      subscriptionId = existingSub.id;
     } else {
-      await tx.insert(dialSubscriptions).values({
+      const [newSub] = await tx.insert(dialSubscriptions).values({
         userId,
-        tier: tier as 'monthly_5' | 'studio_15',
+        tier: tier as DialSubTier,
         status: 'active',
         stripeSubscriptionId,
         stripeCustomerId: session.customer as string,
+        customerCountry,
         mixCreditsRemaining: totalCredits,
         mixCreditsTotal: totalCredits,
         currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
         currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
-      });
+      }).returning({ id: dialSubscriptions.id });
+      subscriptionId = newSub.id;
     }
 
-    logger.info(`[Dial Webhook] Subscription created: ${stripeSubscriptionId} for user: ${userId}`);
+    // Create credit grant with 3-month expiry
+    const grantedAt = new Date();
+    const expiresAt = new Date(grantedAt);
+    expiresAt.setMonth(expiresAt.getMonth() + CREDIT_EXPIRY_MONTHS);
+
+    await tx.insert(dialCreditExpiry).values({
+      subscriptionId,
+      credits: totalCredits,
+      creditsRemaining: totalCredits,
+      grantedAt,
+      expiresAt,
+    });
+
+    logger.info(`[Dial Webhook] Subscription created: ${stripeSubscriptionId} for user: ${userId}, ${totalCredits}cr granted (expires ${expiresAt.toISOString()})`);
   }
 }
 
@@ -963,6 +1017,38 @@ async function handleDialAdditionalCycle(
       logger.error('[Dial Webhook] Failed to send additional cycle notification', { error });
     }
   });
+}
+
+async function handleDialCreditPackCompleted(
+  tx: Transaction,
+  session: Stripe.Checkout.Session,
+) {
+  const { creditPackId, userId } = session.metadata || {};
+
+  if (!creditPackId || !userId) {
+    logger.error('[Dial Webhook] Missing metadata for credit pack purchase');
+    return;
+  }
+
+  const customerCountry = session.customer_details?.address?.country || null;
+
+  const result = await tx
+    .update(dialCreditPacks)
+    .set({
+      status: 'completed',
+      customerCountry,
+      stripePaymentIntentId: session.payment_intent as string,
+      completedAt: new Date(),
+    })
+    .where(eq(dialCreditPacks.id, creditPackId))
+    .returning({ id: dialCreditPacks.id });
+
+  if (result.length === 0) {
+    logger.error(`[Dial Webhook] Credit pack not found: ${creditPackId} for user: ${userId}`);
+    return;
+  }
+
+  logger.info(`[Dial Webhook] Credit pack completed: ${creditPackId} for user: ${userId} (country: ${customerCountry})`);
 }
 
 async function handleDialSubscriptionUpdated(
