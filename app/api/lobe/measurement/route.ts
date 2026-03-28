@@ -97,40 +97,30 @@ export const POST = withAuth(async ({ userId, request }) => {
         const allMeasurements = await cognitiveProfileRepository.findMeasurementsByUserId(userId);
 
         // Build GameResult[] from latest measurement per game type.
-        // Full-version results take priority over shortened versions
-        // (onboarding/break mode) to avoid profile degradation.
+        // All submitted data is treated equally (user confirms before sending).
         const latestByGame = new Map<string, typeof allMeasurements[number]>();
         for (const m of allMeasurements) {
-          const rd = m.rawData as Record<string, unknown> | null;
-          const isShortened = rd?.isOnboarding === true || rd?.isBreak === true;
           const existing = latestByGame.get(m.gameType);
-
-          if (!existing) {
+          if (!existing || (m.measuredAt && existing.measuredAt && m.measuredAt > existing.measuredAt)) {
             latestByGame.set(m.gameType, m);
-            continue;
           }
-
-          const existingRd = existing.rawData as Record<string, unknown> | null;
-          const existingIsShortened = existingRd?.isOnboarding === true || existingRd?.isBreak === true;
-
-          if (existingIsShortened && !isShortened) {
-            // Current is full version, existing is shortened → prefer full
-            latestByGame.set(m.gameType, m);
-          } else if (existingIsShortened === isShortened) {
-            // Same type → prefer latest
-            if (m.measuredAt && existing.measuredAt && m.measuredAt > existing.measuredAt) {
-              latestByGame.set(m.gameType, m);
-            }
-          }
-          // else: existing is full, current is shortened → keep existing
         }
 
         const gameResults: GameResult[] = GAME_ORDER.map((gt) => {
           const m = latestByGame.get(gt)!;
           const score = m.calculatedScore as Record<string, unknown> | null;
+          const rd = m.rawData as Record<string, unknown> | null;
+          // Fallback: derive rawScore from rawData if calculatedScore is missing
+          const rawScore = Number(
+            score?.rawScore
+            ?? score?.totalScore
+            ?? rd?.rawScore
+            ?? rd?.totalScore
+            ?? (typeof rd?.correct === 'number' ? rd.correct - Number(rd?.incorrect ?? 0) : 0)
+          );
           return {
             gameType: gt,
-            rawScore: Number((score?.rawScore ?? score?.totalScore ?? 0)),
+            rawScore,
             rawData: m.rawData as Record<string, unknown>,
             completedAt: m.measuredAt?.toISOString() ?? new Date().toISOString(),
           };
