@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import { MuednoteLayout } from "@/components/layouts/muednote-layout";
 import { db } from "@/db";
 import { muednoteMobileSessions } from "@/db/schema/muednote-mobile";
-import { cognitiveProfiles } from "@/db/schema/cognitive-profiles";
-import { hooConversations } from "@/db/schema";
+import { cognitiveProfiles, measurementHistory } from "@/db/schema/cognitive-profiles";
+import { hooConversations, userProfiles } from "@/db/schema";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
 import { MuednoteTabs } from "./muednote-tabs";
 import { MuednoteDashboardContent } from "./muednote-dashboard-content";
@@ -36,6 +36,8 @@ export default async function MuednoteDashboardPage() {
     todayResult,
     weekResult,
     monthResult,
+    gameCompletions,
+    userProfile,
   ] = await Promise.all([
     // MUEDlobe cognitive profile
     db
@@ -147,6 +149,24 @@ export default async function MuednoteDashboardPage() {
           )
         );
     })(),
+
+    // MUEDlobe game completions (distinct game types completed)
+    db
+      .select({
+        gameType: measurementHistory.gameType,
+        measuredAt: sql<string>`MAX(${measurementHistory.measuredAt})`,
+      })
+      .from(measurementHistory)
+      .where(eq(measurementHistory.userId, user.id))
+      .groupBy(measurementHistory.gameType),
+
+    // User profile (for completeness check)
+    db
+      .select()
+      .from(userProfiles)
+      .where(eq(userProfiles.userId, internalUserId))
+      .limit(1)
+      .then((rows) => rows[0] ?? null),
   ]);
 
   const sessionCount = Number(sessionsResult[0]?.count) || 0;
@@ -157,6 +177,21 @@ export default async function MuednoteDashboardPage() {
     if (hours > 0) return { value: hours, unit: "h", sub: `${mins}m` };
     return { value: mins, unit: "m", sub: null };
   };
+
+  // Build game completion set
+  const completedGames = new Set(gameCompletions.map((g) => g.gameType));
+
+  // Calculate profile completeness
+  const profileChecks = {
+    gamesCompleted: completedGames.size >= 7,
+    hasProfile: !!cognitiveProfile,
+    hasCustomInstructions: !!customInstructions,
+    hasConversations: hooStats.totalConversations > 0,
+    hasSessions: sessionCount > 0,
+    hasUserProfile: !!userProfile,
+  };
+  const completenessTotal = Object.values(profileChecks).filter(Boolean).length;
+  const completenessMax = Object.keys(profileChecks).length;
 
   // Build profile data for client
   const profileData = {
@@ -193,6 +228,15 @@ export default async function MuednoteDashboardPage() {
       durationSec: s.durationSec,
       createdAt: s.createdAt?.toISOString() ?? null,
     })),
+    gameProgress: {
+      completedGames: Array.from(completedGames),
+      totalGames: 7,
+    },
+    completeness: {
+      score: completenessTotal,
+      max: completenessMax,
+      checks: profileChecks,
+    },
   };
 
   const userName = user.firstName || user.username || "Creator";

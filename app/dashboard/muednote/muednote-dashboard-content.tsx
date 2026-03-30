@@ -5,9 +5,9 @@ import {
   MessageCircle,
   Clock,
   ArrowRight,
-  User,
+  CheckCircle,
+  Circle,
   Pencil,
-  HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "@/lib/i18n/locale-context";
@@ -56,12 +56,50 @@ interface ProfileData {
     durationSec: number;
     createdAt: string | null;
   }[];
+  gameProgress: {
+    completedGames: string[];
+    totalGames: number;
+  };
+  completeness: {
+    score: number;
+    max: number;
+    checks: {
+      gamesCompleted: boolean;
+      hasProfile: boolean;
+      hasCustomInstructions: boolean;
+      hasConversations: boolean;
+      hasSessions: boolean;
+      hasUserProfile: boolean;
+    };
+  };
 }
 
 interface MuednoteDashboardContentProps {
   userName: string;
   profile: ProfileData;
 }
+
+// ========================================
+// Game definitions (mirrors lib/muedlobe/constants.ts)
+// ========================================
+
+const GAMES = [
+  { type: "tone-sequence", name: "Tone Sequence", nameJa: "音系列記憶", variable: "WM" },
+  { type: "mental-math", name: "Mental Math", nameJa: "メンタルマス", variable: "WM" },
+  { type: "symbol-match", name: "Symbol Match", nameJa: "シンボルマッチ", variable: "PS" },
+  { type: "code-fill", name: "Code Fill", nameJa: "コードフィル", variable: "PS" },
+  { type: "word-bridge", name: "Word Bridge", nameJa: "ワードブリッジ", variable: "VC" },
+  { type: "pattern-complete", name: "Pattern Complete", nameJa: "パターンコンプリート", variable: "PR" },
+  { type: "focus-flow", name: "Focus Flow", nameJa: "フォーカスフロー", variable: "ATT" },
+];
+
+const VARIABLE_COLORS: Record<string, string> = {
+  WM: "text-amber-400",
+  PS: "text-emerald-400",
+  VC: "text-sky-400",
+  PR: "text-violet-400",
+  ATT: "text-rose-400",
+};
 
 // ========================================
 // Radar Chart (SVG)
@@ -90,37 +128,25 @@ function CognitiveRadar({ scores }: { scores: CognitiveScores }) {
     };
   };
 
-  // Grid rings at 25%, 50%, 75%, 100%
   const rings = [25, 50, 75, 100];
-
-  // Data polygon
   const dataPoints = dimensions.map((d, i) => getPoint(i, d.value));
   const dataPath = dataPoints.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ") + " Z";
 
   return (
-    <svg viewBox="0 0 160 160" className="w-full max-w-[200px]">
-      {/* Grid */}
+    <svg viewBox="0 0 160 160" className="w-full max-w-[180px]">
       {rings.map((pct) => {
         const pts = dimensions.map((_, i) => getPoint(i, pct));
         const path = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ") + " Z";
         return <path key={pct} d={path} fill="none" stroke="white" strokeOpacity={0.08} strokeWidth={0.5} />;
       })}
-
-      {/* Axis lines */}
       {dimensions.map((_, i) => {
         const p = getPoint(i, 100);
         return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="white" strokeOpacity={0.06} strokeWidth={0.5} />;
       })}
-
-      {/* Data fill */}
       <path d={dataPath} fill="rgb(99 102 241)" fillOpacity={0.15} stroke="rgb(99 102 241)" strokeWidth={1.5} />
-
-      {/* Data points */}
       {dataPoints.map((p, i) => (
         <circle key={i} cx={p.x} cy={p.y} r={2.5} fill="rgb(129 140 248)" />
       ))}
-
-      {/* Labels */}
       {dimensions.map((d, i) => {
         const p = getPoint(i, 120);
         return (
@@ -134,6 +160,79 @@ function CognitiveRadar({ scores }: { scores: CognitiveScores }) {
 }
 
 // ========================================
+// Profile Completeness Bar
+// ========================================
+
+function CompletenessBar({
+  score,
+  max,
+  checks,
+  locale,
+}: {
+  score: number;
+  max: number;
+  checks: ProfileData["completeness"]["checks"];
+  locale: string;
+}) {
+  const pct = Math.round((score / max) * 100);
+
+  const items = [
+    { key: "gamesCompleted", done: checks.gamesCompleted, label: locale === "ja" ? "7ゲーム完了" : "Complete 7 games", href: "/lobe" },
+    { key: "hasProfile", done: checks.hasProfile, label: locale === "ja" ? "認知プロファイル" : "Cognitive profile", href: "/lobe" },
+    { key: "hasCustomInstructions", done: checks.hasCustomInstructions, label: locale === "ja" ? "カスタム指示" : "Custom instructions", href: "/dashboard/settings" },
+    { key: "hasConversations", done: checks.hasConversations, label: locale === "ja" ? "Hoo会話" : "Hoo conversations", href: "/dashboard/muednote/hoo" },
+    { key: "hasSessions", done: checks.hasSessions, label: locale === "ja" ? "制作セッション" : "Studio sessions", href: null },
+    { key: "hasUserProfile", done: checks.hasUserProfile, label: locale === "ja" ? "ユーザープロファイル" : "User profile", href: "/dashboard/muednote/import" },
+  ];
+
+  return (
+    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-medium text-slate-400">
+          {locale === "ja" ? "プロファイル充実度" : "Profile Completeness"}
+        </h2>
+        <span className="text-sm font-bold text-white">{pct}%</span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full bg-white/10 rounded-full h-2 mb-4">
+        <div
+          className="h-2 rounded-full bg-indigo-500 transition-all"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {/* Checklist */}
+      <div className="grid grid-cols-2 gap-2">
+        {items.map((item) => {
+          const content = (
+            <div className="flex items-center gap-2 text-xs">
+              {item.done ? (
+                <CheckCircle className="w-3.5 h-3.5 text-green-400 shrink-0" />
+              ) : (
+                <Circle className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+              )}
+              <span className={item.done ? "text-slate-500 line-through" : "text-slate-300"}>
+                {item.label}
+              </span>
+            </div>
+          );
+
+          if (!item.done && item.href) {
+            return (
+              <Link key={item.key} href={item.href} className="hover:bg-white/5 rounded-lg px-2 py-1.5 -mx-2 transition-colors">
+                {content}
+              </Link>
+            );
+          }
+          return <div key={item.key} className="px-2 py-1.5 -mx-2">{content}</div>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ========================================
 // Main Component
 // ========================================
 
@@ -143,9 +242,10 @@ export function MuednoteDashboardContent({
 }: MuednoteDashboardContentProps) {
   const { locale } = useLocale();
 
-  const { cognitiveScores, hooStats, recentConversations, customInstructions, timerStats, recentSessions } = profile;
+  const { cognitiveScores, hooStats, recentConversations, customInstructions, timerStats, recentSessions, gameProgress, completeness } = profile;
 
-  const hasProfile = cognitiveScores || hooStats.totalConversations > 0 || customInstructions;
+  const completedSet = new Set(gameProgress.completedGames);
+  const gamesCompleted = completedSet.size;
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -169,128 +269,109 @@ export function MuednoteDashboardContent({
           {locale === "ja" ? `${userName}さん` : `Hey, ${userName}`}
         </p>
         <h1 className="text-2xl font-bold text-white">
-          {locale === "ja" ? "Hooから見たあなた" : "How Hoo Sees You"}
+          {locale === "ja" ? "あなたのプロファイル" : "Your Profile"}
         </h1>
       </div>
 
       {/* ========================================
-          Main: Profile Card
+          Profile Completeness
+          ======================================== */}
+      <CompletenessBar
+        score={completeness.score}
+        max={completeness.max}
+        checks={completeness.checks}
+        locale={locale}
+      />
+
+      {/* ========================================
+          MUEDlobe: Game Progress + Cognitive Profile
           ======================================== */}
       <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-6">
-        {!hasProfile ? (
-          /* Empty state */
-          <div className="text-center py-8">
-            <div className="w-14 h-14 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <User className="w-7 h-7 text-indigo-400" />
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-medium text-slate-400 flex items-center gap-2">
+            <Brain className="w-4 h-4 text-violet-400" />
+            MUEDlobe
+          </h2>
+          <span className="text-xs text-slate-500">
+            {gamesCompleted}/{gameProgress.totalGames} {locale === "ja" ? "ゲーム完了" : "games"}
+          </span>
+        </div>
+
+        {gamesCompleted === 0 ? (
+          /* No games played — primary CTA */
+          <div className="text-center py-6">
+            <div className="w-14 h-14 bg-violet-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Brain className="w-7 h-7 text-violet-400" />
             </div>
-            <h2 className="text-lg font-semibold text-white mb-2">
+            <h3 className="text-lg font-semibold text-white mb-2">
               {locale === "ja"
-                ? "Hooはまだあなたを知りません"
-                : "Hoo doesn't know you yet"}
-            </h2>
-            <p className="text-sm text-slate-400 max-w-md mx-auto mb-6">
+                ? "認知プロファイルを作ろう"
+                : "Build Your Cognitive Profile"}
+            </h3>
+            <p className="text-sm text-slate-400 max-w-sm mx-auto mb-5">
               {locale === "ja"
-                ? "MUEDlobeのゲームをプレイするか、Hooと会話を始めると、あなたのプロファイルが作られます。"
-                : "Play MUEDlobe games or start chatting with Hoo to build your profile."}
+                ? "7つのゲームをプレイして、あなたの認知スタイルを発見しましょう。Hooがあなたに合わせてパーソナライズされます。"
+                : "Play 7 quick games to discover your cognitive style. Hoo will personalize to match how you think."}
             </p>
-            <div className="flex justify-center gap-3">
-              <Link
-                href="/lobe"
-                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-xl transition-colors"
-              >
-                <Brain className="w-4 h-4 inline mr-1.5 -mt-0.5" />
-                MUEDlobe
-              </Link>
-              <Link
-                href="/dashboard/muednote/hoo"
-                className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white text-sm font-medium rounded-xl transition-colors"
-              >
-                <MessageCircle className="w-4 h-4 inline mr-1.5 -mt-0.5" />
-                {locale === "ja" ? "Hooと話す" : "Talk to Hoo"}
-              </Link>
-            </div>
+            <Link
+              href="/lobe"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-xl transition-colors"
+            >
+              <Brain className="w-4 h-4" />
+              {locale === "ja" ? "MUEDlobeを始める" : "Start MUEDlobe"}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         ) : (
-          /* Profile content */
-          <div className="grid lg:grid-cols-[1fr,200px] gap-6">
-            {/* Left: Text profile */}
-            <div className="space-y-5">
-              {/* Custom Instructions (what Hoo knows) */}
-              {customInstructions && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-xs uppercase tracking-wider text-slate-500">
-                      {locale === "ja" ? "Hooへのメモ" : "Notes for Hoo"}
-                    </h3>
-                    <Link href="/dashboard/settings" className="text-slate-600 hover:text-slate-400 transition-colors">
-                      <Pencil className="w-3 h-3" />
-                    </Link>
-                  </div>
-                  <p className="text-sm text-slate-300 leading-relaxed line-clamp-3">
-                    {customInstructions}
-                  </p>
-                </div>
-              )}
-
-              {/* Hoo Conversation Stats */}
-              {hooStats.totalConversations > 0 && (
-                <div>
-                  <h3 className="text-xs uppercase tracking-wider text-slate-500 mb-2">
-                    {locale === "ja" ? "Hooとの対話" : "Conversations with Hoo"}
-                  </h3>
-                  <div className="flex items-baseline gap-4">
-                    <div>
-                      <span className="text-2xl font-bold text-white">{hooStats.totalConversations}</span>
-                      <span className="text-sm text-slate-500 ml-1">
-                        {locale === "ja" ? "回" : "chats"}
+          /* Games in progress or completed */
+          <div className="grid lg:grid-cols-[1fr,180px] gap-6">
+            {/* Left: Game list */}
+            <div>
+              {/* Game progress grid */}
+              <div className="grid grid-cols-1 gap-1.5">
+                {GAMES.map((game) => {
+                  const done = completedSet.has(game.type);
+                  return (
+                    <div
+                      key={game.type}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg ${
+                        done ? "bg-white/[0.02]" : "bg-white/[0.01]"
+                      }`}
+                    >
+                      {done ? (
+                        <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
+                      ) : (
+                        <Circle className="w-4 h-4 text-slate-600 shrink-0" />
+                      )}
+                      <span className={`text-sm flex-1 ${done ? "text-slate-300" : "text-slate-500"}`}>
+                        {locale === "ja" ? game.nameJa : game.name}
+                      </span>
+                      <span className={`text-xs font-mono ${VARIABLE_COLORS[game.variable] || "text-slate-500"}`}>
+                        {game.variable}
                       </span>
                     </div>
-                    <div>
-                      <span className="text-2xl font-bold text-white">{hooStats.totalMessages}</span>
-                      <span className="text-sm text-slate-500 ml-1">
-                        {locale === "ja" ? "メッセージ" : "messages"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* What Hoo doesn't know yet */}
-              <div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <HelpCircle className="w-3.5 h-3.5 text-amber-500/70" />
-                  <h3 className="text-xs uppercase tracking-wider text-slate-500">
-                    {locale === "ja" ? "Hooがまだ知らないこと" : "What Hoo doesn't know"}
-                  </h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {!cognitiveScores && (
-                    <Link href="/lobe" className="px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 rounded-lg text-xs text-violet-300 hover:bg-violet-500/20 transition-colors">
-                      {locale === "ja" ? "認知プロファイル" : "Cognitive profile"}
-                    </Link>
-                  )}
-                  {!customInstructions && (
-                    <Link href="/dashboard/settings" className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-300 hover:bg-amber-500/20 transition-colors">
-                      {locale === "ja" ? "カスタム指示" : "Custom instructions"}
-                    </Link>
-                  )}
-                  {hooStats.totalConversations === 0 && (
-                    <Link href="/dashboard/muednote/hoo" className="px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-xs text-indigo-300 hover:bg-indigo-500/20 transition-colors">
-                      {locale === "ja" ? "会話履歴" : "Chat history"}
-                    </Link>
-                  )}
-                </div>
+                  );
+                })}
               </div>
+
+              {/* CTA if not all done */}
+              {gamesCompleted < gameProgress.totalGames && (
+                <Link
+                  href="/lobe"
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                >
+                  {locale === "ja" ? "続きをプレイ" : "Continue playing"}
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              )}
             </div>
 
-            {/* Right: Cognitive Radar */}
-            {cognitiveScores && (
-              <div className="flex flex-col items-center">
+            {/* Right: Cognitive Radar (if profile exists) */}
+            {cognitiveScores ? (
+              <div className="flex flex-col items-center justify-center">
                 <CognitiveRadar scores={cognitiveScores} />
                 <p className="text-[10px] text-slate-600 mt-1">
-                  {cognitiveScores.measuredAt
-                    ? formatDate(cognitiveScores.measuredAt)
-                    : ""}
+                  {cognitiveScores.measuredAt ? formatDate(cognitiveScores.measuredAt) : ""}
                 </p>
                 <Link
                   href="/dashboard/muednote/lobe"
@@ -299,52 +380,44 @@ export function MuednoteDashboardContent({
                   {locale === "ja" ? "詳細を見る" : "View details"}
                 </Link>
               </div>
-            )}
+            ) : gamesCompleted >= 7 ? (
+              <div className="flex flex-col items-center justify-center text-center">
+                <p className="text-xs text-slate-500 mb-2">
+                  {locale === "ja" ? "プロファイル生成中..." : "Generating profile..."}
+                </p>
+                <Link
+                  href="/lobe/results"
+                  className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+                >
+                  {locale === "ja" ? "結果を確認" : "View results"}
+                </Link>
+              </div>
+            ) : null}
           </div>
         )}
       </div>
 
       {/* ========================================
-          Sub: Recent Hoo Conversations
+          Custom Instructions (compact)
           ======================================== */}
-      {recentConversations.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-slate-400 flex items-center gap-2">
-              <MessageCircle className="w-4 h-4" />
-              {locale === "ja" ? "最近の会話" : "Recent Conversations"}
-            </h2>
-            <Link
-              href="/dashboard/muednote/hoo"
-              className="text-xs text-slate-500 hover:text-white transition-colors"
-            >
-              {locale === "ja" ? "すべて見る" : "View all"}
+      {customInstructions && (
+        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-xs uppercase tracking-wider text-slate-500">
+              {locale === "ja" ? "Hooへのメモ" : "Notes for Hoo"}
+            </h3>
+            <Link href="/dashboard/settings" className="text-slate-600 hover:text-slate-400 transition-colors">
+              <Pencil className="w-3 h-3" />
             </Link>
           </div>
-          <div className="space-y-2">
-            {recentConversations.map((conv) => (
-              <Link
-                key={conv.id}
-                href={`/dashboard/muednote/hoo?id=${conv.id}`}
-                className="group flex items-center gap-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl px-4 py-3 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white truncate">
-                    {conv.title || (locale === "ja" ? "無題の会話" : "Untitled")}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {conv.messageCount} {locale === "ja" ? "メッセージ" : "msgs"} · {formatDate(conv.updatedAt)}
-                  </p>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-white transition-colors shrink-0" />
-              </Link>
-            ))}
-          </div>
+          <p className="text-sm text-slate-300 leading-relaxed line-clamp-2">
+            {customInstructions}
+          </p>
         </div>
       )}
 
       {/* ========================================
-          Sub: Timer Stats (Hoo's Care Context)
+          Studio Time
           ======================================== */}
       <div>
         <h2 className="text-sm font-medium text-slate-400 flex items-center gap-2 mb-3">
@@ -413,6 +486,54 @@ export function MuednoteDashboardContent({
           </div>
         )}
       </div>
+
+      {/* ========================================
+          Recent Hoo Conversations (compact)
+          ======================================== */}
+      {recentConversations.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-medium text-slate-400 flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              {locale === "ja" ? "最近の会話" : "Recent Conversations"}
+            </h2>
+            <Link
+              href="/dashboard/muednote/hoo"
+              className="text-xs text-slate-500 hover:text-white transition-colors"
+            >
+              {locale === "ja" ? "すべて見る" : "View all"}
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {recentConversations.map((conv) => (
+              <Link
+                key={conv.id}
+                href={`/dashboard/muednote/hoo?id=${conv.id}`}
+                className="group flex items-center gap-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl px-4 py-3 transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-white truncate">
+                    {conv.title || (locale === "ja" ? "無題の会話" : "Untitled")}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {conv.messageCount} {locale === "ja" ? "メッセージ" : "msgs"} · {formatDate(conv.updatedAt)}
+                  </p>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-white transition-colors shrink-0" />
+              </Link>
+            ))}
+          </div>
+
+          {/* Hoo stats summary */}
+          {hooStats.totalConversations > 0 && (
+            <div className="flex items-center gap-4 mt-3 px-1">
+              <span className="text-xs text-slate-600">
+                {hooStats.totalConversations} {locale === "ja" ? "会話" : "chats"} · {hooStats.totalMessages} {locale === "ja" ? "メッセージ" : "msgs"}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
