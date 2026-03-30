@@ -264,7 +264,7 @@ export const dialSubscriptions = pgTable('dial_subscriptions', {
   stripeSubIdx: index('idx_dial_subscriptions_stripe_sub_id').on(table.stripeSubscriptionId),
 }));
 
-/** One-time credit pack purchases (overage, no rollover) */
+/** One-time credit pack purchases (12-month expiry) */
 export const dialCreditPacks = pgTable('dial_credit_packs', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: text('user_id').notNull().references(() => users.clerkId),
@@ -277,6 +277,7 @@ export const dialCreditPacks = pgTable('dial_credit_packs', {
   stripeCheckoutSessionId: text('stripe_checkout_session_id'),
   stripePaymentIntentId: text('stripe_payment_intent_id'),
   status: dialPurchaseStatusEnum('status').notNull().default('pending'),
+  expiresAt: timestamp('expires_at'),  // 12 months after purchase (aligned with RoEx upstream)
   createdAt: timestamp('created_at').notNull().defaultNow(),
   completedAt: timestamp('completed_at'),
 }, (table) => ({
@@ -284,14 +285,14 @@ export const dialCreditPacks = pgTable('dial_credit_packs', {
   statusIdx: index('idx_dial_credit_packs_status').on(table.status),
 }));
 
-/** Subscription credit grants with expiry (FIFO consumption) */
+/** Subscription credit grants with optional expiry (FIFO consumption) */
 export const dialCreditExpiry = pgTable('dial_credit_expiry', {
   id: uuid('id').primaryKey().defaultRandom(),
   subscriptionId: uuid('subscription_id').notNull().references(() => dialSubscriptions.id, { onDelete: 'cascade' }),
   credits: integer('credits').notNull(),        // Original grant amount
   creditsRemaining: integer('credits_remaining').notNull(), // Remaining after consumption
   grantedAt: timestamp('granted_at').notNull().defaultNow(),
-  expiresAt: timestamp('expires_at').notNull(),  // grantedAt + 3 months
+  expiresAt: timestamp('expires_at'),  // null = no expiry (active subscriber rollover)
 }, (table) => ({
   subIdIdx: index('idx_dial_credit_expiry_sub_id').on(table.subscriptionId),
   expiresAtIdx: index('idx_dial_credit_expiry_expires_at').on(table.expiresAt),

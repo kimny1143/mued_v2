@@ -17,25 +17,21 @@ export type DialSubTier = (typeof DIAL_SUB_TIERS)[number];
 export const DIAL_SUB_PLANS: Record<DialSubTier, {
   credits: number;
   priceUsdCents: number;
-  priceJpyDisplay: number; // Tax-inclusive display price
   label: string;
 }> = {
   basic: {
     credits: 1_000,
     priceUsdCents: 1999,
-    priceJpyDisplay: 2_980,
     label: 'MUEDial Basic',
   },
   pro: {
     credits: 1_700,
     priceUsdCents: 3499,
-    priceJpyDisplay: 4_980,
     label: 'MUEDial Pro',
   },
   studio: {
     credits: 3_000,
     priceUsdCents: 4999,
-    priceJpyDisplay: 7_980,
     label: 'MUEDial Studio',
   },
 };
@@ -90,8 +86,12 @@ export const DIAL_SINGLE_PRICES = {
 } as const;
 
 // ========================================
-// Credit Expiry
+// Credit Policy
 // ========================================
 
-/** Subscription credits expire 3 months after grant */
-export const CREDIT_EXPIRY_MONTHS = 3;
+/** Subscription credits: no expiry while subscribed (unlimited rollover) */
+/** On cancellation: remaining grants expire after this many days */
+export const CANCEL_GRACE_DAYS = 30;
+
+/** Credit packs expire 12 months after purchase (aligned with RoEx upstream) */
+export const CREDIT_PACK_EXPIRY_MONTHS = 12;

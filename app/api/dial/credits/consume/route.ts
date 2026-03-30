@@ -14,7 +14,7 @@
  */
 
 import { z } from 'zod';
-import { and, eq, gt, asc, sql } from 'drizzle-orm';
+import { and, eq, gt, asc, sql, or, isNull } from 'drizzle-orm';
 import { withAuth } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
 import { db } from '@/db';
@@ -62,6 +62,7 @@ export const POST = withAuth(async ({ userId, request }) => {
         .limit(1);
 
       // 2. Consume from subscription grants (FIFO by expiry, with row lock)
+      //    expiresAt IS NULL = no expiry (active subscriber rollover)
       if (subscription && remaining > 0) {
         const grants = await tx
           .select()
@@ -69,7 +70,7 @@ export const POST = withAuth(async ({ userId, request }) => {
           .where(and(
             eq(dialCreditExpiry.subscriptionId, subscription.id),
             gt(dialCreditExpiry.creditsRemaining, 0),
-            gt(dialCreditExpiry.expiresAt, now),
+            or(isNull(dialCreditExpiry.expiresAt), gt(dialCreditExpiry.expiresAt, now)),
           ))
           .orderBy(asc(dialCreditExpiry.expiresAt))
           .for('update');
@@ -86,6 +87,7 @@ export const POST = withAuth(async ({ userId, request }) => {
       }
 
       // 3. Consume from credit packs (FIFO by purchase date, with row lock)
+      //    expiresAt IS NULL = legacy pack (no expiry); non-null = 12-month expiry
       if (remaining > 0) {
         const packs = await tx
           .select()
@@ -94,6 +96,7 @@ export const POST = withAuth(async ({ userId, request }) => {
             eq(dialCreditPacks.userId, userId),
             eq(dialCreditPacks.status, 'completed'),
             gt(dialCreditPacks.creditsRemaining, 0),
+            or(isNull(dialCreditPacks.expiresAt), gt(dialCreditPacks.expiresAt, now)),
           ))
           .orderBy(asc(dialCreditPacks.completedAt))
           .for('update');
@@ -122,7 +125,7 @@ export const POST = withAuth(async ({ userId, request }) => {
           .where(and(
             eq(dialCreditExpiry.subscriptionId, subscription.id),
             gt(dialCreditExpiry.creditsRemaining, 0),
-            gt(dialCreditExpiry.expiresAt, now),
+            or(isNull(dialCreditExpiry.expiresAt), gt(dialCreditExpiry.expiresAt, now)),
           ));
 
         await tx

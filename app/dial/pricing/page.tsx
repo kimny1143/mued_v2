@@ -26,10 +26,6 @@ function formatUsd(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-function formatJpy(yen: number): string {
-  return `\u00a5${yen.toLocaleString()}`;
-}
-
 export default function DialPricingPage() {
   const { t } = useLocale();
   const { isSignedIn } = useUser();
@@ -162,9 +158,6 @@ export default function DialPricingPage() {
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-bold">{formatUsd(plan.priceUsdCents)}</span>
                     <span className="text-white/40">/{p.monthly}</span>
-                  </div>
-                  <div className="text-sm text-white/40 mt-1">
-                    {formatJpy(plan.priceJpyDisplay)}/{p.monthly}
                   </div>
                 </div>
 
