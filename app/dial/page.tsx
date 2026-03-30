@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth, useUser, SignInButton, UserButton } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type ServiceTier = 'omakase' | 'dialogue';
 
@@ -357,7 +358,10 @@ export default function DialPage() {
               MUED<span className="text-amber-400">ial</span>
             </span>
           </div>
-          <div>
+          <div className="flex items-center gap-4">
+            <Link href="/dial/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors">
+              {lp.navPricing}
+            </Link>
             {isSignedIn ? (
               <UserButton />
             ) : (
@@ -487,6 +491,20 @@ export default function DialPage() {
               <p className="text-xs text-white/30 text-center mt-3">
                 {isSignedIn ? t.dial.checkout.securePayment : t.dial.checkout.noAccountRequired}
               </p>
+
+              {/* Save with a Plan banner */}
+              <Link
+                href="/dial/pricing"
+                className="mt-6 flex items-center gap-3 p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-colors group"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-amber-300">{lp.planBannerTitle}</p>
+                  <p className="text-xs text-white/40 mt-0.5">{lp.planBannerDesc}</p>
+                </div>
+                <span className="text-xs font-medium text-amber-400 group-hover:text-amber-300 shrink-0">
+                  {lp.planBannerCta} →
+                </span>
+              </Link>
             </div>
 
             {/* ChatMockup — mobile only, after checkout */}
