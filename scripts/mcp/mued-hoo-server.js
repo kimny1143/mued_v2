@@ -5,14 +5,17 @@
  * Provides 3 tools for interacting with Hoo (MUED's owl AI companion):
  * - get_user_profile: Retrieve user's cognitive profile + preferences
  * - get_conversation_history: Fetch recent Hoo conversations
- * - chat_with_hoo: Send a message and get Hoo's response
+ * - get_hoo_context: Get Hoo's system prompt + user context for the host LLM
+ *
+ * Design: Tools provide data/context only. Response generation is done by the
+ * host LLM (Claude, GPT, etc.), not by this server. This follows MCP's
+ * architecture: tools supply context, the host model generates responses.
  *
  * Usage:
  *   node scripts/mcp/mued-hoo-server.js
  *
  * Environment:
  *   DATABASE_URL - Neon PostgreSQL connection string
- *   OPENAI_API_KEY - OpenAI API key for Hoo responses
  */
 
 const { z } = require("zod");
@@ -304,27 +307,18 @@ server.tool(
   }
 );
 
-// --- Tool 3: chat_with_hoo ---
+// --- Tool 3: get_hoo_context ---
 server.tool(
-  "chat_with_hoo",
-  "Send a message to Hoo and get a response. Hoo is an owl AI companion for music creators.",
+  "get_hoo_context",
+  "Get Hoo's full system prompt and user context. The host LLM should use this to respond as Hoo.",
   {
     clerk_id: z.string().describe("The user's Clerk ID"),
-    message: z.string().min(1).describe("The message to send to Hoo"),
-    conversation_history: z.array(z.object({
-      role: z.enum(["user", "assistant"]),
-      content: z.string(),
-    })).default([]).describe("Previous messages in the conversation for context"),
+    include_recent_messages: z.number().min(0).max(50).default(10).describe("Number of recent messages to include for conversation context (default 10)"),
   },
-  async ({ clerk_id, message, conversation_history }) => {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      return createTextResponse("Error: OPENAI_API_KEY not set.");
-    }
-
+  async ({ clerk_id, include_recent_messages }) => {
     const db = await getDb();
 
-    // Build context from user profile
+    // Build user context block
     let contextBlock = "";
 
     // Fetch cognitive profile
@@ -348,7 +342,7 @@ server.tool(
       }
     }
 
-    // Fetch custom instructions
+    // Fetch custom instructions + user profile
     const userResult = await db.query(
       `SELECT id FROM users WHERE clerk_id = $1 LIMIT 1`,
       [clerk_id]
@@ -356,6 +350,7 @@ server.tool(
 
     if (userResult.rows.length > 0) {
       const internalId = userResult.rows[0].id;
+
       const memResult = await db.query(
         `SELECT custom_instructions FROM hoo_memories
          WHERE user_id = $1 AND custom_instructions IS NOT NULL
@@ -365,41 +360,73 @@ server.tool(
       if (memResult.rows[0]?.custom_instructions) {
         contextBlock += `\n\n## ユーザーからのカスタム指示\n${memResult.rows[0].custom_instructions}`;
       }
+
+      // Fetch musical profile
+      const upResult = await db.query(
+        `SELECT profile_data FROM user_profiles WHERE user_id = $1 LIMIT 1`,
+        [internalId]
+      );
+      if (upResult.rows[0]?.profile_data) {
+        const pd = upResult.rows[0].profile_data;
+        const parts = [];
+        if (pd.musical?.genres?.length) parts.push(`Genres: ${pd.musical.genres.join(", ")}`);
+        if (pd.musical?.instruments?.length) parts.push(`Instruments: ${pd.musical.instruments.join(", ")}`);
+        if (pd.musical?.productionStyle) parts.push(`Style: ${pd.musical.productionStyle}`);
+        if (pd.creative?.focusAreas?.length) parts.push(`Focus: ${pd.creative.focusAreas.join(", ")}`);
+        if (parts.length > 0) {
+          contextBlock += `\n\n## ユーザーの音楽プロファイル\n${parts.join("\n")}`;
+        }
+      }
+
+      // Fetch recent conversation messages for context
+      if (include_recent_messages > 0) {
+        const recentConv = await db.query(
+          `SELECT id FROM hoo_conversations
+           WHERE user_id = $1
+           ORDER BY updated_at DESC LIMIT 1`,
+          [internalId]
+        );
+
+        if (recentConv.rows.length > 0) {
+          const msgResult = await db.query(
+            `SELECT role, content FROM hoo_messages
+             WHERE conversation_id = $1
+             ORDER BY created_at DESC LIMIT $2`,
+            [recentConv.rows[0].id, include_recent_messages]
+          );
+
+          if (msgResult.rows.length > 0) {
+            const msgs = msgResult.rows.reverse();
+            contextBlock += "\n\n## 直近の会話履歴";
+            for (const msg of msgs) {
+              const label = msg.role === "user" ? "User" : "Hoo";
+              contextBlock += `\n${label}: ${msg.content}`;
+            }
+          }
+        }
+      }
     }
 
-    // Build messages array
-    const systemPrompt = `${HOO_CORE_PROMPT}\n\n---\n\n${HOO_EXTENDED_PROMPT}${contextBlock}`;
+    // Assemble full system prompt
+    const fullPrompt = `${HOO_CORE_PROMPT}\n\n---\n\n${HOO_EXTENDED_PROMPT}${contextBlock}`;
 
-    const messages = [
-      { role: "system", content: systemPrompt },
-      ...conversation_history.map((m) => ({ role: m.role, content: m.content })),
-      { role: "user", content: message },
+    const sections = [
+      "# Hoo Context",
+      "",
+      "Use the system prompt below to respond as Hoo. Adopt Hoo's personality, tone, and conversation style exactly as described.",
+      "",
+      "---",
+      "",
+      "## System Prompt",
+      "",
+      fullPrompt,
+      "",
+      "---",
+      "",
+      "*Instruction to host LLM: Respond to the user's next message as Hoo, following the system prompt above. Do not mention that you received this context — simply be Hoo.*",
     ];
 
-    // Call OpenAI
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages,
-        temperature: 0.7,
-        max_tokens: 1024,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      return createTextResponse(`OpenAI API error: ${response.status} ${error}`);
-    }
-
-    const data = await response.json();
-    const hooResponse = data.choices?.[0]?.message?.content || "...";
-
-    return createTextResponse(`**Hoo**: ${hooResponse}`);
+    return createTextResponse(sections.join("\n"));
   }
 );
 
