@@ -16,7 +16,7 @@ type BalanceData = {
   } | null;
   grants: Array<{
     creditsRemaining: number;
-    expiresAt: string;
+    expiresAt: string | null;
   }>;
 };
 
@@ -45,8 +45,10 @@ export function CreditBalance({ t }: { t: Translations }) {
 
   if (!data) return null;
 
-  const nearestExpiry = data.grants.length > 0
-    ? new Date(data.grants[0].expiresAt).toLocaleDateString()
+  // Find nearest expiry (skip null = no expiry grants)
+  const expiringGrant = data.grants.find(g => g.expiresAt !== null);
+  const nearestExpiry = expiringGrant
+    ? new Date(expiringGrant.expiresAt!).toLocaleDateString()
     : null;
 
   return (

@@ -3,8 +3,8 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { db } from "@/db";
 import { reservations, subscriptions, users, webhookEvents, lessonSlots, dialSessions, dialPurchases, dialSubscriptions, dialCreditPacks, dialCreditExpiry } from "@/db/schema";
-import { eq, sql, and, gt } from "drizzle-orm";
-import { DIAL_SUB_PLANS, CREDIT_EXPIRY_MONTHS, type DialSubTier } from '@/lib/dial/pricing';
+import { eq, sql, and, gt, or, isNull } from "drizzle-orm";
+import { DIAL_SUB_PLANS, CANCEL_GRACE_DAYS, CREDIT_PACK_EXPIRY_MONTHS, type DialSubTier } from '@/lib/dial/pricing';
 import { validateStripeConfig } from "@/lib/utils/env";
 import { logger } from "@/lib/utils/logger";
 import { notificationService } from "@/lib/services/notification.service";
@@ -517,27 +517,25 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         .limit(1);
 
       if (dialSub) {
-        // Grant new credits with 3-month expiry (don't wipe existing unexpired grants)
+        // Grant new credits with no expiry (unlimited rollover while subscribed)
         const grantedAt = new Date();
-        const expiresAt = new Date(grantedAt);
-        expiresAt.setMonth(expiresAt.getMonth() + CREDIT_EXPIRY_MONTHS);
 
         await tx.insert(dialCreditExpiry).values({
           subscriptionId: dialSub.id,
           credits: dialSub.mixCreditsTotal,
           creditsRemaining: dialSub.mixCreditsTotal,
           grantedAt,
-          expiresAt,
+          expiresAt: null, // No expiry — active subscriber rollover
         });
 
-        // Recalculate total remaining (all non-expired grants)
+        // Recalculate total remaining (all valid grants)
         const validGrants = await tx
           .select()
           .from(dialCreditExpiry)
           .where(and(
             eq(dialCreditExpiry.subscriptionId, dialSub.id),
             gt(dialCreditExpiry.creditsRemaining, 0),
-            gt(dialCreditExpiry.expiresAt, grantedAt),
+            or(isNull(dialCreditExpiry.expiresAt), gt(dialCreditExpiry.expiresAt, grantedAt)),
           ));
 
         const totalRemaining = validGrants.reduce(
@@ -553,7 +551,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           })
           .where(eq(dialSubscriptions.id, dialSub.id));
 
-        logger.debug(`MUEDial ${dialSub.mixCreditsTotal}cr granted for subscription: ${subscriptionId} (total remaining: ${totalRemaining}cr, expires: ${expiresAt.toISOString()})`);
+        logger.debug(`MUEDial ${dialSub.mixCreditsTotal}cr granted for subscription: ${subscriptionId} (total remaining: ${totalRemaining}cr, no expiry while subscribed)`);
         break;
       }
 
@@ -949,20 +947,18 @@ async function handleDialCheckoutCompleted(
       subscriptionId = newSub.id;
     }
 
-    // Create credit grant with 3-month expiry
+    // Create credit grant with no expiry (unlimited rollover while subscribed)
     const grantedAt = new Date();
-    const expiresAt = new Date(grantedAt);
-    expiresAt.setMonth(expiresAt.getMonth() + CREDIT_EXPIRY_MONTHS);
 
     await tx.insert(dialCreditExpiry).values({
       subscriptionId,
       credits: totalCredits,
       creditsRemaining: totalCredits,
       grantedAt,
-      expiresAt,
+      expiresAt: null, // No expiry — active subscriber rollover
     });
 
-    logger.info(`[Dial Webhook] Subscription created: ${stripeSubscriptionId} for user: ${userId}, ${totalCredits}cr granted (expires ${expiresAt.toISOString()})`);
+    logger.info(`[Dial Webhook] Subscription created: ${stripeSubscriptionId} for user: ${userId}, ${totalCredits}cr granted (no expiry while subscribed)`);
   }
 }
 
@@ -1031,6 +1027,9 @@ async function handleDialCreditPackCompleted(
   }
 
   const customerCountry = session.customer_details?.address?.country || null;
+  const completedAt = new Date();
+  const expiresAt = new Date(completedAt);
+  expiresAt.setMonth(expiresAt.getMonth() + CREDIT_PACK_EXPIRY_MONTHS);
 
   const result = await tx
     .update(dialCreditPacks)
@@ -1038,7 +1037,8 @@ async function handleDialCreditPackCompleted(
       status: 'completed',
       customerCountry,
       stripePaymentIntentId: session.payment_intent as string,
-      completedAt: new Date(),
+      completedAt,
+      expiresAt,
     })
     .where(eq(dialCreditPacks.id, creditPackId))
     .returning({ id: dialCreditPacks.id });
@@ -1048,7 +1048,7 @@ async function handleDialCreditPackCompleted(
     return;
   }
 
-  logger.info(`[Dial Webhook] Credit pack completed: ${creditPackId} for user: ${userId} (country: ${customerCountry})`);
+  logger.info(`[Dial Webhook] Credit pack completed: ${creditPackId} for user: ${userId} (country: ${customerCountry}, expires: ${expiresAt.toISOString()})`);
 }
 
 async function handleDialSubscriptionUpdated(
@@ -1104,14 +1104,29 @@ async function handleDialSubscriptionDeleted(
     return;
   }
 
+  const now = new Date();
+
   await tx
     .update(dialSubscriptions)
     .set({
       status: 'cancelled',
       cancelAtPeriodEnd: false,
-      updatedAt: new Date(),
+      updatedAt: now,
     })
     .where(eq(dialSubscriptions.id, existingSub.id));
 
-  logger.debug(`[Dial Webhook] Subscription cancelled: ${subscription.id}`);
+  // Set 30-day grace period on all remaining grants (rollover credits)
+  const graceExpiry = new Date(now);
+  graceExpiry.setDate(graceExpiry.getDate() + CANCEL_GRACE_DAYS);
+
+  await tx
+    .update(dialCreditExpiry)
+    .set({ expiresAt: graceExpiry })
+    .where(and(
+      eq(dialCreditExpiry.subscriptionId, existingSub.id),
+      gt(dialCreditExpiry.creditsRemaining, 0),
+      or(isNull(dialCreditExpiry.expiresAt), gt(dialCreditExpiry.expiresAt, now)),
+    ));
+
+  logger.info(`[Dial Webhook] Subscription cancelled: ${subscription.id}. Remaining credits expire ${graceExpiry.toISOString()} (${CANCEL_GRACE_DAYS}-day grace)`);
 }

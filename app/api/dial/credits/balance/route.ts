@@ -9,7 +9,7 @@
  * Requires Clerk authentication.
  */
 
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, or, isNull } from 'drizzle-orm';
 import { withAuth } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiServerError } from '@/lib/api-response';
 import { db } from '@/db';
@@ -29,7 +29,8 @@ export const GET = withAuth(async ({ userId }) => {
       ))
       .limit(1);
 
-    // 2. Get non-expired credit grants (subscription credits)
+    // 2. Get valid credit grants (subscription credits)
+    //    expiresAt IS NULL = no expiry (active subscriber rollover)
     const creditGrants = subscription
       ? await db
           .select()
@@ -37,16 +38,16 @@ export const GET = withAuth(async ({ userId }) => {
           .where(and(
             eq(dialCreditExpiry.subscriptionId, subscription.id),
             gt(dialCreditExpiry.creditsRemaining, 0),
-            gt(dialCreditExpiry.expiresAt, now),
+            or(isNull(dialCreditExpiry.expiresAt), gt(dialCreditExpiry.expiresAt, now)),
           ))
-          .orderBy(dialCreditExpiry.expiresAt) // FIFO — earliest expiry first
+          .orderBy(dialCreditExpiry.expiresAt) // FIFO — earliest expiry first (nulls last)
       : [];
 
     const subscriptionCredits = creditGrants.reduce(
       (sum, g) => sum + g.creditsRemaining, 0
     );
 
-    // 3. Get credit pack balances (completed, with remaining credits)
+    // 3. Get credit pack balances (completed, with remaining credits, not expired)
     const packs = await db
       .select()
       .from(dialCreditPacks)
@@ -54,6 +55,7 @@ export const GET = withAuth(async ({ userId }) => {
         eq(dialCreditPacks.userId, userId),
         eq(dialCreditPacks.status, 'completed'),
         gt(dialCreditPacks.creditsRemaining, 0),
+        or(isNull(dialCreditPacks.expiresAt), gt(dialCreditPacks.expiresAt, now)),
       ));
 
     const packCredits = packs.reduce(
@@ -83,6 +85,7 @@ export const GET = withAuth(async ({ userId }) => {
         creditsRemaining: p.creditsRemaining,
         packSize: p.packSize,
         completedAt: p.completedAt,
+        expiresAt: p.expiresAt,
       })),
     });
   } catch (error) {
