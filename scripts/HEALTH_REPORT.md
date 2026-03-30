@@ -19,7 +19,6 @@ The script consolidation has been highly successful, achieving a 68% reduction i
 ├── test-e2e-unified.js      # Consolidated E2E testing (replaces 7 scripts)
 ├── db-utilities.ts          # Database management CLI (replaces 4 scripts)
 ├── seed.ts                  # Production database seeding
-├── setup-stripe-products.ts # Stripe configuration
 ├── sync-clerk-users.ts      # User synchronization
 ├── setup-env.sh            # Environment setup (replaces 3 scripts)
 ├── add-indexes.sql         # Database optimization
@@ -108,7 +107,6 @@ All package.json scripts correctly reference consolidated scripts:
   "db:utils": "tsx scripts/db-utilities.ts",
   "db:test-seed": "tsx scripts/db-utilities.ts seed-test",
   "db:verify": "tsx scripts/db-utilities.ts verify",
-  "stripe:setup": "tsx scripts/setup-stripe-products.ts",
   "clerk:sync": "tsx scripts/sync-clerk-users.ts",
   "test:e2e:unified": "node scripts/test-e2e-unified.js",
   "env:setup": "./scripts/setup-env.sh all"
@@ -198,15 +196,14 @@ Limited - current architecture is near-optimal. The 8 remaining scripts each ser
 
 ## Appendix: Current Script Inventory
 
-### Active Scripts (8)
+### Active Scripts (7)
 1. `test-e2e-unified.js` - 9.3KB - E2E test suite
 2. `db-utilities.ts` - 10.4KB - Database CLI
 3. `seed.ts` - 6.9KB - Production seeding
-4. `setup-stripe-products.ts` - 3.9KB - Stripe setup
-5. `sync-clerk-users.ts` - 2.9KB - User sync
-6. `setup-env.sh` - 6.3KB - Environment setup
-7. `add-indexes.sql` - 3.4KB - DB optimization
-8. `reorganize-docs.sh` - 5.3KB - Doc management
+4. `sync-clerk-users.ts` - 2.9KB - User sync
+5. `setup-env.sh` - 6.3KB - Environment setup
+6. `add-indexes.sql` - 3.4KB - DB optimization
+7. `reorganize-docs.sh` - 5.3KB - Doc management
 
 ### MCP Servers (4)
 1. `mued-playwright-e2e.js` - 20.1KB

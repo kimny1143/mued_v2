@@ -288,7 +288,6 @@ npm run db:migrate:phase2     # Run Phase 2 migrations
 ### External Services
 
 ```bash
-npm run stripe:setup          # Initialize Stripe products
 npm run clerk:sync            # Sync Clerk users to DB
 npm run job:rag-metrics       # Calculate RAG metrics
 ```

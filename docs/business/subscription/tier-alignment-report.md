@@ -25,7 +25,7 @@
 **該当ファイル:**
 - `lib/repositories/subscriptions.repository.ts:17` - SubscriptionTier型定義
 - `lib/middleware/usage-limiter.ts:60-77` - TIER_LIMITS定義
-- `scripts/setup-stripe-products.ts:23-79` - Stripe商品定義
+- `scripts/setup-stripe-products.ts:23-79` - Stripe商品定義 *(削除済み — Stripeダッシュボードで直接管理)*
 - `db/schema.ts:125` - DBカラム定義
 
 ### 新プラン（3階層）
@@ -96,7 +96,7 @@ MUEDnote固有の制限（Hoo会話、ログ保存期間）は含まれていな
 | `lib/middleware/usage-limiter.ts` | TIER_LIMITS更新 | Critical |
 | `db/schema.ts` | コメント更新（実際のDBカラムは`text`なので影響小） | Low |
 | `lib/i18n/translations.ts` | `starter`翻訳削除、`freemium`→`free`リネーム | Medium |
-| `scripts/setup-stripe-products.ts` | 価格更新、starter削除 | Critical |
+| `scripts/setup-stripe-products.ts` | *(削除済み)* | — |
 
 ### Phase 2: MUEDnote機能実装
 

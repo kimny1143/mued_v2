@@ -690,8 +690,6 @@
       "hooComment": "Hoo's Analysis",
       "generating": "Analyzing your thinking style...",
       "commentaryFailed": "Could not generate Hoo's analysis.",
-      "commentaryLocked": "Your trial has ended. Upgrade to Basic to unlock Hoo's analysis.",
-      "upgradeToBasic": "Upgrade to Basic",
       "retryCommentary": "Retry",
       "backToLobe": "Back to Lobe",
       "variables": {
