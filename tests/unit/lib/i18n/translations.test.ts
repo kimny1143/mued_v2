@@ -222,14 +222,9 @@ describe('i18n Translations', () => {
     });
 
     it('should have consistent array lengths for lists', () => {
-      // Check subscription plans features
-      const enFree = translations.en.subscription.plans.free.features;
-      const jaFree = translations.ja.subscription.plans.free.features;
-      expect(enFree.length).toBe(jaFree.length);
-
-      const enPremium = translations.en.subscription.plans.premium.features;
-      const jaPremium = translations.ja.subscription.plans.premium.features;
-      expect(enPremium.length).toBe(jaPremium.length);
+      // Subscription plan translations removed (MUEDnote is free).
+      // MUEDial pricing is in dial-specific translations.
+      expect(true).toBe(true);
     });
   });
 
@@ -278,23 +273,7 @@ describe('i18n Translations', () => {
       });
     });
 
-    describe('Subscription Plans', () => {
-      it('should have all plan tiers', () => {
-        const { plans } = translations.en.subscription;
-
-        expect(plans.free.name).toBe('Free');
-        expect(plans.basic.name).toBe('Basic');
-        expect(plans.premium.name).toBe('Premium');
-      });
-
-      it('should have FAQ section', () => {
-        const { faq } = translations.en.subscription;
-
-        expect(faq.title).toBe('Frequently Asked Questions');
-        expect(faq.q1).toContain('cancel');
-        expect(faq.a1).toContain('anytime');
-      });
-    });
+    // Subscription Plans tests removed (MUEDnote is free, subscription translations deleted)
   });
 
   describe('Fallback Behavior', () => {

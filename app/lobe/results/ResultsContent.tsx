@@ -199,12 +199,6 @@ export function ResultsContent({
             ) : commentaryLocked ? (
               <div className="space-y-3">
                 <p className="text-sm text-white/50">{t('commentaryLocked')}</p>
-                <Link
-                  href="/dashboard/subscription"
-                  className="inline-block bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-                >
-                  {t('upgradeToBasic')}
-                </Link>
               </div>
             ) : commentaryError ? (
               <div className="flex items-center gap-3">

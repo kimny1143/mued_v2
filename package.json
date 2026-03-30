@@ -22,7 +22,6 @@
     "db:seed:dialogue": "tsx scripts/seed-dialogue-test-data.ts",
     "db:aggregate:metrics": "tsx scripts/aggregate-metrics.ts",
     "job:rag-metrics": "tsx scripts/jobs/calculate-rag-metrics.ts",
-    "stripe:setup": "tsx scripts/setup-stripe-products.ts",
     "clerk:sync": "tsx scripts/sync-clerk-users.ts",
     "test:e2e:unified": "node scripts/test-e2e-unified.js",
     "env:setup": "./scripts/setup-env.sh all",

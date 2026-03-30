@@ -4,8 +4,9 @@
  * MUEDnote Settings Page
  *
  * Centralized settings for:
- * - Account & subscription management
+ * - Account information
  * - Hoo AI custom instructions
+ * - MUEDlobe cognitive profile
  * - (Future) Notification preferences
  */
 
@@ -22,10 +23,7 @@ import {
   MessageSquare,
   User,
   Bell,
-  CreditCard,
-  ExternalLink,
   Brain,
-  Lock,
 } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-context';
 
@@ -96,24 +94,16 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const [tier, setTier] = useState<string | null>(null);
 
-  // Fetch Hoo settings + tier
+  // Fetch Hoo settings
   const fetchHooSettings = useCallback(async () => {
     try {
-      const [memRes, tierRes] = await Promise.all([
-        fetch('/api/hoo/memory'),
-        fetch('/api/subscription/limits'),
-      ]);
+      const memRes = await fetch('/api/hoo/memory');
       const memData = await memRes.json();
       if (memData.success && memData.data) {
         setHooSettings(memData.data);
         setCustomInstructions(memData.data.customInstructions ?? '');
         setHooEnabled(memData.data.customInstructionsEnabled);
-      }
-      const tierData = await tierRes.json();
-      if (tierData.success) {
-        setTier(tierData.data.limits.tier);
       }
     } catch {
       // Silent fail on initial load
@@ -302,7 +292,7 @@ export default function SettingsPage() {
               </div>
             </SettingsSection>
 
-            {/* MUEDlobe Cognitive Profile (Premium only) */}
+            {/* MUEDlobe Cognitive Profile */}
             <SettingsSection
               title={locale === 'ja' ? 'MUEDlobe 認知プロファイル' : 'MUEDlobe Cognitive Profile'}
               description={
@@ -312,60 +302,39 @@ export default function SettingsPage() {
               }
               icon={<Brain className="w-5 h-5 text-violet-400" />}
             >
-              {tier === 'premium' ? (
-                hooSettings?.hasMuedlobeProfile && hooSettings.muedlobeInstructions ? (
-                  <div className="space-y-3">
-                    <div className="bg-violet-500/5 border border-violet-500/10 rounded-xl px-4 py-3">
-                      <ul className="space-y-2 text-sm text-slate-300">
-                        {hooSettings.muedlobeInstructions.map((instruction, idx) => (
-                          <li key={idx} className="flex items-start gap-2">
-                            <span className="text-violet-400 mt-0.5 flex-shrink-0">•</span>
-                            {instruction}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      {locale === 'ja'
-                        ? 'これらの指示はMUEDlobeの結果に基づいて自動生成され、すべてのHoo会話に適用されます。'
-                        : 'These instructions are auto-generated from your MUEDlobe results and applied to all Hoo conversations.'}
-                    </p>
+              {hooSettings?.hasMuedlobeProfile && hooSettings.muedlobeInstructions ? (
+                <div className="space-y-3">
+                  <div className="bg-violet-500/5 border border-violet-500/10 rounded-xl px-4 py-3">
+                    <ul className="space-y-2 text-sm text-slate-300">
+                      {hooSettings.muedlobeInstructions.map((instruction, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="text-violet-400 mt-0.5 flex-shrink-0">•</span>
+                          {instruction}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                ) : (
-                  <div className="py-4 text-center">
-                    <p className="text-sm text-slate-400">
-                      {locale === 'ja'
-                        ? 'MUEDlobeのゲームを完了してプロファイルを作成すると、ここに認知特性の指示が表示されます。'
-                        : 'Complete MUEDlobe games and generate your profile to see cognitive instructions here.'}
-                    </p>
-                    <Link href="/dashboard/muednote/lobe">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="mt-3 bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border-0 cursor-pointer"
-                      >
-                        <Brain className="w-4 h-4 mr-1.5" />
-                        {locale === 'ja' ? 'MUEDlobeへ' : 'Go to MUEDlobe'}
-                      </Button>
-                    </Link>
-                  </div>
-                )
+                  <p className="text-xs text-slate-500">
+                    {locale === 'ja'
+                      ? 'これらの指示はMUEDlobeの結果に基づいて自動生成され、すべてのHoo会話に適用されます。'
+                      : 'These instructions are auto-generated from your MUEDlobe results and applied to all Hoo conversations.'}
+                  </p>
+                </div>
               ) : (
                 <div className="py-4 text-center">
-                  <Lock className="w-6 h-6 text-slate-600 mx-auto mb-2" />
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-400">
                     {locale === 'ja'
-                      ? 'Premiumプランで利用できます。MUEDlobeの認知プロファイルに基づいて、Hooの会話があなた専用にパーソナライズされます。'
-                      : 'Available on Premium plan. Your Hoo conversations will be personalized based on your MUEDlobe cognitive profile.'}
+                      ? 'MUEDlobeのゲームを完了してプロファイルを作成すると、ここに認知特性の指示が表示されます。'
+                      : 'Complete MUEDlobe games and generate your profile to see cognitive instructions here.'}
                   </p>
-                  <Link href="/dashboard/subscription">
+                  <Link href="/dashboard/muednote/lobe">
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="mt-3 bg-white/10 hover:bg-white/20 text-white border-0 cursor-pointer"
+                      className="mt-3 bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border-0 cursor-pointer"
                     >
-                      <CreditCard className="w-4 h-4 mr-1.5" />
-                      {locale === 'ja' ? 'プランを見る' : 'View Plans'}
+                      <Brain className="w-4 h-4 mr-1.5" />
+                      {locale === 'ja' ? 'MUEDlobeへ' : 'Go to MUEDlobe'}
                     </Button>
                   </Link>
                 </div>
@@ -377,8 +346,8 @@ export default function SettingsPage() {
               title={locale === 'ja' ? 'アカウント' : 'Account'}
               description={
                 locale === 'ja'
-                  ? 'アカウント情報とサブスクリプション'
-                  : 'Account information and subscription'
+                  ? 'アカウント情報'
+                  : 'Account information'
               }
               icon={<User className="w-5 h-5 text-indigo-400" />}
             >
@@ -416,34 +385,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
-
-                {/* Divider */}
-                <div className="border-t border-white/10" />
-
-                {/* Manage Plan Button */}
-                <div className="flex items-center justify-between py-2">
-                  <div>
-                    <p className="text-sm text-slate-300">
-                      {locale === 'ja' ? 'サブスクリプション' : 'Subscription'}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {locale === 'ja'
-                        ? 'プランの変更や請求情報の管理'
-                        : 'Manage your plan and billing'}
-                    </p>
-                  </div>
-                  <Link href="/dashboard/subscription">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="bg-white/10 hover:bg-white/20 text-white border-0 cursor-pointer"
-                    >
-                      <CreditCard className="w-4 h-4 mr-1.5" />
-                      {locale === 'ja' ? 'プラン管理' : 'Manage Plan'}
-                      <ExternalLink className="w-3 h-3 ml-1.5 opacity-50" />
-                    </Button>
-                  </Link>
-                </div>
               </div>
             </SettingsSection>
 
