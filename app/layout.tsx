@@ -25,12 +25,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MUEDnote - 制作のそばに、いつもHoo。",
   description:
-    "音楽制作のおともアプリ。休憩のタイミングを教えてくれて、音に反応して動く。声でメモを残すと自動で文字起こし。",
+    "音楽クリエイターの認知特性を可視化し、AIアシスタントHooがパーソナライズされた対話で制作をサポート。完全無料。",
   metadataBase: new URL("https://mued.jp"),
   openGraph: {
     title: "MUEDnote - 制作のそばに、いつもHoo。",
     description:
-      "音楽制作のおともアプリ。休憩のタイミングを教えてくれて、音に反応して動く。",
+      "音楽クリエイターの認知特性を可視化し、AIアシスタントHooがパーソナライズされた対話で制作をサポート。",
     url: "https://mued.jp",
     siteName: "MUEDnote",
     images: [
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "MUEDnote - 制作のそばに、いつもHoo。",
     description:
-      "音楽制作のおともアプリ。休憩のタイミングを教えてくれて、音に反応して動く。",
+      "音楽クリエイターの認知特性を可視化し、AIアシスタントHooがパーソナライズされた対話で制作をサポート。",
     images: ["/og-image.jpg"],
   },
 };
@@ -72,11 +72,8 @@ export default async function RootLayout({
           <link rel="alternate" hrefLang="en" href="https://mued.jp/en" />
           <link rel="alternate" hrefLang="ja" href="https://mued.jp/ja" />
           <link rel="alternate" hrefLang="x-default" href="https://mued.jp/en" />
-          {/* PWA */}
-          <link rel="manifest" href="/manifest.json" />
-          <meta name="theme-color" content="#8b5cf6" />
-          <meta name="apple-mobile-web-app-capable" content="yes" />
-          <link rel="apple-touch-icon" href="/icons/muedlobe-192.png" />
+          {/* Theme color */}
+          <meta name="theme-color" content="#0f0f0f" />
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{

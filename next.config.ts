@@ -1,15 +1,7 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import createNextIntlPlugin from "next-intl/plugin";
-import withSerwistInit from "@serwist/next";
-
 const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
-
-const withSerwist = withSerwistInit({
-  swSrc: "app/sw.ts",
-  swDest: "public/sw.js",
-  disable: process.env.NODE_ENV === "development",
-});
 
 const nextConfig: NextConfig = {
   // テスト時にNext.js開発オーバーレイを無効化
@@ -77,7 +69,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(withSerwist(withNextIntl(nextConfig)), {
+export default withSentryConfig(withNextIntl(nextConfig), {
   // Suppresses all Sentry SDK build logs
   silent: true,
   // Disable source map upload (enable when SENTRY_AUTH_TOKEN is configured)

@@ -2,7 +2,6 @@
 
 import {
   Brain,
-  MessageCircle,
   Clock,
   ArrowRight,
   CheckCircle,
@@ -42,7 +41,7 @@ interface ProfileData {
     title: string | null;
     messageCount: number;
     updatedAt: string | null;
-  }[];
+  }[];  // kept for data compatibility — not rendered
   customInstructions: string | null;
   timerStats: {
     sessionCount: number;
@@ -180,7 +179,7 @@ function CompletenessBar({
     { key: "gamesCompleted", done: checks.gamesCompleted, label: locale === "ja" ? "7ゲーム完了" : "Complete 7 games", href: "/lobe" },
     { key: "hasProfile", done: checks.hasProfile, label: locale === "ja" ? "認知プロファイル" : "Cognitive profile", href: "/lobe" },
     { key: "hasCustomInstructions", done: checks.hasCustomInstructions, label: locale === "ja" ? "カスタム指示" : "Custom instructions", href: "/dashboard/settings" },
-    { key: "hasConversations", done: checks.hasConversations, label: locale === "ja" ? "Hoo会話" : "Hoo conversations", href: "/dashboard/muednote/hoo" },
+    { key: "hasConversations", done: checks.hasConversations, label: locale === "ja" ? "Hoo会話" : "Hoo conversations", href: null },
     { key: "hasSessions", done: checks.hasSessions, label: locale === "ja" ? "制作セッション" : "Studio sessions", href: null },
     { key: "hasUserProfile", done: checks.hasUserProfile, label: locale === "ja" ? "ユーザープロファイル" : "User profile", href: "/dashboard/muednote/import" },
   ];
@@ -242,7 +241,7 @@ export function MuednoteDashboardContent({
 }: MuednoteDashboardContentProps) {
   const { locale } = useLocale();
 
-  const { cognitiveScores, hooStats, recentConversations, customInstructions, timerStats, recentSessions, gameProgress, completeness } = profile;
+  const { cognitiveScores, customInstructions, timerStats, recentSessions, gameProgress, completeness } = profile;
 
   const completedSet = new Set(gameProgress.completedGames);
   const gamesCompleted = completedSet.size;
@@ -487,53 +486,7 @@ export function MuednoteDashboardContent({
         )}
       </div>
 
-      {/* ========================================
-          Recent Hoo Conversations (compact)
-          ======================================== */}
-      {recentConversations.length > 0 && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-slate-400 flex items-center gap-2">
-              <MessageCircle className="w-4 h-4" />
-              {locale === "ja" ? "最近の会話" : "Recent Conversations"}
-            </h2>
-            <Link
-              href="/dashboard/muednote/hoo"
-              className="text-xs text-slate-500 hover:text-white transition-colors"
-            >
-              {locale === "ja" ? "すべて見る" : "View all"}
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {recentConversations.map((conv) => (
-              <Link
-                key={conv.id}
-                href={`/dashboard/muednote/hoo?id=${conv.id}`}
-                className="group flex items-center gap-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl px-4 py-3 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white truncate">
-                    {conv.title || (locale === "ja" ? "無題の会話" : "Untitled")}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {conv.messageCount} {locale === "ja" ? "メッセージ" : "msgs"} · {formatDate(conv.updatedAt)}
-                  </p>
-                </div>
-                <ArrowRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-white transition-colors shrink-0" />
-              </Link>
-            ))}
-          </div>
-
-          {/* Hoo stats summary */}
-          {hooStats.totalConversations > 0 && (
-            <div className="flex items-center gap-4 mt-3 px-1">
-              <span className="text-xs text-slate-600">
-                {hooStats.totalConversations} {locale === "ja" ? "会話" : "chats"} · {hooStats.totalMessages} {locale === "ja" ? "メッセージ" : "msgs"}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Hoo conversations section removed — conversations are mobile-only */}
     </div>
   );
 }
