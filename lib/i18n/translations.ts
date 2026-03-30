@@ -262,106 +262,6 @@ export const translations = {
       },
     },
 
-    // Subscription Page
-    subscription: {
-      title: 'Choose Your Plan',
-      subtitle: 'Unlock the full power of MUEDnote with Hoo AI assistant',
-      currentPlan: 'Current Plan:',
-      hooConversations: 'Hoo AI:',
-      notAvailable: 'Not available',
-      unlimited: 'Unlimited',
-      used: 'used',
-      mostPopular: 'Most Popular',
-      currentPlanBadge: 'Current Plan',
-      upgrade: 'Upgrade',
-      downgrade: 'Downgrade',
-      freeForever: 'Free Forever',
-      plans: {
-        free: {
-          name: 'Free',
-          description: 'Try MUEDnote for free',
-          features: [
-            'Voice transcription (Whisper)',
-            'Log storage: 90 days',
-            'Hoo: Fixed responses only',
-          ],
-        },
-        basic: {
-          name: 'Basic',
-          description: 'Full features with unlimited Hoo AI',
-          features: [
-            'Hoo AI conversation (unlimited)',
-            'Voice transcription (Whisper)',
-            'Cloud sync & unlimited log storage',
-            'DAW log integration',
-            'Practice data visualization',
-          ],
-        },
-        premium: {
-          name: 'Premium',
-          description: 'Personalized AI with cognitive profile',
-          features: [
-            'All Basic features',
-            'Hoo personalized conversation',
-            'MUEDlobe cognitive profile',
-            'Accumulated data analysis',
-          ],
-        },
-      },
-      faq: {
-        title: 'Frequently Asked Questions',
-        q1: 'Can I cancel anytime?',
-        a1: 'Yes, you can cancel anytime. You will continue to have access until the end of your billing period.',
-        q2: 'What is the difference between Basic and Premium?',
-        a2: 'Both plans include unlimited Hoo AI conversation. Premium adds personalized Hoo (using your accumulated data and cognitive profile from MUEDlobe).',
-        q3: 'How does the free trial work?',
-        a3: 'Free users can try Hoo AI for 3 days (up to 50 turns). After the trial, upgrade to Basic for unlimited access.',
-        q4: 'Can I downgrade my plan?',
-        a4: 'Yes, you can downgrade at any time. The change will take effect at the end of your current billing period.',
-      },
-      scheduledCancel: 'Scheduled to cancel',
-      reactivate: 'Reactivate',
-      success: {
-        title: 'Welcome to {tier}!',
-        subtitle: 'Your subscription is now active',
-        features: 'You now have access to:',
-        cta: 'Start using Hoo',
-        backToDashboard: 'Back to Dashboard',
-      },
-      cancel: {
-        title: 'Downgrade Plan',
-        confirmTitle: 'Are you sure?',
-        loseAccess: "You'll lose access to:",
-        reason: 'Why are you leaving?',
-        reasons: {
-          price: 'Too expensive',
-          notUsing: 'Not using the features',
-          otherService: 'Found another service',
-          other: 'Other',
-        },
-        finalConfirm: 'Cancel subscription',
-        periodEnd: 'Your subscription will end on',
-        completed: 'Cancellation confirmed',
-        keepUntil: 'You can keep using {tier} until',
-      },
-    },
-
-    // Trial
-    trial: {
-      banner: {
-        title: 'Try Basic features free for 3 days',
-        description: 'Hoo AI (50 turns) + DAW log integration',
-        startTrial: 'Start Free Trial',
-        inProgress: 'Free Trial Active',
-        remaining: '{days} days, {turns} turns remaining',
-        expired: 'Trial ended',
-        expiredDescription: 'Upgrade to Basic for continued access',
-        turnsExhausted: 'Trial turns used up',
-        turnsExhaustedDescription: 'Upgrade to Basic for unlimited Hoo AI',
-        upgradeNow: 'Upgrade to Basic',
-      },
-    },
-
     // Lessons Page
     lessons: {
       tabs: {
@@ -436,7 +336,6 @@ export const translations = {
     muednote: {
       header: {
         signOut: 'Log Out',
-        managePlan: 'Manage Plan',
       },
       tabs: {
         home: 'Home',
@@ -724,106 +623,6 @@ export const translations = {
       },
     },
 
-    // Subscription Page
-    subscription: {
-      title: 'プランを選択',
-      subtitle: 'Hoo AIアシスタントでMUEDnoteをフル活用',
-      currentPlan: '現在のプラン：',
-      hooConversations: 'Hoo AI：',
-      notAvailable: '利用不可',
-      unlimited: '無制限',
-      used: '使用済み',
-      mostPopular: '人気',
-      currentPlanBadge: '現在のプラン',
-      upgrade: 'アップグレード',
-      downgrade: 'ダウングレード',
-      freeForever: '永久無料',
-      plans: {
-        free: {
-          name: 'フリー',
-          description: 'MUEDnoteを無料でお試し',
-          features: [
-            '音声文字起こし（Whisper）',
-            'ログ保存：90日間',
-            'Hoo：定型文のみ',
-          ],
-        },
-        basic: {
-          name: 'ベーシック',
-          description: 'Hoo AI無制限のフル機能',
-          features: [
-            'Hoo AI会話（無制限）',
-            '音声文字起こし（Whisper）',
-            'クラウド同期・ログ保存無制限',
-            'DAWログ連携',
-            '練習データの見える化',
-          ],
-        },
-        premium: {
-          name: 'プレミアム',
-          description: '認知プロファイルで個人化AI',
-          features: [
-            'ベーシックの全機能',
-            'Hoo個人化会話',
-            'MUEDlobe認知プロファイル',
-            '蓄積データ分析',
-          ],
-        },
-      },
-      faq: {
-        title: 'よくある質問',
-        q1: 'いつでもキャンセルできますか？',
-        a1: 'はい、いつでもキャンセルできます。請求期間の終了まで引き続きアクセスできます。',
-        q2: 'ベーシックとプレミアムの違いは？',
-        a2: 'どちらもHoo AI会話は無制限です。プレミアムでは蓄積データと認知プロファイル（MUEDlobe）に基づくHooの個人化が加わります。',
-        q3: '無料トライアルの仕組みは？',
-        a3: 'Freeユーザーは3日間（最大50ターン）Hoo AIをお試しいただけます。トライアル終了後はBasicへのアップグレードで無制限利用が可能です。',
-        q4: 'プランをダウングレードできますか？',
-        a4: 'はい、いつでもダウングレードできます。変更は現在の請求期間の終了時に有効になります。',
-      },
-      scheduledCancel: '解約予定',
-      reactivate: '再アクティブ化',
-      success: {
-        title: '{tier}へようこそ！',
-        subtitle: 'サブスクリプションが有効になりました',
-        features: '以下の機能が利用可能になりました：',
-        cta: 'Hooを使い始める',
-        backToDashboard: 'ダッシュボードに戻る',
-      },
-      cancel: {
-        title: 'プランのダウングレード',
-        confirmTitle: '本当によろしいですか？',
-        loseAccess: '以下の機能が使えなくなります：',
-        reason: '解約理由を教えてください',
-        reasons: {
-          price: '価格が高い',
-          notUsing: '機能を使っていない',
-          otherService: '他のサービスを見つけた',
-          other: 'その他',
-        },
-        finalConfirm: 'サブスクリプションを解約',
-        periodEnd: 'サブスクリプションの終了日',
-        completed: '解約手続きが完了しました',
-        keepUntil: '{tier}は以下の日付まで引き続きご利用いただけます',
-      },
-    },
-
-    // Trial
-    trial: {
-      banner: {
-        title: '3日間無料でBasic機能をお試し',
-        description: 'Hoo AI（50ターン）+ DAWログ連携',
-        startTrial: '無料トライアルを開始',
-        inProgress: '無料トライアル中',
-        remaining: '残り{days}日 / {turns}ターン',
-        expired: 'トライアル終了',
-        expiredDescription: 'Basicにアップグレードで継続利用',
-        turnsExhausted: 'トライアルターン使用済み',
-        turnsExhaustedDescription: 'BasicでHoo AI無制限',
-        upgradeNow: 'Basicにアップグレード',
-      },
-    },
-
     // Lessons Page
     lessons: {
       tabs: {
@@ -898,7 +697,6 @@ export const translations = {
     muednote: {
       header: {
         signOut: 'ログアウト',
-        managePlan: 'プラン管理',
       },
       tabs: {
         home: 'ホーム',
