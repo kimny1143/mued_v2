@@ -296,8 +296,8 @@ export default function DialPage() {
   const lp = t.dial.lp;
 
   const MIX_OPTIONS = [
-    { id: 'omakase' as ServiceTier, name: t.dial.checkout.omakaseName, price: 8, yenApprox: '約1,200円', description: t.dial.checkout.omakaseDesc },
-    { id: 'dialogue' as ServiceTier, name: t.dial.checkout.dialogueName, price: 15, yenApprox: '約2,200円', description: t.dial.checkout.dialogueDesc },
+    { id: 'omakase' as ServiceTier, name: t.dial.checkout.omakaseName, price: 8, description: t.dial.checkout.omakaseDesc },
+    { id: 'dialogue' as ServiceTier, name: t.dial.checkout.dialogueName, price: 15, description: t.dial.checkout.dialogueDesc },
   ];
 
   const [email, setEmail] = useState('');
@@ -426,7 +426,6 @@ export default function DialPage() {
                       <span className="text-base font-medium text-white">{opt.name}</span>
                       <div className="text-right">
                         <span className="text-2xl font-bold">${opt.price}</span>
-                        {locale === 'ja' && <span className="text-xs text-white/40 ml-1.5">({opt.yenApprox})</span>}
                       </div>
                     </div>
                     <div className="text-sm text-white/60">{opt.description}</div>
@@ -446,7 +445,6 @@ export default function DialPage() {
               >
                 <div className="flex items-baseline gap-3">
                   <span className="text-lg font-bold">+$6</span>
-                  {locale === 'ja' && <span className="text-xs text-white/40">(約900円)</span>}
                   <span className="text-sm font-medium">{t.dial.checkout.masteringName}</span>
                 </div>
                 <div className="text-xs text-white/60 mt-1">{t.dial.checkout.masteringDesc}</div>
