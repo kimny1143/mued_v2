@@ -120,23 +120,14 @@ export function ResultsContent({
   const [commentary, setCommentary] = useState<string | null>(null);
   const [commentaryLoading, setCommentaryLoading] = useState(false);
   const [commentaryError, setCommentaryError] = useState(false);
-  const [commentaryLocked, setCommentaryLocked] = useState(false);
 
   useEffect(() => {
     if (!hasProfile) return;
 
     setCommentaryLoading(true);
     setCommentaryError(false);
-    setCommentaryLocked(false);
     fetch('/api/lobe/commentary')
       .then(async (res) => {
-        if (res.status === 403) {
-          const body = await res.json().catch(() => null);
-          if (body?.code === 'COMMENTARY_LOCKED') {
-            setCommentaryLocked(true);
-            return null;
-          }
-        }
         if (!res.ok) throw new Error(`Commentary API ${res.status}`);
         return res.json();
       })
@@ -184,7 +175,7 @@ export function ResultsContent({
         </div>
 
         {/* Hoo's Commentary */}
-        {hasProfile && (commentaryLoading || commentary || commentaryError || commentaryLocked) && (
+        {hasProfile && (commentaryLoading || commentary || commentaryError) && (
           <section className="p-4 sm:p-6 bg-white/5 border border-white/10 rounded-xl space-y-3">
             <h2 className="text-sm font-medium text-white/40 uppercase tracking-wider">
               {t('hooComment')}
@@ -196,10 +187,6 @@ export function ResultsContent({
                 <div className="h-4 bg-white/10 rounded animate-pulse w-4/6" />
                 <p className="text-xs text-white/30 mt-2">{t('generating')}</p>
               </div>
-            ) : commentaryLocked ? (
-              <div className="space-y-3">
-                <p className="text-sm text-white/50">{t('commentaryLocked')}</p>
-              </div>
             ) : commentaryError ? (
               <div className="flex items-center gap-3">
                 <p className="text-xs text-white/30">{t('commentaryFailed')}</p>
@@ -209,13 +196,6 @@ export function ResultsContent({
                     setCommentaryError(false);
                     fetch('/api/lobe/commentary')
                       .then(async (res) => {
-                        if (res.status === 403) {
-                          const body = await res.json().catch(() => null);
-                          if (body?.code === 'COMMENTARY_LOCKED') {
-                            setCommentaryLocked(true);
-                            return null;
-                          }
-                        }
                         if (!res.ok) throw new Error(`${res.status}`);
                         return res.json();
                       })

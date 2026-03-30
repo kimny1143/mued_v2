@@ -690,8 +690,6 @@
       "hooComment": "Hooの分析",
       "generating": "あなたの思考スタイルを分析中...",
       "commentaryFailed": "Hooの分析を生成できませんでした。",
-      "commentaryLocked": "体験期間が終了しました。Basicプランにアップグレードすると、Hooの分析が利用できます。",
-      "upgradeToBasic": "Basicにアップグレード",
       "retryCommentary": "再試行",
       "backToLobe": "Lobeに戻る",
       "variables": {
