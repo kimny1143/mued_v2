@@ -63,18 +63,7 @@ tsx scripts/seed.ts # Direct execution
 
 ---
 
-#### 4. **`setup-stripe-products.ts`** - Stripe Product Setup
-Configures Stripe products and pricing for the application.
-
-**Usage:**
-```bash
-npm run stripe:setup       # Via package.json script
-tsx scripts/setup-stripe-products.ts # Direct execution
-```
-
----
-
-#### 5. **`sync-clerk-users.ts`** - Clerk User Synchronization
+#### 4. **`sync-clerk-users.ts`** - Clerk User Synchronization
 Synchronizes user data between Clerk and the local database.
 
 **Usage:**
@@ -195,7 +184,6 @@ tsx db-utilities.ts verify
 
 # Production Setup
 npm run db:seed
-npm run stripe:setup
 ```
 
 ---
