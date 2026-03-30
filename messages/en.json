@@ -1347,7 +1347,11 @@
       "faq5q": "What format is the final file?",
       "faq5a": "Final mixes and masters are delivered as WAV. Previews are MP3.",
       "faq6q": "Do I need an account?",
-      "faq6a": "No. Just an email and a credit card. If you create an account later, your session history carries over."
+      "faq6a": "No. Just an email and a credit card. If you create an account later, your session history carries over.",
+      "navPricing": "Pricing",
+      "planBannerTitle": "Mix regularly? Save with a plan.",
+      "planBannerDesc": "Get monthly credits and pay less per mix.",
+      "planBannerCta": "View Plans"
     },
     "checkout": {
       "tagline": "AI-powered mixing and mastering. Upload your stems, get a professional mix — no account required.",
