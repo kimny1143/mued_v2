@@ -76,23 +76,23 @@
     },
     "philosophy": {
       "title": "What MUEDnote Does",
-      "intro": "When you're deep in production, it's easy to lose track of time.\nMUEDnote keeps you on track.",
+      "intro": "Map your cognitive traits. Let Hoo understand you.\nMaking music visible.",
       "features": {
-        "rest": {
-          "title": "Break Reminders",
-          "description": "Timed reminders prevent burnout and keep you in your creative zone."
+        "lobe": {
+          "title": "Cognitive Profiling",
+          "description": "7 games map your cognitive traits across 5 dimensions. Discover your musical strengths and growth areas."
         },
-        "sound": {
-          "title": "Sound Detection",
-          "description": "Hoo responds to audio from your DAW. A subtle presence while you work."
+        "hoo": {
+          "title": "Hoo Learns You",
+          "description": "Game results, production patterns, and conversation history shape Hoo's personalized dialogue with you."
         },
-        "voice": {
-          "title": "Cloud Transcription",
-          "description": "Your voice memos are automatically transcribed in the cloud. Never forget why you made that choice."
+        "import": {
+          "title": "AI Chat Import",
+          "description": "Import exports from Claude, ChatGPT, or Gemini to automatically extract your music profile."
         },
-        "chat": {
-          "title": "AI-Powered Reflection",
-          "description": "After a session, AI reviews your recordings and helps you reflect. Discover perspectives you might have missed."
+        "free": {
+          "title": "Completely Free",
+          "description": "Every MUEDnote feature is free. Place your iPhone nearby and start recording your sessions."
         }
       }
     },
@@ -100,12 +100,12 @@
       "badge": "iOS App",
       "title": "Your Sessions, Captured on iPhone",
       "description": "Place your phone nearby and recording begins.",
-      "highlight": "Sound detection, break reminders, voice memo transcription.\nEverything you need to stay focused, in one app.",
-      "hint": "Voice memos, automatically transcribed. Review them anytime.",
+      "highlight": "Cognitive profiling, AI personalization, session logging.\nEverything to understand your creative process, in one app.",
+      "hint": "7 games reveal your cognitive profile. Hoo learns who you are.",
       "ctaPrimary": "Get Started Free",
       "preview": {
         "greeting": "Ho-hoo",
-        "timer": "Next break in 23:45"
+        "timer": "Completely Free"
       }
     },
     "growth": {
@@ -121,11 +121,11 @@
         ]
       },
       "conversation": {
-        "title": "AI-Powered Reflection",
-        "quote": "After a session, AI uses your recordings and logs to support a reflective conversation. Available on the Basic plan.",
+        "title": "Personalized Hoo Conversations",
+        "quote": "Hoo uses your cognitive profile and production patterns to deliver dialogue tailored to you. Free for everyone.",
         "features": [
-          "Context-aware dialogue based on your recordings",
-          "Unlimited on Basic plan"
+          "Dialogue informed by your cognitive profile",
+          "Completely free"
         ]
       }
     },

@@ -1,14 +1,13 @@
 "use client";
 
-import { Clock, Music, Mic, MessageCircle } from "lucide-react";
+import { Brain, MessageCircle, Upload, Gift } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 
 /**
  * Philosophy Section - Landing Page
  *
- * MVP features: Rest tracker + Sound reaction + Voice memo
- * No AI conversation - just a cute companion
+ * v1.2.0 features: Cognitive profiling + Hoo personalization + AI chat import + Free
  */
 export function PhilosophySection() {
   const t = useTranslations("landing.philosophy");
@@ -39,10 +38,10 @@ export function PhilosophySection() {
         {/* Four features */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
-            { icon: Clock, key: "rest" },
-            { icon: Music, key: "sound" },
-            { icon: Mic, key: "voice" },
-            { icon: MessageCircle, key: "chat" },
+            { icon: Brain, key: "lobe" },
+            { icon: MessageCircle, key: "hoo" },
+            { icon: Upload, key: "import" },
+            { icon: Gift, key: "free" },
           ].map(({ icon: Icon, key }, index) => (
             <motion.div
               key={key}
