@@ -126,6 +126,80 @@ export class HooMemoriesRepository {
   }
 
   /**
+   * Update auto-extracted memories for a user (Phase 2)
+   */
+  async updateAutoMemories(userId: string, memories: HooAutoMemory[]): Promise<HooMemorySettings> {
+    const existing = await this.getMemorySettings(userId);
+
+    if (existing) {
+      const [updated] = await db
+        .update(hooMemories)
+        .set({
+          autoMemories: memories,
+          updatedAt: new Date(),
+        })
+        .where(eq(hooMemories.userId, userId))
+        .returning();
+
+      return updated;
+    }
+
+    const [created] = await db
+      .insert(hooMemories)
+      .values({
+        userId,
+        autoMemories: memories,
+      })
+      .returning();
+
+    return created;
+  }
+
+  /**
+   * Get auto-extracted memories for a user
+   * Returns empty array if not set or disabled
+   */
+  async getAutoMemories(userId: string): Promise<HooAutoMemory[]> {
+    const settings = await this.getMemorySettings(userId);
+
+    if (!settings?.autoMemoryEnabled) {
+      return [];
+    }
+
+    return settings.autoMemories ?? [];
+  }
+
+  /**
+   * Toggle auto-memory extraction enabled/disabled
+   */
+  async toggleAutoMemory(userId: string, enabled: boolean): Promise<HooMemorySettings> {
+    const existing = await this.getMemorySettings(userId);
+
+    if (existing) {
+      const [updated] = await db
+        .update(hooMemories)
+        .set({
+          autoMemoryEnabled: enabled,
+          updatedAt: new Date(),
+        })
+        .where(eq(hooMemories.userId, userId))
+        .returning();
+
+      return updated;
+    }
+
+    const [created] = await db
+      .insert(hooMemories)
+      .values({
+        userId,
+        autoMemoryEnabled: enabled,
+      })
+      .returning();
+
+    return created;
+  }
+
+  /**
    * Delete memory settings for a user
    */
   async delete(userId: string): Promise<HooMemorySettings | null> {
