@@ -8,7 +8,6 @@
  */
 
 import { useState } from 'react';
-import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { MuednoteLayout } from '@/components/layouts/muednote-layout';
 import { useLocale } from '@/lib/i18n/locale-context';
@@ -64,19 +63,12 @@ const HOSTS: HostInfo[] = [
 // Config Generators
 // ========================================
 
-function generateConfig(host: McpHost, clerkId: string): string {
-  const serverBlock = {
-    command: 'npx',
-    args: ['-y', '@mued/hoo-mcp@latest'],
-    env: {
-      CLERK_USER_ID: clerkId,
-      MUED_API_URL: 'https://mued.jp',
-    },
-  };
+const MCP_SERVER_URL = 'https://hoo-mcp.glasswerkskimny.workers.dev';
 
-  if (host === 'claude-code') {
-    return JSON.stringify({ mcpServers: { 'mued-hoo': serverBlock } }, null, 2);
-  }
+function generateConfig(_host: McpHost): string {
+  const serverBlock = {
+    url: `${MCP_SERVER_URL}/mcp`,
+  };
 
   return JSON.stringify({ mcpServers: { 'mued-hoo': serverBlock } }, null, 2);
 }
@@ -120,11 +112,9 @@ function CopyButton({ text, locale }: { text: string; locale: string }) {
 
 export default function McpSetupPage() {
   const { locale } = useLocale();
-  const { user } = useUser();
   const [selectedHost, setSelectedHost] = useState<McpHost>('claude-desktop');
 
-  const clerkId = user?.id ?? 'user_xxx';
-  const config = generateConfig(selectedHost, clerkId);
+  const config = generateConfig(selectedHost);
   const selectedHostInfo = HOSTS.find(h => h.id === selectedHost)!;
 
   return (
@@ -198,24 +188,10 @@ export default function McpSetupPage() {
             <div className="bg-[#0d1117] border border-white/10 rounded-xl p-4 overflow-x-auto">
               <pre className="text-sm text-green-300 font-mono whitespace-pre">{config}</pre>
             </div>
-            {user?.id && (
-              <p className="text-xs text-white/30 mt-2">
-                {locale === 'ja'
-                  ? `Clerk ID (${clerkId}) は自動で埋め込まれています`
-                  : `Your Clerk ID (${clerkId}) is auto-embedded`}
-              </p>
-            )}
-          </div>
-
-          {/* Note: Coming Soon */}
-          <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-4">
-            <p className="text-sm text-amber-300/80 font-medium mb-1">
-              {locale === 'ja' ? 'リモートサーバー（準備中）' : 'Remote server (coming soon)'}
-            </p>
-            <p className="text-xs text-white/40">
+            <p className="text-xs text-white/30 mt-2">
               {locale === 'ja'
-                ? '現在はローカルセットアップが必要です。近日中にリモートMCPサーバーがリリースされ、URLを貼るだけで接続できるようになります。'
-                : 'Local setup is currently required. A remote MCP server is coming soon — just paste a URL to connect.'}
+                ? 'リモートMCPサーバーに接続します。認証はClerkセッションで自動処理されます。'
+                : 'Connects to the remote MCP server. Authentication is handled automatically via your Clerk session.'}
             </p>
           </div>
 
