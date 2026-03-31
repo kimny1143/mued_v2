@@ -1,0 +1,11 @@
+name = "hoo-mcp"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://mued.jp,https://www.mued.jp,http://localhost:3000,https://*.vercel.app"
+
+# Secrets (set via `wrangler secret put`):
+# DATABASE_URL — Neon PostgreSQL connection string
+# CLERK_SECRET_KEY — Clerk JWT verification key
+# CLERK_PUBLISHABLE_KEY — Clerk publishable key (for JWT issuer verification)
