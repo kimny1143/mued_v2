@@ -11,14 +11,7 @@
 import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useLocale } from '@/lib/i18n/locale-context';
-import {
-  detectFormat,
-  extractMessages,
-  filterMusicRelated,
-  chunkMessages,
-  MAX_CONCURRENT,
-  type FileFormat,
-} from '@/lib/utils/chat-import-parser';
+import type { FileFormat } from '@/lib/utils/chat-import-parser';
 
 // ========================================
 // Types
@@ -62,6 +55,10 @@ export default function DialImportPage() {
     setState('parsing');
 
     try {
+      // Lazy load parser utilities — only needed when processing a file
+      const { detectFormat, extractMessages, filterMusicRelated, chunkMessages, MAX_CONCURRENT: maxConcurrent } =
+        await import('@/lib/utils/chat-import-parser');
+
       const text = await file.text();
       let data: unknown;
       try {
@@ -98,10 +95,10 @@ export default function DialImportPage() {
       const updatedFields = new Set<string>();
       let errors = 0;
 
-      for (let idx = 0; idx < chunks.length; idx += MAX_CONCURRENT) {
+      for (let idx = 0; idx < chunks.length; idx += maxConcurrent) {
         if (abortRef.current) break;
 
-        const batch = chunks.slice(idx, idx + MAX_CONCURRENT);
+        const batch = chunks.slice(idx, idx + maxConcurrent);
         const results = await Promise.allSettled(
           batch.map(chunk =>
             fetch('/api/muednote/profile/import', {

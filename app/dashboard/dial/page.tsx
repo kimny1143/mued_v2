@@ -19,24 +19,25 @@ const STATUS_ICONS = {
 } as const;
 
 export default async function DialDashboardPage() {
-  const cookieStore = await cookies();
+  // Parallelize cookie read + Clerk auth (independent operations)
+  const [cookieStore, user] = await Promise.all([cookies(), currentUser()]);
+  if (!user) redirect("/sign-in");
+
   const locale = (cookieStore.get('NEXT_LOCALE')?.value ?? 'en') as 'en' | 'ja';
-  const messages = (await import(`../../../messages/${locale}.json`)).default;
+
+  // Parallelize message import + DB query (both ready now)
+  const [messages, rawSessions] = await Promise.all([
+    import(`../../../messages/${locale}.json`).then((m) => m.default),
+    db.query.dialSessions.findMany({
+      where: eq(dialSessions.userId, user.id),
+      orderBy: [desc(dialSessions.createdAt)],
+      with: {
+        tracks: { columns: { id: true } },
+        tasks: { columns: { id: true, taskType: true, status: true, r2FinalUrl: true, r2ExpiresAt: true } },
+      },
+    }),
+  ]);
   const t = messages;
-
-  const user = await currentUser();
-  if (!user) {
-    redirect("/sign-in");
-  }
-
-  const rawSessions = await db.query.dialSessions.findMany({
-    where: eq(dialSessions.userId, user.id),
-    orderBy: [desc(dialSessions.createdAt)],
-    with: {
-      tracks: { columns: { id: true } },
-      tasks: { columns: { id: true, taskType: true, status: true, r2FinalUrl: true, r2ExpiresAt: true } },
-    },
-  });
 
   const now = new Date();
   const sessions = rawSessions.map((s) => {
