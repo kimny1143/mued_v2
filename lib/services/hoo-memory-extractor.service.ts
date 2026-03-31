@@ -27,7 +27,7 @@ const MAX_AUTO_MEMORIES = 50;
 const MEMORY_EXTRACTION_PROMPT = `You are analyzing a conversation between a music creator and Hoo (an AI thought-organization companion). Extract specific facts about the user that would be useful to remember for future conversations.
 
 Return a JSON array of memories. Each memory must have:
-- "content": A concise fact (under 80 chars) in the user's language
+- "content": A concise fact (under 120 chars) in the user's language
 - "category": One of "equipment", "genre", "skill", "project", "preference"
 - "confidence": 0.0-1.0 (0.8+ for directly stated facts, 0.5-0.7 for implied)
 

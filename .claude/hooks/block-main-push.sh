@@ -1,0 +1,1 @@
+/Users/kimny/Dropbox/_DevProjects/claude-code-template/.claude/hooks/block-main-push.sh

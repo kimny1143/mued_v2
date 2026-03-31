@@ -42,7 +42,9 @@ export const POST = withAuthResolved(async ({ internalUserId, request }) => {
       return apiError('Conversation not found', { status: 404 });
     }
 
-    // Extract memories
+    // Extract memories (manual trigger — runs even if autoMemoryEnabled=false,
+    // so users can try extraction once without enabling auto-mode.
+    // Auto-trigger in /api/hoo/chat (PR-B) will check the enabled flag.)
     const extracted = await hooMemoryExtractorService.extractFromConversation(
       internalUserId,
       conversationId
