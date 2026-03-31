@@ -270,8 +270,10 @@ export async function getConversationHistory(
   const internalId = await resolveInternalId(sql, clerkId);
   if (!internalId) return textResult("User not found.");
 
+  // Messages are stored as JSONB array in hoo_conversations.messages
+  // (no separate hoo_messages table)
   const convRows = (await sql`
-    SELECT id, title, message_count, model, provider, created_at, updated_at
+    SELECT id, title, message_count, messages, model, provider, created_at, updated_at
     FROM hoo_conversations WHERE user_id = ${internalId}
     ORDER BY updated_at DESC LIMIT ${limit}`) as Row[];
 
@@ -288,17 +290,20 @@ export async function getConversationHistory(
     sections.push(`- Model: ${(conv.model as string) || "unknown"}`);
 
     if (includeMessages) {
-      const msgRows = (await sql`
-        SELECT role, content, created_at FROM hoo_messages
-        WHERE conversation_id = ${conv.id}
-        ORDER BY created_at ASC`) as Row[];
+      const messages = (conv.messages ?? []) as Array<{
+        role: string;
+        content: string;
+        timestamp?: string;
+      }>;
 
-      if (msgRows.length > 0) {
+      if (messages.length > 0) {
         sections.push("\n### Messages:");
-        for (const msg of msgRows) {
+        for (const msg of messages) {
           const role = msg.role === "user" ? "**User**" : "**Hoo**";
-          const time = new Date(msg.created_at as string).toLocaleTimeString();
-          sections.push(`\n${role} (${time}):\n${msg.content}`);
+          const time = msg.timestamp
+            ? new Date(msg.timestamp).toLocaleTimeString()
+            : "";
+          sections.push(`\n${role}${time ? ` (${time})` : ""}:\n${msg.content}`);
         }
       }
     }
@@ -370,22 +375,22 @@ export async function getHooContext(
       }
     }
 
-    // Fetch recent conversation messages
+    // Fetch recent conversation messages (stored as JSONB in hoo_conversations.messages)
     if (recentMsgCount > 0) {
       const recentConv = (await sql`
-        SELECT id FROM hoo_conversations WHERE user_id = ${internalId}
+        SELECT messages FROM hoo_conversations WHERE user_id = ${internalId}
         ORDER BY updated_at DESC LIMIT 1`) as Row[];
 
       if (recentConv.length > 0) {
-        const msgRows = (await sql`
-          SELECT role, content FROM hoo_messages
-          WHERE conversation_id = ${recentConv[0].id}
-          ORDER BY created_at DESC LIMIT ${recentMsgCount}`) as Row[];
+        const allMessages = (recentConv[0].messages ?? []) as Array<{
+          role: string;
+          content: string;
+        }>;
+        const recentMessages = allMessages.slice(-recentMsgCount);
 
-        if (msgRows.length > 0) {
-          const msgs = [...msgRows].reverse();
+        if (recentMessages.length > 0) {
           contextBlock += "\n\n## 直近の会話履歴";
-          for (const msg of msgs) {
+          for (const msg of recentMessages) {
             const label = msg.role === "user" ? "User" : "Hoo";
             contextBlock += `\n${label}: ${msg.content}`;
           }
