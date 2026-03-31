@@ -1,8 +1,5 @@
-"use client";
-
 import { ReactNode } from "react";
 import { MuednoteHeader } from "./muednote-header";
-import { MuednoteTabs } from "./muednote-tabs";
 
 interface MuednoteLayoutProps {
   children: ReactNode;
@@ -11,16 +8,14 @@ interface MuednoteLayoutProps {
 /**
  * MUEDnote Dashboard Layout
  *
- * Dark theme layout for MUEDnote
- * - Consistent with landing page design
- * - No LMS elements
+ * Server Component shell — keeps client JS minimal.
+ * Interactive parts (sign out, language switcher) live in MuednoteHeader (client).
  */
 export function MuednoteLayout({ children }: MuednoteLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col bg-[#0F0F1A]">
       <MuednoteHeader />
       <main className="flex-1 container mx-auto px-6 py-8">
-        <MuednoteTabs />
         {children}
       </main>
       <footer className="bg-[#0F0F1A] py-6 border-t border-white/10">

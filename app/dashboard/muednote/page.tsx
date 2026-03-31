@@ -21,25 +21,22 @@ export default async function MuednoteDashboardPage() {
   const user = await currentUser();
   if (!user) redirect("/sign-in");
 
-  // Resolve internal UUID for tables that reference users.id (UUID)
-  // cognitiveProfiles and muednoteMobileSessions use Clerk ID (text) directly
-  const internalUserId = await getUserIdFromClerkId(user.id);
-
-  // Fetch all data sources in parallel
+  // Phase 1: Resolve UUID in parallel with Clerk-ID-based queries
+  // cognitiveProfiles, muednoteMobileSessions, measurementHistory use Clerk ID directly
+  // hooConversations, hooMemories, userProfiles use internal UUID
   const [
+    internalUserId,
     cognitiveProfile,
-    hooStats,
-    recentConversations,
-    customInstructions,
     sessionsResult,
     recentSessions,
     todayResult,
     weekResult,
     monthResult,
     gameCompletions,
-    userProfile,
   ] = await Promise.all([
-    // MUEDlobe cognitive profile
+    getUserIdFromClerkId(user.id),
+
+    // MUEDlobe cognitive profile (Clerk ID)
     db
       .select()
       .from(cognitiveProfiles)
@@ -47,42 +44,13 @@ export default async function MuednoteDashboardPage() {
       .limit(1)
       .then((rows) => rows[0] ?? null),
 
-    // Hoo conversation stats (hooConversations.userId is UUID)
-    db
-      .select({
-        totalConversations: sql<number>`count(*)`,
-        totalMessages: sql<number>`COALESCE(sum(message_count), 0)`,
-      })
-      .from(hooConversations)
-      .where(eq(hooConversations.userId, internalUserId))
-      .then((rows) => ({
-        totalConversations: Number(rows[0]?.totalConversations ?? 0),
-        totalMessages: Number(rows[0]?.totalMessages ?? 0),
-      })),
-
-    // Recent Hoo conversations (last 3 with titles)
-    db
-      .select({
-        id: hooConversations.id,
-        title: hooConversations.title,
-        messageCount: hooConversations.messageCount,
-        updatedAt: hooConversations.updatedAt,
-      })
-      .from(hooConversations)
-      .where(eq(hooConversations.userId, internalUserId))
-      .orderBy(desc(hooConversations.updatedAt))
-      .limit(3),
-
-    // Custom instructions (hooMemories.userId is UUID)
-    hooMemoriesRepository.getCustomInstructions(internalUserId),
-
-    // Session count
+    // Session count (Clerk ID)
     db
       .select({ count: sql<number>`count(*)` })
       .from(muednoteMobileSessions)
       .where(eq(muednoteMobileSessions.userId, user.id)),
 
-    // Recent sessions
+    // Recent sessions (Clerk ID)
     db
       .select()
       .from(muednoteMobileSessions)
@@ -90,7 +58,7 @@ export default async function MuednoteDashboardPage() {
       .orderBy(desc(muednoteMobileSessions.createdAt))
       .limit(3),
 
-    // Today's time
+    // Today's time (Clerk ID)
     (() => {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
@@ -108,7 +76,7 @@ export default async function MuednoteDashboardPage() {
         );
     })(),
 
-    // Week's time
+    // Week's time (Clerk ID)
     (() => {
       const now = new Date();
       const dayOfWeek = now.getDay();
@@ -132,7 +100,7 @@ export default async function MuednoteDashboardPage() {
         );
     })(),
 
-    // Month's time
+    // Month's time (Clerk ID)
     (() => {
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -150,7 +118,7 @@ export default async function MuednoteDashboardPage() {
         );
     })(),
 
-    // MUEDlobe game completions (distinct game types completed)
+    // MUEDlobe game completions (Clerk ID)
     db
       .select({
         gameType: measurementHistory.gameType,
@@ -159,15 +127,44 @@ export default async function MuednoteDashboardPage() {
       .from(measurementHistory)
       .where(eq(measurementHistory.userId, user.id))
       .groupBy(measurementHistory.gameType),
-
-    // User profile (for completeness check)
-    db
-      .select()
-      .from(userProfiles)
-      .where(eq(userProfiles.userId, internalUserId))
-      .limit(1)
-      .then((rows) => rows[0] ?? null),
   ]);
+
+  // Phase 2: UUID-dependent queries (run after internalUserId resolves)
+  const [hooStats, recentConversations, customInstructions, userProfile] =
+    await Promise.all([
+      db
+        .select({
+          totalConversations: sql<number>`count(*)`,
+          totalMessages: sql<number>`COALESCE(sum(message_count), 0)`,
+        })
+        .from(hooConversations)
+        .where(eq(hooConversations.userId, internalUserId))
+        .then((rows) => ({
+          totalConversations: Number(rows[0]?.totalConversations ?? 0),
+          totalMessages: Number(rows[0]?.totalMessages ?? 0),
+        })),
+
+      db
+        .select({
+          id: hooConversations.id,
+          title: hooConversations.title,
+          messageCount: hooConversations.messageCount,
+          updatedAt: hooConversations.updatedAt,
+        })
+        .from(hooConversations)
+        .where(eq(hooConversations.userId, internalUserId))
+        .orderBy(desc(hooConversations.updatedAt))
+        .limit(3),
+
+      hooMemoriesRepository.getCustomInstructions(internalUserId),
+
+      db
+        .select()
+        .from(userProfiles)
+        .where(eq(userProfiles.userId, internalUserId))
+        .limit(1)
+        .then((rows) => rows[0] ?? null),
+    ]);
 
   const sessionCount = Number(sessionsResult[0]?.count) || 0;
 
