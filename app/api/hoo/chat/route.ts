@@ -19,6 +19,7 @@ import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profile
 import { getHooSystemPrompt, getHooSystemPromptWithMemory, buildLobeContextPrompt } from '@/lib/ai/hoo-prompt';
 import { buildMusicalDawContext } from '@/lib/services/daw-log-interpreter.service';
 import { profileGeneratorService } from '@/lib/services/profile-generator.service';
+import { hooMemoryExtractorService } from '@/lib/services/hoo-memory-extractor.service';
 import { logger } from '@/lib/utils/logger';
 
 // ========================================
@@ -112,8 +113,9 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
       systemPrompt = getHooSystemPrompt();
       systemPrompt += `\n\n---\n\n## 会話コンテキスト: プロファイル収集\nユーザーの音楽的な好み・スタイル・経験を自然な会話で聞き出してください。\n\n### ルール\n- 1回の質問は1つだけ。矢継ぎ早に聞かない\n- 回答を深掘りしてから次の話題に移る\n- DAWの使用状況やセッションデータには言及しない（持っていない）\n- 認知スコアやテスト結果には言及しない\n- 短く親しみやすいトーンで`;
     } else {
-      // Full context: custom instructions, MUEDlobe, sessions, DAW logs
+      // Full context: custom instructions, auto-memories, MUEDlobe, sessions, DAW logs
       const customInstructions = await hooMemoriesRepository.getCustomInstructions(internalUserId);
+      const autoMemories = await hooMemoriesRepository.getAutoMemories(internalUserId);
 
       let muedlobeInstructions: string[] | null = null;
       try {
@@ -136,7 +138,12 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
         logger.warn('[POST /api/hoo/chat] DAW log context fetch failed', { err });
       }
 
-      systemPrompt = getHooSystemPromptWithMemory(customInstructions, sessionContext, muedlobeInstructions);
+      systemPrompt = getHooSystemPromptWithMemory(
+        customInstructions,
+        sessionContext,
+        muedlobeInstructions,
+        autoMemories.length > 0 ? autoMemories : null
+      );
 
       // Append conversation context directive
       if (context === 'profile') {
@@ -290,6 +297,16 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     profileGeneratorService
       .updateFromConversation(internalUserId, conversation.id)
       .catch((err) => logger.warn('[POST /api/hoo/chat] Profile update failed', { err }));
+
+    // Fire-and-forget: extract auto-memories from conversation (Phase 2)
+    // Only runs if autoMemoryEnabled=true and conversation has enough messages (4+)
+    hooMemoriesRepository.getMemorySettings(internalUserId)
+      .then((settings) => {
+        if (settings?.autoMemoryEnabled !== false) {
+          return hooMemoryExtractorService.extractFromConversation(internalUserId, conversation.id);
+        }
+      })
+      .catch((err) => logger.warn('[POST /api/hoo/chat] Auto-memory extraction failed', { err }));
 
     // Get updated usage
     const updatedUsage = await subscriptionRepository.getHooUsageLimits(internalUserId);

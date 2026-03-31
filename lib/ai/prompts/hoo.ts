@@ -290,7 +290,8 @@ ${scoreLines}${patternSection}
 export function getHooSystemPromptWithMemory(
   customInstructions?: string | null,
   sessionContext?: SessionContextForHoo,
-  muedlobeInstructions?: string[] | null
+  muedlobeInstructions?: string[] | null,
+  autoMemories?: Array<{ content: string; category: string }> | null
 ): string {
   const basePrompt = getHooSystemPrompt();
   const parts: string[] = [basePrompt];
@@ -303,6 +304,10 @@ export function getHooSystemPromptWithMemory(
     parts.push(buildMuedlobeInstructionsPrompt(muedlobeInstructions));
   }
 
+  if (autoMemories && autoMemories.length > 0) {
+    parts.push(buildAutoMemoriesPrompt(autoMemories));
+  }
+
   if (sessionContext?.hasContext) {
     const contextPrompt = buildSessionContextPrompt(sessionContext);
     if (contextPrompt) {
@@ -311,4 +316,27 @@ export function getHooSystemPromptWithMemory(
   }
 
   return parts.join('\n\n---\n\n');
+}
+
+/**
+ * Build auto-memories context block for Hoo
+ */
+function buildAutoMemoriesPrompt(
+  memories: Array<{ content: string; category: string }>
+): string {
+  const grouped: Record<string, string[]> = {};
+  for (const mem of memories) {
+    if (!grouped[mem.category]) grouped[mem.category] = [];
+    grouped[mem.category].push(mem.content);
+  }
+
+  const sections = Object.entries(grouped)
+    .map(([cat, items]) => `### ${cat}\n${items.map(i => `- ${i}`).join('\n')}`)
+    .join('\n\n');
+
+  return `## ユーザーについて学んだこと（自動抽出）
+
+以下は過去の会話から自動的に抽出された情報です。会話の文脈に合う場合のみ自然に活用してください。一覧を読み上げたり、全てに言及する必要はありません。
+
+${sections}`;
 }
