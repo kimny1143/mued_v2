@@ -1420,6 +1420,29 @@
         "omakase": "おまかせ",
         "dialogue": "対話",
         "mastering": "マスタリング"
+      },
+      "import": {
+        "title": "AI会話をインポート",
+        "description": "Claude、ChatGPT、Geminiの会話エクスポートをアップロード。Hooがあなたの音楽やミキシングの好みを学びます。",
+        "dropTitle": "JSONエクスポートをここにドロップ",
+        "dropFormats": "対応: Claude (conversations.json)、ChatGPT (conversations.json)、Gemini",
+        "selectFile": "ファイルを選択",
+        "invalidJson": "無効なJSONファイルです。正しい会話エクスポートを選択してください。",
+        "noMusicFound": "このファイルに音楽関連の会話が見つかりませんでした。",
+        "detected": "検出",
+        "format": "フォーマット",
+        "totalMessages": "総メッセージ数",
+        "musicRelated": "音楽関連",
+        "chunks": "チャンク",
+        "complete": "完了",
+        "processingChunk": "チャンク処理中 {current}/{total}",
+        "hooLearned": "Hooが学んだこと:",
+        "chunksFailed": "{count}件のチャンク処理に失敗しました（成功した分でプロフィールは更新済み）",
+        "viewProfile": "ダッシュボードを見る",
+        "importAnother": "別のファイルをインポート",
+        "privacyNote": "ファイルはブラウザ内で処理されます。音楽関連の抜粋のみがプロフィール抽出のためにサーバーに送信されます。",
+        "backToDashboard": "ダッシュボード",
+        "button": "インポート"
       }
     },
     "pricing": {

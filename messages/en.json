@@ -1420,6 +1420,29 @@
         "omakase": "Omakase",
         "dialogue": "Dialogue",
         "mastering": "Mastering"
+      },
+      "import": {
+        "title": "Import AI Conversations",
+        "description": "Upload your Claude, ChatGPT, or Gemini conversation exports. Hoo will learn about your music and mixing preferences.",
+        "dropTitle": "Drop your JSON export here",
+        "dropFormats": "Supports: Claude (conversations.json), ChatGPT (conversations.json), Gemini",
+        "selectFile": "Select File",
+        "invalidJson": "Invalid JSON file. Please select a valid conversation export.",
+        "noMusicFound": "No music-related conversations found in this file.",
+        "detected": "Detected",
+        "format": "format",
+        "totalMessages": "Total Messages",
+        "musicRelated": "Music Related",
+        "chunks": "Chunks",
+        "complete": "Complete",
+        "processingChunk": "Processing chunk {current}/{total}",
+        "hooLearned": "Hoo learned about:",
+        "chunksFailed": "{count} chunk(s) failed to process (profile was still updated from successful chunks)",
+        "viewProfile": "View Dashboard",
+        "importAnother": "Import Another File",
+        "privacyNote": "Your file is processed entirely in the browser. Only music-related excerpts are sent to the server for profile extraction.",
+        "backToDashboard": "Dashboard",
+        "button": "Import"
       }
     },
     "pricing": {

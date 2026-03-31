@@ -5,7 +5,7 @@ import { db } from "@/db";
 import { dialSessions } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import Link from "next/link";
-import { Headphones, Music, Clock, CheckCircle, Loader2, Upload, ArrowRight, Download } from "lucide-react";
+import { Headphones, Music, Clock, CheckCircle, Loader2, Upload, ArrowRight, Download, FileUp } from "lucide-react";
 import { SessionTitle } from "./session-title";
 import { CreditBalance } from "./credit-balance";
 
@@ -84,13 +84,22 @@ export default async function DialDashboardPage() {
               : t.dial.dashboard.noSessionsYet}
           </p>
         </div>
-        <Link
-          href="/dial"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-medium rounded-lg transition-colors text-sm"
-        >
-          <Headphones className="w-4 h-4" />
-          {t.dial.dashboard.newSession}
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/dial/import"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white font-medium rounded-lg transition-colors text-sm"
+          >
+            <FileUp className="w-4 h-4" />
+            {t.dial.dashboard.import.button}
+          </Link>
+          <Link
+            href="/dial"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-medium rounded-lg transition-colors text-sm"
+          >
+            <Headphones className="w-4 h-4" />
+            {t.dial.dashboard.newSession}
+          </Link>
+        </div>
       </div>
 
       {sessions.length === 0 ? (
