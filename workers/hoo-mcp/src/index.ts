@@ -27,8 +27,6 @@ import {
 
 export interface Env {
   DATABASE_URL: string;
-  CLERK_SECRET_KEY: string;
-  CLERK_PUBLISHABLE_KEY: string;
   ALLOWED_ORIGINS: string;
 }
 
@@ -100,9 +98,9 @@ function jsonRpcResult(
 async function handleMcpRequest(
   rpcReq: JsonRpcRequest,
   clerkId: string,
-  env: Env
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sql: import("@neondatabase/serverless").NeonQueryFunction<any, any>
 ): Promise<JsonRpcResponse> {
-  const sql = neon(env.DATABASE_URL);
 
   switch (rpcReq.method) {
     case "initialize":
@@ -205,12 +203,13 @@ const worker = {
       });
     }
 
-    // Authenticate
-    const clerkId = await authenticateRequest(request, env);
+    // Authenticate via API key hash
+    const sql = neon(env.DATABASE_URL);
+    const clerkId = await authenticateRequest(request, sql, env);
     if (!clerkId) {
       return new Response(
         JSON.stringify(
-          jsonRpcError(null, -32000, "Unauthorized: invalid or missing Bearer token")
+          jsonRpcError(null, -32000, "Unauthorized: invalid or missing API key")
         ),
         {
           status: 401,
@@ -247,7 +246,7 @@ const worker = {
 
     // Handle
     try {
-      const response = await handleMcpRequest(rpcReq, clerkId, env);
+      const response = await handleMcpRequest(rpcReq, clerkId, sql);
       return new Response(JSON.stringify(response), {
         headers: { ...cors, "Content-Type": "application/json" },
       });

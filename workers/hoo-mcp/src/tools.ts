@@ -14,7 +14,8 @@ import type { NeonQueryFunction } from "@neondatabase/serverless";
 // Types
 // ========================================
 
-export type SQL = NeonQueryFunction<false, false>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type SQL = NeonQueryFunction<any, any>;
 type Row = Record<string, unknown>;
 
 interface ToolResult {

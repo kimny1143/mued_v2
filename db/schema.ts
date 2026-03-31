@@ -331,3 +331,8 @@ export * from './schema/cognitive-profiles';
 // MUEDial - Mixing/Mastering Service
 // ========================================
 export * from './schema/dial';
+
+// ========================================
+// MCP API Keys
+// ========================================
+export * from './schema/mcp-api-keys';
