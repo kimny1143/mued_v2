@@ -4,6 +4,8 @@ compatibility_date = "2024-12-01"
 
 [vars]
 ALLOWED_ORIGINS = "https://mued.jp,https://www.mued.jp,http://localhost:3000,https://*.vercel.app"
+MUED_API_URL = "https://mued.jp"
 
 # Secrets (set via `wrangler secret put`):
 # DATABASE_URL — Neon PostgreSQL connection string
+# INTERNAL_API_KEY — For Worker → MUED API internal calls

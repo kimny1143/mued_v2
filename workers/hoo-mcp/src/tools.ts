@@ -100,7 +100,15 @@ const HOO_EXTENDED_PROMPT = `## 深掘りの技法
 
 - 相手はその分野のプロである前提で話す
 - 知ったかぶりをしない
-- 相手の経験則や直感を軽視しない`;
+- 相手の経験則や直感を軽視しない
+
+## MCP経由の会話保存
+
+会話が一区切りついたとき（まとめの出力後、話題が収束したとき、相手が離脱を示唆したとき）:
+1. 「この会話をMUEDに送っていいかな？プロファイルの蓄積に使うよ」と確認する
+2. ユーザーが同意したら save_conversation ツールを呼び出す
+3. 拒否されたら保存せず終了。しつこく聞かない
+4. 短い雑談（2往復以下）では聞かなくてよい`;
 
 const VARIABLE_DISPLAY: Record<string, string> = {
   WM: "Memory (Working Memory)",
@@ -173,6 +181,40 @@ export const TOOL_DEFINITIONS = [
         },
       },
       required: [] as string[],
+    },
+  },
+  {
+    name: "save_conversation",
+    description:
+      "Save this conversation to MUED for profile enrichment. Only call after the user explicitly consents to saving.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        messages: {
+          type: "array",
+          description: "Array of conversation messages",
+          items: {
+            type: "object",
+            properties: {
+              role: {
+                type: "string",
+                enum: ["user", "assistant"],
+                description: "Message role",
+              },
+              content: {
+                type: "string",
+                description: "Message content",
+              },
+            },
+            required: ["role", "content"],
+          },
+        },
+        title: {
+          type: "string",
+          description: "Conversation title (auto-generated if omitted)",
+        },
+      },
+      required: ["messages"] as string[],
     },
   },
 ];
@@ -418,4 +460,69 @@ export async function getHooContext(
   ];
 
   return textResult(sections.join("\n"));
+}
+
+export async function saveConversation(
+  sql: SQL,
+  clerkId: string,
+  params: {
+    messages: Array<{ role: string; content: string }>;
+    title?: string;
+  },
+  env: { MUED_API_URL: string; INTERNAL_API_KEY: string }
+): Promise<ToolResult> {
+  if (!params.messages || params.messages.length === 0) {
+    return textResult("Error: No messages provided.");
+  }
+
+  const internalId = await resolveInternalId(sql, clerkId);
+  if (!internalId) return textResult("Error: User not found.");
+
+  // Build JSONB messages with timestamps
+  const now = new Date().toISOString();
+  const messagesJson = params.messages.map((m) => ({
+    role: m.role,
+    content: m.content,
+    timestamp: now,
+  }));
+
+  const title = params.title || "MCP conversation";
+  const messageCount = params.messages.length;
+
+  // Insert conversation
+  const inserted = (await sql`
+    INSERT INTO hoo_conversations (
+      user_id, title, messages, message_count,
+      model, provider, started_at, last_message_at
+    ) VALUES (
+      ${internalId}, ${title}, ${JSON.stringify(messagesJson)}::jsonb, ${messageCount},
+      'external-mcp', 'mcp', NOW(), NOW()
+    )
+    RETURNING id
+  `) as Row[];
+
+  if (inserted.length === 0) {
+    return textResult("Error: Failed to save conversation.");
+  }
+
+  const conversationId = inserted[0].id as string;
+
+  // Trigger auto-memory extraction (fire-and-forget via internal API)
+  if (messageCount >= 4 && env.MUED_API_URL && env.INTERNAL_API_KEY) {
+    fetch(`${env.MUED_API_URL}/api/hoo/memory/extract`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Internal-API-Key": env.INTERNAL_API_KEY,
+      },
+      body: JSON.stringify({
+        conversationId,
+        userId: internalId,
+      }),
+    }).catch(() => {});
+  }
+
+  return textResult(
+    `Conversation saved (${messageCount} messages). ${messageCount >= 4 ? "Auto-memory extraction triggered." : "Too few messages for memory extraction (need 4+)."}`
+  );
 }
