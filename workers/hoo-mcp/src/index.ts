@@ -19,6 +19,7 @@ import {
   getUserProfile,
   getConversationHistory,
   getHooContext,
+  saveConversation,
 } from "./tools";
 
 // ========================================
@@ -28,6 +29,8 @@ import {
 export interface Env {
   DATABASE_URL: string;
   ALLOWED_ORIGINS: string;
+  MUED_API_URL: string;
+  INTERNAL_API_KEY: string;
 }
 
 // ========================================
@@ -99,7 +102,8 @@ async function handleMcpRequest(
   rpcReq: JsonRpcRequest,
   clerkId: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  sql: import("@neondatabase/serverless").NeonQueryFunction<any, any>
+  sql: import("@neondatabase/serverless").NeonQueryFunction<any, any>,
+  env: Env
 ): Promise<JsonRpcResponse> {
 
   switch (rpcReq.method) {
@@ -149,6 +153,21 @@ async function handleMcpRequest(
               include_recent_messages: toolArgs.include_recent_messages as
                 | number
                 | undefined,
+            })
+          );
+
+        case "save_conversation":
+          return jsonRpcResult(
+            rpcReq.id,
+            await saveConversation(sql, clerkId, {
+              messages: toolArgs.messages as Array<{
+                role: string;
+                content: string;
+              }>,
+              title: toolArgs.title as string | undefined,
+            }, {
+              MUED_API_URL: env.MUED_API_URL,
+              INTERNAL_API_KEY: env.INTERNAL_API_KEY,
             })
           );
 
@@ -246,7 +265,7 @@ const worker = {
 
     // Handle
     try {
-      const response = await handleMcpRequest(rpcReq, clerkId, sql);
+      const response = await handleMcpRequest(rpcReq, clerkId, sql, env);
       return new Response(JSON.stringify(response), {
         headers: { ...cors, "Content-Type": "application/json" },
       });
