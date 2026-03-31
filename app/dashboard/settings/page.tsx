@@ -24,6 +24,8 @@ import {
   User,
   Bell,
   Brain,
+  Terminal,
+  ChevronRight,
 } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-context';
 
@@ -386,6 +388,27 @@ export default function SettingsPage() {
                   </div>
                 )}
               </div>
+            </SettingsSection>
+
+            {/* Hoo MCP Setup */}
+            <SettingsSection
+              title={locale === 'ja' ? 'Hoo MCP 接続' : 'Hoo MCP Connection'}
+              description={
+                locale === 'ja'
+                  ? 'Claude Desktop、Cursor等のAIアプリにHooを接続'
+                  : 'Connect Hoo to AI apps like Claude Desktop, Cursor, etc.'
+              }
+              icon={<Terminal className="w-5 h-5 text-indigo-400" />}
+            >
+              <Link
+                href="/dashboard/settings/mcp"
+                className="flex items-center justify-between py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors group"
+              >
+                <span className="text-sm text-white/70 group-hover:text-white transition-colors">
+                  {locale === 'ja' ? 'セットアップガイドを開く' : 'Open setup guide'}
+                </span>
+                <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
+              </Link>
             </SettingsSection>
 
             {/* Notifications - Coming Soon */}
