@@ -2,7 +2,7 @@
  * MCP Connection Test
  *
  * POST — Test connectivity to the remote Hoo MCP Worker.
- * Uses the user's active API key to send a tools/list request.
+ * Verifies the user has an active API key, then hits the Worker health endpoint.
  */
 
 import { NextResponse } from "next/server";
