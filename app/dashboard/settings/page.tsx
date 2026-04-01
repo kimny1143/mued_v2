@@ -83,7 +83,7 @@ function SettingsSection({ title, description, icon, children, comingSoon }: Sec
 // ========================================
 
 export default function SettingsPage() {
-  const { locale } = useLocale();
+  const { t } = useLocale();
   const { user, isLoaded: isUserLoaded } = useUser();
 
   // Hoo settings state
@@ -143,7 +143,7 @@ export default function SettingsPage() {
       if (data.success) {
         setHooSettings(data.data);
         setHasChanges(false);
-        setSuccess(locale === 'ja' ? '保存しました' : 'Saved successfully');
+        setSuccess(t.settings.savedSuccess);
         setTimeout(() => setSuccess(null), 3000);
       } else {
         setError(data.error || 'Failed to save');
@@ -188,12 +188,10 @@ export default function SettingsPage() {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white">
-            {locale === 'ja' ? '設定' : 'Settings'}
+            {t.settings.title}
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            {locale === 'ja'
-              ? 'MUEDnoteの設定を管理'
-              : 'Manage your MUEDnote preferences'}
+            {t.settings.subtitle}
           </p>
         </div>
 
@@ -220,19 +218,15 @@ export default function SettingsPage() {
           <div className="space-y-6">
             {/* Hoo Custom Instructions */}
             <SettingsSection
-              title={locale === 'ja' ? 'Hoo カスタム指示' : 'Hoo Custom Instructions'}
-              description={
-                locale === 'ja'
-                  ? 'Hooに事前に知っておいてほしい情報を設定します'
-                  : 'Set information you want Hoo to know about you'
-              }
+              title={t.settings.hoo.title}
+              description={t.settings.hoo.description}
               icon={<MessageSquare className="w-5 h-5 text-indigo-400" />}
             >
               <div className="space-y-4">
                 {/* Toggle */}
                 <div className="flex items-center justify-between py-2">
                   <span className="text-sm text-slate-300">
-                    {locale === 'ja' ? 'カスタム指示を有効化' : 'Enable custom instructions'}
+                    {t.settings.hoo.enableToggle}
                   </span>
                   <button
                     onClick={handleToggle}
@@ -254,11 +248,7 @@ export default function SettingsPage() {
                   <textarea
                     value={customInstructions}
                     onChange={(e) => setCustomInstructions(e.target.value)}
-                    placeholder={
-                      locale === 'ja'
-                        ? '例: 私はEDMプロデューサーで、Ableton Liveを使っています。主にDubstepを制作していて、音作りに興味があります。'
-                        : "Example: I'm an EDM producer using Ableton Live. I mainly produce Dubstep and I'm interested in sound design."
-                    }
+                    placeholder={t.settings.hoo.placeholder}
                     disabled={!hooEnabled}
                     className={`w-full h-32 resize-none bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm ${
                       !hooEnabled ? 'opacity-50 cursor-not-allowed' : ''
@@ -266,9 +256,7 @@ export default function SettingsPage() {
                   />
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-500">
-                      {locale === 'ja'
-                        ? 'すべてのHoo会話で参照されます'
-                        : 'Referenced in all Hoo conversations'}
+                      {t.settings.hoo.hint}
                     </span>
                     <span className={isOverLimit ? 'text-red-400' : 'text-slate-500'}>
                       {remainingChars.toLocaleString()} / {MAX_INSTRUCTIONS_LENGTH.toLocaleString()}
@@ -288,7 +276,7 @@ export default function SettingsPage() {
                     ) : (
                       <Save className="w-4 h-4 mr-2" />
                     )}
-                    {locale === 'ja' ? '保存' : 'Save'}
+                    {t.settings.hoo.save}
                   </Button>
                 </div>
               </div>
@@ -296,12 +284,8 @@ export default function SettingsPage() {
 
             {/* MUEDlobe Cognitive Profile */}
             <SettingsSection
-              title={locale === 'ja' ? 'MUEDlobe 認知プロファイル' : 'MUEDlobe Cognitive Profile'}
-              description={
-                locale === 'ja'
-                  ? 'MUEDlobeの結果から生成された、Hoo向けの認知特性指示'
-                  : 'Cognitive profile instructions for Hoo, derived from MUEDlobe results'
-              }
+              title={t.settings.muedlobe.title}
+              description={t.settings.muedlobe.description}
               icon={<Brain className="w-5 h-5 text-violet-400" />}
             >
               {hooSettings?.hasMuedlobeProfile && hooSettings.muedlobeInstructions ? (
@@ -317,17 +301,13 @@ export default function SettingsPage() {
                     </ul>
                   </div>
                   <p className="text-xs text-slate-500">
-                    {locale === 'ja'
-                      ? 'これらの指示はMUEDlobeの結果に基づいて自動生成され、すべてのHoo会話に適用されます。'
-                      : 'These instructions are auto-generated from your MUEDlobe results and applied to all Hoo conversations.'}
+                    {t.settings.muedlobe.autoGenerated}
                   </p>
                 </div>
               ) : (
                 <div className="py-4 text-center">
                   <p className="text-sm text-slate-400">
-                    {locale === 'ja'
-                      ? 'MUEDlobeのゲームを完了してプロファイルを作成すると、ここに認知特性の指示が表示されます。'
-                      : 'Complete MUEDlobe games and generate your profile to see cognitive instructions here.'}
+                    {t.settings.muedlobe.empty}
                   </p>
                   <Link href="/dashboard/muednote/lobe">
                     <Button
@@ -336,7 +316,7 @@ export default function SettingsPage() {
                       className="mt-3 bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border-0 cursor-pointer"
                     >
                       <Brain className="w-4 h-4 mr-1.5" />
-                      {locale === 'ja' ? 'MUEDlobeへ' : 'Go to MUEDlobe'}
+                      {t.settings.muedlobe.goToMuedlobe}
                     </Button>
                   </Link>
                 </div>
@@ -345,12 +325,8 @@ export default function SettingsPage() {
 
             {/* Account Settings */}
             <SettingsSection
-              title={locale === 'ja' ? 'アカウント' : 'Account'}
-              description={
-                locale === 'ja'
-                  ? 'アカウント情報'
-                  : 'Account information'
-              }
+              title={t.settings.account.title}
+              description={t.settings.account.description}
               icon={<User className="w-5 h-5 text-indigo-400" />}
             >
               <div className="space-y-4">
@@ -392,12 +368,8 @@ export default function SettingsPage() {
 
             {/* Hoo MCP Setup */}
             <SettingsSection
-              title={locale === 'ja' ? 'Hoo MCP 接続' : 'Hoo MCP Connection'}
-              description={
-                locale === 'ja'
-                  ? 'Claude Desktop、Cursor等のAIアプリにHooを接続'
-                  : 'Connect Hoo to AI apps like Claude Desktop, Cursor, etc.'
-              }
+              title={t.settings.hooMcp.title}
+              description={t.settings.hooMcp.description}
               icon={<Terminal className="w-5 h-5 text-indigo-400" />}
             >
               <Link
@@ -405,7 +377,7 @@ export default function SettingsPage() {
                 className="flex items-center justify-between py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors group"
               >
                 <span className="text-sm text-white/70 group-hover:text-white transition-colors">
-                  {locale === 'ja' ? 'セットアップガイドを開く' : 'Open setup guide'}
+                  {t.settings.hooMcp.openGuide}
                 </span>
                 <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
               </Link>
@@ -413,19 +385,13 @@ export default function SettingsPage() {
 
             {/* Notifications - Coming Soon */}
             <SettingsSection
-              title={locale === 'ja' ? '通知' : 'Notifications'}
-              description={
-                locale === 'ja'
-                  ? '通知とリマインダーの設定'
-                  : 'Notification and reminder preferences'
-              }
+              title={t.settings.notifications.title}
+              description={t.settings.notifications.description}
               icon={<Bell className="w-5 h-5 text-indigo-400" />}
               comingSoon
             >
               <div className="py-4 text-center text-slate-500 text-sm">
-                {locale === 'ja'
-                  ? '通知設定は近日公開予定です'
-                  : 'Notification settings coming soon'}
+                {t.settings.notifications.comingSoon}
               </div>
             </SettingsSection>
           </div>
