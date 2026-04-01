@@ -502,6 +502,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                                 ));
                               }}
                               disabled={generating}
+                              data-testid={msg.action === 'request_final' ? 'dial-chat-generate-final' : 'dial-chat-generate-mix-check'}
                               className={`mt-3 w-full px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                                 msg.action === 'request_final'
                                   ? 'bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 text-white'
@@ -564,6 +565,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                                 ));
                               }}
                               disabled={generating}
+                              data-testid="dial-chat-generate-mastering-final"
                               className="mt-2 w-full px-4 py-2.5 bg-green-600 hover:bg-green-500 disabled:bg-zinc-700 rounded-lg text-sm font-medium text-white transition-colors"
                             >
                               {generating ? t.dial.chat.generating : t.dial.chat.generateMasteredTrack}
@@ -623,12 +625,14 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
             placeholder={tracks.length === 0 ? (isMasteringPhase ? t.dial.chat.upload2mixFirst : t.dial.chat.uploadStemsFirst) : t.dial.chat.placeholder}
             disabled={sending || tracks.length === 0}
             aria-label={t.dial.chat.placeholder}
+            data-testid="dial-chat-input"
             className="flex-1 px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-amber-500 disabled:opacity-50"
           />
           <button
             onClick={handleSend}
             disabled={sending || !input.trim() || tracks.length === 0}
             aria-label={t.dial.chat.send}
+            data-testid="dial-chat-send"
             className="px-4 py-2 bg-amber-600 hover:bg-amber-500 disabled:bg-zinc-700 rounded-lg text-sm font-medium text-black transition-colors"
           >
             {t.dial.chat.send}

@@ -204,7 +204,7 @@ function DialSessionContent() {
     return guestToken ? `${base}&token=${guestToken}` : base;
   }, [guestToken]);
 
-  const fetchSession = useCallback(async () => {
+  const fetchSession = useCallback(async (): Promise<Session | null> => {
     try {
       const res = await fetch(`/api/dial/session?id=${sessionId}`, {
         headers: guestToken ? { 'X-Dial-Guest-Token': guestToken } : {},
@@ -212,6 +212,7 @@ function DialSessionContent() {
       const data = await res.json();
       if (data.success) {
         setSession(data.data);
+        return data.data as Session;
       } else {
         setError(data.error || 'Failed to load session');
       }
@@ -220,6 +221,7 @@ function DialSessionContent() {
     } finally {
       setLoading(false);
     }
+    return null;
   }, [sessionId, guestToken]);
 
   useEffect(() => {
@@ -699,17 +701,16 @@ function DialSessionContent() {
       // Timeout or network error — the task may have been submitted to RoEx successfully.
       // Check session state to see if a processing task exists.
       try {
-        await fetchSession();
+        const refreshedSession = await fetchSession();
+        const hasBackgroundTask = refreshedSession?.tasks?.some(
+          (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced' || t.taskType === 'mix_check')
+            && (t.status === 'processing' || t.status === 'pending'),
+        );
+        if (!hasBackgroundTask) {
+          setError('Mix generation request timed out. Please try again.');
+          setMixGenerating(false);
+        }
       } catch { /* ignore */ }
-      // If a processing task was found, polling will pick it up.
-      // Only show error if no processing task exists after refresh.
-      if (!session?.tasks?.some(
-        (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced' || t.taskType === 'mix_check')
-          && (t.status === 'processing' || t.status === 'pending'),
-      )) {
-        setError('Mix generation request timed out. Please try again.');
-        setMixGenerating(false);
-      }
       // else: mixGenerating stays true, polling will detect completion
     }
   };
@@ -893,6 +894,7 @@ function DialSessionContent() {
           disabled={uploading}
           className="hidden"
           aria-label={isMasteringOnly ? t.dial.session.upload2mix : t.dial.session.uploadStems}
+          data-testid="dial-file-input"
         />
       </label>
 
@@ -950,6 +952,7 @@ function DialSessionContent() {
             <button
               onClick={handleUploadAll}
               disabled={uploading}
+              data-testid="dial-upload-all"
               className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 rounded-lg text-sm font-medium transition-colors"
             >
               {uploading && uploadProgress
@@ -1019,6 +1022,7 @@ function DialSessionContent() {
         <button
           onClick={handlePreview}
           disabled={previewing}
+          data-testid="dial-generate-preview"
           className="mt-4 w-full px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 rounded-lg text-sm font-medium transition-colors"
         >
           {previewing
@@ -1183,6 +1187,7 @@ function DialSessionContent() {
                 href={downloadUrl(masteringFinalTask.id)}
                 download
                 onClick={() => markDownloaded('mastered')}
+                data-testid="dial-download-mastered"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-base font-semibold transition-colors"
               >
                 {downloadedItems.has('mastered') && <span className="text-white">&#10003;</span>}
@@ -1209,6 +1214,7 @@ function DialSessionContent() {
                 href={downloadUrl(mixFinalTask.id)}
                 download
                 onClick={() => markDownloaded('finalMix')}
+                data-testid="dial-download-final-mix"
                 className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-base font-semibold transition-colors ${
                   masteringFinalTask
                     ? 'bg-zinc-700 hover:bg-zinc-600 font-medium'
@@ -1226,6 +1232,7 @@ function DialSessionContent() {
                   href={downloadUrl(mixFinalTask.id, 'stems')}
                   download
                   onClick={() => markDownloaded('stems')}
+                  data-testid="dial-download-stems"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-zinc-700 hover:bg-zinc-600 rounded-xl text-base font-medium transition-colors"
                 >
                   {downloadedItems.has('stems') && <span className="text-white">&#10003;</span>}
@@ -1243,6 +1250,7 @@ function DialSessionContent() {
           <Link
             href="/dial"
             onClick={(e) => handleNavigation(e, '/dial')}
+            data-testid="dial-start-new-session"
             className="flex-1 py-3 text-center bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-medium transition-colors"
           >
             {t.dial.session.startNewSession}
@@ -1335,7 +1343,7 @@ function DialSessionContent() {
         </div>
 
         {error && (
-          <div className="mb-6 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">
+          <div data-testid="dial-session-error" className="mb-6 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">
             {error}
           </div>
         )}
@@ -1399,7 +1407,7 @@ function DialSessionContent() {
                   })();
 
                   return (
-                    <div className="mb-2 px-4 py-3 bg-amber-900/20 border border-amber-800/40 rounded-xl flex items-center gap-3">
+                    <div data-testid="dial-processing-banner" className="mb-2 px-4 py-3 bg-amber-900/20 border border-amber-800/40 rounded-xl flex items-center gap-3">
                       <div className="h-4 w-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" role="status" />
                       <div className="text-sm flex-1">
                         <span className="text-amber-300 font-medium">{label}</span>

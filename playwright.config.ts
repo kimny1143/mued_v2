@@ -6,8 +6,8 @@ import path from "path";
 dotenv.config({ path: path.resolve(__dirname, ".env.test") });
 
 export default defineConfig({
-  testDir: "./tests",
-  testMatch: "**/*.spec.ts", // Only match .spec.ts files, exclude .test.ts (Vitest)
+  testDir: ".",
+  testMatch: ["tests/**/*.spec.ts", "e2e/**/*.spec.ts"], // Include legacy tests plus dedicated top-level e2e specs
   timeout: process.env.CI ? 30 * 1000 : 30 * 1000, // 30s per test (reduced from 60s)
   expect: {
     timeout: process.env.CI ? 10000 : 10000, // 10s for assertions
@@ -63,6 +63,7 @@ export default defineConfig({
     stderr: "ignore",
     env: {
       NEXT_PUBLIC_E2E_TEST_MODE: 'true', // Enable E2E test mode to bypass Clerk auth
+      NEXT_PUBLIC_UPLOAD_PROXY_URL: 'http://localhost:3000/__e2e/upload-proxy',
     },
   },
 });
