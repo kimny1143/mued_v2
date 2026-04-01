@@ -1315,7 +1315,23 @@
       "金",
       "土",
       "日"
-    ]
+    ],
+    "serviceTabs": {
+      "muednote": "MUEDnote",
+      "dial": "MUEDial",
+      "muedear": "MUEDear"
+    },
+    "muedearPlaceholder": {
+      "title": "MUEDear — 耳トレ",
+      "description": "耳トレのスコアや履歴がここに表示されます。",
+      "comingSoon": "Coming soon",
+      "openApp": "MUEDearを開く"
+    },
+    "utilityNav": {
+      "import": "インポート",
+      "settings": "設定",
+      "connect": "接続"
+    }
   },
   "dial": {
     "lp": {

@@ -1315,7 +1315,23 @@
       "Fri",
       "Sat",
       "Sun"
-    ]
+    ],
+    "serviceTabs": {
+      "muednote": "MUEDnote",
+      "dial": "MUEDial",
+      "muedear": "MUEDear"
+    },
+    "muedearPlaceholder": {
+      "title": "MUEDear — Ear Training",
+      "description": "Your ear training scores and history will appear here.",
+      "comingSoon": "Coming soon",
+      "openApp": "Open MUEDear"
+    },
+    "utilityNav": {
+      "import": "Import",
+      "settings": "Settings",
+      "connect": "Connect"
+    }
   },
   "dial": {
     "lp": {
