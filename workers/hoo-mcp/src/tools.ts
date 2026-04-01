@@ -601,6 +601,8 @@ export async function getSubscriptionStatus(
 
   const sub = subRows[0] ?? null;
 
+  let subCredits = 0;
+
   if (sub) {
     sections.push(`\n## Subscription`);
     sections.push(`- **Tier**: ${(sub.tier as string).toUpperCase()}`);
@@ -622,7 +624,7 @@ export async function getSubscriptionStatus(
         AND (expires_at IS NULL OR expires_at > NOW())
       ORDER BY expires_at ASC`) as Row[];
 
-    const subCredits = grantRows.reduce((sum, g) => sum + (g.credits_remaining as number), 0);
+    subCredits = grantRows.reduce((sum, g) => sum + (g.credits_remaining as number), 0);
     sections.push(`\n### Subscription Credits: ${subCredits}`);
     if (grantRows.length > 0) {
       for (const g of grantRows) {
@@ -654,19 +656,8 @@ export async function getSubscriptionStatus(
     }
   }
 
-  // Total
-  let subCreditsTotal = 0;
-  if (sub) {
-    const totalRows = (await sql`
-      SELECT COALESCE(SUM(credits_remaining), 0) as total
-      FROM dial_credit_expiry
-      WHERE subscription_id = ${sub.id}
-        AND credits_remaining > 0
-        AND (expires_at IS NULL OR expires_at > NOW())`) as Row[];
-    subCreditsTotal = Number(totalRows[0]?.total ?? 0);
-  }
-
-  sections.push(`\n## Total Available Credits: ${subCreditsTotal + packCredits}`);
+  // Total (reuse subCredits from grantRows above)
+  sections.push(`\n## Total Available Credits: ${subCredits + packCredits}`);
 
   return textResult(sections.join("\n"));
 }
