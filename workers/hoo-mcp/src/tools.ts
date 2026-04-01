@@ -624,7 +624,7 @@ export async function getSubscriptionStatus(
   const subRows = (await sql`
     SELECT id, tier, status, stripe_subscription_id,
            current_period_start, current_period_end,
-           cancel_at_period_end, credits_per_period
+           cancel_at_period_end, mix_credits_remaining, mix_credits_total
     FROM dial_subscriptions
     WHERE user_id = ${clerkId} AND status = 'active'
     LIMIT 1`) as Row[];
@@ -637,7 +637,7 @@ export async function getSubscriptionStatus(
     sections.push(`\n## Subscription`);
     sections.push(`- **Tier**: ${(sub.tier as string).toUpperCase()}`);
     sections.push(`- **Status**: ${sub.status}`);
-    sections.push(`- **Credits/period**: ${sub.credits_per_period}`);
+    sections.push(`- **Credits**: ${sub.mix_credits_remaining}/${sub.mix_credits_total}`);
     if (sub.current_period_end) {
       sections.push(`- **Current period ends**: ${new Date(sub.current_period_end as string).toISOString().slice(0, 10)}`);
     }
