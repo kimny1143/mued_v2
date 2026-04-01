@@ -2,7 +2,7 @@
  * Hoo MCP Server — Cloudflare Workers
  *
  * Remote MCP server implementing Streamable HTTP transport.
- * Provides 3 tools for accessing Hoo context and user data.
+ * Provides 7 tools for accessing Hoo context, user data, and subscription status.
  *
  * Endpoints:
  *   POST /mcp   — MCP JSON-RPC over HTTP (stateless)
@@ -19,6 +19,8 @@ import {
   getUserProfile,
   getConversationHistory,
   getHooContext,
+  getMuedlobeProfile,
+  getSubscriptionStatus,
   saveConversation,
 } from "./tools";
 
@@ -154,6 +156,18 @@ async function handleMcpRequest(
                 | number
                 | undefined,
             })
+          );
+
+        case "get_muedlobe_profile":
+          return jsonRpcResult(
+            rpcReq.id,
+            await getMuedlobeProfile(sql, clerkId)
+          );
+
+        case "get_subscription_status":
+          return jsonRpcResult(
+            rpcReq.id,
+            await getSubscriptionStatus(sql, clerkId)
           );
 
         case "save_conversation":

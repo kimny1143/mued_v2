@@ -2,7 +2,8 @@
  * Hoo MCP Tools
  *
  * Ported from scripts/mcp/mued-hoo-server.js to TypeScript + Neon serverless.
- * 3 tools: get_user_profile, get_conversation_history, get_hoo_context
+ * 7 tools: get_user_profile, get_conversation_history, get_hoo_context,
+ *           get_muedlobe_profile, get_subscription_status, save_conversation
  *
  * Design: Tools provide data/context only. Response generation is done by
  * the host LLM (Claude, GPT, etc.), not by this server.
@@ -207,6 +208,26 @@ export const TOOL_DEFINITIONS = [
           default: 10,
         },
       },
+      required: [] as string[],
+    },
+  },
+  {
+    name: "get_muedlobe_profile",
+    description:
+      "Get detailed MUEDlobe cognitive profile — scores, patterns, game completion status, and cognitive balance. More detailed than get_user_profile for cognitive data.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {},
+      required: [] as string[],
+    },
+  },
+  {
+    name: "get_subscription_status",
+    description:
+      "Get the user's MUEDial subscription tier, credit balance, and usage status",
+    inputSchema: {
+      type: "object" as const,
+      properties: {},
       required: [] as string[],
     },
   },
@@ -485,6 +506,167 @@ export async function getHooContext(
     "",
     "*Instruction to host LLM: Respond to the user's next message as Hoo, following the system prompt above. Do not mention that you received this context — simply be Hoo.*",
   ];
+
+  return textResult(sections.join("\n"));
+}
+
+export async function getMuedlobeProfile(
+  sql: SQL,
+  clerkId: string
+): Promise<ToolResult> {
+  const [profileRows, gamesRows] = await Promise.all([
+    sql`SELECT wm_score, ps_score, vc_score, pr_score, att_score,
+               vc_pr_balance, significant_patterns, prompt_params,
+               measured_at, version
+        FROM cognitive_profiles WHERE user_id = ${clerkId} LIMIT 1` as Promise<Row[]>,
+    sql`SELECT game_type, score, percentile, measured_at
+        FROM measurement_history WHERE user_id = ${clerkId}
+        ORDER BY measured_at DESC` as Promise<Row[]>,
+  ]);
+
+  const sections: string[] = ["# MUEDlobe Cognitive Profile"];
+
+  const profile = profileRows[0] ?? null;
+
+  if (!profile) {
+    const completedGames = [...new Set(gamesRows.map((r) => r.game_type as string))];
+    sections.push("\n## Status: Not yet calculated");
+    sections.push(`Games completed: ${completedGames.length}/7`);
+    if (completedGames.length > 0) {
+      sections.push(`Completed: ${completedGames.join(", ")}`);
+    }
+    const allGames = ["code-fill", "focus-flow", "mental-math", "pattern-complete", "symbol-match", "tone-sequence", "word-bridge"];
+    const remaining = allGames.filter((g) => !completedGames.includes(g));
+    if (remaining.length > 0) {
+      sections.push(`Remaining: ${remaining.join(", ")}`);
+    }
+    return textResult(sections.join("\n"));
+  }
+
+  // Scores
+  sections.push("\n## Cognitive Scores");
+  sections.push(`| Dimension | Score | Description |`);
+  sections.push(`|-----------|-------|-------------|`);
+  sections.push(`| ${VARIABLE_DISPLAY.WM} | ${profile.wm_score}/100 | Short-term info retention |`);
+  sections.push(`| ${VARIABLE_DISPLAY.PS} | ${profile.ps_score}/100 | Decision speed |`);
+  sections.push(`| ${VARIABLE_DISPLAY.VC} | ${profile.vc_score}/100 | Language & concept grasp |`);
+  sections.push(`| ${VARIABLE_DISPLAY.PR} | ${profile.pr_score}/100 | Visual pattern recognition |`);
+  sections.push(`| ${VARIABLE_DISPLAY.ATT} | ${profile.att_score}/100 | Sustained focus |`);
+
+  // VC/PR Balance
+  if (profile.vc_pr_balance !== null && profile.vc_pr_balance !== undefined) {
+    const balance = Number(profile.vc_pr_balance);
+    const leaning = balance > 0 ? "verbal-leaning" : balance < 0 ? "visual-leaning" : "balanced";
+    sections.push(`\n**VC/PR Balance**: ${balance.toFixed(2)} (${leaning})`);
+  }
+
+  // Patterns
+  const patterns = profile.significant_patterns as string[] | null;
+  if (patterns?.length) {
+    sections.push(`\n## Significant Patterns`);
+    for (const p of patterns) {
+      sections.push(`- ${p}`);
+    }
+  }
+
+  // Game history summary
+  const uniqueGames = [...new Set(gamesRows.map((r) => r.game_type as string))];
+  sections.push(`\n## Game History`);
+  sections.push(`Games completed: ${uniqueGames.length}/7`);
+  sections.push(`Total measurements: ${gamesRows.length}`);
+
+  // Metadata
+  const measuredAt = profile.measured_at
+    ? new Date(profile.measured_at as string).toISOString().slice(0, 10)
+    : "unknown";
+  sections.push(`\n*Profile version: ${profile.version ?? 1} | Measured: ${measuredAt}*`);
+
+  return textResult(sections.join("\n"));
+}
+
+export async function getSubscriptionStatus(
+  sql: SQL,
+  clerkId: string
+): Promise<ToolResult> {
+  const sections: string[] = ["# MUEDial Subscription & Credits"];
+
+  // Get active subscription
+  const subRows = (await sql`
+    SELECT id, tier, status, stripe_subscription_id,
+           current_period_start, current_period_end,
+           cancel_at_period_end, credits_per_period
+    FROM dial_subscriptions
+    WHERE user_id = ${clerkId} AND status = 'active'
+    LIMIT 1`) as Row[];
+
+  const sub = subRows[0] ?? null;
+
+  if (sub) {
+    sections.push(`\n## Subscription`);
+    sections.push(`- **Tier**: ${(sub.tier as string).toUpperCase()}`);
+    sections.push(`- **Status**: ${sub.status}`);
+    sections.push(`- **Credits/period**: ${sub.credits_per_period}`);
+    if (sub.current_period_end) {
+      sections.push(`- **Current period ends**: ${new Date(sub.current_period_end as string).toISOString().slice(0, 10)}`);
+    }
+    if (sub.cancel_at_period_end) {
+      sections.push(`- **Cancels at period end**: Yes`);
+    }
+
+    // Get credit grants for this subscription
+    const grantRows = (await sql`
+      SELECT credits, credits_remaining, granted_at, expires_at
+      FROM dial_credit_expiry
+      WHERE subscription_id = ${sub.id}
+        AND credits_remaining > 0
+        AND (expires_at IS NULL OR expires_at > NOW())
+      ORDER BY expires_at ASC`) as Row[];
+
+    const subCredits = grantRows.reduce((sum, g) => sum + (g.credits_remaining as number), 0);
+    sections.push(`\n### Subscription Credits: ${subCredits}`);
+    if (grantRows.length > 0) {
+      for (const g of grantRows) {
+        const expiry = g.expires_at
+          ? new Date(g.expires_at as string).toISOString().slice(0, 10)
+          : "no expiry";
+        sections.push(`  - ${g.credits_remaining}/${g.credits} remaining (${expiry})`);
+      }
+    }
+  } else {
+    sections.push(`\n## Subscription: None (Free tier)`);
+  }
+
+  // Get credit packs
+  const packRows = (await sql`
+    SELECT credits, credits_remaining, pack_size, completed_at, expires_at
+    FROM dial_credit_packs
+    WHERE user_id = ${clerkId}
+      AND status = 'completed'
+      AND credits_remaining > 0
+      AND (expires_at IS NULL OR expires_at > NOW())`) as Row[];
+
+  const packCredits = packRows.reduce((sum, p) => sum + (p.credits_remaining as number), 0);
+
+  if (packRows.length > 0) {
+    sections.push(`\n## Credit Packs: ${packCredits}`);
+    for (const p of packRows) {
+      sections.push(`  - ${p.pack_size}: ${p.credits_remaining}/${p.credits} remaining`);
+    }
+  }
+
+  // Total
+  let subCreditsTotal = 0;
+  if (sub) {
+    const totalRows = (await sql`
+      SELECT COALESCE(SUM(credits_remaining), 0) as total
+      FROM dial_credit_expiry
+      WHERE subscription_id = ${sub.id}
+        AND credits_remaining > 0
+        AND (expires_at IS NULL OR expires_at > NOW())`) as Row[];
+    subCreditsTotal = Number(totalRows[0]?.total ?? 0);
+  }
+
+  sections.push(`\n## Total Available Credits: ${subCreditsTotal + packCredits}`);
 
   return textResult(sections.join("\n"));
 }
