@@ -1582,7 +1582,8 @@
     "hooMcp": {
       "title": "Hoo MCP 接続",
       "description": "Claude Desktop、Cursor等のAIアプリにHooを接続",
-      "openGuide": "セットアップガイドを開く"
+      "connectGuide": "Hooを連れ出す（セットアップウィザード）",
+      "openGuide": "APIキー管理"
     },
     "notifications": {
       "title": "通知",
@@ -1626,6 +1627,63 @@
         "windsurf": "~/.codeium/windsurf/mcp_config.json",
         "cline": "VS Code 設定 → cline.mcpServers"
       }
+    }
+  },
+  "connect": {
+    "title": "Hooを連れ出す",
+    "subtitle": "あなたの作業場にHooを接続します",
+    "backToDashboard": "ダッシュボード",
+    "step1": {
+      "label": "鍵を作る",
+      "title": "APIキーを生成",
+      "description": "Hooが外に出るための鍵です。安全に保管してください。",
+      "keyWarning": "このキーは一度だけ表示されます。コピーして安全に保管してください。",
+      "activeKey": "アクティブなキー: ",
+      "generating": "生成中...",
+      "regenerate": "再生成",
+      "revoke": "失効",
+      "generate": "APIキーを生成",
+      "hooSays": "ほほう、鍵ができたな。これで外に出られる。"
+    },
+    "step2": {
+      "label": "道を開く",
+      "title": "ホストを選んで設定をコピー",
+      "description": "使っているツールを選んで、設定ファイルにペーストしてください。",
+      "selectHost": "ツールを選択",
+      "configLocation": "設定ファイルの場所",
+      "configJson": "この設定をコピー",
+      "hint": "APIキーを生成すると、Bearer tokenが自動で埋め込まれます",
+      "hooSays": "設定を貼ったら、もうひと息だ。"
+    },
+    "step3": {
+      "label": "接続テスト",
+      "title": "Hooが到着したか確認",
+      "description": "ボタンを押して接続を確認します。",
+      "testButton": "接続テスト",
+      "testing": "テスト中...",
+      "success": "接続成功！Hooが到着しました。",
+      "failure": "接続できませんでした。APIキーと設定を確認してください。",
+      "noKey": "先にAPIキーを生成してください。",
+      "hooSuccess": "ほほう、着いたぞ。よろしくな。",
+      "hooFailure": "うーん、まだ道が通ってないみたいだ。設定を確認してみて。"
+    },
+    "copy": "コピー",
+    "copied": "コピー済み",
+    "loading": "読み込み中...",
+    "hosts": {
+      "claude-desktop": "~/Library/Application Support/Claude/claude_desktop_config.json (macOS)\n%APPDATA%/Claude/claude_desktop_config.json (Windows)",
+      "claude-code": "プロジェクトルート: .mcp.json",
+      "cursor": "プロジェクトルート: .cursor/mcp.json",
+      "windsurf": "~/.codeium/windsurf/mcp_config.json",
+      "cline": "VS Code 設定 → cline.mcpServers"
+    },
+    "whatNext": {
+      "title": "次にできること",
+      "items": [
+        "Claude DesktopやCursorで「Hooと話して」と言うだけ",
+        "認知プロファイルやミキシング状況をHooに聞ける",
+        "会話を保存してプロファイルを育てる"
+      ]
     }
   }
 }
