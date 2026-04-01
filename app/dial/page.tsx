@@ -416,6 +416,7 @@ export default function DialPage() {
                     key={opt.id}
                     onClick={() => setMixType(mixType === opt.id ? null : opt.id)}
                     aria-pressed={mixType === opt.id}
+                    data-testid={`dial-mix-option-${opt.id}`}
                     className={`w-full text-left p-5 rounded-[var(--radius-lg)] border-2 transition-colors cursor-pointer ${
                       mixType === opt.id
                         ? 'border-white bg-white/10'
@@ -437,6 +438,7 @@ export default function DialPage() {
               <button
                 onClick={() => setMasteringType(masteringType ? null : 'omakase')}
                 aria-pressed={!!masteringType}
+                data-testid="dial-mastering-addon"
                 className={`w-full text-left p-4 rounded-[var(--radius-lg)] border-2 transition-colors cursor-pointer mb-6 ${
                   masteringType
                     ? 'border-white bg-white/10'
@@ -465,6 +467,7 @@ export default function DialPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={t.dial.checkout.email}
                     aria-label={t.dial.checkout.email}
+                    data-testid="dial-checkout-email"
                     required
                     className="w-full px-4 py-3 bg-black/50 border border-white/10 rounded-[var(--radius-md)] text-white placeholder-zinc-500 focus:outline-none focus:border-white/40 transition-colors"
                   />
@@ -477,6 +480,7 @@ export default function DialPage() {
               <button
                 onClick={handleCheckout}
                 disabled={loading || !hasSelection || !effectiveEmail}
+                data-testid="dial-checkout-submit"
                 className="w-full py-4 bg-white text-black font-medium rounded-[var(--radius-md)] hover:bg-white/90 disabled:bg-zinc-800 disabled:text-white/50 transition-colors cursor-pointer"
               >
                 {loading
