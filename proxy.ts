@@ -5,6 +5,7 @@ import { locales, type Locale, getPreferredLocale } from "@/lib/i18n/config";
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/lobe(.*)",
+  "/connect(.*)",
 ]);
 
 const isPublicRoute = createRouteMatcher([

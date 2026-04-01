@@ -372,15 +372,26 @@ export default function SettingsPage() {
               description={t.settings.hooMcp.description}
               icon={<Terminal className="w-5 h-5 text-indigo-400" />}
             >
-              <Link
-                href="/dashboard/settings/mcp"
-                className="flex items-center justify-between py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors group"
-              >
-                <span className="text-sm text-white/70 group-hover:text-white transition-colors">
-                  {t.settings.hooMcp.openGuide}
-                </span>
-                <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
-              </Link>
+              <div className="space-y-2">
+                <Link
+                  href="/connect"
+                  className="flex items-center justify-between py-3 px-4 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 rounded-xl transition-colors group"
+                >
+                  <span className="text-sm text-indigo-300 group-hover:text-indigo-200 transition-colors">
+                    🦉 {t.settings.hooMcp.connectGuide}
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-indigo-400/50 group-hover:text-indigo-300 transition-colors" />
+                </Link>
+                <Link
+                  href="/dashboard/settings/mcp"
+                  className="flex items-center justify-between py-3 px-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors group"
+                >
+                  <span className="text-sm text-white/70 group-hover:text-white transition-colors">
+                    {t.settings.hooMcp.openGuide}
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
+                </Link>
+              </div>
             </SettingsSection>
 
             {/* Notifications - Coming Soon */}
