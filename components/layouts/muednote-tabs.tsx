@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, List, Upload, Settings, Brain } from "lucide-react";
+import { Upload, Settings, Wifi } from "lucide-react";
 import { useLocale } from "@/lib/i18n/locale-context";
 
 /**
- * MUEDnote Navigation Tabs
+ * MUED Dashboard Utility Navigation
+ *
+ * Simplified nav for cross-cutting concerns (Import, Settings, Connect).
+ * Service tabs (MUEDnote / MUEDial / MUEDear) are handled by DashboardServiceTabs.
  */
 export function MuednoteTabs() {
   const pathname = usePathname();
@@ -14,30 +17,19 @@ export function MuednoteTabs() {
 
   const tabs = [
     {
-      name: t.muednote.tabs.home,
-      href: "/dashboard/muednote",
-      icon: Home,
-      exact: true,
-    },
-    {
-      name: "MUEDlobe",
-      href: "/dashboard/muednote/lobe",
-      icon: Brain,
-    },
-    {
-      name: t.muednote.tabs.sessions,
-      href: "/dashboard/muednote/sessions",
-      icon: List,
-    },
-    {
-      name: t.muednote.tabs.import || "Import",
-      href: "/dashboard/muednote/import",
+      name: t.muednote.utilityNav.import,
+      href: "/dashboard/import",
       icon: Upload,
     },
     {
-      name: t.muednote.tabs.settings,
+      name: t.muednote.utilityNav.settings,
       href: "/dashboard/settings",
       icon: Settings,
+    },
+    {
+      name: t.muednote.utilityNav.connect,
+      href: "/connect",
+      icon: Wifi,
     },
   ];
 
@@ -45,14 +37,12 @@ export function MuednoteTabs() {
     <div className="border-b border-white/10 mb-8">
       <div className="flex gap-6 overflow-x-auto">
         {tabs.map((tab) => {
-          const isActive = tab.exact
-            ? pathname === tab.href
-            : pathname.startsWith(tab.href);
+          const isActive = pathname.startsWith(tab.href);
           const Icon = tab.icon;
 
           return (
             <Link
-              key={tab.name}
+              key={tab.href}
               href={tab.href}
               className={`pb-3 px-1 border-b-2 text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${
                 isActive

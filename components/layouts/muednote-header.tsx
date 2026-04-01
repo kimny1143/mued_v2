@@ -31,11 +31,11 @@ export function MuednoteHeader() {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/dashboard/muednote" className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-indigo-600/20 rounded-lg flex items-center justify-center">
               <Mic className="w-4 h-4 text-indigo-400" />
             </div>
-            <span className="text-xl font-bold text-white">MUEDnote</span>
+            <span className="text-xl font-bold text-white">MUED</span>
           </Link>
 
           {/* Right side actions */}
