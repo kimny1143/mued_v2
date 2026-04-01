@@ -1,17 +1,22 @@
 'use client';
 
 /**
- * MUEDial Profile Import Page
+ * MUEDnote Profile Import Page
  *
  * Accepts Claude/ChatGPT/Gemini conversation export files (JSON).
- * Extracts music profile data (genres, instruments, mixing preferences, etc.)
- * and merges into the user's shared profile via /api/muednote/profile/import.
+ * Processes entirely in the browser, sends music-related excerpts to API.
  */
 
 import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { useLocale } from '@/lib/i18n/locale-context';
-import type { FileFormat } from '@/lib/utils/chat-import-parser';
+import {
+  detectFormat,
+  extractMessages,
+  filterMusicRelated,
+  chunkMessages,
+  MAX_CONCURRENT,
+  type FileFormat,
+} from '@/lib/utils/chat-import-parser';
 
 // ========================================
 // Types
@@ -32,10 +37,7 @@ interface ProcessingStats {
 // Component
 // ========================================
 
-export default function DialImportPage() {
-  const { t } = useLocale();
-  const i = t.dial.dashboard.import;
-
+export default function ImportPage() {
   const [state, setState] = useState<ImportState>('idle');
   const [stats, setStats] = useState<ProcessingStats>({
     totalConversations: 0,
@@ -55,23 +57,22 @@ export default function DialImportPage() {
     setState('parsing');
 
     try {
-      // Lazy load parser utilities — only needed when processing a file
-      const { detectFormat, extractMessages, filterMusicRelated, chunkMessages, MAX_CONCURRENT: maxConcurrent } =
-        await import('@/lib/utils/chat-import-parser');
-
+      // 1. Parse JSON
       const text = await file.text();
       let data: unknown;
       try {
         data = JSON.parse(text);
       } catch {
-        setError(i.invalidJson);
+        setError('Invalid JSON file. Please select a valid conversation export.');
         setState('error');
         return;
       }
 
+      // 2. Detect format
       const detected = detectFormat(data);
       setFormat(detected);
 
+      // 3. Extract user messages
       setState('filtering');
       const allMessages = extractMessages(data, detected);
       const musicMessages = filterMusicRelated(allMessages);
@@ -83,22 +84,25 @@ export default function DialImportPage() {
       }));
 
       if (musicMessages.length === 0) {
-        setError(i.noMusicFound);
+        setError('No music-related conversations found in this file.');
         setState('error');
         return;
       }
 
+      // 4. Chunk
       const chunks = chunkMessages(musicMessages);
       setStats(s => ({ ...s, totalChunks: chunks.length }));
 
+      // 5. Process chunks
       setState('processing');
       const updatedFields = new Set<string>();
       let errors = 0;
 
-      for (let idx = 0; idx < chunks.length; idx += maxConcurrent) {
+      // Process with limited concurrency
+      for (let i = 0; i < chunks.length; i += MAX_CONCURRENT) {
         if (abortRef.current) break;
 
-        const batch = chunks.slice(idx, idx + maxConcurrent);
+        const batch = chunks.slice(i, i + MAX_CONCURRENT);
         const results = await Promise.allSettled(
           batch.map(chunk =>
             fetch('/api/muednote/profile/import', {
@@ -119,7 +123,6 @@ export default function DialImportPage() {
             if (profile?.musical?.instruments?.length) updatedFields.add('instruments');
             if (profile?.musical?.influences?.length) updatedFields.add('influences');
             if (profile?.musical?.productionStyle) updatedFields.add('productionStyle');
-            if (profile?.musical?.mixingPreferences) updatedFields.add('mixingPreferences');
             if (profile?.creative?.strengths?.length) updatedFields.add('strengths');
             if (profile?.creative?.focusAreas?.length) updatedFields.add('focusAreas');
             if (profile?.bio) updatedFields.add('bio');
@@ -130,7 +133,7 @@ export default function DialImportPage() {
 
         setStats(s => ({
           ...s,
-          processedChunks: Math.min(idx + batch.length, chunks.length),
+          processedChunks: Math.min(i + batch.length, chunks.length),
           updatedFields: [...updatedFields],
           errors,
         }));
@@ -141,7 +144,7 @@ export default function DialImportPage() {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
       setState('error');
     }
-  }, [i]);
+  }, []);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -159,29 +162,32 @@ export default function DialImportPage() {
     : 0;
 
   return (
-    <div>
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-[#0F0F1A] text-white">
+      <div className="max-w-2xl mx-auto px-6 py-12">
         {/* Header */}
-        <Link href="/dashboard/dial" className="text-white/40 hover:text-white text-sm mb-8 inline-block transition-colors">
-          &larr; {i.backToDashboard}
+        <Link href="/dashboard" className="text-slate-500 hover:text-white text-sm mb-8 inline-block">
+          &larr; Dashboard
         </Link>
-        <h1 className="text-2xl font-bold mb-2 text-white">{i.title}</h1>
-        <p className="text-white/50 mb-8">{i.description}</p>
+        <h1 className="text-2xl font-bold mb-2">Import AI Conversations</h1>
+        <p className="text-slate-400 mb-8">
+          Upload your Claude, ChatGPT, or Gemini conversation exports.
+          Hoo will learn about your music preferences from the conversations.
+        </p>
 
         {/* Drop Zone */}
         {(state === 'idle' || state === 'error') && (
           <div
             onDragOver={e => e.preventDefault()}
             onDrop={handleDrop}
-            className="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center hover:border-amber-500/50 transition-colors cursor-pointer"
+            className="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center hover:border-indigo-500/50 transition-colors cursor-pointer"
           >
-            <div className="text-4xl mb-4">
-              <span role="img" aria-label="folder">&#128193;</span>
-            </div>
-            <p className="text-lg text-white/70 mb-2">{i.dropTitle}</p>
-            <p className="text-sm text-white/40 mb-6">{i.dropFormats}</p>
-            <label className="inline-block px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-medium rounded-xl cursor-pointer transition-colors">
-              {i.selectFile}
+            <div className="text-4xl mb-4">📁</div>
+            <p className="text-lg text-slate-300 mb-2">Drop your JSON export here</p>
+            <p className="text-sm text-slate-500 mb-6">
+              Supports: Claude (conversations.json), ChatGPT (conversations.json), Gemini
+            </p>
+            <label className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl cursor-pointer transition-colors">
+              Select File
               <input
                 type="file"
                 accept=".json"
@@ -202,59 +208,62 @@ export default function DialImportPage() {
         {/* Processing Status */}
         {(state === 'parsing' || state === 'filtering' || state === 'processing' || state === 'done') && (
           <div className="bg-white/5 rounded-2xl p-8 space-y-6">
+            {/* Format detected */}
             {format !== 'unknown' && (
-              <div className="text-sm text-white/50">
-                {i.detected}: <span className="text-white font-medium capitalize">{format}</span> {i.format}
+              <div className="text-sm text-slate-400">
+                Detected: <span className="text-white font-medium capitalize">{format}</span> format
               </div>
             )}
 
+            {/* Stats */}
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-white/5 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-white">{stats.totalConversations.toLocaleString()}</div>
-                <div className="text-xs text-white/40 mt-1">{i.totalMessages}</div>
+                <div className="text-2xl font-bold">{stats.totalConversations.toLocaleString()}</div>
+                <div className="text-xs text-slate-500 mt-1">Total Messages</div>
               </div>
               <div className="bg-white/5 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-amber-400">{stats.filteredConversations.toLocaleString()}</div>
-                <div className="text-xs text-white/40 mt-1">{i.musicRelated}</div>
+                <div className="text-2xl font-bold text-indigo-400">{stats.filteredConversations.toLocaleString()}</div>
+                <div className="text-xs text-slate-500 mt-1">Music Related</div>
               </div>
               <div className="bg-white/5 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-white">{stats.totalChunks}</div>
-                <div className="text-xs text-white/40 mt-1">{i.chunks}</div>
+                <div className="text-2xl font-bold">{stats.totalChunks}</div>
+                <div className="text-xs text-slate-500 mt-1">Chunks</div>
               </div>
             </div>
 
+            {/* Progress Bar */}
             {(state === 'processing' || state === 'done') && (
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-white/50">
-                    {state === 'done'
-                      ? i.complete
-                      : i.processingChunk.replace('{current}', String(stats.processedChunks)).replace('{total}', String(stats.totalChunks))}
+                  <span className="text-slate-400">
+                    {state === 'done' ? 'Complete' : `Processing chunk ${stats.processedChunks}/${stats.totalChunks}`}
                   </span>
                   <span className="text-white font-medium">{progressPct}%</span>
                 </div>
                 <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-300 ${state === 'done' ? 'bg-green-500' : 'bg-amber-500'}`}
+                    className={`h-full rounded-full transition-all duration-300 ${state === 'done' ? 'bg-green-500' : 'bg-indigo-500'}`}
                     style={{ width: `${progressPct}%` }}
                   />
                 </div>
               </div>
             )}
 
+            {/* Parsing/Filtering indicator */}
             {(state === 'parsing' || state === 'filtering') && (
-              <div className="flex items-center gap-3 text-white/50">
-                <div className="w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+              <div className="flex items-center gap-3 text-slate-400">
+                <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
                 {state === 'parsing' ? 'Parsing JSON...' : 'Filtering music-related conversations...'}
               </div>
             )}
 
+            {/* Updated Fields */}
             {stats.updatedFields.length > 0 && (
               <div>
-                <div className="text-sm text-white/50 mb-2">{i.hooLearned}</div>
+                <div className="text-sm text-slate-400 mb-2">Hoo learned about:</div>
                 <div className="flex flex-wrap gap-2">
                   {stats.updatedFields.map(field => (
-                    <span key={field} className="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-sm">
+                    <span key={field} className="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-sm">
                       {field}
                     </span>
                   ))}
@@ -262,32 +271,37 @@ export default function DialImportPage() {
               </div>
             )}
 
+            {/* Errors */}
             {stats.errors > 0 && (
               <div className="text-sm text-amber-400">
-                {i.chunksFailed.replace('{count}', String(stats.errors))}
+                {stats.errors} chunk(s) failed to process (profile was still updated from successful chunks)
               </div>
             )}
 
+            {/* Done actions */}
             {state === 'done' && (
               <div className="flex gap-4 pt-4">
                 <Link
-                  href="/dashboard/dial"
-                  className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-black font-medium rounded-xl transition-colors"
+                  href="/dashboard"
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors"
                 >
-                  {i.viewProfile}
+                  View Profile
                 </Link>
                 <button
                   onClick={() => { setState('idle'); setStats({ totalConversations: 0, filteredConversations: 0, totalChunks: 0, processedChunks: 0, updatedFields: [], errors: 0 }); }}
-                  className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-white/60"
+                  className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-slate-300"
                 >
-                  {i.importAnother}
+                  Import Another File
                 </button>
               </div>
             )}
           </div>
         )}
 
-        <p className="text-xs text-white/30 mt-8 text-center">{i.privacyNote}</p>
+        {/* Privacy note */}
+        <p className="text-xs text-slate-600 mt-8 text-center">
+          Your file is processed entirely in the browser. Only music-related excerpts are sent to the server for profile extraction.
+        </p>
       </div>
     </div>
   );
