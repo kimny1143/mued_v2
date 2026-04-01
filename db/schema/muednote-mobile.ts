@@ -47,6 +47,8 @@ export const muednoteMobileSessions = pgTable(
     endedAt: timestamp('ended_at', { withTimezone: true }),
     deviceId: text('device_id'),                 // デバイス識別子（将来用）
     sessionMemo: text('session_memo'),           // セッション振り返りメモ
+    activityType: text('activity_type'),         // v1.3.0: composing|recording|mixing|practicing|other
+    mood: text('mood'),                          // v1.3.0: progressed|neutral|stuck
     status: mobileSessionStatusEnum('status').default('completed'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   },

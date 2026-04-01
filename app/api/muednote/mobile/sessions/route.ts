@@ -59,12 +59,30 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { duration_sec, started_at, ended_at, session_memo, memo, device_id } = body;
+    const { duration_sec, started_at, ended_at, session_memo, memo, device_id, activity_type, mood } = body;
 
     // Validate required fields
     if (!duration_sec || !started_at) {
       return NextResponse.json(
         { error: 'Missing required fields: duration_sec, started_at' },
+        { status: 400 }
+      );
+    }
+
+    // Validate activity_type enum (v1.3.0)
+    const VALID_ACTIVITY_TYPES = ['composing', 'recording', 'mixing', 'practicing', 'other'] as const;
+    if (activity_type && !VALID_ACTIVITY_TYPES.includes(activity_type)) {
+      return NextResponse.json(
+        { error: `Invalid activity_type. Must be one of: ${VALID_ACTIVITY_TYPES.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    // Validate mood enum (v1.3.0)
+    const VALID_MOODS = ['progressed', 'neutral', 'stuck'] as const;
+    if (mood && !VALID_MOODS.includes(mood)) {
+      return NextResponse.json(
+        { error: `Invalid mood. Must be one of: ${VALID_MOODS.join(', ')}` },
         { status: 400 }
       );
     }
@@ -79,6 +97,8 @@ export async function POST(req: Request) {
         endedAt: ended_at ? new Date(ended_at) : null,
         sessionMemo: session_memo || memo || null,
         deviceId: device_id || null,
+        activityType: activity_type || null,
+        mood: mood || null,
         status: 'completed',
       })
       .returning();
@@ -91,6 +111,8 @@ export async function POST(req: Request) {
         started_at: newSession.startedAt,
         ended_at: newSession.endedAt,
         session_memo: newSession.sessionMemo,
+        activity_type: newSession.activityType,
+        mood: newSession.mood,
         created_at: newSession.createdAt,
       },
     });
@@ -130,6 +152,8 @@ export async function GET(req: Request) {
         startedAt: muednoteMobileSessions.startedAt,
         endedAt: muednoteMobileSessions.endedAt,
         sessionMemo: muednoteMobileSessions.sessionMemo,
+        activityType: muednoteMobileSessions.activityType,
+        mood: muednoteMobileSessions.mood,
         status: muednoteMobileSessions.status,
         createdAt: muednoteMobileSessions.createdAt,
         logCount: sql<number>`COUNT(${muednoteMobileLogs.id})::int`,
@@ -155,6 +179,8 @@ export async function GET(req: Request) {
         started_at: s.startedAt,
         ended_at: s.endedAt,
         session_memo: s.sessionMemo,
+        activity_type: s.activityType,
+        mood: s.mood,
         status: s.status,
         log_count: s.logCount,
         created_at: s.createdAt,
