@@ -32,6 +32,17 @@ export function trackCtaClick(product: string, location: string): void {
   });
 }
 
+/** Track MCP /connect funnel steps */
+export function trackMcpConnect(
+  step: "key_generated" | "config_copied" | "test_success" | "test_failure",
+  params?: Record<string, string>
+): void {
+  trackEvent({
+    action: `mcp_connect_${step}`,
+    params: { funnel: "mcp_connect", ...params },
+  });
+}
+
 // Extend Window interface for gtag
 declare global {
   interface Window {

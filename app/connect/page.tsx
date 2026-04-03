@@ -14,6 +14,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { MuednoteLayout } from '@/components/layouts/muednote-layout';
 import { useLocale } from '@/lib/i18n/locale-context';
+import { trackMcpConnect } from '@/lib/analytics/gtag';
 import {
   Check, Copy, ArrowLeft, Key, AlertTriangle, Loader2,
   Wifi, WifiOff, ChevronRight,
@@ -58,12 +59,13 @@ function generateConfig(_host: McpHost, apiKey: string | null): string {
 // Copy Button
 // ========================================
 
-function CopyButton({ text, copiedLabel, copyLabel }: { text: string; copiedLabel: string; copyLabel: string }) {
+function CopyButton({ text, copiedLabel, copyLabel, onCopy }: { text: string; copiedLabel: string; copyLabel: string; onCopy?: () => void }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
+    onCopy?.();
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -159,6 +161,7 @@ export default function ConnectPage() {
         setApiKey(data.data.key);
         setExistingKeyPrefix(data.data.prefix);
         setCurrentStep(2);
+        trackMcpConnect('key_generated');
       }
     } catch {
       // silently fail
@@ -175,9 +178,12 @@ export default function ConnectPage() {
       // Use our own API route to test the connection (avoids CORS)
       const res = await fetch('/api/mcp/test-connection', { method: 'POST' });
       const data = await res.json();
-      setTestStatus(data.success ? 'success' : 'failure');
+      const result = data.success ? 'success' : 'failure';
+      setTestStatus(result);
+      trackMcpConnect(result === 'success' ? 'test_success' : 'test_failure');
     } catch {
       setTestStatus('failure');
+      trackMcpConnect('test_failure');
     }
   }, [apiKey, existingKeyPrefix]);
 
@@ -327,7 +333,7 @@ export default function ConnectPage() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs text-white/40">{c.step2.configJson}</p>
-                  <CopyButton text={config} copiedLabel={c.copied} copyLabel={c.copy} />
+                  <CopyButton text={config} copiedLabel={c.copied} copyLabel={c.copy} onCopy={() => trackMcpConnect('config_copied', { host: selectedHost })} />
                 </div>
                 <div className="bg-[#0d1117] border border-white/10 rounded-xl p-4 overflow-x-auto">
                   <pre className="text-sm text-green-300 font-mono whitespace-pre">{config}</pre>
