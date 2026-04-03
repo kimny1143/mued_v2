@@ -1,15 +1,18 @@
 /**
  * Hoo MCP Tools
  *
- * Ported from scripts/mcp/mued-hoo-server.js to TypeScript + Neon serverless.
- * 7 tools: get_user_profile, get_conversation_history, get_hoo_context,
- *           get_muedlobe_profile, get_subscription_status, save_conversation
+ * Tier 1 (7 tools): get_user_profile, get_conversation_history, get_hoo_context,
+ *                     get_muedlobe_profile, get_subscription_status, save_conversation
+ * Tier 2 (5 tools): get_dial_session_status, get_dial_chat_history,
+ *                     get_dial_credit_balance, get_dial_task_details,
+ *                     get_dial_phase_and_actions
  *
  * Design: Tools provide data/context only. Response generation is done by
  * the host LLM (Claude, GPT, etc.), not by this server.
  */
 
 import type { NeonQueryFunction } from "@neondatabase/serverless";
+import { DIAL_TOOL_DEFINITIONS } from "./tools-dial";
 
 // ========================================
 // Types
@@ -194,6 +197,7 @@ async function resolveInternalId(sql: SQL, clerkId: string): Promise<string | nu
 // ========================================
 
 export const TOOL_DEFINITIONS = [
+  // ── Tier 1: Hoo Context & User Data ──
   {
     name: "get_user_profile",
     description:
@@ -295,6 +299,8 @@ export const TOOL_DEFINITIONS = [
       required: ["messages"] as string[],
     },
   },
+  // ── Tier 2: MUEDial Session Management ──
+  ...DIAL_TOOL_DEFINITIONS,
 ];
 
 // ========================================
