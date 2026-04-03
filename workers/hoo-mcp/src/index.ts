@@ -23,6 +23,13 @@ import {
   getSubscriptionStatus,
   saveConversation,
 } from "./tools";
+import {
+  getDialSessionStatus,
+  getDialChatHistory,
+  getDialCreditBalance,
+  getDialTaskDetails,
+  getDialPhaseAndActions,
+} from "./tools-dial";
 
 // ========================================
 // Environment
@@ -182,6 +189,48 @@ async function handleMcpRequest(
             }, {
               MUED_API_URL: env.MUED_API_URL,
               INTERNAL_API_KEY: env.INTERNAL_API_KEY,
+            })
+          );
+
+        // ── Tier 2: MUEDial Session Management ──
+
+        case "get_dial_session_status":
+          return jsonRpcResult(
+            rpcReq.id,
+            await getDialSessionStatus(sql, clerkId, {
+              session_id: toolArgs.session_id as string,
+            })
+          );
+
+        case "get_dial_chat_history":
+          return jsonRpcResult(
+            rpcReq.id,
+            await getDialChatHistory(sql, clerkId, {
+              session_id: toolArgs.session_id as string,
+              limit: toolArgs.limit as number | undefined,
+            })
+          );
+
+        case "get_dial_credit_balance":
+          return jsonRpcResult(
+            rpcReq.id,
+            await getDialCreditBalance(sql, clerkId)
+          );
+
+        case "get_dial_task_details":
+          return jsonRpcResult(
+            rpcReq.id,
+            await getDialTaskDetails(sql, clerkId, {
+              task_id: toolArgs.task_id as string,
+              include_fx_settings: toolArgs.include_fx_settings as boolean | undefined,
+            })
+          );
+
+        case "get_dial_phase_and_actions":
+          return jsonRpcResult(
+            rpcReq.id,
+            await getDialPhaseAndActions(sql, clerkId, {
+              session_id: toolArgs.session_id as string,
             })
           );
 
