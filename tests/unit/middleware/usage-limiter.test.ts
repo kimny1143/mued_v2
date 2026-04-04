@@ -23,24 +23,13 @@ vi.mock('@/lib/repositories/subscriptions.repository', () => ({
 }));
 
 // Mock Drizzle DB
-const mockSelect = vi.fn();
-const mockFrom = vi.fn();
-const mockWhere = vi.fn();
-const mockOrderBy = vi.fn();
-const mockLimit = vi.fn();
-const mockUpdate = vi.fn();
-const mockSet = vi.fn();
-const mockReturning = vi.fn();
-const mockInsert = vi.fn();
-const mockValues = vi.fn();
-
 vi.mock('@/db', () => ({
   db: {
     select: () => ({
-      from: (table: unknown) => ({
-        where: (condition: unknown) => ({
+      from: (_table: unknown) => ({
+        where: (_condition: unknown) => ({
           limit: vi.fn().mockResolvedValue([]),
-          orderBy: (order: unknown) => ({
+          orderBy: (_order: unknown) => ({
             limit: vi.fn().mockResolvedValue([]),
           }),
         }),

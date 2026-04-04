@@ -10,9 +10,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock Database
 // ========================================
 
-const mockReturning = vi.fn();
-const mockWhere = vi.fn();
-
 vi.mock('@/db/edge', () => ({
   db: {
     select: vi.fn(),

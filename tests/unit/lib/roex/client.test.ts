@@ -4,7 +4,7 @@
  * Tests client construction, webhook URL building, and dev key detection.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { RoExClient, createRoExClient, getRoExWebhookUrl, isRoExDevKey } from '@/lib/roex/client';
 
 // ========================================
