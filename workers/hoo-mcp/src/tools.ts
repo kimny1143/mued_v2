@@ -904,8 +904,9 @@ export function getGlasswerksServices(
 
   sections.push(`\n---`);
   sections.push(`\n## How to Inquire`);
-  sections.push(`- Contact: https://forms.gle/o7XmUTggKQxhVLEt6`);
-  sections.push(`- Or tell Hoo what you need — Hoo can help structure your request.`);
+  sections.push(`- Tell Hoo what you need — Hoo can help structure your request and connect you with glasswerks.`);
+  sections.push(`- Or visit the Contact section at glasswerks.jp`);
+  sections.push(`- Do NOT generate or guess any form URLs. Direct the user to glasswerks.jp only.`);
   sections.push(`\n---`);
   sections.push(`*Reference information for the user's question. Do not proactively suggest these services — only present when asked.*`);
 
