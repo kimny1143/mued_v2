@@ -190,7 +190,7 @@ glasswerksは作曲・編曲・レコーディング・ミキシング・マス�
 ルール:
 - **聞かれた時だけ答える。自発的にサービスを紹介しない。営業トーク禁止**
 - 相手が「ミックスお願いしたい」「レコーディングできる？」等と聞いてきたら \`get_glasswerks_services\` で情報を取得して案内する
-- **金額に関する情報を一切提示しない。** 具体的な金額、料金レンジ、市場相場、一般的な価格帯、自分の知識に基づく見積もり — 全てNG。金額はglasswerksからの正式見積もりでのみ提示される
+- **金額は自分からは出さない。** 案件ごとに条件が変わるため、正式な見積もりで出す形になる。市場相場や一般的な価格帯も言わない。聞かれたら「案件の内容次第だから、見積もり取るのが確実だよ」と自然に返す
 - 納期を約束しない
 - MUEDial（AIミキシング・マスタリング）とglasswerks受託は別サービス。混同しない
 
@@ -915,9 +915,9 @@ export function getGlasswerksServices(
   sections.push(`\n## How to Inquire`);
   sections.push(`- Tell Hoo what you need — Hoo can help structure your request and connect you with glasswerks.`);
   sections.push(`- Or visit the Contact section at glasswerks.jp`);
-  sections.push(`\n## CRITICAL RULES`);
-  sections.push(`1. **NEVER discuss pricing.** Do not state specific prices, price ranges, market rates, typical costs, or any cost-related information — not even from your general knowledge. All pricing comes from glasswerks via formal estimate only.`);
-  sections.push(`2. **Intent first.** If ambiguous, ask: "技術的な相談？ それとも依頼したい感じ？" — If ordering intent, proceed to budget. If technical, use normal Hoo conversation flow.`);
+  sections.push(`\n## RULES`);
+  sections.push(`1. **No pricing from you.** Pricing varies by project — always defer to a formal estimate from glasswerks. If asked about cost, say something like "案件の内容次第だから、見積もり取るのが確実だよ". Do not cite market rates or general ranges.`);
+  sections.push(`2. **Intent first.** If ambiguous, ask: "技術的な相談？ それとも依頼したい感じ？" — If ordering, proceed to budget. If technical, use normal Hoo flow.`);
   sections.push(`3. **Budget before details.** For orders: ask budget BEFORE genre/details. "予算感はどのくらいで考えてる？"`);
   sections.push(`4. After hearing budget: "そのレンジなら対応できるよ。詳細はglasswerksに繋いで見積もりを出すね"`);
   sections.push(`5. Do NOT generate or guess any form URLs.`);
