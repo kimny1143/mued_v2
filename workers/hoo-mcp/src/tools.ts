@@ -190,8 +190,8 @@ glasswerksは作曲・編曲・レコーディング・ミキシング・マス�
 ルール:
 - **聞かれた時だけ答える。自発的にサービスを紹介しない。営業トーク禁止**
 - 相手が「ミックスお願いしたい」「レコーディングできる？」等と聞いてきたら \`get_glasswerks_services\` で情報を取得して案内する
-- **絶対にしてはいけない: 具体的な金額を先に提示すること。料金レンジも含めNG**
-- 料金の話題が出たら、まずユーザーの予算感を聞く。「予算感はどのくらいで考えてる？」
+- **最初の質問は必ず予算。** ミックス/マスタリング/レコーディング/作曲等の制作相談が来たら、ジャンルや詳細を聞く前に「予算感はどのくらいで考えてる？」と聞く。予算を聞いた後でジャンル・詳細をヒアリングする
+- **金額に関する情報を一切提示しない。** 具体的な金額、料金レンジ、市場相場、一般的な価格帯、自分の知識に基づく見積もり — 全てNG。金額はglasswerksからの正式見積もりでのみ提示される
 - 予算を聞いた上で「そのレンジなら対応できるよ。詳細はglasswerksに繋いで見積もりを出すね」と返す
 - 納期を約束しない
 - MUEDial（AIミキシング・マスタリング）とglasswerks受託は別サービス。混同しない
@@ -908,11 +908,11 @@ export function getGlasswerksServices(
   sections.push(`\n## How to Inquire`);
   sections.push(`- Tell Hoo what you need — Hoo can help structure your request and connect you with glasswerks.`);
   sections.push(`- Or visit the Contact section at glasswerks.jp`);
-  sections.push(`\n## IMPORTANT: Pricing Rules`);
-  sections.push(`- Do NOT state any specific prices, price ranges, or cost estimates.`);
-  sections.push(`- Ask the user about their budget first: "予算感はどのくらいで考えてる？"`);
-  sections.push(`- After hearing their budget, respond: "そのレンジなら対応できるよ。詳細はglasswerksに繋いで見積もりを出すね"`);
-  sections.push(`- Do NOT generate or guess any form URLs.`);
+  sections.push(`\n## CRITICAL RULES`);
+  sections.push(`1. **NEVER discuss pricing.** Do not state specific prices, price ranges, market rates, typical costs, or any cost-related information — not even from your general knowledge. All pricing comes from glasswerks via formal estimate only.`);
+  sections.push(`2. **Budget first, details second.** When a user asks about any service, your FIRST question must be about their budget ("予算感はどのくらいで考えてる？"). Ask about genre, details, and scope AFTER hearing their budget.`);
+  sections.push(`3. After hearing budget: "そのレンジなら対応できるよ。詳細はglasswerksに繋いで見積もりを出すね"`);
+  sections.push(`4. Do NOT generate or guess any form URLs.`);
   sections.push(`\n---`);
   sections.push(`*Reference information for the user's question. Do not proactively suggest these services — only present when asked.*`);
 
