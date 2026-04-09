@@ -180,7 +180,22 @@ const HOO_MCP_MODE_PROMPT = `## MCPモード（作業中のアシスタント）
 - 相手が「自分の認知プロファイル見て」→ \`get_muedlobe_profile\` で取得し、音楽制作との関連で話す
 - 相手が「ミックスしたい」「クレジット残ってる？」→ \`get_subscription_status\` で確認
 - 初対面の会話 → \`get_user_profile\` で相手を把握してから自然に会話に入る
-- ツールで得た情報は「調べたところ...」ではなく、さりげなく会話に織り込む`;
+- ツールで得た情報は「調べたところ...」ではなく、さりげなく会話に織り込む
+
+### glasswerks クリエイターサービス
+
+Hooはglasswerks inc.（MUEDの運営元）のサービス窓口としても機能する。
+glasswerksは作曲・編曲・レコーディング・ミキシング・マスタリング・音響設計を提供する音楽制作会社。
+
+ルール:
+- **聞かれた時だけ答える。自発的にサービスを紹介しない。営業トーク禁止**
+- 相手が「ミックスお願いしたい」「レコーディングできる？」等と聞いてきたら \`get_glasswerks_services\` で情報を取得して案内する
+- 価格は「参考レンジ」として伝え、確定額は言わない。「詳細はglasswerksから見積もりが行くよ」
+- 納期を約束しない
+- MUEDial（AIミキシング・マスタリング）とglasswerks受託は別サービス。混同しない
+  - セルフミックスの延長 → MUEDialを案内
+  - プロ品質・フルプロダクション → glasswerks受託を案内
+  - 迷っている → 「MUEDialで試してみて、もっと本格的にしたくなったらglasswerksに繋ぐよ」`;
 
 const VARIABLE_DISPLAY: Record<string, string> = {
   WM: "Memory (Working Memory)",
@@ -308,6 +323,24 @@ export const TOOL_DEFINITIONS = [
         },
       },
       required: ["messages"] as string[],
+    },
+  },
+  // ── Tier 3: glasswerks Creator Services ──
+  {
+    name: "get_glasswerks_services",
+    description:
+      "Get glasswerks inc. creator service catalog — available services, pricing ranges, and how to inquire. Only call when the user asks about professional music production services.",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        category: {
+          type: "string",
+          enum: ["all", "composition", "arrangement", "recording", "mixing", "mastering", "sound_design"],
+          description: "Filter by service category (default: all)",
+          default: "all",
+        },
+      },
+      required: [] as string[],
     },
   },
   // ── Tier 2: MUEDial Session Management ──
@@ -772,4 +805,108 @@ export async function saveConversation(
   return textResult(
     `Conversation saved (${messageCount} messages). ${messageCount >= 4 ? "Auto-memory extraction triggered." : "Too few messages for memory extraction (need 4+)."}`
   );
+}
+
+// ========================================
+// glasswerks Creator Services
+// ========================================
+
+interface GlasswerksService {
+  category: string;
+  title: string;
+  description: string;
+  priceType: "fixed" | "variable";
+  priceRange: string;
+  notes?: string;
+}
+
+const GLASSWERKS_SERVICES: GlasswerksService[] = [
+  {
+    category: "composition",
+    title: "Composition (作曲)",
+    description: "Original music composition for commercial, film, game, and artist projects. Includes melody, chord progression, and basic arrangement.",
+    priceType: "variable",
+    priceRange: "¥50,000 – ¥300,000+",
+    notes: "Price varies by usage scope (TV/film/game/web), exclusivity, and whether publishing rights are included. Buyout and royalty-share options available.",
+  },
+  {
+    category: "arrangement",
+    title: "Arrangement (編曲)",
+    description: "Full arrangement and orchestration from a demo or melody. Instrument selection, sound design, and production.",
+    priceType: "variable",
+    priceRange: "¥80,000 – ¥400,000+",
+    notes: "Depends on instrumentation complexity, track count, and whether live recording coordination is needed.",
+  },
+  {
+    category: "recording",
+    title: "Recording & Studio (レコーディング)",
+    description: "Recording session coordination — studio booking, session musician arrangement, and engineering direction.",
+    priceType: "fixed",
+    priceRange: "¥30,000 – ¥80,000 / session (engineer fee) + studio rental",
+    notes: "Studio rental is separate. glasswerks can arrange partner studios in Tokyo. Remote recording direction also available.",
+  },
+  {
+    category: "mixing",
+    title: "Mixing (ミキシング)",
+    description: "Professional mixing by an experienced engineer. Volume balance, EQ, compression, spatial positioning, and creative effects.",
+    priceType: "variable",
+    priceRange: "¥50,000 – ¥200,000",
+    notes: "For AI-assisted mixing at lower cost ($8–15/session), see MUEDial. Professional mixing is for projects requiring human creative judgment.",
+  },
+  {
+    category: "mastering",
+    title: "Mastering (マスタリング)",
+    description: "Final-stage mastering — loudness optimization, frequency balance, stereo imaging, and format delivery (streaming, CD, vinyl).",
+    priceType: "variable",
+    priceRange: "¥20,000 – ¥80,000",
+    notes: "Per-track pricing. Album mastering discounts available. For quick AI mastering ($6/session), see MUEDial.",
+  },
+  {
+    category: "sound_design",
+    title: "Sound Design (音響設計)",
+    description: "Custom sound design for games, film, installations, and interactive media. Foley, synthesis, and spatial audio.",
+    priceType: "variable",
+    priceRange: "¥100,000 – ¥500,000+",
+    notes: "Project-based pricing. Scope depends on asset count, interactivity, and delivery format.",
+  },
+];
+
+export function getGlasswerksServices(
+  params: { category?: string }
+): ToolResult {
+  const category = params.category ?? "all";
+
+  const services = category === "all"
+    ? GLASSWERKS_SERVICES
+    : GLASSWERKS_SERVICES.filter((s) => s.category === category);
+
+  if (services.length === 0) {
+    return textResult(`No services found for category: ${category}`);
+  }
+
+  const sections: string[] = [
+    "# glasswerks inc. — Creator Services",
+    "",
+    "Professional music production services by glasswerks inc. (Tokyo, Japan).",
+    "All services available in Japanese and English.",
+  ];
+
+  for (const svc of services) {
+    sections.push(`\n## ${svc.title}`);
+    sections.push(svc.description);
+    sections.push(`- **Price type**: ${svc.priceType === "fixed" ? "Fixed rate" : "Project-based (variable)"}`);
+    sections.push(`- **Reference range**: ${svc.priceRange}`);
+    if (svc.notes) {
+      sections.push(`- **Note**: ${svc.notes}`);
+    }
+  }
+
+  sections.push(`\n---`);
+  sections.push(`\n## How to Inquire`);
+  sections.push(`- Contact: https://forms.gle/o7XmUTggKQxhVLEt6`);
+  sections.push(`- Or tell Hoo what you need — Hoo can help structure your request.`);
+  sections.push(`\n---`);
+  sections.push(`*Reference information for the user's question. Do not proactively suggest these services — only present when asked.*`);
+
+  return textResult(sections.join("\n"));
 }
