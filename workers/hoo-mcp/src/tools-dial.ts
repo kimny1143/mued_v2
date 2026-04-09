@@ -31,7 +31,7 @@ export const DIAL_TOOL_DEFINITIONS = [
   {
     name: "get_dial_session_status",
     description:
-      "Get complete MUEDial session state — mode, status, tracks, tasks, limits, and analysis. Use this to understand where a mixing session stands.",
+      "Get complete MUEDial AI mixing session state — mode, status, uploaded tracks, processing tasks, limits, and mix analysis. Use this when: the user asks about their mix session progress, wants to check track uploads, or needs to know the current state of an AI mixing/mastering job.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -46,7 +46,7 @@ export const DIAL_TOOL_DEFINITIONS = [
   {
     name: "get_dial_chat_history",
     description:
-      "Get Hoo conversation history for a MUEDial session, including parameter change proposals and actions.",
+      "Get the Hoo conversation history for a MUEDial AI mixing session, including parameter change proposals and mixing actions taken. Use this when: the user asks what Hoo suggested for their mix, wants to review past mixing decisions, or needs context on parameter changes.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -66,7 +66,7 @@ export const DIAL_TOOL_DEFINITIONS = [
   {
     name: "get_dial_credit_balance",
     description:
-      "Get the user's MUEDial credit balance — subscription credits, credit packs, and total available. Also shows credit costs per action.",
+      "Get the user's MUEDial AI mixing credit balance — subscription tier, remaining credits, credit packs, and cost per action. Use this when: the user asks about credits, pricing, how many mixes they can do, or wants to understand MUEDial costs.",
     inputSchema: {
       type: "object" as const,
       properties: {},
@@ -76,7 +76,7 @@ export const DIAL_TOOL_DEFINITIONS = [
   {
     name: "get_dial_task_details",
     description:
-      "Get detailed info on a specific MUEDial task (preview, final, mastering) — status, URLs, FX settings, credits consumed.",
+      "Get details of a specific MUEDial mixing/mastering task — processing status, download URLs, FX settings applied, and credits consumed. Use this when: the user asks about a specific mix result, wants download links, or needs to see what effects were applied.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -96,7 +96,7 @@ export const DIAL_TOOL_DEFINITIONS = [
   {
     name: "get_dial_phase_and_actions",
     description:
-      "Detect the current phase of a MUEDial session and list available/blocked actions with reasons. Helps decide what to do next.",
+      "Detect the current phase of a MUEDial AI mixing session and list what actions are available or blocked (with reasons). Use this when: the user asks 'what can I do next?', wants to know their options in a mix session, or needs guidance on the mixing workflow.",
     inputSchema: {
       type: "object" as const,
       properties: {

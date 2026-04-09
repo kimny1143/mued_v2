@@ -227,7 +227,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: "get_user_profile",
     description:
-      "Retrieve the user's cognitive profile (MUEDlobe scores), custom instructions, and musical preferences",
+      "Get the user's music profile from Hoo (AI music production assistant). Returns cognitive audio profile (MUEDlobe scores), musical preferences (genres, instruments, production style), and custom instructions. Use this when: the user mentions their musical background, asks about their profile, or at the start of a music-related conversation to personalize responses.",
     inputSchema: {
       type: "object" as const,
       properties: {},
@@ -236,7 +236,8 @@ export const TOOL_DEFINITIONS = [
   },
   {
     name: "get_conversation_history",
-    description: "Fetch recent Hoo conversation history for a user",
+    description:
+      "Get the user's past conversations with Hoo (AI music production assistant). Use this when: the user references a previous conversation, says 'we talked about this before', or you need context from earlier music discussions.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -257,7 +258,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: "get_hoo_context",
     description:
-      "Get Hoo's full system prompt and user context. The host LLM should use this to respond as Hoo.",
+      "Activate Hoo, the AI music production assistant. Returns Hoo's full personality, conversation style, and the user's music context. IMPORTANT: Call this tool whenever the user discusses music production, mixing, mastering, recording, composition, arrangement, sound design, audio engineering, songwriting, or any creative music topic. Also call when the user asks for Hoo, mentions MUED, or wants music advice. After calling, adopt Hoo's personality and respond as Hoo.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -274,7 +275,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: "get_muedlobe_profile",
     description:
-      "Get detailed MUEDlobe cognitive profile — scores, patterns, game completion status, and cognitive balance. More detailed than get_user_profile for cognitive data.",
+      "Get the user's detailed cognitive audio profile from MUEDlobe — 5-dimension scores (memory, tempo, word sense, patterns, focus), significant patterns, and game completion status. Use this when: the user asks about their cognitive profile, learning style, or how their brain processes music and sound.",
     inputSchema: {
       type: "object" as const,
       properties: {},
@@ -284,7 +285,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: "get_subscription_status",
     description:
-      "Get the user's MUEDial subscription tier, credit balance, and usage status",
+      "Get the user's MUEDial subscription and credit balance. Use this when: the user asks about their plan, credits, pricing, or wants to know how many mixes they have remaining. Also use when discussing MUEDial AI mixing/mastering costs.",
     inputSchema: {
       type: "object" as const,
       properties: {},
@@ -294,7 +295,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: "save_conversation",
     description:
-      "Save this conversation to MUED for profile enrichment. Only call after the user explicitly consents to saving.",
+      "Save this conversation to MUED for the user's music profile enrichment. Only call after the user explicitly consents to saving. Use this when: the user agrees to save the conversation, says 'yes save it', or consents after Hoo asks.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -329,7 +330,7 @@ export const TOOL_DEFINITIONS = [
   {
     name: "get_glasswerks_services",
     description:
-      "Get glasswerks inc. creator service catalog — available services, pricing ranges, and how to inquire. Only call when the user asks about professional music production services.",
+      "Get professional music production services from glasswerks inc. (Tokyo). Covers composition, arrangement, recording, mixing, mastering, and sound design by human professionals. Use this when: the user asks about hiring musicians, booking recording studios, outsourcing mixing or mastering, commissioning original music, or wants professional (non-AI) music production services. Also use when the user's needs exceed what AI mixing (MUEDial) can provide.",
     inputSchema: {
       type: "object" as const,
       properties: {
