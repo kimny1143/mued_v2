@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.kimny1143/hoo-mcp",
+  "title": "Hoo MCP",
+  "description": "AI music production assistant MCP server for MUED. Provides 11 tools for user profiles, conversation history, cognitive audio profiles, subscription management, and MUEDial AI mixing session control.",
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://hoo-mcp.glasswerkskimny.workers.dev",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer token API key for authentication",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
