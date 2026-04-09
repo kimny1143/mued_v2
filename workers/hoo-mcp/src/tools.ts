@@ -190,7 +190,9 @@ glasswerksは作曲・編曲・レコーディング・ミキシング・マス�
 ルール:
 - **聞かれた時だけ答える。自発的にサービスを紹介しない。営業トーク禁止**
 - 相手が「ミックスお願いしたい」「レコーディングできる？」等と聞いてきたら \`get_glasswerks_services\` で情報を取得して案内する
-- 価格は「参考レンジ」として伝え、確定額は言わない。「詳細はglasswerksから見積もりが行くよ」
+- **絶対にしてはいけない: 具体的な金額を先に提示すること。料金レンジも含めNG**
+- 料金の話題が出たら、まずユーザーの予算感を聞く。「予算感はどのくらいで考えてる？」
+- 予算を聞いた上で「そのレンジなら対応できるよ。詳細はglasswerksに繋いで見積もりを出すね」と返す
 - 納期を約束しない
 - MUEDial（AIミキシング・マスタリング）とglasswerks受託は別サービス。混同しない
   - セルフミックスの延長 → MUEDialを案内
@@ -816,9 +818,7 @@ interface GlasswerksService {
   category: string;
   title: string;
   description: string;
-  priceType: "fixed" | "variable";
-  priceRange: string;
-  notes?: string;
+  scope: string;
 }
 
 const GLASSWERKS_SERVICES: GlasswerksService[] = [
@@ -826,49 +826,37 @@ const GLASSWERKS_SERVICES: GlasswerksService[] = [
     category: "composition",
     title: "Composition (作曲)",
     description: "Original music composition for commercial, film, game, and artist projects. Includes melody, chord progression, and basic arrangement.",
-    priceType: "variable",
-    priceRange: "¥50,000 – ¥300,000+",
-    notes: "Price varies by usage scope (TV/film/game/web), exclusivity, and whether publishing rights are included. Buyout and royalty-share options available.",
+    scope: "TV/film/game/web/artist projects. Buyout and royalty-share contracts available.",
   },
   {
     category: "arrangement",
     title: "Arrangement (編曲)",
     description: "Full arrangement and orchestration from a demo or melody. Instrument selection, sound design, and production.",
-    priceType: "variable",
-    priceRange: "¥80,000 – ¥400,000+",
-    notes: "Depends on instrumentation complexity, track count, and whether live recording coordination is needed.",
+    scope: "Any genre and instrumentation. Live recording coordination available.",
   },
   {
     category: "recording",
     title: "Recording & Studio (レコーディング)",
     description: "Recording session coordination — studio booking, session musician arrangement, and engineering direction.",
-    priceType: "fixed",
-    priceRange: "¥30,000 – ¥80,000 / session (engineer fee) + studio rental",
-    notes: "Studio rental is separate. glasswerks can arrange partner studios in Tokyo. Remote recording direction also available.",
+    scope: "Partner studios in Tokyo. Remote recording direction also available.",
   },
   {
     category: "mixing",
     title: "Mixing (ミキシング)",
     description: "Professional mixing by an experienced engineer. Volume balance, EQ, compression, spatial positioning, and creative effects.",
-    priceType: "variable",
-    priceRange: "¥50,000 – ¥200,000",
-    notes: "For AI-assisted mixing at lower cost ($8–15/session), see MUEDial. Professional mixing is for projects requiring human creative judgment.",
+    scope: "Full-service mixing for any genre. For quick AI-assisted mixing, see MUEDial.",
   },
   {
     category: "mastering",
     title: "Mastering (マスタリング)",
     description: "Final-stage mastering — loudness optimization, frequency balance, stereo imaging, and format delivery (streaming, CD, vinyl).",
-    priceType: "variable",
-    priceRange: "¥20,000 – ¥80,000",
-    notes: "Per-track pricing. Album mastering discounts available. For quick AI mastering ($6/session), see MUEDial.",
+    scope: "Per-track or album. For quick AI mastering, see MUEDial.",
   },
   {
     category: "sound_design",
     title: "Sound Design (音響設計)",
     description: "Custom sound design for games, film, installations, and interactive media. Foley, synthesis, and spatial audio.",
-    priceType: "variable",
-    priceRange: "¥100,000 – ¥500,000+",
-    notes: "Project-based pricing. Scope depends on asset count, interactivity, and delivery format.",
+    scope: "Project-based. Scope depends on asset count, interactivity, and delivery format.",
   },
 ];
 
@@ -895,18 +883,18 @@ export function getGlasswerksServices(
   for (const svc of services) {
     sections.push(`\n## ${svc.title}`);
     sections.push(svc.description);
-    sections.push(`- **Price type**: ${svc.priceType === "fixed" ? "Fixed rate" : "Project-based (variable)"}`);
-    sections.push(`- **Reference range**: ${svc.priceRange}`);
-    if (svc.notes) {
-      sections.push(`- **Note**: ${svc.notes}`);
-    }
+    sections.push(`- **Scope**: ${svc.scope}`);
   }
 
   sections.push(`\n---`);
   sections.push(`\n## How to Inquire`);
   sections.push(`- Tell Hoo what you need — Hoo can help structure your request and connect you with glasswerks.`);
   sections.push(`- Or visit the Contact section at glasswerks.jp`);
-  sections.push(`- Do NOT generate or guess any form URLs. Direct the user to glasswerks.jp only.`);
+  sections.push(`\n## IMPORTANT: Pricing Rules`);
+  sections.push(`- Do NOT state any specific prices, price ranges, or cost estimates.`);
+  sections.push(`- Ask the user about their budget first: "予算感はどのくらいで考えてる？"`);
+  sections.push(`- After hearing their budget, respond: "そのレンジなら対応できるよ。詳細はglasswerksに繋いで見積もりを出すね"`);
+  sections.push(`- Do NOT generate or guess any form URLs.`);
   sections.push(`\n---`);
   sections.push(`*Reference information for the user's question. Do not proactively suggest these services — only present when asked.*`);
 
