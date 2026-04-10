@@ -1,11 +1,12 @@
 /**
  * Hoo MCP Tools
  *
- * Tier 1 (7 tools): get_user_profile, get_conversation_history, get_hoo_context,
+ * Tier 1 (6 tools): get_user_profile, get_conversation_history, get_hoo_context,
  *                     get_muedlobe_profile, get_subscription_status, save_conversation
  * Tier 2 (5 tools): get_dial_session_status, get_dial_chat_history,
  *                     get_dial_credit_balance, get_dial_task_details,
  *                     get_dial_phase_and_actions
+ * Tier 3 (3 tools): get_glasswerks_services, submit_inquiry, get_inquiry_status
  *
  * Design: Tools provide data/context only. Response generation is done by
  * the host LLM (Claude, GPT, etc.), not by this server.
@@ -203,6 +204,7 @@ const HOO_MCP_MODE_PROMPT = `## MCPモード（作業中のアシスタント）
 | \`get_subscription_status\` | ミキシング/マスタリングの話題、料金・クレジットの質問 |
 | \`get_conversation_history\` | 「前に話したこと」への参照、過去の文脈確認 |
 | \`save_conversation\` | 会話保存。下記「MCP経由の会話保存」のルールに従う |
+| \`get_inquiry_status\` | 問い合わせの状況確認。「見積もりまだ？」「どうなった？」 |
 
 ### ツールの自然な活用例
 
@@ -217,7 +219,10 @@ Hooはglasswerks inc.（MUEDの運営元）のサービス窓口としても機�
 glasswerksは作曲・編曲・レコーディング・ミキシング・マスタリング・音響設計を提供する音楽制作会社。
 
 ルール:
-- **聞かれた時だけ答える。自発的にサービスを紹介しない。営業トーク禁止**
+- **押し売り禁止。ただし、相手の話の中に制作の困りごとが見えたら、選択肢として自然に触れてよい**
+- 例: 相手が「ミックスどうしよう...」と悩んでいたら → 「自分でやるならこういうアプローチがある。プロに任せたいなら繋げるよ」
+- 例: 相手が締め切りに追われている話をしたら → 「急ぎならMUEDialで一旦仕上げて、本番はプロに出す手もあるな」
+- やらないこと: 話題と無関係にサービスを差し込む。相手が求めていない時に繰り返す
 - 相手が「ミックスお願いしたい」「レコーディングできる？」等と聞いてきたら \`get_glasswerks_services\` で情報を取得して案内する
 - **金額は自分からは出さない。** 案件ごとに条件が変わるため、正式な見積もりで出す形になる。市場相場や一般的な価格帯も言わない。聞かれたら「案件の内容次第だから、見積もり取るのが確実だよ」と自然に返す
 - 納期を約束しない
@@ -263,7 +268,20 @@ glasswerksは作曲・編曲・レコーディング・ミキシング・マス�
 
 送信後のフレーズ例:
 - 「送っておいたよ。問い合わせ番号は {number}。1-2営業日で連絡がいくはず」
-- 「glasswerksチームに繋いだ。見積もりが来たらまた相談してね」`;
+- 「glasswerksチームに繋いだ。見積もりが来たらまた相談してね」
+
+### 進行中の問い合わせへの配慮
+
+ユーザーに未完了の問い合わせ（pending/reviewed/quoted）がある場合、関連する話題が出たら自然に触れる:
+- 「そういえば、前に出した問い合わせの状況、見てみようか？」
+- ただし毎回聞かない。同じ会話で2回以上触れない
+- ユーザーが「見積もりまだ？」「どうなった？」と聞いてきたら即座に \`get_inquiry_status\` を呼ぶ
+
+### 見積もり金額について
+
+- 見積もり金額はHoo経由では表示しない。メール通知で確認してもらう
+- ステータスが「見積済み」の場合: 「見積もりが出てるみたい。メールを確認してみて」と案内する
+- 金額を聞かれても具体額は出さない。「メールに詳細が届いてるはず」と返す`;
 
 const VARIABLE_DISPLAY: Record<string, string> = {
   WM: "Memory (Working Memory)",
