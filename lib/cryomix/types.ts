@@ -3,6 +3,8 @@
 export interface CryoMixConfig {
   apiKey: string;
   baseUrl?: string;
+  /** Origin header value — must match a domain registered at platform.cryo-mix.com/integration-settings/domains */
+  origin?: string;
 }
 
 // ─── Request Types ──────────────────────────────────────────────────────────

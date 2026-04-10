@@ -15,6 +15,7 @@ const SOURCE_HEADER = 'Mastering API';
 export class CryoMixClient {
   readonly apiKey: string;
   readonly baseUrl: string;
+  private readonly origin: string | undefined;
   private sessionId: string | null = null;
 
   constructor(config: CryoMixConfig) {
@@ -23,9 +24,10 @@ export class CryoMixClient {
     }
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
+    this.origin = config.origin;
   }
 
-  /** Set the session ID returned from upload for subsequent requests. */
+  /** Set the session ID for subsequent requests. */
   setSessionId(sessionId: string): void {
     this.sessionId = sessionId;
   }
@@ -34,14 +36,23 @@ export class CryoMixClient {
     return this.sessionId;
   }
 
+  /** Ensure a Session-Id exists, generating one if needed. */
+  private ensureSessionId(): string {
+    if (!this.sessionId) {
+      this.sessionId = crypto.randomUUID();
+    }
+    return this.sessionId;
+  }
+
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'X-Api-Key': this.apiKey,
       'Source': SOURCE_HEADER,
+      'Session-Id': this.ensureSessionId(),
     };
-    if (this.sessionId) {
-      headers['Session-Id'] = this.sessionId;
+    if (this.origin) {
+      headers['Origin'] = this.origin;
     }
     return headers;
   }
@@ -78,12 +89,7 @@ export class CryoMixClient {
       content_type: req.contentType,
       ...(req.expirationSeconds && { expiration_seconds: req.expirationSeconds }),
     };
-    const res = await this.request<UploadData>('POST', '/api/signed-url/multi-upload', body);
-    // Session-Id for subsequent calls is the upload_folder_name
-    if (res.data?.upload_folder_name) {
-      this.setSessionId(res.data.upload_folder_name);
-    }
-    return res;
+    return this.request<UploadData>('POST', '/api/signed-url/multi-upload', body);
   }
 
   /**
@@ -156,5 +162,8 @@ export function createCryoMixClient(): CryoMixClient {
   if (!apiKey) {
     throw new Error('CRYOMIX_API_KEY environment variable is not set');
   }
-  return new CryoMixClient({ apiKey });
+  return new CryoMixClient({
+    apiKey,
+    origin: process.env.CRYOMIX_ORIGIN,
+  });
 }

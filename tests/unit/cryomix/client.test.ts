@@ -79,7 +79,7 @@ describe('CryoMixClient', () => {
       });
     });
 
-    it('omits Session-Id when not set (upload)', async () => {
+    it('auto-generates Session-Id for upload (first request)', async () => {
       const fetchMock = mockFetch(cryoResponse({
         upload_folder_name: 'folder-1',
         upload_object_names: { 'test.wav': 'https://signed.url/test.wav' },
@@ -89,16 +89,32 @@ describe('CryoMixClient', () => {
       await client.upload({ objectNames: ['test.wav'], contentType: 'audio/wav' });
 
       const [, init] = fetchMock.mock.calls[0];
-      expect(init.headers['Session-Id']).toBeUndefined();
+      expect(init.headers['Session-Id']).toBeDefined();
+      expect(typeof init.headers['Session-Id']).toBe('string');
+      expect(init.headers['Session-Id'].length).toBeGreaterThan(0);
+    });
+
+    it('sends Origin header when configured', async () => {
+      const clientWithOrigin = new CryoMixClient({ apiKey: 'test-api-key', origin: 'mued.jp' });
+      const fetchMock = mockFetch(cryoResponse({
+        upload_folder_name: 'folder-1',
+        upload_object_names: { 'test.wav': 'https://signed.url/test.wav' },
+      }));
+      globalThis.fetch = fetchMock;
+
+      await clientWithOrigin.upload({ objectNames: ['test.wav'], contentType: 'audio/wav' });
+
+      const [, init] = fetchMock.mock.calls[0];
+      expect(init.headers['Origin']).toBe('mued.jp');
     });
   });
 
   // ─── Upload ─────────────────────────────────────────────────────────────
 
   describe('upload', () => {
-    it('calls multi-upload endpoint and sets sessionId from response', async () => {
+    it('calls multi-upload endpoint with auto-generated sessionId', async () => {
       const fetchMock = mockFetch(cryoResponse({
-        upload_folder_name: 'session-abc',
+        upload_folder_name: 'server-folder-abc',
         upload_object_names: { 'track.wav': 'https://storage.googleapis.com/signed/track.wav' },
       }));
       globalThis.fetch = fetchMock;
@@ -107,8 +123,11 @@ describe('CryoMixClient', () => {
 
       expect(fetchMock).toHaveBeenCalledOnce();
       expect(fetchMock.mock.calls[0][0]).toBe('https://platform.cryo-mix.com/api/signed-url/multi-upload');
-      expect(res.data.upload_folder_name).toBe('session-abc');
-      expect(client.getSessionId()).toBe('session-abc');
+      expect(res.data.upload_folder_name).toBe('server-folder-abc');
+      // Session-Id is auto-generated, NOT the upload_folder_name
+      const sessionId = client.getSessionId();
+      expect(sessionId).toBeDefined();
+      expect(sessionId).not.toBe('server-folder-abc');
     });
 
     it('includes expirationSeconds when provided', async () => {
