@@ -72,10 +72,17 @@ export async function POST(request: Request) {
 
     for (let i = 0; i < MAX_POLL_ATTEMPTS; i++) {
       await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
-      const progress = await client.pollProgress();
-      status = progress.data.status;
-      percentage = progress.data.percentage_complete;
-      log.push(`  Poll ${i + 1}: ${status} (${percentage}%)`);
+      try {
+        const progress = await client.pollProgress();
+        status = progress.data.status;
+        percentage = progress.data.percentage_complete;
+        log.push(`  Poll ${i + 1}: ${status} (${percentage}%)`);
+      } catch (e) {
+        // 503 = process tracking not yet available, retry
+        const msg = e instanceof Error ? e.message : String(e);
+        log.push(`  Poll ${i + 1}: retrying (${msg})`);
+        continue;
+      }
 
       if (status === 'completed' || status === 'failed' || status === 'cancelled') {
         break;

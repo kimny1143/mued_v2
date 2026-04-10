@@ -99,11 +99,15 @@ export class CryoMixClient {
   async uploadToSignedUrl(signedUrl: string, fileBuffer: ArrayBuffer, contentType: string): Promise<void> {
     const res = await fetch(signedUrl, {
       method: 'PUT',
-      headers: { 'Content-Type': contentType },
+      headers: {
+        'Content-Type': contentType,
+        'x-goog-content-length-range': '0,262144000',
+      },
       body: fileBuffer,
     });
     if (!res.ok) {
-      throw new Error(`Cryo Mix upload PUT failed (${res.status})`);
+      const text = await res.text().catch(() => '');
+      throw new Error(`Cryo Mix upload PUT failed (${res.status}): ${text}`);
     }
   }
 
