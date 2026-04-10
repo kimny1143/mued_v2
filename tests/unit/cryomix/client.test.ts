@@ -159,6 +159,7 @@ describe('CryoMixClient', () => {
       expect(url).toBe('https://signed.url/file');
       expect(init.method).toBe('PUT');
       expect(init.headers['Content-Type']).toBe('audio/wav');
+      expect(init.headers['x-goog-content-length-range']).toBe('0,262144000');
     });
 
     it('throws on non-ok response', async () => {
