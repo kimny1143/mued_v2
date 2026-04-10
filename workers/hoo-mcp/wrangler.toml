@@ -9,3 +9,5 @@ MUED_API_URL = "https://mued.jp"
 # Secrets (set via `wrangler secret put`):
 # DATABASE_URL — Neon PostgreSQL connection string
 # INTERNAL_API_KEY — For Worker → MUED API internal calls
+# GA4_MEASUREMENT_ID — GA4 Measurement Protocol measurement ID (optional)
+# GA4_API_SECRET — GA4 Measurement Protocol API secret (optional)

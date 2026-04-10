@@ -32,6 +32,12 @@ import {
   getDialPhaseAndActions,
 } from "./tools-dial";
 import { submitInquiry, getInquiryStatus } from "./tools-glasswerks";
+import {
+  logToolCall,
+  buildGA4Events,
+  sendGA4Events,
+  getToolTier,
+} from "./analytics";
 
 // ========================================
 // Environment
@@ -42,6 +48,8 @@ export interface Env {
   ALLOWED_ORIGINS: string;
   MUED_API_URL: string;
   INTERNAL_API_KEY: string;
+  GA4_MEASUREMENT_ID?: string;
+  GA4_API_SECRET?: string;
 }
 
 // ========================================
@@ -109,29 +117,172 @@ function jsonRpcResult(
   return { jsonrpc: "2.0", id: id ?? null, result };
 }
 
+/** Dispatch a single tool call (no logging — pure execution). */
+async function executeToolCall(
+  toolName: string,
+  toolArgs: Record<string, unknown>,
+  clerkId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sql: import("@neondatabase/serverless").NeonQueryFunction<any, any>,
+  env: Env
+): Promise<{ result: unknown; error?: string }> {
+  switch (toolName) {
+    case "get_user_profile":
+      return { result: await getUserProfile(sql, clerkId) };
+
+    case "get_conversation_history":
+      return {
+        result: await getConversationHistory(sql, clerkId, {
+          limit: toolArgs.limit as number | undefined,
+          include_messages: toolArgs.include_messages as boolean | undefined,
+        }),
+      };
+
+    case "get_hoo_context":
+      return {
+        result: await getHooContext(sql, clerkId, {
+          include_recent_messages: toolArgs.include_recent_messages as
+            | number
+            | undefined,
+        }),
+      };
+
+    case "get_muedlobe_profile":
+      return { result: await getMuedlobeProfile(sql, clerkId) };
+
+    case "get_subscription_status":
+      return { result: await getSubscriptionStatus(sql, clerkId) };
+
+    case "save_conversation":
+      return {
+        result: await saveConversation(
+          sql,
+          clerkId,
+          {
+            messages: toolArgs.messages as Array<{
+              role: string;
+              content: string;
+            }>,
+            title: toolArgs.title as string | undefined,
+          },
+          {
+            MUED_API_URL: env.MUED_API_URL,
+            INTERNAL_API_KEY: env.INTERNAL_API_KEY,
+          }
+        ),
+      };
+
+    // ── Tier 3: glasswerks Creator Services ──
+
+    case "get_glasswerks_services":
+      return {
+        result: getGlasswerksServices({
+          category: toolArgs.category as string | undefined,
+        }),
+      };
+
+    case "submit_inquiry":
+      return {
+        result: await submitInquiry(
+          sql,
+          clerkId,
+          {
+            service_type: toolArgs.service_type as string,
+            budget_range: toolArgs.budget_range as string,
+            description: toolArgs.description as string,
+            urgency: toolArgs.urgency as string | undefined,
+            language: toolArgs.language as string | undefined,
+          },
+          {
+            MUED_API_URL: env.MUED_API_URL,
+            INTERNAL_API_KEY: env.INTERNAL_API_KEY,
+          }
+        ),
+      };
+
+    case "get_inquiry_status":
+      return {
+        result: await getInquiryStatus(sql, clerkId, {
+          inquiry_id: toolArgs.inquiry_id as string | undefined,
+        }),
+      };
+
+    // ── Tier 2: MUEDial Session Management ──
+
+    case "get_dial_session_status":
+      return {
+        result: await getDialSessionStatus(sql, clerkId, {
+          session_id: toolArgs.session_id as string,
+        }),
+      };
+
+    case "get_dial_chat_history":
+      return {
+        result: await getDialChatHistory(sql, clerkId, {
+          session_id: toolArgs.session_id as string,
+          limit: toolArgs.limit as number | undefined,
+        }),
+      };
+
+    case "get_dial_credit_balance":
+      return { result: await getDialCreditBalance(sql, clerkId) };
+
+    case "get_dial_task_details":
+      return {
+        result: await getDialTaskDetails(sql, clerkId, {
+          task_id: toolArgs.task_id as string,
+          include_fx_settings: toolArgs.include_fx_settings as
+            | boolean
+            | undefined,
+        }),
+      };
+
+    case "get_dial_phase_and_actions":
+      return {
+        result: await getDialPhaseAndActions(sql, clerkId, {
+          session_id: toolArgs.session_id as string,
+        }),
+      };
+
+    default:
+      return { result: null, error: `Unknown tool: ${toolName}` };
+  }
+}
+
+interface HandleMcpResult {
+  response: JsonRpcResponse;
+  /** GA4 events to send via ctx.waitUntil (empty if none). */
+  ga4Promise: Promise<void>;
+}
+
 async function handleMcpRequest(
   rpcReq: JsonRpcRequest,
   clerkId: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sql: import("@neondatabase/serverless").NeonQueryFunction<any, any>,
   env: Env
-): Promise<JsonRpcResponse> {
+): Promise<HandleMcpResult> {
+  const noop = Promise.resolve();
 
   switch (rpcReq.method) {
     case "initialize":
-      return jsonRpcResult(rpcReq.id, {
-        protocolVersion: "2024-11-05",
-        capabilities: { tools: {} },
-        serverInfo: { name: "hoo-mcp", version: "1.0.0" },
-      });
+      return {
+        response: jsonRpcResult(rpcReq.id, {
+          protocolVersion: "2024-11-05",
+          capabilities: { tools: {} },
+          serverInfo: { name: "hoo-mcp", version: "1.0.0" },
+        }),
+        ga4Promise: noop,
+      };
 
     case "notifications/initialized":
-      // Client notification, no response needed for notifications
-      // but since we're stateless HTTP, we return an empty result
-      return jsonRpcResult(rpcReq.id, {});
+      return { response: jsonRpcResult(rpcReq.id, {}), ga4Promise: noop };
 
     case "tools/list":
-      return jsonRpcResult(rpcReq.id, { tools: TOOL_DEFINITIONS });
+      return {
+        response: jsonRpcResult(rpcReq.id, { tools: TOOL_DEFINITIONS }),
+        ga4Promise: noop,
+      };
 
     case "tools/call": {
       const toolName = (rpcReq.params as { name: string })?.name;
@@ -139,150 +290,100 @@ async function handleMcpRequest(
         ((rpcReq.params as { arguments?: Record<string, unknown> })
           ?.arguments as Record<string, unknown>) ?? {};
 
-      switch (toolName) {
-        case "get_user_profile":
-          return jsonRpcResult(
-            rpcReq.id,
-            await getUserProfile(sql, clerkId)
-          );
+      const startTime = Date.now();
+      let success = true;
+      let errorMessage: string | undefined;
 
-        case "get_conversation_history":
-          return jsonRpcResult(
-            rpcReq.id,
-            await getConversationHistory(sql, clerkId, {
-              limit: toolArgs.limit as number | undefined,
-              include_messages: toolArgs.include_messages as
-                | boolean
-                | undefined,
-            })
-          );
+      try {
+        const { result, error } = await executeToolCall(
+          toolName,
+          toolArgs,
+          clerkId,
+          sql,
+          env
+        );
 
-        case "get_hoo_context":
-          return jsonRpcResult(
-            rpcReq.id,
-            await getHooContext(sql, clerkId, {
-              include_recent_messages: toolArgs.include_recent_messages as
-                | number
-                | undefined,
-            })
-          );
+        if (error) {
+          // Unknown tool
+          const log = {
+            tool_name: toolName,
+            tool_tier: getToolTier(toolName),
+            duration_ms: Date.now() - startTime,
+            success: false,
+            error_message: error,
+            clerk_id_prefix: clerkId.slice(0, 8),
+            timestamp: new Date().toISOString(),
+          };
+          logToolCall(log);
 
-        case "get_muedlobe_profile":
-          return jsonRpcResult(
-            rpcReq.id,
-            await getMuedlobeProfile(sql, clerkId)
-          );
+          return {
+            response: jsonRpcError(rpcReq.id, -32601, error),
+            ga4Promise: sendGA4Events(
+              env,
+              clerkId.slice(0, 8),
+              buildGA4Events(log)
+            ),
+          };
+        }
 
-        case "get_subscription_status":
-          return jsonRpcResult(
-            rpcReq.id,
-            await getSubscriptionStatus(sql, clerkId)
-          );
+        const durationMs = Date.now() - startTime;
+        const log = {
+          tool_name: toolName,
+          tool_tier: getToolTier(toolName),
+          duration_ms: durationMs,
+          success: true,
+          clerk_id_prefix: clerkId.slice(0, 8),
+          timestamp: new Date().toISOString(),
+        };
+        logToolCall(log);
 
-        case "save_conversation":
-          return jsonRpcResult(
-            rpcReq.id,
-            await saveConversation(sql, clerkId, {
-              messages: toolArgs.messages as Array<{
-                role: string;
-                content: string;
-              }>,
-              title: toolArgs.title as string | undefined,
-            }, {
-              MUED_API_URL: env.MUED_API_URL,
-              INTERNAL_API_KEY: env.INTERNAL_API_KEY,
-            })
-          );
+        return {
+          response: jsonRpcResult(rpcReq.id, result),
+          ga4Promise: sendGA4Events(
+            env,
+            clerkId.slice(0, 8),
+            buildGA4Events(log)
+          ),
+        };
+      } catch (err) {
+        success = false;
+        errorMessage =
+          err instanceof Error ? err.message : "Tool execution failed";
 
-        // ── Tier 3: glasswerks Creator Services ──
+        const log = {
+          tool_name: toolName,
+          tool_tier: getToolTier(toolName),
+          duration_ms: Date.now() - startTime,
+          success,
+          error_message: errorMessage,
+          clerk_id_prefix: clerkId.slice(0, 8),
+          timestamp: new Date().toISOString(),
+        };
+        logToolCall(log);
 
-        case "get_glasswerks_services":
-          return jsonRpcResult(
-            rpcReq.id,
-            getGlasswerksServices({
-              category: toolArgs.category as string | undefined,
-            })
-          );
-
-        case "submit_inquiry":
-          return jsonRpcResult(
-            rpcReq.id,
-            await submitInquiry(sql, clerkId, {
-              service_type: toolArgs.service_type as string,
-              budget_range: toolArgs.budget_range as string,
-              description: toolArgs.description as string,
-              urgency: toolArgs.urgency as string | undefined,
-              language: toolArgs.language as string | undefined,
-            }, {
-              MUED_API_URL: env.MUED_API_URL,
-              INTERNAL_API_KEY: env.INTERNAL_API_KEY,
-            })
-          );
-
-        case "get_inquiry_status":
-          return jsonRpcResult(
-            rpcReq.id,
-            await getInquiryStatus(sql, clerkId, {
-              inquiry_id: toolArgs.inquiry_id as string | undefined,
-            })
-          );
-
-        // ── Tier 2: MUEDial Session Management ──
-
-        case "get_dial_session_status":
-          return jsonRpcResult(
-            rpcReq.id,
-            await getDialSessionStatus(sql, clerkId, {
-              session_id: toolArgs.session_id as string,
-            })
-          );
-
-        case "get_dial_chat_history":
-          return jsonRpcResult(
-            rpcReq.id,
-            await getDialChatHistory(sql, clerkId, {
-              session_id: toolArgs.session_id as string,
-              limit: toolArgs.limit as number | undefined,
-            })
-          );
-
-        case "get_dial_credit_balance":
-          return jsonRpcResult(
-            rpcReq.id,
-            await getDialCreditBalance(sql, clerkId)
-          );
-
-        case "get_dial_task_details":
-          return jsonRpcResult(
-            rpcReq.id,
-            await getDialTaskDetails(sql, clerkId, {
-              task_id: toolArgs.task_id as string,
-              include_fx_settings: toolArgs.include_fx_settings as boolean | undefined,
-            })
-          );
-
-        case "get_dial_phase_and_actions":
-          return jsonRpcResult(
-            rpcReq.id,
-            await getDialPhaseAndActions(sql, clerkId, {
-              session_id: toolArgs.session_id as string,
-            })
-          );
-
-        default:
-          return jsonRpcError(rpcReq.id, -32601, `Unknown tool: ${toolName}`);
+        return {
+          response: jsonRpcError(rpcReq.id, -32603, errorMessage),
+          ga4Promise: sendGA4Events(
+            env,
+            clerkId.slice(0, 8),
+            buildGA4Events(log)
+          ),
+        };
       }
     }
 
     case "ping":
-      return jsonRpcResult(rpcReq.id, {});
+      return { response: jsonRpcResult(rpcReq.id, {}), ga4Promise: noop };
 
     default:
-      return jsonRpcError(
-        rpcReq.id,
-        -32601,
-        `Method not found: ${rpcReq.method}`
-      );
+      return {
+        response: jsonRpcError(
+          rpcReq.id,
+          -32601,
+          `Method not found: ${rpcReq.method}`
+        ),
+        ga4Promise: noop,
+      };
   }
 }
 
@@ -291,7 +392,7 @@ async function handleMcpRequest(
 // ========================================
 
 const worker = {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const cors = corsHeaders(request, env);
 
     // CORS preflight
@@ -363,7 +464,9 @@ const worker = {
 
     // Handle
     try {
-      const response = await handleMcpRequest(rpcReq, clerkId, sql, env);
+      const { response, ga4Promise } = await handleMcpRequest(rpcReq, clerkId, sql, env);
+      // Send GA4 events in the background — does not block the response
+      ctx.waitUntil(ga4Promise);
       return new Response(JSON.stringify(response), {
         headers: { ...cors, "Content-Type": "application/json" },
       });
