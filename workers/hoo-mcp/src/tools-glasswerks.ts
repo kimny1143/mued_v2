@@ -2,6 +2,7 @@
  * glasswerks MCP Tools (Tier 3)
  *
  * Phase 2: submit_inquiry — Write tool for service inquiry submission.
+ * Phase 3: get_inquiry_status — Read tool for inquiry status tracking.
  * Follows save_conversation pattern: DB INSERT → fire-and-forget notification.
  *
  * Security:
@@ -86,6 +87,24 @@ export const GLASSWERKS_TOOL_DEFINITIONS = [
       required: ["service_type", "budget_range", "description"] as string[],
     },
   },
+  {
+    name: "get_inquiry_status",
+    description:
+      "Check the status of the user's service inquiries to glasswerks. " +
+      "Use when: the user asks about their inquiry status, mentions a past " +
+      "request, or says something like '見積もりまだ？' or 'any update on my inquiry?'",
+    inputSchema: {
+      type: "object" as const,
+      properties: {
+        inquiry_id: {
+          type: "string",
+          description:
+            "Specific inquiry ID to check. If omitted, returns all recent inquiries.",
+        },
+      },
+      required: [] as string[],
+    },
+  },
 ];
 
 // ========================================
@@ -106,6 +125,119 @@ const VALID_LANGUAGES = ["ja", "en"];
 
 // ========================================
 // Tool Implementation
+// ========================================
+
+// ========================================
+// get_inquiry_status
+// ========================================
+
+export interface GetInquiryStatusParams {
+  inquiry_id?: string;
+}
+
+const STATUS_DISPLAY: Record<string, { ja: string; en: string }> = {
+  pending: { ja: "受付済み", en: "Received" },
+  reviewed: { ja: "確認済み", en: "Reviewed" },
+  quoted: { ja: "見積済み", en: "Quoted" },
+  resolved: { ja: "完了", en: "Completed" },
+};
+
+const SERVICE_NAMES: Record<string, string> = {
+  composition: "Composition (作曲)",
+  arrangement: "Arrangement (編曲)",
+  recording: "Recording (レコーディング)",
+  mixing: "Mixing (ミキシング)",
+  mastering: "Mastering (マスタリング)",
+  sound_design: "Sound Design (音響設計)",
+  other: "Other",
+};
+
+function formatDate(val: unknown): string {
+  if (!val) return "—";
+  return new Date(val as string).toISOString().slice(0, 10);
+}
+
+export async function getInquiryStatus(
+  sql: SQL,
+  clerkId: string,
+  params: GetInquiryStatusParams
+): Promise<ToolResult> {
+  const internalId = await resolveInternalId(sql, clerkId);
+  if (!internalId) return textResult("Error: User not found.");
+
+  if (params.inquiry_id) {
+    // Single inquiry detail
+    const rows = (await sql`
+      SELECT id, service_type, budget_range, description, urgency, language,
+             status, created_at, reviewed_at, quoted_at, resolved_at
+      FROM glasswerks_inquiries
+      WHERE user_id = ${internalId} AND id = ${params.inquiry_id}
+      LIMIT 1
+    `) as Row[];
+
+    if (rows.length === 0) {
+      return textResult("指定された問い合わせが見つかりませんでした。");
+    }
+
+    const r = rows[0];
+    const status = r.status as string;
+    const statusLabel = STATUS_DISPLAY[status] ?? { ja: status, en: status };
+    const inquiryNumber = `GW-${(r.id as string).slice(0, 8).toUpperCase()}`;
+
+    let text = `## 問い合わせ詳細\n\n`;
+    text += `### ${inquiryNumber}\n`;
+    text += `- **サービス**: ${SERVICE_NAMES[r.service_type as string] ?? r.service_type}\n`;
+    text += `- **予算感**: ${r.budget_range}\n`;
+    text += `- **ステータス**: ${statusLabel.ja} (${statusLabel.en})\n`;
+    text += `- **緊急度**: ${r.urgency}\n`;
+    text += `- **提出日**: ${formatDate(r.created_at)}\n`;
+    if (r.reviewed_at) text += `- **確認日**: ${formatDate(r.reviewed_at)}\n`;
+    if (r.quoted_at) text += `- **見積日**: ${formatDate(r.quoted_at)}\n`;
+    if (r.resolved_at) text += `- **完了日**: ${formatDate(r.resolved_at)}\n`;
+    text += `\n**内容**: ${r.description}\n`;
+
+    if (status === "quoted") {
+      text += `\n※ 見積もりの詳細はメールで送付されています。メールを確認してください。`;
+    }
+
+    return textResult(text);
+  }
+
+  // List recent inquiries
+  const rows = (await sql`
+    SELECT id, service_type, budget_range, status, created_at
+    FROM glasswerks_inquiries
+    WHERE user_id = ${internalId}
+    ORDER BY created_at DESC
+    LIMIT 10
+  `) as Row[];
+
+  if (rows.length === 0) {
+    return textResult("問い合わせ履歴はありません。");
+  }
+
+  let text = `## 問い合わせ一覧\n\n`;
+  for (const r of rows) {
+    const status = r.status as string;
+    const statusLabel = STATUS_DISPLAY[status] ?? { ja: status, en: status };
+    const inquiryNumber = `GW-${(r.id as string).slice(0, 8).toUpperCase()}`;
+    text += `### ${inquiryNumber}\n`;
+    text += `- **サービス**: ${SERVICE_NAMES[r.service_type as string] ?? r.service_type}\n`;
+    text += `- **予算感**: ${r.budget_range}\n`;
+    text += `- **ステータス**: ${statusLabel.ja} (${statusLabel.en})\n`;
+    text += `- **提出日**: ${formatDate(r.created_at)}\n`;
+    if (status === "quoted") {
+      text += `- ※ 見積もり詳細はメールをご確認ください\n`;
+    }
+    text += `\n`;
+  }
+  text += `---\n${rows.length}件の問い合わせがあります。`;
+
+  return textResult(text);
+}
+
+// ========================================
+// submit_inquiry
 // ========================================
 
 export interface SubmitInquiryParams {

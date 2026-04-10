@@ -2,7 +2,7 @@
  * Hoo MCP Server — Cloudflare Workers
  *
  * Remote MCP server implementing Streamable HTTP transport.
- * Provides 13 tools for Hoo context, user data, MUEDial sessions, and glasswerks services.
+ * Provides 14 tools for Hoo context, user data, MUEDial sessions, and glasswerks services.
  *
  * Endpoints:
  *   POST /mcp   — MCP JSON-RPC over HTTP (stateless)
@@ -31,7 +31,7 @@ import {
   getDialTaskDetails,
   getDialPhaseAndActions,
 } from "./tools-dial";
-import { submitInquiry } from "./tools-glasswerks";
+import { submitInquiry, getInquiryStatus } from "./tools-glasswerks";
 
 // ========================================
 // Environment
@@ -216,6 +216,14 @@ async function handleMcpRequest(
             }, {
               MUED_API_URL: env.MUED_API_URL,
               INTERNAL_API_KEY: env.INTERNAL_API_KEY,
+            })
+          );
+
+        case "get_inquiry_status":
+          return jsonRpcResult(
+            rpcReq.id,
+            await getInquiryStatus(sql, clerkId, {
+              inquiry_id: toolArgs.inquiry_id as string | undefined,
             })
           );
 
