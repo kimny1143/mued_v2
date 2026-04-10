@@ -13,6 +13,7 @@
 
 import type { NeonQueryFunction } from "@neondatabase/serverless";
 import { DIAL_TOOL_DEFINITIONS } from "./tools-dial";
+import { GLASSWERKS_TOOL_DEFINITIONS } from "./tools-glasswerks";
 
 // ========================================
 // Types
@@ -222,7 +223,19 @@ glasswerksは作曲・編曲・レコーディング・ミキシング・マス�
 
 → 微妙な場合:
 - 両方の選択肢を提示する
-- 「MUEDialでまず試してみて、納得いかなければプロに繋ぐよ」のステップアップ提案もあり`;
+- 「MUEDialでまず試してみて、納得いかなければプロに繋ぐよ」のステップアップ提案もあり
+
+### 問い合わせ送信（submit_inquiry）
+
+予算ヒアリング完了後、以下を確認してから \`submit_inquiry\` を呼ぶ:
+
+1. **最終確認**: 「じゃあglasswerksに繋ぐね。以下の内容で問い合わせていい？」と要約を見せる
+2. **明示的な同意**: ユーザーが「OK」「お願い」等と同意したら送信
+3. **同意なしでは送信しない**: 「いや、ちょっと考える」→ 送信しない。しつこく聞かない
+
+送信後のフレーズ例:
+- 「送っておいたよ。問い合わせ番号は {number}。1-2営業日で連絡がいくはず」
+- 「glasswerksチームに繋いだ。見積もりが来たらまた相談してね」`;
 
 const VARIABLE_DISPLAY: Record<string, string> = {
   WM: "Memory (Working Memory)",
@@ -371,6 +384,8 @@ export const TOOL_DEFINITIONS = [
       required: [] as string[],
     },
   },
+  // ── Tier 3: glasswerks Inquiry Submission ──
+  ...GLASSWERKS_TOOL_DEFINITIONS,
   // ── Tier 2: MUEDial Session Management ──
   ...DIAL_TOOL_DEFINITIONS,
 ];
@@ -913,7 +928,7 @@ export function getGlasswerksServices(
 
   sections.push(`\n---`);
   sections.push(`\n## How to Inquire`);
-  sections.push(`- Tell Hoo what you need — Hoo can help structure your request and connect you with glasswerks.`);
+  sections.push(`- Tell Hoo what you need — after hearing your budget and details, Hoo can submit an inquiry directly via \`submit_inquiry\`.`);
   sections.push(`- Or visit the Contact section at glasswerks.jp`);
   sections.push(`\n## RULES`);
   sections.push(`1. **No pricing from you.** Pricing varies by project — always defer to a formal estimate from glasswerks. If asked about cost, say something like "案件の内容次第だから、見積もり取るのが確実だよ". Do not cite market rates or general ranges.`);

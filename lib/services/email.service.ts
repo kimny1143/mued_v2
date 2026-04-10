@@ -122,6 +122,24 @@ export interface DialAdditionalCycleEmailData {
   sessionUrl: string;
 }
 
+export interface GlasswerksInquiryNotifyEmailData {
+  inquiryNumber: string;
+  serviceType: string;
+  budgetRange: string;
+  description: string;
+  urgency: string;
+  language: string;
+  userName: string | null;
+  userEmail: string | null;
+}
+
+export interface GlasswerksInquiryConfirmEmailData {
+  inquiryNumber: string;
+  serviceType: string;
+  userName: string | null;
+  language: string;
+}
+
 // ========================================
 // Template Generators
 // ========================================
@@ -587,6 +605,187 @@ ${data.errorMessage ? `エラー内容: ${data.errorMessage}\n` : ''}
 
     return { subject, html, text };
   },
+
+  /**
+   * glasswerks inquiry — admin notification to kimny
+   */
+  glasswerksInquiryNotify(data: GlasswerksInquiryNotifyEmailData): { subject: string; html: string; text: string } {
+    const serviceNames: Record<string, string> = {
+      composition: 'Composition (作曲)',
+      arrangement: 'Arrangement (編曲)',
+      recording: 'Recording (レコーディング)',
+      mixing: 'Mixing (ミキシング)',
+      mastering: 'Mastering (マスタリング)',
+      sound_design: 'Sound Design (音響設計)',
+      other: 'Other',
+    };
+
+    const urgencyNames: Record<string, string> = {
+      flexible: 'フレキシブル',
+      within_2_weeks: '2週間以内',
+      within_1_week: '1週間以内',
+      asap: '至急',
+    };
+
+    const serviceName = serviceNames[data.serviceType] ?? data.serviceType;
+    const urgencyName = urgencyNames[data.urgency] ?? data.urgency;
+
+    const subject = `[glasswerks] 新規問い合わせ: ${serviceName} - ${data.inquiryNumber}`;
+
+    const html = baseTemplate(`
+      <h2 style="color: #1e40af; margin-top: 0;">glasswerks 新規問い合わせ</h2>
+
+      <div class="info-box">
+        <div class="info-row">
+          <span class="label">問い合わせ番号</span>
+          <span class="value">${data.inquiryNumber}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">サービス</span>
+          <span class="value">${serviceName}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">予算感</span>
+          <span class="value">${data.budgetRange}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">希望納期</span>
+          <span class="value">${urgencyName}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">言語</span>
+          <span class="value">${data.language === 'ja' ? '日本語' : 'English'}</span>
+        </div>
+      </div>
+
+      <h3>詳細</h3>
+      <div class="info-box">
+        <p style="margin: 0; white-space: pre-wrap;">${data.description}</p>
+      </div>
+
+      <h3>ユーザー情報</h3>
+      <div class="info-box">
+        <div class="info-row">
+          <span class="label">名前</span>
+          <span class="value">${data.userName ?? '未設定'}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">メール</span>
+          <span class="value">${data.userEmail ?? '未設定'}</span>
+        </div>
+      </div>
+
+      <p style="color: #6b7280; font-size: 12px; margin-top: 24px;">
+        Hoo MCP経由の自動送信
+      </p>
+    `);
+
+    const text = `
+glasswerks 新規問い合わせ
+━━━━━━━━━━━━━━━━━━━━━━━
+
+問い合わせ番号: ${data.inquiryNumber}
+
+■ サービス: ${serviceName}
+■ 予算感: ${data.budgetRange}
+■ 希望納期: ${urgencyName}
+■ 言語: ${data.language === 'ja' ? '日本語' : 'English'}
+
+■ 詳細:
+${data.description}
+
+■ ユーザー情報:
+- 名前: ${data.userName ?? '未設定'}
+- メール: ${data.userEmail ?? '未設定'}
+
+━━━━━━━━━━━━━━━━━━━━━━━
+Hoo MCP経由の自動送信
+    `.trim();
+
+    return { subject, html, text };
+  },
+
+  /**
+   * glasswerks inquiry — user confirmation email
+   */
+  glasswerksInquiryConfirm(data: GlasswerksInquiryConfirmEmailData): { subject: string; html: string; text: string } {
+    const serviceNames: Record<string, string> = {
+      composition: 'Composition (作曲)',
+      arrangement: 'Arrangement (編曲)',
+      recording: 'Recording (レコーディング)',
+      mixing: 'Mixing (ミキシング)',
+      mastering: 'Mastering (マスタリング)',
+      sound_design: 'Sound Design (音響設計)',
+      other: 'Other',
+    };
+
+    const serviceName = serviceNames[data.serviceType] ?? data.serviceType;
+    const isJa = data.language === 'ja';
+    const greeting = data.userName ? `${data.userName}さん` : (isJa ? 'お客様' : 'Hello');
+
+    const subject = isJa
+      ? `[glasswerks] お問い合わせを受け付けました - ${data.inquiryNumber}`
+      : `[glasswerks] Your inquiry has been received - ${data.inquiryNumber}`;
+
+    const html = baseTemplate(`
+      <h2 style="color: #1e40af; margin-top: 0;">${isJa ? 'お問い合わせを受け付けました' : 'Inquiry Received'}</h2>
+
+      <p>${greeting}</p>
+
+      <p>${isJa
+        ? 'glasswerksへのお問い合わせありがとうございます。'
+        : 'Thank you for your inquiry to glasswerks.'}</p>
+
+      <div class="info-box">
+        <div class="info-row">
+          <span class="label">${isJa ? '問い合わせ番号' : 'Inquiry Number'}</span>
+          <span class="value">${data.inquiryNumber}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">${isJa ? 'サービス' : 'Service'}</span>
+          <span class="value">${serviceName}</span>
+        </div>
+      </div>
+
+      <p>${isJa
+        ? '担当者が内容を確認し、1-2営業日以内にご連絡いたします。'
+        : 'Our team will review your request and get back to you within 1-2 business days.'}</p>
+
+      <p style="color: #6b7280; font-size: 14px;">
+        ${isJa
+          ? `ご不明な点がございましたら ${SUPPORT_EMAIL} までお問い合わせください。`
+          : `If you have any questions, please contact us at ${SUPPORT_EMAIL}.`}
+      </p>
+    `);
+
+    const text = isJa
+      ? `
+${greeting}
+
+glasswerksへのお問い合わせありがとうございます。
+
+問い合わせ番号: ${data.inquiryNumber}
+サービス: ${serviceName}
+
+担当者が内容を確認し、1-2営業日以内にご連絡いたします。
+
+glasswerks inc.
+      `.trim()
+      : `
+${greeting}
+
+Thank you for your inquiry to glasswerks.
+
+Inquiry Number: ${data.inquiryNumber}
+Service: ${serviceName}
+
+Our team will review your request and get back to you within 1-2 business days.
+
+glasswerks inc.
+      `.trim();
+
+    return { subject, html, text };
+  },
 };
 
 // ========================================
@@ -779,6 +978,36 @@ class EmailService {
       to,
       ...template,
       tags: [{ name: 'type', value: 'payment_failed' }],
+    });
+  }
+
+  /**
+   * Send glasswerks inquiry notification to admin
+   */
+  async sendGlasswerksInquiryNotify(
+    to: EmailRecipient,
+    data: GlasswerksInquiryNotifyEmailData
+  ): Promise<EmailResult> {
+    const template = emailTemplates.glasswerksInquiryNotify(data);
+    return this.send({
+      to,
+      ...template,
+      tags: [{ name: 'type', value: 'glasswerks_inquiry_notify' }],
+    });
+  }
+
+  /**
+   * Send glasswerks inquiry confirmation to user
+   */
+  async sendGlasswerksInquiryConfirm(
+    to: EmailRecipient,
+    data: GlasswerksInquiryConfirmEmailData
+  ): Promise<EmailResult> {
+    const template = emailTemplates.glasswerksInquiryConfirm(data);
+    return this.send({
+      to,
+      ...template,
+      tags: [{ name: 'type', value: 'glasswerks_inquiry_confirm' }],
     });
   }
 
