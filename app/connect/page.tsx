@@ -138,6 +138,11 @@ export default function ConnectPage() {
   const config = generateConfig(selectedHost, apiKey);
   const hasKey = !!(apiKey || existingKeyPrefix);
 
+  // Track step transitions
+  useEffect(() => {
+    trackMcpConnect('step_viewed', { step: currentStep });
+  }, [currentStep]);
+
   // Check for existing API key on mount
   useEffect(() => {
     fetch('/api/mcp/api-key')
@@ -306,7 +311,10 @@ export default function ConnectPage() {
                   {HOSTS.map(host => (
                     <button
                       key={host.id}
-                      onClick={() => setSelectedHost(host.id)}
+                      onClick={() => {
+                        setSelectedHost(host.id);
+                        trackMcpConnect('host_selected', { host: host.id });
+                      }}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                         selectedHost === host.id
                           ? 'bg-indigo-600 text-white'

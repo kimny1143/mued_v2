@@ -34,12 +34,29 @@ export function trackCtaClick(product: string, location: string): void {
 
 /** Track MCP /connect funnel steps */
 export function trackMcpConnect(
-  step: "key_generated" | "config_copied" | "test_success" | "test_failure",
-  params?: Record<string, string>
+  step:
+    | "key_generated"
+    | "config_copied"
+    | "test_success"
+    | "test_failure"
+    | "step_viewed"
+    | "host_selected",
+  params?: Record<string, string | number>
 ): void {
   trackEvent({
     action: `mcp_connect_${step}`,
     params: { funnel: "mcp_connect", ...params },
+  });
+}
+
+/** Track inquiry-related events (client-side, for future UI-based inquiries) */
+export function trackInquiry(
+  action: "submitted" | "status_checked",
+  params?: Record<string, string>
+): void {
+  trackEvent({
+    action: `mcp_inquiry_${action}`,
+    params: { funnel: "mcp_inquiry", ...params },
   });
 }
 
