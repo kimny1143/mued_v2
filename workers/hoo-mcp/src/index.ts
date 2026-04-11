@@ -400,8 +400,30 @@ const worker = {
       return new Response(null, { status: 204, headers: cors });
     }
 
-    // Health check
+    // Health check + Server Card (SEP-1649)
     if (request.method === "GET") {
+      const url = new URL(request.url);
+
+      // MCP Server Card — enables registry scanner discovery
+      if (url.pathname === "/.well-known/mcp/server-card.json") {
+        return new Response(
+          JSON.stringify({
+            version: "1.0.0",
+            protocolVersion: "2024-11-05",
+            serverInfo: {
+              name: "Hoo MCP",
+              version: "1.0.0",
+              description:
+                "AI music production assistant — audio profiling, AI mixing sessions, and service inquiries.",
+            },
+            transport: [{ type: "streamable-http", url: "/mcp" }],
+            capabilities: { tools: {} },
+          }),
+          { headers: { ...cors, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Default health check
       return new Response(
         JSON.stringify({
           name: "hoo-mcp",
