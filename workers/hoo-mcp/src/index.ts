@@ -418,6 +418,11 @@ const worker = {
             },
             transport: [{ type: "streamable-http", url: "/mcp" }],
             capabilities: { tools: {} },
+            links: {
+              homepage: "https://mued.jp",
+              setup: "https://mued.jp/connect",
+              template: "https://glasswerks.gumroad.com/l/claude-code-template-pro",
+            },
           }),
           { headers: { ...cors, "Content-Type": "application/json" } }
         );
