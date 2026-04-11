@@ -68,6 +68,8 @@ export interface HooChatOptions {
   systemPrompt?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tools?: any[];
+  /** Enable Opus advisor for complex reasoning tasks (Claude models only) */
+  advisor?: boolean;
 }
 
 /**
@@ -84,6 +86,9 @@ export async function sendHooChat(
         model: 'claude-sonnet-4-20250514',
         systemPrompt: options?.systemPrompt,
         tools: options?.tools,
+        ...(options?.advisor && {
+          advisor: { model: 'claude-opus-4-20250514', maxUses: 2 },
+        }),
       });
 
     case 'claude-haiku':

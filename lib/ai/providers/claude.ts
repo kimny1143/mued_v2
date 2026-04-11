@@ -14,9 +14,15 @@ const anthropic = new Anthropic({
 
 export type ClaudeModel = 'claude-sonnet-4-20250514' | 'claude-opus-4-20250514' | 'claude-haiku-4-5-20251001';
 
+export interface AdvisorConfig {
+  model: ClaudeModel;
+  maxUses?: number;
+}
+
 export interface ClaudeProviderConfig extends HooProviderConfig {
   model: ClaudeModel;
   systemPrompt?: string;
+  advisor?: AdvisorConfig;
 }
 
 /**
@@ -77,15 +83,43 @@ export async function sendClaudeChat(
     })),
   };
 
-  if (mergedConfig.tools?.length) {
-    requestParams.tools = mergedConfig.tools;
+  // Build tools array
+  const tools = [...(mergedConfig.tools ?? [])];
+
+  // Add advisor tool if configured
+  if (mergedConfig.advisor) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const advisorTool: any = {
+      type: 'advisor_20260301',
+      name: 'advisor',
+      model: mergedConfig.advisor.model,
+    };
+    if (mergedConfig.advisor.maxUses) {
+      advisorTool.max_uses = mergedConfig.advisor.maxUses;
+    }
+    tools.push(advisorTool);
+  }
+
+  if (tools.length > 0) {
+    requestParams.tools = tools;
   }
 
   let response;
   try {
-    response = await anthropic.messages.create(requestParams, {
-      signal: controller.signal,
-    });
+    if (mergedConfig.advisor) {
+      // Use beta API for advisor support
+      response = await anthropic.beta.messages.create(
+        {
+          ...requestParams,
+          betas: ['advisor-tool-2026-03-01'],
+        },
+        { signal: controller.signal }
+      );
+    } else {
+      response = await anthropic.messages.create(requestParams, {
+        signal: controller.signal,
+      });
+    }
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
