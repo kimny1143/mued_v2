@@ -476,6 +476,33 @@ export default function ConnectPage() {
             </div>
           )}
         </div>
+
+        {/* Pro Template CTA */}
+        <div className="mt-12 border-t border-white/10 pt-8">
+          <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-xl p-5">
+            <h3 className="text-sm font-medium text-white mb-1">{c.proTemplate.title}</h3>
+            <p className="text-xs text-white/50 mb-3">{c.proTemplate.description}</p>
+            <div className="flex flex-wrap gap-3">
+              <a
+                href="https://glasswerks.gumroad.com/l/claude-code-template-pro"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-lg transition-colors"
+              >
+                {c.proTemplate.proButton}
+                <ChevronRight className="w-3.5 h-3.5" />
+              </a>
+              <a
+                href="https://github.com/kimny1143/claude-code-template"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white text-xs font-medium rounded-lg transition-colors"
+              >
+                {c.proTemplate.freeButton}
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </MuednoteLayout>
   );

@@ -1700,6 +1700,12 @@
         "Ask Hoo about your cognitive profile or mixing status",
         "Save conversations to grow your profile"
       ]
+    },
+    "proTemplate": {
+      "title": "Build your own AI workflow",
+      "description": "The same Claude Code architecture that powers Hoo. Multi-agent orchestration, skills, hooks, and MCP integration — ready to customize.",
+      "proButton": "Pro Template",
+      "freeButton": "Free on GitHub"
     }
   }
 }
