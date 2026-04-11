@@ -216,7 +216,7 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     } else {
       conversation = await hooConversationsRepository.create({
         userId: internalUserId,
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-20250514',
         provider: 'claude',
       });
     }
@@ -235,10 +235,12 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
       content: m.content,
     }));
 
-    // Send to AI (Claude Haiku 4.5)
+    // Send to AI (Sonnet executor + Opus advisor for complex contexts)
+    const useAdvisor = context === 'profile' || context === 'lobe';
     const startTime = Date.now();
-    const aiResponse = await sendHooChat('claude-haiku', messages, {
+    const aiResponse = await sendHooChat('claude-sonnet-4', messages, {
       systemPrompt,
+      advisor: useAdvisor,
     });
     const latencyMs = Date.now() - startTime;
 
