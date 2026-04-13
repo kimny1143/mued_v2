@@ -18,8 +18,14 @@
 
 ### 上流コスト（RoEx Tonn API）
 - RoEx APIクレジット有効期限: **購入から12ヶ月**
-- MUEDial 1セッションのRoExコスト: **525cr**（原価率 9.5-10.7%）
-- RoEx価格: $10/1,000cr〜$80/10,000cr（ボリュームディスカウントあり）
+- cr単価: **$0.009/cr**（Medium pack $45/5000cr、Stripe受領書 #2592-1041 で確定、2026-04-13）
+- MUEDial 1セッションのRoExコスト: **530cr**（Mix Diagnosis 10cr訂正反映）
+- Pack別原価率（単発価格比）:
+  - Dialogue ($15, 600cr): **31.8%**
+  - Omakase ($8, 300cr): **33.75%**
+  - Mastering add-on ($6, 200cr): **33%**
+- RoEx価格: $10/1,000cr〜$80/10,000cr（ボリュームディスカウントあり、Large pack使用時は$0.008/cr）
+- 参照: `reference_roex_pricing_facts.md`（conductor 2026-04-13確定版）
 
 ---
 

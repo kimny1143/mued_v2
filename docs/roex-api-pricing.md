@@ -112,17 +112,13 @@ The value of the final mix (250 cr) is: WAV format + custom audio effect overrid
 
 ---
 
-### Mix Analysis クレジット不一致 (要検証)
+### Mix Analysis / Mix Diagnosis クレジット確定
 
-RoEx価格ページでは Mix Analysis = 10 credits と記載があるが、ダッシュボードの実績では
-「Mix Diagnosis」として **5 credits** ずつ消費されている (2026-03-05 PoC テスト)。
+RoEx Mix Analysis = Mix Diagnosis = **10 credits** で確定（David Ronan 2026-03-31 メール訂正、
+conductor 2026-04-13 徹底調査で確定）。
 
-考えられる原因:
-- RoEx側の文書の誤記 (実際は5cr)
-- 内部的に2回APIコールで合計10cr (ただしダッシュボード上は1件=5crで個別表示)
-- 「Mix Diagnosis」と「Mix Analysis」が別サービスの可能性
-
-MUEDialで本格利用する際に実測で確定させること。
+以前 PoC 実績から 5cr と推測されていたが、一次ソース（David直接訂正 + Stripe受領書）で10crに修正済。
+`reference_roex_pricing_facts.md` を正として扱う。
 
 ---
 
@@ -253,5 +249,5 @@ Fix: Changed to `retrieveFxSettings: false`. FX settings are now only retrieved 
 ## RoEx Contact
 
 - Support: support@roexaudio.com
-- Enterprise (500+ requests/month): Custom pricing available
+- Enterprise (500+ requests/month): Custom pricing available [要確認]
 - Discord community available for support
