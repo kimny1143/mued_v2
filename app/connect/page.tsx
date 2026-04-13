@@ -484,7 +484,7 @@ export default function ConnectPage() {
             <p className="text-xs text-white/50 mb-3">{c.proTemplate.description}</p>
             <div className="flex flex-wrap gap-3">
               <a
-                href="https://glasswerks.gumroad.com/l/claude-code-template-pro"
+                href="https://glasswerks.gumroad.com/l/claude-code-template-pro?utm_source=mued&utm_medium=web&utm_campaign=connect_page&utm_content=pro-template-cta"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-lg transition-colors"

@@ -421,7 +421,8 @@ const worker = {
             links: {
               homepage: "https://mued.jp",
               setup: "https://mued.jp/connect",
-              template: "https://glasswerks.gumroad.com/l/claude-code-template-pro",
+              template:
+                "https://glasswerks.gumroad.com/l/claude-code-template-pro?utm_source=hoo-mcp&utm_medium=server-card&utm_campaign=mcp_registry&utm_content=template-link",
             },
           }),
           { headers: { ...cors, "Content-Type": "application/json" } }
