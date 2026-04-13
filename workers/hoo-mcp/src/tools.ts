@@ -319,6 +319,13 @@ export const TOOL_DEFINITIONS = [
       properties: {},
       required: [] as string[],
     },
+    annotations: {
+      title: "Get User Profile",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
   {
     name: "get_conversation_history",
@@ -340,6 +347,13 @@ export const TOOL_DEFINITIONS = [
       },
       required: [] as string[],
     },
+    annotations: {
+      title: "Get Conversation History",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
   {
     name: "get_hoo_context",
@@ -357,6 +371,13 @@ export const TOOL_DEFINITIONS = [
       },
       required: [] as string[],
     },
+    annotations: {
+      title: "Activate Hoo Context",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
   {
     name: "get_muedlobe_profile",
@@ -367,6 +388,13 @@ export const TOOL_DEFINITIONS = [
       properties: {},
       required: [] as string[],
     },
+    annotations: {
+      title: "Get MUEDlobe Profile",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
   {
     name: "get_subscription_status",
@@ -376,6 +404,13 @@ export const TOOL_DEFINITIONS = [
       type: "object" as const,
       properties: {},
       required: [] as string[],
+    },
+    annotations: {
+      title: "Get Subscription Status",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
     },
   },
   {
@@ -411,6 +446,13 @@ export const TOOL_DEFINITIONS = [
       },
       required: ["messages"] as string[],
     },
+    annotations: {
+      title: "Save Conversation",
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
   },
   // ── Tier 3: glasswerks Creator Services ──
   {
@@ -428,6 +470,13 @@ export const TOOL_DEFINITIONS = [
         },
       },
       required: [] as string[],
+    },
+    annotations: {
+      title: "Get glasswerks Services",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
     },
   },
   // ── Tier 3: glasswerks Inquiry Submission ──
