@@ -86,6 +86,13 @@ export const GLASSWERKS_TOOL_DEFINITIONS = [
       },
       required: ["service_type", "budget_range", "description"] as string[],
     },
+    annotations: {
+      title: "Submit glasswerks Inquiry",
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
+    },
   },
   {
     name: "get_inquiry_status",
@@ -103,6 +110,13 @@ export const GLASSWERKS_TOOL_DEFINITIONS = [
         },
       },
       required: [] as string[],
+    },
+    annotations: {
+      title: "Get Inquiry Status",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
     },
   },
 ];

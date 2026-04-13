@@ -42,6 +42,13 @@ export const DIAL_TOOL_DEFINITIONS = [
       },
       required: ["session_id"] as string[],
     },
+    annotations: {
+      title: "Get MUEDial Session Status",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
   {
     name: "get_dial_chat_history",
@@ -62,6 +69,13 @@ export const DIAL_TOOL_DEFINITIONS = [
       },
       required: ["session_id"] as string[],
     },
+    annotations: {
+      title: "Get MUEDial Chat History",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
   {
     name: "get_dial_credit_balance",
@@ -71,6 +85,13 @@ export const DIAL_TOOL_DEFINITIONS = [
       type: "object" as const,
       properties: {},
       required: [] as string[],
+    },
+    annotations: {
+      title: "Get MUEDial Credit Balance",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
     },
   },
   {
@@ -92,6 +113,13 @@ export const DIAL_TOOL_DEFINITIONS = [
       },
       required: ["task_id"] as string[],
     },
+    annotations: {
+      title: "Get MUEDial Task Details",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
   },
   {
     name: "get_dial_phase_and_actions",
@@ -106,6 +134,13 @@ export const DIAL_TOOL_DEFINITIONS = [
         },
       },
       required: ["session_id"] as string[],
+    },
+    annotations: {
+      title: "Get MUEDial Phase and Actions",
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
     },
   },
 ];
