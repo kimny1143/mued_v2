@@ -4,9 +4,9 @@ import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { Check, ExternalLink } from "lucide-react";
 import { trackEvent } from "@/lib/analytics/gtag";
+import { GUMROAD_CLAUDE_CODE_TEMPLATE_URL } from "@/lib/gumroad/constants";
 
-const GUMROAD_URL =
-  "https://glasswerks.gumroad.com/l/claude-code-template-pro?utm_source=mued&utm_medium=web&utm_campaign=landing_page_v2&utm_content=section_a";
+const GUMROAD_URL = `${GUMROAD_CLAUDE_CODE_TEMPLATE_URL}?utm_source=mued&utm_medium=web&utm_campaign=landing_page_v2&utm_content=section_a`;
 
 /**
  * Claude Code Template Section (層A)

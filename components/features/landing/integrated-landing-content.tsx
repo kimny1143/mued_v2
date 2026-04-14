@@ -27,9 +27,9 @@ import { useTranslations } from "next-intl";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
 import { MUEDNOTE_APP_STORE_URL } from "@/lib/muednote/constants";
 import { trackCtaClick, trackEvent } from "@/lib/analytics/gtag";
+import { GUMROAD_CLAUDE_CODE_TEMPLATE_URL } from "@/lib/gumroad/constants";
 
-const GUMROAD_TEMPLATE_URL =
-  "https://glasswerks.gumroad.com/l/claude-code-template-pro?utm_source=mued&utm_medium=web&utm_campaign=landing_page_v2&utm_content=section_b";
+const GUMROAD_TEMPLATE_URL = `${GUMROAD_CLAUDE_CODE_TEMPLATE_URL}?utm_source=mued&utm_medium=web&utm_campaign=landing_page_v2&utm_content=section_b`;
 
 /**
  * Integrated Landing Page - Single page with all products
