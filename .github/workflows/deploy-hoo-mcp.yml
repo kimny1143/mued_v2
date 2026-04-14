@@ -24,12 +24,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Validate required secrets
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+          if [ -z "$CF_TOKEN" ]; then
             echo "Error: CLOUDFLARE_API_TOKEN secret is not set"
             exit 1
           fi
-          if [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+          if [ -z "$CF_ACCOUNT" ]; then
             echo "Error: CLOUDFLARE_ACCOUNT_ID secret is not set"
             exit 1
           fi
