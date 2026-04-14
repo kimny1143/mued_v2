@@ -53,6 +53,18 @@
         "badge": "Live on App Store",
         "quote": "\"Hours would pass without me noticing during production. But I couldn't remember why I made those choices\"—that's why we built this.",
         "author": "From the Developer"
+      },
+      "claudeCodeTemplate": {
+        "badge": "For Claude Code Users",
+        "title": "Bring Hoo into your workflow",
+        "description": "The context design powering MUEDial—now accessible from Claude Code via MCP. Conversation history, mix data, cognitive profile: all of Hoo, ready for your workflow.",
+        "features": [
+          "Official Hoo MCP template",
+          "Claude Code ready",
+          "5-min setup"
+        ],
+        "cta": "Get on Gumroad",
+        "ctaFinalSection": "Get the Claude Code Template"
       }
     },
     "hero": {
