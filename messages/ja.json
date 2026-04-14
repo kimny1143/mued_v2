@@ -53,6 +53,18 @@
         "badge": "App Store公開中",
         "quote": "「制作中、気づいたら何時間も経ってた。でも、なぜそうしたのかは覚えていない」——そんな経験から生まれました。",
         "author": "開発者より"
+      },
+      "claudeCodeTemplate": {
+        "badge": "Claude Code ユーザーへ",
+        "title": "Hooを、自分のワークフローに",
+        "description": "MUEDialを動かすHooの文脈設計を、Claude Code から直接呼び出せるMCPテンプレート。会話履歴・ミックス情報・認知プロファイルへのアクセス——そのまま使える。",
+        "features": [
+          "Hoo MCP公式テンプレート",
+          "Claude Code対応",
+          "セットアップ5分"
+        ],
+        "cta": "Gumroadで入手する",
+        "ctaFinalSection": "Claude Code テンプレートを入手"
       }
     },
     "hero": {

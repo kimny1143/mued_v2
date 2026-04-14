@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLocale } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { BrandHeroSection } from "./brand-hero-section";
 import { HeroSection } from "./hero-section";
 import { PhilosophySection } from "./philosophy-section";
@@ -12,6 +13,7 @@ import { PhilosophySection } from "./philosophy-section";
 // import { MuedlobeOverviewSection } from "@/components/features/muedlobe-landing/muedlobe-overview-section";
 import { SocialProofSection } from "./social-proof-section";
 import { DeveloperStorySection } from "./developer-story-section";
+import { ClaudeCodeTemplateSection } from "./claude-code-template-section";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { MuedearHeroSection } from "@/components/features/muedear-landing/muedear-hero-section";
 import { MuedearFeaturesSection } from "@/components/features/muedear-landing/muedear-features-section";
@@ -19,12 +21,15 @@ import { MuedearPricingSection } from "@/components/features/muedear-landing/mue
 import { MuedearEarRankingSection } from "@/components/features/muedear-landing/muedear-ear-ranking-section";
 import { MuedialHeroSection } from "@/components/features/muedial-landing/muedial-hero-section";
 import { AppStoreButton } from "@/components/ui/app-store-button";
-import { ArrowUp, ChevronLeft, ChevronRight, Music, Ear, Headphones, LogIn } from "lucide-react";
+import { ArrowUp, ChevronLeft, ChevronRight, ExternalLink, Music, Ear, Headphones, LogIn } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
 import { MUEDNOTE_APP_STORE_URL } from "@/lib/muednote/constants";
-import { trackCtaClick } from "@/lib/analytics/gtag";
+import { trackCtaClick, trackEvent } from "@/lib/analytics/gtag";
+
+const GUMROAD_TEMPLATE_URL =
+  "https://glasswerks.gumroad.com/l/claude-code-template-pro?utm_source=mued&utm_medium=web&utm_campaign=landing_page_v2&utm_content=section_b";
 
 /**
  * Integrated Landing Page - Single page with all products
@@ -38,6 +43,8 @@ import { trackCtaClick } from "@/lib/analytics/gtag";
  */
 export function IntegratedLandingContent() {
   const locale = useLocale();
+  const searchParams = useSearchParams();
+  const isV2 = searchParams.get("cta") === "v2";
 
   return (
     <div className="dark">
@@ -109,8 +116,11 @@ export function IntegratedLandingContent() {
       {/* Developer Story */}
       <DeveloperStorySection />
 
+      {/* Claude Code Template Section (層A) - v2 variant only */}
+      {isV2 && <ClaudeCodeTemplateSection />}
+
       {/* Final CTA - Both Products */}
-      <FinalCtaSection />
+      <FinalCtaSection isV2={isV2} />
 
       {/* Footer */}
       <footer className="bg-[#0a0a0a] py-8 border-t border-white/5">
@@ -306,9 +316,12 @@ function SectionNav({
 
 /**
  * Final CTA Section - Both products
+ *
+ * isV2: when true, adds a 4th button for Claude Code Template (層B)
  */
-function FinalCtaSection() {
+function FinalCtaSection({ isV2 = false }: { isV2?: boolean }) {
   const t = useTranslations("landing.brand.cta");
+  const tTemplate = useTranslations("landing.brand.claudeCodeTemplate");
 
   return (
     <section className="py-32 bg-[#0a0a0a] relative">
@@ -324,7 +337,7 @@ function FinalCtaSection() {
             {t("description")}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-6 justify-center items-center">
             <AppStoreButton href={MUEDEAR_APP_STORE_URL} color="amber" size="large" product="muedear" ctaLocation="final_cta" />
             <a
               href="https://dial.mued.jp"
@@ -336,6 +349,27 @@ function FinalCtaSection() {
               {t("muedial.button")}
             </a>
             <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="indigo" size="large" product="muednote" ctaLocation="final_cta" />
+            {isV2 && (
+              <a
+                href={GUMROAD_TEMPLATE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() =>
+                  trackEvent({
+                    action: "cta_click",
+                    params: {
+                      product: "claude_code_template",
+                      location: "final_cta",
+                      variant: "v2",
+                    },
+                  })
+                }
+                className="inline-flex items-center gap-2 px-5 py-3 bg-transparent border-2 border-indigo-400 text-indigo-400 hover:bg-indigo-400 hover:text-black font-medium rounded-[var(--radius-lg)] transition-colors duration-200"
+              >
+                {tTemplate("ctaFinalSection")}
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
           </div>
         </div>
       </div>
