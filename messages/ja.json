@@ -229,7 +229,7 @@
   },
   "privacy": {
     "title": "プライバシーポリシー",
-    "lastUpdated": "最終更新日: 2026年1月8日",
+    "lastUpdated": "最終更新日: 2026年4月15日",
     "intro": "株式会社グラスワークス（以下「当社」）は、MUEDnote（以下「本アプリ」）を運営しています。本プライバシーポリシーは、本アプリご利用時における情報の収集、使用、保護について説明するものです。",
     "section1": {
       "title": "1. 収集する情報",
@@ -257,7 +257,8 @@
       "clerk": "Clerk（認証）",
       "openai": "OpenAI（音声文字起こし - Whisper API）",
       "vercel": "Vercel（ホスティング）",
-      "neon": "Neon（データベース）"
+      "neon": "Neon（データベース）",
+      "googleAnalytics": "Google Analytics 4 / Google BigQuery（アクセス解析・データ分析）"
     },
     "section4": {
       "title": "4. データの保管",
@@ -288,6 +289,13 @@
       "description": "本プライバシーポリシーに関するご質問は、下記までお問い合わせください：",
       "company": "株式会社グラスワークス",
       "address": "〒153-0042 東京都目黒区青葉台4-7-27 3F"
+    },
+    "section9": {
+      "title": "9. Google アナリティクスおよび BigQuery へのデータ転送",
+      "description": "当サイトは Google Analytics 4（GA4）を使用してアクセス状況を計測しています。GA4 で収集した匿名化されたアクセスログ（利用者識別子、IPアドレスの一部、ブラウザ情報、訪問ページ履歴、イベント情報）は、Google Cloud BigQuery に転送・蓄積されます。氏名・メールアドレス等の個人を直接特定する情報は含まれません。",
+      "retention": "データの保存期間は最大2ヶ月で、その後自動的に削除されます。",
+      "purpose": "利用目的：サービス改善、マーケティング効果測定、A/B テスト分析、UX 改善",
+      "optout": "データ収集のオプトアウトは、Google アカウント設定（https://myaccount.google.com/activitycontrols）またはブラウザの Google Analytics オプトアウト拡張機能からいつでも行えます。"
     }
   },
   "tokushoho": {

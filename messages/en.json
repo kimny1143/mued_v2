@@ -229,7 +229,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: January 8, 2026",
+    "lastUpdated": "Last updated: April 15, 2026",
     "intro": "glasswerks inc. (\"we,\" \"our,\" or \"us\") operates MUEDnote (the \"App\"). This Privacy Policy explains how we collect, use, and protect your information when you use our App.",
     "section1": {
       "title": "1. Information We Collect",
@@ -257,7 +257,8 @@
       "clerk": "Clerk (Authentication)",
       "openai": "OpenAI (Voice transcription - Whisper API)",
       "vercel": "Vercel (Hosting)",
-      "neon": "Neon (Database)"
+      "neon": "Neon (Database)",
+      "googleAnalytics": "Google Analytics 4 / Google BigQuery (Access analytics & data analysis)"
     },
     "section4": {
       "title": "4. Data Storage",
@@ -288,6 +289,13 @@
       "description": "If you have any questions about this Privacy Policy, please contact us:",
       "company": "glasswerks inc.",
       "address": "4-7-27-3F Aobadai, Meguro-ku, Tokyo 153-0042, Japan"
+    },
+    "section9": {
+      "title": "9. Google Analytics and BigQuery Data Transfer",
+      "description": "This site uses Google Analytics 4 (GA4) to measure site usage. Anonymized access logs collected by GA4 (user identifiers, partial IP addresses, browser information, page visit history, and event data) are transferred to and stored in Google Cloud BigQuery. No directly personally identifiable information such as names or email addresses is included.",
+      "retention": "Data is retained for a maximum of 2 months and is automatically deleted thereafter.",
+      "purpose": "Purpose of use: Service improvement, marketing effectiveness measurement, A/B test analysis, UX improvement",
+      "optout": "You can opt out of data collection at any time via your Google Account settings (https://myaccount.google.com/activitycontrols) or by using the Google Analytics Opt-out Browser Add-on."
     }
   },
   "tokushoho": {
