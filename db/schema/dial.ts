@@ -23,6 +23,7 @@ import {
   serial,
   boolean,
   index,
+  numeric,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users } from '../schema';
@@ -371,4 +372,29 @@ export const dialCreditExpiryRelations = relations(dialCreditExpiry, ({ one }) =
     fields: [dialCreditExpiry.subscriptionId],
     references: [dialSubscriptions.id],
   }),
+}));
+
+// ========================================
+// RoEx Vendor Credit Packs (internal cost tracking)
+// ========================================
+
+/**
+ * RoEx vendor credit packs purchased by MUED (operator-side).
+ *
+ * Tracks bulk credit purchases from RoEx so that remaining_credits
+ * can be monitored and cost baselines established before Phase A launch.
+ *
+ * This is NOT customer-facing. Records are inserted via
+ * scripts/register_roex_pack.sh when kimny purchases a pack from RoEx.
+ */
+export const roexVendorPacks = pgTable('roex_vendor_packs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  purchasedAt: timestamp('purchased_at').notNull(),
+  amountUsd: numeric('amount_usd', { precision: 8, scale: 2 }).notNull(),
+  creditsTotal: integer('credits_total').notNull(),
+  creditsRemaining: integer('credits_remaining').notNull(),
+  note: text('note'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => ({
+  purchasedAtIdx: index('idx_roex_vendor_packs_purchased_at').on(table.purchasedAt),
 }));
