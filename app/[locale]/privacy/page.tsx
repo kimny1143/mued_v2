@@ -105,6 +105,12 @@ function PrivacyContent() {
                   https://neon.tech/privacy-policy
                 </a>
               </li>
+              <li>
+                <strong>{t("section3.googleAnalytics")}</strong>:{" "}
+                <a href="https://policies.google.com/privacy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://policies.google.com/privacy
+                </a>
+              </li>
             </ul>
           </section>
 
@@ -154,6 +160,15 @@ function PrivacyContent() {
                 </a>
               </p>
             </div>
+          </section>
+
+          {/* Section 9 */}
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">{t("section9.title")}</h2>
+            <p className="text-slate-400 mb-3">{t("section9.description")}</p>
+            <p className="text-slate-400 mb-3">{t("section9.retention")}</p>
+            <p className="text-slate-400 mb-3">{t("section9.purpose")}</p>
+            <p className="text-slate-400">{t("section9.optout")}</p>
           </section>
         </div>
       </main>
