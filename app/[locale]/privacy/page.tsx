@@ -146,15 +146,6 @@ function PrivacyContent() {
             <p className="text-slate-300">{t("section7.description")}</p>
           </section>
 
-          {/* Section 9 */}
-          <section className="mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">{t("section9.title")}</h2>
-            <p className="text-slate-400 mb-3">{t("section9.description")}</p>
-            <p className="text-slate-400 mb-3">{t("section9.retention")}</p>
-            <p className="text-slate-400 mb-3">{t("section9.purpose")}</p>
-            <p className="text-slate-400">{t("section9.optout")}</p>
-          </section>
-
           {/* Section 8 */}
           <section className="mb-8">
             <h2 className="text-xl font-semibold text-white mb-4">{t("section8.title")}</h2>
@@ -169,6 +160,15 @@ function PrivacyContent() {
                 </a>
               </p>
             </div>
+          </section>
+
+          {/* Section 9 */}
+          <section className="mb-8">
+            <h2 className="text-xl font-semibold text-white mb-4">{t("section9.title")}</h2>
+            <p className="text-slate-400 mb-3">{t("section9.description")}</p>
+            <p className="text-slate-400 mb-3">{t("section9.retention")}</p>
+            <p className="text-slate-400 mb-3">{t("section9.purpose")}</p>
+            <p className="text-slate-400">{t("section9.optout")}</p>
           </section>
         </div>
       </main>
