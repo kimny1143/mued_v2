@@ -21,7 +21,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { DialMockServer, buildSession } from './fixtures/dial-mocks';
+import { DialMockServer, buildSession, buildTrack } from './fixtures/dial-mocks';
 
 test('MUEDial Omakase onboarding — LP to download', async ({ page }) => {
   // ── Mock Setup ──────────────────────────────────────────────────────────
@@ -31,6 +31,9 @@ test('MUEDial Omakase onboarding — LP to download', async ({ page }) => {
       mode: 'omakase',
       masteringMode: null,
       title: '夏のロック MIX',
+      // Pre-populate with the 2-mix track so chat panel is enabled from session load.
+      // The upload step is still recorded visually; this ensures smooth chat flow.
+      tracks: [buildTrack('夏のロック_2mix.wav')],
     }),
     onChat(message) {
       if (message.includes('アップロード') || message.includes('upload')) {
@@ -68,11 +71,17 @@ test('MUEDial Omakase onboarding — LP to download', async ({ page }) => {
   await expect(page.locator('body')).toBeVisible();
   await page.waitForTimeout(3000); // viewer absorbs LP
 
-  // ── Scene 2: Select Omakase ──────────────────────────────────────────────
+  // ── Scene 2: Service Selection ───────────────────────────────────────────
+  // Omakase is pre-selected by default. Click dialogue first to show the
+  // selection interaction on screen, then switch back to omakase.
+  const dialogueOption = page.getByTestId('dial-mix-option-dialogue');
+  await expect(dialogueOption).toBeVisible();
+  await dialogueOption.click();
+  await page.waitForTimeout(1200); // viewer sees dialogue selected
+
   const omakaseOption = page.getByTestId('dial-mix-option-omakase');
-  await expect(omakaseOption).toBeVisible();
   await omakaseOption.click();
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(1500); // viewer sees omakase selected (final choice)
 
   // ── Scene 3: Checkout ────────────────────────────────────────────────────
   const emailInput = page.getByTestId('dial-checkout-email');
@@ -89,8 +98,8 @@ test('MUEDial Omakase onboarding — LP to download', async ({ page }) => {
   await page.waitForTimeout(2500); // session page loads
 
   // ── Scene 4: File Upload ─────────────────────────────────────────────────
+  // The file input is CSS-hidden (triggered by a visible button) — skip toBeVisible
   const fileInput = page.getByTestId('dial-file-input');
-  await expect(fileInput).toBeVisible();
   await fileInput.setInputFiles({
     name: '夏のロック_2mix.wav',
     mimeType: 'audio/wav',
@@ -105,17 +114,20 @@ test('MUEDial Omakase onboarding — LP to download', async ({ page }) => {
     ]),
   });
 
-  await expect(page.getByText('夏のロック_2mix.wav')).toBeVisible();
+  // File appears in both upload queue and tracks table — use .first()
+  await expect(page.getByText('夏のロック_2mix.wav').first()).toBeVisible();
   await page.waitForTimeout(1500);
 
   const uploadBtn = page.getByTestId('dial-upload-all');
   await expect(uploadBtn).toBeVisible();
   await uploadBtn.click();
-  await page.waitForTimeout(2000); // upload processing
+
+  // Wait for chat input to become enabled after upload processing
+  const chatInput = page.getByTestId('dial-chat-input');
+  await expect(chatInput).toBeEnabled({ timeout: 15000 });
+  await page.waitForTimeout(1500); // Hoo initial message appears
 
   // ── Scene 5: Hoo Conversation — Genre Input ──────────────────────────────
-  const chatInput = page.getByTestId('dial-chat-input');
-  await expect(chatInput).toBeVisible();
   await chatInput.fill('元気なロック系で、ギターが前に出るイメージです');
   await page.waitForTimeout(1000);
 
@@ -139,13 +151,13 @@ test('MUEDial Omakase onboarding — LP to download', async ({ page }) => {
   await page.waitForTimeout(2000); // Hoo explains the plan
 
   await page.getByTestId('dial-chat-generate-final').click();
-  await expect(page.getByTestId('dial-download-final')).toBeVisible({ timeout: 15000 });
+  await expect(page.getByTestId('dial-download-final-mix')).toBeVisible({ timeout: 15000 });
   await page.waitForTimeout(3000); // final mix appears
 
   // ── Scene 8: Download ────────────────────────────────────────────────────
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByTestId('dial-download-final').click(),
+    page.getByTestId('dial-download-final-mix').click(),
   ]);
 
   expect(download.suggestedFilename()).toBeTruthy();
