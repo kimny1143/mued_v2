@@ -16,7 +16,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env.test') });
 
 export default defineConfig({
   testDir: '.',
-  testMatch: ['e2e/onboarding-recording.spec.ts'],
+  testMatch: ['e2e/onboarding-recording.recording.ts'],
   timeout: 120 * 1000, // 2 min — includes intentional pauses
   fullyParallel: false,
   retries: 0,

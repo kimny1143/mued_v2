@@ -5,8 +5,11 @@
  * Uses mocked API responses — no real payment or RoEx credit consumption.
  *
  * Run:
- *   npm run dev            # start dev server first
+ *   npm run dev                    # start dev server first
  *   npx playwright test --config=playwright.recording.config.ts
+ *
+ * NOTE: Named .recording.ts (not .spec.ts) to exclude from CI testMatch.
+ * Only runs when explicitly targeting playwright.recording.config.ts.
  *
  * Output:
  *   recordings/onboarding/<test-name>/ — 1920x1080 .webm video
