@@ -79,4 +79,7 @@ scripts/tmp/
 # Remotion video projects (separate repository)
 /videos/
 
+# Playwright onboarding recordings
+/recordings/
+
 docs/sunogen_audio/
