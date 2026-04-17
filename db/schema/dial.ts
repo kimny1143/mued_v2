@@ -220,6 +220,7 @@ export const dialSubTierEnum = pgEnum('dial_sub_tier', [
 export const dialCreditPackSizeEnum = pgEnum('dial_credit_pack_size', [
   'small',
   'large',
+  'bonus',
 ]);
 
 /** One-time MUEDial purchases */
@@ -278,6 +279,7 @@ export const dialCreditPacks = pgTable('dial_credit_packs', {
   stripeCheckoutSessionId: text('stripe_checkout_session_id'),
   stripePaymentIntentId: text('stripe_payment_intent_id'),
   status: dialPurchaseStatusEnum('status').notNull().default('pending'),
+  source: text('source'),  // 'bonus' for campaign grants; null for paid packs
   expiresAt: timestamp('expires_at'),  // 12 months after purchase (aligned with RoEx upstream)
   createdAt: timestamp('created_at').notNull().defaultNow(),
   completedAt: timestamp('completed_at'),
@@ -319,6 +321,32 @@ export const dialTrialEvents = pgTable('dial_trial_events', {
   bySession: index('idx_dial_trial_events_session').on(t.sessionId),
   byUserFunnel: index('idx_dial_trial_events_user_funnel').on(t.userId, t.eventType, t.createdAt),
 }));
+
+// ========================================
+// Bonus Campaign
+// ========================================
+
+/** Per-grant audit ledger for the first-purchase 400cr bonus campaign */
+export const dialBonusCampaignLedger = pgTable('dial_bonus_campaign_ledger', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull().references(() => users.clerkId),
+  creditPackId: uuid('credit_pack_id').notNull().references(() => dialCreditPacks.id),
+  bonusCredits: integer('bonus_credits').notNull(),
+  estimatedCostUsd: numeric('estimated_cost_usd', { precision: 8, scale: 4 }).notNull(),
+  grantedAt: timestamp('granted_at').notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index('idx_dial_bonus_ledger_user_id').on(table.userId),
+  grantedAtIdx: index('idx_dial_bonus_ledger_granted_at').on(table.grantedAt),
+}));
+
+/** Runtime state for campaigns (kill switch + cumulative cost) */
+export const dialCampaignState = pgTable('dial_campaign_state', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  campaignName: text('campaign_name').notNull().unique(),
+  enabled: boolean('enabled').notNull().default(true),
+  cumulativeCostUsd: numeric('cumulative_cost_usd', { precision: 10, scale: 4 }).notNull().default('0'),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
 
 // ========================================
 // Relations

@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   bio: text("bio"),
   skills: jsonb("skills").$type<string[]>(),
   stripeCustomerId: text("stripe_customer_id"), // Stripe顧客ID
+  dialFirstPurchaseBonusGranted: boolean("dial_first_purchase_bonus_granted").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
