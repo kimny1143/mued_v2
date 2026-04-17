@@ -12,6 +12,7 @@ import { eq, desc } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { checkRateLimit } from '@/lib/middleware/rate-limit';
+import { recordDialEvent } from '@/lib/analytics/dial-events';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { createRoExClient, isRoExDevKey, analyzeMix, mapMusicalStyle } from '@/lib/roex';
 import type { MusicalStyle } from '@/lib/roex';
@@ -63,6 +64,11 @@ export const POST = withDialAuth(async (auth) => {
 
     // Already analyzed — return cached result
     if (session.analysisResult) {
+      recordDialEvent({
+        sessionId, eventType: 'analyze', userId: auth.userId, guestToken: auth.guestToken,
+        mode: session.mode ?? (session.masteringMode ? 'mastering' : null),
+        metadata: { cached: true },
+      });
       return apiSuccess({ analysisResult: session.analysisResult, cached: true });
     }
 
@@ -102,6 +108,11 @@ export const POST = withDialAuth(async (auth) => {
         .set({ analysisResult: DEV_ANALYSIS_RESULT, updatedAt: new Date() })
         .where(eq(dialSessions.id, sessionId));
 
+      recordDialEvent({
+        sessionId, eventType: 'analyze', userId: auth.userId, guestToken: auth.guestToken,
+        mode: session.mode ?? (session.masteringMode ? 'mastering' : null),
+        metadata: { cached: false, dev_key: true },
+      });
       return apiSuccess({ analysisResult: DEV_ANALYSIS_RESULT, cached: false });
     }
 
@@ -120,6 +131,11 @@ export const POST = withDialAuth(async (auth) => {
       .set({ analysisResult: result, updatedAt: new Date() })
       .where(eq(dialSessions.id, sessionId));
 
+    recordDialEvent({
+      sessionId, eventType: 'analyze', userId: auth.userId, guestToken: auth.guestToken,
+      mode: session.mode ?? (session.masteringMode ? 'mastering' : null),
+      metadata: { cached: false, dev_key: false },
+    });
     return apiSuccess({ analysisResult: result, cached: false });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Analysis failed');
