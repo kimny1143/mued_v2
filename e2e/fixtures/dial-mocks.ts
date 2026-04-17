@@ -150,10 +150,29 @@ export function buildTrack(name: string, instrumentGroup = 'OTHER'): MockTrack {
   };
 }
 
+export interface BuildTaskOptions {
+  stemCount?: number;
+  stemNames?: string[];
+}
+
+const DEFAULT_STEM_NAMES = ['vocals.wav', 'drums.wav'];
+
 export function buildTask(
   taskType: TaskType,
   overrides: Partial<MockTask> = {},
+  options: BuildTaskOptions = {},
 ): MockTask {
+  const stemNamesForTask = options.stemNames
+    ?? (options.stemCount
+      ? DEFAULT_STEM_NAMES.slice(0, options.stemCount).concat(
+          Array.from({ length: Math.max(0, options.stemCount - DEFAULT_STEM_NAMES.length) }, (_, i) => `stem-${i + DEFAULT_STEM_NAMES.length + 1}.wav`)
+        )
+      : DEFAULT_STEM_NAMES);
+
+  const defaultStemsUrls = Object.fromEntries(
+    stemNamesForTask.map((name) => [name, `https://cdn.example.test/stems/${name}`])
+  );
+
   return {
     id: overrides.id ?? `task-${taskCounter++}`,
     taskType,
@@ -162,12 +181,9 @@ export function buildTask(
     finalUrl: overrides.finalUrl ?? (taskType === 'mix_check' || taskType === 'final_basic' || taskType === 'final_advanced' || taskType === 'mastering'
       ? `https://cdn.example.test/${taskType}-${taskCounter}.wav`
       : null),
-    stemsUrls: overrides.stemsUrls ?? (taskType === 'final_basic' || taskType === 'final_advanced'
-      ? {
-          'vocals.wav': 'https://cdn.example.test/stems/vocals.wav',
-          'drums.wav': 'https://cdn.example.test/stems/drums.wav',
-        }
-      : null),
+    stemsUrls: overrides.stemsUrls !== undefined
+      ? overrides.stemsUrls
+      : (taskType === 'final_basic' || taskType === 'final_advanced' ? defaultStemsUrls : null),
     previewParams: overrides.previewParams ?? null,
     createdAt: overrides.createdAt ?? nowIso(),
   };
@@ -483,8 +499,8 @@ export class DialMockServer {
     return task;
   }
 
-  pushMixTask(taskType: 'mix_check' | 'final_basic' | 'final_advanced', status: TaskStatus = 'completed') {
-    const task = buildTask(taskType, { status });
+  pushMixTask(taskType: 'mix_check' | 'final_basic' | 'final_advanced', status: TaskStatus = 'completed', options: BuildTaskOptions = {}) {
+    const task = buildTask(taskType, { status }, options);
     if (status !== 'completed') {
       task.finalUrl = null;
       task.stemsUrls = null;
