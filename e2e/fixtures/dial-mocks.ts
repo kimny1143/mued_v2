@@ -24,6 +24,7 @@ export interface MockTrack {
   presenceSetting: string;
   panPreference: string;
   reverbPreference: string;
+  r2Url: string | null;
 }
 
 export interface MockTask {
@@ -145,6 +146,7 @@ export function buildTrack(name: string, instrumentGroup = 'OTHER'): MockTrack {
     presenceSetting: 'NORMAL',
     panPreference: 'NO_PREFERENCE',
     reverbPreference: 'NONE',
+    r2Url: `https://cdn.example.test/r2/original-${id}.wav`,
   };
 }
 

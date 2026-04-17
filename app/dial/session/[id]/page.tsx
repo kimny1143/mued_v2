@@ -9,6 +9,7 @@ import { ChatPanel } from '@/components/dial/chat-panel';
 import { ReferenceTrack } from '@/components/dial/reference-track';
 import { AudioAnalyzerProvider, useAudioAnalyzerContext } from '@/hooks/use-audio-analyzer-context';
 import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
+import { BeforeAfterPlayer } from '@/components/dial/before-after-player';
 
 /** Proxy GCS audio URLs through our Worker to add CORS headers (needed for Web Audio API analyzer) */
 function proxyAudioUrl(url: string): string {
@@ -24,6 +25,7 @@ interface Track {
   presenceSetting: string;
   panPreference: string;
   reverbPreference: string;
+  r2Url?: string | null;
 }
 
 interface PreviewParams {
@@ -1245,6 +1247,14 @@ function DialSessionContent() {
             )}
           </div>
         )}
+
+        {/* Before/After player — shown when original track URL is available */}
+        {(() => {
+          const beforeUrl = session.tracks[0]?.r2Url;
+          const afterUrl = masteringFinalTask?.finalUrl ?? mixFinalTask?.finalUrl;
+          if (!beforeUrl || !afterUrl) return null;
+          return <BeforeAfterPlayer beforeUrl={beforeUrl} afterUrl={afterUrl} />;
+        })()}
 
         <div className="flex gap-3">
           <Link
