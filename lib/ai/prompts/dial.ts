@@ -666,11 +666,15 @@ function buildOmakasePrompt(input: DialPromptInput): string {
     ? `\n### プレビュー残数\n- 使用: ${input.previewCount}/${input.previewLimit}回（残り${previewRemaining}回）${previewRemaining === 0 ? '\n- **⚠️ 上限到達。request_final を提案すること。**' : ''}`
     : '';
 
+  const omakaseStyleStatus = input.musicalStyle && input.musicalStyle !== 'other'
+    ? `${input.musicalStyle} ✅ 設定済み — **set_musical_styleツールを再度呼び出すことは絶対禁止**`
+    : `未設定（other） — ユーザーにジャンルを聞いてset_musical_styleで設定すること`;
+
   const sessionContext = `## 現在のセッション
 
 **モード: おまかせ** — ${phaseNote}
 
-MusicalStyle: ${input.musicalStyle}
+MusicalStyle: ${omakaseStyleStatus}
 
 ### トラック構成
 ${trackList || '（まだトラックがアップロードされていません）'}
@@ -711,11 +715,15 @@ export function buildDialSystemPrompt(input: DialPromptInput): string {
     ? `\n### リテイク状況\n- 有料サイクル消費: ${input.paidCycleCount}/${totalLimit}回（残り${remainingCycles}回）\n- 基本プラン: ${input.baseCycleLimit}回、追加購入: ${input.additionalCyclesPurchased}回\n${remainingCycles === 1 ? '- **⚠️ 次が最後の調整。ラスト予告メッセージを必ず伝えること。**' : ''}${remainingCycles === 0 ? '- **⚠️ サイクル上限到達。ツール呼び出しをせず3択を提示すること。**' : ''}${additionalUsed >= 3 ? '\n- **追加サイクル3回以上消費。エンジニア斡旋アナウンスを検討。**' : ''}`
     : '';
 
+  const styleStatus = input.musicalStyle && input.musicalStyle !== 'other'
+    ? `${input.musicalStyle} ✅ 設定済み — **set_musical_styleツールを再度呼び出すことは絶対禁止。ジャンルはすでに確定している。**`
+    : `未設定（other） — ユーザーにジャンルを聞いてset_musical_styleツールで設定すること`;
+
   const sessionContext = `## 現在のセッション
 
 **Phase: ${input.hasPreview ? input.phase : '初回'}** — ${phaseNote}
 
-MusicalStyle: ${input.musicalStyle}
+MusicalStyle: ${styleStatus}
 
 ### トラック構成
 ${trackList || '（まだトラックがアップロードされていません）'}
