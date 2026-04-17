@@ -6,20 +6,24 @@
  * Use `withAdminAuth()` from with-auth.ts for full route protection.
  *
  * Setup: Clerk Dashboard → Users → Public Metadata → { "role": "admin" }
+ *
+ * Note: Uses clerkClient().users.getUser() instead of auth()/currentUser()
+ * because this app has no middleware.ts, so Clerk session context is not
+ * propagated — auth() and currentUser() return null in API routes.
  */
 
-import { currentUser } from '@clerk/nextjs/server';
+import { clerkClient } from '@clerk/nextjs/server';
 
 /**
- * Check if the current user has admin role.
- * Uses currentUser() (direct Clerk API call) instead of auth() sessionClaims
- * to avoid JWT cache issues where publicMetadata may not be present in the JWT.
- * Returns false if not authenticated or not admin.
+ * Check if the given userId has admin role.
+ * Fetches publicMetadata directly via Clerk Management API.
+ * Returns false if userId is null/undefined, user not found, or not admin.
  */
-export async function isAdmin(): Promise<boolean> {
+export async function isAdmin(userId?: string | null): Promise<boolean> {
   try {
-    const user = await currentUser();
-    if (!user) return false;
+    if (!userId) return false;
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
     const publicMetadata = user.publicMetadata as Record<string, unknown> | undefined;
     return publicMetadata?.role === 'admin';
   } catch {

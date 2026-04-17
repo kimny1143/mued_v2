@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     // ── Admin bypass: skip Stripe for admin accounts (testing) ──
     const { isAdmin } = await import('@/lib/middleware/admin');
-    if (await isAdmin()) {
+    if (await isAdmin(clerkUserId)) {
       const [session] = await db.insert(dialSessions).values({
         userId: clerkUserId ?? undefined,
         mode: sessionMode ?? undefined,
