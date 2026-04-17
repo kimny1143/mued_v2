@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 const BUCKETS = 120;
 
@@ -60,12 +60,12 @@ export function useWaveformData({
   masterUrl,
   stage,
 }: UseWaveformDataOptions): UseWaveformDataReturn {
-  const [stemPeaks] = useState<Record<string, number[]>>(() => {
+  const stemPeaks = useMemo(() => {
     if (!stemBuffers) return {};
     return Object.fromEntries(
       Object.entries(stemBuffers).map(([name, buf]) => [name, extractPeaks(buf)])
     );
-  });
+  }, [stemBuffers]);
 
   const [peaksCache, setPeaksCache] = useState<Record<string, number[]>>({});
   const [loading, setLoading] = useState(false);
@@ -87,10 +87,6 @@ export function useWaveformData({
 
   const activeUrl = stage === 'raw' ? rawUrl : stage === 'master' ? masterUrl : null;
   const singlePeaks = activeUrl ? (peaksCache[activeUrl] ?? []) : [];
-
-  void stage; // consumed via activeUrl above
-  void rawUrl;
-  void masterUrl;
 
   return {
     stemPeaks,
