@@ -17,6 +17,11 @@ function taskStreamUrl(taskId: string): string {
   return `/api/dial/download?taskId=${taskId}&inline=1`;
 }
 
+/** Proxy individual stem via our API to bypass GCS CORS restriction */
+function stemStreamUrl(taskId: string, stemKey: string): string {
+  return `/api/dial/download?taskId=${taskId}&stemKey=${encodeURIComponent(stemKey)}&inline=1`;
+}
+
 interface Track {
   id: string;
   originalFilename: string;
@@ -1268,7 +1273,11 @@ function DialSessionContent() {
         {/* Multi-stem player — dialogue mode with stems */}
         {session.mode === 'dialogue' && mixFinalTask?.stemsUrls && Object.keys(mixFinalTask.stemsUrls).length > 0 && (
           <MultiStemPanel
-            stemsUrls={mixFinalTask.stemsUrls as Record<string, string>}
+            stemsUrls={Object.fromEntries(
+              Object.entries(mixFinalTask.stemsUrls as Record<string, string>).map(
+                ([k]) => [k, stemStreamUrl(mixFinalTask.id, k)],
+              )
+            )}
             sessionId={session.id}
             headers={headers}
             rawUrl={session.tracks[0]?.r2Url}

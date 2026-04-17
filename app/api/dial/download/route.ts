@@ -1,7 +1,8 @@
 /**
  * MUEDial Download / Stream API
- * GET /api/dial/download?taskId=xxx           → Content-Disposition: attachment (download)
- * GET /api/dial/download?taskId=xxx&inline=1  → Content-Disposition: inline (audio playback)
+ * GET /api/dial/download?taskId=xxx                        → Content-Disposition: attachment (download)
+ * GET /api/dial/download?taskId=xxx&inline=1               → Content-Disposition: inline (audio playback)
+ * GET /api/dial/download?taskId=xxx&stemKey=vocals&inline=1 → Proxy individual stem (GCS CORS bypass)
  *
  * Streams audio through our server. Solves two problems:
  * 1. GCS presigned URLs are 4000+ chars — Chrome URL safety check blocks them as audio src
@@ -23,6 +24,7 @@ export const GET = withDialAuth(async (auth) => {
   const { searchParams } = new URL(auth.request.url);
   const taskId = searchParams.get('taskId');
   const isInline = searchParams.get('inline') === '1';
+  const stemKey = searchParams.get('stemKey');
   if (!taskId) {
     return apiValidationError('taskId is required');
   }
@@ -35,27 +37,35 @@ export const GET = withDialAuth(async (auth) => {
   const { task } = result;
 
   // Determine source URL and file metadata
-  // Priority: r2FinalUrl > finalUrl > previewUrl
-  const isPreview = !task.finalUrl && !!task.previewUrl;
-  const sourceUrl = task.r2FinalUrl || task.finalUrl || task.previewUrl;
+  let sourceUrl: string | null | undefined;
+  let filename: string;
+  let contentType: string;
 
-  if (!sourceUrl) {
-    return apiNotFound('No download available for this task');
+  if (stemKey) {
+    // Proxy an individual stem — bypasses GCS CORS restriction (same issue as main audio, PR#156)
+    const stems = task.stemsUrls as Record<string, string> | null;
+    sourceUrl = stems?.[stemKey];
+    if (!sourceUrl) return apiNotFound(`Stem "${stemKey}" not found for this task`);
+    filename = `MUEDial_stem_${stemKey}_${taskId.slice(0, 8)}.wav`;
+    contentType = 'audio/wav';
+  } else {
+    // Priority: r2FinalUrl > finalUrl > previewUrl
+    const isPreview = !task.finalUrl && !!task.previewUrl;
+    sourceUrl = task.r2FinalUrl || task.finalUrl || task.previewUrl;
+    if (!sourceUrl) return apiNotFound('No download available for this task');
+    const taskLabelMap: Record<string, string> = {
+      mastering: 'mastered',
+      mastering_preview: 'master-preview',
+      mix_check: 'mix-check',
+      final_advanced: 'final-mix',
+      final_basic: 'final-mix',
+      preview: 'preview',
+    };
+    const taskLabel = taskLabelMap[task.taskType] || 'mix';
+    const ext = isPreview ? 'mp3' : 'wav';
+    filename = `MUEDial_${taskLabel}_${taskId.slice(0, 8)}.${ext}`;
+    contentType = isPreview ? 'audio/mpeg' : 'audio/wav';
   }
-
-  // Build a meaningful filename
-  const taskLabelMap: Record<string, string> = {
-    mastering: 'mastered',
-    mastering_preview: 'master-preview',
-    mix_check: 'mix-check',
-    final_advanced: 'final-mix',
-    final_basic: 'final-mix',
-    preview: 'preview',
-  };
-  const taskLabel = taskLabelMap[task.taskType] || 'mix';
-  const ext = isPreview ? 'mp3' : 'wav';
-  const filename = `MUEDial_${taskLabel}_${taskId.slice(0, 8)}.${ext}`;
-  const contentType = isPreview ? 'audio/mpeg' : 'audio/wav';
 
   try {
     // Forward Range header for audio seeking (inline mode)
