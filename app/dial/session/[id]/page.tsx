@@ -1529,6 +1529,7 @@ function DialSessionContent() {
                           src={audioSrc}
                           className="w-full"
                           key={audioSrc}
+                          onPlay={analyzerConnect}
                         />
                         {!isDevOverride && selectedTask && (
                           <a
