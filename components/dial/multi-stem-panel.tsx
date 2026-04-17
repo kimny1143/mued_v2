@@ -220,7 +220,6 @@ export function MultiStemPanel({ stemsUrls, sessionId, headers, rawUrl, masterUr
           key={stage === 'raw' ? rawUrl ?? '' : masterUrl ?? ''}
           controls
           src={stage === 'raw' ? (rawUrl ?? undefined) : (masterUrl ?? undefined)}
-          crossOrigin="anonymous"
           className="w-full h-8"
         />
       )}

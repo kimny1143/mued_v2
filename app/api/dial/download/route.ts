@@ -1,11 +1,13 @@
 /**
- * MUEDial Download API
- * GET /api/dial/download?taskId=xxx
+ * MUEDial Download / Stream API
+ * GET /api/dial/download?taskId=xxx           → Content-Disposition: attachment (download)
+ * GET /api/dial/download?taskId=xxx&inline=1  → Content-Disposition: inline (audio playback)
  *
- * Streams the deliverable file through our server with Content-Disposition: attachment.
- * This avoids cross-origin issues where browser `download` attribute is ignored
- * and GCS returns inline content causing broken downloads.
+ * Streams audio through our server. Solves two problems:
+ * 1. GCS presigned URLs are 4000+ chars — Chrome URL safety check blocks them as audio src
+ * 2. GCS bucket CORS headers can't be set (RoEx-owned bucket)
  *
+ * ?inline=1 mode: forwards Range headers for seeking, passes through 206 status.
  * Prefers R2 URL (if available and not expired), falls back to GCS URL.
  */
 
@@ -20,6 +22,7 @@ export const maxDuration = 120;
 export const GET = withDialAuth(async (auth) => {
   const { searchParams } = new URL(auth.request.url);
   const taskId = searchParams.get('taskId');
+  const isInline = searchParams.get('inline') === '1';
   if (!taskId) {
     return apiValidationError('taskId is required');
   }
@@ -55,21 +58,33 @@ export const GET = withDialAuth(async (auth) => {
   const contentType = isPreview ? 'audio/mpeg' : 'audio/wav';
 
   try {
-    // Stream through our server with Content-Disposition for correct filename
-    const sourceRes = await fetch(sourceUrl);
-    if (!sourceRes.ok || !sourceRes.body) {
+    // Forward Range header for audio seeking (inline mode)
+    const rangeHeader = auth.request.headers.get('Range');
+    const fetchOpts: RequestInit = rangeHeader ? { headers: { Range: rangeHeader } } : {};
+
+    const sourceRes = await fetch(sourceUrl, fetchOpts);
+    if (!sourceRes.body) {
       return apiServerError(`Source file fetch failed (${sourceRes.status})`);
     }
 
     const resHeaders = new Headers();
     resHeaders.set('Content-Type', sourceRes.headers.get('Content-Type') || contentType);
-    resHeaders.set('Content-Disposition', `attachment; filename="${filename}"`);
+    resHeaders.set(
+      'Content-Disposition',
+      isInline ? `inline; filename="${filename}"` : `attachment; filename="${filename}"`,
+    );
     if (sourceRes.headers.get('Content-Length')) {
       resHeaders.set('Content-Length', sourceRes.headers.get('Content-Length')!);
     }
     resHeaders.set('Cache-Control', 'private, no-cache');
 
-    return new NextResponse(sourceRes.body, { status: 200, headers: resHeaders });
+    // Passthrough range response headers for seek support
+    const acceptRanges = sourceRes.headers.get('Accept-Ranges');
+    if (acceptRanges) resHeaders.set('Accept-Ranges', acceptRanges);
+    const contentRange = sourceRes.headers.get('Content-Range');
+    if (contentRange) resHeaders.set('Content-Range', contentRange);
+
+    return new NextResponse(sourceRes.body, { status: sourceRes.status, headers: resHeaders });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Download failed');
   }

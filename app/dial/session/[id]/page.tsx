@@ -12,11 +12,9 @@ import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
 import { BeforeAfterPlayer } from '@/components/dial/before-after-player';
 import { MultiStemPanel } from '@/components/dial/multi-stem-panel';
 
-/** Proxy GCS audio URLs through our Worker to add CORS headers (needed for Web Audio API analyzer) */
-function proxyAudioUrl(url: string): string {
-  const proxyBase = process.env.NEXT_PUBLIC_UPLOAD_PROXY_URL;
-  if (!proxyBase || !url.includes('storage.googleapis.com')) return url;
-  return `${proxyBase}?url=${encodeURIComponent(url)}`;
+/** Stream audio through our own API to avoid GCS presigned URL length/CORS issues */
+function taskStreamUrl(taskId: string): string {
+  return `/api/dial/download?taskId=${taskId}&inline=1`;
 }
 
 interface Track {
@@ -866,7 +864,6 @@ function DialSessionContent() {
 
   // Sidebar player — derive from selected take
   const selectedTask = session.tasks.find((t) => t.id === selectedTakeId);
-  const selectedAudioUrl = selectedTask?.finalUrl || selectedTask?.previewUrl || null;
   const allPreviewTasks = session.tasks.filter((t) => t.taskType === 'preview');
   const selectedTakeLabel = (() => {
     if (!selectedTask) return '';
@@ -1105,14 +1102,14 @@ function DialSessionContent() {
 
         {task.previewUrl && (
           <div className="mt-2">
-            <audio controls src={proxyAudioUrl(task.previewUrl)} crossOrigin="anonymous" className="w-full" />
+            <audio controls src={taskStreamUrl(task.id)} className="w-full" />
           </div>
         )}
 
         {task.finalUrl && (
           <div className="mt-2">
             {task.taskType === 'mix_check' && (
-              <audio controls src={proxyAudioUrl(task.finalUrl)} crossOrigin="anonymous" className="w-full mb-2" />
+              <audio controls src={taskStreamUrl(task.id)} className="w-full mb-2" />
             )}
             <a
               href={downloadUrl(task.id)}
@@ -1262,9 +1259,9 @@ function DialSessionContent() {
         {/* Before/After player — shown when original track URL is available */}
         {(() => {
           const beforeUrl = session.tracks[0]?.r2Url;
-          const afterUrl = masteringFinalTask?.finalUrl ?? mixFinalTask?.finalUrl;
-          if (!beforeUrl || !afterUrl) return null;
-          return <BeforeAfterPlayer beforeUrl={beforeUrl} afterUrl={afterUrl} />;
+          const afterTask = masteringFinalTask ?? mixFinalTask;
+          if (!beforeUrl || !afterTask) return null;
+          return <BeforeAfterPlayer beforeUrl={beforeUrl} afterUrl={taskStreamUrl(afterTask.id)} />;
         })()}
 
         {/* Multi-stem player — dialogue mode with stems */}
@@ -1274,7 +1271,7 @@ function DialSessionContent() {
             sessionId={session.id}
             headers={headers}
             rawUrl={session.tracks[0]?.r2Url}
-            masterUrl={masteringFinalTask?.finalUrl}
+            masterUrl={masteringFinalTask ? taskStreamUrl(masteringFinalTask.id) : undefined}
           />
         )}
 
@@ -1346,7 +1343,7 @@ function DialSessionContent() {
                         )}
                       </div>
                       {task.previewUrl && (
-                        <audio controls src={proxyAudioUrl(task.previewUrl)} crossOrigin="anonymous" className="w-full" />
+                        <audio controls src={taskStreamUrl(task.id)} className="w-full" />
                       )}
                     </div>
                   );
@@ -1519,9 +1516,9 @@ function DialSessionContent() {
                 >
                   <h3 className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">Now Playing</h3>
                   {(() => {
-                    const effectiveUrl = devAudioUrl || selectedAudioUrl;
                     const isDevOverride = !!devAudioUrl;
-                    return effectiveUrl ? (
+                    const audioSrc = devAudioUrl || (selectedTask ? taskStreamUrl(selectedTask.id) : null);
+                    return audioSrc ? (
                       <>
                         <div className="text-sm text-white font-medium mb-2">
                           {isDevOverride ? '🔧 Dev Audio' : selectedTakeLabel}
@@ -1529,10 +1526,9 @@ function DialSessionContent() {
                         <audio
                           ref={audioRef}
                           controls
-                          src={proxyAudioUrl(effectiveUrl)}
-                          crossOrigin="anonymous"
+                          src={audioSrc}
                           className="w-full"
-                          key={effectiveUrl}
+                          key={audioSrc}
                         />
                         {!isDevOverride && selectedTask && (
                           <a
