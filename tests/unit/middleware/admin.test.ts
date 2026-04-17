@@ -11,10 +11,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // ========================================
 
 vi.mock('@clerk/nextjs/server', () => ({
-  auth: vi.fn(),
+  currentUser: vi.fn(),
 }));
 
-import { auth } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { isAdmin } from '@/lib/middleware/admin';
 
 // ========================================
@@ -27,55 +27,45 @@ describe('isAdmin', () => {
   });
 
   it('returns true when user has admin role', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      sessionClaims: {
-        metadata: { role: 'admin' },
-      },
+    vi.mocked(currentUser).mockResolvedValue({
+      publicMetadata: { role: 'admin' },
     } as any);
 
     expect(await isAdmin()).toBe(true);
   });
 
   it('returns false when user has no role', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      sessionClaims: {
-        metadata: {},
-      },
+    vi.mocked(currentUser).mockResolvedValue({
+      publicMetadata: {},
     } as any);
 
     expect(await isAdmin()).toBe(false);
   });
 
   it('returns false when user has non-admin role', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      sessionClaims: {
-        metadata: { role: 'user' },
-      },
+    vi.mocked(currentUser).mockResolvedValue({
+      publicMetadata: { role: 'user' },
     } as any);
 
     expect(await isAdmin()).toBe(false);
   });
 
-  it('returns false when metadata is undefined', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      sessionClaims: {
-        metadata: undefined,
-      },
+  it('returns false when publicMetadata is undefined', async () => {
+    vi.mocked(currentUser).mockResolvedValue({
+      publicMetadata: undefined,
     } as any);
 
     expect(await isAdmin()).toBe(false);
   });
 
-  it('returns false when sessionClaims is null (not authenticated)', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      sessionClaims: null,
-    } as any);
+  it('returns false when not authenticated (currentUser returns null)', async () => {
+    vi.mocked(currentUser).mockResolvedValue(null);
 
     expect(await isAdmin()).toBe(false);
   });
 
-  it('returns false when auth throws (e.g. Clerk unavailable)', async () => {
-    vi.mocked(auth).mockRejectedValue(new Error('Clerk unavailable'));
+  it('returns false when currentUser throws (e.g. Clerk unavailable)', async () => {
+    vi.mocked(currentUser).mockRejectedValue(new Error('Clerk unavailable'));
 
     expect(await isAdmin()).toBe(false);
   });

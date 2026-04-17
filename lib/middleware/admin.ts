@@ -8,17 +8,19 @@
  * Setup: Clerk Dashboard → Users → Public Metadata → { "role": "admin" }
  */
 
-import { auth } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
 
 /**
  * Check if the current user has admin role.
+ * Uses currentUser() (direct Clerk API call) instead of auth() sessionClaims
+ * to avoid JWT cache issues where publicMetadata may not be present in the JWT.
  * Returns false if not authenticated or not admin.
  */
 export async function isAdmin(): Promise<boolean> {
   try {
-    const { sessionClaims } = await auth();
-    if (!sessionClaims) return false;
-    const publicMetadata = sessionClaims.metadata as Record<string, unknown> | undefined;
+    const user = await currentUser();
+    if (!user) return false;
+    const publicMetadata = user.publicMetadata as Record<string, unknown> | undefined;
     return publicMetadata?.role === 'admin';
   } catch {
     return false;
