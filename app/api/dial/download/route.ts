@@ -1,8 +1,9 @@
 /**
  * MUEDial Download / Stream API
- * GET /api/dial/download?taskId=xxx                        → Content-Disposition: attachment (download)
- * GET /api/dial/download?taskId=xxx&inline=1               → Content-Disposition: inline (audio playback)
- * GET /api/dial/download?taskId=xxx&stemKey=vocals&inline=1 → Proxy individual stem (GCS CORS bypass)
+ * GET /api/dial/download?taskId=xxx                                   → Content-Disposition: attachment (download)
+ * GET /api/dial/download?taskId=xxx&inline=1                          → Content-Disposition: inline (audio playback)
+ * GET /api/dial/download?taskId=xxx&stemKey=vocals&inline=1           → Proxy individual stem by taskId (GCS CORS bypass)
+ * GET /api/dial/download?sessionId=xxx&stemKey=vocals&inline=1        → Proxy individual stem, server picks best task
  *
  * Streams audio through our server. Solves two problems:
  * 1. GCS presigned URLs are 4000+ chars — Chrome URL safety check blocks them as audio src
@@ -10,11 +11,17 @@
  *
  * ?inline=1 mode: forwards Range headers for seeking, passes through 206 status.
  * Prefers R2 URL (if available and not expired), falls back to GCS URL.
+ *
+ * sessionId+stemKey mode: server selects the best task (preview MP3 preferred over final WAV)
+ * — this avoids the client-side stemsUrls desync where preview task shows null client-side.
  */
 
 import { NextResponse } from 'next/server';
+import { eq } from 'drizzle-orm';
+import { db } from '@/db';
+import { dialTasks } from '@/db/schema';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
-import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
+import { verifyDialTaskOwnership, verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiValidationError, apiNotFound, apiServerError } from '@/lib/api-response';
 
 // Allow longer duration for large WAV file streaming
@@ -23,48 +30,70 @@ export const maxDuration = 120;
 export const GET = withDialAuth(async (auth) => {
   const { searchParams } = new URL(auth.request.url);
   const taskId = searchParams.get('taskId');
+  const sessionId = searchParams.get('sessionId');
   const isInline = searchParams.get('inline') === '1';
   const stemKey = searchParams.get('stemKey');
-  if (!taskId) {
-    return apiValidationError('taskId is required');
-  }
-
-  const result = await verifyDialTaskOwnership(taskId, auth);
-  if (!result) {
-    return apiNotFound('Task not found');
-  }
-
-  const { task } = result;
 
   // Determine source URL and file metadata
-  let sourceUrl: string | null | undefined;
+  let sourceUrl: string;
   let filename: string;
   let contentType: string;
 
-  if (stemKey) {
-    // Proxy an individual stem — bypasses GCS CORS restriction (same issue as main audio, PR#156)
-    const stems = task.stemsUrls as Record<string, string> | null;
-    sourceUrl = stems?.[stemKey];
-    if (!sourceUrl) return apiNotFound(`Stem "${stemKey}" not found for this task`);
-    filename = `MUEDial_stem_${stemKey}_${taskId.slice(0, 8)}.wav`;
-    contentType = 'audio/wav';
+  if (sessionId && stemKey) {
+    // Session-based stem lookup: server picks best task (preview MP3 preferred over final WAV).
+    // Fixes client-side desync where preview task stemsUrls shows as null after polling.
+    const session = await verifyDialSessionOwnership(sessionId, auth);
+    if (!session) return apiNotFound('Session not found');
+
+    const tasks = await db.query.dialTasks.findMany({
+      where: eq(dialTasks.sessionId, sessionId),
+    });
+
+    const getUrl = (t: typeof tasks[0]) =>
+      (t.stemsUrls as Record<string, string> | null)?.[stemKey] ?? null;
+    const stemTask =
+      tasks.find((t) => t.taskType === 'preview' && !!getUrl(t)) ??
+      tasks.find((t) => !!getUrl(t));
+
+    if (!stemTask) return apiNotFound(`Stem "${stemKey}" not found in session`);
+    sourceUrl = getUrl(stemTask)!;
+    filename = `MUEDial_stem_${stemKey}_${sessionId.slice(0, 8)}.${stemTask.taskType === 'preview' ? 'mp3' : 'wav'}`;
+    contentType = stemTask.taskType === 'preview' ? 'audio/mpeg' : 'audio/wav';
   } else {
-    // Priority: r2FinalUrl > finalUrl > previewUrl
-    const isPreview = !task.finalUrl && !!task.previewUrl;
-    sourceUrl = task.r2FinalUrl || task.finalUrl || task.previewUrl;
-    if (!sourceUrl) return apiNotFound('No download available for this task');
-    const taskLabelMap: Record<string, string> = {
-      mastering: 'mastered',
-      mastering_preview: 'master-preview',
-      mix_check: 'mix-check',
-      final_advanced: 'final-mix',
-      final_basic: 'final-mix',
-      preview: 'preview',
-    };
-    const taskLabel = taskLabelMap[task.taskType] || 'mix';
-    const ext = isPreview ? 'mp3' : 'wav';
-    filename = `MUEDial_${taskLabel}_${taskId.slice(0, 8)}.${ext}`;
-    contentType = isPreview ? 'audio/mpeg' : 'audio/wav';
+    // Existing taskId-based flow
+    if (!taskId) return apiValidationError('taskId or (sessionId + stemKey) is required');
+
+    const result = await verifyDialTaskOwnership(taskId, auth);
+    if (!result) return apiNotFound('Task not found');
+    const { task } = result;
+
+    if (stemKey) {
+      // Proxy an individual stem — bypasses GCS CORS restriction (same issue as main audio, PR#156)
+      const stems = task.stemsUrls as Record<string, string> | null;
+      const url = stems?.[stemKey];
+      if (!url) return apiNotFound(`Stem "${stemKey}" not found for this task`);
+      sourceUrl = url;
+      filename = `MUEDial_stem_${stemKey}_${taskId.slice(0, 8)}.wav`;
+      contentType = 'audio/wav';
+    } else {
+      // Priority: r2FinalUrl > finalUrl > previewUrl
+      const isPreview = !task.finalUrl && !!task.previewUrl;
+      const url = task.r2FinalUrl || task.finalUrl || task.previewUrl;
+      if (!url) return apiNotFound('No download available for this task');
+      sourceUrl = url;
+      const taskLabelMap: Record<string, string> = {
+        mastering: 'mastered',
+        mastering_preview: 'master-preview',
+        mix_check: 'mix-check',
+        final_advanced: 'final-mix',
+        final_basic: 'final-mix',
+        preview: 'preview',
+      };
+      const taskLabel = taskLabelMap[task.taskType] || 'mix';
+      const ext = isPreview ? 'mp3' : 'wav';
+      filename = `MUEDial_${taskLabel}_${taskId.slice(0, 8)}.${ext}`;
+      contentType = isPreview ? 'audio/mpeg' : 'audio/wav';
+    }
   }
 
   try {
