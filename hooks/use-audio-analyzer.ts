@@ -85,6 +85,7 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
 
     try {
       const ctx = new AudioContext();
+      ctx.resume().catch(() => {});
       const source = ctx.createMediaElementSource(el);
 
       // Main analyser (spectrum)
