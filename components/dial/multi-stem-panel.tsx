@@ -226,10 +226,11 @@ export function MultiStemPanel({ stemsUrls, sessionId, headers, rawUrl, masterUr
 
       {/* Stem rows — shown in all stages */}
       <div className="space-y-2">
-        {stemNames.map((stemName) => {
+        {stemNames.map((stemName, stemIndex) => {
           const stemState = stems[stemName] ?? { muted: false, solo: false };
           const reason = matchReason(stemName, paramChanges);
-          const displayName = stemName.replace(/\.[^.]+$/, '');
+          // DB keys are UUIDs or internal names — show numbered label for user-facing display
+          const displayName = `Stem ${stemIndex + 1}`;
           const anySoloed = Object.values(stems).some((s) => s.solo);
           const isActive = !anySoloed ? !stemState.muted : stemState.solo;
           const peaks = stemPeaks[stemName] ?? [];
