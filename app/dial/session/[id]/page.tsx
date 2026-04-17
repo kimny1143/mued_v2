@@ -1263,6 +1263,8 @@ function DialSessionContent() {
             stemsUrls={mixFinalTask.stemsUrls as Record<string, string>}
             sessionId={session.id}
             headers={headers}
+            rawUrl={session.tracks[0]?.r2Url}
+            masterUrl={masteringFinalTask?.finalUrl}
           />
         )}
 
