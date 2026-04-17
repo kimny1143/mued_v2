@@ -171,17 +171,14 @@ export function withAdminAuth(
 ): (request: NextRequest) => Promise<NextResponse> {
   return async (request: NextRequest): Promise<NextResponse> => {
     try {
-      // Admin routes: cookie-only (admin is always web)
-      const { userId, sessionClaims } = await auth();
+      const userId = await resolveClerkUserId(request);
 
       if (!userId) {
         return apiUnauthorized();
       }
 
-      const publicMetadata = sessionClaims?.metadata as Record<string, unknown> | undefined;
-      const isAdmin = publicMetadata?.role === 'admin';
-
-      if (!isAdmin) {
+      const { isAdmin } = await import('./admin');
+      if (!await isAdmin(userId)) {
         return NextResponse.json(
           { success: false, error: 'Admin access required' },
           { status: 403 }
