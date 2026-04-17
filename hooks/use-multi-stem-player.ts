@@ -80,7 +80,7 @@ export function useMultiStemPlayer({
       // Fetch all stems in parallel; individual failures don't abort the rest
       const settled = await Promise.allSettled(
         stemNames.map(async (name) => {
-          const res = await fetch(stemUrls[name], { mode: 'cors', credentials: 'omit' });
+          const res = await fetch(stemUrls[name], { credentials: 'same-origin' });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const ab = await res.arrayBuffer();
           const buf = await ctx.decodeAudioData(ab);
