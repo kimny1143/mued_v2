@@ -10,6 +10,7 @@ import { ReferenceTrack } from '@/components/dial/reference-track';
 import { AudioAnalyzerProvider, useAudioAnalyzerContext } from '@/hooks/use-audio-analyzer-context';
 import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
 import { BeforeAfterPlayer } from '@/components/dial/before-after-player';
+import { MultiStemPanel } from '@/components/dial/multi-stem-panel';
 
 /** Proxy GCS audio URLs through our Worker to add CORS headers (needed for Web Audio API analyzer) */
 function proxyAudioUrl(url: string): string {
@@ -1255,6 +1256,15 @@ function DialSessionContent() {
           if (!beforeUrl || !afterUrl) return null;
           return <BeforeAfterPlayer beforeUrl={beforeUrl} afterUrl={afterUrl} />;
         })()}
+
+        {/* Multi-stem player — dialogue mode with stems */}
+        {session.mode === 'dialogue' && mixFinalTask?.stemsUrls && Object.keys(mixFinalTask.stemsUrls).length > 0 && (
+          <MultiStemPanel
+            stemsUrls={mixFinalTask.stemsUrls as Record<string, string>}
+            sessionId={session.id}
+            headers={headers}
+          />
+        )}
 
         {session.mode === 'omakase' && (
           <Link
