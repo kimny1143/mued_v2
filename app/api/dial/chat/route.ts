@@ -298,18 +298,49 @@ export const POST = withDialAuth(async (auth) => {
       }
     }
 
+    // Guard: if AI returned tool-only response (no text), insert contextual fallback
+    let responseContent = aiResponse.content;
+    if (!responseContent || responseContent.trim() === '') {
+      const styleTool = aiResponse.toolCalls?.find((t) => t.name === 'set_musical_style');
+      const mixTool = aiResponse.toolCalls?.find((t) => t.name === 'propose_mix_action');
+      const masteringTool = aiResponse.toolCalls?.find((t) => t.name === 'propose_mastering_action');
+      if (styleTool) {
+        responseContent = 'ジャンルを設定したよ。どんな雰囲気に仕上げたいか教えてね。';
+      } else if (mixTool) {
+        const act = (mixTool.input as MixActionInput)?.action;
+        if (act === 'adjust_preview') {
+          responseContent = 'パラメータを設定したよ。プレビューが生成されるから聴いてみて。';
+        } else if (act === 'request_mix_check') {
+          responseContent = 'OK、Mix Checkを用意するね。下にボタンが表示されるから、良ければ押してね。';
+        } else if (act === 'request_final') {
+          responseContent = 'Final Mixを用意するね。下にボタンが表示されるから、良ければ押してね。';
+        } else {
+          responseContent = '調整するね。もう少し待ってて。';
+        }
+      } else if (masteringTool) {
+        const act = (masteringTool.input as MasteringActionInput)?.action;
+        if (act === 'request_mastering_final') {
+          responseContent = 'マスタリングを開始するね。下にボタンが表示されるから、良ければ押してね。';
+        } else {
+          responseContent = 'マスタリングパラメータを設定したよ。プレビューが生成されるから聴いてみて。';
+        }
+      } else {
+        responseContent = '少し確認中だよ。もう少し待ってて。';
+      }
+    }
+
     // Save assistant message (text only, no JSON in content)
     const effectiveAction = masteringAction ?? action;
     await db.insert(dialMessages).values({
       sessionId,
       role: 'assistant',
-      content: aiResponse.content,
+      content: responseContent,
       parameterChanges: parameterChanges ?? undefined,
       action: effectiveAction ?? undefined,
     });
 
     return apiSuccess({
-      content: aiResponse.content,
+      content: responseContent,
       action: masteringAction ?? action,
       parameterChanges,
       styleSet,
