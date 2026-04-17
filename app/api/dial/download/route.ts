@@ -49,14 +49,26 @@ export const GET = withDialAuth(async (auth) => {
       where: eq(dialTasks.sessionId, sessionId),
     });
 
-    const getUrl = (t: typeof tasks[0]) =>
-      (t.stemsUrls as Record<string, string> | null)?.[stemKey] ?? null;
+    // Resolve stem URL with extension fallback:
+    // Client sends WAV keys (from final_advanced stemsUrls), but preview task stores MP3 keys.
+    // Try: exact match → .wav→.mp3 swap → base-name match (strips extension from both sides).
+    const resolveUrl = (t: typeof tasks[0]): string | null => {
+      const stems = t.stemsUrls as Record<string, string> | null;
+      if (!stems) return null;
+      if (stems[stemKey]) return stems[stemKey];
+      const mp3Key = stemKey.replace(/\.wav$/i, '.mp3');
+      if (mp3Key !== stemKey && stems[mp3Key]) return stems[mp3Key];
+      const base = stemKey.replace(/\.[^.]+$/, '').toLowerCase();
+      const matched = Object.keys(stems).find((k) => k.replace(/\.[^.]+$/, '').toLowerCase() === base);
+      return matched ? stems[matched] : null;
+    };
     const stemTask =
-      tasks.find((t) => t.taskType === 'preview' && !!getUrl(t)) ??
-      tasks.find((t) => !!getUrl(t));
+      tasks.find((t) => t.taskType === 'preview' && !!resolveUrl(t)) ??
+      tasks.find((t) => !!resolveUrl(t));
 
     if (!stemTask) return apiNotFound(`Stem "${stemKey}" not found in session`);
-    sourceUrl = getUrl(stemTask)!;
+    const resolvedUrl = resolveUrl(stemTask)!;
+    sourceUrl = resolvedUrl;
     filename = `MUEDial_stem_${stemKey}_${sessionId.slice(0, 8)}.${stemTask.taskType === 'preview' ? 'mp3' : 'wav'}`;
     contentType = stemTask.taskType === 'preview' ? 'audio/mpeg' : 'audio/wav';
   } else {
