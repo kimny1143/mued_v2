@@ -32,12 +32,13 @@ CREATE INDEX IF NOT EXISTS idx_dial_bonus_ledger_user_id
 CREATE INDEX IF NOT EXISTS idx_dial_bonus_ledger_granted_at
   ON dial_bonus_campaign_ledger (granted_at);
 
--- 5. Campaign runtime state (kill switch + cumulative cost)
+-- 5. Campaign runtime state (kill switch + cumulative cost + alert tracking)
 CREATE TABLE IF NOT EXISTS dial_campaign_state (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   campaign_name text NOT NULL UNIQUE,
   enabled boolean NOT NULL DEFAULT true,
   cumulative_cost_usd numeric(10, 4) NOT NULL DEFAULT 0,
+  last_alerted_threshold integer,  -- last % milestone notified (80/95/100)
   updated_at timestamp NOT NULL DEFAULT now()
 );
 

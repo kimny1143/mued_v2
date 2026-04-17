@@ -880,7 +880,7 @@ async function handleDialCheckoutCompleted(
       .limit(1);
 
     // Grant first-purchase 400cr bonus for authenticated users
-    let bonusResult: { granted: boolean; newCumulativeCostUsd?: number } = { granted: false };
+    let bonusResult: { granted: boolean; newCumulativeCostUsd?: number; crossedThreshold?: number } = { granted: false };
     if (dialSession?.userId) {
       bonusResult = await grantFirstPurchaseBonus(dialSession.userId, tx);
     }
@@ -899,16 +899,15 @@ async function handleDialCheckoutCompleted(
         logger.error('[Dial Webhook] Failed to send purchase notification', { error });
       }
 
-      // Budget threshold alert (fire after email so it doesn't block it)
-      if (bonusResult.granted && bonusResult.newCumulativeCostUsd !== undefined) {
-        const maxCost = parseFloat(process.env.DIAL_BONUS_CAMPAIGN_MAX_COST_USD || '1500');
-        const pct = (bonusResult.newCumulativeCostUsd / maxCost) * 100;
-        if (pct >= 80) {
-          try {
-            await notificationService.onBonusBudgetThreshold(pct, bonusResult.newCumulativeCostUsd);
-          } catch (error) {
-            logger.error('[Dial Webhook] Failed to send budget threshold alert', { error });
-          }
+      // Budget threshold alert — only fires when a new 80/95/100% milestone is crossed
+      if (bonusResult.crossedThreshold !== undefined && bonusResult.newCumulativeCostUsd !== undefined) {
+        try {
+          await notificationService.onBonusBudgetThreshold(
+            bonusResult.crossedThreshold,
+            bonusResult.newCumulativeCostUsd,
+          );
+        } catch (error) {
+          logger.error('[Dial Webhook] Failed to send budget threshold alert', { error });
         }
       }
     });

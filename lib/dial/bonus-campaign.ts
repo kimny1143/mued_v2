@@ -8,10 +8,27 @@ type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 const CAMPAIGN_NAME = 'first_purchase_400cr';
 const BONUS_CREDITS = 400;
 const ESTIMATED_COST_USD = 3.2; // 400cr × $0.008/cr
+const ALERT_THRESHOLDS = [80, 95, 100] as const;
 
 export interface BonusGrantResult {
   granted: boolean;
   newCumulativeCostUsd?: number;
+  crossedThreshold?: number; // alert milestone newly crossed (80/95/100)
+}
+
+/** Pure helper — finds the lowest threshold newly crossed between prevPct and newPct
+ *  that hasn't already been alerted (> lastAlerted). */
+export function findCrossedThreshold(
+  prevPct: number,
+  newPct: number,
+  lastAlerted: number | null,
+): number | undefined {
+  for (const t of ALERT_THRESHOLDS) {
+    if (prevPct < t && newPct >= t && (lastAlerted === null || lastAlerted < t)) {
+      return t;
+    }
+  }
+  return undefined;
 }
 
 export async function grantFirstPurchaseBonus(
@@ -34,9 +51,23 @@ export async function grantFirstPurchaseBonus(
   }
 
   const currentCost = parseFloat(campaign.cumulativeCostUsd as string);
+  const currentPct = (currentCost / maxCostUsd) * 100;
+  const lastAlerted = campaign.lastAlertedThreshold ?? null;
+
+  // Budget cap exceeded — send 100% alert if not already sent
   if (currentCost + ESTIMATED_COST_USD > maxCostUsd) {
     logger.info('[BonusCampaign] Budget cap reached', { currentCost, maxCostUsd });
-    return { granted: false };
+
+    let crossedThreshold: number | undefined;
+    if (lastAlerted === null || lastAlerted < 100) {
+      crossedThreshold = 100;
+      await tx
+        .update(dialCampaignState)
+        .set({ lastAlertedThreshold: 100, updatedAt: new Date() })
+        .where(eq(dialCampaignState.campaignName, CAMPAIGN_NAME));
+    }
+
+    return { granted: false, newCumulativeCostUsd: currentCost, crossedThreshold };
   }
 
   // Lock user row — idempotency guard against duplicate webhook delivery
@@ -84,10 +115,16 @@ export async function grantFirstPurchaseBonus(
     .where(eq(users.clerkId, clerkUserId));
 
   const newCost = currentCost + ESTIMATED_COST_USD;
+  const newPct = (newCost / maxCostUsd) * 100;
+
+  // Determine if a new alert threshold was crossed
+  const crossedThreshold = findCrossedThreshold(currentPct, newPct, lastAlerted);
+
   await tx
     .update(dialCampaignState)
     .set({
       cumulativeCostUsd: newCost.toFixed(4),
+      ...(crossedThreshold !== undefined ? { lastAlertedThreshold: crossedThreshold } : {}),
       updatedAt: new Date(),
     })
     .where(eq(dialCampaignState.campaignName, CAMPAIGN_NAME));
@@ -96,7 +133,8 @@ export async function grantFirstPurchaseBonus(
     clerkUserId,
     packId: newPack.id,
     newCumulativeCostUsd: newCost,
+    crossedThreshold,
   });
 
-  return { granted: true, newCumulativeCostUsd: newCost };
+  return { granted: true, newCumulativeCostUsd: newCost, crossedThreshold };
 }

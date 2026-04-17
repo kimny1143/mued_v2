@@ -345,6 +345,7 @@ export const dialCampaignState = pgTable('dial_campaign_state', {
   campaignName: text('campaign_name').notNull().unique(),
   enabled: boolean('enabled').notNull().default(true),
   cumulativeCostUsd: numeric('cumulative_cost_usd', { precision: 10, scale: 4 }).notNull().default('0'),
+  lastAlertedThreshold: integer('last_alerted_threshold'), // last % milestone notified (80/95/100)
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
