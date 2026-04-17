@@ -61,13 +61,17 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
   const integratedHistoryRef = useRef<number[]>([]);
   const [data, setData] = useState<AnalyzerData | null>(null);
   const [isActive, setIsActive] = useState(false);
+  const [rafKey, setRafKey] = useState(0);
 
   const connect = useCallback(() => {
     const el = audioRef.current;
     if (!el) return;
 
-    // Same element already connected — nothing to do
-    if (sourceRef.current && connectedElRef.current === el) return;
+    // Same element already connected — resume if suspended (e.g. reconnect from non-gesture context)
+    if (sourceRef.current && connectedElRef.current === el) {
+      ctxRef.current?.resume().catch(() => {});
+      return;
+    }
 
     // Different element (e.g. Take switch) — tear down entire audio graph and rebuild.
     // createMediaElementSource() can only be called once per element per AudioContext,
@@ -126,6 +130,7 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
       analyserLRef.current = analyserL;
       analyserRRef.current = analyserR;
       setIsActive(true);
+      setRafKey((k) => k + 1); // force RAF loop to restart with fresh analyser captures
     } catch (err) {
       console.error('[useAudioAnalyzer] connect failed:', err);
     }
@@ -259,7 +264,7 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
       channel?.close();
       channelRef.current = null;
     };
-  }, [isActive]);
+  }, [isActive, rafKey]);
 
   useEffect(() => {
     return () => {
