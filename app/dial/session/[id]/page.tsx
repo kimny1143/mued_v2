@@ -1272,10 +1272,13 @@ function DialSessionContent() {
 
         {/* Multi-stem player — dialogue mode with stems */}
         {session.mode === 'dialogue' && (() => {
-          // Stems may be on any task type (preview, mix_check, or final) — find whichever has them
-          const stemTask = session.tasks.find(
-            (t) => t.stemsUrls && Object.keys(t.stemsUrls as Record<string, string>).length > 0,
-          );
+          // Prefer preview task stems (MP3, ~7MB each) over final_advanced (WAV, ~78MB each).
+          // Loading 7 × 78MB WAV simultaneously causes fetch timeout in browser.
+          const hasStems = (t: { stemsUrls: Record<string, string> | null }) =>
+            !!t.stemsUrls && Object.keys(t.stemsUrls).length > 0;
+          const stemTask =
+            session.tasks.find((t) => t.taskType === 'preview' && hasStems(t))
+            ?? session.tasks.find((t) => hasStems(t));
           if (!stemTask) return null;
           return (
             <MultiStemPanel
