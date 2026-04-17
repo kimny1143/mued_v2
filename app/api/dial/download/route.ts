@@ -50,16 +50,19 @@ export const GET = withDialAuth(async (auth) => {
     });
 
     // Resolve stem URL with extension fallback:
-    // Client sends WAV keys (from final_advanced stemsUrls), but preview task stores MP3 keys.
-    // Try: exact match → .wav→.mp3 swap → base-name match (strips extension from both sides).
+    // Client sends WAV keys (from final_advanced stemsUrls), but preview task stores MP3 keys
+    // with a `_normalized` suffix (e.g. `001e6b6c.wav` → `001e6b6c_normalized.mp3`).
+    // Try: exact match → .wav→.mp3 swap → base-name match stripping ext + _normalized both sides.
+    const normalizeBase = (k: string) =>
+      k.replace(/\.[^.]+$/, '').replace(/_normalized$/i, '').toLowerCase();
     const resolveUrl = (t: typeof tasks[0]): string | null => {
       const stems = t.stemsUrls as Record<string, string> | null;
       if (!stems) return null;
       if (stems[stemKey]) return stems[stemKey];
       const mp3Key = stemKey.replace(/\.wav$/i, '.mp3');
       if (mp3Key !== stemKey && stems[mp3Key]) return stems[mp3Key];
-      const base = stemKey.replace(/\.[^.]+$/, '').toLowerCase();
-      const matched = Object.keys(stems).find((k) => k.replace(/\.[^.]+$/, '').toLowerCase() === base);
+      const base = normalizeBase(stemKey);
+      const matched = Object.keys(stems).find((k) => normalizeBase(k) === base);
       return matched ? stems[matched] : null;
     };
     const stemTask =
