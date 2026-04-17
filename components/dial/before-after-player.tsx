@@ -131,13 +131,11 @@ export function BeforeAfterPlayer({ beforeUrl, afterUrl }: Props) {
       </div>
 
       {/* Hidden audio element */}
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <audio
         ref={audioRef}
         src={currentUrl}
         onPlay={connect}
         className="hidden"
-        crossOrigin="anonymous"
       />
     </div>
   );
