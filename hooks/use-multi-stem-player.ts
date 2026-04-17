@@ -11,6 +11,7 @@ export interface UseMultiStemPlayerOptions {
   stemUrls: Record<string, string>;
   onReady?: () => void;
   onError?: (err: Error) => void;
+  onBuffersLoaded?: (buffers: Record<string, AudioBuffer>) => void;
 }
 
 export interface UseMultiStemPlayerReturn {
@@ -32,6 +33,7 @@ export function useMultiStemPlayer({
   stemUrls,
   onReady,
   onError,
+  onBuffersLoaded,
 }: UseMultiStemPlayerOptions): UseMultiStemPlayerReturn {
   const ctxRef = useRef<AudioContext | null>(null);
   const buffersRef = useRef<Record<string, AudioBuffer>>({});
@@ -96,6 +98,7 @@ export function useMultiStemPlayer({
         setDuration(dur);
         setIsReady(true);
         onReady?.();
+        onBuffersLoaded?.(results);
       }
     };
 
