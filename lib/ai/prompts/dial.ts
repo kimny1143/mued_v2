@@ -577,9 +577,9 @@ ${HOO_CONVERSATION_STYLE}`;
 function buildMasteringPrompt(input: DialPromptInput): string {
   const basePrompt = MASTERING_PROMPT;
 
-  const styleNote = input.musicalStyle === 'other'
-    ? 'MusicalStyle: 未設定（ユーザーに聞いて set_musical_style で設定すること）'
-    : `MusicalStyle: ${input.musicalStyle}`;
+  const styleNote = input.musicalStyle && input.musicalStyle !== 'other'
+    ? `MusicalStyle: ${input.musicalStyle} ✅ 設定済み — **set_musical_styleツールを再度呼び出すことは絶対禁止。ジャンルはMixフェーズで確定しており、Masteringフェーズで再確認・再報告は不要。**`
+    : 'MusicalStyle: 未設定（ユーザーに聞いて set_musical_style で設定すること）';
 
   let analysisSection = '';
   if (input.analysisResult) {
