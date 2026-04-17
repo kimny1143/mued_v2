@@ -17,9 +17,9 @@ function taskStreamUrl(taskId: string): string {
   return `/api/dial/download?taskId=${taskId}&inline=1`;
 }
 
-/** Proxy individual stem via our API to bypass GCS CORS restriction */
-function stemStreamUrl(taskId: string, stemKey: string): string {
-  return `/api/dial/download?taskId=${taskId}&stemKey=${encodeURIComponent(stemKey)}&inline=1`;
+/** Proxy individual stem via session-based lookup — server picks preview MP3 over final WAV */
+function stemStreamUrl(sessionId: string, stemKey: string): string {
+  return `/api/dial/download?sessionId=${sessionId}&stemKey=${encodeURIComponent(stemKey)}&inline=1`;
 }
 
 interface Track {
@@ -1272,19 +1272,18 @@ function DialSessionContent() {
 
         {/* Multi-stem player — dialogue mode with stems */}
         {session.mode === 'dialogue' && (() => {
-          // Prefer preview task stems (MP3, ~7MB each) over final_advanced (WAV, ~78MB each).
-          // Loading 7 × 78MB WAV simultaneously causes fetch timeout in browser.
+          // Get stem keys from any task that has them (for display labels only).
+          // Actual streaming uses ?sessionId= so server picks preview MP3 over final WAV —
+          // avoids 546MB WAV fetch timeout and client-side stemsUrls desync.
           const hasStems = (t: { stemsUrls: Record<string, string> | null }) =>
             !!t.stemsUrls && Object.keys(t.stemsUrls).length > 0;
-          const stemTask =
-            session.tasks.find((t) => t.taskType === 'preview' && hasStems(t))
-            ?? session.tasks.find((t) => hasStems(t));
+          const stemTask = session.tasks.find((t) => hasStems(t));
           if (!stemTask) return null;
           return (
             <MultiStemPanel
               stemsUrls={Object.fromEntries(
                 Object.entries(stemTask.stemsUrls as Record<string, string>).map(
-                  ([k]) => [k, stemStreamUrl(stemTask.id, k)],
+                  ([k]) => [k, stemStreamUrl(session.id, k)],
                 )
               )}
               sessionId={session.id}
