@@ -13,7 +13,7 @@
  * will still work (with 30s delay before falling back to RoEx polling).
  */
 
-import { eq } from 'drizzle-orm';
+import { and, desc, eq, not } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
@@ -57,14 +57,21 @@ export async function POST(request: Request) {
 
     console.log(`[webhook/roex] Received callback for taskId: ${roexTaskId}`);
 
-    // Find the task by roexTaskId
+    // Find the most recent non-completed task by roexTaskId.
+    // Multiple tasks (e.g. Mix Check 1 + 2) can share the same roexTaskId because
+    // both use the preview task's RoEx ID. Prefer processing tasks over completed ones
+    // so repeated mix checks don't get ignored after the first completes.
     const task = await db.query.dialTasks.findFirst({
-      where: eq(dialTasks.roexTaskId, roexTaskId),
+      where: and(
+        eq(dialTasks.roexTaskId, roexTaskId),
+        not(eq(dialTasks.status, 'completed')),
+      ),
+      orderBy: [desc(dialTasks.createdAt)],
     });
 
     if (!task) {
-      // Not our task — ignore silently (could be stale or from another env)
-      console.warn(`[webhook/roex] Unknown roexTaskId: ${roexTaskId}`);
+      // All tasks for this roexTaskId are already completed, or no tasks exist.
+      console.warn(`[webhook/roex] No active task for roexTaskId: ${roexTaskId} (may already be completed)`);
       return NextResponse.json({ received: true }, { status: 200 });
     }
 
