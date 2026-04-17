@@ -129,6 +129,7 @@ function DialSessionContent() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showPaymentBanner, setShowPaymentBanner] = useState(false);
 
   // Upload state
   const [uploading, setUploading] = useState(false);
@@ -284,6 +285,15 @@ function DialSessionContent() {
     const timeout = setTimeout(() => clearInterval(interval), 30000); // Stop after 30s
     return () => { clearInterval(interval); clearTimeout(timeout); };
   }, [isPaymentRedirect, session, fetchSession]);
+
+  // Show payment success banner when redirect arrives and payment is confirmed
+  useEffect(() => {
+    if (!isPaymentRedirect || !session || session.paymentStatus !== 'paid') return;
+    setShowPaymentBanner(true);
+    const timer = setTimeout(() => setShowPaymentBanner(false), 5000);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPaymentRedirect, session?.paymentStatus]);
 
   // Auto-link: if user just signed up/in and guestToken exists, link session to account
   const [linked, setLinked] = useState(false);
@@ -1378,6 +1388,23 @@ function DialSessionContent() {
         {error && (
           <div data-testid="dial-session-error" className="mb-6 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">
             {error}
+          </div>
+        )}
+
+        {/* Payment success banner — shown briefly after Stripe redirect */}
+        {showPaymentBanner && (
+          <div className="mb-4 p-4 bg-green-900/20 border border-green-700/40 rounded-xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-green-400 text-xl">✓</span>
+              <span className="text-green-300 text-sm font-medium">支払いが確認されました！Hooがこれから案内するよ。</span>
+            </div>
+            <button
+              onClick={() => setShowPaymentBanner(false)}
+              className="text-zinc-500 hover:text-zinc-300 transition-colors text-lg leading-none"
+              aria-label="閉じる"
+            >
+              ✕
+            </button>
           </div>
         )}
 
