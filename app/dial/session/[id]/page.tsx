@@ -18,8 +18,9 @@ function taskStreamUrl(taskId: string): string {
 }
 
 /** Proxy individual stem via session-based lookup — server picks preview MP3 over final WAV */
-function stemStreamUrl(sessionId: string, stemKey: string): string {
-  return `/api/dial/download?sessionId=${sessionId}&stemKey=${encodeURIComponent(stemKey)}&inline=1`;
+function stemStreamUrl(sessionId: string, stemKey: string, token?: string | null): string {
+  const base = `/api/dial/download?sessionId=${sessionId}&stemKey=${encodeURIComponent(stemKey)}&inline=1`;
+  return token ? `${base}&token=${encodeURIComponent(token)}` : base;
 }
 
 interface Track {
@@ -1283,7 +1284,7 @@ function DialSessionContent() {
             <MultiStemPanel
               stemsUrls={Object.fromEntries(
                 Object.entries(stemTask.stemsUrls as Record<string, string>).map(
-                  ([k]) => [k, stemStreamUrl(session.id, k)],
+                  ([k]) => [k, stemStreamUrl(session.id, k, guestToken)],
                 )
               )}
               sessionId={session.id}
