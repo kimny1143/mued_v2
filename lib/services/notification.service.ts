@@ -593,6 +593,20 @@ class NotificationService {
     }
   }
 
+  async onBonusBudgetThreshold(percentUsed: number, cumulativeCostUsd: number): Promise<void> {
+    const msg = `[BonusCampaign] Budget threshold crossed: ${percentUsed.toFixed(1)}% used ($${cumulativeCostUsd.toFixed(2)})`;
+    logger.warn(msg);
+
+    const alertEmail = process.env.OPERATOR_ALERT_EMAIL;
+    if (!alertEmail || !emailService.isConfigured()) return;
+
+    try {
+      await emailService.sendAdminAlert(alertEmail, msg);
+    } catch (err) {
+      logger.error('[NotificationService] Failed to send budget threshold alert', { err });
+    }
+  }
+
   /**
    * Check if notification service is available
    */

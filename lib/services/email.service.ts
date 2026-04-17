@@ -1011,6 +1011,15 @@ class EmailService {
     });
   }
 
+  async sendAdminAlert(toEmail: string, message: string): Promise<void> {
+    await this.send({
+      to: { email: toEmail },
+      subject: '[MUED Alert] Bonus campaign budget threshold',
+      html: `<pre>${message}</pre>`,
+      text: message,
+    });
+  }
+
   /**
    * Check if email service is configured
    */

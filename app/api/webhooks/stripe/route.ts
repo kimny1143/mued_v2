@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { reservations, subscriptions, users, webhookEvents, lessonSlots, dialSessions, dialPurchases, dialSubscriptions, dialCreditPacks, dialCreditExpiry } from "@/db/schema";
 import { eq, sql, and, gt, or, isNull } from "drizzle-orm";
 import { DIAL_SUB_PLANS, CANCEL_GRACE_DAYS, CREDIT_PACK_EXPIRY_MONTHS, type DialSubTier } from '@/lib/dial/pricing';
+import { grantFirstPurchaseBonus } from '@/lib/dial/bonus-campaign';
 import { validateStripeConfig } from "@/lib/utils/env";
 import { logger } from "@/lib/utils/logger";
 import { notificationService } from "@/lib/services/notification.service";
@@ -871,12 +872,18 @@ async function handleDialCheckoutCompleted(
 
     logger.info(`[Dial Webhook] Purchase completed: ${purchaseIds.join(',')} (mix=${mixType})`);
 
-    // Fetch guest token for email session link (so guest can re-access from any browser)
+    // Fetch guest token + userId for email link and bonus eligibility
     const [dialSession] = await tx
-      .select({ guestToken: dialSessions.guestToken })
+      .select({ guestToken: dialSessions.guestToken, userId: dialSessions.userId })
       .from(dialSessions)
       .where(eq(dialSessions.id, dialSessionId))
       .limit(1);
+
+    // Grant first-purchase 400cr bonus for authenticated users
+    let bonusResult: { granted: boolean; newCumulativeCostUsd?: number; crossedThreshold?: number } = { granted: false };
+    if (dialSession?.userId) {
+      bonusResult = await grantFirstPurchaseBonus(dialSession.userId, tx);
+    }
 
     // Send email notification (async, non-blocking)
     setImmediate(async () => {
@@ -890,6 +897,18 @@ async function handleDialCheckoutCompleted(
         });
       } catch (error) {
         logger.error('[Dial Webhook] Failed to send purchase notification', { error });
+      }
+
+      // Budget threshold alert — only fires when a new 80/95/100% milestone is crossed
+      if (bonusResult.crossedThreshold !== undefined && bonusResult.newCumulativeCostUsd !== undefined) {
+        try {
+          await notificationService.onBonusBudgetThreshold(
+            bonusResult.crossedThreshold,
+            bonusResult.newCumulativeCostUsd,
+          );
+        } catch (error) {
+          logger.error('[Dial Webhook] Failed to send budget threshold alert', { error });
+        }
       }
     });
   } else if (session.mode === 'subscription') {
