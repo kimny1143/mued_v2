@@ -87,6 +87,28 @@ const limiters = {
       prefix: "ratelimit:dial-process",
     });
   },
+
+  // Dial analyze: 5 requests per day (RoEx Mix Analysis is expensive)
+  "dial-analyze-daily": () => {
+    const r = getRedis();
+    if (!r) return null;
+    return new Ratelimit({
+      redis: r,
+      limiter: Ratelimit.fixedWindow(5, "1 d"),
+      prefix: "ratelimit:dial-analyze-daily",
+    });
+  },
+
+  // Dial analyze: 30 requests per 30 days (monthly cap)
+  "dial-analyze-monthly": () => {
+    const r = getRedis();
+    if (!r) return null;
+    return new Ratelimit({
+      redis: r,
+      limiter: Ratelimit.fixedWindow(30, "30 d"),
+      prefix: "ratelimit:dial-analyze-monthly",
+    });
+  },
 };
 
 export type RateLimitType = keyof typeof limiters;
