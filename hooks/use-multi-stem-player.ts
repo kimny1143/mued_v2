@@ -76,30 +76,41 @@ export function useMultiStemPlayer({
 
     const load = async () => {
       const ctx = getContext();
-      const results: Record<string, AudioBuffer> = {};
 
-      for (const name of stemNames) {
-        try {
+      // Fetch all stems in parallel; individual failures don't abort the rest
+      const settled = await Promise.allSettled(
+        stemNames.map(async (name) => {
           const res = await fetch(stemUrls[name], { mode: 'cors', credentials: 'omit' });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const ab = await res.arrayBuffer();
-          results[name] = await ctx.decodeAudioData(ab);
-        } catch (err) {
-          if (!cancelled) {
-            onError?.(err instanceof Error ? err : new Error(`Failed to load stem: ${name}`));
-          }
-          return;
-        }
+          const buf = await ctx.decodeAudioData(ab);
+          return { name, buf };
+        }),
+      );
+
+      if (cancelled) return;
+
+      const results: Record<string, AudioBuffer> = {};
+      const failures: string[] = [];
+      for (const r of settled) {
+        if (r.status === 'fulfilled') results[r.value.name] = r.value.buf;
+        else failures.push(r.reason instanceof Error ? r.reason.message : String(r.reason));
       }
 
-      if (!cancelled) {
-        buffersRef.current = results;
-        const dur = Math.max(...Object.values(results).map((b) => b.duration));
-        setDuration(dur);
-        setIsReady(true);
-        onReady?.();
-        onBuffersLoaded?.(results);
+      if (failures.length === stemNames.length) {
+        onError?.(new Error(`All stems failed: ${failures[0]}`));
+        return;
       }
+      if (failures.length > 0) {
+        onError?.(new Error(`${failures.length} stem(s) failed (${failures.length}/${stemNames.length}): ${failures[0]}`));
+      }
+
+      buffersRef.current = results;
+      const dur = Math.max(...Object.values(results).map((b) => b.duration));
+      setDuration(dur);
+      setIsReady(true);
+      onReady?.();
+      onBuffersLoaded?.(results);
     };
 
     load().catch(() => {});
