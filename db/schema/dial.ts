@@ -300,6 +300,27 @@ export const dialCreditExpiry = pgTable('dial_credit_expiry', {
 }));
 
 // ========================================
+// Trial Event Log (server-side funnel measurement)
+// ========================================
+
+export const dialTrialEvents = pgTable('dial_trial_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionId: uuid('session_id')
+    .notNull()
+    .references(() => dialSessions.id, { onDelete: 'cascade' }),
+  eventType: text('event_type').notNull(), // 'analyze' | 'preview' | 'final' | 'checkout_view'
+  userId: text('user_id'), // Clerk ID (null for guests)
+  guestToken: text('guest_token'),
+  mode: text('mode'), // 'omakase' | 'dialogue' | 'mastering' | null
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => ({
+  byEventTime: index('idx_dial_trial_events_type_created').on(t.eventType, t.createdAt),
+  bySession: index('idx_dial_trial_events_session').on(t.sessionId),
+  byUserFunnel: index('idx_dial_trial_events_user_funnel').on(t.userId, t.eventType, t.createdAt),
+}));
+
+// ========================================
 // Relations
 // ========================================
 
@@ -309,6 +330,7 @@ export const dialSessionsRelations = relations(dialSessions, ({ many }) => ({
   messages: many(dialMessages),
   fxSheets: many(dialFxSheets),
   purchases: many(dialPurchases),
+  trialEvents: many(dialTrialEvents),
 }));
 
 export const dialTracksRelations = relations(dialTracks, ({ one }) => ({
@@ -371,6 +393,13 @@ export const dialCreditExpiryRelations = relations(dialCreditExpiry, ({ one }) =
   subscription: one(dialSubscriptions, {
     fields: [dialCreditExpiry.subscriptionId],
     references: [dialSubscriptions.id],
+  }),
+}));
+
+export const dialTrialEventsRelations = relations(dialTrialEvents, ({ one }) => ({
+  session: one(dialSessions, {
+    fields: [dialTrialEvents.sessionId],
+    references: [dialSessions.id],
   }),
 }));
 
