@@ -467,12 +467,13 @@ function DialSessionContent() {
       setFileUploadPercent(0);
 
       // Refresh auth headers per file (Clerk JWT expires in ~60s, WAV uploads take longer)
+      // Signed-in users always use Bearer JWT — guestToken may be stale after auto-link clears it
       const authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (guestToken) {
-        authHeaders['X-Dial-Guest-Token'] = guestToken;
-      } else if (isSignedIn) {
+      if (isSignedIn) {
         const token = await getToken();
         if (token) authHeaders['Authorization'] = `Bearer ${token}`;
+      } else if (guestToken) {
+        authHeaders['X-Dial-Guest-Token'] = guestToken;
       }
 
       try {
