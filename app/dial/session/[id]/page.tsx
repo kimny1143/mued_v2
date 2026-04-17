@@ -1271,19 +1271,26 @@ function DialSessionContent() {
         })()}
 
         {/* Multi-stem player — dialogue mode with stems */}
-        {session.mode === 'dialogue' && mixFinalTask?.stemsUrls && Object.keys(mixFinalTask.stemsUrls).length > 0 && (
-          <MultiStemPanel
-            stemsUrls={Object.fromEntries(
-              Object.entries(mixFinalTask.stemsUrls as Record<string, string>).map(
-                ([k]) => [k, stemStreamUrl(mixFinalTask.id, k)],
-              )
-            )}
-            sessionId={session.id}
-            headers={headers}
-            rawUrl={session.tracks[0]?.r2Url}
-            masterUrl={masteringFinalTask ? taskStreamUrl(masteringFinalTask.id) : undefined}
-          />
-        )}
+        {session.mode === 'dialogue' && (() => {
+          // Stems may be on any task type (preview, mix_check, or final) — find whichever has them
+          const stemTask = session.tasks.find(
+            (t) => t.stemsUrls && Object.keys(t.stemsUrls as Record<string, string>).length > 0,
+          );
+          if (!stemTask) return null;
+          return (
+            <MultiStemPanel
+              stemsUrls={Object.fromEntries(
+                Object.entries(stemTask.stemsUrls as Record<string, string>).map(
+                  ([k]) => [k, stemStreamUrl(stemTask.id, k)],
+                )
+              )}
+              sessionId={session.id}
+              headers={headers}
+              rawUrl={session.tracks[0]?.r2Url}
+              masterUrl={masteringFinalTask ? taskStreamUrl(masteringFinalTask.id) : undefined}
+            />
+          );
+        })()}
 
         {session.mode === 'omakase' && (
           <Link
