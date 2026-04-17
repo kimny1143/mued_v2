@@ -1256,6 +1256,17 @@ function DialSessionContent() {
           return <BeforeAfterPlayer beforeUrl={beforeUrl} afterUrl={afterUrl} />;
         })()}
 
+        {session.mode === 'omakase' && (
+          <Link
+            href="/dial?mode=dialogue"
+            onClick={(e) => handleNavigation(e, '/dial?mode=dialogue')}
+            data-testid="dial-dialogue-upsell"
+            className="block w-full py-3.5 text-center bg-amber-500 hover:bg-amber-400 rounded-xl text-sm font-semibold text-zinc-950 transition-colors"
+          >
+            {t.dial.session.dialogueUpsell}
+          </Link>
+        )}
+
         <div className="flex gap-3">
           <Link
             href="/dial"
