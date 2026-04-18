@@ -320,11 +320,16 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       for (const sn of Object.values(takeNodes.stems)) {
         // B6: set volume at element level — second defensive layer on top of takeMixGain
         sn.audio.volume = isActive ? 1 : 0;
-        // B5: resync INACTIVE takes only — seeking the newly active take risks a failed
-        // seek if it hasn't buffered to refTime (muted takes buffer less aggressively),
-        // which resets currentTime to 0 (B9). The active take's own position is correct
-        // since all takes started playing together via play().
-        if (!isActive) sn.audio.currentTime = refTime;
+        if (!isActive) {
+          // B5: resync inactive takes to keep them aligned for future switches
+          sn.audio.currentTime = refTime;
+        } else if (Math.abs(sn.audio.currentTime - refTime) > 0.5) {
+          // B10: resync newly active take only when significantly drifted — handles the
+          // case where a previous failed seek (while inactive) left it at t=0. The 0.5s
+          // threshold prevents re-seeking takes that are naturally in sync (those started
+          // with play() simultaneously), avoiding the buffering-failure snap from B9.
+          sn.audio.currentTime = refTime;
+        }
       }
     }
 
