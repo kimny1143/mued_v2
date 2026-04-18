@@ -5,6 +5,7 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { contentToString } from './types';
 import type { HooChatMessage, HooChatResponse, HooProviderConfig } from './types';
 import { getHooSystemPrompt } from '../hoo-prompt';
 
@@ -50,7 +51,7 @@ const AI_REQUEST_TIMEOUT_MS = 120_000;
 function convertToGeminiMessages(messages: HooChatMessage[]) {
   return messages.map((msg) => ({
     role: msg.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: msg.content }],
+    parts: [{ text: contentToString(msg.content) }],
   }));
 }
 
@@ -85,7 +86,7 @@ export async function sendGeminiChat(
 
   let result;
   try {
-    result = await chat.sendMessage(lastMessage.content, {
+    result = await chat.sendMessage(contentToString(lastMessage.content), {
       signal: controller.signal,
     });
   } catch (error) {
@@ -157,7 +158,7 @@ export async function* streamGeminiChat(
   });
 
   const lastMessage = messages[messages.length - 1];
-  const result = await chat.sendMessageStream(lastMessage.content);
+  const result = await chat.sendMessageStream(contentToString(lastMessage.content));
 
   let fullContent = '';
   let inputTokens = 0;
