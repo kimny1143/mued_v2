@@ -14,6 +14,8 @@ export interface TakeEntry {
   url: string;
   stemsUrls?: Record<string, string> | null;
   createdAt: string;
+  /** false = task still processing; pill shown disabled with spinner, take not loaded */
+  enabled: boolean;
 }
 
 interface Props {
@@ -123,12 +125,14 @@ function StemRow({
 export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken: _guestToken, compact }: Props) {
   const [showTakeDrawer, setShowTakeDrawer] = useState(false);
 
-  // Convert TakeEntry[] → TakeDef[] for the multi-take player
-  const takeDefs: TakeDef[] = takes.map((take) => ({
-    id: take.id,
-    label: take.label,
-    stemUrls: take.stemsUrls ?? { main: take.url },
-  }));
+  // Only pass enabled (ready) takes to the player hook — disabled (processing) takes have no audio yet
+  const takeDefs: TakeDef[] = takes
+    .filter((take) => take.enabled)
+    .map((take) => ({
+      id: take.id,
+      label: take.label,
+      stemUrls: take.stemsUrls ?? { main: take.url },
+    }));
 
   const {
     isReady, isPlaying, currentTime, duration, activeTakeId,
@@ -167,16 +171,22 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
           {takes.map((take) => (
             <button
               key={take.id}
-              onClick={() => setActiveTake(take.id)}
-              aria-pressed={take.id === activeTakeId}
+              onClick={() => take.enabled && setActiveTake(take.id)}
+              disabled={!take.enabled}
+              aria-pressed={take.enabled && take.id === activeTakeId}
               data-testid={`take-tab-${take.label.toLowerCase()}`}
-              className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                take.id === activeTakeId
-                  ? 'bg-amber-500 text-zinc-950'
-                  : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+              className={`px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1 ${
+                !take.enabled
+                  ? 'opacity-40 cursor-not-allowed bg-zinc-800 text-zinc-500'
+                  : take.id === activeTakeId
+                    ? 'bg-amber-500 text-zinc-950'
+                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
               }`}
             >
               {take.label}
+              {!take.enabled && (
+                <span className="w-2.5 h-2.5 border border-current border-t-transparent rounded-full animate-spin shrink-0" aria-label="Processing" />
+              )}
             </button>
           ))}
         </div>
@@ -281,17 +291,23 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
             {takes.map((take) => (
               <button
                 key={take.id}
-                onClick={() => setActiveTake(take.id)}
+                onClick={() => take.enabled && setActiveTake(take.id)}
+                disabled={!take.enabled}
                 className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs transition-colors ${
-                  take.id === activeTakeId
-                    ? 'bg-amber-500/10 border border-amber-500/30 text-amber-300'
-                    : 'hover:bg-zinc-800 text-zinc-400'
+                  !take.enabled
+                    ? 'opacity-40 cursor-not-allowed text-zinc-600'
+                    : take.id === activeTakeId
+                      ? 'bg-amber-500/10 border border-amber-500/30 text-amber-300'
+                      : 'hover:bg-zinc-800 text-zinc-400'
                 }`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${take.id === activeTakeId ? 'bg-amber-500' : 'bg-zinc-700'}`} />
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  !take.enabled ? 'bg-zinc-600' : take.id === activeTakeId ? 'bg-amber-500' : 'bg-zinc-700'
+                }`} />
                 <span className="font-medium">{take.label}</span>
+                {!take.enabled && <span className="text-[10px] text-zinc-600 ml-1">Processing…</span>}
                 <span className="text-zinc-600 ml-auto">{formatDate(take.createdAt)}</span>
-                {take.id === activeTakeId && <span className="text-[10px] text-amber-500 shrink-0">▶ Playing</span>}
+                {take.enabled && take.id === activeTakeId && <span className="text-[10px] text-amber-500 shrink-0">▶ Playing</span>}
               </button>
             ))}
           </div>
