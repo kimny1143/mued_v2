@@ -558,6 +558,7 @@ export function AudioAnalyzer({ data: dataProp, isActive: isActiveProp, onConnec
                   >
                     {value != null && value > -70 ? value.toFixed(1) : '—'}
                   </div>
+                  <div className="text-[7px] text-zinc-600 tracking-widest leading-none mt-0.5">LUFS</div>
                 </div>
               ))}
             </div>

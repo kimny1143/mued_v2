@@ -148,9 +148,6 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
         const audio = new Audio();
         audio.crossOrigin = 'anonymous';
         audio.preload = 'auto';
-        // B6: mute inactive takes at the element level — prevents native audio path leakage
-        // when WebAudio context is suspended or before first user gesture
-        audio.volume = take.id === defaultId ? 1 : 0;
         audio.src = url;
 
         const source = ctx.createMediaElementSource(audio);
@@ -318,8 +315,6 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       const isActive = takeId === id;
       takeNodes.takeMixGain.gain.setValueAtTime(isActive ? 1 : 0, ctx.currentTime);
       for (const sn of Object.values(takeNodes.stems)) {
-        // B6: set volume at element level — second defensive layer on top of takeMixGain
-        sn.audio.volume = isActive ? 1 : 0;
         if (!isActive) {
           // B5: resync inactive takes to keep them aligned for future switches
           sn.audio.currentTime = refTime;

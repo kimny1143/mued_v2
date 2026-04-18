@@ -1549,7 +1549,7 @@ function DialSessionContent() {
               </div>
 
               {/* Right: Sidebar — player, take history, tracks, upload */}
-              <div className="lg:w-80 shrink-0 space-y-5 overflow-y-auto lg:max-h-[calc(100vh-14rem)] lg:sticky lg:top-24 lg:self-start">
+              <div className="lg:w-[440px] shrink-0 space-y-5 overflow-y-auto lg:max-h-[calc(100vh-14rem)] lg:sticky lg:top-24 lg:self-start">
                 {/* Unified Player */}
                 {sessionTakes.length > 0 ? (
                   <UnifiedSessionPlayer
