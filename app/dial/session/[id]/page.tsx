@@ -215,6 +215,7 @@ function DialSessionContent() {
       (t) => t.taskType === 'mastering' && t.finalUrl,
     );
 
+    // RAW: always enabled once stems are uploaded
     const rawStemEntries = session.tracks
       .filter((t) => !!t.r2Url)
       .map((t) => [t.id, t.r2Url as string] as const);
@@ -225,44 +226,53 @@ function DialSessionContent() {
         url: rawStemEntries[0][1],
         stemsUrls: Object.fromEntries(rawStemEntries),
         createdAt: mixFinalTask?.createdAt ?? masteringFinalTask?.createdAt ?? '',
+        enabled: true,
       });
     }
 
-    if (mixFinalTask) {
-      takes.push({
-        id: mixFinalTask.id,
-        label: 'MIXED',
-        url: taskStreamUrl(mixFinalTask.id),
-        stemsUrls: proxiedStems,
-        createdAt: mixFinalTask.createdAt,
-      });
-    } else {
-      // During active session: show latest completed preview/mix_check as MIXED
-      const latestPreview = [...session.tasks]
+    // MIXED: completed final > latest completed preview > processing task (disabled)
+    const mixTask =
+      mixFinalTask ??
+      [...session.tasks]
         .filter((t) =>
           (t.taskType === 'preview' || t.taskType === 'mix_check') &&
           t.status === 'completed' &&
-          (t.previewUrl || t.finalUrl),
+          !!(t.previewUrl || t.finalUrl),
         )
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-      if (latestPreview) {
-        takes.push({
-          id: latestPreview.id,
-          label: 'MIXED',
-          url: taskStreamUrl(latestPreview.id),
-          stemsUrls: proxiedStems,
-          createdAt: latestPreview.createdAt,
-        });
-      }
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ??
+      session.tasks.find(
+        (t) =>
+          (t.taskType === 'preview' || t.taskType === 'mix_check' ||
+           t.taskType === 'final_basic' || t.taskType === 'final_advanced') &&
+          (t.status === 'processing' || t.status === 'pending'),
+      );
+    if (mixTask) {
+      const isMixEnabled = mixTask.status === 'completed' && !!(mixTask.previewUrl || mixTask.finalUrl);
+      takes.push({
+        id: mixTask.id,
+        label: 'MIXED',
+        url: taskStreamUrl(mixTask.id),
+        stemsUrls: isMixEnabled ? proxiedStems : null,
+        createdAt: mixTask.createdAt,
+        enabled: isMixEnabled,
+      });
     }
 
-    if (masteringFinalTask) {
+    // MASTERED: completed > processing (disabled)
+    const masteringTask =
+      masteringFinalTask ??
+      session.tasks.find(
+        (t) => t.taskType === 'mastering' && (t.status === 'processing' || t.status === 'pending'),
+      );
+    if (masteringTask) {
+      const isMasteredEnabled = masteringTask.status === 'completed' && !!masteringTask.finalUrl;
       takes.push({
-        id: masteringFinalTask.id,
+        id: masteringTask.id,
         label: 'MASTERED',
-        url: taskStreamUrl(masteringFinalTask.id),
+        url: taskStreamUrl(masteringTask.id),
         stemsUrls: null,
-        createdAt: masteringFinalTask.createdAt,
+        createdAt: masteringTask.createdAt,
+        enabled: isMasteredEnabled,
       });
     }
 
@@ -1306,6 +1316,7 @@ function DialSessionContent() {
         {/* Unified player — RAW / MIXED / MASTERED tabs */}
         {sessionTakes.length > 0 && (
           <UnifiedSessionPlayer
+            key={sessionTakes.filter((t) => t.enabled).map((t) => t.id).join(',')}
             takes={sessionTakes}
             sessionId={session.id}
             guestToken={guestToken}
@@ -1542,6 +1553,7 @@ function DialSessionContent() {
                 {/* Unified Player */}
                 {sessionTakes.length > 0 ? (
                   <UnifiedSessionPlayer
+                    key={sessionTakes.filter((t) => t.enabled).map((t) => t.id).join(',')}
                     takes={sessionTakes}
                     sessionId={session.id}
                     guestToken={guestToken}
