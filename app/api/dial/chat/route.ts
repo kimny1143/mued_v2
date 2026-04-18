@@ -201,12 +201,29 @@ export const POST = withDialAuth(async (auth) => {
       systemPrompt += `\n\n---\n\n## セッション復元コンテキスト\n直前のアシスタントアクション: ${lastAssistantMsg.action}（タスク状態: ${taskStatus}）。\n${taskStatus === 'processing' ? 'タスクは処理中。ボタンの再送信は不要。「処理中だよ、もう少し待ってね」等で対応。' : taskStatus === 'completed' ? '前回のアクションは完了済み。結果について会話を続ける。同じツールの再呼び出しは不要。' : ''}`;
     }
 
-    const chatMessages: HooChatMessage[] = existingMessages
-      .filter((m) => m.role === 'user' || m.role === 'assistant')
-      .map((m) => ({
-        role: m.role as 'user' | 'assistant',
-        content: m.content,
-      }));
+    // Reconstruct chat history — include tool_use/tool_result pairs so Hoo remembers past actions
+    const chatMessages: HooChatMessage[] = [];
+    for (const m of existingMessages) {
+      if (m.role !== 'user' && m.role !== 'assistant') continue;
+      const blocks = m.toolUseBlocks as Array<{ id: string; name: string; input: unknown }> | null;
+      if (m.role === 'assistant' && blocks && blocks.length > 0) {
+        // Assistant turn: text + tool_use blocks
+        chatMessages.push({
+          role: 'assistant',
+          content: [
+            { type: 'text', text: m.content },
+            ...blocks.map((b) => ({ type: 'tool_use' as const, id: b.id, name: b.name, input: b.input })),
+          ],
+        });
+        // Synthetic user turn: tool_result for each block (required by Anthropic API)
+        chatMessages.push({
+          role: 'user',
+          content: blocks.map((b) => ({ type: 'tool_result' as const, tool_use_id: b.id, content: 'ok' })),
+        });
+      } else {
+        chatMessages.push({ role: m.role as 'user' | 'assistant', content: m.content });
+      }
+    }
 
     // Send to AI with tool definitions
     const tools = selectTools({ isMasteringPhase, isOmakase });
@@ -329,14 +346,18 @@ export const POST = withDialAuth(async (auth) => {
       }
     }
 
-    // Save assistant message (text only, no JSON in content)
+    // Save assistant message — persist tool_use blocks for history reconstruction
     const effectiveAction = masteringAction ?? action;
+    const toolUseBlocks = aiResponse.toolCalls && aiResponse.toolCalls.length > 0
+      ? aiResponse.toolCalls.map((tc) => ({ id: tc.id, name: tc.name, input: tc.input }))
+      : null;
     await db.insert(dialMessages).values({
       sessionId,
       role: 'assistant',
       content: responseContent,
       parameterChanges: parameterChanges ?? undefined,
       action: effectiveAction ?? undefined,
+      toolUseBlocks: toolUseBlocks ?? undefined,
     });
 
     return apiSuccess({

@@ -156,6 +156,7 @@ export const dialMessages = pgTable('dial_messages', {
   content: text('content').notNull(),
   parameterChanges: jsonb('parameter_changes'), // Structured parameter adjustments
   action: text('action'), // Tool call action: adjust_preview, request_mix_check, request_final, etc.
+  toolUseBlocks: jsonb('tool_use_blocks'), // Persisted tool_use blocks: [{ id, name, input }]
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (table) => ({
   sessionIdIdx: index('idx_dial_messages_session_id').on(table.sessionId),

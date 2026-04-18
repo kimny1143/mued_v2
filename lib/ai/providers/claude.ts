@@ -77,10 +77,8 @@ export async function sendClaudeChat(
     model: mergedConfig.model,
     max_tokens: mergedConfig.maxTokens,
     system: mergedConfig.systemPrompt ?? getHooSystemPrompt(),
-    messages: messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    })),
+    // content is passed as-is: string for simple messages, block array for tool_use/tool_result turns
+    messages: messages.map((msg) => ({ role: msg.role, content: msg.content })),
   };
 
   // Build tools array
@@ -136,16 +134,16 @@ export async function sendClaudeChat(
   const textContent = response.content.find((c) => c.type === 'text');
   const content = textContent?.type === 'text' ? textContent.text : '';
 
-  // Extract tool calls
+  // Extract tool calls — id is required for tool_result pairing in history reconstruction
   const toolCalls = response.content
     .filter((c) => c.type === 'tool_use')
     .map((c) => {
       if (c.type === 'tool_use') {
-        return { name: c.name, input: c.input };
+        return { id: c.id, name: c.name, input: c.input };
       }
       return null;
     })
-    .filter(Boolean) as { name: string; input: unknown }[];
+    .filter(Boolean) as { id: string; name: string; input: unknown }[];
 
   // Calculate cost
   const pricing = CLAUDE_PRICING[mergedConfig.model];

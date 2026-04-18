@@ -2,12 +2,29 @@
  * Shared types for AI providers
  */
 
+/** Structured content blocks for multi-part messages (tool_use / tool_result) */
+export type HooChatContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'tool_use'; id: string; name: string; input: unknown }
+  | { type: 'tool_result'; tool_use_id: string; content: string };
+
 /**
- * Message format for Hoo chat
+ * Message format for Hoo chat.
+ * content is a string for simple text messages, or an array of blocks when
+ * the message includes tool_use / tool_result pairs.
  */
 export interface HooChatMessage {
   role: 'user' | 'assistant';
-  content: string;
+  content: string | HooChatContentBlock[];
+}
+
+/** Extract plain text from message content (for providers that don't support block arrays) */
+export function contentToString(content: string | HooChatContentBlock[]): string {
+  if (typeof content === 'string') return content;
+  return content
+    .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
+    .map((b) => b.text)
+    .join('');
 }
 
 /**
@@ -32,6 +49,7 @@ export interface HooCostStats {
  * Tool call extracted from AI response
  */
 export interface HooToolCall {
+  id: string;
   name: string;
   input: unknown;
 }

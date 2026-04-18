@@ -5,6 +5,7 @@
  */
 
 import OpenAI from 'openai';
+import { contentToString } from './types';
 import type { HooChatMessage, HooChatResponse, HooProviderConfig } from './types';
 import { getHooSystemPrompt } from '../hoo-prompt';
 
@@ -68,7 +69,7 @@ export async function sendOpenAIChat(
         { role: 'system', content: mergedConfig.systemPrompt ?? getHooSystemPrompt() },
         ...messages.map((msg) => ({
           role: msg.role as 'user' | 'assistant',
-          content: msg.content,
+          content: contentToString(msg.content),
         })),
       ],
     }, {
