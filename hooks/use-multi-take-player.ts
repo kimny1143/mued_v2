@@ -119,6 +119,9 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
         const audio = new Audio();
         audio.crossOrigin = 'anonymous';
         audio.preload = 'auto';
+        // B6: mute inactive takes at the element level — prevents native audio path leakage
+        // when WebAudio context is suspended or before first user gesture
+        audio.volume = take.id === defaultId ? 1 : 0;
         audio.src = url;
 
         const source = ctx.createMediaElementSource(audio);
@@ -222,21 +225,25 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   const play = useCallback(() => {
     const ctx = ctxRef.current;
     if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
 
-    const pos = pausedAtRef.current;
-    const allAudios: HTMLAudioElement[] = [];
+    // B5: await ctx.resume() before scheduling play calls — ensures AudioContext is
+    // fully running so all elements start at identical clock positions (no drift)
+    void (async () => {
+      if (ctx.state === 'suspended') await ctx.resume();
 
-    for (const takeNodes of Object.values(takeNodesRef.current)) {
-      for (const stemNodes of Object.values(takeNodes.stems)) {
-        stemNodes.audio.currentTime = pos;
-        allAudios.push(stemNodes.audio);
+      const pos = pausedAtRef.current;
+      const allAudios: HTMLAudioElement[] = [];
+
+      for (const takeNodes of Object.values(takeNodesRef.current)) {
+        for (const stemNodes of Object.values(takeNodes.stems)) {
+          stemNodes.audio.currentTime = pos;
+          allAudios.push(stemNodes.audio);
+        }
       }
-    }
 
-    Promise.all(allAudios.map((a) => a.play().catch(() => {}))).then(() => {
+      await Promise.all(allAudios.map((a) => a.play().catch(() => {})));
       setIsPlaying(true);
-    });
+    })();
   }, []);
 
   const pause = useCallback(() => {
@@ -267,8 +274,20 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     const ctx = ctxRef.current;
     if (!ctx) return;
 
+    // B5: capture ref position from the currently active take before switching,
+    // then resync all takes to eliminate any accumulated drift
+    const curStem = Object.values(takeNodesRef.current[activeTakeIdRef.current]?.stems ?? {})[0];
+    const refTime = curStem?.audio.currentTime ?? pausedAtRef.current;
+
     for (const [takeId, takeNodes] of Object.entries(takeNodesRef.current)) {
-      takeNodes.takeMixGain.gain.setValueAtTime(takeId === id ? 1 : 0, ctx.currentTime);
+      const isActive = takeId === id;
+      takeNodes.takeMixGain.gain.setValueAtTime(isActive ? 1 : 0, ctx.currentTime);
+      for (const sn of Object.values(takeNodes.stems)) {
+        // B6: set volume at element level — second defensive layer on top of takeMixGain
+        sn.audio.volume = isActive ? 1 : 0;
+        // B5: resync every take (including newly active) to the ref position
+        sn.audio.currentTime = refTime;
+      }
     }
 
     const newTakeNodes = takeNodesRef.current[id];
