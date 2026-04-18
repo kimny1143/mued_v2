@@ -9,8 +9,7 @@ import { ChatPanel } from '@/components/dial/chat-panel';
 import { ReferenceTrack } from '@/components/dial/reference-track';
 import { AudioAnalyzerProvider, useAudioAnalyzerContext } from '@/hooks/use-audio-analyzer-context';
 import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
-import { BeforeAfterPlayer } from '@/components/dial/before-after-player';
-import { MultiStemPanel } from '@/components/dial/multi-stem-panel';
+import { UnifiedSessionPlayer, TakeEntry } from '@/components/dial/unified-session-player';
 
 /** Stream audio through our own API to avoid GCS presigned URL length/CORS issues */
 function taskStreamUrl(taskId: string): string {
@@ -1263,34 +1262,55 @@ function DialSessionContent() {
           </div>
         )}
 
-        {/* Before/After player — shown when original track URL is available */}
+        {/* Unified player — RAW / MIXED / MASTERED tabs */}
         {(() => {
-          const beforeUrl = session.tracks[0]?.r2Url;
-          const afterTask = masteringFinalTask ?? mixFinalTask;
-          if (!beforeUrl || !afterTask) return null;
-          return <BeforeAfterPlayer beforeUrl={beforeUrl} afterUrl={taskStreamUrl(afterTask.id)} />;
-        })()}
-
-        {/* Multi-stem player — dialogue mode with stems */}
-        {session.mode === 'dialogue' && (() => {
-          // Get stem keys from any task that has them (for display labels only).
-          // Actual streaming uses ?sessionId= so server picks preview MP3 over final WAV —
-          // avoids 546MB WAV fetch timeout and client-side stemsUrls desync.
-          const hasStems = (t: { stemsUrls: Record<string, string> | null }) =>
+          const track0 = session.tracks[0];
+          const rawUrl = track0?.r2Url;
+          const hasStemsTask = (t: { stemsUrls: Record<string, string> | null }) =>
             !!t.stemsUrls && Object.keys(t.stemsUrls).length > 0;
-          const stemTask = session.tasks.find((t) => hasStems(t));
-          if (!stemTask) return null;
+          const stemTaskForKeys = session.tasks.find((t) => hasStemsTask(t));
+          const proxiedStems = stemTaskForKeys
+            ? Object.fromEntries(
+                Object.keys(stemTaskForKeys.stemsUrls as Record<string, string>).map(
+                  (k) => [k, stemStreamUrl(session.id, k, guestToken)],
+                ),
+              )
+            : null;
+
+          const takes: TakeEntry[] = [];
+          if (rawUrl && track0) {
+            takes.push({
+              id: `raw-${track0.id}`,
+              label: 'RAW',
+              url: rawUrl,
+              stemsUrls: null,
+              createdAt: mixFinalTask?.createdAt ?? masteringFinalTask?.createdAt ?? '',
+            });
+          }
+          if (mixFinalTask) {
+            takes.push({
+              id: mixFinalTask.id,
+              label: 'MIXED',
+              url: taskStreamUrl(mixFinalTask.id),
+              stemsUrls: proxiedStems,
+              createdAt: mixFinalTask.createdAt,
+            });
+          }
+          if (masteringFinalTask) {
+            takes.push({
+              id: masteringFinalTask.id,
+              label: 'MASTERED',
+              url: taskStreamUrl(masteringFinalTask.id),
+              stemsUrls: null,
+              createdAt: masteringFinalTask.createdAt,
+            });
+          }
+          if (takes.length === 0) return null;
           return (
-            <MultiStemPanel
-              stemsUrls={Object.fromEntries(
-                Object.entries(stemTask.stemsUrls as Record<string, string>).map(
-                  ([k]) => [k, stemStreamUrl(session.id, k, guestToken)],
-                )
-              )}
+            <UnifiedSessionPlayer
+              takes={takes}
               sessionId={session.id}
-              headers={headers}
-              rawUrl={session.tracks[0]?.r2Url}
-              masterUrl={masteringFinalTask ? taskStreamUrl(masteringFinalTask.id) : undefined}
+              guestToken={guestToken}
             />
           );
         })()}
