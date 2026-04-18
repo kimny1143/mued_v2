@@ -175,7 +175,7 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
             if (group.length === 0) return null;
             const anyEnabled = group.some((t) => t.enabled);
             const isPillActive = group.some((t) => t.id === activeTakeId);
-            const latestEnabled = group.filter((t) => t.enabled).at(-1);
+            const latestEnabled = group.filter((t) => t.enabled)[0]; // group is newest-first
             return (
               <button
                 key={label}
