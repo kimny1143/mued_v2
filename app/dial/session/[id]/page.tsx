@@ -230,31 +230,54 @@ function DialSessionContent() {
       });
     }
 
-    // MIXED: completed final > latest completed preview > processing task (disabled)
-    const mixTask =
-      mixFinalTask ??
-      [...session.tasks]
-        .filter((t) =>
-          (t.taskType === 'preview' || t.taskType === 'mix_check') &&
-          t.status === 'completed' &&
-          !!(t.previewUrl || t.finalUrl),
-        )
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ??
-      session.tasks.find(
-        (t) =>
-          (t.taskType === 'preview' || t.taskType === 'mix_check' ||
-           t.taskType === 'final_basic' || t.taskType === 'final_advanced') &&
-          (t.status === 'processing' || t.status === 'pending'),
-      );
-    if (mixTask) {
-      const isMixEnabled = mixTask.status === 'completed' && !!(mixTask.previewUrl || mixTask.finalUrl);
+    // MIXED: all completed takes (final > previews > mix_checks) shown individually in drawer
+    // Count each type chronologically (oldest = #1) for display labels
+    const completedPreviews = [...session.tasks]
+      .filter((t) => t.taskType === 'preview' && t.status === 'completed' && !!(t.previewUrl || t.finalUrl))
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const completedMixChecks = [...session.tasks]
+      .filter((t) => t.taskType === 'mix_check' && t.status === 'completed' && !!(t.previewUrl || t.finalUrl))
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const completedFinals = session.tasks.filter(
+      (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.status === 'completed' && !!t.finalUrl,
+    );
+
+    // All completed MIXED takes, newest first for display
+    const allCompletedMix = [
+      ...completedFinals.map((t) => ({ task: t, sublabel: 'Final Mix' })),
+      ...completedMixChecks.map((t, i) => ({ task: t, sublabel: `Mix Check ${i + 1}` })),
+      ...completedPreviews.map((t, i) => ({ task: t, sublabel: `Preview ${i + 1}` })),
+    ].sort((a, b) => new Date(b.task.createdAt).getTime() - new Date(a.task.createdAt).getTime());
+
+    allCompletedMix.forEach(({ task, sublabel }, i) => {
       takes.push({
-        id: mixTask.id,
+        id: task.id,
         label: 'MIXED',
-        url: taskStreamUrl(mixTask.id),
-        stemsUrls: isMixEnabled ? proxiedStems : null,
-        createdAt: mixTask.createdAt,
-        enabled: isMixEnabled,
+        sublabel,
+        url: taskStreamUrl(task.id),
+        stemsUrls: i === 0 ? proxiedStems : null, // stems on most recent only
+        createdAt: task.createdAt,
+        enabled: true,
+      });
+    });
+
+    // Processing MIXED task (disabled pill)
+    const processingMix = session.tasks.find(
+      (t) =>
+        (t.taskType === 'preview' || t.taskType === 'mix_check' ||
+         t.taskType === 'final_basic' || t.taskType === 'final_advanced') &&
+        (t.status === 'processing' || t.status === 'pending'),
+    );
+    if (processingMix && allCompletedMix.length === 0) {
+      // Show disabled MIXED pill only if no completed takes exist yet
+      takes.push({
+        id: processingMix.id,
+        label: 'MIXED',
+        sublabel: 'Processing…',
+        url: '',
+        stemsUrls: null,
+        createdAt: processingMix.createdAt,
+        enabled: false,
       });
     }
 
