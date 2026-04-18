@@ -20,15 +20,10 @@ export interface TakeEntry {
   enabled: boolean;
 }
 
-export interface StemInitialParam {
-  stemId: string;
-  gainDb?: number;
-  panAngleDegrees?: number;
-  reverbSend?: number;
-}
-
-export interface InitialParams {
-  stems?: StemInitialParam[];
+export interface StemParamChange {
+  track: string;
+  changes: { gainDb?: number; panAngleDegrees?: number; reverbSend?: number };
+  reason?: string;
 }
 
 interface Props {
@@ -36,7 +31,7 @@ interface Props {
   sessionId: string;
   guestToken?: string | null;
   /** Initial stem gain/pan values from Hoo's latest parameterChanges (one-directional: Hoo→UI) */
-  initialParams?: InitialParams;
+  initialParams?: StemParamChange[];
   compact?: boolean;
 }
 
@@ -175,16 +170,19 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
   // Waveform peaks fetched in background and cached by URL — renders incrementally as stems load
   const stemPeaks = useStemPeaks(activeTakeId, activeStemUrls);
 
-  // Map stemId → {gainDb, pan} from Hoo's latest parameterChanges (panAngleDegrees → -1..+1)
+  // Map track filename → {gainDb, pan} from Hoo's latest parameterChanges
+  // Real shape: [{ track: "stem_BASS.wav", changes: { gainDb, panAngleDegrees }, reason }]
   const initialStemMap = useMemo(() => {
-    if (!initialParams?.stems) return {} as Record<string, { gainDb: number; pan: number }>;
+    if (!Array.isArray(initialParams) || initialParams.length === 0) {
+      return {} as Record<string, { gainDb: number; pan: number }>;
+    }
     return Object.fromEntries(
-      initialParams.stems.map((s) => [
-        s.stemId,
+      initialParams.map((p) => [
+        p.track,
         {
-          gainDb: s.gainDb ?? 0,
-          pan: s.panAngleDegrees != null
-            ? Math.max(-1, Math.min(1, s.panAngleDegrees / 90))
+          gainDb: p.changes?.gainDb ?? 0,
+          pan: p.changes?.panAngleDegrees != null
+            ? Math.max(-1, Math.min(1, p.changes.panAngleDegrees / 90))
             : 0,
         },
       ]),
