@@ -55,14 +55,11 @@ interface Task {
 }
 
 interface Message {
-  parameterChanges: {
-    stems?: Array<{
-      stemId: string;
-      gainDb?: number;
-      panAngleDegrees?: number;
-      reverbSend?: number;
-    }>;
-  } | null;
+  parameterChanges: Array<{
+    track: string;
+    changes: { gainDb?: number; panAngleDegrees?: number; reverbSend?: number };
+    reason?: string;
+  }> | null;
 }
 
 interface Session {
