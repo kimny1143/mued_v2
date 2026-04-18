@@ -200,8 +200,15 @@ function DialSessionContent() {
     return guestToken ? `${base}&token=${guestToken}` : base;
   }, [guestToken]);
 
-  // Extract latest parameterChanges from session messages (Hoo → UI initial stem values)
-  const latestParamChanges = session?.messages?.[0]?.parameterChanges ?? null;
+  // Extract latest parameterChanges from session messages and normalize track field:
+  // parameterChanges[].track = originalFilename (e.g. "stem_BASS.wav")
+  // stemsUrls keys = track UUID (e.g. "330f758e-abc") — bridge via session.tracks[].id
+  const latestParamChanges = useMemo(() => {
+    const raw = session?.messages?.[0]?.parameterChanges;
+    if (!raw || !session?.tracks?.length) return undefined;
+    const filenameToId = new Map(session.tracks.map((t) => [t.originalFilename, t.id]));
+    return raw.map((p) => ({ ...p, track: filenameToId.get(p.track) ?? p.track }));
+  }, [session?.messages, session?.tracks]);
 
   // Build TakeEntry[] for UnifiedSessionPlayer — used in both active sidebar and completion screen
   const sessionTakes = useMemo((): TakeEntry[] => {
@@ -1355,7 +1362,7 @@ function DialSessionContent() {
             takes={sessionTakes}
             sessionId={session.id}
             guestToken={guestToken}
-            initialParams={latestParamChanges ?? undefined}
+            initialParams={latestParamChanges}
           />
         )}
 
@@ -1593,7 +1600,7 @@ function DialSessionContent() {
                     takes={sessionTakes}
                     sessionId={session.id}
                     guestToken={guestToken}
-                    initialParams={latestParamChanges ?? undefined}
+                    initialParams={latestParamChanges}
                     compact
                   />
                 ) : (

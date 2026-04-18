@@ -170,15 +170,20 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
   // Waveform peaks fetched in background and cached by URL — renders incrementally as stems load
   const stemPeaks = useStemPeaks(activeTakeId, activeStemUrls);
 
-  // Map track filename → {gainDb, pan} from Hoo's latest parameterChanges
-  // Real shape: [{ track: "stem_BASS.wav", changes: { gainDb, panAngleDegrees }, reason }]
+  // Normalize stem key: strip extension + _normalized suffix (matches download/route.ts convention)
+  // e.g. "330f758e-abc.wav" → "330f758e-abc", "001e6b6c_normalized.mp3" → "001e6b6c"
+  const normalizeBase = (k: string) =>
+    k.replace(/\.[^.]+$/, '').replace(/_normalized$/i, '').toLowerCase();
+
+  // Map normalized trackId → {gainDb, pan} from Hoo's parameterChanges
+  // track field already converted from originalFilename → trackId in page.tsx
   const initialStemMap = useMemo(() => {
     if (!Array.isArray(initialParams) || initialParams.length === 0) {
       return {} as Record<string, { gainDb: number; pan: number }>;
     }
     return Object.fromEntries(
       initialParams.map((p) => [
-        p.track,
+        normalizeBase(p.track),
         {
           gainDb: p.changes?.gainDb ?? 0,
           pan: p.changes?.panAngleDegrees != null
@@ -187,6 +192,7 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
         },
       ]),
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialParams]);
 
   const handlePlayPause = useCallback(() => {
@@ -309,8 +315,8 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
                     onSolo={() => toggleStemSolo(activeTakeId, name)}
                     onGain={(db) => setStemGain(activeTakeId, name, db)}
                     onPan={(v) => setStemPan(activeTakeId, name, v)}
-                    initialGainDb={initialStemMap[name]?.gainDb ?? 0}
-                    initialPan={initialStemMap[name]?.pan ?? 0}
+                    initialGainDb={initialStemMap[normalizeBase(name)]?.gainDb ?? 0}
+                    initialPan={initialStemMap[normalizeBase(name)]?.pan ?? 0}
                   />
                 );
               })}
