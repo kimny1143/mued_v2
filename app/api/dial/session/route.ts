@@ -71,13 +71,19 @@ export const GET = withDialAuth(async (auth) => {
         return apiNotFound('Session not found');
       }
 
-      // Load with tracks and tasks
+      // Load with tracks, tasks, and latest parameterChanges from assistant
       const full = await db.query.dialSessions.findFirst({
         where: eq(dialSessions.id, sessionId),
         with: {
           tracks: true,
           tasks: {
             orderBy: [desc(dialTasks.createdAt)],
+          },
+          messages: {
+            where: (m, { and, isNotNull, eq: eqFn }) =>
+              and(isNotNull(m.parameterChanges), eqFn(m.role, 'assistant')),
+            orderBy: (m, { desc: descFn }) => [descFn(m.createdAt)],
+            limit: 1,
           },
         },
       });
@@ -255,6 +261,12 @@ export const GET = withDialAuth(async (auth) => {
             with: {
               tracks: true,
               tasks: { orderBy: [desc(dialTasks.createdAt)] },
+              messages: {
+                where: (m, { and, isNotNull, eq: eqFn }) =>
+                  and(isNotNull(m.parameterChanges), eqFn(m.role, 'assistant')),
+                orderBy: (m, { desc: descFn }) => [descFn(m.createdAt)],
+                limit: 1,
+              },
             },
           });
           return apiSuccess(updated);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useMultiTakePlayer, TakeDef } from '@/hooks/use-multi-take-player';
 import { useMultiTakeAnalyzerData } from '@/hooks/use-multi-take-analyzer-data';
 import { useStemPeaks } from '@/hooks/use-stem-peaks';
@@ -20,10 +20,23 @@ export interface TakeEntry {
   enabled: boolean;
 }
 
+export interface StemInitialParam {
+  stemId: string;
+  gainDb?: number;
+  panAngleDegrees?: number;
+  reverbSend?: number;
+}
+
+export interface InitialParams {
+  stems?: StemInitialParam[];
+}
+
 interface Props {
   takes: TakeEntry[];
   sessionId: string;
   guestToken?: string | null;
+  /** Initial stem gain/pan values from Hoo's latest parameterChanges (one-directional: Hoo→UI) */
+  initialParams?: InitialParams;
   compact?: boolean;
 }
 
@@ -68,13 +81,22 @@ function WaveformBar({ peaks, active, height = 20 }: { peaks: number[]; active: 
 function StemRow({
   index, muted, soloed, anySoloed, peaks,
   onMute, onSolo, onGain, onPan,
+  initialGainDb = 0, initialPan = 0,
 }: {
   index: number; muted: boolean; soloed: boolean; anySoloed: boolean; peaks: number[];
   onMute(): void; onSolo(): void; onGain(db: number): void; onPan(v: number): void;
+  initialGainDb?: number; initialPan?: number;
 }) {
-  const [gainDb, setGainDb] = useState(0);
-  const [pan, setPan] = useState(0);
+  const [gainDb, setGainDb] = useState(initialGainDb);
+  const [pan, setPan] = useState(initialPan);
   const isActive = !anySoloed ? !muted : soloed;
+
+  // Sync WebAudio nodes to initial values on mount
+  useEffect(() => {
+    onGain(initialGainDb);
+    onPan(initialPan);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${isActive ? 'bg-zinc-800/50' : 'bg-zinc-900/50 opacity-50'}`}>
@@ -124,7 +146,7 @@ function StemRow({
   );
 }
 
-export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken: _guestToken, compact }: Props) {
+export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken: _guestToken, initialParams, compact }: Props) {
   const [showTakeDrawer, setShowTakeDrawer] = useState(false);
 
   // Only pass enabled (ready) takes to the player hook — disabled (processing) takes have no audio yet
@@ -152,6 +174,22 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
 
   // Waveform peaks fetched in background and cached by URL — renders incrementally as stems load
   const stemPeaks = useStemPeaks(activeTakeId, activeStemUrls);
+
+  // Map stemId → {gainDb, pan} from Hoo's latest parameterChanges (panAngleDegrees → -1..+1)
+  const initialStemMap = useMemo(() => {
+    if (!initialParams?.stems) return {} as Record<string, { gainDb: number; pan: number }>;
+    return Object.fromEntries(
+      initialParams.stems.map((s) => [
+        s.stemId,
+        {
+          gainDb: s.gainDb ?? 0,
+          pan: s.panAngleDegrees != null
+            ? Math.max(-1, Math.min(1, s.panAngleDegrees / 90))
+            : 0,
+        },
+      ]),
+    );
+  }, [initialParams]);
 
   const handlePlayPause = useCallback(() => {
     if (isPlaying) { pause(); } else { play(); }
@@ -273,6 +311,8 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
                     onSolo={() => toggleStemSolo(activeTakeId, name)}
                     onGain={(db) => setStemGain(activeTakeId, name, db)}
                     onPan={(v) => setStemPan(activeTakeId, name, v)}
+                    initialGainDb={initialStemMap[name]?.gainDb ?? 0}
+                    initialPan={initialStemMap[name]?.pan ?? 0}
                   />
                 );
               })}
