@@ -2,8 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useMultiTakePlayer, TakeDef } from '@/hooks/use-multi-take-player';
-import { useWaveformData } from '@/hooks/use-waveform-data';
 import { useMultiTakeAnalyzerData } from '@/hooks/use-multi-take-analyzer-data';
+import { useStemPeaks } from '@/hooks/use-stem-peaks';
 import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
 
 export type TakeStage = 'RAW' | 'MIXED' | 'MASTERED';
@@ -144,9 +144,8 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
   const activeStemUrls = activeTake?.stemsUrls ?? null;
   const stemNames = activeStemUrls ? Object.keys(activeStemUrls) : [];
 
-  // Waveform peaks from cached AudioBuffer (used for MIXED waveform bars; RAW uses URL)
-  const [stemBuffers] = useState<Record<string, AudioBuffer> | null>(null);
-  const { stemPeaks } = useWaveformData({ stemBuffers, rawUrl: null, masterUrl: null, stage: 'mixed' });
+  // Waveform peaks fetched in background and cached by URL — renders incrementally as stems load
+  const stemPeaks = useStemPeaks(activeTakeId, activeStemUrls);
 
   const handlePlayPause = useCallback(() => {
     if (isPlaying) { pause(); } else { play(); }
