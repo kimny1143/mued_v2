@@ -26,6 +26,7 @@ export interface UseMultiStemPlayerReturn {
   toggleMute(stemName: string): void;
   toggleSolo(stemName: string): void;
   setStemGain(stemName: string, db: number): void;
+  setStemPan(stemName: string, pan: number): void;
   destroy(): void;
 }
 
@@ -39,6 +40,7 @@ export function useMultiStemPlayer({
   const buffersRef = useRef<Record<string, AudioBuffer>>({});
   const sourcesRef = useRef<AudioBufferSourceNode[]>([]);
   const gainNodesRef = useRef<Record<string, GainNode>>({});
+  const panNodesRef = useRef<Record<string, StereoPannerNode>>({});
   const startTimeRef = useRef(0);
   const pausedAtRef = useRef(0);
   const rafRef = useRef<number>(0);
@@ -64,6 +66,7 @@ export function useMultiStemPlayer({
     }
     sourcesRef.current = [];
     gainNodesRef.current = {};
+    panNodesRef.current = {};
   }, []);
 
   // Preload all stem buffers
@@ -139,21 +142,27 @@ export function useMultiStemPlayer({
 
     const newSources: AudioBufferSourceNode[] = [];
     const newGains: Record<string, GainNode> = {};
+    const newPans: Record<string, StereoPannerNode> = {};
 
     for (const [name, buf] of Object.entries(buffersRef.current)) {
       const src = ctx.createBufferSource();
       src.buffer = buf;
       const gainNode = ctx.createGain();
       gainNode.gain.value = computeGain(name, currentStems);
+      const panNode = ctx.createStereoPanner();
+      panNode.pan.value = panNodesRef.current[name]?.pan.value ?? 0;
       src.connect(gainNode);
-      gainNode.connect(ctx.destination);
+      gainNode.connect(panNode);
+      panNode.connect(ctx.destination);
       src.start(0, Math.min(offset, buf.duration - 0.001));
       newSources.push(src);
       newGains[name] = gainNode;
+      newPans[name] = panNode;
     }
 
     sourcesRef.current = newSources;
     gainNodesRef.current = newGains;
+    panNodesRef.current = newPans;
     startTimeRef.current = ctx.currentTime - offset;
   }, [getContext, stopSources, computeGain]);
 
@@ -203,6 +212,11 @@ export function useMultiStemPlayer({
     }
   }, []);
 
+  const setStemPan = useCallback((stemName: string, pan: number) => {
+    const panNode = panNodesRef.current[stemName];
+    if (panNode) panNode.pan.value = Math.max(-1, Math.min(1, pan));
+  }, []);
+
   // RAF loop for playback position tracking
   useEffect(() => {
     if (!isPlaying) {
@@ -249,5 +263,5 @@ export function useMultiStemPlayer({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { isReady, isPlaying, currentTime, duration, stems, play, pause, seek, toggleMute, toggleSolo, setStemGain, destroy };
+  return { isReady, isPlaying, currentTime, duration, stems, play, pause, seek, toggleMute, toggleSolo, setStemGain, setStemPan, destroy };
 }
