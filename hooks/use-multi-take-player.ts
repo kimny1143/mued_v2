@@ -31,6 +31,10 @@ export interface UseMultiTakePlayerReturn {
   setStemPan(takeId: string, stemName: string, pan: number): void;
   /** AnalyserNode fixed at chain's final stage (masterGain → analyser → destination). */
   analyserNode: AnalyserNode | null;
+  /** Stereo L/R analysers split from masterGain — for phase/goniometer/stereo-width metrics. */
+  analyserL: AnalyserNode | null;
+  analyserR: AnalyserNode | null;
+  sampleRate: number;
   destroy(): void;
 }
 
@@ -50,6 +54,9 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   const ctxRef = useRef<AudioContext | null>(null);
   const masterGainRef = useRef<GainNode | null>(null);
   const [analyserNode, setAnalyserNode] = useState<AnalyserNode | null>(null);
+  const [analyserL, setAnalyserL] = useState<AnalyserNode | null>(null);
+  const [analyserR, setAnalyserR] = useState<AnalyserNode | null>(null);
+  const [sampleRate, setSampleRate] = useState(44100);
   const takeNodesRef = useRef<Record<string, TakeNodes>>({});
   const rafRef = useRef<number>(0);
   const pausedAtRef = useRef(0);
@@ -86,8 +93,30 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     analyser.smoothingTimeConstant = 0.8;
     masterGain.connect(analyser);
     analyser.connect(ctx.destination);
+
+    // Stereo split for L/R metrics (correlation, goniometer, stereo width)
+    const splitter = ctx.createChannelSplitter(2);
+    const aL = ctx.createAnalyser();
+    const aR = ctx.createAnalyser();
+    aL.fftSize = 2048;
+    aR.fftSize = 2048;
+    aL.smoothingTimeConstant = 0;
+    aR.smoothingTimeConstant = 0;
+    masterGain.connect(splitter);
+    splitter.connect(aL, 0);
+    splitter.connect(aR, 1);
+    // Route through silent gain to keep L/R nodes alive without adding to output
+    const silentGain = ctx.createGain();
+    silentGain.gain.value = 0;
+    aL.connect(silentGain);
+    aR.connect(silentGain);
+    silentGain.connect(ctx.destination);
+
     masterGainRef.current = masterGain;
     setAnalyserNode(analyser);
+    setAnalyserL(aL);
+    setAnalyserR(aR);
+    setSampleRate(ctx.sampleRate);
 
     const defaultId = activeTakeIdRef.current;
     let loadedCount = 0;
@@ -156,10 +185,16 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       }
       masterGain.disconnect();
       analyser.disconnect();
+      splitter.disconnect();
+      aL.disconnect();
+      aR.disconnect();
+      silentGain.disconnect();
       ctx.close().catch(() => {});
       ctxRef.current = null;
       masterGainRef.current = null;
       setAnalyserNode(null);
+      setAnalyserL(null);
+      setAnalyserR(null);
       takeNodesRef.current = {};
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -344,13 +379,15 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     ctxRef.current?.close().catch(() => {});
     ctxRef.current = null;
     setAnalyserNode(null);
+    setAnalyserL(null);
+    setAnalyserR(null);
   }, []);
 
   return {
     isReady, isPlaying, currentTime, duration, activeTakeId,
     setActiveTake, play, pause, seek,
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
-    analyserNode,
+    analyserNode, analyserL, analyserR, sampleRate,
     destroy,
   };
 }
