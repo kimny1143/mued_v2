@@ -7,8 +7,7 @@ import { useLocale } from '@/lib/i18n/locale-context';
 import Link from 'next/link';
 import { ChatPanel } from '@/components/dial/chat-panel';
 import { ReferenceTrack } from '@/components/dial/reference-track';
-import { AudioAnalyzerProvider, useAudioAnalyzerContext } from '@/hooks/use-audio-analyzer-context';
-import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
+import { AudioAnalyzerProvider } from '@/hooks/use-audio-analyzer-context';
 import { UnifiedSessionPlayer, TakeEntry } from '@/components/dial/unified-session-player';
 
 /** Stream audio through our own API to avoid GCS presigned URL length/CORS issues */
@@ -151,25 +150,6 @@ function DialSessionContent() {
   const [selectedTakeId, setSelectedTakeId] = useState<string | null>(null);
   const prevCompletedCountRef = useRef(0);
 
-  // Audio analyzer (from context)
-  const { audioRef, isActive: analyzerActive, connect: analyzerConnect } = useAudioAnalyzerContext();
-
-  // Dev-mode local audio for testing analyzer
-  const [devAudioUrl, setDevAudioUrl] = useState<string | null>(null);
-  const [devDragOver, setDevDragOver] = useState(false);
-  const isDev = process.env.NODE_ENV === 'development';
-  const devFileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleDevDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDevDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file?.type.startsWith('audio/')) {
-      setDevAudioUrl(URL.createObjectURL(file));
-    }
-  }, []);
-
   // Track whether params changed since last preview
   const [dirty, setDirty] = useState(false);
   const lastPreviewSnapshotRef = useRef<string>('');
@@ -210,6 +190,84 @@ function DialSessionContent() {
     const base = `/api/dial/${api}?taskId=${taskId}`;
     return guestToken ? `${base}&token=${guestToken}` : base;
   }, [guestToken]);
+
+  // Build TakeEntry[] for UnifiedSessionPlayer — used in both active sidebar and completion screen
+  const sessionTakes = useMemo((): TakeEntry[] => {
+    if (!session) return [];
+
+    const hasStemsTask = (t: { stemsUrls: Record<string, string> | null }) =>
+      !!t.stemsUrls && Object.keys(t.stemsUrls).length > 0;
+    const stemTaskForKeys = session.tasks.find((t) => hasStemsTask(t));
+    const proxiedStems = stemTaskForKeys
+      ? Object.fromEntries(
+          Object.keys(stemTaskForKeys.stemsUrls as Record<string, string>).map(
+            (k) => [k, stemStreamUrl(session.id, k, guestToken)],
+          ),
+        )
+      : null;
+
+    const takes: TakeEntry[] = [];
+
+    const mixFinalTask = session.tasks.find(
+      (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.finalUrl,
+    );
+    const masteringFinalTask = session.tasks.find(
+      (t) => t.taskType === 'mastering' && t.finalUrl,
+    );
+
+    const rawStemEntries = session.tracks
+      .filter((t) => !!t.r2Url)
+      .map((t) => [t.id, t.r2Url as string] as const);
+    if (rawStemEntries.length > 0) {
+      takes.push({
+        id: `raw-${session.id}`,
+        label: 'RAW',
+        url: rawStemEntries[0][1],
+        stemsUrls: Object.fromEntries(rawStemEntries),
+        createdAt: mixFinalTask?.createdAt ?? masteringFinalTask?.createdAt ?? '',
+      });
+    }
+
+    if (mixFinalTask) {
+      takes.push({
+        id: mixFinalTask.id,
+        label: 'MIXED',
+        url: taskStreamUrl(mixFinalTask.id),
+        stemsUrls: proxiedStems,
+        createdAt: mixFinalTask.createdAt,
+      });
+    } else {
+      // During active session: show latest completed preview/mix_check as MIXED
+      const latestPreview = [...session.tasks]
+        .filter((t) =>
+          (t.taskType === 'preview' || t.taskType === 'mix_check') &&
+          t.status === 'completed' &&
+          (t.previewUrl || t.finalUrl),
+        )
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+      if (latestPreview) {
+        takes.push({
+          id: latestPreview.id,
+          label: 'MIXED',
+          url: taskStreamUrl(latestPreview.id),
+          stemsUrls: proxiedStems,
+          createdAt: latestPreview.createdAt,
+        });
+      }
+    }
+
+    if (masteringFinalTask) {
+      takes.push({
+        id: masteringFinalTask.id,
+        label: 'MASTERED',
+        url: taskStreamUrl(masteringFinalTask.id),
+        stemsUrls: null,
+        createdAt: masteringFinalTask.createdAt,
+      });
+    }
+
+    return takes;
+  }, [session, guestToken]);
 
   const fetchSession = useCallback(async (): Promise<Session | null> => {
     try {
@@ -416,14 +474,6 @@ function DialSessionContent() {
       setElapsedSeconds(0);
     }
   }, [session]);
-
-  // Reconnect analyzer when selected take changes (audio element is recreated via React key)
-  useEffect(() => {
-    if (!analyzerActive || !selectedTakeId) return;
-    const timer = setTimeout(() => analyzerConnect(), 150);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTakeId, analyzerActive]);
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
@@ -868,16 +918,7 @@ function DialSessionContent() {
       : (!hasMixFinal || (session.masteringMode && !hasMasteringFinal)));
   const phase: 1 | 2 | 3 = hasMixFinal ? 3 : session.mixCheckCount > 0 ? 2 : 1;
 
-  // Sidebar player — derive from selected take
-  const selectedTask = session.tasks.find((t) => t.id === selectedTakeId);
   const allPreviewTasks = session.tasks.filter((t) => t.taskType === 'preview');
-  const selectedTakeLabel = (() => {
-    if (!selectedTask) return '';
-    if (selectedTask.taskType === 'mix_check') return 'Mix Check';
-    const idx = allPreviewTasks.findIndex((t) => t.id === selectedTask.id);
-    if (idx >= 0) return `Take ${allPreviewTasks.length - idx}`;
-    return selectedTask.taskType.replace('_', ' ');
-  })();
 
   // Navigation guard for stems download
   const handleNavigation = (e: React.MouseEvent, _href: string) => {
@@ -1263,59 +1304,13 @@ function DialSessionContent() {
         )}
 
         {/* Unified player — RAW / MIXED / MASTERED tabs */}
-        {(() => {
-          const hasStemsTask = (t: { stemsUrls: Record<string, string> | null }) =>
-            !!t.stemsUrls && Object.keys(t.stemsUrls).length > 0;
-          const stemTaskForKeys = session.tasks.find((t) => hasStemsTask(t));
-          const proxiedStems = stemTaskForKeys
-            ? Object.fromEntries(
-                Object.keys(stemTaskForKeys.stemsUrls as Record<string, string>).map(
-                  (k) => [k, stemStreamUrl(session.id, k, guestToken)],
-                ),
-              )
-            : null;
-
-          const takes: TakeEntry[] = [];
-          // RAW: original uploaded stems (each session.track is one stem)
-          const rawStemEntries = session.tracks
-            .filter((t) => !!t.r2Url)
-            .map((t) => [t.id, t.r2Url as string] as const);
-          if (rawStemEntries.length > 0) {
-            takes.push({
-              id: `raw-${session.id}`,
-              label: 'RAW',
-              url: rawStemEntries[0][1],
-              stemsUrls: Object.fromEntries(rawStemEntries),
-              createdAt: mixFinalTask?.createdAt ?? masteringFinalTask?.createdAt ?? '',
-            });
-          }
-          if (mixFinalTask) {
-            takes.push({
-              id: mixFinalTask.id,
-              label: 'MIXED',
-              url: taskStreamUrl(mixFinalTask.id),
-              stemsUrls: proxiedStems,
-              createdAt: mixFinalTask.createdAt,
-            });
-          }
-          if (masteringFinalTask) {
-            takes.push({
-              id: masteringFinalTask.id,
-              label: 'MASTERED',
-              url: taskStreamUrl(masteringFinalTask.id),
-              stemsUrls: null,
-              createdAt: masteringFinalTask.createdAt,
-            });
-          }
-          if (takes.length === 0) return null;
-          return (
-            <UnifiedSessionPlayer
-              takes={takes}
-              sessionId={session.id}
-              guestToken={guestToken}
-            />
-          );
-        })()}
+        {sessionTakes.length > 0 && (
+          <UnifiedSessionPlayer
+            takes={sessionTakes}
+            sessionId={session.id}
+            guestToken={guestToken}
+          />
+        )}
 
         {session.mode === 'omakase' && (
           <Link
@@ -1544,93 +1539,26 @@ function DialSessionContent() {
 
               {/* Right: Sidebar — player, take history, tracks, upload */}
               <div className="lg:w-80 shrink-0 space-y-5 overflow-y-auto lg:max-h-[calc(100vh-14rem)] lg:sticky lg:top-24 lg:self-start">
-                {/* Shared Player */}
-                <div
-                  className={`bg-zinc-900 border rounded-xl p-4 transition-colors ${
-                    devDragOver ? 'border-indigo-500 bg-indigo-950/20' : 'border-zinc-800'
-                  }`}
-                  {...(isDev ? {
-                    onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDevDragOver(true); },
-                    onDragEnter: (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDevDragOver(true); },
-                    onDragLeave: (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDevDragOver(false); },
-                    onDrop: handleDevDrop,
-                  } : {})}
-                >
-                  <h3 className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">Now Playing</h3>
-                  {(() => {
-                    const isDevOverride = !!devAudioUrl;
-                    const audioSrc = devAudioUrl || (selectedTask ? taskStreamUrl(selectedTask.id) : null);
-                    return audioSrc ? (
-                      <>
-                        <div className="text-sm text-white font-medium mb-2">
-                          {isDevOverride ? '🔧 Dev Audio' : selectedTakeLabel}
-                        </div>
-                        <audio
-                          ref={audioRef}
-                          controls
-                          src={audioSrc}
-                          className="w-full"
-                          key={audioSrc}
-                          onPlay={analyzerConnect}
-                        />
-                        {!isDevOverride && selectedTask && (
-                          <a
-                            href={downloadUrl(selectedTask.id)}
-                            download
-                            className="mt-2 inline-block text-xs text-zinc-400 hover:text-white transition-colors"
-                          >
-                            Download {selectedTask.finalUrl ? '.wav' : '.mp3'}
-                          </a>
-                        )}
-                        {isDevOverride && (
-                          <button
-                            onClick={() => { setDevAudioUrl(null); }}
-                            className="mt-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
-                          >
-                            Remove dev audio
-                          </button>
-                        )}
-                        <div className="mt-3 border-t border-zinc-800 pt-3">
-                          <AudioAnalyzer compact />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-sm text-zinc-600 py-4 text-center">
-                        {analyzing
-                          ? 'Analyzing your audio...'
-                          : hasTracks
-                            ? (isMasteringOnly ? 'Chat with Hoo to start mastering' : 'Generate a preview to hear your mix')
-                            : (isMasteringOnly ? 'Upload your 2-mix to get started' : 'Upload stems to get started')}
-                      </div>
-                    );
-                  })()}
-                  {/* Dev-mode: always show file picker for local audio testing */}
-                  {isDev && (
-                    <div className="mt-3 border-t border-zinc-800 pt-3">
-                      <div className="text-[10px] text-zinc-600 mb-2">
-                        {devDragOver ? '↓ Drop here' : '🔧 Dev: drag audio onto this card, or'}
-                      </div>
-                      <button
-                        onClick={() => devFileInputRef.current?.click()}
-                        className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-                      >
-                        Select file
-                      </button>
-                      <input
-                        ref={devFileInputRef}
-                        type="file"
-                        accept="audio/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setDevAudioUrl(URL.createObjectURL(file));
-                          }
-                        }}
-                      />
+                {/* Unified Player */}
+                {sessionTakes.length > 0 ? (
+                  <UnifiedSessionPlayer
+                    takes={sessionTakes}
+                    sessionId={session.id}
+                    guestToken={guestToken}
+                    compact
+                  />
+                ) : (
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                    <h3 className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">Now Playing</h3>
+                    <div className="text-sm text-zinc-600 py-4 text-center">
+                      {analyzing
+                        ? 'Analyzing your audio...'
+                        : hasTracks
+                          ? (isMasteringOnly ? 'Chat with Hoo to start mastering' : 'Generate a preview to hear your mix')
+                          : (isMasteringOnly ? 'Upload your 2-mix to get started' : 'Upload stems to get started')}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Mastering Phase Banner */}
                 {isMasteringPhase && !isMasteringOnly && (
