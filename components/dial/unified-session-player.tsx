@@ -3,6 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useMultiTakePlayer, TakeDef } from '@/hooks/use-multi-take-player';
 import { useWaveformData } from '@/hooks/use-waveform-data';
+import { useMultiTakeAnalyzerData } from '@/hooks/use-multi-take-analyzer-data';
+import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
 
 export type TakeStage = 'RAW' | 'MIXED' | 'MASTERED';
 
@@ -34,75 +36,6 @@ function formatDate(iso: string): string {
   } catch {
     return iso;
   }
-}
-
-// Inline spectrum + level analyzer — reads from the multi-take player's AnalyserNode.
-// The AnalyserNode sits at the final stage (masterGain → analyser → destination),
-// so it is unaffected by take switching.
-function TakeAnalyzer({ analyserNode }: { analyserNode: AnalyserNode | null }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rafRef = useRef<number>(0);
-  const [lufsApprox, setLufsApprox] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!analyserNode) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx2d = canvas.getContext('2d');
-    if (!ctx2d) return;
-
-    const freqData = new Uint8Array(analyserNode.frequencyBinCount);
-    const timeData = new Float32Array(analyserNode.fftSize);
-    const BAR_COUNT = 32;
-
-    const draw = () => {
-      rafRef.current = requestAnimationFrame(draw);
-      analyserNode.getByteFrequencyData(freqData);
-      analyserNode.getFloatTimeDomainData(timeData);
-
-      const W = canvas.width;
-      const H = canvas.height;
-      ctx2d.clearRect(0, 0, W, H);
-
-      // Spectrum bars
-      const step = Math.floor(freqData.length / BAR_COUNT);
-      const barW = W / BAR_COUNT - 1;
-      for (let i = 0; i < BAR_COUNT; i++) {
-        let sum = 0;
-        for (let j = 0; j < step; j++) sum += freqData[i * step + j];
-        const avg = sum / step / 255;
-        const barH = avg * H;
-        const hue = 40 + avg * 20; // amber → yellow
-        ctx2d.fillStyle = `hsl(${hue}, 90%, ${40 + avg * 20}%)`;
-        ctx2d.fillRect(i * (barW + 1), H - barH, barW, barH);
-      }
-
-      // RMS → approximate dBFS
-      let sumSq = 0;
-      for (let i = 0; i < timeData.length; i++) sumSq += timeData[i] * timeData[i];
-      const rms = Math.sqrt(sumSq / timeData.length);
-      const dbfs = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
-      setLufsApprox(isFinite(dbfs) ? dbfs : null);
-    };
-
-    rafRef.current = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [analyserNode]);
-
-  if (!analyserNode) return null;
-
-  return (
-    <div className="flex items-end gap-3 pt-2 border-t border-zinc-800">
-      <canvas ref={canvasRef} width={200} height={36} className="flex-1 rounded" style={{ height: 36 }} />
-      <div className="text-xs text-zinc-500 tabular-nums shrink-0 mb-1">
-        {lufsApprox !== null ? (
-          <span className="text-zinc-300">{lufsApprox.toFixed(1)} <span className="text-zinc-600">dBFS</span></span>
-        ) : (
-          <span className="text-zinc-700">— dBFS</span>
-        )}
-      </div>
-    </div>
-  );
 }
 
 // Mini waveform canvas for stem rows
@@ -201,8 +134,10 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
     isReady, isPlaying, currentTime, duration, activeTakeId,
     setActiveTake, play, pause, seek,
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
-    analyserNode,
+    analyserNode, analyserL, analyserR, sampleRate,
   } = useMultiTakePlayer(takeDefs);
+
+  const analyzerData = useMultiTakeAnalyzerData({ analyser: analyserNode, analyserL, analyserR, sampleRate });
 
   const activeTake = takes.find((t) => t.id === activeTakeId) ?? takes[0];
   const showStemPanel = activeTake?.label === 'RAW' || activeTake?.label === 'MIXED';
@@ -291,8 +226,12 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
         )}
       </div>
 
-      {/* Inline analyzer — reads from final-stage AnalyserNode, unaffected by take switching */}
-      <TakeAnalyzer analyserNode={analyserNode} />
+      {/* Full-featured analyzer — reads from fixed final-stage analysers, unaffected by take switching */}
+      {analyzerData && (
+        <div className="pt-2 border-t border-zinc-800">
+          <AudioAnalyzer data={analyzerData} isActive={true} compact />
+        </div>
+      )}
 
       {/* Stem Panel — RAW and MIXED */}
       {showStemPanel && (
