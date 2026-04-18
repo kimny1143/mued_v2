@@ -54,6 +54,17 @@ interface Task {
   createdAt: string;
 }
 
+interface Message {
+  parameterChanges: {
+    stems?: Array<{
+      stemId: string;
+      gainDb?: number;
+      panAngleDegrees?: number;
+      reverbSend?: number;
+    }>;
+  } | null;
+}
+
 interface Session {
   id: string;
   mode: 'omakase' | 'dialogue' | null; // null = mastering-only
@@ -66,6 +77,7 @@ interface Session {
   previewCount: number;
   tracks: Track[];
   tasks: Task[];
+  messages?: Message[];
   analysisResult?: Record<string, unknown> | null;
   referenceTrackUrl?: string | null;
   referenceTrackFilename?: string | null;
@@ -190,6 +202,9 @@ function DialSessionContent() {
     const base = `/api/dial/${api}?taskId=${taskId}`;
     return guestToken ? `${base}&token=${guestToken}` : base;
   }, [guestToken]);
+
+  // Extract latest parameterChanges from session messages (Hoo → UI initial stem values)
+  const latestParamChanges = session?.messages?.[0]?.parameterChanges ?? null;
 
   // Build TakeEntry[] for UnifiedSessionPlayer — used in both active sidebar and completion screen
   const sessionTakes = useMemo((): TakeEntry[] => {
@@ -1343,6 +1358,7 @@ function DialSessionContent() {
             takes={sessionTakes}
             sessionId={session.id}
             guestToken={guestToken}
+            initialParams={latestParamChanges ?? undefined}
           />
         )}
 
@@ -1580,6 +1596,7 @@ function DialSessionContent() {
                     takes={sessionTakes}
                     sessionId={session.id}
                     guestToken={guestToken}
+                    initialParams={latestParamChanges ?? undefined}
                     compact
                   />
                 ) : (
