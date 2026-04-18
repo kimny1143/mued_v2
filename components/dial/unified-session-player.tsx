@@ -138,8 +138,9 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
   const [duration, setDuration] = useState(0);
 
   const activeTake = takes.find((t) => t.id === activeTakeId) ?? takes[0];
-  const isMixed = activeTake?.label === 'MIXED';
-  const hasStems = isMixed && !!activeTake?.stemsUrls && Object.keys(activeTake.stemsUrls).length > 0;
+  // RAW and MIXED both support multi-stem playback
+  const hasStems = (activeTake?.label === 'RAW' || activeTake?.label === 'MIXED') &&
+    !!activeTake?.stemsUrls && Object.keys(activeTake.stemsUrls).length > 0;
 
   // Set initial audio src on mount (uncontrolled pattern to avoid el.load() race)
   useEffect(() => {
@@ -167,20 +168,20 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
     setActiveTakeId(take.id);
   }, [activeTakeId, audioRef]);
 
-  // Single-file transport controls
+  // Single-file transport controls (MASTERED only)
   const handlePlay = useCallback(() => {
-    if (isMixed && hasStems) return; // stems mode: handled by stem player
+    if (hasStems) return; // stems mode: handled by stem player
     const el = audioRef.current;
     if (!el) return;
     el.play().catch(() => {});
-  }, [isMixed, hasStems, audioRef]);
+  }, [hasStems, audioRef]);
 
   const handlePause = useCallback(() => {
-    if (isMixed && hasStems) return;
+    if (hasStems) return;
     audioRef.current?.pause();
-  }, [isMixed, hasStems, audioRef]);
+  }, [hasStems, audioRef]);
 
-  // Stem player (MIXED stage)
+  // Stem player (RAW and MIXED stages)
   const stemUrls = hasStems ? (activeTake.stemsUrls as Record<string, string>) : {};
 
   // Waveform data for stem buffers
@@ -194,18 +195,18 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
   } = useMultiStemPlayer({ stemUrls, onError: () => {}, onBuffersLoaded: setStemBuffers });
 
   // Derived display values
-  const displayPlaying = isMixed && hasStems ? stemsReady && stemsPlaying : isPlaying;
-  const displayTime = isMixed && hasStems ? stemTime : currentTime;
-  const displayDuration = isMixed && hasStems ? stemDuration : duration;
-  const displayReady = isMixed && hasStems ? stemsReady : true;
+  const displayPlaying = hasStems ? stemsReady && stemsPlaying : isPlaying;
+  const displayTime = hasStems ? stemTime : currentTime;
+  const displayDuration = hasStems ? stemDuration : duration;
+  const displayReady = hasStems ? stemsReady : true;
 
   const handlePlayPause = useCallback(() => {
-    if (isMixed && hasStems) {
+    if (hasStems) {
       if (stemsPlaying) { pauseStems(); } else { playStems(); }
     } else {
       if (displayPlaying) { handlePause(); } else { handlePlay(); }
     }
-  }, [isMixed, hasStems, stemsPlaying, pauseStems, playStems, displayPlaying, handlePause, handlePlay]);
+  }, [hasStems, stemsPlaying, pauseStems, playStems, displayPlaying, handlePause, handlePlay]);
 
   // LUFS display
   const momentaryLufs = analyzerData?.momentaryLufs;
@@ -285,8 +286,8 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
         style={{ display: 'none' }}
       />
 
-      {/* Stem Panel — MIXED only */}
-      {isMixed && (
+      {/* Stem Panel — RAW and MIXED */}
+      {(activeTake?.label === 'RAW' || activeTake?.label === 'MIXED') && (
         <div className="space-y-1.5 pt-1 border-t border-zinc-800">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-medium text-zinc-500 uppercase tracking-widest">Stems</span>
@@ -317,7 +318,9 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
               })}
             </div>
           ) : (
-            <p className="text-xs text-zinc-600 py-2">Stem tracks available in MIXED mode after dialogue mix.</p>
+            <p className="text-xs text-zinc-600 py-2">
+              {activeTake?.label === 'RAW' ? 'Original stems not available for this session.' : 'Stem tracks available after dialogue mix.'}
+            </p>
           )}
         </div>
       )}

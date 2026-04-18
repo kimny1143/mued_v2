@@ -1264,8 +1264,6 @@ function DialSessionContent() {
 
         {/* Unified player — RAW / MIXED / MASTERED tabs */}
         {(() => {
-          const track0 = session.tracks[0];
-          const rawUrl = track0?.r2Url;
           const hasStemsTask = (t: { stemsUrls: Record<string, string> | null }) =>
             !!t.stemsUrls && Object.keys(t.stemsUrls).length > 0;
           const stemTaskForKeys = session.tasks.find((t) => hasStemsTask(t));
@@ -1278,12 +1276,16 @@ function DialSessionContent() {
             : null;
 
           const takes: TakeEntry[] = [];
-          if (rawUrl && track0) {
+          // RAW: original uploaded stems (each session.track is one stem)
+          const rawStemEntries = session.tracks
+            .filter((t) => !!t.r2Url)
+            .map((t) => [t.id, t.r2Url as string] as const);
+          if (rawStemEntries.length > 0) {
             takes.push({
-              id: `raw-${track0.id}`,
+              id: `raw-${session.id}`,
               label: 'RAW',
-              url: rawUrl,
-              stemsUrls: null,
+              url: rawStemEntries[0][1],
+              stemsUrls: Object.fromEntries(rawStemEntries),
               createdAt: mixFinalTask?.createdAt ?? masteringFinalTask?.createdAt ?? '',
             });
           }
