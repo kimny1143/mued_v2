@@ -19,12 +19,17 @@ export interface DecodeProgress {
   total: number;
 }
 
+/** Per-take decode status for pill UI (spinner/disabled until ready). */
+export type TakeDecodeStatus = 'decoding' | 'ready' | 'error';
+
 export interface UseMultiTakePlayerReturn {
   isReady: boolean;
   isPlaying: boolean;
   /** True while active take is being decoded (gates isReady). */
   isDecoding: boolean;
   decodeProgress: DecodeProgress;
+  /** Per-take decode status keyed by take ID — use for pill spinner/disabled state. */
+  takeDecodeStatus: Record<string, TakeDecodeStatus>;
   currentTime: number;
   duration: number;
   activeTakeId: string;
@@ -122,15 +127,24 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   const takeNodesRef = useRef<Record<string, TakeNodes>>({});
   const rafRef = useRef<number>(0);
   const pausedAtRef = useRef(0);
-  /** AudioContext time at which playback position 0 would be. currentTime = ctx.now - startedAt */
+  /** AudioContext time at which position 0 would be. currentTime = ctx.now - startedAt */
   const startedAtRef = useRef(0);
   const activeTakeIdRef = useRef(takes[0]?.id ?? '');
   const isPlayingRef = useRef(false);
+  /** Take ID queued for activation once its decode completes. */
+  const pendingActivateRef = useRef<string | null>(null);
+  /** Stable ref for takeDecodeStatus — accessible in setActiveTake without closure stale. */
+  const takeDecodeStatusRef = useRef<Record<string, TakeDecodeStatus>>(
+    Object.fromEntries(takes.map((t) => [t.id, 'decoding' as TakeDecodeStatus])),
+  );
 
   const [isReady, setIsReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDecoding, setIsDecoding] = useState(false);
   const [decodeProgress, setDecodeProgress] = useState<DecodeProgress>({ done: 0, total: 0 });
+  const [takeDecodeStatus, setTakeDecodeStatus] = useState<Record<string, TakeDecodeStatus>>(
+    takeDecodeStatusRef.current,
+  );
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [activeTakeId, _setActiveTakeId] = useState(takes[0]?.id ?? '');
@@ -147,7 +161,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   //   AudioBufferSourceNode → gainNode → panNode → takeMixGain
   //                        ↘ stemAnalyser (tap, no output effect)
   //   takeMixGain → masterGain → analyser → destination
-  //   masterGain → splitter → aL/aR (stereo metrics, routed through silentGain)
+  //   masterGain → splitter → aL/aR (stereo metrics, via silentGain)
   useEffect(() => {
     if (takes.length === 0) return;
 
@@ -185,7 +199,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     const defaultId = activeTakeIdRef.current;
     const newTakeNodes: Record<string, TakeNodes> = {};
 
-    // Phase 0: build permanent nodes (no buffers yet)
+    // Phase 0: build permanent nodes for all takes/stems (no buffers yet)
     for (const take of takes) {
       const takeMixGain = ctx.createGain();
       takeMixGain.gain.value = take.id === defaultId ? 1 : 0;
@@ -215,27 +229,46 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     setDecodeProgress({ done: 0, total: totalCount });
     setIsDecoding(true);
 
-    let decodedCount = 0;
+    // Per-take decode counting
+    const takeDecodeCounts = new Map<string, { done: number; success: number; total: number }>();
+    for (const take of takes) {
+      takeDecodeCounts.set(take.id, {
+        done: 0,
+        success: 0,
+        total: Object.keys(take.stemUrls).length,
+      });
+    }
+
     let activeReadySet = false;
+    let decodedCount = 0;
     let cancelled = false;
 
-    const onStemDecoded = (takeId: string) => {
+    const onStemDecoded = (takeId: string, success: boolean) => {
       if (cancelled) return;
       decodedCount++;
       setDecodeProgress({ done: decodedCount, total: totalCount });
 
-      if (!activeReadySet && takeId === defaultId) {
-        const activeTakeNodes = newTakeNodes[defaultId];
-        const allActiveDecoded = activeTakeNodes
-          ? Object.values(activeTakeNodes.stems).every((s) => s.buffer !== null)
-          : false;
-        if (allActiveDecoded) {
+      const counts = takeDecodeCounts.get(takeId)!;
+      counts.done++;
+      if (success) counts.success++;
+
+      // When all stems for a take are done, update per-take status
+      if (counts.done === counts.total) {
+        const status: TakeDecodeStatus = counts.success > 0 ? 'ready' : 'error';
+        const upd = { ...takeDecodeStatusRef.current, [takeId]: status };
+        takeDecodeStatusRef.current = upd;
+        setTakeDecodeStatus({ ...upd });
+
+        // Gate isReady on active take (both ready and error unblock the spinner)
+        if (takeId === defaultId && !activeReadySet) {
           activeReadySet = true;
-          const durations = Object.values(activeTakeNodes!.stems)
-            .map((s) => s.buffer!.duration)
-            .filter((d) => isFinite(d) && d > 0);
-          if (durations.length > 0) setDuration(Math.max(...durations));
-          setIsReady(true);
+          if (status === 'ready') {
+            const durations = Object.values(newTakeNodes[takeId].stems)
+              .map((s) => s.buffer?.duration ?? 0)
+              .filter((d) => isFinite(d) && d > 0);
+            if (durations.length > 0) setDuration(Math.max(...durations));
+            setIsReady(true);
+          }
           setIsDecoding(false);
         }
       }
@@ -243,40 +276,30 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
 
     const decodeStem = async (takeId: string, stemName: string, url: string) => {
       if (cancelled) return;
+      let buffer: AudioBuffer | null = null;
       try {
-        const buffer = await fetchAndDecode(url, ctx);
-        if (!cancelled) {
-          newTakeNodes[takeId].stems[stemName].buffer = buffer;
-          onStemDecoded(takeId);
-        }
+        buffer = await fetchAndDecode(url, ctx);
       } catch {
-        // Count failed decodes so isReady isn't blocked forever
-        if (!cancelled) onStemDecoded(takeId);
+        // Retry once on network glitch
+        try {
+          if (!cancelled) buffer = await fetchAndDecode(url, ctx);
+        } catch { /* give up after second failure */ }
       }
+      if (cancelled) return;
+      if (buffer) newTakeNodes[takeId].stems[stemName].buffer = buffer;
+      onStemDecoded(takeId, buffer !== null);
     };
 
-    // Phase 1: decode active take (gates isReady)
-    const activeTakeDef = takes.find((t) => t.id === defaultId);
-    if (activeTakeDef) {
-      Promise.all(
-        Object.entries(activeTakeDef.stemUrls).map(([name, url]) =>
-          decodeStem(defaultId, name, url),
-        ),
-      ).then(() => {
-        // Phase 2: decode inactive takes in background, yielding between each stem
-        const decodeInBackground = async () => {
-          for (const take of takes) {
-            if (cancelled || take.id === defaultId) continue;
-            for (const [name, url] of Object.entries(take.stemUrls)) {
-              if (cancelled) break;
-              await new Promise<void>((resolve) => setTimeout(resolve, 0));
-              await decodeStem(take.id, name, url);
-            }
-          }
-        };
-        decodeInBackground().catch(() => {});
-      }).catch(() => {});
+    // Decode ALL takes' stems in parallel — eliminates early-take-switch window.
+    // Active take is included and races with others; it typically finishes first
+    // since it has the same priority as the rest but the UI waits for it.
+    const allPromises: Promise<void>[] = [];
+    for (const take of takes) {
+      for (const [name, url] of Object.entries(take.stemUrls)) {
+        allPromises.push(decodeStem(take.id, name, url));
+      }
     }
+    Promise.all(allPromises).catch(() => {});
 
     return () => {
       cancelled = true;
@@ -396,6 +419,12 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   );
 
   const setActiveTake = useCallback((id: string) => {
+    // If the take isn't decoded yet, queue for auto-activation when ready
+    if (takeDecodeStatusRef.current[id] !== 'ready') {
+      pendingActivateRef.current = id;
+      return;
+    }
+
     const ctx = ctxRef.current;
     if (!ctx) return;
 
@@ -430,6 +459,15 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     activeTakeIdRef.current = id;
     _setActiveTakeId(id);
   }, []);
+
+  // Auto-activate pending take once its decode completes
+  useEffect(() => {
+    const pending = pendingActivateRef.current;
+    if (pending && takeDecodeStatus[pending] === 'ready') {
+      pendingActivateRef.current = null;
+      setActiveTake(pending);
+    }
+  }, [takeDecodeStatus, setActiveTake]);
 
   const toggleStemMute = useCallback((takeId: string, stemName: string) => {
     setStemStates((prev) => ({
@@ -484,7 +522,8 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   );
 
   return {
-    isReady, isPlaying, isDecoding, decodeProgress, currentTime, duration, activeTakeId,
+    isReady, isPlaying, isDecoding, decodeProgress, takeDecodeStatus,
+    currentTime, duration, activeTakeId,
     setActiveTake, play, pause, seek,
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
     analyserNode, analyserL, analyserR, sampleRate,
