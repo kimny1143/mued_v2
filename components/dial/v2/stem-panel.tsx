@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLocale } from '@/lib/i18n/locale-context';
 import { Readout, Micro, ToggleSquare } from './atoms';
 import { StemWave, type PeakPoint } from './waveform';
 
@@ -83,10 +84,11 @@ interface StemRowProps {
   playhead: number;
   initialGainDb: number;
   initialPan: number;
+  localPlaybackTooltip: string;
   onUpdate: (patch: StemUpdate) => void;
 }
 
-function StemRow({ stem, playhead, initialGainDb, initialPan, onUpdate }: StemRowProps) {
+function StemRow({ stem, playhead, initialGainDb, initialPan, localPlaybackTooltip, onUpdate }: StemRowProps) {
   const [gainDb, setGainDb] = useState(initialGainDb);
   const [pan, setPan] = useState(initialPan);
 
@@ -157,7 +159,15 @@ function StemRow({ stem, playhead, initialGainDb, initialPan, onUpdate }: StemRo
 
       {/* Pan */}
       <div className="flex items-center gap-2">
-        <Micro>PAN</Micro>
+        <span className="flex items-center gap-0.5">
+          <Micro>PAN</Micro>
+          <span className="cursor-help opacity-30 hover:opacity-70 transition-opacity leading-none" title={localPlaybackTooltip}>
+            <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth={1.4} className="w-2.5 h-2.5 inline-block" style={{ color: 'var(--fg-3)' }}>
+              <circle cx="5" cy="5" r="4" />
+              <path d="M5 4.5v3M5 3h.01" strokeLinecap="round" />
+            </svg>
+          </span>
+        </span>
         <input
           type="range"
           min="-100"
@@ -182,7 +192,15 @@ function StemRow({ stem, playhead, initialGainDb, initialPan, onUpdate }: StemRo
 
       {/* Volume */}
       <div className="flex items-center gap-2">
-        <Micro>VOL</Micro>
+        <span className="flex items-center gap-0.5">
+          <Micro>VOL</Micro>
+          <span className="cursor-help opacity-30 hover:opacity-70 transition-opacity leading-none" title={localPlaybackTooltip}>
+            <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth={1.4} className="w-2.5 h-2.5 inline-block" style={{ color: 'var(--fg-3)' }}>
+              <circle cx="5" cy="5" r="4" />
+              <path d="M5 4.5v3M5 3h.01" strokeLinecap="round" />
+            </svg>
+          </span>
+        </span>
         <input
           type="range"
           min="-30"
@@ -222,6 +240,8 @@ interface StemPanelProps {
 }
 
 export function StemPanel({ stems, playhead, initialGainDbMap, initialPanMap, onUpdateStem }: StemPanelProps) {
+  const { t } = useLocale();
+  const tooltip = t.dial.stemPanel.localPlaybackTooltip;
   return (
     <div className="bg-[color:var(--ink-1)] border border-[color:var(--line)] rounded-[3px]">
       {/* Column headers */}
@@ -247,6 +267,7 @@ export function StemPanel({ stems, playhead, initialGainDbMap, initialPanMap, on
             playhead={playhead}
             initialGainDb={initialGainDbMap[s.id] ?? 0}
             initialPan={initialPanMap[s.id] ?? 0}
+            localPlaybackTooltip={tooltip}
             onUpdate={(patch) => onUpdateStem(s.id, patch)}
           />
         ))}
