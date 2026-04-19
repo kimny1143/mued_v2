@@ -197,7 +197,7 @@ export function UnifiedSessionPlayerV2({
   rawLoudnessLufs,
   compact: _compact,
 }: UnifiedSessionPlayerV2Props) {
-  const TARGET_LUFS = -14;
+  const TARGET_LUFS = -18; // RoEx outputs ~-17.8 LUFS; -14 made RAW 4dB louder than MIXED
 
   // Only pass enabled (ready) takes to the player hook
   const takeDefs: TakeDef[] = useMemo(() =>
