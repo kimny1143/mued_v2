@@ -177,7 +177,8 @@ export function UnifiedSessionPlayerV2({
   );
 
   const {
-    isReady, isPlaying, isDecoding, decodeProgress, currentTime, duration, activeTakeId,
+    isReady, isPlaying, isDecoding, decodeProgress, takeDecodeStatus,
+    currentTime, duration, activeTakeId,
     setActiveTake, play, pause, seek,
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
     analyserNode, analyserL, analyserR, sampleRate: audioSampleRate,
@@ -349,6 +350,7 @@ export function UnifiedSessionPlayerV2({
             activeSub={activeTakeSub}
             onPick={handlePickTake}
             onToggle={() => setTakeDrawerOpen((v) => !v)}
+            takeDecodeStatus={takeDecodeStatus}
           />
         </div>
 

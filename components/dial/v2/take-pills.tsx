@@ -129,9 +129,11 @@ interface TakeHistoryProps {
   activeSub: TakeSub | null;
   onPick: (key: TakeStage, subId: string) => void;
   onToggle: () => void;
+  /** Per-take decode status — shows spinner/dim while decoding, error state on failure */
+  takeDecodeStatus?: Record<string, 'decoding' | 'ready' | 'error'>;
 }
 
-export function TakeHistory({ open, takes, activeTake, activeSub, onPick, onToggle }: TakeHistoryProps) {
+export function TakeHistory({ open, takes, activeTake, activeSub, onPick, onToggle, takeDecodeStatus }: TakeHistoryProps) {
   const activeTakeObj = takes.find((t) => t.key === activeTake);
   return (
     <div className="bg-[color:var(--ink-1)] border border-[color:var(--line)] rounded-[3px] overflow-hidden">
@@ -171,15 +173,24 @@ export function TakeHistory({ open, takes, activeTake, activeSub, onPick, onTogg
                 ) : (
                   take.subs.map((sub) => {
                     const isActive = take.key === activeTake && sub.id === activeSub?.id;
+                    const decodeStatus = takeDecodeStatus?.[sub.id];
+                    const isDecoding = decodeStatus === 'decoding';
+                    const isError = decodeStatus === 'error';
                     return (
                       <button
                         key={sub.id}
-                        onClick={() => onPick(take.key, sub.id)}
+                        onClick={() => !isDecoding && onPick(take.key, sub.id)}
+                        disabled={isDecoding}
+                        title={isDecoding ? 'Decoding…' : isError ? 'Decode failed — click to retry' : undefined}
                         className={
                           'w-full text-left px-2 py-1.5 rounded-[2px] flex items-center justify-between gap-2 transition-colors ' +
                           (isActive
                             ? 'bg-[#221809] text-[color:var(--amber)]'
-                            : 'hover:bg-[#15151a] text-[color:var(--fg-1)]')
+                            : isDecoding
+                              ? 'opacity-40 cursor-wait text-[color:var(--fg-2)]'
+                              : isError
+                                ? 'text-[color:var(--red)] hover:bg-[#15151a]'
+                                : 'hover:bg-[#15151a] text-[color:var(--fg-1)]')
                         }
                       >
                         <div className="flex items-center gap-2 min-w-0">
@@ -190,15 +201,18 @@ export function TakeHistory({ open, takes, activeTake, activeSub, onPick, onTogg
                           >
                             {sub.label}
                           </span>
-                          {sub.flag && (
+                          {isDecoding && <IconSpinner size={9} />}
+                          {!isDecoding && sub.flag && (
                             <span className="mono text-[8px] px-1 h-3.5 flex items-center rounded-[1.5px] bg-[#17171a] border border-[color:var(--line)] text-[color:var(--fg-2)] uppercase tracking-wider">
                               {sub.flag}
                             </span>
                           )}
                         </div>
-                        <span className="mono text-[9px] text-[color:var(--fg-3)] whitespace-nowrap">
-                          {sub.when}
-                        </span>
+                        {!isDecoding && (
+                          <span className="mono text-[9px] text-[color:var(--fg-3)] whitespace-nowrap">
+                            {sub.when}
+                          </span>
+                        )}
                       </button>
                     );
                   })
