@@ -65,6 +65,7 @@ export interface ChatPanelV2Props {
   onMasteringFinalRequested?: () => void;
   generating?: boolean;
   generatingLabel?: string;
+  generatingElapsed?: string;
   className?: string;
   phase?: 1 | 2 | 3;
   mode?: 'omakase' | 'dialogue';
@@ -298,6 +299,7 @@ export function ChatPanelV2({
   onMasteringFinalRequested,
   generating = false,
   generatingLabel,
+  generatingElapsed,
   className,
   phase = 1,
   mode = 'dialogue',
@@ -586,6 +588,9 @@ export function ChatPanelV2({
             style={{ borderColor: 'var(--amber-dim)', background: 'var(--amber-glow)' }}>
             <IconSpinner size={10} />
             <Micro tone="var(--amber)">{generatingLabel || t.dial.chat.generating}</Micro>
+            {generatingElapsed && (
+              <Micro tone="var(--fg-3)" className="tabular-nums ml-auto">{generatingElapsed}</Micro>
+            )}
           </div>
         )}
 

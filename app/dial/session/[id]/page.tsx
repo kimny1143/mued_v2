@@ -915,6 +915,15 @@ function DialSessionContent() {
       default: return 'Processing...';
     }
   }, [mixGenerating, latestTask]);
+
+  const generatingElapsed = useMemo(() => {
+    if (!mixGenerating || elapsedSeconds === 0) return undefined;
+    const m = Math.floor(elapsedSeconds / 60);
+    const s = elapsedSeconds % 60;
+    return m > 0
+      ? `${m}:${String(s).padStart(2, '0')}`
+      : `${s}s`;
+  }, [mixGenerating, elapsedSeconds]);
   const hasCompletedPreview = session.tasks.some(
     (t) => t.taskType === 'preview' && t.status === 'completed',
   );
@@ -1531,6 +1540,7 @@ function DialSessionContent() {
                     onMasteringFinalRequested={handleMasteringFinal}
                     generating={mixGenerating}
                     generatingLabel={generatingLabel}
+                    generatingElapsed={generatingElapsed}
                     phase={phase}
                     mode={session.mode ?? session.masteringMode ?? 'omakase'}
                     previewCount={session.previewCount}

@@ -60,6 +60,7 @@ interface ChatPanelProps {
   onMasteringFinalRequested?: () => void;
   generating?: boolean;
   generatingLabel?: string;
+  generatingElapsed?: string;
   className?: string;
   /** Current mixing phase — prevents preview regeneration in Phase 3 */
   phase?: 1 | 2 | 3;
@@ -73,7 +74,7 @@ const VALID_PRESENCE = ['NORMAL', 'LEAD', 'BACKGROUND'];
 const VALID_PAN = ['NO_PREFERENCE', 'LEFT', 'CENTRE', 'RIGHT'];
 const VALID_REVERB = ['NONE', 'LOW', 'MEDIUM', 'HIGH'];
 
-export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onPreviewRequested, onMixCheckRequested, onFinalRequested, onMasteringPreviewRequested, onMasteringFinalRequested, generating = false, generatingLabel, className, phase = 1, mode = 'dialogue', previewCount = 0, previewLimit = 0, isMasteringPhase = false }: ChatPanelProps) {
+export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onPreviewRequested, onMixCheckRequested, onFinalRequested, onMasteringPreviewRequested, onMasteringFinalRequested, generating = false, generatingLabel, generatingElapsed, className, phase = 1, mode = 'dialogue', previewCount = 0, previewLimit = 0, isMasteringPhase = false }: ChatPanelProps) {
   const { t } = useLocale();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -556,6 +557,9 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
                 <span className="text-amber-300">{generatingLabel || t.dial.chat.generating}</span>
+                {generatingElapsed && (
+                  <span className="text-zinc-500 tabular-nums">{generatingElapsed}</span>
+                )}
               </div>
             </div>
           </div>
