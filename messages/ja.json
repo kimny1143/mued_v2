@@ -1559,6 +1559,13 @@
       "thinking": "Hooが考え中...",
       "networkError": "ネットワークエラー"
     },
+    "stemPanel": {
+      "localPlaybackTooltip": "ローカル試聴用 (API処理には影響しません)",
+      "generatePreview": "プレビュー生成",
+      "generateMixCheck": "ミックスチェック",
+      "generateFinal": "ファイナルミックス",
+      "generateMaster": "マスタリング生成"
+    },
     "session": {
       "loadingSession": "セッション読み込み中...",
       "sessionNotFound": "セッションが見つかりません",

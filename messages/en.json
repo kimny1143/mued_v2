@@ -1559,6 +1559,13 @@
       "thinking": "Hoo is thinking...",
       "networkError": "Network error"
     },
+    "stemPanel": {
+      "localPlaybackTooltip": "Local playback only (does not affect API processing)",
+      "generatePreview": "Generate Preview",
+      "generateMixCheck": "Mix Check",
+      "generateFinal": "Final Mix",
+      "generateMaster": "Generate Master"
+    },
     "session": {
       "loadingSession": "Loading session...",
       "sessionNotFound": "Session not found",

@@ -122,11 +122,6 @@ interface ParamChangeCardProps {
   parameterChanges: ParameterChange[];
   action: MixAction;
   applied: boolean;
-  isActionable: boolean;
-  generating: boolean;
-  onMixCheck?: () => void;
-  onFinal?: () => void;
-  onMasteringFinal?: () => void;
   onMarkApplied: () => void;
 }
 
@@ -134,11 +129,6 @@ function ParamChangeCard({
   parameterChanges,
   action,
   applied,
-  isActionable,
-  generating,
-  onMixCheck,
-  onFinal,
-  onMasteringFinal,
   onMarkApplied,
 }: ParamChangeCardProps) {
   const isPreview = action === 'adjust_preview';
@@ -209,40 +199,6 @@ function ParamChangeCard({
         </div>
       )}
 
-      {/* Action button */}
-      {isActionable && (isMixAction || isMasteringFinal) && (
-        <div className="px-2.5 pb-2 pt-1">
-          <button
-            onClick={() => {
-              if (isFinal) { onFinal?.(); }
-              else if (isMixCheck) { onMixCheck?.(); }
-              else { onMasteringFinal?.(); }
-              onMarkApplied();
-            }}
-            disabled={generating}
-            data-testid={
-              isFinal ? 'dial-chat-generate-final'
-              : isMixCheck ? 'dial-chat-generate-mix-check'
-              : 'dial-chat-generate-mastering-final'
-            }
-            className="w-full h-7 px-3 rounded-[3px] text-[11px] mono font-medium tracking-wide transition-colors disabled:opacity-40"
-            style={
-              isFinal || isMasteringFinal
-                ? { background: 'var(--emerald)', color: '#081a0f' }
-                : { background: 'var(--amber)', color: '#1a1200' }
-            }
-          >
-            {generating
-              ? 'Generating…'
-              : isFinal
-                ? 'Generate Final Mix'
-                : isMixCheck
-                  ? 'Generate Mix Check'
-                  : 'Generate Mastered Track'}
-          </button>
-        </div>
-      )}
-
       {/* Submitted indicator */}
       {applied && (isMixAction || isMasteringFinal) && (
         <div className="px-2.5 pb-2 flex items-center gap-1" style={{ color: 'var(--emerald)' }}>
@@ -264,10 +220,7 @@ export function ChatPanelV2({
   headers,
   onParametersApplied,
   onPreviewRequested,
-  onMixCheckRequested,
-  onFinalRequested,
   onMasteringPreviewRequested,
-  onMasteringFinalRequested,
   generating = false,
   generatingLabel,
   generatingElapsed,
@@ -434,16 +387,6 @@ export function ChatPanelV2({
     }
   }, [isMasteringPhase, sending, messages.length, sendMessage]);
 
-  const lastActionableId = useMemo(() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const m = messages[i];
-      if (m.role === 'assistant' && !m.applied && (
-        m.action === 'request_mix_check' || m.action === 'request_final' || m.action === 'request_mastering_final'
-      )) return m.id;
-    }
-    return null;
-  }, [messages]);
-
   const canSend = !sending && !!input.trim() && tracks.length > 0;
 
   return (
@@ -528,11 +471,6 @@ export function ChatPanelV2({
                         parameterChanges={msg.parameterChanges ?? []}
                         action={msg.action}
                         applied={!!msg.applied}
-                        isActionable={msg.id === lastActionableId}
-                        generating={generating}
-                        onMixCheck={() => { onMixCheckRequested?.(); }}
-                        onFinal={() => { onFinalRequested?.(); }}
-                        onMasteringFinal={() => { onMasteringFinalRequested?.(); }}
                         onMarkApplied={() => setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, applied: true } : m))}
                       />
                     );

@@ -5,6 +5,7 @@ import { useMultiTakePlayer, type TakeDef } from '@/hooks/use-multi-take-player'
 import { useMultiTakeAnalyzerData } from '@/hooks/use-multi-take-analyzer-data';
 import { useStemPeaks } from '@/hooks/use-stem-peaks';
 import { usePerStemPeak } from '@/hooks/use-per-stem-peak';
+import { useLocale } from '@/lib/i18n/locale-context';
 import { Micro, Readout, Btn } from './atoms';
 import { IconPlay, IconPause, IconSkipBack, IconSpinner } from './icons';
 import { OverviewWave, genPeaks, seededRand, type PeakPoint } from './waveform';
@@ -56,6 +57,14 @@ function normalizeBase(k: string): string {
 
 // ─── TransportBar ─────────────────────────────────────────────────────────────
 
+interface TransportAction {
+  label: string;
+  onClick(): void;
+  variant: 'amber' | 'emerald';
+  disabled?: boolean;
+  testId?: string;
+}
+
 interface TransportBarProps {
   isReady: boolean;
   isPlaying: boolean;
@@ -64,9 +73,10 @@ interface TransportBarProps {
   onPlay(): void;
   onPause(): void;
   onSeekToStart(): void;
+  actions?: TransportAction[];
 }
 
-function TransportBar({ isReady, isPlaying, currentTime, duration, onPlay, onPause, onSeekToStart }: TransportBarProps) {
+function TransportBar({ isReady, isPlaying, currentTime, duration, onPlay, onPause, onSeekToStart, actions }: TransportBarProps) {
   return (
     <div className="flex items-center gap-2 px-3 py-2" style={{ borderTop: '1px solid var(--line-soft)' }}>
       <Btn onClick={onSeekToStart} disabled={!isReady} title="Return to start">
@@ -95,6 +105,27 @@ function TransportBar({ isReady, isPlaying, currentTime, duration, onPlay, onPau
         tone="var(--fg-3)"
         className="tabular-nums"
       />
+      {actions && actions.length > 0 && (
+        <>
+          <div className="w-px h-4 mx-1" style={{ background: 'var(--line-soft)' }} />
+          {actions.map((a, i) => (
+            <button
+              key={i}
+              onClick={a.onClick}
+              disabled={a.disabled}
+              data-testid={a.testId}
+              className="h-7 px-3 rounded-[3px] text-[11px] mono font-medium tracking-wide transition-colors disabled:opacity-40"
+              style={
+                a.variant === 'emerald'
+                  ? { background: 'var(--emerald)', color: '#081a0f' }
+                  : { background: 'var(--amber)', color: '#1a1200' }
+              }
+            >
+              {a.label}
+            </button>
+          ))}
+        </>
+      )}
     </div>
   );
 }
@@ -332,6 +363,59 @@ export function UnifiedSessionPlayerV2({
   const displaySampleRate = sampleRate ?? (audioSampleRate !== 44100 ? audioSampleRate : undefined);
   const displayBitDepth = bitDepth;
 
+  const { t } = useLocale();
+
+  // B10: action buttons in transport bar — stage-based display (replaces chat ParamChangeCard buttons)
+  const transportActions = useMemo((): TransportAction[] => {
+    if (!chatProps) return [];
+    const hasMixed = takes.some((take) => take.enabled && take.label === 'MIXED');
+    const hasMastered = takes.some((take) => take.enabled && take.label === 'MASTERED');
+    const isGenerating = chatProps.generating ?? false;
+
+    if (chatProps.isMasteringPhase && !hasMastered) {
+      return [{
+        label: isGenerating ? t.dial.chat.generating : t.dial.stemPanel.generateMaster,
+        onClick: () => chatProps.onMasteringFinalRequested?.(),
+        variant: 'emerald',
+        disabled: isGenerating,
+        testId: 'dial-transport-generate-master',
+      }];
+    }
+
+    if (!hasMixed) {
+      return [{
+        label: isGenerating ? t.dial.chat.generating : t.dial.stemPanel.generatePreview,
+        onClick: () => chatProps.onPreviewRequested?.(),
+        variant: 'amber',
+        disabled: isGenerating,
+        testId: 'dial-transport-generate-preview',
+      }];
+    }
+
+    if (!hasMastered) {
+      const actions: TransportAction[] = [];
+      if (chatProps.mode === 'dialogue') {
+        actions.push({
+          label: isGenerating ? t.dial.chat.generating : t.dial.stemPanel.generateMixCheck,
+          onClick: () => chatProps.onMixCheckRequested?.(),
+          variant: 'amber',
+          disabled: isGenerating,
+          testId: 'dial-transport-generate-mix-check',
+        });
+      }
+      actions.push({
+        label: isGenerating ? t.dial.chat.generating : t.dial.stemPanel.generateFinal,
+        onClick: () => chatProps.onFinalRequested?.(),
+        variant: 'emerald',
+        disabled: isGenerating,
+        testId: 'dial-transport-generate-final',
+      });
+      return actions;
+    }
+
+    return [];
+  }, [chatProps, takes, t]);
+
   return (
     <div className="flex min-h-0 h-full gap-0" style={{ background: 'var(--ink-0)' }}>
 
@@ -388,6 +472,7 @@ export function UnifiedSessionPlayerV2({
           onPlay={handlePlayPause}
           onPause={handlePlayPause}
           onSeekToStart={handleSeekToStart}
+          actions={transportActions}
         />
 
         {/* Analyzer — always visible, fixed above StemPanel (B7: DAW master section convention) */}
