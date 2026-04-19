@@ -315,22 +315,39 @@ function DialSessionContent() {
       });
     }
 
-    // MASTERED: completed > processing (disabled)
-    const masteringTask =
+    // MASTERED: final > preview > processing (disabled)
+    const masteringFinalOrProcessingTask =
       masteringFinalTask ??
       session.tasks.find(
         (t) => t.taskType === 'mastering' && (t.status === 'processing' || t.status === 'pending'),
       );
-    if (masteringTask) {
-      const isMasteredEnabled = masteringTask.status === 'completed' && !!masteringTask.finalUrl;
+    if (masteringFinalOrProcessingTask) {
+      const isMasteredEnabled = masteringFinalOrProcessingTask.status === 'completed' && !!masteringFinalOrProcessingTask.finalUrl;
       takes.push({
-        id: masteringTask.id,
+        id: masteringFinalOrProcessingTask.id,
         label: 'MASTERED',
-        url: taskStreamUrl(masteringTask.id),
+        sublabel: 'Final',
+        url: taskStreamUrl(masteringFinalOrProcessingTask.id),
         stemsUrls: null,
-        createdAt: masteringTask.createdAt,
+        createdAt: masteringFinalOrProcessingTask.createdAt,
         enabled: isMasteredEnabled,
       });
+    } else {
+      // Show mastering preview so user can audition before committing to final (220cr)
+      const masteringPreviewPlayable = session.tasks.find(
+        (t) => t.taskType === 'mastering_preview' && t.status === 'completed' && !!t.previewUrl,
+      );
+      if (masteringPreviewPlayable) {
+        takes.push({
+          id: masteringPreviewPlayable.id,
+          label: 'MASTERED',
+          sublabel: 'Preview',
+          url: taskStreamUrl(masteringPreviewPlayable.id),
+          stemsUrls: null,
+          createdAt: masteringPreviewPlayable.createdAt,
+          enabled: true,
+        });
+      }
     }
 
     return takes;
