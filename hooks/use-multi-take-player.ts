@@ -35,6 +35,8 @@ export interface UseMultiTakePlayerReturn {
   analyserL: AnalyserNode | null;
   analyserR: AnalyserNode | null;
   sampleRate: number;
+  /** Per-stem AnalyserNodes tapped after stemGain (before pan). Keyed by stemName. */
+  getStemAnalysers(takeId: string): Record<string, AnalyserNode> | null;
   destroy(): void;
 }
 
@@ -42,6 +44,7 @@ interface StemNodes {
   audio: HTMLAudioElement;
   gainNode: GainNode;
   panNode: StereoPannerNode;
+  stemAnalyser: AnalyserNode;
 }
 
 interface TakeNodes {
@@ -153,9 +156,13 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
         const source = ctx.createMediaElementSource(audio);
         const gainNode = ctx.createGain();
         const panNode = ctx.createStereoPanner();
+        const stemAnalyser = ctx.createAnalyser();
+        stemAnalyser.fftSize = 256;
+        stemAnalyser.smoothingTimeConstant = 0.8;
 
         source.connect(gainNode);
         gainNode.connect(panNode);
+        gainNode.connect(stemAnalyser); // tap for per-stem peak — does not affect audio chain
         panNode.connect(takeMixGain);
 
         const handleReady = () => onLoaded(defaultId, newTakeNodes);
@@ -163,7 +170,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
         // Count errors as "loaded" to avoid hanging isReady forever
         audio.addEventListener('error', handleReady, { once: true });
 
-        stems[stemName] = { audio, gainNode, panNode };
+        stems[stemName] = { audio, gainNode, panNode, stemAnalyser };
       }
 
       newTakeNodes[take.id] = { stems, takeMixGain };
@@ -177,6 +184,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
         for (const sn of Object.values(tn.stems)) {
           sn.audio.pause();
           sn.audio.src = '';
+          sn.stemAnalyser.disconnect();
         }
         tn.takeMixGain.disconnect();
       }
@@ -386,11 +394,23 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     setAnalyserR(null);
   }, []);
 
+  const getStemAnalysers = useCallback(
+    (takeId: string): Record<string, AnalyserNode> | null => {
+      const nodes = takeNodesRef.current[takeId];
+      if (!nodes) return null;
+      return Object.fromEntries(
+        Object.entries(nodes.stems).map(([name, sn]) => [name, sn.stemAnalyser]),
+      );
+    },
+    [],
+  );
+
   return {
     isReady, isPlaying, currentTime, duration, activeTakeId,
     setActiveTake, play, pause, seek,
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
     analyserNode, analyserL, analyserR, sampleRate,
+    getStemAnalysers,
     destroy,
   };
 }
