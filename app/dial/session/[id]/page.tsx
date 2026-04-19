@@ -26,6 +26,12 @@ function toShortLabel(group: string): string {
   return group.replace(/_GROUP$/, '').replace(/^(INSTRUMENT_|TRACK_)/, '');
 }
 
+function toDisplayName(t: Pick<Track, 'originalFilename' | 'instrumentGroup'>, idx: number): string {
+  if (t.originalFilename) return t.originalFilename.replace(/\.[^.]+$/, '');
+  if (t.instrumentGroup) return toShortLabel(t.instrumentGroup);
+  return `Stem ${idx + 1}`;
+}
+
 interface Track {
   id: string;
   originalFilename: string;
@@ -321,10 +327,10 @@ function DialSessionContent() {
     return takes;
   }, [session, guestToken]);
 
-  // Map track UUID → short instrument label for StemPanel display
+  // Map track UUID → display name for StemPanel: originalFilename (no ext) > instrumentGroup > "Stem N"
   const stemLabelMap = useMemo(() => {
     if (!session?.tracks) return {} as Record<string, string>;
-    return Object.fromEntries(session.tracks.map((t) => [t.id, toShortLabel(t.instrumentGroup)]));
+    return Object.fromEntries(session.tracks.map((t, idx) => [t.id, toDisplayName(t, idx)]));
   }, [session?.tracks]);
 
   const fetchSession = useCallback(async (): Promise<Session | null> => {
