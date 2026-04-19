@@ -8,7 +8,8 @@ import Link from 'next/link';
 import { ChatPanel } from '@/components/dial/chat-panel';
 import { ReferenceTrack } from '@/components/dial/reference-track';
 import { AudioAnalyzerProvider } from '@/hooks/use-audio-analyzer-context';
-import { UnifiedSessionPlayer, TakeEntry } from '@/components/dial/unified-session-player';
+import { UnifiedSessionPlayerV2 as UnifiedSessionPlayer } from '@/components/dial/v2/unified-session-player-v2';
+import type { TakeEntry } from '@/components/dial/unified-session-player';
 
 /** Stream audio through our own API to avoid GCS presigned URL length/CORS issues */
 function taskStreamUrl(taskId: string): string {

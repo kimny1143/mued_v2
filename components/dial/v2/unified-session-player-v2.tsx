@@ -144,8 +144,9 @@ export interface UnifiedSessionPlayerV2Props {
   draftNumber?: number | null;
   sampleRate?: number;
   bitDepth?: number;
-  // Chat props
-  chatProps: Omit<ChatPanelV2Props, 'className'>;
+  compact?: boolean; // accepted for API compatibility, not used in v2 layout
+  // Chat props — omit to render player-only (no chat column)
+  chatProps?: Omit<ChatPanelV2Props, 'className'>;
 }
 
 // ─── UnifiedSessionPlayerV2 ───────────────────────────────────────────────────
@@ -158,6 +159,7 @@ export function UnifiedSessionPlayerV2({
   sampleRate,
   bitDepth,
   chatProps,
+  compact: _compact,
 }: UnifiedSessionPlayerV2Props) {
 
   // Only pass enabled (ready) takes to the player hook
@@ -326,7 +328,7 @@ export function UnifiedSessionPlayerV2({
       {/* ── LEFT: Player column ──────────────────────────────────────────────── */}
       <div
         className="flex-1 min-w-0 flex flex-col overflow-y-auto"
-        style={{ borderRight: '1px solid var(--line)' }}
+        style={chatProps ? { borderRight: '1px solid var(--line)' } : undefined}
       >
         <SessionHeader
           title={sessionTitle}
@@ -390,13 +392,15 @@ export function UnifiedSessionPlayerV2({
         </div>
       </div>
 
-      {/* ── RIGHT: Chat column ───────────────────────────────────────────────── */}
-      <div className="shrink-0 w-[440px] flex flex-col" style={{ minHeight: 0 }}>
-        <ChatPanelV2
-          {...chatProps}
-          className="flex-1 min-h-0 rounded-none border-0"
-        />
-      </div>
+      {/* ── RIGHT: Chat column — only when chatProps provided ───────────────── */}
+      {chatProps && (
+        <div className="shrink-0 w-[440px] flex flex-col" style={{ minHeight: 0 }}>
+          <ChatPanelV2
+            {...chatProps}
+            className="flex-1 min-h-0 rounded-none border-0"
+          />
+        </div>
+      )}
     </div>
   );
 }
