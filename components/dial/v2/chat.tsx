@@ -30,9 +30,6 @@ interface ParameterChange {
   reason: string;
 }
 
-const PREVIEW_KEYS = new Set(['presenceSetting', 'panPreference', 'reverbPreference']);
-const FINAL_KEYS = new Set(['gainDb', 'compRatio', 'compThresholdDb', 'compAttackMs', 'compReleaseMs', 'eqBands', 'panAngleDegrees']);
-
 type MixAction = 'adjust_preview' | 'request_mix_check' | 'request_final'
   | 'set_mastering_params' | 'request_mastering_final';
 
@@ -80,32 +77,6 @@ export interface ChatPanelV2Props {
 const VALID_PRESENCE = ['NORMAL', 'LEAD', 'BACKGROUND'];
 const VALID_PAN = ['NO_PREFERENCE', 'LEFT', 'CENTRE', 'RIGHT'];
 const VALID_REVERB = ['NONE', 'LOW', 'MEDIUM', 'HIGH'];
-
-function formatParamValue(key: string, value: unknown): string {
-  if (key === 'eqBands' && Array.isArray(value)) {
-    return (value as EqBand[])
-      .map((b) => `${b.freq >= 1000 ? `${b.freq / 1000}k` : b.freq}Hz ${b.gainDb > 0 ? '+' : ''}${b.gainDb}dB`)
-      .join(', ');
-  }
-  if (key === 'panAngleDegrees') return `${value}°`;
-  if (key === 'gainDb') return `${value}dB`;
-  if (key === 'compRatio') return `${value}:1`;
-  if (key === 'compThresholdDb') return `${value}dB`;
-  if (key === 'compAttackMs') return `${value}ms`;
-  if (key === 'compReleaseMs') return `${value}ms`;
-  return String(value);
-}
-
-function splitChanges(changes: ParameterChange['changes']) {
-  const preview: [string, unknown][] = [];
-  const final_: [string, unknown][] = [];
-  for (const [k, v] of Object.entries(changes)) {
-    if (v === undefined || v === null) continue;
-    if (PREVIEW_KEYS.has(k)) preview.push([k, v]);
-    else if (FINAL_KEYS.has(k)) final_.push([k, v]);
-  }
-  return { preview, final: final_ };
-}
 
 function stripJsonBlock(content: string) {
   return content.replace(/```json\s*\n?[\s\S]*?\n?```/g, '').trim();

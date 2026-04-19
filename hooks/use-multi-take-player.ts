@@ -7,6 +7,8 @@ export interface TakeDef {
   label: 'RAW' | 'MIXED' | 'MASTERED';
   /** Proxy URLs keyed by stem name. MASTERED uses { main: url }. */
   stemUrls: Record<string, string>;
+  /** Loudness compensation offset in dB applied to this take's output (e.g. -14 - rawLufs). */
+  gainOffsetDb?: number;
 }
 
 export interface StemState {
@@ -67,6 +69,8 @@ interface TakeNodes {
   stems: Record<string, StemNodes>;
   /** Gain 0=muted / 1=active — switched on take change */
   takeMixGain: GainNode;
+  /** Fixed loudness-compensation gain (set once on init, never changed). */
+  loudnessGain: GainNode;
 }
 
 // ─── Module-level helpers ─────────────────────────────────────────────────────
@@ -206,7 +210,13 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     for (const take of takes) {
       const takeMixGain = ctx.createGain();
       takeMixGain.gain.value = take.id === defaultId ? 1 : 0;
-      takeMixGain.connect(masterGain);
+
+      // Fixed loudness-compensation gain: compensates RAW loudness to match processed takes.
+      // Chain: takeMixGain → loudnessGain → masterGain
+      const loudnessGain = ctx.createGain();
+      loudnessGain.gain.value = Math.pow(10, (take.gainOffsetDb ?? 0) / 20);
+      takeMixGain.connect(loudnessGain);
+      loudnessGain.connect(masterGain);
 
       const stems: Record<string, StemNodes> = {};
       for (const stemName of Object.keys(take.stemUrls)) {
@@ -223,7 +233,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
         stems[stemName] = { gainNode, panNode, stemAnalyser, source: null, buffer: null };
       }
 
-      newTakeNodes[take.id] = { stems, takeMixGain };
+      newTakeNodes[take.id] = { stems, takeMixGain, loudnessGain };
     }
 
     takeNodesRef.current = newTakeNodes;
@@ -345,6 +355,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       stopAllSources(newTakeNodes);
       for (const tn of Object.values(newTakeNodes)) {
         tn.takeMixGain.disconnect();
+        tn.loudnessGain.disconnect();
         for (const sn of Object.values(tn.stems)) {
           sn.gainNode.disconnect();
           sn.panNode.disconnect();
