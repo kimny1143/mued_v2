@@ -383,9 +383,17 @@ export function UnifiedSessionPlayerV2({
           onSeekToStart={handleSeekToStart}
         />
 
-        {/* Stem Panel — RAW/MIXED only */}
+        {/* Analyzer — always visible, fixed above StemPanel (B7: DAW master section convention) */}
+        <div className="flex-shrink-0 mt-0">
+          <AnalyzerCluster
+            data={analyzerData}
+            activeTakeLabel={activeTakeLabel}
+          />
+        </div>
+
+        {/* Stem Panel — RAW/MIXED only, below Analyzer, scrollable */}
         {showStemPanel && stemDataList.length > 0 && (
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 max-h-64 overflow-y-auto">
             <StemPanel
               stems={stemDataList}
               playhead={playhead}
@@ -395,14 +403,6 @@ export function UnifiedSessionPlayerV2({
             />
           </div>
         )}
-
-        {/* Analyzer — always visible */}
-        <div className="flex-shrink-0 mt-0">
-          <AnalyzerCluster
-            data={analyzerData}
-            activeTakeLabel={activeTakeLabel}
-          />
-        </div>
       </div>
 
       {/* ── RIGHT: Chat column — only when chatProps provided ───────────────── */}
