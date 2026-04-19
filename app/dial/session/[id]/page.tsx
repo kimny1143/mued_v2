@@ -274,13 +274,15 @@ function DialSessionContent() {
       ...completedPreviews.map((t, i) => ({ task: t, sublabel: `Preview ${i + 1}` })),
     ].sort((a, b) => new Date(b.task.createdAt).getTime() - new Date(a.task.createdAt).getTime());
 
-    allCompletedMix.forEach(({ task, sublabel }, i) => {
+    // Give proxiedStems to ALL MIXED takes — session-based proxy resolves to best task server-side.
+    // Fixes B1: FinalMix generation used to push i=0 stems and null-out older takes' stem panels.
+    allCompletedMix.forEach(({ task, sublabel }) => {
       takes.push({
         id: task.id,
         label: 'MIXED',
         sublabel,
         url: taskStreamUrl(task.id),
-        stemsUrls: i === 0 ? proxiedStems : null, // stems on most recent only
+        stemsUrls: proxiedStems,
         createdAt: task.createdAt,
         enabled: true,
       });
@@ -332,6 +334,18 @@ function DialSessionContent() {
     if (!session?.tracks) return {} as Record<string, string>;
     return Object.fromEntries(session.tracks.map((t, idx) => [t.id, toDisplayName(t, idx)]));
   }, [session?.tracks]);
+
+  // Stable key for UnifiedSessionPlayer — remount when:
+  // 1. Enabled take IDs change (new task completes)
+  // 2. Stem presence flips false→true (B2 fix: remount when stemsUrls first arrives so hook
+  //    rebuilds nodes with correct stem keys instead of the { main: url } fallback)
+  const playerKey = useMemo(() => {
+    const ids = sessionTakes.filter((t) => t.enabled).map((t) => t.id).join(',');
+    const hasStems = sessionTakes.some(
+      (t) => t.enabled && !!t.stemsUrls && Object.keys(t.stemsUrls).length > 0,
+    );
+    return `${ids}:stems=${hasStems}`;
+  }, [sessionTakes]);
 
   const fetchSession = useCallback(async (): Promise<Session | null> => {
     try {
@@ -1218,7 +1232,7 @@ function DialSessionContent() {
         {/* Unified player — RAW / MIXED / MASTERED tabs */}
         {sessionTakes.length > 0 && (
           <UnifiedSessionPlayer
-            key={sessionTakes.filter((t) => t.enabled).map((t) => t.id).join(',')}
+            key={playerKey}
             takes={sessionTakes}
             sessionId={session.id}
             guestToken={guestToken}
@@ -1388,7 +1402,7 @@ function DialSessionContent() {
                 {/* Unified Player */}
                 {sessionTakes.length > 0 ? (
                   <UnifiedSessionPlayer
-                    key={sessionTakes.filter((t) => t.enabled).map((t) => t.id).join(',')}
+                    key={playerKey}
                     takes={sessionTakes}
                     sessionId={session.id}
                     guestToken={guestToken}
