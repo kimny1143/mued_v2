@@ -886,30 +886,8 @@ function DialSessionContent() {
     }
   };
 
-  // ─── Render ─────────────────────────────────────────────────────────────────
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
-        <div className="animate-pulse text-zinc-400" role="status">{t.dial.session.loadingSession}</div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-bold mb-2">{t.dial.session.sessionNotFound}</h2>
-          <p className="text-zinc-400">{error || 'This session may have expired.'}</p>
-        </div>
-      </div>
-    );
-  }
-
-  const hasTracks = session.tracks.length > 0;
-  const latestTask = session.tasks[0];
-  const isProcessing = latestTask?.status === 'processing' || latestTask?.status === 'pending';
+  // useMemo hooks must be called unconditionally before any early returns (React hook rules)
+  const latestTask = session?.tasks[0];
   const generatingLabel = useMemo(() => {
     if (!mixGenerating || !latestTask) return undefined;
     switch (latestTask.taskType) {
@@ -933,7 +911,7 @@ function DialSessionContent() {
 
   const generatingEta = useMemo(() => {
     if (!mixGenerating || !latestTask) return undefined;
-    const trackCount = session.tracks.length;
+    const trackCount = session?.tracks.length ?? 0;
     switch (latestTask.taskType) {
       case 'preview': return trackCount > 8 ? '5–20 min' : '2–10 min';
       case 'mix_check': return '3–10 min';
@@ -943,7 +921,31 @@ function DialSessionContent() {
       case 'mastering': return '1–5 min';
       default: return undefined;
     }
-  }, [mixGenerating, latestTask, session.tracks.length]);
+  }, [mixGenerating, latestTask, session?.tracks.length]);
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+        <div className="animate-pulse text-zinc-400" role="status">{t.dial.session.loadingSession}</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-bold mb-2">{t.dial.session.sessionNotFound}</h2>
+          <p className="text-zinc-400">{error || 'This session may have expired.'}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const hasTracks = session.tracks.length > 0;
+  const isProcessing = latestTask?.status === 'processing' || latestTask?.status === 'pending';
   const hasCompletedPreview = session.tasks.some(
     (t) => t.taskType === 'preview' && t.status === 'completed',
   );
