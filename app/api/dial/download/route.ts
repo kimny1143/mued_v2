@@ -14,18 +14,87 @@
  *
  * sessionId+stemKey mode: server selects the best task (preview MP3 preferred over final WAV)
  * — this avoids the client-side stemsUrls desync where preview task shows null client-side.
+ *
+ * Expired GCS URL recovery: detects <Code>ExpiredToken</Code> in GCS 400/403 response,
+ * re-polls RoEx API for fresh presigned URLs, updates DB, and retries the request once.
+ * Returns 410 Gone if refresh fails.
  */
 
 import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { dialTasks } from '@/db/schema';
+import { dialTasks, dialTracks } from '@/db/schema';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership, verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiValidationError, apiNotFound, apiServerError } from '@/lib/api-response';
+import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview } from '@/lib/roex';
 
 // Allow longer duration for large WAV file streaming
 export const maxDuration = 120;
+
+type DialTask = typeof dialTasks.$inferSelect;
+
+/**
+ * Re-fetch fresh presigned URLs from RoEx when a GCS token expires.
+ * Updates dial_tasks in DB with new URLs. Returns the new URL for the
+ * specific stem/file requested, or null if refresh fails.
+ */
+async function refreshExpiredGcsUrl(task: DialTask, stemKey: string | null): Promise<string | null> {
+  try {
+    const client = createRoExClient();
+    let newStemsUrls: Record<string, string> | undefined;
+    let newPreviewUrl: string | undefined;
+    let newFinalUrl: string | undefined;
+
+    const type = task.taskType;
+
+    if (type === 'preview' || type === 'mix_check') {
+      const result = await pollMixPreview(client, task.roexTaskId);
+      newStemsUrls = result.stemsUrl;
+      newPreviewUrl = result.previewUrl;
+      newFinalUrl = result.finalUrl;
+    } else if (type === 'final_basic' || type === 'final_advanced') {
+      const tracks = await db.query.dialTracks.findMany({
+        where: eq(dialTracks.sessionId, task.sessionId),
+      });
+      const trackUrls = tracks.map((t) => t.roexUploadUrl).filter(Boolean);
+      if (trackUrls.length < 2) return null;
+      const result = await pollMixFinal(client, task.roexTaskId, trackUrls);
+      newStemsUrls = result.stemsUrl;
+      newFinalUrl = result.finalUrl;
+    } else if (type === 'mastering_preview' || type === 'mastering') {
+      const result = await pollMasterPreview(client, task.roexTaskId);
+      newPreviewUrl = result.previewUrl;
+      newFinalUrl = result.finalUrl;
+    } else {
+      return null;
+    }
+
+    // Persist fresh URLs to DB
+    const updates: Record<string, unknown> = {};
+    if (newStemsUrls) updates.stemsUrls = newStemsUrls;
+    if (newPreviewUrl) updates.previewUrl = newPreviewUrl;
+    if (newFinalUrl) updates.finalUrl = newFinalUrl;
+    if (Object.keys(updates).length > 0) {
+      await db.update(dialTasks).set(updates).where(eq(dialTasks.id, task.id));
+    }
+
+    // Return the URL for the specific request
+    if (stemKey && newStemsUrls) {
+      if (newStemsUrls[stemKey]) return newStemsUrls[stemKey];
+      // Base-name fallback (same logic as main route)
+      const normalizeBase = (k: string) =>
+        k.replace(/\.[^.]+$/, '').replace(/_normalized$/i, '').toLowerCase();
+      const base = normalizeBase(stemKey);
+      const matched = Object.entries(newStemsUrls).find(([k]) => normalizeBase(k) === base);
+      return matched?.[1] ?? null;
+    }
+
+    return newFinalUrl ?? newPreviewUrl ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export const GET = withDialAuth(async (auth) => {
   const { searchParams } = new URL(auth.request.url);
@@ -34,10 +103,11 @@ export const GET = withDialAuth(async (auth) => {
   const isInline = searchParams.get('inline') === '1';
   const stemKey = searchParams.get('stemKey');
 
-  // Determine source URL and file metadata
   let sourceUrl: string;
   let filename: string;
   let contentType: string;
+  let taskForRefresh: DialTask | null = null;
+  let stemKeyForRefresh: string | null = stemKey;
 
   if (sessionId && stemKey) {
     // Session-based stem lookup: server picks best task (preview MP3 preferred over final WAV).
@@ -74,6 +144,7 @@ export const GET = withDialAuth(async (auth) => {
     sourceUrl = resolvedUrl;
     filename = `MUEDial_stem_${stemKey}_${sessionId.slice(0, 8)}.${stemTask.taskType === 'preview' ? 'mp3' : 'wav'}`;
     contentType = stemTask.taskType === 'preview' ? 'audio/mpeg' : 'audio/wav';
+    taskForRefresh = stemTask;
   } else {
     // Existing taskId-based flow
     if (!taskId) return apiValidationError('taskId or (sessionId + stemKey) is required');
@@ -81,6 +152,7 @@ export const GET = withDialAuth(async (auth) => {
     const result = await verifyDialTaskOwnership(taskId, auth);
     if (!result) return apiNotFound('Task not found');
     const { task } = result;
+    taskForRefresh = task;
 
     if (stemKey) {
       // Proxy an individual stem — bypasses GCS CORS restriction (same issue as main audio, PR#156)
@@ -91,6 +163,7 @@ export const GET = withDialAuth(async (auth) => {
       filename = `MUEDial_stem_${stemKey}_${taskId.slice(0, 8)}.wav`;
       contentType = 'audio/wav';
     } else {
+      stemKeyForRefresh = null;
       // Priority: r2FinalUrl > finalUrl > previewUrl
       const isPreview = !task.finalUrl && !!task.previewUrl;
       const url = task.r2FinalUrl || task.finalUrl || task.previewUrl;
@@ -116,7 +189,23 @@ export const GET = withDialAuth(async (auth) => {
     const rangeHeader = auth.request.headers.get('Range');
     const fetchOpts: RequestInit = rangeHeader ? { headers: { Range: rangeHeader } } : {};
 
-    const sourceRes = await fetch(sourceUrl, fetchOpts);
+    let sourceRes = await fetch(sourceUrl, fetchOpts);
+
+    // GCS returns 400 with <Code>ExpiredToken</Code> when presigned URL has expired (24-48h).
+    // Re-poll RoEx for fresh URLs, update DB, and retry once.
+    if (!sourceRes.ok && (sourceRes.status === 400 || sourceRes.status === 403) && taskForRefresh) {
+      const bodyText = await sourceRes.text();
+      if (bodyText.includes('ExpiredToken') || bodyText.includes('AccessDenied')) {
+        const newUrl = await refreshExpiredGcsUrl(taskForRefresh, stemKeyForRefresh);
+        if (newUrl) {
+          sourceRes = await fetch(newUrl, fetchOpts);
+        }
+        if (!newUrl || !sourceRes.ok) {
+          return new NextResponse('Audio link expired. Please reload the session.', { status: 410 });
+        }
+      }
+    }
+
     if (!sourceRes.body) {
       return apiServerError(`Source file fetch failed (${sourceRes.status})`);
     }
