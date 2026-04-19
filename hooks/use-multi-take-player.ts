@@ -73,6 +73,7 @@ interface TakeNodes {
 
 async function fetchAndDecode(url: string, ctx: AudioContext): Promise<AudioBuffer> {
   const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
   const arrayBuffer = await response.arrayBuffer();
   return ctx.decodeAudioData(arrayBuffer);
 }
@@ -133,6 +134,8 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   const isPlayingRef = useRef(false);
   /** Take ID queued for activation once its decode completes. */
   const pendingActivateRef = useRef<string | null>(null);
+  /** Ref to retry-decode function — set inside the mount effect to close over takeNodes/counts. */
+  const retryTakeRef = useRef<((id: string) => void) | null>(null);
   /** Stable ref for takeDecodeStatus — accessible in setActiveTake without closure stale. */
   const takeDecodeStatusRef = useRef<Record<string, TakeDecodeStatus>>(
     Object.fromEntries(takes.map((t) => [t.id, 'decoding' as TakeDecodeStatus])),
@@ -276,18 +279,53 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
 
     const decodeStem = async (takeId: string, stemName: string, url: string) => {
       if (cancelled) return;
+      if (!url) {
+        console.error(`[dial:decode] empty URL for stem "${stemName}" in take ${takeId}`);
+        onStemDecoded(takeId, false);
+        return;
+      }
       let buffer: AudioBuffer | null = null;
       try {
         buffer = await fetchAndDecode(url, ctx);
-      } catch {
-        // Retry once on network glitch
+      } catch (e1) {
+        console.error(`[dial:decode] attempt 1 failed: "${stemName}" take=${takeId.slice(-8)}`, e1);
         try {
           if (!cancelled) buffer = await fetchAndDecode(url, ctx);
-        } catch { /* give up after second failure */ }
+        } catch (e2) {
+          console.error(`[dial:decode] retry failed: "${stemName}" take=${takeId.slice(-8)}`, e2);
+        }
       }
       if (cancelled) return;
       if (buffer) newTakeNodes[takeId].stems[stemName].buffer = buffer;
       onStemDecoded(takeId, buffer !== null);
+    };
+
+    // Allow error-state takes to be re-decoded on demand (e.g. user clicks error pill)
+    retryTakeRef.current = (takeId: string) => {
+      if (cancelled) return;
+      const take = takes.find((t) => t.id === takeId);
+      if (!take) return;
+      // Reset per-take counts so onStemDecoded re-gates the status correctly
+      takeDecodeCounts.set(takeId, {
+        done: 0,
+        success: 0,
+        total: Object.keys(take.stemUrls).length,
+      });
+      // Clear stale buffers and stop any playing sources for this take
+      const tn = newTakeNodes[takeId];
+      if (tn) {
+        for (const sn of Object.values(tn.stems)) {
+          sn.buffer = null;
+          if (sn.source) {
+            try { sn.source.stop(); } catch { /* already stopped */ }
+            sn.source.disconnect();
+            sn.source = null;
+          }
+        }
+      }
+      for (const [name, url] of Object.entries(take.stemUrls)) {
+        decodeStem(takeId, name, url).catch(() => {});
+      }
     };
 
     // Decode ALL takes' stems in parallel — eliminates early-take-switch window.
@@ -419,9 +457,21 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   );
 
   const setActiveTake = useCallback((id: string) => {
-    // If the take isn't decoded yet, queue for auto-activation when ready
-    if (takeDecodeStatusRef.current[id] !== 'ready') {
+    const status = takeDecodeStatusRef.current[id];
+
+    // Still decoding — queue for auto-activation when ready
+    if (status === 'decoding') {
       pendingActivateRef.current = id;
+      return;
+    }
+
+    // Decode failed — reset to decoding, trigger retry, queue for auto-activation
+    if (status === 'error') {
+      pendingActivateRef.current = id;
+      const upd = { ...takeDecodeStatusRef.current, [id]: 'decoding' as TakeDecodeStatus };
+      takeDecodeStatusRef.current = upd;
+      setTakeDecodeStatus({ ...upd });
+      retryTakeRef.current?.(id);
       return;
     }
 

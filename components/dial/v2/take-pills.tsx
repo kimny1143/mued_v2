@@ -181,7 +181,7 @@ export function TakeHistory({ open, takes, activeTake, activeSub, onPick, onTogg
                         key={sub.id}
                         onClick={() => !isDecoding && onPick(take.key, sub.id)}
                         disabled={isDecoding}
-                        title={isDecoding ? 'Decoding…' : isError ? 'Decode failed — click to retry' : undefined}
+                        title={isDecoding ? 'Decoding…' : isError ? 'クリックして再読み込み' : undefined}
                         className={
                           'w-full text-left px-2 py-1.5 rounded-[2px] flex items-center justify-between gap-2 transition-colors ' +
                           (isActive
