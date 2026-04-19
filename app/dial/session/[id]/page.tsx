@@ -1520,10 +1520,10 @@ function DialSessionContent() {
 
         {session.paymentStatus === 'paid' && !hasFinal && (
           showChat ? (
-            // 2-column layout: Chat dominant (left) + Sidebar (right)
+            // 2-column layout: Player primary (left) + Chat compact (right)
             <div className="flex flex-col lg:flex-row gap-6">
-              {/* Left: Chat panel */}
-              <div className="flex-1 min-w-0 flex flex-col lg:order-1">
+              {/* Right: Chat panel — compact fixed width */}
+              <div className="lg:w-[440px] shrink-0 flex flex-col lg:order-2">
                 {/* Processing banner — visible when task is being processed server-side */}
                 {isProcessing && latestTask && (() => {
                   const trackCount = session.tracks.length;
@@ -1591,8 +1591,8 @@ function DialSessionContent() {
                 </div>
               </div>
 
-              {/* Right: Sidebar — player, take history, tracks, upload */}
-              <div className="lg:w-[440px] shrink-0 space-y-5 overflow-y-auto lg:max-h-[calc(100vh-14rem)] lg:sticky lg:top-24 lg:self-start lg:order-2">
+              {/* Left: Player sidebar — primary, dominant width */}
+              <div className="flex-1 min-w-0 space-y-5 overflow-y-auto lg:max-h-[calc(100vh-14rem)] lg:sticky lg:top-24 lg:self-start lg:order-1">
                 {/* Unified Player */}
                 {sessionTakes.length > 0 ? (
                   <UnifiedSessionPlayer
