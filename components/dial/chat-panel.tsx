@@ -295,18 +295,27 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
     }
   }, [tracks.length, messages.length, loadingHistory, sending, sendMessage, isMasteringPhase, mode]);
 
+  // Guard: if history already loaded with mastering phase active, mark greeting as sent
+  // (prevents duplicate greeting on page reload — only fresh mix→mastering transition should trigger)
+  useEffect(() => {
+    if (!loadingHistory && isMasteringPhase && messages.length > 0) {
+      masteringGreetingSentRef.current = true;
+    }
+  }, [loadingHistory, isMasteringPhase, messages.length]);
+
   // Auto-trigger mastering phase greeting (mix+mastering transition only)
   useEffect(() => {
     if (
       isMasteringPhase &&
       !masteringGreetingSentRef.current &&
       !sending &&
-      messages.length > 0
+      messages.length > 0 &&
+      !loadingHistory
     ) {
       masteringGreetingSentRef.current = true;
       sendMessage('ミックスが完了しました。マスタリングに進みたいです。', { showInChat: false });
     }
-  }, [isMasteringPhase, sending, messages.length, sendMessage]);
+  }, [isMasteringPhase, sending, messages.length, loadingHistory, sendMessage]);
 
   // Strip JSON code block from display content
   const formatContent = (content: string) => {
