@@ -145,6 +145,7 @@ export interface UnifiedSessionPlayerV2Props {
   sampleRate?: number;
   bitDepth?: number;
   compact?: boolean; // accepted for API compatibility, not used in v2 layout
+  stemLabelMap?: Record<string, string>; // track UUID → short display label (e.g. BASS, VOCAL)
   // Chat props — omit to render player-only (no chat column)
   chatProps?: Omit<ChatPanelV2Props, 'className'>;
 }
@@ -159,6 +160,7 @@ export function UnifiedSessionPlayerV2({
   sampleRate,
   bitDepth,
   chatProps,
+  stemLabelMap,
   compact: _compact,
 }: UnifiedSessionPlayerV2Props) {
 
@@ -248,7 +250,7 @@ export function UnifiedSessionPlayerV2({
 
       return {
         id: name,
-        name,
+        name: stemLabelMap?.[name] ?? normalizeBase(name),
         color: STEM_COLORS[colorIdx],
         peaks,
         gainDb: initParams?.gainDb ?? 0,
@@ -258,7 +260,7 @@ export function UnifiedSessionPlayerV2({
         peakDb: perStemPeakDb[name] ?? -60,
       };
     });
-  }, [stemNames, stemStates, activeTakeId, stemPeaks, initialStemMap, perStemPeakDb]);
+  }, [stemNames, stemStates, activeTakeId, stemPeaks, initialStemMap, perStemPeakDb, stemLabelMap]);
 
   const initialGainDbMap = useMemo(() =>
     Object.fromEntries(stemDataList.map((s) => [s.id, s.gainDb])),

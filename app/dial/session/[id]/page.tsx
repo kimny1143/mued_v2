@@ -6,7 +6,6 @@ import { useAuth } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
 import Link from 'next/link';
 import { ChatPanel } from '@/components/dial/chat-panel';
-import { ReferenceTrack } from '@/components/dial/reference-track';
 import { AudioAnalyzerProvider } from '@/hooks/use-audio-analyzer-context';
 import { UnifiedSessionPlayerV2 as UnifiedSessionPlayer } from '@/components/dial/v2/unified-session-player-v2';
 import type { TakeEntry } from '@/components/dial/unified-session-player';
@@ -20,6 +19,11 @@ function taskStreamUrl(taskId: string): string {
 function stemStreamUrl(sessionId: string, stemKey: string, token?: string | null): string {
   const base = `/api/dial/download?sessionId=${sessionId}&stemKey=${encodeURIComponent(stemKey)}&inline=1`;
   return token ? `${base}&token=${encodeURIComponent(token)}` : base;
+}
+
+/** Convert InstrumentGroup enum to short DAW-style label: BASS_GROUP → BASS */
+function toShortLabel(group: string): string {
+  return group.replace(/_GROUP$/, '').replace(/^(INSTRUMENT_|TRACK_)/, '');
 }
 
 interface Track {
@@ -160,9 +164,6 @@ function DialSessionContent() {
   const [selectedTakeId, setSelectedTakeId] = useState<string | null>(null);
   const prevCompletedCountRef = useRef(0);
 
-  // Track whether params changed since last preview
-  const [dirty, setDirty] = useState(false);
-  const lastPreviewSnapshotRef = useRef<string>('');
 
   // Take folding — show only latest 3, collapse older
   const [showOlderTakes, setShowOlderTakes] = useState(false);
@@ -322,6 +323,12 @@ function DialSessionContent() {
     return takes;
   }, [session, guestToken]);
 
+  // Map track UUID → short instrument label for StemPanel display
+  const stemLabelMap = useMemo(() => {
+    if (!session?.tracks) return {} as Record<string, string>;
+    return Object.fromEntries(session.tracks.map((t) => [t.id, toShortLabel(t.instrumentGroup)]));
+  }, [session?.tracks]);
+
   const fetchSession = useCallback(async (): Promise<Session | null> => {
     try {
       const res = await fetch(`/api/dial/session?id=${sessionId}`, {
@@ -450,48 +457,6 @@ function DialSessionContent() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [session, downloadedItems]);
 
-  // Snapshot current params to detect changes after preview
-  const buildSnapshot = useCallback((s: Session) => {
-    const trackPart = s.tracks
-      .map((t) => `${t.id}:${t.instrumentGroup}:${t.presenceSetting}:${t.panPreference}:${t.reverbPreference}`)
-      .sort()
-      .join(',');
-    return `${s.musicalStyle}|${trackPart}`;
-  }, []);
-
-  // Build snapshot from previewParams (persisted at preview-generation time)
-  const buildSnapshotFromParams = useCallback((pp: PreviewParams) => {
-    const trackPart = pp.tracks
-      .map((t) => `${t.id}:${t.instrumentGroup}:${t.presenceSetting ?? 'NORMAL'}:${t.panPreference ?? 'NO_PREFERENCE'}:${t.reverbPreference ?? 'NONE'}`)
-      .sort()
-      .join(',');
-    return `${pp.musicalStyle}|${trackPart}`;
-  }, []);
-
-  // Restore snapshot from the latest completed preview's previewParams
-  useEffect(() => {
-    if (!session) return;
-    const latestPreview = session.tasks
-      .filter((t) => t.taskType === 'preview' && t.status === 'completed')
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-    if (latestPreview && !lastPreviewSnapshotRef.current) {
-      if (latestPreview.previewParams) {
-        lastPreviewSnapshotRef.current = buildSnapshotFromParams(latestPreview.previewParams);
-      } else {
-        // Fallback for older previews without full params
-        lastPreviewSnapshotRef.current = buildSnapshot(session);
-      }
-    }
-  }, [session, buildSnapshot, buildSnapshotFromParams]);
-
-  // Check dirty whenever session changes
-  useEffect(() => {
-    if (!session || !lastPreviewSnapshotRef.current) {
-      setDirty(false);
-      return;
-    }
-    setDirty(buildSnapshot(session) !== lastPreviewSnapshotRef.current);
-  }, [session, buildSnapshot]);
 
   // Auto-select latest completed task for sidebar player
   useEffect(() => {
@@ -708,32 +673,6 @@ function DialSessionContent() {
     }
   };
 
-  const handleTrackGroupChange = async (trackId: string, newGroup: string) => {
-    if (!session) return;
-    setError(null);
-
-    try {
-      const res = await fetch('/api/dial/tracks', {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify({
-          sessionId: session.id,
-          updates: [{ trackId, instrumentGroup: newGroup }],
-        }),
-      });
-
-      const data = await res.json();
-      if (!data.success) {
-        setError(data.error || 'Failed to update track');
-        return;
-      }
-
-      await fetchSession();
-    } catch {
-      setError('Update error');
-    }
-  };
-
   const _handleStyleChange = async (newStyle: string) => {
     if (!session) return;
     setError(null);
@@ -775,9 +714,6 @@ function DialSessionContent() {
         return;
       }
 
-      // Reset dirty state — new preview is based on current params
-      lastPreviewSnapshotRef.current = buildSnapshot(session);
-      setDirty(false);
 
       await fetchSession();
     } catch {
@@ -1075,75 +1011,6 @@ function DialSessionContent() {
     </div>
   );
 
-  const tracksSection = hasTracks && !(isMasteringPhase && !isMasteringOnly) && (
-    <div>
-      <h2 className="text-lg font-medium mb-3">
-        {t.dial.session.tracks} ({session.tracks.length})
-      </h2>
-      <div className="space-y-2">
-        {session.tracks.map((track) => (
-          <div
-            key={track.id}
-            className="flex items-center justify-between p-3 bg-zinc-900 border border-zinc-800 rounded-lg"
-          >
-            <span className="text-sm truncate max-w-[200px]">{track.originalFilename}</span>
-            <div className="flex items-center gap-3">
-              {!isMasteringOnly && (
-                hasFinal ? (
-                  <span className="text-xs text-zinc-500 px-2 py-0.5 bg-zinc-800 rounded">
-                    {track.instrumentGroup}
-                  </span>
-                ) : (
-                  <select
-                    value={track.instrumentGroup}
-                    onChange={(e) => handleTrackGroupChange(track.id, e.target.value)}
-                    className="px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-white text-xs"
-                  >
-                    {INSTRUMENT_GROUPS.map((g) => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
-                )
-              )}
-              {!hasFinal && (
-                <button
-                  onClick={() => handleDeleteTrack(track.id)}
-                  className="text-zinc-600 hover:text-red-400 text-xs transition-colors"
-                  title={t.dial.session.delete}
-                  aria-label={`${t.dial.session.delete} ${track.originalFilename}`}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Dirty banner */}
-      {dirty && hasCompletedPreview && !isProcessing && !isMasteringOnly && (
-        <div className="mt-3 p-3 bg-amber-900/20 border border-amber-800/50 rounded-lg text-sm text-amber-300">
-          {t.dial.session.settingsChanged}
-        </div>
-      )}
-
-      {/* Preview Button (mix only — mastering uses chat-driven flow) */}
-      {!isProcessing && !hasFinal && !isMasteringOnly && !isMasteringPhase && (
-        <button
-          onClick={handlePreview}
-          disabled={previewing}
-          data-testid="dial-generate-preview"
-          className="mt-4 w-full px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-zinc-800 rounded-lg text-sm font-medium transition-colors"
-        >
-          {previewing
-            ? t.dial.session.processing
-            : dirty && hasCompletedPreview
-              ? t.dial.session.regeneratePreview
-              : t.dial.session.generatePreview}
-        </button>
-      )}
-    </div>
-  );
 
   // Render a single task card (preview take or non-preview)
   const renderTask = (task: Task, allPreviews: Task[]) => {
@@ -1364,6 +1231,7 @@ function DialSessionContent() {
             sessionId={session.id}
             guestToken={guestToken}
             initialParams={latestParamChanges}
+            stemLabelMap={stemLabelMap}
           />
         )}
 
@@ -1602,6 +1470,7 @@ function DialSessionContent() {
                     sessionId={session.id}
                     guestToken={guestToken}
                     initialParams={latestParamChanges}
+                    stemLabelMap={stemLabelMap}
                     compact
                   />
                 ) : (
@@ -1679,18 +1548,6 @@ function DialSessionContent() {
                   </div>
                 )}
 
-                {/* Reference Track */}
-                {session.paymentStatus === 'paid' && (
-                  <ReferenceTrack
-                    sessionId={session.id}
-                    referenceFilename={session.referenceTrackFilename ?? null}
-                    referenceAnalysis={session.referenceAnalysisResult ?? null}
-                    headers={headers}
-                    onUpdate={fetchSession}
-                  />
-                )}
-
-                {tracksSection}
                 {uploadSection}
               </div>
             </div>
