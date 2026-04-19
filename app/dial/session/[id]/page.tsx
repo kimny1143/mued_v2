@@ -924,6 +924,20 @@ function DialSessionContent() {
       ? `${m}:${String(s).padStart(2, '0')}`
       : `${s}s`;
   }, [mixGenerating, elapsedSeconds]);
+
+  const generatingEta = useMemo(() => {
+    if (!mixGenerating || !latestTask) return undefined;
+    const trackCount = session.tracks.length;
+    switch (latestTask.taskType) {
+      case 'preview': return trackCount > 8 ? '5–20 min' : '2–10 min';
+      case 'mix_check': return '3–10 min';
+      case 'final_basic':
+      case 'final_advanced': return '3–10 min';
+      case 'mastering_preview': return '1–5 min';
+      case 'mastering': return '1–5 min';
+      default: return undefined;
+    }
+  }, [mixGenerating, latestTask, session.tracks.length]);
   const hasCompletedPreview = session.tasks.some(
     (t) => t.taskType === 'preview' && t.status === 'completed',
   );
@@ -1541,6 +1555,7 @@ function DialSessionContent() {
                     generating={mixGenerating}
                     generatingLabel={generatingLabel}
                     generatingElapsed={generatingElapsed}
+                    generatingEta={generatingEta}
                     phase={phase}
                     mode={session.mode ?? session.masteringMode ?? 'omakase'}
                     previewCount={session.previewCount}
