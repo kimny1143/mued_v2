@@ -256,6 +256,8 @@ export type AnalysisResult = {
   monoCompatible: boolean;
   clipping: string; // "NONE" | "MINOR" | "MAJOR" etc.
   tonalProfile: Record<string, string>; // e.g. { bass_frequency: "HIGH", high_frequency: "MEDIUM" }
+  sampleRate?: number; // e.g. 44100, 48000
+  bitDepth?: number;   // e.g. 16, 24, 32
   raw: Record<string, unknown>;
 };
 

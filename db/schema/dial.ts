@@ -81,6 +81,7 @@ export const dialSessions = pgTable('dial_sessions', {
   status: dialSessionStatusEnum('status').notNull().default('uploading'),
   musicalStyle: text('musical_style').notNull(), // MusicalStyle enum value
   title: text('title'), // User-given project name
+  draftNumber: integer('draft_number').notNull().default(1), // Per-user auto-increment session number
   // Guest access fields
   guestEmail: text('guest_email'),
   guestToken: text('guest_token').unique(), // 64-char hex for session access

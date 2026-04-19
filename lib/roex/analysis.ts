@@ -16,6 +16,8 @@ const DEV_ANALYSIS_RESULT: AnalysisResult = {
     high_mid_frequency: 'MEDIUM',
     high_frequency: 'MEDIUM',
   },
+  sampleRate: 44100,
+  bitDepth: 24,
   raw: { _dev: true },
 };
 
@@ -93,6 +95,8 @@ export async function analyzeMix(
     monoCompatible: (payload.mono_compatible as boolean) ?? false,
     clipping: (payload.clipping as string) ?? 'NONE',
     tonalProfile: (payload.tonal_profile as Record<string, string>) ?? {},
+    sampleRate: (payload.sample_rate as number) || undefined,
+    bitDepth: (payload.bit_depth as number) || undefined,
     raw: payload,
   };
 }

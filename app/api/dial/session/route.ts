@@ -7,7 +7,7 @@
 
 import { randomBytes } from 'crypto';
 import { z } from 'zod';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, max } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
@@ -38,11 +38,22 @@ export const POST = withDialAuth(async ({ userId, isGuest, request }) => {
       ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
       : null;
 
+    // Per-user draft number: MAX(draft_number) + 1 per userId; guests always 1
+    let draftNumber = 1;
+    if (userId && !isGuest) {
+      const [row] = await db
+        .select({ maxDraft: max(dialSessions.draftNumber) })
+        .from(dialSessions)
+        .where(eq(dialSessions.userId, userId));
+      draftNumber = (row?.maxDraft ?? 0) + 1;
+    }
+
     const [session] = await db.insert(dialSessions).values({
       userId: userId ?? undefined,
       mode: parsed.data.mode,
       musicalStyle: parsed.data.musicalStyle,
       title: parsed.data.title,
+      draftNumber,
       guestToken,
       guestTokenExpiresAt,
     }).returning();
