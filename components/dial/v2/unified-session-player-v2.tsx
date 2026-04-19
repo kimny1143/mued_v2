@@ -7,7 +7,7 @@ import { useStemPeaks } from '@/hooks/use-stem-peaks';
 import { usePerStemPeak } from '@/hooks/use-per-stem-peak';
 import { Micro, Readout, Btn } from './atoms';
 import { IconPlay, IconPause, IconSkipBack, IconSpinner } from './icons';
-import { OverviewWave, StemWave, genPeaks, seededRand, type PeakPoint } from './waveform';
+import { OverviewWave, genPeaks, seededRand, type PeakPoint } from './waveform';
 import { TakeHistory, groupTakeEntries, type TakeSub } from './take-pills';
 import type { TakeStage } from '@/components/dial/unified-session-player';
 import { StemPanel, type StemData, type StemUpdate } from './stem-panel';
@@ -189,7 +189,7 @@ export function UnifiedSessionPlayerV2({
 
   const activeTake = takes.find((t) => t.id === activeTakeId) ?? takes[0];
   const activeStemUrls = activeTake?.stemsUrls ?? null;
-  const stemNames = activeStemUrls ? Object.keys(activeStemUrls) : [];
+  const stemNames = useMemo(() => activeStemUrls ? Object.keys(activeStemUrls) : [], [activeStemUrls]);
   const showStemPanel = activeTake?.label === 'RAW' || activeTake?.label === 'MIXED';
 
   // Per-stem peak meter (via AnalyserNode tap added in v2.4)
@@ -227,7 +227,6 @@ export function UnifiedSessionPlayerV2({
         },
       ]),
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialParams]);
 
   // Build StemData[] for StemPanel
