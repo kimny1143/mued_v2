@@ -210,25 +210,24 @@ function ParamChangeCard({
         </Micro>
       </div>
 
-      {/* Param rows */}
+      {/* Param rows — stem tag + direction reason (dB/Hz values hidden) */}
       {hasParams && (
-        <div className="px-2.5 py-1.5 space-y-0.5">
-          {parameterChanges.map((pc, i) => {
-            const { preview, final: finalParams } = splitChanges(pc.changes);
-            const rows = isPreview ? preview : finalParams;
-            if (rows.length === 0) return null;
-            return (
-              <div key={i} className="flex items-baseline gap-1.5 text-[11px]">
-                <span style={{ color: 'var(--fg-0)' }} className="font-medium truncate max-w-[80px]">
-                  {pc.track}
-                </span>
-                <span style={{ color: 'var(--fg-3)' }}>→</span>
+        <div className="px-2.5 py-1.5 space-y-1">
+          {parameterChanges.map((pc, i) => (
+            <div key={i} className="flex items-start gap-1.5 text-[11px]">
+              <span
+                className="shrink-0 px-1 py-0.5 rounded font-mono text-[10px]"
+                style={{ background: 'rgba(245,165,36,0.12)', color: 'var(--amber)' }}
+              >
+                {pc.track}
+              </span>
+              {pc.reason && (
                 <span style={{ color: isMixAction ? 'rgba(245,165,36,0.75)' : 'var(--fg-1)' }}>
-                  {rows.map(([k, v]) => `${k}: ${formatParamValue(k, v)}`).join(', ')}
+                  {pc.reason}
                 </span>
-              </div>
-            );
-          })}
+              )}
+            </div>
+          ))}
         </div>
       )}
 

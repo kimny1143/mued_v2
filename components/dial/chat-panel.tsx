@@ -416,7 +416,10 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                           </div>
                           <div className="space-y-1">
                             {msg.parameterChanges!.map((pc, i) => (
-                              <div key={i} className="text-xs text-white/80 font-medium">{pc.track}</div>
+                              <div key={i} className="flex items-start gap-1.5 text-xs">
+                                <span className="shrink-0 px-1 py-0.5 rounded bg-zinc-700 text-zinc-300 font-mono text-[10px]">{pc.track}</span>
+                                {pc.reason && <span className="text-zinc-400">{pc.reason}</span>}
+                              </div>
                             ))}
                           </div>
                         </div>
@@ -434,7 +437,10 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
                           {hasParams && (
                             <div className="space-y-1">
                               {msg.parameterChanges!.map((pc, i) => (
-                                <div key={i} className="text-xs text-amber-200/80 font-medium">{pc.track}</div>
+                                <div key={i} className="flex items-start gap-1.5 text-xs">
+                                  <span className="shrink-0 px-1 py-0.5 rounded bg-amber-900/40 text-amber-300 font-mono text-[10px]">{pc.track}</span>
+                                  {pc.reason && <span className="text-amber-200/70">{pc.reason}</span>}
+                                </div>
                               ))}
                             </div>
                           )}
