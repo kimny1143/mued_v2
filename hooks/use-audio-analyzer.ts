@@ -25,26 +25,6 @@ const CHANNEL_NAME = 'mued-dial-analyzer';
 const FFT_SIZE = 2048;
 const GONIO_POINTS = 256;
 
-// ─── K-weighting (ITU-R BS.1770 simplified) ─────────────────────────────────
-
-function buildKWeightTable(binCount: number, sampleRate: number): Float32Array {
-  const table = new Float32Array(binCount);
-  const binWidth = sampleRate / (binCount * 2);
-  for (let i = 0; i < binCount; i++) {
-    const f = i * binWidth;
-    let w: number;
-    if (f < 20) w = 0;
-    else if (f < 100) w = (f - 20) / 80 * 0.5;
-    else if (f < 500) w = 0.5 + (f - 100) / 400 * 0.5;
-    else if (f < 2000) w = 1.0;
-    else if (f < 8000) w = 1.0 + (f - 2000) / 6000 * 0.6;
-    else if (f < 16000) w = 1.6 - (f - 8000) / 8000 * 0.6;
-    else w = Math.max(0, 1.0 - (f - 16000) / 6000);
-    table[i] = w * w;
-  }
-  return table;
-}
-
 // ─── Hook ───────────────────────────────────────────────────────────────────
 
 export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
@@ -54,11 +34,10 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const analyserLRef = useRef<AnalyserNode | null>(null);
   const analyserRRef = useRef<AnalyserNode | null>(null);
+  const workletRef = useRef<AudioWorkletNode | null>(null);
   const rafRef = useRef<number>(0);
   const channelRef = useRef<BroadcastChannel | null>(null);
-  const kWeightRef = useRef<Float32Array | null>(null);
-  const lufsHistoryRef = useRef<number[]>([]);
-  const integratedHistoryRef = useRef<number[]>([]);
+  const workletLufsRef = useRef({ momentary: -70, shortTerm: -70, integrated: -70 });
   const [data, setData] = useState<AnalyzerData | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [rafKey, setRafKey] = useState(0);
@@ -85,55 +64,74 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
       analyserRef.current = null;
       analyserLRef.current = null;
       analyserRRef.current = null;
+      workletRef.current = null;
     }
 
-    try {
-      const ctx = new AudioContext();
-      ctx.resume().catch(() => {});
-      const source = ctx.createMediaElementSource(el);
+    (async () => {
+      try {
+        const ctx = new AudioContext();
+        ctx.resume().catch(() => {});
+        const source = ctx.createMediaElementSource(el);
 
-      // Main analyser (spectrum)
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = FFT_SIZE;
-      analyser.smoothingTimeConstant = 0.8;
-      source.connect(analyser);
-      analyser.connect(ctx.destination);
+        // Load EBU R128 worklet for proper BS.1770-4 LUFS
+        await ctx.audioWorklet.addModule('/worklets/ebur128-processor.js');
+        const worklet = new AudioWorkletNode(ctx, 'ebur128-processor');
+        worklet.port.onmessage = (e: MessageEvent<{ momentary: number; shortTerm: number; integrated: number }>) => {
+          const { momentary, shortTerm, integrated } = e.data;
+          workletLufsRef.current = {
+            momentary:  isFinite(momentary)  ? Math.max(-70, momentary)  : -70,
+            shortTerm:  isFinite(shortTerm)  ? Math.max(-70, shortTerm)  : -70,
+            integrated: isFinite(integrated) ? Math.max(-70, integrated) : -70,
+          };
+        };
+        source.connect(worklet);
+        worklet.connect(ctx.destination);
 
-      // Stereo split for phase/goniometer
-      const splitter = ctx.createChannelSplitter(2);
-      const analyserL = ctx.createAnalyser();
-      const analyserR = ctx.createAnalyser();
-      analyserL.fftSize = FFT_SIZE;
-      analyserR.fftSize = FFT_SIZE;
-      analyserL.smoothingTimeConstant = 0;
-      analyserR.smoothingTimeConstant = 0;
+        // Main analyser (spectrum) — tap after worklet passthrough
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = FFT_SIZE;
+        analyser.smoothingTimeConstant = 0.8;
+        worklet.connect(analyser);
 
-      source.connect(splitter);
-      splitter.connect(analyserL, 0);
-      splitter.connect(analyserR, 1);
+        // Stereo split for phase/goniometer
+        const splitter = ctx.createChannelSplitter(2);
+        const analyserL = ctx.createAnalyser();
+        const analyserR = ctx.createAnalyser();
+        analyserL.fftSize = FFT_SIZE;
+        analyserR.fftSize = FFT_SIZE;
+        analyserL.smoothingTimeConstant = 0;
+        analyserR.smoothingTimeConstant = 0;
 
-      // Keep L/R analysers alive via silent output
-      const silence = ctx.createGain();
-      silence.gain.value = 0;
-      analyserL.connect(silence);
-      analyserR.connect(silence);
-      silence.connect(ctx.destination);
+        source.connect(splitter);
+        splitter.connect(analyserL, 0);
+        splitter.connect(analyserR, 1);
 
-      kWeightRef.current = buildKWeightTable(analyser.frequencyBinCount, ctx.sampleRate);
-      lufsHistoryRef.current = [];
-      integratedHistoryRef.current = [];
+        // Keep L/R analysers alive via silent output
+        const silence = ctx.createGain();
+        silence.gain.value = 0;
+        analyserL.connect(silence);
+        analyserR.connect(silence);
+        silence.connect(ctx.destination);
 
-      ctxRef.current = ctx;
-      sourceRef.current = source;
-      connectedElRef.current = el;
-      analyserRef.current = analyser;
-      analyserLRef.current = analyserL;
-      analyserRRef.current = analyserR;
-      setIsActive(true);
-      setRafKey((k) => k + 1); // force RAF loop to restart with fresh analyser captures
-    } catch (err) {
-      console.error('[useAudioAnalyzer] connect failed:', err);
-    }
+        // Reset integrated on seek (seek = discontinuity in loudness measurement)
+        el.addEventListener('seeked', () => {
+          worklet.port.postMessage({ reset: true });
+        });
+
+        workletLufsRef.current = { momentary: -70, shortTerm: -70, integrated: -70 };
+        ctxRef.current = ctx;
+        sourceRef.current = source;
+        connectedElRef.current = el;
+        analyserRef.current = analyser;
+        analyserLRef.current = analyserL;
+        analyserRRef.current = analyserR;
+        workletRef.current = worklet;
+        setIsActive(true);
+        setRafKey((k) => k + 1); // force RAF loop to restart with fresh analyser captures
+      } catch (err) {
+        console.error('[useAudioAnalyzer] connect failed:', err);
+      }
+    })();
   }, [audioRef]);
 
   useEffect(() => {
@@ -145,10 +143,8 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
     const sampleRate = ctxRef.current.sampleRate;
     const binCount = analyser.frequencyBinCount;
     const freqArray = new Uint8Array(binCount);
-    const timeArray = new Uint8Array(FFT_SIZE);
     const timeLArray = new Uint8Array(FFT_SIZE);
     const timeRArray = new Uint8Array(FFT_SIZE);
-    const kWeight = kWeightRef.current!;
 
     let channel: BroadcastChannel | null = null;
     try {
@@ -156,25 +152,12 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
       channelRef.current = channel;
     } catch { /* no popup */ }
 
-    const MOMENTARY_FRAMES = Math.round(0.4 * 60);
-    const SHORT_TERM_FRAMES = Math.round(3 * 60);
-    const dbRange = analyser.maxDecibels - analyser.minDecibels;
-    const dbMin = analyser.minDecibels;
     const gonioStep = Math.floor(FFT_SIZE / GONIO_POINTS);
 
     const tick = () => {
       analyser.getByteFrequencyData(freqArray);
-      analyser.getByteTimeDomainData(timeArray);
       analyserL.getByteTimeDomainData(timeLArray);
       analyserR.getByteTimeDomainData(timeRArray);
-
-      // ── Mixed RMS (for LUFS base) ──
-      let sumSq = 0;
-      for (let i = 0; i < timeArray.length; i++) {
-        const s = (timeArray[i] - 128) / 128;
-        sumSq += s * s;
-      }
-      const rms = Math.sqrt(sumSq / timeArray.length);
 
       // ── Stereo: correlation, width, balance, per-channel peak/RMS, goniometer ──
       let sumLR = 0, sumLL = 0, sumRR = 0;
@@ -206,35 +189,8 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
       const rPow = Math.sqrt(sumRR / FFT_SIZE);
       const balance = (lPow + rPow) > 1e-10 ? (rPow - lPow) / (lPow + rPow) : 0;
 
-      // ── K-weighted LUFS ──
-      let totalPower = 0, kWeightedPower = 0;
-      for (let i = 1; i < binCount; i++) {
-        const dbVal = (freqArray[i] / 255) * dbRange + dbMin;
-        const lp = Math.pow(10, dbVal / 10);
-        totalPower += lp;
-        kWeightedPower += lp * kWeight[i];
-      }
-      const kCorrDb = totalPower > 1e-20 ? 10 * Math.log10(kWeightedPower / totalPower) : 0;
-      const kMeanSq = rms > 0 ? rms * rms * Math.pow(10, kCorrDb / 10) : 0;
-
-      // Momentary (400ms)
-      const hist = lufsHistoryRef.current;
-      hist.push(kMeanSq);
-      if (hist.length > SHORT_TERM_FRAMES) hist.shift();
-      const mSlice = hist.slice(-MOMENTARY_FRAMES);
-      const mAvg = mSlice.reduce((a, b) => a + b, 0) / mSlice.length;
-      const momentaryLufs = mAvg > 1e-20 ? -0.691 + 10 * Math.log10(mAvg) : -70;
-
-      // Short-term (3s)
-      const stAvg = hist.reduce((a, b) => a + b, 0) / hist.length;
-      const shortTermLufs = stAvg > 1e-20 ? -0.691 + 10 * Math.log10(stAvg) : -70;
-
-      // Integrated (gated long-term)
-      const intHist = integratedHistoryRef.current;
-      if (kMeanSq > 1e-7) intHist.push(kMeanSq); // gate out silence
-      if (intHist.length > 216000) intHist.splice(0, intHist.length - 216000); // cap 1hr
-      const intAvg = intHist.length > 0 ? intHist.reduce((a, b) => a + b, 0) / intHist.length : 0;
-      const integratedLufs = intAvg > 1e-20 ? -0.691 + 10 * Math.log10(intAvg) : -70;
+      // ── LUFS from AudioWorklet (BS.1770-4 compliant) ──
+      const { momentary: momentaryLufs, shortTerm: shortTermLufs, integrated: integratedLufs } = workletLufsRef.current;
 
       const payload: AnalyzerData = {
         frequencyData: Array.from(freqArray),
@@ -242,9 +198,9 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
         peakR: peakRch,
         rmsL: lPow,
         rmsR: rPow,
-        momentaryLufs: Math.max(-70, momentaryLufs),
-        shortTermLufs: Math.max(-70, shortTermLufs),
-        integratedLufs: Math.max(-70, integratedLufs),
+        momentaryLufs,
+        shortTermLufs,
+        integratedLufs,
         correlation,
         stereoWidth,
         balance,
