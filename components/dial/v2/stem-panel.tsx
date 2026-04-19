@@ -111,16 +111,16 @@ function StemRow({ stem, playhead, initialGainDb, initialPan, onUpdate }: StemRo
     <div
       className="stem-row grid items-center gap-2 border-b border-[color:var(--line-soft)] last:border-b-0"
       style={{
-        gridTemplateColumns: '132px 52px 120px 28px 28px 90px 160px 50px',
-        padding: '7px 12px',
-        minHeight: '42px',
+        gridTemplateColumns: '140px 56px 110px 28px 28px 90px 1fr 130px',
+        padding: '10px 12px',
+        minHeight: '56px',
       }}
     >
       {/* Name + color bar */}
       <div className="flex items-center gap-2 min-w-0">
-        <span className="w-[3px] h-5 rounded-[1px]" style={{ background: color }} />
+        <span className="w-[3px] h-6 rounded-[1px]" style={{ background: color }} />
         <span
-          className="text-[12px] text-[color:var(--fg-0)] truncate font-medium"
+          className="text-[13px] text-[color:var(--fg-0)] truncate font-medium"
           style={{ fontFamily: 'var(--font-inter, Inter, sans-serif)' }}
         >
           {name}
@@ -203,7 +203,7 @@ function StemRow({ stem, playhead, initialGainDb, initialPan, onUpdate }: StemRo
       </div>
 
       {/* Level meter + fader dB */}
-      <div className="flex flex-col items-end gap-[3px]">
+      <div className="flex flex-col items-end gap-[4px]">
         <StemMeter level={level} peak={peakNorm} />
         <Readout value={dbFormat(gainDb)} unit="dB" size="xs" tone="var(--fg-1)" />
       </div>
@@ -226,8 +226,8 @@ export function StemPanel({ stems, playhead, initialGainDbMap, initialPanMap, on
     <div className="bg-[color:var(--ink-1)] border border-[color:var(--line)] rounded-[3px]">
       {/* Column headers */}
       <div
-        className="grid items-center gap-2 h-7 px-3 border-b border-[color:var(--line)] bg-[#0d0d0f]"
-        style={{ gridTemplateColumns: '132px 52px 120px 28px 28px 90px 160px 50px' }}
+        className="grid items-center gap-2 h-7 px-3 border-b border-[color:var(--line)] bg-[#0d0d0f] flex-shrink-0"
+        style={{ gridTemplateColumns: '140px 56px 110px 28px 28px 90px 1fr 130px' }}
       >
         <Micro>Stem</Micro>
         <Micro className="text-right">Peak</Micro>
@@ -238,7 +238,8 @@ export function StemPanel({ stems, playhead, initialGainDbMap, initialPanMap, on
         <Micro>Volume</Micro>
         <Micro className="text-right">Fader</Micro>
       </div>
-      <div>
+      {/* Fixed-height scrollable stem list — frame stays constant, content scrolls for 7+ stems */}
+      <div className="overflow-y-auto" style={{ maxHeight: '336px' }}>
         {stems.map((s) => (
           <StemRow
             key={s.id}
