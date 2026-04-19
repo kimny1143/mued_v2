@@ -21,7 +21,7 @@ export function usePerStemPeak(
 
     const buffers: Record<string, Uint8Array<ArrayBuffer>> = {};
     for (const [name, analyser] of Object.entries(stemAnalysers)) {
-      buffers[name] = new Uint8Array(analyser.frequencyBinCount) as Uint8Array<ArrayBuffer>;
+      buffers[name] = new Uint8Array(analyser.fftSize) as Uint8Array<ArrayBuffer>;
     }
 
     let lastUpdate = 0;
