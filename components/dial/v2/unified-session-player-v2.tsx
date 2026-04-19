@@ -177,7 +177,7 @@ export function UnifiedSessionPlayerV2({
   );
 
   const {
-    isReady, isPlaying, currentTime, duration, activeTakeId,
+    isReady, isPlaying, isDecoding, decodeProgress, currentTime, duration, activeTakeId,
     setActiveTake, play, pause, seek,
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
     analyserNode, analyserL, analyserR, sampleRate: audioSampleRate,
@@ -360,6 +360,15 @@ export function UnifiedSessionPlayerV2({
             onSeek={handleOverviewSeek}
           />
         </div>
+
+        {/* Decode progress — active take buffering */}
+        {isDecoding && !isReady && decodeProgress.total > 0 && (
+          <div className="px-3 py-[3px] flex-shrink-0">
+            <Micro tone="var(--fg-3)">
+              Decoding audio… {decodeProgress.done}/{decodeProgress.total}
+            </Micro>
+          </div>
+        )}
 
         {/* Transport */}
         <TransportBar
