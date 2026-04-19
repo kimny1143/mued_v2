@@ -251,7 +251,7 @@ export function UnifiedSessionPlayerV2({
 
       return {
         id: name,
-        name: stemLabelMap?.[name] ?? normalizeBase(name),
+        name: stemLabelMap?.[normalizeBase(name)] ?? normalizeBase(name),
         color: STEM_COLORS[colorIdx],
         peaks,
         gainDb: initParams?.gainDb ?? 0,

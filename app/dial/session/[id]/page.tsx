@@ -35,6 +35,7 @@ function toDisplayName(t: Pick<Track, 'originalFilename' | 'instrumentGroup'>, i
 interface Track {
   id: string;
   originalFilename: string;
+  roexUploadUrl: string;
   instrumentGroup: string;
   presenceSetting: string;
   panPreference: string;
@@ -208,12 +209,18 @@ function DialSessionContent() {
 
   // Extract latest parameterChanges from session messages and normalize track field:
   // parameterChanges[].track = originalFilename (e.g. "stem_BASS.wav")
-  // stemsUrls keys = track UUID (e.g. "330f758e-abc") — bridge via session.tracks[].id
+  // stemsUrls keys = GCS filename from roexUploadUrl (e.g. "abc123-uuid.wav")
+  // Bridge: originalFilename → roexUploadUrl path → "{uuid}.wav" → matches stemsUrls key
   const latestParamChanges = useMemo(() => {
     const raw = session?.messages?.[0]?.parameterChanges;
     if (!raw || !session?.tracks?.length) return undefined;
-    const filenameToId = new Map(session.tracks.map((t) => [t.originalFilename, t.id]));
-    return raw.map((p) => ({ ...p, track: filenameToId.get(p.track) ?? p.track }));
+    const filenameToGcsKey = new Map(
+      session.tracks.map((t) => [
+        t.originalFilename,
+        t.roexUploadUrl.split('/').pop()?.split('?')[0] ?? t.originalFilename,
+      ])
+    );
+    return raw.map((p) => ({ ...p, track: filenameToGcsKey.get(p.track) ?? p.track }));
   }, [session?.messages, session?.tracks]);
 
   // Build TakeEntry[] for UnifiedSessionPlayer — used in both active sidebar and completion screen
@@ -329,10 +336,17 @@ function DialSessionContent() {
     return takes;
   }, [session, guestToken]);
 
-  // Map track UUID → display name for StemPanel: originalFilename (no ext) > instrumentGroup > "Stem N"
+  // Map normalizedBase(GCS filename) → display name for StemPanel.
+  // Key matches initialStemMap key and stemDataList baseKey in unified-session-player-v2.
   const stemLabelMap = useMemo(() => {
     if (!session?.tracks) return {} as Record<string, string>;
-    return Object.fromEntries(session.tracks.map((t, idx) => [t.id, toDisplayName(t, idx)]));
+    const nb = (k: string) => k.replace(/\.[^.]+$/, '').replace(/_normalized$/i, '').toLowerCase();
+    return Object.fromEntries(
+      session.tracks.map((t, idx) => [
+        nb(t.roexUploadUrl.split('/').pop()?.split('?')[0] ?? t.id),
+        toDisplayName(t, idx),
+      ])
+    );
   }, [session?.tracks]);
 
   // Stable key for UnifiedSessionPlayer — remount when:
