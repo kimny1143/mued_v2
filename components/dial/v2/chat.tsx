@@ -64,6 +64,9 @@ export interface ChatPanelV2Props {
   onMasteringPreviewRequested?: (desiredLoudness?: string) => void;
   onMasteringFinalRequested?: () => void;
   generating?: boolean;
+  generatingLabel?: string;
+  generatingElapsed?: string;
+  generatingEta?: string;
   className?: string;
   phase?: 1 | 2 | 3;
   mode?: 'omakase' | 'dialogue';
@@ -296,6 +299,9 @@ export function ChatPanelV2({
   onMasteringPreviewRequested,
   onMasteringFinalRequested,
   generating = false,
+  generatingLabel,
+  generatingElapsed,
+  generatingEta,
   className,
   phase = 1,
   mode = 'dialogue',
@@ -576,6 +582,20 @@ export function ChatPanelV2({
                 <span className="text-[11px]" style={{ color: 'var(--fg-2)' }}>{t.dial.chat.thinking}</span>
               </div>
             </div>
+          </div>
+        )}
+
+        {generating && !sending && (
+          <div className="rounded-[3px] border px-2.5 py-1.5 flex items-center gap-2" data-testid="dial-chat-processing-indicator"
+            style={{ borderColor: 'var(--amber-dim)', background: 'var(--amber-glow)' }}>
+            <IconSpinner size={10} />
+            <Micro tone="var(--amber)">{generatingLabel || t.dial.chat.generating}</Micro>
+            {generatingEta && (
+              <Micro tone="var(--fg-3)">est. {generatingEta}</Micro>
+            )}
+            {generatingElapsed && (
+              <Micro tone="var(--fg-3)" className="tabular-nums ml-auto">{generatingElapsed}</Micro>
+            )}
           </div>
         )}
 

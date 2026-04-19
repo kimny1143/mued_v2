@@ -904,6 +904,40 @@ function DialSessionContent() {
   const hasTracks = session.tracks.length > 0;
   const latestTask = session.tasks[0];
   const isProcessing = latestTask?.status === 'processing' || latestTask?.status === 'pending';
+  const generatingLabel = useMemo(() => {
+    if (!mixGenerating || !latestTask) return undefined;
+    switch (latestTask.taskType) {
+      case 'mix_check': return 'Mix Check processing...';
+      case 'final_basic':
+      case 'final_advanced': return 'Final mix generating...';
+      case 'mastering_preview': return 'Mastering preview generating...';
+      case 'mastering': return 'Final master generating...';
+      default: return 'Processing...';
+    }
+  }, [mixGenerating, latestTask]);
+
+  const generatingElapsed = useMemo(() => {
+    if (!mixGenerating || elapsedSeconds === 0) return undefined;
+    const m = Math.floor(elapsedSeconds / 60);
+    const s = elapsedSeconds % 60;
+    return m > 0
+      ? `${m}:${String(s).padStart(2, '0')}`
+      : `${s}s`;
+  }, [mixGenerating, elapsedSeconds]);
+
+  const generatingEta = useMemo(() => {
+    if (!mixGenerating || !latestTask) return undefined;
+    const trackCount = session.tracks.length;
+    switch (latestTask.taskType) {
+      case 'preview': return trackCount > 8 ? '5–20 min' : '2–10 min';
+      case 'mix_check': return '3–10 min';
+      case 'final_basic':
+      case 'final_advanced': return '3–10 min';
+      case 'mastering_preview': return '1–5 min';
+      case 'mastering': return '1–5 min';
+      default: return undefined;
+    }
+  }, [mixGenerating, latestTask, session.tracks.length]);
   const hasCompletedPreview = session.tasks.some(
     (t) => t.taskType === 'preview' && t.status === 'completed',
   );
@@ -1519,6 +1553,9 @@ function DialSessionContent() {
                     onMasteringPreviewRequested={handleMasteringPreview}
                     onMasteringFinalRequested={handleMasteringFinal}
                     generating={mixGenerating}
+                    generatingLabel={generatingLabel}
+                    generatingElapsed={generatingElapsed}
+                    generatingEta={generatingEta}
                     phase={phase}
                     mode={session.mode ?? session.masteringMode ?? 'omakase'}
                     previewCount={session.previewCount}
