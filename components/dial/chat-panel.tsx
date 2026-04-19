@@ -59,6 +59,7 @@ interface ChatPanelProps {
   onMasteringPreviewRequested?: (desiredLoudness?: string) => void;
   onMasteringFinalRequested?: () => void;
   generating?: boolean;
+  generatingLabel?: string;
   className?: string;
   /** Current mixing phase — prevents preview regeneration in Phase 3 */
   phase?: 1 | 2 | 3;
@@ -72,7 +73,7 @@ const VALID_PRESENCE = ['NORMAL', 'LEAD', 'BACKGROUND'];
 const VALID_PAN = ['NO_PREFERENCE', 'LEFT', 'CENTRE', 'RIGHT'];
 const VALID_REVERB = ['NONE', 'LOW', 'MEDIUM', 'HIGH'];
 
-export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onPreviewRequested, onMixCheckRequested, onFinalRequested, onMasteringPreviewRequested, onMasteringFinalRequested, generating = false, className, phase = 1, mode = 'dialogue', previewCount = 0, previewLimit = 0, isMasteringPhase = false }: ChatPanelProps) {
+export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onPreviewRequested, onMixCheckRequested, onFinalRequested, onMasteringPreviewRequested, onMasteringFinalRequested, generating = false, generatingLabel, className, phase = 1, mode = 'dialogue', previewCount = 0, previewLimit = 0, isMasteringPhase = false }: ChatPanelProps) {
   const { t } = useLocale();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -545,6 +546,16 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
                 {t.dial.chat.thinking}
+              </div>
+            </div>
+          </div>
+        )}
+        {generating && !sending && (
+          <div className="flex justify-start" data-testid="dial-chat-processing-indicator">
+            <div className="px-3 py-2 bg-amber-900/20 border border-amber-800/40 rounded-xl text-sm">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                <span className="text-amber-300">{generatingLabel || t.dial.chat.generating}</span>
               </div>
             </div>
           </div>

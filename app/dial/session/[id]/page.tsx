@@ -904,6 +904,17 @@ function DialSessionContent() {
   const hasTracks = session.tracks.length > 0;
   const latestTask = session.tasks[0];
   const isProcessing = latestTask?.status === 'processing' || latestTask?.status === 'pending';
+  const generatingLabel = useMemo(() => {
+    if (!mixGenerating || !latestTask) return undefined;
+    switch (latestTask.taskType) {
+      case 'mix_check': return 'Mix Check processing...';
+      case 'final_basic':
+      case 'final_advanced': return 'Final mix generating...';
+      case 'mastering_preview': return 'Mastering preview generating...';
+      case 'mastering': return 'Final master generating...';
+      default: return 'Processing...';
+    }
+  }, [mixGenerating, latestTask]);
   const hasCompletedPreview = session.tasks.some(
     (t) => t.taskType === 'preview' && t.status === 'completed',
   );
@@ -1519,6 +1530,7 @@ function DialSessionContent() {
                     onMasteringPreviewRequested={handleMasteringPreview}
                     onMasteringFinalRequested={handleMasteringFinal}
                     generating={mixGenerating}
+                    generatingLabel={generatingLabel}
                     phase={phase}
                     mode={session.mode ?? session.masteringMode ?? 'omakase'}
                     previewCount={session.previewCount}
