@@ -54,16 +54,24 @@ interface TakeNodes {
 }
 
 /**
- * Wait for all audio elements to complete seeking to the new position.
- * `seeked` fires when the browser has buffered enough data to begin playback.
- * 500ms fallback prevents hanging if the browser fails to fire the event.
+ * Wait for audio elements to complete seeking to a new position.
+ * `seeked` fires when the browser has buffered enough data to play from the new position.
+ *
+ * Only pass ACTIVE take stems — inactive takes are deprioritized by the browser and can
+ * take much longer to seek, causing the 3s fallback to govern instead of seeked events.
+ * Inactive takes will be resynced on the next setActiveTake() call.
+ *
+ * 3s fallback (was 500ms): CDN range-request round-trips for mid-track seeks can exceed
+ * 500ms on typical connections, causing the old fallback to fire before active stems were
+ * ready → audio.play() called on not-yet-buffered elements → playback from t=0.
  */
 function waitSeeked(audios: HTMLAudioElement[]): Promise<void> {
+  if (audios.length === 0) return Promise.resolve();
   return Promise.all(
     audios.map(
       (a) =>
         new Promise<void>((resolve) => {
-          const timer = setTimeout(resolve, 500);
+          const timer = setTimeout(resolve, 3000);
           a.addEventListener('seeked', () => { clearTimeout(timer); resolve(); }, { once: true });
         }),
     ),
@@ -285,23 +293,25 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     const ctx = ctxRef.current;
     if (!ctx) return;
 
-    // B5: await ctx.resume() before scheduling play calls — ensures AudioContext is
-    // fully running so all elements start at identical clock positions (no drift)
     void (async () => {
       if (ctx.state === 'suspended') await ctx.resume();
 
       const pos = pausedAtRef.current;
+      const activeId = activeTakeIdRef.current;
+      const activeAudios: HTMLAudioElement[] = [];
       const allAudios: HTMLAudioElement[] = [];
 
-      for (const takeNodes of Object.values(takeNodesRef.current)) {
+      for (const [takeId, takeNodes] of Object.entries(takeNodesRef.current)) {
         for (const stemNodes of Object.values(takeNodes.stems)) {
           stemNodes.audio.currentTime = pos;
           allAudios.push(stemNodes.audio);
+          if (takeId === activeId) activeAudios.push(stemNodes.audio);
         }
       }
 
-      // Wait for all stems to buffer the target position — ensures simultaneous start
-      await waitSeeked(allAudios);
+      // Wait only for active take — inactive takes are deprioritized by the browser
+      // and should not gate playback start (they're muted at gain=0 anyway)
+      await waitSeeked(activeAudios);
       await Promise.all(allAudios.map((a) => a.play().catch(() => {})));
       isPlayingRef.current = true;
       setIsPlaying(true);
@@ -328,22 +338,26 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       setCurrentTime(clamped);
 
       const wasPlaying = isPlayingRef.current;
+      const activeId = activeTakeIdRef.current;
+      const activeAudios: HTMLAudioElement[] = [];
       const allAudios: HTMLAudioElement[] = [];
 
-      for (const tn of Object.values(takeNodesRef.current)) {
+      for (const [takeId, tn] of Object.entries(takeNodesRef.current)) {
         for (const sn of Object.values(tn.stems)) {
-          // Pause before seeking — stops independent re-buffer race between stems
+          // Pause before seek — stops each stem from re-buffering independently while playing
           if (wasPlaying) sn.audio.pause();
           sn.audio.currentTime = clamped;
           allAudios.push(sn.audio);
+          if (takeId === activeId) activeAudios.push(sn.audio);
         }
       }
 
       if (wasPlaying) {
-        // Resume only after ALL stems have their decoders ready at the new position
-        void waitSeeked(allAudios).then(() => {
-          // Guard: user may have seeked again while waiting — skip stale resume
-          if (pausedAtRef.current !== clamped) return;
+        const seekTarget = clamped;
+        // Wait only for active take stems to be ready — they're what the user hears
+        void waitSeeked(activeAudios.length > 0 ? activeAudios : allAudios).then(() => {
+          // Stale-seek guard: user seeked again or duration clamped us differently
+          if (pausedAtRef.current !== seekTarget) return;
           void Promise.all(allAudios.map((a) => a.play().catch(() => {})));
         });
       }
@@ -382,7 +396,10 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       const durations = Object.values(newTakeNodes.stems)
         .map((s) => s.audio.duration)
         .filter((d) => isFinite(d) && d > 0);
-      setDuration(durations.length > 0 ? Math.max(...durations) : 0);
+      // Guard: only update duration when new take has valid durations.
+      // Skipping setDuration(0) prevents a transient duration=0 state that causes
+      // handleOverviewSeek(pos) → seek(pos * 0) → seek(0) → reset to beginning.
+      if (durations.length > 0) setDuration(Math.max(...durations));
     }
 
     activeTakeIdRef.current = id;
