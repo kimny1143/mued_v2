@@ -146,6 +146,8 @@ export interface UnifiedSessionPlayerV2Props {
   bitDepth?: number;
   compact?: boolean; // accepted for API compatibility, not used in v2 layout
   stemLabelMap?: Record<string, string>; // track UUID → short display label (e.g. BASS, VOCAL)
+  /** RAW take integrated loudness (LUFS) — used to level-match RAW to -14 LUFS target. */
+  rawLoudnessLufs?: number | null;
   // Chat props — omit to render player-only (no chat column)
   chatProps?: Omit<ChatPanelV2Props, 'className'>;
 }
@@ -161,8 +163,10 @@ export function UnifiedSessionPlayerV2({
   bitDepth,
   chatProps,
   stemLabelMap,
+  rawLoudnessLufs,
   compact: _compact,
 }: UnifiedSessionPlayerV2Props) {
+  const TARGET_LUFS = -14;
 
   // Only pass enabled (ready) takes to the player hook
   const takeDefs: TakeDef[] = useMemo(() =>
@@ -172,8 +176,11 @@ export function UnifiedSessionPlayerV2({
         id: t.id,
         label: t.label,
         stemUrls: t.stemsUrls ?? { main: t.url },
+        ...(t.label === 'RAW' && rawLoudnessLufs != null
+          ? { gainOffsetDb: TARGET_LUFS - rawLoudnessLufs }
+          : {}),
       })),
-    [takes],
+    [takes, rawLoudnessLufs],
   );
 
   const {

@@ -349,6 +349,12 @@ function DialSessionContent() {
     );
   }, [session?.tracks]);
 
+  // RAW loudness from analysis — used by player to level-match RAW take to -14 LUFS target.
+  const rawLoudnessLufs = useMemo(() => {
+    const v = session?.analysisResult?.loudnessLufs;
+    return typeof v === 'number' ? v : null;
+  }, [session?.analysisResult]);
+
   // Stable key for UnifiedSessionPlayer — remount when:
   // 1. Enabled take IDs change (new task completes)
   // 2. Stem presence flips false→true (B2 fix: remount when stemsUrls first arrives so hook
@@ -1295,6 +1301,7 @@ function DialSessionContent() {
             guestToken={guestToken}
             initialParams={latestParamChanges}
             stemLabelMap={stemLabelMap}
+            rawLoudnessLufs={rawLoudnessLufs}
           />
         )}
 
@@ -1465,6 +1472,7 @@ function DialSessionContent() {
                     guestToken={guestToken}
                     initialParams={latestParamChanges}
                     stemLabelMap={stemLabelMap}
+                    rawLoudnessLufs={rawLoudnessLufs}
                     compact
                   />
                 ) : (
