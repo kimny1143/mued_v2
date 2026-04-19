@@ -1,6 +1,7 @@
 /**
  * MUEDial Mastering Final API
- * POST /api/dial/mastering/final — Retrieve final mastered file (220cr)
+ * POST /api/dial/mastering/final — Trigger final mastered file retrieval (220cr)
+ * GET  /api/dial/mastering/final — Poll mastering final task status
  *
  * Requires a completed mastering preview task.
  */
@@ -14,6 +15,8 @@ import { createRoExClient, masterFinal, isRoExDevKey } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { db } from '@/db';
 import { dialTasks, dialSessions } from '@/db/schema';
+
+export const maxDuration = 120;
 
 const masteringFinalSchema = z.object({
   taskId: z.string().uuid(), // The dial_tasks.id of the completed mastering preview
@@ -120,5 +123,91 @@ export const POST = withDialAuth(async (auth) => {
     });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Mastering final failed');
+  }
+});
+
+// ─── GET: Poll mastering final task status ───────────────────────────────────
+//
+// DB-first: returns cached result if webhook already completed the task.
+// Fallback: if task has been processing 30s+, polls RoEx /retrievefinalmaster directly.
+
+const POLLING_FALLBACK_THRESHOLD_MS = 30_000;
+
+export const GET = withDialAuth(async (auth) => {
+  try {
+    const { searchParams } = new URL(auth.request.url);
+    const taskId = searchParams.get('taskId');
+    if (!taskId) {
+      return apiValidationError('taskId is required');
+    }
+
+    const result = await verifyDialTaskOwnership(taskId, auth);
+    if (!result) {
+      return apiNotFound('Task not found');
+    }
+
+    const { task } = result;
+
+    if (task.taskType !== 'mastering') {
+      return apiError('Task is not a mastering final task', { code: 'INVALID_TASK_TYPE', status: 400 });
+    }
+
+    if (task.status === 'completed') {
+      return apiSuccess({ status: 'completed', finalUrl: task.finalUrl });
+    }
+
+    if (task.status === 'failed') {
+      return apiSuccess({ status: 'failed' });
+    }
+
+    if (isRoExDevKey()) {
+      return apiSuccess({ status: task.status });
+    }
+
+    const elapsed = Date.now() - new Date(task.createdAt).getTime();
+    if (elapsed < POLLING_FALLBACK_THRESHOLD_MS) {
+      return apiSuccess({ status: 'processing' });
+    }
+
+    const client = createRoExClient();
+    const pollResult = await masterFinal(client, task.roexTaskId);
+
+    if (pollResult.finalUrl) {
+      let r2FinalUrl: string | undefined;
+      try {
+        const r2Result = await copyToR2({
+          sourceUrl: pollResult.finalUrl,
+          sessionId: task.sessionId,
+          taskId: task.id,
+          taskType: 'mastering',
+        });
+        r2FinalUrl = r2Result?.r2Url;
+      } catch { /* non-blocking */ }
+
+      await db.update(dialTasks).set({
+        status: 'completed',
+        finalUrl: pollResult.finalUrl,
+        completedAt: new Date(),
+        ...(r2FinalUrl ? { r2FinalUrl } : {}),
+      }).where(eq(dialTasks.id, taskId));
+
+      const session = await db.query.dialSessions.findFirst({
+        where: eq(dialSessions.id, task.sessionId),
+      });
+      if (session) {
+        await db.update(dialSessions)
+          .set({ status: 'completed', updatedAt: new Date() })
+          .where(eq(dialSessions.id, task.sessionId));
+      }
+    } else if (pollResult.status === 'failed') {
+      await db.update(dialTasks).set({ status: 'failed' }).where(eq(dialTasks.id, taskId));
+    }
+
+    return apiSuccess({
+      status: pollResult.finalUrl ? 'completed' : (pollResult.status === 'failed' ? 'failed' : 'processing'),
+      finalUrl: pollResult.finalUrl,
+    });
+  } catch (error) {
+    return apiServerError(error instanceof Error ? error.message : 'Mastering final poll failed');
   }
 });

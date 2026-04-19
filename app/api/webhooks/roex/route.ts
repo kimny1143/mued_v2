@@ -18,7 +18,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
 import { copyToR2 } from '@/lib/dial/r2-storage';
-import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview } from '@/lib/roex';
+import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 
 // Allow up to 120s for R2 copy
@@ -96,8 +96,9 @@ export async function POST(request: Request) {
       const result = await pollMasterPreview(client, roexTaskId);
       resultUrl = result.previewUrl;
     } else if (task.taskType === 'mastering') {
-      // Mastering final — the finalUrl may already be in the webhook body
-      resultUrl = (body.download_url_mastered as string) ?? undefined;
+      // Mastering final — poll RoEx for the result URL (body.download_url_mastered not reliable)
+      const result = await masterFinal(client, task.roexTaskId);
+      resultUrl = result.finalUrl;
     } else {
       // Mix final (final_basic, final_advanced, mix_check)
       const tracks = await db.query.dialTracks.findMany({
