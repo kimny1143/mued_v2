@@ -3,6 +3,30 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* MUEDial DAW Design System — dark surfaces */
+  --ink-0: #070707;
+  --ink-1: #0b0b0c;
+  --ink-2: #111113;
+  --ink-3: #17171a;
+  --ink-4: #1e1e22;
+  --line: #222226;
+  --line-soft: #18181b;
+
+  /* MUEDial text hierarchy */
+  --fg-0: #e8e6df;
+  --fg-1: #b8b5ac;
+  --fg-2: #7a7770;
+  --fg-3: #4a4842;
+
+  /* MUEDial accents */
+  --amber: #f5a524;
+  --amber-dim: #b57a14;
+  --amber-glow: rgba(245, 165, 36, 0.14);
+  --emerald: #4ea674;
+  --emerald-dim: #2b5c42;
+  --red: #e05a4a;
+  --blue: #5d8ab8;
 }
 
 .dark {
@@ -376,4 +400,127 @@ html[lang="ja"] .text-subhead {
   html[lang="ja"] .text-subhead {
     font-size: 1.25rem;      /* 20px - desktop */
   }
+}
+
+/* ===========================================
+   MUEDial v2 Design System Utilities
+   =========================================== */
+
+/* JetBrains Mono with tabular nums — for all DAW readouts */
+.mono {
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "ss01", "ss02", "cv01";
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Interior bevel — inset highlight + shadow for control tracks */
+.bevel-in {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Exterior bevel — raised buttons/toggles */
+.bevel-out {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Subtle noise grain to break gradient posterization in dark backgrounds */
+.grain {
+  background-image:
+    radial-gradient(1px 1px at 30% 20%, rgba(255, 255, 255, 0.015) 50%, transparent 51%),
+    radial-gradient(1px 1px at 70% 60%, rgba(255, 255, 255, 0.012) 50%, transparent 51%),
+    radial-gradient(1px 1px at 10% 85%, rgba(255, 255, 255, 0.01) 50%, transparent 51%);
+  background-size: 7px 7px, 11px 11px, 13px 13px;
+}
+
+/* Stem row hover transition */
+.stem-row {
+  transition: background-color 120ms ease;
+}
+
+/* Chat scroll styling */
+.chat-scroll::-webkit-scrollbar { width: 6px; }
+.chat-scroll::-webkit-scrollbar-track { background: transparent; }
+.chat-scroll::-webkit-scrollbar-thumb { background: #2a2a2e; border-radius: 3px; }
+
+/* Processing pill shimmer */
+@keyframes dial-shimmer {
+  0% { background-position: -120px 0; }
+  100% { background-position: 120px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #1a1a1d 0%, #232327 50%, #1a1a1d 100%);
+  background-size: 240px 100%;
+  animation: dial-shimmer 1.8s linear infinite;
+}
+
+/* Caret blink for chat composer */
+@keyframes dial-caret {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.caret {
+  animation: dial-caret 1.1s steps(1) infinite;
+}
+
+/* Spin for loading states */
+@keyframes dial-spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: dial-spin 1s linear infinite;
+}
+
+/* MUEDial range inputs — thin, precise DAW sliders */
+input[type="range"].mue {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  height: 20px;
+  width: 100%;
+}
+
+input[type="range"].mue::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--ink-3);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+}
+
+input[type="range"].mue::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 16px;
+  background: linear-gradient(180deg, #2c2c30 0%, #1a1a1d 100%);
+  border: 1px solid #3a3a3e;
+  border-radius: 2px;
+  margin-top: -6px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+input[type="range"].mue:hover::-webkit-slider-thumb {
+  border-color: var(--amber);
+}
+
+/* Pan slider — center-marked track */
+input[type="range"].mue-pan::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    90deg,
+    var(--ink-3) 0%,
+    var(--ink-3) 49.5%,
+    var(--line) 49.5%,
+    var(--line) 50.5%,
+    var(--ink-3) 50.5%,
+    var(--ink-3) 100%
+  );
 }
