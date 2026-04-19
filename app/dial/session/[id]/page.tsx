@@ -161,8 +161,6 @@ function DialSessionContent() {
   const [mixGenerating, setMixGenerating] = useState(false);
 
   // Sidebar player — selected take
-  const [selectedTakeId, setSelectedTakeId] = useState<string | null>(null);
-  const prevCompletedCountRef = useRef(0);
 
 
   // Take folding — show only latest 3, collapse older
@@ -458,18 +456,6 @@ function DialSessionContent() {
   }, [session, downloadedItems]);
 
 
-  // Auto-select latest completed task for sidebar player
-  useEffect(() => {
-    if (!session) return;
-    const completedTasks = session.tasks.filter(
-      (t) => t.status === 'completed' && (t.previewUrl || t.finalUrl),
-    );
-    const count = completedTasks.length;
-    if (count > prevCompletedCountRef.current || prevCompletedCountRef.current === 0) {
-      if (completedTasks[0]) setSelectedTakeId(completedTasks[0].id);
-    }
-    prevCompletedCountRef.current = count;
-  }, [session]);
 
   // Track elapsed time while processing
   useEffect(() => {
@@ -926,7 +912,7 @@ function DialSessionContent() {
 
   // ─── Shared Sections (used in both layouts) ─────────────────────────────────
 
-  const uploadSection = session.paymentStatus === 'paid' && !hasFinal && !(isMasteringPhase && !isMasteringOnly) && (
+  const uploadSection = session.paymentStatus === 'paid' && session.tracks.length === 0 && !hasFinal && !(isMasteringPhase && !isMasteringOnly) && (
     <div>
       <h2 className="text-lg font-medium mb-4">{isMasteringOnly ? t.dial.session.upload2mix : t.dial.session.uploadStems}</h2>
 
@@ -1319,10 +1305,10 @@ function DialSessionContent() {
   // ─── Layout ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      <div className={`mx-auto px-6 py-12 ${showChat ? 'max-w-6xl' : 'max-w-3xl'}`}>
+    <div className={showChat ? 'h-screen overflow-hidden flex flex-col bg-zinc-950 text-white' : 'min-h-screen bg-zinc-950 text-white'}>
+      <div className={showChat ? 'flex-1 min-h-0 flex flex-col px-3 pt-3' : hasFinal ? 'w-full px-3 py-3' : 'mx-auto max-w-3xl px-6 py-12'}>
         {/* Header */}
-        <div className={showChat ? 'mb-4' : 'mb-8'}>
+        <div className={showChat ? 'flex-shrink-0 mb-2' : 'mb-8'}>
           <div className="flex items-center justify-between">
             <h1 className={`font-bold ${showChat ? 'text-xl' : 'text-3xl'}`}>
               MUED<span className="text-indigo-400">ial</span>
@@ -1389,10 +1375,49 @@ function DialSessionContent() {
 
         {session.paymentStatus === 'paid' && !hasFinal && (
           showChat ? (
-            // 2-column layout: Player primary (left) + Chat compact (right)
-            <div className="flex flex-col lg:flex-row gap-6">
-              {/* Right: Chat panel — compact fixed width */}
-              <div className="lg:w-[440px] shrink-0 flex flex-col lg:order-2">
+            // 2-column layout: Player (left, flex-1) + Chat (right, fixed 440px) — both independently scrollable
+            <div className="flex gap-3 flex-1 min-h-0">
+              {/* Left: Player — fills remaining width, independently scrollable */}
+              <div className="flex-1 min-w-0 overflow-y-auto">
+                {/* Unified Player */}
+                {sessionTakes.length > 0 ? (
+                  <UnifiedSessionPlayer
+                    key={sessionTakes.filter((t) => t.enabled).map((t) => t.id).join(',')}
+                    takes={sessionTakes}
+                    sessionId={session.id}
+                    guestToken={guestToken}
+                    initialParams={latestParamChanges}
+                    stemLabelMap={stemLabelMap}
+                    compact
+                  />
+                ) : (
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                    <h3 className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">Now Playing</h3>
+                    <div className="text-sm text-zinc-600 py-4 text-center">
+                      {analyzing
+                        ? 'Analyzing your audio...'
+                        : hasTracks
+                          ? (isMasteringOnly ? 'Chat with Hoo to start mastering' : 'Generate a preview to hear your mix')
+                          : (isMasteringOnly ? 'Upload your 2-mix to get started' : 'Upload stems to get started')}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mastering Phase Banner */}
+                {isMasteringPhase && !isMasteringOnly && (
+                  <div className="mt-3 p-4 bg-indigo-900/20 border border-indigo-800/40 rounded-xl text-center">
+                    <p className="text-sm text-indigo-300 font-medium">Mix complete! Mastering phase</p>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Mastering
+                    </p>
+                  </div>
+                )}
+
+                {uploadSection}
+              </div>
+
+              {/* Right: Chat — fixed 440px, independently scrollable */}
+              <div className="w-[440px] shrink-0 flex flex-col overflow-y-auto">
                 {/* Processing banner — visible when task is being processed server-side */}
                 {isProcessing && latestTask && (() => {
                   const trackCount = session.tracks.length;
@@ -1458,97 +1483,6 @@ function DialSessionContent() {
                     isMasteringPhase={isMasteringPhase}
                   />
                 </div>
-              </div>
-
-              {/* Left: Player sidebar — primary, dominant width */}
-              <div className="flex-1 min-w-0 space-y-5 overflow-y-auto lg:max-h-[calc(100vh-14rem)] lg:sticky lg:top-24 lg:self-start lg:order-1">
-                {/* Unified Player */}
-                {sessionTakes.length > 0 ? (
-                  <UnifiedSessionPlayer
-                    key={sessionTakes.filter((t) => t.enabled).map((t) => t.id).join(',')}
-                    takes={sessionTakes}
-                    sessionId={session.id}
-                    guestToken={guestToken}
-                    initialParams={latestParamChanges}
-                    stemLabelMap={stemLabelMap}
-                    compact
-                  />
-                ) : (
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                    <h3 className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">Now Playing</h3>
-                    <div className="text-sm text-zinc-600 py-4 text-center">
-                      {analyzing
-                        ? 'Analyzing your audio...'
-                        : hasTracks
-                          ? (isMasteringOnly ? 'Chat with Hoo to start mastering' : 'Generate a preview to hear your mix')
-                          : (isMasteringOnly ? 'Upload your 2-mix to get started' : 'Upload stems to get started')}
-                    </div>
-                  </div>
-                )}
-
-                {/* Mastering Phase Banner */}
-                {isMasteringPhase && !isMasteringOnly && (
-                  <div className="p-4 bg-indigo-900/20 border border-indigo-800/40 rounded-xl text-center">
-                    <p className="text-sm text-indigo-300 font-medium">Mix complete! Mastering phase</p>
-                    <p className="text-xs text-zinc-500 mt-1">
-                      Mastering
-                    </p>
-                  </div>
-                )}
-
-                {/* Take History */}
-                {session.tasks.some((t) => t.taskType === 'preview' || t.taskType === 'mix_check' || t.taskType === 'mastering_preview' || t.taskType === 'mastering') && (
-                  <div>
-                    <h3 className="text-xs font-medium text-zinc-500 mb-2 uppercase tracking-wider">Takes</h3>
-                    <div className="space-y-1">
-                      {session.tasks
-                        .filter((t) => t.taskType === 'preview' || t.taskType === 'mix_check' || t.taskType === 'mastering_preview' || t.taskType === 'mastering')
-                        .map((task) => {
-                          const isSelected = task.id === selectedTakeId;
-                          const hasAudio = !!(task.previewUrl || task.finalUrl);
-                          const allMixChecks = session.tasks.filter((tt) => tt.taskType === 'mix_check');
-                          const mixCheckIndex = allMixChecks.findIndex((tt) => tt.id === task.id);
-                          const label = task.taskType === 'mix_check'
-                            ? `Mix Check${allMixChecks.length > 1 ? ` ${allMixChecks.length - mixCheckIndex}` : ''}`
-                            : task.taskType === 'mastering_preview'
-                              ? 'Master Preview'
-                              : task.taskType === 'mastering'
-                                ? 'Master Final'
-                                : `${t.dial.session.take} ${allPreviewTasks.length - allPreviewTasks.findIndex((tt) => tt.id === task.id)}`;
-
-                          return (
-                            <button
-                              key={task.id}
-                              onClick={() => hasAudio && setSelectedTakeId(task.id)}
-                              disabled={!hasAudio}
-                              className={`w-full px-3 py-2 rounded-lg text-left text-sm flex items-center justify-between transition-colors ${
-                                isSelected
-                                  ? 'bg-indigo-600/20 border border-indigo-500/30 text-white'
-                                  : hasAudio
-                                    ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-transparent'
-                                    : 'bg-zinc-900/50 text-zinc-600 cursor-not-allowed border border-transparent'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                {isSelected && hasAudio && (
-                                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                                )}
-                                <span>{label}</span>
-                              </div>
-                              {task.status === 'processing' && (
-                                <div className="h-3 w-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" role="status" aria-label={t.dial.session.processing} />
-                              )}
-                              {task.status === 'failed' && (
-                                <span className="text-xs text-red-400">failed</span>
-                              )}
-                            </button>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-
-                {uploadSection}
               </div>
             </div>
           ) : null
