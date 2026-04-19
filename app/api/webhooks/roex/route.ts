@@ -96,9 +96,13 @@ export async function POST(request: Request) {
       const result = await pollMasterPreview(client, roexTaskId);
       resultUrl = result.previewUrl;
     } else if (task.taskType === 'mastering') {
-      // Mastering final — poll RoEx for the result URL (body.download_url_mastered not reliable)
-      const result = await masterFinal(client, task.roexTaskId);
-      resultUrl = result.finalUrl;
+      if (task.finalUrl) {
+        // Already retrieved via POST handler — skip to avoid double 220cr charge
+        resultUrl = task.finalUrl;
+      } else {
+        const result = await masterFinal(client, task.roexTaskId);
+        resultUrl = result.finalUrl;
+      }
     } else {
       // Mix final (final_basic, final_advanced, mix_check)
       const tracks = await db.query.dialTracks.findMany({
