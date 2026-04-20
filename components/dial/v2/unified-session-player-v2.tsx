@@ -236,13 +236,18 @@ export function UnifiedSessionPlayerV2({
     const { id: rawTakeId } = rawTakeDef;
     if (takeDecodeStatus[rawTakeId] !== 'ready') return;
     if (measuredTakesRef.current.has(rawTakeId)) return;
-    measuredTakesRef.current.add(rawTakeId);
 
     const buffer = getTakeBuffer(rawTakeId, 'main');
-    if (!buffer) return;
+    if (!buffer) return; // buffer not ready yet — will retry on next takeDecodeStatus change
+
+    measuredTakesRef.current.add(rawTakeId);
 
     measureIntegratedLufs(buffer).then((measuredLufs) => {
-      const gainOffsetDb = TARGET_LUFS - measuredLufs;
+      if (measuredLufs <= -69) {
+        console.warn('[dial:lufs] RAW LUFS measurement returned floor value, skipping gainOffset');
+        return;
+      }
+      const gainOffsetDb = Math.max(-24, Math.min(24, TARGET_LUFS - measuredLufs));
       updateTakeGainOffset(rawTakeId, gainOffsetDb);
       console.log(`[dial:lufs] RAW in-browser: ${measuredLufs.toFixed(1)} LUFS → gainOffset ${gainOffsetDb.toFixed(1)} dB`);
     }).catch((e) => {
