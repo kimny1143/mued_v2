@@ -13,7 +13,7 @@ export function AccountSection() {
   const hub = t.muednote.dashboardHub;
 
   const handleSignOut = async () => {
-    await signOut();
+    try { await signOut(); } catch {}
     router.push('/');
   };
 
