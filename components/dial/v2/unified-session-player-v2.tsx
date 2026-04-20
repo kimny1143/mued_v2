@@ -442,10 +442,10 @@ export function UnifiedSessionPlayerV2({
     return [];
   }, [chatProps, takes, t]);
 
-  // Gain Match action — prepended when both RAW and MIXED takes exist.
-  // Re-computes on every integratedLufs tick so disabled state stays current.
-  const allTransportActions = useMemo((): TransportAction[] => {
-    if (!rawTakeId || !mixedTakeId) return transportActions;
+  // Gain Match props for RAW column header in TakeHistory.
+  // Re-computes on integratedLufs tick so disabled state updates while audio plays.
+  const gainMatchProps = useMemo(() => {
+    if (!rawTakeId || !mixedTakeId) return undefined;
     const rawLufs = takeLufsRef.current[rawTakeId];
     const mixedLufs = takeLufsRef.current[mixedTakeId];
     const rawReady = rawLufs !== undefined && rawLufs > -69;
@@ -455,21 +455,17 @@ export function UnifiedSessionPlayerV2({
       : !rawReady
       ? t.dial.stemPanel.matchToMixTooltipNeedRaw
       : t.dial.stemPanel.matchToMixTooltip;
-    const label = gainMatchDiff !== null
-      ? `${t.dial.stemPanel.matchedLabel} (${gainMatchDiff >= 0 ? '+' : ''}${gainMatchDiff.toFixed(1)} dB)`
-      : t.dial.stemPanel.matchToMix;
-    const gainMatch: TransportAction = {
-      label,
-      onClick: handleGainMatch,
-      variant: 'amber',
+    return {
       disabled: !rawReady || !mixedReady,
+      diff: gainMatchDiff,
+      onMatch: handleGainMatch,
+      matchLabel: t.dial.stemPanel.matchToMix,
+      matchedLabel: t.dial.stemPanel.matchedLabel,
       title,
-      testId: 'dial-transport-gain-match',
     };
-    return [gainMatch, ...transportActions];
-  // integratedLufs in deps so button disabled state updates while audio plays
+  // integratedLufs in deps so disabled state updates while audio plays
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transportActions, rawTakeId, mixedTakeId, gainMatchDiff, handleGainMatch, integratedLufs, t]);
+  }, [rawTakeId, mixedTakeId, gainMatchDiff, handleGainMatch, integratedLufs, t]);
 
   return (
     <div className="flex min-h-0 h-full gap-0" style={{ background: 'var(--ink-0)' }}>
@@ -497,6 +493,7 @@ export function UnifiedSessionPlayerV2({
             onPick={handlePickTake}
             onToggle={() => setTakeDrawerOpen((v) => !v)}
             takeDecodeStatus={takeDecodeStatus}
+            gainMatch={gainMatchProps}
           />
         </div>
 
@@ -527,7 +524,7 @@ export function UnifiedSessionPlayerV2({
           onPlay={handlePlayPause}
           onPause={handlePlayPause}
           onSeekToStart={handleSeekToStart}
-          actions={allTransportActions}
+          actions={transportActions}
         />
 
         {/* Analyzer — always visible, fixed above StemPanel (B7: DAW master section convention) */}

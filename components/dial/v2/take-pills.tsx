@@ -122,6 +122,15 @@ export function TakePill({ take, active, onClick, disabled, processing }: TakePi
 
 // ─── TakeHistory ──────────────────────────────────────────────────────────────
 
+interface GainMatchProps {
+  disabled: boolean;
+  diff: number | null;
+  onMatch(): void;
+  matchLabel: string;
+  matchedLabel: string;
+  title?: string;
+}
+
 interface TakeHistoryProps {
   open: boolean;
   takes: TakeGroup[];
@@ -131,9 +140,11 @@ interface TakeHistoryProps {
   onToggle: () => void;
   /** Per-take decode status — shows spinner/dim while decoding, error state on failure */
   takeDecodeStatus?: Record<string, 'decoding' | 'ready' | 'error'>;
+  /** Gain match button — shown in RAW column header when both RAW and MIXED takes exist */
+  gainMatch?: GainMatchProps;
 }
 
-export function TakeHistory({ open, takes, activeTake, activeSub, onPick, onToggle, takeDecodeStatus }: TakeHistoryProps) {
+export function TakeHistory({ open, takes, activeTake, activeSub, onPick, onToggle, takeDecodeStatus, gainMatch }: TakeHistoryProps) {
   const activeTakeObj = takes.find((t) => t.key === activeTake);
   return (
     <div className="bg-[color:var(--ink-1)] border border-[color:var(--line)] rounded-[3px] overflow-hidden">
@@ -158,9 +169,28 @@ export function TakeHistory({ open, takes, activeTake, activeSub, onPick, onTogg
           {takes.map((take) => (
             <div key={take.key} className="p-2">
               <div className="flex items-center justify-between mb-1.5 px-1">
-                <Micro tone={take.key === activeTake ? 'var(--amber)' : 'var(--fg-2)'}>
-                  {take.label}
-                </Micro>
+                <div className="flex items-center gap-1.5">
+                  <Micro tone={take.key === activeTake ? 'var(--amber)' : 'var(--fg-2)'}>
+                    {take.label}
+                  </Micro>
+                  {take.key === 'RAW' && gainMatch && (
+                    <button
+                      onClick={gainMatch.onMatch}
+                      disabled={gainMatch.disabled}
+                      title={gainMatch.title}
+                      data-testid="dial-gain-match"
+                      className="mono text-[9px] uppercase tracking-wider px-1.5 h-4 rounded-[2px] transition-colors disabled:opacity-30"
+                      style={gainMatch.diff !== null
+                        ? { color: 'var(--amber)', border: '1px solid var(--amber-dim)', background: '#221809' }
+                        : { color: 'var(--fg-2)', border: '1px solid var(--line)' }
+                      }
+                    >
+                      {gainMatch.diff !== null
+                        ? `${gainMatch.matchedLabel} (${gainMatch.diff >= 0 ? '+' : ''}${gainMatch.diff.toFixed(1)})`
+                        : gainMatch.matchLabel}
+                    </button>
+                  )}
+                </div>
                 <Micro tone="var(--fg-3)">
                   {take.subs.length} {take.subs.length === 1 ? 'ITEM' : 'ITEMS'}
                 </Micro>
