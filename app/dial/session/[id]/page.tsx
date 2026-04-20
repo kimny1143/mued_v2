@@ -174,6 +174,9 @@ function DialSessionContent() {
 
   // Take folding — show only latest 3, collapse older
   const [showOlderTakes, setShowOlderTakes] = useState(false);
+  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [chatHistory, setChatHistory] = useState<{ id: string; role: string; content: string; createdAt: string }[]>([]);
+  const [loadingChatHistory, setLoadingChatHistory] = useState(false);
 
   // Elapsed time tracking for processing tasks
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -184,6 +187,23 @@ function DialSessionContent() {
   const markDownloaded = (item: string) => {
     setDownloadedItems(prev => new Set(prev).add(item));
   };
+
+  const toggleChatHistory = useCallback(async () => {
+    if (showChatHistory) {
+      setShowChatHistory(false);
+      return;
+    }
+    setShowChatHistory(true);
+    if (chatHistory.length > 0) return;
+    setLoadingChatHistory(true);
+    try {
+      const res = await fetch(`/api/dial/chat?sessionId=${sessionId}`);
+      const data = await res.json();
+      if (data.success) setChatHistory(data.data.messages ?? []);
+    } finally {
+      setLoadingChatHistory(false);
+    }
+  }, [showChatHistory, chatHistory.length, session?.id, sessionId]);
 
   // Restore guest token from URL query param (email recovery link)
   const guestToken = useMemo(() => {
@@ -1314,6 +1334,45 @@ function DialSessionContent() {
             )}
           </div>
         )}
+
+        {/* Conversation log download + read-only history */}
+        <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-zinc-400">{t.dial.session.conversationHistory}</span>
+            <div className="flex items-center gap-2">
+              <a
+                href={`/api/dial/session/chat-export?sessionId=${session.id}`}
+                download
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg text-sm font-medium transition-colors"
+              >
+                ↓ {t.dial.session.downloadChatLog}
+              </a>
+              <button
+                onClick={toggleChatHistory}
+                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                {showChatHistory ? t.dial.session.hideConversation : t.dial.session.showConversation}
+              </button>
+            </div>
+          </div>
+          {showChatHistory && (
+            <div className="mt-2 max-h-96 overflow-y-auto space-y-3 border-t border-zinc-800 pt-3">
+              {loadingChatHistory ? (
+                <div className="text-center text-zinc-500 text-sm py-4">Loading...</div>
+              ) : chatHistory.filter((m) => m.role === 'user' || m.role === 'assistant').map((msg) => (
+                <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap ${
+                    msg.role === 'user'
+                      ? 'bg-indigo-600/80 text-white rounded-br-sm'
+                      : 'bg-zinc-800 text-zinc-100 rounded-bl-sm'
+                  }`}>
+                    {msg.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Unified player — RAW / MIXED / MASTERED tabs */}
         {sessionTakes.length > 0 && (
