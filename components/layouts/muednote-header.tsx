@@ -6,6 +6,7 @@ import { useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { useLocale } from "@/lib/i18n/locale-context";
+import { HooMasthead } from "@/components/dashboard/hoo-masthead";
 import { Mic } from "lucide-react";
 
 /**
@@ -40,6 +41,7 @@ export function MuednoteHeader() {
 
           {/* Right side actions */}
           <div className="flex items-center gap-3">
+            <HooMasthead />
             <LanguageSwitcher />
             <Button
               variant="ghost"
