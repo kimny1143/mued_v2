@@ -66,6 +66,7 @@ export const GET = withAuth(async ({ userId }) => {
       totalCredits: subscriptionCredits + packCredits,
       subscriptionCredits,
       packCredits,
+      bonusCredits: packCredits,
       subscription: subscription ? {
         tier: subscription.tier,
         status: subscription.status,

@@ -19,6 +19,7 @@ export interface UnifiedSession {
 
 interface SessionLedgerProps {
   sessions: UnifiedSession[];
+  showDialOnly?: boolean;
 }
 
 const STATUS_DOT: Record<string, { symbol: string; color: string }> = {
@@ -43,8 +44,8 @@ const PRODUCT_LABEL: Record<SessionProduct, string> = {
   muedear:  'MUEDear',
 };
 
-function groupByProduct(sessions: UnifiedSession[]): Array<{ product: SessionProduct; items: UnifiedSession[] }> {
-  const order: SessionProduct[] = ['dial', 'muednote'];
+function groupByProduct(sessions: UnifiedSession[], dialOnly: boolean): Array<{ product: SessionProduct; items: UnifiedSession[] }> {
+  const order: SessionProduct[] = dialOnly ? ['dial'] : ['dial', 'muednote'];
   const groups: Record<string, UnifiedSession[]> = { dial: [], muednote: [] };
   for (const s of sessions) {
     if (groups[s.product]) groups[s.product].push(s);
@@ -55,10 +56,10 @@ function groupByProduct(sessions: UnifiedSession[]): Array<{ product: SessionPro
 // grid: date(110px) dot(20px) name(1fr) status(120px) arrow(24px)
 const ROW_GRID = '110px 20px 1fr 120px 24px';
 
-export function SessionLedger({ sessions }: SessionLedgerProps) {
+export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerProps) {
   const { locale, t } = useLocale();
   const hub = t.muednote.dashboardHub;
-  const groups = groupByProduct(sessions);
+  const groups = groupByProduct(sessions, showDialOnly);
 
   const formatDate = (d: Date | null) => {
     if (!d) return '—';
