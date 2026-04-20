@@ -232,19 +232,23 @@ export function UnifiedSessionPlayerV2({
   const rawTakeId = useMemo(() => takeDefs.find((t) => t.label === 'RAW')?.id, [takeDefs]);
   const mixedTakeId = useMemo(() => takeDefs.find((t) => t.label === 'MIXED')?.id, [takeDefs]);
 
-  // Gain Match button state — null = default label, number = applied dB
-  const [gainMatchDiff, setGainMatchDiff] = useState<number | null>(null);
-  useEffect(() => { setGainMatchDiff(null); }, [activeTakeId]);
+  // Gain Match persistent toggle — survives take switches
+  const [gainMatchActive, setGainMatchActive] = useState(false);
 
   const handleGainMatch = useCallback(() => {
     if (!rawTakeId || !mixedTakeId) return;
+    if (gainMatchActive) {
+      updateTakeGainOffset(rawTakeId, 0);
+      setGainMatchActive(false);
+      return;
+    }
     const rawLufs = takeLufsRef.current[rawTakeId];
     const mixedLufs = takeLufsRef.current[mixedTakeId];
     if (rawLufs === undefined || rawLufs <= -69 || mixedLufs === undefined || mixedLufs <= -69) return;
     const diff = Math.max(-24, Math.min(24, mixedLufs - rawLufs));
     updateTakeGainOffset(rawTakeId, diff);
-    setGainMatchDiff(diff);
-  }, [rawTakeId, mixedTakeId, updateTakeGainOffset]);
+    setGainMatchActive(true);
+  }, [rawTakeId, mixedTakeId, gainMatchActive, updateTakeGainOffset]);
 
   const analyzerData = useMultiTakeAnalyzerData({
     analyser: analyserNode,
@@ -456,16 +460,15 @@ export function UnifiedSessionPlayerV2({
       ? t.dial.stemPanel.matchToMixTooltipNeedRaw
       : t.dial.stemPanel.matchToMixTooltip;
     return {
-      disabled: !rawReady || !mixedReady,
-      diff: gainMatchDiff,
+      disabled: !gainMatchActive && (!rawReady || !mixedReady),
+      active: gainMatchActive,
       onMatch: handleGainMatch,
       matchLabel: t.dial.stemPanel.matchToMix,
-      matchedLabel: t.dial.stemPanel.matchedLabel,
       title,
     };
   // integratedLufs in deps so disabled state updates while audio plays
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawTakeId, mixedTakeId, gainMatchDiff, handleGainMatch, integratedLufs, t]);
+  }, [rawTakeId, mixedTakeId, gainMatchActive, handleGainMatch, integratedLufs, t]);
 
   return (
     <div className="flex min-h-0 h-full gap-0" style={{ background: 'var(--ink-0)' }}>
