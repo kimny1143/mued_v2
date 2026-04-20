@@ -232,9 +232,9 @@ export function UnifiedSessionPlayerV2({
   const rawTakeId = useMemo(() => takeDefs.find((t) => t.label === 'RAW')?.id, [takeDefs]);
   const mixedTakeId = useMemo(() => takeDefs.find((t) => t.label === 'MIXED')?.id, [takeDefs]);
 
-  // Gain Match button state
-  const [gainMatchLabel, setGainMatchLabel] = useState('Match to Mix');
-  useEffect(() => { setGainMatchLabel('Match to Mix'); }, [activeTakeId]);
+  // Gain Match button state — null = default label, number = applied dB
+  const [gainMatchDiff, setGainMatchDiff] = useState<number | null>(null);
+  useEffect(() => { setGainMatchDiff(null); }, [activeTakeId]);
 
   const handleGainMatch = useCallback(() => {
     if (!rawTakeId || !mixedTakeId) return;
@@ -243,7 +243,7 @@ export function UnifiedSessionPlayerV2({
     if (rawLufs === undefined || rawLufs <= -69 || mixedLufs === undefined || mixedLufs <= -69) return;
     const diff = Math.max(-24, Math.min(24, mixedLufs - rawLufs));
     updateTakeGainOffset(rawTakeId, diff);
-    setGainMatchLabel(`Matched (${diff >= 0 ? '+' : ''}${diff.toFixed(1)} dB)`);
+    setGainMatchDiff(diff);
   }, [rawTakeId, mixedTakeId, updateTakeGainOffset]);
 
   const analyzerData = useMultiTakeAnalyzerData({
@@ -451,12 +451,15 @@ export function UnifiedSessionPlayerV2({
     const rawReady = rawLufs !== undefined && rawLufs > -69;
     const mixedReady = mixedLufs !== undefined && mixedLufs > -69;
     const title = !mixedReady
-      ? '先にMIXEDテイクを再生してください'
+      ? t.dial.stemPanel.matchToMixTooltipNeedMixed
       : !rawReady
-      ? '先にRAWテイクを再生してください'
-      : 'MIXEDテイクの音量基準にRAWの出力ゲインを調整します';
+      ? t.dial.stemPanel.matchToMixTooltipNeedRaw
+      : t.dial.stemPanel.matchToMixTooltip;
+    const label = gainMatchDiff !== null
+      ? `${t.dial.stemPanel.matchedLabel} (${gainMatchDiff >= 0 ? '+' : ''}${gainMatchDiff.toFixed(1)} dB)`
+      : t.dial.stemPanel.matchToMix;
     const gainMatch: TransportAction = {
-      label: gainMatchLabel,
+      label,
       onClick: handleGainMatch,
       variant: 'amber',
       disabled: !rawReady || !mixedReady,
@@ -466,7 +469,7 @@ export function UnifiedSessionPlayerV2({
     return [gainMatch, ...transportActions];
   // integratedLufs in deps so button disabled state updates while audio plays
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transportActions, rawTakeId, mixedTakeId, gainMatchLabel, handleGainMatch, integratedLufs]);
+  }, [transportActions, rawTakeId, mixedTakeId, gainMatchDiff, handleGainMatch, integratedLufs, t]);
 
   return (
     <div className="flex min-h-0 h-full gap-0" style={{ background: 'var(--ink-0)' }}>

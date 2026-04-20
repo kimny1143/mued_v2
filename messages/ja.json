@@ -1564,7 +1564,12 @@
       "generatePreview": "プレビュー生成",
       "generateMixCheck": "ミックスチェック",
       "generateFinal": "ファイナルミックス",
-      "generateMaster": "マスタリング生成"
+      "generateMaster": "マスタリング生成",
+      "matchToMix": "ミックスに音量を合わせる",
+      "matchedLabel": "適用済み",
+      "matchToMixTooltipNeedMixed": "先にMIXEDテイクを再生してください",
+      "matchToMixTooltipNeedRaw": "先にRAWテイクを再生してください",
+      "matchToMixTooltip": "MIXEDテイクの音量基準にRAWの出力ゲインを調整します"
     },
     "session": {
       "loadingSession": "セッション読み込み中...",

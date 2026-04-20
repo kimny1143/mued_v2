@@ -1564,7 +1564,12 @@
       "generatePreview": "Generate Preview",
       "generateMixCheck": "Mix Check",
       "generateFinal": "Final Mix",
-      "generateMaster": "Generate Master"
+      "generateMaster": "Generate Master",
+      "matchToMix": "Match to Mix",
+      "matchedLabel": "Matched",
+      "matchToMixTooltipNeedMixed": "Play MIXED take first to measure loudness",
+      "matchToMixTooltipNeedRaw": "Play RAW take first to measure loudness",
+      "matchToMixTooltip": "Adjust RAW output gain to match MIXED take loudness"
     },
     "session": {
       "loadingSession": "Loading session...",
