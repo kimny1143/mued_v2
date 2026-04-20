@@ -50,7 +50,7 @@ class EbuR128Processor extends AudioWorkletProcessor {
   constructor() {
     super();
     this._ready = false;
-this.port.onmessage = (e) => {
+    this.port.onmessage = (e) => {
       if (e.data && e.data.reset) this._reset();
     };
   }
