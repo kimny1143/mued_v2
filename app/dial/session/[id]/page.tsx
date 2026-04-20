@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
+import { DashboardLocaleSwitcher } from '@/components/ui/dashboard-locale-switcher';
 import Link from 'next/link';
 import { ChatPanel } from '@/components/dial/chat-panel';
 import { AudioAnalyzerProvider } from '@/hooks/use-audio-analyzer-context';
@@ -1429,6 +1430,7 @@ function DialSessionContent() {
                   {MUSICAL_STYLES.find((s) => s.value === session.musicalStyle)?.label ?? session.musicalStyle}
                 </span>
               )}
+              <DashboardLocaleSwitcher />
             </div>
           </div>
         </div>
