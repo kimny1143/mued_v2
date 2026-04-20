@@ -104,9 +104,19 @@ class EbuR128Processor extends AudioWorkletProcessor {
     this._intBFull   = false;
   }
 
-  process(inputs) {
+  process(inputs, outputs) {
     const input = inputs[0];
     if (!input || !input.length) return true;
+
+    // Passthrough: copy input to output so the audio graph stays active.
+    // Without this, Chrome may withhold audio from inputs[0] when the worklet
+    // output is unused, causing incorrect LUFS measurements.
+    const output = outputs[0];
+    if (output) {
+      for (let ch = 0; ch < input.length && ch < output.length; ch++) {
+        output[ch].set(input[ch]);
+      }
+    }
 
     const nCh = input.length;
     if (!this._ready || nCh !== this._nCh) this._setup(nCh);
