@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useMultiTakePlayer, type TakeDef } from '@/hooks/use-multi-take-player';
 import { useMultiTakeAnalyzerData } from '@/hooks/use-multi-take-analyzer-data';
 import { useStemPeaks } from '@/hooks/use-stem-peaks';
@@ -15,6 +15,7 @@ import { StemPanel, type StemData, type StemUpdate } from './stem-panel';
 import { AnalyzerCluster } from './analyzer';
 import { ChatPanelV2, type ChatPanelV2Props } from './chat';
 import type { TakeEntry, StemParamChange } from '@/components/dial/unified-session-player';
+import { measureIntegratedLufs } from '@/lib/audio/measure-lufs';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -221,8 +222,34 @@ export function UnifiedSessionPlayerV2({
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
     analyserNode, analyserL, analyserR, sampleRate: audioSampleRate,
     getStemAnalysers,
+    getTakeBuffer, updateTakeGainOffset,
     momentaryLufs, shortTermLufs, integratedLufs,
   } = useMultiTakePlayer(takeDefs);
+
+  // In-browser LUFS measurement for RAW take when analysisResult is unavailable.
+  // Runs once after RAW decode completes; caches per-take to avoid re-measurement.
+  const measuredTakesRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (rawLoudnessLufs != null) return; // server-side value available — no need to measure
+    const rawTakeDef = takeDefs.find((t) => t.label === 'RAW');
+    if (!rawTakeDef) return;
+    const { id: rawTakeId } = rawTakeDef;
+    if (takeDecodeStatus[rawTakeId] !== 'ready') return;
+    if (measuredTakesRef.current.has(rawTakeId)) return;
+    measuredTakesRef.current.add(rawTakeId);
+
+    const buffer = getTakeBuffer(rawTakeId, 'main');
+    if (!buffer) return;
+
+    measureIntegratedLufs(buffer).then((measuredLufs) => {
+      const gainOffsetDb = TARGET_LUFS - measuredLufs;
+      updateTakeGainOffset(rawTakeId, gainOffsetDb);
+      console.log(`[dial:lufs] RAW in-browser: ${measuredLufs.toFixed(1)} LUFS → gainOffset ${gainOffsetDb.toFixed(1)} dB`);
+    }).catch((e) => {
+      console.warn('[dial:lufs] RAW LUFS measurement failed:', e);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [takeDecodeStatus, rawLoudnessLufs]);
 
   const analyzerData = useMultiTakeAnalyzerData({
     analyser: analyserNode,

@@ -52,6 +52,10 @@ export interface UseMultiTakePlayerReturn {
   sampleRate: number;
   /** Per-stem AnalyserNodes tapped after stemGain (before pan). Keyed by stemName. */
   getStemAnalysers(takeId: string): Record<string, AnalyserNode> | null;
+  /** Decoded AudioBuffer for a specific stem — null until decode completes. */
+  getTakeBuffer(takeId: string, stemName: string): AudioBuffer | null;
+  /** Dynamically updates loudnessGain for a take (use after in-browser LUFS measurement). */
+  updateTakeGainOffset(takeId: string, gainOffsetDb: number): void;
   /** BS.1770-4 compliant LUFS from AudioWorklet tapped at masterGain. */
   momentaryLufs: number;
   shortTermLufs: number;
@@ -614,6 +618,24 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     [],
   );
 
+  const getTakeBuffer = useCallback(
+    (takeId: string, stemName: string): AudioBuffer | null => {
+      return takeNodesRef.current[takeId]?.stems[stemName]?.buffer ?? null;
+    },
+    [],
+  );
+
+  const updateTakeGainOffset = useCallback(
+    (takeId: string, gainOffsetDb: number) => {
+      const nodes = takeNodesRef.current[takeId];
+      if (!nodes) return;
+      const linearGain = Math.pow(10, gainOffsetDb / 20);
+      const t = ctxRef.current?.currentTime ?? 0;
+      nodes.loudnessGain.gain.setValueAtTime(linearGain, t);
+    },
+    [],
+  );
+
   return {
     isReady, isPlaying, isDecoding, decodeProgress, takeDecodeStatus,
     currentTime, duration, activeTakeId,
@@ -621,6 +643,8 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
     analyserNode, analyserL, analyserR, sampleRate,
     getStemAnalysers,
+    getTakeBuffer,
+    updateTakeGainOffset,
     momentaryLufs, shortTermLufs, integratedLufs,
     destroy,
   };
