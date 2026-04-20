@@ -1357,8 +1357,8 @@ function DialSessionContent() {
             </a>
           ) : (
             <Link
-              href="/dashboard/dial"
-              onClick={(e) => handleNavigation(e, '/dashboard/dial')}
+              href="/dashboard"
+              onClick={(e) => handleNavigation(e, '/dashboard')}
               className="flex-1 py-3 text-center bg-zinc-800 hover:bg-zinc-700 rounded-xl text-sm font-medium transition-colors"
             >
               {t.dial.session.backToDashboard}

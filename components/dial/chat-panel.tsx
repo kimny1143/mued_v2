@@ -259,7 +259,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
     } finally {
       setSending(false);
     }
-  }, [sending, sessionId, headers, phase, applyChanges, onPreviewRequested, isMasteringPhase, onMasteringPreviewRequested, onParametersApplied, t]);
+  }, [sending, sessionId, headers, phase, applyChanges, onPreviewRequested, isMasteringPhase, onMasteringPreviewRequested, onParametersApplied, t, locale]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
