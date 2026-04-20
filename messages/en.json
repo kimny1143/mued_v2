@@ -1365,7 +1365,9 @@
       },
       "sessions": {
         "empty": "No sessions yet",
-        "startFirst": "Start your first mix"
+        "startFirst": "Start your first mix",
+        "comingSoon": "MUEDear — Coming Soon",
+        "muedlobeProfile": "MUEDlobe profile →"
       },
       "credits": {
         "sub": "sub",
@@ -1374,6 +1376,13 @@
         "bonusActive": "Launch bonus active",
         "buyMore": "Buy more →",
         "noSub": "No subscription — view plans"
+      },
+      "account": {
+        "title": "Account",
+        "settings": "Settings",
+        "import": "Import (AI conversations)",
+        "mcp": "MCP Setup",
+        "signOut": "Sign out"
       }
     }
   },
