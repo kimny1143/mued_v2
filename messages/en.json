@@ -1342,10 +1342,10 @@
       "muedear": "MUEDear"
     },
     "muedearPlaceholder": {
-      "title": "MUEDear — Ear Training",
-      "description": "Your ear training scores and history will appear here.",
-      "comingSoon": "Coming soon",
-      "openApp": "Open MUEDear"
+      "title": "MUEDear",
+      "tagline": "AI that trains your ears — ear training for music creators",
+      "comingSoon": "Coming Soon",
+      "notify": "Get notified when it launches"
     },
     "utilityNav": {
       "import": "Import",
