@@ -280,7 +280,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       lufsWorklet.connect(lufsGain);
       lufsGain.connect(ctx.destination);
       lufsWorkletRef.current = lufsWorklet;
-    }).catch(() => { /* worklet unavailable — LUFS stays at default */ });
+    }).catch((e) => { console.warn('[useMultiTakePlayer] ebur128 worklet load failed:', e); });
 
     const onStemDecoded = (takeId: string, success: boolean) => {
       if (cancelled) return;
