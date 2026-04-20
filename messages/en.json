@@ -1385,7 +1385,8 @@
       "navPricing": "Pricing",
       "planBannerTitle": "Mix regularly? Save with a plan.",
       "planBannerDesc": "Get monthly credits and pay less per mix.",
-      "planBannerCta": "View Plans"
+      "planBannerCta": "View Plans",
+      "previewUpdatedBadge": "Preview updated"
     },
     "checkout": {
       "tagline": "AI-powered mixing and mastering. Upload your stems, get a professional mix — no account required.",
@@ -1566,7 +1567,6 @@
       "generateFinal": "Final Mix",
       "generateMaster": "Generate Master",
       "matchToMix": "Match to Mix",
-      "matchedLabel": "Matched",
       "matchToMixTooltipNeedMixed": "Play MIXED take first to measure loudness",
       "matchToMixTooltipNeedRaw": "Play RAW take first to measure loudness",
       "matchToMixTooltip": "Adjust RAW output gain to match MIXED take loudness"
@@ -1602,7 +1602,28 @@
       "instrumentGroup": "Instrument",
       "presence": "Presence",
       "pan": "Pan",
-      "reverb": "Reverb"
+      "reverb": "Reverb",
+      "addFiles": "+ Add Files",
+      "fileTableHeader": "File",
+      "filesReadyOne": "1 file ready",
+      "filesReadyMany": "{count} files ready",
+      "uploadAllButton": "Upload All ({count})",
+      "mixCheckLabel": "Mix Check",
+      "masterPreviewLabel": "Master Preview",
+      "masterFinalLabel": "Master Final",
+      "downloadMixCheckWav": "Download Mix Check (.wav)",
+      "downloadMasteredTrackWav": "Download Mastered Track (.wav)",
+      "mixResultsTitle": "Mix Results",
+      "statusMixCheckProcessing": "Mix Check processing…",
+      "statusFinalMixGenerating": "Final mix generating…",
+      "statusMasteringPreviewGenerating": "Mastering preview generating…",
+      "statusMasteringFinalGenerating": "Final master generating…",
+      "sessionExpiredFallback": "This session may have expired.",
+      "originalStemsNotAvailable": "Original stems not available.",
+      "stemTracksAvailableAfterDialogue": "Stem tracks available after dialogue mix.",
+      "stemDownloadGuard": "Stem files have not been downloaded yet. Leaving this page will make them unavailable. Continue?",
+      "returnToStart": "Return to start",
+      "uploadFailedError": "Upload failed"
     }
   },
   "settings": {

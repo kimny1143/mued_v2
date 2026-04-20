@@ -1385,7 +1385,8 @@
       "navPricing": "料金プラン",
       "planBannerTitle": "定期的にミックスするなら、プランがお得。",
       "planBannerDesc": "月額プランで1ミックスあたりの単価がお得に。",
-      "planBannerCta": "プランを見る"
+      "planBannerCta": "プランを見る",
+      "previewUpdatedBadge": "プレビュー更新済み"
     },
     "checkout": {
       "tagline": "AIミキシング＆マスタリング。ステムをアップロードするだけ。アカウント不要。",
@@ -1566,7 +1567,6 @@
       "generateFinal": "ファイナルミックス",
       "generateMaster": "マスタリング生成",
       "matchToMix": "ミックスに音量を合わせる",
-      "matchedLabel": "適用済み",
       "matchToMixTooltipNeedMixed": "先にMIXEDテイクを再生してください",
       "matchToMixTooltipNeedRaw": "先にRAWテイクを再生してください",
       "matchToMixTooltip": "MIXEDテイクの音量基準にRAWの出力ゲインを調整します"
@@ -1602,7 +1602,28 @@
       "instrumentGroup": "楽器",
       "presence": "プレゼンス",
       "pan": "パン",
-      "reverb": "リバーブ"
+      "reverb": "リバーブ",
+      "addFiles": "+ ファイルを追加",
+      "fileTableHeader": "ファイル",
+      "filesReadyOne": "1ファイル準備完了",
+      "filesReadyMany": "{count}ファイル準備完了",
+      "uploadAllButton": "すべてアップロード ({count})",
+      "mixCheckLabel": "ミックスチェック",
+      "masterPreviewLabel": "マスタリングプレビュー",
+      "masterFinalLabel": "マスタリングファイナル",
+      "downloadMixCheckWav": "ミックスチェックをダウンロード (.wav)",
+      "downloadMasteredTrackWav": "マスタリング音源をダウンロード (.wav)",
+      "mixResultsTitle": "ミックス結果",
+      "statusMixCheckProcessing": "ミックスチェック処理中…",
+      "statusFinalMixGenerating": "ファイナルミックス生成中…",
+      "statusMasteringPreviewGenerating": "マスタリングプレビュー生成中…",
+      "statusMasteringFinalGenerating": "ファイナルマスター生成中…",
+      "sessionExpiredFallback": "このセッションは有効期限が切れた可能性があります。",
+      "originalStemsNotAvailable": "オリジナルステムは利用できません。",
+      "stemTracksAvailableAfterDialogue": "ステムはダイアローグミックス後に利用可能になります。",
+      "stemDownloadGuard": "ステムファイルがまだダウンロードされていません。このページを離れると利用できなくなります。続行しますか？",
+      "returnToStart": "先頭に戻る",
+      "uploadFailedError": "アップロードに失敗しました"
     }
   },
   "settings": {
