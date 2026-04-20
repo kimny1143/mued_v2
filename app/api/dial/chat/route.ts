@@ -53,6 +53,7 @@ const chatRequestSchema = z.object({
   sessionId: z.string().uuid(),
   message: z.string().min(1).max(5000),
   locale: z.enum(['en', 'ja']).optional(),
+  hooLocale: z.enum(['en', 'ja']).optional(),
 });
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -85,14 +86,16 @@ export const POST = withDialAuth(async (auth) => {
       return apiValidationError('Invalid request', parsed.error.errors);
     }
 
-    const { sessionId, message, locale: bodyLocale } = parsed.data;
+    const { sessionId, message, locale: bodyLocale, hooLocale: bodyHooLocale } = parsed.data;
 
-    // Resolve locale: body > NEXT_LOCALE cookie > default 'ja'
-    const cookieLocale = auth.request.headers.get('cookie')
-      ?.split('; ')
-      .find((c) => c.startsWith('NEXT_LOCALE='))
-      ?.split('=')[1] as 'en' | 'ja' | undefined;
+    // Resolve UI locale: body > NEXT_LOCALE cookie > default 'ja'
+    const cookies = auth.request.headers.get('cookie') ?? '';
+    const cookieLocale = cookies.split('; ').find((c) => c.startsWith('NEXT_LOCALE='))?.split('=')[1] as 'en' | 'ja' | undefined;
     const locale: 'en' | 'ja' = bodyLocale ?? (cookieLocale === 'en' || cookieLocale === 'ja' ? cookieLocale : 'ja');
+
+    // Resolve Hoo response locale: body hooLocale > HOO_LOCALE cookie > UI locale fallback
+    const hooLocaleCookie = cookies.split('; ').find((c) => c.startsWith('HOO_LOCALE='))?.split('=')[1] as 'en' | 'ja' | undefined;
+    const hooLocale: 'en' | 'ja' = bodyHooLocale ?? (hooLocaleCookie === 'en' || hooLocaleCookie === 'ja' ? hooLocaleCookie : locale);
 
     // Verify session ownership
     const session = await verifyDialSessionOwnership(sessionId, auth);
@@ -164,6 +167,7 @@ export const POST = withDialAuth(async (auth) => {
       referenceFilename: session.referenceTrackFilename ?? null,
       comparisonResult: null as ComparisonResult | null, // populated below if applicable
       locale,
+      hooLocale,
     };
 
     // If reference track exists and a preview is available, run comparison inline
@@ -237,7 +241,7 @@ export const POST = withDialAuth(async (auth) => {
     }
 
     // Send to AI with locale-aware tool definitions
-    const tools = getDialTools({ mode: promptInput.mode, isMasteringPhase, locale });
+    const tools = getDialTools({ mode: promptInput.mode, isMasteringPhase, locale, hooLocale });
 
     const startTime = Date.now();
     const aiResponse = await sendHooChat('claude-sonnet-4', chatMessages, {
