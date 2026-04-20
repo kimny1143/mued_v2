@@ -203,7 +203,7 @@ function DialSessionContent() {
     } finally {
       setLoadingChatHistory(false);
     }
-  }, [showChatHistory, chatHistory.length, session?.id, sessionId]);
+  }, [showChatHistory, chatHistory.length, sessionId]);
 
   // Restore guest token from URL query param (email recovery link)
   const guestToken = useMemo(() => {
