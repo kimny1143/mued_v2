@@ -977,24 +977,26 @@ async function handleDialCheckoutCompleted(
       expiresAt: null, // No expiry — active subscriber rollover
     });
 
-    // Grant first-purchase 400cr bonus for authenticated users
-    const bonusResult = await grantFirstPurchaseBonus(userId, tx);
-
     logger.info(`[Dial Webhook] Subscription created: ${stripeSubscriptionId} for user: ${userId}, ${totalCredits}cr granted (no expiry while subscribed)`);
 
-    // Budget threshold alert — non-blocking
-    setImmediate(async () => {
-      if (bonusResult.crossedThreshold !== undefined && bonusResult.newCumulativeCostUsd !== undefined) {
-        try {
-          await notificationService.onBonusBudgetThreshold(
-            bonusResult.crossedThreshold,
-            bonusResult.newCumulativeCostUsd,
-          );
-        } catch (error) {
-          logger.error('[Dial Webhook] Failed to send budget threshold alert', { error });
+    // Grant first-purchase 400cr bonus — best-effort, must not block credit delivery
+    try {
+      const bonusResult = await grantFirstPurchaseBonus(userId, tx);
+      setImmediate(async () => {
+        if (bonusResult.crossedThreshold !== undefined && bonusResult.newCumulativeCostUsd !== undefined) {
+          try {
+            await notificationService.onBonusBudgetThreshold(
+              bonusResult.crossedThreshold,
+              bonusResult.newCumulativeCostUsd,
+            );
+          } catch (error) {
+            logger.error('[Dial Webhook] Failed to send budget threshold alert', { error });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      logger.warn('[Dial Webhook] Bonus grant failed — credit delivery unaffected', { userId, error });
+    }
   }
 }
 
@@ -1084,24 +1086,26 @@ async function handleDialCreditPackCompleted(
     return;
   }
 
-  // Grant first-purchase 400cr bonus for authenticated users
-  const bonusResult = await grantFirstPurchaseBonus(userId, tx);
-
   logger.info(`[Dial Webhook] Credit pack completed: ${creditPackId} for user: ${userId} (country: ${customerCountry}, expires: ${expiresAt.toISOString()})`);
 
-  // Budget threshold alert — non-blocking
-  setImmediate(async () => {
-    if (bonusResult.crossedThreshold !== undefined && bonusResult.newCumulativeCostUsd !== undefined) {
-      try {
-        await notificationService.onBonusBudgetThreshold(
-          bonusResult.crossedThreshold,
-          bonusResult.newCumulativeCostUsd,
-        );
-      } catch (error) {
-        logger.error('[Dial Webhook] Failed to send budget threshold alert', { error });
+  // Grant first-purchase 400cr bonus — best-effort, must not block credit delivery
+  try {
+    const bonusResult = await grantFirstPurchaseBonus(userId, tx);
+    setImmediate(async () => {
+      if (bonusResult.crossedThreshold !== undefined && bonusResult.newCumulativeCostUsd !== undefined) {
+        try {
+          await notificationService.onBonusBudgetThreshold(
+            bonusResult.crossedThreshold,
+            bonusResult.newCumulativeCostUsd,
+          );
+        } catch (error) {
+          logger.error('[Dial Webhook] Failed to send budget threshold alert', { error });
+        }
       }
-    }
-  });
+    });
+  } catch (error) {
+    logger.warn('[Dial Webhook] Bonus grant failed — credit delivery unaffected', { userId, error });
+  }
 }
 
 async function handleDialSubscriptionUpdated(
