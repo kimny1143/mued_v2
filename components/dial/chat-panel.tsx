@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocale } from '@/lib/i18n/locale-context';
+import { useHooLocale } from '@/components/dial/hoo-locale-switcher';
 
 interface EqBand {
   freq: number;
@@ -77,6 +78,7 @@ const VALID_REVERB = ['NONE', 'LOW', 'MEDIUM', 'HIGH'];
 
 export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onPreviewRequested, onMixCheckRequested, onFinalRequested, onMasteringPreviewRequested, onMasteringFinalRequested, generating = false, generatingLabel, generatingElapsed, generatingEta, className, phase = 1, mode = 'dialogue', previewCount = 0, previewLimit = 0, isMasteringPhase = false }: ChatPanelProps) {
   const { t, locale } = useLocale();
+  const { hooLocale } = useHooLocale();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -190,7 +192,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
       const res = await fetch('/api/dial/chat', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ sessionId, message, locale }),
+        body: JSON.stringify({ sessionId, message, locale, hooLocale }),
       });
       const data = await res.json();
 
@@ -259,7 +261,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
     } finally {
       setSending(false);
     }
-  }, [sending, sessionId, headers, phase, applyChanges, onPreviewRequested, isMasteringPhase, onMasteringPreviewRequested, onParametersApplied, t, locale]);
+  }, [sending, sessionId, headers, phase, applyChanges, onPreviewRequested, isMasteringPhase, onMasteringPreviewRequested, onParametersApplied, t, locale, hooLocale]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
