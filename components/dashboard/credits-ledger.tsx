@@ -96,7 +96,7 @@ export function CreditsLedger() {
             </div>
 
             {/* Breakdown line */}
-            <p
+            <div
               className="text-xs text-white/40 tabular-nums"
               style={{ fontFamily: 'var(--font-jetbrains), monospace' }}
             >
@@ -126,7 +126,7 @@ export function CreditsLedger() {
                   {hub.credits.noSub}
                 </Link>
               )}
-            </p>
+            </div>
 
             {/* Subscription tier */}
             {data.subscription && (

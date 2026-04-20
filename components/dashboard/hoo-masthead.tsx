@@ -54,7 +54,7 @@ export function HooMasthead() {
 
   return (
     <div className="flex items-center gap-2">
-      <Link href="/dial/pricing" className="flex items-center gap-2 group" tabIndex={-1}>
+      <Link href="/dial/pricing" className="flex items-center gap-2 group">
         <div className="relative w-8 h-8 flex-shrink-0">
           <Image
             src="/images/hoo-icon.png"
