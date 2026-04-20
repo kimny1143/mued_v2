@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocale } from '@/lib/i18n/locale-context';
-import { useHooLocale } from '@/components/dial/hoo-locale-switcher';
 import { Panel, Micro, Btn } from './atoms';
 import { IconSend, IconSpinner, IconSparkle } from './icons';
 
@@ -234,7 +233,6 @@ export function ChatPanelV2({
   isMasteringPhase = false,
 }: ChatPanelV2Props) {
   const { t, locale } = useLocale();
-  const { hooLocale } = useHooLocale();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -308,7 +306,7 @@ export function ChatPanelV2({
     }
 
     try {
-      const res = await fetch('/api/dial/chat', { method: 'POST', headers, body: JSON.stringify({ sessionId, message, locale, hooLocale }) });
+      const res = await fetch('/api/dial/chat', { method: 'POST', headers, body: JSON.stringify({ sessionId, message, locale }) });
       const data = await res.json();
       if (!data.success) {
         setError(data.error || 'Chat failed');
@@ -354,7 +352,7 @@ export function ChatPanelV2({
     } finally {
       setSending(false);
     }
-  }, [sending, sessionId, headers, phase, applyChanges, onPreviewRequested, isMasteringPhase, onMasteringPreviewRequested, onParametersApplied, t, locale, hooLocale]);
+  }, [sending, sessionId, headers, phase, applyChanges, onPreviewRequested, isMasteringPhase, onMasteringPreviewRequested, onParametersApplied, t, locale]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
