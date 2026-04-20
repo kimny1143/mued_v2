@@ -221,6 +221,7 @@ export function UnifiedSessionPlayerV2({
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
     analyserNode, analyserL, analyserR, sampleRate: audioSampleRate,
     getStemAnalysers,
+    momentaryLufs, shortTermLufs, integratedLufs,
   } = useMultiTakePlayer(takeDefs);
 
   const analyzerData = useMultiTakeAnalyzerData({
@@ -228,6 +229,9 @@ export function UnifiedSessionPlayerV2({
     analyserL,
     analyserR,
     sampleRate: audioSampleRate,
+    momentaryLufs,
+    shortTermLufs,
+    integratedLufs,
   });
 
   const activeTake = takes.find((t) => t.id === activeTakeId) ?? takes[0];
