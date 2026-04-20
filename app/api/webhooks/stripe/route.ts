@@ -977,7 +977,24 @@ async function handleDialCheckoutCompleted(
       expiresAt: null, // No expiry — active subscriber rollover
     });
 
+    // Grant first-purchase 400cr bonus for authenticated users
+    const bonusResult = await grantFirstPurchaseBonus(userId, tx);
+
     logger.info(`[Dial Webhook] Subscription created: ${stripeSubscriptionId} for user: ${userId}, ${totalCredits}cr granted (no expiry while subscribed)`);
+
+    // Budget threshold alert — non-blocking
+    setImmediate(async () => {
+      if (bonusResult.crossedThreshold !== undefined && bonusResult.newCumulativeCostUsd !== undefined) {
+        try {
+          await notificationService.onBonusBudgetThreshold(
+            bonusResult.crossedThreshold,
+            bonusResult.newCumulativeCostUsd,
+          );
+        } catch (error) {
+          logger.error('[Dial Webhook] Failed to send budget threshold alert', { error });
+        }
+      }
+    });
   }
 }
 
@@ -1067,7 +1084,24 @@ async function handleDialCreditPackCompleted(
     return;
   }
 
+  // Grant first-purchase 400cr bonus for authenticated users
+  const bonusResult = await grantFirstPurchaseBonus(userId, tx);
+
   logger.info(`[Dial Webhook] Credit pack completed: ${creditPackId} for user: ${userId} (country: ${customerCountry}, expires: ${expiresAt.toISOString()})`);
+
+  // Budget threshold alert — non-blocking
+  setImmediate(async () => {
+    if (bonusResult.crossedThreshold !== undefined && bonusResult.newCumulativeCostUsd !== undefined) {
+      try {
+        await notificationService.onBonusBudgetThreshold(
+          bonusResult.crossedThreshold,
+          bonusResult.newCumulativeCostUsd,
+        );
+      } catch (error) {
+        logger.error('[Dial Webhook] Failed to send budget threshold alert', { error });
+      }
+    }
+  });
 }
 
 async function handleDialSubscriptionUpdated(

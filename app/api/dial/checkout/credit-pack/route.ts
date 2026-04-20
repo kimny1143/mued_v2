@@ -31,6 +31,9 @@ const CREDIT_PACK_PRICE_IDS: Record<DialCreditPackSize, string> = {
 
 const creditPackSchema = z.object({
   packSize: z.enum(['small', 'large']),
+  utmSource: z.string().max(50).optional(),
+  utmMedium: z.string().max(50).optional(),
+  utmCampaign: z.string().max(100).optional(),
 });
 
 export const POST = withAuth(async ({ userId, request }) => {
@@ -41,7 +44,7 @@ export const POST = withAuth(async ({ userId, request }) => {
       return apiValidationError('Invalid request', parsed.error.errors);
     }
 
-    const { packSize } = parsed.data;
+    const { packSize, utmSource, utmMedium, utmCampaign } = parsed.data;
     const pack = DIAL_CREDIT_PACKS[packSize];
     const priceId = CREDIT_PACK_PRICE_IDS[packSize];
 
@@ -80,6 +83,9 @@ export const POST = withAuth(async ({ userId, request }) => {
         creditPackId: creditPack.id,
         userId,
         credits: pack.credits.toString(),
+        ...(utmSource && { utm_source: utmSource }),
+        ...(utmMedium && { utm_medium: utmMedium }),
+        ...(utmCampaign && { utm_campaign: utmCampaign }),
       },
       billing_address_collection: 'required',
       success_url: `${origin}/dashboard?credit_pack=success`,
