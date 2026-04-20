@@ -50,6 +50,7 @@ class EbuR128Processor extends AudioWorkletProcessor {
   constructor() {
     super();
     this._ready = false;
+    this._diagCount = 0; // diagnostic block counter (logs first 5 blocks then stops)
     this.port.onmessage = (e) => {
       if (e.data && e.data.reset) this._reset();
     };
@@ -121,6 +122,14 @@ class EbuR128Processor extends AudioWorkletProcessor {
     const nCh = input.length;
     if (!this._ready || nCh !== this._nCh) this._setup(nCh);
 
+    // One-time startup diagnostic — log channel count + first 4 sample values per channel
+    if (this._diagCount === 0) {
+      const chInfo = Array.from({ length: nCh }, (_, ch) =>
+        `ch${ch}[0..3]=${Array.from(input[ch].slice(0, 4)).map(v => v.toFixed(4)).join(',')}`
+      ).join(' | ');
+      console.log(`[ebur128] nCh=${nCh} sampleRate=${sampleRate} blockSz=${this._blockSz} ${chInfo}`);
+    }
+
     const c  = this._coeffs;
     const bq = this._bq;
 
@@ -155,6 +164,13 @@ class EbuR128Processor extends AudioWorkletProcessor {
     const meanSq = this._blockAccum[0] / this._blockN;
     this._blockAccum[0] = 0;
     this._blockN = 0;
+
+    // Diagnostic: log first 5 blocks to help diagnose signal level in browser
+    if (this._diagCount < 5) {
+      const lufsRaw = meanSq > 0 ? (-0.691 + 10 * Math.log10(meanSq)).toFixed(2) : '-inf';
+      console.log(`[ebur128] block#${this._diagCount} meanSq=${meanSq.toExponential(4)} lufs_raw=${lufsRaw} nCh=${this._nCh}`);
+      this._diagCount++;
+    }
 
     // ── Momentary (400 ms) ──────────────────────────────────────────────────
     this._mBuf[this._mHead] = meanSq;

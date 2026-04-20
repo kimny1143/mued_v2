@@ -233,7 +233,7 @@ function DialSessionContent() {
     const proxiedStems = stemTaskForKeys
       ? Object.fromEntries(
           Object.keys(stemTaskForKeys.stemsUrls as Record<string, string>)
-            .filter((k) => k.startsWith('stem_')) // exclude RoEx effect returns (e.g. reverb_send)
+            .filter((k) => !k.startsWith('reverb_send')) // exclude RoEx effect returns; real stems are UUID-named
             .map((k) => [k, stemStreamUrl(session.id, k, guestToken)]),
         )
       : null;
