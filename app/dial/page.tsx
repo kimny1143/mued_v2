@@ -196,7 +196,7 @@ function BeforeAfterDemo({ lp }: { lp: Record<string, string> }) {
 
 // ─── Video Promo Modal ──────────────────────────────────────────────────────
 
-function VideoPromo({ lp, locale }: { lp: Record<string, string>; locale: string }) {
+function VideoPromo({ lp, locale, closeLabel }: { lp: Record<string, string>; locale: string; closeLabel: string }) {
   const [open, setOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -266,7 +266,7 @@ function VideoPromo({ lp, locale }: { lp: Record<string, string>; locale: string
             <button
               onClick={close}
               className="absolute -top-10 right-0 text-white/60 hover:text-white transition-colors cursor-pointer"
-              aria-label="Close"
+              aria-label={closeLabel}
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -522,7 +522,7 @@ export default function DialPage() {
         <BeforeAfterDemo lp={lp} />
 
         {/* ─── Video Promo ────────────────────────────────────────────── */}
-        <VideoPromo lp={lp as unknown as Record<string, string>} locale={locale} />
+        <VideoPromo lp={lp as unknown as Record<string, string>} locale={locale} closeLabel={t.dial.session.close} />
 
         {/* ─── FAQ ──────────────────────────────────────────────────── */}
         <section className="py-20 px-6 border-t border-zinc-900">

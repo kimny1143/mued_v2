@@ -85,10 +85,12 @@ interface StemRowProps {
   initialGainDb: number;
   initialPan: number;
   localPlaybackTooltip: string;
+  muteLabel: string;
+  soloLabel: string;
   onUpdate: (patch: StemUpdate) => void;
 }
 
-function StemRow({ stem, playhead, initialGainDb, initialPan, localPlaybackTooltip, onUpdate }: StemRowProps) {
+function StemRow({ stem, playhead, initialGainDb, initialPan, localPlaybackTooltip, muteLabel, soloLabel, onUpdate }: StemRowProps) {
   const [gainDb, setGainDb] = useState(initialGainDb);
   const [pan, setPan] = useState(initialPan);
 
@@ -145,7 +147,7 @@ function StemRow({ stem, playhead, initialGainDb, initialPan, localPlaybackToolt
         label="M"
         tone="red"
         onClick={() => onUpdate({ mute: !muted })}
-        title="Mute"
+        title={muteLabel}
       />
 
       {/* Solo */}
@@ -154,7 +156,7 @@ function StemRow({ stem, playhead, initialGainDb, initialPan, localPlaybackToolt
         label="S"
         tone="amber"
         onClick={() => onUpdate({ solo: !soloed })}
-        title="Solo"
+        title={soloLabel}
       />
 
       {/* Pan */}
@@ -242,6 +244,8 @@ interface StemPanelProps {
 export function StemPanel({ stems, playhead, initialGainDbMap, initialPanMap, onUpdateStem }: StemPanelProps) {
   const { t } = useLocale();
   const tooltip = t.dial.stemPanel.localPlaybackTooltip;
+  const muteLabel = t.dial.session.mute;
+  const soloLabel = t.dial.session.solo;
   return (
     <div className="bg-[color:var(--ink-1)] border border-[color:var(--line)] rounded-[3px]">
       {/* Column headers */}
@@ -268,6 +272,8 @@ export function StemPanel({ stems, playhead, initialGainDbMap, initialPanMap, on
             initialGainDb={initialGainDbMap[s.id] ?? 0}
             initialPan={initialPanMap[s.id] ?? 0}
             localPlaybackTooltip={tooltip}
+            muteLabel={muteLabel}
+            soloLabel={soloLabel}
             onUpdate={(patch) => onUpdateStem(s.id, patch)}
           />
         ))}
