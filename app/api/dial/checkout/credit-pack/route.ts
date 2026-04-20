@@ -25,8 +25,8 @@ const stripe = new Stripe(stripeConfig.secretKey, {
 const FALLBACK_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
 
 const CREDIT_PACK_PRICE_IDS: Record<DialCreditPackSize, string> = {
-  small: process.env.STRIPE_DIAL_CREDIT_SMALL_PRICE_ID || '',
-  large: process.env.STRIPE_DIAL_CREDIT_LARGE_PRICE_ID || '',
+  small: (process.env.STRIPE_DIAL_CREDIT_SMALL_PRICE_ID || '').trim(),
+  large: (process.env.STRIPE_DIAL_CREDIT_LARGE_PRICE_ID || '').trim(),
 };
 
 const creditPackSchema = z.object({
