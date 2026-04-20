@@ -142,7 +142,7 @@ class EbuR128Processor extends AudioWorkletProcessor {
   }
 
   _emitBlock() {
-    const meanSq = this._blockAccum[0] / (this._blockN * this._nCh);
+    const meanSq = this._blockAccum[0] / this._blockN;
     this._blockAccum[0] = 0;
     this._blockN = 0;
 
