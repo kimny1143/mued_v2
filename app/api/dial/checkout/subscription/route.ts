@@ -29,6 +29,9 @@ const DIAL_SUB_PRICE_IDS: Record<DialSubTier, string> = {
 
 const subscriptionSchema = z.object({
   tier: z.enum(['basic', 'pro', 'studio']),
+  utmSource: z.string().max(50).optional(),
+  utmMedium: z.string().max(50).optional(),
+  utmCampaign: z.string().max(100).optional(),
 });
 
 export const POST = withAuth(async ({ userId, request }) => {
@@ -39,7 +42,7 @@ export const POST = withAuth(async ({ userId, request }) => {
       return apiValidationError('Invalid request', parsed.error.errors);
     }
 
-    const { tier } = parsed.data;
+    const { tier, utmSource, utmMedium, utmCampaign } = parsed.data;
     const plan = DIAL_SUB_PLANS[tier];
     const priceId = DIAL_SUB_PRICE_IDS[tier];
 
@@ -64,6 +67,9 @@ export const POST = withAuth(async ({ userId, request }) => {
         tier,
         userId,
         credits: plan.credits.toString(),
+        ...(utmSource && { utm_source: utmSource }),
+        ...(utmMedium && { utm_medium: utmMedium }),
+        ...(utmCampaign && { utm_campaign: utmCampaign }),
       },
       subscription_data: {
         metadata: {

@@ -978,6 +978,25 @@ async function handleDialCheckoutCompleted(
     });
 
     logger.info(`[Dial Webhook] Subscription created: ${stripeSubscriptionId} for user: ${userId}, ${totalCredits}cr granted (no expiry while subscribed)`);
+
+    // Grant first-purchase 400cr bonus — best-effort, must not block credit delivery
+    try {
+      const bonusResult = await grantFirstPurchaseBonus(userId, tx);
+      setImmediate(async () => {
+        if (bonusResult.crossedThreshold !== undefined && bonusResult.newCumulativeCostUsd !== undefined) {
+          try {
+            await notificationService.onBonusBudgetThreshold(
+              bonusResult.crossedThreshold,
+              bonusResult.newCumulativeCostUsd,
+            );
+          } catch (error) {
+            logger.error('[Dial Webhook] Failed to send budget threshold alert', { error });
+          }
+        }
+      });
+    } catch (error) {
+      logger.warn('[Dial Webhook] Bonus grant failed — credit delivery unaffected', { userId, error });
+    }
   }
 }
 
@@ -1068,6 +1087,25 @@ async function handleDialCreditPackCompleted(
   }
 
   logger.info(`[Dial Webhook] Credit pack completed: ${creditPackId} for user: ${userId} (country: ${customerCountry}, expires: ${expiresAt.toISOString()})`);
+
+  // Grant first-purchase 400cr bonus — best-effort, must not block credit delivery
+  try {
+    const bonusResult = await grantFirstPurchaseBonus(userId, tx);
+    setImmediate(async () => {
+      if (bonusResult.crossedThreshold !== undefined && bonusResult.newCumulativeCostUsd !== undefined) {
+        try {
+          await notificationService.onBonusBudgetThreshold(
+            bonusResult.crossedThreshold,
+            bonusResult.newCumulativeCostUsd,
+          );
+        } catch (error) {
+          logger.error('[Dial Webhook] Failed to send budget threshold alert', { error });
+        }
+      }
+    });
+  } catch (error) {
+    logger.warn('[Dial Webhook] Bonus grant failed — credit delivery unaffected', { userId, error });
+  }
 }
 
 async function handleDialSubscriptionUpdated(

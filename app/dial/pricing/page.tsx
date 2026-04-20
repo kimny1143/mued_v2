@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { useUser } from '@clerk/nextjs';
 import { Check, Zap, CreditCard, ArrowRight, AlertCircle } from 'lucide-react';
@@ -29,9 +30,16 @@ function formatUsd(cents: number): string {
 export default function DialPricingPage() {
   const { t } = useLocale();
   const { isSignedIn } = useUser();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const p = t.dial.pricing;
+
+  const utmParams = {
+    utmSource: searchParams.get('utm_source') ?? undefined,
+    utmMedium: searchParams.get('utm_medium') ?? undefined,
+    utmCampaign: searchParams.get('utm_campaign') ?? undefined,
+  };
 
   const clearError = useCallback(() => {
     if (error) setTimeout(() => setError(null), 5000);
@@ -44,7 +52,7 @@ export default function DialPricingPage() {
       const res = await fetch('/api/dial/checkout/subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ tier, ...utmParams }),
       });
       const data = await res.json();
       if (data.success && data.data?.url) {
@@ -68,7 +76,7 @@ export default function DialPricingPage() {
       const res = await fetch('/api/dial/checkout/credit-pack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packSize }),
+        body: JSON.stringify({ packSize, ...utmParams }),
       });
       const data = await res.json();
       if (data.success && data.data?.url) {
