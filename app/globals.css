@@ -445,10 +445,13 @@ html[lang="ja"] .text-subhead {
   transition: background-color 120ms ease;
 }
 
-/* Chat scroll styling */
-.chat-scroll::-webkit-scrollbar { width: 6px; }
-.chat-scroll::-webkit-scrollbar-track { background: transparent; }
-.chat-scroll::-webkit-scrollbar-thumb { background: #2a2a2e; border-radius: 3px; }
+/* Dark scrollbar — used on all DAW dark-theme containers */
+.chat-scroll::-webkit-scrollbar,
+.bg-zinc-950 *::-webkit-scrollbar { width: 6px; }
+.chat-scroll::-webkit-scrollbar-track,
+.bg-zinc-950 *::-webkit-scrollbar-track { background: transparent; }
+.chat-scroll::-webkit-scrollbar-thumb,
+.bg-zinc-950 *::-webkit-scrollbar-thumb { background: #2a2a2e; border-radius: 3px; }
 
 /* Processing pill shimmer */
 @keyframes dial-shimmer {
