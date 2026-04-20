@@ -1,7 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { MuednoteLayout } from "@/components/layouts/muednote-layout";
-import { MuednoteTabs } from "@/components/layouts/muednote-tabs";
 import { db } from "@/db";
 import { muednoteMobileSessions } from "@/db/schema/muednote-mobile";
 import {
@@ -10,11 +9,9 @@ import {
 } from "@/db/schema/cognitive-profiles";
 import { hooConversations, userProfiles, dialSessions } from "@/db/schema";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
-import { MuednoteDashboardContent } from "./muednote/muednote-dashboard-content";
-import { MuedearPlaceholder } from "./muedear-placeholder";
-import { DashboardServiceTabs } from "./dashboard-service-tabs";
-import { SessionLedger } from "@/components/dashboard/session-ledger";
+import { SessionLedger, type UnifiedSession } from "@/components/dashboard/session-ledger";
 import { CreditsLedger } from "@/components/dashboard/credits-ledger";
+import { AccountSection } from "@/components/dashboard/account-section";
 import { hooMemoriesRepository } from "@/lib/repositories/hoo-memories.repository";
 import { getUserIdFromClerkId } from "@/lib/utils/auth-helpers";
 
@@ -317,23 +314,48 @@ export default async function DashboardPage() {
   // Render
   // ========================================
 
-  const userName = user.firstName || user.username || "Creator";
+  // ========================================
+  // Build unified session list (dial + muednote, sorted by date desc)
+  // ========================================
+
+  const dialUnified: UnifiedSession[] = dialSessionsData.map((s) => ({
+    id: s.id,
+    product: 'dial' as const,
+    status: s.status,
+    displayName: s.title || s.musicalStyle || s.id.replace(/-/g, '').slice(0, 8),
+    createdAt: s.createdAt,
+    href: `/dial/session/${s.id}`,
+    hasDownload: s.hasDownload,
+    daysRemaining: s.daysRemaining,
+  }));
+
+  const muednoteUnified: UnifiedSession[] = profileData.recentSessions.map((s) => {
+    const durationMin = s.durationSec ? Math.round(s.durationSec / 60) : null;
+    const label = s.sessionMemo
+      ? s.sessionMemo.slice(0, 40)
+      : durationMin
+        ? `${durationMin}min session`
+        : 'Practice session';
+    return {
+      id: s.id,
+      product: 'muednote' as const,
+      status: 'note',
+      displayName: label,
+      createdAt: s.createdAt ? new Date(s.createdAt) : null,
+      href: '/lobe',
+    };
+  });
+
+  const unifiedSessions: UnifiedSession[] = [
+    ...dialUnified,
+    ...muednoteUnified,
+  ];
 
   return (
     <MuednoteLayout>
-      <MuednoteTabs />
-      <DashboardServiceTabs
-        muednoteContent={
-          <MuednoteDashboardContent userName={userName} profile={profileData} />
-        }
-        dialContent={
-          <>
-            <CreditsLedger />
-            <SessionLedger sessions={dialSessionsData} />
-          </>
-        }
-        muedearContent={<MuedearPlaceholder />}
-      />
+      <CreditsLedger />
+      <SessionLedger sessions={unifiedSessions} />
+      <AccountSection />
     </MuednoteLayout>
   );
 }

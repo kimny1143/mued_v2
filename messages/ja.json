@@ -1365,7 +1365,9 @@
       },
       "sessions": {
         "empty": "セッションはまだありません",
-        "startFirst": "最初のミックスを始める"
+        "startFirst": "最初のミックスを始める",
+        "comingSoon": "MUEDear — もうすぐ公開",
+        "muedlobeProfile": "MUEDlobeプロファイル →"
       },
       "credits": {
         "sub": "サブスク",
@@ -1374,6 +1376,13 @@
         "bonusActive": "Launchボーナス有効",
         "buyMore": "追加購入 →",
         "noSub": "サブスク未加入 — プランを見る"
+      },
+      "account": {
+        "title": "アカウント",
+        "settings": "設定",
+        "import": "インポート (AI会話)",
+        "mcp": "MCP設定",
+        "signOut": "サインアウト"
       }
     }
   },
