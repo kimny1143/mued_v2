@@ -75,7 +75,7 @@ export const POST = withAuth(async ({ userId, request }) => {
       },
       // Collect address for tax classification (JP = domestic = tax-inclusive)
       billing_address_collection: 'required',
-      success_url: `${origin}/dashboard/dial?subscription=success`,
+      success_url: `${origin}/dashboard?subscription=success`,
       cancel_url: `${origin}/dial/pricing?subscription=cancelled`,
     });
 
