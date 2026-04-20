@@ -19,8 +19,8 @@ import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { sendHooChat, type HooChatMessage } from '@/lib/ai/providers';
-import { buildDialSystemPrompt, type DialPromptInput } from '@/lib/ai/prompts/dial';
-import { detectPhase, selectTools } from '@/lib/dial/phase';
+import { buildDialSystemPrompt, getDialTools, type DialPromptInput } from '@/lib/ai/prompts/dial';
+import { detectPhase } from '@/lib/dial/phase';
 import { createRoExClient, compareMixes } from '@/lib/roex';
 import type { AnalysisResult, ComparisonResult } from '@/lib/roex';
 import { db } from '@/db';
@@ -52,6 +52,7 @@ interface MasteringActionInput {
 const chatRequestSchema = z.object({
   sessionId: z.string().uuid(),
   message: z.string().min(1).max(5000),
+  locale: z.enum(['en', 'ja']).optional(),
 });
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -84,7 +85,14 @@ export const POST = withDialAuth(async (auth) => {
       return apiValidationError('Invalid request', parsed.error.errors);
     }
 
-    const { sessionId, message } = parsed.data;
+    const { sessionId, message, locale: bodyLocale } = parsed.data;
+
+    // Resolve locale: body > NEXT_LOCALE cookie > default 'ja'
+    const cookieLocale = auth.request.headers.get('cookie')
+      ?.split('; ')
+      .find((c) => c.startsWith('NEXT_LOCALE='))
+      ?.split('=')[1] as 'en' | 'ja' | undefined;
+    const locale: 'en' | 'ja' = bodyLocale ?? (cookieLocale === 'en' || cookieLocale === 'ja' ? cookieLocale : 'ja');
 
     // Verify session ownership
     const session = await verifyDialSessionOwnership(sessionId, auth);
@@ -155,6 +163,7 @@ export const POST = withDialAuth(async (auth) => {
       referenceAnalysis: session.referenceAnalysisResult as AnalysisResult | null ?? null,
       referenceFilename: session.referenceTrackFilename ?? null,
       comparisonResult: null as ComparisonResult | null, // populated below if applicable
+      locale,
     };
 
     // If reference track exists and a preview is available, run comparison inline
@@ -198,7 +207,9 @@ export const POST = withDialAuth(async (auth) => {
         .filter((t) => t.status === 'processing' || t.status === 'completed')
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
       const taskStatus = taskForAction?.status ?? 'unknown';
-      systemPrompt += `\n\n---\n\n## セッション復元コンテキスト\n直前のアシスタントアクション: ${lastAssistantMsg.action}（タスク状態: ${taskStatus}）。\n${taskStatus === 'processing' ? 'タスクは処理中。ボタンの再送信は不要。「処理中だよ、もう少し待ってね」等で対応。' : taskStatus === 'completed' ? '前回のアクションは完了済み。結果について会話を続ける。同じツールの再呼び出しは不要。' : ''}`;
+      systemPrompt += locale === 'en'
+        ? `\n\n---\n\n## Session Restore Context\nLast assistant action: ${lastAssistantMsg.action} (task status: ${taskStatus}).\n${taskStatus === 'processing' ? 'Task is still processing. No need to re-submit. Tell the user "still working on it, hang tight".' : taskStatus === 'completed' ? 'Previous action is complete. Continue the conversation about results. No need to call the same tool again.' : ''}`
+        : `\n\n---\n\n## セッション復元コンテキスト\n直前のアシスタントアクション: ${lastAssistantMsg.action}（タスク状態: ${taskStatus}）。\n${taskStatus === 'processing' ? 'タスクは処理中。ボタンの再送信は不要。「処理中だよ、もう少し待ってね」等で対応。' : taskStatus === 'completed' ? '前回のアクションは完了済み。結果について会話を続ける。同じツールの再呼び出しは不要。' : ''}`;
     }
 
     // Reconstruct chat history — include tool_use/tool_result pairs so Hoo remembers past actions
@@ -225,8 +236,8 @@ export const POST = withDialAuth(async (auth) => {
       }
     }
 
-    // Send to AI with tool definitions
-    const tools = selectTools({ isMasteringPhase, isOmakase });
+    // Send to AI with locale-aware tool definitions
+    const tools = getDialTools({ mode: promptInput.mode, isMasteringPhase, locale });
 
     const startTime = Date.now();
     const aiResponse = await sendHooChat('claude-sonnet-4', chatMessages, {
@@ -322,27 +333,39 @@ export const POST = withDialAuth(async (auth) => {
       const mixTool = aiResponse.toolCalls?.find((t) => t.name === 'propose_mix_action');
       const masteringTool = aiResponse.toolCalls?.find((t) => t.name === 'propose_mastering_action');
       if (styleTool) {
-        responseContent = 'ジャンルを設定したよ。どんな雰囲気に仕上げたいか教えてね。';
+        responseContent = locale === 'en'
+          ? 'Genre set. Now, what vibe are you going for?'
+          : 'ジャンルを設定したよ。どんな雰囲気に仕上げたいか教えてね。';
       } else if (mixTool) {
         const act = (mixTool.input as MixActionInput)?.action;
         if (act === 'adjust_preview') {
-          responseContent = 'パラメータを設定したよ。プレビューが生成されるから聴いてみて。';
+          responseContent = locale === 'en'
+            ? 'Parameters applied. A new preview is being generated — give it a listen.'
+            : 'パラメータを設定したよ。プレビューが生成されるから聴いてみて。';
         } else if (act === 'request_mix_check') {
-          responseContent = 'OK、Mix Checkを用意するね。下にボタンが表示されるから、良ければ押してね。';
+          responseContent = locale === 'en'
+            ? 'Mix Check requested. A button will appear below — press it to start generation.'
+            : 'OK、Mix Checkを用意するね。下にボタンが表示されるから、良ければ押してね。';
         } else if (act === 'request_final') {
-          responseContent = 'Final Mixを用意するね。下にボタンが表示されるから、良ければ押してね。';
+          responseContent = locale === 'en'
+            ? 'Final Mix requested. A button will appear below — press it to start generation.'
+            : 'Final Mixを用意するね。下にボタンが表示されるから、良ければ押してね。';
         } else {
-          responseContent = '調整するね。もう少し待ってて。';
+          responseContent = locale === 'en' ? 'On it — give me a moment.' : '調整するね。もう少し待ってて。';
         }
       } else if (masteringTool) {
         const act = (masteringTool.input as MasteringActionInput)?.action;
         if (act === 'request_mastering_final') {
-          responseContent = 'マスタリングを開始するね。下にボタンが表示されるから、良ければ押してね。';
+          responseContent = locale === 'en'
+            ? 'Mastering Final requested. A button will appear below — press it to start generation.'
+            : 'マスタリングを開始するね。下にボタンが表示されるから、良ければ押してね。';
         } else {
-          responseContent = 'マスタリングパラメータを設定したよ。プレビューが生成されるから聴いてみて。';
+          responseContent = locale === 'en'
+            ? 'Mastering parameters set. A new preview is being generated — have a listen.'
+            : 'マスタリングパラメータを設定したよ。プレビューが生成されるから聴いてみて。';
         }
       } else {
-        responseContent = '少し確認中だよ。もう少し待ってて。';
+        responseContent = locale === 'en' ? 'Let me check on that — just a moment.' : '少し確認中だよ。もう少し待ってて。';
       }
     }
 

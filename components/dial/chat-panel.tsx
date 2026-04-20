@@ -76,7 +76,7 @@ const VALID_PAN = ['NO_PREFERENCE', 'LEFT', 'CENTRE', 'RIGHT'];
 const VALID_REVERB = ['NONE', 'LOW', 'MEDIUM', 'HIGH'];
 
 export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onPreviewRequested, onMixCheckRequested, onFinalRequested, onMasteringPreviewRequested, onMasteringFinalRequested, generating = false, generatingLabel, generatingElapsed, generatingEta, className, phase = 1, mode = 'dialogue', previewCount = 0, previewLimit = 0, isMasteringPhase = false }: ChatPanelProps) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -190,7 +190,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
       const res = await fetch('/api/dial/chat', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ sessionId, message }),
+        body: JSON.stringify({ sessionId, message, locale }),
       });
       const data = await res.json();
 
