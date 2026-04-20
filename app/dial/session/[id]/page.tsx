@@ -1449,7 +1449,7 @@ function DialSessionContent() {
             <button
               onClick={() => setShowPaymentBanner(false)}
               className="text-zinc-500 hover:text-zinc-300 transition-colors text-lg leading-none"
-              aria-label="閉じる"
+              aria-label={t.dial.session.close}
             >
               ✕
             </button>

@@ -1623,7 +1623,13 @@
       "stemTracksAvailableAfterDialogue": "Stem tracks available after dialogue mix.",
       "stemDownloadGuard": "Stem files have not been downloaded yet. Leaving this page will make them unavailable. Continue?",
       "returnToStart": "Return to start",
-      "uploadFailedError": "Upload failed"
+      "uploadFailedError": "Upload failed",
+      "close": "Close",
+      "mute": "Mute",
+      "solo": "Solo",
+      "removeReference": "Remove reference",
+      "chatMessages": "Chat messages",
+      "processingSpinner": "Processing"
     }
   },
   "settings": {

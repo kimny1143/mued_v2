@@ -236,7 +236,7 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
                 }`}
               >
                 {label}
-                {!anyEnabled && <span className="w-2.5 h-2.5 border border-current border-t-transparent rounded-full animate-spin shrink-0" aria-label="Processing" />}
+                {!anyEnabled && <span className="w-2.5 h-2.5 border border-current border-t-transparent rounded-full animate-spin shrink-0" aria-label={t.dial.session.processingSpinner} />}
                 {anyEnabled && group.filter((t) => t.enabled).length > 1 && (
                   <span className="text-[9px] opacity-60 tabular-nums">{group.filter((t) => t.enabled).length}</span>
                 )}

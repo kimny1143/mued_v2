@@ -1623,7 +1623,13 @@
       "stemTracksAvailableAfterDialogue": "ステムはダイアローグミックス後に利用可能になります。",
       "stemDownloadGuard": "ステムファイルがまだダウンロードされていません。このページを離れると利用できなくなります。続行しますか？",
       "returnToStart": "先頭に戻る",
-      "uploadFailedError": "アップロードに失敗しました"
+      "uploadFailedError": "アップロードに失敗しました",
+      "close": "閉じる",
+      "mute": "ミュート",
+      "solo": "ソロ",
+      "removeReference": "リファレンスを削除",
+      "chatMessages": "チャットメッセージ",
+      "processingSpinner": "処理中"
     }
   },
   "settings": {

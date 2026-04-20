@@ -182,7 +182,7 @@ export function ReferenceTrack({
             <button
               onClick={handleRemove}
               className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors shrink-0 ml-2"
-              title="Remove reference"
+              title={t.dial.session.removeReference}
             >
               ✕
             </button>
