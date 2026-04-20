@@ -1351,6 +1351,30 @@
       "import": "インポート",
       "settings": "設定",
       "connect": "接続"
+    },
+    "dashboardHub": {
+      "sections": {
+        "sessions": "セッション",
+        "credits": "クレジット"
+      },
+      "hoo": {
+        "statusCredits": "Hoo: {total}cr",
+        "statusBonus": "Hoo: {total}cr ({bonus} ボーナス)",
+        "statusNoSub": "Hoo: サブスク未加入",
+        "statusLoading": "Hoo: —"
+      },
+      "sessions": {
+        "empty": "セッションはまだありません",
+        "startFirst": "最初のミックスを始める"
+      },
+      "credits": {
+        "sub": "サブスク",
+        "bonus": "ボーナス",
+        "exp": "期限 {date}",
+        "bonusActive": "Launchボーナス有効",
+        "buyMore": "追加購入 →",
+        "noSub": "サブスク未加入 — プランを見る"
+      }
     }
   },
   "dial": {

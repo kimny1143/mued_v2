@@ -11,9 +11,10 @@ import {
 import { hooConversations, userProfiles, dialSessions } from "@/db/schema";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
 import { MuednoteDashboardContent } from "./muednote/muednote-dashboard-content";
-import { DialDashboardContent } from "./dial/dial-dashboard-content";
 import { MuedearPlaceholder } from "./muedear-placeholder";
 import { DashboardServiceTabs } from "./dashboard-service-tabs";
+import { SessionLedger } from "@/components/dashboard/session-ledger";
+import { CreditsLedger } from "@/components/dashboard/credits-ledger";
 import { hooMemoriesRepository } from "@/lib/repositories/hoo-memories.repository";
 import { getUserIdFromClerkId } from "@/lib/utils/auth-helpers";
 
@@ -325,7 +326,12 @@ export default async function DashboardPage() {
         muednoteContent={
           <MuednoteDashboardContent userName={userName} profile={profileData} />
         }
-        dialContent={<DialDashboardContent sessions={dialSessionsData} />}
+        dialContent={
+          <>
+            <CreditsLedger />
+            <SessionLedger sessions={dialSessionsData} />
+          </>
+        }
         muedearContent={<MuedearPlaceholder />}
       />
     </MuednoteLayout>

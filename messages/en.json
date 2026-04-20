@@ -1351,6 +1351,30 @@
       "import": "Import",
       "settings": "Settings",
       "connect": "Connect"
+    },
+    "dashboardHub": {
+      "sections": {
+        "sessions": "Sessions",
+        "credits": "Credits"
+      },
+      "hoo": {
+        "statusCredits": "Hoo: {total}cr",
+        "statusBonus": "Hoo: {total}cr ({bonus} bonus)",
+        "statusNoSub": "Hoo: no subscription",
+        "statusLoading": "Hoo: —"
+      },
+      "sessions": {
+        "empty": "No sessions yet",
+        "startFirst": "Start your first mix"
+      },
+      "credits": {
+        "sub": "sub",
+        "bonus": "bonus",
+        "exp": "exp {date}",
+        "bonusActive": "Launch bonus active",
+        "buyMore": "Buy more →",
+        "noSub": "No subscription — view plans"
+      }
     }
   },
   "dial": {

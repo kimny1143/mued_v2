@@ -21,8 +21,8 @@ type ServiceTab = "muednote" | "dial" | "muedear";
 // ========================================
 
 const TAB_CONFIG: { key: ServiceTab; icon: typeof Brain }[] = [
-  { key: "muednote", icon: Brain },
   { key: "dial", icon: Headphones },
+  { key: "muednote", icon: Brain },
   { key: "muedear", icon: Music },
 ];
 
@@ -35,7 +35,7 @@ export function DashboardServiceTabs({
   dialContent,
   muedearContent,
 }: DashboardServiceTabsProps) {
-  const [activeTab, setActiveTab] = useState<ServiceTab>("muednote");
+  const [activeTab, setActiveTab] = useState<ServiceTab>("dial");
   const { t } = useLocale();
 
   const contentMap: Record<ServiceTab, React.ReactNode> = {
