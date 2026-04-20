@@ -1342,10 +1342,10 @@
       "muedear": "MUEDear"
     },
     "muedearPlaceholder": {
-      "title": "MUEDear — 耳トレ",
-      "description": "耳トレのスコアや履歴がここに表示されます。",
-      "comingSoon": "Coming soon",
-      "openApp": "MUEDearを開く"
+      "title": "MUEDear",
+      "tagline": "AIが耳を鍛える、音楽のための耳トレーニング",
+      "comingSoon": "Coming Soon",
+      "notify": "リリース通知を受け取る"
     },
     "utilityNav": {
       "import": "インポート",
