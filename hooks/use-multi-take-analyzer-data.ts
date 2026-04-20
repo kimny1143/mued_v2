@@ -31,6 +31,10 @@ interface Options {
   analyserL: AnalyserNode | null;
   analyserR: AnalyserNode | null;
   sampleRate: number;
+  /** BS.1770-4 LUFS from AudioWorklet — overrides the approximated values when provided. */
+  momentaryLufs?: number;
+  shortTermLufs?: number;
+  integratedLufs?: number;
 }
 
 /**
@@ -38,11 +42,15 @@ interface Options {
  * AnalyzerData compatible with AudioAnalyzer. Uses the full stereo L/R split
  * for correlation, goniometer, width, and balance metrics.
  */
-export function useMultiTakeAnalyzerData({ analyser, analyserL, analyserR, sampleRate }: Options): AnalyzerData | null {
+export function useMultiTakeAnalyzerData({ analyser, analyserL, analyserR, sampleRate, momentaryLufs: realMomentary, shortTermLufs: realShortTerm, integratedLufs: realIntegrated }: Options): AnalyzerData | null {
   const rafRef = useRef<number>(0);
   const lufsHistoryRef = useRef<number[]>([]);
   const integratedHistoryRef = useRef<number[]>([]);
+  const realLufsRef = useRef({ momentary: realMomentary, shortTerm: realShortTerm, integrated: realIntegrated });
   const [data, setData] = useState<AnalyzerData | null>(null);
+
+  // Keep ref current so the RAF loop always reads latest values without re-mounting
+  realLufsRef.current = { momentary: realMomentary, shortTerm: realShortTerm, integrated: realIntegrated };
 
   useEffect(() => {
     if (!analyser || !analyserL || !analyserR) {
@@ -113,20 +121,27 @@ export function useMultiTakeAnalyzerData({ analyser, analyserL, analyserR, sampl
       const kCorrDb = totalPower > 1e-20 ? 10 * Math.log10(kWeightedPower / totalPower) : 0;
       const kMeanSq = rms > 0 ? rms * rms * Math.pow(10, kCorrDb / 10) : 0;
 
+      // Approximate LUFS (frequency-domain K-weighting) used only when worklet values unavailable
       const hist = lufsHistoryRef.current;
       hist.push(kMeanSq);
       if (hist.length > SHORT_TERM_FRAMES) hist.shift();
       const mSlice = hist.slice(-MOMENTARY_FRAMES);
       const mAvg = mSlice.reduce((a, b) => a + b, 0) / mSlice.length;
-      const momentaryLufs = mAvg > 1e-20 ? -0.691 + 10 * Math.log10(mAvg) : -70;
+      const approxMomentary = mAvg > 1e-20 ? -0.691 + 10 * Math.log10(mAvg) : -70;
       const stAvg = hist.reduce((a, b) => a + b, 0) / hist.length;
-      const shortTermLufs = stAvg > 1e-20 ? -0.691 + 10 * Math.log10(stAvg) : -70;
+      const approxShortTerm = stAvg > 1e-20 ? -0.691 + 10 * Math.log10(stAvg) : -70;
 
       const intHist = integratedHistoryRef.current;
       if (kMeanSq > 1e-7) intHist.push(kMeanSq);
       if (intHist.length > 216000) intHist.splice(0, intHist.length - 216000);
       const intAvg = intHist.length > 0 ? intHist.reduce((a, b) => a + b, 0) / intHist.length : 0;
-      const integratedLufs = intAvg > 1e-20 ? -0.691 + 10 * Math.log10(intAvg) : -70;
+      const approxIntegrated = intAvg > 1e-20 ? -0.691 + 10 * Math.log10(intAvg) : -70;
+
+      // Prefer real BS.1770-4 values from worklet; fall back to approximation
+      const rl = realLufsRef.current;
+      const outMomentary = rl.momentary !== undefined ? rl.momentary : Math.max(-70, approxMomentary);
+      const outShortTerm = rl.shortTerm !== undefined ? rl.shortTerm : Math.max(-70, approxShortTerm);
+      const outIntegrated = rl.integrated !== undefined ? rl.integrated : Math.max(-70, approxIntegrated);
 
       setData({
         frequencyData: Array.from(freqArray),
@@ -134,9 +149,9 @@ export function useMultiTakeAnalyzerData({ analyser, analyserL, analyserR, sampl
         peakR: peakRch,
         rmsL: lPow,
         rmsR: rPow,
-        momentaryLufs: Math.max(-70, momentaryLufs),
-        shortTermLufs: Math.max(-70, shortTermLufs),
-        integratedLufs: Math.max(-70, integratedLufs),
+        momentaryLufs: outMomentary,
+        shortTermLufs: outShortTerm,
+        integratedLufs: outIntegrated,
         correlation,
         stereoWidth,
         balance,

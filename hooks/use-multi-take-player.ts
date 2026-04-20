@@ -52,6 +52,10 @@ export interface UseMultiTakePlayerReturn {
   sampleRate: number;
   /** Per-stem AnalyserNodes tapped after stemGain (before pan). Keyed by stemName. */
   getStemAnalysers(takeId: string): Record<string, AnalyserNode> | null;
+  /** BS.1770-4 compliant LUFS from AudioWorklet tapped at masterGain. */
+  momentaryLufs: number;
+  shortTermLufs: number;
+  integratedLufs: number;
   destroy(): void;
 }
 
@@ -129,6 +133,10 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   const [analyserL, setAnalyserL] = useState<AnalyserNode | null>(null);
   const [analyserR, setAnalyserR] = useState<AnalyserNode | null>(null);
   const [sampleRate, setSampleRate] = useState(44100);
+  const lufsWorkletRef = useRef<AudioWorkletNode | null>(null);
+  const [momentaryLufs, setMomentaryLufs] = useState(-70);
+  const [shortTermLufs, setShortTermLufs] = useState(-70);
+  const [integratedLufs, setIntegratedLufs] = useState(-70);
   const takeNodesRef = useRef<Record<string, TakeNodes>>({});
   const rafRef = useRef<number>(0);
   const pausedAtRef = useRef(0);
@@ -256,6 +264,24 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     let decodedCount = 0;
     let cancelled = false;
 
+    // BS.1770-4 LUFS worklet — tap masterGain, silent output keeps graph active
+    ctx.audioWorklet.addModule('/worklets/ebur128-processor.js').then(() => {
+      if (cancelled) return;
+      const lufsWorklet = new AudioWorkletNode(ctx, 'ebur128-processor');
+      lufsWorklet.port.onmessage = (e) => {
+        const { momentary, shortTerm, integrated } = e.data as { momentary: number; shortTerm: number; integrated: number };
+        setMomentaryLufs(isFinite(momentary) ? Math.max(-70, momentary) : -70);
+        setShortTermLufs(isFinite(shortTerm) ? Math.max(-70, shortTerm) : -70);
+        setIntegratedLufs(isFinite(integrated) ? Math.max(-70, integrated) : -70);
+      };
+      masterGain.connect(lufsWorklet);
+      const lufsGain = ctx.createGain();
+      lufsGain.gain.value = 0;
+      lufsWorklet.connect(lufsGain);
+      lufsGain.connect(ctx.destination);
+      lufsWorkletRef.current = lufsWorklet;
+    }).catch(() => { /* worklet unavailable — LUFS stays at default */ });
+
     const onStemDecoded = (takeId: string, success: boolean) => {
       if (cancelled) return;
       decodedCount++;
@@ -362,6 +388,8 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
           sn.stemAnalyser.disconnect();
         }
       }
+      lufsWorkletRef.current?.disconnect();
+      lufsWorkletRef.current = null;
       masterGain.disconnect();
       analyser.disconnect();
       splitter.disconnect();
@@ -519,6 +547,10 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
 
     activeTakeIdRef.current = id;
     _setActiveTakeId(id);
+    lufsWorkletRef.current?.port.postMessage({ reset: true });
+    setMomentaryLufs(-70);
+    setShortTermLufs(-70);
+    setIntegratedLufs(-70);
   }, []);
 
   // Auto-activate pending take once its decode completes
@@ -589,6 +621,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
     analyserNode, analyserL, analyserR, sampleRate,
     getStemAnalysers,
+    momentaryLufs, shortTermLufs, integratedLufs,
     destroy,
   };
 }
