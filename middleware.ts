@@ -45,6 +45,13 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Subdomain routing: dial.mued.jp → serve /dial page
   if (hostname.startsWith('dial.')) {
+    // Redirect checkout-requiring paths to primary domain (Clerk session not shared across subdomains)
+    if (pathname.startsWith('/dial/pricing') || pathname.startsWith('/dashboard')) {
+      const primaryUrl = new URL(req.url);
+      primaryUrl.hostname = hostname.replace(/^dial\./, '');
+      return NextResponse.redirect(primaryUrl);
+    }
+
     // Set locale cookie from Accept-Language (dial subdomain has no /ja prefix)
     const acceptLanguage = req.headers.get('accept-language');
     const locale = getPreferredLocale(acceptLanguage);
