@@ -17,8 +17,9 @@ export function HooMasthead() {
   const [balance, setBalance] = useState<BalanceSummary | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     const load = () => {
-      fetch('/api/dial/credits/balance')
+      fetch('/api/dial/credits/balance', { signal: controller.signal })
         .then((r) => r.json())
         .then((res) => {
           if (res.success) {
@@ -30,12 +31,11 @@ export function HooMasthead() {
             });
           }
         })
-        .catch(() => {});
+        .catch((e) => { if (e?.name !== 'AbortError') console.error(e); });
     };
     load();
-    // Refresh every 5 minutes (Phase 2: tighten to 1min with user activity detection)
     const id = setInterval(load, 5 * 60 * 1000);
-    return () => clearInterval(id);
+    return () => { controller.abort(); clearInterval(id); };
   }, []);
 
   const statusLine = () => {

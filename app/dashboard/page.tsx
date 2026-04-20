@@ -1,5 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { MuednoteLayout } from "@/components/layouts/muednote-layout";
 import { db } from "@/db";
 import { muednoteMobileSessions } from "@/db/schema/muednote-mobile";
@@ -351,10 +352,13 @@ export default async function DashboardPage() {
     ...muednoteUnified,
   ];
 
+  const host = (await headers()).get('host') ?? '';
+  const isDialDomain = host.startsWith('dial.');
+
   return (
     <MuednoteLayout>
       <CreditsLedger />
-      <SessionLedger sessions={unifiedSessions} />
+      <SessionLedger sessions={unifiedSessions} showDialOnly={isDialDomain} />
       <AccountSection />
     </MuednoteLayout>
   );

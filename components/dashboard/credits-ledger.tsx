@@ -30,12 +30,14 @@ export function CreditsLedger() {
   const [data, setData] = useState<BalanceData | null>(null);
 
   useEffect(() => {
-    fetch('/api/dial/credits/balance')
+    const controller = new AbortController();
+    fetch('/api/dial/credits/balance', { signal: controller.signal })
       .then((r) => r.json())
       .then((res) => {
         if (res.success) setData(res.data);
       })
-      .catch(() => {});
+      .catch((e) => { if (e?.name !== 'AbortError') console.error(e); });
+    return () => controller.abort();
   }, []);
 
   const hasBonusActive = data
