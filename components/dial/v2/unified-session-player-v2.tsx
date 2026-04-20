@@ -15,7 +15,6 @@ import { StemPanel, type StemData, type StemUpdate } from './stem-panel';
 import { AnalyzerCluster } from './analyzer';
 import { ChatPanelV2, type ChatPanelV2Props } from './chat';
 import type { TakeEntry, StemParamChange } from '@/components/dial/unified-session-player';
-import { measureIntegratedLufs } from '@/lib/audio/measure-lufs';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -64,6 +63,7 @@ interface TransportAction {
   variant: 'amber' | 'emerald';
   disabled?: boolean;
   testId?: string;
+  title?: string;
 }
 
 interface TransportBarProps {
@@ -115,6 +115,7 @@ function TransportBar({ isReady, isPlaying, currentTime, duration, onPlay, onPau
               onClick={a.onClick}
               disabled={a.disabled}
               data-testid={a.testId}
+              title={a.title}
               className="h-7 px-3 rounded-[3px] text-[11px] mono font-medium tracking-wide transition-colors disabled:opacity-40"
               style={
                 a.variant === 'emerald'
@@ -198,8 +199,6 @@ export function UnifiedSessionPlayerV2({
   rawLoudnessLufs,
   compact: _compact,
 }: UnifiedSessionPlayerV2Props) {
-  const TARGET_LUFS = -18; // RoEx outputs ~-17.8 LUFS; -14 made RAW 4dB louder than MIXED
-
   // Only pass enabled (ready) takes to the player hook
   const takeDefs: TakeDef[] = useMemo(() =>
     takes
@@ -208,11 +207,8 @@ export function UnifiedSessionPlayerV2({
         id: t.id,
         label: t.label,
         stemUrls: t.stemsUrls ?? { main: t.url },
-        ...(t.label === 'RAW' && rawLoudnessLufs != null
-          ? { gainOffsetDb: TARGET_LUFS - rawLoudnessLufs }
-          : {}),
       })),
-    [takes, rawLoudnessLufs],
+    [takes],
   );
 
   const {
@@ -222,39 +218,33 @@ export function UnifiedSessionPlayerV2({
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
     analyserNode, analyserL, analyserR, sampleRate: audioSampleRate,
     getStemAnalysers,
-    getTakeBuffer, updateTakeGainOffset,
+    updateTakeGainOffset,
     momentaryLufs, shortTermLufs, integratedLufs,
   } = useMultiTakePlayer(takeDefs);
 
-  // In-browser LUFS measurement for RAW take when analysisResult is unavailable.
-  // Runs once after RAW decode completes; caches per-take to avoid re-measurement.
-  const measuredTakesRef = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    if (rawLoudnessLufs != null) return; // server-side value available — no need to measure
-    const rawTakeDef = takeDefs.find((t) => t.label === 'RAW');
-    if (!rawTakeDef) return;
-    const { id: rawTakeId } = rawTakeDef;
-    if (takeDecodeStatus[rawTakeId] !== 'ready') return;
-    if (measuredTakesRef.current.has(rawTakeId)) return;
+  // Per-take integrated LUFS snapshot — updated each render so take-switch doesn't lose values.
+  const takeLufsRef = useRef<Record<string, number>>({});
+  if (integratedLufs > -69) {
+    takeLufsRef.current[activeTakeId] = integratedLufs;
+  }
 
-    const buffer = getTakeBuffer(rawTakeId, 'main');
-    if (!buffer) return; // buffer not ready yet — will retry on next takeDecodeStatus change
+  // Stable IDs for RAW / MIXED takes
+  const rawTakeId = useMemo(() => takeDefs.find((t) => t.label === 'RAW')?.id, [takeDefs]);
+  const mixedTakeId = useMemo(() => takeDefs.find((t) => t.label === 'MIXED')?.id, [takeDefs]);
 
-    measuredTakesRef.current.add(rawTakeId);
+  // Gain Match button state
+  const [gainMatchLabel, setGainMatchLabel] = useState('Match to Mix');
+  useEffect(() => { setGainMatchLabel('Match to Mix'); }, [activeTakeId]);
 
-    measureIntegratedLufs(buffer).then((measuredLufs) => {
-      if (measuredLufs <= -69) {
-        console.warn('[dial:lufs] RAW LUFS measurement returned floor value, skipping gainOffset');
-        return;
-      }
-      const gainOffsetDb = Math.max(-24, Math.min(24, TARGET_LUFS - measuredLufs));
-      updateTakeGainOffset(rawTakeId, gainOffsetDb);
-      console.log(`[dial:lufs] RAW in-browser: ${measuredLufs.toFixed(1)} LUFS → gainOffset ${gainOffsetDb.toFixed(1)} dB`);
-    }).catch((e) => {
-      console.warn('[dial:lufs] RAW LUFS measurement failed:', e);
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [takeDecodeStatus, rawLoudnessLufs]);
+  const handleGainMatch = useCallback(() => {
+    if (!rawTakeId || !mixedTakeId) return;
+    const rawLufs = takeLufsRef.current[rawTakeId];
+    const mixedLufs = takeLufsRef.current[mixedTakeId];
+    if (rawLufs === undefined || rawLufs <= -69 || mixedLufs === undefined || mixedLufs <= -69) return;
+    const diff = Math.max(-24, Math.min(24, mixedLufs - rawLufs));
+    updateTakeGainOffset(rawTakeId, diff);
+    setGainMatchLabel(`Matched (${diff >= 0 ? '+' : ''}${diff.toFixed(1)} dB)`);
+  }, [rawTakeId, mixedTakeId, updateTakeGainOffset]);
 
   const analyzerData = useMultiTakeAnalyzerData({
     analyser: analyserNode,
@@ -452,6 +442,32 @@ export function UnifiedSessionPlayerV2({
     return [];
   }, [chatProps, takes, t]);
 
+  // Gain Match action — prepended when both RAW and MIXED takes exist.
+  // Re-computes on every integratedLufs tick so disabled state stays current.
+  const allTransportActions = useMemo((): TransportAction[] => {
+    if (!rawTakeId || !mixedTakeId) return transportActions;
+    const rawLufs = takeLufsRef.current[rawTakeId];
+    const mixedLufs = takeLufsRef.current[mixedTakeId];
+    const rawReady = rawLufs !== undefined && rawLufs > -69;
+    const mixedReady = mixedLufs !== undefined && mixedLufs > -69;
+    const title = !mixedReady
+      ? '先にMIXEDテイクを再生してください'
+      : !rawReady
+      ? '先にRAWテイクを再生してください'
+      : 'MIXEDテイクの音量基準にRAWの出力ゲインを調整します';
+    const gainMatch: TransportAction = {
+      label: gainMatchLabel,
+      onClick: handleGainMatch,
+      variant: 'amber',
+      disabled: !rawReady || !mixedReady,
+      title,
+      testId: 'dial-transport-gain-match',
+    };
+    return [gainMatch, ...transportActions];
+  // integratedLufs in deps so button disabled state updates while audio plays
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transportActions, rawTakeId, mixedTakeId, gainMatchLabel, handleGainMatch, integratedLufs]);
+
   return (
     <div className="flex min-h-0 h-full gap-0" style={{ background: 'var(--ink-0)' }}>
 
@@ -508,7 +524,7 @@ export function UnifiedSessionPlayerV2({
           onPlay={handlePlayPause}
           onPause={handlePlayPause}
           onSeekToStart={handleSeekToStart}
-          actions={transportActions}
+          actions={allTransportActions}
         />
 
         {/* Analyzer — always visible, fixed above StemPanel (B7: DAW master section convention) */}
