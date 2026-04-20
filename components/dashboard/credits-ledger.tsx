@@ -59,12 +59,7 @@ export function CreditsLedger() {
 
   return (
     <section className="mb-10">
-      <h2
-        className="text-xs font-medium tracking-widest uppercase text-white/40 mb-3"
-        style={{ letterSpacing: '0.12em' }}
-      >
-        {hub.sections.credits}
-      </h2>
+      <h2 className="dashboard-section-title">{hub.sections.credits}</h2>
 
       <div className="border-t border-white/[0.08] pt-4 pb-2">
         {!data ? (
@@ -78,12 +73,7 @@ export function CreditsLedger() {
           <div className="space-y-2">
             {/* Total credits */}
             <div className="flex items-baseline gap-3">
-              <span
-                className={`text-2xl font-medium tabular-nums ${
-                  hasBonusActive ? 'text-amber-400' : 'text-white'
-                }`}
-                style={{ fontFamily: 'var(--font-jetbrains), monospace' }}
-              >
+              <span className="credit-total">
                 {data.totalCredits.toLocaleString()}
               </span>
               <span className="text-xs text-white/40">cr</span>

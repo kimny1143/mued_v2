@@ -9,7 +9,7 @@
  * Requires Clerk authentication.
  */
 
-import { and, eq, gt, or, isNull } from 'drizzle-orm';
+import { and, eq, gt, or, isNull, inArray } from 'drizzle-orm';
 import { withAuth } from '@/lib/middleware/with-auth';
 import { apiSuccess, apiServerError } from '@/lib/api-response';
 import { db } from '@/db';
@@ -25,7 +25,7 @@ export const GET = withAuth(async ({ userId }) => {
       .from(dialSubscriptions)
       .where(and(
         eq(dialSubscriptions.userId, userId),
-        eq(dialSubscriptions.status, 'active'),
+        inArray(dialSubscriptions.status, ['active', 'trialing']),
       ))
       .limit(1);
 

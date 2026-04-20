@@ -25,12 +25,7 @@ export function AccountSection() {
 
   return (
     <section className="mb-10">
-      <h2
-        className="text-xs font-medium uppercase text-white/40 mb-3"
-        style={{ letterSpacing: '0.12em' }}
-      >
-        {hub.account.title}
-      </h2>
+      <h2 className="dashboard-section-title">{hub.account.title}</h2>
 
       <div className="border-t border-white/[0.08]">
         {links.map(({ label, href, icon: Icon }) => (
