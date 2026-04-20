@@ -124,10 +124,9 @@ export function TakePill({ take, active, onClick, disabled, processing }: TakePi
 
 interface GainMatchProps {
   disabled: boolean;
-  diff: number | null;
+  active: boolean;
   onMatch(): void;
   matchLabel: string;
-  matchedLabel: string;
   title?: string;
 }
 
@@ -178,16 +177,15 @@ export function TakeHistory({ open, takes, activeTake, activeSub, onPick, onTogg
                       onClick={gainMatch.onMatch}
                       disabled={gainMatch.disabled}
                       title={gainMatch.title}
+                      aria-pressed={gainMatch.active}
                       data-testid="dial-gain-match"
                       className="mono text-[9px] uppercase tracking-wider px-1.5 h-4 rounded-[2px] transition-colors disabled:opacity-30"
-                      style={gainMatch.diff !== null
+                      style={gainMatch.active
                         ? { color: 'var(--amber)', border: '1px solid var(--amber-dim)', background: '#221809' }
                         : { color: 'var(--fg-2)', border: '1px solid var(--line)' }
                       }
                     >
-                      {gainMatch.diff !== null
-                        ? `${gainMatch.matchedLabel} (${gainMatch.diff >= 0 ? '+' : ''}${gainMatch.diff.toFixed(1)})`
-                        : gainMatch.matchLabel}
+                      {gainMatch.matchLabel}
                     </button>
                   )}
                 </div>
