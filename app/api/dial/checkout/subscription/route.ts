@@ -22,9 +22,9 @@ const FALLBACK_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
 
 // Stripe Price IDs (configured in Stripe Dashboard)
 const DIAL_SUB_PRICE_IDS: Record<DialSubTier, string> = {
-  basic: process.env.STRIPE_DIAL_BASIC_PRICE_ID || '',
-  pro: process.env.STRIPE_DIAL_PRO_PRICE_ID || '',
-  studio: process.env.STRIPE_DIAL_STUDIO_PRICE_ID || '',
+  basic: (process.env.STRIPE_DIAL_BASIC_PRICE_ID || '').trim(),
+  pro: (process.env.STRIPE_DIAL_PRO_PRICE_ID || '').trim(),
+  studio: (process.env.STRIPE_DIAL_STUDIO_PRICE_ID || '').trim(),
 };
 
 const subscriptionSchema = z.object({

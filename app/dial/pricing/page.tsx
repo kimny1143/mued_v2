@@ -102,7 +102,7 @@ export default function DialPricingPage() {
         </Link>
         <div className="flex items-center gap-4">
           {isSignedIn ? (
-            <Link href="/dashboard/dial" className="text-sm text-white/60 hover:text-white transition-colors">
+            <Link href="/dashboard" className="text-sm text-white/60 hover:text-white transition-colors">
               Dashboard
             </Link>
           ) : (
