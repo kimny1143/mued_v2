@@ -414,7 +414,7 @@ export function ChatPanelV2({
         style={{ background: 'var(--ink-0)' }}
         role="log"
         aria-live="polite"
-        aria-label="Chat messages"
+        aria-label={t.dial.session.chatMessages}
       >
         {loadingHistory ? (
           <div className="flex items-center justify-center py-8 gap-2" style={{ color: 'var(--fg-3)' }}>

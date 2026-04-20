@@ -347,7 +347,7 @@ export function ChatPanel({ sessionId, tracks, headers, onParametersApplied, onP
       </div>
 
       {/* Messages */}
-      <div className="flex-1 min-h-[320px] overflow-y-auto px-4 py-3 space-y-4 bg-zinc-950/50" role="log" aria-live="polite" aria-label="Chat messages">
+      <div className="flex-1 min-h-[320px] overflow-y-auto px-4 py-3 space-y-4 bg-zinc-950/50" role="log" aria-live="polite" aria-label={t.dial.session.chatMessages}>
         {loadingHistory ? (
           <div className="text-center text-zinc-600 text-sm py-8">{t.dial.chat.loading}</div>
         ) : messages.length === 0 ? (
