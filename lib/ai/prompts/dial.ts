@@ -24,7 +24,6 @@ export const DIAL_PROMPT_VERSION = '5.9.0';
 export type DialPromptInput = {
   mode: 'omakase' | 'dialogue';
   locale?: 'en' | 'ja';
-  hooLocale?: 'en' | 'ja';
   previewCount: number;
   previewLimit: number; // 5 for omakase, 0 = unlimited for dialogue
   musicalStyle: string;
@@ -1073,7 +1072,7 @@ If a reference track is uploaded:
 ${HOO_CONVERSATION_STYLE_EN}`;
 
 function buildMasteringPrompt(input: DialPromptInput): string {
-  const en = (input.hooLocale ?? input.locale) === 'en';
+  const en = input.locale === 'en';
   const basePrompt = en ? MASTERING_PROMPT_EN : MASTERING_PROMPT;
 
   const styleNote = en
@@ -1176,7 +1175,7 @@ ${rawStr}
 // ─── Builder ────────────────────────────────────────────────────────────────
 
 function buildOmakasePrompt(input: DialPromptInput): string {
-  const en = (input.hooLocale ?? input.locale) === 'en';
+  const en = input.locale === 'en';
   const trackList = input.tracks
     .map(
       (t) =>
@@ -1233,7 +1232,7 @@ ${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済み�
 }
 
 export function buildDialSystemPrompt(input: DialPromptInput): string {
-  const en = (input.hooLocale ?? input.locale) === 'en';
+  const en = input.locale === 'en';
 
   // Mastering phase takes precedence
   if (input.isMasteringPhase) {
@@ -1312,8 +1311,8 @@ ${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済み�
   ].join('\n\n---\n\n');
 }
 
-export function getDialTools(input: Pick<DialPromptInput, 'mode' | 'isMasteringPhase' | 'locale' | 'hooLocale'>) {
-  const en = (input.hooLocale ?? input.locale) === 'en';
+export function getDialTools(input: Pick<DialPromptInput, 'mode' | 'isMasteringPhase' | 'locale'>) {
+  const en = input.locale === 'en';
   if (input.isMasteringPhase) {
     return [
       en ? DIAL_SET_STYLE_TOOL_EN : DIAL_SET_STYLE_TOOL,
