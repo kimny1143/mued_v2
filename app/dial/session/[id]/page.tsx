@@ -232,9 +232,9 @@ function DialSessionContent() {
     const stemTaskForKeys = session.tasks.find((t) => hasStemsTask(t));
     const proxiedStems = stemTaskForKeys
       ? Object.fromEntries(
-          Object.keys(stemTaskForKeys.stemsUrls as Record<string, string>).map(
-            (k) => [k, stemStreamUrl(session.id, k, guestToken)],
-          ),
+          Object.keys(stemTaskForKeys.stemsUrls as Record<string, string>)
+            .filter((k) => k.startsWith('stem_')) // exclude RoEx effect returns (e.g. reverb_send)
+            .map((k) => [k, stemStreamUrl(session.id, k, guestToken)]),
         )
       : null;
 
@@ -248,9 +248,11 @@ function DialSessionContent() {
     );
 
     // RAW: always enabled once stems are uploaded
+    // Key = originalFilename (without extension) so StemPanel shows human-readable names.
+    // t.id (UUID) was the old key — caused UUID display in stem panel (Bug A).
     const rawStemEntries = session.tracks
       .filter((t) => !!t.r2Url)
-      .map((t) => [t.id, t.r2Url as string] as const);
+      .map((t) => [(t.originalFilename ?? t.id), t.r2Url as string] as const);
     if (rawStemEntries.length > 0) {
       takes.push({
         id: `raw-${session.id}`,
@@ -1481,7 +1483,7 @@ function DialSessionContent() {
             // 2-column layout: Player (left, flex-1) + Chat (right, fixed 440px) — both independently scrollable
             <div className="flex gap-3 flex-1 min-h-0">
               {/* Left: Player — fills remaining width, independently scrollable */}
-              <div className="flex-1 min-w-0 overflow-y-auto">
+              <div className="flex-1 min-w-0 overflow-y-auto chat-scroll">
                 {/* Unified Player */}
                 {sessionTakes.length > 0 ? (
                   <UnifiedSessionPlayer
@@ -1521,7 +1523,7 @@ function DialSessionContent() {
               </div>
 
               {/* Right: Chat — fixed 440px, independently scrollable */}
-              <div className="w-[440px] shrink-0 flex flex-col overflow-y-auto">
+              <div className="w-[440px] shrink-0 flex flex-col overflow-y-auto chat-scroll">
                 {/* Processing banner — visible when task is being processed server-side */}
                 {isProcessing && latestTask && (() => {
                   const trackCount = session.tracks.length;

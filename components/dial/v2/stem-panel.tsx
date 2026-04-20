@@ -259,7 +259,7 @@ export function StemPanel({ stems, playhead, initialGainDbMap, initialPanMap, on
         <Micro className="text-right">Fader</Micro>
       </div>
       {/* Fixed-height scrollable stem list — frame stays constant, content scrolls for 7+ stems */}
-      <div className="overflow-y-auto" style={{ maxHeight: '336px' }}>
+      <div className="overflow-y-auto chat-scroll" style={{ maxHeight: '336px' }}>
         {stems.map((s) => (
           <StemRow
             key={s.id}
