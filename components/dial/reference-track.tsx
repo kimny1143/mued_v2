@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { useLocale } from '@/lib/i18n/locale-context';
 
 interface ReferenceAnalysis {
   loudnessLufs: number;
@@ -26,6 +27,7 @@ export function ReferenceTrack({
   headers,
   onUpdate,
 }: ReferenceTrackProps) {
+  const { t } = useLocale();
   const [status, setStatus] = useState<Status>(referenceFilename ? 'done' : 'idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [uploadPercent, setUploadPercent] = useState(0);
@@ -81,7 +83,7 @@ export function ReferenceTrack({
       onUpdate();
     } catch (err) {
       setStatus('error');
-      setErrorMsg(err instanceof Error ? err.message : 'Upload failed');
+      setErrorMsg(err instanceof Error ? err.message : t.dial.session.uploadFailedError);
     }
   }, [sessionId, headers, onUpdate]);
 
@@ -199,7 +201,7 @@ export function ReferenceTrack({
 
       {status === 'error' && (
         <div className="px-3 py-2.5 rounded-lg bg-red-950/20 border border-red-800/30">
-          <div className="text-sm text-red-400 mb-1">{errorMsg || 'Upload failed'}</div>
+          <div className="text-sm text-red-400 mb-1">{errorMsg || t.dial.session.uploadFailedError}</div>
           <button
             onClick={() => { setStatus('idle'); setErrorMsg(null); }}
             className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"

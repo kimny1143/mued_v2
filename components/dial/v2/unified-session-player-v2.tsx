@@ -75,12 +75,13 @@ interface TransportBarProps {
   onPause(): void;
   onSeekToStart(): void;
   actions?: TransportAction[];
+  returnToStartLabel: string;
 }
 
-function TransportBar({ isReady, isPlaying, currentTime, duration, onPlay, onPause, onSeekToStart, actions }: TransportBarProps) {
+function TransportBar({ isReady, isPlaying, currentTime, duration, onPlay, onPause, onSeekToStart, actions, returnToStartLabel }: TransportBarProps) {
   return (
     <div className="flex items-center gap-2 px-3 py-2" style={{ borderTop: '1px solid var(--line-soft)' }}>
-      <Btn onClick={onSeekToStart} disabled={!isReady} title="Return to start">
+      <Btn onClick={onSeekToStart} disabled={!isReady} title={returnToStartLabel}>
         <IconSkipBack size={11} />
       </Btn>
       <Btn
@@ -528,6 +529,7 @@ export function UnifiedSessionPlayerV2({
           onPause={handlePlayPause}
           onSeekToStart={handleSeekToStart}
           actions={transportActions}
+          returnToStartLabel={t.dial.session.returnToStart}
         />
 
         {/* Analyzer — always visible, fixed above StemPanel (B7: DAW master section convention) */}

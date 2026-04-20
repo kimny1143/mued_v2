@@ -910,12 +910,12 @@ function DialSessionContent() {
   const generatingLabel = useMemo(() => {
     if (!mixGenerating || !latestTask) return undefined;
     switch (latestTask.taskType) {
-      case 'mix_check': return 'Mix Check processing...';
+      case 'mix_check': return t.dial.session.statusMixCheckProcessing;
       case 'final_basic':
-      case 'final_advanced': return 'Final mix generating...';
-      case 'mastering_preview': return 'Mastering preview generating...';
-      case 'mastering': return 'Final master generating...';
-      default: return 'Processing...';
+      case 'final_advanced': return t.dial.session.statusFinalMixGenerating;
+      case 'mastering_preview': return t.dial.session.statusMasteringPreviewGenerating;
+      case 'mastering': return t.dial.session.statusMasteringFinalGenerating;
+      default: return t.dial.session.processing;
     }
   }, [mixGenerating, latestTask]);
 
@@ -957,7 +957,7 @@ function DialSessionContent() {
       <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-xl font-bold mb-2">{t.dial.session.sessionNotFound}</h2>
-          <p className="text-zinc-400">{error || 'This session may have expired.'}</p>
+          <p className="text-zinc-400">{error || t.dial.session.sessionExpiredFallback}</p>
         </div>
       </div>
     );
@@ -1006,7 +1006,7 @@ function DialSessionContent() {
     );
     if (finalTask?.stemsUrls && !downloadedItems.has('stems')) {
       const confirmed = window.confirm(
-        'ステムファイルがまだダウンロードされていません。このページを離れるとダウンロードできなくなります。続けますか？',
+        t.dial.session.stemDownloadGuard,
       );
       if (!confirmed) {
         e.preventDefault();
@@ -1021,7 +1021,7 @@ function DialSessionContent() {
       <h2 className="text-lg font-medium mb-4">{isMasteringOnly ? t.dial.session.upload2mix : t.dial.session.uploadStems}</h2>
 
       <label className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg cursor-pointer text-sm transition-colors">
-        + Add Files
+        {t.dial.session.addFiles}
         <input
           type="file"
           accept=".wav,.flac,.aiff,.mp3"
@@ -1039,7 +1039,7 @@ function DialSessionContent() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-zinc-900 text-zinc-400 text-left">
-                <th className="px-4 py-2 font-medium">File</th>
+                <th className="px-4 py-2 font-medium">{t.dial.session.fileTableHeader}</th>
                 {!isMasteringOnly && <th className="px-4 py-2 font-medium w-44">{t.dial.session.instrumentGroup}</th>}
                 <th className="px-4 py-2 font-medium w-12"></th>
               </tr>
@@ -1083,7 +1083,7 @@ function DialSessionContent() {
 
           <div className="px-4 py-3 bg-zinc-900/50 border-t border-zinc-800 flex items-center justify-between">
             <span className="text-xs text-zinc-500">
-              {stagedFiles.length} file{stagedFiles.length !== 1 ? 's' : ''} ready
+              {stagedFiles.length === 1 ? t.dial.session.filesReadyOne : t.dial.session.filesReadyMany.replace('{count}', String(stagedFiles.length))}
             </span>
             <button
               onClick={handleUploadAll}
@@ -1093,7 +1093,7 @@ function DialSessionContent() {
             >
               {uploading && uploadProgress
                 ? `${t.dial.session.uploading} ${uploadProgress.current}/${uploadProgress.total} (${fileUploadPercent}%)`
-                : `Upload All (${stagedFiles.length})`}
+                : t.dial.session.uploadAllButton.replace('{count}', String(stagedFiles.length))}
             </button>
           </div>
         </div>
@@ -1124,11 +1124,11 @@ function DialSessionContent() {
               {task.taskType === 'preview' && previewNumber > 0
                 ? `${t.dial.session.take} ${previewNumber}`
                 : task.taskType === 'mix_check'
-                  ? 'Mix Check'
+                  ? t.dial.session.mixCheckLabel
                   : task.taskType === 'mastering_preview'
-                    ? 'Master Preview'
+                    ? t.dial.session.masterPreviewLabel
                     : task.taskType === 'mastering'
-                      ? 'Master Final'
+                      ? t.dial.session.masterFinalLabel
                       : task.taskType.replace('_', ' ')}
             </span>
             {pp && (
@@ -1174,9 +1174,9 @@ function DialSessionContent() {
               className="inline-block px-4 py-2 bg-green-700 hover:bg-green-600 rounded-lg text-sm font-medium transition-colors"
             >
               {task.taskType === 'mix_check'
-                ? 'Download Mix Check (.wav)'
+                ? t.dial.session.downloadMixCheckWav
                 : task.taskType === 'mastering'
-                  ? 'Download Mastered Track (.wav)'
+                  ? t.dial.session.downloadMasteredTrackWav
                   : `${t.dial.session.downloadFinal} (.wav)`}
             </a>
           </div>
@@ -1195,7 +1195,7 @@ function DialSessionContent() {
 
     return (
       <div>
-        <h2 className="text-lg font-medium mb-3">Mix Results</h2>
+        <h2 className="text-lg font-medium mb-3">{t.dial.session.mixResultsTitle}</h2>
         <div className="space-y-3">
           {nonPreviews.map((t) => renderTask(t, allPreviews))}
           {recentTakes.map((t) => renderTask(t, allPreviews))}

@@ -11,7 +11,9 @@ type ServiceTier = 'omakase' | 'dialogue';
 // ─── Chat Mockup ────────────────────────────────────────────────────────────
 
 function ChatMockup({ t }: { t: Record<string, unknown> }) {
-  const lp = (t as { dial: { lp: Record<string, string> } }).dial.lp;
+  const dial = (t as { dial: { lp: Record<string, string>; chat: Record<string, string> } }).dial;
+  const lp = dial.lp;
+  const chat = dial.chat;
   return (
     <div className="w-full max-w-sm">
       <p className="text-xs text-white/50 mb-3 uppercase tracking-wider">{lp.chatMockLabel}</p>
@@ -21,7 +23,7 @@ function ChatMockup({ t }: { t: Record<string, unknown> }) {
           <div className="flex items-center gap-2">
             <Image src="/hoo-animated.svg" alt="" width={24} height={24} />
             <span className="text-amber-400 text-sm font-medium">Hoo</span>
-            <span className="text-zinc-500 text-xs">Mixing Assistant</span>
+            <span className="text-zinc-500 text-xs">{chat.mixingAssistant}</span>
           </div>
         </div>
         {/* Messages */}
@@ -42,7 +44,7 @@ function ChatMockup({ t }: { t: Record<string, unknown> }) {
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
-                Preview updated
+                {lp.previewUpdatedBadge}
               </span>
             </div>
           </div>

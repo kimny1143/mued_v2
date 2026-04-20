@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useLocale } from '@/lib/i18n/locale-context';
 import { useMultiTakePlayer, TakeDef } from '@/hooks/use-multi-take-player';
 import { useMultiTakeAnalyzerData } from '@/hooks/use-multi-take-analyzer-data';
 import { useStemPeaks } from '@/hooks/use-stem-peaks';
@@ -142,6 +143,7 @@ function StemRow({
 }
 
 export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken: _guestToken, initialParams, compact }: Props) {
+  const { t } = useLocale();
   const [showTakeDrawer, setShowTakeDrawer] = useState(false);
 
   // Only pass enabled (ready) takes to the player hook — disabled (processing) takes have no audio yet
@@ -323,7 +325,7 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
             </div>
           ) : (
             <p className="text-xs text-zinc-600 py-2">
-              {activeTake?.label === 'RAW' ? 'Original stems not available.' : 'Stem tracks available after dialogue mix.'}
+              {activeTake?.label === 'RAW' ? t.dial.session.originalStemsNotAvailable : t.dial.session.stemTracksAvailableAfterDialogue}
             </p>
           )}
         </div>
