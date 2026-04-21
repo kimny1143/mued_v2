@@ -30,7 +30,7 @@
 }
 
 .dark {
-  --background: #0f0f1a;
+  --background: #0a0a0a;
   --foreground: #ffffff;
 }
 
@@ -41,7 +41,7 @@
   --font-mono: var(--font-geist-mono);
 
   /* MUED Brand Colors (Dark Mode First) */
-  --color-mued-bg: #0f0f1a;
+  --color-mued-bg: #0a0a0a;
   --color-mued-primary: #1a1a2e;
   --color-mued-accent: #4f46e5;
   --color-mued-accent-hover: #4338ca;
@@ -161,13 +161,13 @@ body {
    WCAG Compliant Text Utilities
    =========================================== */
 
-/* For solid dark backgrounds (#0f0f1a) */
+/* For solid dark backgrounds (#0a0a0a) */
 .text-muted {
-  color: #cbd5e1; /* slate-300: 7.5:1 contrast on #0f0f1a */
+  color: #cbd5e1; /* slate-300: 7.5:1 contrast on #0a0a0a */
 }
 
 .text-subtle {
-  color: #9ca3af; /* gray-400: 5.0:1 contrast on #0f0f1a */
+  color: #9ca3af; /* gray-400: 5.0:1 contrast on #0a0a0a */
 }
 
 /* For glass/overlay backgrounds - use text-white/80 instead of these classes */
