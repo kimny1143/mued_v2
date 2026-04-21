@@ -143,8 +143,8 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
     const sampleRate = ctxRef.current.sampleRate;
     const binCount = analyser.frequencyBinCount;
     const freqArray = new Uint8Array(binCount);
-    const timeLArray = new Uint8Array(FFT_SIZE);
-    const timeRArray = new Uint8Array(FFT_SIZE);
+    const timeLArray = new Float32Array(FFT_SIZE);
+    const timeRArray = new Float32Array(FFT_SIZE);
 
     let channel: BroadcastChannel | null = null;
     try {
@@ -156,8 +156,8 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
 
     const tick = () => {
       analyser.getByteFrequencyData(freqArray);
-      analyserL.getByteTimeDomainData(timeLArray);
-      analyserR.getByteTimeDomainData(timeRArray);
+      analyserL.getFloatTimeDomainData(timeLArray);
+      analyserR.getFloatTimeDomainData(timeRArray);
 
       // ── Stereo: correlation, width, balance, per-channel peak/RMS, goniometer ──
       let sumLR = 0, sumLL = 0, sumRR = 0;
@@ -166,8 +166,8 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
       const gonioL: number[] = [];
       const gonioR: number[] = [];
       for (let i = 0; i < FFT_SIZE; i++) {
-        const l = (timeLArray[i] - 128) / 128;
-        const r = (timeRArray[i] - 128) / 128;
+        const l = timeLArray[i];
+        const r = timeRArray[i];
         sumLR += l * r;
         sumLL += l * l;
         sumRR += r * r;
