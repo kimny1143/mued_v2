@@ -363,6 +363,10 @@ export function ChatPanelV2({
 
   const greetingSentRef = useRef(false);
   const masteringGreetingSentRef = useRef(false);
+  // Track whether component mounted already in mastering phase.
+  // If true + messages exist on load, the mastering transition already happened in a prior session —
+  // skip the transition greeting to prevent duplicate on fresh page load.
+  const mountedInMasteringRef = useRef(isMasteringPhase);
 
   useEffect(() => {
     if (tracks.length > 0 && messages.length === 0 && !loadingHistory && !sending && !greetingSentRef.current) {
@@ -381,7 +385,9 @@ export function ChatPanelV2({
   }, [tracks.length, messages.length, loadingHistory, sending, sendMessage, isMasteringPhase, mode]);
 
   useEffect(() => {
-    if (isMasteringPhase && !masteringGreetingSentRef.current && !sending && messages.length > 0) {
+    // Only fire mastering transition greeting when transitioning during this page session.
+    // Skip if component mounted already in mastering phase (fresh load of existing mastering session).
+    if (isMasteringPhase && !masteringGreetingSentRef.current && !sending && messages.length > 0 && !mountedInMasteringRef.current) {
       masteringGreetingSentRef.current = true;
       sendMessage('ミックスが完了しました。マスタリングに進みたいです。', { showInChat: false });
     }
