@@ -233,6 +233,17 @@ export function UnifiedSessionPlayerV2({
   const rawTakeId = useMemo(() => takeDefs.find((t) => t.label === 'RAW')?.id, [takeDefs]);
   const mixedTakeId = useMemo(() => takeDefs.find((t) => t.label === 'MIXED')?.id, [takeDefs]);
 
+  // Pre-seed takeLufsRef with server-side analysis LUFS so Gain Match is available
+  // immediately (without requiring the user to play the RAW take first).
+  // Live measurement from the worklet overrides this value once the take is played.
+  useEffect(() => {
+    if (rawTakeId && rawLoudnessLufs != null && rawLoudnessLufs > -69) {
+      if (takeLufsRef.current[rawTakeId] === undefined) {
+        takeLufsRef.current[rawTakeId] = rawLoudnessLufs;
+      }
+    }
+  }, [rawTakeId, rawLoudnessLufs]);
+
   // Gain Match persistent toggle — survives take switches
   const [gainMatchActive, setGainMatchActive] = useState(false);
 
