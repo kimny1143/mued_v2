@@ -9,7 +9,13 @@
  *
  * Supports reset via port.postMessage({ reset: true })
  * (call on seek or take-switch to clear integrated state)
+ *
+ * Core math mirrors lib/audio/ebur128-core.ts (unit-tested pure functions).
+ * When changing the algorithm, update both files.
  */
+
+// BS.1770-4 §2.1: surround channel (+1.5 dB power gain for Ls, Rs)
+const SURROUND_GAIN = Math.pow(10, 1.5 / 10);  // ≈ 1.41254, NOT √2 ≈ 1.41421
 
 function computeKWeightingCoefficients(fs) {
   // Stage 1: pre-filter — high-shelf +3.999 dB at ~1682 Hz
@@ -138,8 +144,9 @@ class EbuR128Processor extends AudioWorkletProcessor {
                    - c.s2.a1 * bq2.y1 - c.s2.a2 * bq2.y2;
         bq2.x2 = bq2.x1; bq2.x1 = y1; bq2.y2 = bq2.y1; bq2.y1 = y2;
 
-        // ITU-R BS.1770-4: surround channels (≥3) get +1.5 dB (×1.41)
-        const g = ch >= 3 ? 1.41 : 1.0;
+        // BS.1770-4 channel weights (Web Audio 5.1 layout: L R C LFE Ls Rs)
+        // LFE (ch 3): excluded (weight 0). Ls/Rs (ch 4-5): +1.5 dB power gain.
+        const g = ch === 3 ? 0 : ch >= 4 ? SURROUND_GAIN : 1.0;
         chSum  += g * y2 * y2;
       }
       this._blockAccum[0] += chSum; // reuse index 0 as accumulator
