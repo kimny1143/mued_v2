@@ -94,9 +94,9 @@ export default function DialPricingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-bg-primary text-white">
       {/* Nav */}
-      <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-black/80 backdrop-blur-md border-b border-white/5">
+      <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-bg-primary/80 backdrop-blur-md border-b border-white/5">
         <Link href="/dial" className="flex items-center gap-2 text-amber-400 font-bold text-lg">
           MUEDial
         </Link>

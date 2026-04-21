@@ -33,9 +33,9 @@ function TokushohoContent() {
   const t = useTranslations("tokushoho");
 
   return (
-    <div className="dark min-h-screen bg-[#0F0F1A]">
+    <div className="dark min-h-screen bg-bg-primary">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6 bg-[#0F0F1A]/80 backdrop-blur-xl border-b border-white/5">
+      <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6 bg-bg-primary/80 backdrop-blur-xl border-b border-white/5">
         <div className="container mx-auto flex justify-between items-center">
           <Link href="/" className="text-white font-semibold hover:text-slate-300 transition-colors">
             MUED
@@ -134,7 +134,7 @@ function TokushohoContent() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-[#0F0F1A] py-8 border-t border-white/10">
+      <footer className="bg-bg-primary py-8 border-t border-white/10">
         <div className="container mx-auto px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-slate-500 text-sm">
