@@ -56,7 +56,7 @@ export default async function StoryPage({ params }: PageProps) {
 
   return (
     <div className="dark">
-      <div className="fixed inset-0 -z-10 bg-[#0f0f0f]" />
+      <div className="fixed inset-0 -z-10 bg-bg-primary" />
       <main className="min-h-screen py-20 px-6">
         <StoryArticle slug={slug as StorySlug} sections={sections} />
       </main>
