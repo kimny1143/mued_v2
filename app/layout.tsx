@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
-import { Geist, Geist_Mono, JetBrains_Mono, Inter } from "next/font/google";
+import { Geist, Geist_Mono, JetBrains_Mono, Inter, Sora } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { LocaleProviderWrapper } from "@/components/providers/locale-provider-wrapper";
 import { Analytics } from "@vercel/analytics/react";
@@ -33,6 +33,13 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const sora = Sora({
+  variable: "--font-sora",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -96,7 +103,7 @@ export default async function RootLayout({
           />
         </head>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${inter.variable} antialiased`}
+          className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${inter.variable} ${sora.variable} antialiased`}
         >
           <LocaleProviderWrapper>
             {children}
