@@ -12,9 +12,9 @@ import Link from "next/link";
  */
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen bg-[#0F0F1A] flex">
+    <div className="min-h-screen bg-[#0a0a0a] flex" style={{ fontFamily: 'var(--font-sora, var(--font-geist-sans)), system-ui, sans-serif' }}>
       {/* Left: MUEDnote Branding */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-12 bg-gradient-to-br from-[#0F0F1A] to-[#1A1A2E]">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-12 bg-gradient-to-br from-[#0a0a0a] to-[#111113]">
         <div className="max-w-md text-center">
           {/* Logo */}
           <Link href="/" className="inline-block mb-8">
@@ -31,7 +31,7 @@ export default function SignUpPage() {
           <h1 className="text-3xl font-bold text-white mb-4">
             MUEDnote
           </h1>
-          <p className="text-xl text-indigo-400 mb-6">
+          <p className="text-xl text-amber-400 mb-6">
             Making music visible.
           </p>
 
@@ -44,15 +44,15 @@ export default function SignUpPage() {
           {/* Features highlight */}
           <div className="text-left space-y-3">
             <div className="flex items-center gap-3 text-slate-300">
-              <span className="text-indigo-400">✓</span>
+              <span className="text-amber-400">✓</span>
               <span>Free to start</span>
             </div>
             <div className="flex items-center gap-3 text-slate-300">
-              <span className="text-indigo-400">✓</span>
+              <span className="text-amber-400">✓</span>
               <span>Sync with iOS app</span>
             </div>
             <div className="flex items-center gap-3 text-slate-300">
-              <span className="text-indigo-400">✓</span>
+              <span className="text-amber-400">✓</span>
               <span>Review your sessions anytime</span>
             </div>
           </div>
@@ -80,18 +80,18 @@ export default function SignUpPage() {
           signInFallbackRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
           appearance={{
             variables: {
-              colorPrimary: "#6366f1",
-              colorBackground: "#1A1A2E",
+              colorPrimary: "#f5a524",
+              colorBackground: "#111113",
               colorText: "#ffffff",
-              colorTextOnPrimaryBackground: "#ffffff",
+              colorTextOnPrimaryBackground: "#000000",
               colorTextSecondary: "#94a3b8",
-              colorInputBackground: "#0F0F1A",
+              colorInputBackground: "#0a0a0a",
               colorInputText: "#ffffff",
               colorNeutral: "#ffffff",
             },
             elements: {
               rootBox: "mx-auto w-full max-w-md",
-              card: "bg-[#1A1A2E] border border-white/10 shadow-2xl !text-white",
+              card: "bg-[#111113] border border-white/10 shadow-2xl !text-white",
               headerTitle: "!text-white",
               headerSubtitle: "!text-slate-400",
               socialButtonsBlockButton: "!bg-white/5 !border-white/10 !text-white hover:!bg-white/10",
@@ -99,14 +99,14 @@ export default function SignUpPage() {
               dividerLine: "!bg-white/10",
               dividerText: "!text-slate-500",
               formFieldLabel: "!text-slate-300",
-              formFieldInput: "!bg-[#0F0F1A] !border-white/10 !text-white placeholder:!text-slate-500",
-              formButtonPrimary: "!bg-indigo-600 hover:!bg-indigo-500 !text-white",
-              footerActionLink: "!text-indigo-400 hover:!text-indigo-300",
+              formFieldInput: "!bg-[#0a0a0a] !border-white/10 !text-white placeholder:!text-slate-500",
+              formButtonPrimary: "!bg-amber-500 hover:!bg-amber-400 !text-black",
+              footerActionLink: "!text-amber-400 hover:!text-amber-300",
               footerActionText: "!text-slate-400",
               footer: "!text-slate-400",
-              identityPreviewEditButton: "!text-indigo-400",
+              identityPreviewEditButton: "!text-amber-400",
               identityPreviewText: "!text-white",
-              formFieldAction: "!text-indigo-400",
+              formFieldAction: "!text-amber-400",
               formFieldInputShowPasswordButton: "!text-slate-400",
               alert: "!bg-red-500/10 !border-red-500/20 !text-red-400",
               alertText: "!text-red-400",
