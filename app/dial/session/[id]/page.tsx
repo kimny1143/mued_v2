@@ -167,6 +167,7 @@ function DialSessionContent() {
 
   // Mix generation state
   const [mixGenerating, setMixGenerating] = useState(false);
+  const [mixGeneratingType, setMixGeneratingType] = useState<'preview' | 'mix_check' | 'final' | 'mastering_preview' | 'mastering' | null>(null);
 
   // Sidebar player — selected take
 
@@ -546,9 +547,11 @@ function DialSessionContent() {
 
 
 
-  // Track elapsed time while processing
+  // Track elapsed time while processing.
+  // Starts immediately when mixGenerating is set (client-side) so the timer
+  // runs during the RoEx blocking window before the DB task record exists.
   useEffect(() => {
-    const hasProcessing = session?.tasks?.some(
+    const hasProcessing = mixGenerating || session?.tasks?.some(
       (t) => t.status === 'processing' || t.status === 'pending',
     );
     if (hasProcessing) {
@@ -566,7 +569,7 @@ function DialSessionContent() {
       processingStartRef.current = null;
       setElapsedSeconds(0);
     }
-  }, [session]);
+  }, [session, mixGenerating]);
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
 
@@ -774,6 +777,7 @@ function DialSessionContent() {
   const handlePreview = async () => {
     if (!session) return;
     setPreviewing(true);
+    setMixGeneratingType('preview');
     setError(null);
 
     try {
@@ -795,12 +799,14 @@ function DialSessionContent() {
       setError('Preview error');
     } finally {
       setPreviewing(false);
+      setMixGeneratingType(null);
     }
   };
 
   const handleMixGenerate = async (taskId: string, type: 'mix_check' | 'final' = 'final') => {
     setError(null);
     setMixGenerating(true);
+    setMixGeneratingType(type === 'mix_check' ? 'mix_check' : 'final');
     try {
       const res = await fetch('/api/dial/final', {
         method: 'POST',
@@ -812,6 +818,7 @@ function DialSessionContent() {
       if (!data.success) {
         setError(data.error || 'Mix generation failed');
         setMixGenerating(false);
+        setMixGeneratingType(null);
         return;
       }
 
@@ -819,6 +826,7 @@ function DialSessionContent() {
       if (data.data?.status === 'completed') {
         await fetchSession();
         setMixGenerating(false);
+        setMixGeneratingType(null);
         return;
       }
 
@@ -840,6 +848,7 @@ function DialSessionContent() {
         if (!hasBackgroundTask) {
           setError('Mix generation request timed out. Please try again.');
           setMixGenerating(false);
+          setMixGeneratingType(null);
         }
       } catch { /* ignore */ }
       // else: mixGenerating stays true, polling will detect completion
@@ -873,6 +882,7 @@ function DialSessionContent() {
   const handleMasteringPreview = async (desiredLoudness?: string) => {
     if (!session) return;
     setMixGenerating(true);
+    setMixGeneratingType('mastering_preview');
     setError(null);
     try {
       const res = await fetch('/api/dial/mastering/preview', {
@@ -893,12 +903,14 @@ function DialSessionContent() {
       setError('Mastering preview error');
     } finally {
       setMixGenerating(false);
+      setMixGeneratingType(null);
     }
   };
 
   const handleMasteringFinal = async () => {
     if (!session) return;
     setMixGenerating(true);
+    setMixGeneratingType('mastering');
     setError(null);
     try {
       const masteringPreviewTask = session.tasks.find(
@@ -923,6 +935,7 @@ function DialSessionContent() {
       setError('Mastering final error');
     } finally {
       setMixGenerating(false);
+      setMixGeneratingType(null);
     }
   };
 
@@ -1585,8 +1598,8 @@ function DialSessionContent() {
 
               {/* Right: Chat — fixed 440px, independently scrollable */}
               <div className="w-[440px] shrink-0 flex flex-col overflow-y-auto chat-scroll">
-                {/* Processing banner — visible when task is being processed server-side */}
-                {isProcessing && latestTask && (() => {
+                {/* Processing banner — visible during client-side API call (mixGenerating/previewing) or DB-driven processing */}
+                {(mixGenerating || previewing || isProcessing) && (() => {
                   const trackCount = session.tracks.length;
                   const elapsedMin = Math.floor(elapsedSeconds / 60);
                   const elapsedSec = elapsedSeconds % 60;
@@ -1594,24 +1607,28 @@ function DialSessionContent() {
                     ? `${elapsedMin}:${String(elapsedSec).padStart(2, '0')}`
                     : `0:${String(elapsedSec).padStart(2, '0')}`;
 
+                  // Determine label + estimate. Use mixGeneratingType when available (most accurate),
+                  // fall back to latestTask.taskType for DB-driven polling state.
+                  const activeType = mixGeneratingType ?? (isProcessing ? latestTask?.taskType : null);
                   const { label, estimate } = (() => {
-                    switch (latestTask.taskType) {
+                    switch (activeType) {
                       case 'preview':
                         return {
-                          label: 'Generating preview...',
+                          label: t.dial.session.processing,
                           estimate: trackCount > 8 ? '5\u201320 min' : '2\u201310 min',
                         };
                       case 'mix_check':
-                        return { label: 'Generating mix check...', estimate: '3\u201310 min' };
+                        return { label: t.dial.session.statusMixCheckProcessing, estimate: '3\u201310 min' };
+                      case 'final':
                       case 'final_basic':
                       case 'final_advanced':
-                        return { label: 'Generating final mix...', estimate: '3\u201310 min' };
+                        return { label: t.dial.session.statusFinalMixGenerating, estimate: '3\u201310 min' };
                       case 'mastering_preview':
-                        return { label: 'Generating master preview...', estimate: '1\u20135 min' };
+                        return { label: t.dial.session.statusMasteringPreviewGenerating, estimate: '1\u20135 min' };
                       case 'mastering':
-                        return { label: 'Generating mastered track...', estimate: '1\u20135 min' };
+                        return { label: t.dial.session.statusMasteringFinalGenerating, estimate: '1\u20135 min' };
                       default:
-                        return { label: 'Processing...', estimate: '' };
+                        return { label: t.dial.session.processing, estimate: '' };
                     }
                   })();
 
