@@ -23,6 +23,7 @@ import { z } from 'zod';
 import { eq, sql } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
+import { recordDialEvent } from '@/lib/analytics/dial-events';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMixPreview, pollMixFinal } from '@/lib/roex';
@@ -285,6 +286,11 @@ export const POST = withDialAuth(async (auth) => {
 
     const newPaidCycleCount = sessionRow.paidCycleCount + 1;
     const newTotalLimit = sessionRow.baseCycleLimit + sessionRow.additionalCyclesPurchased;
+
+    recordDialEvent({
+      sessionId: previewTask.sessionId, eventType: 'final', userId: auth.userId, guestToken: auth.guestToken,
+      mode: sessionRow.mode, metadata: { type: taskType },
+    });
 
     return apiSuccess({
       taskId: task.id,
