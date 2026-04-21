@@ -24,7 +24,7 @@ function toDisplayBins(fftData: number[]): number[] {
 }
 
 function lufsLabel(v: number): string {
-  if (!isFinite(v) || v < -80) return '—';
+  if (!isFinite(v) || v < -70) return '—';
   return (v >= 0 ? '+' : '') + v.toFixed(1);
 }
 
@@ -206,7 +206,7 @@ export function LufsReadout({ data }: LufsReadoutProps) {
     { label: 'MOMENTARY', unit: 'LUFS', v: M, sub: 'M', big: false },
     { label: 'SHORT-TERM', unit: 'LUFS', v: S, sub: 'S', big: false },
     { label: 'INTEGRATED', unit: 'LUFS', v: I, sub: 'I', big: true },
-    { label: 'TRUE PEAK', unit: 'dBTP', v: TP, sub: 'TP', big: false },
+    { label: 'PEAK', unit: 'dBFS', v: TP, sub: 'PK', big: false },
   ];
 
   return (

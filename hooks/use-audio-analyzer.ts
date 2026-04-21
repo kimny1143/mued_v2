@@ -37,7 +37,7 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
   const workletRef = useRef<AudioWorkletNode | null>(null);
   const rafRef = useRef<number>(0);
   const channelRef = useRef<BroadcastChannel | null>(null);
-  const workletLufsRef = useRef({ momentary: -70, shortTerm: -70, integrated: -70 });
+  const workletLufsRef = useRef({ momentary: -Infinity, shortTerm: -Infinity, integrated: -Infinity });
   const [data, setData] = useState<AnalyzerData | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [rafKey, setRafKey] = useState(0);
@@ -79,9 +79,9 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
         worklet.port.onmessage = (e: MessageEvent<{ momentary: number; shortTerm: number; integrated: number }>) => {
           const { momentary, shortTerm, integrated } = e.data;
           workletLufsRef.current = {
-            momentary:  isFinite(momentary)  ? Math.max(-70, momentary)  : -70,
-            shortTerm:  isFinite(shortTerm)  ? Math.max(-70, shortTerm)  : -70,
-            integrated: isFinite(integrated) ? Math.max(-70, integrated) : -70,
+            momentary:  isFinite(momentary)  ? momentary  : -Infinity,
+            shortTerm:  isFinite(shortTerm)  ? shortTerm  : -Infinity,
+            integrated: isFinite(integrated) ? integrated : -Infinity,
           };
         };
         source.connect(worklet);
@@ -118,7 +118,7 @@ export function useAudioAnalyzer(audioRef: RefObject<HTMLAudioElement | null>) {
           worklet.port.postMessage({ reset: true });
         });
 
-        workletLufsRef.current = { momentary: -70, shortTerm: -70, integrated: -70 };
+        workletLufsRef.current = { momentary: -Infinity, shortTerm: -Infinity, integrated: -Infinity };
         ctxRef.current = ctx;
         sourceRef.current = source;
         connectedElRef.current = el;
