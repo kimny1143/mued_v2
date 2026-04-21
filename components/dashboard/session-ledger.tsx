@@ -53,8 +53,45 @@ function groupByProduct(sessions: UnifiedSession[], dialOnly: boolean): Array<{ 
   return order.filter(p => groups[p].length > 0).map(p => ({ product: p as SessionProduct, items: groups[p] }));
 }
 
-// grid: date(110px) dot(20px) name(1fr) status(120px) arrow(24px)
-const ROW_GRID = '110px 20px 1fr 120px 24px';
+// grid: badge(40px) date(110px) dot(20px) name(1fr) status(120px) arrow(24px)
+const ROW_GRID = '40px 110px 20px 1fr 120px 24px';
+
+function SessionTypeBadge({ product }: { product: SessionProduct }) {
+  if (product === 'dial') {
+    return (
+      <div
+        className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+        style={{ background: 'rgba(245,165,36,0.15)' }}
+        aria-hidden
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="1"  y="6" width="2.5" height="6"  rx="1" fill="white"/>
+          <rect x="5"  y="3" width="2.5" height="12" rx="1" fill="white"/>
+          <rect x="9"  y="5" width="2.5" height="8"  rx="1" fill="white"/>
+          <rect x="13" y="2" width="2.5" height="14" rx="1" fill="white"/>
+          <rect x="17" y="7" width="2.5" height="4"  rx="1" fill="white"/>
+        </svg>
+      </div>
+    );
+  }
+  if (product === 'muednote') {
+    return (
+      <div
+        className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+        style={{ background: '#141417' }}
+        aria-hidden
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M3 2h9l3 3v11H3V2z" stroke="white" strokeWidth="1.5" fill="none"/>
+          <path d="M12 2v3h3" stroke="white" strokeWidth="1.5" fill="none"/>
+          <line x1="6" y1="8"  x2="12" y2="8"  stroke="white" strokeWidth="1.5"/>
+          <line x1="6" y1="11" x2="12" y2="11" stroke="white" strokeWidth="1.5"/>
+        </svg>
+      </div>
+    );
+  }
+  return <span aria-hidden />;
+}
 
 export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerProps) {
   const { locale, t } = useLocale();
@@ -111,6 +148,7 @@ export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerP
                   className="group grid border-b border-white/[0.04] hover:bg-white/[0.025] transition-colors items-center"
                   style={{ gridTemplateColumns: ROW_GRID, gap: '12px' }}
                 >
+                  <SessionTypeBadge product={product} />
                   <span className="mono text-xs text-white/40 py-3 pl-1 truncate">
                     {formatDate(session.createdAt)}
                   </span>
@@ -142,6 +180,7 @@ export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerP
             className="grid border-b border-white/[0.04] items-center py-3"
             style={{ gridTemplateColumns: ROW_GRID, gap: '12px' }}
           >
+            <span aria-hidden />
             <span className="mono text-xs text-white/20 pl-1">—</span>
             <span className="text-center text-xs text-white/20" aria-hidden>○</span>
             <span className="mono text-xs text-white/25">{hub.sessions.comingSoon}</span>
