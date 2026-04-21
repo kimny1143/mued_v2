@@ -141,15 +141,13 @@ export default function DialPricingPage() {
                 key={tier}
                 className={`relative rounded-2xl p-6 border transition-all ${
                   isHighlighted
-                    ? 'border-indigo-500/50 bg-indigo-500/5 ring-1 ring-indigo-500/20'
+                    ? 'border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/20'
                     : 'border-white/10 bg-white/[0.03]'
                 }`}
               >
                 {badge.labelKey && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      tier === 'pro' ? 'bg-indigo-600 text-white' : 'bg-amber-500 text-black'
-                    }`}>
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-500 text-black">
                       {p[badge.labelKey]}
                     </span>
                   </div>
@@ -186,7 +184,7 @@ export default function DialPricingPage() {
                   disabled={loading !== null}
                   className={`w-full py-3 rounded-xl font-medium text-sm transition-all ${
                     isHighlighted
-                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                      ? 'bg-amber-500 hover:bg-amber-400 text-black'
                       : 'bg-white/10 hover:bg-white/15 text-white'
                   } disabled:opacity-50`}
                 >
@@ -252,7 +250,7 @@ export default function DialPricingPage() {
           <div className="text-center mt-6">
             <Link
               href="/dial"
-              className="inline-flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors"
             >
               Start a session <ArrowRight className="w-4 h-4" />
             </Link>
