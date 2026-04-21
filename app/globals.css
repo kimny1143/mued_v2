@@ -27,6 +27,18 @@
   --emerald-dim: #2b5c42;
   --red: #e05a4a;
   --blue: #5d8ab8;
+
+  /* DS v1: semantic aliases + surface tokens */
+  --accent: var(--amber);
+  --accent-dim: var(--amber-dim);
+  --accent-glow: var(--amber-glow);
+  --bg-base: #0a0a0a;
+  --bg-surface: #111113;
+  --bg-elevated: #17171a;
+  --border-default: rgba(250, 250, 250, 0.08);
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1a1;
+  --text-muted: #71717a;
 }
 
 .dark {
@@ -96,12 +108,24 @@
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-full: 999px;
+
+  /* DS v1: Tailwind utility tokens */
+  --color-bg-primary: var(--bg-base);
+  --color-bg-elev-1: var(--bg-surface);
+  --color-bg-elev-2: var(--bg-elevated);
+  --color-fg-primary: var(--text-primary);
+  --color-fg-secondary: var(--text-secondary);
+  --color-fg-muted: var(--text-muted);
+  --color-accent: var(--amber);
+  --color-accent-dim: var(--amber-dim);
+  --color-accent-glow: var(--amber-glow);
+  --color-border-default: var(--border-default);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
 }
 
 /* Hoo gentle bounce animation - 2 bounces then long pause */
