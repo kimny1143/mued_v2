@@ -29,17 +29,25 @@ export async function copyToR2(params: {
     : `sessions/${params.sessionId}/${params.taskType}_${params.taskId}.wav`;
 
   try {
-    const res = await fetch(`${workerUrl}/copy`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-R2-Secret': secret,
-      },
-      body: JSON.stringify({
-        sourceUrl: params.sourceUrl,
-        key,
-      }),
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90_000);
+    let res: Response;
+    try {
+      res = await fetch(`${workerUrl}/copy`, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-R2-Secret': secret,
+        },
+        body: JSON.stringify({
+          sourceUrl: params.sourceUrl,
+          key,
+        }),
+      });
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!res.ok) {
       const text = await res.text().catch(() => 'unknown');
@@ -54,7 +62,11 @@ export async function copyToR2(params: {
       expiresAt,
     };
   } catch (error) {
-    console.error('[r2-storage] Copy request failed:', error);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('[r2-storage] Copy timed out after 90s — GCS source may be slow');
+    } else {
+      console.error('[r2-storage] Copy request failed:', error);
+    }
     return null;
   }
 }
