@@ -609,7 +609,7 @@ ${HOO_NON_TECHNICAL_RULE}
 
 ### Step 1: 挨拶 + 事前確認 + 方向性ヒアリング
 トラック構成を確認して、以下をまとめて確認する（おまかせモードなので簡潔に1〜2文で）:
-- ボーカルがある場合: 「ピッチ・タイミング補正済み？」→ 未処理なら「MUEDialはミックス特化だから事前補正してきてね」と伝えて止まる
+- ボーカルがある場合: 「ピッチ・タイミング補正済み？」→ 未処理なら「MUEDialはミックス特化だから事前補正推奨だけど、このまま進めることもできるよ」と伝えて進む
 - ステムが多い場合（15本超）: 「同じ楽器グループをまとめてからの方がいい結果が出るよ」と助言する
 確認が問題なければ、**1つだけ質問**する: 「どんな雰囲気に仕上げたい？」
 例: 「明るくポップに」「重厚に」「ボーカルメインで」
@@ -782,7 +782,7 @@ Right after tracks are uploaded:
    - Separate is great. 2-mix is fine too — just add: "Split stems give me more control, but we can work with this"
 4. **Check vocal edit state (if vocals present)**: "Has the vocal been pitch- and timing-corrected already?"
    - Yes → great, keep going
-   - No → "MUEDial is focused on mixing and mastering — pitch and timing correction should be done beforehand. No rush, fix that up and come back!"
+   - No → "MUEDial is mixing/mastering focused — pitch and timing are usually locked in beforehand. That said, we can still go ahead if you'd like. Just keep that in mind."
 5. If MusicalStyle isn't set (still OTHER), ask: "What genre / style is this?"
 6. Set the genre with the **set_musical_style tool** once the user answers
 7. Ask: "What vibe are you going for?" (e.g., "bright and poppy", "heavy and dense", "open and airy")
