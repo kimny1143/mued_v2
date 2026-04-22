@@ -400,8 +400,11 @@ export default function DialPage() {
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
                 {lp.heroTitle}
               </h1>
-              <p className="text-lg text-white/70 mb-16 max-w-md">
+              <p className="text-lg text-white/70 mb-2 max-w-md">
                 {lp.heroSub}
+              </p>
+              <p className="text-sm text-amber-400/70 mb-14 max-w-md">
+                {lp.heroNote}
               </p>
               {/* ChatMockup — desktop only (mobile shows after checkout) */}
               <div className="hidden lg:block">
