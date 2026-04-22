@@ -1508,6 +1508,8 @@
         "musicRelated": "音楽関連",
         "chunks": "チャンク",
         "complete": "完了",
+        "parsing": "JSONを解析中...",
+        "filtering": "音楽関連の会話をフィルタリング中...",
         "processingChunk": "チャンク処理中 {current}/{total}",
         "hooLearned": "Hooが学んだこと:",
         "chunksFailed": "{count}件のチャンク処理に失敗しました（成功した分でプロフィールは更新済み）",
