@@ -67,7 +67,7 @@ export default function DialPricingPage() {
       });
       const data = await res.json();
       if (data.success && data.data?.url) {
-        trackCheckoutView('subscription', tier);
+        await trackCheckoutView('subscription', tier);
         window.location.href = data.data.url;
       } else {
         setError(data.error?.message || 'Checkout failed. Please try again.');
@@ -92,7 +92,7 @@ export default function DialPricingPage() {
       });
       const data = await res.json();
       if (data.success && data.data?.url) {
-        trackCheckoutView('credit_pack', packSize);
+        await trackCheckoutView('credit_pack', packSize);
         window.location.href = data.data.url;
       } else {
         setError(data.error?.message || 'Checkout failed. Please try again.');

@@ -122,7 +122,8 @@ export default async function RootLayout({
                   window.dataLayer = window.dataLayer || [];
                   function gtag(){dataLayer.push(arguments);}
                   gtag('js', new Date());
-                  gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');
+                  var _gaDebug = new URLSearchParams(window.location.search).has('debug_mode');
+                  gtag('config', '${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}', { debug_mode: _gaDebug });
                 `}
               </Script>
             </>
