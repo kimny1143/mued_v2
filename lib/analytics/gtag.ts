@@ -60,6 +60,28 @@ export function trackInquiry(
   });
 }
 
+/** Track Stripe checkout funnel: fired when redirect to Stripe is imminent */
+export function trackCheckoutView(
+  checkoutType: "subscription" | "credit_pack",
+  item: string
+): void {
+  trackEvent({
+    action: "checkout_view",
+    params: { checkout_type: checkoutType, item, funnel: "dial_checkout" },
+  });
+}
+
+/** Track Stripe checkout abandonment: fired when user returns via cancel_url */
+export function trackCheckoutAbandoned(
+  checkoutType: "subscription" | "credit_pack",
+  item: string
+): void {
+  trackEvent({
+    action: "checkout_abandoned",
+    params: { checkout_type: checkoutType, item, funnel: "dial_checkout" },
+  });
+}
+
 // Extend Window interface for gtag
 declare global {
   interface Window {
