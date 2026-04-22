@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { useUser } from '@clerk/nextjs';
@@ -14,6 +14,7 @@ import {
   type DialCreditPackSize,
 } from '@/lib/dial/pricing';
 import Link from 'next/link';
+import { trackCheckoutView, trackCheckoutAbandoned } from '@/lib/analytics/gtag';
 
 const TIER_ORDER: DialSubTier[] = ['basic', 'pro', 'studio'];
 
@@ -45,6 +46,16 @@ export default function DialPricingPage() {
     if (error) setTimeout(() => setError(null), 5000);
   }, [error]);
 
+  useEffect(() => {
+    const subCancelled = searchParams.get('subscription') === 'cancelled';
+    const packCancelled = searchParams.get('credit_pack') === 'cancelled';
+    if (subCancelled) {
+      trackCheckoutAbandoned('subscription', 'unknown');
+    } else if (packCancelled) {
+      trackCheckoutAbandoned('credit_pack', 'unknown');
+    }
+  }, [searchParams]);
+
   async function handleSubscribe(tier: DialSubTier) {
     setLoading(tier);
     setError(null);
@@ -56,6 +67,7 @@ export default function DialPricingPage() {
       });
       const data = await res.json();
       if (data.success && data.data?.url) {
+        trackCheckoutView('subscription', tier);
         window.location.href = data.data.url;
       } else {
         setError(data.error?.message || 'Checkout failed. Please try again.');
@@ -80,6 +92,7 @@ export default function DialPricingPage() {
       });
       const data = await res.json();
       if (data.success && data.data?.url) {
+        trackCheckoutView('credit_pack', packSize);
         window.location.href = data.data.url;
       } else {
         setError(data.error?.message || 'Checkout failed. Please try again.');
