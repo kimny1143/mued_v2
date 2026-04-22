@@ -1367,7 +1367,10 @@
         "empty": "No sessions yet",
         "startFirst": "Start your first mix",
         "comingSoon": "MUEDear — Coming Soon",
-        "muedlobeProfile": "MUEDlobe profile →"
+        "muedlobeProfile": "MUEDlobe profile →",
+        "durationSession": "{duration}min session",
+        "practiceSession": "Practice session",
+        "noteStatus": "Recorded"
       },
       "credits": {
         "sub": "sub",

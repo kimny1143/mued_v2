@@ -1367,7 +1367,10 @@
         "empty": "セッションはまだありません",
         "startFirst": "最初のミックスを始める",
         "comingSoon": "MUEDear — もうすぐ公開",
-        "muedlobeProfile": "MUEDlobeプロファイル →"
+        "muedlobeProfile": "MUEDlobeプロファイル →",
+        "durationSession": "{duration}分のセッション",
+        "practiceSession": "練習セッション",
+        "noteStatus": "記録済み"
       },
       "credits": {
         "sub": "サブスク",

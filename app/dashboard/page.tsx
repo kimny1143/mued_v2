@@ -330,22 +330,15 @@ export default async function DashboardPage() {
     daysRemaining: s.daysRemaining,
   }));
 
-  const muednoteUnified: UnifiedSession[] = profileData.recentSessions.map((s) => {
-    const durationMin = s.durationSec ? Math.round(s.durationSec / 60) : null;
-    const label = s.sessionMemo
-      ? s.sessionMemo.slice(0, 40)
-      : durationMin
-        ? `${durationMin}min session`
-        : 'Practice session';
-    return {
-      id: s.id,
-      product: 'muednote' as const,
-      status: 'note',
-      displayName: label,
-      createdAt: s.createdAt ? new Date(s.createdAt) : null,
-      href: '/lobe',
-    };
-  });
+  const muednoteUnified: UnifiedSession[] = profileData.recentSessions.map((s) => ({
+    id: s.id,
+    product: 'muednote' as const,
+    status: 'note',
+    displayName: s.sessionMemo ? s.sessionMemo.slice(0, 40) : '',
+    createdAt: s.createdAt ? new Date(s.createdAt) : null,
+    href: '/lobe',
+    durationSec: s.durationSec ?? null,
+  }));
 
   const unifiedSessions: UnifiedSession[] = [
     ...dialUnified,

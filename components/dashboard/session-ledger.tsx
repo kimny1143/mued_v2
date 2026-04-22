@@ -15,6 +15,7 @@ export interface UnifiedSession {
   href: string;
   hasDownload?: boolean;
   daysRemaining?: number | null;
+  durationSec?: number | null;
 }
 
 interface SessionLedgerProps {
@@ -138,8 +139,13 @@ export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerP
               const dot = STATUS_DOT[session.status] ?? STATUS_DOT.uploading;
               const statusKey = session.status as keyof typeof t.dial.dashboard.status;
               const statusLabel = product === 'muednote'
-                ? session.status
+                ? hub.sessions.noteStatus
                 : (t.dial.dashboard.status[statusKey] ?? session.status);
+              const displayName = (product === 'muednote' && !session.displayName)
+                ? (session.durationSec
+                    ? hub.sessions.durationSession.replace('{duration}', String(Math.round(session.durationSec / 60)))
+                    : hub.sessions.practiceSession)
+                : session.displayName;
 
               return (
                 <Link
@@ -156,7 +162,7 @@ export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerP
                     {dot.symbol}
                   </span>
                   <span className="mono text-xs text-white/80 truncate">
-                    {session.displayName}
+                    {displayName}
                   </span>
                   <span className={`mono text-xs truncate ${session.status === 'completed' ? 'text-amber-400' : 'text-white/30'}`}>
                     {statusLabel}
