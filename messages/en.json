@@ -1509,6 +1509,8 @@
         "musicRelated": "Music Related",
         "chunks": "Chunks",
         "complete": "Complete",
+        "parsing": "Parsing JSON...",
+        "filtering": "Filtering music-related conversations...",
         "processingChunk": "Processing chunk {current}/{total}",
         "hooLearned": "Hoo learned about:",
         "chunksFailed": "{count} chunk(s) failed to process (profile was still updated from successful chunks)",

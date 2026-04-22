@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import {
   detectFormat,
   extractMessages,
@@ -38,6 +39,7 @@ interface ProcessingStats {
 // ========================================
 
 export default function ImportPage() {
+  const t = useTranslations('dial.dashboard.import');
   const [state, setState] = useState<ImportState>('idle');
   const [stats, setStats] = useState<ProcessingStats>({
     totalConversations: 0,
@@ -63,7 +65,7 @@ export default function ImportPage() {
       try {
         data = JSON.parse(text);
       } catch {
-        setError('Invalid JSON file. Please select a valid conversation export.');
+        setError(t('invalidJson'));
         setState('error');
         return;
       }
@@ -84,7 +86,7 @@ export default function ImportPage() {
       }));
 
       if (musicMessages.length === 0) {
-        setError('No music-related conversations found in this file.');
+        setError(t('noMusicFound'));
         setState('error');
         return;
       }
@@ -144,7 +146,7 @@ export default function ImportPage() {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
       setState('error');
     }
-  }, []);
+  }, [t]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -166,12 +168,11 @@ export default function ImportPage() {
       <div className="max-w-2xl mx-auto px-6 py-12">
         {/* Header */}
         <Link href="/dashboard" className="text-slate-500 hover:text-white text-sm mb-8 inline-block">
-          &larr; Dashboard
+          &larr; {t('backToDashboard')}
         </Link>
-        <h1 className="text-2xl font-bold mb-2">Import AI Conversations</h1>
+        <h1 className="text-2xl font-bold mb-2">{t('title')}</h1>
         <p className="text-slate-400 mb-8">
-          Upload your Claude, ChatGPT, or Gemini conversation exports.
-          Hoo will learn about your music preferences from the conversations.
+          {t('description')}
         </p>
 
         {/* Drop Zone */}
@@ -182,12 +183,12 @@ export default function ImportPage() {
             className="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center hover:border-indigo-500/50 transition-colors cursor-pointer"
           >
             <div className="text-4xl mb-4">📁</div>
-            <p className="text-lg text-slate-300 mb-2">Drop your JSON export here</p>
+            <p className="text-lg text-slate-300 mb-2">{t('dropTitle')}</p>
             <p className="text-sm text-slate-500 mb-6">
-              Supports: Claude (conversations.json), ChatGPT (conversations.json), Gemini
+              {t('dropFormats')}
             </p>
             <label className="inline-block px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl cursor-pointer transition-colors">
-              Select File
+              {t('selectFile')}
               <input
                 type="file"
                 accept=".json"
@@ -211,7 +212,7 @@ export default function ImportPage() {
             {/* Format detected */}
             {format !== 'unknown' && (
               <div className="text-sm text-slate-400">
-                Detected: <span className="text-white font-medium capitalize">{format}</span> format
+                {t('detected')}: <span className="text-white font-medium capitalize">{format}</span> {t('format')}
               </div>
             )}
 
@@ -219,15 +220,15 @@ export default function ImportPage() {
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-white/5 rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold">{stats.totalConversations.toLocaleString()}</div>
-                <div className="text-xs text-slate-500 mt-1">Total Messages</div>
+                <div className="text-xs text-slate-500 mt-1">{t('totalMessages')}</div>
               </div>
               <div className="bg-white/5 rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-indigo-400">{stats.filteredConversations.toLocaleString()}</div>
-                <div className="text-xs text-slate-500 mt-1">Music Related</div>
+                <div className="text-xs text-slate-500 mt-1">{t('musicRelated')}</div>
               </div>
               <div className="bg-white/5 rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold">{stats.totalChunks}</div>
-                <div className="text-xs text-slate-500 mt-1">Chunks</div>
+                <div className="text-xs text-slate-500 mt-1">{t('chunks')}</div>
               </div>
             </div>
 
@@ -236,7 +237,7 @@ export default function ImportPage() {
               <div>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-slate-400">
-                    {state === 'done' ? 'Complete' : `Processing chunk ${stats.processedChunks}/${stats.totalChunks}`}
+                    {state === 'done' ? t('complete') : t('processingChunk', { current: stats.processedChunks, total: stats.totalChunks })}
                   </span>
                   <span className="text-white font-medium">{progressPct}%</span>
                 </div>
@@ -253,14 +254,14 @@ export default function ImportPage() {
             {(state === 'parsing' || state === 'filtering') && (
               <div className="flex items-center gap-3 text-slate-400">
                 <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                {state === 'parsing' ? 'Parsing JSON...' : 'Filtering music-related conversations...'}
+                {state === 'parsing' ? t('parsing') : t('filtering')}
               </div>
             )}
 
             {/* Updated Fields */}
             {stats.updatedFields.length > 0 && (
               <div>
-                <div className="text-sm text-slate-400 mb-2">Hoo learned about:</div>
+                <div className="text-sm text-slate-400 mb-2">{t('hooLearned')}</div>
                 <div className="flex flex-wrap gap-2">
                   {stats.updatedFields.map(field => (
                     <span key={field} className="px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-sm">
@@ -274,7 +275,7 @@ export default function ImportPage() {
             {/* Errors */}
             {stats.errors > 0 && (
               <div className="text-sm text-amber-400">
-                {stats.errors} chunk(s) failed to process (profile was still updated from successful chunks)
+                {t('chunksFailed', { count: stats.errors })}
               </div>
             )}
 
@@ -285,13 +286,13 @@ export default function ImportPage() {
                   href="/dashboard"
                   className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors"
                 >
-                  View Profile
+                  {t('viewProfile')}
                 </Link>
                 <button
                   onClick={() => { setState('idle'); setStats({ totalConversations: 0, filteredConversations: 0, totalChunks: 0, processedChunks: 0, updatedFields: [], errors: 0 }); }}
                   className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors text-slate-300"
                 >
-                  Import Another File
+                  {t('importAnother')}
                 </button>
               </div>
             )}
@@ -300,7 +301,7 @@ export default function ImportPage() {
 
         {/* Privacy note */}
         <p className="text-xs text-slate-600 mt-8 text-center">
-          Your file is processed entirely in the browser. Only music-related excerpts are sent to the server for profile extraction.
+          {t('privacyNote')}
         </p>
       </div>
     </div>
