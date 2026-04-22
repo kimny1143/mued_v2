@@ -1377,6 +1377,7 @@
         "bonus": "bonus",
         "exp": "exp {date}",
         "bonusActive": "Launch bonus active",
+        "cancelling": "(cancelling)",
         "buyMore": "Buy more →",
         "noSub": "No subscription — view plans"
       },

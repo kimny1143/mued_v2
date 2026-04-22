@@ -124,7 +124,7 @@ export function CreditsLedger() {
             {data.subscription && (
               <p className="text-xs text-white/30 capitalize">
                 {data.subscription.tier}
-                {data.subscription.cancelAtPeriodEnd && ' (cancelling)'}
+                {data.subscription.cancelAtPeriodEnd && ` ${hub.credits.cancelling}`}
               </p>
             )}
 

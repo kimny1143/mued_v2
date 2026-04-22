@@ -1377,6 +1377,7 @@
         "bonus": "ボーナス",
         "exp": "期限 {date}",
         "bonusActive": "Launchボーナス有効",
+        "cancelling": "（解約予定）",
         "buyMore": "追加購入 →",
         "noSub": "サブスク未加入 — プランを見る"
       },
