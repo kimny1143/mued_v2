@@ -52,7 +52,12 @@ async function sendGA4Event(input: RecordDialEventInput): Promise<void> {
   const clientId = input.userId ?? input.guestToken ?? `session-${input.sessionId}`;
   const url = `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`;
 
-  await fetch(url, {
+  const isDebug = process.env.GA4_DEBUG_MODE === 'true';
+  const collectUrl = isDebug
+    ? `https://www.google-analytics.com/debug/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`
+    : url;
+
+  await fetch(collectUrl, {
     method: 'POST',
     body: JSON.stringify({
       client_id: clientId,
@@ -62,6 +67,7 @@ async function sendGA4Event(input: RecordDialEventInput): Promise<void> {
           session_id: input.sessionId,
           mode: input.mode ?? 'unknown',
           authenticated: input.userId ? 'true' : 'false',
+          ...(isDebug ? { debug_mode: 1 } : {}),
           ...(input.metadata ?? {}),
         },
       }],

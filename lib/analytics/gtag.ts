@@ -60,14 +60,30 @@ export function trackInquiry(
   });
 }
 
-/** Track Stripe checkout funnel: fired when redirect to Stripe is imminent */
+/**
+ * Track Stripe checkout funnel: fired when redirect to Stripe is imminent.
+ * Returns a Promise that resolves after the event fires (or after 500ms timeout),
+ * ensuring the GA4 hit completes before the page navigates away.
+ */
 export function trackCheckoutView(
   checkoutType: "subscription" | "credit_pack",
   item: string
-): void {
-  trackEvent({
-    action: "checkout_view",
-    params: { checkout_type: checkoutType, item, funnel: "dial_checkout" },
+): Promise<void> {
+  return new Promise((resolve) => {
+    if (!isGtagAvailable()) {
+      resolve();
+      return;
+    }
+    const timeout = setTimeout(resolve, 500);
+    window.gtag("event", "checkout_view", {
+      checkout_type: checkoutType,
+      item,
+      funnel: "dial_checkout",
+      event_callback: () => {
+        clearTimeout(timeout);
+        resolve();
+      },
+    });
   });
 }
 
