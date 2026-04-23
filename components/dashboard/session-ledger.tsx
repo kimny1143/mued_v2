@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-context';
+import { trackMuednoteToDialCta } from '@/lib/analytics/gtag';
 
 export type SessionProduct = 'dial' | 'muednote' | 'muedear';
 
@@ -118,6 +119,7 @@ export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerP
             <Link
               href="/dial"
               className="inline-flex items-center gap-2 text-sm text-amber-400 hover:text-amber-300 transition-colors"
+              onClick={() => trackMuednoteToDialCta('empty_state', 'session_ledger')}
             >
               {hub.sessions.startFirst}
               <ArrowRight className="w-3.5 h-3.5" />
