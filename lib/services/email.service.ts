@@ -466,32 +466,75 @@ ${data.studentName} 様
    * MUEDial purchase confirmed — sent after checkout
    */
   dialPurchaseConfirmed(data: DialPurchaseConfirmedEmailData): { subject: string; html: string; text: string } {
-    const subject = 'Your MUEDial mix is being prepared';
+    const isDialogue = data.purchaseType === 'dialogue';
+    const subject = 'MUEDial — セッションの準備ができました / Your session is ready';
 
     const html = baseTemplate(`
-      <h2 style="color: #059669; margin-top: 0;">Payment Confirmed</h2>
-      <p>Thank you for your purchase!</p>
-      <p>Your <strong>${data.purchaseType}</strong> mix session is ready. Upload your tracks to get started.</p>
+      <h2 style="color: #059669; margin-top: 0;">ご購入ありがとうございます！ / Purchase Confirmed</h2>
+
+      <p>MUEDialをご利用いただきありがとうございます。セッションの準備ができました。</p>
+      <p style="color: #6b7280;">Thank you for your MUEDial purchase. Your session is ready to start.</p>
+
+      <div class="info-box">
+        <h3 style="margin-top: 0; color: #1f2937;">ミックス開始の手順 / How to Start</h3>
+
+        <div style="margin: 12px 0;">
+          <strong style="color: #059669;">Step 1</strong> — セッションページを開く<br>
+          <span style="color: #6b7280; font-size: 14px;">Open your session page via the button below.</span>
+        </div>
+
+        <div style="margin: 12px 0;">
+          <strong style="color: #059669;">Step 2</strong> — ステムをアップロードする<br>
+          <span style="color: #6b7280; font-size: 14px;">Upload your stem files (WAV/MP3). DAWからトラックをバウンスして個別ファイルとして書き出してください。Export each track from your DAW as a separate file.</span>
+        </div>
+
+        <div style="margin: 12px 0;">
+          <strong style="color: #059669;">Step 3</strong> — ${isDialogue ? 'AIと対話しながら調整する' : 'AIに自動処理を任せる'}<br>
+          <span style="color: #6b7280; font-size: 14px;">${isDialogue
+            ? '「ボーカルをもう少し前に出して」など、感覚的な言葉でAIに伝えてください。Tell AI your direction in natural language.'
+            : 'AIが自動でミックスを仕上げます。1ラウンドのフィードバック調整が可能です。AI will automatically mix your tracks. One round of feedback included.'
+          }</span>
+        </div>
+
+        <div style="margin: 12px 0;">
+          <strong style="color: #059669;">Step 4</strong> — 完成ファイルを受け取る<br>
+          <span style="color: #6b7280; font-size: 14px;">ミックス完成後にメールでお知らせします。You'll receive an email when your mix is ready.</span>
+        </div>
+      </div>
 
       <p style="text-align: center;">
-        <a href="${data.sessionUrl}" class="button">Go to Your Session</a>
+        <a href="${data.sessionUrl}" class="button">セッションを開く / Go to Session</a>
       </p>
 
-      <p style="color: #6b7280; font-size: 14px;">
-        Your session link is valid for 7 days. Bookmark it to access your mix anytime.
+      <div class="info-box" style="background: #f9fafb;">
+        <h4 style="margin-top: 0; color: #374151;">よくある質問 / FAQ</h4>
+        <p style="margin: 8px 0;"><strong>Q: どんなファイルが必要ですか？</strong><br>
+        <span style="color: #6b7280; font-size: 14px;">WAVまたはMP3形式のステムファイル。ドラム・ベース・ボーカル等、トラックごとに個別のファイルとして書き出してください。</span></p>
+        <p style="margin: 8px 0;"><strong>Q: How long does it take?</strong><br>
+        <span style="color: #6b7280; font-size: 14px;">Processing typically takes a few minutes after upload. You'll receive an email when your mix is ready.</span></p>
+      </div>
+
+      <p style="color: #6b7280; font-size: 13px; margin-top: 16px;">
+        セッションリンクは7日間有効です。Session link valid for 7 days.<br>
+        ご不明な点は <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> までどうぞ。
       </p>
     `);
 
     const text = `
-Payment Confirmed
+ご購入ありがとうございます！MUEDial セッション準備完了
 
-Thank you for your MUEDial purchase!
+ミックス開始の手順:
+1. セッションページを開く: ${data.sessionUrl}
+2. ステムをアップロード（DAWからトラックを個別にバウンス・WAV/MP3）
+3. ${isDialogue ? 'AIと対話しながら方向性を調整（感覚的な言葉でOK）' : 'AIが自動でミックスを処理（フィードバック1ラウンド含む）'}
+4. 完成後にメールでお知らせします
 
-Your ${data.purchaseType} mix session is ready. Upload your tracks to get started.
+よくある質問:
+- ステムとは？ → ドラム・ベース・ボーカル等を個別ファイルとして書き出したもの
+- 処理時間は？ → アップロード後、数分〜で完成メールが届きます
 
-Session: ${data.sessionUrl}
-
-Your session link is valid for 7 days.
+セッションリンクは7日間有効です。
+ご不明な点は ${SUPPORT_EMAIL} までどうぞ。
     `.trim();
 
     return { subject, html, text };
