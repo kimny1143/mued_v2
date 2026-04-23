@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/lib/i18n/locale-context';
+import { trackMuednoteToDialCta } from '@/lib/analytics/gtag';
 
 type BalanceData = {
   totalCredits: number;
@@ -82,6 +83,7 @@ export function CreditsLedger() {
               <Link
                 href="/dial/pricing"
                 className="ml-auto text-xs text-white/30 hover:text-amber-400 transition-colors"
+                onClick={() => trackMuednoteToDialCta('buy_more', 'credits_ledger')}
               >
                 {hub.credits.buyMore}
               </Link>
@@ -114,6 +116,7 @@ export function CreditsLedger() {
                 <Link
                   href="/dial/pricing"
                   className="text-amber-400/70 hover:text-amber-400 transition-colors"
+                  onClick={() => trackMuednoteToDialCta('no_sub', 'credits_ledger')}
                 >
                   {hub.credits.noSub}
                 </Link>

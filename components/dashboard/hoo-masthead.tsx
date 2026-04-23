@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useLocale } from '@/lib/i18n/locale-context';
+import { trackMuednoteToDialCta } from '@/lib/analytics/gtag';
 
 type BalanceSummary = {
   totalCredits: number;
@@ -54,7 +55,11 @@ export function HooMasthead() {
 
   return (
     <div className="flex items-center gap-2">
-      <Link href="/dial/pricing" className="flex items-center gap-2 group">
+      <Link
+        href="/dial/pricing"
+        className="flex items-center gap-2 group"
+        onClick={() => trackMuednoteToDialCta('masthead', 'hoo_masthead')}
+      >
         <div className="relative w-8 h-8 flex-shrink-0">
           <Image
             src="/images/hoo-icon.png"
