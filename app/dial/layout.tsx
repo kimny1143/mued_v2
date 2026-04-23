@@ -106,6 +106,7 @@ export default function DialLayout({
       <Script
         id="dial-jsonld"
         type="application/ld+json"
+        strategy="beforeInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(dialJsonLd) }}
       />
       {children}
