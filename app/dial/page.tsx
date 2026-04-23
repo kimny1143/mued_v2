@@ -440,7 +440,7 @@ export default function DialPage() {
                       <div className="text-right">
                         <span className="text-2xl font-bold">${opt.price}</span>
                         {locale === 'ja' && (
-                          <span className="text-xs text-white/40 ml-1.5">約¥{opt.jpy.toLocaleString()}</span>
+                          <span className="text-xs text-white/40 ml-1.5">約¥{opt.jpy.toLocaleString('ja-JP')}</span>
                         )}
                       </div>
                     </div>
