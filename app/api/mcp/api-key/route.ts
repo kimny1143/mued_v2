@@ -7,11 +7,11 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { mcpApiKeys } from "@/db/schema/mcp-api-keys";
-import { users } from "@/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
+import { resolveClerkUserId } from "@/lib/middleware/with-auth";
+import { getUserIdFromClerkId } from "@/lib/utils/auth-helpers";
 
 async function sha256(input: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -30,24 +30,17 @@ function generateRawKey(): string {
   );
 }
 
-async function resolveInternalUserId(clerkId: string): Promise<string | null> {
-  const rows = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.clerkId, clerkId))
-    .limit(1);
-  return rows[0]?.id ?? null;
-}
-
 // POST — Generate new API key
-export async function POST() {
-  const { userId: clerkId } = await auth();
+export async function POST(request: NextRequest) {
+  const clerkId = await resolveClerkUserId(request);
   if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const internalUserId = await resolveInternalUserId(clerkId);
-  if (!internalUserId) {
+  let internalUserId: string;
+  try {
+    internalUserId = await getUserIdFromClerkId(clerkId);
+  } catch {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
@@ -82,13 +75,15 @@ export async function POST() {
 
 // DELETE — Revoke API key
 export async function DELETE(request: NextRequest) {
-  const { userId: clerkId } = await auth();
+  const clerkId = await resolveClerkUserId(request);
   if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const internalUserId = await resolveInternalUserId(clerkId);
-  if (!internalUserId) {
+  let internalUserId: string;
+  try {
+    internalUserId = await getUserIdFromClerkId(clerkId);
+  } catch {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
@@ -120,14 +115,16 @@ export async function DELETE(request: NextRequest) {
 }
 
 // GET — List active keys
-export async function GET() {
-  const { userId: clerkId } = await auth();
+export async function GET(request: NextRequest) {
+  const clerkId = await resolveClerkUserId(request);
   if (!clerkId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const internalUserId = await resolveInternalUserId(clerkId);
-  if (!internalUserId) {
+  let internalUserId: string;
+  try {
+    internalUserId = await getUserIdFromClerkId(clerkId);
+  } catch {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
