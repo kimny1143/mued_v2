@@ -7,4 +7,5 @@ Disallow: /sign-up
 Disallow: /lobe/
 Disallow: /dial/session/
 
-Sitemap: https://www.mued.jp/sitemap.xml
+Sitemap: https://mued.jp/sitemap.xml
+Sitemap: https://dial.mued.jp/sitemap.xml
