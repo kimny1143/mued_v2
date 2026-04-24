@@ -46,7 +46,7 @@ HooはMUEDのAIアシスタントです。ユーザーの認知特性・制作�
 - **Hoo MCP**: AI向けAPIサービス（https://hoo-mcp.glasswerkskimny.workers.dev）
 `;
 
-const MUEDRAL_CONTENT = `# MUEDial — AIミキシング・マスタリングサービス
+const MUEDIAL_CONTENT = `# MUEDial — AIミキシング・マスタリングサービス
 
 > AIミキシング・マスタリングサービス。宅録・DTM制作者向け。日本語対応。
 
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const isDial = host.includes("dial.mued.jp");
 
-  const content = isDial ? MUEDRAL_CONTENT : MUEDNOTE_CONTENT;
+  const content = isDial ? MUEDIAL_CONTENT : MUEDNOTE_CONTENT;
 
   return new NextResponse(content, {
     headers: {
