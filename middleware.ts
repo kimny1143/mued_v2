@@ -50,8 +50,11 @@ export default clerkMiddleware(async (auth, req) => {
     // After sign-in, users return to dial.mued.jp/ (public LP) to continue their flow.
     // Prerequisite: https://dial.mued.jp must be in Clerk Dashboard → Allowed redirect URLs.
     if (pathname.startsWith('/dial/pricing') || pathname.startsWith('/dashboard')) {
+      // After sign-in on mued.jp, redirect to /dial-return (same-origin) which then
+      // does a server-side bounce to dial.mued.jp/. Same-origin redirect_url requires
+      // no Clerk Dashboard configuration and works on Hobby plan.
       const signInUrl = new URL('/sign-in', 'https://mued.jp');
-      signInUrl.searchParams.set('redirect_url', 'https://dial.mued.jp/');
+      signInUrl.searchParams.set('redirect_url', 'https://mued.jp/dial-return');
       return NextResponse.redirect(signInUrl);
     }
 
