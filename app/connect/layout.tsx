@@ -33,5 +33,5 @@ export default function ConnectLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return <>{children}</>;
 }

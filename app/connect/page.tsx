@@ -130,6 +130,7 @@ export default function ConnectPage() {
   const [existingKeyPrefix, setExistingKeyPrefix] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const [selectedHost, setSelectedHost] = useState<McpHost>('claude-desktop');
 
   // Connection test state
@@ -159,6 +160,7 @@ export default function ConnectPage() {
 
   const handleGenerateKey = useCallback(async () => {
     setIsGenerating(true);
+    setGenerateError(null);
     try {
       const res = await fetch('/api/mcp/api-key', { method: 'POST' });
       const data = await res.json();
@@ -167,9 +169,11 @@ export default function ConnectPage() {
         setExistingKeyPrefix(data.data.prefix);
         setCurrentStep(2);
         trackMcpConnect('key_generated');
+      } else {
+        setGenerateError(data.error ?? 'APIキーの発行に失敗しました');
       }
     } catch {
-      // silently fail
+      setGenerateError('接続エラー。ページを再読み込みしてお試しください。');
     } finally {
       setIsGenerating(false);
     }
@@ -275,23 +279,31 @@ export default function ConnectPage() {
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={handleGenerateKey}
-                  disabled={isGenerating}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {c.step1.generating}
-                    </>
-                  ) : (
-                    <>
-                      <Key className="w-4 h-4" />
-                      {c.step1.generate}
-                    </>
+                <div className="space-y-2">
+                  <button
+                    onClick={handleGenerateKey}
+                    disabled={isGenerating}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {c.step1.generating}
+                      </>
+                    ) : (
+                      <>
+                        <Key className="w-4 h-4" />
+                        {c.step1.generate}
+                      </>
+                    )}
+                  </button>
+                  {generateError && (
+                    <p className="text-sm text-red-400 flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                      {generateError}
+                    </p>
                   )}
-                </button>
+                </div>
               )}
             </div>
           )}
