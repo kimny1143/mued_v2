@@ -45,11 +45,14 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Subdomain routing: dial.mued.jp → serve /dial page
   if (hostname.startsWith('dial.')) {
-    // Redirect checkout-requiring paths to primary domain (Clerk session not shared across subdomains)
+    // Auth-required paths: redirect to mued.jp sign-in with dial.mued.jp LP as return URL.
+    // Clerk sessions are scoped to mued.jp (Hobby plan, no satellite).
+    // After sign-in, users return to dial.mued.jp/ (public LP) to continue their flow.
+    // Prerequisite: https://dial.mued.jp must be in Clerk Dashboard → Allowed redirect URLs.
     if (pathname.startsWith('/dial/pricing') || pathname.startsWith('/dashboard')) {
-      const primaryUrl = new URL(req.url);
-      primaryUrl.hostname = hostname.replace(/^dial\./, '');
-      return NextResponse.redirect(primaryUrl);
+      const signInUrl = new URL('/sign-in', 'https://mued.jp');
+      signInUrl.searchParams.set('redirect_url', 'https://dial.mued.jp/');
+      return NextResponse.redirect(signInUrl);
     }
 
     // Set locale cookie from Accept-Language (dial subdomain has no /ja prefix)
