@@ -1,10 +1,6 @@
-# glasswerks プロダクトスイート — MUEDnote & MUEDial
+import { NextRequest, NextResponse } from "next/server";
 
-> 音楽クリエイター向けプロダクトスイート。AIアシスタントHooと耳トレ・AIミキシングを提供。glasswerks inc. 運営。
-
----
-
-# MUEDnote
+const MUEDNOTE_CONTENT = `# MUEDnote — 音楽クリエイター向けプロダクションコンパニオン
 
 > 音楽クリエイターの認知特性を可視化するアプリ。AIアシスタントHooがパーソナライズされた対話で制作をサポート。完全無料。
 
@@ -22,7 +18,7 @@ MUEDnoteは、7つの耳トレゲームで音楽クリエイターの認知特�
 
 - **MUEDlobe**: 7種の耳トレゲームで認知プロファイル（音程感知・リズム・和音・音場定位等）を可視化
 - **AIアシスタント Hoo**: プロファイルをもとに制作の悩みに対話でアドバイス
-- **MUEDnote連携**: 制作ログ・Hoo会話履歴を蓄積してHooの理解を深める
+- **制作ログ連携**: Hoo会話履歴を蓄積してHooの理解を深める
 - **プロファイル共有**: MUEDialへのシームレス誘導（AIミキシングへの文脈連携）
 
 ## Hoo について
@@ -36,11 +32,21 @@ HooはMUEDのAIアシスタントです。ユーザーの認知特性・制作�
 - **URL**: https://hoo-mcp.glasswerkskimny.workers.dev
 - **認証**: ユーザー発行APIキー（mued.jpダッシュボード → 設定 → MCP）
 - **ツール数**: 14ツール（プロファイル取得・会話履歴・MUEDial連携等）
-- **公式レジストリ**: `io.github.kimny1143/hoo-mcp` として登録済み
+- **公式レジストリ**: \`io.github.kimny1143/hoo-mcp\` として登録済み
 
----
+## 運営会社
 
-# MUEDial
+**glasswerks inc.**（株式会社グラスワークス）
+- URL: https://www.glasswerks.jp
+- メール: info@glasswerks.jp
+
+## 関連サービス
+
+- **MUEDial**: AIミキシング・マスタリングサービス（https://dial.mued.jp）
+- **Hoo MCP**: AI向けAPIサービス（https://hoo-mcp.glasswerkskimny.workers.dev）
+`;
+
+const MUEDRAL_CONTENT = `# MUEDial — AIミキシング・マスタリングサービス
 
 > AIミキシング・マスタリングサービス。宅録・DTM制作者向け。日本語対応。
 
@@ -70,9 +76,19 @@ MUEDialは、ステムファイルをアップロードしてAIと話すだけ�
 | マスタリング | $6 | ミックス完成後のマスタリング |
 | Retake | $10 | 追加調整 |
 
+## サブスクリプション
+
+| プラン | 価格 | クレジット |
+|-------|------|----------|
+| Basic | $19.99/月 | 1,000cr/月 |
+| Pro | $34.99/月 | 1,700cr/月 |
+| Studio | $49.99/月 | 3,000cr/月 |
+
+クレジットは最大3ヶ月ロールオーバー。クレジットパック（500cr/$12.99、1,500cr/$34.99）も別途購入可能。
+
 ## 競合との差別化
 
-- Landr・eMastered・LANDR等の自動化ツールとは異なり「会話型」
+- Landr・eMastered等の自動化ツールとは異なり「会話型」
 - 日本語でパラメータを感覚的に指示可能（英語ツールとの言語優位）
 - セッション制により月額課金なしで利用可能
 
@@ -88,3 +104,18 @@ MUEDialは、ステムファイルをアップロードしてAIと話すだけ�
 
 - **MUEDnote**: 音楽制作者向けプロダクションコンパニオン・耳トレアプリ（https://mued.jp）
 - **Hoo MCP**: AI向けAPIサービス（https://hoo-mcp.glasswerkskimny.workers.dev）
+`;
+
+export async function GET(request: NextRequest) {
+  const host = request.headers.get("host") ?? "";
+  const isDial = host.includes("dial.mued.jp");
+
+  const content = isDial ? MUEDRAL_CONTENT : MUEDNOTE_CONTENT;
+
+  return new NextResponse(content, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "public, max-age=86400, stale-while-revalidate=3600",
+    },
+  });
+}
