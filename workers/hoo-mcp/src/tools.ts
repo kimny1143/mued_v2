@@ -15,6 +15,7 @@
 import type { NeonQueryFunction } from "@neondatabase/serverless";
 import { DIAL_TOOL_DEFINITIONS } from "./tools-dial";
 import { GLASSWERKS_TOOL_DEFINITIONS } from "./tools-glasswerks";
+import { ECHOVNA_TOOL_DEFINITIONS } from "./tools-echovna";
 
 // ========================================
 // Types
@@ -483,6 +484,8 @@ export const TOOL_DEFINITIONS = [
   ...GLASSWERKS_TOOL_DEFINITIONS,
   // ── Tier 2: MUEDial Session Management ──
   ...DIAL_TOOL_DEFINITIONS,
+  // ── Echovna: AI Music Composition (Phase 0) ──
+  ...ECHOVNA_TOOL_DEFINITIONS,
 ];
 
 // ========================================

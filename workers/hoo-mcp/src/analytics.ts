@@ -54,6 +54,10 @@ const TOOL_TIERS: Record<string, 1 | 2 | 3> = {
   get_glasswerks_services: 3,
   submit_inquiry: 3,
   get_inquiry_status: 3,
+  // Echovna: AI music composition (Phase 0, stateless)
+  compose_from_concept: 1,
+  evaluate_generation: 1,
+  get_echovna_capability: 1,
 };
 
 export function getToolTier(toolName: string): 1 | 2 | 3 {
