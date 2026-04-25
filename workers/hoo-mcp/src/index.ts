@@ -32,6 +32,7 @@ import {
   getDialPhaseAndActions,
 } from "./tools-dial";
 import { submitInquiry, getInquiryStatus } from "./tools-glasswerks";
+import { handleEchovnaTool } from "./tools-echovna";
 import {
   logToolCall,
   buildGA4Events,
@@ -243,6 +244,12 @@ async function executeToolCall(
           session_id: toolArgs.session_id as string,
         }),
       };
+
+    // ── Echovna: AI Music Composition (Phase 0) ──
+    case "compose_from_concept":
+    case "evaluate_generation":
+    case "get_echovna_capability":
+      return { result: await handleEchovnaTool(toolName, toolArgs) };
 
     default:
       return { result: null, error: `Unknown tool: ${toolName}` };
