@@ -6,8 +6,9 @@
  * reimplementation driven by kimny_cognitive_model.md v0.6 specs.
  *
  * Phase 0: Skeleton — cognitive model → prompt translation logic.
- *           MiniMax Music API call is NOT wired (Phase 2).
- * Phase 2: Wire MiniMax Music API / ACE-Step generation.
+ *           Generation API not yet wired. ACE-Step v1.5 (MIT/MLX-Swift) is the
+ *           primary Phase 2 target. MiniMax Music via fal.ai = supplementary (Phase 1.5+).
+ * Phase 2: Wire ACE-Step v1.5 generation (primary). MiniMax Music via fal.ai (supplementary).
  * Phase 3: Result evaluation + iterative refinement loop.
  *
  * Tools:
@@ -375,9 +376,9 @@ function handleComposeFromConcept(args: Record<string, unknown>): ToolResult {
     prompt.lyrics ? `- **Lyrics**: ${prompt.lyrics.slice(0, 80)}...` : "",
     ``,
     `### Phase 0 Note`,
-    `Music generation API (MiniMax Music) is not yet wired.`,
+    `Music generation API (ACE-Step v1.5, MIT license) is not yet wired.`,
     `This prompt is ready for Phase 2 integration.`,
-    `To generate: pass prompt + BPM + duration to MiniMax Music API.`,
+    `To generate: pass prompt + BPM + duration to ACE-Step v1.5 (primary) or MiniMax Music via fal.ai (supplementary, Phase 1.5+).`,
   ].filter((l) => l !== "");
 
   return textResult(lines.join("\n"));
@@ -436,8 +437,8 @@ function handleGetCapability(): ToolResult {
     `Conversion: concept → adjectives → genre → instruments → BPM → prompt tags.`,
     ``,
     `### Phase 2 Roadmap`,
-    `- MiniMax Music API integration`,
-    `- ACE-Step 1.5 XL (local, MLX-Swift via native課)`,
+    `- ACE-Step v1.5 (MLX-Swift local, MIT license) integration — Primary`,
+    `- MiniMax Music via fal.ai — Supplementary option (Phase 1.5+)`,
     `- Result scoring + iterative refinement`,
   ];
 
