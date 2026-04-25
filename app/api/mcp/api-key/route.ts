@@ -40,8 +40,10 @@ export async function POST(request: NextRequest) {
   let internalUserId: string;
   try {
     internalUserId = await getUserIdFromClerkId(clerkId);
-  } catch {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  } catch (err) {
+    const status = (err as { status?: number }).status === 404 ? 404 : 500;
+    const error = status === 404 ? "User not found" : "Internal server error";
+    return NextResponse.json({ error }, { status });
   }
 
   // Revoke any existing active keys (one active key per user)
@@ -83,8 +85,10 @@ export async function DELETE(request: NextRequest) {
   let internalUserId: string;
   try {
     internalUserId = await getUserIdFromClerkId(clerkId);
-  } catch {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  } catch (err) {
+    const status = (err as { status?: number }).status === 404 ? 404 : 500;
+    const error = status === 404 ? "User not found" : "Internal server error";
+    return NextResponse.json({ error }, { status });
   }
 
   const body = await request.json().catch(() => ({}));
@@ -124,8 +128,10 @@ export async function GET(request: NextRequest) {
   let internalUserId: string;
   try {
     internalUserId = await getUserIdFromClerkId(clerkId);
-  } catch {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  } catch (err) {
+    const status = (err as { status?: number }).status === 404 ? 404 : 500;
+    const error = status === 404 ? "User not found" : "Internal server error";
+    return NextResponse.json({ error }, { status });
   }
 
   const keys = await db
