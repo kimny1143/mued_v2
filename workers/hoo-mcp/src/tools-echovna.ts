@@ -1,20 +1,18 @@
 /**
- * Echovna MCP Tools (Phase 0 Skeleton)
+ * Echovna MCP Tools (Phase 1)
  *
  * Composer-side tools for AI-assisted music generation via Hoo.
  * Design mirrors Python PoC (Echovna/echovna/pipeline/) — TypeScript
  * reimplementation driven by kimny_cognitive_model.md v0.6 specs.
  *
- * Phase 0: Skeleton — cognitive model → prompt translation logic.
- *           Generation API not yet wired. ACE-Step v1.5 (MIT/MLX-Swift) is the
- *           primary Phase 2 target. MiniMax Music via fal.ai = supplementary (Phase 1.5+).
- * Phase 2: Wire ACE-Step v1.5 generation (primary). MiniMax Music via fal.ai (supplementary).
- * Phase 3: Result evaluation + iterative refinement loop.
+ * Phase 1: Free-form concept parser — Japanese/English → English music tags.
+ *           ACE-Step v1.5 (MIT/MLX-Swift) local inference via MUEDaw subprocess.
+ * Phase 2: Result evaluation + iterative refinement loop.
  *
  * Tools:
  *   compose_from_concept    — CognitiveImage → GenerationPrompt translation
  *   evaluate_generation     — Generation result scoring (Phase 2 stub)
- *   get_echovna_capability  — Available genres, status, Phase 0 readiness
+ *   get_echovna_capability  — Available genres, status, Phase 1 readiness
  */
 
 interface ToolResult {
@@ -130,6 +128,46 @@ const ADJECTIVE_TABLE: Record<string, string[]> = {
 };
 
 // ========================================
+// Japanese Keyword → English Tags (Phase 1 concept parser)
+// ========================================
+
+const JP_KEYWORDS: Record<string, string[]> = {
+  ゆったり: ["relaxed", "laid-back", "unhurried"],
+  のんびり: ["easygoing", "relaxed", "slow"],
+  心地よい: ["pleasant", "comfortable", "mellow"],
+  夕暮れ: ["sunset", "twilight", "golden hour"],
+  朝焼け: ["dawn", "sunrise", "morning glow"],
+  夜明け: ["dawn", "early morning"],
+  深夜: ["late night", "midnight", "nocturnal"],
+  夜: ["night", "nocturnal", "dark"],
+  朝: ["morning", "fresh", "bright"],
+  雨: ["rainy", "melancholic", "grey"],
+  春: ["spring", "fresh", "bright"],
+  夏: ["summer", "warm", "vibrant"],
+  秋: ["autumn", "melancholic", "nostalgic"],
+  冬: ["winter", "cold", "sparse"],
+  切ない: ["bittersweet", "melancholic", "longing"],
+  哀愁: ["nostalgia", "melancholy", "wistful"],
+  懐かしい: ["nostalgic", "vintage", "warm memory"],
+  幻想的: ["dreamy", "ethereal", "surreal"],
+  神秘的: ["mysterious", "ethereal", "dark ambient"],
+  明るい: ["bright", "uplifting", "cheerful"],
+  暗い: ["dark", "brooding", "moody"],
+  静か: ["quiet", "peaceful", "sparse"],
+  激しい: ["intense", "energetic", "driving"],
+  柔らかい: ["soft", "gentle", "mellow"],
+  温かい: ["warm", "cozy", "intimate"],
+  爽やか: ["fresh", "crisp", "airy"],
+  疾走感: ["driving", "fast-paced", "momentum"],
+  浮遊感: ["floating", "ethereal", "weightless"],
+  孤独: ["solitary", "minimal", "sparse"],
+  内省: ["introspective", "intimate", "subdued"],
+  力強い: ["powerful", "strong dynamics", "driving rhythm"],
+  優しい: ["gentle", "soft dynamics", "warm texture"],
+  雰囲気: [], // modifier only, no standalone tags
+};
+
+// ========================================
 // BPM Resolution
 // (mirrors: echovna/pipeline/bpm_table.py)
 // ========================================
@@ -160,6 +198,79 @@ function resolveBpm(explicit?: number, genre?: string): number {
     if (base) return base;
   }
   return 90; // sensible default
+}
+
+// ========================================
+// Free-form Concept Parser (Phase 1)
+// Parses Japanese/English concept string → CognitiveImage fields
+// ========================================
+
+function extractBpmFromText(text: string): number | undefined {
+  const m = text.match(/\bBPM\s*(\d{2,3})\b/i);
+  return m ? parseInt(m[1], 10) : undefined;
+}
+
+function extractDurationFromText(text: string): number | undefined {
+  const minMatch = text.match(/(\d+)\s*分/);
+  const secMatch = text.match(/(\d+)\s*秒/);
+  if (minMatch && secMatch) return parseInt(minMatch[1]) * 60 + parseInt(secMatch[1]);
+  if (minMatch) return parseInt(minMatch[1]) * 60;
+  if (secMatch) return parseInt(secMatch[1]);
+  return undefined;
+}
+
+interface ParsedConcept {
+  genre?: string;
+  extra_tags: string[];
+  bpm?: number;
+  duration?: number;
+}
+
+function parseConceptFreeform(concept: string): ParsedConcept {
+  const extra_tags: string[] = [];
+  const seen = new Set<string>();
+
+  const addTag = (tag: string) => {
+    if (tag && !seen.has(tag)) { extra_tags.push(tag); seen.add(tag); }
+  };
+
+  // Extract BPM and duration from text
+  const bpm = extractBpmFromText(concept);
+  const duration = extractDurationFromText(concept);
+
+  // Japanese keywords → English tags
+  for (const [jp, en] of Object.entries(JP_KEYWORDS)) {
+    if (concept.includes(jp)) {
+      en.forEach(addTag);
+    }
+  }
+
+  // Detect genre from concept (longest match wins to avoid "lo-fi" matching "fi")
+  const lc = concept.toLowerCase();
+  const genres = Object.keys(GENRE_TABLE).sort((a, b) => b.length - a.length);
+  let genre: string | undefined;
+  for (const g of genres) {
+    if (lc.includes(g)) { genre = g; break; }
+  }
+
+  // Detect English adjective keys present in concept
+  for (const adj of Object.keys(ADJECTIVE_TABLE)) {
+    if (lc.includes(adj.toLowerCase())) {
+      ADJECTIVE_TABLE[adj].forEach(addTag);
+    }
+  }
+
+  return { genre, extra_tags, bpm, duration };
+}
+
+// Strip Japanese characters and BPM specs, returning clean ASCII tags
+function conceptToFallbackTags(concept: string): string {
+  return concept
+    .replace(/[^\x00-\x7F]+/g, " ")   // remove non-ASCII
+    .replace(/\bBPM\s*\d+\b/gi, "")   // remove BPM spec
+    .replace(/\s+/g, ", ")
+    .trim()
+    .replace(/^,\s*|,\s*$/g, "");
 }
 
 // ========================================
@@ -226,9 +337,9 @@ export const ECHOVNA_TOOL_DEFINITIONS = [
     name: "compose_from_concept",
     description:
       "Translate a music concept into a structured generation prompt using kimny's cognitive model. " +
-      "Converts adjectives, genre, and mood into music generation API parameters (tags, BPM, duration). " +
-      "Use when: the user describes a musical idea, mood, or reference and wants to generate music. " +
-      "Phase 0: Returns the translated prompt for inspection. Music generation API is wired in Phase 2.",
+      "Accepts free-form Japanese or English input (e.g. 'lo-fi chill ゆったり BPM75 夕暮れの雰囲気'). " +
+      "Converts adjectives, genre, and mood into English music tags, BPM, and duration for ACE-Step. " +
+      "Use when: the user describes a musical idea, mood, or reference and wants to generate music.",
     inputSchema: {
       type: "object" as const,
       properties: {
@@ -345,19 +456,28 @@ export async function handleEchovnaTool(
 }
 
 function handleComposeFromConcept(args: Record<string, unknown>): ToolResult {
+  const rawConcept = String(args.concept ?? "");
+
+  // Parse free-form concept for implicit genre / adjectives / BPM / duration
+  const parsed = parseConceptFreeform(rawConcept);
+
   const image: CognitiveImage = {
-    concept: String(args.concept ?? ""),
-    genre: args.genre ? String(args.genre) : undefined,
+    concept: rawConcept,
+    genre: args.genre ? String(args.genre) : parsed.genre,
     adjectives: Array.isArray(args.adjectives)
       ? (args.adjectives as string[])
       : undefined,
-    bpm: typeof args.bpm === "number" ? args.bpm : undefined,
-    duration: typeof args.duration === "number" ? args.duration : undefined,
+    bpm: typeof args.bpm === "number" ? args.bpm : parsed.bpm,
+    duration: typeof args.duration === "number" ? args.duration : parsed.duration,
     vocal_style: args.vocal_style ? String(args.vocal_style) : undefined,
     lyrics: args.lyrics ? String(args.lyrics) : undefined,
+    extra_tags: parsed.extra_tags.length > 0 ? parsed.extra_tags : undefined,
   };
 
   const prompt = buildGenerationPrompt(image);
+
+  // Fallback: if cognitive model produced no tags, extract ASCII words from concept
+  const finalTags = prompt.prompt || conceptToFallbackTags(rawConcept) || rawConcept;
 
   const lines = [
     `## Echovna Generation Prompt`,
@@ -367,18 +487,13 @@ function handleComposeFromConcept(args: Record<string, unknown>): ToolResult {
     ``,
     `### Translated Tags`,
     `\`\`\``,
-    prompt.prompt || "(no tags — concept only)",
+    finalTags,
     `\`\`\``,
     ``,
     `### Parameters`,
     `- **BPM**: ${prompt.bpm}`,
     `- **Duration**: ${prompt.duration}s`,
     prompt.lyrics ? `- **Lyrics**: ${prompt.lyrics.slice(0, 80)}...` : "",
-    ``,
-    `### Phase 0 Note`,
-    `Music generation API (ACE-Step v1.5, MIT license) is not yet wired.`,
-    `This prompt is ready for Phase 2 integration.`,
-    `To generate: pass prompt + BPM + duration to ACE-Step v1.5 (primary) or MiniMax Music via fal.ai (supplementary, Phase 1.5+).`,
   ].filter((l) => l !== "");
 
   return textResult(lines.join("\n"));
@@ -414,32 +529,28 @@ function handleEvaluateGeneration(args: Record<string, unknown>): ToolResult {
 function handleGetCapability(): ToolResult {
   const supportedGenres = Object.keys(GENRE_TABLE).join(", ");
   const supportedAdjectives = Object.keys(ADJECTIVE_TABLE).join(", ");
+  const supportedJpKeywords = Object.keys(JP_KEYWORDS).filter(k => JP_KEYWORDS[k].length > 0).join(", ");
 
   const lines = [
-    `## Echovna Capability (Phase 0)`,
+    `## Echovna Capability (Phase 1)`,
     ``,
     `### Current Phase`,
-    `**Phase 0** — Cognitive model → prompt translation (skeleton).`,
-    `Music generation API: **NOT connected** (Phase 2).`,
+    `**Phase 1** — Free-form concept parser active.`,
+    `Input: Japanese/English concept string → Output: English music tags for ACE-Step.`,
+    `Local inference: ACE-Step v1.5 via MUEDaw subprocess (MLX backend).`,
     ``,
     `### Supported Genres`,
     supportedGenres,
     ``,
-    `### Supported Adjectives (Japanese / English)`,
+    `### Supported Adjectives (English)`,
     supportedAdjectives,
     ``,
+    `### Supported Japanese Keywords`,
+    supportedJpKeywords,
+    ``,
     `### Available Tools`,
-    `- \`compose_from_concept\` — Translate concept to generation prompt ✅`,
+    `- \`compose_from_concept\` — Translate concept (JP/EN free-form) to generation prompt ✅`,
     `- \`evaluate_generation\` — Generation scoring (stub, Phase 2)`,
-    ``,
-    `### Cognitive Model`,
-    `Based on kimny_cognitive_model.md v0.6 (37KB).`,
-    `Conversion: concept → adjectives → genre → instruments → BPM → prompt tags.`,
-    ``,
-    `### Phase 2 Roadmap`,
-    `- ACE-Step v1.5 (MLX-Swift local, MIT license) integration — Primary`,
-    `- MiniMax Music via fal.ai — Supplementary option (Phase 1.5+)`,
-    `- Result scoring + iterative refinement`,
   ];
 
   return textResult(lines.join("\n"));
