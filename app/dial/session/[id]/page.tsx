@@ -10,7 +10,7 @@ import { ChatPanel } from '@/components/dial/chat-panel';
 import { AudioAnalyzerProvider } from '@/hooks/use-audio-analyzer-context';
 import { UnifiedSessionPlayerV2 as UnifiedSessionPlayer } from '@/components/dial/v2/unified-session-player-v2';
 import type { TakeEntry } from '@/components/dial/unified-session-player';
-import { type DeliveryTarget, DELIVERY_TARGETS, DELIVERY_TARGET_LABELS } from '@/lib/dial/lufs-presets';
+import { type DeliveryTarget, DELIVERY_TARGETS, DELIVERY_TARGET_LABELS, DELIVERY_TARGET_LUFS, getLufsGapJudgment } from '@/lib/dial/lufs-presets';
 
 /** Stream audio through our own API to avoid GCS presigned URL length/CORS issues */
 function taskStreamUrl(taskId: string): string {
@@ -1604,6 +1604,20 @@ function DialSessionContent() {
                         ))}
                       </select>
                     </div>
+                    {rawLoudnessLufs !== null && (() => {
+                      const j = getLufsGapJudgment(rawLoudnessLufs, DELIVERY_TARGET_LUFS[deliveryTarget]);
+                      return (
+                        <div className={`mt-2 px-3 py-2 rounded-lg text-xs flex items-center gap-2 ${
+                          j.status === 'ok' ? 'bg-green-900/30 text-green-300' : 'bg-amber-900/30 text-amber-300'
+                        }`}>
+                          <span>{j.status === 'ok' ? '✅' : '⚠️'}</span>
+                          <span>{j.message}</span>
+                          {'gapDb' in j && (
+                            <span className="ml-auto font-mono">{j.status === 'boost' ? `-${j.gapDb.toFixed(1)}` : `+${j.gapDb.toFixed(1)}`} dB</span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
@@ -1620,6 +1634,20 @@ function DialSessionContent() {
                         <option key={t} value={t}>{DELIVERY_TARGET_LABELS[t]}</option>
                       ))}
                     </select>
+                    {rawLoudnessLufs !== null && (() => {
+                      const j = getLufsGapJudgment(rawLoudnessLufs, DELIVERY_TARGET_LUFS[deliveryTarget]);
+                      return (
+                        <div className={`mt-2 px-3 py-2 rounded-lg text-xs flex items-center gap-2 ${
+                          j.status === 'ok' ? 'bg-green-900/30 text-green-300' : 'bg-amber-900/30 text-amber-300'
+                        }`}>
+                          <span>{j.status === 'ok' ? '✅' : '⚠️'}</span>
+                          <span>{j.message}</span>
+                          {'gapDb' in j && (
+                            <span className="ml-auto font-mono">{j.status === 'boost' ? `-${j.gapDb.toFixed(1)}` : `+${j.gapDb.toFixed(1)}`} dB</span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
 
