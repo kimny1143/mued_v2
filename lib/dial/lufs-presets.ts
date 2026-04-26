@@ -27,3 +27,30 @@ export function mapLufsToDesiredLoudness(lufs: number): 'LOW' | 'MEDIUM' | 'HIGH
   if (lufs <= -15) return 'MEDIUM'; // Apple Music / Podcast (-16)
   return 'HIGH';                     // Spotify / YouTube / Tidal / Amazon (-14)
 }
+
+export type LufsGapJudgment =
+  | { status: 'ok'; message: string }
+  | { status: 'boost'; message: string; gapDb: number }
+  | { status: 'over'; message: string; gapDb: number };
+
+export function getLufsGapJudgment(
+  measuredLufs: number,
+  targetLufs: number,
+): LufsGapJudgment {
+  const gap = measuredLufs - targetLufs;
+  if (Math.abs(gap) <= 1.0) {
+    return { status: 'ok', message: '配信可能 / Ready to deliver' };
+  }
+  if (gap < -1.0) {
+    return {
+      status: 'boost',
+      message: `マスタリング強度UP推奨 / Boost needed`,
+      gapDb: Math.abs(gap),
+    };
+  }
+  return {
+    status: 'over',
+    message: `ラウドネスオーバー / Too loud`,
+    gapDb: gap,
+  };
+}
