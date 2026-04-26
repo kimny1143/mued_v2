@@ -10,7 +10,7 @@ const faqJsonLd = {
       name: "MUEDial のサブスクリプションプランは何がありますか？ / What subscription plans does MUEDial offer?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "3つのプランがあります。Basic（$19.99/月・1,000cr）、Pro（$34.99/月・1,700cr）、Studio（$49.99/月・3,000cr）。サブスクリプションのクレジットは3ヶ月ロールオーバー可能です。 / Three plans are available: Basic ($19.99/month · 1,000cr), Pro ($34.99/month · 1,700cr), and Studio ($49.99/month · 3,000cr). Subscription credits roll over for up to 3 months.",
+        text: "3つのプランがあります。Basic（$19.99/月・1,000cr）、Pro（$34.99/月・1,700cr）、Studio（$49.99/月・3,000cr）。サブスク継続中はクレジットが無期限ロールオーバーします。 / Three plans are available: Basic ($19.99/month · 1,000cr), Pro ($34.99/month · 1,700cr), and Studio ($49.99/month · 3,000cr). Subscription credits roll over indefinitely while your subscription is active.",
       },
     },
     {
@@ -18,7 +18,7 @@ const faqJsonLd = {
       name: "クレジットとは何ですか？各操作で何クレジット必要ですか？ / What are credits and how many does each operation cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "クレジットはMUEDialの処理単位です。おまかせミックス：300cr、対話ミックス：600cr、マスタリング：200cr、ミックス診断：5cr、音声クリーンアップ：10cr。 / Credits are the processing unit of MUEDial. Omakase Mix: 300cr, Dialogue Mix: 600cr, Mastering: 200cr, Mix Diagnosis: 5cr, Audio Cleanup: 10cr.",
+        text: "クレジットはMUEDialの処理単位です。おまかせミックス：300cr、対話ミックス：530cr、マスタリング：220cr、ミックス診断：10cr、音声クリーンアップ：10cr。 / Credits are the processing unit of MUEDial. Omakase Mix: 300cr, Dialogue Mix: 530cr, Mastering: 220cr, Mix Diagnosis: 10cr, Audio Cleanup: 10cr.",
       },
     },
     {
@@ -42,7 +42,7 @@ const faqJsonLd = {
       name: "クレジットはロールオーバーしますか？ / Do credits roll over?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "サブスクリプションのクレジットは最大3ヶ月ロールオーバーします。クレジットパックは購入後12ヶ月有効。キャンセル後は30日間の猶予期間があります。 / Subscription credits roll over for up to 3 months. Credit packs are valid for 12 months. A 30-day grace period applies after cancellation.",
+        text: "サブスク継続中はクレジットが無期限ロールオーバーします。クレジットパックは購入後12ヶ月有効。キャンセル後は30日間の猶予期間があります。 / Subscription credits roll over indefinitely while your subscription is active. Credit packs are valid for 12 months. A 30-day grace period applies after cancellation.",
       },
     },
     {
