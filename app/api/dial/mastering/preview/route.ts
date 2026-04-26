@@ -18,10 +18,12 @@ import { createRoExClient, masterPreview, pollMasterPreview, isRoExDevKey, mapMu
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
+import { DELIVERY_TARGETS, DELIVERY_TARGET_LUFS, mapLufsToDesiredLoudness } from '@/lib/dial/lufs-presets';
 
 const masteringPreviewSchema = z.object({
   sessionId: z.string().uuid(),
   desiredLoudness: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
+  deliveryTarget: z.enum(DELIVERY_TARGETS as [string, ...string[]]).optional(),
 });
 
 export const POST = withDialAuth(async (auth) => {
@@ -36,7 +38,10 @@ export const POST = withDialAuth(async (auth) => {
       return apiValidationError('Invalid request', parsed.error.errors);
     }
 
-    const { sessionId, desiredLoudness } = parsed.data;
+    const { sessionId, desiredLoudness, deliveryTarget } = parsed.data;
+    const resolvedLoudness = deliveryTarget
+      ? mapLufsToDesiredLoudness(DELIVERY_TARGET_LUFS[deliveryTarget as keyof typeof DELIVERY_TARGET_LUFS])
+      : (desiredLoudness ?? 'MEDIUM');
 
     const session = await verifyDialSessionOwnership(sessionId, auth);
     if (!session) {
@@ -94,7 +99,7 @@ export const POST = withDialAuth(async (auth) => {
       result = await masterPreview(client, {
         trackUrl,
         musicalStyle: roexMusicalStyle as Parameters<typeof masterPreview>[1]['musicalStyle'],
-        desiredLoudness: desiredLoudness ?? 'MEDIUM',
+        desiredLoudness: resolvedLoudness,
       });
     }
 

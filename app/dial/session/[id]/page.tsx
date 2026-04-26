@@ -10,6 +10,7 @@ import { ChatPanel } from '@/components/dial/chat-panel';
 import { AudioAnalyzerProvider } from '@/hooks/use-audio-analyzer-context';
 import { UnifiedSessionPlayerV2 as UnifiedSessionPlayer } from '@/components/dial/v2/unified-session-player-v2';
 import type { TakeEntry } from '@/components/dial/unified-session-player';
+import { type DeliveryTarget, DELIVERY_TARGETS, DELIVERY_TARGET_LABELS } from '@/lib/dial/lufs-presets';
 
 /** Stream audio through our own API to avoid GCS presigned URL length/CORS issues */
 function taskStreamUrl(taskId: string): string {
@@ -168,6 +169,9 @@ function DialSessionContent() {
   // Mix generation state
   const [mixGenerating, setMixGenerating] = useState(false);
   const [mixGeneratingType, setMixGeneratingType] = useState<'preview' | 'mix_check' | 'final' | 'mastering_preview' | 'mastering' | null>(null);
+
+  // LUFS delivery target for mastering
+  const [deliveryTarget, setDeliveryTarget] = useState<DeliveryTarget>('spotify');
 
   // Sidebar player — selected take
 
@@ -890,7 +894,8 @@ function DialSessionContent() {
         headers,
         body: JSON.stringify({
           sessionId: session.id,
-          desiredLoudness: desiredLoudness ?? 'MEDIUM',
+          deliveryTarget,
+          ...(desiredLoudness && !deliveryTarget ? { desiredLoudness } : {}),
         }),
       });
       const data = await res.json();
@@ -1585,11 +1590,36 @@ function DialSessionContent() {
 
                 {/* Mastering Phase Banner */}
                 {isMasteringPhase && !isMasteringOnly && (
-                  <div className="mt-3 p-4 bg-indigo-900/20 border border-indigo-800/40 rounded-xl text-center">
-                    <p className="text-sm text-indigo-300 font-medium">Mix complete! Mastering phase</p>
-                    <p className="text-xs text-zinc-500 mt-1">
-                      Mastering
-                    </p>
+                  <div className="mt-3 p-4 bg-indigo-900/20 border border-indigo-800/40 rounded-xl">
+                    <p className="text-sm text-indigo-300 font-medium text-center">Mix complete! Mastering phase</p>
+                    <div className="mt-3">
+                      <label className="block text-xs text-zinc-400 mb-1">配信先 / Delivery target</label>
+                      <select
+                        value={deliveryTarget}
+                        onChange={(e) => setDeliveryTarget(e.target.value as DeliveryTarget)}
+                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-amber-500"
+                      >
+                        {DELIVERY_TARGETS.map((t) => (
+                          <option key={t} value={t}>{DELIVERY_TARGET_LABELS[t]}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Mastering-only delivery target selector */}
+                {isMasteringOnly && !hasMasteringFinal && session.tracks.length > 0 && (
+                  <div className="mt-3 p-4 bg-zinc-900/60 border border-zinc-800 rounded-xl">
+                    <label className="block text-xs text-zinc-400 mb-1">配信先 / Delivery target</label>
+                    <select
+                      value={deliveryTarget}
+                      onChange={(e) => setDeliveryTarget(e.target.value as DeliveryTarget)}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-amber-500"
+                    >
+                      {DELIVERY_TARGETS.map((t) => (
+                        <option key={t} value={t}>{DELIVERY_TARGET_LABELS[t]}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
 
