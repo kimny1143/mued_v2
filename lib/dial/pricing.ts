@@ -65,12 +65,12 @@ export const DIAL_CREDIT_PACKS: Record<DialCreditPackSize, {
 // ========================================
 
 export const DIAL_CREDIT_COSTS = {
-  mix_diagnosis: 5,
+  mix_diagnosis: 10,
   audio_cleanup: 10,
   omakase: 300,
-  mastering: 200,
-  dialogue: 600,
-  dialogue_mastering: 800,
+  mastering: 220,
+  dialogue: 530,
+  dialogue_mastering: 750, // 530 + 220
 } as const;
 
 export type DialCreditOperation = keyof typeof DIAL_CREDIT_COSTS;
