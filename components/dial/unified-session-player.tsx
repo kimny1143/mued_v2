@@ -194,7 +194,6 @@ export function UnifiedSessionPlayer({ takes, sessionId: _sessionId, guestToken:
         },
       ]),
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialParams]);
 
   const handlePlayPause = useCallback(() => {

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocale } from '@/lib/i18n/locale-context';
-import { Panel, Micro, Btn } from './atoms';
+import { Micro, Btn } from './atoms';
 import { IconSend, IconSpinner, IconSparkle } from './icons';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -129,7 +129,7 @@ function ParamChangeCard({
   parameterChanges,
   action,
   applied,
-  onMarkApplied,
+  onMarkApplied: _onMarkApplied,
 }: ParamChangeCardProps) {
   const isPreview = action === 'adjust_preview';
   const isMixCheck = action === 'request_mix_check';
