@@ -83,3 +83,9 @@ scripts/tmp/
 /recordings/
 
 docs/sunogen_audio/
+docs/drafts/
+docs/engineering/
+docs/monetization/
+
+# Claude Code session memory (stored in project root, not committed)
+/memory/
