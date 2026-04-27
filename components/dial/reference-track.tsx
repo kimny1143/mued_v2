@@ -85,7 +85,7 @@ export function ReferenceTrack({
       setStatus('error');
       setErrorMsg(err instanceof Error ? err.message : t.dial.session.uploadFailedError);
     }
-  }, [sessionId, headers, onUpdate]);
+  }, [sessionId, headers, onUpdate, t.dial.session.uploadFailedError]);
 
   const handleRemove = useCallback(async () => {
     // Clear reference track by setting fields to null via session PATCH

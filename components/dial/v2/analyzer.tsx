@@ -240,14 +240,13 @@ interface GoniometerProps {
 
 export function Goniometer({ data }: GoniometerProps) {
   const corr = data?.correlation ?? 0;
-  const gL = data?.goniometerL ?? [];
-  const gR = data?.goniometerR ?? [];
-
   const size = 130;
   const c = size / 2;
 
   // Compute M/S scatter points from L/R samples
   const points = useMemo(() => {
+    const gL = data?.goniometerL ?? [];
+    const gR = data?.goniometerR ?? [];
     const len = Math.min(gL.length, gR.length);
     if (len === 0) return [];
     return Array.from({ length: len }, (_, i) => {
@@ -257,7 +256,7 @@ export function Goniometer({ data }: GoniometerProps) {
       const S = (L - R) / Math.SQRT2;
       return { x: S, y: -M };
     });
-  }, [gL, gR]);
+  }, [data]);
 
   return (
     <div className="flex flex-col gap-2">

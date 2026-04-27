@@ -732,7 +732,7 @@ function DialSessionContent() {
 
   const handleUploadAll = () => uploadFiles(stagedFiles);
 
-  const handleDeleteTrack = async (trackId: string) => {
+  const _handleDeleteTrack = async (trackId: string) => {
     if (!session) return;
     setError(null);
 
@@ -956,7 +956,7 @@ function DialSessionContent() {
       case 'mastering': return t.dial.session.statusMasteringFinalGenerating;
       default: return t.dial.session.processing;
     }
-  }, [mixGenerating, latestTask]);
+  }, [mixGenerating, latestTask, t]);
 
   const generatingElapsed = useMemo(() => {
     if (!mixGenerating || elapsedSeconds === 0) return undefined;
@@ -1004,7 +1004,7 @@ function DialSessionContent() {
 
   const hasTracks = session.tracks.length > 0;
   const isProcessing = latestTask?.status === 'processing' || latestTask?.status === 'pending';
-  const hasCompletedPreview = session.tasks.some(
+  const _hasCompletedPreview = session.tasks.some(
     (t) => t.taskType === 'preview' && t.status === 'completed',
   );
   const _hasMixCheck = session.tasks.some(
@@ -1036,7 +1036,7 @@ function DialSessionContent() {
       : (!hasMixFinal || (session.masteringMode && !hasMasteringFinal)));
   const phase: 1 | 2 | 3 = hasMixFinal ? 3 : session.mixCheckCount > 0 ? 2 : 1;
 
-  const allPreviewTasks = session.tasks.filter((t) => t.taskType === 'preview');
+  const _allPreviewTasks = session.tasks.filter((t) => t.taskType === 'preview');
 
   // Navigation guard for stems download
   const handleNavigation = (e: React.MouseEvent, _href: string) => {
