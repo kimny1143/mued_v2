@@ -1,8 +1,13 @@
+import type { Metadata } from 'next';
 import { cookies, headers } from 'next/headers';
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { locales, type Locale, getPreferredLocale } from '@/lib/i18n/config';
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function LobeLayout({
   children,

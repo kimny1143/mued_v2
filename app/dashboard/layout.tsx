@@ -1,6 +1,11 @@
+import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { cookies } from 'next/headers';
 import { type Locale, locales, defaultLocale } from '@/lib/i18n/config';
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function DashboardLayout({
   children,
