@@ -34,8 +34,13 @@ vi.mock('@/lib/utils/logger', () => ({
   },
 }));
 
+vi.mock('@/lib/middleware/admin', () => ({
+  isAdmin: vi.fn(),
+}));
+
 import { auth } from '@clerk/nextjs/server';
 import { getUserIdFromClerkId } from '@/lib/utils/auth-helpers';
+import { isAdmin } from '@/lib/middleware/admin';
 
 // ========================================
 // Test Helpers
@@ -233,14 +238,8 @@ describe('withAdminAuth', () => {
   });
 
   it('should call handler when user is admin', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      userId: 'clerk_admin123',
-      sessionClaims: {
-        metadata: {
-          role: 'admin',
-        },
-      },
-    } as any);
+    vi.mocked(auth).mockResolvedValue({ userId: 'clerk_admin123' } as any);
+    vi.mocked(isAdmin).mockResolvedValue(true);
 
     const handler = vi.fn(async ({ userId }) => {
       return NextResponse.json({ userId, message: 'Admin access granted' });
@@ -260,14 +259,8 @@ describe('withAdminAuth', () => {
   });
 
   it('should return 403 when user is not admin', async () => {
-    vi.mocked(auth).mockResolvedValue({
-      userId: 'clerk_user123',
-      sessionClaims: {
-        metadata: {
-          role: 'user',
-        },
-      },
-    } as any);
+    vi.mocked(auth).mockResolvedValue({ userId: 'clerk_user123' } as any);
+    vi.mocked(isAdmin).mockResolvedValue(false);
 
     const handler = vi.fn();
     const wrappedHandler = withAdminAuth(handler);

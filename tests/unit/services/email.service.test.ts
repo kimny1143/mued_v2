@@ -270,15 +270,16 @@ describe('emailTemplates', () => {
   });
 
   describe('dialPurchaseConfirmed', () => {
-    it('returns English subject', () => {
+    it('returns bilingual subject', () => {
       const result = emailTemplates.dialPurchaseConfirmed(dialPurchaseData);
-      expect(result.subject).toBe('Your MUEDial mix is being prepared');
+      expect(result.subject).toBe('MUEDial — セッションの準備ができました / Your session is ready');
     });
 
-    it('includes purchase type', () => {
+    it('uses omakase (non-dialogue) content branch', () => {
       const result = emailTemplates.dialPurchaseConfirmed(dialPurchaseData);
-      expect(result.html).toContain('omakase');
-      expect(result.text).toContain('omakase');
+      // omakase path: auto-mix text (not dialogue text)
+      expect(result.html).toContain('AIが自動でミックスを仕上げます');
+      expect(result.text).toContain('AIが自動でミックスを処理');
     });
 
     it('includes session URL', () => {
