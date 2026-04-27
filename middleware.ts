@@ -83,11 +83,11 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 
-  // Handle root path - redirect to locale-prefixed landing page
+  // Handle root path - permanently redirect to locale-prefixed landing page (308)
   if (pathname === "/") {
     const acceptLanguage = req.headers.get("accept-language");
     const locale = getPreferredLocale(acceptLanguage);
-    const response = NextResponse.redirect(new URL(`/${locale}`, req.url));
+    const response = NextResponse.redirect(new URL(`/${locale}`, req.url), 308);
     response.cookies.set("NEXT_LOCALE", locale, { path: "/" });
     return response;
   }
