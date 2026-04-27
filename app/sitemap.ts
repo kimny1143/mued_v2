@@ -1,9 +1,15 @@
 import { MetadataRoute } from 'next';
+import { STORY_SLUGS } from '@/lib/story/articles';
 
 const MUED = 'https://mued.jp';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
+
+  const storyPages: MetadataRoute.Sitemap = STORY_SLUGS.flatMap((slug) => [
+    { url: `${MUED}/en/story/${slug}`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.6 },
+    { url: `${MUED}/ja/story/${slug}`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.6 },
+  ]);
 
   return [
     { url: `${MUED}/en`, lastModified: now, changeFrequency: 'weekly', priority: 1.0 },
@@ -15,5 +21,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${MUED}/ja/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${MUED}/en/tokushoho`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${MUED}/ja/tokushoho`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    ...storyPages,
   ];
 }

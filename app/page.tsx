@@ -1,14 +1,8 @@
-import { redirect } from "next/navigation";
-import { currentUser } from "@clerk/nextjs/server";
-import { LandingContent } from "@/components/features/landing-content";
+import { permanentRedirect } from "next/navigation";
 
-export default async function Home() {
-  const user = await currentUser();
-
-  // Redirect to dashboard if already logged in
-  if (user) {
-    redirect("/dashboard");
-  }
-
-  return <LandingContent />;
+// Root URL permanently redirects to /en (default locale) to avoid duplicate content with /en and /ja.
+// 308 Permanent Redirect signals to crawlers that mued.jp/ canonical is mued.jp/en.
+// Auth and LandingContent rendering are handled by app/[locale]/page.tsx.
+export default function Home() {
+  permanentRedirect("/en");
 }

@@ -1,4 +1,9 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 // Intermediate bounce page: mued.jp/dial-return → dial.mued.jp/
 // Used as same-origin redirect_url after Clerk sign-in on mued.jp,
