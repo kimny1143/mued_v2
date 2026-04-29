@@ -259,4 +259,72 @@ opusplan 運用開始（2026-04-14）以降、これらの条件に該当する�
 
 ---
 
-*最終更新: 2026-04-23*
+## write課への canonical変更通知義務
+
+本peer が以下のcanonicalを変更/公開した場合、変更決裁完了タイミングで
+**write課にclaude-peers経由で通知する義務** を持つ。
+
+### 通知トリガー
+- 公式pricing (mued.jp / dial.mued.jp等)
+- product spec (プラン構成、機能セット、UI仕様)
+- 戦略docs (`_conductor/docs/strategies/` 配下)
+- ロードマップ (Phase切替、機能ローンチ、廃止判定)
+- kimny判断 / conductor承認決定事項のうち記事訴求に影響するもの
+
+判断迷う場合は **過剰通知側に倒す**。過去30日以内に write課が該当canonical名で記事化/proposal化していた場合は確実に通知。
+
+### 通知方法
+1. write課peer ID = `mcp__claude-peers__list_peers` で最新ID取得
+   - cwd識別: `/Users/kimny/Dropbox/_DevProjects/_contents-writing`
+   - 代替: `peer-id-lookup` skill使用 (課名→peer ID自動解決)
+2. SNS課 (cwd `mued/threads-api`) と混同しないよう注意
+3. `mcp__claude-peers__send_message` で通知
+
+### 通知内容必須
+- canonical名 (ファイルパス or サービス名)
+- 変更要点 (before/after核心差分)
+- 影響範囲推定 (write課公開済記事への影響あり/なし/不明)
+- 緊急度 (即時/通常/軽微)
+
+### 緊急度判定目安
+
+| 緊急度 | 条件 | 通知運用 |
+|--------|------|---------|
+| **即時** | 公開済記事の数値・機能訴求が誤情報、訴訟・コンプライアンスリスク | 即時claude-peers通知 + 当日中対応着手 |
+| **通常** | 公開済記事のarticulationが陳腐化 | 即時claude-peers通知 + 2段階SLA対応 |
+| **軽微** | 内部参考、新規記事から反映で十分 | **即時通知不要、通知ログ追記のみ** |
+
+「軽微」即時通知不要化により notification fatigue → false negative リスク抑制。
+
+### write課側の対応 (2段階SLA)
+
+- 内部更新 (`drafts/article_*.md`): 48時間以内
+- note.com反映 (SNS課依頼必要): 72-96時間以内
+- 全面陳腐化時 archived化判断: kimny/conductor協議後即時
+
+### self-attestation (本peer月次scorecard組込み、3層防御 Layer 2)
+
+```
+## canonical change attestation (毎月実施)
+- [ ] 当月変更したcanonical一覧化
+- [ ] 各canonical変更時のwrite課通知有無確認
+- [ ] 通知漏れがあれば即時遡及通知 + 原因記録
+```
+
+### 通知漏れリカバリ
+
+write課月次audit (毎月最終週) で stale検知された場合、通知漏れの根本原因を本peerに共有 → self-attestation改善。
+
+### 適用範囲とTier判定
+
+mud課 / native課 / template課 (CCO) / conductor / kimny の **4peer内に閉じる = Tier 2 妥当**。SNS課 / freee課 / data課等を含める場合は Tier 3 再合議が必要。
+
+### 関連ドキュメント
+
+- write課 workspace memory: `feedback_canonical_change_notification.md`
+- write課版両輪: `_contents-writing/docs/drafts/fact-check/write_fact_check_proposal_v2.md`
+- CFO起案根拠: `feedback_stale_source_retirement.md`
+
+---
+
+*最終更新: 2026-04-29*
