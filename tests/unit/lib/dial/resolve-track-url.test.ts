@@ -5,8 +5,8 @@ import { resolveTrackUrl, resolveAllTrackUrls } from '@/lib/dial/resolve-track-u
 const gcsUrl = (dateZ: string, expiresSec: number) =>
   `https://storage.googleapis.com/bucket/stem.wav?X-Goog-Date=${dateZ}&X-Goog-Expires=${expiresSec}`;
 
-// A GCS URL that expires 2026-04-28T00:00:00Z (clearly future relative to 2026-04-27)
-const FRESH_GCS = gcsUrl('20260427T000000Z', 86400);
+// A GCS URL that expires 2030-01-02T00:00:00Z (far future — won't expire during test runs)
+const FRESH_GCS = gcsUrl('20300101T000000Z', 86400);
 // A GCS URL that expired 2026-01-01T01:00:00Z (clearly past)
 const EXPIRED_GCS = gcsUrl('20260101T000000Z', 3600);
 const R2 = 'https://cdn.example.com/stream/stem.wav';
@@ -40,7 +40,7 @@ describe('resolveTrackUrl', () => {
   });
 
   it('returns GCS URL when only X-Goog-Date is present (missing Expires)', () => {
-    const url = 'https://storage.googleapis.com/bucket/stem.wav?X-Goog-Date=20260427T000000Z';
+    const url = 'https://storage.googleapis.com/bucket/stem.wav?X-Goog-Date=20300101T000000Z';
     const result = resolveTrackUrl({ roexUploadUrl: url, r2Url: null });
     expect(result).toBe(url);
   });
