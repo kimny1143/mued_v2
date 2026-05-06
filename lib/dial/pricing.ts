@@ -83,6 +83,7 @@ export const DIAL_SINGLE_PRICES = {
   omakase: 800,           // $8
   dialogue: 1500,         // $15
   mastering_addon: 600,   // $6
+  retake: 1000,           // $10
 } as const;
 
 // ========================================
