@@ -21,6 +21,7 @@ import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { validateStripeConfig } from '@/lib/utils/env';
+import { DIAL_SINGLE_PRICES } from '@/lib/dial/pricing';
 import { db } from '@/db';
 import { dialPurchases } from '@/db/schema';
 
@@ -31,7 +32,7 @@ const stripe = new Stripe(stripeConfig.secretKey, {
 
 const FALLBACK_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
 
-const ADDITIONAL_CYCLE_CENTS = 1000; // $10
+const ADDITIONAL_CYCLE_CENTS = DIAL_SINGLE_PRICES.retake;
 
 const additionalSchema = z.object({
   sessionId: z.string().uuid(),
