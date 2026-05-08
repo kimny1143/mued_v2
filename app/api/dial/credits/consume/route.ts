@@ -16,10 +16,14 @@
 import { z } from 'zod';
 import { and, eq, gt, asc, sql, or, isNull } from 'drizzle-orm';
 import { withAuth } from '@/lib/middleware/with-auth';
-import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
+import { apiSuccess, apiValidationError, apiServerError, apiError } from '@/lib/api-response';
 import { db } from '@/db';
+import { users } from '@/db/schema';
 import { dialCreditExpiry, dialCreditPacks, dialSubscriptions } from '@/db/schema/dial';
 import { DIAL_CREDIT_COSTS, type DialCreditOperation } from '@/lib/dial/pricing';
+import { checkWaitlistEmailExists } from '@/lib/storage/waitlist-blob';
+import { checkMixDiagnosisFreeUsed, markMixDiagnosisFreeUsed } from '@/lib/storage/mix-diagnosis-free';
+import { logger } from '@/lib/utils/logger';
 
 class InsufficientCreditsError extends Error {
   constructor(public cost: number, public shortfall: number) {
@@ -36,6 +40,7 @@ const consumeSchema = z.object({
 });
 
 export const POST = withAuth(async ({ userId, request }) => {
+  let operation: z.infer<typeof consumeSchema>['operation'] | undefined;
   try {
     const body = await request.json();
     const parsed = consumeSchema.safeParse(body);
@@ -43,7 +48,7 @@ export const POST = withAuth(async ({ userId, request }) => {
       return apiValidationError('Invalid request', parsed.error.errors);
     }
 
-    const { operation } = parsed.data;
+    operation = parsed.data.operation;
     const cost = DIAL_CREDIT_COSTS[operation as DialCreditOperation];
     const now = new Date();
 
@@ -143,6 +148,38 @@ export const POST = withAuth(async ({ userId, request }) => {
       creditsConsumed: cost,
     });
   } catch (error) {
+    if (error instanceof InsufficientCreditsError && operation === 'mix_diagnosis') {
+      try {
+        const [userRecord] = await db
+          .select({ email: users.email })
+          .from(users)
+          .where(eq(users.clerkId, userId))
+          .limit(1);
+        const email = userRecord?.email;
+        if (email) {
+          const isWaitlisted = await checkWaitlistEmailExists(email);
+          if (!isWaitlisted) {
+            return apiError('Mix diagnosis requires waitlist registration.', {
+              code: 'WAITLIST_REQUIRED',
+              status: 403,
+            });
+          }
+          const freeUsed = await checkMixDiagnosisFreeUsed(email);
+          if (!freeUsed) {
+            markMixDiagnosisFreeUsed(email).catch((err) =>
+              logger.error('[credits/consume] mix_diagnosis free trial mark failed', { error: err, email })
+            );
+            return apiSuccess({ operation: 'mix_diagnosis', creditsConsumed: 0, freeTrial: true });
+          }
+          return apiValidationError(
+            'Mix diagnosis free trial already used. Please subscribe or purchase credits.',
+            [{ path: ['credits'], message: 'Free trial exhausted. Subscribe to Hoo Pass or buy credits.' }]
+          );
+        }
+      } catch (blobErr) {
+        logger.error('[credits/consume] mix_diagnosis free trial check failed', { error: blobErr, userId });
+      }
+    }
     if (error instanceof InsufficientCreditsError) {
       return apiValidationError(
         error.message,
