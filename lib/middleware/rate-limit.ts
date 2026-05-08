@@ -110,6 +110,17 @@ const limiters = {
     });
   },
 
+  // Hoo Pass subscribers: 3 mix analyses per day (credit abuse control)
+  "dial-hoo-pass-daily": () => {
+    const r = getRedis();
+    if (!r) return null;
+    return new Ratelimit({
+      redis: r,
+      limiter: Ratelimit.fixedWindow(3, "1 d"),
+      prefix: "ratelimit:dial-hoo-pass-daily",
+    });
+  },
+
   // Research beta endpoints: 5 requests per minute per IP (waitlist/readiness submit)
   research: () => {
     const r = getRedis();

@@ -214,6 +214,7 @@ export const dialPurchaseStatusEnum = pgEnum('dial_purchase_status', [
 ]);
 
 export const dialSubTierEnum = pgEnum('dial_sub_tier', [
+  'hoo_pass',
   'basic',
   'pro',
   'studio',

@@ -21,14 +21,16 @@ const stripe = new Stripe(stripeConfig.secretKey, {
 const FALLBACK_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
 
 // Stripe Price IDs (configured in Stripe Dashboard)
+// Only hoo_pass accepts new purchases; deprecated tiers kept for webhook backward compat
 const DIAL_SUB_PRICE_IDS: Record<DialSubTier, string> = {
+  hoo_pass: (process.env.STRIPE_DIAL_HOO_PASS_PRICE_ID || '').trim(),
   basic: (process.env.STRIPE_DIAL_BASIC_PRICE_ID || '').trim(),
   pro: (process.env.STRIPE_DIAL_PRO_PRICE_ID || '').trim(),
   studio: (process.env.STRIPE_DIAL_STUDIO_PRICE_ID || '').trim(),
 };
 
 const subscriptionSchema = z.object({
-  tier: z.enum(['basic', 'pro', 'studio']),
+  tier: z.enum(['hoo_pass']),
   utmSource: z.string().max(50).optional(),
   utmMedium: z.string().max(50).optional(),
   utmCampaign: z.string().max(100).optional(),

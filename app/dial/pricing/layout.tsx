@@ -26,7 +26,7 @@ const faqJsonLd = {
       name: "サブスクリプションなしで使えますか？ / Can I use MUEDial without a subscription?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "はい。セッション単位での購入が可能です。おまかせミックス $8、対話ミックス $15、マスタリング $6。サブスクリプション不要で使い始められます。 / Yes. Pay-per-session options are available: Omakase Mix $8, Dialogue Mix $15, Mastering $6. No subscription required to get started.",
+        text: "はい。セッション単位での購入が可能です。おまかせミックス $8、対話ミックス $14.99、マスタリング $6.99。サブスクリプション不要で使い始められます。 / Yes. Pay-per-session options are available: Omakase Mix $8, Dialogue Mix $14.99, Mastering $6.99. No subscription required to get started.",
       },
     },
     {
@@ -67,7 +67,7 @@ const faqJsonLd = {
 export const metadata: Metadata = {
   title: "料金プラン | MUEDial — AIミキシング・マスタリング",
   description:
-    "MUEDialの料金プラン。おまかせミックス$8・対話ミックス$15・マスタリング$6。宅録・DTM向けAIミックスサービス。ステムを送るだけでプロ品質のミックスが完成。",
+    "MUEDialの料金プラン。おまかせミックス$8・対話ミックス$14.99・マスタリング$6.99。宅録・DTM向けAIミックスサービス。ステムを送るだけでプロ品質のミックスが完成。",
   keywords: [
     "AIミックス 料金",
     "AIミキシング 価格",
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "料金プラン | MUEDial — AIミキシング・マスタリング",
     description:
-      "おまかせミックス$8・対話ミックス$15・マスタリング$6。宅録・DTM向けAIミックスサービス。",
+      "おまかせミックス$8・対話ミックス$14.99・マスタリング$6.99。宅録・DTM向けAIミックスサービス。",
     url: "https://dial.mued.jp/pricing",
     siteName: "MUEDial",
   },

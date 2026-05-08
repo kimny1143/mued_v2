@@ -299,7 +299,7 @@ export default function DialPage() {
 
   const MIX_OPTIONS = [
     { id: 'omakase' as ServiceTier, name: t.dial.checkout.omakaseName, price: 8, jpy: 1240, description: t.dial.checkout.omakaseDesc },
-    { id: 'dialogue' as ServiceTier, name: t.dial.checkout.dialogueName, price: 15, jpy: 2300, description: t.dial.checkout.dialogueDesc },
+    { id: 'dialogue' as ServiceTier, name: t.dial.checkout.dialogueName, price: 14.99, jpy: 2300, description: t.dial.checkout.dialogueDesc },
   ];
 
   const [email, setEmail] = useState('');
@@ -311,7 +311,7 @@ export default function DialPage() {
   const effectiveEmail = isSignedIn ? clerkEmail : email;
   const hasSelection = mixType || masteringType;
   const totalPrice = (mixType ? MIX_OPTIONS.find((o) => o.id === mixType)!.price : 0)
-    + (masteringType ? 6 : 0);
+    + (masteringType ? 6.99 : 0);
 
   const handleCheckout = async () => {
     if (!hasSelection || !effectiveEmail) {
@@ -461,9 +461,9 @@ export default function DialPage() {
                 }`}
               >
                 <div className="flex items-baseline gap-3">
-                  <span className="text-lg font-bold">+$6</span>
+                  <span className="text-lg font-bold">+$6.99</span>
                   {locale === 'ja' && (
-                    <span className="text-xs text-white/40">約¥930</span>
+                    <span className="text-xs text-white/40">約¥1,050</span>
                   )}
                   <span className="text-sm font-medium">{t.dial.checkout.masteringName}</span>
                 </div>

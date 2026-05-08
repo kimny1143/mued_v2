@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob';
+import { put, list } from '@vercel/blob';
 
 export interface WaitlistEntry {
   email: string;
@@ -16,14 +16,17 @@ export interface WaitlistEntry {
   source: string;
 }
 
+function normalizeEmailKey(email: string): string {
+  return email.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 40);
+}
+
 export async function putWaitlistEntry(
   entry: WaitlistEntry
 ): Promise<{ url: string; pathname: string }> {
   const now = new Date(entry.submitted_at);
   const yyyy = now.getUTCFullYear();
   const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
-  // Use email hash as unique key to prevent duplicates
-  const emailKey = entry.email.replace(/[^a-z0-9]/g, '_').slice(0, 40);
+  const emailKey = normalizeEmailKey(entry.email);
   const ts = now.getTime();
   const pathname = `waitlist/${yyyy}/${mm}/${ts}_${emailKey}.json`;
 
@@ -34,4 +37,19 @@ export async function putWaitlistEntry(
   });
 
   return { url: blob.url, pathname: blob.pathname };
+}
+
+export async function checkWaitlistEmailExists(email: string): Promise<boolean> {
+  const emailKey = normalizeEmailKey(email);
+  const { blobs } = await list({ prefix: `waitlist/idx/${emailKey}`, limit: 1 });
+  return blobs.length > 0;
+}
+
+export async function putWaitlistIndex(email: string, entryPathname: string): Promise<void> {
+  const emailKey = normalizeEmailKey(email);
+  await put(
+    `waitlist/idx/${emailKey}.json`,
+    JSON.stringify({ entryPathname, created_at: new Date().toISOString() }),
+    { access: 'private', contentType: 'application/json', addRandomSuffix: false }
+  );
 }

@@ -18,6 +18,7 @@ import { createRoExClient, isRoExDevKey, analyzeMix, mapMusicalStyle } from '@/l
 import type { MusicalStyle } from '@/lib/roex';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
+import { dialRepository } from '@/lib/repositories/dial.repository';
 
 const analyzeSchema = z.object({
   sessionId: z.string().uuid(),
@@ -36,14 +37,20 @@ const DEV_ANALYSIS_RESULT = {
 
 export const POST = withDialAuth(async (auth) => {
   try {
-    // Rate limit: 5/day and 30/30-days per user (guest tokens share IP bucket)
+    // Rate limit: tier-aware daily + monthly caps
     const identifier = auth.userId ? `user:${auth.userId}` : `guest:${auth.request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'}`;
+    const activeSub = auth.userId
+      ? await dialRepository.findActiveSubscriptionByUserId(auth.userId)
+      : null;
+    const isHooPass = activeSub?.tier === 'hoo_pass';
+    const dailyPreset = isHooPass ? 'dial-hoo-pass-daily' : 'dial-analyze-daily';
+    const dailyLimit = isHooPass ? 3 : 5;
     const [daily, monthly] = await Promise.all([
-      checkRateLimit('dial-analyze-daily', identifier),
+      checkRateLimit(dailyPreset, identifier),
       checkRateLimit('dial-analyze-monthly', identifier),
     ]);
     if (daily && !daily.success) {
-      return apiError('Daily analysis limit reached (5/day)', { code: 'RATE_LIMIT_DAILY', status: 429 });
+      return apiError(`Daily analysis limit reached (${dailyLimit}/day)`, { code: 'RATE_LIMIT_DAILY', status: 429 });
     }
     if (monthly && !monthly.success) {
       return apiError('Monthly analysis limit reached (30/month)', { code: 'RATE_LIMIT_MONTHLY', status: 429 });

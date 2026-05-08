@@ -27,6 +27,7 @@ export default function WaitlistPage() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [qualifiedResult, setQualifiedResult] = useState(false);
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
 
   useEffect(() => {
     trackWaitlistView();
@@ -67,7 +68,10 @@ export default function WaitlistPage() {
       const data = await res.json();
       if (data.success) {
         setQualifiedResult(data.data?.qualified_waitlist ?? false);
-        trackWaitlistSuccess({ qualified: data.data?.qualified_waitlist ?? false });
+        setAlreadyRegistered(data.data?.already_registered ?? false);
+        if (!data.data?.already_registered) {
+          trackWaitlistSuccess({ qualified: data.data?.qualified_waitlist ?? false });
+        }
         setDone(true);
       } else {
         setError(locale === 'ja' ? '登録に失敗しました。もう一度お試しください。' : 'Registration failed. Please try again.');
@@ -85,7 +89,11 @@ export default function WaitlistPage() {
         <div className="max-w-lg w-full text-center">
           <div className="text-amber-400 text-5xl mb-6">🎚️</div>
           <h1 className="text-3xl font-bold mb-4">{w.thankyou.h1}</h1>
-          <p className="text-gray-300 mb-8 whitespace-pre-line">{w.thankyou.sub}</p>
+          {alreadyRegistered ? (
+            <p className="text-gray-300 mb-8">{w.thankyou.alreadyRegistered}</p>
+          ) : (
+            <p className="text-gray-300 mb-8 whitespace-pre-line">{w.thankyou.sub}</p>
+          )}
           <a
             href="https://dial.mued.jp"
             onClick={() => trackCtaClick('muedial_from_waitlist_thanks', 'waitlist_thankyou')}
@@ -93,7 +101,7 @@ export default function WaitlistPage() {
           >
             {w.thankyou.cta}
           </a>
-          {qualifiedResult && (
+          {qualifiedResult && !alreadyRegistered && (
             <p className="mt-4 text-sm text-amber-400">✓ {locale === 'ja' ? '診断スコア: qualified' : 'Readiness: qualified'}</p>
           )}
         </div>
