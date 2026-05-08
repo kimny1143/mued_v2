@@ -11,28 +11,37 @@
 // Subscription Plans
 // ========================================
 
-export const DIAL_SUB_TIERS = ['basic', 'pro', 'studio'] as const;
+export const DIAL_SUB_TIERS = ['hoo_pass', 'basic', 'pro', 'studio'] as const;
 export type DialSubTier = (typeof DIAL_SUB_TIERS)[number];
 
 export const DIAL_SUB_PLANS: Record<DialSubTier, {
   credits: number;
   priceUsdCents: number;
   label: string;
+  deprecated?: boolean;
 }> = {
+  hoo_pass: {
+    credits: 100,
+    priceUsdCents: 699,
+    label: 'MUEDial Hoo Pass',
+  },
   basic: {
     credits: 1_000,
     priceUsdCents: 1999,
     label: 'MUEDial Basic',
+    deprecated: true,
   },
   pro: {
     credits: 1_700,
     priceUsdCents: 3499,
     label: 'MUEDial Pro',
+    deprecated: true,
   },
   studio: {
     credits: 3_000,
     priceUsdCents: 4999,
     label: 'MUEDial Studio',
+    deprecated: true,
   },
 };
 
@@ -80,10 +89,10 @@ export type DialCreditOperation = keyof typeof DIAL_CREDIT_COSTS;
 // ========================================
 
 export const DIAL_SINGLE_PRICES = {
-  omakase: 800,           // $8
-  dialogue: 1500,         // $15
-  mastering_addon: 600,   // $6
-  retake: 1000,           // $10
+  omakase: 800,           // $8.00
+  dialogue: 1499,         // $14.99
+  mastering_addon: 699,   // $6.99
+  retake: 999,            // $9.99
 } as const;
 
 // ========================================

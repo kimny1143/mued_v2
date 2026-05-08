@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
-import { putWaitlistEntry, type WaitlistEntry } from '@/lib/storage/waitlist-blob';
+import { putWaitlistEntry, checkWaitlistEmailExists, putWaitlistIndex, type WaitlistEntry } from '@/lib/storage/waitlist-blob';
 import { emailService } from '@/lib/services/email.service';
 import { logger } from '@/lib/utils/logger';
 
@@ -61,6 +61,17 @@ export async function POST(request: NextRequest) {
   const input = parsed.data;
   const { score, qualified, launch_ready_recent } = calcReadinessScore(input);
 
+  // Per-email dedup: return success without re-saving if already registered
+  try {
+    const isDuplicate = await checkWaitlistEmailExists(input.email);
+    if (isDuplicate) {
+      return apiSuccess({ qualified_waitlist: qualified, readiness_score: score, already_registered: true });
+    }
+  } catch (err) {
+    // Blob list failure is non-blocking — proceed with save (occasional duplicate acceptable)
+    logger.error('[research/waitlist] Blob dedup check failed', { error: err, email: input.email });
+  }
+
   const entry: WaitlistEntry = {
     email: input.email,
     submitted_at: new Date().toISOString(),
@@ -77,12 +88,19 @@ export async function POST(request: NextRequest) {
     source: input.source,
   };
 
+  let savedPathname: string;
   try {
-    await putWaitlistEntry(entry);
+    const saved = await putWaitlistEntry(entry);
+    savedPathname = saved.pathname;
   } catch (err) {
     logger.error('[research/waitlist] Blob write failed', { error: err, email: entry.email });
     return apiServerError('Failed to save registration');
   }
+
+  // Create index marker for dedup (fail-open: occasional race condition acceptable)
+  putWaitlistIndex(input.email, savedPathname).catch((err) =>
+    logger.error('[research/waitlist] Index write failed', { error: err, email: entry.email })
+  );
 
   // Send welcome email — fail-open
   if (emailService.isConfigured()) {

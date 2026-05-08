@@ -8,7 +8,7 @@ import {
   CREDIT_PACK_EXPIRY_MONTHS,
 } from '@/lib/dial/pricing';
 
-// Regression guard: David Ronan confirmed values (2026-03-24, PR#295)
+// Regression guard: David Ronan confirmed credit costs (2026-03-24, PR#295)
 // Any change here requires re-verification with upstream RoEx pricing.
 describe('DIAL_CREDIT_COSTS — DR-confirmed values', () => {
   it('mix_diagnosis = 10cr', () => {
@@ -35,34 +35,48 @@ describe('DIAL_CREDIT_COSTS — DR-confirmed values', () => {
   });
 });
 
+// Price adjustment 5/8 — CFO Phase 2 approved (kimny policy-gate Option 1)
 describe('DIAL_SINGLE_PRICES — USD cents', () => {
-  it('omakase = $8', () => {
+  it('omakase = $8.00 (unchanged)', () => {
     expect(DIAL_SINGLE_PRICES.omakase).toBe(800);
   });
 
-  it('dialogue = $15', () => {
-    expect(DIAL_SINGLE_PRICES.dialogue).toBe(1500);
+  it('dialogue = $14.99 (was $15)', () => {
+    expect(DIAL_SINGLE_PRICES.dialogue).toBe(1499);
   });
 
-  it('mastering_addon = $6', () => {
-    expect(DIAL_SINGLE_PRICES.mastering_addon).toBe(600);
+  it('mastering_addon = $6.99 (was $6)', () => {
+    expect(DIAL_SINGLE_PRICES.mastering_addon).toBe(699);
+  });
+
+  it('retake = $9.99 (was $10)', () => {
+    expect(DIAL_SINGLE_PRICES.retake).toBe(999);
   });
 });
 
 describe('DIAL_SUB_PLANS', () => {
-  it('basic: $19.99/mo, 1000cr', () => {
+  it('hoo_pass: $6.99/mo, 100cr (new tier)', () => {
+    expect(DIAL_SUB_PLANS.hoo_pass.priceUsdCents).toBe(699);
+    expect(DIAL_SUB_PLANS.hoo_pass.credits).toBe(100);
+    expect(DIAL_SUB_PLANS.hoo_pass.deprecated).toBeUndefined();
+  });
+
+  it('basic: $19.99/mo, 1000cr (deprecated)', () => {
     expect(DIAL_SUB_PLANS.basic.priceUsdCents).toBe(1999);
     expect(DIAL_SUB_PLANS.basic.credits).toBe(1000);
+    expect(DIAL_SUB_PLANS.basic.deprecated).toBe(true);
   });
 
-  it('pro: $34.99/mo, 1700cr', () => {
+  it('pro: $34.99/mo, 1700cr (deprecated)', () => {
     expect(DIAL_SUB_PLANS.pro.priceUsdCents).toBe(3499);
     expect(DIAL_SUB_PLANS.pro.credits).toBe(1700);
+    expect(DIAL_SUB_PLANS.pro.deprecated).toBe(true);
   });
 
-  it('studio: $49.99/mo, 3000cr', () => {
+  it('studio: $49.99/mo, 3000cr (deprecated)', () => {
     expect(DIAL_SUB_PLANS.studio.priceUsdCents).toBe(4999);
     expect(DIAL_SUB_PLANS.studio.credits).toBe(3000);
+    expect(DIAL_SUB_PLANS.studio.deprecated).toBe(true);
   });
 });
 

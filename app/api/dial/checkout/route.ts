@@ -24,21 +24,22 @@ import { dialSessions, dialPurchases } from '@/db/schema';
 import { validateStripeConfig } from '@/lib/utils/env';
 import { NextRequest } from 'next/server';
 import { rateLimit } from '@/lib/middleware/rate-limit';
+import { DIAL_SINGLE_PRICES } from '@/lib/dial/pricing';
 
 const stripeConfig = validateStripeConfig();
 const stripe = new Stripe(stripeConfig.secretKey, {
   apiVersion: '2025-08-27.basil',
 });
 
-// ─── Price mapping (cents) ──────────────────────────────────────────────────
+// ─── Price mapping (cents) — derived from DIAL_SINGLE_PRICES (SSOT) ─────────
 
 const MIX_PRICES: Record<string, { amountCents: number; label: string }> = {
-  omakase: { amountCents: 800, label: 'MUEDial Omakase Mix' },
-  dialogue: { amountCents: 1500, label: 'MUEDial Dialogue Mix' },
+  omakase: { amountCents: DIAL_SINGLE_PRICES.omakase, label: 'MUEDial Omakase Mix' },
+  dialogue: { amountCents: DIAL_SINGLE_PRICES.dialogue, label: 'MUEDial Dialogue Mix' },
 };
 
 const MASTERING_PRICES: Record<string, { amountCents: number; label: string }> = {
-  omakase: { amountCents: 600, label: 'MUEDial Mastering' },
+  omakase: { amountCents: DIAL_SINGLE_PRICES.mastering_addon, label: 'MUEDial Mastering' },
 };
 
 const FALLBACK_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';

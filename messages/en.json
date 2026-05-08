@@ -384,9 +384,9 @@
         "description": "Prices for each option are as follows (tax included):",
         "plans": {
           "omakase": "Omakase Mix: $8 (approx. ¥1,200)",
-          "dialogue": "Dialogue Mix: $15 (approx. ¥2,200)",
-          "mastering": "Mastering add-on: $6 (approx. ¥900)",
-          "additionalCycle": "Additional retake cycle: $10 (approx. ¥1,500)"
+          "dialogue": "Dialogue Mix: $14.99 (approx. ¥2,200)",
+          "mastering": "Mastering add-on: $6.99 (approx. ¥1,050)",
+          "additionalCycle": "Additional retake cycle: $9.99 (approx. ¥1,500)"
         }
       },
       "paymentTiming": {
@@ -1635,7 +1635,7 @@
       "startNewSession": "Start New Session",
       "saveToAccount": "Save to Account",
       "backToDashboard": "Back to Dashboard",
-      "dialogueUpsell": "Polish with Dialogue Mix — $15",
+      "dialogueUpsell": "Polish with Dialogue Mix — $14.99",
       "take": "Take",
       "previousTakes": "Previous Takes",
       "currentTake": "Current",
@@ -1857,7 +1857,8 @@
     "thankyou": {
       "h1": "You're on the list.",
       "sub": "Hoo sent a confirmation email your way.\nCheck your spam folder if you don't see it.\n\nWhen Q3 launches, you'll be the first to know.\nKeep working on those tracks in the meantime.",
-      "cta": "Try the beta now →"
+      "cta": "Try the beta now →",
+      "alreadyRegistered": "That email is already registered. We'll reach out when Q3 launches."
     }
   },
   "readiness": {

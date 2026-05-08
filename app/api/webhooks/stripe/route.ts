@@ -819,8 +819,9 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
 // MUEDial Webhook Handlers
 // ========================================
 
-// Credit amounts per tier — sourced from pricing constants
+// Credit amounts per tier — sourced from pricing constants (backward compat: all tiers retained)
 const DIAL_SUB_CREDITS: Record<string, number> = {
+  hoo_pass: DIAL_SUB_PLANS.hoo_pass.credits,
   basic: DIAL_SUB_PLANS.basic.credits,
   pro: DIAL_SUB_PLANS.pro.credits,
   studio: DIAL_SUB_PLANS.studio.credits,

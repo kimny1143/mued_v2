@@ -16,12 +16,10 @@ import {
 import Link from 'next/link';
 import { trackCheckoutView, trackCheckoutAbandoned } from '@/lib/analytics/gtag';
 
-const TIER_ORDER: DialSubTier[] = ['basic', 'pro', 'studio'];
+const TIER_ORDER: DialSubTier[] = ['hoo_pass'];
 
-const TIER_BADGES: Record<DialSubTier, { labelKey: 'popular' | 'bestValue' | null }> = {
-  basic: { labelKey: null },
-  pro: { labelKey: 'popular' },
-  studio: { labelKey: 'bestValue' },
+const TIER_BADGES: Partial<Record<DialSubTier, { labelKey: 'popular' | 'bestValue' | null }>> = {
+  hoo_pass: { labelKey: null },
 };
 
 function formatUsd(cents: number): string {
@@ -158,7 +156,7 @@ export default function DialPricingPage() {
                     : 'border-white/10 bg-white/[0.03]'
                 }`}
               >
-                {badge.labelKey && (
+                {badge?.labelKey && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-500 text-black">
                       {p[badge.labelKey]}
