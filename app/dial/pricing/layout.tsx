@@ -10,7 +10,7 @@ const faqJsonLd = {
       name: "MUEDial のサブスクリプションプランは何がありますか？ / What subscription plans does MUEDial offer?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "3つのプランがあります。Basic（$19.99/月・1,000cr）、Pro（$34.99/月・1,700cr）、Studio（$49.99/月・3,000cr）。サブスク継続中はクレジットが無期限ロールオーバーします。 / Three plans are available: Basic ($19.99/month · 1,000cr), Pro ($34.99/month · 1,700cr), and Studio ($49.99/month · 3,000cr). Subscription credits roll over indefinitely while your subscription is active.",
+        text: "Hoo Pass（$5.99/月・100cr）のみ提供しています。サブスク継続中はクレジットが無期限ロールオーバーします。 / Only Hoo Pass ($5.99/month · 100cr) is currently available. Subscription credits roll over indefinitely while your subscription is active.",
       },
     },
     {
@@ -26,7 +26,7 @@ const faqJsonLd = {
       name: "サブスクリプションなしで使えますか？ / Can I use MUEDial without a subscription?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "はい。セッション単位での購入が可能です。おまかせミックス $8、対話ミックス $14.99、マスタリング $6.99。サブスクリプション不要で使い始められます。 / Yes. Pay-per-session options are available: Omakase Mix $8, Dialogue Mix $14.99, Mastering $6.99. No subscription required to get started.",
+        text: "はい。セッション単位での購入が可能です。おまかせミックス $7.49、対話ミックス $13.99、マスタリング $5.99。サブスクリプション不要で使い始められます。 / Yes. Pay-per-session options are available: Omakase Mix $7.49, Dialogue Mix $13.99, Mastering $5.99. No subscription required to get started.",
       },
     },
     {
@@ -67,7 +67,7 @@ const faqJsonLd = {
 export const metadata: Metadata = {
   title: "料金プラン | MUEDial — AIミキシング・マスタリング",
   description:
-    "MUEDialの料金プラン。おまかせミックス$8・対話ミックス$14.99・マスタリング$6.99。宅録・DTM向けAIミックスサービス。ステムを送るだけでプロ品質のミックスが完成。",
+    "MUEDialの料金プラン。おまかせミックス$7.49・対話ミックス$13.99・マスタリング$5.99。宅録・DTM向けAIミックスサービス。ステムを送るだけでプロ品質のミックスが完成。",
   keywords: [
     "AIミックス 料金",
     "AIミキシング 価格",
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "料金プラン | MUEDial — AIミキシング・マスタリング",
     description:
-      "おまかせミックス$8・対話ミックス$14.99・マスタリング$6.99。宅録・DTM向けAIミックスサービス。",
+      "おまかせミックス$7.49・対話ミックス$13.99・マスタリング$5.99。宅録・DTM向けAIミックスサービス。",
     url: "https://dial.mued.jp/pricing",
     siteName: "MUEDial",
   },

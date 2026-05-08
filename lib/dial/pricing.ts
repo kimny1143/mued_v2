@@ -22,7 +22,7 @@ export const DIAL_SUB_PLANS: Record<DialSubTier, {
 }> = {
   hoo_pass: {
     credits: 100,
-    priceUsdCents: 699,
+    priceUsdCents: 599,
     label: 'MUEDial Hoo Pass',
   },
   basic: {
@@ -89,10 +89,10 @@ export type DialCreditOperation = keyof typeof DIAL_CREDIT_COSTS;
 // ========================================
 
 export const DIAL_SINGLE_PRICES = {
-  omakase: 800,           // $8.00
-  dialogue: 1499,         // $14.99
-  mastering_addon: 699,   // $6.99
-  retake: 999,            // $9.99
+  omakase: 749,           // $7.49
+  dialogue: 1399,         // $13.99
+  mastering_addon: 599,   // $5.99
+  retake: 999,            // $9.99 (unchanged)
 } as const;
 
 // ========================================
