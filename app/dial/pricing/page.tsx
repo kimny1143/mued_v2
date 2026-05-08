@@ -22,6 +22,8 @@ const TIER_BADGES: Partial<Record<DialSubTier, { labelKey: 'popular' | 'bestValu
   hoo_pass: { labelKey: null },
 };
 
+const IS_RESEARCH_BETA = process.env.NEXT_PUBLIC_RESEARCH_BETA === 'true';
+
 function formatUsd(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
@@ -172,10 +174,14 @@ export default function DialPricingPage() {
                 </div>
 
                 <div className="mb-6">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold">{formatUsd(plan.priceUsdCents)}</span>
-                    <span className="text-white/40">/{p.monthly}</span>
-                  </div>
+                  {IS_RESEARCH_BETA ? (
+                    <div className="text-amber-400/70 text-sm font-medium">Coming soon (Research beta)</div>
+                  ) : (
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-bold">{formatUsd(plan.priceUsdCents)}</span>
+                      <span className="text-white/40">/{p.monthly}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mb-6 py-4 border-t border-b border-white/5">
@@ -185,22 +191,33 @@ export default function DialPricingPage() {
                       {plan.credits.toLocaleString()}cr
                     </span>
                   </div>
-                  <div className="text-xs text-white/30 mt-1">
-                    ${perCredit} {p.perCredit}
-                  </div>
+                  {!IS_RESEARCH_BETA && (
+                    <div className="text-xs text-white/30 mt-1">
+                      ${perCredit} {p.perCredit}
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  onClick={() => handleSubscribe(tier)}
-                  disabled={loading !== null}
-                  className={`w-full py-3 rounded-xl font-medium text-sm transition-all ${
-                    isHighlighted
-                      ? 'bg-amber-500 hover:bg-amber-400 text-black'
-                      : 'bg-white/10 hover:bg-white/15 text-white'
-                  } disabled:opacity-50`}
-                >
-                  {loading === tier ? '...' : p.subscribe}
-                </button>
+                {IS_RESEARCH_BETA ? (
+                  <Link
+                    href="/waitlist"
+                    className="w-full py-3 rounded-xl font-medium text-sm text-center block bg-amber-500 hover:bg-amber-400 text-black transition-all"
+                  >
+                    Research beta先行登録
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => handleSubscribe(tier)}
+                    disabled={loading !== null}
+                    className={`w-full py-3 rounded-xl font-medium text-sm transition-all ${
+                      isHighlighted
+                        ? 'bg-amber-500 hover:bg-amber-400 text-black'
+                        : 'bg-white/10 hover:bg-white/15 text-white'
+                    } disabled:opacity-50`}
+                  >
+                    {loading === tier ? '...' : p.subscribe}
+                  </button>
+                )}
               </div>
             );
           })}
@@ -254,7 +271,11 @@ export default function DialPricingPage() {
                   <h4 className="font-medium">{p[nameKey as keyof typeof p]}</h4>
                 </div>
                 <p className="text-xs text-white/40 mb-3">{p[descKey as keyof typeof p]}</p>
-                <div className="text-xl font-bold">{formatUsd(price)}</div>
+                {IS_RESEARCH_BETA ? (
+                  <div className="text-sm text-amber-400/70">Q3 GA時に提供開始</div>
+                ) : (
+                  <div className="text-xl font-bold">{formatUsd(price)}</div>
+                )}
               </div>
             ))}
           </div>
@@ -289,14 +310,20 @@ export default function DialPricingPage() {
                     <div className="text-xs text-white/30 mt-1">{p.noRollover}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold mb-2">{formatUsd(pack.priceUsdCents)}</div>
-                    <button
-                      onClick={() => handleBuyCreditPack(size)}
-                      disabled={loading !== null}
-                      className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-sm font-medium transition-all disabled:opacity-50"
-                    >
-                      {loading === size ? '...' : p.buyCredits}
-                    </button>
+                    {IS_RESEARCH_BETA ? (
+                      <div className="text-sm text-amber-400/70">Q3 GA時に提供開始</div>
+                    ) : (
+                      <>
+                        <div className="text-lg font-bold mb-2">{formatUsd(pack.priceUsdCents)}</div>
+                        <button
+                          onClick={() => handleBuyCreditPack(size)}
+                          disabled={loading !== null}
+                          className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-sm font-medium transition-all disabled:opacity-50"
+                        >
+                          {loading === size ? '...' : p.buyCredits}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               );

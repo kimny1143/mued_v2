@@ -383,9 +383,9 @@
         "title": "販売価格",
         "description": "各メニューの料金は以下の通りです（税込）：",
         "plans": {
-          "omakase": "Omakase Mix: $8（約1,200円）",
-          "dialogue": "Dialogue Mix: $14.99（約2,200円）",
-          "mastering": "マスタリング追加: $6.99（約1,050円）",
+          "omakase": "Omakase Mix: $7.49（約1,160円）",
+          "dialogue": "Dialogue Mix: $13.99（約2,160円）",
+          "mastering": "マスタリング追加: $5.99（約930円）",
           "additionalCycle": "追加リテイクサイクル: $9.99（約1,500円）"
         }
       },
@@ -1635,7 +1635,7 @@
       "startNewSession": "新規セッションを開始",
       "saveToAccount": "アカウントに保存",
       "backToDashboard": "ダッシュボードへ戻る",
-      "dialogueUpsell": "Dialogue Mix で仕上げる — $14.99",
+      "dialogueUpsell": "Dialogue Mix で仕上げる — $13.99",
       "take": "テイク",
       "previousTakes": "過去のテイク",
       "currentTake": "現在",

@@ -383,9 +383,9 @@
         "title": "Pricing",
         "description": "Prices for each option are as follows (tax included):",
         "plans": {
-          "omakase": "Omakase Mix: $8 (approx. ¥1,200)",
-          "dialogue": "Dialogue Mix: $14.99 (approx. ¥2,200)",
-          "mastering": "Mastering add-on: $6.99 (approx. ¥1,050)",
+          "omakase": "Omakase Mix: $7.49 (approx. ¥1,160)",
+          "dialogue": "Dialogue Mix: $13.99 (approx. ¥2,160)",
+          "mastering": "Mastering add-on: $5.99 (approx. ¥930)",
           "additionalCycle": "Additional retake cycle: $9.99 (approx. ¥1,500)"
         }
       },
@@ -1635,7 +1635,7 @@
       "startNewSession": "Start New Session",
       "saveToAccount": "Save to Account",
       "backToDashboard": "Back to Dashboard",
-      "dialogueUpsell": "Polish with Dialogue Mix — $14.99",
+      "dialogueUpsell": "Polish with Dialogue Mix — $13.99",
       "take": "Take",
       "previousTakes": "Previous Takes",
       "currentTake": "Current",

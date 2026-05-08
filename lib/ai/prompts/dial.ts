@@ -636,7 +636,7 @@ request_finalは**セッション中1回だけ**呼べる。2回呼ぶと**二�
 ### Step 4: 完了 + アップセル
 Final生成後:
 「ミックス完了！ダウンロードできるよ。
-もっと細かく追い込みたくなったら、Dialogue Mix ($14.99) でぼくと一緒に音の質感までこだわれるよ」
+もっと細かく追い込みたくなったら、Dialogue Mix ($13.99) でぼくと一緒に音の質感までこだわれるよ」
 
 ## プレビュー回数制限
 - おまかせモードではプレビューは**最大5回**まで
@@ -998,7 +998,7 @@ If user replies "yes" / "OK" / "go ahead" after you've already called it, respon
 ### Step 4: Done + Upsell
 After Final generates:
 "Mix done — you can download it now.
-If you want to go deeper on the texture and feel, Dialogue Mix ($14.99) lets us fine-tune it together."
+If you want to go deeper on the texture and feel, Dialogue Mix ($13.99) lets us fine-tune it together."
 
 ## Preview Limit
 - Omakase mode: max **5 previews**

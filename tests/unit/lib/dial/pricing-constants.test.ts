@@ -35,28 +35,28 @@ describe('DIAL_CREDIT_COSTS — DR-confirmed values', () => {
   });
 });
 
-// Price adjustment 5/8 — CFO Phase 2 approved (kimny policy-gate Option 1)
+// Price adjustment 5/8 Phase 6 案X — CFO + Codex + reserch final (kimny 17:05 JST)
 describe('DIAL_SINGLE_PRICES — USD cents', () => {
-  it('omakase = $8.00 (unchanged)', () => {
-    expect(DIAL_SINGLE_PRICES.omakase).toBe(800);
+  it('omakase = $7.49', () => {
+    expect(DIAL_SINGLE_PRICES.omakase).toBe(749);
   });
 
-  it('dialogue = $14.99 (was $15)', () => {
-    expect(DIAL_SINGLE_PRICES.dialogue).toBe(1499);
+  it('dialogue = $13.99', () => {
+    expect(DIAL_SINGLE_PRICES.dialogue).toBe(1399);
   });
 
-  it('mastering_addon = $6.99 (was $6)', () => {
-    expect(DIAL_SINGLE_PRICES.mastering_addon).toBe(699);
+  it('mastering_addon = $5.99', () => {
+    expect(DIAL_SINGLE_PRICES.mastering_addon).toBe(599);
   });
 
-  it('retake = $9.99 (was $10)', () => {
+  it('retake = $9.99 (unchanged)', () => {
     expect(DIAL_SINGLE_PRICES.retake).toBe(999);
   });
 });
 
 describe('DIAL_SUB_PLANS', () => {
-  it('hoo_pass: $6.99/mo, 100cr (new tier)', () => {
-    expect(DIAL_SUB_PLANS.hoo_pass.priceUsdCents).toBe(699);
+  it('hoo_pass: $5.99/mo, 100cr (Phase 6 案X)', () => {
+    expect(DIAL_SUB_PLANS.hoo_pass.priceUsdCents).toBe(599);
     expect(DIAL_SUB_PLANS.hoo_pass.credits).toBe(100);
     expect(DIAL_SUB_PLANS.hoo_pass.deprecated).toBeUndefined();
   });
