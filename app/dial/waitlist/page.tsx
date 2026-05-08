@@ -245,7 +245,7 @@ export default function WaitlistPage() {
           </button>
           <p className="text-xs text-gray-500 text-center">
             {w.form.notice}{' '}
-            <Link href="/privacy" className="underline hover:text-gray-300">{w.form.privacyLink}</Link>
+            <a href={`https://mued.jp/${locale}/privacy`} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300">{w.form.privacyLink}</a>
           </p>
         </form>
       </section>
