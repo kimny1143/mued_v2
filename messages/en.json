@@ -1811,5 +1811,105 @@
       "proButton": "Pro Template",
       "freeButton": "Free on GitHub"
     }
+  },
+  "waitlist": {
+    "hero": {
+      "badge": "Q3 2026 (late Aug–Sep) launch — Early access open",
+      "h1": "Tracks stuck at mix.\nMoving again in Q3.",
+      "sub": "MUEDial is AI mixing through conversation with Hoo.\nNo plugins, no studio, no back-and-forth with engineers.\nUpload your stems. Talk to Hoo in your language.",
+      "cta": "Join the waitlist (free)",
+      "qualifiedBadge": "Readiness check complete"
+    },
+    "diff": {
+      "title": "Not automated. Conversational.",
+      "cols": [
+        { "icon": "💬", "title": "Revise by talking", "desc": "\"Bring vocals forward a bit\" or \"drums are too loud\" — just say it. No plugin parameters to fiddle with." },
+        { "icon": "⚡", "title": "Same-day delivery", "desc": "Preview in minutes, final in the same day. Even works the night before a live show." },
+        { "icon": "🔬", "title": "research beta", "desc": "Pricing still being tuned. Waitlist members get notified first when we officially launch." }
+      ],
+      "tableNote": "eMastered & LANDR are mastering-only. Conversational mix revisions are unique to MUEDial.",
+      "pricingNote": "※ Pricing is being adjusted during the research beta. Confirmed pricing will be sent to waitlist members first."
+    },
+    "benefits": {
+      "title": "Perks for early registrants",
+      "items": [
+        { "icon": "🚀", "title": "Day-one access (research beta)", "desc": "Start before general availability. We'll email you first when launch day arrives." },
+        { "icon": "📬", "title": "Monthly newsletter", "desc": "Behind-the-scenes updates, feature previews, and mixing tips once a month. Unsubscribe anytime." }
+      ]
+    },
+    "form": {
+      "title": "Join the waitlist",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "dtmLabel": "How long have you been making music? (optional)",
+      "dtmNone": "Prefer not to say",
+      "dtmUnder1y": "Just started (under 1 year)",
+      "dtm1_3y": "1–3 years",
+      "dtm3_5y": "3–5 years",
+      "dtmOver5y": "5+ years",
+      "challengeLabel": "What's your biggest mixing challenge? (optional)",
+      "challengePlaceholder": "e.g. vocals get buried, too much low end, etc.",
+      "submit": "Complete registration →",
+      "submitting": "Submitting...",
+      "notice": "Your email is used only for MUEDial launch notifications and early-access perks. No spam, no third-party sharing. Unsubscribe anytime.",
+      "privacyLink": "Privacy Policy"
+    },
+    "thankyou": {
+      "h1": "You're on the list.",
+      "sub": "Hoo sent a confirmation email your way.\nCheck your spam folder if you don't see it.\n\nWhen Q3 launches, you'll be the first to know.\nKeep working on those tracks in the meantime.",
+      "cta": "Try the beta now →"
+    }
+  },
+  "readiness": {
+    "hero": {
+      "h1": "Ready to hand your mix\nover to Hoo?",
+      "sub": "4 questions to check your stem readiness.",
+      "duration": "Takes about 1 minute"
+    },
+    "q1": {
+      "question": "Do you have a track you want to release within 30 days?",
+      "yes": "Yes",
+      "no": "No / not decided yet"
+    },
+    "q2": {
+      "question": "Can you provide individual stem files for each track?",
+      "have": "I already have them",
+      "can_export": "I have a DAW and can export",
+      "unknown": "Not sure"
+    },
+    "q3": {
+      "question": "Is pitch correction on your vocals done?",
+      "done": "Yes, it's done",
+      "instrumental": "No vocals — it's instrumental",
+      "not_done": "Not done / still deciding",
+      "unknown": "What's pitch correction?"
+    },
+    "q4": {
+      "question": "Which MUEDial service would you try first?",
+      "omakase": "Omakase Mix (let AI handle everything)",
+      "dialogue": "Dialogue Mix (adjust with Hoo step by step)",
+      "mastering": "Add Mastering (polish after mixing)",
+      "unknown": "Not sure yet"
+    },
+    "emailOptional": {
+      "label": "Get your results by email (optional)",
+      "placeholder": "you@example.com",
+      "note": "You'll also receive Q3 launch notifications."
+    },
+    "submit": "Check my readiness →",
+    "submitting": "Submitting...",
+    "pricingNote": "※ Pricing is being adjusted during the research beta. Confirmed pricing will be sent to waitlist members first.",
+    "resultQualified": {
+      "h1": "You're ready.",
+      "sub": "Stems are set, release is planned.\nAll that's left is to hand it over to Hoo.\n\nYou'll be the first to hear when Q3 launches.\nJoin the waitlist to hold your spot.",
+      "cta": "Join the waitlist (free) →",
+      "secondary": "Want to try it now? → dial.mued.jp"
+    },
+    "resultRaw": {
+      "h1": "Almost there — stems are the next step.",
+      "sub": "Once your stems are ready, Hoo is waiting.\n\nThese articles can help you get set up:",
+      "secondary": "Still want to wait for Q3 launch?",
+      "secondaryCta": "Join the waitlist (optional) →"
+    }
   }
 }

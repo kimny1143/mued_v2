@@ -23,6 +23,9 @@ const isPublicRoute = createRouteMatcher([
   "/muedear(.*)",
   "/dial(.*)",
   "/api/dial(.*)",
+  "/waitlist(.*)",
+  "/readiness(.*)",
+  "/api/research(.*)",
 ]);
 
 // Check if path starts with a locale
@@ -63,6 +66,11 @@ export default clerkMiddleware(async (auth, req) => {
     const locale = getPreferredLocale(acceptLanguage);
     if (pathname === '/') {
       const response = NextResponse.rewrite(new URL('/dial', req.url));
+      response.cookies.set('NEXT_LOCALE', locale, { path: '/' });
+      return response;
+    }
+    if (pathname === '/waitlist' || pathname === '/readiness') {
+      const response = NextResponse.rewrite(new URL(`/dial${pathname}`, req.url));
       response.cookies.set('NEXT_LOCALE', locale, { path: '/' });
       return response;
     }
