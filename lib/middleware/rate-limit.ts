@@ -109,6 +109,17 @@ const limiters = {
       prefix: "ratelimit:dial-analyze-monthly",
     });
   },
+
+  // Research beta endpoints: 5 requests per minute per IP (waitlist/readiness submit)
+  research: () => {
+    const r = getRedis();
+    if (!r) return null;
+    return new Ratelimit({
+      redis: r,
+      limiter: Ratelimit.slidingWindow(5, "1 m"),
+      prefix: "ratelimit:research",
+    });
+  },
 };
 
 export type RateLimitType = keyof typeof limiters;

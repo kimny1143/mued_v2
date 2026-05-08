@@ -749,6 +749,47 @@ Hoo MCP経由の自動送信
   },
 
   /**
+   * MUEDial research beta waitlist — welcome email
+   */
+  researchWaitlistWelcome(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
+    const isJa = data.locale === 'ja';
+
+    const subject = isJa
+      ? '[MUEDial] ほほう、登録完了ですね。'
+      : '[MUEDial] You\'re on the list.';
+
+    const html = baseTemplate(`
+      <h2 style="color: #f5a524; margin-top: 0;">${isJa ? 'ほほう、登録完了ですね。' : 'You\'re on the list.'}</h2>
+
+      <p>${isJa
+        ? 'Hooが確認しました。迷惑メールフォルダも確認してみてください。'
+        : 'Hoo received your registration. Check your spam folder if you don\'t see future emails.'}</p>
+
+      <p>${isJa
+        ? 'Q3ローンチの際に、あなたのメアドに一番先に届けます。<br>それまで、ミックスで止まってる曲を温めておいてください。'
+        : 'When Q3 launches, you\'ll be the first to know.<br>Keep working on those tracks in the meantime.'}</p>
+
+      <div style="margin: 24px 0;">
+        <a href="https://dial.mued.jp" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
+          ${isJa ? '先行βで今すぐ試す →' : 'Try the beta now →'}
+        </a>
+      </div>
+
+      <p style="color: #6b7280; font-size: 14px;">
+        ${isJa
+          ? `ご不明な点がございましたら ${SUPPORT_EMAIL} までお問い合わせください。`
+          : `Questions? Reach us at ${SUPPORT_EMAIL}.`}
+      </p>
+    `);
+
+    const text = isJa
+      ? `ほほう、登録完了ですね。\n\nHooが確認しました。Q3ローンチの際に一番先にお知らせします。\n\n先行βで今すぐ試す: https://dial.mued.jp\n\nMUEDial team`.trim()
+      : `You're on the list.\n\nHoo received your registration. You'll be the first to know when Q3 launches.\n\nTry the beta: https://dial.mued.jp\n\nMUEDial team`.trim();
+
+    return { subject, html, text };
+  },
+
+  /**
    * glasswerks inquiry — user confirmation email
    */
   glasswerksInquiryConfirm(data: GlasswerksInquiryConfirmEmailData): { subject: string; html: string; text: string } {
@@ -1051,6 +1092,18 @@ class EmailService {
       to,
       ...template,
       tags: [{ name: 'type', value: 'glasswerks_inquiry_confirm' }],
+    });
+  }
+
+  async sendResearchWaitlistWelcome(
+    to: EmailRecipient,
+    data: { locale: 'ja' | 'en' }
+  ): Promise<EmailResult> {
+    const template = emailTemplates.researchWaitlistWelcome(data);
+    return this.send({
+      to,
+      ...template,
+      tags: [{ name: 'type', value: 'research_waitlist_welcome' }],
     });
   }
 

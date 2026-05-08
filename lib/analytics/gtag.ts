@@ -114,6 +114,58 @@ export function trackCheckoutAbandoned(
   });
 }
 
+/** Track research beta waitlist page view */
+export function trackWaitlistView(): void {
+  trackEvent({ action: 'waitlist_view', params: { page: 'muedial_waitlist', funnel: 'research_beta' } });
+}
+
+/** Track waitlist form submission */
+export function trackWaitlistSubmit(params: {
+  dtm_years: string | null;
+  has_pain_point: boolean;
+  from?: string;
+}): void {
+  trackEvent({
+    action: 'waitlist_submit',
+    params: {
+      dtm_years: params.dtm_years ?? 'none',
+      has_pain_point: params.has_pain_point,
+      from: params.from ?? 'direct',
+      funnel: 'research_beta',
+    },
+  });
+}
+
+/** Track successful waitlist registration */
+export function trackWaitlistSuccess(params: { qualified: boolean }): void {
+  trackEvent({
+    action: 'waitlist_success',
+    params: { qualified_waitlist: params.qualified, funnel: 'research_beta' },
+  });
+}
+
+/** Track readiness diagnostic page view */
+export function trackReadinessStart(): void {
+  trackEvent({ action: 'readiness_start', params: { funnel: 'research_beta' } });
+}
+
+/** Track readiness diagnostic completion */
+export function trackReadinessComplete(params: {
+  score: number;
+  qualified: boolean;
+  has_email: boolean;
+}): void {
+  trackEvent({
+    action: 'readiness_complete',
+    params: {
+      score: params.score,
+      qualified_waitlist: params.qualified,
+      has_email: params.has_email,
+      funnel: 'research_beta',
+    },
+  });
+}
+
 // Extend Window interface for gtag
 declare global {
   interface Window {
