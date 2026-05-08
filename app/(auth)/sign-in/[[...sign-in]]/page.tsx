@@ -17,7 +17,7 @@ export const metadata: Metadata = {
  */
 export default function SignInPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex" style={{ fontFamily: 'var(--font-sora, var(--font-geist-sans)), system-ui, sans-serif' }}>
+    <div className="min-h-screen bg-[#0a0a0a] flex" style={{ fontFamily: 'var(--font-sora), system-ui, sans-serif' }}>
       {/* Left: MUEDnote Branding */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-12 bg-gradient-to-br from-[#0a0a0a] to-[#111113]">
         <div className="max-w-md text-center">

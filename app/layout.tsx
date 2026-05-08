@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
-import { Geist, Geist_Mono, JetBrains_Mono, Inter, Sora } from "next/font/google";
+import { Geist_Mono, JetBrains_Mono, Sora } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { LocaleProviderWrapper } from "@/components/providers/locale-provider-wrapper";
 import { Analytics } from "@vercel/analytics/react";
@@ -9,12 +9,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { structuredData } from "@/lib/seo/structured-data";
 import { locales, defaultLocale, type Locale } from "@/lib/i18n/config";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -26,13 +20,6 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
-  display: "swap",
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
   display: "swap",
 });
 
@@ -103,7 +90,7 @@ export default async function RootLayout({
           />
         </head>
         <body
-          className={`${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${inter.variable} ${sora.variable} antialiased`}
+          className={`${geistMono.variable} ${jetbrainsMono.variable} ${sora.variable} antialiased`}
         >
           <LocaleProviderWrapper>
             {children}
