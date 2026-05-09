@@ -7,12 +7,12 @@ import { MUEDEAR_APP_STORE_URL, GAME_COLORS, type GameKey } from "@/lib/muedear/
 import { AppStoreButton } from "@/components/ui/app-store-button";
 
 const GAMES: { key: GameKey; screenshot: string }[] = [
-  { key: "mufreq", screenshot: "/images/muedear/mufreq.png" },
-  { key: "mucomp", screenshot: "/images/muedear/mucomp-settings.png" },
-  { key: "muhorse", screenshot: "/images/muedear/muhorse.png" },
-  { key: "muverb", screenshot: "/images/muedear/muverb.png" },
-  { key: "mupan", screenshot: "/images/muedear/mupan.png" },
-  { key: "murush", screenshot: "/images/muedear/mufreq.png" }, // murush uses mufreq image as placeholder
+  { key: "mufreq", screenshot: "/images/muedear/mufreq.webp" },
+  { key: "mucomp", screenshot: "/images/muedear/mucomp-settings.webp" },
+  { key: "muhorse", screenshot: "/images/muedear/muhorse.webp" },
+  { key: "muverb", screenshot: "/images/muedear/muverb.webp" },
+  { key: "mupan", screenshot: "/images/muedear/mupan.webp" },
+  { key: "murush", screenshot: "/images/muedear/mufreq.webp" },
 ];
 
 /**
