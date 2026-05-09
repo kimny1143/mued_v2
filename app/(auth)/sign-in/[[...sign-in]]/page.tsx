@@ -24,7 +24,7 @@ export default function SignInPage() {
           {/* Logo */}
           <Link href="/" className="inline-block mb-8">
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="MUEDnote"
               width={120}
               height={120}
@@ -54,7 +54,7 @@ export default function SignInPage() {
         <div className="lg:hidden mb-8 text-center">
           <Link href="/">
             <Image
-              src="/logo.png"
+              src="/logo.webp"
               alt="MUEDnote"
               width={80}
               height={80}
