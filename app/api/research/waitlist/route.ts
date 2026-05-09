@@ -5,42 +5,23 @@ import { rateLimit } from '@/lib/middleware/rate-limit';
 import { putWaitlistEntry, checkWaitlistEmailExists, putWaitlistIndex, type WaitlistEntry } from '@/lib/storage/waitlist-blob';
 import { emailService } from '@/lib/services/email.service';
 import { logger } from '@/lib/utils/logger';
+import { calcReadinessScore } from '@/lib/research/readiness-score';
 
 const schema = z.object({
   email: z.string().email().transform((e) => e.toLowerCase().trim()),
   locale: z.enum(['ja', 'en']).default('ja'),
   source: z.string().default('lp'),
-  // Waitlist-only fields
   dtm_years: z.enum(['under_1y', '1_3y', '3_5y', 'over_5y']).nullable().optional(),
   challenge: z.string().max(500).nullable().optional(),
-  // Readiness fields (optional — sent when coming from /readiness)
   launches_within_30d: z.boolean().optional(),
   has_stems: z.boolean().optional(),
   vocal_ready: z.boolean().optional(),
   product_intent: z.string().nullable().optional(),
-  // UTM
   utm_source: z.string().nullable().optional(),
   utm_medium: z.string().nullable().optional(),
   utm_campaign: z.string().nullable().optional(),
   utm_content: z.string().nullable().optional(),
 });
-
-function calcReadinessScore(input: z.infer<typeof schema>): {
-  score: number;
-  qualified: boolean;
-  launch_ready_recent: boolean;
-} {
-  let score = 0;
-  if (input.launches_within_30d === true) score++;
-  if (input.has_stems === true) score++;
-  if (input.vocal_ready === true) score++;
-  if (input.product_intent && input.product_intent !== 'unknown') score++;
-  return {
-    score,
-    qualified: score >= 3,
-    launch_ready_recent: input.launches_within_30d === true,
-  };
-}
 
 export async function POST(request: NextRequest) {
   const rateLimitResponse = await rateLimit(request, 'research');
