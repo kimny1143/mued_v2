@@ -1530,6 +1530,7 @@
       "perCredit": "1crあたり",
       "currentPlan": "現在のプラン",
       "subscribe": "申し込む",
+      "autoRenewalNote": "お申し込み後、毎月自動更新（$5.99/月）。解約はダッシュボードからいつでも可能。お問い合わせ: support@mued.jp",
       "popular": "人気",
       "bestValue": "最もお得",
       "basicDesc": "たまにミックスするクリエイター向け。",
