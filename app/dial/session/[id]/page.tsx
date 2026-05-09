@@ -1089,7 +1089,7 @@ function DialSessionContent() {
         {t.dial.session.addFiles}
         <input
           type="file"
-          accept=".wav,.flac,.aiff,.mp3"
+          accept=".wav,.flac,.aiff,.mp3,.m4a"
           multiple={!isMasteringOnly}
           onChange={handleFilesSelected}
           disabled={uploading}
