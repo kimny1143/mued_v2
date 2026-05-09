@@ -6,6 +6,25 @@ mued課・conductorがトラッキングする kimny手動作業のリスト。�
 
 ## 未完了
 
+### Item #5: Migration 0047 psql適用 (5/13 launch前完納必須)
+
+```bash
+psql "$DATABASE_URL" -f db/migrations/0047_add_dial_subs_unique_active_constraint.sql
+```
+
+適用確認:
+```sql
+SELECT indexname FROM pg_indexes
+  WHERE tablename = 'dial_subscriptions'
+    AND indexname = 'dial_subs_unique_active_per_user';
+```
+
+**背景**: PR #334 (feat/dial-subs-partial-unique-index) merge予定 (2026-05-09)。`dial_subscriptions (user_id) WHERE status = 'active'` のDB層重複ガード。API層ガード (PR #331) との多層防御。drizzle-kit history sync未解消のためpsql直接適用。
+
+**deadline**: 5/13 launch当日サブスク購入前（#4と同時実行可）
+
+---
+
 ### Item #4: Migration 0046 psql適用 (5/13 launch前完納必須)
 
 ```bash
