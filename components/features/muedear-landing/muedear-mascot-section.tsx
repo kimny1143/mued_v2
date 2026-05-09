@@ -33,7 +33,7 @@ export function MuedearMascotSection() {
               <div className="w-64 h-64 bg-[#111] border border-white/5 rounded-3xl flex items-center justify-center p-8">
                 <div className="text-center">
                   <Image
-                    src="/logo.png"
+                    src="/logo.webp"
                     alt="Hoo"
                     width={180}
                     height={180}

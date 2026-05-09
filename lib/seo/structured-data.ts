@@ -19,7 +19,7 @@ export const structuredData = {
       url: "https://mued.jp",
       logo: {
         "@type": "ImageObject",
-        url: "https://mued.jp/logo.png",
+        url: "https://mued.jp/logo.webp",
       },
       slogan: "Making music visible.",
       description:
