@@ -117,6 +117,18 @@ else
   inc_fail
 fi
 
+migration_file_047="db/migrations/0047_add_dial_subs_unique_active_constraint.sql"
+if [[ -f "$migration_file_047" ]]; then
+  green "Migration file 0047 exists: $migration_file_047"
+  inc_pass
+  yellow "MANUAL: Verify migration 0047 was applied to Neon production DB"
+  yellow "  Run: psql \$DATABASE_URL -c \"SELECT indexname FROM pg_indexes WHERE tablename = 'dial_subscriptions' AND indexname = 'dial_subs_unique_active_per_user';\""
+  inc_warn
+else
+  red "Migration file 0047 missing — expected: $migration_file_047"
+  inc_fail
+fi
+
 # ─── 4. Stripe Price ID format check ──────────────
 header "4. Stripe Configuration"
 
