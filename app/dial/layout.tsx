@@ -102,6 +102,7 @@ export const metadata: Metadata = {
     title: "MUEDial — 宅録・DTMの仕上げをAIと。",
     description:
       "ステムをアップロードしてAIと話すだけ。宅録・DTM向けAIミキシング・マスタリング。おまかせミックス$8から。",
+    images: ["/muedial-hoo-mixing-console.webp"],
   },
 };
 
