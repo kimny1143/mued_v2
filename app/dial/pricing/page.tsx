@@ -56,14 +56,22 @@ export default function DialPricingPage() {
     }
   }, [searchParams]);
 
+  function getGaClientId(): string | undefined {
+    const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/);
+    if (!match) return undefined;
+    const parts = match[1].split('.');
+    return parts.length >= 4 ? `${parts[2]}.${parts[3]}` : undefined;
+  }
+
   async function handleSubscribe(tier: DialSubTier) {
     setLoading(tier);
     setError(null);
     try {
+      const gaClientId = getGaClientId();
       const res = await fetch('/api/dial/checkout/subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier, ...utmParams }),
+        body: JSON.stringify({ tier, ...utmParams, ...(gaClientId && { gaClientId }) }),
       });
       const data = await res.json();
       if (data.success && data.data?.url) {

@@ -35,6 +35,7 @@ const subscriptionSchema = z.object({
   utmSource: z.string().max(50).optional(),
   utmMedium: z.string().max(50).optional(),
   utmCampaign: z.string().max(100).optional(),
+  gaClientId: z.string().max(100).optional(),
 });
 
 export const POST = withAuth(async ({ userId, request }) => {
@@ -45,7 +46,7 @@ export const POST = withAuth(async ({ userId, request }) => {
       return apiValidationError('Invalid request', parsed.error.errors);
     }
 
-    const { tier, utmSource, utmMedium, utmCampaign } = parsed.data;
+    const { tier, utmSource, utmMedium, utmCampaign, gaClientId } = parsed.data;
     const plan = DIAL_SUB_PLANS[tier];
     const priceId = DIAL_SUB_PRICE_IDS[tier];
 
@@ -79,6 +80,7 @@ export const POST = withAuth(async ({ userId, request }) => {
         ...(utmSource && { utm_source: utmSource }),
         ...(utmMedium && { utm_medium: utmMedium }),
         ...(utmCampaign && { utm_campaign: utmCampaign }),
+        ...(gaClientId && { ga_client_id: gaClientId }),
       },
       subscription_data: {
         metadata: {

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { reservations, subscriptions, users, webhookEvents, lessonSlots, dialSessions, dialPurchases, dialSubscriptions, dialCreditPacks, dialCreditExpiry, dialSubscriptionEvents } from "@/db/schema";
 import { eq, sql, and, gt, or, isNull } from "drizzle-orm";
 import { DIAL_SUB_PLANS, CANCEL_GRACE_DAYS, CREDIT_PACK_EXPIRY_MONTHS, type DialSubTier } from '@/lib/dial/pricing';
+import { trackServerPurchase } from '@/lib/analytics/ga4-server';
 import { grantFirstPurchaseBonus } from '@/lib/dial/bonus-campaign';
 import { validateStripeConfig } from "@/lib/utils/env";
 import { logger } from "@/lib/utils/logger";
@@ -1013,6 +1014,20 @@ async function handleDialCheckoutCompleted(
     });
 
     logger.info(`[Dial Webhook] Subscription created: ${stripeSubscriptionId} for user: ${userId}, ${totalCredits}cr granted (no expiry while subscribed)`);
+
+    // Fire GA4 purchase event — best-effort, must not block subscription creation
+    const gaClientId = session.metadata?.ga_client_id;
+    if (gaClientId) {
+      const planPriceUsd = DIAL_SUB_PLANS[tier as DialSubTier]?.priceUsdCents / 100;
+      trackServerPurchase({
+        clientId: gaClientId,
+        transactionId: eventId,
+        value: planPriceUsd || 5.99,
+        currency: 'USD',
+        itemName: `Hoo Pass (${tier})`,
+        itemId: `dial_sub_${tier}`,
+      }).catch((err) => logger.error('[Dial Webhook] GA4 purchase event failed', { error: err }));
+    }
 
     // Grant first-purchase 400cr bonus — best-effort, must not block credit delivery
     try {
