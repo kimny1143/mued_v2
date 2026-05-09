@@ -105,6 +105,18 @@ else
   inc_fail
 fi
 
+migration_file_046="db/migrations/0046_add_dial_subscription_events.sql"
+if [[ -f "$migration_file_046" ]]; then
+  green "Migration file 0046 exists: $migration_file_046"
+  inc_pass
+  yellow "MANUAL: Verify migration 0046 was applied to Neon production DB"
+  yellow "  Run: psql \$DATABASE_URL -c \"SELECT table_name FROM information_schema.tables WHERE table_name = 'dial_subscription_events';\""
+  inc_warn
+else
+  red "Migration file 0046 missing — expected: $migration_file_046"
+  inc_fail
+fi
+
 # ─── 4. Stripe Price ID format check ──────────────
 header "4. Stripe Configuration"
 
