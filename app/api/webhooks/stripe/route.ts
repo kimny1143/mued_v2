@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { db } from "@/db";
-import { reservations, subscriptions, users, webhookEvents, lessonSlots, dialSessions, dialPurchases, dialSubscriptions, dialCreditPacks, dialCreditExpiry } from "@/db/schema";
+import { reservations, subscriptions, users, webhookEvents, lessonSlots, dialSessions, dialPurchases, dialSubscriptions, dialCreditPacks, dialCreditExpiry, dialSubscriptionEvents } from "@/db/schema";
 import { eq, sql, and, gt, or, isNull } from "drizzle-orm";
 import { DIAL_SUB_PLANS, CANCEL_GRACE_DAYS, CREDIT_PACK_EXPIRY_MONTHS, type DialSubTier } from '@/lib/dial/pricing';
 import { grantFirstPurchaseBonus } from '@/lib/dial/bonus-campaign';
@@ -154,7 +154,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
         } else if (session.metadata.purchaseType === 'credit_pack') {
           await handleDialCreditPackCompleted(tx, session);
         } else {
-          await handleDialCheckoutCompleted(tx, session);
+          await handleDialCheckoutCompleted(tx, session, event.id);
         }
         break;
       }
@@ -410,7 +410,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
 
       // ─── MUEDial subscription update ───────────────
       if (subscription.metadata?.service === 'dial') {
-        await handleDialSubscriptionUpdated(tx, subscription);
+        await handleDialSubscriptionUpdated(tx, subscription, event.id);
         break;
       }
 
@@ -466,7 +466,7 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
 
       // ─── MUEDial subscription deleted ───────────────
       if (subscription.metadata?.service === 'dial') {
-        await handleDialSubscriptionDeleted(tx, subscription);
+        await handleDialSubscriptionDeleted(tx, subscription, event.id);
         break;
       }
 
@@ -621,6 +621,27 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
           .where(eq(subscriptions.id, sub.id));
 
         logger.debug(`Payment failed for subscription: ${subscriptionId}`);
+
+        // Log state transition for dial subscriptions (for D30/D60 retention analytics)
+        const [dialSub] = await tx
+          .select()
+          .from(dialSubscriptions)
+          .where(eq(dialSubscriptions.stripeSubscriptionId, subscriptionId))
+          .limit(1);
+
+        if (dialSub) {
+          await tx.insert(dialSubscriptionEvents).values({
+            subscriptionId: dialSub.id,
+            userId: dialSub.userId,
+            eventType: 'invoice.payment_failed',
+            stripeEventId: event.id,
+            fromStatus: dialSub.status,
+            toStatus: 'past_due',
+            cancelAtPeriodEnd: dialSub.cancelAtPeriodEnd,
+            currentPeriodEnd: dialSub.currentPeriodEnd,
+            stripeSubscriptionId: subscriptionId,
+          });
+        }
 
         // Send payment failure notification to user
         setImmediate(async () => {
@@ -830,6 +851,7 @@ const DIAL_SUB_CREDITS: Record<string, number> = {
 async function handleDialCheckoutCompleted(
   tx: Transaction,
   session: Stripe.Checkout.Session,
+  eventId: string,
 ) {
   const { dialSessionId, tier, userId, credits } = session.metadata || {};
   // Support both old (purchaseId) and new (purchaseIds) metadata formats
@@ -978,6 +1000,18 @@ async function handleDialCheckoutCompleted(
       expiresAt: null, // No expiry — active subscriber rollover
     });
 
+    await tx.insert(dialSubscriptionEvents).values({
+      subscriptionId,
+      userId,
+      eventType: 'checkout.session.completed',
+      stripeEventId: eventId,
+      fromStatus: null,
+      toStatus: 'active',
+      cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
+      currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+      stripeSubscriptionId,
+    });
+
     logger.info(`[Dial Webhook] Subscription created: ${stripeSubscriptionId} for user: ${userId}, ${totalCredits}cr granted (no expiry while subscribed)`);
 
     // Grant first-purchase 400cr bonus — best-effort, must not block credit delivery
@@ -1112,6 +1146,7 @@ async function handleDialCreditPackCompleted(
 async function handleDialSubscriptionUpdated(
   tx: Transaction,
   subscription: StripeSubscriptionWithPeriods,
+  eventId: string,
 ) {
   const [existingSub] = await tx
     .select()
@@ -1133,10 +1168,13 @@ async function handleDialSubscriptionUpdated(
     paused: 'cancelled',
   };
 
+  const prevStatus = existingSub.status;
+  const newStatus = statusMap[subscription.status] || 'active';
+
   await tx
     .update(dialSubscriptions)
     .set({
-      status: statusMap[subscription.status] || 'active',
+      status: newStatus,
       currentPeriodStart: new Date(subscription.current_period_start * 1000),
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
@@ -1144,12 +1182,25 @@ async function handleDialSubscriptionUpdated(
     })
     .where(eq(dialSubscriptions.id, existingSub.id));
 
-  logger.debug(`[Dial Webhook] Subscription updated: ${subscription.id}`);
+  await tx.insert(dialSubscriptionEvents).values({
+    subscriptionId: existingSub.id,
+    userId: existingSub.userId,
+    eventType: 'customer.subscription.updated',
+    stripeEventId: eventId,
+    fromStatus: prevStatus,
+    toStatus: newStatus,
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+    stripeSubscriptionId: subscription.id,
+  });
+
+  logger.debug(`[Dial Webhook] Subscription updated: ${subscription.id} (${prevStatus} → ${newStatus})`);
 }
 
 async function handleDialSubscriptionDeleted(
   tx: Transaction,
   subscription: Stripe.Subscription,
+  eventId: string,
 ) {
   const [existingSub] = await tx
     .select()
@@ -1162,6 +1213,7 @@ async function handleDialSubscriptionDeleted(
     return;
   }
 
+  const prevStatus = existingSub.status;
   const now = new Date();
 
   await tx
@@ -1185,6 +1237,18 @@ async function handleDialSubscriptionDeleted(
       gt(dialCreditExpiry.creditsRemaining, 0),
       or(isNull(dialCreditExpiry.expiresAt), gt(dialCreditExpiry.expiresAt, now)),
     ));
+
+  await tx.insert(dialSubscriptionEvents).values({
+    subscriptionId: existingSub.id,
+    userId: existingSub.userId,
+    eventType: 'customer.subscription.deleted',
+    stripeEventId: eventId,
+    fromStatus: prevStatus,
+    toStatus: 'cancelled',
+    cancelAtPeriodEnd: false,
+    currentPeriodEnd: existingSub.currentPeriodEnd,
+    stripeSubscriptionId: subscription.id,
+  });
 
   logger.info(`[Dial Webhook] Subscription cancelled: ${subscription.id}. Remaining credits expire ${graceExpiry.toISOString()} (${CANCEL_GRACE_DAYS}-day grace)`);
 }
