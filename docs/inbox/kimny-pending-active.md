@@ -6,6 +6,20 @@ mued課・conductorがトラッキングする kimny手動作業のリスト。�
 
 ## 未完了
 
+### Item #8: Stripe Dashboard 利用規約・プライバシーポリシーURL設定 (5/12 EOD前推奨)
+
+Stripe Dashboard → Settings → Business → Branding で以下を設定:
+- Terms of service URL: `https://mued.jp/ja/tokushoho`
+- Privacy policy URL: `https://mued.jp/ja/privacy`
+
+これにより全Stripe checkoutページにリンクが表示され、チャージバック対応時の証拠書類として機能する。コード変更不要、Dashboardのみで完結。
+
+**背景**: H-251 (reserch課) 法的最低要件確認。mued.jp の tokushoho/privacy ページは存在済み。Stripe checkout へのリンク設定のみ未対応。
+
+**deadline**: 5/12 EOD (5/13 launch前)
+
+---
+
 ### Item #7: GA4 Measurement Protocol API secret 作成 (5/12 EOD前必須)
 
 GA4 Admin → Data Streams → 対象ストリーム → Measurement Protocol API secrets → 「Create」で新規secret生成。生成されたsecretを `GA4_MP_API_SECRET` としてVercel Production環境変数に設定。
