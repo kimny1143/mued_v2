@@ -6,6 +6,21 @@ mued課・conductorがトラッキングする kimny手動作業のリスト。�
 
 ## 未完了
 
+### Item #9: Stripe live mode キー確認 (5/12 EOD前必須)
+
+Vercel Dashboard → Project (mued_v2) → Settings → Environment Variables で以下を確認:
+- `STRIPE_SECRET_KEY` が `sk_live_***` で始まること
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` が `pk_live_***` で始まること
+- `STRIPE_WEBHOOK_SECRET` が本番用 webhook secret であること
+
+ローカル `.env.local` はテストキー (正常)。本番Vercelがlive keyでないと5/13購入が処理されない。
+
+**背景**: H-265 (reserch課) live mode確認依頼。コードから確認不可、Vercelダッシュボード確認が必要。
+
+**deadline**: 5/12 EOD
+
+---
+
 ### Item #8: Stripe Dashboard 利用規約・プライバシーポリシーURL設定 (5/12 EOD前推奨)
 
 Stripe Dashboard → Settings → Business → Branding で以下を設定:
