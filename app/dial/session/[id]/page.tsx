@@ -28,6 +28,8 @@ function toShortLabel(group: string): string {
   return group.replace(/_GROUP$/, '').replace(/^(INSTRUMENT_|TRACK_)/, '');
 }
 
+const IS_RESEARCH_BETA = process.env.NEXT_PUBLIC_RESEARCH_BETA === 'true';
+
 function toDisplayName(t: Pick<Track, 'originalFilename' | 'instrumentGroup'>, idx: number): string {
   if (t.originalFilename) return t.originalFilename.replace(/\.[^.]+$/, '');
   if (t.instrumentGroup) return toShortLabel(t.instrumentGroup);
@@ -154,6 +156,8 @@ function DialSessionContent() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [retryFn, setRetryFn] = useState<(() => void) | null>(null);
   const [showPaymentBanner, setShowPaymentBanner] = useState(false);
 
   // Upload state
@@ -783,6 +787,8 @@ function DialSessionContent() {
     setPreviewing(true);
     setMixGeneratingType('preview');
     setError(null);
+    setErrorCode(null);
+    setRetryFn(null);
 
     try {
       const res = await fetch('/api/dial/preview', {
@@ -794,6 +800,8 @@ function DialSessionContent() {
       const data = await res.json();
       if (!data.success) {
         setError(data.error || 'Preview request failed');
+        setErrorCode(data.code || (res.status >= 500 ? 'INFRA_ERROR' : null));
+        setRetryFn(() => handlePreview);
         return;
       }
 
@@ -801,6 +809,8 @@ function DialSessionContent() {
       await fetchSession();
     } catch {
       setError('Preview error');
+      setErrorCode('INFRA_ERROR');
+      setRetryFn(() => handlePreview);
     } finally {
       setPreviewing(false);
       setMixGeneratingType(null);
@@ -809,6 +819,8 @@ function DialSessionContent() {
 
   const handleMixGenerate = async (taskId: string, type: 'mix_check' | 'final' = 'final') => {
     setError(null);
+    setErrorCode(null);
+    setRetryFn(null);
     setMixGenerating(true);
     setMixGeneratingType(type === 'mix_check' ? 'mix_check' : 'final');
     try {
@@ -821,6 +833,8 @@ function DialSessionContent() {
       const data = await res.json();
       if (!data.success) {
         setError(data.error || 'Mix generation failed');
+        setErrorCode(data.code || (res.status >= 500 ? 'INFRA_ERROR' : null));
+        setRetryFn(() => () => handleMixGenerate(taskId, type));
         setMixGenerating(false);
         setMixGeneratingType(null);
         return;
@@ -851,6 +865,8 @@ function DialSessionContent() {
         );
         if (!hasBackgroundTask) {
           setError('Mix generation request timed out. Please try again.');
+          setErrorCode('INFRA_ERROR');
+          setRetryFn(() => () => handleMixGenerate(taskId, type));
           setMixGenerating(false);
           setMixGeneratingType(null);
         }
@@ -888,6 +904,8 @@ function DialSessionContent() {
     setMixGenerating(true);
     setMixGeneratingType('mastering_preview');
     setError(null);
+    setErrorCode(null);
+    setRetryFn(null);
     try {
       const res = await fetch('/api/dial/mastering/preview', {
         method: 'POST',
@@ -901,11 +919,15 @@ function DialSessionContent() {
       const data = await res.json();
       if (!data.success) {
         setError(data.error || 'Mastering preview failed');
+        setErrorCode(data.code || (res.status >= 500 ? 'INFRA_ERROR' : null));
+        setRetryFn(() => () => handleMasteringPreview(desiredLoudness));
         return;
       }
       await fetchSession();
     } catch {
       setError('Mastering preview error');
+      setErrorCode('INFRA_ERROR');
+      setRetryFn(() => () => handleMasteringPreview(desiredLoudness));
     } finally {
       setMixGenerating(false);
       setMixGeneratingType(null);
@@ -917,6 +939,8 @@ function DialSessionContent() {
     setMixGenerating(true);
     setMixGeneratingType('mastering');
     setError(null);
+    setErrorCode(null);
+    setRetryFn(null);
     try {
       const masteringPreviewTask = session.tasks.find(
         (t) => t.taskType === 'mastering_preview' && t.status === 'completed',
@@ -933,6 +957,8 @@ function DialSessionContent() {
       const data = await res.json();
       if (!data.success) {
         setError(data.error || 'Mastering final failed');
+        setErrorCode(data.code || (res.status >= 500 ? 'INFRA_ERROR' : null));
+        setRetryFn(() => handleMasteringFinal);
         return;
       }
       await fetchSession();
@@ -1415,6 +1441,19 @@ function DialSessionContent() {
           </Link>
         )}
 
+        {/* Hoo Pass CTA — shown after session completes */}
+        <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl text-center">
+          <p className="text-amber-400 text-xs font-medium mb-2">{t.dial.session.hooPassCtaLabel}</p>
+          <Link
+            href={IS_RESEARCH_BETA ? '/waitlist' : '/dial/pricing'}
+            onClick={(e) => handleNavigation(e, IS_RESEARCH_BETA ? '/waitlist' : '/dial/pricing')}
+            data-testid="dial-hoo-pass-cta"
+            className="inline-block px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black text-sm font-semibold rounded-lg transition-colors"
+          >
+            {IS_RESEARCH_BETA ? t.dial.session.hooPassCtaBeta : t.dial.session.hooPassCtaLive}
+          </Link>
+        </div>
+
         <div className="flex gap-3">
           <Link
             href="/dial"
@@ -1513,8 +1552,26 @@ function DialSessionContent() {
         </div>
 
         {error && (
-          <div data-testid="dial-session-error" className="mb-6 p-3 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">
-            {error}
+          <div data-testid="dial-session-error" className="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                {errorCode === 'INFRA_ERROR' && (
+                  <p className="font-medium mb-1">{t.dial.session.errorInfra}</p>
+                )}
+                <p>{error}</p>
+                {errorCode === 'INFRA_ERROR' && (
+                  <p className="text-xs text-red-400/70 mt-1">{t.dial.session.errorInfraHint}</p>
+                )}
+              </div>
+              {retryFn && (
+                <button
+                  onClick={() => { setError(null); setErrorCode(null); retryFn(); }}
+                  className="shrink-0 px-3 py-1.5 bg-red-800/60 hover:bg-red-700/60 rounded-lg text-xs font-medium transition-colors"
+                >
+                  {t.dial.session.retryButton}
+                </button>
+              )}
+            </div>
           </div>
         )}
 

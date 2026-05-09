@@ -545,7 +545,7 @@ export default function DialPage() {
           <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold mb-10 text-center">{lp.faqTitle}</h2>
             <dl className="space-y-6">
-              {([1, 2, 3, 4, 5, 6] as const).map((n) => (
+              {([1, 2, 3, 4, 5, 6, 7] as const).map((n) => (
                 <div key={n} className="border-b border-zinc-800 pb-6 last:border-0">
                   <dt className="text-base font-medium text-white mb-2">
                     {lp[`faq${n}q` as keyof typeof lp]}
