@@ -1532,7 +1532,7 @@
       "perCredit": "1crあたり",
       "currentPlan": "現在のプラン",
       "subscribe": "申し込む",
-      "autoRenewalNote": "お申し込み後、毎月自動更新（$5.99/月）。解約はダッシュボードからいつでも可能。お問い合わせ: support@mued.jp",
+      "autoRenewalNote": "お申し込み後、毎月自動更新（$5.99/月）。解約・お問い合わせは support@mued.jp まで。",
       "popular": "人気",
       "bestValue": "最もお得",
       "basicDesc": "たまにミックスするクリエイター向け。",
@@ -1913,7 +1913,7 @@
       "h1": "ほほう、準備バッチリですね。",
       "sub": "ステムも整って、リリース予定もある。\nあとは Hoo に任せるだけです。\n\nQ3 launch時に、あなたに一番先にお知らせします。\n先行登録して、launch待ちリストに入っておきましょう。",
       "cta": "先行登録する（無料）→",
-      "secondary": "今すぐ試したい方は → dial.mued.jp"
+      "secondary": "今すぐ試したい方は → dial.mued.jp/pricing"
     },
     "resultRaw": {
       "h1": "ほほう、ステム準備の段階ですね。",
