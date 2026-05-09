@@ -269,6 +269,27 @@ export const dialSubscriptions = pgTable('dial_subscriptions', {
   stripeSubIdx: index('idx_dial_subscriptions_stripe_sub_id').on(table.stripeSubscriptionId),
 }));
 
+/** Subscription state transition event log (for D30/D60 retention analytics) */
+export const dialSubscriptionEvents = pgTable('dial_subscription_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  subscriptionId: uuid('subscription_id').notNull()
+    .references(() => dialSubscriptions.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull(),
+  eventType: text('event_type').notNull(),
+  stripeEventId: text('stripe_event_id').notNull().unique(),
+  fromStatus: text('from_status'),
+  toStatus: text('to_status').notNull(),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end'),
+  currentPeriodEnd: timestamp('current_period_end'),
+  stripeSubscriptionId: text('stripe_subscription_id').notNull(),
+  occurredAt: timestamp('occurred_at').notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index('idx_dial_sub_events_user_id').on(table.userId),
+  subIdIdx: index('idx_dial_sub_events_sub_id').on(table.subscriptionId),
+  occurredAtIdx: index('idx_dial_sub_events_occurred_at').on(table.occurredAt),
+  toStatusIdx: index('idx_dial_sub_events_to_status').on(table.toStatus),
+}));
+
 /** One-time credit pack purchases (12-month expiry) */
 export const dialCreditPacks = pgTable('dial_credit_packs', {
   id: uuid('id').primaryKey().defaultRandom(),
