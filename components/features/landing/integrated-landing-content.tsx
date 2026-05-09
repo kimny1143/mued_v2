@@ -54,6 +54,12 @@ export function IntegratedLandingContent() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6">
         <div className="container mx-auto flex items-center justify-end gap-4">
+          <a
+            href="https://dial.mued.jp"
+            className="text-sm text-amber-400/80 hover:text-amber-400 transition-colors font-medium"
+          >
+            MUEDial
+          </a>
           <Link
             href="/sign-in"
             className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white transition-colors"
