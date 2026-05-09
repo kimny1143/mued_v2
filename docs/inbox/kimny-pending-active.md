@@ -6,6 +6,30 @@ mued課・conductorがトラッキングする kimny手動作業のリスト。�
 
 ## 未完了
 
+### Item #11: GA4 クロスドメイン設定確認 (5/12 EOD前推奨)
+
+GA4 Admin → Data Streams → Web stream → More tagging settings → Configure your domains で以下を設定:
+- `mued.jp` および `dial.mued.jp` の両ドメインを追加
+
+**背景**: H-477 (reserch課)。両ドメインは同一プロパティ `G-6LB1JJHP1S` を使用済み（コード確認）。サブドメイン間は `_ga` Cookie (`domain=.mued.jp`) で自動共有されるが、GA4 Admin でドメインリストを明示設定することでセッション継続計測が確実になる。PR #351 (mued.jp→dial.mued.jp 導線) の流入効果検証のために推奨。
+
+**deadline**: 5/12 EOD (推奨)
+
+---
+
+### Item #10: Stripe 自動領収書メール 有効確認 (5/12 EOD前必須)
+
+Stripe Dashboard → Settings → Emails → Customer emails で以下を確認:
+- 「Successful payments」の Receipt メールが有効 (ON) になっていること
+
+有効でない場合: 同設定でトグルONにする（コード変更不要、Dashboard のみ）。
+
+**背景**: H-472 (reserch課)。Hoo Pass 購入後 Stripe が自動で領収書メールを購入者に送ることが期待される。設定 OFF の場合、購入者は購入完了の確認手段がなく不安を感じる。5/12 smoke test rehearsal で実際に届くかも確認推奨。
+
+**deadline**: 5/12 EOD
+
+---
+
 ### Item #9: Stripe live mode キー確認 (5/12 EOD前必須)
 
 Vercel Dashboard → Project (mued_v2) → Settings → Environment Variables で以下を確認:
