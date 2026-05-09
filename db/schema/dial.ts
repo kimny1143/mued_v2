@@ -23,9 +23,10 @@ import {
   serial,
   boolean,
   index,
+  uniqueIndex,
   numeric,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import { users } from '../schema';
 
 // ========================================
@@ -267,6 +268,9 @@ export const dialSubscriptions = pgTable('dial_subscriptions', {
   userIdIdx: index('idx_dial_subscriptions_user_id').on(table.userId),
   statusIdx: index('idx_dial_subscriptions_status').on(table.status),
   stripeSubIdx: index('idx_dial_subscriptions_stripe_sub_id').on(table.stripeSubscriptionId),
+  uniqueActivePerUser: uniqueIndex('dial_subs_unique_active_per_user')
+    .on(table.userId)
+    .where(sql`status = 'active'`),
 }));
 
 /** Subscription state transition event log (for D30/D60 retention analytics) */
