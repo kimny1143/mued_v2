@@ -89,7 +89,7 @@ export const metadata: Metadata = {
     siteName: "MUEDial",
     images: [
       {
-        url: "/muedial-hoo-mixing-console.jpg",
+        url: "/muedial-hoo-mixing-console.webp",
         width: 1200,
         height: 630,
         alt: "MUEDial — 宅録・DTM向けAIミキシング",
