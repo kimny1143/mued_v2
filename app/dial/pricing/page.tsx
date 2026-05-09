@@ -206,17 +206,22 @@ export default function DialPricingPage() {
                     Research beta先行登録
                   </Link>
                 ) : (
-                  <button
-                    onClick={() => handleSubscribe(tier)}
-                    disabled={loading !== null}
-                    className={`w-full py-3 rounded-xl font-medium text-sm transition-all ${
-                      isHighlighted
-                        ? 'bg-amber-500 hover:bg-amber-400 text-black'
-                        : 'bg-white/10 hover:bg-white/15 text-white'
-                    } disabled:opacity-50`}
-                  >
-                    {loading === tier ? '...' : p.subscribe}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleSubscribe(tier)}
+                      disabled={loading !== null}
+                      className={`w-full py-3 rounded-xl font-medium text-sm transition-all ${
+                        isHighlighted
+                          ? 'bg-amber-500 hover:bg-amber-400 text-black'
+                          : 'bg-white/10 hover:bg-white/15 text-white'
+                      } disabled:opacity-50`}
+                    >
+                      {loading === tier ? '...' : p.subscribe}
+                    </button>
+                    <p className="text-xs text-white/30 text-center mt-2">
+                      {p.autoRenewalNote}
+                    </p>
+                  </>
                 )}
               </div>
             );
