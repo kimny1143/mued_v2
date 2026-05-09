@@ -30,7 +30,7 @@ export function MuedialHeroSection() {
           {/* Hero image */}
           <div className="relative aspect-video rounded-xl overflow-hidden">
             <Image
-              src="/muedial-hoo-mixing-console.jpg"
+              src="/muedial-hoo-mixing-console.webp"
               alt="MUEDial - AI Mixing"
               fill
               className="object-cover"

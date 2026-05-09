@@ -231,7 +231,7 @@ function VideoPromo({ lp, locale, closeLabel }: { lp: Record<string, string>; lo
             className="group relative w-full aspect-[9/16] max-w-[280px] mx-auto rounded-[var(--radius-lg)] overflow-hidden border border-zinc-800 hover:border-zinc-600 transition-colors cursor-pointer"
           >
             <Image
-              src="/muedial-hoo-mixing-console.jpg"
+              src="/muedial-hoo-mixing-console.webp"
               alt=""
               fill
               className="object-cover brightness-75 group-hover:brightness-90 transition-all"
@@ -382,7 +382,7 @@ export default function DialPage() {
         <div className="relative min-h-[calc(100vh-3.5rem)] flex items-center px-6 py-16 lg:py-0">
           {/* Background image */}
           <Image
-            src="/muedial-hoo-mixing-console.jpg"
+            src="/muedial-hoo-mixing-console.webp"
             alt=""
             fill
             className="object-cover object-[center_30%]"
