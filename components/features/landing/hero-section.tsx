@@ -49,7 +49,7 @@ export function HeroSection() {
       {/* Background image */}
       <div className="absolute inset-0">
         <Image
-          src="/images/hero-muednote-studio.png"
+          src="/images/hero-muednote-studio.webp"
           alt="Music production studio"
           fill
           className="object-cover"

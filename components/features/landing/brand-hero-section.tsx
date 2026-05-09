@@ -18,7 +18,7 @@ export function BrandHeroSection() {
       {/* Hero Image - Full bleed */}
       <div className="absolute inset-0">
         <Image
-          src="/images/hero-hoo-studio.png"
+          src="/images/hero-hoo-studio.webp"
           alt="Hoo in the studio"
           fill
           className="object-cover"

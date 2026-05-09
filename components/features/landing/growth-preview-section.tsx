@@ -29,7 +29,7 @@ export function GrowthPreviewSection() {
           className="flex flex-col items-center text-center mb-12"
         >
           <Image
-            src="/logo.png"
+            src="/logo.webp"
             alt="Hoo"
             width={64}
             height={64}
