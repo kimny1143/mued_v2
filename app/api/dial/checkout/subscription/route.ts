@@ -9,7 +9,7 @@
 import { z } from 'zod';
 import Stripe from 'stripe';
 import { withAuth } from '@/lib/middleware/with-auth';
-import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
+import { apiSuccess, apiConflictError, apiValidationError, apiServerError } from '@/lib/api-response';
 import { validateStripeConfig } from '@/lib/utils/env';
 import { DIAL_SUB_PLANS, type DialSubTier } from '@/lib/dial/pricing';
 import { dialRepository } from '@/lib/repositories/dial.repository';
@@ -56,7 +56,7 @@ export const POST = withAuth(async ({ userId, request }) => {
     // Prevent duplicate subscription purchase
     const existingSub = await dialRepository.findActiveSubscriptionByUserId(userId);
     if (existingSub) {
-      return apiValidationError('You already have an active Hoo Pass subscription.', { code: 'ALREADY_SUBSCRIBED' });
+      return apiConflictError('You already have an active Hoo Pass subscription.', 'ALREADY_SUBSCRIBED');
     }
 
     // Derive base URL from request origin (preserves subdomain for localStorage)

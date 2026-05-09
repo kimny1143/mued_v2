@@ -147,6 +147,21 @@ export function apiRateLimitExceeded(
 }
 
 /**
+ * 競合エラーレスポンス（リソース重複など）
+ */
+export function apiConflictError(
+  message: string,
+  code: string = 'CONFLICT',
+  details?: unknown
+): NextResponse<ApiErrorResponse> {
+  return apiError(message, {
+    code,
+    details,
+    status: 409,
+  });
+}
+
+/**
  * サーバーエラーレスポンス
  */
 export function apiServerError(
