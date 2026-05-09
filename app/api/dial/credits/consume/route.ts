@@ -16,6 +16,7 @@
 import { z } from 'zod';
 import { and, eq, gt, asc, sql, or, isNull } from 'drizzle-orm';
 import { withAuth } from '@/lib/middleware/with-auth';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 import { apiSuccess, apiValidationError, apiServerError, apiError } from '@/lib/api-response';
 import { db } from '@/db';
 import { users } from '@/db/schema';
@@ -40,6 +41,9 @@ const consumeSchema = z.object({
 });
 
 export const POST = withAuth(async ({ userId, request }) => {
+  const rateLimitResponse = await rateLimit(request, "research");
+  if (rateLimitResponse) return rateLimitResponse;
+
   let operation: z.infer<typeof consumeSchema>['operation'] | undefined;
   try {
     const body = await request.json();
