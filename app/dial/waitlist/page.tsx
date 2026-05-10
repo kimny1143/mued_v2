@@ -238,7 +238,7 @@ export default function WaitlistPage() {
           <button
             type="submit"
             disabled={loading || !email.trim()}
-            className="w-full py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-lg transition-colors"
+            className="w-full py-3 min-h-[44px] bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold rounded-lg transition-colors"
           >
             {loading ? w.form.submitting : w.form.submit}
           </button>
