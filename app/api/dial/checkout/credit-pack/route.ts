@@ -88,8 +88,8 @@ export const POST = withAuth(async ({ userId, request }) => {
         ...(utmCampaign && { utm_campaign: utmCampaign }),
       },
       billing_address_collection: 'required',
-      success_url: `${origin}/dashboard?credit_pack=success`,
-      cancel_url: `${origin}/dial/pricing?credit_pack=cancelled`,
+      success_url: `${origin}/pricing?credit_pack=success`,
+      cancel_url: `${origin}/pricing?credit_pack=cancelled`,
     });
 
     // Store Stripe session ID

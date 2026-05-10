@@ -69,7 +69,7 @@ export default clerkMiddleware(async (auth, req) => {
       response.cookies.set('NEXT_LOCALE', locale, { path: '/' });
       return response;
     }
-    if (pathname === '/waitlist' || pathname === '/readiness') {
+    if (pathname === '/waitlist' || pathname === '/readiness' || pathname === '/pricing') {
       const response = NextResponse.rewrite(new URL(`/dial${pathname}`, req.url));
       response.cookies.set('NEXT_LOCALE', locale, { path: '/' });
       return response;

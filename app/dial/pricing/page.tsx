@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { useUser } from '@clerk/nextjs';
-import { Check, Zap, CreditCard, ArrowRight, AlertCircle } from 'lucide-react';
+import { Check, Zap, CreditCard, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 import {
   DIAL_SUB_PLANS,
   DIAL_CREDIT_PACKS,
@@ -29,11 +29,12 @@ function formatUsd(cents: number): string {
 }
 
 export default function DialPricingPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { isSignedIn } = useUser();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const p = t.dial.pricing;
 
   const utmParams = {
@@ -49,12 +50,18 @@ export default function DialPricingPage() {
   useEffect(() => {
     const subCancelled = searchParams.get('subscription') === 'cancelled';
     const packCancelled = searchParams.get('credit_pack') === 'cancelled';
+    const subSuccess = searchParams.get('subscription') === 'success';
+    const packSuccess = searchParams.get('credit_pack') === 'success';
     if (subCancelled) {
       trackCheckoutAbandoned('subscription', 'unknown');
     } else if (packCancelled) {
       trackCheckoutAbandoned('credit_pack', 'unknown');
+    } else if (subSuccess) {
+      setSuccessMsg(locale === 'ja' ? 'Hoo Pass の購読を開始しました。' : 'Hoo Pass subscription activated.');
+    } else if (packSuccess) {
+      setSuccessMsg(locale === 'ja' ? 'クレジットパックを購入しました。' : 'Credit pack purchased successfully.');
     }
-  }, [searchParams]);
+  }, [searchParams, locale]);
 
   function getGaClientId(): string | undefined {
     const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/);
@@ -133,6 +140,14 @@ export default function DialPricingPage() {
           )}
         </div>
       </nav>
+
+      {/* Success toast */}
+      {successMsg && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 bg-green-600/90 backdrop-blur-sm text-white text-sm rounded-xl shadow-lg">
+          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+          {successMsg}
+        </div>
+      )}
 
       {/* Error toast */}
       {error && (
