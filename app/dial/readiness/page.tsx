@@ -105,7 +105,7 @@ export default function ReadinessPage() {
             <p className="text-gray-300 mb-8 whitespace-pre-line">{r.resultQualified.sub}</p>
             <button
               onClick={() => handleWaitlistCta(true)}
-              className="block w-full py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors mb-4"
+              className="block w-full py-3 min-h-[44px] bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors mb-4"
             >
               {r.resultQualified.cta}
             </button>
@@ -156,8 +156,8 @@ export default function ReadinessPage() {
 
   return (
     <div className="min-h-screen bg-bg-primary text-white">
-      <section className="max-w-2xl mx-auto px-4 pt-16 pb-8 text-center">
-        <h1 className="text-4xl font-bold mb-3 whitespace-pre-line">{r.hero.h1}</h1>
+      <section className="max-w-2xl mx-auto px-4 pt-8 md:pt-16 pb-8 text-center">
+        <h1 className="text-3xl md:text-4xl font-bold mb-3">{r.hero.h1}</h1>
         <p className="text-gray-300 mb-1">{r.hero.sub}</p>
         <p className="text-sm text-gray-500">{r.hero.duration}</p>
       </section>
@@ -233,7 +233,7 @@ export default function ReadinessPage() {
           <button
             type="submit"
             disabled={!allAnswered || loading}
-            className="w-full py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold rounded-lg transition-colors"
+            className="w-full py-3 min-h-[44px] bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold rounded-lg transition-colors"
           >
             {loading ? r.submitting : r.submit}
           </button>
