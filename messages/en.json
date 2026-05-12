@@ -386,12 +386,13 @@
           "omakase": "Omakase Mix: $7.49 (approx. ¥1,160)",
           "dialogue": "Dialogue Mix: $13.99 (approx. ¥2,160)",
           "mastering": "Mastering add-on: $5.99 (approx. ¥930)",
-          "additionalCycle": "Additional retake cycle: $9.99 (approx. ¥1,500)"
+          "additionalCycle": "Additional retake cycle: $9.99 (approx. ¥1,500)",
+          "hooPass": "Hoo Pass (subscription): $5.99/month. 100 credits/month with unlimited rollover while subscribed. Cancelled credits usable for 30 days after cancellation."
         }
       },
       "paymentTiming": {
         "title": "Payment Timing",
-        "value": "Per-transaction purchase. Payment is charged immediately via credit card at time of purchase."
+        "value": "Pay-per-use: Charged immediately upon purchase.\nHoo Pass (subscription): Charged on signup date, then auto-renewed monthly on the same date. Next charge date is available in the Stripe Customer Portal and on the invoice sent to your registered email."
       },
       "delivery": {
         "title": "Service Delivery",
@@ -399,7 +400,7 @@
       },
       "cancellation": {
         "title": "Cancellation & Refund Policy",
-        "description": "Cancellation is available before AI audio processing begins. Due to the nature of digital services, refunds are not available after processing has started."
+        "description": "Pay-per-use: Cancellation is available before AI audio processing begins. Refunds are not available after processing starts due to the nature of digital services.\n\nHoo Pass (subscription): Cancel anytime by emailing support@mued.jp with subject 'Hoo Pass cancellation' (cancellation processed within 24 business hours). Service remains available until the next renewal date, after which charges stop. Cancelled credits remain usable for 30 days. Pro-rated refunds are not provided."
       },
       "environment": {
         "title": "System Requirements",
