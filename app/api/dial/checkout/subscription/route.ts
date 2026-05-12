@@ -90,6 +90,7 @@ export const POST = withAuth(async ({ userId, request }) => {
           credits: plan.credits.toString(),
         },
       },
+      locale: 'auto',
       // Collect address for tax classification (JP = domestic = tax-inclusive)
       billing_address_collection: 'required',
       success_url: `${origin}/pricing?subscription=success`,

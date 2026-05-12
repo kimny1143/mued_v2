@@ -87,6 +87,7 @@ export const POST = withAuth(async ({ userId, request }) => {
         ...(utmMedium && { utm_medium: utmMedium }),
         ...(utmCampaign && { utm_campaign: utmCampaign }),
       },
+      locale: 'auto',
       billing_address_collection: 'required',
       success_url: `${origin}/pricing?credit_pack=success`,
       cancel_url: `${origin}/pricing?credit_pack=cancelled`,
