@@ -1940,7 +1940,8 @@
       "accept": "WAV / MP3 / AIF / FLAC — max 30MB",
       "skip": "Skip → Just see questionnaire results",
       "analyzingBrowser": "Checking waveform...",
-      "analyzingServer": "Hoo is analyzing..."
+      "analyzingServer": "Hoo is analyzing...",
+      "privacyNote": "Your file is automatically deleted after analysis."
     },
     "diagnosisStep": {
       "h2": "Diagnosis",

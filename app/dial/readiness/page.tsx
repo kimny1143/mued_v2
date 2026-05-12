@@ -417,6 +417,7 @@ export default function ReadinessPage() {
                 </svg>
                 <p className="text-white whitespace-pre-line font-medium">{r.uploadStep.dropzone}</p>
                 <p className="text-xs text-gray-500">{r.uploadStep.accept}</p>
+                <p className="text-xs text-gray-600">{r.uploadStep.privacyNote}</p>
               </>
             )}
           </div>
