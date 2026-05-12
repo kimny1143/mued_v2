@@ -1931,6 +1931,27 @@
       "sub": "Hooと仕上げる準備、もう少しで整います。\n\nステムの書き出し方や、ミックス前の準備は、\nこちらの記事で確認できます。",
       "secondary": "それでも Q3 launch を待ちたい方は",
       "secondaryCta": "先行登録する（任意）→"
+    },
+    "uploadStep": {
+      "h2": "ステム1ファイルで本格診断",
+      "sub": "WAV・MP3・AIF・FLACをアップロードすると、Hooが具体的なフィードバックを返します。",
+      "dropzone": "ここにファイルをドロップ\nまたはクリックして選択",
+      "dropzoneActive": "ドロップしてください",
+      "accept": "WAV / MP3 / AIF / FLAC — 最大30MB",
+      "skip": "スキップ → アンケート結果だけ見る",
+      "analyzingBrowser": "波形をチェック中...",
+      "analyzingServer": "Hooが解析中..."
+    },
+    "diagnosisStep": {
+      "h2": "診断結果",
+      "score": "スコア",
+      "noIssues": "問題は検出されませんでした",
+      "severityCritical": "要修正",
+      "severityWarning": "推奨",
+      "severityInfo": "参考",
+      "retry": "別のファイルで再診断",
+      "fromBrowser": "波形チェック",
+      "fromServer": "AI解析（Hoo）"
     }
   }
 }
