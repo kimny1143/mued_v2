@@ -1940,7 +1940,8 @@
       "accept": "WAV / MP3 / AIF / FLAC — 最大30MB",
       "skip": "スキップ → アンケート結果だけ見る",
       "analyzingBrowser": "波形をチェック中...",
-      "analyzingServer": "Hooが解析中..."
+      "analyzingServer": "Hooが解析中...",
+      "privacyNote": "アップロードされたファイルは診断後に自動削除されます。"
     },
     "diagnosisStep": {
       "h2": "診断結果",
