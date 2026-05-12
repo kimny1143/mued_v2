@@ -1931,6 +1931,27 @@
       "sub": "Once your stems are ready, Hoo is waiting.\n\nThese articles can help you get set up:",
       "secondary": "Still want to wait for Q3 launch?",
       "secondaryCta": "Join the waitlist (optional) →"
+    },
+    "uploadStep": {
+      "h2": "Diagnose with one stem file",
+      "sub": "Upload any WAV, MP3, AIF, or FLAC file and Hoo will give you concrete feedback.",
+      "dropzone": "Drop your file here\nor click to select",
+      "dropzoneActive": "Drop it!",
+      "accept": "WAV / MP3 / AIF / FLAC — max 30MB",
+      "skip": "Skip → Just see questionnaire results",
+      "analyzingBrowser": "Checking waveform...",
+      "analyzingServer": "Hoo is analyzing..."
+    },
+    "diagnosisStep": {
+      "h2": "Diagnosis",
+      "score": "Score",
+      "noIssues": "No issues detected",
+      "severityCritical": "Fix required",
+      "severityWarning": "Recommended",
+      "severityInfo": "Note",
+      "retry": "Diagnose another file",
+      "fromBrowser": "Waveform check",
+      "fromServer": "AI analysis (Hoo)"
     }
   }
 }
