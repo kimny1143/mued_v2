@@ -11,6 +11,7 @@ import { put, del } from '@vercel/blob';
 import { createRoExClient, analyzeMix, isRoExDevKey } from '@/lib/roex';
 import { MusicalStyle } from '@/lib/roex';
 import { apiSuccess, apiValidationError, apiServerError } from '@/lib/api-response';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 import type { DiagnosisIssue, DiagnosisResult } from '@/lib/dsp/analyzeStem';
 
 export const maxDuration = 60;
@@ -156,6 +157,9 @@ function buildDiagnosis(
 }
 
 export async function POST(request: Request) {
+  const rateLimitResponse = await rateLimit(request, 'research');
+  if (rateLimitResponse) return rateLimitResponse;
+
   let blobUrl: string | null = null;
   try {
     const url = new URL(request.url);
@@ -207,7 +211,8 @@ export async function POST(request: Request) {
 
     return apiSuccess({ diagnosis: buildDiagnosis(analysisRaw, locale) });
   } catch (error) {
-    return apiServerError(error instanceof Error ? error.message : 'Analysis failed');
+    console.error('[readiness/analyze] Analysis error:', error);
+    return apiServerError('Analysis failed. Please try again.');
   } finally {
     if (blobUrl) {
       try { await del(blobUrl); } catch { /* ignore cleanup errors */ }
