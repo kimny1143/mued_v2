@@ -9,8 +9,8 @@ blocked_by: external (native peer Build 76 kimny verify待ち)
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-05-20T15:00:00+09:00
-last_update: 2026-05-20T09:32:00+09:00
+expected_next_check_at: 2026-05-21T09:00:00+09:00
+last_update: 2026-05-20T18:00:00+09:00
 evidence: memory/project-cognitive-load-v3-self-apply.md
 confidence: high
 lane: notification
@@ -18,6 +18,7 @@ lane: notification
 
 ## Recent events
 
+- 2026-05-20T18:00:00+09:00: kimny不在入り → expected_next_check_at 5/21 09:00 JST (long interval) に更新
 - 2026-05-20T09:32:00+09:00: conductor heartbeat refresh依頼 → expected_next_check_at 15:00 JST更新
 - 2026-05-19T12:04:00+09:00: stale alert受信 → status.md heartbeat update実施
 - 2026-05-19T01:14:00+09:00: conductor cognitive load v3 self-apply dispatch受領 (dormant OK確認)
