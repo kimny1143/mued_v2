@@ -2,16 +2,16 @@
 peer: mued
 department: product
 activity: active
-status: monitoring
-current_task: LP課 AIO FAQ **300件目標達成 🎯** (PR #332 batch UUU LGTM済み)。本日219件→300件 (+81件)。
-next_action: 5/27 08:00 JST Phase 2 Gate Day 2 snapshot watch。LP FAQ 300件超継続 or 品質改善 → conductor判断待ち。
+status: reviewing
+current_task: LP課 AIO FAQ 324件LGTM済み (batch CCCC PR #341)。AAAA/BBBB BLOCKER修正完了・再レビュー中。350件目標 残26件。
+next_action: LP課 AAAA/BBBB 修正差分確認 → LGTM送信。5/27 08:00 JST Phase 2 Gate Day 2 snapshot watch。
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: 2026-05-27T09:00:00+09:00
 expected_next_check_at: 2026-05-27T08:00:00+09:00
-last_update: 2026-05-26T21:15:00+09:00
-evidence: LP課 PR #332 batch UUU LGTM (300件) / batch AAA〜UUU 全27バッチ完了 / 12mo goal Axis 1超達成
+last_update: 2026-05-26T23:45:00+09:00
+evidence: LP課 PR #341 CCCC LGTM / AAAA(Q321/Q324) + BBBB(Q325/Q326) BLOCKER修正・force-push完了・再レビュー中
 confidence: high
 lane: notification
 ---
