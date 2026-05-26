@@ -1,11 +1,32 @@
 import { MetadataRoute } from 'next';
+import { headers } from 'next/headers';
 import { STORY_SLUGS } from '@/lib/story/articles';
 
+// Force dynamic rendering so headers() can be read per-request
+export const dynamic = 'force-dynamic';
+
 const MUED = 'https://mued.jp';
+const DIAL = 'https://dial.mued.jp';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const headersList = await headers();
+  const host = headersList.get('host') ?? '';
 
+  // dial.mued.jp: return dial-specific URLs only
+  // Prevents GSC "indexed but not canonical" errors caused by mued.jp URLs
+  // being served from dial.mued.jp/sitemap.xml
+  if (host.includes('dial.mued.jp')) {
+    return [
+      { url: `${DIAL}/`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
+      { url: `${DIAL}/pricing`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+      { url: `${DIAL}/waitlist`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
+      { url: `${DIAL}/readiness`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+      { url: `${DIAL}/dial`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    ];
+  }
+
+  // mued.jp (default): return mued.jp URLs
   const storyPages: MetadataRoute.Sitemap = STORY_SLUGS.flatMap((slug) => [
     { url: `${MUED}/en/story/${slug}`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.6 },
     { url: `${MUED}/ja/story/${slug}`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.6 },
