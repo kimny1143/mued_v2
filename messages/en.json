@@ -1568,7 +1568,9 @@
       "creditPackLarge": "Large Pack",
       "buyCredits": "Buy Credits",
       "noRollover": "Valid for 12 months",
-      "creditUsage": "Credit Usage"
+      "creditUsage": "Credit Usage",
+      "alreadySubscribed": "Already subscribed",
+      "hooPassDesc": "Monthly credits for regular mixing sessions."
     },
     "creditsBalance": {
       "title": "Credits",

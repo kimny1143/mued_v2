@@ -1568,7 +1568,9 @@
       "creditPackLarge": "ラージパック",
       "buyCredits": "購入する",
       "noRollover": "購入から12ヶ月有効",
-      "creditUsage": "クレジット消費量"
+      "creditUsage": "クレジット消費量",
+      "alreadySubscribed": "Hoo Pass 購入済み",
+      "hooPassDesc": "定期的なミキシングセッションのための月額クレジット"
     },
     "creditsBalance": {
       "title": "クレジット",
