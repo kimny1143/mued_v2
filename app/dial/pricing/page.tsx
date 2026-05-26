@@ -35,6 +35,7 @@ export default function DialPricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const p = t.dial.pricing;
 
   const utmParams = {
@@ -62,6 +63,16 @@ export default function DialPricingPage() {
       setSuccessMsg(locale === 'ja' ? 'クレジットパックを購入しました。' : 'Credit pack purchased successfully.');
     }
   }, [searchParams, locale]);
+
+  // Fetch subscription status to guard the subscribe button for existing Hoo Pass holders.
+  // Only active when RESEARCH_BETA=false (Q3 GA); during beta the button is already hidden.
+  useEffect(() => {
+    if (IS_RESEARCH_BETA || !isSignedIn) return;
+    fetch('/api/dial/subscription/status')
+      .then((r) => r.json())
+      .then((data: { subscribed: boolean }) => setIsSubscribed(data.subscribed))
+      .catch(() => { /* non-critical: fall through to show subscribe button */ });
+  }, [isSignedIn]);
 
   function getGaClientId(): string | undefined {
     const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/);
@@ -228,6 +239,10 @@ export default function DialPricingPage() {
                   >
                     Research beta先行登録
                   </Link>
+                ) : isSubscribed ? (
+                  <div className="w-full py-3 rounded-xl font-medium text-sm text-center bg-green-500/10 border border-green-500/30 text-green-400">
+                    ✓ {locale === 'ja' ? 'Hoo Pass 購入済み' : 'Already subscribed'}
+                  </div>
                 ) : (
                   <>
                     <button
