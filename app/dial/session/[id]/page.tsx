@@ -799,9 +799,11 @@ function DialSessionContent() {
 
       const data = await res.json();
       if (!data.success) {
+        const code = data.code || (res.status >= 500 ? 'INFRA_ERROR' : null);
         setError(data.error || 'Preview request failed');
-        setErrorCode(data.code || (res.status >= 500 ? 'INFRA_ERROR' : null));
-        setRetryFn(() => handlePreview);
+        setErrorCode(code);
+        // PREVIEW_LIMIT: retrying will always fail — suppress retry button
+        setRetryFn(code === 'PREVIEW_LIMIT' ? null : () => handlePreview);
         return;
       }
 
@@ -1557,6 +1559,9 @@ function DialSessionContent() {
               <div>
                 {errorCode === 'INFRA_ERROR' && (
                   <p className="font-medium mb-1">{t.dial.session.errorInfra}</p>
+                )}
+                {errorCode === 'PREVIEW_LIMIT' && (
+                  <p className="font-medium mb-1">{t.dial.session.errorPreviewLimit}</p>
                 )}
                 <p>{error}</p>
                 {errorCode === 'INFRA_ERROR' && (
