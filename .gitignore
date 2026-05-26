@@ -59,6 +59,7 @@ scripts/tmp/
 
 # Claude Code symlinks (managed in claude-code-template repository)
 # Ignore all, then whitelist MUED-specific files
+.claude/projects/
 .claude/commands/
 .claude/agents/*
 !.claude/agents/database-architect.md
