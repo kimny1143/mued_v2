@@ -1560,6 +1560,9 @@ function DialSessionContent() {
                 {errorCode === 'INFRA_ERROR' && (
                   <p className="font-medium mb-1">{t.dial.session.errorInfra}</p>
                 )}
+                {errorCode === 'PREVIEW_LIMIT' && (
+                  <p className="font-medium mb-1">{t.dial.session.errorPreviewLimit}</p>
+                )}
                 <p>{error}</p>
                 {errorCode === 'INFRA_ERROR' && (
                   <p className="text-xs text-red-400/70 mt-1">{t.dial.session.errorInfraHint}</p>

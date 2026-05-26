@@ -1655,6 +1655,7 @@
       "retryButton": "再試行",
       "errorInfra": "一時的なサーバーエラーです",
       "errorInfraHint": "しばらく待ってから再試行してください。問題が続く場合は support@mued.jp までご連絡ください。",
+      "errorPreviewLimit": "プレビュー上限に達しました — 下のボタンからファイナルミックスを生成してください。",
       "hooPassCtaLabel": "毎月繰り返すなら定額の方がお得です",
       "hooPassCtaBeta": "ウェイトリストに登録 — Hoo Passを先行取得",
       "hooPassCtaLive": "Hoo Pass — 月100cr $5.99/月",
