@@ -241,7 +241,7 @@ export default function DialPricingPage() {
                   </Link>
                 ) : isSubscribed ? (
                   <div className="w-full py-3 rounded-xl font-medium text-sm text-center bg-green-500/10 border border-green-500/30 text-green-400">
-                    ✓ {locale === 'ja' ? 'Hoo Pass 購入済み' : 'Already subscribed'}
+                    ✓ {p.alreadySubscribed}
                   </div>
                 ) : (
                   <>
