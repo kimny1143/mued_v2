@@ -3,21 +3,22 @@ peer: mued
 department: product
 activity: active
 status: reviewing
-current_task: LP課 Tier 2 レビュー大量継続。PR #517-529 (13本) LGTM完了。PR #506/#512/#513/#515/#516 英語翻訳部分BLOCKER継続中 (修正待ち)。全修正後1000件到達見込み。
-next_action: PR #506/#512/#513/#515/#516 BLOCKER修正確認 → LGTM → 1000件達成🎯
-blocked_by: LP課 PRs #506/512/513/515/516 英語翻訳GA日程除去待ち
+current_task: LP課 FAQ AIO Tier 2 全レビュー完了。PR #506-529 (24本) 全LGTM。**1000件到達見込み🎯🏆**。次バッチ待機中。
+next_action: 次バッチ (1000件超) 受信次第即レビュー対応。並行でmued_v2 proactive作業。
+blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-05-27T18:00:00+09:00
-last_update: 2026-05-27T14:35:00+09:00
-evidence: PR #517-529 LGTM送信済み / PRs #506/512/513/515/516 BLOCKER継続 / 36件ブロッカー通算
+last_update: 2026-05-27T14:45:00+09:00
+evidence: PR #506-529 全LGTM完了 / 36件ブロッカー通算 / 1000件到達見込み
 confidence: high
 lane: notification
 ---
 
 ## Recent events
 
+- 2026-05-27T14:45:00+09:00: **🎯🏆 1000件到達見込み！** PR #506-529 (24本) 全LGTM完了。BLOCKERs #506/#512/#513/#515/#516 GA日程表記 (日英両方) 修正確認済み。36件ブロッカー通算 / LP課全batch review完了
 - 2026-05-27T14:35:00+09:00: LP課 PR #516 BLOCKER送信(GA日付)。PR #517-529 (13本)全LGTM完了。PR #506/#512/#513/#515/#516 英語翻訳部分BLOCKER継続送信。全5本修正後1000件到達見込み。36件ブロッカー通算
 - 2026-05-27T14:05:00+09:00: **🎯🏆 904件LIVE確認** PR #490-505 squash merged完了。次バッチ(QQQQQQQQQ〜)LP課量産中
 - 2026-05-27T14:00:00+09:00: LP課 PR #490-505 (9-charシリーズ AAAAAAAAA-PPPPPPPPP) 全16本LGTM完了。BLOCKERなし。904件LIVE見込み。31件ブロッカー通算
@@ -47,7 +48,7 @@ lane: notification
 
 - **Phase 2 Gate Day 2 (5/27)**: active_users=0 (全campaign)。主因: GA4 24-48hラグ + SNS bio UTM未着手。conductor (b) defer推奨。5/28-29 SNS bio UTM完納 → Day 3 (5/29-30) 再Gate
 - **PR #84 (data課)**: Phase 2 Gate GO後 + INTERNAL_API_KEY取得後にmerge。現在defer中
-- LP課 FAQ AIO review: **904件LIVE確認済 🎯🏆**。36件ブロッカー検出通算。PR #517-529 (13本) LGTM済。PRs #506/#512/#513/#515/#516 英語翻訳GA日程BLOCKER継続中。全修正後1000件到達見込み
+- LP課 FAQ AIO review: **🎯🏆 PR #506-529 全LGTM完了！1000件到達見込み**。36件ブロッカー検出通算。GA日程公表禁止ルール(日英両方)確立済み
 - **GA日程公表禁止ルール (PR #485 evidence)**: 「具体的な時期は公表されていません」が確立方針。英語翻訳部分の「(~November 2026)」「(until approximately November 2026)」「(planned until November 13, 2026)」「(through 2026-11-13)」= BLOCKER
 - **新BLOCKER Rule (PR #463 evidence)**: UIジャンル選択肢は**11種類**のみ。「Country」はUI上に存在しない (country→ACOUSTIC内部マッピング)。"12種類"や"Country"の表記=BLOCKER
 - **Rule: 内部RoExキー名NG** (UI表示名との不一致BLOCKER): Pop/Electronic/Acoustic/Metal (UIラベル) vs POP/ELECTRONIC/ACOUSTIC/METAL (内部キー) — FAQ表記はUIラベル統一
