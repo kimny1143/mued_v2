@@ -3,21 +3,22 @@ peer: mued
 department: product
 activity: active
 status: reviewing
-current_task: LP課 Tier 2 レビュー大量継続。PR #454-462 (RRRRRRR-ZZZZZZZ) 全9本 LGTM済。**700件LIVE → merge後736件予定**。次バッチ (8charシリーズ AAAAAAAA〜) 待機中。
-next_action: LP課 次バッチ (8char) 対応随時。800件目標まで残64件。新バッチ受信後即レビュー。
-blocked_by: null
+current_task: LP課 Tier 2 レビュー大量継続。PR #463-478 (8charシリーズ AAAAAAAA-PPPPPPPP) 16本レビュー完了。PR #463 BLOCKER (Country UI不在・12→11種類)。PR #464-478 全15本LGTM済。**800件達成見込み (PR #463修正後)**。
+next_action: PR #463 AAAAAAAA BLOCKER修正確認後LGTM。800件確定後 次バッチ対応。
+blocked_by: PR #463 AAAAAAAA BLOCKER修正待ち (LP課対応中)
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-05-27T18:00:00+09:00
-last_update: 2026-05-27T12:52:00+09:00
-evidence: PR #454-462 全LGTM / 700件LIVE / 30件ブロッカー通算 / 736件LIVE見込み
+last_update: 2026-05-27T13:20:00+09:00
+evidence: PR #463 BLOCKER送信済 / PR #464-478 全LGTM / 31件ブロッカー通算 / 800件達成見込み
 confidence: high
 lane: notification
 ---
 
 ## Recent events
 
+- 2026-05-27T13:20:00+09:00: LP課 PR #463-478 (AAAAAAAA-PPPPPPPP) 16本レビュー完了。PR #463 BLOCKER (Country UI不在・ジャンル12→11種類修正要)。PR #464-478 全15本LGTM。31件ブロッカー通算。800件達成見込み
 - 2026-05-27T12:52:00+09:00: LP課 PR #454-462 (RRRRRRR-ZZZZZZZ) 全9本 LGTM。736件LIVE見込み。8charシリーズ開始待機中
 - 2026-05-27T12:48:00+09:00: **🎯🏆 700件 LIVE 達成！** PR #450 OOOOOOO merge確認済 (main HEAD)。30件ブロッカー通算全件対応完了。次目標800件
 - 2026-05-27T12:46:00+09:00: LP課 PR #450 OOOOOOO BLOCKER解消確認LGTM。全5本(#439/#440/#442/#443/#450) self-merge GO。**680件→700件達成目前 🎯🏆**。30件ブロッカー通算
@@ -41,7 +42,8 @@ lane: notification
 
 - **Phase 2 Gate Day 2 (5/27)**: active_users=0 (全campaign)。主因: GA4 24-48hラグ + SNS bio UTM未着手。conductor (b) defer推奨。5/28-29 SNS bio UTM完納 → Day 3 (5/29-30) 再Gate
 - **PR #84 (data課)**: Phase 2 Gate GO後 + INTERNAL_API_KEY取得後にmerge。現在defer中
-- LP課 FAQ AIO review: **700件 LIVE 🎯🏆 (700件目標達成！)**。30件ブロッカー検出通算。次目標800件
+- LP課 FAQ AIO review: **736件 LIVE、800件目標まで残64件** (PR #463 BLOCKER修正後800件達成見込み)。31件ブロッカー検出通算。
+- **新BLOCKER Rule (PR #463 evidence)**: UIジャンル選択肢は**11種類**のみ。「Country」はUI上に存在しない (country→ACOUSTIC内部マッピング)。"12種類"や"Country"の表記=BLOCKER
 - **Rule: 内部RoExキー名NG** (UI表示名との不一致BLOCKER): Pop/Electronic/Acoustic/Metal (UIラベル) vs POP/ELECTRONIC/ACOUSTIC/METAL (内部キー) — FAQ表記はUIラベル統一
 - **MUEDial i18n確認**: `lib/i18n/locale-context.tsx` = 'en'|'ja' 両対応。"日本語のみ" 断言BLOCKER (Q402で検出・修正済み)
 - **Rule 14 (indirect mapping "最適化"NG拡張)**: jazz→OTHER / rnb→POP / country→ACOUSTIC は"考慮したAIミキシング処理"/"考慮した処理"が安全。**"考慮した最適化"もBLOCKER** (Q477/Q478 NNNNN確定)
