@@ -3,15 +3,15 @@ peer: mued
 department: product
 activity: active
 status: monitoring
-current_task: LP課 Tier 2 レビュー継続。PR #405-#408 全LGTM (520→532件)。PR #409 BBBBBB BLOCKER (Q536 Suno/Udio WAVステム条件なし) 修正待ち。native PR #107/#108 + data PR #142 全LGTM完了。
-next_action: PR #409 BBBBBB BLOCKER修正版到着次第レビュー継続 (→536件)。LP課追加バッチ到着次第レビュー継続。
-blocked_by: LP課 PR #409 修正対応待ち (BLOCKER: Q536)
+current_task: LP課 Tier 2 レビュー継続。PR #409 BBBBBB BLOCKER修正確認完了 (Q536 WAVステム条件付き表現追加)。FAQ 536件LGTM済。次バッチ到着待ち。
+next_action: LP課次バッチ到着次第レビュー継続。Phase 2 Gate Day 3 (5/29-30 予定)。
+blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-05-27T12:00:00+09:00
-last_update: 2026-05-27T11:40:00+09:00
-evidence: PR #405-#408 LGTM / PR #409 BLOCKER送信済み / FAQ 532件LGTM済 / native#107/#108 LGTM / data#142 LGTM
+expected_next_check_at: 2026-05-27T14:00:00+09:00
+last_update: 2026-05-27T11:50:00+09:00
+evidence: PR #409 BLOCKER修正確認 merged / FAQ 536件LGTM済 / 22件ブロッカー通算
 confidence: high
 lane: notification
 ---
