@@ -31,16 +31,23 @@ const dialJsonLd = {
         {
           "@type": "Offer",
           name: "おまかせミックス",
-          price: "8",
+          price: "7.49",
           priceCurrency: "USD",
           description: "AIがステムを自動解析してプロ品質のミックスを生成",
         },
         {
           "@type": "Offer",
           name: "対話ミックス",
-          price: "15",
+          price: "13.99",
           priceCurrency: "USD",
           description: "AIと会話しながら音の方向性を細かく調整",
+        },
+        {
+          "@type": "Offer",
+          name: "マスタリング",
+          price: "5.99",
+          priceCurrency: "USD",
+          description: "AIがラウドネス・ダイナミクスを最終仕上げ",
         },
       ],
       creator: {
@@ -56,7 +63,7 @@ const dialJsonLd = {
 export const metadata: Metadata = {
   title: "MUEDial — 宅録・DTMの仕上げをAIと。",
   description:
-    "ステムをアップロードしてAIと話すだけ。宅録・DTM向けAIミキシング・マスタリング。DTMの仕上げはMUEDial。おまかせミックス$8から。日本語対応AIミックスサービス唯一の存在。",
+    "ステムをアップロードしてAIと話すだけ。宅録・DTM向けAIミキシング・マスタリング。DTMの仕上げはMUEDial。おまかせミックス$7.49から。日本語対応AIミックスサービス唯一の存在。",
   keywords: [
     "AIミックス",
     "AIミキシング",
@@ -84,7 +91,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "MUEDial — 宅録・DTMの仕上げをAIと。",
     description:
-      "ステムをアップロードしてAIと話すだけ。宅録・DTM向けAIミキシング・マスタリング。おまかせミックス$8から。",
+      "ステムをアップロードしてAIと話すだけ。宅録・DTM向けAIミキシング・マスタリング。おまかせミックス$7.49から。",
     url: "https://dial.mued.jp/",
     siteName: "MUEDial",
     images: [
@@ -101,7 +108,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "MUEDial — 宅録・DTMの仕上げをAIと。",
     description:
-      "ステムをアップロードしてAIと話すだけ。宅録・DTM向けAIミキシング・マスタリング。おまかせミックス$8から。",
+      "ステムをアップロードしてAIと話すだけ。宅録・DTM向けAIミキシング・マスタリング。おまかせミックス$7.49から。",
     images: ["/muedial-hoo-mixing-console.webp"],
   },
 };
