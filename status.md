@@ -3,21 +3,22 @@ peer: mued
 department: product
 activity: active
 status: reviewing
-current_task: LP課 Tier 2 レビュー大量継続。PR #463-478 (8charシリーズ AAAAAAAA-PPPPPPPP) 16本レビュー完了。PR #463 BLOCKER (Country UI不在・12→11種類)。PR #464-478 全15本LGTM済。**800件達成見込み (PR #463修正後)**。
-next_action: PR #463 AAAAAAAA BLOCKER修正確認後LGTM。800件確定後 次バッチ対応。
-blocked_by: PR #463 AAAAAAAA BLOCKER修正待ち (LP課対応中)
+current_task: LP課 Tier 2 レビュー大量継続。PR #480-489 (QQQQQQQQ-ZZZZZZZZ) 全10本LGTM完了。PR #463 AAAAAAAA BLOCKER修正force-push待ち。**840件LIVE予定 (PR #463修正+全merge後)**。
+next_action: PR #463 force-push後即確認LGTM。840件確定後 次バッチ対応。
+blocked_by: PR #463 AAAAAAAA force-push待ち (LP課対応中)
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-05-27T18:00:00+09:00
-last_update: 2026-05-27T13:20:00+09:00
-evidence: PR #463 BLOCKER送信済 / PR #464-478 全LGTM / 31件ブロッカー通算 / 800件達成見込み
+last_update: 2026-05-27T13:30:00+09:00
+evidence: PR #464-478 全LGTM / PR #480-489 全LGTM / 31件ブロッカー通算 / 840件LIVE見込み
 confidence: high
 lane: notification
 ---
 
 ## Recent events
 
+- 2026-05-27T13:30:00+09:00: LP課 PR #480-489 (QQQQQQQQ-ZZZZZZZZ) 全10本LGTM完了。840件LIVE見込み。PR #463 BLOCKER force-push待ち継続
 - 2026-05-27T13:20:00+09:00: LP課 PR #463-478 (AAAAAAAA-PPPPPPPP) 16本レビュー完了。PR #463 BLOCKER (Country UI不在・ジャンル12→11種類修正要)。PR #464-478 全15本LGTM。31件ブロッカー通算。800件達成見込み
 - 2026-05-27T12:52:00+09:00: LP課 PR #454-462 (RRRRRRR-ZZZZZZZ) 全9本 LGTM。736件LIVE見込み。8charシリーズ開始待機中
 - 2026-05-27T12:48:00+09:00: **🎯🏆 700件 LIVE 達成！** PR #450 OOOOOOO merge確認済 (main HEAD)。30件ブロッカー通算全件対応完了。次目標800件
