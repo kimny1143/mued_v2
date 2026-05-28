@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/lib/i18n/locale-context';
 import {
@@ -93,15 +94,26 @@ export default function WaitlistPage() {
           ) : (
             <p className="text-gray-300 mb-8 whitespace-pre-line">{w.thankyou.sub}</p>
           )}
-          <a
-            href="https://dial.mued.jp"
-            onClick={() => trackCtaClick('muedial_from_waitlist_thanks', 'waitlist_thankyou')}
-            className="inline-block px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors"
-          >
-            {w.thankyou.cta}
-          </a>
-          {qualifiedResult && !alreadyRegistered && (
-            <p className="mt-4 text-sm text-amber-400">✓ {locale === 'ja' ? '診断スコア: qualified' : 'Readiness: qualified'}</p>
+          {qualifiedResult && !alreadyRegistered ? (
+            <div className="mt-2 mb-6 rounded-xl border border-green-500/30 bg-green-500/10 px-6 py-5 text-left">
+              <p className="text-sm text-green-400 font-medium mb-2">{w.thankyou.qualifiedLabel}</p>
+              <p className="text-sm text-gray-300 mb-4">{w.thankyou.qualifiedDesc}</p>
+              <Link
+                href="/sign-in?redirect_url=/dial"
+                onClick={() => trackCtaClick('muedial_signup_qualified_waitlist', 'waitlist_thankyou_qualified')}
+                className="inline-block w-full text-center px-6 py-3 bg-green-500 hover:bg-green-400 text-black font-bold rounded-lg transition-colors"
+              >
+                {w.thankyou.qualifiedCta}
+              </Link>
+            </div>
+          ) : (
+            <a
+              href="https://dial.mued.jp"
+              onClick={() => trackCtaClick('muedial_from_waitlist_thanks', 'waitlist_thankyou')}
+              className="inline-block px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors"
+            >
+              {w.thankyou.cta}
+            </a>
           )}
         </div>
       </div>
