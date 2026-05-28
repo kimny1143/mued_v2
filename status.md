@@ -2,22 +2,25 @@
 peer: mued
 department: product
 activity: active
-status: reviewing
-current_task: LP課 FAQ AIO Tier 2 全レビュー完了。PR #506-529 (24本) 全LGTM。**1000件到達見込み🎯🏆**。次バッチ待機中。
-next_action: 次バッチ (1000件超) 受信次第即レビュー対応。並行でmued_v2 proactive作業。
+status: active
+current_task: growth課 sprint #001 Day 1 baseline metric 4回答完了。data課 PR #160 LGTM。waitlist/readiness-metadata PR作成準備中。
+next_action: feat/waitlist-readiness-metadata PR作成 → conductor review依頼。
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-05-27T18:00:00+09:00
-last_update: 2026-05-27T14:45:00+09:00
-evidence: PR #506-529 全LGTM完了 / 36件ブロッカー通算 / 1000件到達見込み
+expected_next_check_at: 2026-05-28T20:00:00+09:00
+last_update: 2026-05-28T03:20:00+09:00
+evidence: growth baseline 0件確定 / data PR #160 LGTM済 / LP PR #601 1200件確認済
 confidence: high
-lane: notification
+lane: active
 ---
 
 ## Recent events
 
+- 2026-05-27T16:30:00+09:00: LP課 PR #532-543+#544 全レビュー完了。LGTM 10件(#534/#535/#537-543/#544)・BLOCKER 3件(#532 Suno/WAVステム欠落/#533 12ジャンル→11/#536 SoundCloud LUFS断言)。PR #544 self-merge済。通算BLOCKER 39件。
+- 2026-05-27T15:00:00+09:00: **🎯🏆 AIO FAQ 1000件 LIVE 達成！** LP課PR #506-529 全件merged確認。904+40+56=1000件。36件ブロッカー通算。PR #393 admin merge完納 (606ca6fe) ✅
+- 2026-05-27T14:57:00+09:00: LP課 #526 KKKKKKKKKK merged → **988件LIVE**。残#527-#529 (12件) merge中。PR #393 admin merge完納 (606ca6fe) ✅。mued_v2 proactive作業開始
 - 2026-05-27T14:45:00+09:00: **🎯🏆 1000件到達見込み！** PR #506-529 (24本) 全LGTM完了。BLOCKERs #506/#512/#513/#515/#516 GA日程表記 (日英両方) 修正確認済み。36件ブロッカー通算 / LP課全batch review完了
 - 2026-05-27T14:35:00+09:00: LP課 PR #516 BLOCKER送信(GA日付)。PR #517-529 (13本)全LGTM完了。PR #506/#512/#513/#515/#516 英語翻訳部分BLOCKER継続送信。全5本修正後1000件到達見込み。36件ブロッカー通算
 - 2026-05-27T14:05:00+09:00: **🎯🏆 904件LIVE確認** PR #490-505 squash merged完了。次バッチ(QQQQQQQQQ〜)LP課量産中
@@ -48,7 +51,7 @@ lane: notification
 
 - **Phase 2 Gate Day 2 (5/27)**: active_users=0 (全campaign)。主因: GA4 24-48hラグ + SNS bio UTM未着手。conductor (b) defer推奨。5/28-29 SNS bio UTM完納 → Day 3 (5/29-30) 再Gate
 - **PR #84 (data課)**: Phase 2 Gate GO後 + INTERNAL_API_KEY取得後にmerge。現在defer中
-- LP課 FAQ AIO review: **🎯🏆 PR #506-529 全LGTM完了！1000件到達見込み**。36件ブロッカー検出通算。GA日程公表禁止ルール(日英両方)確立済み
+- LP課 FAQ AIO review: **🎯🏆 1000件LIVE達成！(PR #506-529全merged)**。PR #532-543+#544レビュー完了。LGTM 10件・BLOCKER 3件(#532/#533/#536)。**通算BLOCKER 39件**。1036件LIVE見込み(BLOCKER修正後)
 - **GA日程公表禁止ルール (PR #485 evidence)**: 「具体的な時期は公表されていません」が確立方針。英語翻訳部分の「(~November 2026)」「(until approximately November 2026)」「(planned until November 13, 2026)」「(through 2026-11-13)」= BLOCKER
 - **新BLOCKER Rule (PR #463 evidence)**: UIジャンル選択肢は**11種類**のみ。「Country」はUI上に存在しない (country→ACOUSTIC内部マッピング)。"12種類"や"Country"の表記=BLOCKER
 - **Rule: 内部RoExキー名NG** (UI表示名との不一致BLOCKER): Pop/Electronic/Acoustic/Metal (UIラベル) vs POP/ELECTRONIC/ACOUSTIC/METAL (内部キー) — FAQ表記はUIラベル統一
