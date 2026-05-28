@@ -1846,9 +1846,21 @@
     "diff": {
       "title": "Not automated. Conversational.",
       "cols": [
-        { "icon": "💬", "title": "Revise by talking", "desc": "\"Bring vocals forward a bit\" or \"drums are too loud\" — just say it. No plugin parameters to fiddle with." },
-        { "icon": "⚡", "title": "Same-day delivery", "desc": "Preview in minutes, final in the same day. Even works the night before a live show." },
-        { "icon": "🔬", "title": "research beta", "desc": "Pricing still being tuned. Waitlist members get notified first when we officially launch." }
+        {
+          "icon": "💬",
+          "title": "Revise by talking",
+          "desc": "\"Bring vocals forward a bit\" or \"drums are too loud\" — just say it. No plugin parameters to fiddle with."
+        },
+        {
+          "icon": "⚡",
+          "title": "Same-day delivery",
+          "desc": "Preview in minutes, final in the same day. Even works the night before a live show."
+        },
+        {
+          "icon": "🔬",
+          "title": "research beta",
+          "desc": "Pricing still being tuned. Waitlist members get notified first when we officially launch."
+        }
       ],
       "tableNote": "eMastered & LANDR are mastering-only. Conversational mix revisions are unique to MUEDial.",
       "pricingNote": "※ Pricing is being adjusted during the research beta. Confirmed pricing will be sent to waitlist members first."
@@ -1856,8 +1868,16 @@
     "benefits": {
       "title": "Perks for early registrants",
       "items": [
-        { "icon": "🚀", "title": "Day-one access (research beta)", "desc": "Start before general availability. We'll email you first when launch day arrives." },
-        { "icon": "📬", "title": "Monthly newsletter", "desc": "Behind-the-scenes updates, feature previews, and mixing tips once a month. Unsubscribe anytime." }
+        {
+          "icon": "🚀",
+          "title": "Day-one access (research beta)",
+          "desc": "Start before general availability. We'll email you first when launch day arrives."
+        },
+        {
+          "icon": "📬",
+          "title": "Monthly newsletter",
+          "desc": "Behind-the-scenes updates, feature previews, and mixing tips once a month. Unsubscribe anytime."
+        }
       ]
     },
     "form": {
@@ -1881,7 +1901,10 @@
       "h1": "You're on the list.",
       "sub": "Hoo sent a confirmation email your way.\nCheck your spam folder if you don't see it.\n\nWhen Q3 launches, you'll be the first to know.\nKeep working on those tracks in the meantime.",
       "cta": "Try the beta now →",
-      "alreadyRegistered": "That email is already registered. We'll reach out when Q3 launches."
+      "alreadyRegistered": "That email is already registered. We'll reach out when Q3 launches.",
+      "qualifiedCta": "Sign up and try the free diagnosis →",
+      "qualifiedDesc": "As a waitlist member, you get one free mix diagnosis. Sign up and try it now.",
+      "qualifiedLabel": "✓ Readiness: qualified"
     }
   },
   "readiness": {

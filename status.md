@@ -3,15 +3,15 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: growth課 sprint #001 Day 1 baseline metric 4回答完了。data課 PR #160 LGTM。waitlist/readiness-metadata PR作成準備中。
-next_action: feat/waitlist-readiness-metadata PR作成 → conductor review依頼。
-blocked_by: null
+current_task: PR #396 (qualified waitlist CTA card) native課 Tier 2 review 待ち。成果物 evidence コメント添付済み。
+next_action: native課 LGTM → [peer-review: native] タグで self-merge → growth/data課 FYI 共有。並行で次プロダクトタスク探索。
+blocked_by: PR #396 native review (本日中予定)
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-05-28T20:00:00+09:00
-last_update: 2026-05-28T03:20:00+09:00
-evidence: growth baseline 0件確定 / data PR #160 LGTM済 / LP PR #601 1200件確認済
+expected_next_check_at: 2026-05-29T09:00:00+09:00
+last_update: 2026-05-28T11:35:00+09:00
+evidence: PR #395 merged / PR #396 review 依頼済 (mz3ubfhc) / 成果物 evidence comment #4563575203
 confidence: high
 lane: active
 ---
