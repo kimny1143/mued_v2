@@ -3,23 +3,25 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: PR #397 (dial top → /readiness CTA, sprint#001 step2 fix) native課 Tier 2 review 待ち。受領確認済み。
-next_action: native課 LGTM → UI evidence スクショ添付 → self-merge → growth/conductor FYI。完納後次タスク探索。
-blocked_by: PR #397 native review (本日中予定)
+current_task: sprint#001 step2 fix 完納 (PR #397 merged 789da642)。Vercel deploy 完了確認後 growth ack 予定。次タスク探索中。
+next_action: Vercel deploy 完了確認 → growth ack (deploy 時刻) → 次プロダクト改善タスク自走判断。
+blocked_by: null
 urgency: low
 action_owner: peer
-deadline: 2026-05-29T08:00:00+09:00
+deadline: null
 expected_next_check_at: 2026-05-29T08:00:00+09:00
-last_update: 2026-05-28T11:47:00+09:00
-evidence: PR #395 merged (0e8de1b9) / PR #396 merged (96217f86) / PR #397 open (f62d4f1a) review依頼済 (mz3ubfhc)
+last_update: 2026-05-28T20:50:00+09:00
+evidence: PR #395 merged (0e8de1b9) / PR #396 merged (96217f86) / PR #397 merged (789da642) / UI evidence comment #4563671949
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
-- 2026-05-28T11:47:00+09:00: **PR #397 open** (dial top → /readiness CTA, sprint#001 step2 fix)。Tier 2 native review 依頼済み (mz3ubfhc 受領確認)。deadline: Day4 (5/29 08:00 JST)。growth・conductor に完納 boundary timestamp 通知済み。
-- 2026-05-28T11:35:00+09:00: PR #396 (qualified waitlist CTA) native LGTM → merged (96217f86)。sprint#001 step5→6 fix 完納。
+- 2026-05-28T20:50:00+09:00: **PR #397 merged** (789da642) — sprint#001 funnel step2 fix 完納。UI evidence スクショ添付済み。Vercel deploy 完了確認中→growth ack 予定。
+- 2026-05-28T20:46:00+09:00: PR #397 native LGTM (mz3ubfhc) + evidence コメント → GitHub merge 完了。
+- 2026-05-28T20:39:00+09:00: **PR #397 open** (dial top → /readiness CTA, sprint#001 step2 fix)。Tier 2 native review 依頼済み (mz3ubfhc 受領確認)。growth・conductor に完納 boundary timestamp 通知済み。
+- 2026-05-28T20:35:00+09:00: PR #396 (qualified waitlist CTA) native LGTM → merged (96217f86)。sprint#001 step5→6 fix 完納。
 - 2026-05-27T16:30:00+09:00: LP課 PR #532-543+#544 全レビュー完了。LGTM 10件(#534/#535/#537-543/#544)・BLOCKER 3件(#532 Suno/WAVステム欠落/#533 12ジャンル→11/#536 SoundCloud LUFS断言)。PR #544 self-merge済。通算BLOCKER 39件。
 - 2026-05-27T15:00:00+09:00: **🎯🏆 AIO FAQ 1000件 LIVE 達成！** LP課PR #506-529 全件merged確認。904+40+56=1000件。36件ブロッカー通算。PR #393 admin merge完納 (606ca6fe) ✅
 - 2026-05-27T14:57:00+09:00: LP課 #526 KKKKKKKKKK merged → **988件LIVE**。残#527-#529 (12件) merge中。PR #393 admin merge完納 (606ca6fe) ✅。mued_v2 proactive作業開始
