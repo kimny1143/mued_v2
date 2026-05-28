@@ -1437,6 +1437,9 @@
       "planBannerTitle": "定期的にミックスするなら、プランがお得。",
       "planBannerDesc": "月額プランで1ミックスあたりの単価がお得に。",
       "planBannerCta": "プランを見る",
+      "readinessBannerTitle": "ステムの準備ができているか確認したい？",
+      "readinessBannerDesc": "4問の診断でreadiness確認。waitlist登録で無料診断1回つき。",
+      "readinessBannerCta": "診断を受ける",
       "previewUpdatedBadge": "プレビュー更新済み"
     },
     "checkout": {
