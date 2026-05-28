@@ -3,15 +3,15 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: PR #396 (qualified waitlist CTA card) native課 Tier 2 review 待ち。成果物 evidence コメント添付済み。
-next_action: native課 LGTM → [peer-review: native] タグで self-merge → growth/data課 FYI 共有。並行で次プロダクトタスク探索。
-blocked_by: PR #396 native review (本日中予定)
+current_task: PR #395 + #396 完納 (SEO metadata + qualified waitlist CTA card)。growth/data課 FYI 共有済み。次フェーズタスク探索中。
+next_action: 次プロダクト改善タスク自走判断 (readiness UX / llms.txt / MUEDnote onboarding 候補)。
+blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-05-29T09:00:00+09:00
-last_update: 2026-05-28T11:35:00+09:00
-evidence: PR #395 merged / PR #396 review 依頼済 (mz3ubfhc) / 成果物 evidence comment #4563575203
+last_update: 2026-05-28T11:40:00+09:00
+evidence: PR #395 merged (0e8de1b9) / PR #396 merged (96217f86) / growth FYI 共有済み
 confidence: high
 lane: active
 ---
