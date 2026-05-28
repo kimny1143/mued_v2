@@ -2,18 +2,18 @@
 peer: mued
 department: product
 activity: active
-status: reviewing
-current_task: LP課 PR #532-543+#544 全レビュー完了。LGTM 10件(#534/#535/#537-543/#544)・BLOCKER 3件(#532/#533/#536)送信済み。PR #544 self-merge済。BLOCKER修正待ち中。
-next_action: PR #532/#533/#536 BLOCKER修正force-push待ち → 修正確認LGTM → self-merge GO。通算BLOCKERカウント39件。
+status: active
+current_task: growth課 sprint #001 Day 1 baseline metric 4回答完了。data課 PR #160 LGTM。waitlist/readiness-metadata PR作成準備中。
+next_action: feat/waitlist-readiness-metadata PR作成 → conductor review依頼。
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-05-27T18:00:00+09:00
-last_update: 2026-05-27T16:30:00+09:00
-evidence: LP課 PR #532-543全件diff確認 / BLOCKER 3件 GitHub comment済 / LGTM 9件 GitHub comment済
+expected_next_check_at: 2026-05-28T20:00:00+09:00
+last_update: 2026-05-28T03:20:00+09:00
+evidence: growth baseline 0件確定 / data PR #160 LGTM済 / LP PR #601 1200件確認済
 confidence: high
-lane: notification
+lane: active
 ---
 
 ## Recent events
