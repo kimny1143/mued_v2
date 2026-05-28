@@ -3,15 +3,15 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: growth課 sprint #001 Day 1 baseline metric 4回答完了。data課 PR #160 LGTM。waitlist/readiness-metadata PR作成準備中。
-next_action: feat/waitlist-readiness-metadata PR作成 → conductor review依頼。
+current_task: PR #395 (waitlist/readiness SEO metadata) merged完納。次フェーズ: qualified waitlist ユーザーの post-signup CTA 強化 (thankyou画面改善) タスク洗い出し完了・実装開始予定。
+next_action: feat/qualified-waitlist-cta ブランチで thankyou qualified CTA 実装 → PR作成。
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-05-28T20:00:00+09:00
-last_update: 2026-05-28T03:20:00+09:00
-evidence: growth baseline 0件確定 / data PR #160 LGTM済 / LP PR #601 1200件確認済
+expected_next_check_at: 2026-05-29T09:00:00+09:00
+last_update: 2026-05-28T11:30:00+09:00
+evidence: PR #395 merged (0e8de1b9) / growth sprint#001 baseline完了 / next phase task 洗い出し完了
 confidence: high
 lane: active
 ---
