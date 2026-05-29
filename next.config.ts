@@ -65,6 +65,22 @@ const nextConfig: NextConfig = {
         destination: '/en/support',
         permanent: true,
       },
+      // Convenience redirects for short paths → canonical /dial/* paths
+      {
+        source: '/waitlist',
+        destination: '/dial/waitlist',
+        permanent: false,
+      },
+      {
+        source: '/waitlist/:path*',
+        destination: '/dial/waitlist/:path*',
+        permanent: false,
+      },
+      {
+        source: '/readiness',
+        destination: '/dial/readiness',
+        permanent: false,
+      },
     ];
   },
 };
