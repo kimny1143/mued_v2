@@ -19,6 +19,13 @@ export default function WaitlistPage() {
   const searchParams = useSearchParams();
   const fromReadiness = searchParams.get('from') === 'readiness';
   const qualifiedFromReadiness = searchParams.get('qualified') === 'true';
+  // Readiness answers forwarded from /dial/readiness for accurate API scoring
+  const readinessAnswers = fromReadiness ? {
+    launches_within_30d: searchParams.get('launches_within_30d') === 'true',
+    has_stems: searchParams.get('has_stems') === 'true',
+    vocal_ready: searchParams.get('vocal_ready') === 'true',
+    product_intent: searchParams.get('product_intent') ?? undefined,
+  } : {};
 
   const [email, setEmail] = useState('');
   const [dtmYears, setDtmYears] = useState<DtmYears>('');
@@ -62,6 +69,7 @@ export default function WaitlistPage() {
           source: fromReadiness ? 'readiness' : 'lp',
           dtm_years: dtmYears || undefined,
           challenge: challenge.trim() || undefined,
+          ...readinessAnswers,
           ...utm,
         }),
       });
