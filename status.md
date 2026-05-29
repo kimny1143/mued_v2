@@ -3,21 +3,24 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: sprint#001 全funnel修正完納 (PR #400+#401 merged)。SNS h190投稿開始後の計測待ち。次プロダクト改善自走。
-next_action: llms.txt quality改善 or MUEDnote onboarding調査 → 次PR自走。
+current_task: context shape-up halt待機。CLAUDE.md slim+fanout完了 (PR#406+#407, 1010→607行)。WIPなし。
+next_action: 再起動後 → Q3 GA backlog自走 (llms.txt改善 / MUEDnote onboarding / funnel計測)
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-05-29T11:00:00+09:00
-last_update: 2026-05-29T09:25:00+09:00
-evidence: PR #400 merged (aca24bd6) / PR #401 merged (aa70d693) / SNS h190 09:00 JST投稿GO
+expected_next_check_at: 2026-05-29T16:00:00+09:00
+last_update: 2026-05-29T19:57:00+09:00
+evidence: PR #406 merged (0087bdd2) / PR #407 merged (260728cc) / CLAUDE.md 1010→607行(-40%)
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
+- 2026-05-29T19:57:00+09:00: **context shape-up halt待機** — WIPなし。CLAUDE.md slim+fanout完了 (PR#406+#407)。再起動後Q3 GA backlog自走予定。
+- 2026-05-29T16:00:00+09:00: **PR #407 merged** (260728cc) — CCO fanout適用完了 (block14除去・block19挿入・18ブロック圧縮)。861→607行。
+- 2026-05-29T15:01:00+09:00: **PR #406 merged** (0087bdd2) — CLAUDE.md mued固有slim (重複3削除・write通知外出し)。1010→861行。
 - 2026-05-29T09:25:00+09:00: **PR #401 merged** (aa70d693) — readiness answers forwarding fix。qualified ユーザーが waitlist 登録時に `qualified_waitlist: true` を正しく受け取り緑CTA表示。sprint#001 全pipeline稼働 🎚️
 - 2026-05-29T09:15:00+09:00: **PR #400 merged** (aca24bd6) — `/waitlist` → `/dial/waitlist` routing 404修正。readiness + pricing 両ページ。SNS h190投稿前に完了 ✅
 - 2026-05-29T09:10:00+09:00: Cryo Mix billing調査完了 → conductor へ回答。grace ~7/15、$20/月 base fee waived、per-download $1.70 (0件=費用なし)。
