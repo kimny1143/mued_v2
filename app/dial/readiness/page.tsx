@@ -215,6 +215,11 @@ export default function ReadinessPage() {
   function handleWaitlistCta(isQualified: boolean) {
     trackCtaClick('waitlist_from_readiness', isQualified ? 'result_qualified' : 'result_raw');
     const params = new URLSearchParams({ from: 'readiness', qualified: String(isQualified) });
+    // Pass readiness answers so the waitlist API can re-run calcReadinessScore accurately
+    params.set('launches_within_30d', String(answers.q1 === 'yes'));
+    params.set('has_stems', String(answers.q2 === 'have' || answers.q2 === 'can_export'));
+    params.set('vocal_ready', String(answers.q3 === 'done' || answers.q3 === 'instrumental'));
+    if (answers.q4 && answers.q4 !== 'unknown') params.set('product_intent', answers.q4);
     router.push(`/dial/waitlist?${params.toString()}`);
   }
 
