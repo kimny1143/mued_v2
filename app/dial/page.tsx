@@ -5,6 +5,7 @@ import { useAuth, useUser, SignInButton, UserButton } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
 import Image from 'next/image';
 import Link from 'next/link';
+import { trackCtaClick } from '@/lib/analytics/gtag';
 
 type ServiceTier = 'omakase' | 'dialogue';
 
@@ -523,6 +524,21 @@ export default function DialPage() {
                 </div>
                 <span className="text-xs font-medium text-amber-400 group-hover:text-amber-300 shrink-0">
                   {lp.planBannerCta} →
+                </span>
+              </Link>
+
+              {/* Readiness check CTA — funnel step 2: dial top → /readiness */}
+              <Link
+                href="/dial/readiness"
+                onClick={() => trackCtaClick('muedial_readiness_check', 'dial_top_checkout')}
+                className="mt-3 flex items-center gap-3 p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 transition-colors group"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-indigo-300">{lp.readinessBannerTitle}</p>
+                  <p className="text-xs text-white/40 mt-0.5">{lp.readinessBannerDesc}</p>
+                </div>
+                <span className="text-xs font-medium text-indigo-400 group-hover:text-indigo-300 shrink-0">
+                  {lp.readinessBannerCta} →
                 </span>
               </Link>
             </div>

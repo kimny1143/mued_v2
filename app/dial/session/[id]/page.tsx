@@ -1447,8 +1447,8 @@ function DialSessionContent() {
         <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-xl text-center">
           <p className="text-amber-400 text-xs font-medium mb-2">{t.dial.session.hooPassCtaLabel}</p>
           <Link
-            href={IS_RESEARCH_BETA ? '/waitlist' : '/dial/pricing'}
-            onClick={(e) => handleNavigation(e, IS_RESEARCH_BETA ? '/waitlist' : '/dial/pricing')}
+            href={IS_RESEARCH_BETA ? '/dial/waitlist' : '/dial/pricing'}
+            onClick={(e) => handleNavigation(e, IS_RESEARCH_BETA ? '/dial/waitlist' : '/dial/pricing')}
             data-testid="dial-hoo-pass-cta"
             className="inline-block px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black text-sm font-semibold rounded-lg transition-colors"
           >

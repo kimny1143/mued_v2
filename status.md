@@ -3,21 +3,28 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: PR #395 + #396 完納 (SEO metadata + qualified waitlist CTA card)。growth/data課 FYI 共有済み。次フェーズタスク探索中。
-next_action: 次プロダクト改善タスク自走判断 (readiness UX / llms.txt / MUEDnote onboarding 候補)。
+current_task: sprint#001 全funnel修正完納 (PR #400+#401 merged)。SNS h190投稿開始後の計測待ち。次プロダクト改善自走。
+next_action: llms.txt quality改善 or MUEDnote onboarding調査 → 次PR自走。
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-05-29T09:00:00+09:00
-last_update: 2026-05-28T11:40:00+09:00
-evidence: PR #395 merged (0e8de1b9) / PR #396 merged (96217f86) / growth FYI 共有済み
+expected_next_check_at: 2026-05-29T11:00:00+09:00
+last_update: 2026-05-29T09:25:00+09:00
+evidence: PR #400 merged (aca24bd6) / PR #401 merged (aa70d693) / SNS h190 09:00 JST投稿GO
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
+- 2026-05-29T09:25:00+09:00: **PR #401 merged** (aa70d693) — readiness answers forwarding fix。qualified ユーザーが waitlist 登録時に `qualified_waitlist: true` を正しく受け取り緑CTA表示。sprint#001 全pipeline稼働 🎚️
+- 2026-05-29T09:15:00+09:00: **PR #400 merged** (aca24bd6) — `/waitlist` → `/dial/waitlist` routing 404修正。readiness + pricing 両ページ。SNS h190投稿前に完了 ✅
+- 2026-05-29T09:10:00+09:00: Cryo Mix billing調査完了 → conductor へ回答。grace ~7/15、$20/月 base fee waived、per-download $1.70 (0件=費用なし)。
+- 2026-05-28T20:50:00+09:00: **PR #397 merged** (789da642) — sprint#001 funnel step2 fix 完納。UI evidence スクショ添付済み。
+- 2026-05-28T20:46:00+09:00: PR #397 native LGTM (mz3ubfhc) + evidence コメント → GitHub merge 完了。
+- 2026-05-28T20:39:00+09:00: **PR #397 open** (dial top → /readiness CTA, sprint#001 step2 fix)。Tier 2 native review 依頼済み (mz3ubfhc 受領確認)。growth・conductor に完納 boundary timestamp 通知済み。
+- 2026-05-28T20:35:00+09:00: PR #396 (qualified waitlist CTA) native LGTM → merged (96217f86)。sprint#001 step5→6 fix 完納。
 - 2026-05-27T16:30:00+09:00: LP課 PR #532-543+#544 全レビュー完了。LGTM 10件(#534/#535/#537-543/#544)・BLOCKER 3件(#532 Suno/WAVステム欠落/#533 12ジャンル→11/#536 SoundCloud LUFS断言)。PR #544 self-merge済。通算BLOCKER 39件。
 - 2026-05-27T15:00:00+09:00: **🎯🏆 AIO FAQ 1000件 LIVE 達成！** LP課PR #506-529 全件merged確認。904+40+56=1000件。36件ブロッカー通算。PR #393 admin merge完納 (606ca6fe) ✅
 - 2026-05-27T14:57:00+09:00: LP課 #526 KKKKKKKKKK merged → **988件LIVE**。残#527-#529 (12件) merge中。PR #393 admin merge完納 (606ca6fe) ✅。mued_v2 proactive作業開始
@@ -49,6 +56,9 @@ lane: active
 
 ## Notes
 
+- **Sprint#001 全funnel接続済み**: Threads bio UTM → dial top (PR#397) → readiness → qualified → waitlist (PR#400, #401) → green sign-in CTA (PR#396) → mix_diagnosis
+- **SNS課 h190-h196**: 5/29 09:00 JST〜6/4 manual dispatch GO。bio UTM完納
+- **Phase 2 Gate Day 3**: 5/29-30 data課スナップショット待機。threads bio UTM完全反映ポイント
 - **Phase 2 Gate Day 2 (5/27)**: active_users=0 (全campaign)。主因: GA4 24-48hラグ + SNS bio UTM未着手。conductor (b) defer推奨。5/28-29 SNS bio UTM完納 → Day 3 (5/29-30) 再Gate
 - **PR #84 (data課)**: Phase 2 Gate GO後 + INTERNAL_API_KEY取得後にmerge。現在defer中
 - LP課 FAQ AIO review: **🎯🏆 1000件LIVE達成！(PR #506-529全merged)**。PR #532-543+#544レビュー完了。LGTM 10件・BLOCKER 3件(#532/#533/#536)。**通算BLOCKER 39件**。1036件LIVE見込み(BLOCKER修正後)
