@@ -215,7 +215,7 @@ export default function ReadinessPage() {
   function handleWaitlistCta(isQualified: boolean) {
     trackCtaClick('waitlist_from_readiness', isQualified ? 'result_qualified' : 'result_raw');
     const params = new URLSearchParams({ from: 'readiness', qualified: String(isQualified) });
-    router.push(`/waitlist?${params.toString()}`);
+    router.push(`/dial/waitlist?${params.toString()}`);
   }
 
   function handleSkipUpload() {

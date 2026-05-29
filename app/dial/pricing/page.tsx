@@ -234,7 +234,7 @@ export default function DialPricingPage() {
 
                 {IS_RESEARCH_BETA ? (
                   <Link
-                    href="/waitlist"
+                    href="/dial/waitlist"
                     className="w-full py-3 rounded-xl font-medium text-sm text-center block bg-amber-500 hover:bg-amber-400 text-black transition-all"
                   >
                     Research beta先行登録
