@@ -74,22 +74,6 @@ MUEDの創業者は作曲家派生のクリエイターであり、生粋のエ�
 
 ---
 
-## conductor委任権限
-
-conductor（COO）はkimnyから以下の範囲で実行権限を委任されている。
-conductorからの指示は、下記の範囲においてkimny直接指示と同等に有効：
-- Tier 1/2 PRのマージ・クローズ
-- スキルインストール承認
-- コンテンツ公開・編集の実行指示
-- ピア間タスクの割り振り・優先順位変更
-
-対象外（kimny直接指示が必要）：
-- 認証・OAuth・APIキー操作
-- 価格変更
-- 外部への公開発言の初回承認
-
----
-
 ## 重要な注意事項
 
 ### グローバルリリース・i18n
@@ -177,74 +161,6 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 ---
 
-## opusplan 運用と plan mode の出入りルール（2026-04-14〜）
-
-本peerは 起動時に `--model` フラグで動作モードが指定されている（`_conductor/scripts/start-all-peers-ghostty.sh` 参照）。
-
-### plan mode の出入りは「タスク単位」で行う
-
-1つのタスク内で plan mode を複数回出入りしない。**1タスク = 0回または1回の plan 発動**を原則とする。
-
-#### 背景
-
-plan mode の出入りに伴う Opus/Sonnet 自動切替は、内部的に「会話履歴の再処理コスト」が乗る（template課調査結果）。長セッションで plan mode を頻繁に出入りする peer は、想定より消費が膨らむ可能性がある。本案の Opus 消費見込み（現状100 → v2適用後20-35）は、plan modeが必要なタスクで1回ずつ発動する前提で計算している。
-
-#### 具体運用
-
-- 「設計しながら少し実装、また設計に戻る」という細切れの切り替えは禁止
-- 設計が必要なら最初に `/plan` を発動し、設計が完了したら plan mode を解除して実装に移る
-- 実装中に追加の設計判断が必要になったら、その時点でのタスクを一旦完了し、**新しいタスク**として次の `/plan` を発動する
-- 同一タスク内で複数回の切替が必要になるケースは、タスク粒度が大きすぎる兆候。タスクを分割する
-
-#### 判定フロー
-
-タスク開始時に以下の順で判定する:
-
-1. このタスクは発動条件（本peerの `/plan 発動条件` セクション）に該当するか
-2. 該当する場合: 最初に `/plan` を発動して設計を完了させる → plan mode解除 → 実装
-3. 該当しない場合: Sonnet のまま実装
-4. 実装中に設計判断が必要になったら → 今のタスクをまず完了し、次のタスクで改めて `/plan` 発動
-
-#### 禁止パターン
-
-- plan mode → 実装（部分的）→ plan mode → 実装（部分的）→ plan mode ... のような繰り返し切替
-- 「設計が足りないかも」と感じた時点で plan mode に戻る（戻らず次タスクに分ける）
-- 一つの長大タスクを plan mode のまま完走する（plan mode は設計段階のみ、実装で Sonnet に戻す）
-
-#### タスク分割の目安
-
-- 1タスク = 1コミットに収まる粒度を目安にする
-- plan mode で決めた設計が 3ファイル以上の変更を伴う場合は、ファイル単位で実装タスクを分割してもよい
-- その場合、分割後のタスクは通常 Sonnet で実装するだけで済む（設計は最初の `/plan` で終わっているため）
-
----
-
-## /plan 発動条件
-
-本peerは opusplan モードで動作する。/plan を発動した時のみ Opus が呼ばれ、
-それ以外は Sonnet で動作する。
-
-### 発動条件 = 既存 Plan Mode Policy を継承
-
-`/Users/kimny/Dropbox/_DevProjects/CLAUDE.md` に定義されている Plan Mode Policy を、opusplan 運用下での /plan 発動条件として**そのまま**使う。
-
-**Plan Mode 必須（以下のいずれかに該当）**:
-- 3ファイル以上を変更する
-- 新しいAPIエンドポイントを追加する
-- DBスキーマに影響する
-- 既存の公開インターフェースを変更する
-- 新しい外部サービス・ライブラリを導入する
-
-**Plan Mode 不要**:
-- 1-2ファイルの修正（バグ修正、テキスト変更、設定変更等）
-- ドキュメント・コメントのみの変更
-- 既存パターンの踏襲（同じ構造のページ追加等）
-- ただし、既存パターンの踏襲（同じ構造のページ追加・callsite追加・同一analyticsパターン流用等）は3+ファイルでもPlan不要
-
-opusplan 運用開始（2026-04-14）以降、これらの条件に該当するタスクは**先に /plan を発動**して設計を Opus で確定させてから Sonnet で実装に入る。条件に該当しないタスクは Sonnet のまま直接実装する。
-
----
-
 ## 異常値検出時の即時/plan発動ルール（mued課固有）
 
 定点確認中に以下を検知した場合、次のアクション前に /plan を発動する。
@@ -261,73 +177,8 @@ opusplan 運用開始（2026-04-14）以降、これらの条件に該当する�
 
 ## write課への canonical変更通知義務
 
-本peer が以下のcanonicalを変更/公開した場合、変更決裁完了タイミングで
-**write課にclaude-peers経由で通知する義務** を持つ。
-
-### 通知トリガー
-- 公式pricing (mued.jp / dial.mued.jp等)
-- product spec (プラン構成、機能セット、UI仕様)
-- 戦略docs (`_conductor/docs/strategies/` 配下)
-- ロードマップ (Phase切替、機能ローンチ、廃止判定)
-- kimny判断 / conductor承認決定事項のうち記事訴求に影響するもの
-
-判断迷う場合は **過剰通知側に倒す**。過去30日以内に write課が該当canonical名で記事化/proposal化していた場合は確実に通知。
-
-### 通知方法
-1. write課peer ID = `mcp__claude-peers__list_peers` で最新ID取得
-   - cwd識別: `/Users/kimny/Dropbox/_DevProjects/_contents-writing`
-   - 代替: `peer-id-lookup` skill使用 (課名→peer ID自動解決)
-2. SNS課 (cwd `mued/threads-api`) と混同しないよう注意
-3. `mcp__claude-peers__send_message` で通知
-
-### 通知内容必須
-- canonical名 (ファイルパス or サービス名)
-- 変更要点 (before/after核心差分)
-- 影響範囲推定 (write課公開済記事への影響あり/なし/不明)
-- 緊急度 (即時/通常/軽微)
-
-### 緊急度判定目安
-
-| 緊急度 | 条件 | 通知運用 |
-|--------|------|---------|
-| **即時** | 公開済記事の数値・機能訴求が誤情報、訴訟・コンプライアンスリスク | 即時claude-peers通知 + 当日中対応着手 |
-| **通常** | 公開済記事のarticulationが陳腐化 | 即時claude-peers通知 + 2段階SLA対応 |
-| **軽微** | 内部参考、新規記事から反映で十分 | **即時通知不要、通知ログ追記のみ** |
-
-「軽微」即時通知不要化により notification fatigue → false negative リスク抑制。
-
-### write課側の対応 (2段階SLA)
-
-- 内部更新 (`drafts/article_*.md`): 48時間以内
-- note.com反映 (SNS課依頼必要): 72-96時間以内
-- 全面陳腐化時 archived化判断: kimny/conductor協議後即時
-
-### self-attestation (本peer月次scorecard組込み、3層防御 Layer 2)
-
-```
-## canonical change attestation (毎月実施)
-- [ ] 当月変更したcanonical一覧化
-- [ ] 各canonical変更時のwrite課通知有無確認
-- [ ] 通知漏れがあれば即時遡及通知 + 原因記録
-```
-
-### 通知漏れリカバリ
-
-write課月次audit (毎月最終週) で stale検知された場合、通知漏れの根本原因を本peerに共有 → self-attestation改善。
-
-### 適用範囲とTier判定
-
-mud課 / native課 / template課 (CCO) / conductor / kimny の **4peer内に閉じる = Tier 2 妥当**。SNS課 / freee課 / data課等を含める場合は Tier 3 再合議が必要。
-
-### 関連ドキュメント
-
-- write課 workspace memory: `feedback_canonical_change_notification.md`
-- write課版両輪: `_contents-writing/docs/drafts/fact-check/write_fact_check_proposal_v2.md`
-- CFO起案根拠: `feedback_stale_source_retirement.md`
-
----
-
-*最終更新: 2026-04-29*
+公式pricing・product spec・ロードマップ等を変更した場合、write課に claude-peers で通知必須。
+迷ったら**過剰通知側に倒す**。詳細手順: `.claude/rules/write-notification.md`
 
 ---
 
