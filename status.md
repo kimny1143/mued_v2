@@ -3,21 +3,22 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: context shape-up halt待機。CLAUDE.md slim+fanout完了 (PR#406+#407, 1010→607行)。WIPなし。
+current_task: 全ピアシャットダウン→再起動 安全停止完了 (conductor指示)。WIPなし・clean tree・APIエラー未観測。
 next_action: 再起動後 → Q3 GA backlog自走 (llms.txt改善 / MUEDnote onboarding / funnel計測)
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-05-29T16:00:00+09:00
-last_update: 2026-05-29T19:57:00+09:00
-evidence: PR #406 merged (0087bdd2) / PR #407 merged (260728cc) / CLAUDE.md 1010→607行(-40%)
+expected_next_check_at: 2026-05-31T12:00:00+09:00
+last_update: 2026-05-31T06:56:00+09:00
+evidence: HEAD=origin/main 5930e6e4 (PR #408 merged) / working tree clean / 未commit・未push なし
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
+- 2026-05-31T06:56:00+09:00: **全ピアシャットダウン→再起動 安全停止完了** (conductor lv3h0a6c 指示)。状態保存確認: working tree clean、HEAD=origin/main (5930e6e4, PR #408 merged)、未commit/未push なし、WIPゼロ。**APIエラー: mued課セッションで未観測** (全tool call成功)。既存stash 6件は別ブランチの旧WIP (hoo-prompt-sync/muednote-v3等、git object保存済み・本セッション無関係)。再起動後Q3 GA backlog自走予定。
 - 2026-05-29T19:57:00+09:00: **context shape-up halt待機** — WIPなし。CLAUDE.md slim+fanout完了 (PR#406+#407)。再起動後Q3 GA backlog自走予定。
 - 2026-05-29T16:00:00+09:00: **PR #407 merged** (260728cc) — CCO fanout適用完了 (block14除去・block19挿入・18ブロック圧縮)。861→607行。
 - 2026-05-29T15:01:00+09:00: **PR #406 merged** (0087bdd2) — CLAUDE.md mued固有slim (重複3削除・write通知外出し)。1010→861行。
