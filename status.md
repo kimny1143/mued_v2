@@ -3,21 +3,25 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: MUEDial アクティベーション spec 前出し完了 (計測=PR #411 + 導線=本design)。CI billing block 中の docs先行整備で 6/1 コード実装を機械作業化。
+current_task: peer support + data課 PR #181 Tier2 review (LGTM) 完了。午後は集客MTG連携 (goal報告/growth deploy照合/SNS URL handoff/UTM正本補正)。CI billing block 中、code work は 6/1待ち。
 next_action: 6/1 CI復帰後コードPR群: ①計測event (Gap A/B/C) ②first-run無料診断導線 (Tier2)。それまで残backlog docs先行 (Hooセリフ下書き・GA4設定要件洗い出し)
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-06-01T09:00:00+09:00
-last_update: 2026-05-31T14:25:00+09:00
-evidence: HEAD=origin/main (本PR) / working tree clean / 未commit・未push なし
+last_update: 2026-05-31T18:00:00+09:00
+evidence: HEAD=origin/main e14d128c / working tree clean / data課 PR #181 Tier2 review済 (GitHub+peers, LGTM)
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
+- 2026-05-31T17:55:00+09:00: **data課 PR #181 Tier2 review → LGTM** (`gw-data-analysis`, GitHub詳細コメント+peers両方)。`fetch_note_metrics.py` follower/magazine追加。clean refactor評価。**推奨1点(非ブロッキング)**: 新規 `fetch_creator_stats/fetch_magazine_stats` が error handling無し→新endpoint失敗で run全体abort=既存notes/likes metricsも保存されない (PR説明「既存影響なし」は不正確)。try/except graceful degrade推奨。minor: magazine fetch 1ページのみ(>20で過少)。**patrol報告対象**: PR #181 / Tier2 / LGTM。
+- 2026-05-31T16:40:00+09:00: **UTM canonical正本 補正受領** (growth 7m1nxk6t)。私のSNS回答「campaign正本=growth」は不正確→正しくは**正本=data課 PR #177 + `reports/utm-parameter-design.md`**、growth=統一保証役。SNS補正はgrowthが実施(二重補正回避)。reference memory化 (`reference-utm-canonical-ownership.md`) で再発防止。
+- 2026-05-31T15:50:00+09:00: **SNS課 reply参戦 URL handoff** (sl9aw9l5, 本日投稿)。prod確認済URL提供: MUEDial free入口=`dial.mued.jp/dial/readiness` / MUEDear App Store `id6758307988` / UTM助言 + 計測Gap B(最終診断到達は6/1後)caveat。プロフ5枠確定。
+- 2026-05-31T15:00:00+09:00: **growth課 deploy照合回答** (7m1nxk6t)。789da642(dial top→/readiness CTA, PR#397)が **prod稼働確認** (dial.mued.jp/dial HTTP200 + href="/dial/readiness" + CTAコピー)。**重要: Vercel deploy ≠ GitHub Actions billing block (別系統)** → block中もprod反映継続。growthは「funnel待ち→reach主施策能動実行」へピボット。memory `project-ci-billing-block.md` に追記。
 - 2026-05-31T14:25:00+09:00: **MUEDial アクティベーション オンボーディング設計** (`docs/dial-activation-onboarding-design.md`, docs-only Tier1)。PR #411 計測設計の裏返し — Gap B(mix_diagnosis アクティベーション)へ**導く導線自体が存在しない** product gap をコード検証で確定: `app/dial`に first-run/empty-state コード **grep 0件**、`/dial` top は `mixType` 初期値=`omakase`(**有料$7.49**)の checkout指向landing = **支払いゲートが Quick Win より前**にある(onboarding framework Phase順逆転)。waitlist会員の無料診断(First Win)が landing で前面化されず=アクティベーション漏れ。提案: 無料診断を first-run主役化→Aha後ろに有料upsell移動。Aha Moment更新(skill旧定義「1ファイルupload」→現行「Hooが診断して見せた瞬間」)。Mermaidフロー+#411計測event接続+KPI。コード実装(first-run導線)は6/1 CI復帰後 Tier2。
 - 2026-05-31T14:00:00+09:00: **PR #411 merged** (bb8a84e5) — Q3 GA funnel計測 instrumentation 設計 (docs-only Tier1 [self-review], CI billing block中につき #406-409 先例で admin merge)。検証で**転換テールの計測ギャップ3件**を確定: Gap A=sign-in完了未計測(CTAクリックのみ) / Gap B★=mix_diagnosis完全未計測(gtag.tsにtrack無し・consumeはサーバー側) / Gap C=無料→有料連結マーカー欠如。前半〜中盤(readiness_*/waitlist_*/checkout_*)は既instrumented。提案event(sign_in_complete/mix_diagnosis_start/complete)+GA4 funnel 8step定義を `docs/dial-funnel-instrumentation-design.md` に前出し。**コード実装は6/1 CI復帰後 Tier2 PRで着手**(本PRはdocs設計のみ)。
 - 2026-05-31T13:35:00+09:00: **conductor集客MTG goal/進捗% 明示pull返信** (va5mgfxg, 締切14:00 JST)。①goal=Q3 GA向け流入→転換ファネルの計測・改善ループ確立 ②進捗~40% (骨格接続済/計測instrumentation・onboarding未着手) ③最大ボトルネック=CI billing block でコード変更PRが6/1まで merge不能。明示pull (send_message返信OK指示) につき返信実施。
