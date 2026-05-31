@@ -3,21 +3,22 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: peer support + data課 PR #181 Tier2 review (LGTM) 完了。午後は集客MTG連携 (goal報告/growth deploy照合/SNS URL handoff/UTM正本補正)。CI billing block 中、code work は 6/1待ち。
+current_task: 夕方 /checkout compact 状態保存 (conductor指示, 全peer compact)。本日完納分は #414 までに保存済・clean tree継続。code work は 6/1 CI復帰待ち。
 next_action: 6/1 CI復帰後コードPR群: ①計測event (Gap A/B/C) ②first-run無料診断導線 (Tier2)。それまで残backlog docs先行 (Hooセリフ下書き・GA4設定要件洗い出し)
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-06-01T09:00:00+09:00
-last_update: 2026-05-31T18:00:00+09:00
-evidence: HEAD=origin/main e14d128c / working tree clean / data課 PR #181 Tier2 review済 (GitHub+peers, LGTM)
+last_update: 2026-05-31T18:58:00+09:00
+evidence: HEAD=origin/main fcd7c7cc (PR #414 merged) / working tree clean / 未commit・未push なし
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
+- 2026-05-31T18:58:00+09:00: **夕方 /checkout compact 状態保存** (conductor va5mgfxg 指示, 全peer compact)。#414 (18:00) 以降 repo変更なし=clean tree継続、HEAD=fcd7c7cc。**本日完納**: Q3 GA activation spec (PR #411計測設計 + #413導線設計) + peer support (conductor goal報告 / growth deploy照合 / SNS reply参戦URL handoff / UTM正本補正) + data課 PR #181 Tier2 review(LGTM)。memory 2件追記 (`project-ci-billing-block` Vercel別系統追記 / `reference-utm-canonical-ownership` 新規)。**conductor継続メモ再確認**: コード変更PRは6/1 CI復帰までHOLD、docs/status継続、6/1 billing復旧後 GA4 funnel instrumentation 着手 (設計draft #411/#413 先行済=着手時は機械作業化)。返信不要につき send_message なし・状態保存のみ。
 - 2026-05-31T17:55:00+09:00: **data課 PR #181 Tier2 review → LGTM** (`gw-data-analysis`, GitHub詳細コメント+peers両方)。`fetch_note_metrics.py` follower/magazine追加。clean refactor評価。**推奨1点(非ブロッキング)**: 新規 `fetch_creator_stats/fetch_magazine_stats` が error handling無し→新endpoint失敗で run全体abort=既存notes/likes metricsも保存されない (PR説明「既存影響なし」は不正確)。try/except graceful degrade推奨。minor: magazine fetch 1ページのみ(>20で過少)。**patrol報告対象**: PR #181 / Tier2 / LGTM。
 - 2026-05-31T16:40:00+09:00: **UTM canonical正本 補正受領** (growth 7m1nxk6t)。私のSNS回答「campaign正本=growth」は不正確→正しくは**正本=data課 PR #177 + `reports/utm-parameter-design.md`**、growth=統一保証役。SNS補正はgrowthが実施(二重補正回避)。reference memory化 (`reference-utm-canonical-ownership.md`) で再発防止。
 - 2026-05-31T15:50:00+09:00: **SNS課 reply参戦 URL handoff** (sl9aw9l5, 本日投稿)。prod確認済URL提供: MUEDial free入口=`dial.mued.jp/dial/readiness` / MUEDear App Store `id6758307988` / UTM助言 + 計測Gap B(最終診断到達は6/1後)caveat。プロフ5枠確定。
