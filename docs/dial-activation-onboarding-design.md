@@ -113,7 +113,20 @@ KPI（skill テンプレート準拠）:
 
 ## オープン項目（実装時解消）
 
-1. waitlist 会員判定を client でどう取るか（既存 `checkMixDiagnosisFreeUsed` はサーバー側 — first-run 分岐用の軽量 API or サインイン後の初期 props 注入が要る）
+### ✅ #1 解消（2026-05-31 追検証）: first-run 分岐の client データ取得 = **GET eligibility route を新設**（既存 precedent あり）
+
+コード実態を検証して確定:
+
+- `/dial` landing（`app/dial/page.tsx`）は **`'use client'`**。Clerk client hook（`useAuth().isSignedIn` `:294` / `useUser().user` `:295`）でサインイン状態は持つが、**waitlist 会員 / 無料診断 eligibility は一切 fetch していない**（現状 fetch は `/api/dial/checkout` のみ `:327`）。
+- 無料診断 eligibility ロジックは存在するが **POST consume route に埋め込み**: `app/api/dial/credits/consume/route.ts:164` `checkWaitlistEmailExists(email)` + `:171` `checkMixDiagnosisFreeUsed(email)`。**GET の eligibility 公開口は無い**。
+- **precedent あり**: `app/api/dial/subscription/status/route.ts` の `GET`（`:17`、PR #375/#377 pricing dual-defense）が「client が server user-state を要る」ケースの確立パターン。
+
+→ **解消設計**: GET `/api/dial/credits/free-status`（仮）を新設。`withDialAuth` でサインインユーザーの email を server 側解決 → `checkWaitlistEmailExists` + `checkMixDiagnosisFreeUsed` を再利用し `{ isWaitlistMember, freeDiagnosisUsed, eligible }` を返す。landing が mount 時に fetch → `eligible` なら mixType=omakase default の代わりに **first-run 無料診断カード**を前面化（本ドラフトのフロー B→C）。
+
+⚠️ **新 API endpoint = Plan Mode 必須**（CLAUDE.md Plan Mode Policy「新しい API エンドポイントを追加する」）。Tier は **Tier 2**（auth/pricing/破壊的schema に非該当、既存 helper を読むだけの純追加 GET）。6/1 着手時に `/plan` 発動 → 設計承認 → 実装。
+
+### 残オープン（実装時解消）
+
 2. first-run カードを `/dial` page に inline で出すか、専用 `/dial/start` route にするか（後者は計測が綺麗だが route 追加 = Tier 2 設計）
 3. 「あとで」分岐（P5）の再訪フックを push 不可前提でどう作るか（Web、通知権限なし）
 4. ディレクターモデル整合: Hoo の first-run セリフトーン（「ほほう、まず1曲聴かせて」系 — skill 注意書き「オンボーディング中は自然な案内優先」）
