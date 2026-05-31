@@ -4,20 +4,21 @@ department: product
 activity: active
 status: active
 current_task: **mued課 最重点 = MUEDial 実装 + 継続的改善 (kimny 5/31)**。ファネル等通常業務(#411計測/#413アクティベーション导线)も**並行継続**(「後回し」は kimny 訂正で撤回)。コアは launch済(本番稼働)、GA完成度~80%。
-next_action: 6/1 CI復帰後 Tier2(並行): ①v2 session UI chat cutover=session page `:1771` の props を v2 player `chatProps` に移植+旧ChatPanel除去(**props完全一致のdrop-in/de-risk済**、`docs/dial-v2-session-ui-mainlining.md`) ②アクティベーション导线(#413)。6/1前 docs先行: GA toggle checklist精緻化 / 実UX要のB10検証はキャラクターgate
+next_action: 6/1 CI復帰後 Tier2(並行): ①v2 chat cutover=`:1771` props を v2 player `chatProps` 移植+旧除去(props完全一致drop-in/de-risk済) ②アクティベーション导线(#413, first-run分岐=GET eligibility route新設→**/plan必須**(新endpoint)/precedent=subscription/status GET)。両 next-hand とも de-risk 済=実装は機械作業。6/1前 docs先行: GA toggle checklist精緻化
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-06-01T09:00:00+09:00
-last_update: 2026-05-31T20:45:00+09:00
-evidence: HEAD=origin/main 7afd1973 (PR #417 merged) / working tree clean / 未commit・未push なし
+last_update: 2026-05-31T21:00:00+09:00
+evidence: HEAD=origin/main e8caf8e7 (PR #418 merged) / working tree clean / 未commit・未push なし
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
+- 2026-05-31T21:00:00+09:00: **#413 アクティベーション导线 オープン項目#1 解消 (first-run分岐の clientデータ取得設計)**。validated #2 next-hand のprep。コード実態検証: `/dial` landing(`app/dial/page.tsx`)は `'use client'`、Clerk hook でサインイン状態は持つが **waitlist/無料診断 eligibility を一切fetchせず**(現fetchは `/api/dial/checkout` のみ)。eligibility ロジックは POST consume route `:164/:171` に埋込、**GET公開口なし**。→ 解消設計: **GET `/api/dial/credits/free-status`(仮) 新設**(withDialAuth→`checkWaitlistEmailExists`+`checkMixDiagnosisFreeUsed` 再利用→`{isWaitlistMember,freeDiagnosisUsed,eligible}`)、landing が mount fetch→eligibleなら first-run無料診断カード前面化。**precedent**=`subscription/status` GET(#375/#377)。⚠️**新endpoint=6/1着手時 /plan必須**、Tier2。doc(`docs/dial-activation-onboarding-design.md`)に追記。両 next-hand(v2 chat cutover + #413)とも de-risk 完了=6/1は機械実装。
 - 2026-05-31T20:45:00+09:00: **v2 chat cutover オープン項目 2件 解消 (props parity diff + git履歴, doc追検証)**。①**旧ChatPanel残置理由 = 未完の staged migration**: PR-v2.6(#195)で ChatPanelV2追加→PR-v2.8(#198)で player cutover→**最終 chat配線(chatProps)が未実施**(`grep chatProps=` 全0件=ChatPanelV2は本番未レンダー)。意図hold でなく段階cutoverのやり残し。②**props parity = 完全一致(drop-in)**: `ChatPanelProps`/`ChatPanelV2Props` 21フィールド全同一(検証定数も)→ gap無し。③**feature drift無し**: Hoo language(v2.42/v2.44)は旧/v2 両chatに同一コミット適用=co-maintained。→ **cutover value = chat二重メンテ負債の解消**(継続的改善対象)。6/1実装は :1771 props移植+旧除去+B10キャラクターgate検証の機械作業に de-risk 済。
 - 2026-05-31T20:30:00+09:00: **v2 session UI 本線化 現状把握 完了** (`docs/dial-v2-session-ui-mainlining.md`, docs-only Tier1)。priority 最重点(MUEDial実装)の第一手 `components/dial/v2/` を実態検証 → **「未着手 build」想定は誤り、~70% 本線化済**と判明(既存state優先)。✅完了: player/waveform/stem/analyzer/take-pills は v2 本線(session route `:11` が `UnifiedSessionPlayerV2` 使用、内部で v2/一式)。⚠️**残ギャップ(検証済)**: 会話UIだけ旧 `ChatPanel`(629L)のまま — v2 player は `chatProps` 渡せば ChatPanelV2 + transport-barアクション(B10)を内蔵描画する設計だが、session page は chatProps未配線で旧 ChatPanel を別途レンダー(`:1771`)。🧹旧 `unified-session-player.tsx` は型importのみ(本体未使用)。**本線化の実体 = session page の chat配線 旧→ChatPanelV2 切替 1点(+旧cleanup)**、end-stateはコード設計済=6/1実装は機械作業。**切替前オープン項目**: ①旧ChatPanel残置理由(意図hold? 移行途中?) ②ChatPanelV2 props parity diff(旧は onMixCheck/Mastering/previewLimit/phase/mode等多数) を確認してから切替。
 - 2026-05-31T20:08:00+09:00: **priority 訂正受領 (kimny via conductor)= 「後回し」撤回 → MUEDial 実装+「継続的改善」最重点 ＋ ファネル等通常業務も並行継続**。20:05の「ファネル計測/onboarding後回し」整理は kimny が**過剰として撤回**。正: ①goal に「継続的改善」明示(単発GA polishでなく) ②#411(計測)/#413(アクティベーション导线)は drop でなく**並行継続** ③私の「#413 first-run無料診断前面化=product UX実装」整理は妥当と承認、その線で MUEDial体験改善として進めてOK。実数~80%/次手(v2 UI本線化+アクティベーション导线)は PWA反映済。**self-correction記録**: status/memory を「後回し」→「並行継続」に訂正(本コミットで反映、push前訂正)。返信不要指示につき send_message なし。
