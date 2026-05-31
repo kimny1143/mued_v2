@@ -73,17 +73,37 @@ v2 player は **chat を内蔵できる設計**だが、その有効化は `chat
 
 ---
 
-## 切替前に潰すオープン項目（assumption禁止 / 要確認）
+## オープン項目の解消（2026-05-31 追検証）
 
-1. **なぜ session page は今も旧 ChatPanel か** — 意図的 hold（ChatPanelV2 の feature gap 待ち）か、単なる移行途中か。コミット履歴 / v2/chat.tsx の TODO を確認してから切替。
-2. **ChatPanelV2 の feature parity** — 旧 `ChatPanel` は多数 props を持つ（`onMixCheckRequested` / `onMasteringPreviewRequested` / `previewCount` / `previewLimit` / `isMasteringPhase` / `phase` / `mode` 等）。ChatPanelV2(=chatProps 型) がこれら全てを賄えるか **props diff** を取ってから切替（欠落あれば ChatPanelV2 側を先に補完）。
-3. **transport-bar アクション(B10) と旧 chat-card ボタンの UX 差** — 切替で操作導線が変わる。ディレクターモデル整合（Hoo の指示→アクションが自然か）をキャラクター gate（実際に session を操作して確認）で検証。
-4. **playerKey remount 影響** — chatProps 追加で player の remount key 条件（`:407`）に影響しないか。
+### ✅ #1 解消: 旧 ChatPanel 残置理由 = **未完の staged migration**
+
+git 履歴で確定。「PR-v2.x」シリーズの段階移行が**途中で止まっている**:
+- `c1aff760` PR-v2.6 (#195): **ChatPanelV2 を新規追加**（HooAvatar/ModeBadge/ParamChangeCard）
+- `cc418c76` PR-v2.8 (#198): **page.tsx を UnifiedSessionPlayerV2 に cutover**（player だけ）
+- → 最終ステップ（chatProps 配線で ChatPanelV2 を本線化）が**未実施**。`grep "chatProps="` = **全コードベースで 0 件** → ChatPanelV2 は本番で一度もレンダーされていない。
+
+意図的 feature-gap hold ではなく、**段階 cutover のやり残し**。
+
+### ✅ #2 解消: props parity = **完全一致（drop-in）**
+
+`ChatPanelProps`（旧）と `ChatPanelV2Props`（v2）は **21 フィールド全て同一**（型・optional 記号・`onMasteringPreviewRequested?(desiredLoudness?)` の引数まで一致、検証定数 `VALID_PRESENCE/PAN/REVERB` も同一）。**props gap なし** → 切替は「:1771 の `<ChatPanel {...}>` に渡している props オブジェクトをそのまま v2 player の `chatProps`（`Omit<_, 'className'>`）に移す」だけ。
+
+### ⚠️ feature drift なし、ただし dual-maintenance 負債
+
+Hoo language 機能（`4c7f605b` v2.42 / `a67ee13d` v2.44）は **`chat-panel.tsx` と `v2/chat.tsx` の両方に同一コミットで適用**されている（各 PR で両ファイル "6 ++--"）。= **両 chat は並行 co-maintained**、旧(本番)が機能遅れではない。
+
+→ **cutover の value は feature 回復ではなく「chat 実装の二重メンテ解消」**（chat 変更を毎回 2 ファイルに入れている負債の解消）。
+
+### 残オープン（実装時に潰す）
+
+3. **transport-bar アクション(B10) の UX 差** — 切替で mix アクションが chat-card → transport bar に移動（唯一の実 UX 変更）。ディレクターモデル整合を**キャラクター gate**（実 session 操作で Hoo の指示→アクションが自然か確認）で検証。
+4. **playerKey remount 影響** — chatProps 追加で player remount 条件（`:407`）に影響しないか。
 
 ---
 
 ## まとめ
 
-- **v2 session UI は「未着手」ではなく ~70% 本線化済**（playback 系は完了、chat だけ旧のまま）。
-- 「本線化」の実体 = **session page の chat 配線を旧 ChatPanel → ChatPanelV2 に切替える 1 点が主**（+ 旧コード cleanup）。end-state はコードに設計済み（chatProps gate + B10）なので、6/1 の実装は **props 配線 + diff 補完 + 旧除去の機械作業**に落ちる。
-- 切替前に **props parity diff** と **旧 ChatPanel 残置理由** を確認すること（オープン項目 1-2）。
+- **v2 session UI は「未着手」ではなく ~70% 本線化済**（playback 系完了、chat だけ旧のまま）。原因は **PR-v2.x 段階 cutover の最終 chat 配線やり残し**。
+- 「本線化」の実体 = **session page の chat 配線を 旧 ChatPanel → ChatPanelV2 に切替える 1 点**（props 完全一致の drop-in + 旧除去）。**props gap・feature drift なし**で de-risk 済。
+- 6/1 実装は **①:1771 の props を v2 player `chatProps` に移植 → ②旧 `<ChatPanel>` render + 2カラム wrapper 除去 → ③B10 UX をキャラクター gate 検証 → ④ proven 後 `chat-panel.tsx` 削除（二重メンテ解消）** の機械作業。
+- 副次 value: chat 実装の dual-maintenance 負債を解消（継続的改善の対象として妥当）。

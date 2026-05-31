@@ -4,20 +4,21 @@ department: product
 activity: active
 status: active
 current_task: **mued課 最重点 = MUEDial 実装 + 継続的改善 (kimny 5/31)**。ファネル等通常業務(#411計測/#413アクティベーション导线)も**並行継続**(「後回し」は kimny 訂正で撤回)。コアは launch済(本番稼働)、GA完成度~80%。
-next_action: 6/1 CI復帰後 Tier2(並行): ①v2 session UI 本線化=session page の chat配線を旧ChatPanel→ChatPanelV2に切替(v2は~70%本線化済・playback完了/chatのみ旧、`docs/dial-v2-session-ui-mainlining.md`) ②アクティベーション导线(landing 有料default逆転, #413)。6/1前: props parity diff確認 + GA toggle checklist精緻化(docs先行)
+next_action: 6/1 CI復帰後 Tier2(並行): ①v2 session UI chat cutover=session page `:1771` の props を v2 player `chatProps` に移植+旧ChatPanel除去(**props完全一致のdrop-in/de-risk済**、`docs/dial-v2-session-ui-mainlining.md`) ②アクティベーション导线(#413)。6/1前 docs先行: GA toggle checklist精緻化 / 実UX要のB10検証はキャラクターgate
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-06-01T09:00:00+09:00
-last_update: 2026-05-31T20:30:00+09:00
-evidence: HEAD=origin/main bc3c9594 (PR #416 merged) / working tree clean / 未commit・未push なし
+last_update: 2026-05-31T20:45:00+09:00
+evidence: HEAD=origin/main 7afd1973 (PR #417 merged) / working tree clean / 未commit・未push なし
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
+- 2026-05-31T20:45:00+09:00: **v2 chat cutover オープン項目 2件 解消 (props parity diff + git履歴, doc追検証)**。①**旧ChatPanel残置理由 = 未完の staged migration**: PR-v2.6(#195)で ChatPanelV2追加→PR-v2.8(#198)で player cutover→**最終 chat配線(chatProps)が未実施**(`grep chatProps=` 全0件=ChatPanelV2は本番未レンダー)。意図hold でなく段階cutoverのやり残し。②**props parity = 完全一致(drop-in)**: `ChatPanelProps`/`ChatPanelV2Props` 21フィールド全同一(検証定数も)→ gap無し。③**feature drift無し**: Hoo language(v2.42/v2.44)は旧/v2 両chatに同一コミット適用=co-maintained。→ **cutover value = chat二重メンテ負債の解消**(継続的改善対象)。6/1実装は :1771 props移植+旧除去+B10キャラクターgate検証の機械作業に de-risk 済。
 - 2026-05-31T20:30:00+09:00: **v2 session UI 本線化 現状把握 完了** (`docs/dial-v2-session-ui-mainlining.md`, docs-only Tier1)。priority 最重点(MUEDial実装)の第一手 `components/dial/v2/` を実態検証 → **「未着手 build」想定は誤り、~70% 本線化済**と判明(既存state優先)。✅完了: player/waveform/stem/analyzer/take-pills は v2 本線(session route `:11` が `UnifiedSessionPlayerV2` 使用、内部で v2/一式)。⚠️**残ギャップ(検証済)**: 会話UIだけ旧 `ChatPanel`(629L)のまま — v2 player は `chatProps` 渡せば ChatPanelV2 + transport-barアクション(B10)を内蔵描画する設計だが、session page は chatProps未配線で旧 ChatPanel を別途レンダー(`:1771`)。🧹旧 `unified-session-player.tsx` は型importのみ(本体未使用)。**本線化の実体 = session page の chat配線 旧→ChatPanelV2 切替 1点(+旧cleanup)**、end-stateはコード設計済=6/1実装は機械作業。**切替前オープン項目**: ①旧ChatPanel残置理由(意図hold? 移行途中?) ②ChatPanelV2 props parity diff(旧は onMixCheck/Mastering/previewLimit/phase/mode等多数) を確認してから切替。
 - 2026-05-31T20:08:00+09:00: **priority 訂正受領 (kimny via conductor)= 「後回し」撤回 → MUEDial 実装+「継続的改善」最重点 ＋ ファネル等通常業務も並行継続**。20:05の「ファネル計測/onboarding後回し」整理は kimny が**過剰として撤回**。正: ①goal に「継続的改善」明示(単発GA polishでなく) ②#411(計測)/#413(アクティベーション导线)は drop でなく**並行継続** ③私の「#413 first-run無料診断前面化=product UX実装」整理は妥当と承認、その線で MUEDial体験改善として進めてOK。実数~80%/次手(v2 UI本線化+アクティベーション导线)は PWA反映済。**self-correction記録**: status/memory を「後回し」→「並行継続」に訂正(本コミットで反映、push前訂正)。返信不要指示につき send_message なし。
 - 2026-05-31T20:05:00+09:00: **priority pivot 受領 (kimny指示 via conductor va5mgfxg)= mued課当面プライオリティ = MUEDial実装担当** (MUEDial=mued_v2リポ内プロダクト)。conductor PWA ピアゴール表 実数更新の明示pull に自己申告返信: ①goal=MUEDial を Q3 GA(2026-11-13)で一般提供できる完成品質に ②実装達成 **~80%** (GA完成度ベース、コアMVPは5/13 launch=本番稼働済・実質100%、Q3 GA backlog 6/8 done) ③次手=`components/dial/v2/`(analyzer/chat/stem-panel/take-pills/waveform/player-v2=次世代session UI)本線化 + アクティベーション导线、6/1 CI復帰後 ④ブロッカー=CI billing block中コードPR HOLD、機能ブロッカー無し。**framing note送付**: 「実装%」はコア既launch済のため GA完成度軸で算出、特定feature(例Cryo Mix統合)がgoal指定なら再較正。set_summary更新済。memory `project-mued-priority-pivot` 化。【20:08 訂正: 下記「後回し」框は撤回、上記エントリ参照】
