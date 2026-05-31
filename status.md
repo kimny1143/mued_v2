@@ -3,21 +3,23 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: 全ピアシャットダウン→再起動 安全停止完了 (conductor指示)。WIPなし・clean tree・APIエラー未観測。
-next_action: 再起動後 → Q3 GA backlog自走 (llms.txt改善 / MUEDnote onboarding / funnel計測)
+current_task: 昼 /checkout compact 状態保存 (conductor指示, 全peer compact)。朝の安全停止以降 新規作業なし・clean tree継続。
+next_action: compact後 6/1 cron で継続 → Q3 GA backlog自走 (llms.txt改善 / MUEDnote onboarding / funnel計測)
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-05-31T12:00:00+09:00
-last_update: 2026-05-31T06:56:00+09:00
-evidence: HEAD=origin/main 5930e6e4 (PR #408 merged) / working tree clean / 未commit・未push なし
+expected_next_check_at: 2026-06-01T09:00:00+09:00
+last_update: 2026-05-31T13:15:00+09:00
+evidence: HEAD=origin/main 2fcf65e3 (PR #409 merged) / working tree clean / 未commit・未push なし / stash 6件は別ブランチ旧WIP
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
+- 2026-05-31T13:20:00+09:00: **CI billing block 検知→conductor escalate→決定(a)受領**。CI確認中に GitHub Actions が account billing 失敗で 5/29〜repo-wide 停止中と判明 (全run 3-4s fail、PR#406-409+#410+日次RAG Metrics 全fail)。URGENCY:high で conductor (va5mgfxg) escalate。**conductor決定 = 推奨(a)採用**: ①コード変更PRは 6/1 CI復帰まで merge HOLD (CI起動不能=ルール充足不能のため) ②docs-only/status PR (Tier1 [self-review]) は #406-409 先例通り継続可 (#410含む)。既知の$20上限到達 (6/1リセットで自動復帰見込み、dashboard記載済) と同根。**verify候補 (kimny回し)**: annotation全文「The job was not started because recent account payments have failed or your spending limit needs to be increased.」は cap到達(6/1自動復帰) と 支払い方法failure(6/1自動解消せず) を区別不能。区別は billing画面要 (gh token に user scope なし→API確認不可、深追いせず kimny verify)。
+- 2026-05-31T13:15:00+09:00: **昼 /checkout compact 状態保存** (conductor va5mgfxg 指示, 全peer compact)。朝の安全停止 (06:56) 以降 mued課セッションで新規作業なし → state不変: working tree clean、HEAD=origin/main (2fcf65e3, PR #409)、未commit/未push なし、WIPゼロ。既存stash 6件は別ブランチ旧WIP (本セッション無関係)。expected_next_check_at を 12:00→6/1 cron に更新 (朝の値は経過済み)。compact後 6/1 cron で継続。返信不要指示につき send_message 応答なし・状態保存のみ。
 - 2026-05-31T06:56:00+09:00: **全ピアシャットダウン→再起動 安全停止完了** (conductor lv3h0a6c 指示)。状態保存確認: working tree clean、HEAD=origin/main (5930e6e4, PR #408 merged)、未commit/未push なし、WIPゼロ。**APIエラー: mued課セッションで未観測** (全tool call成功)。既存stash 6件は別ブランチの旧WIP (hoo-prompt-sync/muednote-v3等、git object保存済み・本セッション無関係)。再起動後Q3 GA backlog自走予定。
 - 2026-05-29T19:57:00+09:00: **context shape-up halt待機** — WIPなし。CLAUDE.md slim+fanout完了 (PR#406+#407)。再起動後Q3 GA backlog自走予定。
 - 2026-05-29T16:00:00+09:00: **PR #407 merged** (260728cc) — CCO fanout適用完了 (block14除去・block19挿入・18ブロック圧縮)。861→607行。
