@@ -3,21 +3,23 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: 夕方 /checkout compact 状態保存 (conductor指示, 全peer compact)。本日完納分は #414 までに保存済・clean tree継続。code work は 6/1 CI復帰待ち。
-next_action: 6/1 CI復帰後コードPR群: ①計測event (Gap A/B/C) ②first-run無料診断導線 (Tier2)。それまで残backlog docs先行 (Hooセリフ下書き・GA4設定要件洗い出し)
+current_task: **mued課 最重点 = MUEDial 実装 + 継続的改善 (kimny 5/31)**。ファネル等通常業務(#411計測/#413アクティベーション导线)も**並行継続**(「後回し」は kimny 訂正で撤回)。コアは launch済(本番稼働)、GA完成度~80%。
+next_action: 6/1 CI復帰後コードPR群(並行): ①`components/dial/v2/` 次世代session UI 本線化(MUEDial体験改善) ②アクティベーション导线(landing 有料default 逆転=product UX実装, #413設計済)。6/1前は v2/現状把握 + GA toggle checklist 精緻化(docs先行)
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-06-01T09:00:00+09:00
-last_update: 2026-05-31T18:58:00+09:00
-evidence: HEAD=origin/main fcd7c7cc (PR #414 merged) / working tree clean / 未commit・未push なし
+last_update: 2026-05-31T20:05:00+09:00
+evidence: HEAD=origin/main 1657b8b7 (PR #415 merged) / working tree clean / 未commit・未push なし
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
+- 2026-05-31T20:08:00+09:00: **priority 訂正受領 (kimny via conductor)= 「後回し」撤回 → MUEDial 実装+「継続的改善」最重点 ＋ ファネル等通常業務も並行継続**。20:05の「ファネル計測/onboarding後回し」整理は kimny が**過剰として撤回**。正: ①goal に「継続的改善」明示(単発GA polishでなく) ②#411(計測)/#413(アクティベーション导线)は drop でなく**並行継続** ③私の「#413 first-run無料診断前面化=product UX実装」整理は妥当と承認、その線で MUEDial体験改善として進めてOK。実数~80%/次手(v2 UI本線化+アクティベーション导线)は PWA反映済。**self-correction記録**: status/memory を「後回し」→「並行継続」に訂正(本コミットで反映、push前訂正)。返信不要指示につき send_message なし。
+- 2026-05-31T20:05:00+09:00: **priority pivot 受領 (kimny指示 via conductor va5mgfxg)= mued課当面プライオリティ = MUEDial実装担当** (MUEDial=mued_v2リポ内プロダクト)。conductor PWA ピアゴール表 実数更新の明示pull に自己申告返信: ①goal=MUEDial を Q3 GA(2026-11-13)で一般提供できる完成品質に ②実装達成 **~80%** (GA完成度ベース、コアMVPは5/13 launch=本番稼働済・実質100%、Q3 GA backlog 6/8 done) ③次手=`components/dial/v2/`(analyzer/chat/stem-panel/take-pills/waveform/player-v2=次世代session UI)本線化 + アクティベーション导线、6/1 CI復帰後 ④ブロッカー=CI billing block中コードPR HOLD、機能ブロッカー無し。**framing note送付**: 「実装%」はコア既launch済のため GA完成度軸で算出、特定feature(例Cryo Mix統合)がgoal指定なら再較正。set_summary更新済。memory `project-mued-priority-pivot` 化。【20:08 訂正: 下記「後回し」框は撤回、上記エントリ参照】
 - 2026-05-31T18:58:00+09:00: **夕方 /checkout compact 状態保存** (conductor va5mgfxg 指示, 全peer compact)。#414 (18:00) 以降 repo変更なし=clean tree継続、HEAD=fcd7c7cc。**本日完納**: Q3 GA activation spec (PR #411計測設計 + #413導線設計) + peer support (conductor goal報告 / growth deploy照合 / SNS reply参戦URL handoff / UTM正本補正) + data課 PR #181 Tier2 review(LGTM)。memory 2件追記 (`project-ci-billing-block` Vercel別系統追記 / `reference-utm-canonical-ownership` 新規)。**conductor継続メモ再確認**: コード変更PRは6/1 CI復帰までHOLD、docs/status継続、6/1 billing復旧後 GA4 funnel instrumentation 着手 (設計draft #411/#413 先行済=着手時は機械作業化)。返信不要につき send_message なし・状態保存のみ。
 - 2026-05-31T17:55:00+09:00: **data課 PR #181 Tier2 review → LGTM** (`gw-data-analysis`, GitHub詳細コメント+peers両方)。`fetch_note_metrics.py` follower/magazine追加。clean refactor評価。**推奨1点(非ブロッキング)**: 新規 `fetch_creator_stats/fetch_magazine_stats` が error handling無し→新endpoint失敗で run全体abort=既存notes/likes metricsも保存されない (PR説明「既存影響なし」は不正確)。try/except graceful degrade推奨。minor: magazine fetch 1ページのみ(>20で過少)。**patrol報告対象**: PR #181 / Tier2 / LGTM。
 - 2026-05-31T16:40:00+09:00: **UTM canonical正本 補正受領** (growth 7m1nxk6t)。私のSNS回答「campaign正本=growth」は不正確→正しくは**正本=data課 PR #177 + `reports/utm-parameter-design.md`**、growth=統一保証役。SNS補正はgrowthが実施(二重補正回避)。reference memory化 (`reference-utm-canonical-ownership.md`) で再発防止。
