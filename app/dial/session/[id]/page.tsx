@@ -6,7 +6,7 @@ import { useAuth } from '@clerk/nextjs';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { DashboardLocaleSwitcher } from '@/components/ui/dashboard-locale-switcher';
 import Link from 'next/link';
-import { ChatPanel } from '@/components/dial/chat-panel';
+import { ChatPanelV2 } from '@/components/dial/v2/chat';
 import { AudioAnalyzerProvider } from '@/hooks/use-audio-analyzer-context';
 import { UnifiedSessionPlayerV2 as UnifiedSessionPlayer } from '@/components/dial/v2/unified-session-player-v2';
 import type { TakeEntry } from '@/components/dial/unified-session-player';
@@ -1768,7 +1768,7 @@ function DialSessionContent() {
                   );
                 })()}
                 <div className="flex-1 min-h-0">
-                  <ChatPanel
+                  <ChatPanelV2
                     className="h-full"
                     sessionId={session.id}
                     tracks={session.tracks}
