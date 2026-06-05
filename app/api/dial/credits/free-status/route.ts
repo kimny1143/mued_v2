@@ -40,15 +40,15 @@ export async function GET() {
   const { userId } = await auth();
   if (!userId) return NextResponse.json(DEFAULT);
 
-  const [rec] = await db
-    .select({ email: users.email })
-    .from(users)
-    .where(eq(users.clerkId, userId))
-    .limit(1);
-  const email = rec?.email;
-  if (!email) return NextResponse.json({ ...DEFAULT, signedIn: true });
-
   try {
+    const [rec] = await db
+      .select({ email: users.email })
+      .from(users)
+      .where(eq(users.clerkId, userId))
+      .limit(1);
+    const email = rec?.email;
+    if (!email) return NextResponse.json({ ...DEFAULT, signedIn: true });
+
     const isWaitlistMember = await checkWaitlistEmailExists(email);
     const freeDiagnosisUsed = isWaitlistMember ? await checkMixDiagnosisFreeUsed(email) : false;
     return NextResponse.json({
@@ -58,7 +58,10 @@ export async function GET() {
       eligible: isWaitlistMember && !freeDiagnosisUsed,
     });
   } catch (err) {
-    // Blob (list) failure → fail-closed: do not falsely promise a free trial. Log + report ineligible.
+    // Fail-closed: ANY lookup error (Neon user lookup or Blob eligibility) → report
+    // ineligible, never 500. Honors the "always 200" contract so the landing can
+    // fetch unconditionally without handling auth/error states. Never fail-open
+    // (no wrongly-granted free trial).
     logger.error('[credits/free-status] eligibility check failed', { error: err, userId });
     return NextResponse.json({ ...DEFAULT, signedIn: true });
   }

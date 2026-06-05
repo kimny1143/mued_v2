@@ -96,4 +96,15 @@ describe('GET /api/dial/credits/free-status', () => {
       signedIn: true, isWaitlistMember: false, freeDiagnosisUsed: false, eligible: false,
     });
   });
+
+  it('fails closed (200, never 500) when the user lookup (db) throws', async () => {
+    vi.mocked(auth).mockResolvedValue({ userId: 'u1' } as never);
+    const limit = vi.fn().mockRejectedValue(new Error('neon down'));
+    vi.mocked(db.select).mockReturnValue({ from: () => ({ where: () => ({ limit }) }) } as never);
+    const res = await GET();
+    expect(res.status).toBe(200);
+    await expect(res.json()).resolves.toEqual({
+      signedIn: true, isWaitlistMember: false, freeDiagnosisUsed: false, eligible: false,
+    });
+  });
 });
