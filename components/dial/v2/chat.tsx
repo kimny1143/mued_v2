@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { Micro, Btn } from './atoms';
 import { IconSend, IconSpinner, IconSparkle } from './icons';
@@ -78,6 +78,11 @@ const VALID_PRESENCE = ['NORMAL', 'LEAD', 'BACKGROUND'];
 const VALID_PAN = ['NO_PREFERENCE', 'LEFT', 'CENTRE', 'RIGHT'];
 const VALID_REVERB = ['NONE', 'LOW', 'MEDIUM', 'HIGH'];
 
+// Assistant actions that require an explicit user "generate" click
+// (vs adjust_preview / set_mastering_params which auto-fire). The generate
+// button is shown only on the latest such message to prevent duplicate firing.
+const BUTTON_ACTIONS = new Set<MixAction>(['request_mix_check', 'request_final', 'request_mastering_final']);
+
 function stripJsonBlock(content: string) {
   return content.replace(/```json\s*\n?[\s\S]*?\n?```/g, '').trim();
 }
@@ -122,15 +127,20 @@ interface ParamChangeCardProps {
   parameterChanges: ParameterChange[];
   action: MixAction;
   applied: boolean;
-  onMarkApplied: () => void;
+  generating: boolean;
+  isLastActionable: boolean;
+  onGenerate: () => void;
 }
 
 function ParamChangeCard({
   parameterChanges,
   action,
   applied,
-  onMarkApplied: _onMarkApplied,
+  generating,
+  isLastActionable,
+  onGenerate,
 }: ParamChangeCardProps) {
+  const { t } = useLocale();
   const isPreview = action === 'adjust_preview';
   const isMixCheck = action === 'request_mix_check';
   const isFinal = action === 'request_final';
@@ -138,6 +148,7 @@ function ParamChangeCard({
   const isMasteringFinal = action === 'request_mastering_final';
   const hasParams = parameterChanges.length > 0;
   const isMixAction = isMixCheck || isFinal;
+  const isButtonAction = isMixCheck || isFinal || isMasteringFinal;
 
   const accentColor = isFinal || isMasteringFinal
     ? 'var(--emerald)'
@@ -199,6 +210,32 @@ function ParamChangeCard({
         </div>
       )}
 
+      {/* Generate trigger — restores Final / Mix Check / Mastering Final firing.
+          Shown only on the latest unsubmitted actionable card (lastActionableId guard). */}
+      {isButtonAction && isLastActionable && !applied && (
+        <div className="px-2.5 pb-2 pt-0.5">
+          <button
+            onClick={onGenerate}
+            disabled={generating}
+            data-testid={isFinal ? 'dial-chat-generate-final' : isMasteringFinal ? 'dial-chat-generate-mastering-final' : 'dial-chat-generate-mix-check'}
+            className="w-full px-3 py-2 rounded-[3px] text-[11px] mono font-medium tracking-wide transition-colors disabled:opacity-40"
+            style={
+              isFinal || isMasteringFinal
+                ? { background: 'var(--emerald)', color: '#081a0f' }
+                : { background: 'var(--amber)', color: '#1a1200' }
+            }
+          >
+            {generating
+              ? t.dial.chat.generating
+              : isFinal
+                ? t.dial.chat.generateFinal
+                : isMasteringFinal
+                  ? t.dial.chat.generateMasteredTrack
+                  : t.dial.chat.generateMixCheck}
+          </button>
+        </div>
+      )}
+
       {/* Submitted indicator */}
       {applied && (isMixAction || isMasteringFinal) && (
         <div className="px-2.5 pb-2 flex items-center gap-1" style={{ color: 'var(--emerald)' }}>
@@ -220,7 +257,10 @@ export function ChatPanelV2({
   headers,
   onParametersApplied,
   onPreviewRequested,
+  onMixCheckRequested,
+  onFinalRequested,
   onMasteringPreviewRequested,
+  onMasteringFinalRequested,
   generating = false,
   generatingLabel,
   generatingElapsed,
@@ -274,7 +314,6 @@ export function ChatPanelV2({
         const res = await fetch(`/api/dial/chat?sessionId=${sessionId}`, { headers });
         const data = await res.json();
         if (data.success) {
-          const BUTTON_ACTIONS = new Set(['request_mix_check', 'request_final', 'request_mastering_final']);
           const msgs = data.data.messages as ChatMessage[];
           setMessages(msgs.map((m: ChatMessage, idx: number) => {
             const isBtn = m.role === 'assistant' && m.action && BUTTON_ACTIONS.has(m.action);
@@ -395,6 +434,16 @@ export function ChatPanelV2({
 
   const canSend = !sending && !!input.trim() && tracks.length > 0;
 
+  // Latest assistant message requiring an explicit generate action.
+  // Only this card renders the generate button (prevents duplicate firing from history).
+  const lastActionableId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.role === 'assistant' && m.action && BUTTON_ACTIONS.has(m.action)) return m.id;
+    }
+    return null;
+  }, [messages]);
+
   return (
     <div className={`flex flex-col overflow-hidden ${className ?? ''}`} style={{ background: 'var(--ink-1)', border: '1px solid var(--line)', borderRadius: 3 }}>
 
@@ -477,7 +526,14 @@ export function ChatPanelV2({
                         parameterChanges={msg.parameterChanges ?? []}
                         action={msg.action}
                         applied={!!msg.applied}
-                        onMarkApplied={() => setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, applied: true } : m))}
+                        generating={generating}
+                        isLastActionable={msg.id === lastActionableId}
+                        onGenerate={() => {
+                          if (msg.action === 'request_final') onFinalRequested?.();
+                          else if (msg.action === 'request_mix_check') onMixCheckRequested?.();
+                          else if (msg.action === 'request_mastering_final') onMasteringFinalRequested?.();
+                          setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, applied: true } : m));
+                        }}
                       />
                     );
                   })()}
