@@ -288,6 +288,81 @@ function VideoPromo({ lp, locale, closeLabel }: { lp: Record<string, string>; lo
   );
 }
 
+// ─── First-Run Free Campaign CTA ────────────────────────────────────────────
+//
+// Renders ONLY when the signed-in user is eligible (kill-switch ON + cap not reached +
+// lifetime-1 unused). While DIAL_FREE_CAMPAIGN_ENABLED is OFF (default), the status
+// endpoint reports eligible:false and this renders nothing — the campaign ships dark.
+
+function FreeCampaignCta({ fc }: { fc: Record<string, string> }) {
+  const [eligible, setEligible] = useState(false);
+  const [remaining, setRemaining] = useState(0);
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/dial/campaign/status', { signal: controller.signal })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.eligible) {
+          setEligible(true);
+          setRemaining(typeof d.remaining === 'number' ? d.remaining : 0);
+        }
+      })
+      .catch(() => { /* fail-closed: no CTA on error */ });
+    return () => controller.abort();
+  }, []);
+
+  const start = useCallback(async () => {
+    setStarting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/dial/campaign/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        setError(data.error || fc.error);
+        setStarting(false);
+        return;
+      }
+      if (data.data.guestToken) localStorage.setItem('dial_guest_token', data.data.guestToken);
+      localStorage.setItem('dial_session_id', data.data.sessionId);
+      window.location.href = `/dial/session/${data.data.sessionId}`;
+    } catch {
+      setError(fc.error);
+      setStarting(false);
+    }
+  }, [fc.error]);
+
+  if (!eligible) return null;
+
+  return (
+    <div className="mb-6 p-5 rounded-[var(--radius-lg)] border-2 border-amber-400/40 bg-amber-500/10" data-testid="dial-free-campaign-cta">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-amber-400 text-black">{fc.badge}</span>
+        {remaining > 0 && (
+          <span className="text-xs text-amber-300">{fc.remaining.replace('{n}', String(remaining))}</span>
+        )}
+      </div>
+      <p className="text-base font-semibold text-white mb-1">{fc.title}</p>
+      <p className="text-sm text-white/70 mb-4">{fc.desc}</p>
+      {error && <p className="text-sm text-red-400 mb-2">{error}</p>}
+      <button
+        onClick={start}
+        disabled={starting}
+        data-testid="dial-free-campaign-start"
+        className="w-full py-3.5 bg-amber-400 text-black font-semibold rounded-[var(--radius-md)] hover:bg-amber-300 disabled:opacity-60 transition-colors cursor-pointer"
+      >
+        {starting ? fc.starting : fc.cta}
+      </button>
+    </div>
+  );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 export default function DialPage() {
@@ -415,6 +490,9 @@ export default function DialPage() {
 
             {/* Right: Checkout */}
             <div className="lg:max-w-md lg:ml-auto bg-black/50 backdrop-blur-sm rounded-[var(--radius-lg)] p-6 lg:p-8 border border-white/5">
+              {/* First-run free campaign (renders only when eligible; dark by default) */}
+              <FreeCampaignCta fc={t.dial.freeCampaign} />
+
               {/* Mix options */}
               <div className="space-y-3 mb-4" role="radiogroup" aria-label={t.dial.checkout.step1}>
                 {MIX_OPTIONS.map((opt) => (

@@ -29,7 +29,8 @@ import { recordDialEvent } from '@/lib/analytics/dial-events';
 import { logger } from '@/lib/utils/logger';
 
 const startSchema = z.object({
-  musicalStyle: z.string().min(1).max(40),
+  // Genre is chosen in-session (Hoo sets it via chat); default 'other' like /checkout.
+  musicalStyle: z.string().min(1).max(40).optional(),
   title: z.string().max(200).optional(),
 });
 
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
       userId,
       mode: FREE_CAMPAIGN_SESSION.mode,
       masteringMode: FREE_CAMPAIGN_SESSION.masteringMode,
-      musicalStyle: parsed.data.musicalStyle,
+      musicalStyle: parsed.data.musicalStyle ?? 'other',
       title: parsed.data.title,
       guestEmail: email ?? undefined,
       guestToken,
