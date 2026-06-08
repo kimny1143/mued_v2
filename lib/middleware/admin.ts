@@ -7,9 +7,10 @@
  *
  * Setup: Clerk Dashboard → Users → Public Metadata → { "role": "admin" }
  *
- * Note: Uses clerkClient().users.getUser() instead of auth()/currentUser()
- * because this app has no middleware.ts, so Clerk session context is not
- * propagated — auth() and currentUser() return null in API routes.
+ * Note: Uses clerkClient().users.getUser(userId) (Clerk Management API) rather than
+ * currentUser(), because isAdmin() checks the role of an *arbitrary* userId (passed in),
+ * not necessarily the current session user. Callers resolve the session userId via auth()
+ * first, then pass it here.
  */
 
 import { clerkClient } from '@clerk/nextjs/server';

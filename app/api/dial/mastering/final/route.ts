@@ -7,10 +7,11 @@
  */
 
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterFinal, isRoExDevKey } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { db } from '@/db';
@@ -24,6 +25,10 @@ const masteringFinalSchema = z.object({
 
 export const POST = withDialAuth(async (auth) => {
   try {
+    // Rate limit: mastering final is a RoEx credit operation (220cr)
+    const rateLimitResponse = await rateLimit(auth.request, 'dial-process');
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await auth.request.json();
     const parsed = masteringFinalSchema.safeParse(body);
     if (!parsed.success) {
@@ -60,6 +65,22 @@ export const POST = withDialAuth(async (auth) => {
       return apiError('Payment required before mastering.', {
         code: 'PAYMENT_REQUIRED',
         status: 402,
+      });
+    }
+
+    // Duplicate guard: one mastering final per session (prevents direct 220cr×N hits;
+    // the chat dup-suppression only covered the conversational path).
+    const existingMaster = await db.query.dialTasks.findFirst({
+      where: and(
+        eq(dialTasks.sessionId, previewTask.sessionId),
+        eq(dialTasks.taskType, 'mastering'),
+        ne(dialTasks.status, 'failed'),
+      ),
+    });
+    if (existingMaster) {
+      return apiError('Mastering already generated for this session.', {
+        code: 'MASTERING_ALREADY_DONE',
+        status: 409,
       });
     }
 

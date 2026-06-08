@@ -113,6 +113,11 @@ export const dialSessions = pgTable('dial_sessions', {
   statusIdx: index('idx_dial_sessions_status').on(table.status),
   userStatusIdx: index('idx_dial_sessions_user_status').on(table.userId, table.status),
   guestTokenIdx: index('idx_dial_sessions_guest_token').on(table.guestToken),
+  // Lifetime-1: at most one free-campaign grant per user (DB-level race safety net
+  // on top of the API guard). Same pattern as dial_subs_unique_active_per_user.
+  uniqueFreeCampaignPerUser: uniqueIndex('dial_sessions_unique_free_campaign_per_user')
+    .on(table.userId)
+    .where(sql`is_free_campaign = true`),
 }));
 
 /** Uploaded audio stems */
