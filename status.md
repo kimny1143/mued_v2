@@ -3,21 +3,22 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: **MUEDial 初回ユーザー無料キャンペーン Path A 実装中 (kimny 最終GO 6/8 11:46)**。Stripe迂回paidセッション+RoExプール無料付与(cap15/480cr/人)。Tier3(課金ゲート)→conductorレビュー。**kill-switch DEFAULT OFF でマージ**(公開はgo-live別ゲート)。母集団(b)全開放cap15確定/Auto Top-Up OFF確認済/設計承認済。
-next_action: 実装7コミット(branch feat/dial-free-campaign): ①schema+migration✅ ②Blob grant flag+unit ③free-campaign config/eligibility+unit ④campaign status/start endpoint ⑤reference/chat ガード ⑥LP CTA+i18n ⑦監視query+verify→Tier3 PR。**実RoEx E2E(480cr)とswitch ONはgo-live前ゲート(kimny nod+conductor声チェック+Auto Top-Up再確認)で実施、当方は着手しない**。
+current_task: **MUEDial 初回無料キャンペーン Path A 実装完了→Tier3 PR提出**。7コミット全完納(schema/Blob/eligibility/endpoint/ガード/LP+i18n/監視)。**kill-switch DEFAULT OFF でマージ**(公開はgo-live別ゲート)。verify全green(typecheck/lint/build/unit 1468)。Tier3(課金ゲート)=conductorレビュー待ち。
+next_action: ①conductor Tier3レビュー待ち(grant/Stripe迂回部) ②マージ後 migration 0048 Neon手動適用(kimny) ③**go-live別ゲート**: LP告知コピー声チェック+Auto Top-Up再確認+env3点(`DIAL_FREE_CAMPAIGN_ENABLED=true`/`AUDIENCE=open`/cap)+kimny nod+実RoEx E2E(480cr実測=stems-off gate裏取り)→switch ON+告知。**当方はswitch ON/実E2E未着手(go-liveゲート)**。
 blocked_by: null
 urgency: mid
-action_owner: peer
+action_owner: conductor
 deadline: null
-expected_next_check_at: 2026-06-08T14:00:00+09:00
-last_update: 2026-06-08T20:55:00+09:00
-evidence: branch feat/dial-free-campaign / commit 1/7 5c15a966 (is_free_campaign schema+migration 0048) / プラン /Users/kimny/.claude/plans/sorted-greeting-pebble.md / Auto Top-Up OFF確認(conductor 6/8)
+expected_next_check_at: 2026-06-08T15:00:00+09:00
+last_update: 2026-06-08T21:12:00+09:00
+evidence: branch feat/dial-free-campaign HEAD=ad8e5bce / 7 commits(5c15a966..ad8e5bce) / verify全green(typecheck/lint/build/unit 1468) / campaign routes 3本 build登録確認 / プラン sorted-greeting-pebble.md
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
+- 2026-06-08T21:12:00+09:00: **Path A 実装完了 (7コミット) → Tier3 PR 提出**。branch feat/dial-free-campaign (5c15a966..ad8e5bce)。①is_free_campaign schema+migration 0048 ②Blob lifetime-1 grant flag(+7 unit) ③free-campaign config/eligibility(kill-switch DEFAULT OFF/audience open default/cap15/fail-closed, +14 unit) ④campaign status(always-200 fail-closed)+start(Stripe迂回paid+userId DB lifetime-1+email Blob mark) endpoint ⑤free-tierガード(reference無効化+chat compareMixesスキップ+stems-off returnStems:false→480cr) ⑥LP CTA(eligible時のみ描画=dark by default)+i18n en/ja(parity確認) ⑦admin監視stats endpoint+realized 480cr。**verify全green**: typecheck/lint/build/unit 1468全pass、campaign routes 3本build登録確認。**kill-switch OFFでマージ=公開されない状態で入る**。go-live(switch ON+告知)は別ゲート(LP声チェック+Auto Top-Up再確認+env3点+kimny nod+実RoEx E2E 480cr実測)。CFO連携: open#4 close(omakase final=stems込み300cr)/realized 480=stems-off gate依存/RoEx balance API無し確定(監視=CFO週次手動dashboard)。
 - 2026-06-08T20:55:00+09:00: **MUEDial 初回無料キャンペーン Path A 実装着手 (kimny 最終GO 6/8 11:46 via conductor)**。設計経緯: conductor の集客デモ弾照会から MUEDial 実態を一次ソース確認 → ①出力=実音処理(RoEx)②デモ素材=mix由来(case-A copy不一致検出)③RoEx原価 525/720論争を「paid final取得回数」で決着④**credit-consume本番未配線**(ゲート=paymentStatus+cycle)発見⑤**対話イテレーション=無料preview/paid finalは1回**を実コード断定(前回過大見積を self-correction)→ 規律journey=無料会話+final250+master220+diag10=**480cr/人→~16名**。Path A(Stripe迂回paidセッション)を /plan→kimny承認→母集団(b)全開放cap15確定→**最終GO**。**Tier3(課金ゲート)/ kill-switch DEFAULT OFF でマージ(公開はgo-live別ゲート: LP声チェック+Auto Top-Up再確認+env3点+kimny nod+実E2E)**。ガード3点(baseCycleLimit=1/reference無効化/正直コピー)+停止二重(cap15+`DIAL_FREE_CAMPAIGN_ENABLED`)。Auto Top-Up OFF確認済(conductor 実値 auto_topup_enabled=false/残9610/Recent Activityが原価モデル裏取り)。**Commit 1/7 完了**(5c15a966): `is_free_campaign` 列追加(db/schema/dial.ts + migration 0048、純粋追加 NOT NULL DEFAULT false)。残: Blob grant flag→eligibility→endpoint→ガード→LP→監視→verify→Tier3 PR。
 - 2026-06-05T10:45:00+09:00: **#413 endpoint PR #423 merged(native LGTM + nit 適用)= task1/2 完納**。PR #423: native の non-blocking nit(db.select を fail-closed try 内へ移動=Neon 一過性エラーも 200 fail-closed、「常に200」契約完全 honor、fail-open でない)を適用 + 7ケース目 test(db throw→fail-closed)追加 → native 承認延長(19c9f580 delta verify)+ CI 全green → self-merge(ecaf069b)。GET `/api/dial/credits/free-status` 本番 merge(Phase2 client が consume するまで UI 無影響)。**両 priority next-hand(v2 chat cutover + #413 endpoint)merged + deployed 完納**。**残 = #413 Phase2 = client first-run カード**: landing(`app/dial/page.tsx`)で signed-in & eligible なら無料診断を前面化(現 mixType=omakase 有料 default を置換)+ i18n。**/plan 必須**(新UI+3ファイル)+ **要調査(設計の核)**: 無料 mix_diagnosis の **entry flow**(landing checkout は tier 選択=paid 経路で、free diagnosis の起動経路が未確定)。production landing UX=design-sensitive(kimny ディレクター判断領域)につき、方向性確認 → /plan → 実装の順。
 - 2026-06-05T10:35:00+09:00: **PR #420 merged + Production LIVE + #413 endpoint PR #423**。①**PR #420**(v2 chat cutover + regression fix): native code-LGTM + conductor smoke-gate **(a)確定**(unit test 実発火 assert を smoke 充足として受容=一度きり手動 smoke より強い恒久回帰ガード) + CI 全green → `[peer-review: native]` self-merge(88a9eac7) → **Production deploy 確認(sha 88a9eac7, 01:25Z = dial.mued.jp LIVE)**。**post-merge kimny QA item(blocker でない)**: 実 session で chat UI/generate ボタン live 視覚 spot-check → kimny 実機 QA 同梱。②**#413 activation导线 Phase1 = GET `/api/dial/credits/free-status` 実装→PR #423**(Tier2 native review 中)。/plan conductor 承認(a)通り: plain auth + 未認証200(precedent=subscription/status)、自分の eligibility のみ(email auth 解決=列挙不可)、既存 helper 再利用、mutation なし、Blob fail-closed、response shape canonical 固定(Phase2 前提)。6ケース unit test 全green、typecheck/lint/build green、route table 登録確認、unit 1446 全green。Phase2(client first-run カード+i18n)は別PR。
