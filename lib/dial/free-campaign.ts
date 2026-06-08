@@ -39,14 +39,15 @@ export function getFreeCampaignCap(): number {
 /**
  * Fixed shape of a free-campaign session.
  * baseCycleLimit=1 caps the paid mix to a single final; additionalCycleLimit=0
- * blocks retake purchases. roexCrEstimate is bookkeeping (with stems ≈530, without ≈480).
+ * blocks retake purchases. roexCrEstimate = realized RoEx cost of a completed journey
+ * (free is stems-off ≈480cr = final250 + master220 + diag10; with stems it'd be ≈530).
  */
 export const FREE_CAMPAIGN_SESSION = {
   mode: 'dialogue',
   masteringMode: 'omakase',
   baseCycleLimit: 1,
   additionalCycleLimit: 0,
-  roexCrEstimate: 530,
+  roexCrEstimate: 480,
 } as const;
 
 /** Count of free-campaign grant sessions issued so far (cap enforcement). */
