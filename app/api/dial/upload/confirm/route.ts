@@ -69,7 +69,11 @@ export const POST = withDialAuth(async (auth) => {
     let r2Url: string | null = null;
 
     if (workerUrl && secret) {
-      const r2Key = `stems/${sessionId}/${fileName}`;
+      // Include the track UUID so the R2 key is unique even when two stems share a
+      // filename (e.g. 4 vocal stems all named "vocal.wav"). Without this, same-named
+      // stems collided on stems/{sessionId}/{fileName} → R2 overwrite → on GCS expiry
+      // the fallback URL resolved all of them to one object → RoEx dropped the dupes.
+      const r2Key = `stems/${sessionId}/${track.id}/${fileName}`;
       try {
         const res = await fetch(`${workerUrl}/copy`, {
           method: 'POST',
