@@ -7,7 +7,7 @@ import { db } from '@/db';
 import { dialTrialEvents } from '@/db/schema';
 import { logger } from '@/lib/utils/logger';
 
-export type DialEventType = 'analyze' | 'preview' | 'final' | 'checkout_view';
+export type DialEventType = 'analyze' | 'preview' | 'final' | 'checkout_view' | 'free_campaign_start';
 
 export interface RecordDialEventInput {
   sessionId: string;
