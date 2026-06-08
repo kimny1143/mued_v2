@@ -29,6 +29,14 @@ export const POST = withDialAuth(async (auth) => {
       return apiForbidden('Payment required before uploading');
     }
 
+    // Free campaign: reference-track is disabled (free sessions are paymentStatus=paid,
+    // so the gate above does not catch them). A reference track makes chat run
+    // /mixcomparison on every message — a hidden per-message RoEx cost we exclude from
+    // the free tier. Reference comparison stays a paid differentiator.
+    if (session.isFreeCampaign) {
+      return apiForbidden('Reference track comparison is not available on the free trial.');
+    }
+
     const client = createRoExClient();
     const { signedUrl, readableUrl } = await getUploadUrl(client, fileName);
 

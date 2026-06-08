@@ -102,6 +102,10 @@ export const dialSessions = pgTable('dial_sessions', {
   referenceTrackUrl: text('reference_track_url'), // RoEx readable URL
   referenceTrackFilename: text('reference_track_filename'), // Original filename
   referenceAnalysisResult: jsonb('reference_analysis_result'), // analyzeMix result cache
+  // First-run free campaign: true = Stripe-bypass promo grant session (RoEx pool funded, capped).
+  // Used to bound cost (baseCycleLimit=1), disable reference-track (hidden /mixcomparison cost),
+  // and exclude from paid-user counts. See lib/dial/free-campaign.ts.
+  isFreeCampaign: boolean('is_free_campaign').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
@@ -109,6 +113,11 @@ export const dialSessions = pgTable('dial_sessions', {
   statusIdx: index('idx_dial_sessions_status').on(table.status),
   userStatusIdx: index('idx_dial_sessions_user_status').on(table.userId, table.status),
   guestTokenIdx: index('idx_dial_sessions_guest_token').on(table.guestToken),
+  // Lifetime-1: at most one free-campaign grant per user (DB-level race safety net
+  // on top of the API guard). Same pattern as dial_subs_unique_active_per_user.
+  uniqueFreeCampaignPerUser: uniqueIndex('dial_sessions_unique_free_campaign_per_user')
+    .on(table.userId)
+    .where(sql`is_free_campaign = true`),
 }));
 
 /** Uploaded audio stems */

@@ -1442,6 +1442,15 @@
       "readinessBannerCta": "Check my readiness",
       "previewUpdatedBadge": "Preview updated"
     },
+    "freeCampaign": {
+      "badge": "15 spots · Free",
+      "title": "Let Hoo handle your mix — free",
+      "desc": "Conversational mixing + mastering + a mix diagnosis, on us. First-run only, while spots last.",
+      "remaining": "{n} spots left",
+      "cta": "Start free",
+      "starting": "Starting…",
+      "error": "Couldn't start your free session. Please try again."
+    },
     "checkout": {
       "tagline": "AI-powered mixing and mastering. Upload your stems, get a professional mix — no account required.",
       "step1": "Step 1: Mixing",

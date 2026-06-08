@@ -124,7 +124,7 @@ export async function mixFinalBasic(
   const body = {
     applyAudioEffectsData: {
       multitrackTaskId: req.taskId,
-      returnStems: true,
+      returnStems: req.returnStems ?? true,
       trackData: req.trackData.map((t) => ({
         trackURL: t.trackUrl,
         gainDb: t.gainDb,
@@ -148,7 +148,7 @@ export async function mixFinalAdvanced(
   const body = {
     applyAudioEffectsData: {
       multitrackTaskId: req.taskId,
-      returnStems: true,
+      returnStems: req.returnStems ?? true,
       trackData: req.trackData.map((t) => ({
         trackURL: t.trackUrl,
         gainDb: t.gainDb,
