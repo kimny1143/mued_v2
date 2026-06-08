@@ -121,11 +121,15 @@ export type AdvancedTrackAdjustment = {
 export type MixFinalRequest = {
   taskId: string;
   trackData: TrackGainAdjustment[];
+  /** Return processed stems (+50cr). Defaults to true. Set false for free-tier sessions. */
+  returnStems?: boolean;
 };
 
 export type MixAdvancedFinalRequest = {
   taskId: string;
   trackData: AdvancedTrackAdjustment[];
+  /** Return processed stems (+50cr). Defaults to true. Set false for free-tier sessions. */
+  returnStems?: boolean;
 };
 
 export type MixResult = {

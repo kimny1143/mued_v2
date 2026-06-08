@@ -164,8 +164,10 @@ export const POST = withDialAuth(async (auth) => {
       locale,
     };
 
-    // If reference track exists and a preview is available, run comparison inline
-    if (session.referenceTrackUrl && latestTask?.previewUrl) {
+    // If reference track exists and a preview is available, run comparison inline.
+    // Free campaign sessions never set referenceTrackUrl (reference upload is blocked),
+    // but guard explicitly so /mixcomparison can never bill the RoEx pool for a free session.
+    if (!session.isFreeCampaign && session.referenceTrackUrl && latestTask?.previewUrl) {
       try {
         const roexClient = createRoExClient();
         const comparison = await compareMixes(

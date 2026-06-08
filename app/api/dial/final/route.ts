@@ -182,6 +182,8 @@ export const POST = withDialAuth(async (auth) => {
       mixResult = await mixFinalAdvanced(client, {
         taskId: previewTask.roexTaskId,
         trackData: advancedTrackData,
+        // Free campaign: skip stems (+50cr) — stems are a paid differentiator; keeps free journey ≈480cr.
+        returnStems: !sessionRow.isFreeCampaign,
       });
     } else {
       // Omakase mode: basic final (gain only)
@@ -214,6 +216,8 @@ export const POST = withDialAuth(async (auth) => {
       mixResult = await mixFinalBasic(client, {
         taskId: previewTask.roexTaskId,
         trackData,
+        // Free campaign: skip stems (+50cr) — keeps free journey ≈480cr.
+        returnStems: !sessionRow.isFreeCampaign,
       });
     }
 

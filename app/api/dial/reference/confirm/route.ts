@@ -43,6 +43,11 @@ export const POST = withDialAuth(async (auth) => {
       return apiForbidden('Payment required');
     }
 
+    // Free campaign: reference-track disabled (hidden /mixcomparison per-message cost).
+    if (session.isFreeCampaign) {
+      return apiForbidden('Reference track comparison is not available on the free trial.');
+    }
+
     // Copy to R2 for permanent URL (GCS signed URLs expire in 1h)
     const r2Result = await copyToR2({
       sourceUrl: readableUrl,
