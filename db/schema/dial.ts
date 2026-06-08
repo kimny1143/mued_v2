@@ -102,6 +102,10 @@ export const dialSessions = pgTable('dial_sessions', {
   referenceTrackUrl: text('reference_track_url'), // RoEx readable URL
   referenceTrackFilename: text('reference_track_filename'), // Original filename
   referenceAnalysisResult: jsonb('reference_analysis_result'), // analyzeMix result cache
+  // First-run free campaign: true = Stripe-bypass promo grant session (RoEx pool funded, capped).
+  // Used to bound cost (baseCycleLimit=1), disable reference-track (hidden /mixcomparison cost),
+  // and exclude from paid-user counts. See lib/dial/free-campaign.ts.
+  isFreeCampaign: boolean('is_free_campaign').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({
