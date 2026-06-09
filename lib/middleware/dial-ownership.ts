@@ -91,7 +91,7 @@ export async function verifyDialSessionReadAccess(
   });
   if (!session) return null;
 
-  recordAdminAccess({
+  await recordAdminAccess({
     adminUserId: auth.userId,
     adminEmail: email,
     targetSessionId: session.id,

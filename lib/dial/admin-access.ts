@@ -48,22 +48,24 @@ export async function resolveRequesterEmail(userId: string | null): Promise<stri
 }
 
 /**
- * Record an admin read of a non-owned session. Fire-and-forget (mirrors recordDialEvent):
- * never throws, never blocks the response. Security-sensitive — every admin read is logged.
+ * Record an admin read of a non-owned session. Awaited by callers (security-sensitive —
+ * the audit entry must be durably written before the read proceeds; serverless can drop
+ * un-awaited writes). Never throws — a logging failure must not break the read path.
  */
-export function recordAdminAccess(input: {
+export async function recordAdminAccess(input: {
   adminUserId: string;
   adminEmail: string;
   targetSessionId: string;
   accessType: AdminAccessType;
-}): void {
-  void db
-    .insert(dialAdminAccessLog)
-    .values({
+}): Promise<void> {
+  try {
+    await db.insert(dialAdminAccessLog).values({
       adminUserId: input.adminUserId,
       adminEmail: input.adminEmail,
       targetSessionId: input.targetSessionId,
       accessType: input.accessType,
-    })
-    .catch((err) => logger.error('[admin-access] audit log write failed', { error: err, ...input }));
+    });
+  } catch (err) {
+    logger.error('[admin-access] audit log write failed', { error: err, ...input });
+  }
 }
