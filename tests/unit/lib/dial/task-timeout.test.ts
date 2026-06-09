@@ -11,7 +11,7 @@ vi.mock('@/db', () => ({
     update: vi.fn(),
     query: {
       dialSessions: { findFirst: vi.fn() },
-      dialTasks: { findMany: vi.fn() },
+      dialTasks: { findMany: vi.fn(), findFirst: vi.fn() },
     },
   },
 }));
@@ -115,12 +115,26 @@ describe('markDialTaskFailedWithReconcile', () => {
   });
 
   it('0-row guard: an already-completed task is NOT failed and touches nothing else', async () => {
-    returning.mockResolvedValue([]); // WHERE status<>'completed' matched nothing
+    returning.mockResolvedValue([]); // active-flip matched nothing
+    vi.mocked(db.query.dialTasks.findFirst).mockResolvedValue({ id: 't1', status: 'completed', taskType: 'preview', sessionId: 's1' } as never);
     const res = await markDialTaskFailedWithReconcile('t1', 'late');
     expect(res).toEqual({ failed: false });
     expect(db.query.dialSessions.findFirst).not.toHaveBeenCalled();
     expect(sessionWhere).not.toHaveBeenCalled();
     expect(sessionSetArg).toBeNull();
+  });
+
+  it('re-runnable: an already-FAILED task re-reconciles the session WITHOUT a 2nd previewCount refund', async () => {
+    returning.mockResolvedValue([]); // active-flip matched nothing (already failed)
+    vi.mocked(db.query.dialTasks.findFirst).mockResolvedValue({ id: 't9', status: 'failed', taskType: 'preview', sessionId: 's9' } as never);
+    vi.mocked(db.query.dialSessions.findFirst).mockResolvedValue({ id: 's9', status: 'previewing', mode: 'omakase', previewCount: 1 } as never);
+    vi.mocked(db.query.dialTasks.findMany).mockResolvedValue([] as never);
+
+    const res = await markDialTaskFailedWithReconcile('t9');
+    expect(res).toEqual({ failed: true });
+    expect(sessionWhere).toHaveBeenCalledTimes(1); // session reconcile re-ran
+    expect(sessionSetArg?.status).toBe('uploading'); // revert applied
+    expect(sessionSetArg?.previewCount).toBeUndefined(); // NO second refund on a re-run
   });
 
   it('flips a preview, reverts session, and restores an omakase preview slot', async () => {

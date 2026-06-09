@@ -7,8 +7,14 @@ const DEFAULT_BASE_URL = 'https://tonn.roexaudio.com';
  * serverless function until Vercel kills it — so the task never gets reconciled. 45s is
  * far above a healthy poll round-trip (RoEx status retrieves return in seconds) and below
  * the routes' maxDuration. This is opt-in per call (`{ timeoutMs }`): POLL/retrieve calls
- * set it; SUBMIT/charge calls do NOT — a false abort on a charge call (RoEx received it but
- * we aborted before our response) would risk a re-POST re-charge.
+ * set it; SUBMIT/charge calls do NOT.
+ *
+ * BILLING SAFETY — RoEx /retrieve* endpoints are IDEMPOTENT per task id: the first
+ * retrieve of a given multitrackTaskId / masteringTaskId charges once, every subsequent
+ * retrieve returns the cached result for FREE (preview retrieves are always free).
+ * [FACT: confirmed in writing by RoEx CEO David Ronan, 2026-03-23.] So a poll retry or a
+ * comm-timeout-then-retry on the SAME task id never re-charges. The submit-vs-poll split
+ * (no timeout on the initial charge submit) is belt-and-suspenders on top of that.
  */
 export const ROEX_POLL_TIMEOUT_MS = 45_000;
 

@@ -94,12 +94,16 @@ export function deriveRevertSessionStatus(
  * Mark a task failed + reconcile the session + restore previewCount — the single source of
  * truth for the failure write. Returns `{ failed }`.
  *
- * Race-safe / idempotent:
- *  - the task flip only matches an ACTIVE task (`status IN ('processing','pending')`), so
- *    re-running on an already-failed/completed task flips 0 rows → `{ failed:false }` and
- *    touches NOTHING (no double previewCount refund, no session revert).
+ * Race-safe / re-runnable / idempotent:
+ *  - the task flip only matches an ACTIVE task (`status IN ('processing','pending')`), so the
+ *    one-time previewCount refund happens ONLY on the real processing→failed transition.
+ *  - if the flip matches 0 rows the task is already terminal. If it is already 'failed'
+ *    (e.g. a previous reconcile crashed after the flip but before the session write), the
+ *    session reconcile is RE-RUN (idempotent — no second previewCount refund) so the
+ *    dashboard isn't frozen. If it is 'completed'/gone, return `{ failed:false }`.
  *  - the session write is guarded `WHERE status <> 'completed'`, so a concurrently-completed
  *    session is never downgraded.
+ * Callers should respect `{ failed:false }` (the task is completed/gone — do NOT report failed).
  */
 export async function markDialTaskFailedWithReconcile(
   taskId: string,
@@ -111,10 +115,21 @@ export async function markDialTaskFailedWithReconcile(
     .where(and(eq(dialTasks.id, taskId), inArray(dialTasks.status, ['processing', 'pending'])))
     .returning({ id: dialTasks.id, taskType: dialTasks.taskType, sessionId: dialTasks.sessionId });
 
-  if (flipped.length === 0) return { failed: false };
-
-  const { taskType, sessionId } = flipped[0];
-  console.warn(`[dial] task ${taskId} (${taskType}) marked failed${reason ? `: ${reason}` : ''}`);
+  const isFreshFail = flipped.length > 0;
+  let taskType: string;
+  let sessionId: string;
+  if (isFreshFail) {
+    taskType = flipped[0].taskType;
+    sessionId = flipped[0].sessionId;
+    console.warn(`[dial] task ${taskId} (${taskType}) marked failed${reason ? `: ${reason}` : ''}`);
+  } else {
+    // Already terminal — re-run the session reconcile only if it's a 'failed' task whose
+    // last reconcile may not have completed; otherwise (completed/gone) nothing to do.
+    const t = await db.query.dialTasks.findFirst({ where: eq(dialTasks.id, taskId) });
+    if (!t || t.status !== 'failed') return { failed: false };
+    taskType = t.taskType;
+    sessionId = t.sessionId;
+  }
 
   const session = await db.query.dialSessions.findFirst({ where: eq(dialSessions.id, sessionId) });
   if (!session) return { failed: true };
@@ -127,9 +142,9 @@ export async function markDialTaskFailedWithReconcile(
 
   const sessionUpdate: Record<string, unknown> = { updatedAt: new Date() };
   if (session.status !== revert) sessionUpdate.status = revert;
-  // Restore an omakase preview slot consumed at submit — a false fail must not burn the
-  // max-5 budget. GREATEST floors at 0.
-  if (taskType === 'preview' && session.mode === 'omakase') {
+  // Restore an omakase preview slot consumed at submit — ONLY on the fresh fail (never on a
+  // re-run, so the slot is refunded at most once). GREATEST floors at 0.
+  if (isFreshFail && taskType === 'preview' && session.mode === 'omakase') {
     sessionUpdate.previewCount = sql`GREATEST(${dialSessions.previewCount} - 1, 0)`;
   }
 

@@ -1,18 +1,17 @@
 /**
- * POST /api/cron/dial-reconcile — the durable stuck-task backstop + paid-incomplete flag.
+ * POST /api/cron/dial-reconcile — the durable stuck-task backstop.
  * Covers auth (500 no secret / 401 bad bearer) and the backstop decision (over → fail,
- * under → no fail). The reconcile + anomaly internals are unit-tested separately.
+ * under → no fail). The reconcile internals are unit-tested in task-timeout.test.ts.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/dial/task-timeout', () => ({
   isDialTaskPastBackstop: vi.fn(),
-  markDialTaskFailedWithReconcile: vi.fn().mockResolvedValue({ failed: true }),
+  markDialTaskFailedWithReconcile: vi.fn(),
 }));
-vi.mock('@/lib/analytics/dial-events', () => ({ recordDialEvent: vi.fn() }));
-vi.mock('@/db', () => ({ db: { select: vi.fn(), selectDistinct: vi.fn() } }));
-vi.mock('@/db/schema', () => ({ dialTasks: {}, dialSessions: {}, dialTrialEvents: {} }));
-vi.mock('drizzle-orm', () => ({ and: vi.fn(), eq: vi.fn(), inArray: vi.fn(), lt: vi.fn() }));
+vi.mock('@/db', () => ({ db: { select: vi.fn() } }));
+vi.mock('@/db/schema', () => ({ dialTasks: {} }));
+vi.mock('drizzle-orm', () => ({ inArray: vi.fn() }));
 
 import { POST } from '@/app/api/cron/dial-reconcile/route';
 import { db } from '@/db';
@@ -47,10 +46,7 @@ describe('POST /api/cron/dial-reconcile', () => {
   });
 
   it('fails a task past its backstop and reports the count', async () => {
-    vi.mocked(db.select)
-      .mockReturnValueOnce(chain([{ id: 't1', taskType: 'preview', createdAt: new Date(0) }])) // active tasks
-      .mockReturnValueOnce(chain([])); // paid-idle sessions
-    vi.mocked(db.selectDistinct).mockReturnValue(chain([]));
+    vi.mocked(db.select).mockReturnValue(chain([{ id: 't1', taskType: 'preview', createdAt: new Date(0) }]));
     vi.mocked(isDialTaskPastBackstop).mockReturnValue(true);
 
     const res = await POST(req('Bearer secret'));
@@ -61,10 +57,7 @@ describe('POST /api/cron/dial-reconcile', () => {
   });
 
   it('does NOT fail a task that is under its backstop', async () => {
-    vi.mocked(db.select)
-      .mockReturnValueOnce(chain([{ id: 't2', taskType: 'preview', createdAt: new Date() }]))
-      .mockReturnValueOnce(chain([]));
-    vi.mocked(db.selectDistinct).mockReturnValue(chain([]));
+    vi.mocked(db.select).mockReturnValue(chain([{ id: 't2', taskType: 'preview', createdAt: new Date() }]));
     vi.mocked(isDialTaskPastBackstop).mockReturnValue(false);
 
     const res = await POST(req('Bearer secret'));

@@ -177,7 +177,7 @@ export const GET = withDialAuth(async (auth) => {
       return apiError('Task is not a mastering final task', { code: 'INVALID_TASK_TYPE', status: 400 });
     }
 
-    if (task.status === 'completed') {
+    if (task.status === 'completed' && task.finalUrl) {
       return apiSuccess({ status: 'completed', finalUrl: task.finalUrl });
     }
 
@@ -196,8 +196,8 @@ export const GET = withDialAuth(async (auth) => {
     // Backstop-before-poll: past the generous backstop, fail WITHOUT calling the
     // credit-bearing /retrievefinalmaster on a stuck task.
     if (elapsed > getDialBackstopMs(task.taskType)) {
-      await markDialTaskFailedWithReconcile(taskId, 'mastering-final processing backstop');
-      return apiSuccess({ status: 'failed' });
+      const r = await markDialTaskFailedWithReconcile(taskId, 'mastering-final processing backstop');
+      return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
     }
 
     const client = createRoExClient();
@@ -238,8 +238,8 @@ export const GET = withDialAuth(async (auth) => {
 
       // Explicit RoEx failure → fail. Otherwise keep processing (backstop above + cron).
       if (pollResult.status === 'failed') {
-        await markDialTaskFailedWithReconcile(taskId, 'RoEx reported mastering-final failure');
-        return apiSuccess({ status: 'failed' });
+        const r = await markDialTaskFailedWithReconcile(taskId, 'RoEx reported mastering-final failure');
+        return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
       }
 
       return apiSuccess({ status: 'processing' });

@@ -7,19 +7,7 @@ import { db } from '@/db';
 import { dialTrialEvents } from '@/db/schema';
 import { logger } from '@/lib/utils/logger';
 
-export type DialEventType =
-  | 'analyze'
-  | 'preview'
-  | 'final'
-  | 'checkout_view'
-  | 'free_campaign_start'
-  // Completion instrumentation: a paid deliverable (final/mastering) was downloaded.
-  // "download = completion" (payment-complete ≠ completion). Enables the completion
-  // metric: % of paid sessions that reach a download.
-  | 'download_clicked'
-  // Cron-flagged anomaly: a paid session has not reached a download within the backstop
-  // window (proactively surfaces "paid but didn't get the deliverable" before complaints).
-  | 'paid_session_incomplete';
+export type DialEventType = 'analyze' | 'preview' | 'final' | 'checkout_view' | 'free_campaign_start';
 
 export interface RecordDialEventInput {
   sessionId: string;

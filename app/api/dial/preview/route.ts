@@ -175,7 +175,7 @@ export const GET = withDialAuth(async (auth) => {
     const { task } = result;
 
     // Already completed? Return cached result.
-    if (task.status === 'completed') {
+    if (task.status === 'completed' && task.previewUrl) {
       return apiSuccess({
         status: 'completed',
         previewUrl: task.previewUrl,
@@ -198,8 +198,8 @@ export const GET = withDialAuth(async (auth) => {
     // backstop biased large), fail WITHOUT polling RoEx so a stuck task can't hang the
     // function. (preview is free, but this keeps the pattern uniform with the paid routes.)
     if (elapsed > getDialBackstopMs(task.taskType)) {
-      await markDialTaskFailedWithReconcile(taskId, 'preview processing backstop');
-      return apiSuccess({ status: 'failed' });
+      const r = await markDialTaskFailedWithReconcile(taskId, 'preview processing backstop');
+      return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
     }
 
     // Fallback: poll RoEx directly. Do NOT request FX settings here (costs 125 credits).
@@ -229,8 +229,8 @@ export const GET = withDialAuth(async (auth) => {
       // Explicit RoEx failure → fail now. Otherwise keep processing (the backstop above is
       // the wall-clock catch; a comm-timeout abort is transient → handled in the catch).
       if (pollResult.status === 'failed') {
-        await markDialTaskFailedWithReconcile(taskId, 'RoEx reported preview failure');
-        return apiSuccess({ status: 'failed' });
+        const r = await markDialTaskFailedWithReconcile(taskId, 'RoEx reported preview failure');
+        return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
       }
 
       return apiSuccess({ status: 'processing' });

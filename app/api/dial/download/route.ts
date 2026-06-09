@@ -28,7 +28,6 @@ import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskReadAccess, verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiValidationError, apiNotFound, apiServerError } from '@/lib/api-response';
 import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview } from '@/lib/roex';
-import { recordDialEvent } from '@/lib/analytics/dial-events';
 
 // Allow longer duration for large WAV file streaming
 export const maxDuration = 120;
@@ -236,25 +235,6 @@ export const GET = withDialAuth(async (auth) => {
     if (acceptRanges) resHeaders.set('Accept-Ranges', acceptRanges);
     const contentRange = sourceRes.headers.get('Content-Range');
     if (contentRange) resHeaders.set('Content-Range', contentRange);
-
-    // ② Completion instrumentation — record AFTER a successful stream (a failed/expired
-    // click must not mark the session complete). An actual download (attachment, not inline
-    // playback) of a deliverable (final/mastering/mix_check) or its stems; not admin.
-    // "download = completion". Fire-and-forget.
-    const isDeliverableTask = !!taskForRefresh && (
-      taskForRefresh.taskType === 'final_basic' || taskForRefresh.taskType === 'final_advanced'
-      || taskForRefresh.taskType === 'mastering' || taskForRefresh.taskType === 'mix_check'
-    );
-    if (!isInline && !viaAdmin && taskForRefresh && isDeliverableTask) {
-      recordDialEvent({
-        sessionId: taskForRefresh.sessionId,
-        eventType: 'download_clicked',
-        userId: auth.userId,
-        guestToken: auth.guestToken,
-        mode: null,
-        metadata: { taskId: taskForRefresh.id, taskType: taskForRefresh.taskType, stemKey: stemKeyForRefresh ?? stemKey },
-      });
-    }
 
     return new NextResponse(sourceRes.body, { status: sourceRes.status, headers: resHeaders });
   } catch (error) {

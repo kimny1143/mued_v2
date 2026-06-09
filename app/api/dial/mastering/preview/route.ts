@@ -151,7 +151,7 @@ export const GET = withDialAuth(async (auth) => {
 
     const { task } = result;
 
-    if (task.status === 'completed') {
+    if (task.status === 'completed' && task.previewUrl) {
       return apiSuccess({
         status: 'completed',
         previewUrl: task.previewUrl,
@@ -173,8 +173,8 @@ export const GET = withDialAuth(async (auth) => {
     }
     // Backstop-before-poll: past the generous backstop, fail WITHOUT polling RoEx.
     if (elapsed > getDialBackstopMs(task.taskType)) {
-      await markDialTaskFailedWithReconcile(taskId, 'mastering-preview processing backstop');
-      return apiSuccess({ status: 'failed' });
+      const r = await markDialTaskFailedWithReconcile(taskId, 'mastering-preview processing backstop');
+      return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
     }
 
     // Fallback: poll RoEx for mastering preview result
@@ -193,8 +193,8 @@ export const GET = withDialAuth(async (auth) => {
 
       // Explicit RoEx failure → fail. Otherwise keep processing (backstop above + cron).
       if (pollResult.status === 'failed') {
-        await markDialTaskFailedWithReconcile(taskId, 'RoEx reported mastering-preview failure');
-        return apiSuccess({ status: 'failed' });
+        const r = await markDialTaskFailedWithReconcile(taskId, 'RoEx reported mastering-preview failure');
+        return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
       }
 
       return apiSuccess({ status: 'processing' });

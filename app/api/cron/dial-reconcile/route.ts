@@ -1,37 +1,24 @@
 /**
  * MUEDial reconcile cron — the durable backstop for the "stuck processing" problem.
  *
- * Two jobs:
- *  1. STUCK-TASK RECONCILE: any task still 'processing'/'pending' past its GENEROUS
- *     per-type wall-clock backstop (DIAL_BACKSTOP_MS — far above the observed max) is
- *     failed via markDialTaskFailedWithReconcile. This catches what the open-tab client
- *     poll cannot: a closed tab (no poll running) or a genuinely-stuck/abandoned job.
- *  2. ① PAID-INCOMPLETE ANOMALY FLAG: a paid session idle past the threshold with no
- *     download is recorded once as 'paid_session_incomplete' so support can proactively
- *     reach "paid but never got the deliverable" users before they complain.
+ * Marks any task still 'processing'/'pending' past its GENEROUS per-type wall-clock
+ * backstop (DIAL_BACKSTOP_MS — far above the observed max) as failed via
+ * markDialTaskFailedWithReconcile. This catches what the open-tab client poll cannot:
+ * a closed tab (no poll running) or a genuinely-stuck/abandoned job.
  *
  * Auth: Bearer ${CRON_SECRET} (same pattern as cron/rag-metrics). Dev GET for manual run.
- * Schedule: see vercel.json.
+ * Schedule: see vercel.json (daily on the current Vercel Free/Hobby plan — Hobby caps cron
+ * at once/day; on Pro this can move to a 10-minute schedule for a tighter closed-tab backstop).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { and, eq, inArray, lt } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import { db } from '@/db';
-import { dialTasks, dialSessions, dialTrialEvents } from '@/db/schema';
+import { dialTasks } from '@/db/schema';
 import { isDialTaskPastBackstop, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
-import { recordDialEvent } from '@/lib/analytics/dial-events';
 
 export const maxDuration = 120;
 
-/**
- * A paid session idle this long with no download is flagged as an anomaly. Set ABOVE the
- * largest task backstop (final = 120min in DIAL_BACKSTOP_MS) so a still-processing-within-
- * backstop job is never falsely flagged as incomplete. Source: production distribution
- * (final_advanced max 33.9min) → backstop 120min → anomaly threshold 150min.
- */
-const PAID_INCOMPLETE_THRESHOLD_MIN = 150;
-
 async function runReconcile() {
-  // ── 1. Stuck-task reconcile ────────────────────────────────────────────────
   const active = await db
     .select({ id: dialTasks.id, taskType: dialTasks.taskType, createdAt: dialTasks.createdAt })
     .from(dialTasks)
@@ -44,51 +31,7 @@ async function runReconcile() {
       if (failed) failedCount++;
     }
   }
-
-  // ── 2. ① Paid-incomplete anomaly flag ──────────────────────────────────────
-  const cutoff = new Date(Date.now() - PAID_INCOMPLETE_THRESHOLD_MIN * 60_000);
-  const paidIdle = await db
-    .select({
-      id: dialSessions.id,
-      userId: dialSessions.userId,
-      mode: dialSessions.mode,
-      status: dialSessions.status,
-    })
-    .from(dialSessions)
-    .where(and(eq(dialSessions.paymentStatus, 'paid'), lt(dialSessions.updatedAt, cutoff)));
-
-  let flaggedCount = 0;
-  if (paidIdle.length > 0) {
-    const ids = paidIdle.map((s) => s.id);
-    // Skip sessions that already downloaded OR were already flagged (idempotent).
-    const seen = await db
-      .selectDistinct({ sessionId: dialTrialEvents.sessionId })
-      .from(dialTrialEvents)
-      .where(and(
-        inArray(dialTrialEvents.sessionId, ids),
-        inArray(dialTrialEvents.eventType, ['download_clicked', 'paid_session_incomplete']),
-      ));
-    const seenSet = new Set(seen.map((r) => r.sessionId));
-    for (const s of paidIdle) {
-      if (seenSet.has(s.id)) continue;
-      recordDialEvent({
-        sessionId: s.id,
-        eventType: 'paid_session_incomplete',
-        userId: s.userId ?? null,
-        guestToken: null,
-        mode: s.mode ?? null,
-        metadata: { sessionStatus: s.status, thresholdMin: PAID_INCOMPLETE_THRESHOLD_MIN },
-      });
-      flaggedCount++;
-    }
-  }
-
-  return {
-    activeChecked: active.length,
-    failedCount,
-    paidIdleChecked: paidIdle.length,
-    flaggedCount,
-  };
+  return { activeChecked: active.length, failedCount };
 }
 
 export async function POST(request: NextRequest) {

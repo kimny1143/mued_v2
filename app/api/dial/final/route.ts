@@ -340,7 +340,7 @@ export const GET = withDialAuth(async (auth) => {
     const { task } = result;
 
     // Already completed? Return cached result.
-    if (task.status === 'completed') {
+    if (task.status === 'completed' && task.finalUrl) {
       return apiSuccess({
         status: 'completed',
         finalUrl: task.finalUrl,
@@ -368,8 +368,8 @@ export const GET = withDialAuth(async (auth) => {
     // Backstop-before-poll: past the generous backstop, fail WITHOUT calling the
     // credit-bearing /retrievefinalmix on a stuck task (avoids hitting a charge endpoint).
     if (elapsed > getDialBackstopMs(task.taskType)) {
-      await markDialTaskFailedWithReconcile(taskId, 'final-mix processing backstop');
-      return apiSuccess({ status: 'failed' });
+      const r = await markDialTaskFailedWithReconcile(taskId, 'final-mix processing backstop');
+      return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
     }
 
     // Fallback: poll RoEx for final mix result
@@ -434,8 +434,8 @@ export const GET = withDialAuth(async (auth) => {
       // Explicit RoEx failure → fail. Otherwise keep processing (backstop above is the
       // wall-clock catch; a comm-timeout abort is transient → handled in the catch).
       if (pollResult.status === 'failed') {
-        await markDialTaskFailedWithReconcile(taskId, 'RoEx reported final-mix failure');
-        return apiSuccess({ status: 'failed' });
+        const r = await markDialTaskFailedWithReconcile(taskId, 'RoEx reported final-mix failure');
+        return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
       }
 
       return apiSuccess({ status: 'processing' });
