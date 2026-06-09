@@ -1293,10 +1293,13 @@ export function buildDialSystemPrompt(input: DialPromptInput): string {
   const remainingCycles = totalLimit - input.paidCycleCount;
   const additionalUsed = Math.max(0, input.paidCycleCount - input.baseCycleLimit);
 
+  // "add-on cycles" (not "purchased"): additionalCyclesPurchased can include admin-comped cycles
+  // (see lib/dial/comp.ts), so the label stays provenance-neutral — Hoo must not tell a user they
+  // "purchased" a cycle that was actually comped.
   const cycleNote = input.phase >= 2
     ? (en
-        ? `\n### Retake Status\n- Paid cycles used: ${input.paidCycleCount}/${totalLimit} (${remainingCycles} remaining)\n- Base plan: ${input.baseCycleLimit}, add-on purchased: ${input.additionalCyclesPurchased}\n${remainingCycles === 1 ? '- **⚠️ Last adjustment remaining. Give the heads-up message.**' : ''}${remainingCycles === 0 ? '- **⚠️ Cycle limit reached. Present options without calling a tool.**' : ''}${additionalUsed >= 3 ? '\n- **3+ add-on cycles used. Consider the extended-rounds message.**' : ''}`
-        : `\n### リテイク状況\n- 有料サイクル消費: ${input.paidCycleCount}/${totalLimit}回（残り${remainingCycles}回）\n- 基本プラン: ${input.baseCycleLimit}回、追加購入: ${input.additionalCyclesPurchased}回\n${remainingCycles === 1 ? '- **⚠️ 次が最後の調整。ラスト予告メッセージを必ず伝えること。**' : ''}${remainingCycles === 0 ? '- **⚠️ サイクル上限到達。ツール呼び出しをせず3択を提示すること。**' : ''}${additionalUsed >= 3 ? '\n- **追加サイクル3回以上消費。エンジニア斡旋アナウンスを検討。**' : ''}`)
+        ? `\n### Retake Status\n- Paid cycles used: ${input.paidCycleCount}/${totalLimit} (${remainingCycles} remaining)\n- Base plan: ${input.baseCycleLimit}, add-on cycles: ${input.additionalCyclesPurchased}\n${remainingCycles === 1 ? '- **⚠️ Last adjustment remaining. Give the heads-up message.**' : ''}${remainingCycles === 0 ? '- **⚠️ Cycle limit reached. Present options without calling a tool.**' : ''}${additionalUsed >= 3 ? '\n- **3+ add-on cycles used. Consider the extended-rounds message.**' : ''}`
+        : `\n### リテイク状況\n- 有料サイクル消費: ${input.paidCycleCount}/${totalLimit}回（残り${remainingCycles}回）\n- 基本プラン: ${input.baseCycleLimit}回、追加サイクル: ${input.additionalCyclesPurchased}回\n${remainingCycles === 1 ? '- **⚠️ 次が最後の調整。ラスト予告メッセージを必ず伝えること。**' : ''}${remainingCycles === 0 ? '- **⚠️ サイクル上限到達。ツール呼び出しをせず3択を提示すること。**' : ''}${additionalUsed >= 3 ? '\n- **追加サイクル3回以上消費。エンジニア斡旋アナウンスを検討。**' : ''}`)
     : '';
 
   const styleStatus = en
