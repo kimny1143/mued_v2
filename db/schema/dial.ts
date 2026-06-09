@@ -377,6 +377,31 @@ export const dialAdminAccessLog = pgTable('dial_admin_access_log', {
   byAdmin: index('idx_dial_admin_access_admin').on(t.adminUserId),
 }));
 
+/**
+ * Audit + idempotency ledger for admin-granted free redo (comp) cycles.
+ * A comp is an exceptional support remedy: an admin grants ONE free retake cycle on a session
+ * (additionalCyclesPurchased +1 so the cycle is usable for free, + additionalCycleLimit +1 so it
+ * doesn't consume the user's purchase headroom). One comp per session (unique index); the admin
+ * daily cap (3 / rolling 24h) is enforced in the grant transaction (lib/dial/comp.ts). No FK on
+ * session_id so the trail survives session deletion (same as dial_admin_access_log). This ledger
+ * is the source of truth for "this cycle was comped (cost-only, no revenue)" — revenue is derived
+ * from dial_purchases / Stripe, never inferred from the additionalCyclesPurchased counter. Migration 0051.
+ */
+export const dialCompLedger = pgTable('dial_comp_ledger', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  adminUserId: text('admin_user_id').notNull(), // Clerk ID of the granting admin
+  adminEmail: text('admin_email').notNull(),
+  sessionId: uuid('session_id').notNull(),
+  compType: text('comp_type').notNull(), // 'retake_cycle'
+  estimatedCr: integer('estimated_cr').notNull(), // RoEx cr estimate of the comped cycle (audit, not billing)
+  reason: text('reason'),
+  grantedAt: timestamp('granted_at').notNull().defaultNow(),
+}, (t) => ({
+  uniquePerSession: uniqueIndex('dial_comp_ledger_unique_session').on(t.sessionId),
+  byAdmin: index('idx_dial_comp_ledger_admin').on(t.adminUserId),
+  byGranted: index('idx_dial_comp_ledger_granted').on(t.grantedAt),
+}));
+
 // ========================================
 // Bonus Campaign
 // ========================================
