@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildFirstTouch } from '@/lib/dial/first-touch';
+import { buildFirstTouch, firstTouchInputSchema } from '@/lib/dial/first-touch';
 
 function headers(init: Record<string, string> = {}): Headers {
   return new Headers(init);
@@ -64,5 +64,30 @@ describe('buildFirstTouch', () => {
   it('never throws on a malformed client payload', () => {
     expect(() => buildFirstTouch(headers(), 'not-an-object')).not.toThrow();
     expect(buildFirstTouch(headers(), 'not-an-object')).toBeNull();
+  });
+});
+
+describe('firstTouchInputSchema (a bad payload must never block the request)', () => {
+  it('accepts a well-formed payload', () => {
+    const r = firstTouchInputSchema.safeParse({ referrer: 'https://x.test', utmSource: 'threads' });
+    expect(r.success).toBe(true);
+    expect(r.success && r.data).toMatchObject({ referrer: 'https://x.test', utmSource: 'threads' });
+  });
+
+  it('accepts undefined / empty (optional)', () => {
+    expect(firstTouchInputSchema.safeParse(undefined).success).toBe(true);
+    expect(firstTouchInputSchema.safeParse({}).success).toBe(true);
+  });
+
+  it('degrades a type-mismatched payload to undefined instead of failing (no 400)', () => {
+    const r = firstTouchInputSchema.safeParse({ referrer: 123, utmSource: { nested: true } });
+    expect(r.success).toBe(true);
+    expect(r.success && r.data).toBeUndefined();
+  });
+
+  it('degrades a non-object payload to undefined instead of failing (no 400)', () => {
+    const r = firstTouchInputSchema.safeParse('tampered-garbage');
+    expect(r.success).toBe(true);
+    expect(r.success && r.data).toBeUndefined();
   });
 });

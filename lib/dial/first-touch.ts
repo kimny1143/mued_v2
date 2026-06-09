@@ -33,8 +33,10 @@ export interface FirstTouch {
 
 /**
  * Loose Zod schema for the client-provided first-touch object on session-create request bodies.
- * Intentionally permissive (all optional): buildFirstTouch() re-validates and clips every field,
- * so a malformed payload degrades to null rather than failing the request.
+ * Intentionally permissive: all fields optional, and `.catch(undefined)` makes a type-mismatched
+ * or corrupted payload (e.g. a tampered/legacy localStorage value, or a future client schema
+ * change) degrade to `undefined` instead of failing the request — so a bad first-touch payload
+ * can NEVER 400 a checkout/payment flow. buildFirstTouch() then re-validates and clips every field.
  */
 export const firstTouchInputSchema = z
   .object({
@@ -48,7 +50,8 @@ export const firstTouchInputSchema = z
     gaClientId: z.string().optional(),
     capturedAt: z.string().optional(),
   })
-  .optional();
+  .optional()
+  .catch(undefined);
 
 const STR_MAX = 2048;
 const SHORT_MAX = 255;
