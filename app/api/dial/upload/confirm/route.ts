@@ -69,11 +69,16 @@ export const POST = withDialAuth(async (auth) => {
     let r2Url: string | null = null;
 
     if (workerUrl && secret) {
-      // Include the track UUID so the R2 key is unique even when two stems share a
-      // filename (e.g. 4 vocal stems all named "vocal.wav"). Without this, same-named
-      // stems collided on stems/{sessionId}/{fileName} → R2 overwrite → on GCS expiry
-      // the fallback URL resolved all of them to one object → RoEx dropped the dupes.
-      const r2Key = `stems/${sessionId}/${track.id}/${fileName}`;
+      // ASCII-only R2 key: stems/{sessionId}/{trackId}.{ext}. The original filename is
+      // NOT put in the key/URL. Previously the key was stems/{sessionId}/{fileName}, so a
+      // non-ASCII (e.g. Japanese) filename produced an r2Url with raw non-ASCII bytes in
+      // its path (`${workerUrl}/stream/${r2Key}`, no encoding). On GCS expiry the mix fell
+      // back to that r2Url and RoEx could not fetch the malformed URL → those stems were
+      // silently dropped from the mix (ASCII-named stems survived). trackId (UUID) gives
+      // uniqueness; the filename stays in the DB (originalFilename) for display only.
+      const extMatch = fileName.match(/\.([a-zA-Z0-9]+)$/);
+      const ext = extMatch ? extMatch[1].toLowerCase() : 'wav';
+      const r2Key = `stems/${sessionId}/${track.id}.${ext}`;
       try {
         const res = await fetch(`${workerUrl}/copy`, {
           method: 'POST',
