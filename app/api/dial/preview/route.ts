@@ -78,6 +78,18 @@ export const POST = withDialAuth(async (auth) => {
       };
     });
 
+    // Guard: each stem must resolve to a distinct URL. A collision (e.g. legacy same-filename
+    // R2 keys after GCS expiry) would send RoEx duplicate trackURLs, which it silently
+    // dedupes → the mix loses stems. Fail loudly instead of producing a broken mix.
+    const urlCounts = new Map<string, number>();
+    for (const ti of trackInputs) urlCounts.set(ti.trackUrl, (urlCounts.get(ti.trackUrl) ?? 0) + 1);
+    if ([...urlCounts.values()].some((n) => n > 1)) {
+      return apiError(
+        'Some stems resolved to the same file (URL collision). Please re-upload your stems with distinct filenames.',
+        { code: 'STEM_URL_COLLISION', status: 409 },
+      );
+    }
+
     const roexMusicalStyle = mapMusicalStyle(session.musicalStyle);
 
     const client = createRoExClient();
