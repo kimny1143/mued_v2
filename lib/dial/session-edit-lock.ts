@@ -7,9 +7,10 @@
  * user paid for. Redo-after-final is handled by the comp flow (admin grant), not by silently
  * mutating a finished session.
  *
- * This is enforced SERVER-SIDE in every mutating track endpoint (upload / tracks PATCH·DELETE·PUT /
- * analyze), not just hidden in the UI — a direct API call must not be able to alter a paid
- * deliverable. The UI uses the same predicate to disable affordances.
+ * This is enforced SERVER-SIDE in every mutating track endpoint — upload/presign + upload/confirm
+ * (add & in-place replace), tracks PATCH·DELETE, and a fresh analyze — not just hidden in the UI;
+ * a direct API call must not be able to alter a paid deliverable. The UI uses the same predicate
+ * to disable affordances.
  *
  * Status line (conductor-approved, 2026-06-09): editable through `previewing`; locked from the
  * first paid final onward (`mixing` is set once a mix_check/final cycle begins).
