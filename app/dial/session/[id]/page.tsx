@@ -1041,6 +1041,42 @@ function DialSessionContent() {
     }
   };
 
+  // Surface a task that FAILED (RoEx failure or processing timeout) as a retryable
+  // error, so the spinner doesn't silently vanish or spin forever. Only the latest
+  // task is considered, so a superseded older failure isn't resurfaced.
+  const notifiedFailedTaskRef = useRef<string | null>(null);
+  // Always-latest retry handlers, so the failure effect need not list the (non-memoized)
+  // handlers as deps — which would re-run it on every render.
+  const retryHandlersRef = useRef({ handlePreview, handleMasteringPreview });
+  retryHandlersRef.current = { handlePreview, handleMasteringPreview };
+  useEffect(() => {
+    const latest = session?.tasks?.[0];
+    if (!latest || latest.status !== 'failed') return;
+    if (notifiedFailedTaskRef.current === latest.id) return;
+    notifiedFailedTaskRef.current = latest.id;
+
+    // Clear any stuck "generating" spinner state.
+    setMixGenerating(false);
+    setMixGeneratingType(null);
+    setPreviewing(false);
+
+    setErrorCode('TASK_FAILED');
+    const isFreeRender = latest.taskType === 'preview' || latest.taskType === 'mastering_preview';
+    if (isFreeRender) {
+      // Free render — safe to re-generate (no charge, no cycle consumed).
+      setError(t.dial.session.errorTaskFailedHint);
+      const retry = latest.taskType === 'preview'
+        ? () => retryHandlersRef.current.handlePreview()
+        : () => retryHandlersRef.current.handleMasteringPreview();
+      setRetryFn(() => retry);
+    } else {
+      // Paid render (final / mix_check / mastering): the paid cycle was consumed at
+      // submit time, so a blind re-POST would double-charge. Direct to support instead.
+      setError(t.dial.session.errorTaskFailedSupport);
+      setRetryFn(null);
+    }
+  }, [session, t]);
+
   // useMemo hooks must be called unconditionally before any early returns (React hook rules)
   const latestTask = session?.tasks[0];
   const generatingLabel = useMemo(() => {
@@ -1696,6 +1732,9 @@ function DialSessionContent() {
                 )}
                 {errorCode === 'PREVIEW_LIMIT' && (
                   <p className="font-medium mb-1">{t.dial.session.errorPreviewLimit}</p>
+                )}
+                {errorCode === 'TASK_FAILED' && (
+                  <p className="font-medium mb-1">{t.dial.session.errorTaskFailed}</p>
                 )}
                 <p>{error}</p>
                 {errorCode === 'INFRA_ERROR' && (

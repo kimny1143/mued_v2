@@ -61,7 +61,25 @@ function parseMixResponse(raw: Record<string, unknown>): MixResult {
     (results.mix_output_settings as Record<string, FxChainWrapper>) ??
     undefined;
 
-  return { taskId, status, previewUrl, finalUrl, stemsUrl, fxSettings };
+  // Best-effort failure detection. RoEx has no documented failure-body contract
+  // (the only sample is a dev dummy with error:false), so this is opportunistic;
+  // the task-timeout safety net is the guaranteed catch, and most RoEx failures
+  // surface as an HTTP non-200 that client.post() throws on before reaching here.
+  const rawError = results.error ?? raw.error;
+  const isFailed = rawError === true || /fail|error/i.test(status);
+  const error = isFailed
+    ? ((results.message as string) ?? (raw.message as string) ?? (results.error_message as string) ?? 'RoEx mix task failed')
+    : undefined;
+
+  return {
+    taskId,
+    status: isFailed ? 'failed' : status,
+    previewUrl,
+    finalUrl,
+    stemsUrl,
+    fxSettings,
+    error,
+  };
 }
 
 // ─── API Methods ────────────────────────────────────────────────────────────

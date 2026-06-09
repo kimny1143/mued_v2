@@ -14,6 +14,7 @@ import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError }
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterFinal, isRoExDevKey } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
+import { getDialTaskTimeoutMs, markDialTaskFailed } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialSessions } from '@/db/schema';
 
@@ -189,45 +190,65 @@ export const GET = withDialAuth(async (auth) => {
     if (elapsed < POLLING_FALLBACK_THRESHOLD_MS) {
       return apiSuccess({ status: 'processing' });
     }
+    // Past this point a task that never produces a URL must eventually fail
+    // instead of spinning forever.
+    const timedOut = elapsed > getDialTaskTimeoutMs(task.taskType);
 
     const client = createRoExClient();
-    const pollResult = await masterFinal(client, task.roexTaskId);
+    try {
+      const pollResult = await masterFinal(client, task.roexTaskId);
 
-    if (pollResult.finalUrl) {
-      let r2FinalUrl: string | undefined;
-      try {
-        const r2Result = await copyToR2({
-          sourceUrl: pollResult.finalUrl,
-          sessionId: task.sessionId,
-          taskId: task.id,
-          taskType: 'mastering',
+      if (pollResult.finalUrl) {
+        let r2FinalUrl: string | undefined;
+        try {
+          const r2Result = await copyToR2({
+            sourceUrl: pollResult.finalUrl,
+            sessionId: task.sessionId,
+            taskId: task.id,
+            taskType: 'mastering',
+          });
+          r2FinalUrl = r2Result?.r2Url;
+        } catch { /* non-blocking */ }
+
+        await db.update(dialTasks).set({
+          status: 'completed',
+          finalUrl: pollResult.finalUrl,
+          completedAt: new Date(),
+          ...(r2FinalUrl ? { r2FinalUrl } : {}),
+        }).where(eq(dialTasks.id, taskId));
+
+        const session = await db.query.dialSessions.findFirst({
+          where: eq(dialSessions.id, task.sessionId),
         });
-        r2FinalUrl = r2Result?.r2Url;
-      } catch { /* non-blocking */ }
+        if (session) {
+          await db.update(dialSessions)
+            .set({ status: 'completed', updatedAt: new Date() })
+            .where(eq(dialSessions.id, task.sessionId));
+        }
 
-      await db.update(dialTasks).set({
-        status: 'completed',
-        finalUrl: pollResult.finalUrl,
-        completedAt: new Date(),
-        ...(r2FinalUrl ? { r2FinalUrl } : {}),
-      }).where(eq(dialTasks.id, taskId));
-
-      const session = await db.query.dialSessions.findFirst({
-        where: eq(dialSessions.id, task.sessionId),
-      });
-      if (session) {
-        await db.update(dialSessions)
-          .set({ status: 'completed', updatedAt: new Date() })
-          .where(eq(dialSessions.id, task.sessionId));
+        return apiSuccess({ status: 'completed', finalUrl: pollResult.finalUrl });
       }
-    } else if (pollResult.status === 'failed') {
-      await db.update(dialTasks).set({ status: 'failed' }).where(eq(dialTasks.id, taskId));
-    }
 
-    return apiSuccess({
-      status: pollResult.finalUrl ? 'completed' : (pollResult.status === 'failed' ? 'failed' : 'processing'),
-      finalUrl: pollResult.finalUrl,
-    });
+      // No URL yet: explicit RoEx failure or processing timeout → fail.
+      if (pollResult.status === 'failed' || timedOut) {
+        await markDialTaskFailed(
+          taskId,
+          pollResult.status === 'failed' ? 'RoEx reported mastering-final failure' : 'mastering-final processing timeout',
+        );
+        return apiSuccess({ status: 'failed' });
+      }
+
+      return apiSuccess({ status: 'processing' });
+    } catch (pollErr) {
+      if (timedOut) {
+        await markDialTaskFailed(
+          taskId,
+          `mastering-final poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
+        );
+        return apiSuccess({ status: 'failed' });
+      }
+      return apiSuccess({ status: 'processing' });
+    }
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Mastering final poll failed');
   }

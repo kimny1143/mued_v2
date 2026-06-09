@@ -20,6 +20,7 @@ import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+import { markDialTaskFailed } from '@/lib/dial/task-timeout';
 
 // Allow up to 120s for R2 copy
 export const maxDuration = 120;
@@ -86,15 +87,18 @@ export async function POST(request: Request) {
     let resultUrl: string | undefined;
     let stemsUrl: Record<string, string> | undefined;
     let fxSettings: Record<string, unknown> | undefined;
+    let roexFailed = false;
 
     if (task.taskType === 'preview') {
       const result = await pollMixPreview(client, roexTaskId, { retrieveFxSettings: false });
       resultUrl = result.previewUrl;
       stemsUrl = result.stemsUrl;
       fxSettings = result.fxSettings as Record<string, unknown> | undefined;
+      roexFailed = result.status === 'failed';
     } else if (task.taskType === 'mastering_preview') {
       const result = await pollMasterPreview(client, roexTaskId);
       resultUrl = result.previewUrl;
+      roexFailed = result.status === 'failed';
     } else if (task.taskType === 'mastering') {
       if (task.finalUrl) {
         // Already retrieved via POST handler — skip to avoid double 220cr charge
@@ -102,6 +106,7 @@ export async function POST(request: Request) {
       } else {
         const result = await masterFinal(client, task.roexTaskId);
         resultUrl = result.finalUrl;
+        roexFailed = result.status === 'failed';
       }
     } else {
       // Mix final (final_basic, final_advanced, mix_check)
@@ -113,6 +118,15 @@ export async function POST(request: Request) {
       resultUrl = result.finalUrl;
       stemsUrl = result.stemsUrl;
       fxSettings = result.fxSettings as Record<string, unknown> | undefined;
+      roexFailed = result.status === 'failed';
+    }
+
+    // Explicit RoEx failure → mark the task failed so the UI stops spinning.
+    // This is distinct from "not_ready" below: RoEx can fire the webhook BEFORE the
+    // result exists (no URL, no error) — that is still processing, NOT a failure.
+    if (roexFailed && !resultUrl) {
+      await markDialTaskFailed(task.id, 'RoEx webhook reported task failure');
+      return NextResponse.json({ received: true, status: 'failed' }, { status: 200 });
     }
 
     if (!resultUrl) {

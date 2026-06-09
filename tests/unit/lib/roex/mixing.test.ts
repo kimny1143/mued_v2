@@ -341,3 +341,52 @@ describe('parseMixResponse edge cases', () => {
     expect(result.finalUrl).toBeUndefined();
   });
 });
+
+describe('parseMixResponse failure detection', () => {
+  it('marks failed and populates error when results.error === true', async () => {
+    const client = createMockClient({
+      previewMixTaskResults: {
+        multitrack_task_id: 'task-x',
+        status: 'processing',
+        error: true,
+        message: 'stem fetch failed',
+      },
+    });
+
+    const result = await pollMixPreview(client, 'task-x');
+    expect(result.status).toBe('failed');
+    expect(result.error).toBe('stem fetch failed');
+  });
+
+  it('does NOT mark failed when error === false (normal completion)', async () => {
+    const client = createMockClient({
+      previewMixTaskResults: {
+        multitrack_task_id: 'task-x',
+        status: 'completed',
+        error: false,
+        download_url_preview_mixed: 'https://cdn.roex.com/p.mp3',
+      },
+    });
+
+    const result = await pollMixPreview(client, 'task-x');
+    expect(result.status).toBe('completed');
+    expect(result.error).toBeUndefined();
+    expect(result.previewUrl).toBe('https://cdn.roex.com/p.mp3');
+  });
+
+  it('marks failed when the status string looks like a failure (FAILED / ERROR)', async () => {
+    for (const status of ['FAILED', 'ERROR_PROCESSING', 'task_failed']) {
+      const client = createMockClient({ previewMixTaskResults: { status } });
+      const result = await pollMixPreview(client, 'task-x');
+      expect(result.status).toBe('failed');
+      expect(result.error).toBeDefined();
+    }
+  });
+
+  it('leaves a normal processing status untouched', async () => {
+    const client = createMockClient({ previewMixTaskResults: { status: 'processing' } });
+    const result = await pollMixPreview(client, 'task-x');
+    expect(result.status).toBe('processing');
+    expect(result.error).toBeUndefined();
+  });
+});

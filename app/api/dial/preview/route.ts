@@ -17,6 +17,7 @@ import { recordDialEvent } from '@/lib/analytics/dial-events';
 import { createRoExClient, mixPreview, pollMixPreview, mapMusicalStyle, mapInstrumentGroup } from '@/lib/roex';
 import type { MixTrackInput } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+import { getDialTaskTimeoutMs, markDialTaskFailed } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTracks, dialTasks, dialSessions } from '@/db/schema';
 
@@ -193,32 +194,58 @@ export const GET = withDialAuth(async (auth) => {
       // Trust webhook — too early to poll RoEx
       return apiSuccess({ status: 'processing' });
     }
+    // Past this point a task that never produces a URL must eventually fail
+    // instead of spinning forever.
+    const timedOut = elapsed > getDialTaskTimeoutMs(task.taskType);
 
     // Fallback: poll RoEx directly
     // Do NOT request FX settings here (costs 125 credits).
     const client = createRoExClient();
-    const pollResult = await pollMixPreview(client, task.roexTaskId, {
-      retrieveFxSettings: false,
-    });
+    try {
+      const pollResult = await pollMixPreview(client, task.roexTaskId, {
+        retrieveFxSettings: false,
+      });
 
-    const isCompleted = !!pollResult.previewUrl;
+      if (pollResult.previewUrl) {
+        await db.update(dialTasks).set({
+          status: 'completed',
+          previewUrl: pollResult.previewUrl,
+          fxSettings: pollResult.fxSettings ?? null,
+          stemsUrls: pollResult.stemsUrl ?? null,
+          completedAt: new Date(),
+        }).where(eq(dialTasks.id, taskId));
 
-    if (isCompleted) {
-      await db.update(dialTasks).set({
-        status: 'completed',
-        previewUrl: pollResult.previewUrl,
-        fxSettings: pollResult.fxSettings ?? null,
-        stemsUrls: pollResult.stemsUrl ?? null,
-        completedAt: new Date(),
-      }).where(eq(dialTasks.id, taskId));
+        return apiSuccess({
+          status: 'completed',
+          previewUrl: pollResult.previewUrl,
+          fxSettings: pollResult.fxSettings,
+          stemsUrls: pollResult.stemsUrl,
+        });
+      }
+
+      // No URL yet: explicit RoEx failure or processing timeout → fail (don't spin forever).
+      if (pollResult.status === 'failed' || timedOut) {
+        await markDialTaskFailed(
+          taskId,
+          pollResult.status === 'failed' ? 'RoEx reported preview failure' : 'preview processing timeout',
+        );
+        return apiSuccess({ status: 'failed' });
+      }
+
+      return apiSuccess({ status: 'processing' });
+    } catch (pollErr) {
+      // A thrown RoEx poll error (e.g. HTTP non-200) must not 500-and-leave-stuck.
+      // Fail only once the task has also exceeded its timeout; a single transient
+      // error before then just means "keep polling".
+      if (timedOut) {
+        await markDialTaskFailed(
+          taskId,
+          `preview poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
+        );
+        return apiSuccess({ status: 'failed' });
+      }
+      return apiSuccess({ status: 'processing' });
     }
-
-    return apiSuccess({
-      status: isCompleted ? 'completed' : 'processing',
-      previewUrl: pollResult.previewUrl,
-      fxSettings: isCompleted ? pollResult.fxSettings : undefined,
-      stemsUrls: isCompleted ? pollResult.stemsUrl : undefined,
-    });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Poll failed');
   }

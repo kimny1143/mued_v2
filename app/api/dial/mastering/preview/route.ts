@@ -16,6 +16,7 @@ import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError }
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterPreview, pollMasterPreview, isRoExDevKey, mapMusicalStyle } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+import { getDialTaskTimeoutMs, markDialTaskFailed } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
 import { DELIVERY_TARGETS, DELIVERY_TARGET_LUFS, mapLufsToDesiredLoudness } from '@/lib/dial/lufs-presets';
@@ -170,29 +171,44 @@ export const GET = withDialAuth(async (auth) => {
     if (elapsed < POLLING_FALLBACK_THRESHOLD_MS) {
       return apiSuccess({ status: 'processing' });
     }
+    // Past this point a task that never produces a URL must eventually fail
+    // instead of spinning forever.
+    const timedOut = elapsed > getDialTaskTimeoutMs(task.taskType);
 
     // Fallback: poll RoEx for mastering preview result
     const client = createRoExClient();
-    const pollResult = await pollMasterPreview(client, task.roexTaskId);
+    try {
+      const pollResult = await pollMasterPreview(client, task.roexTaskId);
 
-    const isCompleted = !!pollResult.previewUrl;
+      if (pollResult.previewUrl) {
+        await db.update(dialTasks).set({
+          status: 'completed',
+          previewUrl: pollResult.previewUrl,
+          completedAt: new Date(),
+        }).where(eq(dialTasks.id, taskId));
+        return apiSuccess({ status: 'completed', previewUrl: pollResult.previewUrl });
+      }
 
-    if (isCompleted) {
-      await db.update(dialTasks).set({
-        status: 'completed',
-        previewUrl: pollResult.previewUrl,
-        completedAt: new Date(),
-      }).where(eq(dialTasks.id, taskId));
-    } else if (pollResult.status === 'failed') {
-      await db.update(dialTasks).set({
-        status: 'failed',
-      }).where(eq(dialTasks.id, taskId));
+      // No URL yet: explicit RoEx failure or processing timeout → fail.
+      if (pollResult.status === 'failed' || timedOut) {
+        await markDialTaskFailed(
+          taskId,
+          pollResult.status === 'failed' ? 'RoEx reported mastering-preview failure' : 'mastering-preview processing timeout',
+        );
+        return apiSuccess({ status: 'failed' });
+      }
+
+      return apiSuccess({ status: 'processing' });
+    } catch (pollErr) {
+      if (timedOut) {
+        await markDialTaskFailed(
+          taskId,
+          `mastering-preview poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
+        );
+        return apiSuccess({ status: 'failed' });
+      }
+      return apiSuccess({ status: 'processing' });
     }
-
-    return apiSuccess({
-      status: isCompleted ? 'completed' : (pollResult.status === 'failed' ? 'failed' : 'processing'),
-      previewUrl: pollResult.previewUrl,
-    });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Poll failed');
   }

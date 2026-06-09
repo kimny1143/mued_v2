@@ -30,6 +30,7 @@ import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMi
 import { buildAdvancedTrackData, type ParameterChanges } from '@/lib/dial/track-data';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+import { getDialTaskTimeoutMs, markDialTaskFailed } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks, dialMessages } from '@/db/schema';
 
@@ -364,6 +365,9 @@ export const GET = withDialAuth(async (auth) => {
       // Trust webhook — too early to poll RoEx
       return apiSuccess({ status: 'processing' });
     }
+    // Past this point a task that never produces a URL must eventually fail
+    // instead of spinning forever.
+    const timedOut = elapsed > getDialTaskTimeoutMs(task.taskType);
 
     // Fallback: poll RoEx for final mix result
     const tracks = await db.query.dialTracks.findMany({
@@ -372,21 +376,19 @@ export const GET = withDialAuth(async (auth) => {
     const trackUrls = tracks.map((t) => resolveTrackUrl(t) ?? t.roexUploadUrl);
 
     const client = createRoExClient();
-    const pollResult = await pollMixFinal(client, task.roexTaskId, trackUrls);
+    try {
+      const pollResult = await pollMixFinal(client, task.roexTaskId, trackUrls);
 
-    const isCompleted = !!pollResult.finalUrl;
-
-    if (isCompleted) {
-      await db.update(dialTasks).set({
-        status: 'completed',
-        finalUrl: pollResult.finalUrl,
-        stemsUrls: pollResult.stemsUrl ?? null,
-        fxSettings: pollResult.fxSettings ?? null,
-        completedAt: new Date(),
-      }).where(eq(dialTasks.id, taskId));
-
-      // R2 copy
       if (pollResult.finalUrl) {
+        await db.update(dialTasks).set({
+          status: 'completed',
+          finalUrl: pollResult.finalUrl,
+          stemsUrls: pollResult.stemsUrl ?? null,
+          fxSettings: pollResult.fxSettings ?? null,
+          completedAt: new Date(),
+        }).where(eq(dialTasks.id, taskId));
+
+        // R2 copy
         try {
           const r2Result = await copyToR2({
             sourceUrl: pollResult.finalUrl,
@@ -403,33 +405,51 @@ export const GET = withDialAuth(async (auth) => {
         } catch (err) {
           console.error('[final/GET] R2 copy failed:', err);
         }
+
+        // Update session status
+        const sessionRow = await db.query.dialSessions.findFirst({
+          where: eq(dialSessions.id, task.sessionId),
+        });
+        const newStatus = task.taskType === 'mix_check'
+          ? 'mixing' as const
+          : sessionRow?.masteringMode
+            ? 'mastering' as const
+            : 'completed' as const;
+        await db.update(dialSessions).set({
+          status: newStatus,
+          updatedAt: new Date(),
+        }).where(eq(dialSessions.id, task.sessionId));
+
+        return apiSuccess({
+          status: 'completed',
+          finalUrl: pollResult.finalUrl,
+          stemsUrls: pollResult.stemsUrl,
+          fxSettings: pollResult.fxSettings,
+        });
       }
 
-      // Update session status
-      const sessionRow = await db.query.dialSessions.findFirst({
-        where: eq(dialSessions.id, task.sessionId),
-      });
-      const newStatus = task.taskType === 'mix_check'
-        ? 'mixing' as const
-        : sessionRow?.masteringMode
-          ? 'mastering' as const
-          : 'completed' as const;
-      await db.update(dialSessions).set({
-        status: newStatus,
-        updatedAt: new Date(),
-      }).where(eq(dialSessions.id, task.sessionId));
-    } else if (pollResult.status === 'failed') {
-      await db.update(dialTasks).set({
-        status: 'failed',
-      }).where(eq(dialTasks.id, taskId));
-    }
+      // No URL yet: explicit RoEx failure or processing timeout → fail.
+      if (pollResult.status === 'failed' || timedOut) {
+        await markDialTaskFailed(
+          taskId,
+          pollResult.status === 'failed' ? 'RoEx reported final-mix failure' : 'final-mix processing timeout',
+        );
+        return apiSuccess({ status: 'failed' });
+      }
 
-    return apiSuccess({
-      status: isCompleted ? 'completed' : (pollResult.status === 'failed' ? 'failed' : 'processing'),
-      finalUrl: pollResult.finalUrl,
-      stemsUrls: isCompleted ? pollResult.stemsUrl : undefined,
-      fxSettings: isCompleted ? pollResult.fxSettings : undefined,
-    });
+      return apiSuccess({ status: 'processing' });
+    } catch (pollErr) {
+      // A thrown RoEx poll error (e.g. HTTP non-200) must not 500-and-leave-stuck.
+      // Fail only once the task has also exceeded its timeout.
+      if (timedOut) {
+        await markDialTaskFailed(
+          taskId,
+          `final-mix poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
+        );
+        return apiSuccess({ status: 'failed' });
+      }
+      return apiSuccess({ status: 'processing' });
+    }
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Poll failed');
   }

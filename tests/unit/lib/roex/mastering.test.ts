@@ -184,6 +184,43 @@ describe('parseMasteringResponse edge cases', () => {
   });
 });
 
+describe('parseMasteringResponse failure detection', () => {
+  it('marks failed and populates error when error === true', async () => {
+    const client = createMockClient({
+      previewMasterTaskResults: { mastering_task_id: 'm-x', status: 'processing', error: true, message: 'master failed' },
+    });
+    const result = await pollMasterPreview(client, 'm-x');
+    expect(result.status).toBe('failed');
+    expect(result.error).toBe('master failed');
+  });
+
+  it('does NOT mark failed when error === false', async () => {
+    const client = createMockClient({
+      previewMasterTaskResults: { mastering_task_id: 'm-x', status: 'completed', error: false, download_url_mastered_preview: 'https://cdn.roex.com/m.mp3' },
+    });
+    const result = await pollMasterPreview(client, 'm-x');
+    expect(result.status).toBe('completed');
+    expect(result.error).toBeUndefined();
+    expect(result.previewUrl).toBe('https://cdn.roex.com/m.mp3');
+  });
+
+  it('marks failed when the status string looks like a failure', async () => {
+    for (const status of ['FAILED', 'ERROR', 'mastering_error']) {
+      const client = createMockClient({ previewMasterTaskResults: { status } });
+      const result = await pollMasterPreview(client, 'm-x');
+      expect(result.status).toBe('failed');
+      expect(result.error).toBeDefined();
+    }
+  });
+
+  it('does not treat a plain string URL response as a failure', async () => {
+    const client = createMockClient('https://cdn.roex.com/direct.wav');
+    const result = await masterFinal(client, 'm-x');
+    expect(result.status).toBe('completed');
+    expect(result.error).toBeUndefined();
+  });
+});
+
 describe('RoExClient usage', () => {
   it('calls correct endpoint for preview', async () => {
     const client = createMockClient({ status: 'processing' });

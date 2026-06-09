@@ -22,7 +22,15 @@ function parseMasteringResponse(raw: unknown): MasteringResult {
     (data.download_url_mastered_preview as string) ?? undefined;
   const finalUrl = (data.download_url_mastered as string) ?? undefined;
 
-  return { taskId, status, previewUrl, finalUrl };
+  // Best-effort failure detection (see parseMixResponse note). RoEx exposes no
+  // documented failure-body contract; the task-timeout net is the guaranteed catch.
+  const rawError = data.error ?? top.error;
+  const isFailed = rawError === true || /fail|error/i.test(status);
+  const error = isFailed
+    ? ((data.message as string) ?? (top.message as string) ?? 'RoEx mastering task failed')
+    : undefined;
+
+  return { taskId, status: isFailed ? 'failed' : status, previewUrl, finalUrl, error };
 }
 
 // ─── API Methods ────────────────────────────────────────────────────────────
