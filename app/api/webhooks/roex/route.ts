@@ -13,7 +13,7 @@
  * will still work (with 30s delay before falling back to RoEx polling).
  */
 
-import { and, desc, eq, not } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
@@ -62,10 +62,13 @@ export async function POST(request: Request) {
     // Multiple tasks (e.g. Mix Check 1 + 2) can share the same roexTaskId because
     // both use the preview task's RoEx ID. Prefer processing tasks over completed ones
     // so repeated mix checks don't get ignored after the first completes.
+    // Only ACTIVE tasks — never resurrect a terminal one. Excluding 'failed' (not just
+    // 'completed') is the reverse-direction guard: a late RoEx webhook must not flip a
+    // backstop/cron-failed task back to 'completed'.
     const task = await db.query.dialTasks.findFirst({
       where: and(
         eq(dialTasks.roexTaskId, roexTaskId),
-        not(eq(dialTasks.status, 'completed')),
+        inArray(dialTasks.status, ['processing', 'pending']),
       ),
       orderBy: [desc(dialTasks.createdAt)],
     });

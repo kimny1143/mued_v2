@@ -20,7 +20,7 @@
  */
 
 import { z } from 'zod';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { recordDialEvent } from '@/lib/analytics/dial-events';
@@ -389,7 +389,7 @@ export const GET = withDialAuth(async (auth) => {
           stemsUrls: pollResult.stemsUrl ?? null,
           fxSettings: pollResult.fxSettings ?? null,
           completedAt: new Date(),
-        }).where(eq(dialTasks.id, taskId));
+        }).where(and(eq(dialTasks.id, taskId), ne(dialTasks.status, 'failed')));
 
         // R2 copy
         try {

@@ -8,7 +8,7 @@
  */
 
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership, verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
@@ -216,7 +216,7 @@ export const GET = withDialAuth(async (auth) => {
           fxSettings: pollResult.fxSettings ?? null,
           stemsUrls: pollResult.stemsUrl ?? null,
           completedAt: new Date(),
-        }).where(eq(dialTasks.id, taskId));
+        }).where(and(eq(dialTasks.id, taskId), ne(dialTasks.status, 'failed')));
 
         return apiSuccess({
           status: 'completed',

@@ -7,7 +7,7 @@
  */
 
 import { z } from 'zod';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
@@ -222,7 +222,7 @@ export const GET = withDialAuth(async (auth) => {
           finalUrl: pollResult.finalUrl,
           completedAt: new Date(),
           ...(r2FinalUrl ? { r2FinalUrl } : {}),
-        }).where(eq(dialTasks.id, taskId));
+        }).where(and(eq(dialTasks.id, taskId), ne(dialTasks.status, 'failed')));
 
         const session = await db.query.dialSessions.findFirst({
           where: eq(dialSessions.id, task.sessionId),

@@ -129,7 +129,7 @@ export const GET = withDialAuth(async (auth) => {
                   status: 'completed',
                   previewUrl: result.previewUrl,
                   completedAt: new Date(),
-                }).where(eq(dialTasks.id, task.id));
+                }).where(and(eq(dialTasks.id, task.id), ne(dialTasks.status, 'failed')));
 
                 await db.update(dialSessions).set({
                   status: 'uploading',
@@ -157,7 +157,7 @@ export const GET = withDialAuth(async (auth) => {
                   finalUrl: result.finalUrl,
                   stemsUrls: result.stemsUrl ?? null,
                   completedAt: new Date(),
-                }).where(eq(dialTasks.id, task.id));
+                }).where(and(eq(dialTasks.id, task.id), ne(dialTasks.status, 'failed')));
 
                 // Fire-and-forget: copy deliverable to R2 for stable download URL
                 if (result.finalUrl) {
@@ -212,7 +212,7 @@ export const GET = withDialAuth(async (auth) => {
                   status: 'completed',
                   previewUrl: result.previewUrl,
                   completedAt: new Date(),
-                }).where(eq(dialTasks.id, task.id));
+                }).where(and(eq(dialTasks.id, task.id), ne(dialTasks.status, 'failed')));
               } else if (result.status === 'failed') {
                 // Race-safe failure write (never clobbers a completed task) + session/
                 // previewCount reconcile. Replaces the prior unconditional id-update.
@@ -241,7 +241,7 @@ export const GET = withDialAuth(async (auth) => {
                   status: 'completed',
                   finalUrl: result.finalUrl,
                   completedAt: new Date(),
-                }).where(eq(dialTasks.id, task.id));
+                }).where(and(eq(dialTasks.id, task.id), ne(dialTasks.status, 'failed')));
 
                 // Fire-and-forget: copy deliverable to R2 for stable download URL
                 if (result.finalUrl) {
