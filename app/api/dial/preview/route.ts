@@ -194,13 +194,15 @@ export const GET = withDialAuth(async (auth) => {
       // Trust webhook — too early to poll RoEx
       return apiSuccess({ status: 'processing' });
     }
-    // Past the generous wall-clock backstop a task that never produces a URL is failed
-    // instead of spinning forever. Set FAR above normal completion (preview up to ~19min)
-    // so a slow-but-healthy job is never failed by mistake.
-    const timedOut = elapsed > getDialBackstopMs(task.taskType);
+    // Backstop-before-poll: past the generous wall-clock backstop (preview ~19min observed,
+    // backstop biased large), fail WITHOUT polling RoEx so a stuck task can't hang the
+    // function. (preview is free, but this keeps the pattern uniform with the paid routes.)
+    if (elapsed > getDialBackstopMs(task.taskType)) {
+      await markDialTaskFailedWithReconcile(taskId, 'preview processing backstop');
+      return apiSuccess({ status: 'failed' });
+    }
 
-    // Fallback: poll RoEx directly
-    // Do NOT request FX settings here (costs 125 credits).
+    // Fallback: poll RoEx directly. Do NOT request FX settings here (costs 125 credits).
     const client = createRoExClient();
     try {
       const pollResult = await pollMixPreview(client, task.roexTaskId, {
@@ -224,27 +226,18 @@ export const GET = withDialAuth(async (auth) => {
         });
       }
 
-      // No URL yet: explicit RoEx failure or processing timeout → fail (don't spin forever).
-      if (pollResult.status === 'failed' || timedOut) {
-        await markDialTaskFailedWithReconcile(
-          taskId,
-          pollResult.status === 'failed' ? 'RoEx reported preview failure' : 'preview processing timeout',
-        );
+      // Explicit RoEx failure → fail now. Otherwise keep processing (the backstop above is
+      // the wall-clock catch; a comm-timeout abort is transient → handled in the catch).
+      if (pollResult.status === 'failed') {
+        await markDialTaskFailedWithReconcile(taskId, 'RoEx reported preview failure');
         return apiSuccess({ status: 'failed' });
       }
 
       return apiSuccess({ status: 'processing' });
     } catch (pollErr) {
-      // A thrown RoEx poll error (e.g. HTTP non-200) must not 500-and-leave-stuck.
-      // Fail only once the task has also exceeded its timeout; a single transient
-      // error before then just means "keep polling".
-      if (timedOut) {
-        await markDialTaskFailedWithReconcile(
-          taskId,
-          `preview poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
-        );
-        return apiSuccess({ status: 'failed' });
-      }
+      // Transient (comm-timeout abort / HTTP error). Keep processing; the backstop (next
+      // request) and the cron catch a genuinely stuck task.
+      console.warn(`[preview/GET] transient poll error: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`);
       return apiSuccess({ status: 'processing' });
     }
   } catch (error) {

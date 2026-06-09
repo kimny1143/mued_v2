@@ -171,9 +171,11 @@ export const GET = withDialAuth(async (auth) => {
     if (elapsed < POLLING_FALLBACK_THRESHOLD_MS) {
       return apiSuccess({ status: 'processing' });
     }
-    // Past this point a task that never produces a URL must eventually fail
-    // instead of spinning forever.
-    const timedOut = elapsed > getDialBackstopMs(task.taskType);
+    // Backstop-before-poll: past the generous backstop, fail WITHOUT polling RoEx.
+    if (elapsed > getDialBackstopMs(task.taskType)) {
+      await markDialTaskFailedWithReconcile(taskId, 'mastering-preview processing backstop');
+      return apiSuccess({ status: 'failed' });
+    }
 
     // Fallback: poll RoEx for mastering preview result
     const client = createRoExClient();
@@ -189,24 +191,16 @@ export const GET = withDialAuth(async (auth) => {
         return apiSuccess({ status: 'completed', previewUrl: pollResult.previewUrl });
       }
 
-      // No URL yet: explicit RoEx failure or processing timeout → fail.
-      if (pollResult.status === 'failed' || timedOut) {
-        await markDialTaskFailedWithReconcile(
-          taskId,
-          pollResult.status === 'failed' ? 'RoEx reported mastering-preview failure' : 'mastering-preview processing timeout',
-        );
+      // Explicit RoEx failure → fail. Otherwise keep processing (backstop above + cron).
+      if (pollResult.status === 'failed') {
+        await markDialTaskFailedWithReconcile(taskId, 'RoEx reported mastering-preview failure');
         return apiSuccess({ status: 'failed' });
       }
 
       return apiSuccess({ status: 'processing' });
     } catch (pollErr) {
-      if (timedOut) {
-        await markDialTaskFailedWithReconcile(
-          taskId,
-          `mastering-preview poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
-        );
-        return apiSuccess({ status: 'failed' });
-      }
+      // Transient (comm-timeout abort / HTTP error). Keep processing.
+      console.warn(`[mastering/preview/GET] transient poll error: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`);
       return apiSuccess({ status: 'processing' });
     }
   } catch (error) {

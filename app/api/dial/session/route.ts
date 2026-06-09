@@ -7,7 +7,7 @@
 
 import { randomBytes } from 'crypto';
 import { z } from 'zod';
-import { eq, desc, max } from 'drizzle-orm';
+import { eq, desc, max, and, ne } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership, verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
@@ -124,7 +124,7 @@ export const GET = withDialAuth(async (auth) => {
                 retrieveFxSettings: false,
               });
 
-              if (result.previewUrl || result.status === 'completed') {
+              if (result.previewUrl) {
                 await db.update(dialTasks).set({
                   status: 'completed',
                   previewUrl: result.previewUrl,
@@ -134,7 +134,7 @@ export const GET = withDialAuth(async (auth) => {
                 await db.update(dialSessions).set({
                   status: 'uploading',
                   updatedAt: new Date(),
-                }).where(eq(dialSessions.id, sessionId));
+                }).where(and(eq(dialSessions.id, sessionId), ne(dialSessions.status, 'completed')));
               } else if (result.status === 'failed') {
                 // Race-safe failure write (never clobbers a completed task) + session/
                 // previewCount reconcile. Replaces the prior unconditional id-update.
@@ -151,7 +151,7 @@ export const GET = withDialAuth(async (auth) => {
 
               const result = await pollMixFinal(client, task.roexTaskId, trackUrls);
 
-              if (result.finalUrl || result.status === 'completed') {
+              if (result.finalUrl) {
                 await db.update(dialTasks).set({
                   status: 'completed',
                   finalUrl: result.finalUrl,
@@ -188,7 +188,7 @@ export const GET = withDialAuth(async (auth) => {
                 await db.update(dialSessions).set({
                   status: newStatus,
                   updatedAt: new Date(),
-                }).where(eq(dialSessions.id, sessionId));
+                }).where(and(eq(dialSessions.id, sessionId), ne(dialSessions.status, 'completed')));
               } else if (result.status === 'failed') {
                 // Race-safe failure write (never clobbers a completed task) + session/
                 // previewCount reconcile. Replaces the prior unconditional id-update.
@@ -207,7 +207,7 @@ export const GET = withDialAuth(async (auth) => {
 
               const result = await pollMasterPreview(client, task.roexTaskId);
 
-              if (result.previewUrl || result.status === 'completed') {
+              if (result.previewUrl) {
                 await db.update(dialTasks).set({
                   status: 'completed',
                   previewUrl: result.previewUrl,
@@ -234,9 +234,9 @@ export const GET = withDialAuth(async (auth) => {
                 continue;
               }
 
-              const result = await masterFinal(client, task.roexTaskId);
+              const result = await masterFinal(client, task.roexTaskId, { poll: true });
 
-              if (result.finalUrl || result.status === 'completed') {
+              if (result.finalUrl) {
                 await db.update(dialTasks).set({
                   status: 'completed',
                   finalUrl: result.finalUrl,

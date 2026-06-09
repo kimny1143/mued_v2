@@ -1,4 +1,4 @@
-import { getRoExWebhookUrl, type RoExClient } from './client';
+import { getRoExWebhookUrl, ROEX_POLL_TIMEOUT_MS, type RoExClient } from './client';
 import type {
   MixPreviewRequest,
   MixFinalRequest,
@@ -130,9 +130,11 @@ export async function pollMixPreview(
     },
   };
 
+  // POLL call → opt into the comm-timeout (a hung poll must not block the function).
   const raw = await client.post<Record<string, unknown>>(
     '/retrievepreviewmix',
     body,
+    { timeoutMs: ROEX_POLL_TIMEOUT_MS },
   );
   return parseMixResponse(raw);
 }
@@ -200,6 +202,7 @@ export async function mixFinalAdvanced(
     },
   };
 
+  // SUBMIT/charge call → NO comm-timeout (a false abort would risk a re-POST re-charge).
   const raw = await client.post<Record<string, unknown>>('/retrievefinalmix', body);
   return parseMixResponse(raw);
 }
@@ -221,6 +224,9 @@ export async function pollMixFinal(
     },
   };
 
-  const raw = await client.post<Record<string, unknown>>('/retrievefinalmix', body);
+  // POLL call → opt into the comm-timeout (retrieve, not the initial charge submit).
+  const raw = await client.post<Record<string, unknown>>('/retrievefinalmix', body, {
+    timeoutMs: ROEX_POLL_TIMEOUT_MS,
+  });
   return parseMixResponse(raw);
 }

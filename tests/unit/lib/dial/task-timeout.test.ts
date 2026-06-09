@@ -23,6 +23,7 @@ vi.mock('drizzle-orm', () => ({
   and: (...a: unknown[]) => ({ and: a }),
   eq: (a: unknown, b: unknown) => ({ eq: [a, b] }),
   ne: (a: unknown, b: unknown) => ({ ne: [a, b] }),
+  inArray: (a: unknown, b: unknown) => ({ inArray: [a, b] }),
   sql: (strings: TemplateStringsArray) => ({ sql: strings.join('?') }),
 }));
 
@@ -58,17 +59,17 @@ describe('getDialBackstopMs', () => {
 
 describe('isDialTaskPastBackstop', () => {
   const now = 1_700_000_000_000;
-  it('a healthy 18-min preview is NOT past the 45-min backstop (no false fail)', () => {
+  it('a healthy 18-min preview is NOT past the 60-min backstop (no false fail)', () => {
     expect(isDialTaskPastBackstop(new Date(now - 18 * 60_000), 'preview', now)).toBe(false);
   });
-  it('a 46-min preview IS past the backstop', () => {
-    expect(isDialTaskPastBackstop(new Date(now - 46 * 60_000), 'preview', now)).toBe(true);
+  it('a 70-min preview IS past the 60-min backstop', () => {
+    expect(isDialTaskPastBackstop(new Date(now - 70 * 60_000), 'preview', now)).toBe(true);
   });
-  it('a 30-min final is NOT past the 75-min backstop', () => {
+  it('a 30-min final is NOT past the 120-min backstop (heavy-final margin)', () => {
     expect(isDialTaskPastBackstop(new Date(now - 30 * 60_000), 'final_advanced', now)).toBe(false);
   });
   it('accepts an ISO string', () => {
-    expect(isDialTaskPastBackstop(new Date(now - 50 * 60_000).toISOString(), 'preview', now)).toBe(true);
+    expect(isDialTaskPastBackstop(new Date(now - 70 * 60_000).toISOString(), 'preview', now)).toBe(true);
   });
 });
 

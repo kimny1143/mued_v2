@@ -9,6 +9,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@/lib/roex/client', () => ({
   getRoExWebhookUrl: vi.fn().mockReturnValue('https://test.webhook.url/roex'),
   RoExClient: vi.fn(),
+  ROEX_POLL_TIMEOUT_MS: 45_000,
 }));
 
 import {
@@ -248,12 +249,12 @@ describe('RoExClient usage', () => {
   it('calls correct endpoint for poll', async () => {
     const client = createMockClient({ status: 'processing' });
     await pollMasterPreview(client, 'task-123');
-    expect(client.post).toHaveBeenCalledWith('/retrievepreviewmaster', expect.any(Object));
+    expect(vi.mocked(client.post).mock.calls[0][0]).toBe('/retrievepreviewmaster');
   });
 
   it('calls correct endpoint for final', async () => {
     const client = createMockClient({ status: 'processing' });
     await masterFinal(client, 'task-123');
-    expect(client.post).toHaveBeenCalledWith('/retrievefinalmaster', expect.any(Object));
+    expect(vi.mocked(client.post).mock.calls[0][0]).toBe('/retrievefinalmaster');
   });
 });

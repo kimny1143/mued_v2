@@ -23,11 +23,12 @@ import { recordDialEvent } from '@/lib/analytics/dial-events';
 export const maxDuration = 120;
 
 /**
- * A paid session idle this long with no download is flagged as an anomaly. Set above the
- * longest normal render (final max ~34min) + margin so a still-processing job is never
- * flagged as incomplete just for taking a while.
+ * A paid session idle this long with no download is flagged as an anomaly. Set ABOVE the
+ * largest task backstop (final = 120min in DIAL_BACKSTOP_MS) so a still-processing-within-
+ * backstop job is never falsely flagged as incomplete. Source: production distribution
+ * (final_advanced max 33.9min) → backstop 120min → anomaly threshold 150min.
  */
-const PAID_INCOMPLETE_THRESHOLD_MIN = 60;
+const PAID_INCOMPLETE_THRESHOLD_MIN = 150;
 
 async function runReconcile() {
   // ── 1. Stuck-task reconcile ────────────────────────────────────────────────

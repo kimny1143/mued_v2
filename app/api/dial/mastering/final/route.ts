@@ -193,13 +193,17 @@ export const GET = withDialAuth(async (auth) => {
     if (elapsed < POLLING_FALLBACK_THRESHOLD_MS) {
       return apiSuccess({ status: 'processing' });
     }
-    // Past this point a task that never produces a URL must eventually fail
-    // instead of spinning forever.
-    const timedOut = elapsed > getDialBackstopMs(task.taskType);
+    // Backstop-before-poll: past the generous backstop, fail WITHOUT calling the
+    // credit-bearing /retrievefinalmaster on a stuck task.
+    if (elapsed > getDialBackstopMs(task.taskType)) {
+      await markDialTaskFailedWithReconcile(taskId, 'mastering-final processing backstop');
+      return apiSuccess({ status: 'failed' });
+    }
 
     const client = createRoExClient();
     try {
-      const pollResult = await masterFinal(client, task.roexTaskId);
+      // POLL (retrieve) → comm-timeout on; this is NOT the initial 220cr submit.
+      const pollResult = await masterFinal(client, task.roexTaskId, { poll: true });
 
       if (pollResult.finalUrl) {
         let r2FinalUrl: string | undefined;
@@ -232,24 +236,16 @@ export const GET = withDialAuth(async (auth) => {
         return apiSuccess({ status: 'completed', finalUrl: pollResult.finalUrl });
       }
 
-      // No URL yet: explicit RoEx failure or processing timeout → fail.
-      if (pollResult.status === 'failed' || timedOut) {
-        await markDialTaskFailedWithReconcile(
-          taskId,
-          pollResult.status === 'failed' ? 'RoEx reported mastering-final failure' : 'mastering-final processing timeout',
-        );
+      // Explicit RoEx failure → fail. Otherwise keep processing (backstop above + cron).
+      if (pollResult.status === 'failed') {
+        await markDialTaskFailedWithReconcile(taskId, 'RoEx reported mastering-final failure');
         return apiSuccess({ status: 'failed' });
       }
 
       return apiSuccess({ status: 'processing' });
     } catch (pollErr) {
-      if (timedOut) {
-        await markDialTaskFailedWithReconcile(
-          taskId,
-          `mastering-final poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
-        );
-        return apiSuccess({ status: 'failed' });
-      }
+      // Transient (comm-timeout abort / HTTP error). Keep processing.
+      console.warn(`[mastering/final/GET] transient poll error: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`);
       return apiSuccess({ status: 'processing' });
     }
   } catch (error) {

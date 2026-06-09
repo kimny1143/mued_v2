@@ -365,9 +365,12 @@ export const GET = withDialAuth(async (auth) => {
       // Trust webhook — too early to poll RoEx
       return apiSuccess({ status: 'processing' });
     }
-    // Past this point a task that never produces a URL must eventually fail
-    // instead of spinning forever.
-    const timedOut = elapsed > getDialBackstopMs(task.taskType);
+    // Backstop-before-poll: past the generous backstop, fail WITHOUT calling the
+    // credit-bearing /retrievefinalmix on a stuck task (avoids hitting a charge endpoint).
+    if (elapsed > getDialBackstopMs(task.taskType)) {
+      await markDialTaskFailedWithReconcile(taskId, 'final-mix processing backstop');
+      return apiSuccess({ status: 'failed' });
+    }
 
     // Fallback: poll RoEx for final mix result
     const tracks = await db.query.dialTracks.findMany({
@@ -428,26 +431,17 @@ export const GET = withDialAuth(async (auth) => {
         });
       }
 
-      // No URL yet: explicit RoEx failure or processing timeout → fail.
-      if (pollResult.status === 'failed' || timedOut) {
-        await markDialTaskFailedWithReconcile(
-          taskId,
-          pollResult.status === 'failed' ? 'RoEx reported final-mix failure' : 'final-mix processing timeout',
-        );
+      // Explicit RoEx failure → fail. Otherwise keep processing (backstop above is the
+      // wall-clock catch; a comm-timeout abort is transient → handled in the catch).
+      if (pollResult.status === 'failed') {
+        await markDialTaskFailedWithReconcile(taskId, 'RoEx reported final-mix failure');
         return apiSuccess({ status: 'failed' });
       }
 
       return apiSuccess({ status: 'processing' });
     } catch (pollErr) {
-      // A thrown RoEx poll error (e.g. HTTP non-200) must not 500-and-leave-stuck.
-      // Fail only once the task has also exceeded its timeout.
-      if (timedOut) {
-        await markDialTaskFailedWithReconcile(
-          taskId,
-          `final-mix poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
-        );
-        return apiSuccess({ status: 'failed' });
-      }
+      // Transient (comm-timeout abort / HTTP error). Keep processing; backstop + cron catch it.
+      console.warn(`[final/GET] transient poll error: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`);
       return apiSuccess({ status: 'processing' });
     }
   } catch (error) {

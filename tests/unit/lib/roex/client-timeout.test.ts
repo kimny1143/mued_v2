@@ -19,7 +19,8 @@ describe('RoExClient comm-timeout', () => {
     ) as never;
 
     const client = new RoExClient({ apiKey: 'k' });
-    const p = client.post('/slow', {});
+    // Timeout only applies when opted in (poll calls). Submit calls pass no timeoutMs.
+    const p = client.post('/slow', {}, { timeoutMs: 45_000 });
     const assertion = expect(p).rejects.toBeInstanceOf(RoExCommTimeoutError);
     await vi.advanceTimersByTimeAsync(46_000);
     await assertion;
@@ -30,8 +31,20 @@ describe('RoExClient comm-timeout', () => {
     global.fetch = vi.fn(async () => new Response(JSON.stringify({ ok: 1 }), { status: 200 })) as never;
 
     const client = new RoExClient({ apiKey: 'k' });
-    const result = await client.post<{ ok: number }>('/fast', {});
+    const result = await client.post<{ ok: number }>('/fast', {}, { timeoutMs: 45_000 });
     expect(result).toEqual({ ok: 1 });
     expect(clearSpy).toHaveBeenCalled();
+  });
+
+  it('a SUBMIT call (no timeoutMs) is never aborted', async () => {
+    // A submit/charge call passes no timeoutMs → plain fetch, no AbortController, no abort.
+    let sawSignal = false;
+    global.fetch = vi.fn(async (_url: unknown, init?: { signal?: AbortSignal }) => {
+      sawSignal = !!init?.signal;
+      return new Response(JSON.stringify({ ok: 1 }), { status: 200 });
+    }) as never;
+    const client = new RoExClient({ apiKey: 'k' });
+    await client.post('/submit', {});
+    expect(sawSignal).toBe(false);
   });
 });

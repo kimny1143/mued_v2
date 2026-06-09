@@ -3,18 +3,24 @@ import type { RoExConfig } from './types';
 const DEFAULT_BASE_URL = 'https://tonn.roexaudio.com';
 
 /**
- * Per-HTTP-call timeout for RoEx requests. RoEx submit/poll endpoints return in
- * seconds (the 8–34 min job processing time is consumed across REPEATED polls), so 45s
- * is well above any healthy round-trip yet far below the routes' maxDuration (≤300s).
- * Without this, a hung TCP connection blocks the serverless function until Vercel kills
- * it — so the task never gets reconciled. This is the PRIMARY hang protection.
+ * Comm-timeout for RoEx POLL calls. A hung POLL connection would otherwise block the
+ * serverless function until Vercel kills it — so the task never gets reconciled. 45s is
+ * far above a healthy poll round-trip (RoEx status retrieves return in seconds) and below
+ * the routes' maxDuration. This is opt-in per call (`{ timeoutMs }`): POLL/retrieve calls
+ * set it; SUBMIT/charge calls do NOT — a false abort on a charge call (RoEx received it but
+ * we aborted before our response) would risk a re-POST re-charge.
  */
-const ROEX_HTTP_TIMEOUT_MS = 45_000;
+export const ROEX_POLL_TIMEOUT_MS = 45_000;
+
+export interface RoExRequestOpts {
+  /** When set, abort the HTTP call after this many ms (poll calls only — never submits). */
+  timeoutMs?: number;
+}
 
 /**
- * Thrown when a RoEx HTTP call exceeds ROEX_HTTP_TIMEOUT_MS. Callers MUST treat this as
- * TRANSIENT (the async job may still be processing) — keep the task `processing` and let
- * the next poll / cron retry. It is NOT a job failure (that is an explicit `status:'failed'`).
+ * Thrown when a RoEx HTTP call exceeds its timeoutMs. Callers MUST treat this as TRANSIENT
+ * (the async job may still be processing) — keep the task `processing` and let the next
+ * poll / cron retry. It is NOT a job failure (that is an explicit `status:'failed'`).
  */
 export class RoExCommTimeoutError extends Error {
   constructor(message: string) {
@@ -35,14 +41,18 @@ export class RoExClient {
     this.baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
   }
 
-  private async fetchWithTimeout(url: string, init: RequestInit, path: string): Promise<Response> {
+  private async doFetch(url: string, init: RequestInit, path: string, timeoutMs?: number): Promise<Response> {
+    if (!timeoutMs) {
+      // No comm-timeout (submit/charge calls): a false abort here would risk a re-charge.
+      return fetch(url, init);
+    }
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), ROEX_HTTP_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       return await fetch(url, { ...init, signal: controller.signal });
     } catch (err) {
       if (controller.signal.aborted) {
-        throw new RoExCommTimeoutError(`RoEx API ${path} timed out after ${ROEX_HTTP_TIMEOUT_MS}ms`);
+        throw new RoExCommTimeoutError(`RoEx API ${path} timed out after ${timeoutMs}ms`);
       }
       throw err;
     } finally {
@@ -50,12 +60,13 @@ export class RoExClient {
     }
   }
 
-  async post<T = unknown>(path: string, body: unknown): Promise<T> {
+  async post<T = unknown>(path: string, body: unknown, opts?: RoExRequestOpts): Promise<T> {
     const url = `${this.baseUrl}${path}?key=${this.apiKey}`;
-    const res = await this.fetchWithTimeout(
+    const res = await this.doFetch(
       url,
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
       path,
+      opts?.timeoutMs,
     );
 
     if (!res.ok) {
@@ -66,10 +77,10 @@ export class RoExClient {
     return res.json() as Promise<T>;
   }
 
-  async get<T = unknown>(path: string): Promise<T> {
+  async get<T = unknown>(path: string, opts?: RoExRequestOpts): Promise<T> {
     const separator = path.includes('?') ? '&' : '?';
     const url = `${this.baseUrl}${path}${separator}key=${this.apiKey}`;
-    const res = await this.fetchWithTimeout(url, { method: 'GET' }, path);
+    const res = await this.doFetch(url, { method: 'GET' }, path, opts?.timeoutMs);
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');

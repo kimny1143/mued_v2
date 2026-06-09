@@ -104,7 +104,7 @@ export async function POST(request: Request) {
         // Already retrieved via POST handler — skip to avoid double 220cr charge
         resultUrl = task.finalUrl;
       } else {
-        const result = await masterFinal(client, task.roexTaskId);
+        const result = await masterFinal(client, task.roexTaskId, { poll: true });
         resultUrl = result.finalUrl;
         roexFailed = result.status === 'failed';
       }

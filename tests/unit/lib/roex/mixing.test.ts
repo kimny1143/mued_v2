@@ -11,6 +11,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@/lib/roex/client', () => ({
   getRoExWebhookUrl: vi.fn().mockReturnValue('https://test.webhook.url/roex'),
   RoExClient: vi.fn(),
+  ROEX_POLL_TIMEOUT_MS: 45_000,
 }));
 
 import {

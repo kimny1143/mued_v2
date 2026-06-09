@@ -185,23 +185,6 @@ export const GET = withDialAuth(async (auth) => {
       const ext = isPreview ? 'mp3' : 'wav';
       filename = `MUEDial_${taskLabel}_${taskId.slice(0, 8)}.${ext}`;
       contentType = isPreview ? 'audio/mpeg' : 'audio/wav';
-
-      // ② Completion instrumentation: record an actual deliverable download (attachment,
-      // not inline playback; final/mastering, not preview; not admin viewing). This is the
-      // "download = completion" signal — fire-and-forget, never blocks the stream.
-      const isDeliverable =
-        task.taskType === 'final_basic' || task.taskType === 'final_advanced'
-        || task.taskType === 'mastering' || task.taskType === 'mix_check';
-      if (!isInline && !viaAdmin && isDeliverable) {
-        recordDialEvent({
-          sessionId: task.sessionId,
-          eventType: 'download_clicked',
-          userId: auth.userId,
-          guestToken: auth.guestToken,
-          mode: null,
-          metadata: { taskId, taskType: task.taskType },
-        });
-      }
     }
   }
 
@@ -253,6 +236,25 @@ export const GET = withDialAuth(async (auth) => {
     if (acceptRanges) resHeaders.set('Accept-Ranges', acceptRanges);
     const contentRange = sourceRes.headers.get('Content-Range');
     if (contentRange) resHeaders.set('Content-Range', contentRange);
+
+    // ② Completion instrumentation — record AFTER a successful stream (a failed/expired
+    // click must not mark the session complete). An actual download (attachment, not inline
+    // playback) of a deliverable (final/mastering/mix_check) or its stems; not admin.
+    // "download = completion". Fire-and-forget.
+    const isDeliverableTask = !!taskForRefresh && (
+      taskForRefresh.taskType === 'final_basic' || taskForRefresh.taskType === 'final_advanced'
+      || taskForRefresh.taskType === 'mastering' || taskForRefresh.taskType === 'mix_check'
+    );
+    if (!isInline && !viaAdmin && taskForRefresh && isDeliverableTask) {
+      recordDialEvent({
+        sessionId: taskForRefresh.sessionId,
+        eventType: 'download_clicked',
+        userId: auth.userId,
+        guestToken: auth.guestToken,
+        mode: null,
+        metadata: { taskId: taskForRefresh.id, taskType: taskForRefresh.taskType, stemKey: stemKeyForRefresh ?? stemKey },
+      });
+    }
 
     return new NextResponse(sourceRes.body, { status: sourceRes.status, headers: resHeaders });
   } catch (error) {
