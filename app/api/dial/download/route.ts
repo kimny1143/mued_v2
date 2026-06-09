@@ -25,7 +25,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { dialTasks, dialTracks } from '@/db/schema';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
-import { verifyDialTaskOwnership, verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
+import { verifyDialTaskReadAccess, verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiValidationError, apiNotFound, apiServerError } from '@/lib/api-response';
 import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview } from '@/lib/roex';
 
@@ -112,8 +112,8 @@ export const GET = withDialAuth(async (auth) => {
   if (sessionId && stemKey) {
     // Session-based stem lookup: server picks best task (preview MP3 preferred over final WAV).
     // Fixes client-side desync where preview task stemsUrls shows as null after polling.
-    const session = await verifyDialSessionOwnership(sessionId, auth);
-    if (!session) return apiNotFound('Session not found');
+    const access = await verifyDialSessionReadAccess(sessionId, auth, 'listen');
+    if (!access) return apiNotFound('Session not found');
 
     const tasks = await db.query.dialTasks.findMany({
       where: eq(dialTasks.sessionId, sessionId),
@@ -149,7 +149,7 @@ export const GET = withDialAuth(async (auth) => {
     // Existing taskId-based flow
     if (!taskId) return apiValidationError('taskId or (sessionId + stemKey) is required');
 
-    const result = await verifyDialTaskOwnership(taskId, auth);
+    const result = await verifyDialTaskReadAccess(taskId, auth, 'listen');
     if (!result) return apiNotFound('Task not found');
     const { task } = result;
     taskForRefresh = task;
