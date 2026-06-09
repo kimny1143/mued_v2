@@ -1,19 +1,31 @@
 /**
  * MUEDial Tracks API
- * PATCH /api/dial/tracks   — Update track parameters (apply Hoo's suggestions)
- * GET   /api/dial/tracks   — List tracks for a session
+ * PATCH  /api/dial/tracks   — Update track parameters (apply Hoo's suggestions)
+ * DELETE /api/dial/tracks   — Remove a track
+ * GET    /api/dial/tracks   — List tracks for a session
  *
- * Used in dialogue mode when Hoo suggests parameter changes
- * and the user approves them.
+ * Mutations (PATCH/DELETE) are blocked once the session's track set is locked
+ * (final mix/mastering started) — enforced server-side, see lib/dial/session-edit-lock.
+ * Add/replace go through /api/dial/upload/presign + /confirm (confirm takes an optional
+ * trackId to replace in place) — that path streams the file via the Worker proxy to avoid
+ * Vercel's 4.5MB request-body limit, so it is NOT done here.
  */
 
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
-import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
+import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
+import { isDialSessionTrackEditable, dialTrackLockReason } from '@/lib/dial/session-edit-lock';
 import { db } from '@/db';
 import { dialTracks } from '@/db/schema';
+
+/** 409 response when a session's track set is locked (final started). Null when editable. */
+function trackLockResponse(status: string | null | undefined) {
+  if (isDialSessionTrackEditable(status)) return null;
+  const lock = dialTrackLockReason(status)!;
+  return apiError(lock.message, { code: lock.code, status: 409 });
+}
 
 // ─── PATCH: Update track parameters ────────────────────────────────────────
 
@@ -45,6 +57,10 @@ export const PATCH = withDialAuth(async (auth) => {
     if (!session) {
       return apiNotFound('Session not found');
     }
+
+    // Track set frozen once a final mix/master started (server-side lock — not cosmetic).
+    const locked = trackLockResponse(session.status);
+    if (locked) return locked;
 
     // Apply each update
     const results = await Promise.all(
@@ -107,6 +123,10 @@ export const DELETE = withDialAuth(async (auth) => {
     if (!session) {
       return apiNotFound('Session not found');
     }
+
+    // Track set frozen once a final mix/master started (server-side lock — not cosmetic).
+    const locked = trackLockResponse(session.status);
+    if (locked) return locked;
 
     // Delete track (only if it belongs to this session)
     const [deleted] = await db

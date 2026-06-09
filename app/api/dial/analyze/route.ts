@@ -15,6 +15,7 @@ import { checkRateLimit } from '@/lib/middleware/rate-limit';
 import { recordDialEvent } from '@/lib/analytics/dial-events';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { createRoExClient, isRoExDevKey, analyzeMix, mapMusicalStyle } from '@/lib/roex';
+import { isDialSessionTrackEditable, dialTrackLockReason } from '@/lib/dial/session-edit-lock';
 import type { MusicalStyle } from '@/lib/roex';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
@@ -77,6 +78,14 @@ export const POST = withDialAuth(async (auth) => {
         metadata: { cached: true },
       });
       return apiSuccess({ analysisResult: session.analysisResult, cached: true });
+    }
+
+    // Don't spend credits on a FRESH analysis once the session's track set is locked
+    // (final mix/master started). Cached results above always remain readable. The UI only
+    // triggers analysis in the editable window, so this never blocks a legitimate flow.
+    if (!isDialSessionTrackEditable(session.status)) {
+      const lock = dialTrackLockReason(session.status)!;
+      return apiError(lock.message, { code: lock.code, status: 409 });
     }
 
     // Find audio URL to analyze

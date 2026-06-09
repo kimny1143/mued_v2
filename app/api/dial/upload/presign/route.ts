@@ -9,8 +9,9 @@
 
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
-import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiForbidden } from '@/lib/api-response';
+import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiForbidden, apiError } from '@/lib/api-response';
 import { createRoExClient, getUploadUrl } from '@/lib/roex';
+import { isDialSessionTrackEditable, dialTrackLockReason } from '@/lib/dial/session-edit-lock';
 
 export const POST = withDialAuth(async (auth) => {
   try {
@@ -30,6 +31,13 @@ export const POST = withDialAuth(async (auth) => {
     // Verify payment completed
     if (session.paymentStatus !== 'paid') {
       return apiForbidden('Payment required before uploading');
+    }
+
+    // Track set is frozen once a final mix/master has started (server-side lock — not cosmetic).
+    // Covers both add and replace, since replace also presigns before re-uploading.
+    if (!isDialSessionTrackEditable(session.status)) {
+      const lock = dialTrackLockReason(session.status)!;
+      return apiError(lock.message, { code: lock.code, status: 409 });
     }
 
     // Get signed URL from RoEx
