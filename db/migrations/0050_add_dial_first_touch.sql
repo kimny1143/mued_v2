@@ -1,0 +1,19 @@
+-- Add first_touch JSONB to dial_sessions — first-touch acquisition attribution.
+--
+-- Records where a user ORIGINALLY came from, captured at session creation across ALL
+-- session-creating paths (checkout / campaign/start / session). The value is persisted
+-- client-side on the user's FIRST /dial landing (first-wins, never overwritten) so that
+-- multi-step funnels (e.g. Threads bio -> dial top -> readiness -> ... -> paid) keep the
+-- ORIGINAL referrer/utm instead of an internal same-site referer.
+--
+-- Shape (all optional):
+--   { referrer, refererHeader, utmSource, utmMedium, utmCampaign, utmContent, utmTerm,
+--     landingPath, gaClientId, capturedAt, serverCapturedAt }
+-- gaClientId is the GA4 client_id (_ga cookie) so a session can be joined back to GA4 events.
+--
+-- Pure additive, nullable — existing rows stay NULL (no backfill). See lib/dial/first-touch.ts.
+--
+-- WARNING — DEPLOY ORDER: apply this to PRODUCTION Neon BEFORE merging/deploying the code that
+-- writes to it. Merge = Vercel auto-deploy, so code-first would write to a missing column
+-- (42703 undefined_column). Lesson from migration 0048 / PR#426 (2026-06-09 prod outage).
+ALTER TABLE dial_sessions ADD COLUMN IF NOT EXISTS first_touch JSONB;

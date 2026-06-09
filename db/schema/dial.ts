@@ -106,6 +106,12 @@ export const dialSessions = pgTable('dial_sessions', {
   // Used to bound cost (baseCycleLimit=1), disable reference-track (hidden /mixcomparison cost),
   // and exclude from paid-user counts. See lib/dial/free-campaign.ts.
   isFreeCampaign: boolean('is_free_campaign').notNull().default(false),
+  // First-touch acquisition attribution (where the user originally came from), captured at
+  // session creation across all creation paths. Client-persisted at first /dial landing
+  // (first-wins). Shape: { referrer, refererHeader, utm*, landingPath, gaClientId, capturedAt,
+  // serverCapturedAt }. Nullable, pure additive — existing rows stay null. See
+  // lib/dial/first-touch.ts (migration 0050).
+  firstTouch: jsonb('first_touch'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 }, (table) => ({

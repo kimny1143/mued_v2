@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { FirstTouchTracker } from "@/components/dial/first-touch-tracker";
 
 const dialJsonLd = {
   "@context": "https://schema.org",
@@ -126,6 +127,7 @@ export default function DialLayout({
         strategy="beforeInteractive"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(dialJsonLd) }}
       />
+      <FirstTouchTracker />
       {children}
     </>
   );

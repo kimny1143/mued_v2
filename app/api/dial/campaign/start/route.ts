@@ -26,12 +26,14 @@ import { rateLimit } from '@/lib/middleware/rate-limit';
 import { evaluateFreeCampaignEligibility, FREE_CAMPAIGN_SESSION, getFreeCampaignCap } from '@/lib/dial/free-campaign';
 import { markFreeCampaignGrantUsed } from '@/lib/storage/dial-free-campaign-grant';
 import { recordDialEvent } from '@/lib/analytics/dial-events';
+import { buildFirstTouch, firstTouchInputSchema } from '@/lib/dial/first-touch';
 import { logger } from '@/lib/utils/logger';
 
 const startSchema = z.object({
   // Genre is chosen in-session (Hoo sets it via chat); default 'other' like /checkout.
   musicalStyle: z.string().min(1).max(40).optional(),
   title: z.string().max(200).optional(),
+  firstTouch: firstTouchInputSchema,
 });
 
 // Stable key for pg_advisory_xact_lock — serializes all concurrent grant attempts so the
@@ -93,6 +95,9 @@ export async function POST(request: NextRequest) {
     const cap = getFreeCampaignCap();
     const guestToken = randomBytes(32).toString('hex');
 
+    // First-touch attribution (best-effort, never blocks the grant; null when nothing is known).
+    const firstTouch = buildFirstTouch(request.headers, parsed.data.firstTouch);
+
     // Atomic grant: advisory lock serializes concurrent claims so cap is never exceeded
     // and a single user can never get two grants (partial unique index is the final backstop).
     let session: typeof dialSessions.$inferSelect;
@@ -132,6 +137,7 @@ export async function POST(request: NextRequest) {
             baseCycleLimit: FREE_CAMPAIGN_SESSION.baseCycleLimit,
             additionalCycleLimit: FREE_CAMPAIGN_SESSION.additionalCycleLimit,
             isFreeCampaign: true,
+            firstTouch: firstTouch ?? undefined,
           }).returning();
           return row;
         } catch (insErr) {

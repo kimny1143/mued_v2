@@ -25,6 +25,7 @@ import { validateStripeConfig } from '@/lib/utils/env';
 import { NextRequest } from 'next/server';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { DIAL_SINGLE_PRICES } from '@/lib/dial/pricing';
+import { buildFirstTouch, firstTouchInputSchema } from '@/lib/dial/first-touch';
 
 const stripeConfig = validateStripeConfig();
 const stripe = new Stripe(stripeConfig.secretKey, {
@@ -52,6 +53,7 @@ const checkoutSchema = z.object({
   email: z.string().email(),
   musicalStyle: z.string().optional(),
   title: z.string().optional(),
+  firstTouch: firstTouchInputSchema,
 }).refine(
   (d) => d.mixType || d.masteringType,
   'At least one service must be selected',
@@ -72,6 +74,9 @@ export async function POST(request: NextRequest) {
     }
 
     const { mixType, masteringType, email, musicalStyle, title } = parsed.data;
+
+    // First-touch attribution (best-effort, never blocks checkout; null when nothing is known).
+    const firstTouch = buildFirstTouch(request.headers, parsed.data.firstTouch);
 
     // Try to resolve Clerk user (optional — not required)
     const clerkUserId = await resolveClerkUserId(request).catch(() => null);
@@ -96,6 +101,7 @@ export async function POST(request: NextRequest) {
         guestToken,
         guestTokenExpiresAt,
         paymentStatus: 'paid',
+        firstTouch: firstTouch ?? undefined,
         ...(sessionMode === 'omakase' ? {
           baseCycleLimit: 1,
           additionalCycleLimit: 0,
@@ -152,6 +158,7 @@ export async function POST(request: NextRequest) {
         guestToken,
         guestTokenExpiresAt,
         paymentStatus: 'pending',
+        firstTouch: firstTouch ?? undefined,
         ...(sessionMode === 'omakase' ? {
           baseCycleLimit: 1,
           additionalCycleLimit: 0,
