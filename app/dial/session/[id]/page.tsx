@@ -451,6 +451,18 @@ function DialSessionContent() {
     if (processingTasks.length === 0) return;
 
     const poll = async () => {
+      // For preview tasks, poll the dedicated GET route so its server-side timeout
+      // backstop runs. The session-route inline poll (GET /api/dial/session) has no
+      // timeout and swallows non-200 errors, so a hung/errored preview — the actual
+      // incident type — would otherwise spin forever. This route flips it to 'failed'
+      // past the timeout (markDialTaskFailed is idempotent, so the parallel session
+      // poll never conflicts).
+      const previewTask = processingTasks.find((t) => t.taskType === 'preview');
+      if (previewTask) {
+        try {
+          await fetch(`/api/dial/preview?taskId=${previewTask.id}`, { headers });
+        } catch { /* ignore */ }
+      }
       // For final/mix_check tasks, poll the RoEx result endpoint first
       const finalTask = processingTasks.find(
         (t) => t.taskType === 'final_basic' || t.taskType === 'final_advanced' || t.taskType === 'mix_check',
