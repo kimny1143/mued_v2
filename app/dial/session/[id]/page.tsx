@@ -11,6 +11,7 @@ import { AudioAnalyzerProvider } from '@/hooks/use-audio-analyzer-context';
 import { UnifiedSessionPlayerV2 as UnifiedSessionPlayer } from '@/components/dial/v2/unified-session-player-v2';
 import type { TakeEntry } from '@/components/dial/unified-session-player';
 import { type DeliveryTarget, DELIVERY_TARGETS, DELIVERY_TARGET_LABELS, DELIVERY_TARGET_LUFS, getLufsGapJudgment } from '@/lib/dial/lufs-presets';
+import { isDialSessionTrackEditable } from '@/lib/dial/session-edit-lock';
 
 /** Stream audio through our own API to avoid GCS presigned URL length/CORS issues */
 function taskStreamUrl(taskId: string): string {
@@ -165,6 +166,7 @@ function DialSessionContent() {
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [fileUploadPercent, setFileUploadPercent] = useState(0);
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
+  const [replacingTrackId, setReplacingTrackId] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
   // Preview state
@@ -736,8 +738,9 @@ function DialSessionContent() {
 
   const handleUploadAll = () => uploadFiles(stagedFiles);
 
-  const _handleDeleteTrack = async (trackId: string) => {
+  const handleDeleteTrack = async (trackId: string) => {
     if (!session) return;
+    if (!window.confirm(t.dial.session.deleteTrackConfirm)) return;
     setError(null);
 
     try {
@@ -756,6 +759,72 @@ function DialSessionContent() {
       await fetchSession();
     } catch {
       setError('Delete error');
+    }
+  };
+
+  // Replace a track's audio in place (same trackId/row). Reuses the presign → Worker proxy →
+  // confirm{trackId} flow so the file streams around Vercel's 4.5MB body limit. The server
+  // rejects this once the session's track set is locked (final started).
+  const handleReplaceTrack = async (trackId: string, file: File, instrumentGroup: string) => {
+    if (!session) return;
+    setError(null);
+    setReplacingTrackId(trackId);
+    try {
+      const authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (isSignedIn) {
+        const token = await getToken();
+        if (token) authHeaders['Authorization'] = `Bearer ${token}`;
+      } else if (guestToken) {
+        authHeaders['X-Dial-Guest-Token'] = guestToken;
+      }
+
+      // 1) Presign
+      const presignRes = await fetch('/api/dial/upload/presign', {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ fileName: file.name, sessionId: session.id }),
+      });
+      const presignData = await presignRes.json();
+      if (!presignData.success) {
+        setError(presignData.error || 'Replace failed');
+        return;
+      }
+      const { signedUrl, readableUrl } = presignData.data;
+
+      // 2) PUT the file via the Cloudflare Worker proxy → RoEx GCS
+      const proxyUrl = process.env.NEXT_PUBLIC_UPLOAD_PROXY_URL;
+      if (!proxyUrl) throw new Error('Upload proxy URL not configured');
+      const contentType = file.type || 'audio/wav';
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', proxyUrl, true);
+        xhr.setRequestHeader('Content-Type', contentType);
+        xhr.setRequestHeader('X-Upload-Target', signedUrl);
+        xhr.onload = () =>
+          xhr.status >= 200 && xhr.status < 300
+            ? resolve()
+            : reject(new Error(`Upload proxy failed (${xhr.status})`));
+        xhr.onerror = () => reject(new Error('Network error during upload'));
+        xhr.send(file);
+      });
+
+      // 3) Confirm with trackId → replace the existing row in place
+      const confirmRes = await fetch('/api/dial/upload/confirm', {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ sessionId: session.id, trackId, fileName: file.name, readableUrl, instrumentGroup }),
+      });
+      const confirmData = await confirmRes.json();
+      if (!confirmData.success) {
+        setError(confirmData.error || 'Replace failed');
+        return;
+      }
+
+      await fetchSession();
+    } catch (err) {
+      setError(`Replace error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setReplacingTrackId(null);
     }
   };
 
@@ -1083,7 +1152,13 @@ function DialSessionContent() {
 
   // ─── Shared Sections (used in both layouts) ─────────────────────────────────
 
-  const uploadSection = session.paymentStatus === 'paid' && session.tracks.length === 0 && !hasFinal && !(isMasteringPhase && !isMasteringOnly) && (
+  const editable = isDialSessionTrackEditable(session.status);
+  // Tracks may be added / replaced / deleted only while the session is editable (pre-final) and
+  // paid. Mirrors the server-side lock (lib/dial/session-edit-lock); the API enforces it regardless
+  // of what the UI shows, so a direct API call can't mutate a paid deliverable.
+  const canEditTracks = session.paymentStatus === 'paid' && editable && !hasFinal && !(isMasteringPhase && !isMasteringOnly);
+
+  const uploadSection = canEditTracks && (isMasteringOnly ? session.tracks.length === 0 : true) && (
     <div>
       <h2 className="text-lg font-medium mb-4">{isMasteringOnly ? t.dial.session.upload2mix : t.dial.session.uploadStems}</h2>
 
@@ -1168,6 +1243,65 @@ function DialSessionContent() {
     </div>
   );
 
+
+  // ─── Track Manager (add / replace / delete uploaded tracks) ─────────────────
+  // Lets the user self-correct their stems while the session is still editable. Hidden once the
+  // track set is locked; the server (lib/dial/session-edit-lock) is the source of truth.
+  const trackManagerSection = canEditTracks && session.tracks.length > 0 && (
+    <div className="mt-4">
+      <h3 className="text-sm font-medium text-zinc-400 mb-2">{t.dial.session.manageTracks}</h3>
+      <div className="border border-zinc-800 rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <tbody>
+            {session.tracks.map((track, idx) => {
+              const isReplacing = replacingTrackId === track.id;
+              const busy = isReplacing || uploading;
+              return (
+                <tr key={track.id} className="border-t border-zinc-800/50 first:border-t-0">
+                  <td className="px-4 py-2 text-white truncate max-w-[240px]">
+                    {toDisplayName(track, idx)}
+                    {!isMasteringOnly && track.instrumentGroup && (
+                      <span className="ml-2 text-xs text-zinc-500">{track.instrumentGroup}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-right whitespace-nowrap">
+                    <label
+                      className={`inline-flex items-center gap-1 px-2 py-1 mr-1 rounded text-xs transition-colors ${
+                        busy ? 'opacity-50 pointer-events-none' : 'text-zinc-400 hover:text-white hover:bg-zinc-800 cursor-pointer'
+                      }`}
+                    >
+                      {isReplacing ? t.dial.session.replacing : t.dial.session.replace}
+                      <input
+                        type="file"
+                        accept=".wav,.flac,.aiff,.mp3,.m4a"
+                        className="hidden"
+                        disabled={busy}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = '';
+                          if (f) handleReplaceTrack(track.id, f, track.instrumentGroup);
+                        }}
+                        aria-label={`${t.dial.session.replace} ${track.originalFilename}`}
+                      />
+                    </label>
+                    <button
+                      onClick={() => handleDeleteTrack(track.id)}
+                      disabled={busy}
+                      className="px-2 py-1 rounded text-xs text-zinc-500 hover:text-red-400 hover:bg-zinc-800 disabled:opacity-50 transition-colors"
+                      title={t.dial.session.delete}
+                      aria-label={`${t.dial.session.delete} ${track.originalFilename}`}
+                    >
+                      {t.dial.session.delete}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 
   // Render a single task card (preview take or non-preview)
   const renderTask = (task: Task, allPreviews: Task[]) => {
@@ -1714,6 +1848,7 @@ function DialSessionContent() {
                 )}
 
                 {uploadSection}
+                {trackManagerSection}
               </div>
 
               {/* Right: Chat — fixed 440px, independently scrollable */}

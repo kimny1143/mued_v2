@@ -5,13 +5,18 @@
  * Called after the client successfully PUTs the file to GCS.
  * Saves the track record in the database, then copies to R2 for permanent URL.
  *
+ * Add vs replace: when `trackId` is supplied, the existing track row is REPLACED in place
+ * (same trackId → same R2 key `stems/{sessionId}/{trackId}.{ext}`, so the new audio overwrites
+ * the old one with no orphan stem). Otherwise a new track is inserted.
+ *
  * Strategy: roexUploadUrl = GCS (for RoEx API), r2Url = R2 /stream/ (fallback when GCS expires)
  */
 
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
-import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiForbidden } from '@/lib/api-response';
+import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiForbidden, apiError } from '@/lib/api-response';
+import { isDialSessionTrackEditable, dialTrackLockReason } from '@/lib/dial/session-edit-lock';
 import { db } from '@/db';
 import { dialTracks } from '@/db/schema';
 
@@ -23,6 +28,7 @@ export const POST = withDialAuth(async (auth) => {
       fileName,
       readableUrl,
       instrumentGroup,
+      trackId, // when present: replace this existing track in place
       presenceSetting = 'NORMAL',
       panPreference = 'NO_PREFERENCE',
       reverbPreference = 'NONE',
@@ -31,6 +37,7 @@ export const POST = withDialAuth(async (auth) => {
       fileName?: string;
       readableUrl?: string;
       instrumentGroup?: string;
+      trackId?: string;
       presenceSetting?: string;
       panPreference?: string;
       reverbPreference?: string;
@@ -51,16 +58,39 @@ export const POST = withDialAuth(async (auth) => {
       return apiForbidden('Payment required before uploading');
     }
 
-    // Save track record with GCS URL first
-    const [track] = await db.insert(dialTracks).values({
-      sessionId,
-      originalFilename: fileName,
-      roexUploadUrl: readableUrl,
-      instrumentGroup,
-      presenceSetting,
-      panPreference,
-      reverbPreference,
-    }).returning();
+    // Track set is frozen once a final mix/master has started (server-side lock — not cosmetic).
+    if (!isDialSessionTrackEditable(session.status)) {
+      const lock = dialTrackLockReason(session.status)!;
+      return apiError(lock.message, { code: lock.code, status: 409 });
+    }
+
+    // Replace in place (same row/R2 key) when trackId is given, else insert a new track.
+    let track: typeof dialTracks.$inferSelect;
+    if (trackId) {
+      const existing = await db.query.dialTracks.findFirst({
+        where: and(eq(dialTracks.id, trackId), eq(dialTracks.sessionId, sessionId)),
+      });
+      if (!existing) {
+        return apiNotFound('Track not found');
+      }
+      // Swap audio + filename (+ optional regroup); clear r2Url until the new copy lands below.
+      [track] = await db
+        .update(dialTracks)
+        .set({ originalFilename: fileName, roexUploadUrl: readableUrl, instrumentGroup, r2Url: null })
+        .where(and(eq(dialTracks.id, trackId), eq(dialTracks.sessionId, sessionId)))
+        .returning();
+    } else {
+      // Save track record with GCS URL first
+      [track] = await db.insert(dialTracks).values({
+        sessionId,
+        originalFilename: fileName,
+        roexUploadUrl: readableUrl,
+        instrumentGroup,
+        presenceSetting,
+        panPreference,
+        reverbPreference,
+      }).returning();
+    }
 
     // Copy stem to R2 for permanent URL (GCS signed URLs expire in 1h)
     // Uses /stream/ path (no Content-Disposition) so RoEx can fetch it directly
