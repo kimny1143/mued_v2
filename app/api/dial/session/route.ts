@@ -15,6 +15,7 @@ import { createRoExClient, isRoExDevKey, pollMixPreview, pollMixFinal, pollMaste
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { db } from '@/db';
 import { dialSessions, dialTasks, dialTracks } from '@/db/schema';
+import { buildFirstTouch, firstTouchInputSchema } from '@/lib/dial/first-touch';
 
 // ─── POST: Create session ───────────────────────────────────────────────────
 
@@ -22,6 +23,7 @@ const createSessionSchema = z.object({
   mode: z.enum(['omakase', 'dialogue']),
   musicalStyle: z.string(),
   title: z.string().optional(),
+  firstTouch: firstTouchInputSchema,
 });
 
 export const POST = withDialAuth(async ({ userId, isGuest, request }) => {
@@ -48,6 +50,9 @@ export const POST = withDialAuth(async ({ userId, isGuest, request }) => {
       draftNumber = (row?.maxDraft ?? 0) + 1;
     }
 
+    // First-touch attribution (best-effort, never blocks creation; null when nothing is known).
+    const firstTouch = buildFirstTouch(request.headers, parsed.data.firstTouch);
+
     const [session] = await db.insert(dialSessions).values({
       userId: userId ?? undefined,
       mode: parsed.data.mode,
@@ -56,6 +61,7 @@ export const POST = withDialAuth(async ({ userId, isGuest, request }) => {
       draftNumber,
       guestToken,
       guestTokenExpiresAt,
+      firstTouch: firstTouch ?? undefined,
     }).returning();
 
     return apiSuccess({

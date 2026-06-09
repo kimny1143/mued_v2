@@ -6,6 +6,7 @@ import { useLocale } from '@/lib/i18n/locale-context';
 import Image from 'next/image';
 import Link from 'next/link';
 import { trackCtaClick } from '@/lib/analytics/gtag';
+import { getStoredFirstTouch } from '@/lib/dial/first-touch-client';
 
 type ServiceTier = 'omakase' | 'dialogue';
 
@@ -321,7 +322,8 @@ function FreeCampaignCta({ fc }: { fc: Record<string, string> }) {
       const res = await fetch('/api/dial/campaign/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        // First-touch attribution (best-effort; undefined when nothing was captured).
+        body: JSON.stringify({ firstTouch: getStoredFirstTouch() }),
       });
       const data = await res.json();
       if (!data.success) {
@@ -402,7 +404,8 @@ export default function DialPage() {
       const res = await fetch('/api/dial/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mixType, masteringType, email: effectiveEmail }),
+        // First-touch attribution (best-effort; undefined when nothing was captured).
+        body: JSON.stringify({ mixType, masteringType, email: effectiveEmail, firstTouch: getStoredFirstTouch() }),
       });
 
       const data = await res.json();
