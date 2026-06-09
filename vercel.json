@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/dial-reconcile",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 18 * * *"
     }
   ]
 }
