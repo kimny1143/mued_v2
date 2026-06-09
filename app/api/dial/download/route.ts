@@ -28,6 +28,7 @@ import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskReadAccess, verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiValidationError, apiNotFound, apiServerError } from '@/lib/api-response';
 import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview } from '@/lib/roex';
+import { recordDialEvent } from '@/lib/analytics/dial-events';
 
 // Allow longer duration for large WAV file streaming
 export const maxDuration = 120;
@@ -184,6 +185,23 @@ export const GET = withDialAuth(async (auth) => {
       const ext = isPreview ? 'mp3' : 'wav';
       filename = `MUEDial_${taskLabel}_${taskId.slice(0, 8)}.${ext}`;
       contentType = isPreview ? 'audio/mpeg' : 'audio/wav';
+
+      // ② Completion instrumentation: record an actual deliverable download (attachment,
+      // not inline playback; final/mastering, not preview; not admin viewing). This is the
+      // "download = completion" signal — fire-and-forget, never blocks the stream.
+      const isDeliverable =
+        task.taskType === 'final_basic' || task.taskType === 'final_advanced'
+        || task.taskType === 'mastering' || task.taskType === 'mix_check';
+      if (!isInline && !viaAdmin && isDeliverable) {
+        recordDialEvent({
+          sessionId: task.sessionId,
+          eventType: 'download_clicked',
+          userId: auth.userId,
+          guestToken: auth.guestToken,
+          mode: null,
+          metadata: { taskId, taskType: task.taskType },
+        });
+      }
     }
   }
 

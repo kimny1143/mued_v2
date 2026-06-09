@@ -30,7 +30,7 @@ import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMi
 import { buildAdvancedTrackData, type ParameterChanges } from '@/lib/dial/track-data';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
-import { getDialTaskTimeoutMs, markDialTaskFailed } from '@/lib/dial/task-timeout';
+import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks, dialMessages } from '@/db/schema';
 
@@ -367,7 +367,7 @@ export const GET = withDialAuth(async (auth) => {
     }
     // Past this point a task that never produces a URL must eventually fail
     // instead of spinning forever.
-    const timedOut = elapsed > getDialTaskTimeoutMs(task.taskType);
+    const timedOut = elapsed > getDialBackstopMs(task.taskType);
 
     // Fallback: poll RoEx for final mix result
     const tracks = await db.query.dialTracks.findMany({
@@ -430,7 +430,7 @@ export const GET = withDialAuth(async (auth) => {
 
       // No URL yet: explicit RoEx failure or processing timeout → fail.
       if (pollResult.status === 'failed' || timedOut) {
-        await markDialTaskFailed(
+        await markDialTaskFailedWithReconcile(
           taskId,
           pollResult.status === 'failed' ? 'RoEx reported final-mix failure' : 'final-mix processing timeout',
         );
@@ -442,7 +442,7 @@ export const GET = withDialAuth(async (auth) => {
       // A thrown RoEx poll error (e.g. HTTP non-200) must not 500-and-leave-stuck.
       // Fail only once the task has also exceeded its timeout.
       if (timedOut) {
-        await markDialTaskFailed(
+        await markDialTaskFailedWithReconcile(
           taskId,
           `final-mix poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
         );

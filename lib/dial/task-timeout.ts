@@ -1,78 +1,141 @@
 /**
- * MUEDial task timeout + failure helpers.
+ * MUEDial task backstop + failure-reconcile helpers.
  *
- * Background: the RoEx poll routes detected completion ONLY by the presence of a
- * result URL. A RoEx task that fails or never returns a URL would therefore leave
- * the `dial_tasks` row stuck at `status='processing'` forever — the user sees an
- * infinite "処理中" spinner (real incident: a paid preview regen stuck ~7h while a
- * healthy preview completes in ~35s).
+ * Background: the RoEx poll routes detected completion ONLY by result-URL presence,
+ * so a failed/never-returning task stuck `dial_tasks` at `status='processing'` forever
+ * (infinite "処理中" spinner). The FIRST fix used a short fixed timeout (3/10 min) —
+ * but production data shows normal previews take 8–22 min (final up to ~34 min), so a
+ * short timeout false-fails healthy jobs (worse than the bug).
  *
- * These helpers provide the GUARANTEED safety net: once a still-processing task
- * passes its timeout, it is flipped to `failed` so the UI can offer a retry path
- * instead of spinning. Explicit RoEx-failure detection (see parseMixResponse /
- * parseMasteringResponse) is the faster best-effort path; the timeout is the
- * backstop that works regardless of RoEx's (undocumented) failure contract.
+ * Correct design (zero-false-fail priority):
+ *   - PRIMARY hang protection = RoEx HTTP comm-timeout (lib/roex/client.ts) + explicit
+ *     failure detection (lib/roex/mixing|mastering parse).
+ *   - LAST-RESORT wall-clock backstop = these GENEROUS per-type thresholds, far above
+ *     the observed max, applied by both the GET poll routes (open tab) and the cron
+ *     reconciler (closed tab / very-long jobs).
+ *   - markDialTaskFailedWithReconcile is the single source of truth for the failure
+ *     write: race-safe (never clobbers a completed task), reconciles session.status so
+ *     the dashboard isn't stuck on an active dot, and restores a falsely-consumed
+ *     omakase preview slot.
  */
-import { and, eq, ne } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { dialTasks } from '@/db/schema';
+import { dialTasks, dialSessions } from '@/db/schema';
 
 /**
- * Timeout (ms) for FREE renders (preview, mastering_preview), measured from
- * `dial_tasks.createdAt`. Healthy previews complete in ~35s, so 3 min is ~5x
- * headroom — a slow-but-healthy render is never failed by mistake, and a genuine
- * hang is caught quickly (free retries are cheap, so a tighter bound is safe).
+ * Generous per-task-type wall-clock backstops (ms), from the production completion
+ * distribution: preview max 19.0min / final_advanced max 33.9min / mastering_preview
+ * max 15.2min. Set FAR above observed max so a slow-but-healthy job is NEVER failed by
+ * mistake — these only catch a genuinely stuck/abandoned task.
  */
-export const DIAL_FREE_PREVIEW_TIMEOUT_MS = 3 * 60_000;
+export const DIAL_BACKSTOP_MS: Record<string, number> = {
+  preview: 45 * 60_000,        // max 19min  → ~2.4x
+  mix_check: 30 * 60_000,      // max 2.3min → huge margin
+  final_basic: 75 * 60_000,    // final max 33.9min → ~2.2x
+  final_advanced: 75 * 60_000,
+  mastering_preview: 40 * 60_000, // max 15.2min → ~2.6x
+  mastering: 30 * 60_000,      // near-instant, but generous
+};
+const DEFAULT_BACKSTOP_MS = 75 * 60_000;
 
-/**
- * Timeout (ms) for PAID renders (final_basic, final_advanced, mix_check,
- * mastering). These hit RoEx's heavier /applyaudioeffects / /retrievefinalmaster
- * endpoints (the final route documents 60s+ runtimes). 10 min gives a wide margin
- * — a false-positive timeout on a paid task is worse than on a free one — while
- * still bounding a truly-stuck task.
- */
-export const DIAL_PAID_RENDER_TIMEOUT_MS = 10 * 60_000;
-
-/** Task types whose render is free (preview-class). Everything else is a paid render. */
-const FREE_TASK_TYPES: ReadonlySet<string> = new Set(['preview', 'mastering_preview']);
-
-/** The processing timeout (ms) for a given task type. */
-export function getDialTaskTimeoutMs(taskType: string): number {
-  return FREE_TASK_TYPES.has(taskType)
-    ? DIAL_FREE_PREVIEW_TIMEOUT_MS
-    : DIAL_PAID_RENDER_TIMEOUT_MS;
+/** The wall-clock backstop (ms) for a given task type. */
+export function getDialBackstopMs(taskType: string): number {
+  return DIAL_BACKSTOP_MS[taskType] ?? DEFAULT_BACKSTOP_MS;
 }
 
-/**
- * True when a task created at `createdAt` has been processing past its timeout.
- * Pure function — `now` is injectable for testing.
- */
-export function isDialTaskTimedOut(
+/** True when a task created at `createdAt` has been processing past its generous backstop. */
+export function isDialTaskPastBackstop(
   createdAt: Date | string,
   taskType: string,
   now: number = Date.now(),
 ): boolean {
   const created = createdAt instanceof Date ? createdAt.getTime() : new Date(createdAt).getTime();
-  return now - created > getDialTaskTimeoutMs(taskType);
+  return now - created > getDialBackstopMs(taskType);
+}
+
+export type DialSessionStatus = 'uploading' | 'previewing' | 'mixing' | 'mastering' | 'completed' | 'archived';
+
+export interface ReconcileSiblingTask {
+  taskType: string;
+  status: string;
+  hasFinal: boolean;
 }
 
 /**
- * Mark a task as failed — the single source of truth for the failure write.
- *
- * Race-safe / idempotent: the `status <> 'completed'` guard guarantees a late
- * failure signal (e.g. a delayed poll or webhook) can never overwrite a task that
- * was already delivered. `reason` is logged for post-deploy observability (there
- * is no error column on dial_tasks).
+ * Pure: when a task of `failedType` fails, pick the stable session.status that (a) does
+ * NOT leave the dashboard on a perpetual active ("mixing"/"mastering") dot and (b) never
+ * downgrades an existing completed deliverable. The caller still guards against writing
+ * over an already-`completed` session.
  */
-export async function markDialTaskFailed(taskId: string, reason?: string): Promise<void> {
-  const updated = await db
+export function deriveRevertSessionStatus(
+  failedType: string,
+  siblings: ReconcileSiblingTask[],
+): DialSessionStatus {
+  const hasCompletedFinal = siblings.some(
+    (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.status === 'completed' && t.hasFinal,
+  );
+  const hasCompletedPreview = siblings.some((t) => t.taskType === 'preview' && t.status === 'completed');
+
+  switch (failedType) {
+    case 'preview':
+      return hasCompletedPreview ? 'previewing' : 'uploading';
+    case 'mix_check':
+    case 'final_basic':
+    case 'final_advanced':
+      return 'previewing';
+    case 'mastering_preview':
+    case 'mastering':
+      // The mix deliverable is intact even if mastering failed → keep it completed.
+      return hasCompletedFinal ? 'completed' : (hasCompletedPreview ? 'previewing' : 'uploading');
+    default:
+      return hasCompletedPreview ? 'previewing' : 'uploading';
+  }
+}
+
+/**
+ * Mark a task failed + reconcile the session + restore previewCount — the single source
+ * of truth for the failure write. Returns `{ failed }`.
+ *
+ * Race-safe: the `status <> 'completed'` guard means the failure write only "wins" if the
+ * task was still non-completed. If a webhook/poll completed it first, the update flips 0
+ * rows → we return `{ failed: false }` and touch NEITHER the session NOR previewCount
+ * (so a delivered result is never reverted and a slot is never wrongly refunded).
+ */
+export async function markDialTaskFailedWithReconcile(
+  taskId: string,
+  reason?: string,
+): Promise<{ failed: boolean }> {
+  const flipped = await db
     .update(dialTasks)
     .set({ status: 'failed' })
     .where(and(eq(dialTasks.id, taskId), ne(dialTasks.status, 'completed')))
-    .returning({ id: dialTasks.id });
+    .returning({ id: dialTasks.id, taskType: dialTasks.taskType, sessionId: dialTasks.sessionId });
 
-  if (updated.length > 0) {
-    console.warn(`[dial] task ${taskId} marked failed${reason ? `: ${reason}` : ''}`);
+  if (flipped.length === 0) return { failed: false };
+
+  const { taskType, sessionId } = flipped[0];
+  console.warn(`[dial] task ${taskId} (${taskType}) marked failed${reason ? `: ${reason}` : ''}`);
+
+  const session = await db.query.dialSessions.findFirst({ where: eq(dialSessions.id, sessionId) });
+  if (!session) return { failed: true };
+
+  const siblings = await db.query.dialTasks.findMany({ where: eq(dialTasks.sessionId, sessionId) });
+  const revert = deriveRevertSessionStatus(
+    taskType,
+    siblings.map((t) => ({ taskType: t.taskType, status: t.status, hasFinal: !!t.finalUrl })),
+  );
+
+  const sessionUpdate: Record<string, unknown> = { updatedAt: new Date() };
+  // Never downgrade an already-delivered (completed) session.
+  if (session.status !== 'completed' && session.status !== revert) {
+    sessionUpdate.status = revert;
   }
+  // Restore an omakase preview slot consumed at submit — a false fail must not burn the
+  // max-5 budget. GREATEST floors at 0.
+  if (taskType === 'preview' && session.mode === 'omakase') {
+    sessionUpdate.previewCount = sql`GREATEST(${dialSessions.previewCount} - 1, 0)`;
+  }
+
+  await db.update(dialSessions).set(sessionUpdate).where(eq(dialSessions.id, sessionId));
+  return { failed: true };
 }

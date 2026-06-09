@@ -61,14 +61,20 @@ function parseMixResponse(raw: Record<string, unknown>): MixResult {
     (results.mix_output_settings as Record<string, FxChainWrapper>) ??
     undefined;
 
-  // Best-effort failure detection. RoEx has no documented failure-body contract
-  // (the only sample is a dev dummy with error:false), so this is opportunistic;
-  // the task-timeout safety net is the guaranteed catch, and most RoEx failures
-  // surface as an HTTP non-200 that client.post() throws on before reaching here.
+  // Best-effort failure detection across RoEx's (undocumented) error shapes. Failed when
+  // an explicit error flag is set (boolean true / non-empty string / truthy object) OR the
+  // status reads like a failure. `error:false` must NOT trip. The comm-timeout + wall-clock
+  // backstop are the guaranteed catches; this is the fast path when RoEx tells us directly.
   const rawError = results.error ?? raw.error;
-  const isFailed = rawError === true || /fail|error/i.test(status);
+  const hasErrorFlag =
+    rawError === true ||
+    (typeof rawError === 'string' && rawError.trim().length > 0) ||
+    (typeof rawError === 'object' && rawError !== null);
+  const isFailed = hasErrorFlag || /fail|error|cancel|abort|reject|time.?out/i.test(status);
   const error = isFailed
-    ? ((results.message as string) ?? (raw.message as string) ?? (results.error_message as string) ?? 'RoEx mix task failed')
+    ? (typeof rawError === 'string' && rawError.trim()
+        ? rawError
+        : (results.message as string) ?? (raw.message as string) ?? (results.error_message as string) ?? `RoEx mix task failed${status ? ` (${status})` : ''}`)
     : undefined;
 
   return {

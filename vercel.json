@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/rag-metrics",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/cron/dial-reconcile",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

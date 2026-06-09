@@ -7,14 +7,14 @@
  */
 
 import { z } from 'zod';
-import { and, eq, ne } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterFinal, isRoExDevKey } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
-import { getDialTaskTimeoutMs, markDialTaskFailed } from '@/lib/dial/task-timeout';
+import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialSessions } from '@/db/schema';
 
@@ -69,20 +69,23 @@ export const POST = withDialAuth(async (auth) => {
       });
     }
 
-    // Duplicate guard: one mastering final per session (prevents direct 220cr×N hits;
-    // the chat dup-suppression only covered the conversational path).
+    // Duplicate guard: one mastering final per session (prevents direct 220cr×N hits).
+    // A 'failed' mastering ALSO blocks a re-POST: the 220cr is consumed at submit, so
+    // re-POSTing a failed mastering would leak another 220cr. A genuinely-failed mastering
+    // is directed to support (Phase 2 will add same-task retry without re-charge).
     const existingMaster = await db.query.dialTasks.findFirst({
       where: and(
         eq(dialTasks.sessionId, previewTask.sessionId),
         eq(dialTasks.taskType, 'mastering'),
-        ne(dialTasks.status, 'failed'),
       ),
     });
     if (existingMaster) {
-      return apiError('Mastering already generated for this session.', {
-        code: 'MASTERING_ALREADY_DONE',
-        status: 409,
-      });
+      return apiError(
+        existingMaster.status === 'failed'
+          ? 'A previous mastering attempt did not complete. Please contact support@mued.jp.'
+          : 'Mastering already generated for this session.',
+        { code: 'MASTERING_ALREADY_DONE', status: 409 },
+      );
     }
 
     let masterResult;
@@ -192,7 +195,7 @@ export const GET = withDialAuth(async (auth) => {
     }
     // Past this point a task that never produces a URL must eventually fail
     // instead of spinning forever.
-    const timedOut = elapsed > getDialTaskTimeoutMs(task.taskType);
+    const timedOut = elapsed > getDialBackstopMs(task.taskType);
 
     const client = createRoExClient();
     try {
@@ -231,7 +234,7 @@ export const GET = withDialAuth(async (auth) => {
 
       // No URL yet: explicit RoEx failure or processing timeout → fail.
       if (pollResult.status === 'failed' || timedOut) {
-        await markDialTaskFailed(
+        await markDialTaskFailedWithReconcile(
           taskId,
           pollResult.status === 'failed' ? 'RoEx reported mastering-final failure' : 'mastering-final processing timeout',
         );
@@ -241,7 +244,7 @@ export const GET = withDialAuth(async (auth) => {
       return apiSuccess({ status: 'processing' });
     } catch (pollErr) {
       if (timedOut) {
-        await markDialTaskFailed(
+        await markDialTaskFailedWithReconcile(
           taskId,
           `mastering-final poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
         );

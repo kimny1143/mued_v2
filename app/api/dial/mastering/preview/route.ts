@@ -16,7 +16,7 @@ import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError }
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterPreview, pollMasterPreview, isRoExDevKey, mapMusicalStyle } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
-import { getDialTaskTimeoutMs, markDialTaskFailed } from '@/lib/dial/task-timeout';
+import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
 import { DELIVERY_TARGETS, DELIVERY_TARGET_LUFS, mapLufsToDesiredLoudness } from '@/lib/dial/lufs-presets';
@@ -173,7 +173,7 @@ export const GET = withDialAuth(async (auth) => {
     }
     // Past this point a task that never produces a URL must eventually fail
     // instead of spinning forever.
-    const timedOut = elapsed > getDialTaskTimeoutMs(task.taskType);
+    const timedOut = elapsed > getDialBackstopMs(task.taskType);
 
     // Fallback: poll RoEx for mastering preview result
     const client = createRoExClient();
@@ -191,7 +191,7 @@ export const GET = withDialAuth(async (auth) => {
 
       // No URL yet: explicit RoEx failure or processing timeout → fail.
       if (pollResult.status === 'failed' || timedOut) {
-        await markDialTaskFailed(
+        await markDialTaskFailedWithReconcile(
           taskId,
           pollResult.status === 'failed' ? 'RoEx reported mastering-preview failure' : 'mastering-preview processing timeout',
         );
@@ -201,7 +201,7 @@ export const GET = withDialAuth(async (auth) => {
       return apiSuccess({ status: 'processing' });
     } catch (pollErr) {
       if (timedOut) {
-        await markDialTaskFailed(
+        await markDialTaskFailedWithReconcile(
           taskId,
           `mastering-preview poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
         );

@@ -17,7 +17,7 @@ import { recordDialEvent } from '@/lib/analytics/dial-events';
 import { createRoExClient, mixPreview, pollMixPreview, mapMusicalStyle, mapInstrumentGroup } from '@/lib/roex';
 import type { MixTrackInput } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
-import { getDialTaskTimeoutMs, markDialTaskFailed } from '@/lib/dial/task-timeout';
+import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTracks, dialTasks, dialSessions } from '@/db/schema';
 
@@ -194,9 +194,10 @@ export const GET = withDialAuth(async (auth) => {
       // Trust webhook — too early to poll RoEx
       return apiSuccess({ status: 'processing' });
     }
-    // Past this point a task that never produces a URL must eventually fail
-    // instead of spinning forever.
-    const timedOut = elapsed > getDialTaskTimeoutMs(task.taskType);
+    // Past the generous wall-clock backstop a task that never produces a URL is failed
+    // instead of spinning forever. Set FAR above normal completion (preview up to ~19min)
+    // so a slow-but-healthy job is never failed by mistake.
+    const timedOut = elapsed > getDialBackstopMs(task.taskType);
 
     // Fallback: poll RoEx directly
     // Do NOT request FX settings here (costs 125 credits).
@@ -225,7 +226,7 @@ export const GET = withDialAuth(async (auth) => {
 
       // No URL yet: explicit RoEx failure or processing timeout → fail (don't spin forever).
       if (pollResult.status === 'failed' || timedOut) {
-        await markDialTaskFailed(
+        await markDialTaskFailedWithReconcile(
           taskId,
           pollResult.status === 'failed' ? 'RoEx reported preview failure' : 'preview processing timeout',
         );
@@ -238,7 +239,7 @@ export const GET = withDialAuth(async (auth) => {
       // Fail only once the task has also exceeded its timeout; a single transient
       // error before then just means "keep polling".
       if (timedOut) {
-        await markDialTaskFailed(
+        await markDialTaskFailedWithReconcile(
           taskId,
           `preview poll error after timeout: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`,
         );

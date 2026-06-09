@@ -20,7 +20,7 @@ import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
-import { markDialTaskFailed } from '@/lib/dial/task-timeout';
+import { markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 
 // Allow up to 120s for R2 copy
 export const maxDuration = 120;
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
     // This is distinct from "not_ready" below: RoEx can fire the webhook BEFORE the
     // result exists (no URL, no error) — that is still processing, NOT a failure.
     if (roexFailed && !resultUrl) {
-      await markDialTaskFailed(task.id, 'RoEx webhook reported task failure');
+      await markDialTaskFailedWithReconcile(task.id, 'RoEx webhook reported task failure');
       return NextResponse.json({ received: true, status: 'failed' }, { status: 200 });
     }
 

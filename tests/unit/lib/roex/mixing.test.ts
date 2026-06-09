@@ -389,4 +389,22 @@ describe('parseMixResponse failure detection', () => {
     expect(result.status).toBe('processing');
     expect(result.error).toBeUndefined();
   });
+
+  it('detects broadened failure shapes (string / object error, cancel|abort|reject|timeout status)', async () => {
+    // non-empty string error → failed, string surfaced as the message
+    let r = await pollMixPreview(createMockClient({ previewMixTaskResults: { error: 'stem decode failed' } }), 'x');
+    expect(r.status).toBe('failed');
+    expect(r.error).toBe('stem decode failed');
+    // object error → failed
+    r = await pollMixPreview(createMockClient({ previewMixTaskResults: { error: { code: 'E1' } } }), 'x');
+    expect(r.status).toBe('failed');
+    // cancelled / aborted / rejected / timeout status → failed
+    for (const status of ['cancelled', 'aborted', 'REJECTED', 'timeout']) {
+      r = await pollMixPreview(createMockClient({ previewMixTaskResults: { status } }), 'x');
+      expect(r.status).toBe('failed');
+    }
+    // empty-string error must NOT trip
+    r = await pollMixPreview(createMockClient({ previewMixTaskResults: { status: 'processing', error: '' } }), 'x');
+    expect(r.status).toBe('processing');
+  });
 });

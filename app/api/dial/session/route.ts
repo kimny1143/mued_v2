@@ -13,6 +13,7 @@ import { verifyDialSessionOwnership, verifyDialSessionReadAccess } from '@/lib/m
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { createRoExClient, isRoExDevKey, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
+import { markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialSessions, dialTasks, dialTracks } from '@/db/schema';
 import { buildFirstTouch, firstTouchInputSchema } from '@/lib/dial/first-touch';
@@ -135,9 +136,9 @@ export const GET = withDialAuth(async (auth) => {
                   updatedAt: new Date(),
                 }).where(eq(dialSessions.id, sessionId));
               } else if (result.status === 'failed') {
-                await db.update(dialTasks).set({
-                  status: 'failed',
-                }).where(eq(dialTasks.id, task.id));
+                // Race-safe failure write (never clobbers a completed task) + session/
+                // previewCount reconcile. Replaces the prior unconditional id-update.
+                await markDialTaskFailedWithReconcile(task.id, 'session-poll: RoEx reported failure');
               }
             } else if (task.taskType === 'final_basic' || task.taskType === 'final_advanced' || task.taskType === 'mix_check') {
               // Dev key: dummy track URLs cause /retrievefinalmix to fail — skip polling
@@ -189,9 +190,9 @@ export const GET = withDialAuth(async (auth) => {
                   updatedAt: new Date(),
                 }).where(eq(dialSessions.id, sessionId));
               } else if (result.status === 'failed') {
-                await db.update(dialTasks).set({
-                  status: 'failed',
-                }).where(eq(dialTasks.id, task.id));
+                // Race-safe failure write (never clobbers a completed task) + session/
+                // previewCount reconcile. Replaces the prior unconditional id-update.
+                await markDialTaskFailedWithReconcile(task.id, 'session-poll: RoEx reported failure');
               }
             } else if (task.taskType === 'mastering_preview') {
               // Dev key: dummy URLs cause mastering preview poll to never complete
@@ -213,9 +214,9 @@ export const GET = withDialAuth(async (auth) => {
                   completedAt: new Date(),
                 }).where(eq(dialTasks.id, task.id));
               } else if (result.status === 'failed') {
-                await db.update(dialTasks).set({
-                  status: 'failed',
-                }).where(eq(dialTasks.id, task.id));
+                // Race-safe failure write (never clobbers a completed task) + session/
+                // previewCount reconcile. Replaces the prior unconditional id-update.
+                await markDialTaskFailedWithReconcile(task.id, 'session-poll: RoEx reported failure');
               }
             } else if (task.taskType === 'mastering') {
               // Dev key: auto-complete with dummy URL to allow full flow testing
@@ -264,9 +265,9 @@ export const GET = withDialAuth(async (auth) => {
                   updatedAt: new Date(),
                 }).where(eq(dialSessions.id, sessionId));
               } else if (result.status === 'failed') {
-                await db.update(dialTasks).set({
-                  status: 'failed',
-                }).where(eq(dialTasks.id, task.id));
+                // Race-safe failure write (never clobbers a completed task) + session/
+                // previewCount reconcile. Replaces the prior unconditional id-update.
+                await markDialTaskFailedWithReconcile(task.id, 'session-poll: RoEx reported failure');
               }
             }
           } catch {

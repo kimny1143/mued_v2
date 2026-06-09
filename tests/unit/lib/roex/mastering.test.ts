@@ -219,6 +219,18 @@ describe('parseMasteringResponse failure detection', () => {
     expect(result.status).toBe('completed');
     expect(result.error).toBeUndefined();
   });
+
+  it('detects broadened failure shapes (string / object error, cancel|timeout status)', async () => {
+    let r = await pollMasterPreview(createMockClient({ previewMasterTaskResults: { error: 'mastering decode failed' } }), 'm-x');
+    expect(r.status).toBe('failed');
+    expect(r.error).toBe('mastering decode failed');
+    r = await pollMasterPreview(createMockClient({ previewMasterTaskResults: { error: { code: 'E' } } }), 'm-x');
+    expect(r.status).toBe('failed');
+    for (const status of ['cancelled', 'timeout', 'ABORTED']) {
+      r = await pollMasterPreview(createMockClient({ previewMasterTaskResults: { status } }), 'm-x');
+      expect(r.status).toBe('failed');
+    }
+  });
 });
 
 describe('RoExClient usage', () => {
