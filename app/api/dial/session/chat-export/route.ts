@@ -7,7 +7,7 @@
 import { NextResponse } from 'next/server';
 import { eq, asc } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
-import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
+import { verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiValidationError, apiNotFound } from '@/lib/api-response';
 import { db } from '@/db';
 import { dialMessages } from '@/db/schema';
@@ -19,10 +19,11 @@ export const GET = withDialAuth(async (auth) => {
     return apiValidationError('sessionId is required');
   }
 
-  const session = await verifyDialSessionOwnership(sessionId, auth);
-  if (!session) {
+  const access = await verifyDialSessionReadAccess(sessionId, auth, 'chat');
+  if (!access) {
     return apiNotFound('Session not found');
   }
+  const { session } = access;
 
   const messages = await db.query.dialMessages.findMany({
     where: eq(dialMessages.sessionId, sessionId),

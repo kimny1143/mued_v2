@@ -25,7 +25,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { dialTasks, dialTracks } from '@/db/schema';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
-import { verifyDialTaskOwnership, verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
+import { verifyDialTaskReadAccess, verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiValidationError, apiNotFound, apiServerError } from '@/lib/api-response';
 import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview } from '@/lib/roex';
 
@@ -108,12 +108,14 @@ export const GET = withDialAuth(async (auth) => {
   let contentType: string;
   let taskForRefresh: DialTask | null = null;
   let stemKeyForRefresh: string | null = stemKey;
+  let viaAdmin = false; // admin read must stay zero-cost: never re-poll RoEx / mutate the user's task
 
   if (sessionId && stemKey) {
     // Session-based stem lookup: server picks best task (preview MP3 preferred over final WAV).
     // Fixes client-side desync where preview task stemsUrls shows as null after polling.
-    const session = await verifyDialSessionOwnership(sessionId, auth);
-    if (!session) return apiNotFound('Session not found');
+    const access = await verifyDialSessionReadAccess(sessionId, auth, 'listen');
+    if (!access) return apiNotFound('Session not found');
+    viaAdmin = access.viaAdmin;
 
     const tasks = await db.query.dialTasks.findMany({
       where: eq(dialTasks.sessionId, sessionId),
@@ -149,9 +151,10 @@ export const GET = withDialAuth(async (auth) => {
     // Existing taskId-based flow
     if (!taskId) return apiValidationError('taskId or (sessionId + stemKey) is required');
 
-    const result = await verifyDialTaskOwnership(taskId, auth);
+    const result = await verifyDialTaskReadAccess(taskId, auth, 'listen');
     if (!result) return apiNotFound('Task not found');
     const { task } = result;
+    viaAdmin = result.viaAdmin;
     taskForRefresh = task;
 
     if (stemKey) {
@@ -196,6 +199,12 @@ export const GET = withDialAuth(async (auth) => {
     if (!sourceRes.ok && (sourceRes.status === 400 || sourceRes.status === 403) && taskForRefresh) {
       const bodyText = await sourceRes.text();
       if (bodyText.includes('ExpiredToken') || bodyText.includes('AccessDenied')) {
+        // Admin reads stay zero-cost & non-mutating: never re-poll RoEx (refreshExpiredGcsUrl
+        // calls pollMixFinal — up to 250cr — and db.update on the user's task). Expired link →
+        // 410; only the owner (viaAdmin=false) triggers a refresh.
+        if (viaAdmin) {
+          return new NextResponse('Audio link expired. Admin view is read-only — the owner must reload the session to regenerate.', { status: 410 });
+        }
         const newUrl = await refreshExpiredGcsUrl(taskForRefresh, stemKeyForRefresh);
         if (newUrl) {
           sourceRes = await fetch(newUrl, fetchOpts);

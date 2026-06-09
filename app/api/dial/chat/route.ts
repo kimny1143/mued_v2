@@ -15,7 +15,7 @@
 import { z } from 'zod';
 import { eq, asc, desc } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
-import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
+import { verifyDialSessionOwnership, verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { sendHooChat, type HooChatMessage } from '@/lib/ai/providers';
@@ -415,9 +415,9 @@ export const GET = withDialAuth(async (auth) => {
       return apiValidationError('sessionId is required');
     }
 
-    // Verify session ownership
-    const session = await verifyDialSessionOwnership(sessionId, auth);
-    if (!session) {
+    // Read-only: owner OR allow-listed admin (load conversation history). POST stays owner-only.
+    const access = await verifyDialSessionReadAccess(sessionId, auth, 'chat');
+    if (!access) {
       return apiNotFound('Session not found');
     }
 

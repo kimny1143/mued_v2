@@ -9,7 +9,7 @@ import { randomBytes } from 'crypto';
 import { z } from 'zod';
 import { eq, desc, max } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
-import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
+import { verifyDialSessionOwnership, verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { createRoExClient, isRoExDevKey, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
@@ -76,11 +76,12 @@ export const GET = withDialAuth(async (auth) => {
     const sessionId = searchParams.get('id');
 
     if (sessionId) {
-      // Single session with ownership check
-      const session = await verifyDialSessionOwnership(sessionId, auth);
-      if (!session) {
+      // Single session: owner OR allow-listed admin (read-only). viaAdmin skips polling side-effects.
+      const access = await verifyDialSessionReadAccess(sessionId, auth, 'view');
+      if (!access) {
         return apiNotFound('Session not found');
       }
+      const { viaAdmin } = access;
 
       // Load with tracks, tasks, and latest parameterChanges from assistant
       const full = await db.query.dialSessions.findFirst({
@@ -99,8 +100,10 @@ export const GET = withDialAuth(async (auth) => {
         },
       });
 
-      // Poll RoEx for any processing tasks and update DB
-      if (full?.tasks) {
+      // Poll RoEx for any processing tasks and update DB.
+      // Skipped for admin reads (viaAdmin) — admin viewing must be zero-cost & read-only
+      // (no RoEx calls, no task/session state mutation).
+      if (!viaAdmin && full?.tasks) {
         const processingTasks = full.tasks.filter(
           (t) => t.status === 'processing' || t.status === 'pending',
         );

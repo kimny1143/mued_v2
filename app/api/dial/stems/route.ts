@@ -11,7 +11,7 @@ import { PassThrough } from 'stream';
 import archiver from 'archiver';
 import { eq } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
-import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
+import { verifyDialTaskReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiValidationError, apiNotFound, apiError } from '@/lib/api-response';
 import { db } from '@/db';
 import { dialTracks } from '@/db/schema';
@@ -26,7 +26,7 @@ export const GET = withDialAuth(async (auth) => {
     return apiValidationError('taskId is required');
   }
 
-  const result = await verifyDialTaskOwnership(taskId, auth);
+  const result = await verifyDialTaskReadAccess(taskId, auth, 'stems');
   if (!result) {
     return apiNotFound('Task not found');
   }

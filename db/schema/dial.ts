@@ -359,6 +359,24 @@ export const dialTrialEvents = pgTable('dial_trial_events', {
   byUserFunnel: index('idx_dial_trial_events_user_funnel').on(t.userId, t.eventType, t.createdAt),
 }));
 
+/**
+ * Audit log for admin read-only access to *other users'* dial sessions.
+ * Security-sensitive: every admin view/listen/download of a non-owned session is recorded.
+ * No FK on target_session_id so the audit trail survives session deletion.
+ */
+export const dialAdminAccessLog = pgTable('dial_admin_access_log', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  adminUserId: text('admin_user_id').notNull(), // Clerk ID of the admin
+  adminEmail: text('admin_email').notNull(),
+  targetSessionId: uuid('target_session_id').notNull(),
+  accessType: text('access_type').notNull(), // 'view' | 'listen' | 'download' | 'stems' | 'chat'
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (t) => ({
+  byTarget: index('idx_dial_admin_access_target').on(t.targetSessionId),
+  byCreated: index('idx_dial_admin_access_created').on(t.createdAt),
+  byAdmin: index('idx_dial_admin_access_admin').on(t.adminUserId),
+}));
+
 // ========================================
 // Bonus Campaign
 // ========================================
