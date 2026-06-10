@@ -3,15 +3,15 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: **★無料15人施策 go-live = 本番公開 LIVE 完遂**(cap=15/open・先着15名 claim可)。B1/B2 課金二重化修正(#438 Tier3・①pollMixFinal ②reserve-before-charge ③mastering advisory lock+sentinel ④stripe ⑤N2・Codex 4round → 軸B解除)= **本番ライブ + prod soft-launch E2E で並行 double-charge 無しを実証**(2並行 final → DB paid_cycle_count=1/final 1本/charge-id固定 + RoEx -250×1)。点火 chain 完遂: count=0 gate(operator DELETE)→ CTA copy 修正(#444・診断削除)→ cap1→15/open(env+redeploy)→ enabled:true/remaining:15 verify。daily計測稼働(data switch_on_ts=11:08:31Z/pool 9140)。
-next_action: ①free15 公開後の claim/CVR/pool 監視(data daily snapshot稼働・最初の3 claimでgrowth early signal)②**Yuu Part B**(次セッション): failed task DELETE(7ae1333e・4条件照合済・kimny手動)+ スピナー perf修正(RAW遅延デコード・設計済・別Tier2)。#442 decode-timeout 安全網=merged/deploy済 ③David Ronan 回答後 Layer I(stems-on-poll課金 semantics)精査(CFO経由)④write/SNS canonical 通知済(offer copy=対話ミックス＋マスタリング)。
+current_task: **go-live LIVE 完遂後の fast-follow + Yuu 救済**。#441 analyze TOCTOU 修正=**PR #446(Tier3)native LGTM + CI green**(per-session advisory lock で check→charge(~10cr)→cache を直列化・migration なし)→ conductor merge/deploy ゲート待ち(campaign 稼働中・deploy 前一報)。Yuu(a64befc1)購入実態=**omakase $7.49 mix のみ**を一次データで確定(kimny の「$10・mix+master 470cr」認識を訂正)。Yuu 救済=**経路(b)self-claim free15 枠 + Part B now**(kimny確定): failed preview 7ae1333e DELETE→払い済 omakase final 完走。
+next_action: ①**Part B 実行待ち**: kimny が本番 psql で DELETE(4条件 live verify 済)→ conductor「実行した」一報 → 私が read-only verify(failed=0/session=previewing/completed preview 3本健在)→ conductor report ②**#446 merge/deploy** = conductor ゲート(CCO/Codex 監査要否判断 + claim 非衝突 deploy タイミング)③**free15 fill 監視**(現 0/15、cap 接近で一報→経路a admin SQL 確保にスイッチ)④Layer I(David Ronan/CFO)・Yuu スピナー perf(別Tier2・次セッション trigger)。
 blocked_by: null
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-06-10T22:00:00+09:00
-last_update: 2026-06-10T20:15:00+09:00
-evidence: free15 LIVE(campaign/status enabled:true/remaining:15/audience:open・dial.mued.jp 200)/ #438 prod E2E 並行double-charge無し(DB paid_cycle_count=1 + RoEx 9610→9360→9140 各-1行)/ switch_on_ts 2026-06-10T11:08:31Z / pool baseline 9140cr / 証跡 docs/dial/e2e-evidence/02-06 / PR #438/#442/#443/#444 merged / migration0052 applied
+last_update: 2026-06-10T21:15:00+09:00
+evidence: PR #446 native LGTM(#issuecomment-4670007479・CI green・advisory-lock-across-fetch 許容=migration不要)/ Yuu dial_purchases omakase 749=$7.49 pi_3TfzATDFMlr9MRjA1wFbzsvo / DELETE 4条件 PASS(failed-preview・無課金・fx_sheets/ledger refs=0・残 completed preview 3本)/ #442 spinner(17803f2a)deployed origin/main 内包 / free15 claim 0/15 / pool 9140cr
 confidence: high
 lane: active
 ---
