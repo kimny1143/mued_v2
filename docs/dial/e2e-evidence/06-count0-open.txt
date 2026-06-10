@@ -1,0 +1,9 @@
+=== ④ count=0 gate + 点火 open ===
+operator session DELETEd (DELETE 1, cascade). free_grants after delete:
+0
+campaign/status at open: enabled:true / remaining:15 (cap=15, 0 claimed) / audience=open (env)
+switch_on_ts = 2026-06-10T11:08:31Z
+snapshot(ii) RoEx pool = 9,140cr (9,610 - final250 - master220 = -470; operator session DELETEd but RoEx cr not refunded = baseline)
+③ analyze 429 = code-verify: lib/middleware/rate-limit.ts:92 dial-analyze-daily=5/day -> analyze/route.ts:54 RATE_LIMIT_DAILY 429 (6th call)
+diag(10cr) = N/A for dialogue (page.tsx:729 isMasterOnly auto only; no manual trigger in dialogue UI)
+copy fix: messages/ja.json+en.json freeCampaign.desc dropped 'ミックス診断'/'mix diagnosis' (PR#444, main 3c5e2ba0)

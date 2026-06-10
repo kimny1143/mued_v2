@@ -1,0 +1,5 @@
+                  id                  |             user_id              | payment_status | is_free_campaign |   mode   | mastering_mode | base_cycle_limit | additional_cycle_limit | paid_cycle_count |  status   |     created_utc     
+--------------------------------------+----------------------------------+----------------+------------------+----------+----------------+------------------+------------------------+------------------+-----------+---------------------
+ 961e1530-aca0-4f3d-8c06-411f29077b70 | user_3EwLADUqw2xh4udYBCs1oz3hia5 | paid           | t                | dialogue | omakase        |                1 |                      0 |                0 | uploading | 2026-06-10 09:48:18
+(1 row)
+

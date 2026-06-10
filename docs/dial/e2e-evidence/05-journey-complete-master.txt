@@ -1,0 +1,18 @@
+=== journey complete — full task list + session final ===
+     task_type     |  status   | has_final | has_preview |             roex_task_id             | created  | completed 
+-------------------+-----------+-----------+-------------+--------------------------------------+----------+-----------
+ preview           | completed | f         | t           | 26624315-42fa-4d4c-ba64-7aa7099f306c | 10:08:17 | 10:08:54
+ final_advanced    | completed | t         | f           | 26624315-42fa-4d4c-ba64-7aa7099f306c | 10:14:04 | 10:14:10
+ mastering_preview | completed | f         | t           | fea1611b-3064-48ec-814b-5128adc0dae9 | 10:18:34 | 10:19:45
+ mastering         | completed | t         | f           | fea1611b-3064-48ec-814b-5128adc0dae9 | 10:38:55 | 10:39:00
+(4 rows)
+
+  status   | paid_cycle_count | base_cycle_limit | additional_cycle_limit | has_diag | mix_check_count 
+-----------+------------------+------------------+------------------------+----------+-----------------
+ completed |                1 |                1 |                      0 | f        |               0
+(1 row)
+
+
+RoEx (conductor read): 9610 -> 9360 (Final Mix -250, 10:13) -> 9140 (Final Master -220, 10:38). Each charge 1 line, no double. preview/mastering_preview = 0cr (no charge line).
+Downloaded WAV verified: MUEDial_mastered_93b1e5b9.wav 28.8MB 44.1k/16bit 2:43.42 mean -15.9dB peak -1.0dB = real audio PASS.
+Journey complete: dialogue mix(250) + master(220) = 470cr. diag(10) = N/A for dialogue flow (auto only for mastering-only).
