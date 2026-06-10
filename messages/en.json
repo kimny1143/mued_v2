@@ -1445,7 +1445,7 @@
     "freeCampaign": {
       "badge": "15 spots · Free",
       "title": "Let Hoo handle your mix — free",
-      "desc": "Conversational mixing + mastering + a mix diagnosis, on us. First-run only, while spots last.",
+      "desc": "Conversational mixing + mastering, on us. First-run only, while spots last.",
       "remaining": "{n} spots left",
       "cta": "Start free",
       "starting": "Starting…",
