@@ -81,11 +81,36 @@ interface TakeNodes {
 
 // ─── Module-level helpers ─────────────────────────────────────────────────────
 
+/**
+ * Per-stem fetch timeout. A hung fetch (unresponsive / expired / broken stem URL — e.g. an
+ * old session whose signed URLs have lapsed) would otherwise never settle, so the decode
+ * counter stalls and the "Decoding audio…" spinner spins forever. This is the client-side
+ * analogue of the server-side RoEx poll comm-timeout (#434): aborting a hang turns it into a
+ * normal decode failure, which the per-take error-pill path already handles (counter advances,
+ * spinner clears, pill becomes a retry). Generous (45s) so a genuinely slow-but-valid stem
+ * load on mobile isn't false-aborted — a false abort here costs no money, just an error pill.
+ */
+const FETCH_DECODE_TIMEOUT_MS = 45_000;
+
+/** Thrown when the per-stem fetch is aborted by the timeout (distinct from a transient error). */
+class DecodeTimeoutError extends Error {
+  constructor() { super('stem fetch timed out'); this.name = 'DecodeTimeoutError'; }
+}
+
 async function fetchAndDecode(url: string, ctx: AudioContext): Promise<AudioBuffer> {
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
-  const arrayBuffer = await response.arrayBuffer();
-  return ctx.decodeAudioData(arrayBuffer);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_DECODE_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    const arrayBuffer = await response.arrayBuffer();
+    return await ctx.decodeAudioData(arrayBuffer);
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') throw new DecodeTimeoutError();
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
@@ -326,11 +351,16 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       try {
         buffer = await fetchAndDecode(url, ctx);
       } catch (e1) {
-        console.error(`[dial:decode] attempt 1 failed: "${stemName}" take=${takeId.slice(-8)}`, e1);
-        try {
-          if (!cancelled) buffer = await fetchAndDecode(url, ctx);
-        } catch (e2) {
-          console.error(`[dial:decode] retry failed: "${stemName}" take=${takeId.slice(-8)}`, e2);
+        const timedOut = e1 instanceof DecodeTimeoutError;
+        console.error(`[dial:decode] attempt 1 failed${timedOut ? ' (timeout)' : ''}: "${stemName}" take=${takeId.slice(-8)}`, e1);
+        // Retry a transient error once — but NOT a timeout: a hung URL would just time out
+        // again and double the spinner delay, so a timeout is treated as terminal.
+        if (!timedOut) {
+          try {
+            if (!cancelled) buffer = await fetchAndDecode(url, ctx);
+          } catch (e2) {
+            console.error(`[dial:decode] retry failed: "${stemName}" take=${takeId.slice(-8)}`, e2);
+          }
         }
       }
       if (cancelled) return;
