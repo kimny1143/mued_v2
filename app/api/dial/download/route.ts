@@ -41,6 +41,9 @@ type DialTask = typeof dialTasks.$inferSelect;
  */
 async function refreshExpiredGcsUrl(task: DialTask, stemKey: string | null): Promise<string | null> {
   try {
+    // Reserved-but-not-yet-charged tasks (empty roexTaskId, e.g. a mastering reservation)
+    // have nothing to refresh and must never be polled.
+    if (!task.roexTaskId) return null;
     const client = createRoExClient();
     let newStemsUrls: Record<string, string> | undefined;
     let newPreviewUrl: string | undefined;

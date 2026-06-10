@@ -33,6 +33,7 @@ import {
   isDialTaskPastBackstop,
   deriveRevertSessionStatus,
   markDialTaskFailedWithReconcile,
+  isUnchargedMasteringReservation,
 } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks } from '@/db/schema';
@@ -91,6 +92,25 @@ describe('deriveRevertSessionStatus', () => {
   it('mastering-fail with no final → previewing (has preview) / uploading', () => {
     expect(deriveRevertSessionStatus('mastering', [{ taskType: 'preview', status: 'completed', hasFinal: false }])).toBe('previewing');
     expect(deriveRevertSessionStatus('mastering', [])).toBe('uploading');
+  });
+});
+
+describe('isUnchargedMasteringReservation — poll/webhook paths must skip reserved rows', () => {
+  it('is true for a mastering row with empty roexTaskId (reserved, pre-charge)', () => {
+    expect(isUnchargedMasteringReservation({ taskType: 'mastering', roexTaskId: '' })).toBe(true);
+  });
+
+  it('is true for a mastering row with null roexTaskId', () => {
+    expect(isUnchargedMasteringReservation({ taskType: 'mastering', roexTaskId: null })).toBe(true);
+  });
+
+  it('is false once the charge wrote a real roexTaskId (now pollable)', () => {
+    expect(isUnchargedMasteringReservation({ taskType: 'mastering', roexTaskId: 'roex-master-123' })).toBe(false);
+  });
+
+  it('is false for non-mastering tasks even with empty roexTaskId (final never uses the sentinel)', () => {
+    expect(isUnchargedMasteringReservation({ taskType: 'final_advanced', roexTaskId: '' })).toBe(false);
+    expect(isUnchargedMasteringReservation({ taskType: 'preview', roexTaskId: '' })).toBe(false);
   });
 });
 

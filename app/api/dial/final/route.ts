@@ -167,32 +167,40 @@ export const POST = withDialAuth(async (auth) => {
         });
       };
     } else {
-      // Omakase mode: basic final (gain only) — retrieve FX settings for gain values if not cached
-      let fxSettings = previewTask.fxSettings as Record<string, Record<string, unknown>> | null;
-
-      if (!fxSettings) {
-        const client2 = createRoExClient();
-        const fxResult = await pollMixPreview(client2, previewTask.roexTaskId, {
-          retrieveFxSettings: true,
-        });
-        fxSettings = fxResult.fxSettings ?? null;
-        if (fxSettings) {
-          await db.update(dialTasks).set({ fxSettings }).where(eq(dialTasks.id, previewTask.id));
+      // Omakase mode: basic final (gain only). Validate stem URLs up-front (no charge), but
+      // defer the FX retrieval — pollMixPreview(retrieveFxSettings:true) costs 125cr — AND the
+      // mix charge into submit(), so a reservation race-loser never pays the 125cr for FX it
+      // can't use (the FX retrieval used to run before the cycle reservation).
+      for (const t of tracks) {
+        if (!resolveTrackUrl(t)) {
+          throw new Error(`Stem URL expired for "${t.originalFilename}". Please re-upload your stems.`);
         }
       }
 
-      const trackData = tracks.map((t) => {
-        const urlKey = t.roexUploadUrl.split('/').pop()?.split('?')[0] ?? '';
-        const fx = fxSettings?.[urlKey];
-        const gainDb = (fx?.gain_settings as Record<string, number>)?.gain_db ?? 0;
-        const trackUrl = resolveTrackUrl(t);
-        if (!trackUrl) {
-          throw new Error(`Stem URL expired for "${t.originalFilename}". Please re-upload your stems.`);
-        }
-        return { trackUrl, gainDb };
-      });
-
       submit = async () => {
+        let fxSettings = previewTask.fxSettings as Record<string, Record<string, unknown>> | null;
+        if (!fxSettings) {
+          const client2 = createRoExClient();
+          const fxResult = await pollMixPreview(client2, previewTask.roexTaskId, {
+            retrieveFxSettings: true,
+          });
+          fxSettings = fxResult.fxSettings ?? null;
+          if (fxSettings) {
+            await db.update(dialTasks).set({ fxSettings }).where(eq(dialTasks.id, previewTask.id));
+          }
+        }
+
+        const trackData = tracks.map((t) => {
+          const urlKey = t.roexUploadUrl.split('/').pop()?.split('?')[0] ?? '';
+          const fx = fxSettings?.[urlKey];
+          const gainDb = (fx?.gain_settings as Record<string, number>)?.gain_db ?? 0;
+          const trackUrl = resolveTrackUrl(t);
+          if (!trackUrl) {
+            throw new Error(`Stem URL expired for "${t.originalFilename}". Please re-upload your stems.`);
+          }
+          return { trackUrl, gainDb };
+        });
+
         const client = createRoExClient();
         return mixFinalBasic(client, {
           taskId: previewTask.roexTaskId,

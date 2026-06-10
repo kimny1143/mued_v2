@@ -13,7 +13,7 @@ import { verifyDialSessionOwnership, verifyDialSessionReadAccess } from '@/lib/m
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { createRoExClient, isRoExDevKey, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
-import { markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
+import { markDialTaskFailedWithReconcile, isUnchargedMasteringReservation } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialSessions, dialTasks, dialTracks } from '@/db/schema';
 import { buildFirstTouch, firstTouchInputSchema } from '@/lib/dial/first-touch';
@@ -236,6 +236,10 @@ export const GET = withDialAuth(async (auth) => {
                 }).where(eq(dialSessions.id, sessionId));
                 continue;
               }
+
+              // Reserved-but-not-yet-charged row: the mastering POST has not run its single
+              // 220cr charge yet — never poll /retrievefinalmaster on it.
+              if (isUnchargedMasteringReservation(task)) continue;
 
               const result = await masterFinal(client, task.roexTaskId, { poll: true });
 

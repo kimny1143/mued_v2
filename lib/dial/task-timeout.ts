@@ -53,6 +53,19 @@ export function isDialTaskPastBackstop(
   return now - created > getDialBackstopMs(taskType);
 }
 
+/**
+ * A mastering task with no roexTaskId is a RESERVED-but-not-yet-charged row: the mastering
+ * POST inserts it (sentinel roexTaskId='') BEFORE its single 220cr charge, to reserve the
+ * per-session slot atomically. Every poll/webhook path MUST skip such a row, or it could call
+ * masterFinal()/retrievefinalmaster on it and charge a second time before the POST's charge
+ * runs. Once the POST charges, it writes the real roexTaskId and the row becomes pollable.
+ */
+export function isUnchargedMasteringReservation(
+  task: { taskType: string; roexTaskId: string | null },
+): boolean {
+  return task.taskType === 'mastering' && !task.roexTaskId;
+}
+
 export type DialSessionStatus = 'uploading' | 'previewing' | 'mixing' | 'mastering' | 'completed' | 'archived';
 
 export interface ReconcileSiblingTask {

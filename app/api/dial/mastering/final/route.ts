@@ -14,7 +14,7 @@ import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError }
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterFinal, isRoExDevKey } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
-import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
+import { getDialBackstopMs, markDialTaskFailedWithReconcile, isUnchargedMasteringReservation } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialSessions } from '@/db/schema';
 
@@ -115,7 +115,11 @@ export const POST = withDialAuth(async (auth) => {
         try {
           const [row] = await tx.insert(dialTasks).values({
             sessionId: previewTask.sessionId,
-            roexTaskId: previewTask.roexTaskId, // placeholder until the charge returns the real id
+            // Sentinel: empty roexTaskId marks the row as RESERVED-but-not-yet-charged. All
+            // mastering poll/webhook paths skip a row with no roexTaskId, so they can never
+            // call /retrievefinalmaster on it (and double-charge) before this POST's single
+            // charge runs. The real id is written below once the charge succeeds.
+            roexTaskId: '',
             taskType: 'mastering',
             status: 'processing',
             completedAt: null,
@@ -249,10 +253,16 @@ export const GET = withDialAuth(async (auth) => {
       return apiSuccess({ status: 'processing' });
     }
     // Backstop-before-poll: past the generous backstop, fail WITHOUT calling the
-    // credit-bearing /retrievefinalmaster on a stuck task.
+    // credit-bearing /retrievefinalmaster on a stuck task. Applies even to a reserved row
+    // (empty roexTaskId) whose POST died mid-charge — markFailed makes no RoEx call.
     if (elapsed > getDialBackstopMs(task.taskType)) {
       const r = await markDialTaskFailedWithReconcile(taskId, 'mastering-final processing backstop');
       return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
+    }
+    // Reserved-but-not-yet-charged row: the POST handler has not run its single 220cr charge
+    // yet — never poll /retrievefinalmaster on it.
+    if (isUnchargedMasteringReservation(task)) {
+      return apiSuccess({ status: 'processing' });
     }
 
     const client = createRoExClient();
