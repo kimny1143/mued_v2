@@ -86,13 +86,25 @@ env 反映には Vercel 再デプロイが必要（getter は call-time read だ
 
 機械テストで拾えない。**実音源・実 RoEx cr 消費**を人間が確認する一線。
 
-### 環境
-- preview/staging で kill-switch ON にして実施するのが安全（prod 本番枠を1つ消費しない）。
-  - staging が無い場合は prod で1枠だけ消費して検証 → cap を一時 16 にして本番15枠を守る案も可。
-- 必要素材: テスト用 WAV 1本（`reference-muedial-demo-assets` 参照）、Clerk テストアカウント1つ。
+### ★環境 = 制御 prod soft-launch（preview は使えない）
+- **preview は分離サンドボックスでない**: DATABASE_URL は全 scope 同値 = **prod Neon DB**、preview の ROEX_API_KEY = **production 実キー**（≠ dev key, `isRoExDevKey()` false）→ preview deploy も実 RoEx を呼び **prod プール(9,610cr)を実消費・prod DB に行を書く**（[[reference-vercel-preview-shares-prod]]）。よって preview E2E は prod soft-launch と副作用が同等。
+- **E2E 方式 = 制御 prod soft-launch**（owner+kimny 承認 2026-06-10）: operator=user#1、**二段点火**で公開を封じる。
+- **operator account**: 内部 test Clerk アカウント（実顧客でない）。AUDIENCE=waitlist gating ゆえ operator email を **waitlist 登録**（`lib/storage/waitlist-blob`）→ E2E 窓で他者は `not_waitlisted` で構造排除。operator email は kimny/conductor が確定（auth=escalation）。
+- **test 音源 = multi-stem 必須**（dialogue mix は stem 分離前提・ステレオ2-mix 不可）: `docs/sunogen_audio/muedial/multitracks/Track 2 liberation.zip`（既存 Liberation デモの元 stem・RoEx 通過実績あり）。
+
+### ★二段点火（kimny「点火」= ENABLED toggle でなく cap 1→15 公開）
+```
+1. conductor が prod env 設定: DIAL_FREE_CAMPAIGN_ENABLED=true / DIAL_FREE_CAMPAIGN_AUDIENCE=waitlist / DIAL_FREE_CAMPAIGN_CAP=1
+   （cap=1 + waitlist で operator 以外は claim 不可＝公開封じ）
+2. operator が full journey 実行（下記フロー）→ CCO が証跡検証
+3. operator session を DELETE（onDelete cascade で tasks も削除）
+4. ★count=0 gate: SELECT count(*) FROM dial_sessions WHERE is_free_campaign=true; が 0 を確認（clean start 構造検証）
+5. [kimny「点火」] conductor が cap 1→15 / AUDIENCE waitlist→open に変更（=公開）
+```
+data cohort は `is_free_campaign=true AND created_at >= <switch_on_ts>` の時間fence でも保護（cleanup 漏れに非依存）。点火前に RoEx dashboard 実残高 snapshot を data baseline へ（baseline ≈ 9,610 − E2E実消費 ≈ 9,100cr）。
 
 ### フロー（実コード trace 確定の cr 内訳）
-1. サインイン → `/dial` の無料CTA (`data-testid="dial-free-campaign-start"`) → `POST /api/dial/campaign/start`
+1. operator サインイン → `/dial` の無料CTA (`data-testid="dial-free-campaign-start"`) → `POST /api/dial/campaign/start`
    → `paymentStatus='paid'` + `is_free_campaign=true` セッション発行（baseCycleLimit=1）。
 2. 対話 mix の各調整（"vocals up" 等）= `/mixpreview` = **0cr・無制限**。
 3. 最終 commit（final WAV 取得）= **250cr**（1回のみ。baseCycleLimit=1 が縛る）。
@@ -109,14 +121,16 @@ env 反映には Vercel 再デプロイが必要（getter は call-time read だ
 - [ ] RoEx 実消費 ≈480cr（±診断/stem 有無で 480-530 レンジ）
 - [ ] **stuck-processing 再発なし**（PR#434 comm-timeout + cron backstop が効く）
 
-### 軸B TOCTOU pool 実測（CCO 監査要件 2026-06-10・金銭neutralだが pool 上振れ実測）
-free 文脈は Stripe 非経由（pool 建て）で金銭 neutral だが、`final/route.ts:131` の cycle guard が
-check/increment 非atomic（既存 TOCTOU・Tier3 fast-follow 本丸）。E2E で実際に pool 二重消費が
-起きるかを裏取りし、Codex 軸B(a) 判断の実測材料にする。
-- [ ] ①正常完走後の RoEx pool 消費が **480cr 近傍か（上振れ無し）** を Recent Activity で実測
-- [ ] ②**final を意図的に並行/連打** → 2回目が `final/route.ts:131`（paidCycleCount >= baseCycleLimit+additionalCyclesPurchased=1+0）で弾かれるか。弾かれず RoEx submit が2回飛んだら **pool 二重消費を実数記録**
-- [ ] ③mastering の `MASTERING_ALREADY_DONE`(409, `mastering/final/route.ts:87`) dup-guard が並行時に効くか
-→ 「並行でも弾かれた（pool 上振れ無し）」なら Codex 判断がより固くなる／「弾かれず二重消費」でも free=金銭neutral 範囲を実数確認。どちらでも判断材料が増える（CCO 見解）。
+### 軸B 並行課金ガード 実測（PR #438 修正の本番検証・CCO/Codex 要件）
+PR #438 で reserve-before-charge + mastering 予約 sentinel + omakase FX after-reserve を投入済。
+E2E は「修正が本番条件で効く」ことを実測確認する（バグ計測でなく fix verify）。
+- [ ] ①正常完走後の RoEx pool 消費が **480cr 近傍**（上振れ無し）を Recent Activity で実測
+- [ ] ②**final を並行/連打** → 2本目が atomic reservation（`UPDATE ... WHERE paid_cycle_count < limit` 0行）で **402・RoEx submit 前に弾かれる**ことを確認（pool 二重消費が起きない）
+- [ ] ③**mastering POST を並行** → 2本目が advisory lock + unique index で **409・charge 前に弾かれる**
+- [ ] ④★**mastering の poll/webhook 並行**（round-2 検証）: charge 前の予約行（sentinel roexTaskId）を GET /session・RoEx webhook・mastering GET が拾って二重 charge **しない**ことを確認（poll-skip guard）
+- [ ] ⑤**omakase final を上限到達後に再試行**（有料 path・operator が omakase セッションで）→ 125cr FX 取得が走らず 402（FX after-reserve）
+- [ ] ⑥（go-live 後 fast-follow 候補・LOW）analyze 並行 → 各10cr 課金の有無を実測（CCO doc v3 指摘・別 issue）
+→ ②〜⑤ が「並行でも弾かれた（pool 上振れ無し）」なら #438 の本番有効性が実証され軸B 解除材料に。
 
 ### wall-clock 注意
 prod preview 実測 **8-22分**（`reference-dial-generation-hang-diagnosis`）。
