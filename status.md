@@ -3,21 +3,22 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: **MUEDial 初回無料キャンペーン Path A 実装完了→Tier3 PR提出**。7コミット全完納(schema/Blob/eligibility/endpoint/ガード/LP+i18n/監視)。**kill-switch DEFAULT OFF でマージ**(公開はgo-live別ゲート)。verify全green(typecheck/lint/build/unit 1468)。Tier3(課金ゲート)=conductorレビュー待ち。
-next_action: ①conductor Tier3レビュー待ち(grant/Stripe迂回部) ②マージ後 migration 0048 Neon手動適用(kimny) ③**go-live別ゲート**: LP告知コピー声チェック+Auto Top-Up再確認+env3点(`DIAL_FREE_CAMPAIGN_ENABLED=true`/`AUDIENCE=open`/cap)+kimny nod+実RoEx E2E(480cr実測=stems-off gate裏取り)→switch ON+告知。**当方はswitch ON/実E2E未着手(go-liveゲート)**。
+current_task: **MUEDial 無限「処理中」恒久修正 本番ライブ確定**(PR#434 squash-merge sha `2d004b1b`)。CI full green(billing block 復帰確認)+Vercel prod success+conductor production smoke PASS+kimny confirm。#433(固定短timeout)は Codex NG で supersede。残=Tier3 fast-follow(課金二重化・明日)。
+next_action: ①**明日 Tier3 1PR**: DB unique(session_id,task_type active)+atomic check-and-increment(SELECT FOR UPDATE)+insert-before-charge+final submit fire-and-forget化+N2 completion-path guard(native review) ②David Ronan dedup質問送付(Layer I 確定) ③Yuu完走=conductor/kimny relay 監視(RO文字列再relay時 poller再開) ④CFO 1枚→freee課 cost leak 突合。
 blocked_by: null
-urgency: mid
-action_owner: conductor
+urgency: low
+action_owner: peer
 deadline: null
-expected_next_check_at: 2026-06-08T15:00:00+09:00
-last_update: 2026-06-08T21:12:00+09:00
-evidence: branch feat/dial-free-campaign HEAD=ad8e5bce / 7 commits(5c15a966..ad8e5bce) / verify全green(typecheck/lint/build/unit 1468) / campaign routes 3本 build登録確認 / プラン sorted-greeting-pebble.md
+expected_next_check_at: 2026-06-10T18:00:00+09:00
+last_update: 2026-06-10T09:15:00+09:00
+evidence: PR #434 merged sha 2d004b1b / Vercel prod success(7M3rNVhjRbALa415epRKVGgE3bRC) / dial.mued.jp・mued.jp HTTP200 / conductor smoke PASS / CFO 1枚 docs/drafts/cfo-dial-billing-idempotency-1pager-20260610.md
 confidence: high
 lane: active
 ---
 
 ## Recent events
 
+- 2026-06-10T09:15:00+09:00: **🎯 MUEDial 無限「処理中」恒久修正 本番ライブ確定**。PR#434 squash-merged(sha `2d004b1b`, branch feat/dial-task-reconcile-redesign)→ **CI full green**(Validate/Test/Build ✓・**5/29〜の billing block 復帰確認**)→ **Vercel production deploy success**(dial.mued.jp/mued.jp HTTP200)→ **conductor production smoke PASS**(free-status 未認証 fail-closed / cron route 404 保護 / 正常系無傷 / sha一致)→ **kimny confirm 済**。#433(固定短timeout free3/paid10min)は Codex 独立レビュー+本番実測(preview max19/final_advanced max33.9分)で誤fail回帰判明→supersede。着地まで Codex 4round + native 全round file:line LGTM + CCO billing-PASS + RoEx冪等FACT(David Ronan)。設計核心: comm-timeout は POLL専用(課金submit非適用=false-abort防止)+大幅大backstop(本番実測max+margin・誤failゼロ最優先)+backstop-before-poll(課金endpoint回避)+CAS reconcile+terminal state sticky両方向+cron daily(Hobby)。**残=Tier3 fast-follow(明日)**: 課金二重化(Layer I RoEx依存=David Ronan質問 / Layer II cycle TOCTOU確定bug final:131vs263 / #1#3並行POST / N2 completion-path未guard)→ CFO 1枚 `docs/drafts/cfo-dial-billing-idempotency-1pager-20260610.md`(freee課+conductor送付済)。Yuu(a64befc1)=recovery SQL適用済でunstuck・完走監視は poller RO文字列 compaction消失→relay検知に切替。
 - 2026-06-08T21:25:00+09:00: **PR #426 Tier3 CHANGES-REQUESTED → 4点修正完了・再レビュー依頼**(9ee66890)。conductor敵対的レビューで race 2点指摘: ①lifetime-1 atomic化(部分unique index `UNIQUE(user_id) WHERE is_free_campaign=true` + 23505→already_granted)②cap atomic化(campaign/start を transaction + `pg_advisory_xact_lock` で直列化=cap15超過/二重付与 構造的に不可)。nit ③/mastering/final rateLimit+1セッション1マスタリングdup guard(409)④admin.ts stale comment修正。verify全green(typecheck/lint/build/unit28)、**CI再走 全green**(Validate/Test/Build/Vercel/GitGuardian)。race-safety は advisory lock + unique index で構造enforce(integration層=CI不可のため unit化せずレビュー担保)。
 - 2026-06-08T21:12:00+09:00: **Path A 実装完了 (7コミット) → Tier3 PR 提出**。branch feat/dial-free-campaign (5c15a966..ad8e5bce)。①is_free_campaign schema+migration 0048 ②Blob lifetime-1 grant flag(+7 unit) ③free-campaign config/eligibility(kill-switch DEFAULT OFF/audience open default/cap15/fail-closed, +14 unit) ④campaign status(always-200 fail-closed)+start(Stripe迂回paid+userId DB lifetime-1+email Blob mark) endpoint ⑤free-tierガード(reference無効化+chat compareMixesスキップ+stems-off returnStems:false→480cr) ⑥LP CTA(eligible時のみ描画=dark by default)+i18n en/ja(parity確認) ⑦admin監視stats endpoint+realized 480cr。**verify全green**: typecheck/lint/build/unit 1468全pass、campaign routes 3本build登録確認。**kill-switch OFFでマージ=公開されない状態で入る**。go-live(switch ON+告知)は別ゲート(LP声チェック+Auto Top-Up再確認+env3点+kimny nod+実RoEx E2E 480cr実測)。CFO連携: open#4 close(omakase final=stems込み300cr)/realized 480=stems-off gate依存/RoEx balance API無し確定(監視=CFO週次手動dashboard)。
 - 2026-06-08T20:55:00+09:00: **MUEDial 初回無料キャンペーン Path A 実装着手 (kimny 最終GO 6/8 11:46 via conductor)**。設計経緯: conductor の集客デモ弾照会から MUEDial 実態を一次ソース確認 → ①出力=実音処理(RoEx)②デモ素材=mix由来(case-A copy不一致検出)③RoEx原価 525/720論争を「paid final取得回数」で決着④**credit-consume本番未配線**(ゲート=paymentStatus+cycle)発見⑤**対話イテレーション=無料preview/paid finalは1回**を実コード断定(前回過大見積を self-correction)→ 規律journey=無料会話+final250+master220+diag10=**480cr/人→~16名**。Path A(Stripe迂回paidセッション)を /plan→kimny承認→母集団(b)全開放cap15確定→**最終GO**。**Tier3(課金ゲート)/ kill-switch DEFAULT OFF でマージ(公開はgo-live別ゲート: LP声チェック+Auto Top-Up再確認+env3点+kimny nod+実E2E)**。ガード3点(baseCycleLimit=1/reference無効化/正直コピー)+停止二重(cap15+`DIAL_FREE_CAMPAIGN_ENABLED`)。Auto Top-Up OFF確認済(conductor 実値 auto_topup_enabled=false/残9610/Recent Activityが原価モデル裏取り)。**Commit 1/7 完了**(5c15a966): `is_free_campaign` 列追加(db/schema/dial.ts + migration 0048、純粋追加 NOT NULL DEFAULT false)。残: Blob grant flag→eligibility→endpoint→ガード→LP→監視→verify→Tier3 PR。
