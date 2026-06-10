@@ -164,9 +164,13 @@ export const POST = withDialAuth(async (auth) => {
       throw chargeErr;
     }
 
-    // Persist the real RoEx id + result onto the reserved task.
+    // Persist the result onto the reserved task. Save the CHARGE id (= the masteringTaskId we
+    // submitted with), NOT masterResult.taskId: RoEx /retrieve* idempotency is per-task-id
+    // (client.ts) — a poll re-retrieve is free ONLY for the same id that was charged. Saving a
+    // divergent response id would let consumers (mastering GET / session / webhook) poll an
+    // un-charged id and trigger a second 220cr.
     await db.update(dialTasks).set({
-      roexTaskId: masterResult.taskId || previewTask.roexTaskId,
+      roexTaskId: previewTask.roexTaskId,
       finalUrl: masterResult.finalUrl,
     }).where(eq(dialTasks.id, task.id));
 

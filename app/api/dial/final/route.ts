@@ -276,7 +276,11 @@ export const POST = withDialAuth(async (auth) => {
 
     const [task] = await db.insert(dialTasks).values({
       sessionId: previewTask.sessionId,
-      roexTaskId: mixResult.taskId || previewTask.roexTaskId,
+      // Save the CHARGE id (= the multitrackTaskId we submitted with), NOT mixResult.taskId.
+      // RoEx /retrieve* idempotency is per-task-id (client.ts): saving a divergent response id
+      // would let poll paths (final GET / session / webhook) retrieve an un-charged id and risk
+      // a second 250cr. The webhook lookup is also keyed by the submitted id.
+      roexTaskId: previewTask.roexTaskId,
       taskType,
       status: 'processing',
       finalUrl: mixResult.finalUrl,
