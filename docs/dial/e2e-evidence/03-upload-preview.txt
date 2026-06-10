@@ -1,0 +1,25 @@
+=== tracks (9) ===
+ instrument_group |    original_filename    
+------------------+-------------------------
+ BASS             | 1 Bass.wav
+ BRASS            | 6 Brass.wav
+ DRUMS            | 0 Drums.wav
+ OTHER            | 7 wood.wav
+ OTHER            | 2 Percussion.wav
+ STRINGS          | 8 Strings.wav
+ SYNTH            | 3 Synth.wav
+ VOCAL            | 4 Vocal.wav
+ VOCAL            | 5 Background Vocal1.wav
+(9 rows)
+
+=== preview task (0cr, completed) + session ===
+ task_type |  status   | credits_consumed | created  
+-----------+-----------+------------------+----------
+ preview   | completed |                  | 10:08:17
+(1 row)
+
+   status   | paid_cycle_count | preview_count | musical_style 
+------------+------------------+---------------+---------------
+ previewing |                0 |             1 | POP
+(1 row)
+
