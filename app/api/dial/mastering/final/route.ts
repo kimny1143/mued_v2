@@ -7,18 +7,39 @@
  */
 
 import { z } from 'zod';
-import { and, eq, ne } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterFinal, isRoExDevKey } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
-import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
+import { getDialBackstopMs, markDialTaskFailedWithReconcile, isUnchargedMasteringReservation } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialSessions } from '@/db/schema';
 
 export const maxDuration = 120;
+
+// Advisory-lock namespace for mastering submission (PR#426 style). Two-key form
+// pg_advisory_xact_lock(CLASS, hashtext(session_id)) serializes concurrent mastering
+// POSTs per session without blocking other sessions or the final-mix lock space.
+const MASTERING_LOCK_CLASS = 4926082;
+
+/** Signals an existing mastering task found inside the advisory-locked transaction. */
+class MasteringExistsError extends Error {
+  constructor(public existingStatus: string) {
+    super('mastering already exists');
+  }
+}
+
+/** Postgres unique_violation (23505) — the partial unique index tripped on a concurrent claim. */
+function isUniqueViolation(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) return false;
+  const code = (err as { code?: string }).code;
+  const causeCode = (err as { cause?: { code?: string } }).cause?.code;
+  return code === '23505' || causeCode === '23505'
+    || (err instanceof Error && /duplicate key value|unique constraint/i.test(err.message));
+}
 
 const masteringFinalSchema = z.object({
   taskId: z.string().uuid(), // The dial_tasks.id of the completed mastering preview
@@ -69,47 +90,89 @@ export const POST = withDialAuth(async (auth) => {
       });
     }
 
-    // Duplicate guard: one mastering final per session (prevents direct 220cr×N hits).
-    // A 'failed' mastering ALSO blocks a re-POST: the 220cr is consumed at submit, so
-    // re-POSTing a failed mastering would leak another 220cr. A genuinely-failed mastering
-    // is directed to support (Phase 2 will add same-task retry without re-charge).
-    const existingMaster = await db.query.dialTasks.findFirst({
-      where: and(
-        eq(dialTasks.sessionId, previewTask.sessionId),
-        eq(dialTasks.taskType, 'mastering'),
-      ),
-    });
-    if (existingMaster) {
-      return apiError(
-        existingMaster.status === 'failed'
-          ? 'A previous mastering attempt did not complete. Please contact support@mued.jp.'
-          : 'Mastering already generated for this session.',
-        { code: 'MASTERING_ALREADY_DONE', status: 409 },
-      );
+    // ─── Atomic single-mastering reservation (insert-before-charge) ───────
+    // One mastering final per session. The advisory lock serializes concurrent POSTs for
+    // this session (PR#426 style); the partial unique index dial_tasks(session_id) WHERE
+    // task_type='mastering' is the DB backstop; and inserting the task row BEFORE the
+    // 220cr charge means a second concurrent request is rejected (existing row / 23505)
+    // BEFORE it can charge another 220cr. A 'failed' mastering also blocks (re-POST would
+    // leak 220cr) → directed to support (consistent with #434 false-abort avoidance).
+    let task: typeof dialTasks.$inferSelect;
+    try {
+      task = await db.transaction(async (tx) => {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(${MASTERING_LOCK_CLASS}, hashtext(${previewTask.sessionId}))`);
+
+        const existing = await tx.query.dialTasks.findFirst({
+          where: and(
+            eq(dialTasks.sessionId, previewTask.sessionId),
+            eq(dialTasks.taskType, 'mastering'),
+          ),
+        });
+        if (existing) {
+          throw new MasteringExistsError(existing.status);
+        }
+
+        try {
+          const [row] = await tx.insert(dialTasks).values({
+            sessionId: previewTask.sessionId,
+            // Sentinel: empty roexTaskId marks the row as RESERVED-but-not-yet-charged. All
+            // mastering poll/webhook paths skip a row with no roexTaskId, so they can never
+            // call /retrievefinalmaster on it (and double-charge) before this POST's single
+            // charge runs. The real id is written below once the charge succeeds.
+            roexTaskId: '',
+            taskType: 'mastering',
+            status: 'processing',
+            completedAt: null,
+          }).returning();
+          return row;
+        } catch (insErr) {
+          if (isUniqueViolation(insErr)) {
+            throw new MasteringExistsError('processing');
+          }
+          throw insErr;
+        }
+      });
+    } catch (txErr) {
+      if (txErr instanceof MasteringExistsError) {
+        return apiError(
+          txErr.existingStatus === 'failed'
+            ? 'A previous mastering attempt did not complete. Please contact support@mued.jp.'
+            : 'Mastering already generated for this session.',
+          { code: 'MASTERING_ALREADY_DONE', status: 409 },
+        );
+      }
+      throw txErr;
     }
 
-    let masterResult;
-
-    if (isRoExDevKey()) {
-      masterResult = {
-        taskId: `dev-mastering-final-${Date.now()}`,
-        status: 'completed',
-        finalUrl: `https://example.com/dev-mastered-final.wav`,
-      };
-    } else {
-      const client = createRoExClient();
-      masterResult = await masterFinal(client, previewTask.roexTaskId);
+    // ─── Charge (220cr) — the task row is already reserved; a concurrent POST cannot
+    // reach here. On failure, mark the reserved task failed (dashboard not stuck) and keep
+    // the unique row so a re-try is directed to support, never silently re-charged. ──────
+    let masterResult: { taskId: string; status: string; finalUrl?: string | null };
+    try {
+      if (isRoExDevKey()) {
+        masterResult = {
+          taskId: `dev-mastering-final-${Date.now()}`,
+          status: 'completed',
+          finalUrl: `https://example.com/dev-mastered-final.wav`,
+        };
+      } else {
+        const client = createRoExClient();
+        masterResult = await masterFinal(client, previewTask.roexTaskId);
+      }
+    } catch (chargeErr) {
+      await markDialTaskFailedWithReconcile(task.id, 'mastering charge failed').catch(() => {});
+      throw chargeErr;
     }
 
-    // Save mastering final task
-    const [task] = await db.insert(dialTasks).values({
-      sessionId: previewTask.sessionId,
-      roexTaskId: masterResult.taskId || previewTask.roexTaskId,
-      taskType: 'mastering',
-      status: 'processing',
+    // Persist the result onto the reserved task. Save the CHARGE id (= the masteringTaskId we
+    // submitted with), NOT masterResult.taskId: RoEx /retrieve* idempotency is per-task-id
+    // (client.ts) — a poll re-retrieve is free ONLY for the same id that was charged. Saving a
+    // divergent response id would let consumers (mastering GET / session / webhook) poll an
+    // un-charged id and trigger a second 220cr.
+    await db.update(dialTasks).set({
+      roexTaskId: previewTask.roexTaskId,
       finalUrl: masterResult.finalUrl,
-      completedAt: null,
-    }).returning();
+    }).where(eq(dialTasks.id, task.id));
 
     // Await R2 copy before returning (Vercel serverless terminates after response)
     if (masterResult.finalUrl && task.id) {
@@ -134,11 +197,11 @@ export const POST = withDialAuth(async (auth) => {
       }
     }
 
-    // Update session status to completed
+    // Update session status to completed (N2 guard: never re-touch a completed session)
     if (masterResult.finalUrl) {
       await db.update(dialSessions)
         .set({ status: 'completed', updatedAt: new Date() })
-        .where(eq(dialSessions.id, previewTask.sessionId));
+        .where(and(eq(dialSessions.id, previewTask.sessionId), ne(dialSessions.status, 'completed')));
     }
 
     return apiSuccess({
@@ -194,10 +257,16 @@ export const GET = withDialAuth(async (auth) => {
       return apiSuccess({ status: 'processing' });
     }
     // Backstop-before-poll: past the generous backstop, fail WITHOUT calling the
-    // credit-bearing /retrievefinalmaster on a stuck task.
+    // credit-bearing /retrievefinalmaster on a stuck task. Applies even to a reserved row
+    // (empty roexTaskId) whose POST died mid-charge — markFailed makes no RoEx call.
     if (elapsed > getDialBackstopMs(task.taskType)) {
       const r = await markDialTaskFailedWithReconcile(taskId, 'mastering-final processing backstop');
       return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
+    }
+    // Reserved-but-not-yet-charged row: the POST handler has not run its single 220cr charge
+    // yet — never poll /retrievefinalmaster on it.
+    if (isUnchargedMasteringReservation(task)) {
+      return apiSuccess({ status: 'processing' });
     }
 
     const client = createRoExClient();

@@ -23,7 +23,7 @@
 import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { dialTasks, dialTracks } from '@/db/schema';
+import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskReadAccess, verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiValidationError, apiNotFound, apiServerError } from '@/lib/api-response';
@@ -41,6 +41,9 @@ type DialTask = typeof dialTasks.$inferSelect;
  */
 async function refreshExpiredGcsUrl(task: DialTask, stemKey: string | null): Promise<string | null> {
   try {
+    // Reserved-but-not-yet-charged tasks (empty roexTaskId, e.g. a mastering reservation)
+    // have nothing to refresh and must never be polled.
+    if (!task.roexTaskId) return null;
     const client = createRoExClient();
     let newStemsUrls: Record<string, string> | undefined;
     let newPreviewUrl: string | undefined;
@@ -59,7 +62,13 @@ async function refreshExpiredGcsUrl(task: DialTask, stemKey: string | null): Pro
       });
       const trackUrls = tracks.map((t) => t.roexUploadUrl).filter(Boolean);
       if (trackUrls.length < 2) return null;
-      const result = await pollMixFinal(client, task.roexTaskId, trackUrls);
+      // Free campaign: poll must not re-request the (+50cr) stems the free submit skipped.
+      const dlSession = await db.query.dialSessions.findFirst({
+        where: eq(dialSessions.id, task.sessionId),
+      });
+      const result = await pollMixFinal(client, task.roexTaskId, trackUrls, {
+        returnStems: !dlSession?.isFreeCampaign,
+      });
       newStemsUrls = result.stemsUrl;
       newFinalUrl = result.finalUrl;
     } else if (type === 'mastering_preview' || type === 'mastering') {

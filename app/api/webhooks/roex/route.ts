@@ -20,7 +20,7 @@ import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
-import { markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
+import { markDialTaskFailedWithReconcile, isUnchargedMasteringReservation } from '@/lib/dial/task-timeout';
 
 // Allow up to 120s for R2 copy
 export const maxDuration = 120;
@@ -106,18 +106,26 @@ export async function POST(request: Request) {
       if (task.finalUrl) {
         // Already retrieved via POST handler — skip to avoid double 220cr charge
         resultUrl = task.finalUrl;
-      } else {
+      } else if (!isUnchargedMasteringReservation(task)) {
         const result = await masterFinal(client, task.roexTaskId, { poll: true });
         resultUrl = result.finalUrl;
         roexFailed = result.status === 'failed';
       }
+      // else: reserved-but-not-yet-charged → leave processing; the POST handler owns the
+      // single charge.
     } else {
       // Mix final (final_basic, final_advanced, mix_check)
       const tracks = await db.query.dialTracks.findMany({
         where: eq(dialTracks.sessionId, task.sessionId),
       });
       const trackUrls = tracks.map((t) => resolveTrackUrl(t) ?? t.roexUploadUrl);
-      const result = await pollMixFinal(client, roexTaskId, trackUrls);
+      // Free campaign: poll must not re-request the (+50cr) stems the free submit skipped.
+      const whSession = await db.query.dialSessions.findFirst({
+        where: eq(dialSessions.id, task.sessionId),
+      });
+      const result = await pollMixFinal(client, roexTaskId, trackUrls, {
+        returnStems: !whSession?.isFreeCampaign,
+      });
       resultUrl = result.finalUrl;
       stemsUrl = result.stemsUrl;
       fxSettings = result.fxSettings as Record<string, unknown> | undefined;

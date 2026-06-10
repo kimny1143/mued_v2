@@ -26,7 +26,7 @@ import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { recordDialEvent } from '@/lib/analytics/dial-events';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
-import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMixPreview, pollMixFinal } from '@/lib/roex';
+import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMixPreview, pollMixFinal, type MixResult } from '@/lib/roex';
 import { buildAdvancedTrackData, type ParameterChanges } from '@/lib/dial/track-data';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
@@ -118,41 +118,20 @@ export const POST = withDialAuth(async (auth) => {
       });
     }
 
-    // Enforce mix check limit (max 2)
-    if (type === 'mix_check' && sessionRow.mixCheckCount >= 2) {
-      return apiError('Mix check limit reached (max 2). Please generate Final Mix instead.', {
-        code: 'MIX_CHECK_LIMIT',
-        status: 400,
-      });
-    }
-
-    // Enforce paid cycle limit (mix_check + final count toward paidCycleCount)
-    const totalCycleLimit = sessionRow.baseCycleLimit + sessionRow.additionalCyclesPurchased;
-    if (sessionRow.paidCycleCount >= totalCycleLimit) {
-      return apiError('Cycle limit reached. Purchase additional cycles or finalize.', {
-        code: 'CYCLE_LIMIT_REACHED',
-        status: 402,
-        details: {
-          paidCycleCount: sessionRow.paidCycleCount,
-          baseCycleLimit: sessionRow.baseCycleLimit,
-          additionalCyclesPurchased: sessionRow.additionalCyclesPurchased,
-          additionalCycleLimit: sessionRow.additionalCycleLimit,
-          canPurchaseMore: sessionRow.additionalCyclesPurchased < sessionRow.additionalCycleLimit,
-        },
-      });
-    }
-
     // Get tracks
     const tracks = await db.query.dialTracks.findMany({
       where: eq(dialTracks.sessionId, previewTask.sessionId),
     });
 
-    // ─── Build mix request ────────────────────────────────────────────────
-
+    // ─── Pre-charge: build the RoEx request (NO charge yet) ────────────────
+    // Everything that can throw (missing params / expired stem URLs / fx retrieval)
+    // happens BEFORE the cycle reservation, so a failed build never consumes a cycle.
+    // `submit` is the single credit-bearing RoEx call, deferred until the slot is reserved.
     const isDialogue = sessionRow.mode === 'dialogue';
     const isAdvanced = isDialogue && (type === 'mix_check' || type === 'final');
+    const taskType = type === 'mix_check' ? 'mix_check' as const : (isAdvanced ? 'final_advanced' as const : 'final_basic' as const);
 
-    let mixResult;
+    let submit: () => Promise<MixResult>;
 
     if (isRoExDevKey()) {
       // Dev key mock — generate stem URLs from actual track names
@@ -161,13 +140,12 @@ export const POST = withDialAuth(async (auth) => {
         const name = t.originalFilename.replace(/\.[^.]+$/, '');
         mockStems[name] = `https://example.com/dev-stem-${name}.wav`;
       }
-      mixResult = {
+      submit = async () => ({
         taskId: `dev-${type}-${Date.now()}`,
+        status: 'completed',
         finalUrl: `https://example.com/dev-${type}.wav`,
-        previewUrl: null,
-        fxSettings: null,
         stemsUrl: mockStems,
-      };
+      });
     } else if (isAdvanced) {
       // Dialogue mode: use advanced params from Hoo chat
       const paramChanges = (clientParams as ParameterChanges[] | undefined)
@@ -179,56 +157,130 @@ export const POST = withDialAuth(async (auth) => {
 
       const advancedTrackData = buildAdvancedTrackData(tracks, paramChanges);
 
-      const client = createRoExClient();
-      mixResult = await mixFinalAdvanced(client, {
-        taskId: previewTask.roexTaskId,
-        trackData: advancedTrackData,
-        // Free campaign: skip stems (+50cr) — stems are a paid differentiator; keeps free journey ≈480cr.
-        returnStems: !sessionRow.isFreeCampaign,
-      });
-    } else {
-      // Omakase mode: basic final (gain only)
-      // Retrieve FX settings for gain values if not cached
-      let fxSettings = previewTask.fxSettings as Record<string, Record<string, unknown>> | null;
-
-      if (!fxSettings) {
-        const client2 = createRoExClient();
-        const fxResult = await pollMixPreview(client2, previewTask.roexTaskId, {
-          retrieveFxSettings: true,
+      submit = async () => {
+        const client = createRoExClient();
+        return mixFinalAdvanced(client, {
+          taskId: previewTask.roexTaskId,
+          trackData: advancedTrackData,
+          // Free campaign: skip stems (+50cr) — stems are a paid differentiator; keeps free journey ≈480cr.
+          returnStems: !sessionRow.isFreeCampaign,
         });
-        fxSettings = fxResult.fxSettings ?? null;
-        if (fxSettings) {
-          await db.update(dialTasks).set({ fxSettings }).where(eq(dialTasks.id, previewTask.id));
+      };
+    } else {
+      // Omakase mode: basic final (gain only). Validate stem URLs up-front (no charge), but
+      // defer the FX retrieval — pollMixPreview(retrieveFxSettings:true) costs 125cr — AND the
+      // mix charge into submit(), so a reservation race-loser never pays the 125cr for FX it
+      // can't use (the FX retrieval used to run before the cycle reservation).
+      for (const t of tracks) {
+        if (!resolveTrackUrl(t)) {
+          throw new Error(`Stem URL expired for "${t.originalFilename}". Please re-upload your stems.`);
         }
       }
 
-      const trackData = tracks.map((t) => {
-        const urlKey = t.roexUploadUrl.split('/').pop()?.split('?')[0] ?? '';
-        const fx = fxSettings?.[urlKey];
-        const gainDb = (fx?.gain_settings as Record<string, number>)?.gain_db ?? 0;
-        const trackUrl = resolveTrackUrl(t);
-        if (!trackUrl) {
-          throw new Error(`Stem URL expired for "${t.originalFilename}". Please re-upload your stems.`);
+      submit = async () => {
+        let fxSettings = previewTask.fxSettings as Record<string, Record<string, unknown>> | null;
+        if (!fxSettings) {
+          const client2 = createRoExClient();
+          const fxResult = await pollMixPreview(client2, previewTask.roexTaskId, {
+            retrieveFxSettings: true,
+          });
+          fxSettings = fxResult.fxSettings ?? null;
+          if (fxSettings) {
+            await db.update(dialTasks).set({ fxSettings }).where(eq(dialTasks.id, previewTask.id));
+          }
         }
-        return { trackUrl, gainDb };
-      });
 
-      const client = createRoExClient();
-      mixResult = await mixFinalBasic(client, {
-        taskId: previewTask.roexTaskId,
-        trackData,
-        // Free campaign: skip stems (+50cr) — keeps free journey ≈480cr.
-        returnStems: !sessionRow.isFreeCampaign,
+        const trackData = tracks.map((t) => {
+          const urlKey = t.roexUploadUrl.split('/').pop()?.split('?')[0] ?? '';
+          const fx = fxSettings?.[urlKey];
+          const gainDb = (fx?.gain_settings as Record<string, number>)?.gain_db ?? 0;
+          const trackUrl = resolveTrackUrl(t);
+          if (!trackUrl) {
+            throw new Error(`Stem URL expired for "${t.originalFilename}". Please re-upload your stems.`);
+          }
+          return { trackUrl, gainDb };
+        });
+
+        const client = createRoExClient();
+        return mixFinalBasic(client, {
+          taskId: previewTask.roexTaskId,
+          trackData,
+          // Free campaign: skip stems (+50cr) — keeps free journey ≈480cr.
+          returnStems: !sessionRow.isFreeCampaign,
+        });
+      };
+    }
+
+    // ─── Atomic cycle reservation (BEFORE charge) ─────────────────────────
+    // One conditional UPDATE both enforces the limit AND consumes the slot. Postgres
+    // serializes the two concurrent UPDATEs on the same row, so two final POSTs can never
+    // both read a stale paidCycleCount, both pass, and both charge RoEx (Layer-II TOCTOU).
+    // 0 rows updated → a limit is already reached → reject WITHOUT charging.
+    const reserved = await db
+      .update(dialSessions)
+      .set({
+        paidCycleCount: sql`${dialSessions.paidCycleCount} + 1`,
+        ...(type === 'mix_check' ? { mixCheckCount: sql`${dialSessions.mixCheckCount} + 1` } : {}),
+        status: 'mixing',
+        updatedAt: new Date(),
+      })
+      .where(and(
+        eq(dialSessions.id, previewTask.sessionId),
+        sql`${dialSessions.paidCycleCount} < ${dialSessions.baseCycleLimit} + ${dialSessions.additionalCyclesPurchased}`,
+        ...(type === 'mix_check' ? [sql`${dialSessions.mixCheckCount} < 2`] : []),
+      ))
+      .returning({ paidCycleCount: dialSessions.paidCycleCount });
+
+    if (reserved.length === 0) {
+      // Re-read to report which limit tripped precisely (no charge happened).
+      const cur = await db.query.dialSessions.findFirst({ where: eq(dialSessions.id, previewTask.sessionId) });
+      if (type === 'mix_check' && cur && cur.mixCheckCount >= 2) {
+        return apiError('Mix check limit reached (max 2). Please generate Final Mix instead.', {
+          code: 'MIX_CHECK_LIMIT',
+          status: 400,
+        });
+      }
+      const curAdditional = cur?.additionalCyclesPurchased ?? sessionRow.additionalCyclesPurchased;
+      return apiError('Cycle limit reached. Purchase additional cycles or finalize.', {
+        code: 'CYCLE_LIMIT_REACHED',
+        status: 402,
+        details: {
+          paidCycleCount: cur?.paidCycleCount ?? sessionRow.paidCycleCount,
+          baseCycleLimit: sessionRow.baseCycleLimit,
+          additionalCyclesPurchased: curAdditional,
+          additionalCycleLimit: sessionRow.additionalCycleLimit,
+          canPurchaseMore: curAdditional < sessionRow.additionalCycleLimit,
+        },
       });
     }
 
-    // ─── Save task & update session ───────────────────────────────────────
+    const newPaidCycleCount = reserved[0].paidCycleCount;
 
-    const taskType = type === 'mix_check' ? 'mix_check' as const : (isAdvanced ? 'final_advanced' as const : 'final_basic' as const);
+    // ─── Charge: the single credit-bearing RoEx call ──────────────────────
+    // The slot is already reserved. On failure we KEEP the slot consumed (refunding it
+    // could let a re-submit double-charge — same false-abort-avoidance principle as the
+    // #434 comm-timeout design) and only revert the session status off 'mixing' so the
+    // dashboard isn't stuck. The spent cycle is remedied via the admin comp flow, never
+    // silently refunded.
+    let mixResult: MixResult;
+    try {
+      mixResult = await submit();
+    } catch (chargeErr) {
+      await db.update(dialSessions)
+        .set({ status: 'previewing', updatedAt: new Date() })
+        .where(and(eq(dialSessions.id, previewTask.sessionId), ne(dialSessions.status, 'completed')));
+      throw chargeErr;
+    }
+
+    // ─── Save task & R2 copy ──────────────────────────────────────────────
 
     const [task] = await db.insert(dialTasks).values({
       sessionId: previewTask.sessionId,
-      roexTaskId: mixResult.taskId || previewTask.roexTaskId,
+      // Save the CHARGE id (= the multitrackTaskId we submitted with), NOT mixResult.taskId.
+      // RoEx /retrieve* idempotency is per-task-id (client.ts): saving a divergent response id
+      // would let poll paths (final GET / session / webhook) retrieve an un-charged id and risk
+      // a second 250cr. The webhook lookup is also keyed by the submitted id.
+      roexTaskId: previewTask.roexTaskId,
       taskType,
       status: 'processing',
       finalUrl: mixResult.finalUrl,
@@ -260,36 +312,16 @@ export const POST = withDialAuth(async (auth) => {
       }
     }
 
-    // Update session — atomic increment to prevent race conditions
+    // Advance session status only. The cycle counter is already incremented at reservation;
+    // mix_check / not-yet-complete final stay 'mixing'. N2 guard: never downgrade a session a
+    // concurrent poll/webhook already moved to 'completed'.
     const taskCompleted = !!mixResult.finalUrl;
-    if (type === 'mix_check') {
+    if (type !== 'mix_check' && taskCompleted) {
       await db.update(dialSessions)
-        .set({
-          mixCheckCount: sql`${dialSessions.mixCheckCount} + 1`,
-          paidCycleCount: sql`${dialSessions.paidCycleCount} + 1`,
-          status: 'mixing',
-          updatedAt: new Date(),
-        })
-        .where(eq(dialSessions.id, previewTask.sessionId));
-    } else if (taskCompleted) {
-      await db.update(dialSessions)
-        .set({
-          paidCycleCount: sql`${dialSessions.paidCycleCount} + 1`,
-          status: 'completed',
-          updatedAt: new Date(),
-        })
-        .where(eq(dialSessions.id, previewTask.sessionId));
-    } else {
-      await db.update(dialSessions)
-        .set({
-          paidCycleCount: sql`${dialSessions.paidCycleCount} + 1`,
-          status: 'mixing',
-          updatedAt: new Date(),
-        })
-        .where(eq(dialSessions.id, previewTask.sessionId));
+        .set({ status: 'completed', updatedAt: new Date() })
+        .where(and(eq(dialSessions.id, previewTask.sessionId), ne(dialSessions.status, 'completed')));
     }
 
-    const newPaidCycleCount = sessionRow.paidCycleCount + 1;
     const newTotalLimit = sessionRow.baseCycleLimit + sessionRow.additionalCyclesPurchased;
 
     recordDialEvent({
@@ -377,10 +409,16 @@ export const GET = withDialAuth(async (auth) => {
       where: eq(dialTracks.sessionId, task.sessionId),
     });
     const trackUrls = tracks.map((t) => resolveTrackUrl(t) ?? t.roexUploadUrl);
+    const sessionRow = await db.query.dialSessions.findFirst({
+      where: eq(dialSessions.id, task.sessionId),
+    });
 
     const client = createRoExClient();
     try {
-      const pollResult = await pollMixFinal(client, task.roexTaskId, trackUrls);
+      // Free campaign: poll must not re-request the (+50cr) stems the free submit skipped.
+      const pollResult = await pollMixFinal(client, task.roexTaskId, trackUrls, {
+        returnStems: !sessionRow?.isFreeCampaign,
+      });
 
       if (pollResult.finalUrl) {
         await db.update(dialTasks).set({
@@ -409,10 +447,8 @@ export const GET = withDialAuth(async (auth) => {
           console.error('[final/GET] R2 copy failed:', err);
         }
 
-        // Update session status
-        const sessionRow = await db.query.dialSessions.findFirst({
-          where: eq(dialSessions.id, task.sessionId),
-        });
+        // Update session status — N2 guard: never downgrade a session a concurrent
+        // poll/webhook already moved to 'completed'.
         const newStatus = task.taskType === 'mix_check'
           ? 'mixing' as const
           : sessionRow?.masteringMode
@@ -421,7 +457,7 @@ export const GET = withDialAuth(async (auth) => {
         await db.update(dialSessions).set({
           status: newStatus,
           updatedAt: new Date(),
-        }).where(eq(dialSessions.id, task.sessionId));
+        }).where(and(eq(dialSessions.id, task.sessionId), ne(dialSessions.status, 'completed')));
 
         return apiSuccess({
           status: 'completed',

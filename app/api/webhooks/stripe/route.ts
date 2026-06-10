@@ -884,7 +884,9 @@ async function handleDialCheckoutCompleted(
         .where(eq(dialPurchases.id, pid));
     }
 
-    // Update session payment status
+    // Update session payment status. Guard is_free_campaign=false: a free-campaign session
+    // is already paid via Stripe-bypass and has no checkout — a Stripe webhook must never
+    // mutate it (defensive belt-and-suspenders; free sessions never reach a real checkout).
     await tx
       .update(dialSessions)
       .set({
@@ -892,7 +894,7 @@ async function handleDialCheckoutCompleted(
         stripeCheckoutSessionId: session.id,
         updatedAt: new Date(),
       })
-      .where(eq(dialSessions.id, dialSessionId));
+      .where(and(eq(dialSessions.id, dialSessionId), eq(dialSessions.isFreeCampaign, false)));
 
     logger.info(`[Dial Webhook] Purchase completed: ${purchaseIds.join(',')} (mix=${mixType})`);
 
@@ -1071,11 +1073,13 @@ async function handleDialAdditionalCycle(
     })
     .where(eq(dialPurchases.id, purchaseId));
 
-  // Increment additionalCyclesPurchased on the session
+  // Increment additionalCyclesPurchased on the session. Guard is_free_campaign=false: a
+  // free-campaign session never has an additional-cycle Stripe purchase, so a webhook must
+  // never grow its cycle headroom (defensive).
   const [dialSession] = await tx
     .select()
     .from(dialSessions)
-    .where(eq(dialSessions.id, dialSessionId))
+    .where(and(eq(dialSessions.id, dialSessionId), eq(dialSessions.isFreeCampaign, false)))
     .limit(1);
 
   if (dialSession) {
@@ -1085,7 +1089,7 @@ async function handleDialAdditionalCycle(
         additionalCyclesPurchased: dialSession.additionalCyclesPurchased + 1,
         updatedAt: new Date(),
       })
-      .where(eq(dialSessions.id, dialSessionId));
+      .where(and(eq(dialSessions.id, dialSessionId), eq(dialSessions.isFreeCampaign, false)));
   }
 
   logger.info(`[Dial Webhook] Additional cycle purchased for session: ${dialSessionId}`);

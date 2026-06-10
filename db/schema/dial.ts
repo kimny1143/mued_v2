@@ -163,6 +163,12 @@ export const dialTasks = pgTable('dial_tasks', {
   sessionIdIdx: index('idx_dial_tasks_session_id').on(table.sessionId),
   roexTaskIdIdx: index('idx_dial_tasks_roex_task_id').on(table.roexTaskId),
   statusIdx: index('idx_dial_tasks_status').on(table.status),
+  // One mastering final per session — DB backstop for the advisory-lock + insert-before-charge
+  // guard in app/api/dial/mastering/final/route.ts (blocks concurrent 220cr double-charge).
+  // Same partial-unique pattern as dial_sessions_unique_free_campaign_per_user. Migration 0052.
+  uniqueMasteringPerSession: uniqueIndex('dial_tasks_unique_mastering_per_session')
+    .on(table.sessionId)
+    .where(sql`task_type = 'mastering'`),
 }));
 
 /** Hoo conversation messages within a dial session */
