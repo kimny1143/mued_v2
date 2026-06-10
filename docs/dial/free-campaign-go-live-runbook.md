@@ -109,6 +109,15 @@ env 反映には Vercel 再デプロイが必要（getter は call-time read だ
 - [ ] RoEx 実消費 ≈480cr（±診断/stem 有無で 480-530 レンジ）
 - [ ] **stuck-processing 再発なし**（PR#434 comm-timeout + cron backstop が効く）
 
+### 軸B TOCTOU pool 実測（CCO 監査要件 2026-06-10・金銭neutralだが pool 上振れ実測）
+free 文脈は Stripe 非経由（pool 建て）で金銭 neutral だが、`final/route.ts:131` の cycle guard が
+check/increment 非atomic（既存 TOCTOU・Tier3 fast-follow 本丸）。E2E で実際に pool 二重消費が
+起きるかを裏取りし、Codex 軸B(a) 判断の実測材料にする。
+- [ ] ①正常完走後の RoEx pool 消費が **480cr 近傍か（上振れ無し）** を Recent Activity で実測
+- [ ] ②**final を意図的に並行/連打** → 2回目が `final/route.ts:131`（paidCycleCount >= baseCycleLimit+additionalCyclesPurchased=1+0）で弾かれるか。弾かれず RoEx submit が2回飛んだら **pool 二重消費を実数記録**
+- [ ] ③mastering の `MASTERING_ALREADY_DONE`(409, `mastering/final/route.ts:87`) dup-guard が並行時に効くか
+→ 「並行でも弾かれた（pool 上振れ無し）」なら Codex 判断がより固くなる／「弾かれず二重消費」でも free=金銭neutral 範囲を実数確認。どちらでも判断材料が増える（CCO 見解）。
+
 ### wall-clock 注意
 prod preview 実測 **8-22分**（`reference-dial-generation-hang-diagnosis`）。
 1 journey の verify は **30-60分**見込み（RoEx 処理待ちが律速）。env ON はこの完走確認後。
