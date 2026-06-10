@@ -149,7 +149,10 @@ export const GET = withDialAuth(async (auth) => {
               });
               const trackUrls = tracks.map((t) => t.roexUploadUrl);
 
-              const result = await pollMixFinal(client, task.roexTaskId, trackUrls);
+              // Free campaign: poll must not re-request the (+50cr) stems the free submit skipped.
+              const result = await pollMixFinal(client, task.roexTaskId, trackUrls, {
+                returnStems: !full.isFreeCampaign,
+              });
 
               if (result.finalUrl) {
                 await db.update(dialTasks).set({

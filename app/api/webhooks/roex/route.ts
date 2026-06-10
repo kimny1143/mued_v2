@@ -117,7 +117,13 @@ export async function POST(request: Request) {
         where: eq(dialTracks.sessionId, task.sessionId),
       });
       const trackUrls = tracks.map((t) => resolveTrackUrl(t) ?? t.roexUploadUrl);
-      const result = await pollMixFinal(client, roexTaskId, trackUrls);
+      // Free campaign: poll must not re-request the (+50cr) stems the free submit skipped.
+      const whSession = await db.query.dialSessions.findFirst({
+        where: eq(dialSessions.id, task.sessionId),
+      });
+      const result = await pollMixFinal(client, roexTaskId, trackUrls, {
+        returnStems: !whSession?.isFreeCampaign,
+      });
       resultUrl = result.finalUrl;
       stemsUrl = result.stemsUrl;
       fxSettings = result.fxSettings as Record<string, unknown> | undefined;

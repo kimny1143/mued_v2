@@ -215,11 +215,14 @@ export async function pollMixFinal(
   client: RoExClient,
   taskId: string,
   trackUrls: string[],
+  opts?: { returnStems?: boolean },
 ): Promise<MixResult> {
   const body = {
     applyAudioEffectsData: {
       multitrackTaskId: taskId,
-      returnStems: true,
+      // Default true preserves existing behaviour; free-campaign poll paths pass false so a
+      // poll never re-requests the (+50cr) stems the free submit deliberately skipped.
+      returnStems: opts?.returnStems ?? true,
       trackData: trackUrls.map((url) => ({ trackURL: url })),
     },
   };

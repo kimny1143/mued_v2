@@ -306,6 +306,30 @@ describe('pollMixFinal', () => {
     expect(body.applyAudioEffectsData.trackData).toHaveLength(2);
     expect(result.finalUrl).toBe('https://cdn.roex.com/final.wav');
   });
+
+  it('defaults returnStems to true (paid behaviour preserved)', async () => {
+    const client = createMockClient({
+      applyAudioEffectsResults: { multitrack_task_id: 'task-final', status: 'completed' },
+    });
+
+    await pollMixFinal(client, 'task-final', ['https://ex.com/t1.wav', 'https://ex.com/t2.wav']);
+
+    const body = vi.mocked(client.post).mock.calls[0][1] as any;
+    expect(body.applyAudioEffectsData.returnStems).toBe(true);
+  });
+
+  it('sends returnStems:false when opted out (free-campaign poll must not re-request +50cr stems)', async () => {
+    const client = createMockClient({
+      applyAudioEffectsResults: { multitrack_task_id: 'task-final', status: 'completed' },
+    });
+
+    await pollMixFinal(client, 'task-final', ['https://ex.com/t1.wav', 'https://ex.com/t2.wav'], {
+      returnStems: false,
+    });
+
+    const body = vi.mocked(client.post).mock.calls[0][1] as any;
+    expect(body.applyAudioEffectsData.returnStems).toBe(false);
+  });
 });
 
 describe('parseMixResponse edge cases', () => {
