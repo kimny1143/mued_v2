@@ -1,4 +1,4 @@
-import { getRoExWebhookUrl, type RoExClient } from './client';
+import { getRoExWebhookUrl, ROEX_POLL_TIMEOUT_MS, type RoExClient } from './client';
 import type {
   MixPreviewRequest,
   MixFinalRequest,
@@ -61,7 +61,31 @@ function parseMixResponse(raw: Record<string, unknown>): MixResult {
     (results.mix_output_settings as Record<string, FxChainWrapper>) ??
     undefined;
 
-  return { taskId, status, previewUrl, finalUrl, stemsUrl, fxSettings };
+  // Best-effort failure detection across RoEx's (undocumented) error shapes. Failed when
+  // an explicit error flag is set (boolean true / non-empty string / truthy object) OR the
+  // status reads like a failure. `error:false` must NOT trip. The comm-timeout + wall-clock
+  // backstop are the guaranteed catches; this is the fast path when RoEx tells us directly.
+  const rawError = results.error ?? raw.error;
+  const hasErrorFlag =
+    rawError === true ||
+    (typeof rawError === 'string' && rawError.trim().length > 0) ||
+    (typeof rawError === 'object' && rawError !== null);
+  const isFailed = hasErrorFlag || /fail|error|cancel|abort|reject|time.?out/i.test(status);
+  const error = isFailed
+    ? (typeof rawError === 'string' && rawError.trim()
+        ? rawError
+        : (results.message as string) ?? (raw.message as string) ?? (results.error_message as string) ?? `RoEx mix task failed${status ? ` (${status})` : ''}`)
+    : undefined;
+
+  return {
+    taskId,
+    status: isFailed ? 'failed' : status,
+    previewUrl,
+    finalUrl,
+    stemsUrl,
+    fxSettings,
+    error,
+  };
 }
 
 // ─── API Methods ────────────────────────────────────────────────────────────
@@ -106,9 +130,11 @@ export async function pollMixPreview(
     },
   };
 
+  // POLL call → opt into the comm-timeout (a hung poll must not block the function).
   const raw = await client.post<Record<string, unknown>>(
     '/retrievepreviewmix',
     body,
+    { timeoutMs: ROEX_POLL_TIMEOUT_MS },
   );
   return parseMixResponse(raw);
 }
@@ -176,6 +202,7 @@ export async function mixFinalAdvanced(
     },
   };
 
+  // SUBMIT/charge call → NO comm-timeout (a false abort would risk a re-POST re-charge).
   const raw = await client.post<Record<string, unknown>>('/retrievefinalmix', body);
   return parseMixResponse(raw);
 }
@@ -197,6 +224,9 @@ export async function pollMixFinal(
     },
   };
 
-  const raw = await client.post<Record<string, unknown>>('/retrievefinalmix', body);
+  // POLL call → opt into the comm-timeout (retrieve, not the initial charge submit).
+  const raw = await client.post<Record<string, unknown>>('/retrievefinalmix', body, {
+    timeoutMs: ROEX_POLL_TIMEOUT_MS,
+  });
   return parseMixResponse(raw);
 }

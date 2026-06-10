@@ -8,7 +8,7 @@
  */
 
 import { z } from 'zod';
-import { eq, desc } from 'drizzle-orm';
+import { and, desc, eq, ne } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
@@ -16,6 +16,7 @@ import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError }
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterPreview, pollMasterPreview, isRoExDevKey, mapMusicalStyle } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
 import { DELIVERY_TARGETS, DELIVERY_TARGET_LUFS, mapLufsToDesiredLoudness } from '@/lib/dial/lufs-presets';
@@ -150,7 +151,7 @@ export const GET = withDialAuth(async (auth) => {
 
     const { task } = result;
 
-    if (task.status === 'completed') {
+    if (task.status === 'completed' && task.previewUrl) {
       return apiSuccess({
         status: 'completed',
         previewUrl: task.previewUrl,
@@ -170,29 +171,38 @@ export const GET = withDialAuth(async (auth) => {
     if (elapsed < POLLING_FALLBACK_THRESHOLD_MS) {
       return apiSuccess({ status: 'processing' });
     }
+    // Backstop-before-poll: past the generous backstop, fail WITHOUT polling RoEx.
+    if (elapsed > getDialBackstopMs(task.taskType)) {
+      const r = await markDialTaskFailedWithReconcile(taskId, 'mastering-preview processing backstop');
+      return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
+    }
 
     // Fallback: poll RoEx for mastering preview result
     const client = createRoExClient();
-    const pollResult = await pollMasterPreview(client, task.roexTaskId);
+    try {
+      const pollResult = await pollMasterPreview(client, task.roexTaskId);
 
-    const isCompleted = !!pollResult.previewUrl;
+      if (pollResult.previewUrl) {
+        await db.update(dialTasks).set({
+          status: 'completed',
+          previewUrl: pollResult.previewUrl,
+          completedAt: new Date(),
+        }).where(and(eq(dialTasks.id, taskId), ne(dialTasks.status, 'failed')));
+        return apiSuccess({ status: 'completed', previewUrl: pollResult.previewUrl });
+      }
 
-    if (isCompleted) {
-      await db.update(dialTasks).set({
-        status: 'completed',
-        previewUrl: pollResult.previewUrl,
-        completedAt: new Date(),
-      }).where(eq(dialTasks.id, taskId));
-    } else if (pollResult.status === 'failed') {
-      await db.update(dialTasks).set({
-        status: 'failed',
-      }).where(eq(dialTasks.id, taskId));
+      // Explicit RoEx failure → fail. Otherwise keep processing (backstop above + cron).
+      if (pollResult.status === 'failed') {
+        const r = await markDialTaskFailedWithReconcile(taskId, 'RoEx reported mastering-preview failure');
+        return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
+      }
+
+      return apiSuccess({ status: 'processing' });
+    } catch (pollErr) {
+      // Transient (comm-timeout abort / HTTP error). Keep processing.
+      console.warn(`[mastering/preview/GET] transient poll error: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`);
+      return apiSuccess({ status: 'processing' });
     }
-
-    return apiSuccess({
-      status: isCompleted ? 'completed' : (pollResult.status === 'failed' ? 'failed' : 'processing'),
-      previewUrl: pollResult.previewUrl,
-    });
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Poll failed');
   }

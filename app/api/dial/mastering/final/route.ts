@@ -14,6 +14,7 @@ import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError }
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterFinal, isRoExDevKey } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
+import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialSessions } from '@/db/schema';
 
@@ -68,20 +69,23 @@ export const POST = withDialAuth(async (auth) => {
       });
     }
 
-    // Duplicate guard: one mastering final per session (prevents direct 220cr×N hits;
-    // the chat dup-suppression only covered the conversational path).
+    // Duplicate guard: one mastering final per session (prevents direct 220cr×N hits).
+    // A 'failed' mastering ALSO blocks a re-POST: the 220cr is consumed at submit, so
+    // re-POSTing a failed mastering would leak another 220cr. A genuinely-failed mastering
+    // is directed to support (Phase 2 will add same-task retry without re-charge).
     const existingMaster = await db.query.dialTasks.findFirst({
       where: and(
         eq(dialTasks.sessionId, previewTask.sessionId),
         eq(dialTasks.taskType, 'mastering'),
-        ne(dialTasks.status, 'failed'),
       ),
     });
     if (existingMaster) {
-      return apiError('Mastering already generated for this session.', {
-        code: 'MASTERING_ALREADY_DONE',
-        status: 409,
-      });
+      return apiError(
+        existingMaster.status === 'failed'
+          ? 'A previous mastering attempt did not complete. Please contact support@mued.jp.'
+          : 'Mastering already generated for this session.',
+        { code: 'MASTERING_ALREADY_DONE', status: 409 },
+      );
     }
 
     let masterResult;
@@ -173,7 +177,7 @@ export const GET = withDialAuth(async (auth) => {
       return apiError('Task is not a mastering final task', { code: 'INVALID_TASK_TYPE', status: 400 });
     }
 
-    if (task.status === 'completed') {
+    if (task.status === 'completed' && task.finalUrl) {
       return apiSuccess({ status: 'completed', finalUrl: task.finalUrl });
     }
 
@@ -189,45 +193,61 @@ export const GET = withDialAuth(async (auth) => {
     if (elapsed < POLLING_FALLBACK_THRESHOLD_MS) {
       return apiSuccess({ status: 'processing' });
     }
-
-    const client = createRoExClient();
-    const pollResult = await masterFinal(client, task.roexTaskId);
-
-    if (pollResult.finalUrl) {
-      let r2FinalUrl: string | undefined;
-      try {
-        const r2Result = await copyToR2({
-          sourceUrl: pollResult.finalUrl,
-          sessionId: task.sessionId,
-          taskId: task.id,
-          taskType: 'mastering',
-        });
-        r2FinalUrl = r2Result?.r2Url;
-      } catch { /* non-blocking */ }
-
-      await db.update(dialTasks).set({
-        status: 'completed',
-        finalUrl: pollResult.finalUrl,
-        completedAt: new Date(),
-        ...(r2FinalUrl ? { r2FinalUrl } : {}),
-      }).where(eq(dialTasks.id, taskId));
-
-      const session = await db.query.dialSessions.findFirst({
-        where: eq(dialSessions.id, task.sessionId),
-      });
-      if (session) {
-        await db.update(dialSessions)
-          .set({ status: 'completed', updatedAt: new Date() })
-          .where(eq(dialSessions.id, task.sessionId));
-      }
-    } else if (pollResult.status === 'failed') {
-      await db.update(dialTasks).set({ status: 'failed' }).where(eq(dialTasks.id, taskId));
+    // Backstop-before-poll: past the generous backstop, fail WITHOUT calling the
+    // credit-bearing /retrievefinalmaster on a stuck task.
+    if (elapsed > getDialBackstopMs(task.taskType)) {
+      const r = await markDialTaskFailedWithReconcile(taskId, 'mastering-final processing backstop');
+      return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
     }
 
-    return apiSuccess({
-      status: pollResult.finalUrl ? 'completed' : (pollResult.status === 'failed' ? 'failed' : 'processing'),
-      finalUrl: pollResult.finalUrl,
-    });
+    const client = createRoExClient();
+    try {
+      // POLL (retrieve) → comm-timeout on; this is NOT the initial 220cr submit.
+      const pollResult = await masterFinal(client, task.roexTaskId, { poll: true });
+
+      if (pollResult.finalUrl) {
+        let r2FinalUrl: string | undefined;
+        try {
+          const r2Result = await copyToR2({
+            sourceUrl: pollResult.finalUrl,
+            sessionId: task.sessionId,
+            taskId: task.id,
+            taskType: 'mastering',
+          });
+          r2FinalUrl = r2Result?.r2Url;
+        } catch { /* non-blocking */ }
+
+        await db.update(dialTasks).set({
+          status: 'completed',
+          finalUrl: pollResult.finalUrl,
+          completedAt: new Date(),
+          ...(r2FinalUrl ? { r2FinalUrl } : {}),
+        }).where(and(eq(dialTasks.id, taskId), ne(dialTasks.status, 'failed')));
+
+        const session = await db.query.dialSessions.findFirst({
+          where: eq(dialSessions.id, task.sessionId),
+        });
+        if (session) {
+          await db.update(dialSessions)
+            .set({ status: 'completed', updatedAt: new Date() })
+            .where(eq(dialSessions.id, task.sessionId));
+        }
+
+        return apiSuccess({ status: 'completed', finalUrl: pollResult.finalUrl });
+      }
+
+      // Explicit RoEx failure → fail. Otherwise keep processing (backstop above + cron).
+      if (pollResult.status === 'failed') {
+        const r = await markDialTaskFailedWithReconcile(taskId, 'RoEx reported mastering-final failure');
+        return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
+      }
+
+      return apiSuccess({ status: 'processing' });
+    } catch (pollErr) {
+      // Transient (comm-timeout abort / HTTP error). Keep processing.
+      console.warn(`[mastering/final/GET] transient poll error: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`);
+      return apiSuccess({ status: 'processing' });
+    }
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Mastering final poll failed');
   }

@@ -8,7 +8,7 @@
  */
 
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { and, eq, ne } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialSessionOwnership, verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError } from '@/lib/api-response';
@@ -17,6 +17,7 @@ import { recordDialEvent } from '@/lib/analytics/dial-events';
 import { createRoExClient, mixPreview, pollMixPreview, mapMusicalStyle, mapInstrumentGroup } from '@/lib/roex';
 import type { MixTrackInput } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTracks, dialTasks, dialSessions } from '@/db/schema';
 
@@ -174,7 +175,7 @@ export const GET = withDialAuth(async (auth) => {
     const { task } = result;
 
     // Already completed? Return cached result.
-    if (task.status === 'completed') {
+    if (task.status === 'completed' && task.previewUrl) {
       return apiSuccess({
         status: 'completed',
         previewUrl: task.previewUrl,
@@ -193,32 +194,52 @@ export const GET = withDialAuth(async (auth) => {
       // Trust webhook — too early to poll RoEx
       return apiSuccess({ status: 'processing' });
     }
-
-    // Fallback: poll RoEx directly
-    // Do NOT request FX settings here (costs 125 credits).
-    const client = createRoExClient();
-    const pollResult = await pollMixPreview(client, task.roexTaskId, {
-      retrieveFxSettings: false,
-    });
-
-    const isCompleted = !!pollResult.previewUrl;
-
-    if (isCompleted) {
-      await db.update(dialTasks).set({
-        status: 'completed',
-        previewUrl: pollResult.previewUrl,
-        fxSettings: pollResult.fxSettings ?? null,
-        stemsUrls: pollResult.stemsUrl ?? null,
-        completedAt: new Date(),
-      }).where(eq(dialTasks.id, taskId));
+    // Backstop-before-poll: past the generous wall-clock backstop (preview ~19min observed,
+    // backstop biased large), fail WITHOUT polling RoEx so a stuck task can't hang the
+    // function. (preview is free, but this keeps the pattern uniform with the paid routes.)
+    if (elapsed > getDialBackstopMs(task.taskType)) {
+      const r = await markDialTaskFailedWithReconcile(taskId, 'preview processing backstop');
+      return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
     }
 
-    return apiSuccess({
-      status: isCompleted ? 'completed' : 'processing',
-      previewUrl: pollResult.previewUrl,
-      fxSettings: isCompleted ? pollResult.fxSettings : undefined,
-      stemsUrls: isCompleted ? pollResult.stemsUrl : undefined,
-    });
+    // Fallback: poll RoEx directly. Do NOT request FX settings here (costs 125 credits).
+    const client = createRoExClient();
+    try {
+      const pollResult = await pollMixPreview(client, task.roexTaskId, {
+        retrieveFxSettings: false,
+      });
+
+      if (pollResult.previewUrl) {
+        await db.update(dialTasks).set({
+          status: 'completed',
+          previewUrl: pollResult.previewUrl,
+          fxSettings: pollResult.fxSettings ?? null,
+          stemsUrls: pollResult.stemsUrl ?? null,
+          completedAt: new Date(),
+        }).where(and(eq(dialTasks.id, taskId), ne(dialTasks.status, 'failed')));
+
+        return apiSuccess({
+          status: 'completed',
+          previewUrl: pollResult.previewUrl,
+          fxSettings: pollResult.fxSettings,
+          stemsUrls: pollResult.stemsUrl,
+        });
+      }
+
+      // Explicit RoEx failure → fail now. Otherwise keep processing (the backstop above is
+      // the wall-clock catch; a comm-timeout abort is transient → handled in the catch).
+      if (pollResult.status === 'failed') {
+        const r = await markDialTaskFailedWithReconcile(taskId, 'RoEx reported preview failure');
+        return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
+      }
+
+      return apiSuccess({ status: 'processing' });
+    } catch (pollErr) {
+      // Transient (comm-timeout abort / HTTP error). Keep processing; the backstop (next
+      // request) and the cron catch a genuinely stuck task.
+      console.warn(`[preview/GET] transient poll error: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`);
+      return apiSuccess({ status: 'processing' });
+    }
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Poll failed');
   }

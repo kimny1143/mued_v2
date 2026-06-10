@@ -2,6 +2,39 @@ import type { RoExConfig } from './types';
 
 const DEFAULT_BASE_URL = 'https://tonn.roexaudio.com';
 
+/**
+ * Comm-timeout for RoEx POLL calls. A hung POLL connection would otherwise block the
+ * serverless function until Vercel kills it — so the task never gets reconciled. 45s is
+ * far above a healthy poll round-trip (RoEx status retrieves return in seconds) and below
+ * the routes' maxDuration. This is opt-in per call (`{ timeoutMs }`): POLL/retrieve calls
+ * set it; SUBMIT/charge calls do NOT.
+ *
+ * BILLING SAFETY — RoEx /retrieve* endpoints are IDEMPOTENT per task id: the first
+ * retrieve of a given multitrackTaskId / masteringTaskId charges once, every subsequent
+ * retrieve returns the cached result for FREE (preview retrieves are always free).
+ * [FACT: confirmed in writing by RoEx CEO David Ronan, 2026-03-23.] So a poll retry or a
+ * comm-timeout-then-retry on the SAME task id never re-charges. The submit-vs-poll split
+ * (no timeout on the initial charge submit) is belt-and-suspenders on top of that.
+ */
+export const ROEX_POLL_TIMEOUT_MS = 45_000;
+
+export interface RoExRequestOpts {
+  /** When set, abort the HTTP call after this many ms (poll calls only — never submits). */
+  timeoutMs?: number;
+}
+
+/**
+ * Thrown when a RoEx HTTP call exceeds its timeoutMs. Callers MUST treat this as TRANSIENT
+ * (the async job may still be processing) — keep the task `processing` and let the next
+ * poll / cron retry. It is NOT a job failure (that is an explicit `status:'failed'`).
+ */
+export class RoExCommTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RoExCommTimeoutError';
+  }
+}
+
 export class RoExClient {
   readonly apiKey: string;
   readonly baseUrl: string;
@@ -14,15 +47,33 @@ export class RoExClient {
     this.baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
   }
 
-  async post<T = unknown>(path: string, body: unknown): Promise<T> {
+  private async doFetch(url: string, init: RequestInit, path: string, timeoutMs?: number): Promise<Response> {
+    if (!timeoutMs) {
+      // No comm-timeout (submit/charge calls): a false abort here would risk a re-charge.
+      return fetch(url, init);
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } catch (err) {
+      if (controller.signal.aborted) {
+        throw new RoExCommTimeoutError(`RoEx API ${path} timed out after ${timeoutMs}ms`);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async post<T = unknown>(path: string, body: unknown, opts?: RoExRequestOpts): Promise<T> {
     const url = `${this.baseUrl}${path}?key=${this.apiKey}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
+    const res = await this.doFetch(
+      url,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+      path,
+      opts?.timeoutMs,
+    );
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');
@@ -32,10 +83,10 @@ export class RoExClient {
     return res.json() as Promise<T>;
   }
 
-  async get<T = unknown>(path: string): Promise<T> {
+  async get<T = unknown>(path: string, opts?: RoExRequestOpts): Promise<T> {
     const separator = path.includes('?') ? '&' : '?';
     const url = `${this.baseUrl}${path}${separator}key=${this.apiKey}`;
-    const res = await fetch(url);
+    const res = await this.doFetch(url, { method: 'GET' }, path, opts?.timeoutMs);
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');

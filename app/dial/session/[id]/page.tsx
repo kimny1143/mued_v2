@@ -451,6 +451,18 @@ function DialSessionContent() {
     if (processingTasks.length === 0) return;
 
     const poll = async () => {
+      // For preview tasks, poll the dedicated GET route so its server-side timeout
+      // backstop runs. The session-route inline poll (GET /api/dial/session) has no
+      // timeout and swallows non-200 errors, so a hung/errored preview — the actual
+      // incident type — would otherwise spin forever. This route flips it to 'failed'
+      // past the timeout (markDialTaskFailed is idempotent, so the parallel session
+      // poll never conflicts).
+      const previewTask = processingTasks.find((t) => t.taskType === 'preview');
+      if (previewTask) {
+        try {
+          await fetch(`/api/dial/preview?taskId=${previewTask.id}`, { headers });
+        } catch { /* ignore */ }
+      }
       // For final/mix_check tasks, poll the RoEx result endpoint first
       const finalTask = processingTasks.find(
         (t) => t.taskType === 'final_basic' || t.taskType === 'final_advanced' || t.taskType === 'mix_check',
@@ -1040,6 +1052,42 @@ function DialSessionContent() {
       setMixGeneratingType(null);
     }
   };
+
+  // Surface a task that FAILED (RoEx failure or processing timeout) as a retryable
+  // error, so the spinner doesn't silently vanish or spin forever. Only the latest
+  // task is considered, so a superseded older failure isn't resurfaced.
+  const notifiedFailedTaskRef = useRef<string | null>(null);
+  // Always-latest retry handlers, so the failure effect need not list the (non-memoized)
+  // handlers as deps — which would re-run it on every render.
+  const retryHandlersRef = useRef({ handlePreview, handleMasteringPreview });
+  retryHandlersRef.current = { handlePreview, handleMasteringPreview };
+  useEffect(() => {
+    const latest = session?.tasks?.[0];
+    if (!latest || latest.status !== 'failed') return;
+    if (notifiedFailedTaskRef.current === latest.id) return;
+    notifiedFailedTaskRef.current = latest.id;
+
+    // Clear any stuck "generating" spinner state.
+    setMixGenerating(false);
+    setMixGeneratingType(null);
+    setPreviewing(false);
+
+    setErrorCode('TASK_FAILED');
+    const isFreeRender = latest.taskType === 'preview' || latest.taskType === 'mastering_preview';
+    if (isFreeRender) {
+      // Free render — safe to re-generate (no charge, no cycle consumed).
+      setError(t.dial.session.errorTaskFailedHint);
+      const retry = latest.taskType === 'preview'
+        ? () => retryHandlersRef.current.handlePreview()
+        : () => retryHandlersRef.current.handleMasteringPreview();
+      setRetryFn(() => retry);
+    } else {
+      // Paid render (final / mix_check / mastering): the paid cycle was consumed at
+      // submit time, so a blind re-POST would double-charge. Direct to support instead.
+      setError(t.dial.session.errorTaskFailedSupport);
+      setRetryFn(null);
+    }
+  }, [session, t]);
 
   // useMemo hooks must be called unconditionally before any early returns (React hook rules)
   const latestTask = session?.tasks[0];
@@ -1696,6 +1744,9 @@ function DialSessionContent() {
                 )}
                 {errorCode === 'PREVIEW_LIMIT' && (
                   <p className="font-medium mb-1">{t.dial.session.errorPreviewLimit}</p>
+                )}
+                {errorCode === 'TASK_FAILED' && (
+                  <p className="font-medium mb-1">{t.dial.session.errorTaskFailed}</p>
                 )}
                 <p>{error}</p>
                 {errorCode === 'INFRA_ERROR' && (

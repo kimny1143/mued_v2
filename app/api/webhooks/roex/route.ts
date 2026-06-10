@@ -13,13 +13,14 @@
  * will still work (with 30s delay before falling back to RoEx polling).
  */
 
-import { and, desc, eq, not } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks } from '@/db/schema';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+import { markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 
 // Allow up to 120s for R2 copy
 export const maxDuration = 120;
@@ -61,10 +62,13 @@ export async function POST(request: Request) {
     // Multiple tasks (e.g. Mix Check 1 + 2) can share the same roexTaskId because
     // both use the preview task's RoEx ID. Prefer processing tasks over completed ones
     // so repeated mix checks don't get ignored after the first completes.
+    // Only ACTIVE tasks — never resurrect a terminal one. Excluding 'failed' (not just
+    // 'completed') is the reverse-direction guard: a late RoEx webhook must not flip a
+    // backstop/cron-failed task back to 'completed'.
     const task = await db.query.dialTasks.findFirst({
       where: and(
         eq(dialTasks.roexTaskId, roexTaskId),
-        not(eq(dialTasks.status, 'completed')),
+        inArray(dialTasks.status, ['processing', 'pending']),
       ),
       orderBy: [desc(dialTasks.createdAt)],
     });
@@ -86,22 +90,26 @@ export async function POST(request: Request) {
     let resultUrl: string | undefined;
     let stemsUrl: Record<string, string> | undefined;
     let fxSettings: Record<string, unknown> | undefined;
+    let roexFailed = false;
 
     if (task.taskType === 'preview') {
       const result = await pollMixPreview(client, roexTaskId, { retrieveFxSettings: false });
       resultUrl = result.previewUrl;
       stemsUrl = result.stemsUrl;
       fxSettings = result.fxSettings as Record<string, unknown> | undefined;
+      roexFailed = result.status === 'failed';
     } else if (task.taskType === 'mastering_preview') {
       const result = await pollMasterPreview(client, roexTaskId);
       resultUrl = result.previewUrl;
+      roexFailed = result.status === 'failed';
     } else if (task.taskType === 'mastering') {
       if (task.finalUrl) {
         // Already retrieved via POST handler — skip to avoid double 220cr charge
         resultUrl = task.finalUrl;
       } else {
-        const result = await masterFinal(client, task.roexTaskId);
+        const result = await masterFinal(client, task.roexTaskId, { poll: true });
         resultUrl = result.finalUrl;
+        roexFailed = result.status === 'failed';
       }
     } else {
       // Mix final (final_basic, final_advanced, mix_check)
@@ -113,6 +121,15 @@ export async function POST(request: Request) {
       resultUrl = result.finalUrl;
       stemsUrl = result.stemsUrl;
       fxSettings = result.fxSettings as Record<string, unknown> | undefined;
+      roexFailed = result.status === 'failed';
+    }
+
+    // Explicit RoEx failure → mark the task failed so the UI stops spinning.
+    // This is distinct from "not_ready" below: RoEx can fire the webhook BEFORE the
+    // result exists (no URL, no error) — that is still processing, NOT a failure.
+    if (roexFailed && !resultUrl) {
+      await markDialTaskFailedWithReconcile(task.id, 'RoEx webhook reported task failure');
+      return NextResponse.json({ received: true, status: 'failed' }, { status: 200 });
     }
 
     if (!resultUrl) {

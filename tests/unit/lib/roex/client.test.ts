@@ -74,7 +74,8 @@ describe('RoExClient', () => {
     await client.get('/status');
 
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://tonn.roexaudio.com/status?key=get-key'
+      'https://tonn.roexaudio.com/status?key=get-key',
+      expect.objectContaining({ method: 'GET' })
     );
 
     vi.unstubAllGlobals();
@@ -91,7 +92,8 @@ describe('RoExClient', () => {
     await client.get('/status?filter=active');
 
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://tonn.roexaudio.com/status?filter=active&key=get-key'
+      'https://tonn.roexaudio.com/status?filter=active&key=get-key',
+      expect.objectContaining({ method: 'GET' })
     );
 
     vi.unstubAllGlobals();

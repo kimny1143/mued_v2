@@ -20,7 +20,7 @@
  */
 
 import { z } from 'zod';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
 import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskOwnership } from '@/lib/middleware/dial-ownership';
 import { recordDialEvent } from '@/lib/analytics/dial-events';
@@ -30,6 +30,7 @@ import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMi
 import { buildAdvancedTrackData, type ParameterChanges } from '@/lib/dial/track-data';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks, dialMessages } from '@/db/schema';
 
@@ -339,7 +340,7 @@ export const GET = withDialAuth(async (auth) => {
     const { task } = result;
 
     // Already completed? Return cached result.
-    if (task.status === 'completed') {
+    if (task.status === 'completed' && task.finalUrl) {
       return apiSuccess({
         status: 'completed',
         finalUrl: task.finalUrl,
@@ -364,6 +365,12 @@ export const GET = withDialAuth(async (auth) => {
       // Trust webhook — too early to poll RoEx
       return apiSuccess({ status: 'processing' });
     }
+    // Backstop-before-poll: past the generous backstop, fail WITHOUT calling the
+    // credit-bearing /retrievefinalmix on a stuck task (avoids hitting a charge endpoint).
+    if (elapsed > getDialBackstopMs(task.taskType)) {
+      const r = await markDialTaskFailedWithReconcile(taskId, 'final-mix processing backstop');
+      return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
+    }
 
     // Fallback: poll RoEx for final mix result
     const tracks = await db.query.dialTracks.findMany({
@@ -372,21 +379,19 @@ export const GET = withDialAuth(async (auth) => {
     const trackUrls = tracks.map((t) => resolveTrackUrl(t) ?? t.roexUploadUrl);
 
     const client = createRoExClient();
-    const pollResult = await pollMixFinal(client, task.roexTaskId, trackUrls);
+    try {
+      const pollResult = await pollMixFinal(client, task.roexTaskId, trackUrls);
 
-    const isCompleted = !!pollResult.finalUrl;
-
-    if (isCompleted) {
-      await db.update(dialTasks).set({
-        status: 'completed',
-        finalUrl: pollResult.finalUrl,
-        stemsUrls: pollResult.stemsUrl ?? null,
-        fxSettings: pollResult.fxSettings ?? null,
-        completedAt: new Date(),
-      }).where(eq(dialTasks.id, taskId));
-
-      // R2 copy
       if (pollResult.finalUrl) {
+        await db.update(dialTasks).set({
+          status: 'completed',
+          finalUrl: pollResult.finalUrl,
+          stemsUrls: pollResult.stemsUrl ?? null,
+          fxSettings: pollResult.fxSettings ?? null,
+          completedAt: new Date(),
+        }).where(and(eq(dialTasks.id, taskId), ne(dialTasks.status, 'failed')));
+
+        // R2 copy
         try {
           const r2Result = await copyToR2({
             sourceUrl: pollResult.finalUrl,
@@ -403,33 +408,42 @@ export const GET = withDialAuth(async (auth) => {
         } catch (err) {
           console.error('[final/GET] R2 copy failed:', err);
         }
+
+        // Update session status
+        const sessionRow = await db.query.dialSessions.findFirst({
+          where: eq(dialSessions.id, task.sessionId),
+        });
+        const newStatus = task.taskType === 'mix_check'
+          ? 'mixing' as const
+          : sessionRow?.masteringMode
+            ? 'mastering' as const
+            : 'completed' as const;
+        await db.update(dialSessions).set({
+          status: newStatus,
+          updatedAt: new Date(),
+        }).where(eq(dialSessions.id, task.sessionId));
+
+        return apiSuccess({
+          status: 'completed',
+          finalUrl: pollResult.finalUrl,
+          stemsUrls: pollResult.stemsUrl,
+          fxSettings: pollResult.fxSettings,
+        });
       }
 
-      // Update session status
-      const sessionRow = await db.query.dialSessions.findFirst({
-        where: eq(dialSessions.id, task.sessionId),
-      });
-      const newStatus = task.taskType === 'mix_check'
-        ? 'mixing' as const
-        : sessionRow?.masteringMode
-          ? 'mastering' as const
-          : 'completed' as const;
-      await db.update(dialSessions).set({
-        status: newStatus,
-        updatedAt: new Date(),
-      }).where(eq(dialSessions.id, task.sessionId));
-    } else if (pollResult.status === 'failed') {
-      await db.update(dialTasks).set({
-        status: 'failed',
-      }).where(eq(dialTasks.id, taskId));
-    }
+      // Explicit RoEx failure → fail. Otherwise keep processing (backstop above is the
+      // wall-clock catch; a comm-timeout abort is transient → handled in the catch).
+      if (pollResult.status === 'failed') {
+        const r = await markDialTaskFailedWithReconcile(taskId, 'RoEx reported final-mix failure');
+        return apiSuccess({ status: r.failed ? 'failed' : 'processing' });
+      }
 
-    return apiSuccess({
-      status: isCompleted ? 'completed' : (pollResult.status === 'failed' ? 'failed' : 'processing'),
-      finalUrl: pollResult.finalUrl,
-      stemsUrls: isCompleted ? pollResult.stemsUrl : undefined,
-      fxSettings: isCompleted ? pollResult.fxSettings : undefined,
-    });
+      return apiSuccess({ status: 'processing' });
+    } catch (pollErr) {
+      // Transient (comm-timeout abort / HTTP error). Keep processing; backstop + cron catch it.
+      console.warn(`[final/GET] transient poll error: ${pollErr instanceof Error ? pollErr.message : 'unknown'}`);
+      return apiSuccess({ status: 'processing' });
+    }
   } catch (error) {
     return apiServerError(error instanceof Error ? error.message : 'Poll failed');
   }

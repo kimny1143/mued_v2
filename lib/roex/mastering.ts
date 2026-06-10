@@ -1,4 +1,4 @@
-import { getRoExWebhookUrl, type RoExClient } from './client';
+import { getRoExWebhookUrl, ROEX_POLL_TIMEOUT_MS, type RoExClient } from './client';
 import type { MasteringPreviewRequest, MasteringResult } from './types';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -22,7 +22,20 @@ function parseMasteringResponse(raw: unknown): MasteringResult {
     (data.download_url_mastered_preview as string) ?? undefined;
   const finalUrl = (data.download_url_mastered as string) ?? undefined;
 
-  return { taskId, status, previewUrl, finalUrl };
+  // Best-effort failure detection (see parseMixResponse). `error:false` must NOT trip.
+  const rawError = data.error ?? top.error;
+  const hasErrorFlag =
+    rawError === true ||
+    (typeof rawError === 'string' && rawError.trim().length > 0) ||
+    (typeof rawError === 'object' && rawError !== null);
+  const isFailed = hasErrorFlag || /fail|error|cancel|abort|reject|time.?out/i.test(status);
+  const error = isFailed
+    ? (typeof rawError === 'string' && rawError.trim()
+        ? rawError
+        : (data.message as string) ?? (top.message as string) ?? `RoEx mastering task failed${status ? ` (${status})` : ''}`)
+    : undefined;
+
+  return { taskId, status: isFailed ? 'failed' : status, previewUrl, finalUrl, error };
 }
 
 // ─── API Methods ────────────────────────────────────────────────────────────
@@ -56,11 +69,12 @@ export async function pollMasterPreview(
   client: RoExClient,
   taskId: string,
 ): Promise<MasteringResult> {
+  // POLL call → opt into the comm-timeout (free retrieve).
   const raw = await client.post('/retrievepreviewmaster', {
     masteringData: {
       masteringTaskId: taskId,
     },
-  });
+  }, { timeoutMs: ROEX_POLL_TIMEOUT_MS });
   return parseMasteringResponse(raw);
 }
 
@@ -71,12 +85,19 @@ export async function pollMasterPreview(
 export async function masterFinal(
   client: RoExClient,
   taskId: string,
+  opts?: { poll?: boolean },
 ): Promise<MasteringResult> {
   const body = {
     masteringData: {
       masteringTaskId: taskId,
     },
   };
-  const raw = await client.post('/retrievefinalmaster', body);
+  // SUBMIT (mastering/final POST, 220cr charge) → NO comm-timeout (a false abort would risk
+  // a re-POST re-charge). POLL/retrieve (GET / session / webhook, opts.poll=true) → timeout.
+  const raw = await client.post(
+    '/retrievefinalmaster',
+    body,
+    opts?.poll ? { timeoutMs: ROEX_POLL_TIMEOUT_MS } : undefined,
+  );
   return parseMasteringResponse(raw);
 }

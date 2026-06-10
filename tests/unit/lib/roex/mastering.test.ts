@@ -9,6 +9,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@/lib/roex/client', () => ({
   getRoExWebhookUrl: vi.fn().mockReturnValue('https://test.webhook.url/roex'),
   RoExClient: vi.fn(),
+  ROEX_POLL_TIMEOUT_MS: 45_000,
 }));
 
 import {
@@ -184,6 +185,55 @@ describe('parseMasteringResponse edge cases', () => {
   });
 });
 
+describe('parseMasteringResponse failure detection', () => {
+  it('marks failed and populates error when error === true', async () => {
+    const client = createMockClient({
+      previewMasterTaskResults: { mastering_task_id: 'm-x', status: 'processing', error: true, message: 'master failed' },
+    });
+    const result = await pollMasterPreview(client, 'm-x');
+    expect(result.status).toBe('failed');
+    expect(result.error).toBe('master failed');
+  });
+
+  it('does NOT mark failed when error === false', async () => {
+    const client = createMockClient({
+      previewMasterTaskResults: { mastering_task_id: 'm-x', status: 'completed', error: false, download_url_mastered_preview: 'https://cdn.roex.com/m.mp3' },
+    });
+    const result = await pollMasterPreview(client, 'm-x');
+    expect(result.status).toBe('completed');
+    expect(result.error).toBeUndefined();
+    expect(result.previewUrl).toBe('https://cdn.roex.com/m.mp3');
+  });
+
+  it('marks failed when the status string looks like a failure', async () => {
+    for (const status of ['FAILED', 'ERROR', 'mastering_error']) {
+      const client = createMockClient({ previewMasterTaskResults: { status } });
+      const result = await pollMasterPreview(client, 'm-x');
+      expect(result.status).toBe('failed');
+      expect(result.error).toBeDefined();
+    }
+  });
+
+  it('does not treat a plain string URL response as a failure', async () => {
+    const client = createMockClient('https://cdn.roex.com/direct.wav');
+    const result = await masterFinal(client, 'm-x');
+    expect(result.status).toBe('completed');
+    expect(result.error).toBeUndefined();
+  });
+
+  it('detects broadened failure shapes (string / object error, cancel|timeout status)', async () => {
+    let r = await pollMasterPreview(createMockClient({ previewMasterTaskResults: { error: 'mastering decode failed' } }), 'm-x');
+    expect(r.status).toBe('failed');
+    expect(r.error).toBe('mastering decode failed');
+    r = await pollMasterPreview(createMockClient({ previewMasterTaskResults: { error: { code: 'E' } } }), 'm-x');
+    expect(r.status).toBe('failed');
+    for (const status of ['cancelled', 'timeout', 'ABORTED']) {
+      r = await pollMasterPreview(createMockClient({ previewMasterTaskResults: { status } }), 'm-x');
+      expect(r.status).toBe('failed');
+    }
+  });
+});
+
 describe('RoExClient usage', () => {
   it('calls correct endpoint for preview', async () => {
     const client = createMockClient({ status: 'processing' });
@@ -199,12 +249,12 @@ describe('RoExClient usage', () => {
   it('calls correct endpoint for poll', async () => {
     const client = createMockClient({ status: 'processing' });
     await pollMasterPreview(client, 'task-123');
-    expect(client.post).toHaveBeenCalledWith('/retrievepreviewmaster', expect.any(Object));
+    expect(vi.mocked(client.post).mock.calls[0][0]).toBe('/retrievepreviewmaster');
   });
 
   it('calls correct endpoint for final', async () => {
     const client = createMockClient({ status: 'processing' });
     await masterFinal(client, 'task-123');
-    expect(client.post).toHaveBeenCalledWith('/retrievefinalmaster', expect.any(Object));
+    expect(vi.mocked(client.post).mock.calls[0][0]).toBe('/retrievefinalmaster');
   });
 });

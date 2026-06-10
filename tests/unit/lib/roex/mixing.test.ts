@@ -11,6 +11,7 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@/lib/roex/client', () => ({
   getRoExWebhookUrl: vi.fn().mockReturnValue('https://test.webhook.url/roex'),
   RoExClient: vi.fn(),
+  ROEX_POLL_TIMEOUT_MS: 45_000,
 }));
 
 import {
@@ -339,5 +340,72 @@ describe('parseMixResponse edge cases', () => {
     expect(result.status).toBe('');
     expect(result.previewUrl).toBeUndefined();
     expect(result.finalUrl).toBeUndefined();
+  });
+});
+
+describe('parseMixResponse failure detection', () => {
+  it('marks failed and populates error when results.error === true', async () => {
+    const client = createMockClient({
+      previewMixTaskResults: {
+        multitrack_task_id: 'task-x',
+        status: 'processing',
+        error: true,
+        message: 'stem fetch failed',
+      },
+    });
+
+    const result = await pollMixPreview(client, 'task-x');
+    expect(result.status).toBe('failed');
+    expect(result.error).toBe('stem fetch failed');
+  });
+
+  it('does NOT mark failed when error === false (normal completion)', async () => {
+    const client = createMockClient({
+      previewMixTaskResults: {
+        multitrack_task_id: 'task-x',
+        status: 'completed',
+        error: false,
+        download_url_preview_mixed: 'https://cdn.roex.com/p.mp3',
+      },
+    });
+
+    const result = await pollMixPreview(client, 'task-x');
+    expect(result.status).toBe('completed');
+    expect(result.error).toBeUndefined();
+    expect(result.previewUrl).toBe('https://cdn.roex.com/p.mp3');
+  });
+
+  it('marks failed when the status string looks like a failure (FAILED / ERROR)', async () => {
+    for (const status of ['FAILED', 'ERROR_PROCESSING', 'task_failed']) {
+      const client = createMockClient({ previewMixTaskResults: { status } });
+      const result = await pollMixPreview(client, 'task-x');
+      expect(result.status).toBe('failed');
+      expect(result.error).toBeDefined();
+    }
+  });
+
+  it('leaves a normal processing status untouched', async () => {
+    const client = createMockClient({ previewMixTaskResults: { status: 'processing' } });
+    const result = await pollMixPreview(client, 'task-x');
+    expect(result.status).toBe('processing');
+    expect(result.error).toBeUndefined();
+  });
+
+  it('detects broadened failure shapes (string / object error, cancel|abort|reject|timeout status)', async () => {
+    // non-empty string error → failed, string surfaced as the message
+    let r = await pollMixPreview(createMockClient({ previewMixTaskResults: { error: 'stem decode failed' } }), 'x');
+    expect(r.status).toBe('failed');
+    expect(r.error).toBe('stem decode failed');
+    // object error → failed
+    r = await pollMixPreview(createMockClient({ previewMixTaskResults: { error: { code: 'E1' } } }), 'x');
+    expect(r.status).toBe('failed');
+    // cancelled / aborted / rejected / timeout status → failed
+    for (const status of ['cancelled', 'aborted', 'REJECTED', 'timeout']) {
+      r = await pollMixPreview(createMockClient({ previewMixTaskResults: { status } }), 'x');
+      expect(r.status).toBe('failed');
+    }
+    // empty-string error must NOT trip
+    r = await pollMixPreview(createMockClient({ previewMixTaskResults: { status: 'processing', error: '' } }), 'x');
+    expect(r.status).toBe('processing');
   });
 });
