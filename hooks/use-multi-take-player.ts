@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useCallback, useEffect } from 'react';
+import { trackDialPlaybackIssue } from '@/lib/analytics/gtag';
 
 export interface TakeDef {
   id: string;
@@ -21,21 +22,25 @@ export interface DecodeProgress {
   total: number;
 }
 
-/** Per-take decode status for pill UI (spinner/disabled until ready). */
+/** Per-take decode status for pill UI. Absent from the map = not yet decoded (lazy), clickable. */
 export type TakeDecodeStatus = 'decoding' | 'ready' | 'error';
 
 export interface UseMultiTakePlayerReturn {
   isReady: boolean;
   isPlaying: boolean;
-  /** True while active take is being decoded (gates isReady). */
+  /** True while the ACTIVE take is being decoded (gates isReady). */
   isDecoding: boolean;
   decodeProgress: DecodeProgress;
   /** Per-take decode status keyed by take ID — use for pill spinner/disabled state. */
   takeDecodeStatus: Record<string, TakeDecodeStatus>;
+  /** Decode status of the currently active take — drives transport spinner vs error/retry UI. */
+  activeTakeStatus: TakeDecodeStatus;
   currentTime: number;
   duration: number;
   activeTakeId: string;
   setActiveTake(id: string): void;
+  /** Re-decode the active take after a failure (transport "retry" affordance). */
+  retryActiveTake(): void;
   play(): void;
   pause(): void;
   seek(time: number): void;
@@ -82,34 +87,75 @@ interface TakeNodes {
 // ─── Module-level helpers ─────────────────────────────────────────────────────
 
 /**
- * Per-stem fetch timeout. A hung fetch (unresponsive / expired / broken stem URL — e.g. an
- * old session whose signed URLs have lapsed) would otherwise never settle, so the decode
- * counter stalls and the "Decoding audio…" spinner spins forever. This is the client-side
- * analogue of the server-side RoEx poll comm-timeout (#434): aborting a hang turns it into a
- * normal decode failure, which the per-take error-pill path already handles (counter advances,
- * spinner clears, pill becomes a retry). Generous (45s) so a genuinely slow-but-valid stem
- * load on mobile isn't false-aborted — a false abort here costs no money, just an error pill.
+ * Per-stem fetch+decode timeout. A hung fetch (unresponsive / expired / broken stem URL — e.g. an
+ * old session whose signed URLs have lapsed) or a stuck decodeAudioData() would otherwise never
+ * settle, so the decode counter stalls and the spinner spins forever. Aborting a hang turns it into
+ * a normal decode failure, which the per-take error-pill path handles (counter advances, spinner
+ * clears, pill/transport becomes a retry). Generous (45s) so a slow-but-valid stem on mobile isn't
+ * false-aborted — a false abort here costs no money, just an error pill.
  */
 const FETCH_DECODE_TIMEOUT_MS = 45_000;
 
-/** Thrown when the per-stem fetch is aborted by the timeout (distinct from a transient error). */
+/**
+ * Max simultaneous fetch+decode operations. The RAW take's stems are full uncompressed WAVs
+ * (~80MB each); decoding many in parallel starves bandwidth past the timeout and balloons PCM
+ * memory. Capping concurrency keeps the active take responsive and bounds memory growth.
+ * (Yuu incident 2026-06-11 — see project-dial-v2-player-decode-hang.)
+ */
+const DECODE_CONCURRENCY = 3;
+
+/** Emit a player_stall telemetry event if the active take isn't ready within this window. */
+const PLAYER_STALL_MS = 20_000;
+
+/** Thrown when the per-stem fetch/decode is aborted by the timeout (distinct from a transient error). */
 class DecodeTimeoutError extends Error {
-  constructor() { super('stem fetch timed out'); this.name = 'DecodeTimeoutError'; }
+  constructor() { super('stem fetch/decode timed out'); this.name = 'DecodeTimeoutError'; }
+}
+
+/** A small async semaphore — bounds concurrent fetch+decode to DECODE_CONCURRENCY. */
+function createSemaphore(max: number) {
+  let active = 0;
+  const waiters: Array<() => void> = [];
+  const acquire = (): Promise<void> =>
+    new Promise<void>((resolve) => {
+      const attempt = () => {
+        if (active < max) { active++; resolve(); }
+        else waiters.push(attempt);
+      };
+      attempt();
+    });
+  const release = () => {
+    active = Math.max(0, active - 1);
+    waiters.shift()?.();
+  };
+  return { acquire, release };
 }
 
 async function fetchAndDecode(url: string, ctx: AudioContext): Promise<AudioBuffer> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_DECODE_TIMEOUT_MS);
+  // Outer guard also covers a hung decodeAudioData() (which is not abortable) via Promise.race.
+  let timedOut = false;
+  let guardTimer: ReturnType<typeof setTimeout> | undefined;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, FETCH_DECODE_TIMEOUT_MS);
   try {
-    const response = await fetch(url, { signal: controller.signal });
-    if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
-    const arrayBuffer = await response.arrayBuffer();
-    return await ctx.decodeAudioData(arrayBuffer);
+    const work = (async () => {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      const arrayBuffer = await response.arrayBuffer();
+      return await ctx.decodeAudioData(arrayBuffer);
+    })();
+    const guard = new Promise<never>((_, reject) => {
+      // Fires if decodeAudioData() hangs after a completed fetch (abort can't interrupt it).
+      guardTimer = setTimeout(() => reject(new DecodeTimeoutError()), FETCH_DECODE_TIMEOUT_MS);
+    });
+    return await Promise.race([work, guard]);
   } catch (e) {
-    if (e instanceof DOMException && e.name === 'AbortError') throw new DecodeTimeoutError();
+    if (timedOut || (e instanceof DOMException && e.name === 'AbortError')) throw new DecodeTimeoutError();
     throw e;
   } finally {
+    // Clear BOTH timers on settle so a successful decode leaves no dangling 45s timer.
     clearTimeout(timer);
+    if (guardTimer) clearTimeout(guardTimer);
   }
 }
 
@@ -152,6 +198,16 @@ function stopAllSources(takeNodes: Record<string, TakeNodes>): void {
   }
 }
 
+/** Initial active take: prefer the newest processed take (MIXED→MASTERED) so first paint decodes a
+ *  light preview rather than the heavy RAW WAVs; fall back to the first take (RAW) when none exist. */
+function pickInitialActiveId(takes: TakeDef[]): string {
+  return (
+    takes.find((t) => t.label === 'MIXED') ??
+    takes.find((t) => t.label === 'MASTERED') ??
+    takes[0]
+  )?.id ?? '';
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
@@ -169,27 +225,31 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   const pausedAtRef = useRef(0);
   /** AudioContext time at which position 0 would be. currentTime = ctx.now - startedAt */
   const startedAtRef = useRef(0);
-  const activeTakeIdRef = useRef(takes[0]?.id ?? '');
+  const initialActiveId = pickInitialActiveId(takes);
+  const activeTakeIdRef = useRef(initialActiveId);
   const isPlayingRef = useRef(false);
   /** Take ID queued for activation once its decode completes. */
   const pendingActivateRef = useRef<string | null>(null);
-  /** Ref to retry-decode function — set inside the mount effect to close over takeNodes/counts. */
+  /** Ensure a take's stems are decoded (lazy, idempotent). Set inside the mount effect. */
+  const ensureTakeDecodeRef = useRef<((id: string) => void) | null>(null);
+  /** Re-decode an errored take from scratch. Set inside the mount effect. */
   const retryTakeRef = useRef<((id: string) => void) | null>(null);
   /** Stable ref for takeDecodeStatus — accessible in setActiveTake without closure stale. */
   const takeDecodeStatusRef = useRef<Record<string, TakeDecodeStatus>>(
-    Object.fromEntries(takes.map((t) => [t.id, 'decoding' as TakeDecodeStatus])),
+    initialActiveId ? { [initialActiveId]: 'decoding' } : {},
   );
 
-  const [isReady, setIsReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isDecoding, setIsDecoding] = useState(false);
+  // Only "decoding" if there's an initial active take to decode — empty takes must not strand
+  // the UI on a perpetual spinner.
+  const [isDecoding, setIsDecoding] = useState(initialActiveId !== '');
   const [decodeProgress, setDecodeProgress] = useState<DecodeProgress>({ done: 0, total: 0 });
   const [takeDecodeStatus, setTakeDecodeStatus] = useState<Record<string, TakeDecodeStatus>>(
     takeDecodeStatusRef.current,
   );
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [activeTakeId, _setActiveTakeId] = useState(takes[0]?.id ?? '');
+  const [activeTakeId, _setActiveTakeId] = useState(initialActiveId);
   const [stemStates, setStemStates] = useState<Record<string, Record<string, StemState>>>(() =>
     Object.fromEntries(
       takes.map((t) => [
@@ -198,6 +258,11 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       ]),
     ),
   );
+
+  // isReady is DERIVED from the active take's decode status — never a single fixed gating take.
+  // A failed/slow non-active take can never freeze the transport (Yuu incident root cause).
+  const activeTakeStatus: TakeDecodeStatus = takeDecodeStatus[activeTakeId] ?? 'decoding';
+  const isReady = activeTakeStatus === 'ready';
 
   // Build Web Audio graph on mount. Signal chain per stem:
   //   AudioBufferSourceNode → gainNode → panNode → takeMixGain
@@ -273,23 +338,20 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
 
     takeNodesRef.current = newTakeNodes;
 
-    const totalCount = takes.reduce((sum, t) => sum + Object.keys(t.stemUrls).length, 0);
-    setDecodeProgress({ done: 0, total: totalCount });
-    setIsDecoding(true);
-
-    // Per-take decode counting
-    const takeDecodeCounts = new Map<string, { done: number; success: number; total: number }>();
-    for (const take of takes) {
-      takeDecodeCounts.set(take.id, {
-        done: 0,
-        success: 0,
-        total: Object.keys(take.stemUrls).length,
-      });
-    }
-
-    let activeReadySet = false;
-    let decodedCount = 0;
     let cancelled = false;
+    const sem = createSemaphore(DECODE_CONCURRENCY);
+    /** Takes whose decode has been kicked off (lazy — only the active take + user-selected takes). */
+    const startedTakes = new Set<string>();
+    /** Per-take decode counting. */
+    const takeDecodeCounts = new Map<string, { done: number; success: number; total: number }>();
+    /** Active-take stall timers, cleared when the take settles. */
+    const stallTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+    const setStatus = (takeId: string, status: TakeDecodeStatus) => {
+      const upd = { ...takeDecodeStatusRef.current, [takeId]: status };
+      takeDecodeStatusRef.current = upd;
+      setTakeDecodeStatus({ ...upd });
+    };
 
     // BS.1770-4 LUFS worklet — tap masterGain, silent output keeps graph active
     ctx.audioWorklet.addModule('/worklets/ebur128-processor.js').then(() => {
@@ -311,32 +373,34 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
 
     const onStemDecoded = (takeId: string, success: boolean) => {
       if (cancelled) return;
-      decodedCount++;
-      setDecodeProgress({ done: decodedCount, total: totalCount });
-
-      const counts = takeDecodeCounts.get(takeId)!;
+      const counts = takeDecodeCounts.get(takeId);
+      if (!counts) return;
       counts.done++;
       if (success) counts.success++;
 
-      // When all stems for a take are done, update per-take status
+      // Drive the "Decoding audio…" progress bar for the active take only.
+      if (takeId === activeTakeIdRef.current) {
+        setDecodeProgress({ done: counts.done, total: counts.total });
+      }
+
+      // When all stems for a take are done, finalize per-take status
       if (counts.done === counts.total) {
         const status: TakeDecodeStatus = counts.success > 0 ? 'ready' : 'error';
-        const upd = { ...takeDecodeStatusRef.current, [takeId]: status };
-        takeDecodeStatusRef.current = upd;
-        setTakeDecodeStatus({ ...upd });
+        setStatus(takeId, status);
 
-        // Gate isReady on active take (both ready and error unblock the spinner)
-        if (takeId === defaultId && !activeReadySet) {
-          activeReadySet = true;
-          if (status === 'ready') {
+        const timer = stallTimers.get(takeId);
+        if (timer) { clearTimeout(timer); stallTimers.delete(takeId); }
+
+        if (status === 'ready') {
+          // Update duration if this is the active take.
+          if (takeId === activeTakeIdRef.current) {
             const durations = Object.values(newTakeNodes[takeId].stems)
               .map((s) => s.buffer?.duration ?? 0)
               .filter((d) => isFinite(d) && d > 0);
             if (durations.length > 0) setDuration(Math.max(...durations));
-            setIsReady(true);
           }
-          setIsDecoding(false);
         }
+        if (takeId === activeTakeIdRef.current) setIsDecoding(false);
       }
     };
 
@@ -347,38 +411,80 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
         onStemDecoded(takeId, false);
         return;
       }
+      await sem.acquire();
       let buffer: AudioBuffer | null = null;
+      let timedOut = false;
       try {
-        buffer = await fetchAndDecode(url, ctx);
-      } catch (e1) {
-        const timedOut = e1 instanceof DecodeTimeoutError;
-        console.error(`[dial:decode] attempt 1 failed${timedOut ? ' (timeout)' : ''}: "${stemName}" take=${takeId.slice(-8)}`, e1);
-        // Retry a transient error once — but NOT a timeout: a hung URL would just time out
-        // again and double the spinner delay, so a timeout is treated as terminal.
-        if (!timedOut) {
-          try {
-            if (!cancelled) buffer = await fetchAndDecode(url, ctx);
-          } catch (e2) {
-            console.error(`[dial:decode] retry failed: "${stemName}" take=${takeId.slice(-8)}`, e2);
+        if (cancelled) return;
+        try {
+          buffer = await fetchAndDecode(url, ctx);
+        } catch (e1) {
+          timedOut = e1 instanceof DecodeTimeoutError;
+          console.error(`[dial:decode] attempt 1 failed${timedOut ? ' (timeout)' : ''}: "${stemName}" take=${takeId.slice(-8)}`, e1);
+          // Retry a transient error once — but NOT a timeout (a hung URL would just time out again).
+          if (!timedOut) {
+            try {
+              if (!cancelled) buffer = await fetchAndDecode(url, ctx);
+            } catch (e2) {
+              timedOut = e2 instanceof DecodeTimeoutError;
+              console.error(`[dial:decode] retry failed: "${stemName}" take=${takeId.slice(-8)}`, e2);
+            }
           }
         }
+      } finally {
+        sem.release();
       }
       if (cancelled) return;
-      if (buffer) newTakeNodes[takeId].stems[stemName].buffer = buffer;
+      if (buffer) {
+        newTakeNodes[takeId].stems[stemName].buffer = buffer;
+      } else {
+        trackDialPlaybackIssue({
+          issue: timedOut ? 'decode_timeout' : 'decode_error',
+          takeLabel: takes.find((t) => t.id === takeId)?.label,
+          stemKey: stemName,
+          takeCount: takes.length,
+        });
+      }
       onStemDecoded(takeId, buffer !== null);
     };
 
-    // Allow error-state takes to be re-decoded on demand (e.g. user clicks error pill)
+    /** Lazily decode a take's stems exactly once. The heart of the stop-bleed fix — only the active
+     *  take (and any the user later selects) is fetched, so the heavy RAW WAVs never load up front. */
+    const ensureTakeDecode = (takeId: string) => {
+      if (cancelled || startedTakes.has(takeId)) return;
+      const take = takes.find((t) => t.id === takeId);
+      if (!take) return;
+      startedTakes.add(takeId);
+      takeDecodeCounts.set(takeId, { done: 0, success: 0, total: Object.keys(take.stemUrls).length });
+      setStatus(takeId, 'decoding');
+      if (takeId === activeTakeIdRef.current) {
+        setIsDecoding(true);
+        setDecodeProgress({ done: 0, total: Object.keys(take.stemUrls).length });
+        // Stall telemetry: surface a player that never reaches ready (detection layer).
+        const stall = setTimeout(() => {
+          if (cancelled) return;
+          if (takeDecodeStatusRef.current[takeId] === 'decoding') {
+            trackDialPlaybackIssue({
+              issue: 'player_stall',
+              takeLabel: take.label,
+              takeCount: takes.length,
+              elapsedMs: PLAYER_STALL_MS,
+            });
+          }
+        }, PLAYER_STALL_MS);
+        stallTimers.set(takeId, stall);
+      }
+      for (const [name, url] of Object.entries(take.stemUrls)) {
+        decodeStem(takeId, name, url).catch(() => {});
+      }
+    };
+    ensureTakeDecodeRef.current = ensureTakeDecode;
+
+    // Re-decode an errored take from scratch (e.g. user clicks an error pill / retry).
     retryTakeRef.current = (takeId: string) => {
       if (cancelled) return;
       const take = takes.find((t) => t.id === takeId);
       if (!take) return;
-      // Reset per-take counts so onStemDecoded re-gates the status correctly
-      takeDecodeCounts.set(takeId, {
-        done: 0,
-        success: 0,
-        total: Object.keys(take.stemUrls).length,
-      });
       // Clear stale buffers and stop any playing sources for this take
       const tn = newTakeNodes[takeId];
       if (tn) {
@@ -391,25 +497,19 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
           }
         }
       }
-      for (const [name, url] of Object.entries(take.stemUrls)) {
-        decodeStem(takeId, name, url).catch(() => {});
-      }
+      startedTakes.delete(takeId);
+      takeDecodeCounts.delete(takeId);
+      ensureTakeDecode(takeId);
     };
 
-    // Decode ALL takes' stems in parallel — eliminates early-take-switch window.
-    // Active take is included and races with others; it typically finishes first
-    // since it has the same priority as the rest but the UI waits for it.
-    const allPromises: Promise<void>[] = [];
-    for (const take of takes) {
-      for (const [name, url] of Object.entries(take.stemUrls)) {
-        allPromises.push(decodeStem(take.id, name, url));
-      }
-    }
-    Promise.all(allPromises).catch(() => {});
+    // Kick off ONLY the initial active take — everything else decodes on demand.
+    if (defaultId) ensureTakeDecode(defaultId);
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(rafRef.current);
+      for (const t of stallTimers.values()) clearTimeout(t);
+      stallTimers.clear();
       stopAllSources(newTakeNodes);
       for (const tn of Object.values(newTakeNodes)) {
         tn.takeMixGain.disconnect();
@@ -530,18 +630,22 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   const setActiveTake = useCallback((id: string) => {
     const status = takeDecodeStatusRef.current[id];
 
-    // Still decoding — queue for auto-activation when ready
+    // Not yet decoded (lazy) — kick off its decode and queue activation when ready.
+    if (status === undefined) {
+      pendingActivateRef.current = id;
+      ensureTakeDecodeRef.current?.(id);
+      return;
+    }
+
+    // Still decoding — queue for auto-activation when ready.
     if (status === 'decoding') {
       pendingActivateRef.current = id;
       return;
     }
 
-    // Decode failed — reset to decoding, trigger retry, queue for auto-activation
+    // Decode failed — re-decode from scratch, queue for auto-activation.
     if (status === 'error') {
       pendingActivateRef.current = id;
-      const upd = { ...takeDecodeStatusRef.current, [id]: 'decoding' as TakeDecodeStatus };
-      takeDecodeStatusRef.current = upd;
-      setTakeDecodeStatus({ ...upd });
       retryTakeRef.current?.(id);
       return;
     }
@@ -579,10 +683,19 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
 
     activeTakeIdRef.current = id;
     _setActiveTakeId(id);
+    setIsDecoding(false);
     lufsWorkletRef.current?.port.postMessage({ reset: true });
     setMomentaryLufs(-70);
     setShortTermLufs(-70);
     setIntegratedLufs(-70);
+  }, []);
+
+  // Re-decode the active take after a failure (transport "retry").
+  const retryActiveTake = useCallback(() => {
+    const id = activeTakeIdRef.current;
+    if (takeDecodeStatusRef.current[id] === 'error') {
+      retryTakeRef.current?.(id);
+    }
   }, []);
 
   // Auto-activate pending take once its decode completes
@@ -658,9 +771,9 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   );
 
   return {
-    isReady, isPlaying, isDecoding, decodeProgress, takeDecodeStatus,
+    isReady, isPlaying, isDecoding, decodeProgress, takeDecodeStatus, activeTakeStatus,
     currentTime, duration, activeTakeId,
-    setActiveTake, play, pause, seek,
+    setActiveTake, retryActiveTake, play, pause, seek,
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
     analyserNode, analyserL, analyserR, sampleRate,
     getStemAnalysers,
