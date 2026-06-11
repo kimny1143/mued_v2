@@ -167,13 +167,28 @@ export const GET = withDialAuth(async (auth) => {
     taskForRefresh = task;
 
     if (stemKey) {
-      // Proxy an individual stem — bypasses GCS CORS restriction (same issue as main audio, PR#156)
+      // Proxy an individual stem — bypasses GCS CORS restriction (same issue as main audio, PR#156).
+      // Resolve with extension/normalize fallback (preview tasks store MP3 keys, e.g. `_normalized.mp3`,
+      // while the client may request a `.wav` key) — mirrors the sessionId+stemKey branch's resolver.
       const stems = task.stemsUrls as Record<string, string> | null;
-      const url = stems?.[stemKey];
+      const normalizeBase = (k: string) =>
+        k.replace(/\.[^.]+$/, '').replace(/_normalized$/i, '').toLowerCase();
+      let url = stems?.[stemKey];
+      if (!url && stems) {
+        const mp3Key = stemKey.replace(/\.wav$/i, '.mp3');
+        url = mp3Key !== stemKey ? stems[mp3Key] : undefined;
+        if (!url) {
+          const base = normalizeBase(stemKey);
+          const matched = Object.keys(stems).find((k) => normalizeBase(k) === base);
+          url = matched ? stems[matched] : undefined;
+        }
+      }
       if (!url) return apiNotFound(`Stem "${stemKey}" not found for this task`);
       sourceUrl = url;
-      filename = `MUEDial_stem_${stemKey}_${taskId.slice(0, 8)}.wav`;
-      contentType = 'audio/wav';
+      // preview-task stems are MP3; final/mix_check stems are WAV (was hardcoded 'wav' — wrong for previews)
+      const isPreviewStem = task.taskType === 'preview';
+      filename = `MUEDial_stem_${stemKey}_${taskId.slice(0, 8)}.${isPreviewStem ? 'mp3' : 'wav'}`;
+      contentType = isPreviewStem ? 'audio/mpeg' : 'audio/wav';
     } else {
       stemKeyForRefresh = null;
       // Priority: r2FinalUrl > finalUrl > previewUrl
