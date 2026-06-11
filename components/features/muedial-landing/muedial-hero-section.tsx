@@ -10,7 +10,11 @@ import { trackCtaClick } from "@/lib/analytics/gtag";
  * Matches the visual weight of MUEDear/MUEDnote hero sections.
  * Chat mock + CTA to dial.mued.jp
  */
-export function MuedialHeroSection() {
+export function MuedialHeroSection({
+  freeCampaignActive = false,
+}: {
+  freeCampaignActive?: boolean;
+}) {
   const t = useTranslations("landing.brand.cta.muedial");
   const tLp = useTranslations("dial.lp");
 
@@ -70,6 +74,29 @@ export function MuedialHeroSection() {
             </div>
           </div>
         </div>
+
+        {/* free15 first-run campaign promo — gated server-side (campaign live + spots remain) */}
+        {freeCampaignActive && (
+          <div
+            className="mb-10 p-5 rounded-[var(--radius-lg)] border-2 border-amber-400/40 bg-amber-500/10 max-w-xl"
+            data-testid="muedjp-free15-promo"
+          >
+            <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded bg-amber-400 text-black mb-3">
+              {t("free15Badge")}
+            </span>
+            <p className="text-white font-semibold mb-1">{t("free15Headline")}</p>
+            <p className="text-white/70 text-sm mb-4">{t("free15Sub")}</p>
+            <a
+              href="https://dial.mued.jp/dial?utm_source=mued&utm_medium=web&utm_campaign=free15&utm_content=muedjp_muedial"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackCtaClick("muedial", "free15")}
+              className="inline-flex items-center px-5 py-2.5 bg-amber-400 text-black font-semibold rounded-[var(--radius-lg)] hover:bg-amber-300 transition-colors"
+            >
+              {t("free15Cta")}
+            </a>
+          </div>
+        )}
 
         {/* CTA */}
         <div className="flex flex-col sm:flex-row items-start gap-6">
