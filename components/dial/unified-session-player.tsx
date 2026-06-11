@@ -7,25 +7,10 @@ import { useMultiTakeAnalyzerData } from '@/hooks/use-multi-take-analyzer-data';
 import { useStemPeaks } from '@/hooks/use-stem-peaks';
 import { AudioAnalyzer } from '@/components/dial/audio-analyzer';
 
-export type TakeStage = 'RAW' | 'MIXED' | 'MASTERED';
-
-export interface TakeEntry {
-  id: string;
-  label: TakeStage;
-  /** Display name shown in TAKE History drawer (e.g. "Preview 2", "Mix Check 1", "Final Mix") */
-  sublabel?: string;
-  url: string;
-  stemsUrls?: Record<string, string> | null;
-  createdAt: string;
-  /** false = task still processing; pill shown disabled with spinner, take not loaded */
-  enabled: boolean;
-}
-
-export interface StemParamChange {
-  track: string;
-  changes: { gainDb?: number; panAngleDegrees?: number; reverbSend?: number };
-  reason?: string;
-}
+// Take types moved to lib/dial/take-types (fixes the lib→component reverse-import nit). Re-exported
+// here for backward compatibility with existing component-side imports.
+import type { TakeStage, TakeEntry, StemParamChange } from '@/lib/dial/take-types';
+export type { TakeStage, TakeEntry, StemParamChange };
 
 interface Props {
   takes: TakeEntry[];

@@ -1,4 +1,4 @@
-import type { TakeEntry } from '@/components/dial/unified-session-player';
+import type { TakeEntry } from '@/lib/dial/take-types';
 
 /**
  * Pure builder for the v2 player's ordered take list (RAW → MIXED newest-first → MASTERED).
