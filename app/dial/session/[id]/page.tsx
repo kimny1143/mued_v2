@@ -12,17 +12,7 @@ import { UnifiedSessionPlayerV2 as UnifiedSessionPlayer } from '@/components/dia
 import type { TakeEntry } from '@/components/dial/unified-session-player';
 import { type DeliveryTarget, DELIVERY_TARGETS, DELIVERY_TARGET_LABELS, DELIVERY_TARGET_LUFS, getLufsGapJudgment } from '@/lib/dial/lufs-presets';
 import { isDialSessionTrackEditable } from '@/lib/dial/session-edit-lock';
-
-/** Stream audio through our own API to avoid GCS presigned URL length/CORS issues */
-function taskStreamUrl(taskId: string): string {
-  return `/api/dial/download?taskId=${taskId}&inline=1`;
-}
-
-/** Proxy individual stem via session-based lookup — server picks preview MP3 over final WAV */
-function stemStreamUrl(sessionId: string, stemKey: string, token?: string | null): string {
-  const base = `/api/dial/download?sessionId=${sessionId}&stemKey=${encodeURIComponent(stemKey)}&inline=1`;
-  return token ? `${base}&token=${encodeURIComponent(token)}` : base;
-}
+import { buildSessionTakes, taskStreamUrl } from '@/lib/dial/session-takes';
 
 /** Convert InstrumentGroup enum to short DAW-style label: BASS_GROUP → BASS */
 function toShortLabel(group: string): string {
@@ -255,137 +245,13 @@ function DialSessionContent() {
     return raw.map((p) => ({ ...p, track: filenameToGcsKey.get(p.track) ?? p.track }));
   }, [session?.messages, session?.tracks]);
 
-  // Build TakeEntry[] for UnifiedSessionPlayer — used in both active sidebar and completion screen
-  const sessionTakes = useMemo((): TakeEntry[] => {
-    if (!session) return [];
-
-    const hasStemsTask = (t: { stemsUrls: Record<string, string> | null }) =>
-      !!t.stemsUrls && Object.keys(t.stemsUrls).length > 0;
-    const stemTaskForKeys = session.tasks.find((t) => hasStemsTask(t));
-    const proxiedStems = stemTaskForKeys
-      ? Object.fromEntries(
-          Object.keys(stemTaskForKeys.stemsUrls as Record<string, string>)
-            .filter((k) => !k.startsWith('reverb_send')) // exclude RoEx effect returns; real stems are UUID-named
-            .map((k) => [k, stemStreamUrl(session.id, k, guestToken)]),
-        )
-      : null;
-
-    const takes: TakeEntry[] = [];
-
-    const mixFinalTask = session.tasks.find(
-      (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.finalUrl,
-    );
-    const masteringFinalTask = session.tasks.find(
-      (t) => t.taskType === 'mastering' && t.finalUrl,
-    );
-
-    // RAW: always enabled once stems are uploaded
-    // Key = originalFilename (without extension) so StemPanel shows human-readable names.
-    // t.id (UUID) was the old key — caused UUID display in stem panel (Bug A).
-    const rawStemEntries = session.tracks
-      .filter((t) => !!t.r2Url)
-      .map((t) => [(t.originalFilename ?? t.id), t.r2Url as string] as const);
-    if (rawStemEntries.length > 0) {
-      takes.push({
-        id: `raw-${session.id}`,
-        label: 'RAW',
-        url: rawStemEntries[0][1],
-        stemsUrls: Object.fromEntries(rawStemEntries),
-        createdAt: mixFinalTask?.createdAt ?? masteringFinalTask?.createdAt ?? '',
-        enabled: true,
-      });
-    }
-
-    // MIXED: all completed takes (final > previews > mix_checks) shown individually in drawer
-    // Count each type chronologically (oldest = #1) for display labels
-    const completedPreviews = [...session.tasks]
-      .filter((t) => t.taskType === 'preview' && t.status === 'completed' && !!(t.previewUrl || t.finalUrl))
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    const completedMixChecks = [...session.tasks]
-      .filter((t) => t.taskType === 'mix_check' && t.status === 'completed' && !!(t.previewUrl || t.finalUrl))
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    const completedFinals = session.tasks.filter(
-      (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced') && t.status === 'completed' && !!t.finalUrl,
-    );
-
-    // All completed MIXED takes, newest first for display
-    const allCompletedMix = [
-      ...completedFinals.map((t) => ({ task: t, sublabel: 'Final Mix' })),
-      ...completedMixChecks.map((t, i) => ({ task: t, sublabel: `Mix Check ${i + 1}` })),
-      ...completedPreviews.map((t, i) => ({ task: t, sublabel: `Preview ${i + 1}` })),
-    ].sort((a, b) => new Date(b.task.createdAt).getTime() - new Date(a.task.createdAt).getTime());
-
-    // Give proxiedStems to ALL MIXED takes — session-based proxy resolves to best task server-side.
-    // Fixes B1: FinalMix generation used to push i=0 stems and null-out older takes' stem panels.
-    allCompletedMix.forEach(({ task, sublabel }) => {
-      takes.push({
-        id: task.id,
-        label: 'MIXED',
-        sublabel,
-        url: taskStreamUrl(task.id),
-        stemsUrls: proxiedStems,
-        createdAt: task.createdAt,
-        enabled: true,
-      });
-    });
-
-    // Processing MIXED task (disabled pill)
-    const processingMix = session.tasks.find(
-      (t) =>
-        (t.taskType === 'preview' || t.taskType === 'mix_check' ||
-         t.taskType === 'final_basic' || t.taskType === 'final_advanced') &&
-        (t.status === 'processing' || t.status === 'pending'),
-    );
-    if (processingMix && allCompletedMix.length === 0) {
-      // Show disabled MIXED pill only if no completed takes exist yet
-      takes.push({
-        id: processingMix.id,
-        label: 'MIXED',
-        sublabel: 'Processing…',
-        url: '',
-        stemsUrls: null,
-        createdAt: processingMix.createdAt,
-        enabled: false,
-      });
-    }
-
-    // MASTERED: final > preview > processing (disabled)
-    const masteringFinalOrProcessingTask =
-      masteringFinalTask ??
-      session.tasks.find(
-        (t) => t.taskType === 'mastering' && (t.status === 'processing' || t.status === 'pending'),
-      );
-    if (masteringFinalOrProcessingTask) {
-      const isMasteredEnabled = masteringFinalOrProcessingTask.status === 'completed' && !!masteringFinalOrProcessingTask.finalUrl;
-      takes.push({
-        id: masteringFinalOrProcessingTask.id,
-        label: 'MASTERED',
-        sublabel: 'Final',
-        url: taskStreamUrl(masteringFinalOrProcessingTask.id),
-        stemsUrls: null,
-        createdAt: masteringFinalOrProcessingTask.createdAt,
-        enabled: isMasteredEnabled,
-      });
-    } else {
-      // Show mastering preview so user can audition before committing to final (220cr)
-      const masteringPreviewPlayable = session.tasks.find(
-        (t) => t.taskType === 'mastering_preview' && t.status === 'completed' && !!t.previewUrl,
-      );
-      if (masteringPreviewPlayable) {
-        takes.push({
-          id: masteringPreviewPlayable.id,
-          label: 'MASTERED',
-          sublabel: 'Preview',
-          url: taskStreamUrl(masteringPreviewPlayable.id),
-          stemsUrls: null,
-          createdAt: masteringPreviewPlayable.createdAt,
-          enabled: true,
-        });
-      }
-    }
-
-    return takes;
-  }, [session, guestToken]);
+  // Build TakeEntry[] for UnifiedSessionPlayer (RAW → MIXED newest-first → MASTERED).
+  // Logic extracted to lib/dial/session-takes for unit-testability; each MIXED take gets its OWN
+  // task's stem URLs (taskId-scoped) so "Preview 2" plays Preview 2's stems, not Preview 1's.
+  const sessionTakes = useMemo(
+    (): TakeEntry[] => (session ? buildSessionTakes(session, guestToken) : []),
+    [session, guestToken],
+  );
 
   // Map normalizedBase(GCS filename) → display name for StemPanel.
   // Key matches initialStemMap key and stemDataList baseKey in unified-session-player-v2.
