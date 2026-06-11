@@ -272,17 +272,16 @@ function DialSessionContent() {
     return typeof v === 'number' ? v : null;
   }, [session?.analysisResult]);
 
-  // Stable key for UnifiedSessionPlayer — remount when:
-  // 1. Enabled take IDs change (new task completes)
-  // 2. Stem presence flips false→true (B2 fix: remount when stemsUrls first arrives so hook
-  //    rebuilds nodes with correct stem keys instead of the { main: url } fallback)
+  // Player key — the v2 player now reconciles take add/remove IN PLACE (no remount), so a newly
+  // completed take no longer tears down the AudioContext / interrupts playback. We still key on the
+  // one-time stem-presence flip (false→true) so the hook rebuilds with real stem keys the first time
+  // stems arrive (B2) instead of the { main: url } fallback — that flip happens once, before playback.
   const playerKey = useMemo(() => {
-    const ids = sessionTakes.filter((t) => t.enabled).map((t) => t.id).join(',');
     const hasStems = sessionTakes.some(
       (t) => t.enabled && !!t.stemsUrls && Object.keys(t.stemsUrls).length > 0,
     );
-    return `${ids}:stems=${hasStems}`;
-  }, [sessionTakes]);
+    return `${sessionId}:stems=${hasStems}`;
+  }, [sessionTakes, sessionId]);
 
   const fetchSession = useCallback(async (): Promise<Session | null> => {
     try {
