@@ -1714,6 +1714,7 @@
       "stemTracksAvailableAfterDialogue": "ステムはダイアローグミックス後に利用可能になります。",
       "stemDownloadGuard": "ステムファイルがまだダウンロードされていません。このページを離れると利用できなくなります。続行しますか？",
       "returnToStart": "先頭に戻る",
+      "decodeError": "このテイクを読み込めませんでした。",
       "uploadFailedError": "アップロードに失敗しました",
       "close": "閉じる",
       "mute": "ミュート",

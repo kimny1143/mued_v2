@@ -69,6 +69,9 @@ interface TransportAction {
 interface TransportBarProps {
   isReady: boolean;
   isPlaying: boolean;
+  /** Active take decode failed — show a retry affordance instead of a perpetual spinner. */
+  errored?: boolean;
+  onRetry?(): void;
   currentTime: number;
   duration: number;
   onPlay(): void;
@@ -78,20 +81,21 @@ interface TransportBarProps {
   returnToStartLabel: string;
 }
 
-function TransportBar({ isReady, isPlaying, currentTime, duration, onPlay, onPause, onSeekToStart, actions, returnToStartLabel }: TransportBarProps) {
+function TransportBar({ isReady, isPlaying, errored, onRetry, currentTime, duration, onPlay, onPause, onSeekToStart, actions, returnToStartLabel }: TransportBarProps) {
   return (
     <div className="flex items-center gap-2 px-3 py-2" style={{ borderTop: '1px solid var(--line-soft)' }}>
       <Btn onClick={onSeekToStart} disabled={!isReady} title={returnToStartLabel}>
         <IconSkipBack size={11} />
       </Btn>
       <Btn
-        onClick={isPlaying ? onPause : onPlay}
-        disabled={!isReady}
+        onClick={errored ? onRetry : isPlaying ? onPause : onPlay}
+        disabled={!isReady && !errored}
         active={isPlaying}
         className="w-8 justify-center"
-        aria-label={isPlaying ? 'Pause' : 'Play'}
+        aria-label={errored ? 'Retry' : isPlaying ? 'Pause' : 'Play'}
+        title={errored ? 'Retry' : undefined}
       >
-        {!isReady ? <IconSpinner size={11} /> : isPlaying ? <IconPause size={12} /> : <IconPlay size={12} />}
+        {errored ? <span className="text-[13px] leading-none">↻</span> : !isReady ? <IconSpinner size={11} /> : isPlaying ? <IconPause size={12} /> : <IconPlay size={12} />}
       </Btn>
       <div className="flex-1" />
       <Readout
@@ -213,9 +217,9 @@ export function UnifiedSessionPlayerV2({
   );
 
   const {
-    isReady, isPlaying, isDecoding, decodeProgress, takeDecodeStatus,
+    isReady, isPlaying, isDecoding, decodeProgress, takeDecodeStatus, activeTakeStatus,
     currentTime, duration, activeTakeId,
-    setActiveTake, play, pause, seek,
+    setActiveTake, retryActiveTake, play, pause, seek,
     stemStates, toggleStemMute, toggleStemSolo, setStemGain, setStemPan,
     analyserNode, analyserL, analyserR, sampleRate: audioSampleRate,
     getStemAnalysers,
@@ -522,7 +526,7 @@ export function UnifiedSessionPlayerV2({
         </div>
 
         {/* Decode progress — active take buffering */}
-        {isDecoding && !isReady && decodeProgress.total > 0 && (
+        {isDecoding && !isReady && activeTakeStatus !== 'error' && decodeProgress.total > 0 && (
           <div className="px-3 py-[3px] flex-shrink-0">
             <Micro tone="var(--fg-3)">
               Decoding audio… {decodeProgress.done}/{decodeProgress.total}
@@ -530,10 +534,27 @@ export function UnifiedSessionPlayerV2({
           </div>
         )}
 
+        {/* Decode error — a failed take never freezes the transport; offer an explicit retry. */}
+        {activeTakeStatus === 'error' && (
+          <div className="px-3 py-[3px] flex-shrink-0 flex items-center gap-2">
+            <Micro tone="var(--rose, #b85d7a)">{t.dial.session.decodeError}</Micro>
+            <button
+              onClick={retryActiveTake}
+              data-testid="dial-take-retry"
+              className="mono text-[9px] uppercase tracking-wider px-1.5 h-4 rounded-[2px] transition-colors"
+              style={{ background: 'var(--amber)', color: '#1a1200' }}
+            >
+              {t.dial.session.retryButton}
+            </button>
+          </div>
+        )}
+
         {/* Transport */}
         <TransportBar
           isReady={isReady}
           isPlaying={isPlaying}
+          errored={activeTakeStatus === 'error'}
+          onRetry={retryActiveTake}
           currentTime={currentTime}
           duration={duration}
           onPlay={handlePlayPause}

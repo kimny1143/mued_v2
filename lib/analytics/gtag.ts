@@ -20,6 +20,30 @@ export function trackEvent({ action, params }: GtagEvent): void {
   window.gtag("event", action, params);
 }
 
+/**
+ * Track MUEDial player playback issues — the detection layer for the decode/playback
+ * failure class (Yuu incident 2026-06-11). Every prior playback failure was user-reported;
+ * this surfaces decode timeouts / errors / player stalls to GA4 so we catch them first.
+ */
+export function trackDialPlaybackIssue(params: {
+  issue: "decode_timeout" | "decode_error" | "player_stall";
+  takeLabel?: string;
+  stemKey?: string;
+  takeCount?: number;
+  elapsedMs?: number;
+}): void {
+  trackEvent({
+    action: "dial_playback_issue",
+    params: {
+      issue: params.issue,
+      ...(params.takeLabel ? { take_label: params.takeLabel } : {}),
+      ...(params.stemKey ? { stem_key: params.stemKey } : {}),
+      ...(params.takeCount != null ? { take_count: params.takeCount } : {}),
+      ...(params.elapsedMs != null ? { elapsed_ms: params.elapsedMs } : {}),
+    },
+  });
+}
+
 /** Track CTA button clicks on the landing page */
 export function trackCtaClick(product: string, location: string): void {
   trackEvent({

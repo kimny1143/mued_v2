@@ -1714,6 +1714,7 @@
       "stemTracksAvailableAfterDialogue": "Stem tracks available after dialogue mix.",
       "stemDownloadGuard": "Stem files have not been downloaded yet. Leaving this page will make them unavailable. Continue?",
       "returnToStart": "Return to start",
+      "decodeError": "Couldn't load this take.",
       "uploadFailedError": "Upload failed",
       "close": "Close",
       "mute": "Mute",
