@@ -295,11 +295,13 @@ function VideoPromo({ lp, locale, closeLabel }: { lp: Record<string, string>; lo
 // lifetime-1 unused). While DIAL_FREE_CAMPAIGN_ENABLED is OFF (default), the status
 // endpoint reports eligible:false and this renders nothing — the campaign ships dark.
 
-function FreeCampaignCta({ fc }: { fc: Record<string, string> }) {
+function FreeCampaignCta({ fc, locale }: { fc: Record<string, string>; locale: string }) {
   const [eligible, setEligible] = useState(false);
   const [remaining, setRemaining] = useState(0);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Marketing opt-in (self-owned list). Default OFF — explicit opt-in, never a grant condition.
+  const [marketingConsent, setMarketingConsent] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -323,7 +325,12 @@ function FreeCampaignCta({ fc }: { fc: Record<string, string> }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // First-touch attribution (best-effort; undefined when nothing was captured).
-        body: JSON.stringify({ firstTouch: getStoredFirstTouch() }),
+        // marketingConsent/locale: opt-in capture for the self-owned list (best-effort, optional).
+        body: JSON.stringify({
+          firstTouch: getStoredFirstTouch(),
+          marketingConsent,
+          locale: locale === 'ja' ? 'ja' : 'en',
+        }),
       });
       const data = await res.json();
       if (!data.success) {
@@ -338,7 +345,7 @@ function FreeCampaignCta({ fc }: { fc: Record<string, string> }) {
       setError(fc.error);
       setStarting(false);
     }
-  }, [fc.error]);
+  }, [fc.error, marketingConsent, locale]);
 
   if (!eligible) return null;
 
@@ -353,6 +360,18 @@ function FreeCampaignCta({ fc }: { fc: Record<string, string> }) {
       <p className="text-base font-semibold text-white mb-1">{fc.title}</p>
       <p className="text-sm text-white/70 mb-4">{fc.desc}</p>
       {error && <p className="text-sm text-red-400 mb-2">{error}</p>}
+      {fc.consentLabel && (
+        <label className="flex items-start gap-2 mb-3 cursor-pointer text-xs text-white/55 leading-snug">
+          <input
+            type="checkbox"
+            checked={marketingConsent}
+            onChange={(e) => setMarketingConsent(e.target.checked)}
+            data-testid="dial-free-campaign-consent"
+            className="mt-0.5 accent-amber-400 cursor-pointer shrink-0"
+          />
+          <span>{fc.consentLabel}</span>
+        </label>
+      )}
       <button
         onClick={start}
         disabled={starting}
@@ -494,7 +513,7 @@ export default function DialPage() {
             {/* Right: Checkout */}
             <div className="lg:max-w-md lg:ml-auto bg-black/50 backdrop-blur-sm rounded-[var(--radius-lg)] p-6 lg:p-8 border border-white/5">
               {/* First-run free campaign (renders only when eligible; dark by default) */}
-              <FreeCampaignCta fc={t.dial.freeCampaign} />
+              <FreeCampaignCta fc={t.dial.freeCampaign} locale={locale} />
 
               {/* Mix options */}
               <div className="space-y-3 mb-4" role="radiogroup" aria-label={t.dial.checkout.step1}>

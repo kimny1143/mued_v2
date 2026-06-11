@@ -1453,7 +1453,8 @@
       "remaining": "{n} spots left",
       "cta": "Start free",
       "starting": "Starting…",
-      "error": "Couldn't start your free session. Please try again."
+      "error": "Couldn't start your free session. Please try again.",
+      "consentLabel": "Send me MUED updates, tips, and announcements by email (about once a month — you can unsubscribe anytime)."
     },
     "checkout": {
       "tagline": "AI-powered mixing and mastering. Upload your stems, get a professional mix — no account required.",
