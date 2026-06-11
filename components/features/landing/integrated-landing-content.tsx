@@ -41,7 +41,11 @@ const GUMROAD_TEMPLATE_URL = `${GUMROAD_CLAUDE_CODE_TEMPLATE_URL}?utm_source=mue
  * 4. Social Proof
  * 5. Final CTA
  */
-export function IntegratedLandingContent() {
+export function IntegratedLandingContent({
+  freeCampaignActive = false,
+}: {
+  freeCampaignActive?: boolean;
+}) {
   const locale = useLocale();
   const searchParams = useSearchParams();
   const isV2 = searchParams.get("cta") === "v2";
@@ -94,7 +98,7 @@ export function IntegratedLandingContent() {
 
       {/* MUEDial Section */}
       <section id="muedial" className="relative">
-        <MuedialHeroSection />
+        <MuedialHeroSection freeCampaignActive={freeCampaignActive} />
         <SectionNav
           prevHref="#muedear"
           prevLabel="MUEDear"

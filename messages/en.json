@@ -44,8 +44,12 @@
         "muedlobe": "Try MUEDlobe",
         "muedial": {
           "tagline": "Let AI handle your mix.",
-          "description": "Professional AI mixing from $8. Upload stems, chat with Hoo, get your mix.",
-          "button": "Try MUEDial"
+          "description": "Professional AI mixing. Upload stems, chat with Hoo, get your mix.",
+          "button": "Try MUEDial",
+          "free15Badge": "15 spots · Free",
+          "free15Headline": "Let Hoo handle your mix — free",
+          "free15Sub": "Conversational mixing and mastering — one track, one final, no retakes — on us. First 15 only, while spots last.",
+          "free15Cta": "Try it free →"
         }
       },
       "social": {
@@ -1394,7 +1398,7 @@
   "dial": {
     "lp": {
       "heroTitle": "How many tracks are stuck at mixing?",
-      "heroSub": "Upload stems. Talk to AI. From $8.",
+      "heroSub": "Upload stems. Talk to AI.",
       "heroNote": "Already have your stems? You're ready to go.",
       "chatMockUser1": "Bring the vocals forward. Drums are too loud.",
       "chatMockHoo1": "On it! Pulled the vocals up and eased the drums. Have a listen.",

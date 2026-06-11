@@ -44,8 +44,12 @@
         "muedlobe": "MUEDlobeを試す",
         "muedial": {
           "tagline": "そのミックス、Hooにお願いしてみない？",
-          "description": "AIミキシング、$8から。ステムをアップロードして、Hooとチャットするだけ。",
-          "button": "MUEDialを試す"
+          "description": "AIミキシング。ステムをアップロードして、Hooとチャットするだけ。",
+          "button": "MUEDialを試す",
+          "free15Badge": "15名限定 · 無料",
+          "free15Headline": "Hooにミックスを任せる（無料）",
+          "free15Sub": "対話ミックス＋マスタリング（1曲・1回・リテイクなし）を無料で。先着15名・枠が埋まり次第終了。",
+          "free15Cta": "無料で試す →"
         }
       },
       "social": {
@@ -1394,7 +1398,7 @@
   "dial": {
     "lp": {
       "heroTitle": "ミックスで止まってる曲、何曲ある？",
-      "heroSub": "ステムを上げて、AIと話すだけ。$8から。",
+      "heroSub": "ステムを上げて、AIと話すだけ。",
       "heroNote": "ステムさえあれば、すぐ始められる。",
       "chatMockUser1": "ボーカルもう少し前に出して。ドラムちょっとうるさい。",
       "chatMockHoo1": "ほほう、了解。ボーカル持ち上げて、ドラム控えめにしたよ。聴いてみて。",
