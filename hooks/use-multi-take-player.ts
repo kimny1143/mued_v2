@@ -135,6 +135,7 @@ async function fetchAndDecode(url: string, ctx: AudioContext): Promise<AudioBuff
   const controller = new AbortController();
   // Outer guard also covers a hung decodeAudioData() (which is not abortable) via Promise.race.
   let timedOut = false;
+  let guardTimer: ReturnType<typeof setTimeout> | undefined;
   const timer = setTimeout(() => { timedOut = true; controller.abort(); }, FETCH_DECODE_TIMEOUT_MS);
   try {
     const work = (async () => {
@@ -145,14 +146,16 @@ async function fetchAndDecode(url: string, ctx: AudioContext): Promise<AudioBuff
     })();
     const guard = new Promise<never>((_, reject) => {
       // Fires if decodeAudioData() hangs after a completed fetch (abort can't interrupt it).
-      setTimeout(() => reject(new DecodeTimeoutError()), FETCH_DECODE_TIMEOUT_MS);
+      guardTimer = setTimeout(() => reject(new DecodeTimeoutError()), FETCH_DECODE_TIMEOUT_MS);
     });
     return await Promise.race([work, guard]);
   } catch (e) {
     if (timedOut || (e instanceof DOMException && e.name === 'AbortError')) throw new DecodeTimeoutError();
     throw e;
   } finally {
+    // Clear BOTH timers on settle so a successful decode leaves no dangling 45s timer.
     clearTimeout(timer);
+    if (guardTimer) clearTimeout(guardTimer);
   }
 }
 
@@ -237,7 +240,9 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   );
 
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isDecoding, setIsDecoding] = useState(true);
+  // Only "decoding" if there's an initial active take to decode — empty takes must not strand
+  // the UI on a perpetual spinner.
+  const [isDecoding, setIsDecoding] = useState(initialActiveId !== '');
   const [decodeProgress, setDecodeProgress] = useState<DecodeProgress>({ done: 0, total: 0 });
   const [takeDecodeStatus, setTakeDecodeStatus] = useState<Record<string, TakeDecodeStatus>>(
     takeDecodeStatusRef.current,

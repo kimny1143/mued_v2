@@ -227,4 +227,12 @@ describe('useMultiTakePlayer — decode/playback stop-bleed', () => {
     // Only the new active take decoded — not RAW, not the older preview.
     expect((globalThis.fetch as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(1);
   });
+
+  it('empty takes do not strand the UI on a perpetual spinner', async () => {
+    const { result } = renderHook(() => useMultiTakePlayer([]));
+    await flush();
+    expect(result.current.isDecoding).toBe(false);
+    expect(result.current.isReady).toBe(false);
+    expect(result.current.activeTakeId).toBe('');
+  });
 });
