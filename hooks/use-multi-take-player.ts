@@ -734,9 +734,9 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     }
 
     // Update duration from newly active take's decoded buffers
-    const newTakeNodes = takeNodesRef.current[id];
-    if (newTakeNodes) {
-      const durations = Object.values(newTakeNodes.stems)
+    const activeNodes = takeNodesRef.current[id];
+    if (activeNodes) {
+      const durations = Object.values(activeNodes.stems)
         .map((s) => s.buffer?.duration ?? 0)
         .filter((d) => isFinite(d) && d > 0);
       if (durations.length > 0) setDuration(Math.max(...durations));
@@ -787,6 +787,13 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     const newest = pickInitialActiveId(takesRef.current);
     if (newest && !before.has(newest) && newest !== activeTakeIdRef.current) {
       setActiveTake(newest);
+    }
+    // If the ACTIVE take was removed (and no newer take just took over), re-point to a survivor.
+    // Otherwise activeTakeStatus stays 'decoding' for a gone take → isReady=false → permanent
+    // spinner — the same failure class as the original Yuu incident. (product review #454)
+    if (activeTakeIdRef.current && !takesRef.current.some((t) => t.id === activeTakeIdRef.current)) {
+      const survivor = pickInitialActiveId(takesRef.current);
+      if (survivor) setActiveTake(survivor);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [takesSig]);

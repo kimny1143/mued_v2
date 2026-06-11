@@ -260,17 +260,22 @@ describe('useMultiTakePlayer — decode/playback stop-bleed', () => {
     expect(result.current.takeDecodeStatus.p1).toBe('ready'); // older take's state preserved
   });
 
-  it('reconciles a removed take (drops its decode state) without remounting', async () => {
+  it('removing the ACTIVE take re-points to a survivor (no permanent spinner) without remounting', async () => {
     const { result, rerender } = renderHook((tk: TakeDef[]) => useMultiTakePlayer(tk), {
       initialProps: [RAW_5, PREVIEW2, PREVIEW1] as TakeDef[],
     });
     await flush(14);
+    expect(result.current.activeTakeId).toBe('p2'); // newest MIXED is active
     expect(result.current.takeDecodeStatus.p2).toBe('ready');
 
-    rerender([RAW_5, PREVIEW1]); // p2 removed
-    await flush();
+    // Remove the ACTIVE take (p2) with NO newer take added — the same failure class as the original
+    // incident (active gone → status 'decoding' → permanent spinner) unless we re-point to a survivor.
+    rerender([RAW_5, PREVIEW1]);
+    await flush(14);
 
     expect(audioContextCount).toBe(1); // no remount
-    expect(result.current.takeDecodeStatus.p2).toBeUndefined(); // decode state dropped
+    expect(result.current.takeDecodeStatus.p2).toBeUndefined(); // removed take's decode state dropped
+    expect(result.current.activeTakeId).toBe('p1'); // re-pointed to the surviving MIXED take
+    expect(result.current.isReady).toBe(true); // recovered — NOT stranded on a spinner
   });
 });
