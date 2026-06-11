@@ -4,14 +4,14 @@ department: product
 activity: active
 status: active
 current_task: **【Yuu incident】stop-bleed PR #451 提出(Tier2・verify全green・product課レビュー中)**。真因=Preview2生成→player全体remount→全take全stem一括decode(RAW 419MB WAV)+ global `isReady` が RAW 1本にgate→永久spinner(Codex一致・ライブ裏取り)。止血実装: active take lazy decode(初期=最新MIXED小MP3・RAWは選択時までload しない)+ concurrency cap 3 + isReady を active take から導出(1 take失敗で凍結しない・Retry表示)+ decode timeout guard + telemetry。マージゲート harness 6 tests 全green(Preview3反復/1stem永久未settle/期限切れ/7stem継続再生)。typecheck/lint/unit1547/build 全green。応急(単一MP3直リンク・本番write不要・HTTP206検証済)報告済。新規ユーザー反応=ゼロ(session/claim/mix 0・waitlist累計3/点火後0)→腰据えリファクタ安全。
-next_action: ①PR #451 = product課(7h1eepeg)LGTM + **デプロイ前Chrome実機再生(キャラクターgate)** → conductor merge ②Hooプロンプト修正ドラフト(capability境界明記+範囲外オーダー明示拒否+APPLIED実適用のみ列挙)→kimny声チェック ③⑥フルリファクタ(take単位URL分離=Preview2がPreview1音を再生するバグ修正/remount回避)別PR計画 ④自前リスト基盤(product課handoff)= incident収束後に再開(discovery済)。Part B(a64befc1 stuck 8990d7b8)=18:00 UTC cron自己回復見込み・本番write不要。
-blocked_by: null
+next_action: ①**PR #451 merge方法=conductor判断待ち**: CI green✅+product LGTM✅+nit2反映済✅、残=Chrome実機だが **preview検証不能(dev Clerk 401・別user pool・期限切れ・実測)**→ conductor へ判断要請(a)merge→prod deploy→kimny実音spot-check(zero traffic+fix悪化させ得ない=安全)/(b)preview fresh session drive/(c)code gate先行merge。推奨(a)。②Hooプロンプト修正ドラフト=voice-check準備完了(`docs/drafts/hoo-capability-boundary-prompt-fix-20260611.md`・gitignore=local・content共有可)。③⑥フルリファクタ(take単位URL分離/remount回避)別PR計画 ④自前リスト基盤 incident収束後再開。Part B(a64befc1 stuck 8990d7b8)=18:00 UTC cron自己回復・本番write不要。
+blocked_by: PR #451 Chrome実機ゲートの満たし方=conductor判断待ち(preview検証不能のため代替a/b/c)
 urgency: mid
-action_owner: peer
+action_owner: conductor
 deadline: null
 expected_next_check_at: 2026-06-12T09:00:00+09:00
-last_update: 2026-06-11T22:50:00+09:00
-evidence: PR #451(fix/dial-v2-player-decode-stop-bleed-clean・origin/main cherry-pick) / use-multi-take-player.ts lazy decode+concurrency3+isReady derived / tests/unit/hooks/use-multi-take-player.test.ts 6 pass / unit 1547 pass+build green / waitlist Blob 3 all-time・0 since launch / 新規session/claim/mix=0
+last_update: 2026-06-11T23:05:00+09:00
+evidence: PR #451 CI green+product LGTM(issuecomment-4681279757)+nit2 commit / preview 401 dev-browser-missing(検証不能実測) / harness 7 pass / unit 1547+build green / Hoo draft docs/drafts/hoo-capability-boundary-prompt-fix-20260611.md
 confidence: high
 lane: active
 ---
