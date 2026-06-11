@@ -234,6 +234,11 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   const ensureTakeDecodeRef = useRef<((id: string) => void) | null>(null);
   /** Re-decode an errored take from scratch. Set inside the mount effect. */
   const retryTakeRef = useRef<((id: string) => void) | null>(null);
+  /** Reconcile the take set in place (add/remove nodes) without remount. Set inside the mount effect. */
+  const reconcileTakesRef = useRef<((next: TakeDef[]) => void) | null>(null);
+  /** Latest takes prop — lets the mount-once decode machinery + reconcile see the current set. */
+  const takesRef = useRef(takes);
+  takesRef.current = takes;
   /** Stable ref for takeDecodeStatus — accessible in setActiveTake without closure stale. */
   const takeDecodeStatusRef = useRef<Record<string, TakeDecodeStatus>>(
     initialActiveId ? { [initialActiveId]: 'decoding' } : {},
@@ -304,12 +309,13 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     setSampleRate(ctx.sampleRate);
 
     const defaultId = activeTakeIdRef.current;
-    const newTakeNodes: Record<string, TakeNodes> = {};
 
-    // Phase 0: build permanent nodes for all takes/stems (no buffers yet)
-    for (const take of takes) {
+    // Build the Web Audio subgraph for ONE take (no buffers yet) and wire it to masterGain.
+    // Reused by the initial build below AND by reconcileTakes when a take is added without remount.
+    // Gain follows the live active take (0 for non-active), so reconcile-added takes start muted.
+    const buildTakeNodes = (take: TakeDef): TakeNodes => {
       const takeMixGain = ctx.createGain();
-      takeMixGain.gain.value = take.id === defaultId ? 1 : 0;
+      takeMixGain.gain.value = take.id === activeTakeIdRef.current ? 1 : 0;
 
       // Fixed loudness-compensation gain: compensates RAW loudness to match processed takes.
       // Chain: takeMixGain → loudnessGain → masterGain
@@ -333,10 +339,13 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
         stems[stemName] = { gainNode, panNode, stemAnalyser, source: null, buffer: null };
       }
 
-      newTakeNodes[take.id] = { stems, takeMixGain, loudnessGain };
-    }
+      return { stems, takeMixGain, loudnessGain };
+    };
 
-    takeNodesRef.current = newTakeNodes;
+    // Phase 0: build permanent nodes for all initial takes into takeNodesRef (no buffers yet).
+    const builtNodes: Record<string, TakeNodes> = {};
+    for (const take of takes) builtNodes[take.id] = buildTakeNodes(take);
+    takeNodesRef.current = builtNodes;
 
     let cancelled = false;
     const sem = createSemaphore(DECODE_CONCURRENCY);
@@ -394,7 +403,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
         if (status === 'ready') {
           // Update duration if this is the active take.
           if (takeId === activeTakeIdRef.current) {
-            const durations = Object.values(newTakeNodes[takeId].stems)
+            const durations = Object.values(takeNodesRef.current[takeId]?.stems ?? {})
               .map((s) => s.buffer?.duration ?? 0)
               .filter((d) => isFinite(d) && d > 0);
             if (durations.length > 0) setDuration(Math.max(...durations));
@@ -435,14 +444,17 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
         sem.release();
       }
       if (cancelled) return;
+      // The take may have been removed by reconcileTakes while this decode was in flight.
+      const tn = takeNodesRef.current[takeId];
+      if (!tn || !tn.stems[stemName]) return;
       if (buffer) {
-        newTakeNodes[takeId].stems[stemName].buffer = buffer;
+        tn.stems[stemName].buffer = buffer;
       } else {
         trackDialPlaybackIssue({
           issue: timedOut ? 'decode_timeout' : 'decode_error',
-          takeLabel: takes.find((t) => t.id === takeId)?.label,
+          takeLabel: takesRef.current.find((t) => t.id === takeId)?.label,
           stemKey: stemName,
-          takeCount: takes.length,
+          takeCount: takesRef.current.length,
         });
       }
       onStemDecoded(takeId, buffer !== null);
@@ -452,7 +464,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
      *  take (and any the user later selects) is fetched, so the heavy RAW WAVs never load up front. */
     const ensureTakeDecode = (takeId: string) => {
       if (cancelled || startedTakes.has(takeId)) return;
-      const take = takes.find((t) => t.id === takeId);
+      const take = takesRef.current.find((t) => t.id === takeId);
       if (!take) return;
       startedTakes.add(takeId);
       takeDecodeCounts.set(takeId, { done: 0, success: 0, total: Object.keys(take.stemUrls).length });
@@ -467,7 +479,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
             trackDialPlaybackIssue({
               issue: 'player_stall',
               takeLabel: take.label,
-              takeCount: takes.length,
+              takeCount: takesRef.current.length,
               elapsedMs: PLAYER_STALL_MS,
             });
           }
@@ -483,10 +495,10 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     // Re-decode an errored take from scratch (e.g. user clicks an error pill / retry).
     retryTakeRef.current = (takeId: string) => {
       if (cancelled) return;
-      const take = takes.find((t) => t.id === takeId);
+      const take = takesRef.current.find((t) => t.id === takeId);
       if (!take) return;
       // Clear stale buffers and stop any playing sources for this take
-      const tn = newTakeNodes[takeId];
+      const tn = takeNodesRef.current[takeId];
       if (tn) {
         for (const sn of Object.values(tn.stems)) {
           sn.buffer = null;
@@ -502,6 +514,62 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       ensureTakeDecode(takeId);
     };
 
+    // Reconcile the take set in place when `takes` changes — add new takes' nodes, remove gone
+    // takes — WITHOUT tearing down the AudioContext or touching currently-playing sources. Replaces
+    // the old full-remount (playerKey) so playback isn't interrupted when a take completes.
+    reconcileTakesRef.current = (next: TakeDef[]) => {
+      if (cancelled) return;
+      const nextIds = new Set(next.map((t) => t.id));
+      const currentIds = Object.keys(takeNodesRef.current);
+
+      // Add new takes (lazy: build nodes + register stemStates; decode only when activated).
+      for (const take of next) {
+        if (takeNodesRef.current[take.id]) continue;
+        takeNodesRef.current[take.id] = buildTakeNodes(take);
+        setStemStates((prev) =>
+          prev[take.id]
+            ? prev
+            : {
+                ...prev,
+                [take.id]: Object.fromEntries(
+                  Object.keys(take.stemUrls).map((k) => [k, { muted: false, solo: false }]),
+                ),
+              },
+        );
+      }
+
+      // Remove gone takes (stop sources, disconnect nodes, drop decode state).
+      for (const id of currentIds) {
+        if (nextIds.has(id)) continue;
+        const tn = takeNodesRef.current[id];
+        if (tn) {
+          for (const sn of Object.values(tn.stems)) {
+            if (sn.source) {
+              try { sn.source.stop(); } catch { /* already stopped */ }
+              sn.source.disconnect();
+              sn.source = null;
+            }
+            sn.gainNode.disconnect();
+            sn.panNode.disconnect();
+            sn.stemAnalyser.disconnect();
+          }
+          tn.takeMixGain.disconnect();
+          tn.loudnessGain.disconnect();
+        }
+        delete takeNodesRef.current[id];
+        startedTakes.delete(id);
+        takeDecodeCounts.delete(id);
+        const st = stallTimers.get(id);
+        if (st) { clearTimeout(st); stallTimers.delete(id); }
+        if (takeDecodeStatusRef.current[id] !== undefined) {
+          const upd = { ...takeDecodeStatusRef.current };
+          delete upd[id];
+          takeDecodeStatusRef.current = upd;
+          setTakeDecodeStatus({ ...upd });
+        }
+      }
+    };
+
     // Kick off ONLY the initial active take — everything else decodes on demand.
     if (defaultId) ensureTakeDecode(defaultId);
 
@@ -510,8 +578,8 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       cancelAnimationFrame(rafRef.current);
       for (const t of stallTimers.values()) clearTimeout(t);
       stallTimers.clear();
-      stopAllSources(newTakeNodes);
-      for (const tn of Object.values(newTakeNodes)) {
+      stopAllSources(takeNodesRef.current);
+      for (const tn of Object.values(takeNodesRef.current)) {
         tn.takeMixGain.disconnect();
         tn.loudnessGain.disconnect();
         for (const sn of Object.values(tn.stems)) {
@@ -706,6 +774,22 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       setActiveTake(pending);
     }
   }, [takeDecodeStatus, setActiveTake]);
+
+  // Reconcile the take set WITHOUT remounting the player. When `takes` changes (a new take completes
+  // or an old one drops), add/remove its nodes in place — preserving the AudioContext and any
+  // currently-playing sources, so playback isn't interrupted (replaces the old playerKey remount).
+  const takesSig = takes.map((t) => `${t.id}/${Object.keys(t.stemUrls).length}`).join(',');
+  useEffect(() => {
+    if (!ctxRef.current) return; // mount effect hasn't built the graph yet (or takes empty)
+    const before = new Set(Object.keys(takeNodesRef.current));
+    reconcileTakesRef.current?.(takesRef.current);
+    // Auto-show the newest processed take when it was just added (replicates the remount UX).
+    const newest = pickInitialActiveId(takesRef.current);
+    if (newest && !before.has(newest) && newest !== activeTakeIdRef.current) {
+      setActiveTake(newest);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [takesSig]);
 
   const toggleStemMute = useCallback((takeId: string, stemName: string) => {
     setStemStates((prev) => ({

@@ -43,11 +43,14 @@ function makeNode(extra: Record<string, unknown> = {}) {
   };
 }
 
+let audioContextCount = 0; // constructions — used to prove no-remount (PR-B reconcile)
+
 class MockAudioContext {
   currentTime = 0;
   sampleRate = 44100;
   state = 'running';
   destination = makeNode();
+  constructor() { audioContextCount++; }
   audioWorklet = { addModule: vi.fn().mockResolvedValue(undefined) };
   createGain() { return makeNode(); }
   createAnalyser() { return makeNode(); }
@@ -99,6 +102,7 @@ beforeEach(() => {
   fetchPlan = () => 'ok';
   concurrentFetches = 0;
   maxConcurrentFetches = 0;
+  audioContextCount = 0;
   vi.stubGlobal('AudioContext', MockAudioContext);
   vi.stubGlobal('AudioWorkletNode', MockAudioWorkletNode);
   vi.stubGlobal('fetch', vi.fn(mockFetch));
@@ -234,5 +238,39 @@ describe('useMultiTakePlayer — decode/playback stop-bleed', () => {
     expect(result.current.isDecoding).toBe(false);
     expect(result.current.isReady).toBe(false);
     expect(result.current.activeTakeId).toBe('');
+  });
+
+  // ── PR-B: reconcile take changes in place, no remount ───────────────────────
+  it('reconciles a newly-added take WITHOUT remounting (single AudioContext) and auto-shows it', async () => {
+    const { result, rerender } = renderHook((tk: TakeDef[]) => useMultiTakePlayer(tk), {
+      initialProps: [RAW_5, PREVIEW1] as TakeDef[],
+    });
+    await flush();
+    expect(result.current.activeTakeId).toBe('p1');
+    expect(audioContextCount).toBe(1);
+
+    // Preview 2 completes → takes prop grows. The old playerKey remount built a NEW AudioContext
+    // (interrupting playback); now it must reconcile in place — same context.
+    rerender([RAW_5, PREVIEW2, PREVIEW1]);
+    await flush(14);
+
+    expect(audioContextCount).toBe(1); // ← no remount: AudioContext preserved (no audio interruption)
+    expect(result.current.activeTakeId).toBe('p2'); // newest auto-shown
+    expect(result.current.takeDecodeStatus.p2).toBe('ready'); // and decoded lazily
+    expect(result.current.takeDecodeStatus.p1).toBe('ready'); // older take's state preserved
+  });
+
+  it('reconciles a removed take (drops its decode state) without remounting', async () => {
+    const { result, rerender } = renderHook((tk: TakeDef[]) => useMultiTakePlayer(tk), {
+      initialProps: [RAW_5, PREVIEW2, PREVIEW1] as TakeDef[],
+    });
+    await flush(14);
+    expect(result.current.takeDecodeStatus.p2).toBe('ready');
+
+    rerender([RAW_5, PREVIEW1]); // p2 removed
+    await flush();
+
+    expect(audioContextCount).toBe(1); // no remount
+    expect(result.current.takeDecodeStatus.p2).toBeUndefined(); // decode state dropped
   });
 });
