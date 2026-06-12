@@ -3,14 +3,14 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: **⑤ correctness パッケージ 全 land 完納 → smoke 方針待ち standby**。本日一気通貫: 反証→client-orchestrated 再設計→実装→9stem before/after PASS→**#462(5→3)/#463(correctness LIVE)/#464(U2)全 merged**→Vercel success=dial.mued.jp 反映。**free15-full が本番で正しく機能**(2回目以降の調整が実音で返る=cached stale 解消)。U2 canonical 軽微 log=完了(PR body+status+memory・write/content通知なし)。
-next_action: **smoke=(b) 確定・driver 準備完了→admin account 確定+kimny login 待ち**。Chrome tools ロード済 / 小stem 3本(8s・4.4MB・`.smoke-stems/` gitignored)用意済→**render ~16s/回・smoke 全体 ~5-10分・~100-200cr**(小素材ゆえ高速)。推奨 session=**admin→新規 dialogue(admin-bypass・free15枠非消費=pilot非汚染)**。フロー: kimny admin login→Chrome lock 要請→dialogue session 作成→3 stem upload→Hoo会話 調整A→mix_check1→別調整B→mix_check2→**検証(session API): take2.roexTaskId≠take1 + audio md5 別物**。caveat: file_upload が cwd ファイル reject したら kimny に file-select 1回追加(fallback)。残 housekeeping: branch hygiene(全settle後)/ cost-model canonical=conductor→CFO。
-blocked_by: admin account 具体 + kimny login(conductor 調整) → 即 driver 着手。
+current_task: **⑤ パッケージ 全 land + prod LIVE 完納 / browser smoke=部分verify→RoEx遅延で(b)中断**。⑤本体(#463)・5→3(#462)・U2(#464)全 merged→prod LIVE。**browser E2E smoke(kimny admin login→私 driver)= prod経路 大半 verify ✅**(admin-bypass dialogue session作成 / 3 stem upload[kimny file-select fallback] / Hoo adjust_preview APPLIED / /preview render起動 / session API で baseCycleLimit=3・DIALOGUE 確認)。だが **初回 preview render が RoEx 側で 17分遅延**(⑤コード無関係の RoEx infra slow spell)→ conductor 判定 (b) で **Chrome lock 解放・mix_check fresh-mint 検証は defer**。
+next_action: **mix_check fresh-mint 検証 1点のみ残(low urgency・launch非ブロッカー)**。⑤は 9stem md5実験+product review+build で既検証済。resume案: RoEx speed戻り時に同 session `ab2cb2f0-1197-443b-b3d8-3e465f1b03cb`(stems upload済・preview は RoEx が後で完了)で mix_check×2(調整A→1/調整B→2)→take2.roexTaskId≠take1+md5別物 検証(要 Chrome lock+kimny login 再調整) / 或いは最初の実 free15 session で自然確認。残 housekeeping: `.smoke-stems/` + `~/Downloads/muedial-smoke/` cleanup(smoke完了後) / .gitignore 変更 / branch hygiene / cost-model canonical=conductor→CFO。
+blocked_by: RoEx infra speed(初回preview 17分遅延) → mix_check 検証 defer。⑤本体は LIVE 完納。
 urgency: low
 action_owner: conductor
 deadline: null
-expected_next_check_at: 2026-06-12T20:30:00+09:00
-last_update: 2026-06-12T18:25:00+09:00
+expected_next_check_at: 2026-06-12T21:00:00+09:00
+last_update: 2026-06-12T20:57:00+09:00
 evidence: **PR #463**(⑤ client-orchestrated・off main clean branch・product Tier3 review依頼済・CI走行中) / 9stem before/after PASS: A(effA)`2239bdd7…`==control(同task effB=bug cached) / B(fresh task effB)`7a70a885…`≠A(fix=実音反映)・script experiment-dial-correct-sequence.ts / typecheck/lint/build/214 unit 全green(+13 orchestration) / Yuu調査: baseCycleLimit 書込=checkout/campaign-start のみ・以降read-only(chat L148/final L250)・Yuu=omakase baseCycleLimit1=影響ゼロ→救済不要 / PR #462(5→3)既に main / memory reference-roex-retrievefinalmix-needs-ready-preview
 confidence: high
 lane: active
