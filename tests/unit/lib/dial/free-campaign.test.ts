@@ -4,6 +4,7 @@ import {
   getFreeCampaignAudience,
   getFreeCampaignCap,
   evaluateFreeCampaignEligibility,
+  FREE_CAMPAIGN_SESSION,
 } from '@/lib/dial/free-campaign';
 
 const ENV_KEYS = ['DIAL_FREE_CAMPAIGN_ENABLED', 'DIAL_FREE_CAMPAIGN_AUDIENCE', 'DIAL_FREE_CAMPAIGN_CAP'] as const;
@@ -62,6 +63,24 @@ describe('config getters', () => {
     expect(getFreeCampaignCap()).toBe(15);
     process.env.DIAL_FREE_CAMPAIGN_CAP = 'abc';
     expect(getFreeCampaignCap()).toBe(15);
+  });
+});
+
+describe('FREE_CAMPAIGN_SESSION shape', () => {
+  it('funds the full dialogue journey: baseCycleLimit=3 (mix_check×2 + final)', () => {
+    // limit=3 + the mixCheckCount<2 guard (final/route.ts) guarantees a final slot remains
+    // after refining. limit=1 stranded the user once a single mix_check was spent.
+    expect(FREE_CAMPAIGN_SESSION.baseCycleLimit).toBe(3);
+  });
+
+  it('estimates the realized full-journey RoEx cost: 980cr (mix_check×2 + final + master + diag)', () => {
+    expect(FREE_CAMPAIGN_SESSION.roexCrEstimate).toBe(980);
+  });
+
+  it('keeps the other guardrails unchanged (no retake purchases, dialogue+omakase)', () => {
+    expect(FREE_CAMPAIGN_SESSION.additionalCycleLimit).toBe(0);
+    expect(FREE_CAMPAIGN_SESSION.mode).toBe('dialogue');
+    expect(FREE_CAMPAIGN_SESSION.masteringMode).toBe('omakase');
   });
 });
 
