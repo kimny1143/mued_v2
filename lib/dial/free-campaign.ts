@@ -3,7 +3,8 @@
  *
  * Path A: a free grant is a Stripe-bypass `paymentStatus: 'paid'` dialogue+mastering
  * session (see app/api/dial/campaign/start). Pool-funded (RoEx), bounded by:
- *   - per-session: baseCycleLimit=1 (one paid final) + reference-track disabled
+ *   - per-session: baseCycleLimit=3 (full dialogue journey: mix_check×2 + final) +
+ *     reference-track disabled
  *   - campaign-wide: hard cap on grant count + DIAL_FREE_CAMPAIGN_ENABLED kill-switch
  *
  * Audience (kimny policy-gate 2026-06-08): default 'open' (cap-only 先着「演出」).
@@ -38,16 +39,23 @@ export function getFreeCampaignCap(): number {
 
 /**
  * Fixed shape of a free-campaign session.
- * baseCycleLimit=1 caps the paid mix to a single final; additionalCycleLimit=0
- * blocks retake purchases. roexCrEstimate = realized RoEx cost of a completed journey
- * (free is stems-off ≈480cr = final250 + master220 + diag10; with stems it'd be ≈530).
+ *
+ * baseCycleLimit=3 funds the FULL dialogue journey — the existing `mixCheckCount < 2`
+ * guard (final/route.ts) means a session can spend at most 2 mix_checks, so a base of 3
+ * guarantees a final cycle remains after refining (mix_check×2 + final). [kimny GO
+ * 2026-06-12, Chief+CFO: was 1, which let a single mix_check exhaust the budget and strand
+ * the user before the final — a class of trap removed by raising the limit, not by hiding
+ * the mix_check button.] additionalCycleLimit=0 still blocks retake purchases.
+ *
+ * roexCrEstimate = realized RoEx cost of a completed journey, stems-off: mix_check×2 (500)
+ * + final (250) + master (220) + diag (10) = 980cr. (Was 480 = single-final journey.)
  */
 export const FREE_CAMPAIGN_SESSION = {
   mode: 'dialogue',
   masteringMode: 'omakase',
-  baseCycleLimit: 1,
+  baseCycleLimit: 3,
   additionalCycleLimit: 0,
-  roexCrEstimate: 480,
+  roexCrEstimate: 980,
 } as const;
 
 /** Count of free-campaign grant sessions issued so far (cap enforcement). */

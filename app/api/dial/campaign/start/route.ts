@@ -4,7 +4,7 @@
  *
  * Creates a Stripe-bypass `paymentStatus: 'paid'` dialogue+mastering session for an
  * eligible signed-in user (mirrors the admin-bypass in /api/dial/checkout). The
- * session is RoEx-pool funded and bounded by baseCycleLimit=1 + is_free_campaign
+ * session is RoEx-pool funded and bounded by baseCycleLimit=3 + is_free_campaign
  * (reference-track disabled, stems-off). Server-side re-checks all eligibility —
  * never trusts the client.
  *

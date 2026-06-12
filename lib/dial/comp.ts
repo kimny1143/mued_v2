@@ -38,7 +38,7 @@ export class CompGrantError extends Error {
 /**
  * Estimate the RoEx cr cost of one comped retake cycle, for audit/ledger visibility (NOT a billing
  * figure). A retake re-runs the paid final (+ mastering if the session masters). Ranges ≈220–530cr;
- * cf. free-campaign roexCrEstimate ≈ 480.
+ * cf. free-campaign roexCrEstimate ≈ 980 (full dialogue journey: mix_check×2 + final + master + diag).
  */
 export function estimateCompCr(session: { mode: string | null; masteringMode: string | null }): number {
   // dialogue final ≈ 250cr (final_advanced); omakase final = DIAL_CREDIT_COSTS.omakase (300cr).
