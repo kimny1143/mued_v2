@@ -243,7 +243,12 @@ chrome拡張（claude-in-chrome）は共有リソース。同時に1課しか使
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/04-org-structure.md -->
 <!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
 
-## 組織体制（2026-04-04改定）
+<!-- Evidence: 2026-06-11 組織再編 v2 改定 (kimny Q1-Q7 確定 / 即時移行)。
+     確定版 = _conductor/docs/inbox/proposal-org-restructure-20260611.md (v2)。
+     旧構成: プロダクト部=mued/native/dsp/occur、マーケ部=SNS/write/LP、分析研究部=reserch/data。
+     変更: occur=closed / native→product課 畳込 / write+LP+blender→content課 / reserch+data→insight課 / product課・Chief 新設。
+     ★ native の workspace 物理畳込は Tier2 matrix main 反映後 (保護条件)。 -->
+## 組織体制（2026-06-11 組織再編v2改定）
 
 ### 経営体制
 | 役職 | 課 | 機能 |
@@ -252,14 +257,20 @@ chrome拡張（claude-in-chrome）は共有リソース。同時に1課しか使
 | COO | conductor | 執行・調整・記録 |
 | CCO | template課 | プロダクト基盤・品質・技術戦略 |
 | CFO | freee課 | 財務・コスト・収益性チェック |
+| 参謀(Chief) | Chief課 | 戦略助言（on-demand・指揮権なし・`_chief`のみ書込） |
 
-### 部署構成
+### 部署構成（11課常時 + Chief on-demand）
 | 部 | 課 |
 |----|----|
 | 経営部 | conductor(COO)、template課(CCO)、freee課(CFO)、cowork課 |
-| プロダクト部 | mued課、native課、dsp課、occur課 |
-| マーケティング部 | SNS課、write課、LP課 |
-| 分析研究部 | reserch課、data課 |
+| プロダクト部 | mued課、product課、dsp課 |
+| マーケティング部 | SNS課、content課、growth課 |
+| 分析部 | insight課 |
+
+- **product課** = 旧 native課 / occur課 の畳み先・製品横断統括（occur は 2026-06-11 closed、記憶は product課が保持）
+- **content課**（母体 `_contents-writing`）= 旧 write課 + LP課 + blender課 の統合（制作・配信）
+- **insight課**（母体 `_data-analysis`）= 旧 reserch課 + data課 の統合（reserch は dormant化、free15計測は母体継続=無断絶）
+- **Chief（参謀）** = on-demand 起動・指揮権なし・戦略助言のみ（`_chief` に書込、コードPRは出さない）
 
 戦略的提案はconductor経由でpolicy-gate（経営部会議）を通してからCEO(kimny)に提示する。
 
@@ -449,6 +460,8 @@ peer judgment の矛盾・不一致を後から認識したら **reverse 判断 
 
 peer → conductor の claude-peers send_message の message 先頭に固定 format で記入 (conductor 認知負荷削減の判断契約中核)。
 
+**入口絞り (2026-05-30 kimny 決定 / 必読)**: peer は **`URGENCY: high` のみ send_message する**。low / mid は send_message せず自 `status.md` に記入する (block 17、cowork が `peer-raw-status.md` に集約 → conductor が checkin/checkout/patrol/自ターン頭で FIFO 読取り処理)。これにより conductor へのプッシュ割り込みを最小化し、件取り違えによる捏造を防ぐ。下記 6 行 format は high send_message 用。urgency vocabulary (high/mid/low) は status.md `urgency` field 含む全分類に適用。proposal v3 communication lanes (reporting.md) の厳格版。
+
 ### Required format
 
 ```
@@ -470,9 +483,20 @@ EVIDENCE: <PR# | file | commit>
 
 ### 運用 rules
 
-- **迷ったら `mid`** (fallback)
+- **迷ったら `mid`** (fallback) → 入口絞り下では send_message せず status.md 記入 (high のみ send)
 - **`high` は REASON + EVIDENCE 必須** (EVIDENCE 不在の high は audit で `evidence_missing` 分類)
-- **議論レーン** (kimny ↔ conductor 対話中) では low / mid 送信禁止。conductor `set_summary` の hold 表示を peer 側 read で判定
+- **議論レーン** (kimny ↔ conductor 対話中) では high も送信抑制。conductor `set_summary` の hold 表示を peer 側 read で判定し、解除まで status.md 集約に寄せる
+- **誤判定で mid を high にしない**: high は不可逆/当日 hard deadline/security/secret/外部リソース新規作成/課金・契約/production outage/data loss/kimny Tier 3 に限定 (上表 high 基準)。判断要請は block 18 form を high send_message or status.md に記入
+
+### peer ID 自称禁止・from_id 正本原則
+
+peer の識別子は **受信 channel の `from_id` 属性を唯一の正本**とする (self は `list_peers` が self を除外する構造ゆえ自分の ID を確実に知れない)。
+
+1. **peer は告知・メッセージ本文に自分の peer ID を書かない** (self からは自 ID を確実に知れないため)。
+2. **受信側は常に channel の `from_id` 属性を正とし**、本文中の自称 ID と矛盾したら `from_id` を採る。
+3. **再起動告知は「この `from_id` が新 ID」形式に統一** (本文に ID 文字列を書かない)。
+
+> 背景 (2026-06-11): conductor 再起動時、`list_peers` が self を除外する構造のため出力に残ったゴースト `_conductor` エントリを自分と誤認 → 全課に誤 ID を配布。外部観測で訂正されたが、検知者不在なら全課送信が死箱へ向かうサイレント分断だった。
 
 <!-- COMMON-BLOCK-END: 15-urgency-marker -->
 
@@ -512,8 +536,16 @@ EVIDENCE: <PR# | file | commit>
 
 ### update timing (必須)
 - **task accept** (dispatch / review request 受領) / **blocked** (外部依存・kimny 待ち・cross-peer 停滞) / **PR submit** / **done**
-- **high urgency 発生時**: 即 status.md update + URGENCY: high send_message 並行
+- **low / mid の連絡は status.md のみ** (send_message しない = 入口絞り block 15)。progress / done / routine PR / FYI / conductor 判断候補だが即時でない 等はここに集約され、cowork が `peer-raw-status.md` へ、conductor が FIFO で拾う
+- **high urgency 発生時のみ**: 即 status.md update + URGENCY: high send_message 並行
 - **1 日 1 回 minimum heartbeat**: 朝の自走開始時 + EOD 区切り
+
+### DoD: status.md 更新 = タスク完了の定義 (必須)
+
+- **task done / milestone 到達 / blocked / PR submit / high urgency の各区切りで、status.md を更新してから「完了」とする。status.md 未更新の完了報告は未完扱い**。
+- **live session で conductor / kimny と直接やり取りした作業も同じ**。区切りごとに status.md へ反映し、conductor が後から状態を再構築する状況を作らない (= cowork aggregation を常に最新に保つ。conductor の手作業 reconstruct を増やさない)。
+- 狙い: conductor は checkout 時に `peer-raw-status.md` aggregation を読むだけで全課 EOD が揃う (手作業 reconstruct 不要)。
+- 起案根拠: 2026-06-11 — live session 中に複数 peer (dsp/SNS/insight) が status.md 未更新のまま作業 → conductor が状態を手作業再構築する事案が発生 (kimny 指摘)。
 
 ### 並行 update
 - `set_summary` (current_task + next_action) も同時更新。status.md = 機械可読 raw、set_summary = peer list 表示用。両者整合必須
@@ -523,7 +555,7 @@ EVIDENCE: <PR# | file | commit>
 - main 直接 push 禁止 peer は feature branch + PR (docs only = Tier 1 self-merge OK)
 
 ### 統合
-- `urgency` field は URGENCY marker (block 15) と同一 vocabulary (high / mid / low)。high 時は send_message 並行
+- `urgency` field は URGENCY marker (block 15) と同一 vocabulary (high / mid / low)。**high 時のみ send_message 並行、low / mid は status.md 記入のみ** (入口絞り)
 - `current_task` / `next_action` に外部リソース新規作成 (block 16 対象) を含む場合、pre-approval URGENCY: high send_message を必ず並行
 - stale 判定 (cowork cron): active 6h / blocked-waiting 2h / dormant 72h 超 (`expected_next_check_at` 優先) → conductor alert + ping
 
@@ -533,9 +565,11 @@ EVIDENCE: <PR# | file | commit>
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/18-judgment-request-contract.md -->
 <!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
 
-## judgment request contract — mid / high message format
+## judgment request contract — judgment request form
 
-mid / high の URGENCY marker (block 15) で conductor 判断要請する場合、urgency 報告でなく **conductor 即決可能な judgment request form** で送る (判断材料収集を peer 側に shift)。
+conductor 判断要請は urgency 報告でなく **conductor 即決可能な judgment request form** で渡す (判断材料収集を peer 側に shift)。
+
+**チャネル (入口絞り block 15 準拠)**: **high** の判断要請のみ send_message に下記 form を添付。**mid** の判断要請は send_message せず status.md の `next_action` / `## Notes` に form を記入し、conductor が `peer-raw-status.md` を FIFO で拾って即決する。いずれも form 構造は同一。
 
 ### Required format (URGENCY 6 行の後ろに続けて)
 
@@ -555,11 +589,13 @@ RECOMMENDATION: <peer 推奨 (a/b/c) + 理由 1 文>
 
 ### Example
 
+high の例 (send_message)。mid なら同 form を status.md `next_action` / `Notes` に記入:
+
 ```
-URGENCY: mid
+URGENCY: high
 NEEDS_ATTENTION: yes
 ACTION_OWNER: conductor
-REASON: PR scope creep 判定
+REASON: 外部リソース新規作成の可否判定 (不可逆)
 DEADLINE: 2026-05-19T12:00:00+09:00
 EVIDENCE: PR #45
 
