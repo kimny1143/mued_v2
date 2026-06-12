@@ -26,14 +26,46 @@ import { apiError, type ApiErrorResponse } from '@/lib/api-response';
  * failed paid-final still keeps its reserved cycle (reserve-before-charge, see
  * `app/api/dial/final/route.ts`); cycle restoration is a separate, deliberate flow.
  */
+function infraError(message: string): NextResponse<ApiErrorResponse> {
+  return apiError(message, { code: 'INFRA_ERROR', status: 503 });
+}
+
 export function sanitizeUpstreamRoExError(
   error: unknown,
   logTag: string,
 ): NextResponse<ApiErrorResponse> | null {
   if (!isRoExUpstreamError(error)) return null;
   console.error(`${logTag} RoEx upstream error:`, error instanceof Error ? error.message : error);
-  return apiError('Generation temporarily failed. Please try again.', {
-    code: 'INFRA_ERROR',
-    status: 503,
-  });
+  return infraError('Generation temporarily failed. Please try again.');
+}
+
+/**
+ * Upload-route counterpart of {@link sanitizeUpstreamRoExError}.
+ *
+ * The upload / presign routes call RoEx `/upload` and PUT to the returned GCS signed URL, so
+ * besides the generic `RoEx API …` HTTP errors they can throw two upload-specific upstream
+ * failures that do NOT carry the `RoEx API ` prefix (from `lib/roex/upload.ts`):
+ *   - "RoEx /upload did not return expected URLs"   (RoEx 2xx but missing signedUrl/readableUrl)
+ *   - "Upload to signed URL failed (<status>)"      (GCS PUT non-2xx)
+ * Both are infrastructure failures the user can't act on, so they get the same friendly
+ * `INFRA_ERROR`. We match these by their exact thrown prefixes rather than broadening
+ * `isRoExUpstreamError` to a bare `RoEx ` prefix, which would risk sanitizing future
+ * intentional user-facing copy (keeping the generation-route matcher narrow).
+ *
+ * App-side actionable errors on these routes (missing fields, payment required, track lock)
+ * are returned BEFORE the try/catch, so they never reach here — only upstream/unexpected
+ * throws do. Returns `null` for anything non-upstream so callers preserve their fallback.
+ */
+export function sanitizeUploadError(
+  error: unknown,
+  logTag: string,
+): NextResponse<ApiErrorResponse> | null {
+  const isUploadUpstream =
+    isRoExUpstreamError(error) ||
+    (error instanceof Error &&
+      (error.message.startsWith('RoEx /upload ') ||
+        error.message.startsWith('Upload to signed URL failed')));
+  if (!isUploadUpstream) return null;
+  console.error(`${logTag} upstream upload error:`, error instanceof Error ? error.message : error);
+  return infraError('Upload temporarily failed. Please try again.');
 }

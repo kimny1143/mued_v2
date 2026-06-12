@@ -18,6 +18,7 @@ import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiForbidden, apiError } from '@/lib/api-response';
 import { createRoExClient, getUploadUrl, uploadToSignedUrl } from '@/lib/roex';
 import { isDialSessionTrackEditable, dialTrackLockReason } from '@/lib/dial/session-edit-lock';
+import { sanitizeUploadError } from '@/lib/dial/roex-error';
 import { db } from '@/db';
 import { dialTracks } from '@/db/schema';
 
@@ -78,6 +79,7 @@ export const POST = withDialAuth(async (auth) => {
       readableUrl,
     });
   } catch (error) {
-    return apiServerError(error instanceof Error ? error.message : 'Upload failed');
+    return sanitizeUploadError(error, '[upload/POST]')
+      ?? apiServerError(error instanceof Error ? error.message : 'Upload failed');
   }
 });

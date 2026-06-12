@@ -12,6 +12,7 @@ import { verifyDialSessionOwnership } from '@/lib/middleware/dial-ownership';
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiForbidden, apiError } from '@/lib/api-response';
 import { createRoExClient, getUploadUrl } from '@/lib/roex';
 import { isDialSessionTrackEditable, dialTrackLockReason } from '@/lib/dial/session-edit-lock';
+import { sanitizeUploadError } from '@/lib/dial/roex-error';
 
 export const POST = withDialAuth(async (auth) => {
   try {
@@ -46,6 +47,7 @@ export const POST = withDialAuth(async (auth) => {
 
     return apiSuccess({ signedUrl, readableUrl });
   } catch (error) {
-    return apiServerError(error instanceof Error ? error.message : 'Presign failed');
+    return sanitizeUploadError(error, '[upload/presign/POST]')
+      ?? apiServerError(error instanceof Error ? error.message : 'Presign failed');
   }
 });

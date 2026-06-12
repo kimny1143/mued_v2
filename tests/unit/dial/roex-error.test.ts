@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { isRoExUpstreamError, RoExCommTimeoutError } from '@/lib/roex';
-import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
+import { sanitizeUpstreamRoExError, sanitizeUploadError } from '@/lib/dial/roex-error';
 
 // The exact RoEx upstream body reported for free-campaign session fd7ef7a2 (2026-06-12).
 const ROEX_RAW =
@@ -54,5 +54,37 @@ describe('sanitizeUpstreamRoExError', () => {
       '[preview/POST]',
     );
     expect(res).toBeNull();
+  });
+});
+
+describe('sanitizeUploadError', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('sanitizes generic RoEx HTTP errors (RoEx API prefix)', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = sanitizeUploadError(new Error('RoEx API /upload failed (500): internal error'), '[upload/POST]');
+    expect(res).not.toBeNull();
+    expect(res!.status).toBe(503);
+    const body = await res!.json();
+    expect(body.code).toBe('INFRA_ERROR');
+    expect(body.error).not.toMatch(/RoEx/);
+  });
+
+  it('sanitizes upload-specific upstream throws (no RoEx API prefix)', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    for (const msg of ['RoEx /upload did not return expected URLs', 'Upload to signed URL failed (403)']) {
+      const res = sanitizeUploadError(new Error(msg), '[upload/POST]');
+      expect(res, msg).not.toBeNull();
+      const body = await res!.json();
+      expect(body.code).toBe('INFRA_ERROR');
+      expect(body.error).not.toMatch(/RoEx/);
+    }
+    expect(errSpy).toHaveBeenCalled();
+  });
+
+  it('returns null for app-side / unexpected errors (preserve fallback)', () => {
+    expect(sanitizeUploadError(new Error('Some unexpected DB error'), '[upload/POST]')).toBeNull();
+    expect(sanitizeUploadError(new Error('Payment required before uploading'), '[upload/POST]')).toBeNull();
+    expect(sanitizeUploadError('not an error', '[upload/POST]')).toBeNull();
   });
 });
