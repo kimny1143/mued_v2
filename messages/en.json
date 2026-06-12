@@ -1725,6 +1725,14 @@
       "processingSpinner": "Processing"
     }
   },
+  "marketingConsent": {
+    "sectionTitle": "Email updates",
+    "sectionDescription": "Manage whether you receive update emails from MUED. You can change this anytime.",
+    "toggleLabel": "Send me MUED updates, tips, and announcements by email (about once a month — you can unsubscribe anytime).",
+    "savedGranted": "Email updates turned on.",
+    "savedWithdrawn": "Email updates turned off.",
+    "error": "Couldn't update your preference. Please try again."
+  },
   "settings": {
     "title": "Settings",
     "subtitle": "Manage your MUEDnote preferences",

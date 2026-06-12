@@ -26,6 +26,7 @@ import {
   Brain,
   Terminal,
   ChevronRight,
+  Mail,
 } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-context';
 
@@ -83,7 +84,7 @@ function SettingsSection({ title, description, icon, children, comingSoon }: Sec
 // ========================================
 
 export default function SettingsPage() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const { user, isLoaded: isUserLoaded } = useUser();
 
   // Hoo settings state
@@ -96,6 +97,10 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+
+  // Marketing consent state (self-owned list). Default OFF — explicit opt-in.
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [isMarketingToggling, setIsMarketingToggling] = useState(false);
 
   // Fetch Hoo settings
   const fetchHooSettings = useCallback(async () => {
@@ -117,6 +122,18 @@ export default function SettingsPage() {
   useEffect(() => {
     fetchHooSettings();
   }, [fetchHooSettings]);
+
+  // Fetch current marketing consent (de-normalized value). granted → toggle ON, else OFF.
+  useEffect(() => {
+    let active = true;
+    fetch('/api/marketing/consent')
+      .then((r) => r.json())
+      .then((d) => {
+        if (active && d.success) setMarketingOptIn(d.data?.status === 'granted');
+      })
+      .catch(() => { /* default OFF on error */ });
+    return () => { active = false; };
+  }, []);
 
   // Track changes
   useEffect(() => {
@@ -176,6 +193,33 @@ export default function SettingsPage() {
       setError('Network error');
     } finally {
       setIsToggling(false);
+    }
+  };
+
+  // Toggle marketing consent — grants/withdraws via the consent API (records ledger + de-norm value).
+  const handleMarketingToggle = async () => {
+    const next = !marketingOptIn;
+    setIsMarketingToggling(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch('/api/marketing/consent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: next ? 'granted' : 'withdrawn', locale: locale === 'ja' ? 'ja' : 'en' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMarketingOptIn(next);
+        setSuccess(next ? t.marketingConsent.savedGranted : t.marketingConsent.savedWithdrawn);
+        setTimeout(() => setSuccess(null), 3000);
+      } else {
+        setError(data.error || t.marketingConsent.error);
+      }
+    } catch {
+      setError(t.marketingConsent.error);
+    } finally {
+      setIsMarketingToggling(false);
     }
   };
 
@@ -391,6 +435,34 @@ export default function SettingsPage() {
                   </span>
                   <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
                 </Link>
+              </div>
+            </SettingsSection>
+
+            {/* Marketing email consent (self-owned list) — default OFF, withdrawal always available */}
+            <SettingsSection
+              title={t.marketingConsent.sectionTitle}
+              description={t.marketingConsent.sectionDescription}
+              icon={<Mail className="w-5 h-5 text-indigo-400" />}
+            >
+              <div className="flex items-start justify-between gap-4 py-2">
+                <span className="text-sm text-slate-300 leading-snug flex-1">
+                  {t.marketingConsent.toggleLabel}
+                </span>
+                <button
+                  onClick={handleMarketingToggle}
+                  disabled={isMarketingToggling}
+                  data-testid="marketing-consent-toggle"
+                  aria-pressed={marketingOptIn}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 ${
+                    marketingOptIn ? 'bg-indigo-600' : 'bg-slate-600'
+                  } ${isMarketingToggling ? 'opacity-50' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      marketingOptIn ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
               </div>
             </SettingsSection>
 
