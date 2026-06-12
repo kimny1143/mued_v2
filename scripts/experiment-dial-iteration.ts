@@ -19,7 +19,7 @@ config({ path: '.env.local' });
 import { readFileSync, writeFileSync } from 'fs';
 import { createHash } from 'crypto';
 import {
-  createRoExClient,
+  RoExClient,
   getUploadUrl,
   uploadToSignedUrl,
   mixPreview,
@@ -50,7 +50,7 @@ async function md5OfUrl(url: string, label: string): Promise<string> {
   return hash;
 }
 
-async function pollPreview(client: ReturnType<typeof createRoExClient>, taskId: string, label: string): Promise<void> {
+async function pollPreview(client: RoExClient, taskId: string, label: string): Promise<void> {
   const start = Date.now();
   for (let i = 0; i < 120; i++) {
     const r = await pollMixPreview(client, taskId, { retrieveFxSettings: false });
@@ -62,7 +62,7 @@ async function pollPreview(client: ReturnType<typeof createRoExClient>, taskId: 
 }
 
 async function finalWithPoll(
-  client: ReturnType<typeof createRoExClient>,
+  client: RoExClient,
   taskId: string,
   trackData: AdvancedTrackAdjustment[],
   trackUrls: string[],
@@ -86,12 +86,15 @@ const effectsB = (urls: string[]): AdvancedTrackAdjustment[] =>
   urls.map((u) => ({ trackUrl: u, gainDb: 0, eqBands: [{ frequency: 5000, gain: 6, q: 1.5 }] }));
 
 async function main() {
-  if (!process.env.ROEX_API_KEY) throw new Error('ROEX_API_KEY not set');
-  if (process.env.ROEX_DEV_API_KEY && process.env.ROEX_API_KEY === process.env.ROEX_DEV_API_KEY) {
-    throw new Error('Refusing to run on DEV key (no real render)');
+  // Use the PROD key explicitly (ROEX_API_KEY in .env.local is the dev key locally).
+  // NEVER log/echo/commit the key value — only use it to construct the client.
+  const prodKey = process.env.ROEX_PROD_API_KEY;
+  if (!prodKey) throw new Error('ROEX_PROD_API_KEY not set');
+  if (prodKey === process.env.ROEX_DEV_API_KEY) {
+    throw new Error('Refusing to run: PROD key equals DEV key (no real render)');
   }
-  const client = createRoExClient();
-  log('=== ⑤ decisive experiment START (real RoEx renders) ===');
+  const client = new RoExClient({ apiKey: prodKey });
+  log('=== ⑤ decisive experiment START (real RoEx renders, PROD key) ===');
 
   // 1. Upload stems
   const trackUrls: string[] = [];
