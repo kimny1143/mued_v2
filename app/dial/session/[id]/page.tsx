@@ -13,6 +13,7 @@ import type { TakeEntry } from '@/components/dial/unified-session-player';
 import { type DeliveryTarget, DELIVERY_TARGETS, DELIVERY_TARGET_LABELS, DELIVERY_TARGET_LUFS, getLufsGapJudgment } from '@/lib/dial/lufs-presets';
 import { isDialSessionTrackEditable } from '@/lib/dial/session-edit-lock';
 import { buildSessionTakes, taskStreamUrl } from '@/lib/dial/session-takes';
+import { getUnusedCompletedPreview, withoutIntermediatePreviews, paramsSignature } from '@/lib/dial/iteration-orchestration';
 
 /** Convert InstrumentGroup enum to short DAW-style label: BASS_GROUP → BASS */
 function toShortLabel(group: string): string {
@@ -166,6 +167,18 @@ function DialSessionContent() {
   const [mixGenerating, setMixGenerating] = useState(false);
   const [mixGeneratingType, setMixGeneratingType] = useState<'preview' | 'mix_check' | 'final' | 'mastering_preview' | 'mastering' | null>(null);
 
+  // ⑤ correctness: dialogue iterations need a FRESH render each time (RoEx caches a 2nd
+  // /retrievefinalmix on the same preview task → stale audio). When the latest preview was already
+  // rendered, we mint a fresh /preview, wait for it to render (existing poll), then fire /final.
+  // pendingRender holds that "fire /final once this fresh preview completes" intent.
+  const [pendingRender, setPendingRender] = useState<{ previewTaskId: string; type: 'mix_check' | 'final' } | null>(null);
+  // detect-and-regen: per-type param signature of the last render we initiated. Unchanged signature
+  // for the SAME render type → return the existing take instead of re-rendering (no wasted
+  // minutes/charge). Per-type so a Final after a same-params Mix Check is never blocked (Final is a
+  // distinct deliverable). Fail-safe: a miss only falls back to the bounded (baseCycleLimit)
+  // re-render, never an extra charge. Reset on error.
+  const lastRenderedSigRef = useRef<{ mix_check: string | null; final: string | null }>({ mix_check: null, final: null });
+
   // LUFS delivery target for mastering
   const [deliveryTarget, setDeliveryTarget] = useState<DeliveryTarget>('spotify');
 
@@ -248,8 +261,17 @@ function DialSessionContent() {
   // Build TakeEntry[] for UnifiedSessionPlayer (RAW → MIXED newest-first → MASTERED).
   // Logic extracted to lib/dial/session-takes for unit-testability; each MIXED take gets its OWN
   // task's stem URLs (taskId-scoped) so "Preview 2" plays Preview 2's stems, not Preview 1's.
+  // ⑤: hide intermediate previews. Each dialogue iteration mints a fresh base preview before its
+  // mix_check/final; those superseded previews would otherwise clutter the take list. The initial
+  // preview stays visible until the first mix_check.
   const sessionTakes = useMemo(
-    (): TakeEntry[] => (session ? buildSessionTakes(session, guestToken) : []),
+    (): TakeEntry[] =>
+      session
+        ? buildSessionTakes(
+            { ...session, tasks: withoutIntermediatePreviews(session.tasks) },
+            guestToken,
+          )
+        : [],
     [session, guestToken],
   );
 
@@ -363,15 +385,17 @@ function DialSessionContent() {
     return () => clearInterval(interval);
   }, [session, fetchSession, headers]);
 
-  // Sync mixGenerating state with session task status (handles page reload)
+  // Sync mixGenerating state with session task status (handles page reload).
+  // pendingRender keeps the progress UI on during the ⑤ fresh-base-preview rebuild phase, before any
+  // final/mix_check task exists yet.
   useEffect(() => {
     if (!session?.tasks) return;
     const hasFinalProcessing = session.tasks.some(
       (t) => (t.taskType === 'final_basic' || t.taskType === 'final_advanced' || t.taskType === 'mix_check')
         && (t.status === 'processing' || t.status === 'pending'),
     );
-    setMixGenerating(hasFinalProcessing);
-  }, [session]);
+    setMixGenerating(hasFinalProcessing || pendingRender !== null);
+  }, [session, pendingRender]);
 
   // Poll for payment confirmation after Stripe redirect
   const isPaymentRedirect = searchParams.get('payment') === 'success';
@@ -780,6 +804,7 @@ function DialSessionContent() {
 
       const data = await res.json();
       if (!data.success) {
+        lastRenderedSigRef.current[type] = null; // failed → allow the same-params retry through detect-and-regen
         setError(data.error || 'Mix generation failed');
         setErrorCode(data.code || (res.status >= 500 ? 'INFRA_ERROR' : null));
         setRetryFn(() => () => handleMixGenerate(taskId, type));
@@ -812,6 +837,7 @@ function DialSessionContent() {
             && (t.status === 'processing' || t.status === 'pending'),
         );
         if (!hasBackgroundTask) {
+          lastRenderedSigRef.current[type] = null; // no task landed → allow the same-params retry
           setError('Mix generation request timed out. Please try again.');
           setErrorCode('INFRA_ERROR');
           setRetryFn(() => () => handleMixGenerate(taskId, type));
@@ -823,28 +849,110 @@ function DialSessionContent() {
     }
   };
 
-  // Chat-driven mix generation (find latest preview task and trigger)
-  const handleMixCheckFromChat = () => {
-    const latestPreview = session?.tasks.find(
-      (t) => t.taskType === 'preview' && t.status === 'completed',
+  // ⑤ correctness — client-orchestrated render. RoEx is task-level idempotent, so a repeat
+  // /retrievefinalmix on the SAME preview task returns the cached first render (stale audio). To
+  // make every adjustment real: the FIRST render after a preview reuses it (its first apply is
+  // fresh); each SUBSEQUENT render mints a fresh /preview, lets the existing poll drive it to ready,
+  // then fires /final (see the pendingRender effect). detect-and-regen skips an unchanged re-render.
+  const requestRender = useCallback(async (type: 'mix_check' | 'final') => {
+    if (!session) return;
+    const hasCompletedPreview = session.tasks.some(
+      (tk) => tk.taskType === 'preview' && tk.status === 'completed',
     );
-    if (!latestPreview) {
-      setError('Preview required before mix check. Please generate a preview first.');
+    if (!hasCompletedPreview) {
+      setError(type === 'mix_check'
+        ? 'Preview required before mix check. Please generate a preview first.'
+        : 'Preview required before generating final mix. Please generate a preview first.');
       return;
     }
-    handleMixGenerate(latestPreview.id, 'mix_check');
-  };
 
-  const handleFinalFromChat = () => {
-    const latestPreview = session?.tasks.find(
-      (t) => t.taskType === 'preview' && t.status === 'completed',
+    // detect-and-regen: unchanged Hoo params since the last render OF THIS TYPE → show the existing
+    // take instead of spending another multi-minute render + charge.
+    const currentSig = paramsSignature(session.messages?.[0]?.parameterChanges ?? null);
+    const hasCompletedRenderOfType = session.tasks.some((tk) =>
+      tk.status === 'completed' && !!tk.finalUrl && (type === 'mix_check'
+        ? tk.taskType === 'mix_check'
+        : (tk.taskType === 'final_basic' || tk.taskType === 'final_advanced')),
     );
-    if (!latestPreview) {
-      setError('Preview required before generating final mix. Please generate a preview first.');
+    if (currentSig !== '' && currentSig === lastRenderedSigRef.current[type] && hasCompletedRenderOfType) {
+      setError(t.dial.session.noChangesSinceLastMix);
+      setErrorCode('NO_CHANGES');
+      setRetryFn(null);
       return;
     }
-    handleMixGenerate(latestPreview.id, 'final');
-  };
+
+    // The first render after a preview can reuse it (its first /retrievefinalmix is uncached).
+    const usable = getUnusedCompletedPreview(session.tasks);
+    if (usable) {
+      lastRenderedSigRef.current[type] = currentSig;
+      await handleMixGenerate(usable.id, type);
+      return;
+    }
+
+    // 2nd+ iteration: mint a FRESH base preview, then fire /final once it has rendered.
+    lastRenderedSigRef.current[type] = currentSig;
+    setError(null);
+    setErrorCode(null);
+    setRetryFn(null);
+    setMixGenerating(true);
+    setMixGeneratingType(type);
+    try {
+      const res = await fetch('/api/dial/preview', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ sessionId: session.id }),
+      });
+      const data = await res.json();
+      if (!data.success || !data.data?.taskId) {
+        lastRenderedSigRef.current[type] = null;
+        setError(data.error || 'Mix generation failed');
+        setErrorCode(data.code || (res.status >= 500 ? 'INFRA_ERROR' : null));
+        setRetryFn(() => () => requestRender(type));
+        setMixGenerating(false);
+        setMixGeneratingType(null);
+        return;
+      }
+      setPendingRender({ previewTaskId: data.data.taskId, type });
+      await fetchSession();
+    } catch {
+      lastRenderedSigRef.current[type] = null;
+      setError('Mix generation error');
+      setErrorCode('INFRA_ERROR');
+      setRetryFn(() => () => requestRender(type));
+      setMixGenerating(false);
+      setMixGeneratingType(null);
+    }
+  // handleMixGenerate is a stable-enough closure (POSTs by taskId + stable headers); excluded to
+  // avoid re-creating requestRender every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, headers, fetchSession, t]);
+
+  // When a pending render's freshly-minted base preview completes, fire /final on it. firedRenderRef
+  // de-dupes; pendingRender stays set (progress on) until /final lands a processing task, then clears.
+  const firedRenderRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!pendingRender || !session?.tasks) return;
+    const pv = session.tasks.find((tk) => tk.id === pendingRender.previewTaskId);
+    if (!pv) return;
+    if (pv.status === 'completed' && (pv.previewUrl || pv.finalUrl)) {
+      if (firedRenderRef.current === pendingRender.previewTaskId) return;
+      firedRenderRef.current = pendingRender.previewTaskId;
+      const { previewTaskId, type } = pendingRender;
+      handleMixGenerate(previewTaskId, type).finally(() => setPendingRender(null));
+    } else if (pv.status === 'failed') {
+      lastRenderedSigRef.current[pendingRender.type] = null;
+      setPendingRender(null);
+      setError('Mix render failed while rebuilding the base mix. Please try again.');
+      setErrorCode('INFRA_ERROR');
+      setMixGenerating(false);
+      setMixGeneratingType(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, pendingRender]);
+
+  // Chat-driven mix generation (⑤ client-orchestrated — reuses or mints a fresh base preview).
+  const handleMixCheckFromChat = () => { void requestRender('mix_check'); };
+  const handleFinalFromChat = () => { void requestRender('final'); };
 
   // Mastering handlers
   const handleMasteringPreview = async (desiredLoudness?: string) => {
@@ -957,7 +1065,11 @@ function DialSessionContent() {
   // useMemo hooks must be called unconditionally before any early returns (React hook rules)
   const latestTask = session?.tasks[0];
   const generatingLabel = useMemo(() => {
-    if (!mixGenerating || !latestTask) return undefined;
+    if (!mixGenerating) return undefined;
+    // ⑤ U3: while we re-render a fresh base mix to apply the new adjustments, say so plainly
+    // (otherwise the label would read "preview"/"processing" and surprise the user during the wait).
+    if (pendingRender) return t.dial.session.statusRebuildingMix;
+    if (!latestTask) return undefined;
     switch (latestTask.taskType) {
       case 'mix_check': return t.dial.session.statusMixCheckProcessing;
       case 'final_basic':
@@ -966,7 +1078,7 @@ function DialSessionContent() {
       case 'mastering': return t.dial.session.statusMasteringFinalGenerating;
       default: return t.dial.session.processing;
     }
-  }, [mixGenerating, latestTask, t]);
+  }, [mixGenerating, latestTask, t, pendingRender]);
 
   const generatingElapsed = useMemo(() => {
     if (!mixGenerating || elapsedSeconds === 0) return undefined;
@@ -978,8 +1090,12 @@ function DialSessionContent() {
   }, [mixGenerating, elapsedSeconds]);
 
   const generatingEta = useMemo(() => {
-    if (!mixGenerating || !latestTask) return undefined;
+    if (!mixGenerating) return undefined;
     const trackCount = session?.tracks.length ?? 0;
+    // ⑤ U3: during the rebuild phase the soft time guidance is folded into statusRebuildingMix (so it
+    // reads as an estimate, not a hard cap) — suppress the separate hard ETA chip here.
+    if (pendingRender) return undefined;
+    if (!latestTask) return undefined;
     switch (latestTask.taskType) {
       case 'preview': return trackCount > 8 ? '5–20 min' : '2–10 min';
       case 'mix_check': return '3–10 min';
@@ -989,7 +1105,7 @@ function DialSessionContent() {
       case 'mastering': return '1–5 min';
       default: return undefined;
     }
-  }, [mixGenerating, latestTask, session?.tracks.length]);
+  }, [mixGenerating, latestTask, session?.tracks.length, pendingRender]);
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
@@ -1601,7 +1717,11 @@ function DialSessionContent() {
         </div>
 
         {error && (
-          <div data-testid="dial-session-error" className="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-lg text-red-300 text-sm">
+          <div data-testid="dial-session-error" className={`mb-6 p-4 border rounded-lg text-sm ${
+            errorCode === 'NO_CHANGES'
+              ? 'bg-zinc-800/40 border-zinc-700 text-zinc-300' // benign info, not a failure
+              : 'bg-red-900/30 border-red-800 text-red-300'
+          }`}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 {errorCode === 'INFRA_ERROR' && (
@@ -1620,7 +1740,7 @@ function DialSessionContent() {
                   <p className="text-xs text-red-400/70 mt-1">{t.dial.session.errorInfraHint}</p>
                 )}
               </div>
-              {retryFn && (
+              {retryFn && errorCode !== 'NO_CHANGES' && (
                 <button
                   onClick={() => { setError(null); setErrorCode(null); retryFn(); }}
                   className="shrink-0 px-3 py-1.5 bg-red-800/60 hover:bg-red-700/60 rounded-lg text-xs font-medium transition-colors"
