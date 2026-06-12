@@ -1613,7 +1613,9 @@ function DialSessionContent() {
                 {errorCode === 'TASK_FAILED' && (
                   <p className="font-medium mb-1">{t.dial.session.errorTaskFailed}</p>
                 )}
-                <p>{error}</p>
+                {/* INFRA_ERROR carries the localized errorInfra heading + hint below; the raw
+                    `error` body is non-actionable noise (and may be upstream copy), so hide it. */}
+                {errorCode !== 'INFRA_ERROR' && <p>{error}</p>}
                 {errorCode === 'INFRA_ERROR' && (
                   <p className="text-xs text-red-400/70 mt-1">{t.dial.session.errorInfraHint}</p>
                 )}

@@ -30,6 +30,7 @@ import { createRoExClient, isRoExDevKey, mixFinalBasic, mixFinalAdvanced, pollMi
 import { buildAdvancedTrackData, type ParameterChanges } from '@/lib/dial/track-data';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks, dialMessages } from '@/db/schema';
@@ -344,7 +345,8 @@ export const POST = withDialAuth(async (auth) => {
       },
     });
   } catch (error) {
-    return apiServerError(error instanceof Error ? error.message : 'Mix generation failed');
+    return sanitizeUpstreamRoExError(error, '[final/POST]')
+      ?? apiServerError(error instanceof Error ? error.message : 'Mix generation failed');
   }
 });
 
