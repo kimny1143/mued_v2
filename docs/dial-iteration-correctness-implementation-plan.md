@@ -1,112 +1,116 @@
-# ⑤ Dialogue iteration correctness — implementation plan (resume doc, 2026-06-12)
+# ⑤ Dialogue iteration correctness — implementation plan (APPROVED design, 2026-06-12)
 
-Branch: `feat/dial-iteration-correctness`. Tier3 (core billing/render path). Plan-first APPROVED by
-conductor (4 points + simplification). This doc is the durable handoff for the compacted next
-session — execute step 2 from here.
+Branch: `feat/dial-iteration-correctness`. Tier3 (touches the render/charge journey). kimny GO
+(2026-06-12, 4-point set via conductor). This is the durable resume doc — implement from §3.
 
-> ## ⚠️ 2026-06-12 UPDATE — the "immediate final" simplification below is DISPROVEN
-> The 9-stem latency experiment (`scripts/experiment-dial-latency.ts`, run `b2hk3ku8n`) proved that
-> calling `/retrievefinalmix` immediately on a FRESH (un-rendered) large task **charges-and-fails**
-> (500 in 11s: "Service completed but did not return results. Your credits have been used"). The base
-> preview render (8-22min for real sessions) MUST complete before `/retrievefinalmix`. So the
-> synchronous `submit()` design in Step 2 below is NOT viable — it would charge-and-fail every real
-> iteration. The correct fix is **client-orchestrated**: each iteration re-runs the existing async
-> `/preview` (mint + client-poll to ready) THEN `/final` applies effects to the now-ready fresh task.
-> Cost shift (freee): today's 2nd+ iterations are FREE RoEx cache-hits → become real 250cr+ charges.
-> Escalated to conductor (URGENCY:mid, 2026-06-12) as a kimny-domain UX+cost decision. See
-> memory `reference-roex-retrievefinalmix-needs-ready-preview`. Steps 2-3 below are kept ONLY as the
-> record of what was disproven; do NOT implement them as written.
+## 0. What was disproven (do NOT revert to it)
+The original "mint fresh `/mixpreview` → **immediately** `/retrievefinalmix`" (synchronous, inside
+`/api/dial/final`) was **disproven** by the 9-stem latency experiment
+(`scripts/experiment-dial-latency.ts`, run `b2hk3ku8n`): an immediate final on a fresh large task
+returns **500 in 11s AND consumes credits** ("Service completed but did not return results. Your
+credits have been used"). RoEx `/retrievefinalmix` needs the base preview RENDERED first (8-22min),
+which exceeds Vercel `maxDuration=300s`. See memory
+`reference-roex-retrievefinalmix-needs-ready-preview`. → The fix is **client-orchestrated async**.
 
-## Status
-- ✅ **baseCycleLimit 5→3** (commit `c3c8c80d`): `checkout/route.ts` sets per mode — omakase=1,
-  dialogue=3, else schema default. Both insert paths (admin bypass + transaction).
-- ✅ **Experiment** (commit on branch, `scripts/experiment-dial-iteration.ts`): ⑤ CONFIRMED.
-- ⬜ **⑤ core fix** — NOT YET implemented. Steps below.
-- ⬜ before/after audio evidence + unit tests.
-- ⬜ Tier3 PR → product(2g7xrfai) review → conductor merge.
-- stems-off = SEPARATE kimny decision (recommend KEEP — degrades in-player stem soloing; NOT in this PR).
+## 1. Approved design (kimny 4 points)
+1. ⑤ = switch to REAL audio per iteration (no more cached stale render).
+2. Wait UX = **U1** (progress-bar button, reuse the existing generation-wait UI) **+ U3** (honest
+   expectation copy: each adjustment re-renders, takes minutes) **+ U2** (Hoo "batch your tweaks"
+   guidance), with **detect-and-regen** default (unchanged params since last render → return the
+   existing take instantly, no re-render, no charge).
+3. **mix_check ALSO renders real every time** (NOT just final) — this is the director's-seat core.
+4. free15 gets the real full experience; ordering = ⑤ fix into main → open 15 seats.
 
-## Confirmed problem (experiment run bttlx8vam, md5 = primary evidence)
-RoEx is **task-level idempotent**. mix_check/final reuse `previewTask.roexTaskId`
-(`final/route.ts:164`, `mixing.ts:176`) → 2nd+ render on a used task returns the CACHED first
-render for free, ignoring new effects.
-- A (M1, neutral EQ) md5 `6b7de1c2…` == B (M1 SAME task, +6dB@5k) md5 `6b7de1c2…` → byte-identical
-  = cached old audio (B returned in 1s = free cache hit; no dashboard charge for B).
-- C (M2 NEW task, +6dB@5k) md5 `8eaf6032…` ≠ B → a fresh task renders the new audio.
-- Immediate final on a just-submitted preview returns valid audio in ~16s (small input) → no
-  separate preview-poll needed; `/retrievefinalmix` pipelines auto-mix+effects.
+### ⚠️ Scope guards (hard)
+- **DO NOT touch `returnStems` anywhere.** stems-off is explicitly EXCLUDED (CFO correction:
+  mix_check stems are used by in-player stem-solo, `session-takes.ts`; removing re-breaks PR-A
+  cross-take bleed). `/final` keeps `returnStems: !isFreeCampaign` exactly. The fresh `/preview`
+  reuses `/preview`'s existing `returnStems: true` (0cr — preview is free — so no cost change).
+- **U3 expectation copy ships in THIS PR** (EN/JA i18n). conductor voice-checks the copy drafts
+  (kimny final not needed). U2 Hoo prompt = same PR or fast-follow (mued sequencing call).
+- baseCycleLimit 5→3 already merged (PR #462). Cost model update = conductor → CFO after direction.
 
-## The fix (core) — mint a fresh multitrackTaskId per dialogue render
-**Only the dialogue `isAdvanced` path** in `final/route.ts` (omakase = single final, ⑤ N/A, and it
-depends on the preview's FX retrieval — leave as-is).
+## 2. Why client-orchestrated solves latency (the must-verify, by construction)
+Each adjustment: client calls `/preview` (mints a fresh base task, returns immediately) → the
+EXISTING client poll (`page.tsx` poll loop) drives it to ready via `/api/dial/preview` GET, which is
+already #434-hardened for the 8-22min preview render (backstop 60min) → once ready, client calls
+`/final` on that ready task (fast, p50 ~6s, same as today). **No single RPC blocks >300s.** The
+fresh preview render reuses the path built specifically for long preview renders; `/final` only ever
+runs on a ready task (the exact condition the experiment showed is required). Orphan-charge risk is
+unchanged from today because `/final` is unchanged.
 
-Replace `taskId: previewTask.roexTaskId` with a freshly-minted `/mixpreview` task per render.
+## 3. Implementation (client-only; NO server route change, NO schema/migration)
+All in `app/dial/session/[id]/page.tsx` (+ i18n copy + a small take filter + unit-testable helper).
 
-### Step-by-step (`app/api/dial/final/route.ts`)
-1. **Imports** — add to the `@/lib/roex` import: `mixPreview, mapMusicalStyle, mapInstrumentGroup, type MixTrackInput`.
-2. **isAdvanced submit builder** (currently ~`:150-169`): before `mixFinalAdvanced`, build a fresh
-   preview request from the session tracks **the same way `preview/route.ts:68-80` does** (so the
-   fresh preview ↔ effects trackUrl relationship is identical to the current working flow — no new
-   inconsistency; note `buildAdvancedTrackData` uses `t.roexUploadUrl`, the original preview used
-   `resolveTrackUrl(t)`; replicate the original):
-   ```ts
-   const freshTracks: MixTrackInput[] = tracks.map((t) => {
-     const trackUrl = resolveTrackUrl(t);
-     if (!trackUrl) throw new Error(`Stem URL expired for "${t.originalFilename}". Please re-upload your stems.`);
-     return {
-       trackUrl,
-       instrumentGroup: mapInstrumentGroup(t.instrumentGroup) as MixTrackInput['instrumentGroup'],
-       presenceSetting: t.presenceSetting as MixTrackInput['presenceSetting'],
-       panPreference: t.panPreference as MixTrackInput['panPreference'],
-       reverbPreference: t.reverbPreference as MixTrackInput['reverbPreference'],
-     };
-   });
-   const roexStyle = mapMusicalStyle(sessionRow.musicalStyle);
-   submit = async () => {
-     const client = createRoExClient();
-     const fresh = await mixPreview(client, { tracks: freshTracks, musicalStyle: roexStyle as never, returnStems: false });
-     if (!fresh.taskId) throw new Error('Failed to mint a fresh mix task');
-     chargedTaskId = fresh.taskId;               // capture for the task-row insert (see step 3)
-     return mixFinalAdvanced(client, { taskId: fresh.taskId, trackData: advancedTrackData, returnStems: !sessionRow.isFreeCampaign });
-   };
-   ```
-3. **★Save the FRESH task id on the dial_task** (critical): the task insert (`~:283`) currently saves
-   `roexTaskId: previewTask.roexTaskId`. The poll/webhook paths re-retrieve by `task.roexTaskId`, so it
-   MUST be the charged (fresh) id, not the preview's. Add `let chargedTaskId = previewTask.roexTaskId;`
-   before the submit builders (default for dev/omakase), set it inside the isAdvanced submit, and change
-   the insert to `roexTaskId: chargedTaskId`. (mixResult.taskId also echoes fresh.taskId, but capture
-   explicitly to avoid the "save the charge id, not mixResult.taskId" trap noted at `:279-283`.)
-4. **No dial_task for the fresh preview** — we only use its roexTaskId; do NOT insert a preview row.
-   This auto-hides the intermediate preview (no extra take in `session-takes.ts`).
+### 3a. Helper: which preview to render on (avoid wasted renders)
+The initial preview's FIRST `/retrievefinalmix` is fresh (not cached) — so the first render can reuse
+it. Only AFTER a preview has been rendered do we need a fresh one. Add a pure helper (unit-tested):
+```
+getUnusedCompletedPreview(tasks): Task | null
+  // latest completed preview with NO mix_check/final created at-or-after it (createdAt compare)
+  // → that preview is "unused" and safe to /retrievefinalmix once (fresh). Else null = mint fresh.
+```
 
-### ★Large-session latency (MUST verify — experiment only tested small/fast 16s input)
-For 9-stem sessions a render is 8-22min. `mixFinalAdvanced` (submit, no comm-timeout) may BLOCK for
-the full render → the final POST exceeds `maxDuration=300s` → Vercel kills it → task insert (after
-submit) never runs → **orphaned charge** (charged, no task row to poll/reconcile).
-- Verify how `/retrievefinalmix` behaves on a fresh task for a large session: returns `processing`
-  quickly (then polled) vs blocks. Run the experiment with the full 9-stem set if needed.
-- If it blocks: restructure so the task row is created BEFORE/independent of the blocking submit (mirror
-  the reserve-before-charge ordering, or rely on the webhook + #434 reconcile cron to adopt the orphan).
-  The existing #434 poll/backstop/cron must be able to find and complete the task.
+### 3b. detect-and-regen (client-side, fail-safe toward the bounded default)
+- `paramsHash = stableStringify(latestParamChanges)` (the Hoo effects that will be applied).
+- Keep `lastRenderedParamsHashRef`. On a render request: if `paramsHash === lastRenderedParamsHashRef`
+  AND a completed mix_check/final take exists → **no-op** (toast: "前回から変更がないため、最新のミックスを表示しています" /
+  "No changes since the last mix — showing your latest take."). Do NOT mint/charge.
+- Reset the ref on track edits / style change (those change the base mix).
+- After a render completes, set the ref to that render's hash. (Client-side is fail-SAFE: a miss only
+  falls back to the existing bounded re-render — it can never CAUSE an extra charge beyond baseline,
+  which is capped by baseCycleLimit=3.)
 
-## detect-and-regen optimization (conductor: include if effects-hash is cheap)
-Avoid re-charging a no-op re-check (user clicks generate without changing params → with always-fresh
-they pay for a slightly-different non-deterministic render; experiment showed C≠D for same effects).
-- Compute a stable hash of `paramChanges` (sorted JSON). Compare to the last render's hash for this
-  session (store the hash on the dial_task — small column or in an existing JSON field).
-- Same hash → return the existing completed final task's result (no new mint/charge).
-- Different hash → mint fresh + render (the core fix above), store new hash.
-- If the storage/compare adds too much surface, ship correctness-first (always-fresh) and do this as a
-  fast-follow (cost is bounded by baseCycleLimit=3).
+### 3c. The orchestration state machine
+New state: `pendingRender: { previewTaskId: string; type: 'mix_check' | 'final' } | null`.
 
-## Tests / evidence (character gate)
-- **Before/after audio**: reuse the experiment — A==B (cached old audio, the bug) vs C≠B (fresh new
-  audio, the fix). Attach md5s + (optionally) short WAV clips to the PR.
-- Re-run the experiment-style check AFTER the fix is wired through the app endpoints (a real
-  session: 2 mix_checks with different Hoo params → confirm the 2nd is audibly different, not cached).
-- Unit: the fresh-task minting path; baseCycleLimit=3 gate (mix_check×2+final allowed, over-limit 402/400).
-- typecheck/lint/build/unit green.
+`requestRender(type)` (called by handleMixCheckFromChat / handleFinalFromChat):
+1. detect-and-regen short-circuit (3b) → return if unchanged.
+2. `const usable = getUnusedCompletedPreview(session.tasks)`.
+3. If `usable` → `handleMixGenerate(usable.id, type)` directly (today's fast path; first render).
+4. Else → mint fresh: `POST /api/dial/preview {sessionId}` → on success `fetchSession()` then set
+   `pendingRender = { previewTaskId: <new preview task id>, type }` and `mixGenerating = true`.
+   (The POST response returns `taskId` = the new dial_task id; use it.)
 
-## PR
-Tier3 → product(2g7xrfai) review → conductor merge. ⑤ fix makes #461 free15-full actually work
-(today free's 2nd render is also cached old audio). Canonical cost model update coordinated w/ freee.
+New effect: when `pendingRender` is set and `session.tasks` shows that `pendingRender.previewTaskId`
+is `completed` → `handleMixGenerate(pendingRender.previewTaskId, pendingRender.type)` then clear
+`pendingRender`. (If it goes `failed` → surface error, clear pendingRender, mixGenerating=false.)
+
+Progress/U1: make `mixGenerating` (or a derived `isRendering`) TRUE while `pendingRender !== null`
+too (today it only tracks final/mix_check processing — during the fresh-preview phase there's no
+final task yet). Wire `pendingRender` into the mixGenerating-sync effect and the elapsed-time effect.
+
+### 3d. Hide intermediate previews (clean take list)
+In the `sessionTakes` memo (or a thin wrapper around `buildSessionTakes`), drop `preview` takes that
+are superseded — i.e. a completed preview that has a mix_check/final task created at-or-after it. The
+initial preview stays visible until the first mix_check; intermediate fresh previews never clutter.
+Keep `buildSessionTakes` itself stable (PR-A); filter in the page memo or add an opt-in param.
+
+### 3e. U3 copy (THIS PR, i18n EN/JA)
+- Generation-wait subtext (when rendering a dialogue iteration): EN "Re-rendering your mix with the
+  new adjustments — this takes a few minutes each time (we rebuild the whole mix)." / JA「新しい調整で
+  ミックスを作り直しています。毎回数分かかります（ミックス全体を作り直すため）。」
+- A one-line note near the Mix Check / Final buttons setting the expectation up front.
+- U2 nudge (Hoo): "まとめて調整を伝えてから生成すると、待ち時間を減らせます" — same PR if cheap, else fast-follow.
+Submit copy drafts to conductor for voice-check before finalizing.
+
+## 4. Evidence / tests (character gate)
+- **9-stem correct-sequence render** (`scripts/experiment-dial-latency.ts` extended, or a new probe):
+  mint fresh `/mixpreview` → poll to ready → `/retrievefinalmix` effA, then a SECOND fresh task with
+  effB → confirm md5(A) ≠ md5(B) (real adjustment reflected) and both download as valid WAV. Attach
+  md5s. (pool ~250-500cr, within ~17,890cr.) This is the "speed→honesty" before/after proof.
+- Unit: `getUnusedCompletedPreview` (used/unused cases), detect-and-regen hash equality/skip, the
+  intermediate-preview take filter.
+- typecheck / lint / build / unit green.
+
+## 5. PR
+Tier3 → product (2g7xrfai) → conductor merge. Character gate = the 9-stem md5 before/after + a
+described manual smoke (2 mix_checks with different Hoo params → 2nd is audibly different, not cached).
+
+## 6. Follow-ups (NOT this PR)
+- **Yuu existing-session recovery**: baseCycleLimit 5→3 only affects NEW sessions (set at checkout).
+  Investigate whether Yuu's existing session needs an ops fix; escalate to conductor. (Read-only DB =
+  kimny-gated.)
+- Cost-model canonical update (conductor → CFO).
+- stems-off = separate decision (recommend KEEP).
+- Optional: server-side detect-and-regen hardening (store hash on session) if client-side proves leaky.
