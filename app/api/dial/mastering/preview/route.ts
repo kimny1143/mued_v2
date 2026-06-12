@@ -16,6 +16,7 @@ import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError }
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterPreview, pollMasterPreview, isRoExDevKey, mapMusicalStyle } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
@@ -125,7 +126,8 @@ export const POST = withDialAuth(async (auth) => {
       previewUrl: result.previewUrl,
     });
   } catch (error) {
-    return apiServerError(error instanceof Error ? error.message : 'Mastering preview failed');
+    return sanitizeUpstreamRoExError(error, '[mastering/preview/POST]')
+      ?? apiServerError(error instanceof Error ? error.message : 'Mastering preview failed');
   }
 });
 

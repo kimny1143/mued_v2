@@ -14,6 +14,7 @@ import { apiSuccess, apiValidationError, apiServerError, apiNotFound, apiError }
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterFinal, isRoExDevKey } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
+import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile, isUnchargedMasteringReservation } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialSessions } from '@/db/schema';
@@ -210,7 +211,8 @@ export const POST = withDialAuth(async (auth) => {
       finalUrl: masterResult.finalUrl,
     });
   } catch (error) {
-    return apiServerError(error instanceof Error ? error.message : 'Mastering final failed');
+    return sanitizeUpstreamRoExError(error, '[mastering/final/POST]')
+      ?? apiServerError(error instanceof Error ? error.message : 'Mastering final failed');
   }
 });
 

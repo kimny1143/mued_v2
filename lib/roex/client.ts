@@ -134,3 +134,16 @@ export function isRoExDevKey(): boolean {
   if (!devKey) return false;
   return process.env.ROEX_API_KEY === devKey;
 }
+
+/**
+ * True when `error` originates from the RoEx upstream (an HTTP non-2xx surfaced by
+ * `post`/`get` as `RoEx API <path> failed (<status>): <body>`, or a poll comm-timeout).
+ * These carry RoEx's raw operator-facing copy (e.g. "Your credits have been used - please
+ * contact support") that must NOT be shown to end users. App-side errors thrown inside our
+ * routes (e.g. "Stem URL expired — please re-upload") are intentionally user-facing and
+ * actionable, so they return false and are left untouched.
+ */
+export function isRoExUpstreamError(error: unknown): boolean {
+  if (error instanceof RoExCommTimeoutError) return true;
+  return error instanceof Error && error.message.startsWith('RoEx API ');
+}

@@ -17,6 +17,7 @@ import { recordDialEvent } from '@/lib/analytics/dial-events';
 import { createRoExClient, mixPreview, pollMixPreview, mapMusicalStyle, mapInstrumentGroup } from '@/lib/roex';
 import type { MixTrackInput } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
+import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTracks, dialTasks, dialSessions } from '@/db/schema';
@@ -147,7 +148,8 @@ export const POST = withDialAuth(async (auth) => {
       previewUrl: result.previewUrl,
     });
   } catch (error) {
-    return apiServerError(error instanceof Error ? error.message : 'Preview request failed');
+    return sanitizeUpstreamRoExError(error, '[preview/POST]')
+      ?? apiServerError(error instanceof Error ? error.message : 'Preview request failed');
   }
 });
 
