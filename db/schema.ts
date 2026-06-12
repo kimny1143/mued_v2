@@ -13,6 +13,11 @@ export const users = pgTable("users", {
   skills: jsonb("skills").$type<string[]>(),
   stripeCustomerId: text("stripe_customer_id"), // Stripe顧客ID
   dialFirstPurchaseBonusGranted: boolean("dial_first_purchase_bonus_granted").notNull().default(false),
+  // Self-owned marketing list (handoff): de-normalized current consent value. null=未提示 / true=同意 /
+  // false=拒否・撤回. Append-only audit trail lives in marketing_consents. Nullable additive (Tier2,
+  // first_touch 0050 同型) — existing rows stay NULL, no backfill.
+  marketingConsent: boolean("marketing_consent"),
+  marketingConsentAt: timestamp("marketing_consent_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
@@ -337,3 +342,8 @@ export * from './schema/dial';
 // MCP API Keys
 // ========================================
 export * from './schema/mcp-api-keys';
+
+// ========================================
+// Marketing Consent (Self-Owned List)
+// ========================================
+export * from './schema/marketing-consents';

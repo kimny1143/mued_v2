@@ -27,6 +27,7 @@ import { evaluateFreeCampaignEligibility, FREE_CAMPAIGN_SESSION, getFreeCampaign
 import { markFreeCampaignGrantUsed } from '@/lib/storage/dial-free-campaign-grant';
 import { recordDialEvent } from '@/lib/analytics/dial-events';
 import { buildFirstTouch, firstTouchInputSchema } from '@/lib/dial/first-touch';
+import { recordConsent } from '@/lib/marketing/consent';
 import { logger } from '@/lib/utils/logger';
 
 const startSchema = z.object({
@@ -34,6 +35,11 @@ const startSchema = z.object({
   musicalStyle: z.string().min(1).max(40).optional(),
   title: z.string().max(200).optional(),
   firstTouch: firstTouchInputSchema,
+  // Marketing opt-in (self-owned list — product課 handoff Step 4). Best-effort & optional:
+  // consent is NEVER a condition of the grant (抱き合わせ回避). `locale` records the language
+  // the consent copy was shown in. Both pure-additive so an old client just omits them.
+  marketingConsent: z.boolean().optional(),
+  locale: z.enum(['ja', 'en']).optional(),
 });
 
 // Stable key for pg_advisory_xact_lock — serializes all concurrent grant attempts so the
@@ -74,7 +80,7 @@ export async function POST(request: NextRequest) {
     }
 
     const [rec] = await db
-      .select({ email: users.email })
+      .select({ id: users.id, email: users.email })
       .from(users)
       .where(eq(users.clerkId, userId))
       .limit(1);
@@ -175,6 +181,23 @@ export async function POST(request: NextRequest) {
       mode: FREE_CAMPAIGN_SESSION.mode,
       metadata: { remaining_before: elig.remaining },
     });
+
+    // Marketing consent capture (self-owned list — product課 handoff Step 4). Opt-in only and
+    // fully non-blocking: any failure here is logged and swallowed so it NEVER affects the granted
+    // session response. marketing_consents.user_id is a FK to the INTERNAL users.id (not the Clerk
+    // id) — use the row we already resolved above.
+    if (parsed.data.marketingConsent && rec?.id) {
+      try {
+        await recordConsent({
+          userId: rec.id,
+          status: 'granted',
+          source: 'free15_claim',
+          locale: parsed.data.locale ?? 'ja',
+        });
+      } catch (err) {
+        logger.error('[campaign/start] marketing consent record failed', { error: err, userId });
+      }
+    }
 
     return apiSuccess({ sessionId: session.id, guestToken });
   } catch (error) {
