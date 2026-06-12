@@ -1710,6 +1710,8 @@
       "statusFinalMixGenerating": "Final mix generating…",
       "statusMasteringPreviewGenerating": "Mastering preview generating…",
       "statusMasteringFinalGenerating": "Final master generating…",
+      "statusRebuildingMix": "Rebuilding your mix to apply your new adjustments… (about 5–20 min; larger sessions take longer)",
+      "noChangesSinceLastMix": "No changes since your last mix — showing your latest take. Ask Hoo for a new adjustment to hear something different.",
       "sessionExpiredFallback": "This session may have expired.",
       "originalStemsNotAvailable": "Original stems not available.",
       "stemTracksAvailableAfterDialogue": "Stem tracks available after dialogue mix.",

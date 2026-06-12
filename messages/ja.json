@@ -1710,6 +1710,8 @@
       "statusFinalMixGenerating": "ファイナルミックス生成中…",
       "statusMasteringPreviewGenerating": "マスタリングプレビュー生成中…",
       "statusMasteringFinalGenerating": "ファイナルマスター生成中…",
+      "statusRebuildingMix": "新しい調整を反映するため、ミックスを作り直しています…（目安5〜20分。曲の長さ・トラック数で前後します）",
+      "noChangesSinceLastMix": "前回から変更がないため、最新のミックスを表示しています。Hooに新しい調整を相談すると、違う仕上がりを聴けます。",
       "sessionExpiredFallback": "このセッションは有効期限が切れた可能性があります。",
       "originalStemsNotAvailable": "オリジナルステムは利用できません。",
       "stemTracksAvailableAfterDialogue": "ステムはダイアローグミックス後に利用可能になります。",
