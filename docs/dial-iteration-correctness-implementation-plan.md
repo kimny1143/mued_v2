@@ -4,6 +4,19 @@ Branch: `feat/dial-iteration-correctness`. Tier3 (core billing/render path). Pla
 conductor (4 points + simplification). This doc is the durable handoff for the compacted next
 session — execute step 2 from here.
 
+> ## ⚠️ 2026-06-12 UPDATE — the "immediate final" simplification below is DISPROVEN
+> The 9-stem latency experiment (`scripts/experiment-dial-latency.ts`, run `b2hk3ku8n`) proved that
+> calling `/retrievefinalmix` immediately on a FRESH (un-rendered) large task **charges-and-fails**
+> (500 in 11s: "Service completed but did not return results. Your credits have been used"). The base
+> preview render (8-22min for real sessions) MUST complete before `/retrievefinalmix`. So the
+> synchronous `submit()` design in Step 2 below is NOT viable — it would charge-and-fail every real
+> iteration. The correct fix is **client-orchestrated**: each iteration re-runs the existing async
+> `/preview` (mint + client-poll to ready) THEN `/final` applies effects to the now-ready fresh task.
+> Cost shift (freee): today's 2nd+ iterations are FREE RoEx cache-hits → become real 250cr+ charges.
+> Escalated to conductor (URGENCY:mid, 2026-06-12) as a kimny-domain UX+cost decision. See
+> memory `reference-roex-retrievefinalmix-needs-ready-preview`. Steps 2-3 below are kept ONLY as the
+> record of what was disproven; do NOT implement them as written.
+
 ## Status
 - ✅ **baseCycleLimit 5→3** (commit `c3c8c80d`): `checkout/route.ts` sets per mode — omakase=1,
   dialogue=3, else schema default. Both insert paths (admin bypass + transaction).

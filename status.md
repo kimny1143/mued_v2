@@ -3,15 +3,15 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: **free15 主面 mued.jp 化 完遂(#448 LIVE) + Yuu seat coupling 顕在化**。conductor dispatch(kimny GO): ①mued.jp MUEDial に free15 promo 追加 + "from $8" 価格表記撤去 = **PR #448 MERGED(02:03Z)→ 本番 LIVE**(prod env `DIAL_FREE_CAMPAIGN_ENABLED` 既に true=#448 deploy で自動露出・prod curl で /ja /en promo描画 + from$8撤去 独立確認)②story card "$8 democratization" 中和 = **PR #449**(content課copy承認・product LGTM・conductor merge待ち)。**price-scope=(a)確定**(kimny: teaser前面のみ撤去・料金/購入導線/特商法は残置)。canonical=対話ミックス＋マスタリング(LP「おまかせmix」誤記を content課照会で訂正)。
-next_action: ①**Yuu seat = 矛盾 phantom と判明・coupling flag 撤回**: anonymous `campaign/status` は count を引かず full cap(16 or 0)を返す(`route.ts:31-38`)→「remaining:16=count:0」は誤推論。anonymous は 15 を返せない=je2a255j「remaining:15」は count-based source 由来=count:1=Yuu seat 予約済の公算大。conductor に je2a255j source 1点確認(b)を推奨・**kimny prompt 不要** ②**#449 merge** = conductor CI green 後ゲート ③**insight【2/2】**= mued.jp LIVE 確定として relay済 ④Yuu Part B(failed preview 7ae1333e DELETE→払い済 omakase final)= kimny trigger待ち。
-blocked_by: null
-urgency: low
-action_owner: peer
+current_task: **⑤ dialogue-iteration correctness fix — large-session latency 実証で plan中核assumption を反証→設計pivot escalate**。conductor 6/12夜 dispatch(本丸=⑤fix 実装resume)。experiment-first 厳守で 9stem latency gate を実走 → **plan の「mint fresh preview→即 /retrievefinalmix」は real session で charge-and-fail と判明**(下記evidence)。正しい⑤fix=client-orchestrated 非同期(iteration毎にfull render待ち)。UX(各iteration=数分render)+原価(cache-hit無料→実課金)が kimny判断領域につき conductor へ URGENCY:mid 判断要請送付。
+next_action: conductor/kimny の scope判断待ち。推奨(a): **baseCycleLimit 5→3 を単独Tier3 PRで先行**(c3c8c80d・安全)+ ⑤本体(client-orchestrated)は kimny UX/原価承認後に別PR。承認来たら: 9stem 正シーケンス(mint→poll ready→final→fresh audio)実証renderで before/after固め→client(`app/dial/session/[id]/page.tsx:826-847` が同一preview再利用=⑤surface)を fresh-preview-per-iteration 化→/final は ready taskに effects適用(既存)。
+blocked_by: conductor/kimny scope decision (⑤本体 client-orchestrated 着手可否 + UX/原価shift承認)
+urgency: mid
+action_owner: conductor
 deadline: null
-expected_next_check_at: 2026-06-11T14:00:00+09:00
-last_update: 2026-06-11T11:20:00+09:00
-evidence: PR #448 merged a447b01d(product LGTM issuecomment-4676502401・CI green)→prod curl mued.jp /ja /en promo描画+testid muedjp-free15-promo+from$8撤去 = 本番LIVE / PR #449(product LGTM issuecomment-4676532750) / campaign/status anonymous=full-cap(route.ts:31-38、15は返せない→je2a255j 15=count-based=Yuu seat予約済示唆) / price-scope=(a)確定
+expected_next_check_at: 2026-06-12T18:00:00+09:00
+last_update: 2026-06-12T16:35:00+09:00
+evidence: 9stem latency experiment task b2hk3ku8n — fresh /mixpreview(2s)→即 mixFinalAdvanced → 11s/500 `Service completed but did not return results. Your credits have been used` + 課金 / 小2stemは16s成立=sampling artifact / baseCycleLimit 5→3=c3c8c80d / plan doc aab6a3de に⚠️DISPROVEN追記 / memory reference-roex-retrievefinalmix-needs-ready-preview
 confidence: high
 lane: active
 ---
