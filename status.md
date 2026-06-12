@@ -3,14 +3,14 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: **⑤ correctness = #463 merged → prod LIVE 確認済 + U2 fast-follow PR #464 open**。⑤ 本体 = client-orchestrated 非同期で本日一気通貫完納(反証→再設計→実装→9stem before/after PASS→#463 merge→Vercel success→dial.mued.jp 反映)。**free15-full が本番で正しく機能(2回目以降の調整が実音で返る)**。U2(Hoo batch-nudge)= PR #464(Tier2・声チェックPASS)product review待ち。
-next_action: ①**U2 PR #464 = product Tier2 review + CI green → conductor merge** 待ち。②(任意)free15 traffic 前 functional smoke の要否=conductor 判断待ち(hold中・要なら admin session で実行可)。③Yuu 救済=不要(結論済)・Part B別件。④cost-model canonical=conductor→CFO。⑤branch hygiene: merged impl branch + design branch の cleanup(全 settle 後)。
-blocked_by: null（U2 #464 = product review/CI 待ち・⑤本体は LIVE 完納）
+current_task: **⑤ correctness パッケージ 全 land 完納 → smoke 方針待ち standby**。本日一気通貫: 反証→client-orchestrated 再設計→実装→9stem before/after PASS→**#462(5→3)/#463(correctness LIVE)/#464(U2)全 merged**→Vercel success=dial.mued.jp 反映。**free15-full が本番で正しく機能**(2回目以降の調整が実音で返る=cached stale 解消)。U2 canonical 軽微 log=完了(PR body+status+memory・write/content通知なし)。
+next_action: **conductor 指示待ち standby**(kimny の smoke 方針 a/b/c 回答)。(b)=kimny 1-login→私が browser自動化 driver(upload via file_upload→Hoo会話→mix_check×2→1回目vs2回目 md5/実音)・Chrome lock 要請。(a)=準備不要・conductor が最初の実 free15 session 監視。並行=**free15 監視 standby**。残 housekeeping: branch hygiene(merged impl branch + design branch cleanup・全settle後)/ cost-model canonical=conductor→CFO。
+blocked_by: kimny smoke 方針(a/b/c)回答 → conductor 指示。⑤本体は LIVE 完納で手離れ。
 urgency: low
 action_owner: conductor
 deadline: null
-expected_next_check_at: 2026-06-12T20:00:00+09:00
-last_update: 2026-06-12T18:10:00+09:00
+expected_next_check_at: 2026-06-12T20:30:00+09:00
+last_update: 2026-06-12T18:25:00+09:00
 evidence: **PR #463**(⑤ client-orchestrated・off main clean branch・product Tier3 review依頼済・CI走行中) / 9stem before/after PASS: A(effA)`2239bdd7…`==control(同task effB=bug cached) / B(fresh task effB)`7a70a885…`≠A(fix=実音反映)・script experiment-dial-correct-sequence.ts / typecheck/lint/build/214 unit 全green(+13 orchestration) / Yuu調査: baseCycleLimit 書込=checkout/campaign-start のみ・以降read-only(chat L148/final L250)・Yuu=omakase baseCycleLimit1=影響ゼロ→救済不要 / PR #462(5→3)既に main / memory reference-roex-retrievefinalmix-needs-ready-preview
 confidence: high
 lane: active
@@ -18,6 +18,7 @@ lane: active
 
 ## Recent events
 
+- 2026-06-12T18:25:00+09:00: **⑤ パッケージ全 land 完納(#462/#463/#464 merged・prod LIVE)→ smoke standby**。U2 PR #464 = product Tier2 LGTM + CI 全green → conductor squash-merge(08:52Z)。**⑤ 3PR 完結**(#462 5→3 / #463 correctness client-orchestrated LIVE / #464 U2 Hoo batch-nudge)。**U2 canonical 軽微 log追記=完了**(PR #464 body[main]+status+MEMORY.md・write/content通知なし=軽微/no-mamagoto)。**functional smoke 自走可否=正直評価**: ⑤新コードは page.tsx(client)のみ→browser要・**autonomousな authセッション作成不可**(Stripe決済 or Clerk admin token=escalation・test account credential 非保持)→ conductor「kimny手要る→報告」分岐該当。conductor が kimny に 3択(a 最初の実session監視 / b[推奨] kimny 1-login→mued browser自動化E2E / c kimny自身が1session体感)諮り中→**回答後 conductor 指示で動く**(b なら私が driver)。mued=free15 監視 standby + smoke 指示待ち(conductor 本務は dsp 段[2]へ移行)。
 - 2026-06-12T18:10:00+09:00: **⑤ correctness #463 MERGED→prod LIVE 確認 + U2 fast-follow PR #464 open**。conductor squash-merge(08:38Z・独立verify=server route/schema変更ゼロ・CI green・product LGTM)→ main `50d43f59`。**Vercel deploy=success** → dial.mued.jp/dial 200・mued.jp 308 = **⑤ 本番反映**(2回目以降の調整が実音で返る=cached stale 解消=free15-full が正しく機能)。**functional smoke=hold**(conductor判断: md5実験で機構=実RoEx実証済[B≠A fresh]・deploy はコード運搬のみ・250cr二重消費回避・free15 traffic前1発の要否は別途)。**U2(Hoo batch-nudge)= PR #464**(Tier2・`lib/ai/prompts/dial.ts` Phase2 に prose・「各Mix Check=full rebuild数分→まとめてから・無料Phase1で方向固め→ミックスチェック」誘導・conductor声チェックPASS=例文UIラベル「ミックスチェック」統一)→product Tier2 review。canonical=軽微log only(内部nudge・no-mamagoto)。dial prompt unit 26+typecheck/lint green。**本日 ⑤ = 反証→再設計→実装→実証→merge→LIVE→U2 一気通貫**。
 - 2026-06-12T18:00:00+09:00: **PR #463 = product Tier3 LGTM + CI 全green = merge ready**(conductor 独立verify→merge 待ち)。product(2g7xrfai)が billing safety 8点 code裏取り: server route/schema 変更ゼロ・/preview 無課金(fresh mint=ユーザー課金+0・RoEx compute のみ事業コスト)・firedRenderRef×server atomic 二重de-dup・poll-then-final が「ready前final=500+課金」Yuu vector を構造閉鎖・detect-and-regen が messages[0]=最新(desc createdAt)正追跡・型別で mix_check が final block せず・stems-off不在(CFO遵守)・**md5対比で character gate充足=WAV共有不要**判定。CI: Validate/Test/Build/Vercel/GitGuardian 全green。→ merge後すぐ U2 fast-follow。
 - 2026-06-12T17:45:00+09:00: **⑤ correctness 本体 Tier3 PR #463 open + 9stem before/after PASS + Yuu調査=救済不要**。clean branch `feat/dial-iteration-correctness-impl`(off origin/main=#462 dup排除・status churnなし・10 files +1032)で **PR #463** open→product(2g7xrfai)Tier3 review 依頼→CI走行中→conductor merge gate。**9stem 実音証跡 PASS**(`experiment-dial-correct-sequence.ts`): A(M1,effA)md5 `2239bdd7…` / **control(M1同task,effB)== A** = BUG再現(cached stale) / **B(M2 fresh,effB)`7a70a885…`≠A** = FIX実証(調整が実音に反映)。byte一致cache vs distinct fresh。実音WAV A/B/control(各57MB・/tmp/dial-seq-*.wav)= kimny audio判定希望時共有可。**U3 copy=conductor 声チェック PASS**(ETA を soft estimate「目安5〜20分・larger sessions take longer」に修正・「変更なし」info は採用)。**Yuu 既存救済=不要と結論**(code-level): baseCycleLimit 書込=checkout/campaign-start のみ→以降 read-only→既存 session 旧値据置・Yuu=omakase baseCycleLimit1 で 5→3 影響ゼロ・omakase は mix_check反復なしで ⑤ fix も無影響。Yuu Part B(failed preview 7ae1333e)は別件 pre-existing。**U2(Hooまとめ誘導)= merge後すぐ fast-follow**(conductor「backlog落ち禁止」)。design branch `feat/dial-iteration-correctness` は ⑤投資の全履歴+status保持(PR は impl branch から)。
