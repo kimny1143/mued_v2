@@ -102,10 +102,16 @@ export async function POST(request: NextRequest) {
         guestTokenExpiresAt,
         paymentStatus: 'paid',
         firstTouch: firstTouch ?? undefined,
-        ...(sessionMode === 'omakase' ? {
-          baseCycleLimit: 1,
-          additionalCycleLimit: 0,
-        } : {}),
+        // omakase = single final (1 cycle). dialogue = full journey: mix_check×2 + final
+        // (3 cycles; the mixCheckCount<2 guard in final/route.ts then guarantees a final
+        // slot). [kimny policy-gate 2026-06-12: paid dialogue 5→3, matches free15(=3) and
+        // the canonical journey; over-limit is sold as retakes.] Schema default (5) only
+        // applies to sessions with neither mode set.
+        ...(sessionMode === 'omakase'
+          ? { baseCycleLimit: 1, additionalCycleLimit: 0 }
+          : sessionMode === 'dialogue'
+          ? { baseCycleLimit: 3 }
+          : {}),
       }).returning();
 
       const origin = request.headers.get('origin')
@@ -159,10 +165,16 @@ export async function POST(request: NextRequest) {
         guestTokenExpiresAt,
         paymentStatus: 'pending',
         firstTouch: firstTouch ?? undefined,
-        ...(sessionMode === 'omakase' ? {
-          baseCycleLimit: 1,
-          additionalCycleLimit: 0,
-        } : {}),
+        // omakase = single final (1 cycle). dialogue = full journey: mix_check×2 + final
+        // (3 cycles; the mixCheckCount<2 guard in final/route.ts then guarantees a final
+        // slot). [kimny policy-gate 2026-06-12: paid dialogue 5→3, matches free15(=3) and
+        // the canonical journey; over-limit is sold as retakes.] Schema default (5) only
+        // applies to sessions with neither mode set.
+        ...(sessionMode === 'omakase'
+          ? { baseCycleLimit: 1, additionalCycleLimit: 0 }
+          : sessionMode === 'dialogue'
+          ? { baseCycleLimit: 3 }
+          : {}),
       }).returning();
 
       // Create separate purchase records for mix and mastering
