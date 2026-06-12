@@ -1092,8 +1092,9 @@ function DialSessionContent() {
   const generatingEta = useMemo(() => {
     if (!mixGenerating) return undefined;
     const trackCount = session?.tracks.length ?? 0;
-    // ⑤: the rebuild phase is a fresh preview render → same ETA as a preview.
-    if (pendingRender) return trackCount > 8 ? '5–20 min' : '2–10 min';
+    // ⑤ U3: during the rebuild phase the soft time guidance is folded into statusRebuildingMix (so it
+    // reads as an estimate, not a hard cap) — suppress the separate hard ETA chip here.
+    if (pendingRender) return undefined;
     if (!latestTask) return undefined;
     switch (latestTask.taskType) {
       case 'preview': return trackCount > 8 ? '5–20 min' : '2–10 min';
