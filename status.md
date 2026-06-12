@@ -3,15 +3,15 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: **Yuu インシデント=ほぼ全クローズ**。kimny GO「free15=full dialogue(limit=3)」→ 3PR + 復元完了。**#459(RoEx生文言sanitize)= MERGED本番LIVE**(78028858) / **#460(upload sanitize)= product LGTM + CI全green = merge ready** / **#461(systemic fix: free baseCycleLimit 1→3 + roexCrEstimate 480→980)= Tier3 提出・product review中**。**★Yuu#2 復元 = kimny SQL適用 + 私が read-only verify 完了**: `paid_cycle_count=0 / base_cycle_limit=3 / status=previewing`(0/3 期待値どおり)→ Yuu 完走可・Yuu返信 GO を conductor へ。session#1(a64befc1)無傷。
-next_action: ①**#461** product Tier3 review→CI green→conductor merge→deploy(新規 grant に full 適用) ②**#460** conductor merge ③Yuu 返信(conductor→kimny 送付・文面推奨済: 枠復元+新preview→ミックス案内) ④kimny RoEx Large $80 買い足し(並行・現残8890で Yuu 1journey十分) ⑤根因 Tier3/CFO=RoEx確定失敗時 cycle 自動refund(将来)。cycle系は GO 済=hold 解除。
+current_task: **Yuu インシデント=ほぼ全クローズ・3PR とも product 承認済**。kimny GO「free15=full dialogue(limit=3)」。**#459(RoEx生文言sanitize)= MERGED本番LIVE**(78028858) / **#460(upload sanitize)= product LGTM + CI全green = merge ready** / **#461(free baseCycleLimit 1→3 + roexCrEstimate 480→980)= product Tier3 LGTM**(cycle会計 hard-bound 検証: 980=厳密ceiling/mastering別会計1回/追final402・追mix400停止/有料Stripe literal非交差/新規session限定)+ nit対応(comp.ts:41 `≈480→≈980` `ec955b50`)→ CI 再走中→conductor merge。**★Yuu#2 復元 verify 完了**(0/3)。session#1 無傷。
+next_action: ①**#461** CI green→conductor merge→deploy(新規 grant に full 適用) ②**#460** conductor merge ③Yuu 返信(conductor→kimny) ④kimny RoEx $80 買い足し(並行) ⑤根因 Tier3/CFO=RoEx確定失敗時 cycle 自動refund(将来)。**mued課 側の実装・診断・復元 verify は全完了**=残は merge(conductor)+ user返信(conductor/kimny)。
 blocked_by: null
 urgency: low
-action_owner: peer
+action_owner: conductor
 deadline: null
 expected_next_check_at: 2026-06-12T17:00:00+09:00
-last_update: 2026-06-12T14:10:00+09:00
-evidence: #459 merged 78028858(LIVE) / #460 LGTM+CI green / #461 提出(unit17 green) / Yuu 復元verify=paid_cycle_count:0/base_cycle_limit:3/status:previewing(kimny SQL→read-only確認)
+last_update: 2026-06-12T14:20:00+09:00
+evidence: #459 merged 78028858(LIVE) / #460 product LGTM+CI green / #461 product Tier3 LGTM(unit17 green・nit ec955b50対応) / Yuu 復元verify 0/3
 confidence: high
 lane: active
 ---
