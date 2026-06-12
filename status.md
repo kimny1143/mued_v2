@@ -4,8 +4,8 @@ department: product
 activity: active
 status: active
 current_task: **⑤ correctness パッケージ 全 land 完納 → smoke 方針待ち standby**。本日一気通貫: 反証→client-orchestrated 再設計→実装→9stem before/after PASS→**#462(5→3)/#463(correctness LIVE)/#464(U2)全 merged**→Vercel success=dial.mued.jp 反映。**free15-full が本番で正しく機能**(2回目以降の調整が実音で返る=cached stale 解消)。U2 canonical 軽微 log=完了(PR body+status+memory・write/content通知なし)。
-next_action: **conductor 指示待ち standby**(kimny の smoke 方針 a/b/c 回答)。(b)=kimny 1-login→私が browser自動化 driver(upload via file_upload→Hoo会話→mix_check×2→1回目vs2回目 md5/実音)・Chrome lock 要請。(a)=準備不要・conductor が最初の実 free15 session 監視。並行=**free15 監視 standby**。残 housekeeping: branch hygiene(merged impl branch + design branch cleanup・全settle後)/ cost-model canonical=conductor→CFO。
-blocked_by: kimny smoke 方針(a/b/c)回答 → conductor 指示。⑤本体は LIVE 完納で手離れ。
+next_action: **smoke=(b) 確定・driver 準備完了→admin account 確定+kimny login 待ち**。Chrome tools ロード済 / 小stem 3本(8s・4.4MB・`.smoke-stems/` gitignored)用意済→**render ~16s/回・smoke 全体 ~5-10分・~100-200cr**(小素材ゆえ高速)。推奨 session=**admin→新規 dialogue(admin-bypass・free15枠非消費=pilot非汚染)**。フロー: kimny admin login→Chrome lock 要請→dialogue session 作成→3 stem upload→Hoo会話 調整A→mix_check1→別調整B→mix_check2→**検証(session API): take2.roexTaskId≠take1 + audio md5 別物**。caveat: file_upload が cwd ファイル reject したら kimny に file-select 1回追加(fallback)。残 housekeeping: branch hygiene(全settle後)/ cost-model canonical=conductor→CFO。
+blocked_by: admin account 具体 + kimny login(conductor 調整) → 即 driver 着手。
 urgency: low
 action_owner: conductor
 deadline: null
