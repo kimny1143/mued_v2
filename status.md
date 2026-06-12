@@ -3,15 +3,15 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: **⑤修正+limit5→3 設計 brief = conductor 4点承認済 → before 実験が prod RoEx key で blocked(kimny判断待ち)**。設計承認(client-orchestrated 非同期/detect-and-regen/新preview 0cr/limit5→3/experiment-first/stems-off→kimny/中間preview隠す)。**experiment-first 着手→ブロッカー判明**: 実験 script(`scripts/experiment-dial-iteration.ts`・branch feat/dial-iteration-correctness `27f2362b` push済)を流したら **安全ガード発火**=`.env.local` の `ROEX_API_KEY` が **dev key**(=ダミー・実レンダー不可)。prod 実キーは Vercel のみ。→ prod key 取得方法 kimny 判断待ち(推奨(b)=kimny が script 直接実行・私は key 触らず md5 解析)。**core 実装は実験で A/B 確定後**(plan-first・憶測実装しない)。
-next_action: ①**kimny 判断待ち(prod key 取得=a/b/c)**→ 実験実行→ md5(A==B で⑤確定/C≠B で新task新音)+timing(A=latency) 一次報告→ conductor が kimny にダッシュボード -250 行 cross-check ②A/B 確定後: core 実装(⑤ detect-and-regen 非同期 + limit5→3 Tier3)→ after実験(聴覚 before/after 証跡)→ product review→merge ③stems-off=kimny 別判断。
-blocked_by: kimny 判断(before 実験の prod RoEx key 取得方法)
-urgency: mid
-action_owner: kimny
+current_task: **⑤修正+limit5→3 設計brief conductor 4点承認 → before 実験 RUNNING(prod key blocker 解消)**。**prod key blocker 解消**: kimny 指摘で `.env.local:137 ROEX_PROD_API_KEY` 発見(active ROEX_API_KEY は dev・私の「Vercel のみ」は誤断=env prod変数を grep せず assume の教訓)。script を `ROEX_PROD_API_KEY` 明示参照に修正→**実行中**(background befytychj・キー値 log/echo/commit せず・isolated DB行ゼロ)。stem 2本 upload 済→preview render(8-22分×2)+final×3=30-90分。完了通知で md5(A/B/C)+timing 一次報告。**core 実装は A/B 確定後**(plan-first)。
+next_action: ①**実験完了待ち(background)**→ md5(A==B で⑤確定/C≠B で新task新音)+timing(A=latency) 一次報告→ conductor が kimny にダッシュボード -250 行 cross-check ②A/B 確定後: core 実装(⑤ detect-and-regen 非同期 + limit5→3 Tier3)→ after実験(聴覚 before/after 証跡)→ product review→merge ③stems-off=kimny 別判断。
+blocked_by: null
+urgency: low
+action_owner: peer
 deadline: null
-expected_next_check_at: 2026-06-12T18:30:00+09:00
-last_update: 2026-06-12T15:45:00+09:00
-evidence: 設計brief conductor 4点承認 / 実験script 27f2362b push / local ROEX_API_KEY==DEV_KEY(実レンダー不可・ガード発火) / Chief brief X確定
+expected_next_check_at: 2026-06-12T19:00:00+09:00
+last_update: 2026-06-12T16:25:00+09:00
+evidence: 設計brief 4点承認 / 実験 RUNNING(befytychj・ROEX_PROD_API_KEY:137 使用・upload済) / Chief brief X確定 / script branch feat/dial-iteration-correctness
 confidence: high
 lane: active
 ---
