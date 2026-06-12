@@ -15,6 +15,9 @@
  */
 import { config } from 'dotenv';
 config({ path: '.env.local' });
+// RoEx requires a webhook URL that returns 2xx (we poll instead). The lib default httpbin.org
+// is flaky (503s). Point at a reliable 200-on-POST responder for the experiment.
+process.env.ROEX_WEBHOOK_URL = process.env.ROEX_WEBHOOK_URL || 'https://postman-echo.com/post';
 
 import { readFileSync, writeFileSync } from 'fs';
 import { createHash } from 'crypto';
@@ -48,6 +51,24 @@ async function md5OfUrl(url: string, label: string): Promise<string> {
   writeFileSync(`/tmp/dial-exp-${label}.wav`, buf);
   log(`  ${label}: ${buf.length} bytes  md5=${hash}`);
   return hash;
+}
+
+async function submitPreview(
+  client: RoExClient,
+  tracks: { trackUrl: string; instrumentGroup: string }[],
+  label: string,
+): Promise<MixResult> {
+  for (let i = 0; i < 5; i++) {
+    try {
+      const r = await mixPreview(client, { tracks: tracks as never, musicalStyle: 'POP', returnStems: false });
+      if (r.taskId && !r.error) return r;
+      log(`  ${label} preview submit error (try ${i + 1}): ${r.error ?? 'no taskId'}`);
+    } catch (e) {
+      log(`  ${label} preview submit threw (try ${i + 1}): ${e instanceof Error ? e.message : e}`);
+    }
+    await sleep(8_000);
+  }
+  throw new Error(`${label} preview submit failed after retries`);
 }
 
 async function pollPreview(client: RoExClient, taskId: string, label: string): Promise<void> {
@@ -109,50 +130,55 @@ async function main() {
   }
   log('uploads done.');
 
-  // 2. Submit M2 preview, then IMMEDIATELY final(M2) — (A) latency test
-  const m2 = await mixPreview(client, { tracks, musicalStyle: 'POP', returnStems: false });
-  log(`M2 preview submitted: ${m2.taskId}`);
-  log('(A) latency test: calling final(M2) immediately (before M2 preview completes)…');
-  let aTestResult = 'unknown';
-  try {
-    const immediate = await mixFinalAdvanced(client, { taskId: m2.taskId, trackData: effectsB(trackUrls), returnStems: false });
-    aTestResult = immediate.error
-      ? `errored: ${immediate.error}`
-      : immediate.finalUrl ? 'returned finalUrl immediately' : `accepted, status=${immediate.status} (processing)`;
-  } catch (e) {
-    aTestResult = `threw: ${e instanceof Error ? e.message : e}`;
-  }
-  log(`(A) immediate final(M2) → ${aTestResult}`);
-
-  // 3. Submit M1 preview + poll to complete (needed for the in-place A/B test)
-  const m1 = await mixPreview(client, { tracks, musicalStyle: 'POP', returnStems: false });
+  // 2. ⑤ test on M1: poll preview to ready FIRST, then final_A then final_B (same task)
+  const m1 = await submitPreview(client, tracks, 'M1');
   log(`M1 preview submitted: ${m1.taskId}`);
   await pollPreview(client, m1.taskId, 'M1');
-  await pollPreview(client, m2.taskId, 'M2'); // ensure M2 done for its final too
-
-  // 4. ⑤ test on M1: effects_A then effects_B (same task)
   log('⑤ test: final(M1, effects_A) …');
   const rA = await finalWithPoll(client, m1.taskId, effectsA(trackUrls), trackUrls, 'A');
   log('⑤ test: final(M1, effects_B) [different EQ, SAME task] …');
   const rB = await finalWithPoll(client, m1.taskId, effectsB(trackUrls), trackUrls, 'B');
 
-  // 5. (B) test on M2: effects_B on the NEW task (final may already be done from the (A) probe)
+  // 3. (B) test on M2 (new task): poll preview to ready, then final_B
+  const m2 = await submitPreview(client, tracks, 'M2');
+  log(`M2 preview submitted: ${m2.taskId}`);
+  await pollPreview(client, m2.taskId, 'M2');
   log('(B) test: final(M2, effects_B) [NEW task] …');
   const rC = await finalWithPoll(client, m2.taskId, effectsB(trackUrls), trackUrls, 'C');
 
-  // 6. Download + md5 compare
+  // 4. (A) latency probe on M3 (fresh task): final IMMEDIATELY after preview submit (no poll).
+  //    Download the result to verify the immediate finalUrl is REAL audio (not a placeholder).
+  const m3 = await submitPreview(client, tracks, 'M3');
+  log(`M3 preview submitted: ${m3.taskId}`);
+  log('(A) latency: final(M3) IMMEDIATELY (no preview poll)…');
+  let aResult = 'unknown';
+  let rD: MixResult | null = null;
+  const aStart = Date.now();
+  try {
+    rD = await mixFinalAdvanced(client, { taskId: m3.taskId, trackData: effectsB(trackUrls), returnStems: false });
+    aResult = rD.error ? `errored: ${rD.error}` : rD.finalUrl ? `finalUrl in ${Math.round((Date.now() - aStart) / 1000)}s` : `status=${rD.status} (processing)`;
+  } catch (e) {
+    aResult = `threw: ${e instanceof Error ? e.message : e}`;
+  }
+  log(`(A) immediate final(M3) → ${aResult}`);
+
+  // 5. Download + md5 compare
   log('=== downloading + md5 ===');
   const mA = rA.finalUrl ? await md5OfUrl(rA.finalUrl, 'A') : 'no-url';
   const mB = rB.finalUrl ? await md5OfUrl(rB.finalUrl, 'B') : 'no-url';
   const mC = rC.finalUrl ? await md5OfUrl(rC.finalUrl, 'C') : 'no-url';
+  let mD = 'n/a';
+  try { mD = rD?.finalUrl ? await md5OfUrl(rD.finalUrl, 'D') : 'no-url'; } catch (e) { mD = `download-failed: ${e instanceof Error ? e.message : e}`; }
 
   log('=== VERDICT ===');
-  log(`A (M1,effA) md5 = ${mA}`);
-  log(`B (M1,effB) md5 = ${mB}`);
-  log(`C (M2,effB) md5 = ${mC}`);
-  log(`⑤  same-task A==B (cached old audio)? ${mA === mB ? 'YES → ⑤ CONFIRMED (task idempotent / X)' : 'NO → effects re-render per call'}`);
-  log(`(B) new-task C != B (fresh render)?    ${mC !== mB ? 'YES → new task renders NEW audio' : 'NO'}`);
-  log(`(A) immediate final(M2): ${aTestResult}`);
+  log(`A (M1,effA)         md5 = ${mA}`);
+  log(`B (M1,effB,SAMEtask) md5 = ${mB}`);
+  log(`C (M2,effB,NEWtask)  md5 = ${mC}`);
+  log(`D (M3,effB,immediate) md5 = ${mD}`);
+  log(`⑤  same-task A==B (2nd effects ignored = cached old audio)? ${mA === mB ? 'YES → ⑤ CONFIRMED (task-level idempotent / X)' : 'NO → effects DO re-render per call'}`);
+  log(`(B) new-task C != B (fresh render of new effects)?          ${mC !== mB ? 'YES → new task renders the NEW audio' : 'NO → new task also cached?!'}`);
+  log(`    new-task C reflects effB (C != A)?                       ${mC !== mA ? 'YES (differs from effA render)' : 'NO (same as effA)'}`);
+  log(`(A) immediate final(M3): ${aResult}  | D valid+real? ${mD.length === 32 ? 'YES (downloadable WAV)' : 'NO/failed'}`);
   log('=== DONE ===');
 }
 
