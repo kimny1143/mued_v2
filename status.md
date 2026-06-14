@@ -4,8 +4,8 @@ department: product
 activity: active
 status: active
 current_task: **(6/14) Yuu 2問題 診断 確定済(prod data 受領)→ kimny 返信ドラフト用所見 提出・stems SQL で最終確定待ち**。session fd7ef7a2 rows: mix_check_count=2/paid_cycle_count=1/base=3・preview task×2 のみ(両 completed 6/11・has_r2=false)。**【A】max2エラー=仕様**(Final 枠可:paid1<3)。**【B】Preview読込めない=preview URL 失効**(preview は構造上 R2非cache=final のみ・6/11 GCS署名URL が数日で失効・2-3日前 RoEx task purge で auto-refresh 失敗→410。**当初⑤render×RoEx遅延仮説は否定・#454 player bugでもない**)。**Yuu 実態=使える成果物ゼロ**(過去mix_check×2=charge-and-fail[task未生成]+救済で paid=1)。**Final 直押しリスク=VALID**(⑤client が 6/11 preview 再利用→stale RoEx task で /retrievefinalmix 失敗公算)→**推奨=Preview作り直し→Final**(fresh task→最終R2恒久)。【前提=⑤全land+prod LIVE済】
-next_action: **Yuu 診断+literal steps 全提出済 → conductor の返信パス選択待ち**(①in-session 自助手順[無料だが Hoo/⑤orchestration prod未検証] vs ②admin で fresh session 作成[最確実・無料・但しYuu stem 要])。stems=全5本 r2_url あり(in-session 再Preview 技術的に可)。**重要 gotcha 確定**: Yuu 自力「新規セッション」は free15 lifetime-1 消費済(fd7ef7a2)→ **$13.99 課金**ゆえ無料確実は admin 作成のみ。**深掘り根因=preview も R2 cache すべき**(別issue・preview MP3 数日失効が再訪ユーザー全員に影響)。残: ⑤ mix_check fresh-mint 検証(RoEx speed戻り時・session ab2cb2f0)/ smoke artifact cleanup / cost-model canonical=conductor→CFO。
-blocked_by: conductor の Yuu 返信パス選択(in-session手順 or admin作成)。診断+手順は全提出済。
+next_action: **kimny (b)ホワイトグローブ GO・「effects 反映されるか」に回答済→ 確認SQL結果+実行方式 決定待ち**。**Yuu effects=完全復元可**(Layer A presence/pan/reverb=dial_tracks永続[tracks/route.ts:69-71]・Layer B EQ/comp=dial_messages.parameter_changes[final getLatestParameterChanges])=render失敗と別レイヤー。**★救済は fd7ef7a2 内で実行必須(新規séssion=generic・前回案撤回)**。fresh preview(Yuu tracks)→final(Yuu最新params)で Yuu のミックス再現。確認SQL(dial_tracks効果+dial_messages params)を kimny実行依頼。実行=(b-i)Yuu自助 in fd7ef7a2 / (b-ii)私が rescue script で fd7ef7a2 effects 読んで RoEx で final 焼く(deterministic・r2Url stem 直参照可・kimny-gate な DB read/write 介在)。(b-ii)なら script 書く。**新規séssion gotcha=free15 lifetime-1 で $13.99 課金**。残: ⑤ mix_check検証(RoEx戻り時)/ preview R2-cache 別issue / smoke cleanup。
+blocked_by: 確認SQL(Yuu effects 実在)結果 + (b-i)/(b-ii) 実行方式 決定(kimny/conductor)。
 urgency: mid
 action_owner: conductor
 deadline: null
