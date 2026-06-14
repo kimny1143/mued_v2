@@ -20,7 +20,8 @@
 | 同一 URL 衝突で stem が溶ける | Yuu の 5 stem は r2_url が distinct → 衝突ガード（409）に触れない | `preview/route.ts:86-93` |
 | 2つ目の free15 枠は lifetime-1 index で弾かれる | 付与セッションを **`is_free_campaign=false`** にすれば部分 unique index（`WHERE is_free_campaign=true`）の対象外。free15 cap も消費しない | `db/schema/dial.ts:124-126` |
 | Yuu の EQ/comp（Layer B）を対話やり直しなしで反映 | `/final` は **DB から `getLatestParameterChanges`** で最新 assistant params を読んで適用。Yuu の params message を新セッションへコピーすれば final が自動適用 | `app/api/dial/final/route.ts:55-67` |
-| 開いた瞬間 upload 画面に戻されないか | `/dial/session/[id]` は tasks/tracks 駆動の作業UI（status で upload 画面へ分岐しない）。tracks 既存＋tasks 空 → 「preview 生成」導線が出る想定 | `app/dial/session/[id]/page.tsx`（②c E2E で実機確認） |
+| 開いた瞬間 upload 画面に戻されないか | **mix step に着地（確認済）**: tracks 既存＋takes 空 → dialogue は右に Hoo chat パネル + 左に「Generate a preview to hear your mix」placeholder。`uploadSection` は `canEditTracks`(paymentStatus='paid'…)で出るが**追加アップロード用＝非ブロッキング**（status で upload 画面に強制分岐しない） | `page.tsx:1818-1819`(placeholder) / `:1188`(canEditTracks) / `:1888`(uploadSection 併置) |
+| pre-load した Layer B message が UI を壊さないか | **壊さない（確認済）**: chat 履歴 render は `{msg.content}` のみ出力＝`action`/`parameterChanges` を unsafe 参照しない → 注入 message は**plain bubble で描画・crash path なし**。かつ `messages[0]`(最新)として `latestParamChanges` を駆動 → `/final` が自動適用 | `page.tsx:1577`(content-only render) / `:250`(messages[0]→latestParamChanges) |
 
 **pre-mint しない**: preview は R2 キャッシュされず GCS が 1-2日で失効するため、事前生成した preview は Yuu が開く頃には死ぬ。**Yuu が開いて fresh preview を打つ**設計が正しい（無料・~1分）。
 
@@ -135,7 +136,12 @@ https://（本番ドメイン）/dial/session/<new_session_id>
 ```
 
 - Yuu は**サインイン状態**で開く（ownership = user_id 一致）。admin 作成セッションは `/dial` 一覧に自動表示されない場合があるため**直リンク必須**（過去教訓: admin session は /dial 非表示・claim ボタン already_granted）。
-- Yuu の操作: 開く → **「preview 生成」**（無料・~1分・r2_url で通る） → **「ファイナルミックス」**（彼の EQ/comp 自動適用 = 彼の意図ミックス） → **「マスタリング」**（★Yuu が音圧オーダーを出す） → **DL**。
+- **dialogue mode は chat 駆動**（bare ボタンでなく Hoo との会話 + ParamChangeCard ボタンで render を起動）。Yuu の操作:
+  1. 開く → 右の **Hoo chat** で「ミックスして / プレビュー作って」 → fresh preview（無料・~1分・r2_url で通る）
+  2. Hoo に「ファイナル作って」 → final（pre-load した彼の EQ/comp が `messages[0]` 経由で**自動適用** = 彼の意図ミックス。再指定不要）
+  3. Hoo に「マスタリングして（音圧/配信先オーダー）」 → ★**Yuu が音圧オーダーを出す**（配信先 selector で LUFS gap 表示）
+  4. **DL**
+- Layer B を pre-load しているので、Yuu は EQ/comp を**一から喋り直す必要がない**（対話やり直し回避）。追加で詰めたい時だけ Hoo に頼めば `messages[0]` が更新され反映される。
 
 ---
 
@@ -146,7 +152,7 @@ https://（本番ドメイン）/dial/session/<new_session_id>
 - **対象 = 別の operator/test free15 セッション**（runbook M3 の制御 prod soft-launch）。Yuu が辿る `final→mastering→DL` の**同一コードパス**を検証でき、Yuu のセッションは無傷に保てる。
 - **必要条件**: kimny の test Clerk ログイン（auth=escalation）＋ Chrome 拡張ロック（conductor 調整・先着制）。RoEx は現在健全。
 - **driver**: claude-in-chrome。wall-clock ~30-60分（RoEx 描画律速）。
-- **同時に確認したい UI 一点**: pre-load した params message（Layer B）が session UI で破綻なく描画されるか／開いて mix step に着地するか。破綻時は「次善」（tracks のみ Layer A コピー＋Yuu が EQ/comp を再依頼）へフォールバック。
+- **②c で残す唯一の実機確認**: 着地点（mix step）と注入 message の描画（plain bubble）は**コード read で確定済**（上表）。E2E で見るのは **dialogue chat の正確な click-path**（Hoo に頼んで preview→final→master が ParamChangeCard ボタン経由で順に走るか・pre-load 済 Layer B が final で実音反映されるか）。万一 click-path に詰まりがあれば「次善」（tracks のみ Layer A コピー＋Yuu が EQ/comp を 1-2 ターン再依頼）へフォールバック。
 
 ---
 
