@@ -1,6 +1,6 @@
 # Yuu「動くセッション」付与 — owed マスタリング自走用 (Plan A)
 
-作成: 2026-06-14 / mued課 / 状態: **設計 + 枠付与SQL（実行=kimny gate）。本番 write は未実行。**
+作成: 2026-06-14 / mued課 / 状態: **✅ 実行完了（2026-06-14）。採用 keeper = `e3688b24-6645-4f8a-822c-7818237c30f1`（A verify 全緑）。重複 e067fcf6 削除済。残= Yuu 返信送信（conductor→kimny 声チェック）+ ②c は launch ゲートで後日。**
 
 > kimny 決定 (Plan A): ミックス（Yuu の調整の忠実再現）は緊急措置として渡す＝OK。
 > **マスタリングは Yuu の創作オーダー**なので我々が決め打ちしない（先に作った MEDIUM マスターは内部保留・送らない）。
@@ -143,8 +143,10 @@ WHERE s.id = '<NEW_SESSION_ID>';
 --       base_cycle_limit=3 / additional_cycle_limit=0 / tracks=5 / tracks_with_r2=5 / params_msgs=1
 ```
 
-### STEP1-cleanup — 重複セッション削除（実行 = kimny / 本番 write gate）
+### STEP1-cleanup — 重複セッション削除（✅ 完了 2026-06-14）
 
+> **結果（conductor post-check 確認）**: e067fcf6 = 0行（削除済・token 廃棄）/ e3688b24 = 残存・title 正・無傷 / fd7ef7a2 = 無傷。A verify 全項目グリーン。token 値は非流通。
+>
 > 経緯: STEP1 を旧版（guest_token 生成あり）と更新版（guest_token なし）の**両方流したため goodwill セッションが2つ**生成された。
 > - `e067fcf6-fdf7-4e6f-b79f-0e19c77d6cf0` = 旧版（guest_token=credential あり）→ **削除**（重複解消＋token 廃棄）
 > - `e3688b24-6645-4f8a-822c-7818237c30f1` = 更新版（guest_token なし・クリーン）→ **採用**（Yuu リンクはこちら）
