@@ -143,10 +143,19 @@ WHERE s.id = '<NEW_SESSION_ID>';
 --       base_cycle_limit=3 / additional_cycle_limit=0 / tracks=5 / tracks_with_r2=5 / params_msgs=1
 ```
 
+### STEP1-cleanup — 重複セッション削除（実行 = kimny / 本番 write gate）
+
+> 経緯: STEP1 を旧版（guest_token 生成あり）と更新版（guest_token なし）の**両方流したため goodwill セッションが2つ**生成された。
+> - `e067fcf6-fdf7-4e6f-b79f-0e19c77d6cf0` = 旧版（guest_token=credential あり）→ **削除**（重複解消＋token 廃棄）
+> - `e3688b24-6645-4f8a-822c-7818237c30f1` = 更新版（guest_token なし・クリーン）→ **採用**（Yuu リンクはこちら）
+>
+> 実行順 **A（採用 verify）→ B（削除 pre-check, has_token 目視）→ C（削除）**。A 緑 ＋ B で `e067fcf6.has_token=true` 確認時のみ C。
+> C は children-first（fx_sheets→tasks→messages/tracks/purchases/trial_events→session）で cascade 有無に非依存・**e067fcf6 単一スコープ**・transaction 内 post-check で `e3688b24`/`fd7ef7a2` 無傷を確認してから COMMIT。SQL 全文は本セッションの conductor 連絡（2026-06-14）に記載。`fd7ef7a2`（原本）と `e3688b24`（採用）は**絶対に触らない**。
+
 ### STEP 2 — Yuu への案内リンク
 
 ```
-https://（本番ドメイン）/dial/session/<new_session_id>
+https://dial.mued.jp/dial/session/e3688b24-6645-4f8a-822c-7818237c30f1   ← 採用セッション（A verify 緑 ＋ C 削除完了後に確定）
 ```
 
 - Yuu は**サインイン状態**で開く（ownership = user_id 一致）。admin 作成セッションは `/dial` 一覧に自動表示されない場合があるため**直リンク必須**（過去教訓: admin session は /dial 非表示・claim ボタン already_granted）。
