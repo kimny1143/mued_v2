@@ -4,13 +4,8 @@ department: product
 activity: active
 status: active
 current_task: **🎯 ⑤ saga 完全クローズ + Yuu 案件クローズ(6/14)**。**⑤ = 反証→client-orchestrated 再設計→実装→#462/#463/#464 merge→prod LIVE→Yuu rescue で fresh-preview→final orchestration prod 実検証 PASS = 完全クローズ**(⑤ prod-verified via Yuu rescue 2026-06-14)。**Yuu = kimny 返信送信済でクローズ**(Yuu の saved effects を反映した final WAV を rescue で生成・効果反映確認・以後 通常サポート triage)。**preview R2非cache = product bug issue #465 で file**(深掘り根因・優先度低 pre-PMF・kimny別途判断)。idle/通常運用へ。
-next_action: **Yuu UI動線2点 一次確認 提出済→ kimny の「マスター版も送るか」判断待ち**(A=動線/ラベル / B=mastering feasibility)。判断 yes なら rescue script に mastering step 追加(masterPreview→masterFinal 220cr)→ final+master 再render(≈470cr・rescue URL 24h失効ゆえ一気再render)→マスター WAV 共有。残 housekeeping(任意): design branch hygiene / cost-model canonical=conductor→CFO。MUEDial 通常監視継続。
-blocked_by: kimny の Yuu マスター版送付 判断(feasibility 提出済・実行は GO 待ち)。
-urgency: low
-action_owner: kimny
-deadline: null
-expected_next_check_at: 2026-06-14T20:00:00+09:00
-last_update: 2026-06-14T18:00:00+09:00
+next_action: **kimny GO=① master white-glove 実行 + ② Yuu自走経路検証**。rescue script に `--master` step 追加済(masterPreview→pollMasterPreview→masterFinal 220cr・typecheck green・commit済)。**SQL-2本を kimny 実行依頼**(SQL-1=rescue_data+cycleState→/tmp/yuu-rescue-data.json[①+②a] / SQL-2=free15 grant count[②b])→ JSON 受領後 `npx tsx ...--master` で final+master 再render(≈470cr・Yuu枠非消費)→/tmp/yuu-rescue-{final,master}.wav+md5→Dropbox `_[MUED]fileshare/` 配置(path確認待ち)。②a=cycleState解釈・②b=grant解釈・**②c=①master実行が RoEx音声経路 end-to-end 実証**(page.tsx browser E2E は要望次第で再走可=RoEx健康・前回blocker解消)。
+blocked_by: SQL-2本(kimny prod read)→ ① render + ②a/b 回答。②c は要望次第。
 evidence: (Yuu診断) session fd7ef7a2 rows = mix_check_count=2/paid_cycle_count=1/base=3・preview task×2(両 completed 6/11・has_r2=false・mix_check/final task 無) / A=final/route.ts:238 仕様 / B=preview/route.ts に copyToR2 無(preview R2非cache=URL失効根因)+download route auto-refresh は 2-3日前RoEx task purge で失敗→410 / Final直押しリスク=⑤client が stale preview再利用 / 【⑤本体】#462/#463/#464 全land+prod LIVE済・memory reference-roex-retrievefinalmix-needs-ready-preview
 confidence: high
 lane: active
