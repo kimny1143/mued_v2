@@ -4,13 +4,13 @@ department: product
 activity: active
 status: active
 current_task: **🎯 ⑤ saga 完全クローズ + Yuu 案件クローズ(6/14)**。**⑤ = 反証→client-orchestrated 再設計→実装→#462/#463/#464 merge→prod LIVE→Yuu rescue で fresh-preview→final orchestration prod 実検証 PASS = 完全クローズ**(⑤ prod-verified via Yuu rescue 2026-06-14)。**Yuu = kimny 返信送信済でクローズ**(Yuu の saved effects を反映した final WAV を rescue で生成・効果反映確認・以後 通常サポート triage)。**preview R2非cache = product bug issue #465 で file**(深掘り根因・優先度低 pre-PMF・kimny別途判断)。idle/通常運用へ。
-next_action: **通常運用 standby**。残 housekeeping(任意): design branch `feat/dial-iteration-correctness` の hygiene(全 ⑤ merge 済=experiment/plan/rescue script は記録・status保持) / cost-model canonical 更新=conductor→CFO(⑤後 iteration実課金化)。MUEDial 通常監視継続。
-blocked_by: null（⑤ saga・Yuu 共にクローズ）
+next_action: **通常運用 standby**。Chief 再監査 後始末2点=完了(下記)。残 housekeeping(任意): design branch hygiene / cost-model canonical 更新=conductor→CFO(⑤後 iteration実課金化)。MUEDial 通常監視継続。
+blocked_by: null（⑤ saga・Yuu・Chief後始末 全クローズ）
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-06-14T18:00:00+09:00
-last_update: 2026-06-14T13:45:00+09:00
+expected_next_check_at: 2026-06-14T20:00:00+09:00
+last_update: 2026-06-14T17:45:00+09:00
 evidence: (Yuu診断) session fd7ef7a2 rows = mix_check_count=2/paid_cycle_count=1/base=3・preview task×2(両 completed 6/11・has_r2=false・mix_check/final task 無) / A=final/route.ts:238 仕様 / B=preview/route.ts に copyToR2 無(preview R2非cache=URL失効根因)+download route auto-refresh は 2-3日前RoEx task purge で失敗→410 / Final直押しリスク=⑤client が stale preview再利用 / 【⑤本体】#462/#463/#464 全land+prod LIVE済・memory reference-roex-retrievefinalmix-needs-ready-preview
 confidence: high
 lane: active
@@ -18,6 +18,7 @@ lane: active
 
 ## Recent events
 
+- 2026-06-14T17:45:00+09:00: **Chief Fable期文書再監査 後始末2点 完了(conductor 整合確認・クローズ)**。**①stale comment/doc 同期 = PR #466 self-merge**(Tier1 docs-only・`41fcdce8` on main・CI全green・挙動変更ゼロ): `db/schema/dial.ts` isFreeCampaign コメント baseCycleLimit=1→**3** + `free-campaign-go-live-runbook.md` M3 cr-flow ≈480cr/single-final→**≈980cr**(mix_check×2+final)/=3 同期・canonical=free-campaign.ts 明記。スコープ外残置=measurement-field-map(data lane)/e2e-checklist・holes-brief(historical snapshot)。**②`returnStems:!isFreeCampaign` = 問題なし(no-op)**: paid は stems返す=in-player ソロ維持(CFO 懸念対象=paid・保護済)、free は設計上 stems-off で session-takes `perTakeStems`→null graceful(RAW/processing/mastering と同 null パターン・crash無)。既存 stems-off 決定と矛盾なし。両件 conductor クローズ。
 - 2026-06-14T13:45:00+09:00: **🎯 ⑤ saga 完全クローズ + Yuu クローズ + preview-R2 issue #465 file**。kimny が Yuu 返信送信→**Yuu 案件クローズ**(以後 通常サポート triage・white-glove は今回限り)。conductor 確定: **⑤ orchestration = 本番確定でクローズ**(rescue で fresh preview→final prod 初実証 PASS=⑤ prod-verified 2026-06-14)。**preview R2非cache = product bug issue #465 で file**(全再訪ユーザー影響・優先度低 pre-PMF・backlog登録のみ・kimny別途)。cleanup: Yuu /tmp data(effects JSON+84MB WAV)+ smoke artifacts(/tmp/dial-seq・smoke-stems・~/Downloads/muedial-smoke・.smoke-stems)削除済・.gitignore revert・tree clean。rescue script は記録として design branch 保持。memory `reference-dial-effects-recovery-and-preview-expiry` 化。
 - 2026-06-14T10:40:00+09:00: **✅ Yuu white-glove rescue 完走 + ⑤ orchestration prod 実検証 PASS**。kimny (b) GO → `scripts/rescue-dial-yuu-final.ts`(rescue_data JSON=kimny SQL 経由・5 stems r2Url 健在)実行 → **Yuu の saved effects(Layer A presence/pan/reverb=dial_tracks + Layer B EQ/comp/gain=dial_messages.parameter_changes)を反映した final WAV 生成**: `/tmp/yuu-rescue-final.wav`(84MB・md5 `758c588766eb32acd5c99005c3b51181`・共有/tmp)。effects=コーラス下げ/リード前 一貫POP=Yuu意図(汎用でない・/tmp値と二重一致)。RoEx-only(~300cr pool・free15枠非消費)。musicalStyle は enum 直使用に修正(POP)。**★bonus: ⑤ fresh-preview→final orchestration を prod で初実証**(fresh preview ea26f083 48s→final 26s SUCCEEDED・smoke が RoEx遅延で未到達だった本丸・今回 RoEx高速)=⑤ デプロイ後本番で正しく動作 確定。**permanence**: R2 copy 私側不可(creds無)→ WAV直渡し推奨 / finalUrl 24h / dial_task INSERT(R2無で ~2-3日)。conductor の渡し方判断待ち→Yuu返信ドラフト(②失効お詫び+①仕様+完成版WAV+枠据置)。深掘り根因=preview R2非cache(別issue)。
 - 2026-06-14T09:50:00+09:00: **(6/14) Yuu 2問題 read-only 診断 着手**(conductor依頼・ユーザー待ち急ぎ)。Yuu 再返信=①「Mix check limit reached(max2)」②「Preview読込めない」。**①=code確定 仕様**(final/route.ts:238 `mixCheckCount>=2`→設計どおり最大2回・対処=Final Mix・free15 baseCycleLimit=3 で paid_cycle_count<3 なら Final可)。**②=要prod data・最有力=⑤fix正常(本物fresh render)×RoEx slow spell**(自分が smoke で初回preview 17分遅延 実体験・⑤後は各mix_checkがfresh render伴う→遅延で「読込めない」体感)・但し failed なら実バグ。read-only CTE SQL(guest_email keyed・本番write無)を conductor 経由 kimny 実行依頼。生行で ①②確定→kimny返信ドラフト所見。**②の⑤特有確認点**: preview完了後に mix_check task 発火(orchestration prod効くか・smoke未到達)/ completed task の has_r2(GCS 1h expiry fallback)。
