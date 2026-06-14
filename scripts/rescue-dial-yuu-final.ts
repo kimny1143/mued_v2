@@ -31,6 +31,9 @@ import {
   pollMixPreview,
   mixFinalAdvanced,
   pollMixFinal,
+  masterPreview,
+  pollMasterPreview,
+  masterFinal,
   mapMusicalStyle,
   mapInstrumentGroup,
   MusicalStyle,
@@ -154,6 +157,48 @@ async function main() {
   if (fin.stemsUrl) log(`stems: ${Object.keys(fin.stemsUrl).length} keys`);
   log(`freshPreviewRoexTaskId=${prev.taskId}  (⑤ orchestration: fresh preview → final SUCCEEDED in prod)`);
   log('=== Yuu の effects(presence/pan/reverb + EQ/comp)を反映した final 生成 完了 ===');
+
+  // ─── Optional mastering step (--master): master the final mix → mastered WAV (masterFinal=220cr) ──
+  if (process.argv.includes('--master')) {
+    log('=== MASTERING (white-glove・omakase・loudness=MEDIUM) ===');
+    const mp = await masterPreview(client, {
+      trackUrl: fin.finalUrl!,
+      musicalStyle: roexStyle as never,
+      desiredLoudness: 'MEDIUM' as never,
+    });
+    if (!mp.taskId) throw new Error('master preview returned no taskId');
+    log(`master preview submitted: ${mp.taskId}`);
+    const mpStart = Date.now();
+    let mpr = mp;
+    for (let i = 0; i < 120 && !mpr.previewUrl && mpr.status !== 'failed'; i++) {
+      await sleep(15_000);
+      mpr = await pollMasterPreview(client, mp.taskId);
+      if (i % 4 === 0) log(`  master preview rendering (${Math.round((Date.now() - mpStart) / 1000)}s)…`);
+    }
+    if (mpr.status === 'failed') throw new Error('master preview failed');
+    log(`master preview READY in ${Math.round((Date.now() - mpStart) / 1000)}s`);
+
+    log('master final (/retrievefinalmaster, 220cr)…');
+    const mfStart = Date.now();
+    let mf = await masterFinal(client, mp.taskId);
+    for (let i = 0; i < 120 && !mf.finalUrl && mf.status !== 'failed'; i++) {
+      await sleep(15_000);
+      mf = await masterFinal(client, mp.taskId, { poll: true });
+    }
+    if (!mf.finalUrl) throw new Error(`master final no URL (status=${mf.status} error=${mf.error ?? 'none'})`);
+    log(`master final done in ${Math.round((Date.now() - mfStart) / 1000)}s`);
+
+    const mres = await fetch(mf.finalUrl);
+    if (!mres.ok) throw new Error(`master download failed ${mres.status}`);
+    const mbuf = Buffer.from(await mres.arrayBuffer());
+    const mmd5 = createHash('md5').update(mbuf).digest('hex');
+    const mout = `/tmp/yuu-rescue-master.wav`;
+    writeFileSync(mout, mbuf);
+    log('=== MASTER RESULT ===');
+    log(`master WAV: ${mbuf.length} bytes  md5=${mmd5}  saved=${mout}`);
+    log(`masterUrl (RoEx, expires): ${mf.finalUrl}`);
+    log('=== Yuu の final → master(loudness MEDIUM)生成 完了 ===');
+  }
 }
 
 main().catch((e) => { console.error('RESCUE ERROR:', e); process.exit(1); });
