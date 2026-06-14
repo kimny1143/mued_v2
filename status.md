@@ -3,15 +3,15 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: **(6/14) Yuu 2問題 read-only 診断中(conductor依頼・kimny返信ドラフト用)**。①「Mix check limit reached(max2)」=**code上 仕様確定**(final/route.ts:238 mixCheckCount>=2・対処=Final Mix押す・free15 baseCycleLimit=3 で Final可)。②「Preview読込めない」=要prod data・**最有力仮説=⑤fix正常動作(本物fresh render)×RoEx slow spell**(私が smoke で17分遅延 実体験)・failed なら別=実バグ。read-only SQL(CTE・guest_email keyed)を conductor 経由 kimny 実行依頼済→生行で確定。【前提=⑤パッケージ全land+prod LIVE 完納済(#462/#463/#464)・browser smoke は部分verify(mix_check fresh-mint は RoEx遅延で defer)】
-next_action: **Yuu 診断 SQL の生行待ち**(kimny 実行)→ ①(mix_check_count/paid_cycle_count で仕様確定)②(最新task status で processing[RoEx遅延=待てば出る]/failed[実バグ]/completed-but-no-load[player/URL層 #454線]を確定)→ kimny 返信ドラフト用 所見を conductor へ。**②で確認すべき⑤特有点**: 完了previewの後に mix_check task が発火しているか(fresh preview完了→/final 発火の orchestration が prod で効くか・smoke未到達ゆえ未検証)/ completed task の has_r2(GCS 1h expiry で R2 fallback あるか)。残: ⑤ mix_check fresh-mint 検証(RoEx speed戻り時・session ab2cb2f0)/ smoke artifact cleanup / cost-model canonical=conductor→CFO。
-blocked_by: Yuu 診断 = kimny の prod read-only SQL 実行待ち(kimny-gate)。
+current_task: **(6/14) Yuu 2問題 診断 確定済(prod data 受領)→ kimny 返信ドラフト用所見 提出・stems SQL で最終確定待ち**。session fd7ef7a2 rows: mix_check_count=2/paid_cycle_count=1/base=3・preview task×2 のみ(両 completed 6/11・has_r2=false)。**【A】max2エラー=仕様**(Final 枠可:paid1<3)。**【B】Preview読込めない=preview URL 失効**(preview は構造上 R2非cache=final のみ・6/11 GCS署名URL が数日で失効・2-3日前 RoEx task purge で auto-refresh 失敗→410。**当初⑤render×RoEx遅延仮説は否定・#454 player bugでもない**)。**Yuu 実態=使える成果物ゼロ**(過去mix_check×2=charge-and-fail[task未生成]+救済で paid=1)。**Final 直押しリスク=VALID**(⑤client が 6/11 preview 再利用→stale RoEx task で /retrievefinalmix 失敗公算)→**推奨=Preview作り直し→Final**(fresh task→最終R2恒久)。【前提=⑤全land+prod LIVE済】
+next_action: **stems SQL(`dial_tracks.r2_url` for fd7ef7a2)の結果待ち**→ in-session 再Preview可否を確定し Yuu 推奨(セッションで作り直し / 新規セッション)を最終化。深掘り根因=**preview も R2 cache すべき**(別issue化・preview MP3 数日失効が再訪ユーザー全員に影響)。残: ⑤ mix_check fresh-mint 検証(RoEx speed戻り時・session ab2cb2f0)/ smoke artifact cleanup(.smoke-stems等)/ cost-model canonical=conductor→CFO。
+blocked_by: Yuu 最終推奨 = stems r2_url SQL(kimny実行)待ち。診断本体は確定済。
 urgency: mid
 action_owner: kimny
 deadline: null
-expected_next_check_at: 2026-06-14T11:00:00+09:00
-last_update: 2026-06-14T09:50:00+09:00
-evidence: **PR #463**(⑤ client-orchestrated・off main clean branch・product Tier3 review依頼済・CI走行中) / 9stem before/after PASS: A(effA)`2239bdd7…`==control(同task effB=bug cached) / B(fresh task effB)`7a70a885…`≠A(fix=実音反映)・script experiment-dial-correct-sequence.ts / typecheck/lint/build/214 unit 全green(+13 orchestration) / Yuu調査: baseCycleLimit 書込=checkout/campaign-start のみ・以降read-only(chat L148/final L250)・Yuu=omakase baseCycleLimit1=影響ゼロ→救済不要 / PR #462(5→3)既に main / memory reference-roex-retrievefinalmix-needs-ready-preview
+expected_next_check_at: 2026-06-14T11:30:00+09:00
+last_update: 2026-06-14T10:15:00+09:00
+evidence: (Yuu診断) session fd7ef7a2 rows = mix_check_count=2/paid_cycle_count=1/base=3・preview task×2(両 completed 6/11・has_r2=false・mix_check/final task 無) / A=final/route.ts:238 仕様 / B=preview/route.ts に copyToR2 無(preview R2非cache=URL失効根因)+download route auto-refresh は 2-3日前RoEx task purge で失敗→410 / Final直押しリスク=⑤client が stale preview再利用 / 【⑤本体】#462/#463/#464 全land+prod LIVE済・memory reference-roex-retrievefinalmix-needs-ready-preview
 confidence: high
 lane: active
 ---
