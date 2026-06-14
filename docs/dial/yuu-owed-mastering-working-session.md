@@ -78,18 +78,15 @@ Yuu の Clerk ID・track 内容・params message を**すべて既存セッシ�
 WITH new_session AS (
   INSERT INTO dial_sessions (
     user_id, mode, mastering_mode, status, musical_style, title,
-    guest_token, guest_token_expires_at, payment_status,
-    base_cycle_limit, additional_cycle_limit, is_free_campaign
+    payment_status, base_cycle_limit, additional_cycle_limit, is_free_campaign
   )
   SELECT
     s.user_id, 'dialogue', 'omakase', 'uploading', s.musical_style,
     '(goodwill) Yuu owed mastering',
-    replace(gen_random_uuid()::text,'-','') || replace(gen_random_uuid()::text,'-',''),  -- 64-hex guest_token（extension 不要）
-    now() + interval '30 days',
     'paid', 3, 0, false
   FROM dial_sessions s
   WHERE s.id = 'fd7ef7a2-c227-40c2-8aeb-28c45a570fbc'
-  RETURNING id, user_id, guest_token
+  RETURNING id, user_id
 ),
 copy_tracks AS (
   INSERT INTO dial_tracks (
@@ -121,13 +118,30 @@ copy_params AS (
   ) m
   RETURNING 1
 )
-SELECT ns.id AS new_session_id, ns.user_id, ns.guest_token,
+SELECT ns.id AS new_session_id, ns.user_id,
        (SELECT count(*) FROM copy_tracks) AS tracks_copied,   -- 期待: 5
        (SELECT count(*) FROM copy_params) AS params_copied    -- 期待: 1
 FROM new_session ns;
 ```
 
-**返ってきた `new_session_id` を mued課へ。** read-only で `dial_tracks` 5件 / params 1件 / payment_status='paid' を verify する。
+> **guest_token は生成しない（NULL のまま）。** Yuu は**サインイン状態**でアクセスし、ownership は `session.user_id === auth.userId` で成立（`lib/middleware/dial-ownership.ts:41-42`・signed-in は guest_token を参照しない）。
+> → credential を**そもそも作らない**ので doc/git/memory に token が残る余地がない（kimny 運用要件を source で満たす）。
+
+**返ってきた `new_session_id` のみ mued課へ流通。** read-only で `dial_tracks` 5件 / params 1件 / payment_status='paid' を verify する（下記 STEP1-verify）。
+
+### STEP1-verify — 付与後の read-only 確認（new_session_id を埋めて kimny or mued 実行）
+
+```sql
+SELECT s.id, s.user_id, s.payment_status, s.is_free_campaign,
+       s.mode, s.mastering_mode, s.base_cycle_limit, s.additional_cycle_limit,
+       (SELECT count(*) FROM dial_tracks  t WHERE t.session_id = s.id) AS tracks,   -- 期待: 5
+       (SELECT count(*) FROM dial_tracks  t WHERE t.session_id = s.id AND t.r2_url IS NOT NULL) AS tracks_with_r2,  -- 期待: 5
+       (SELECT count(*) FROM dial_messages m WHERE m.session_id = s.id AND m.parameter_changes IS NOT NULL) AS params_msgs  -- 期待: 1
+FROM dial_sessions s
+WHERE s.id = '<NEW_SESSION_ID>';
+-- 期待: payment_status='paid' / is_free_campaign=false / mode='dialogue' / mastering_mode='omakase'
+--       base_cycle_limit=3 / additional_cycle_limit=0 / tracks=5 / tracks_with_r2=5 / params_msgs=1
+```
 
 ### STEP 2 — Yuu への案内リンク
 
