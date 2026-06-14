@@ -82,7 +82,12 @@ env 反映には Vercel 再デプロイが必要（getter は call-time read だ
 
 ---
 
-## ゲート M3 — 実 RoEx E2E 480cr verify（キャラクター gate）
+## ゲート M3 — 実 RoEx E2E ≈980cr verify（キャラクター gate）
+
+> 注: free15 の cycle 予算は #461 で **baseCycleLimit 1→3**（full dialogue journey = mix_check×2 +
+> final）に更新済。当初 6/10 go-live は baseCycleLimit=1 / ≈480cr の旧仕様で実施した（その実行記録は
+> status/memory 側）。以下の cr 図は現行仕様（≈980cr）に同期。canonical 値は
+> `lib/dial/free-campaign.ts`（`baseCycleLimit` + `roexCrEstimate`）。
 
 機械テストで拾えない。**実音源・実 RoEx cr 消費**を人間が確認する一線。
 
@@ -105,26 +110,27 @@ data cohort は `is_free_campaign=true AND created_at >= <switch_on_ts>` の時�
 
 ### フロー（実コード trace 確定の cr 内訳）
 1. operator サインイン → `/dial` の無料CTA (`data-testid="dial-free-campaign-start"`) → `POST /api/dial/campaign/start`
-   → `paymentStatus='paid'` + `is_free_campaign=true` セッション発行（baseCycleLimit=1）。
-2. 対話 mix の各調整（"vocals up" 等）= `/mixpreview` = **0cr・無制限**。
-3. 最終 commit（final WAV 取得）= **250cr**（1回のみ。baseCycleLimit=1 が縛る）。
+   → `paymentStatus='paid'` + `is_free_campaign=true` セッション発行（baseCycleLimit=3 #461）。
+2. 対話の各「調整」= `/mixpreview`（preview 反復）= **0cr・無制限**（方向決め）。
+3. 本格ミックス（mix_check×2 + final）= **各 250cr**（stems-off）= **750cr**。⑤(#463)後は各回が実 fresh
+   render。`baseCycleLimit=3` + `mixCheckCount<2` ガードが mix_check×2 + final の計3回を funds する。
 4. mastering（omakase）= **220cr**。
 5. mix diagnosis = **10cr**。
-6. → 合計 **≈480cr** 消費を RoEx dashboard の Recent Activity で実数照合。
+6. → 合計 **≈980cr** 消費を RoEx dashboard の Recent Activity で実数照合（canonical=`free-campaign.ts` roexCrEstimate）。
 
 ### 確認項目（evidence 必須・スクショ/ログ）
 - [ ] grant セッションが `paid` + `is_free_campaign=true` で生成された
 - [ ] preview 反復が課金されない（0cr）
-- [ ] final が **1回で打ち止め**（2回目 final が baseCycleLimit で拒否される）
+- [ ] **計3回 render（mix_check×2 + final）で打ち止め**（4回目の paid render が baseCycleLimit=3 で拒否される。mix_check は `mixCheckCount<2` でも縛られる）
 - [ ] retake 購入導線が出ない（additionalCycleLimit=0）
 - [ ] reference-track / compareMixes が無効（隠れ従量オフ）
-- [ ] RoEx 実消費 ≈480cr（±診断/stem 有無で 480-530 レンジ）
+- [ ] RoEx 実消費 ≈980cr（mix_check×2 500 + final 250 + master 220 + diag 10・stems-off）
 - [ ] **stuck-processing 再発なし**（PR#434 comm-timeout + cron backstop が効く）
 
 ### 軸B 並行課金ガード 実測（PR #438 修正の本番検証・CCO/Codex 要件）
 PR #438 で reserve-before-charge + mastering 予約 sentinel + omakase FX after-reserve を投入済。
 E2E は「修正が本番条件で効く」ことを実測確認する（バグ計測でなく fix verify）。
-- [ ] ①正常完走後の RoEx pool 消費が **480cr 近傍**（上振れ無し）を Recent Activity で実測
+- [ ] ①正常完走後の RoEx pool 消費が **≈980cr 近傍**（上振れ無し）を Recent Activity で実測
 - [ ] ②**final を並行/連打** → 2本目が atomic reservation（`UPDATE ... WHERE paid_cycle_count < limit` 0行）で **402・RoEx submit 前に弾かれる**ことを確認（pool 二重消費が起きない）
 - [ ] ③**mastering POST を並行** → 2本目が advisory lock + unique index で **409・charge 前に弾かれる**
 - [ ] ④★**mastering の poll/webhook 並行**（round-2 検証）: charge 前の予約行（sentinel roexTaskId）を GET /session・RoEx webhook・mastering GET が拾って二重 charge **しない**ことを確認（poll-skip guard）
@@ -164,7 +170,7 @@ GET /api/dial/campaign/stats   (admin)
 |---|---|---|---|
 | M1 migration 0048 | ~5分 | kimny psql | 追加列（後方互換・rollback容易） |
 | M2 env 3点 | ~5分 | kimny/conductor | env のみ（即 revert 可） |
-| M3 実 RoEx E2E 480cr | 30-60分 (RoEx律速) | mued | 実cr ~480消費 |
+| M3 実 RoEx E2E ≈980cr | 30-60分 (RoEx律速) | mued | 実cr ~980消費 |
 
 **律速 = kimny の prod psql/env 操作 + E2E 観測時間。実装追加ゼロ。半日で go-live ready。**
 LP 告知コピー声チェック / kimny go-live うなずき は本書スコープ外（LP課 / kimny）。

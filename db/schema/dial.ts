@@ -103,8 +103,9 @@ export const dialSessions = pgTable('dial_sessions', {
   referenceTrackFilename: text('reference_track_filename'), // Original filename
   referenceAnalysisResult: jsonb('reference_analysis_result'), // analyzeMix result cache
   // First-run free campaign: true = Stripe-bypass promo grant session (RoEx pool funded, capped).
-  // Used to bound cost (baseCycleLimit=1), disable reference-track (hidden /mixcomparison cost),
-  // and exclude from paid-user counts. See lib/dial/free-campaign.ts.
+  // Bounds cost via baseCycleLimit=3 (full dialogue journey: mix_check×2 + final, #461) +
+  // returnStems-off, disables reference-track (hidden /mixcomparison cost), and excludes from
+  // paid-user counts. See lib/dial/free-campaign.ts (canonical: baseCycleLimit + roexCrEstimate).
   isFreeCampaign: boolean('is_free_campaign').notNull().default(false),
   // First-touch acquisition attribution (where the user originally came from), captured at
   // session creation across all creation paths. Client-persisted at first /dial landing
