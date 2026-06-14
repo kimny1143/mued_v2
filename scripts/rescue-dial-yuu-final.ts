@@ -33,6 +33,7 @@ import {
   pollMixFinal,
   mapMusicalStyle,
   mapInstrumentGroup,
+  MusicalStyle,
   type InstrumentGroup,
   type MixResult,
 } from '../lib/roex';
@@ -97,9 +98,16 @@ async function main() {
     if (!t.r2Url) throw new Error(`track "${t.filename}" has no r2Url — stems not R2-cached, cannot rescue RoEx-only`);
   }
 
+  // musical_style may be stored as the RoEx enum already (e.g. 'POP') OR a UI value ('pop').
+  // Use it directly when it's a valid enum; otherwise map the UI value. (mapMusicalStyle('POP')
+  // would wrongly fall through to 'OTHER' since the map keys are lowercase UI values.)
+  const roexStyle = (Object.values(MusicalStyle) as string[]).includes(data.musicalStyle)
+    ? data.musicalStyle
+    : mapMusicalStyle(data.musicalStyle);
+
   const client = new RoExClient({ apiKey: prodKey });
   log(`=== Yuu white-glove rescue — session ${data.sessionId} (${data.tracks.length} stems) ===`);
-  log(`musicalStyle=${data.musicalStyle} → ${mapMusicalStyle(data.musicalStyle)}`);
+  log(`musicalStyle=${data.musicalStyle} → roex=${roexStyle}`);
   log('Yuu effects (Layer A) being applied:');
   for (const t of data.tracks) {
     log(`  ${t.filename}: group=${t.instrumentGroup} presence=${t.presenceSetting} pan=${t.panPreference} reverb=${t.reverbPreference}`);
@@ -117,7 +125,7 @@ async function main() {
     reverbPreference: t.reverbPreference as never,
   }));
   log('minting fresh preview (Yuu tracks)…');
-  const prev = await mixPreview(client, { tracks: previewTracks, musicalStyle: mapMusicalStyle(data.musicalStyle) as never, returnStems: true });
+  const prev = await mixPreview(client, { tracks: previewTracks, musicalStyle: roexStyle as never, returnStems: true });
   if (!prev.taskId) throw new Error('preview mint returned no taskId');
   log(`fresh preview submitted: ${prev.taskId}`);
   await pollPreviewReady(client, prev.taskId);
