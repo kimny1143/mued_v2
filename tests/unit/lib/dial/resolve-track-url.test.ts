@@ -8,44 +8,40 @@ const FRESH_GCS = gcsUrl('20300101T000000Z', 86400); // far future — won't exp
 const EXPIRED_GCS = gcsUrl('20260101T000000Z', 3600); // clearly past
 const R2 = 'https://cdn.example.com/stream/stem.wav';
 
-// URLs whose expiry CANNOT be parsed (no / partial X-Goog params). These are the incident class:
-// before the 2026-06-15 fix, isGcsUrlExpired() returned false for these → resolveTrackUrl handed
-// RoEx the (possibly long-dead) upload URL → preview 500 (Yuu goodwill session e3688b24).
+// URLs whose expiry CANNOT be parsed (no / partial X-Goog params). Before the 2026-06-15 fail-safe
+// these returned "not expired" → resolveTrackUrl could hand RoEx a long-dead upload URL.
 const NO_GOOG = 'https://storage.googleapis.com/bucket/stem.wav';
 const PARTIAL_GOOG = 'https://storage.googleapis.com/bucket/stem.wav?X-Goog-Date=20300101T000000Z'; // no Expires
 const MALFORMED = 'not-a-url';
 
-describe('resolveTrackUrl — r2-first (permanent copy preferred)', () => {
-  it('prefers R2 over a fresh GCS URL when both present', () => {
-    expect(resolveTrackUrl({ roexUploadUrl: FRESH_GCS, r2Url: R2 })).toBe(R2);
+describe('resolveTrackUrl — GCS-first (submit identity preserved)', () => {
+  // REGRESSION GUARD: a valid GCS URL must be returned even when R2 exists. RoEx keys fxSettings
+  // by the SUBMITTED URL basename, and final/route.ts looks up fxSettings by roexUploadUrl(GCS)
+  // basename — so the submitted identity must stay GCS for a fresh session or omakase basic-final
+  // silently loses per-track gain. (The brief 2026-06-15 r2-first reorder broke this; reverted.)
+  it('returns the fresh GCS URL even when R2 is also present', () => {
+    expect(resolveTrackUrl({ roexUploadUrl: FRESH_GCS, r2Url: R2 })).toBe(FRESH_GCS);
   });
 
-  it('prefers R2 when GCS is expired', () => {
+  it('uses a fresh GCS URL when R2 is null (just-uploaded, copy pending)', () => {
+    expect(resolveTrackUrl({ roexUploadUrl: FRESH_GCS, r2Url: null })).toBe(FRESH_GCS);
+  });
+});
+
+describe('resolveTrackUrl — R2 fallback only when GCS is dead (the retained fix)', () => {
+  it('falls back to R2 when the GCS URL is expired', () => {
     expect(resolveTrackUrl({ roexUploadUrl: EXPIRED_GCS, r2Url: R2 })).toBe(R2);
   });
 
-  it('INCIDENT 2026-06-15: prefers R2 even when GCS expiry is unparseable (was the preview-500)', () => {
-    // Copied/goodwill session: roex_upload_url is a long-dead GCS URL with no parseable expiry.
-    // Old behavior returned the dead URL → RoEx 500. New behavior returns the live R2 copy.
+  it('fail-safe: falls back to R2 when GCS expiry is UNPARSEABLE (closes the dead-GCS hazard)', () => {
+    // Yuu's goodwill case is the parseable-expired one above; these cover the un-vouchable shapes.
     expect(resolveTrackUrl({ roexUploadUrl: NO_GOOG, r2Url: R2 })).toBe(R2);
     expect(resolveTrackUrl({ roexUploadUrl: PARTIAL_GOOG, r2Url: R2 })).toBe(R2);
     expect(resolveTrackUrl({ roexUploadUrl: MALFORMED, r2Url: R2 })).toBe(R2);
   });
-});
 
-describe('resolveTrackUrl — GCS fallback only when no R2 copy yet', () => {
-  it('uses a fresh GCS URL when R2 is null (just-uploaded, copy pending)', () => {
-    expect(resolveTrackUrl({ roexUploadUrl: FRESH_GCS, r2Url: null })).toBe(FRESH_GCS);
-  });
-
-  it('returns null when GCS is expired and there is no R2', () => {
+  it('returns null when GCS is expired/unparseable and there is no R2', () => {
     expect(resolveTrackUrl({ roexUploadUrl: EXPIRED_GCS, r2Url: null })).toBeNull();
-  });
-
-  it('fail-safe: returns null when expiry is UNPARSEABLE and there is no R2', () => {
-    // The flip from return-false → return-true: an un-vouchable URL is treated as expired so we
-    // never hand RoEx a possibly-dead URL. Real fresh uploads are X-Goog-signed (parse fine), so
-    // this only bites genuinely unrecoverable no-R2 tracks → caller shows a re-upload error.
     expect(resolveTrackUrl({ roexUploadUrl: NO_GOOG, r2Url: null })).toBeNull();
     expect(resolveTrackUrl({ roexUploadUrl: PARTIAL_GOOG, r2Url: null })).toBeNull();
     expect(resolveTrackUrl({ roexUploadUrl: MALFORMED, r2Url: null })).toBeNull();
@@ -57,15 +53,15 @@ describe('resolveAllTrackUrls', () => {
     expect(resolveAllTrackUrls([])).toEqual([]);
   });
 
-  it('resolves fresh-GCS(no R2) and R2-backed tracks', () => {
+  it('returns fresh GCS for both no-R2 and R2-backed tracks (GCS-first)', () => {
     const tracks = [
       { roexUploadUrl: FRESH_GCS, r2Url: null },
       { roexUploadUrl: FRESH_GCS, r2Url: R2 },
     ];
     const results = resolveAllTrackUrls(tracks);
     expect(results).toHaveLength(2);
-    expect(results[0].trackUrl).toBe(FRESH_GCS); // no R2 → fresh GCS
-    expect(results[1].trackUrl).toBe(R2); // R2 present → R2
+    expect(results[0].trackUrl).toBe(FRESH_GCS);
+    expect(results[1].trackUrl).toBe(FRESH_GCS); // R2 present but fresh GCS wins (submit identity)
     expect(results[0].original).toBe(tracks[0]);
   });
 
@@ -86,12 +82,12 @@ describe('resolveAllTrackUrls', () => {
     expect(() =>
       resolveAllTrackUrls([
         { roexUploadUrl: EXPIRED_GCS, r2Url: null },
-        { roexUploadUrl: NO_GOOG, r2Url: null }, // unparseable + no R2 → now also unusable
+        { roexUploadUrl: NO_GOOG, r2Url: null },
       ]),
     ).toThrow('2 track(s) affected');
   });
 
-  it('resolves mixed: expired+R2 and fresh-GCS(no R2)', () => {
+  it('resolves mixed: expired→R2 and fresh→GCS', () => {
     const tracks = [
       { roexUploadUrl: EXPIRED_GCS, r2Url: R2 },
       { roexUploadUrl: FRESH_GCS, r2Url: null },
