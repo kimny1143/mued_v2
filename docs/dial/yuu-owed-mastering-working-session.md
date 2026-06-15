@@ -186,3 +186,20 @@ https://dial.mued.jp/dial/session/e3688b24-6645-4f8a-822c-7818237c30f1   ← 採
 1. Layer B（params message）を pre-load するか（理想）／Yuu に再依頼させるか（次善）。**推奨=理想**（pre-load）。
 2. STEP 1 SQL の本番実行タイミング。
 3. ②c E2E の実施可否（test ログイン＋Chrome ロック手配）。
+
+---
+
+## 追記 — preview-500 インシデント (2026-06-15) と iOS E2E テストセッション
+
+Yuu が e3688b24 で preview→500（「一時的なサーバーエラー」）。**真因＝transient な RoEx submit 失敗**（resolveTrackUrl は r2 を正しく返していた＝not the cause）。preview submit は comm-timeout/retry 無し（再課金回避設計）→ RoEx 一過性 5xx で即 INFRA_ERROR→task 未生成→ユーザー行き止まり。
+
+**修正（2 PR・`d071c8c5` で main マージ）**:
+- **#468（Yuu fix）**: `app/api/dial/preview/route.ts` の mixPreview submit を `withRoExRetry`（`lib/dial/retry-roex.ts`）で transient 時 auto-retry（5xx/429/network/timeout・4xx propagate・3回 backoff・**preview 0cr で再課金リスク無**）。
+- **#467（hardening・Yuu fix ではない）**: resolveTrackUrl r2-first（format 非依存）+ `use-stem-peaks.ts` decode 同時数 2 bound（iOS メモリ）。
+
+### iOS E2E テストセッション（deploy 後・kimny 実行）
+deploy success ＋ adversarial 検証 clean の後、**kimny iOS Safari** で修正を実機検証する disposable セッション。Yuu の e3688b24 は触らず、fd7ef7a2 の 5stem（死 GCS roex_upload_url＋生 r2＝**Yuu の 500 条件を忠実再現**・5stem で F4 decode-bound も exercise）＋ params をコピーして kimny1143 アカウントに発行。
+
+- SQL 一式（T0 pre-check / T1 grant→test_session_id / T1-verify / T-cleanup children-first DELETE）は本インシデントの conductor 連絡（2026-06-15）に記載。kimny 実行・本番 write gate。
+- フロー: deploy success → 検証 clean → T0/T1（kimny）→ test_session_id を mued が RO-verify → kimny iOS で `/dial/session/<test_session_id>` を開き preview→mix_check→final→master→DL（before/after で 500→PASS）→ conductor 確認 → T-cleanup DELETE → Yuu 返信。
+- 消費 ≈470cr（E2E 想定）。`fd7ef7a2`/`e3688b24` は不可侵（T1 は read-only コピーのみ）。
