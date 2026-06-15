@@ -1389,14 +1389,14 @@ function DialSessionContent() {
 
         {task.previewUrl && (
           <div className="mt-2">
-            <audio controls src={taskStreamUrl(task.id)} className="w-full" />
+            <audio controls src={taskStreamUrl(task.id, guestToken)} className="w-full" />
           </div>
         )}
 
         {task.finalUrl && (
           <div className="mt-2">
             {task.taskType === 'mix_check' && (
-              <audio controls src={taskStreamUrl(task.id)} className="w-full mb-2" />
+              <audio controls src={taskStreamUrl(task.id, guestToken)} className="w-full mb-2" />
             )}
             <a
               href={downloadUrl(task.id)}
@@ -1676,7 +1676,7 @@ function DialSessionContent() {
                         )}
                       </div>
                       {task.previewUrl && (
-                        <audio controls src={taskStreamUrl(task.id)} className="w-full" />
+                        <audio controls src={taskStreamUrl(task.id, guestToken)} className="w-full" />
                       )}
                     </div>
                   );

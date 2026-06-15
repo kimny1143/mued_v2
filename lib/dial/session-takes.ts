@@ -37,9 +37,14 @@ export interface SessionTakeInput {
   tasks: SessionTakeTask[];
 }
 
-/** Stream a task's main mix/master through our API (avoids GCS presigned URL length/CORS). */
-export function taskStreamUrl(taskId: string): string {
-  return `/api/dial/download?taskId=${taskId}&inline=1`;
+/** Stream a task's main mix/master through our API (avoids GCS presigned URL length/CORS).
+ *  The guest token MUST be appended (as ?token) for guest sessions: inline playback uses
+ *  fetch()/<audio> which can't send the X-Dial-Guest-Token header, so without it withDialAuth
+ *  401s and the take fails to load (DL works because downloadUrl appends the token). Mirrors
+ *  stemStreamUrl/stemStreamUrlByTask below. */
+export function taskStreamUrl(taskId: string, token?: string | null): string {
+  const base = `/api/dial/download?taskId=${taskId}&inline=1`;
+  return token ? `${base}&token=${encodeURIComponent(token)}` : base;
 }
 
 /** Session-scoped stem proxy — server resolves to the best available task. Used only as a fallback
@@ -128,7 +133,7 @@ export function buildSessionTakes(
       id: task.id,
       label: 'MIXED',
       sublabel,
-      url: taskStreamUrl(task.id),
+      url: taskStreamUrl(task.id, guestToken),
       stemsUrls: perTakeStems(task),
       createdAt: task.createdAt,
       enabled: true,
@@ -165,7 +170,7 @@ export function buildSessionTakes(
       id: masteringFinalOrProcessingTask.id,
       label: 'MASTERED',
       sublabel: 'Final',
-      url: taskStreamUrl(masteringFinalOrProcessingTask.id),
+      url: taskStreamUrl(masteringFinalOrProcessingTask.id, guestToken),
       stemsUrls: null,
       createdAt: masteringFinalOrProcessingTask.createdAt,
       enabled: isMasteredEnabled,
@@ -179,7 +184,7 @@ export function buildSessionTakes(
         id: masteringPreviewPlayable.id,
         label: 'MASTERED',
         sublabel: 'Preview',
-        url: taskStreamUrl(masteringPreviewPlayable.id),
+        url: taskStreamUrl(masteringPreviewPlayable.id, guestToken),
         stemsUrls: null,
         createdAt: masteringPreviewPlayable.createdAt,
         enabled: true,
