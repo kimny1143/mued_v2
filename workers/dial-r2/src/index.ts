@@ -154,6 +154,11 @@ const worker = {
         if (secret !== expectedSecret) {
           return jsonResponse({ error: 'Unauthorized' }, 401);
         }
+      } else {
+        // Fail-open mirror of app/api/webhooks/roex: if the secret is unset, the
+        // endpoint accepts any caller. Surface it loudly so a missing binding is
+        // caught, not silently un-authenticated.
+        console.warn('CRITICAL: ROEX_WEBHOOK_SECRET not configured — /webhooks/roex auth DISABLED (accepting all callers)');
       }
       // Ack only — RoEx result is retrieved by MUED via polling, not this callback.
       return jsonResponse({ ok: true }, 200);
