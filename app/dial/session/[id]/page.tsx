@@ -1476,7 +1476,7 @@ function DialSessionContent() {
         {masteringFinalTask && (
           <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-zinc-400">Mastered Track</span>
+              <span className="text-sm font-medium text-zinc-400">{t.dial.session.masteredTrack}</span>
               <span className="text-xs px-2 py-1 rounded bg-green-900/50 text-green-300">completed</span>
             </div>
             <div className="flex items-center gap-3">
@@ -1488,8 +1488,9 @@ function DialSessionContent() {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 rounded-xl text-base font-semibold transition-colors"
               >
                 {downloadedItems.has('mastered') && <span className="text-white">&#10003;</span>}
-                {t.dial.session.downloadFinal} (.wav)
+                {t.dial.session.downloadMaster} (.wav)
               </a>
+              <span className="text-xs text-zinc-500">{t.dial.session.formatMaster}</span>
               <span className="text-xs text-zinc-500">30日間再ダウンロード可能</span>
             </div>
           </div>
@@ -1499,8 +1500,8 @@ function DialSessionContent() {
         {mixFinalTask && (
           <div className="p-6 bg-zinc-900 border border-zinc-800 rounded-xl">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-zinc-400 capitalize">
-                {mixFinalTask.taskType.replace('_', ' ')}
+              <span className="text-sm font-medium text-zinc-400">
+                {t.dial.session.finalMixLabel}
               </span>
               <span className="text-xs px-2 py-1 rounded bg-green-900/50 text-green-300">
                 completed
@@ -1521,6 +1522,7 @@ function DialSessionContent() {
                 {downloadedItems.has('finalMix') && <span className="text-white">&#10003;</span>}
                 {t.dial.session.downloadFinal} (.wav)
               </a>
+              <span className="text-xs text-zinc-500">{t.dial.session.formatFinal}</span>
               <span className="text-xs text-zinc-500">30日間再ダウンロード可能</span>
             </div>
             {mixFinalTask.stemsUrls && Object.keys(mixFinalTask.stemsUrls).length > 0 && (
