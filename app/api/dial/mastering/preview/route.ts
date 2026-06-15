@@ -17,6 +17,7 @@ import { rateLimit } from '@/lib/middleware/rate-limit';
 import { createRoExClient, masterPreview, pollMasterPreview, isRoExDevKey, mapMusicalStyle } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
+import { withRoExRetry } from '@/lib/dial/retry-roex';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
@@ -98,11 +99,25 @@ export const POST = withDialAuth(async (auth) => {
       };
     } else {
       const client = createRoExClient();
-      result = await masterPreview(client, {
-        trackUrl,
-        musicalStyle: roexMusicalStyle as Parameters<typeof masterPreview>[1]['musicalStyle'],
-        desiredLoudness: resolvedLoudness,
-      });
+      // Mastering preview is 0cr, so a retry can never double-charge — auto-retry transient RoEx
+      // failures (5xx / 429 / network blip) so a one-off upstream hiccup doesn't dead-end the user
+      // with INFRA_ERROR at the master step (same class/fix as the preview submit, #468; caught by
+      // the 2026-06-15 iOS E2E). The 220cr mastering FINAL is NOT retried — it is reserve-before-
+      // charge guarded (app/api/dial/mastering/final/route.ts). A non-transient 4xx still propagates.
+      result = await withRoExRetry(
+        () =>
+          masterPreview(client, {
+            trackUrl,
+            musicalStyle: roexMusicalStyle as Parameters<typeof masterPreview>[1]['musicalStyle'],
+            desiredLoudness: resolvedLoudness,
+          }),
+        {
+          onRetry: (err, attempt) =>
+            console.warn(
+              `[mastering/preview/POST] transient RoEx submit error (attempt ${attempt}), retrying: ${err instanceof Error ? err.message : String(err)}`,
+            ),
+        },
+      );
     }
 
     // Save mastering preview task
