@@ -18,6 +18,7 @@ import { createRoExClient, mixPreview, pollMixPreview, mapMusicalStyle, mapInstr
 import type { MixTrackInput } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
+import { withRoExRetry } from '@/lib/dial/retry-roex';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialTracks, dialTasks, dialSessions } from '@/db/schema';
@@ -95,12 +96,24 @@ export const POST = withDialAuth(async (auth) => {
     const roexMusicalStyle = mapMusicalStyle(session.musicalStyle);
 
     const client = createRoExClient();
-    const result = await mixPreview(client, {
-      tracks: trackInputs,
-      musicalStyle: roexMusicalStyle as Parameters<typeof mixPreview>[1]['musicalStyle'],
-      returnStems: true,
-      retrieveFxSettings,
-    });
+    // Preview submit is 0cr, so a retry can never double-charge — auto-retry transient RoEx
+    // failures (5xx / 429 / network blip) so a one-off upstream hiccup doesn't dead-end the user
+    // with INFRA_ERROR (incident 2026-06-15). A non-transient 4xx still propagates immediately.
+    const result = await withRoExRetry(
+      () =>
+        mixPreview(client, {
+          tracks: trackInputs,
+          musicalStyle: roexMusicalStyle as Parameters<typeof mixPreview>[1]['musicalStyle'],
+          returnStems: true,
+          retrieveFxSettings,
+        }),
+      {
+        onRetry: (err, attempt) =>
+          console.warn(
+            `[preview/POST] transient RoEx submit error (attempt ${attempt}), retrying: ${err instanceof Error ? err.message : String(err)}`,
+          ),
+      },
+    );
 
     // Snapshot params used for this preview (for dirty-state comparison UI)
     const previewParams = {
