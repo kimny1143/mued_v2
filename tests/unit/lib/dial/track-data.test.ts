@@ -5,7 +5,10 @@ import { buildAdvancedTrackData, type ParameterChanges, type TrackInfo } from '@
 
 function makeTracks(filenames: string[]): TrackInfo[] {
   return filenames.map((f) => ({
+    // roexUploadUrl has no X-Goog params → treated as expired (fail-safe) → resolveTrackUrl uses
+    // r2Url. Setting r2Url to the same value keeps the resolved trackUrl stable for assertions.
     roexUploadUrl: `https://storage.example.com/${f}`,
+    r2Url: `https://storage.example.com/${f}`,
     originalFilename: f,
   }));
 }
@@ -137,6 +140,34 @@ describe('buildAdvancedTrackData', () => {
     const result = buildAdvancedTrackData(tracks, changes);
 
     expect(result[0].panAngleDegrees).toBe(-30);
+  });
+
+  // ─── Incident 2026-06-15: dialogue-final URL resolution (GCS→R2 fallback + pre-charge guard) ──
+
+  it('resolves the submit URL via GCS→R2 fallback when the GCS upload URL is expired', () => {
+    // A returning/copied (goodwill) session: roex_upload_url is a long-dead GCS URL, r2_url is live.
+    // The dialogue-final path must send the live R2 URL, not the dead GCS one.
+    const expiredGcs = 'https://storage.googleapis.com/b/stem.wav?X-Goog-Date=20260101T000000Z&X-Goog-Expires=3600';
+    const liveR2 = 'https://cdn.example.com/stream/stem.wav';
+    const result = buildAdvancedTrackData(
+      [{ roexUploadUrl: expiredGcs, r2Url: liveR2, originalFilename: 'stem.wav' }],
+      [{ track: 'stem.wav', changes: { gainDb: 2 } }],
+    );
+    expect(result[0].trackUrl).toBe(liveR2);
+    expect(result[0].gainDb).toBe(2); // params still matched by filename, independent of URL
+  });
+
+  it('THROWS (pre-charge guard) when a track has no usable URL — never hands RoEx a dead URL', () => {
+    // dead GCS + no R2 → resolveTrackUrl returns null. buildAdvancedTrackData runs BEFORE the cycle
+    // reservation in final/route.ts, so throwing here means a paid dialogue-final neither 500s on a
+    // dead URL nor burns a reserved cycle.
+    const deadGcs = 'https://storage.googleapis.com/b/stem.wav?X-Goog-Date=20260101T000000Z&X-Goog-Expires=3600';
+    expect(() =>
+      buildAdvancedTrackData(
+        [{ roexUploadUrl: deadGcs, r2Url: null, originalFilename: 'stem.wav' }],
+        [{ track: 'stem.wav', changes: { gainDb: 1 } }],
+      ),
+    ).toThrow(/Stem URL expired for "stem.wav"/);
   });
 
   it('handles a full 5-track rock band scenario', () => {
