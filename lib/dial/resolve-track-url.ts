@@ -37,9 +37,12 @@ function getGcsExpiry(url: string): Date | null {
 function isGcsUrlExpired(url: string): boolean {
   const expiry = getGcsExpiry(url);
   if (!expiry) {
-    // If we can't parse expiry, assume it might be expired after 50 minutes
-    // (conservative — GCS URLs typically expire at 1h)
-    return false;
+    // Can't parse expiry (no X-Goog-Date/Expires) → fail-safe: treat as expired so we never
+    // hand RoEx a URL we can't vouch for. With resolveTrackUrl() preferring r2_url first, this
+    // only affects tracks WITHOUT an R2 copy; a just-uploaded stem's GCS URL is X-Goog-signed
+    // and parses fine, so this does not reject fresh uploads. (Incident 2026-06-15: a copied
+    // session's long-dead GCS upload URL was passed to RoEx → 500, because this returned false.)
+    return true;
   }
   // Add 2-minute buffer so we don't send an about-to-expire URL
   return new Date() > new Date(expiry.getTime() - 2 * 60 * 1000);
@@ -55,12 +58,20 @@ export interface TrackWithUrls {
  * Returns null if no valid URL is available.
  */
 export function resolveTrackUrl(track: TrackWithUrls): string | null {
-  if (!isGcsUrlExpired(track.roexUploadUrl)) {
-    return track.roexUploadUrl;
-  }
-
+  // Prefer the permanent R2 copy whenever it exists. R2 /stream/ URLs never expire and are
+  // RoEx-readable, so for any returning or copied session (whose GCS roex_upload_url may be
+  // long dead) this is always the safe choice. GCS-first previously handed RoEx a dead URL
+  // whenever isGcsUrlExpired() couldn't parse the expiry — incident 2026-06-15 (Yuu goodwill
+  // session preview 500).
   if (track.r2Url) {
     return track.r2Url;
+  }
+
+  // No R2 copy yet (e.g. immediately after upload, before the async copy lands): fall back to
+  // the GCS upload URL while it's still valid. If validity can't be confirmed, return null so
+  // the caller surfaces an actionable "re-upload" error rather than risk a dead URL.
+  if (!isGcsUrlExpired(track.roexUploadUrl)) {
+    return track.roexUploadUrl;
   }
 
   return null;
