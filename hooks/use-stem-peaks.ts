@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 
 const BUCKETS = 120;
+// Max stem WAVs decoded at once. fetchPeaks() pulls a full stem WAV and decodeAudioData()s it to
+// PCM, which holds the whole decoded buffer in memory (tens of MB per stem). Decoding every stem
+// of a take concurrently spiked peak memory enough to crash the tab on constrained devices (iOS
+// Safari memory ceiling) — invisible on high-RAM dev machines. A small pool bounds peak memory to
+// ~N stems instead of all of them. (Incident 2026-06-15.)
+const DECODE_CONCURRENCY = 2;
 
 async function fetchPeaks(url: string): Promise<number[]> {
   const res = await fetch(url, { credentials: 'same-origin' });
@@ -59,20 +65,27 @@ export function useStemPeaks(
       setPeaksByTake((prev) => ({ ...prev, [takeId]: { ...(prev[takeId] ?? {}), ...cached } }));
     }
 
-    // Fetch peaks for stems not yet in cache
-    for (const [stemName, url] of Object.entries(urls)) {
-      if (cacheRef.current[url]) continue;
-      fetchPeaks(url).then((p) => {
-        if (cancelled) return;
-        cacheRef.current[url] = p;
-        setPeaksByTake((prev) => ({
-          ...prev,
-          [takeId]: { ...(prev[takeId] ?? {}), [stemName]: p },
-        }));
-      }).catch(() => {
-        // Silent failure — WaveformBar renders nothing for missing peaks
-      });
-    }
+    // Fetch peaks for stems not yet in cache, decoding at most DECODE_CONCURRENCY at a time so a
+    // multi-stem take doesn't hold every stem's decoded PCM in memory at once (iOS crash vector).
+    const pending = Object.entries(urls).filter(([, url]) => !cacheRef.current[url]);
+    let next = 0;
+    const runOne = async (): Promise<void> => {
+      while (!cancelled && next < pending.length) {
+        const [stemName, url] = pending[next++];
+        try {
+          const p = await fetchPeaks(url);
+          if (cancelled) return;
+          cacheRef.current[url] = p;
+          setPeaksByTake((prev) => ({
+            ...prev,
+            [takeId]: { ...(prev[takeId] ?? {}), [stemName]: p },
+          }));
+        } catch {
+          // Silent failure — WaveformBar renders nothing for missing peaks
+        }
+      }
+    };
+    for (let i = 0; i < Math.min(DECODE_CONCURRENCY, pending.length); i++) void runOne();
 
     return () => { cancelled = true; };
   }, [activeTakeId]); // stemUrls is stable per take; activeTakeId is the change signal
