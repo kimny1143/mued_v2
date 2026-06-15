@@ -112,3 +112,42 @@ describe('buildSessionTakes — take/URL wiring (PR-A)', () => {
     expect(labels).toEqual(['RAW:raw-s', 'MIXED:new', 'MIXED:old', 'MASTERED:mp']);
   });
 });
+
+// QA (d), 2026-06-15: the main take `url` (not just stems) must carry the guest token, or guest
+// inline playback/analysis 401s ("could not load this take") while DL works (downloadUrl appends
+// the token). taskStreamUrl previously dropped the token — a guest-only latent bug Yuu hit on the
+// mastering completion screen. Signed-in works via the Clerk cookie, so the token must be ABSENT
+// when none is provided (no stray empty param).
+describe('buildSessionTakes — main take URL carries guest token (QA d)', () => {
+  const mixFinal = (id: string, createdAt: string): SessionTakeTask =>
+    ({ id, taskType: 'final_advanced', status: 'completed', previewUrl: null, finalUrl: `gcs://${id}.wav`, stemsUrls: null, createdAt });
+  const masteringFinal = (id: string, createdAt: string): SessionTakeTask =>
+    ({ id, taskType: 'mastering', status: 'completed', previewUrl: null, finalUrl: `gcs://${id}.wav`, stemsUrls: null, createdAt });
+
+  it('appends ?token to the MASTERED final take url for a guest session', () => {
+    const session: SessionTakeInput = { id: 's', tracks: [], tasks: [masteringFinal('mf', '2026-06-15T07:00:00Z')] };
+    const mastered = buildSessionTakes(session, 'guest-tok').find((t) => t.label === 'MASTERED')!;
+    expect(mastered.sublabel).toBe('Final');
+    expect(mastered.url).toContain('taskId=mf');
+    expect(mastered.url).toContain('token=guest-tok');
+  });
+
+  it('appends ?token to the MIXED final take url for a guest session', () => {
+    const session: SessionTakeInput = { id: 's', tracks: [], tasks: [mixFinal('xf', '2026-06-15T07:00:00Z')] };
+    const mixed = buildSessionTakes(session, 'guest-tok').find((t) => t.label === 'MIXED')!;
+    expect(mixed.url).toContain('taskId=xf');
+    expect(mixed.url).toContain('token=guest-tok');
+  });
+
+  it('omits the token param entirely for a signed-in session (token null)', () => {
+    const session: SessionTakeInput = {
+      id: 's',
+      tracks: [],
+      tasks: [mixFinal('xf', '2026-06-15T07:00:00Z'), masteringFinal('mf', '2026-06-15T08:00:00Z')],
+    };
+    const takes = buildSessionTakes(session, null);
+    for (const t of takes) {
+      expect(t.url).not.toContain('token=');
+    }
+  });
+});
