@@ -14,6 +14,7 @@ interface Env {
   DELIVERABLES: R2Bucket;
   ALLOWED_ORIGINS: string;
   R2_COPY_SECRET: string;
+  ROEX_WEBHOOK_SECRET: string;
 }
 
 const DEFAULT_ORIGINS = [
@@ -137,6 +138,25 @@ const worker = {
         key,
         size: r2Object.size,
       }, 200);
+    }
+
+    // ── POST /webhooks/roex — RoEx webhook receiver (validate + ack only) ──
+    // RoEx's /masteringpreview EAGERLY connects to the configured webhookURL at submit and
+    // requires a 2xx, or it 503s ("Problem initiating a mastering task"). MUED polls RoEx for
+    // results (does NOT consume this callback), so this endpoint only verifies the secret and
+    // acks 200. Hosting it on this Cloudflare worker — not the Vercel app — keeps RoEx's
+    // datacenter IP off Vercel's managed DDoS Mitigation, which was denying RoEx and breaking
+    // mastering (incident 2026-06-15). Mirrors app/api/webhooks/roex secret check.
+    if (request.method === 'POST' && url.pathname === '/webhooks/roex') {
+      const expectedSecret = env.ROEX_WEBHOOK_SECRET;
+      if (expectedSecret) {
+        const secret = url.searchParams.get('secret');
+        if (secret !== expectedSecret) {
+          return jsonResponse({ error: 'Unauthorized' }, 401);
+        }
+      }
+      // Ack only — RoEx result is retrieved by MUED via polling, not this callback.
+      return jsonResponse({ ok: true }, 200);
     }
 
     // ── GET /download/* — public download from R2 (attachment) ─────────────
