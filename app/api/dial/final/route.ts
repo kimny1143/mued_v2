@@ -156,6 +156,10 @@ export const POST = withDialAuth(async (auth) => {
         return apiValidationError('No parameter changes found. Ask Hoo for mixing suggestions first.');
       }
 
+      // buildAdvancedTrackData resolves each submit URL via resolveTrackUrl (GCS→R2 fallback) and
+      // THROWS on a dead URL. This runs BEFORE the cycle reservation below, so a dialogue-final on
+      // a returning/copied session whose GCS upload URL has expired falls back to r2_url (or fails
+      // pre-charge) instead of handing RoEx a dead URL → 500 + a burned 250cr cycle. Incident 2026-06-15.
       const advancedTrackData = buildAdvancedTrackData(tracks, paramChanges);
 
       submit = async () => {
