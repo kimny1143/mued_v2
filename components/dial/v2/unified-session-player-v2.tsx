@@ -405,8 +405,12 @@ export function UnifiedSessionPlayerV2({
   const activeTakeObj = takes.find((t) => t.id === activeTakeId);
   const activeTakeLabel = activeTakeObj?.sublabel ?? activeTakeObj?.label ?? '';
 
-  // Derived sampleRate / bitDepth: prefer analysisResult prop, fall back to AudioContext rate
-  const displaySampleRate = sampleRate ?? (audioSampleRate !== 44100 ? audioSampleRate : undefined);
+  // Derived sampleRate / bitDepth. NEVER fall back to `audioSampleRate`: that is the AudioContext's
+  // (device) output rate — decodeAudioData resamples the decoded buffer to it, so it reflects the
+  // playback device (e.g. 48kHz), NOT the file. RoEx dial deliverables are 44.1kHz, so default to
+  // that when the server analysis rate isn't provided (was showing the device's 48kHz — kimny QA c).
+  const DIAL_OUTPUT_SAMPLE_RATE = 44100;
+  const displaySampleRate = sampleRate ?? DIAL_OUTPUT_SAMPLE_RATE;
   const displayBitDepth = bitDepth;
 
   const { t } = useLocale();
