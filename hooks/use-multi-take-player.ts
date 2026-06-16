@@ -198,12 +198,19 @@ function stopAllSources(takeNodes: Record<string, TakeNodes>): void {
   }
 }
 
-/** Initial active take: prefer the newest processed take (MIXED→MASTERED) so first paint decodes a
- *  light preview rather than the heavy RAW WAVs; fall back to the first take (RAW) when none exist. */
+/** Initial active take: first paint should decode the LIGHTEST take. A single-file take (one
+ *  stemUrl — the MASTERED 2-mix) loads instantly; a multi-stem MIXED/RAW take decodes 5-6 large
+ *  WAVs concurrently and stalls the completion screen (kimny/Yuu "このテイクを読み込めませんでした"
+ *  — multi-stem decode-hang, 2026-06-16). So prefer the finished single-file MASTERED, then any
+ *  other single-file take, and only fall back to a multi-stem take when no single-file one exists.
+ *  This is also the better UX: the completion screen first shows the user's finished master. */
 function pickInitialActiveId(takes: TakeDef[]): string {
+  const singleFile = (t: TakeDef) => Object.keys(t.stemUrls).length <= 1;
   return (
-    takes.find((t) => t.label === 'MIXED') ??
-    takes.find((t) => t.label === 'MASTERED') ??
+    takes.find((t) => t.label === 'MASTERED') ??                  // finished master 2-mix: single-file, ideal
+    takes.find((t) => t.label === 'MIXED' && singleFile(t)) ??    // single-file mix preview (newest first)
+    takes.find(singleFile) ??                                     // any other single-file take
+    takes.find((t) => t.label === 'MIXED') ??                     // last resort: multi-stem (no single-file)
     takes[0]
   )?.id ?? '';
 }

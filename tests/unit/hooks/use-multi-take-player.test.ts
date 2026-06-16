@@ -2,8 +2,10 @@
  * Merge gate for the MUEDial v2 player decode/playback stop-bleed (Yuu incident 2026-06-11).
  *
  * Reproduces the failure class and asserts the fix:
- *  - Default active take = newest processed (MIXED), decoded lazily — the heavy RAW WAVs do NOT
- *    load up front (root cause: all-takes-all-stems parallel decode of ~419MB RAW).
+ *  - Default active take = the lightest-to-decode take, decoded lazily — the single-file MASTERED
+ *    2-mix is preferred (then a single-file MIXED preview); the heavy multi-stem MIXED/RAW WAVs do
+ *    NOT load up front (root causes: ~419MB RAW parallel decode, 2026-06-11; multi-stem Final Mix
+ *    completion-screen stall, 2026-06-16).
  *  - A failed / hung / expired take never freezes the transport (isReady is derived from the
  *    ACTIVE take, not a single fixed gating take). It becomes a per-take error, not an infinite spinner.
  *  - Decode concurrency is bounded.
@@ -145,6 +147,27 @@ describe('useMultiTakePlayer — decode/playback stop-bleed', () => {
     // RAW's 419MB of WAVs were never fetched (lazy) — the whole point.
     expect(result.current.takeDecodeStatus['raw-x']).toBeUndefined();
     // Only the 1 active-take stem was fetched, not RAW's 5.
+    expect((globalThis.fetch as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(1);
+  });
+
+  it('completion screen: defaults to the single-file MASTERED take, NOT the multi-stem MIXED final mix', async () => {
+    // The MIXED "Final Mix" is multi-stem (5-6 large WAVs) — auto-decoding it on first paint stalls
+    // the completion screen (kimny/Yuu "このテイクを読み込めませんでした", 2026-06-16). The MASTERED
+    // 2-mix is a single file, so it must be the default first paint.
+    const FINAL_MIX: TakeDef = {
+      id: 'fm', label: 'MIXED',
+      stemUrls: Object.fromEntries(Array.from({ length: 6 }, (_, i) => [`s${i}`, `https://proxy/fm-s${i}.wav`])),
+    };
+    const MASTERED: TakeDef = { id: 'ma', label: 'MASTERED', stemUrls: { main: 'https://proxy/master.wav' } };
+    const { result } = renderHook(() => useMultiTakePlayer([RAW_5, FINAL_MIX, MASTERED]));
+    await flush();
+
+    expect(result.current.activeTakeId).toBe('ma'); // MASTERED, not the multi-stem MIXED
+    expect(result.current.isReady).toBe(true);
+    expect(result.current.takeDecodeStatus.ma).toBe('ready');
+    // The 6-stem MIXED was never auto-decoded (lazy) — avoids the stall.
+    expect(result.current.takeDecodeStatus.fm).toBeUndefined();
+    // Only the single master file was fetched, not the 6 MIXED stems or 5 RAW stems.
     expect((globalThis.fetch as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(1);
   });
 
