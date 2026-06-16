@@ -12,7 +12,7 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export type ClaudeModel = 'claude-sonnet-4-20250514' | 'claude-opus-4-20250514' | 'claude-haiku-4-5-20251001';
+export type ClaudeModel = 'claude-sonnet-4-6' | 'claude-opus-4-8' | 'claude-haiku-4-5-20251001';
 
 export interface AdvisorConfig {
   model: ClaudeModel;
@@ -29,7 +29,7 @@ export interface ClaudeProviderConfig extends HooProviderConfig {
  * Default configuration for Claude provider
  */
 export const defaultClaudeConfig: ClaudeProviderConfig = {
-  model: 'claude-sonnet-4-20250514',
+  model: 'claude-sonnet-4-6',
   maxTokens: 4096,
   temperature: 0.7,
 };
@@ -40,11 +40,11 @@ export const defaultClaudeConfig: ClaudeProviderConfig = {
  * Output: $15.00
  */
 const CLAUDE_PRICING = {
-  'claude-sonnet-4-20250514': {
+  'claude-sonnet-4-6': {
     input: 3.0 / 1_000_000,
     output: 15.0 / 1_000_000,
   },
-  'claude-opus-4-20250514': {
+  'claude-opus-4-8': {
     input: 15.0 / 1_000_000,
     output: 75.0 / 1_000_000,
   },

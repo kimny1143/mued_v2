@@ -216,7 +216,7 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
     } else {
       conversation = await hooConversationsRepository.create({
         userId: internalUserId,
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-haiku-4-5-20251001',
         provider: 'claude',
       });
     }
@@ -235,10 +235,12 @@ export const POST = withAuthResolved(async ({ internalUserId, clerkUserId, reque
       content: m.content,
     }));
 
-    // Send to AI (Sonnet executor + Opus advisor for complex contexts)
+    // Hoo runs on Haiku (kimny cost policy). PR #38 had switched dial to Sonnet; that dated Sonnet
+    // snapshot was later retired by Anthropic → 404. The Haiku branch has no Opus advisor tier, so
+    // `advisor` is a no-op here (kept for the profile/lobe signal if the tier is ever reinstated).
     const useAdvisor = context === 'profile' || context === 'lobe';
     const startTime = Date.now();
-    const aiResponse = await sendHooChat('claude-sonnet-4', messages, {
+    const aiResponse = await sendHooChat('claude-haiku', messages, {
       systemPrompt,
       advisor: useAdvisor,
     });

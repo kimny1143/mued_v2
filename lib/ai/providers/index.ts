@@ -83,11 +83,11 @@ export async function sendHooChat(
   switch (modelId) {
     case 'claude-sonnet-4':
       return sendClaudeChat(messages, {
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         systemPrompt: options?.systemPrompt,
         tools: options?.tools,
         ...(options?.advisor && {
-          advisor: { model: 'claude-opus-4-20250514', maxUses: 2 },
+          advisor: { model: 'claude-opus-4-8', maxUses: 2 },
         }),
       });
 

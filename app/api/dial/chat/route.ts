@@ -240,7 +240,9 @@ export const POST = withDialAuth(async (auth) => {
     const tools = getDialTools({ mode: promptInput.mode, isMasteringPhase, locale });
 
     const startTime = Date.now();
-    const aiResponse = await sendHooChat('claude-sonnet-4', chatMessages, {
+    // Hoo dialogue runs on Haiku (kimny cost policy). A prior PR (#38) switched this to Sonnet;
+    // that dated Sonnet snapshot was later retired by Anthropic → 404 on every preview request.
+    const aiResponse = await sendHooChat('claude-haiku', chatMessages, {
       systemPrompt,
       tools,
     });
