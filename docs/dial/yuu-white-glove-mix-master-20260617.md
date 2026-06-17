@@ -1,6 +1,12 @@
 # Yuu 白手袋セッション付与 — 対話ミックス＋マスタリング (2026-06-17)
 
-作成: 2026-06-17 / mued課 / 状態: **SQL ドラフト → kimny 実行待ち（本番 write gate）**
+作成: 2026-06-17 / mued課 / 状態: **✅ 実行済（new_session_id `df55abae-34b0-4794-a3d5-05d84ad432a0`）。Preview 1-3 + Mix Check + Final Mix 正常完走・Yuu 症状 非再現（PR#477 効果確認）。**
+
+> ## ⚠️ 訂正（実行後の学習・次回反映）— **白手袋は operator が session owner**
+> 当初 SQL は `user_id` を Yuu からコピーした（「kimny が Yuu アカウントでサインイン操作」前提）。
+> しかし **kimny は自分（admin）で操作する**ため、Yuu 所有 session は `Session not found`（ownership 不一致・admin view は read-only で chat/preview POST 不可）。
+> kimny が `user_id` を自分の Clerk ID に変更して解決。
+> **正しい設計: 「operator（kimny）が操作する白手袋」は `user_id = operator の Clerk ID` にし、完成 WAV を後で end user（Yuu）に渡す。** 下表/SQL の user_id は operator 前提で読むこと。
 
 > conductor dispatch (2026-06-17): Yuu (`tanaka07yuu23@gmail.com`) が白手袋を承諾。**kimny が自分で操作する**。
 > e3688b24 のトラック（Instrument 1 + Vocal 4）と調整（メインV前・コーラス控えめ）を引き継ぎ、
@@ -13,7 +19,7 @@
 | 項目 | 値 | 理由 |
 |---|---|---|
 | 親セッション（コピー元） | `e3688b24-6645-4f8a-822c-7818237c30f1` | 6/14 goodwill keeper。5 track + Layer A/B 健全（DB 確認済 2026-06-17） |
-| user_id | Yuu の Clerk ID（親から SELECT コピー） | kimny は **サインイン状態の Yuu アカウント**で操作（ownership=user_id 一致・guest_token 不要） |
+| user_id | **operator（kimny）の Clerk ID** ← ⚠️訂正（上記参照。当初は Yuu をコピーし Session not found だった） | operator が自分で操作するため owner=operator。成果物を後で end user に渡す。guest_token 不要 |
 | `mode` | `'dialogue'` | 対話ミックス |
 | `mastering_mode` | `'omakase'` | マスタリングは LUFS ターゲット選択型（より決定的）。「落ち着いた自然な仕上げ」＝ **LOW / -14 LUFS** を選ぶ。Haiku の tool-fire 確率に依存しない（adversarial verify の指摘反映）。前回 runbook(e3688b24)とも一致。**※ 会話で詰めたいなら `'dialogue'` でも可** |
 | `status` | `'uploading'`（default） | tracks 有 + tasks 空 → 開くと mix step に着地（runbook 確認済） |
