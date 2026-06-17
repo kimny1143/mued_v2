@@ -58,6 +58,7 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 - `assertTransition(session, tasks, to)`: ガード検査（**無言フォールバック禁止 = 不正入力は throw**・入力 URL は durable r2 で解決 Y-05）。
 - `applyTransition(tx, sessionId, to)`: state UPDATE（既存 reserve/advisory-lock パターンと合成）。
 - 各遷移エンドポイント（preview/final/mastering/rollback/download）が散在 `.set({status})` の代わりに本サービスを呼ぶ（status 書込み 5 箇所を集約）。
+- **★mode 依存の遷移（1b で実装・product 指摘 2026-06-17）**: **mastering-only セッション（`session.mode = null`・masteringMode あり）は mix フェーズを skip** → 入口エッジ **`uploading → mastering_review`** が必要（mix-flow の `uploading → previewing → mix_review → mix_final → mastering_review` を通らない）。mastering-only は **previewing/mix_review/mix_final を持たず**、**`mastering_review → mix_review` ロールバック不可**（戻る mix が無い）。よって遷移の妥当性は `session.mode` 依存 = `assertTransition` に mode を渡し mix-flow / mastering-only でエッジ集合を切替える。**1a の純粋グラフ（PR #492）は mix-flow foundation**（mastering-only エッジ + mode gating は本 1b で追加）。backfill（0054）は task 検査ゆえ mastering-only も既に正しく `mastering_review`/`mastered_final` にマップ済（追加対応不要）。
 
 ### 1.3 detectPhase 置換（blast radius）
 - `getDialTools` を `selectToolsByState(state, mode)` に置換し **state で決定的に gate**（:1389 バグも同時解消 = dialogue でも mastering 入りまで mastering ツールを出さない）。
