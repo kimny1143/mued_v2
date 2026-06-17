@@ -44,9 +44,14 @@ export const DIAL_STATES: readonly DialState[] = [
  * - mastered_final → settling | delivered : download (unsettled > 0 settles first; = 0 delivers)
  * - settling → delivered : payment confirmed ; settling → mastered_final : payment cancel/fail
  * - mastered_final has NO edge back to mix (kimny: re-master = new mastering-only session)
+ * - uploading → mastering_review : mastering-only session (session.mode = null) skips the mix phase
+ *
+ * The graph is structural (mode-agnostic). Mode-specific validity (a mix-flow session can't jump
+ * uploading→mastering_review; a mastering-only session has no mix states/rollback) is enforced by
+ * the optional `masteringOnly` arg on canTransition/assertTransition. (product review 2026-06-17)
  */
 export const DIAL_STATE_TRANSITIONS: Record<DialState, readonly DialState[]> = {
-  uploading: ['previewing'],
+  uploading: ['previewing', 'mastering_review'],
   previewing: ['mix_review'],
   mix_review: ['previewing', 'mix_final'],
   mix_final: ['mastering_review', 'mix_review'],
@@ -56,6 +61,20 @@ export const DIAL_STATE_TRANSITIONS: Record<DialState, readonly DialState[]> = {
   delivered: [],
 };
 
+/** Edges valid ONLY in the mix flow (session.mode set) — forbidden for mastering-only sessions. */
+const MIX_FLOW_ONLY_EDGES: ReadonlySet<string> = new Set([
+  'uploading→previewing',
+  'previewing→mix_review',
+  'mix_review→previewing',
+  'mix_review→mix_final',
+  'mix_final→mastering_review',
+  'mix_final→mix_review',
+  'mastering_review→mix_review',
+]);
+
+/** Edges valid ONLY in the mastering-only flow (session.mode = null) — forbidden for mix-flow. */
+const MASTERING_ONLY_EDGES: ReadonlySet<string> = new Set(['uploading→mastering_review']);
+
 export class InvalidDialTransitionError extends Error {
   constructor(public readonly from: DialState, public readonly to: DialState) {
     super(`Invalid MUEDial state transition: ${from} → ${to}`);
@@ -63,14 +82,34 @@ export class InvalidDialTransitionError extends Error {
   }
 }
 
-/** True if `from → to` is a permitted transition. */
-export function canTransition(from: DialState, to: DialState): boolean {
-  return DIAL_STATE_TRANSITIONS[from]?.includes(to) ?? false;
+/**
+ * True if `from → to` is a permitted transition.
+ *
+ * Pass `opts.masteringOnly` to additionally apply mode-specific gating:
+ *   - masteringOnly=true  (session.mode = null): mix-flow edges are forbidden (uploading enters
+ *     mastering_review directly; no mix states / no mix rollback).
+ *   - masteringOnly=false (session.mode set): the mastering-only entry edge is forbidden (must go
+ *     through the mix phase).
+ * Omit `opts` for a structural-only check (mode-agnostic).
+ */
+export function canTransition(
+  from: DialState,
+  to: DialState,
+  opts?: { masteringOnly?: boolean },
+): boolean {
+  if (!(DIAL_STATE_TRANSITIONS[from]?.includes(to) ?? false)) return false;
+  if (opts?.masteringOnly === undefined) return true;
+  const edge = `${from}→${to}`;
+  return opts.masteringOnly ? !MIX_FLOW_ONLY_EDGES.has(edge) : !MASTERING_ONLY_EDGES.has(edge);
 }
 
 /** Throw on an invalid transition (no silent fallback — §2 invariant). */
-export function assertTransition(from: DialState, to: DialState): void {
-  if (!canTransition(from, to)) throw new InvalidDialTransitionError(from, to);
+export function assertTransition(
+  from: DialState,
+  to: DialState,
+  opts?: { masteringOnly?: boolean },
+): void {
+  if (!canTransition(from, to, opts)) throw new InvalidDialTransitionError(from, to);
 }
 
 // ─── Pure phase predicates (replace detectPhase / isMasteringPhase reads) ──────────────────────

@@ -96,3 +96,39 @@ describe('dial session state machine — phase predicates', () => {
     expect(canRollbackToMix('delivered')).toBe(false);
   });
 });
+
+describe('dial session state machine — mode-aware transitions (mastering-only vs mix-flow)', () => {
+  it('structural (no opts): both uploading→previewing and uploading→mastering_review are valid edges', () => {
+    expect(canTransition('uploading', 'previewing')).toBe(true);
+    expect(canTransition('uploading', 'mastering_review')).toBe(true);
+  });
+
+  it('mastering-only (mode=null): enters mastering_review directly, mix-flow edges forbidden', () => {
+    expect(canTransition('uploading', 'mastering_review', { masteringOnly: true })).toBe(true);
+    expect(canTransition('mastering_review', 'mastered_final', { masteringOnly: true })).toBe(true);
+    // mix-flow edges are not available to a mastering-only session
+    expect(canTransition('uploading', 'previewing', { masteringOnly: true })).toBe(false);
+    expect(canTransition('mastering_review', 'mix_review', { masteringOnly: true })).toBe(false);
+  });
+
+  it('mix-flow (mode set): must enter via the mix phase — direct uploading→mastering_review forbidden', () => {
+    expect(canTransition('uploading', 'mastering_review', { masteringOnly: false })).toBe(false);
+    expect(canTransition('uploading', 'previewing', { masteringOnly: false })).toBe(true);
+    expect(canTransition('mix_final', 'mastering_review', { masteringOnly: false })).toBe(true);
+    expect(canTransition('mastering_review', 'mix_review', { masteringOnly: false })).toBe(true);
+  });
+
+  it('shared edges (master approve / download / settle) are valid in both modes', () => {
+    for (const masteringOnly of [true, false]) {
+      expect(canTransition('mastering_review', 'mastered_final', { masteringOnly })).toBe(true);
+      expect(canTransition('mastered_final', 'delivered', { masteringOnly })).toBe(true);
+      expect(canTransition('mastered_final', 'settling', { masteringOnly })).toBe(true);
+      expect(canTransition('settling', 'delivered', { masteringOnly })).toBe(true);
+    }
+  });
+
+  it('assertTransition honors the mode gate', () => {
+    expect(() => assertTransition('uploading', 'mastering_review', { masteringOnly: false })).toThrow(InvalidDialTransitionError);
+    expect(() => assertTransition('uploading', 'mastering_review', { masteringOnly: true })).not.toThrow();
+  });
+});
