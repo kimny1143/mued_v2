@@ -266,7 +266,8 @@ export function ChatPanelV2({
   generatingElapsed,
   generatingEta,
   className,
-  phase = 1,
+  // `phase` (1/2/3) is no longer read client-side after R-1 (Tier3 Phase 1b) removed the
+  // adjust_preview → request_final auto-promotion. Kept in the prop type for callers; not destructured.
   mode = 'dialogue',
   previewCount = 0,
   previewLimit = 0,
@@ -358,11 +359,11 @@ export function ChatPanelV2({
       const desiredLoudness: string | null = data.data.desiredLoudness ?? null;
 
       let applied = false;
-      let effectiveAction = action;
+      const effectiveAction = action;
 
-      if (action === 'adjust_preview' && phase === 3 && !isMasteringPhase) {
-        effectiveAction = 'request_final';
-      }
+      // R-1 (Tier3 Phase 1b): no client-side auto-promotion of adjust_preview → request_final in
+      // phase 3. A paid Final requires an explicit Final button click (data-testid
+      // dial-chat-generate-final); the normal tool path (Hoo calling request_final) still renders it.
 
       if (effectiveAction === 'adjust_preview') {
         // Apply any param changes first (track presence/pan/reverb), then ALWAYS request a preview.
@@ -397,7 +398,7 @@ export function ChatPanelV2({
     } finally {
       setSending(false);
     }
-  }, [sending, sessionId, headers, phase, applyChanges, onPreviewRequested, isMasteringPhase, onMasteringPreviewRequested, onParametersApplied, t, locale]);
+  }, [sending, sessionId, headers, applyChanges, onPreviewRequested, onMasteringPreviewRequested, onParametersApplied, t, locale]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
