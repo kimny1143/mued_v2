@@ -56,6 +56,20 @@ describe('mapMusicalStyle', () => {
     expect(mapMusicalStyle('')).toBe('OTHER');
     expect(mapMusicalStyle('funk')).toBe('OTHER');
   });
+
+  it('is idempotent: an already-RoEx-enum value passes through (not downgraded to OTHER)', () => {
+    // session.musicalStyle is the RoEx enum when set via the set_musical_style chat tool.
+    expect(mapMusicalStyle('ROCK_INDIE')).toBe('ROCK_INDIE');
+    expect(mapMusicalStyle('POP')).toBe('POP');
+    expect(mapMusicalStyle('HIPHOP_GRIME')).toBe('HIPHOP_GRIME');
+    expect(mapMusicalStyle('ORCHESTRAL')).toBe('ORCHESTRAL');
+    expect(mapMusicalStyle('REGGAE_DUB')).toBe('REGGAE_DUB');
+    expect(mapMusicalStyle('OTHER')).toBe('OTHER');
+    // every enum value round-trips
+    for (const enumVal of Object.values(MUSICAL_STYLE_MAP)) {
+      expect(mapMusicalStyle(enumVal)).toBe(enumVal);
+    }
+  });
 });
 
 // ─── INSTRUMENT_GROUP_MAP ────────────────────────────────────────────────────
