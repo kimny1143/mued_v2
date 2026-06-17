@@ -18,6 +18,28 @@
 - **Stripe**: 全 dial checkout が `mode:'payment'`（都度前払い）。**saved-card / off-session は未実装**。
 - **Final 自動化**: Hoo がユーザー承認で `request_final` を発火 → /final が課金+ final_advanced render。
 
+## RoEx クレジット確定タイミング（調査確定 2026-06-17 / conductor 設計反映済）
+
+後決済モデルと WYSIWYG ゲートの土台。read-only 調査で file:line 確定:
+
+- **課金点 = retrieve 呼び出し（preview ではない）**:
+  - `/mixpreview`・`/masteringpreview` = **FREE 0cr**（lib/roex/{mixing,mastering}.ts）。対話中の反復試聴はここ。
+  - `/retrievefinalmix` = **250cr**（FX 既取得なら 125 / +50cr stems）。
+  - `/retrievefinalmaster` = **220cr**。
+  - **同一 task id の FIRST retrieve のみ課金**、2 回目以降の同一 task retrieve は cached で **FREE**（lib/roex/client.ts:13-14）。
+- **mix_check と final_advanced は同一の課金 retrieve**: 両者とも `mixFinalAdvanced`→`/retrievefinalmix`（250cr・WAV・EQ/comp 適用済）で生成され、**差は `taskType` ラベルのみ**（final/route.ts:133、docstring:9）。→ **要件 2(a)「再 render なし昇格」は構造的に確定**（後述）。
+- **dial_credit_ledger は本番未配線**（lib/ app/ 全域 grep で consume insert ゼロ）。実課金ゲート = **paymentStatus(Stripe) + cycle(paidCycleCount/baseCycleLimit)**。→ **R-4 = greenfield 実装**（conductor 記録）。
+
+### WYSIWYG ゲート確定（conductor 設計確定）
+
+| ゲート | コスト意味 | 確定方針 |
+|---|---|---|
+| ① 無料プレビュー試聴（`/mixpreview` `/masteringpreview`） | 無料 | **強制ロック廃止**。ここが「再生音源＝実レンダー出力」= 正しさの本丸 |
+| ② 有料 final retrieve（250/220cr） | **課金点** | **支払いコミットゲートとして維持**（承認＝唯一の課金トリガー） |
+| ③ MixCheck→Final 昇格（taskType UPDATE） | 0cr | **ロックなし**（純粋 source-swap） |
+
+> mix_check も ② の有料 retrieve の一種（250cr）。対話フロー = 無料 preview 反復 → 任意で有料 MixCheck チェックポイント → 昇格 or 反復。
+
 ## 設計方針
 
 ### 共通の核 = 後決済モデル（3 要件すべてに跨る最大の新規）
@@ -38,7 +60,7 @@
 
 - **Hoo 自動 Final 廃止**: prompt から「承認で即 request_final」を除去。Hoo は常に **MixCheck を提案**し、ユーザーが**特定の版を名指しで「これを Final に」**と言った時のみ Final 化。
 - **「MixCheck を Final に昇格」**: 2 案。
-  - **(a) 再 render なし【要確認・推奨】**: MixCheck 出力は既に「250cr・WAV・EQ/comp 適用済」(final route コメント)。これが**配信品質 WAV ならそのまま Final 成果物として flag**（追加 cr 0）。→ 要 RoEx 確認: `mix_check` WAV == `final_advanced` WAV か。等価なら昇格は「選択+flag」で完結（コスト減・kimny の直感と一致）。
+  - **(a) 再 render なし【確定・推奨】**: `mix_check` と `final_advanced` は**同一の `mixFinalAdvanced`→`/retrievefinalmix`（250cr・WAV・EQ/comp 適用済）で生成され、差は `taskType` ラベルのみ**（final/route.ts:133 で確認済）。よって昇格 = **`task_type` UPDATE のみ・追加 cr 0**。**Yuu 白手袋で実証済**（mix_check→final_advanced を DB UPDATE で昇格、既存 finalUrl/r2_final_url をそのまま Final 成果物に）。昇格は「選択+flag」で完結（コスト減・kimny の直感と一致）。
   - (b) 選択版の params で Final を再 render（現行・追加 cr）。
 - 影響: prompt(dial.ts) + final route の final 意味論（render→selection）+ UI（「この版を Final にする」ボタン）。**(a) なら最小**。
 
@@ -78,8 +100,9 @@
 
 ## リスク / 要確認
 
-- **回収**: 案(A)は「DL 前決済」で原価を bound するが、途中離脱分の RoEx 原価は被る → preview/mixcheck の試聴範囲に原価を抑える設計（既に preview は無料/低 cr）。
-- **mix_check WAV == final WAV か**（要件2(a) の前提）→ RoEx 確認必須。
+- **回収**: 案(A)は「DL 前決済」で原価を bound するが、途中離脱分の RoEx 原価は被る → preview/mixcheck の試聴範囲に原価を抑える設計（preview は無料、mixcheck は 250cr 課金済＝既に課金捕捉済）。
+- ~~mix_check WAV == final WAV か~~ → **解決**: 同一 retrieve 出力（final/route.ts:133・Yuu 実証）。要件2(a) は確定。
+- **R-4（後決済台帳）= greenfield**: dial_credit_ledger は本番未配線（既存ゲート = paymentStatus + cycle）→ 新台帳は #438 の reserve-before-charge / advisory-lock / partial-unique を最初から踏襲して新規構築。
 - **二重課金**: 後決済タブ = 新たな TOCTOU 面 → #438 の reserve-before-charge / advisory-lock / partial-unique を全経路に。
 - **承認 UX**: 「追加 +$X OK?」の頻度過多は離脱要因 → A/B。
 - **音質関門**（別件 feasibility `hoo-material-grounded-proposals-feasibility-20260617.md`）と連動: Final 承認制 + 素材ベース提案で「過剰適用→納得いく仕上げ」を両輪化。
