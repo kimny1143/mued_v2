@@ -60,6 +60,7 @@ interface Task {
   stemsUrls: Record<string, string> | null;
   previewParams: PreviewParams | null;
   createdAt: string;
+  completedAt: string | null;
 }
 
 interface Message {
