@@ -1347,7 +1347,9 @@ MusicalStyle: ${styleStatus}
 ### Track Layout
 ${trackList || '(No tracks uploaded yet)'}
 ${input.currentFxSummary ? `\n### Current FX Settings\n${input.currentFxSummary}` : ''}
-${input.previewUrl ? `\n### Preview\nPreview URL generated. User can listen.` : ''}${cycleNote}${input.masteringMode ? `\n### Mastering\nThis session includes mixing + mastering. After Final Mix is done, mastering phase starts automatically. Never tell the user mastering is out of scope.` : ''}${buildReferenceSection(input, en)}` : `## 現在のセッション
+${input.hasPreview
+  ? (input.previewUrl ? `\n### Preview\nPreview URL generated. User can listen.` : '')
+  : `\n### Preview\nNo preview has been generated yet — this session has NO preview. If the user wants to hear the mix or asks to "make a preview", call propose_mix_action with adjust_preview. Never claim a preview already exists.`}${cycleNote}${input.masteringMode ? `\n### Mastering\nThis session includes mixing + mastering. After Final Mix is done, mastering phase starts automatically. Never tell the user mastering is out of scope.` : ''}${buildReferenceSection(input, en)}` : `## 現在のセッション
 
 **Phase: ${input.hasPreview ? input.phase : '初回'}** — ${phaseNote}
 
@@ -1356,7 +1358,9 @@ MusicalStyle: ${styleStatus}
 ### トラック構成
 ${trackList || '（まだトラックがアップロードされていません）'}
 ${input.currentFxSummary ? `\n### 現在のFX設定\n${input.currentFxSummary}` : ''}
-${input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済みです。ユーザーは試聴可能な状態です。` : ''}${cycleNote}${input.masteringMode ? `\n### マスタリング\nこのセッションはミキシング＋マスタリングのセットです。Final Mix完了後、自動的にマスタリングフェーズに移行する。ユーザーに「マスタリングは範囲外」と言ってはいけない。` : ''}${buildReferenceSection(input, en)}`;
+${input.hasPreview
+  ? (input.previewUrl ? `\n### プレビュー\nプレビューURLが生成済みです。ユーザーは試聴可能な状態です。` : '')
+  : `\n### プレビュー\nまだプレビューは生成されていません（このセッションにプレビューは存在しない）。ユーザーがミックスを聴きたい・「プレビューを作って」と言ったら propose_mix_action の adjust_preview を呼ぶこと。「プレビューは既に作成済み」と言ってはいけない。`}${cycleNote}${input.masteringMode ? `\n### マスタリング\nこのセッションはミキシング＋マスタリングのセットです。Final Mix完了後、自動的にマスタリングフェーズに移行する。ユーザーに「マスタリングは範囲外」と言ってはいけない。` : ''}${buildReferenceSection(input, en)}`;
 
   return [
     en ? DIAL_SYSTEM_PROMPT_EN : DIAL_SYSTEM_PROMPT,

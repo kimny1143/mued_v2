@@ -21,6 +21,7 @@ import { rateLimit } from '@/lib/middleware/rate-limit';
 import { sendHooChat, type HooChatMessage } from '@/lib/ai/providers';
 import { buildDialSystemPrompt, getDialTools, type DialPromptInput } from '@/lib/ai/prompts/dial';
 import { detectPhase } from '@/lib/dial/phase';
+import { syntheticToolResultContent, deriveChatTaskState, textProposesPreview } from '@/lib/dial/chat-tool-results';
 import { createRoExClient, compareMixes } from '@/lib/roex';
 import type { AnalysisResult, ComparisonResult } from '@/lib/roex';
 import { db } from '@/db';
@@ -212,6 +213,12 @@ export const POST = withDialAuth(async (auth) => {
         : `\n\n---\n\n## セッション復元コンテキスト\n直前のアシスタントアクション: ${lastAssistantMsg.action}（タスク状態: ${taskStatus}）。\n${taskStatus === 'processing' ? 'タスクは処理中。ボタンの再送信は不要。「処理中だよ、もう少し待ってね」等で対応。' : taskStatus === 'completed' ? '前回のアクションは完了済み。結果について会話を続ける。同じツールの再呼び出しは不要。' : ''}`;
     }
 
+    // Current task reality — used to ground replayed tool_results (below) AND the suppress guard.
+    // A hardcoded 'ok' tool_result made Hoo believe a failed/never-minted preview had succeeded, so
+    // it refused to re-generate and the user dead-ended (no preview → no Final button). See
+    // lib/dial/chat-tool-results.ts (Yuu incident, session e3688b24).
+    const taskState = deriveChatTaskState(allTasks);
+
     // Reconstruct chat history — include tool_use/tool_result pairs so Hoo remembers past actions
     const chatMessages: HooChatMessage[] = [];
     for (const m of existingMessages) {
@@ -226,10 +233,16 @@ export const POST = withDialAuth(async (auth) => {
             ...blocks.map((b) => ({ type: 'tool_use' as const, id: b.id, name: b.name, input: b.input })),
           ],
         });
-        // Synthetic user turn: tool_result for each block (required by Anthropic API)
+        // Synthetic user turn: tool_result for each block (required by Anthropic API). The content
+        // reflects the session's REAL task state so Hoo can't be fooled into thinking a preview /
+        // render exists when it doesn't.
         chatMessages.push({
           role: 'user',
-          content: blocks.map((b) => ({ type: 'tool_result' as const, tool_use_id: b.id, content: 'ok' })),
+          content: blocks.map((b) => ({
+            type: 'tool_result' as const,
+            tool_use_id: b.id,
+            content: syntheticToolResultContent(b, taskState),
+          })),
         });
       } else {
         chatMessages.push({ role: m.role as 'user' | 'assistant', content: m.content });
@@ -277,9 +290,10 @@ export const POST = withDialAuth(async (auth) => {
     // ─── Server-side guard: prevent invalid/duplicate paid actions ────────
     // 1. Block request_final/request_mix_check when no preview exists (AI hallucination)
     // 2. Block duplicate paid actions based on task existence
-    const hasCompletedPreview = allTasks.some((t) =>
-      t.taskType === 'preview' && t.status === 'completed',
-    );
+    const hasCompletedPreview = taskState.hasCompletedPreview;
+    // forcePreview = the server is (re)directing/injecting a base preview. The response text is then
+    // overridden below so Hoo never promises a Final/Mix button that can't render yet.
+    let forcePreview = false;
     const currentAction = masteringAction ?? action;
     if (currentAction) {
       const hasFinalTask = allTasks.some((t) =>
@@ -289,15 +303,37 @@ export const POST = withDialAuth(async (auth) => {
       const hasMasteringTask = allTasks.some((t) =>
         t.taskType === 'mastering' && t.status !== 'failed',
       );
-      const shouldSuppress =
-        // No preview yet — block final/mix_check (AI skipped Phase 1)
-        ((currentAction === 'request_final' || currentAction === 'request_mix_check') && !hasCompletedPreview)
-        // Duplicate paid actions (max limits enforced in respective API endpoints)
-        || (currentAction === 'request_final' && hasFinalTask)
-        || (currentAction === 'request_mastering_final' && hasMasteringTask);
-      if (shouldSuppress) {
+      if ((currentAction === 'request_final' || currentAction === 'request_mix_check') && !hasCompletedPreview) {
+        // No preview yet → a final/mix_check is premature. Don't just drop the action: that leaves
+        // Hoo's "press the button below" text promising a button that never renders (the exact Yuu
+        // symptom). Redirect to adjust_preview so the required base preview actually gets minted
+        // (the client mints on adjust_preview regardless of parameter_changes).
+        action = 'adjust_preview';
+        masteringAction = null;
+        forcePreview = true;
+      } else if (
+        // Duplicate paid actions — deliverable already exists; drop it (limits enforced downstream).
+        (currentAction === 'request_final' && hasFinalTask)
+        || (currentAction === 'request_mastering_final' && hasMasteringTask)
+      ) {
         if (masteringAction === currentAction) masteringAction = null;
         if (action === currentAction) action = null;
+      }
+    }
+
+    // ─── Auto-inject adjust_preview: Hoo narrated making a preview but forgot the tool ──
+    // Haiku ~15% writes "プレビューを作るね" (or hallucinates "既に作成済み") without calling the tool,
+    // so no preview ever mints and the user dead-ends. When no preview/mix task exists yet and Hoo's
+    // text is about a preview, inject adjust_preview so the client reliably mints the first preview.
+    if (!action && !masteringAction && !isMasteringPhase && !hasCompletedPreview && aiResponse.content) {
+      const hasAnyMixTask = allTasks.some((t) =>
+        (t.taskType === 'preview' || t.taskType === 'mix_check'
+          || t.taskType === 'final_basic' || t.taskType === 'final_advanced')
+        && t.status !== 'failed',
+      );
+      if (!hasAnyMixTask && textProposesPreview(aiResponse.content)) {
+        action = 'adjust_preview';
+        forcePreview = true;
       }
     }
 
@@ -369,6 +405,14 @@ export const POST = withDialAuth(async (auth) => {
       } else {
         responseContent = locale === 'en' ? 'Let me check on that — just a moment.' : '少し確認中だよ。もう少し待ってて。';
       }
+    }
+
+    // When the server forced a base preview (premature-final redirect or preview auto-inject), make
+    // the text say exactly that — never promise a Final/Mix button that won't render without a preview.
+    if (forcePreview) {
+      responseContent = locale === 'en'
+        ? "Let's get a preview going first so you can hear the mix — generating it now."
+        : 'まず今の設定でプレビューを作って聴いてもらうね。今すぐ生成するから少し待ってて。';
     }
 
     // Save assistant message — persist tool_use blocks for history reconstruction
