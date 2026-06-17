@@ -32,6 +32,8 @@ import { copyToR2 } from '@/lib/dial/r2-storage';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
+import { sessionStateForCompletedTask } from '@/lib/dial/session-state';
+import { advanceDialSessionState } from '@/lib/dial/session-state-write';
 import { db } from '@/db';
 import { dialTasks, dialSessions, dialTracks, dialMessages } from '@/db/schema';
 
@@ -327,6 +329,14 @@ export const POST = withDialAuth(async (auth) => {
         .where(and(eq(dialSessions.id, previewTask.sessionId), ne(dialSessions.status, 'completed')));
     }
 
+    // Tier3 state machine (Phase 1b): advance workflow `state` forward on completion — for ALL
+    // task types (mix_check → mix_review, final_* → mix_final), unlike the legacy `status` write
+    // above which leaves mix_check on 'mixing'. Forward-only; the GET poll / webhook cover async.
+    if (taskCompleted) {
+      const st = sessionStateForCompletedTask(taskType);
+      if (st) await advanceDialSessionState(db, previewTask.sessionId, st);
+    }
+
     const newTotalLimit = sessionRow.baseCycleLimit + sessionRow.additionalCyclesPurchased;
 
     recordDialEvent({
@@ -464,6 +474,11 @@ export const GET = withDialAuth(async (auth) => {
           status: newStatus,
           updatedAt: new Date(),
         }).where(and(eq(dialSessions.id, task.sessionId), ne(dialSessions.status, 'completed')));
+
+        // Tier3 state machine (Phase 1b): sync-poll completion fallback (webhook may not fire —
+        // 2026-06-15 Vercel-DDoS incident). Forward-only; mix_check → mix_review, final_* → mix_final.
+        const st = sessionStateForCompletedTask(task.taskType);
+        if (st) await advanceDialSessionState(db, task.sessionId, st);
 
         return apiSuccess({
           status: 'completed',

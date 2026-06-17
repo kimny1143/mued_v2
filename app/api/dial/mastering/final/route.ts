@@ -16,6 +16,8 @@ import { createRoExClient, masterFinal, isRoExDevKey } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
 import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile, isUnchargedMasteringReservation } from '@/lib/dial/task-timeout';
+import { sessionStateForCompletedTask } from '@/lib/dial/session-state';
+import { advanceDialSessionState } from '@/lib/dial/session-state-write';
 import { db } from '@/db';
 import { dialTasks, dialSessions } from '@/db/schema';
 
@@ -203,6 +205,11 @@ export const POST = withDialAuth(async (auth) => {
       await db.update(dialSessions)
         .set({ status: 'completed', updatedAt: new Date() })
         .where(and(eq(dialSessions.id, previewTask.sessionId), ne(dialSessions.status, 'completed')));
+
+      // Tier3 state machine (Phase 1b): the 220cr master is committed → mastered_final.
+      // Forward-only; the GET poll / webhook cover async completion.
+      const st = sessionStateForCompletedTask('mastering');
+      if (st) await advanceDialSessionState(db, previewTask.sessionId, st);
     }
 
     return apiSuccess({
@@ -303,6 +310,11 @@ export const GET = withDialAuth(async (auth) => {
             .set({ status: 'completed', updatedAt: new Date() })
             .where(eq(dialSessions.id, task.sessionId));
         }
+
+        // Tier3 state machine (Phase 1b): sync-poll completion fallback (webhook may not fire —
+        // 2026-06-15 Vercel-DDoS incident). Forward-only advance to mastered_final.
+        const st = sessionStateForCompletedTask('mastering');
+        if (st) await advanceDialSessionState(db, task.sessionId, st);
 
         return apiSuccess({ status: 'completed', finalUrl: pollResult.finalUrl });
       }
