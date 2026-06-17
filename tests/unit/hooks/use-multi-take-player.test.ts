@@ -301,4 +301,29 @@ describe('useMultiTakePlayer — decode/playback stop-bleed', () => {
     expect(result.current.activeTakeId).toBe('p1'); // re-pointed to the surviving MIXED take
     expect(result.current.isReady).toBe(true); // recovered — NOT stranded on a spinner
   });
+
+  // ── Y-11: head-out on generation auto-switch; manual pick keeps position ─────
+  it('heads out to 0:00 when a freshly generated take auto-switches, but keeps position on a manual pick', async () => {
+    const { result, rerender } = renderHook((tk: TakeDef[]) => useMultiTakePlayer(tk), {
+      initialProps: [RAW_5, PREVIEW1] as TakeDef[],
+    });
+    await flush();
+    expect(result.current.activeTakeId).toBe('p1');
+
+    // Move the playhead to a non-zero position (paused).
+    act(() => { result.current.seek(8); });
+    expect(result.current.currentTime).toBe(8);
+
+    // Preview 2 generated → reconcile auto-switch must head out to 0:00 (survives the decode queue).
+    rerender([RAW_5, PREVIEW2, PREVIEW1]);
+    await flush(14);
+    expect(result.current.activeTakeId).toBe('p2');
+    expect(result.current.currentTime).toBe(0); // ← head-out on generation
+
+    // Manual switch back to p1 keeps the current position (A/B compare) — no head-out.
+    act(() => { result.current.seek(5); });
+    expect(result.current.currentTime).toBe(5);
+    act(() => { result.current.setActiveTake('p1'); });
+    expect(result.current.currentTime).toBe(5); // ← position preserved on manual pick
+  });
 });

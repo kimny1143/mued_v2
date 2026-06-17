@@ -38,7 +38,7 @@ export interface UseMultiTakePlayerReturn {
   currentTime: number;
   duration: number;
   activeTakeId: string;
-  setActiveTake(id: string): void;
+  setActiveTake(id: string, opts?: { resetToStart?: boolean }): void;
   /** Re-decode the active take after a failure (transport "retry" affordance). */
   retryActiveTake(): void;
   play(): void;
@@ -237,6 +237,9 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
   const isPlayingRef = useRef(false);
   /** Take ID queued for activation once its decode completes. */
   const pendingActivateRef = useRef<string | null>(null);
+  /** Y-11: whether the queued activation should head-out (0:00) when it resolves. Survives the
+   *  pendingActivateRef decode-wait queue. Set true only for generation auto-switch, not manual picks. */
+  const pendingResetToStartRef = useRef(false);
   /** Ensure a take's stems are decoded (lazy, idempotent). Set inside the mount effect. */
   const ensureTakeDecodeRef = useRef<((id: string) => void) | null>(null);
   /** Re-decode an errored take from scratch. Set inside the mount effect. */
@@ -702,12 +705,14 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     [duration],
   );
 
-  const setActiveTake = useCallback((id: string) => {
+  const setActiveTake = useCallback((id: string, opts?: { resetToStart?: boolean }) => {
+    const resetToStart = opts?.resetToStart ?? false;
     const status = takeDecodeStatusRef.current[id];
 
     // Not yet decoded (lazy) — kick off its decode and queue activation when ready.
     if (status === undefined) {
       pendingActivateRef.current = id;
+      pendingResetToStartRef.current = resetToStart;
       ensureTakeDecodeRef.current?.(id);
       return;
     }
@@ -715,12 +720,14 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     // Still decoding — queue for auto-activation when ready.
     if (status === 'decoding') {
       pendingActivateRef.current = id;
+      pendingResetToStartRef.current = resetToStart;
       return;
     }
 
     // Decode failed — re-decode from scratch, queue for auto-activation.
     if (status === 'error') {
       pendingActivateRef.current = id;
+      pendingResetToStartRef.current = resetToStart;
       retryTakeRef.current?.(id);
       return;
     }
@@ -729,9 +736,12 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     if (!ctx) return;
 
     const wasPlaying = isPlayingRef.current;
-    const currentPos = wasPlaying
-      ? ctx.currentTime - startedAtRef.current
-      : pausedAtRef.current;
+    // Y-11: generation auto-switch heads out to 0:00; manual picks keep position (A/B compare).
+    const currentPos = resetToStart
+      ? 0
+      : wasPlaying
+        ? ctx.currentTime - startedAtRef.current
+        : pausedAtRef.current;
 
     if (wasPlaying) stopAllSources(takeNodesRef.current);
 
@@ -754,7 +764,13 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       pausedAtRef.current = currentPos;
       const startedAt = startAllSources(ctx, takeNodesRef.current, currentPos);
       startedAtRef.current = startedAt;
+    } else if (resetToStart) {
+      // Paused + head-out: reset the resume position to 0 without starting playback.
+      pausedAtRef.current = 0;
+      startedAtRef.current = 0;
     }
+    // Reflect the head-out immediately in the transport readout (rAF loop also converges here).
+    if (resetToStart) setCurrentTime(0);
 
     activeTakeIdRef.current = id;
     _setActiveTakeId(id);
@@ -778,7 +794,9 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     const pending = pendingActivateRef.current;
     if (pending && takeDecodeStatus[pending] === 'ready') {
       pendingActivateRef.current = null;
-      setActiveTake(pending);
+      const resetToStart = pendingResetToStartRef.current;
+      pendingResetToStartRef.current = false;
+      setActiveTake(pending, { resetToStart });
     }
   }, [takeDecodeStatus, setActiveTake]);
 
@@ -793,7 +811,10 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
     // Auto-show the newest processed take when it was just added (replicates the remount UX).
     const newest = pickInitialActiveId(takesRef.current);
     if (newest && !before.has(newest) && newest !== activeTakeIdRef.current) {
-      setActiveTake(newest);
+      // Y-11: a freshly generated take auto-switches AND heads out to 0:00 (vs manual picks which
+      // keep position for A/B). resetToStart survives the pendingActivateRef decode-wait queue, so
+      // the head-out applies when the new (initially undecoded) take's decode resolves.
+      setActiveTake(newest, { resetToStart: true });
     }
     // If the ACTIVE take was removed (and no newer take just took over), re-point to a survivor.
     // Otherwise activeTakeStatus stays 'decoding' for a gone take → isReady=false → permanent
