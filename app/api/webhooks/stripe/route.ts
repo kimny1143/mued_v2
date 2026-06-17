@@ -7,6 +7,7 @@ import { eq, sql, and, gt, or, isNull } from "drizzle-orm";
 import { DIAL_SUB_PLANS, CANCEL_GRACE_DAYS, CREDIT_PACK_EXPIRY_MONTHS, type DialSubTier } from '@/lib/dial/pricing';
 import { trackServerPurchase } from '@/lib/analytics/ga4-server';
 import { grantFirstPurchaseBonus } from '@/lib/dial/bonus-campaign';
+import { dialCheckoutAction } from '@/lib/dial/checkout-payment-gate';
 import { validateStripeConfig } from "@/lib/utils/env";
 import { logger } from "@/lib/utils/logger";
 import { notificationService } from "@/lib/services/notification.service";
@@ -148,14 +149,16 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      // ─── MUEDial: Route dial-specific checkouts ───────────────
+      // ─── MUEDial: Route dial-specific checkouts (§③ payment-status gate) ───────────────
       if (session.metadata?.service === 'dial') {
-        if (session.metadata.purchaseType === 'additional_cycle') {
-          await handleDialAdditionalCycle(tx, session);
-        } else if (session.metadata.purchaseType === 'credit_pack') {
-          await handleDialCreditPackCompleted(tx, session);
+        const action = dialCheckoutAction(event.type, session);
+        if (action === 'commit') {
+          await handleDialCheckoutEvent(tx, session, event.id);
         } else {
-          await handleDialCheckoutCompleted(tx, session, event.id);
+          // 'defer': a delayed payment method fired `completed` while still unpaid → leave the
+          // session pending and await checkout.session.async_payment_succeeded. Never mark an
+          // unpaid session paid (it would let it consume RoEx COGS before settlement). §③
+          logger.info(`[Dial Webhook] checkout.session.completed payment_status=${session.payment_status} for dial session ${session.metadata?.dialSessionId ?? '?'} — deferring paid effects (awaiting async_payment_succeeded)`);
         }
         break;
       }
@@ -296,6 +299,34 @@ async function processStripeEvent(tx: Transaction, event: Stripe.Event) {
       } catch (error) {
         console.error("Error updating reservation:", error);
         throw error; // トランザクションをロールバックするために再スロー
+      }
+      break;
+    }
+
+    case "checkout.session.async_payment_succeeded": {
+      // §③ A delayed payment method cleared after `completed` deferred it. The session here carries
+      // payment_status='paid' → commit the dial paid effects now (purchases→completed, session→paid).
+      const session = event.data.object as Stripe.Checkout.Session;
+      if (session.metadata?.service === 'dial') {
+        if (dialCheckoutAction(event.type, session) === 'commit') {
+          await handleDialCheckoutEvent(tx, session, event.id);
+        }
+      } else {
+        logger.debug(`Unhandled async_payment_succeeded (non-dial): ${session.id}`);
+      }
+      break;
+    }
+
+    case "checkout.session.async_payment_failed": {
+      // §③ A delayed payment failed → mark the dial session + its purchases failed so no deliverable
+      // is gated open and the UI reflects non-payment.
+      const session = event.data.object as Stripe.Checkout.Session;
+      if (session.metadata?.service === 'dial') {
+        if (dialCheckoutAction(event.type, session) === 'fail') {
+          await handleDialCheckoutFailed(tx, session);
+        }
+      } else {
+        logger.debug(`Unhandled async_payment_failed (non-dial): ${session.id}`);
       }
       break;
     }
@@ -848,6 +879,47 @@ const DIAL_SUB_CREDITS: Record<string, number> = {
   pro: DIAL_SUB_PLANS.pro.credits,
   studio: DIAL_SUB_PLANS.studio.credits,
 };
+
+/** Dispatch a *payment-confirmed* dial checkout to its completion handler. Callers must gate on
+ *  dialCheckoutAction(...) === 'commit' first (§③), so this only runs once payment is settled
+ *  (synchronously on `completed` for cards, or later via `async_payment_succeeded`). */
+async function handleDialCheckoutEvent(
+  tx: Transaction,
+  session: Stripe.Checkout.Session,
+  eventId: string,
+) {
+  if (session.metadata?.purchaseType === 'additional_cycle') {
+    await handleDialAdditionalCycle(tx, session);
+  } else if (session.metadata?.purchaseType === 'credit_pack') {
+    await handleDialCreditPackCompleted(tx, session);
+  } else {
+    await handleDialCheckoutCompleted(tx, session, eventId);
+  }
+}
+
+/** §③ A delayed dial payment failed → mark the session + its one-time purchases failed so no
+ *  deliverable is gated open. Guards is_free_campaign=false (a free-campaign session has no real
+ *  checkout, so a webhook must never mutate it). */
+async function handleDialCheckoutFailed(tx: Transaction, session: Stripe.Checkout.Session) {
+  const { dialSessionId } = session.metadata || {};
+  const purchaseIds = session.metadata?.purchaseIds
+    ? session.metadata.purchaseIds.split(',')
+    : session.metadata?.purchaseId
+      ? [session.metadata.purchaseId]
+      : [];
+  if (!dialSessionId) {
+    logger.error('[Dial Webhook] async_payment_failed missing dialSessionId');
+    return;
+  }
+  for (const pid of purchaseIds) {
+    await tx.update(dialPurchases).set({ status: 'failed' }).where(eq(dialPurchases.id, pid));
+  }
+  await tx
+    .update(dialSessions)
+    .set({ paymentStatus: 'failed', updatedAt: new Date() })
+    .where(and(eq(dialSessions.id, dialSessionId), eq(dialSessions.isFreeCampaign, false)));
+  logger.info(`[Dial Webhook] async payment failed → dial session ${dialSessionId} marked failed (purchases: ${purchaseIds.join(',') || 'none'})`);
+}
 
 async function handleDialCheckoutCompleted(
   tx: Transaction,
