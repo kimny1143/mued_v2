@@ -1,8 +1,14 @@
 # 技術 Plan: MUEDial セッション状態機械 / WYSIWYG / 後決済 (Tier3)
 
-作成: 2026-06-17 / mued課 / **Plan のみ — 実装は本 Plan への kimny GO 後**
+作成: 2026-06-17 / mued課 / **Plan GO 済（kimny 2026-06-17）→ Phase 0 から実装着手**
 正本設計: conductor repo `docs/inbox/tier3-design-muedial-session-statemachine-20260617.md`（kimny 決定済: ①後決済 ②WYSIWYG ハードゲートなし ③精算前 DL 不可 ④Final 後ミックスロック+明示ロールバック）
 本 Plan = 正本を**現状コードに接地**し実装単位に分解 + 検証4項目に推奨を付す。料金数値は freee 並行確定 → **機構は数値を後挿し可能に組む**（DIAL_CREDIT_COSTS / 新 pricing 定数を単一ソースに）。
+
+## kimny GO 確定（2026-06-17・本 Plan に反映済）
+- **Q1**: retrievefinalmaster(220cr) = **承認時発火**（V2 推奨 a 採用）。承認＝コミット＝課金の1点。
+- **Q2/ロールバック簡潔化**: ロールバックは **`mastering_review`(無料プレビュー段)→ mix のみ**（master 未コミット＝遷移自体は無料）。**`mastered_final → mix` 経路は廃止** — 確定済マスターのやり直し = **新規 mastering-only セッション**（確定 2mix を入力）。同一セッション再マスターなし → 220cr は1セッション1回。非破壊は **mix テイク**に適用。**「再マスター課金 SKU」不要**（freee 伝達済）。
+- **V1 preview fidelity ヌルテスト**: GO（~220cr 許容）。**Phase 2 を組む前に早期実行**し結果報告。不一致なら WYSIWYG を承認段の実 retrieve 提示に切替。
+- **進め方**: 各 Phase 独立 PR・conductor が PR ごと Tier 判定（純追加 schema/UI=Tier2 / Stripe・価格・破壊的 schema=Tier3 escalation）。migration 0054/0055 は kimny psql 先行適用。
 
 ---
 
@@ -59,7 +65,7 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 - `phase.ts` は backfill 用に一時保持 → 全置換後に削除。`phase.test.ts` を state enum テストへ書換え。
 
 ### 1.4 Hoo 状態スコープ権限（§5 / Y-06 恒久解決）
-`selectToolsByState`: 変更系ツール（`adjust_preview`/`request_mix_check`/`set_reverb_preference`/`set_musical_style`/フェーダー）は **`previewing`/`mix_review` のみ**。`mix_final` 以降で変更要求 → Hoo は変更せず「Final 確定済。変更は『ミックスに戻す』($X)」と応答し**明示ロールバック遷移を提示**。prompt(dial.ts) に state 別許可を明記。
+`selectToolsByState`: 変更系ツール（`adjust_preview`/`request_mix_check`/`set_reverb_preference`/`set_musical_style`/フェーダー）は **`previewing`/`mix_review` のみ**。`mix_final`/`mastering_review`（**master 未コミット段**）で変更要求 → Hoo は「ミックスに戻す（無料）」の明示ロールバック遷移を提示。**`mastered_final`（master コミット済）以降**で変更要求 → Hoo は変更せず「確定済マスターのやり直しは新規 mastering-only セッションが必要」と案内（同一セッション再マスターなし）。prompt(dial.ts) に state 別許可を明記。
 
 ---
 
@@ -77,14 +83,14 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 
 ## 3. 後決済（Phase 3・正本 §4）
 
-**大原則**: 基本パッケージは前払い（現状どおり）。後決済は**追加タスク（追加 MixCheck / master→mix ロールバック）だけ**に掛かる。未精算 0 の基本ユーザーは **Checkout スキップで即 delivered**（決済ウォール非増設）。
+**大原則**: 基本パッケージは前払い（現状どおり）。後決済は**追加タスク（追加 MixCheck=R-2・rollback 後の再 redo）だけ**に掛かる。未精算 0 の基本ユーザーは **Checkout スキップで即 delivered**（決済ウォール非増設）。**rollback の課金 attribution（rollback 遷移=無料+再 mix=R-2 / rollback 自体=$X のどちらで計上するか・net redo $X は同じ）は kimny 確認中**（conductor relay・Phase 3 着手前に確定）。
 
 ### 3.1 ledger 拡張（migration 0055・greenfield 寄り）
 `dial_credit_ledger` に追加（pure additive）: `session_id uuid` / `user_id text` / `amount_cents int`（ユーザー請求額・COGS cr とは別）/ `settled boolean NOT NULL DEFAULT false` / `settled_at timestamp` / `stripe_checkout_session_id text`。`action` enum に `accrue`/`settle` を追加（`DO $$` で `ALTER TYPE ... ADD VALUE`）。
 > per-call deduction は本番未配線のため、本台帳は**有料遷移のみ accrue 行を挿入**する新規配線（既存 consume route とは独立）。
 
 ### 3.2 配線
-- **accrue**: 有料遷移（追加 MixCheck=R-2 / rollback=R-3）成立時に `accrue` 行（amount_cents=該当料金, settled=false）を atomic に挿入（reserve-before-charge と同一 tx）。基本パッケージ分は計上しない。
+- **accrue**: 有料遷移（追加 MixCheck=R-2・rollback 後の再 redo）成立時に `accrue` 行（amount_cents=該当料金, settled=false）を atomic に挿入（reserve-before-charge と同一 tx）。基本パッケージ分は計上しない。**課金 attribution は kimny 確認中**（上記大原則）。
 - **DL 分岐**（download/route.ts に追加）:
   - 未精算合計 = 0 → `applyTransition(→delivered)` で即配信（基本ユーザー）。
   - 未精算 > 0 → `settling` へ → 未精算合計で **Stripe Checkout 1 回**（既存 checkout パターン流用・mode:'payment'）。
@@ -97,7 +103,7 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 
 - **R-1（自動 Final 廃止）**: `chat.tsx:363-365` の `adjust_preview & phase===3 → request_final` 自動昇格を**削除**。`request_final` は常に ParamChangeCard のボタン明示クリック必須。prompt は既にユーザー明示発話前提（dial.ts:493）なので prompt 変更は最小。遷移 mix_review→mix_final = 明示承認のみ。
 - **R-2（追加 MixCheck 後決済）**: `final/route.ts` の `mixCheckCount < 2` ハードキャップ(:235)を撤廃 → soft limit + 承認制。2 回目以降の MixCheck 成立時に accrue（$X・freee 確定）。COGS 250cr は生成時発生（reserve 維持）。
-- **R-3（master→mix ロールバック $X）**: 新エンドポイント `POST /api/dial/session/[id]/rollback`。`mastering_review|mastered_final → mix_review`。**意味論は §5 V3 推奨参照**（非破壊・version 保持・mix ロック解除・mix params 再編集可）。Yuu で手動 DELETE した reopen の**非破壊製品版**。
+- **R-3（ロールバック）= kimny 簡潔化確定**: 新エンドポイント `POST /api/dial/session/[id]/rollback`。**`mastering_review`(無料プレビュー段)→ `mix_review` のみ**（mix_final からの pre-commit 戻りも同様に許容）。**`mastered_final → mix` は廃止** → 確定済マスターのやり直しは**新規 mastering-only セッション**（確定 2mix 入力）。意味論(§5 V3): master 未コミット段ゆえ **mix テイクに非破壊適用**・mix ロック解除・reverb 含む mix params 再編集可。**「再マスター課金 SKU」不要**。課金 attribution は kimny 確認中（上記）。
 
 ---
 
@@ -109,12 +115,13 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 - **分岐**: ヌルテスト合格（実質同一）→ 無料 preview で WYSIWYG 担保確定・決定画面は無料 preview 音を流せる。不一致 → 決定画面は**有料 retrieve 後の実ファイル**を流す必要 → 「無料 WYSIWYG」前提が崩れ、課金フロー（試聴=有料後）を再設計。**この実証を Phase 2 着手前の gate にする**。
 
 ### V2. retrievefinalmaster(220cr) 発火点: 承認 vs DL
-- **推奨 = 承認時発火**（正本 §2 表と整合・非対称「master=確定で課金」）。理由: ①master preview(`/masteringpreview`)は無料 → 承認前に WYSIWYG 担保可（V1 master 版が前提）②COGS は「この master にコミット」の承認で発生が自然 ③DL 発火だと mastered_final 状態が実ファイル不在で成立し WYSIWYG/状態整合が崩れる。
-- **トレードオフ明示**: 承認後 DL 前に離脱すると追加 re-master(R-3 経由)の 220cr COGS を MUED が被る（基本 master は前払いゆえ無risk・**risk は追加 re-master のみ**・離脱率低で bounded）。DL 発火を選ぶ場合は「承認＝無料 preview のまま / 実 master は DL 時 retrieve」となり paid 段で WYSIWYG が崩れる懸念。→ **承認発火を推奨**。kimny 判断項目。
+- **kimny 確定 = (a) 承認時発火**（推奨採用）。承認＝コミット＝課金の1点。理由: ①master preview(`/masteringpreview`)は無料 → 承認前に WYSIWYG 担保可（V1 master 版が前提）②COGS は「この master にコミット」の承認で発生が自然 ③DL 発火だと mastered_final 状態が実ファイル不在で成立し WYSIWYG/状態整合が崩れる。
+- **離脱 COGS（残存・小）**: 承認(220cr 発火)後 DL 前に離脱すると 220cr COGS を MUED が被る。基本 master は前払いゆえ実 risk は限定的・離脱率低で bounded。`mastered_final → mix` 廃止で re-master 起点の重複 COGS risk は消滅。
 
-### V3. R-3 ロールバック意味論
-- **推奨**: ①**既存 master/final version は破棄せず保持**（非破壊・task に `superseded` フラグ or version 連番・Yuu の DELETE 運用を製品化して恒久回避・監査/復元可）②**mix ロック解除**（state=mix_review に戻し Hoo mix ツール再有効）③**reverb 含む全 mix params 再編集可**（戻る目的そのもの）。④戻り後の再 MixCheck=250cr COGS+$X accrue / 再 master=220cr COGS+$X accrue（課金単位は freee §8、「成果物の再レンダー単位」推奨）。
-- 状態整合: rollback は可逆遷移として TRANSITIONS に明示・version 保持で「どの master を delivered するか」は最新 mastered_final を指す。
+### V3. ロールバック意味論（kimny 簡潔化確定）
+- **確定**: ロールバックは **`mastering_review`(無料プレビュー段)→ `mix_review` のみ**（mix_final からの pre-commit 戻りも許容）。master 未コミットゆえ ①**mix テイクに非破壊適用**（確定マスターは存在しない＝破棄でなく無料プレビュー再生成可）②**mix ロック解除**（Hoo mix ツール再有効）③**reverb 含む mix params 再編集可**。
+- **`mastered_final → mix` 廃止**: 確定済マスターのやり直し = **新規 mastering-only セッション**（確定 2mix 入力）。→ 220cr は1セッション1回・「再マスター課金 SKU」不要・mix テイク非破壊保持で「どの mix から再マスターするか」も明確。
+- **課金 attribution（kimny 確認中・conductor relay）**: 「rollback 遷移=無料 + 再 mix=R-2($X)」 vs 「rollback=$X」。net redo $X は同一・二重課金回避で前者が綺麗。Phase 3 着手前に確定受領。
 
 ### V4. state migration → deploy 順序
 - **migration-first 厳守**（0053 header / database-operations.md）: 0054(state)/0055(ledger) を **kimny が psql で Neon prod に先行適用** → コード PR merge（=Vercel auto-deploy）。pure additive ゆえ旧コードは新列を無視（forward-compatible）。逆順は 42703 undefined_column の本番断（migration 0048/PR#426 教訓 [[feedback-migration-before-schema-deploy]]）。
@@ -129,7 +136,7 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 | **0**（先行・独立小 PR） | §③ Stripe `payment_status` guard + `async_payment_succeeded/_failed` handler / 全レンダー遷移の入力ガード原則化（#484 を一般化）/ download GCS 失効 250cr 経路の見直し | 小-中 | なし | 独立・後段の前提 |
 | **1** | 状態機械: 0054 migration + `session-state.ts` 遷移サービス + detectPhase 全置換 + Hoo state 権限 + R-1（自動 Final 廃止） | **大** | 0054（先行適用） | Phase 0 |
 | **2** | WYSIWYG: 操作用/決定用 再生分離 + 決定画面（実 retrieve 音提示） | 中 | なし | **V1 実証 gate** + Phase 1 |
-| **3** | 後決済: 0055 ledger + accrue 配線 + settle Checkout + delivered DL gate + payment guard + R-2 + R-3 | **大** | 0055（先行適用） | Phase 1, Phase 0(§③) |
+| **3** | 後決済: 0055 ledger + accrue 配線 + settle Checkout + delivered DL gate + payment guard + R-2 + rollback(mastering_review→mix・無料遷移)+ mastered_final やり直し=新規 mastering-only セッション導線 | **大** | 0055（先行適用） | Phase 1, Phase 0(§③), **rollback 課金 attribution 確定** |
 
 各 Phase は独立 PR。Phase 1 が背骨（state）で全土台。Phase 2 は **V1 実証合格を着手 gate**に。料金数値（基本パッケージ内訳 / 追加 $X）は freee §8 確定後に pricing 定数へ後挿し（機構は数値非依存に組む）。
 
