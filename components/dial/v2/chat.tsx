@@ -364,9 +364,15 @@ export function ChatPanelV2({
         effectiveAction = 'request_final';
       }
 
-      if (effectiveAction === 'adjust_preview' && parameterChanges && parameterChanges.length > 0) {
-        applied = await applyChanges(parameterChanges);
-        if (applied && onPreviewRequested) onPreviewRequested();
+      if (effectiveAction === 'adjust_preview') {
+        // Apply any param changes first (track presence/pan/reverb), then ALWAYS request a preview.
+        // adjust_preview means "produce a preview to hear" — minting must not depend on there being
+        // param changes or a track-name match, otherwise a bare "make a preview" (or the server's
+        // auto-injected adjust_preview) silently fails to mint and the user dead-ends.
+        if (parameterChanges && parameterChanges.length > 0) {
+          applied = await applyChanges(parameterChanges);
+        }
+        if (onPreviewRequested) onPreviewRequested();
       }
 
       if (effectiveAction === 'set_mastering_params' && onMasteringPreviewRequested) {
