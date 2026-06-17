@@ -74,14 +74,14 @@ describe('buildSessionTakes — take/URL wiring (PR-A)', () => {
     expect(raw.url).toBe('https://r2/vocal.wav');
   });
 
-  it('excludes reverb_send effect-return keys from MIXED stems', () => {
+  it('INCLUDES reverb_send effect-return keys in MIXED stems (so playback matches the wet 2-mix)', () => {
     const session: SessionTakeInput = {
       id: 's',
       tracks: [],
       tasks: [previewTask('p', '2026-06-11T07:00:00Z', { vox: 'u', reverb_send_1: 'r' })],
     };
     const mixed = buildSessionTakes(session, null).find((t) => t.label === 'MIXED')!;
-    expect(Object.keys(mixed.stemsUrls!)).toEqual(['vox']);
+    expect(Object.keys(mixed.stemsUrls!).sort()).toEqual(['reverb_send_1', 'vox']);
   });
 
   it('adds a MASTERED preview take (null stems, taskId-scoped url)', () => {
