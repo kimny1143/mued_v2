@@ -4,14 +4,17 @@ import { dialCheckoutAction } from '@/lib/dial/checkout-payment-gate';
 const dial = (payment_status?: string | null) => ({ metadata: { service: 'dial' }, payment_status });
 
 describe('dialCheckoutAction — §③ Stripe payment-status gate', () => {
-  it('commits a dial checkout.session.completed only when payment_status=paid (card)', () => {
+  it('commits a dial checkout.session.completed when payment_status=paid (card)', () => {
     expect(dialCheckoutAction('checkout.session.completed', dial('paid'))).toBe('commit');
+  });
+
+  it('commits on no_payment_required ($0 / 100%-coupon) — Stripe fires no async event, so deferring would hang it', () => {
+    expect(dialCheckoutAction('checkout.session.completed', dial('no_payment_required'))).toBe('commit');
   });
 
   it('DEFERS a dial checkout.session.completed that is not yet paid (delayed method) — no paid effects', () => {
     // The §③ bug: this used to be treated as PAID, letting an unpaid session consume RoEx COGS.
     expect(dialCheckoutAction('checkout.session.completed', dial('unpaid'))).toBe('defer');
-    expect(dialCheckoutAction('checkout.session.completed', dial('no_payment_required'))).toBe('defer');
     expect(dialCheckoutAction('checkout.session.completed', dial(null))).toBe('defer');
     expect(dialCheckoutAction('checkout.session.completed', dial(undefined))).toBe('defer');
   });

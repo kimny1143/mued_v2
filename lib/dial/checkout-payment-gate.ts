@@ -27,8 +27,9 @@ export interface CheckoutSessionLike {
 /**
  * Decide what a dial checkout event should do, given its type and the session's payment_status.
  *
- * - `checkout.session.completed` + payment_status='paid'  → commit  (card: settles immediately)
- * - `checkout.session.completed` + payment_status!='paid' → defer   (delayed method, await async)
+ * - `checkout.session.completed` + payment_status='paid' | 'no_payment_required' → commit
+ *     (card settles immediately; $0 / full-coupon fires NO async event → must commit, never defer)
+ * - `checkout.session.completed` + other (e.g. 'unpaid')  → defer   (delayed method, await async)
  * - `checkout.session.async_payment_succeeded`            → commit  (delayed payment cleared)
  * - `checkout.session.async_payment_failed`               → fail    (delayed payment failed)
  * - non-dial session, or any other event type            → ignore
@@ -41,7 +42,12 @@ export function dialCheckoutAction(
 
   switch (eventType) {
     case 'checkout.session.completed':
-      return session.payment_status === 'paid' ? 'commit' : 'defer';
+      // 'paid' = card settled synchronously. 'no_payment_required' = $0 / 100%-coupon checkout —
+      // Stripe fires NO async event for these, so deferring would strand the session pending
+      // forever (a latent silent-failure once coupons exist). Commit both.
+      return session.payment_status === 'paid' || session.payment_status === 'no_payment_required'
+        ? 'commit'
+        : 'defer';
     case 'checkout.session.async_payment_succeeded':
       return 'commit';
     case 'checkout.session.async_payment_failed':
