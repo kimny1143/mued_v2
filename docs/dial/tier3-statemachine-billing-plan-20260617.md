@@ -7,7 +7,7 @@
 ## kimny GO 確定（2026-06-17・本 Plan に反映済）
 - **Q1**: retrievefinalmaster(220cr) = **承認時発火**（V2 推奨 a 採用）。承認＝コミット＝課金の1点。
 - **Q2/ロールバック簡潔化**: ロールバックは **`mastering_review`(無料プレビュー段)→ mix のみ**（master 未コミット＝遷移自体は無料）。**`mastered_final → mix` 経路は廃止** — 確定済マスターのやり直し = **新規 mastering-only セッション**（確定 2mix を入力）。同一セッション再マスターなし → 220cr は1セッション1回。非破壊は **mix テイク**に適用。**「再マスター課金 SKU」不要**（freee 伝達済）。
-- **V1 preview fidelity ヌルテスト**: GO（~220cr 許容）。**Phase 2 を組む前に早期実行**し結果報告。不一致なら WYSIWYG を承認段の実 retrieve 提示に切替。
+- **V1 preview fidelity ヌルテスト**: ✅ **実証済（2026-06-17・220cr）**。master preview(無料 mp3 30s)と final(WAV 全長)は**同一マスター**（~-11 LUFS・1 LUFS 以内）= lossy 30s 代理であって別処理でない → **無料プレビュー承認ゲート維持で妥当**（§5 V1）。「不一致→実 retrieve 切替」は**不要**。
 - **進め方**: 各 Phase 独立 PR・conductor が PR ごと Tier 判定（純追加 schema/UI=Tier2 / Stripe・価格・破壊的 schema=Tier3 escalation）。migration 0054/0055 は kimny psql 先行適用。
 
 ---
@@ -109,10 +109,12 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 
 ## 5. 検証4項目（conductor 指定）+ 推奨
 
-### V1. 無料 preview の音 == 有料 final の音（preview fidelity 実証）
-- **現状確度**: 両者は**同一 RoEx task**（final は previewTask.roexTaskId 再利用 `final/route.ts:163/206/283`）。ただし「同一 task」≠「ビット同一音」は**未実証**。これが WYSIWYG-at-無料-preview 前提の**最大リスク**。
-- **実証方法（Plan 内タスク・prod 必須）**: dev-key はスタブを返す（[[reference-dial-prod-debug-gotchas]] ①）ため **prod で**1 セッションを起こし、(a) `/mixpreview` 出力 wav と (b) 同 task `/retrievefinalmix` 出力 wav を取得 → **位相反転ヌルテスト**（合成して無音化するか）+ LUFS/true-peak/スペクトル差分。master も `/masteringpreview` vs `/retrievefinalmaster` で同様。既存 `scripts/experiment-dial-correct-sequence.ts` harness を流用。
-- **分岐**: ヌルテスト合格（実質同一）→ 無料 preview で WYSIWYG 担保確定・決定画面は無料 preview 音を流せる。不一致 → 決定画面は**有料 retrieve 後の実ファイル**を流す必要 → 「無料 WYSIWYG」前提が崩れ、課金フロー（試聴=有料後）を再設計。**この実証を Phase 2 着手前の gate にする**。
+### V1. 無料 preview の音 == 有料 final の音（preview fidelity）— ✅ 実証済 2026-06-17
+- **実測（prod・220cr 消費・`scripts/v1-master-preview-fidelity.ts`・taskId 065aaf63…）**: master preview(無料)=**mp3・30秒**・I=**-10.8 LUFS**・true-peak 0.1 dBFS / final(220cr)=**WAV・163秒(全長)**・I=**-11.1 LUFS**・peak 0.5 dBFS。
+- **判定**: ビット非一致だが**同一マスター**。非一致の正体は「無料プレビュー=30秒 lossy mp3 代理／有料 final=全長 lossless WAV」というフォーマット+尺差。loudness/limiting は一致（全計測 ~-11 LUFS・1 LUFS 以内、peak 天井付近）= 同一マスタリングチェーン。Y-01 の「dry≠wet」構造的ミスマッチとは別物（プレビューは実マスター出力の忠実な lossy 縮約）。
+- **設計結論**: 「承認段で実 retrieve 提示」案は不可能（RoEx は無料では 30秒 lossy しか出さない・全長 lossless は 220cr=決定前課金の矛盾）。∴ **無料プレビュー承認ゲートを維持**（唯一かつ妥当）。ユーザーは 30秒 mp3 で実マスターのキャラクター（音圧/EQ/空間）を忠実に聴いて承認→220cr→同一マスター全長 WAV。**「不一致→実 retrieve 切替」分岐は不要**。
+- **mix/master 非対称**: mix の決定は MixCheck(=250cr 実 retrieve 出力=納品物そのもの)再生＝ビット厳密 / master の決定は 30秒 lossy プレビュー＝キャラクター厳密。両者承認に十分。
+- **UX 推奨**: 承認画面に「プレビューは約30秒・参考音質、承認後に全長・高音質マスターを納品」と明示。
 
 ### V2. retrievefinalmaster(220cr) 発火点: 承認 vs DL
 - **kimny 確定 = (a) 承認時発火**（推奨採用）。承認＝コミット＝課金の1点。理由: ①master preview(`/masteringpreview`)は無料 → 承認前に WYSIWYG 担保可（V1 master 版が前提）②COGS は「この master にコミット」の承認で発生が自然 ③DL 発火だと mastered_final 状態が実ファイル不在で成立し WYSIWYG/状態整合が崩れる。
@@ -144,7 +146,7 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 
 ## 7. リスク / kimny・conductor 決定待ち
 
-1. **★V1 preview fidelity 未実証**（最大リスク）: 無料 preview ≠ 有料 final 音なら無料 WYSIWYG 前提が崩れる。Phase 2 着手前に prod ヌルテストで確定。
+1. ~~**★V1 preview fidelity 未実証**~~ → ✅ **解決済(2026-06-17)**: prod ヌルテストで preview=同一マスターの lossy 30s 代理と確定。無料プレビュー承認ゲート維持で妥当（§5 V1）。
 2. **V2 retrievefinalmaster 発火点**（承認 推奨 / DL）= kimny 決定。
 3. **後決済の COGS 回収**: 追加タスク承認後 DL 前離脱の COGS 被り（基本前払いゆえ追加分のみ・bounded）。許容可否 = kimny。
 4. **state backfill の正確さ**: detectPhase 論理を SQL 再現する一度きり backfill。保守側へ丸め + 既存セッション少数ゆえ手動検証可。
