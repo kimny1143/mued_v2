@@ -47,6 +47,20 @@ export const dialSessionStatusEnum = pgEnum('dial_session_status', [
   'archived',    // User archived
 ]);
 
+// Tier3 explicit workflow state machine (migration 0054, docs/dial/tier3-statemachine-billing-plan-20260617.md).
+// Replaces task-inference phase detection (lib/dial/phase.ts). `archived` is NOT here — it is an
+// orthogonal user action that stays on `status` above (workflow = `state`, archive/legacy = `status`).
+export const dialSessionStateEnum = pgEnum('dial_session_state', [
+  'uploading',         // stems uploading
+  'previewing',        // free preview iteration
+  'mix_review',        // MixCheck rendered, reviewing
+  'mix_final',         // mix approved (mix locked)
+  'mastering_review',  // mastering preview, reviewing (free)
+  'mastered_final',    // master approved (220cr committed)
+  'settling',          // download requested, settling unpaid balance
+  'delivered',         // settled, clean deliverable downloadable
+]);
+
 export const dialTaskTypeEnum = pgEnum('dial_task_type', [
   'preview',
   'mix_check',           // Advanced preview with EQ/comp (250cr, WAV) — user listens & provides feedback
@@ -80,6 +94,9 @@ export const dialSessions = pgTable('dial_sessions', {
   mode: dialModeEnum('mode'), // null = mastering-only (no mix)
   masteringMode: text('mastering_mode'), // 'omakase' | 'dialogue' | null
   status: dialSessionStatusEnum('status').notNull().default('uploading'),
+  // Tier3 explicit workflow state (migration 0054). Source of truth for phase/tools/gating once the
+  // Phase 1 transition service is wired; `status` is retained for the transition window + archive.
+  state: dialSessionStateEnum('state').notNull().default('uploading'),
   musicalStyle: text('musical_style').notNull(), // MusicalStyle enum value
   title: text('title'), // User-given project name
   draftNumber: integer('draft_number').notNull().default(1), // Per-user auto-increment session number
