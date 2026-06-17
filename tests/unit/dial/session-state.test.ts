@@ -10,6 +10,8 @@ import {
   isMixLocked,
   canRollbackToMix,
   isTerminal,
+  isForwardState,
+  maxState,
 } from '@/lib/dial/session-state';
 
 describe('dial session state machine — transitions (§2)', () => {
@@ -130,5 +132,24 @@ describe('dial session state machine — mode-aware transitions (mastering-only 
   it('assertTransition honors the mode gate', () => {
     expect(() => assertTransition('uploading', 'mastering_review', { masteringOnly: false })).toThrow(InvalidDialTransitionError);
     expect(() => assertTransition('uploading', 'mastering_review', { masteringOnly: true })).not.toThrow();
+  });
+});
+
+describe('dial session state machine — forward-only lifecycle advance (write-side guard)', () => {
+  it('isForwardState: strictly forward by rank', () => {
+    expect(isForwardState('uploading', 'previewing')).toBe(true);
+    expect(isForwardState('uploading', 'mastering_review')).toBe(true); // mastering-only jump
+    expect(isForwardState('mix_review', 'mix_final')).toBe(true);
+    expect(isForwardState('mastered_final', 'delivered')).toBe(true);
+    // not forward (equal or backward) — guards late/duplicate task events from regressing state
+    expect(isForwardState('mix_final', 'mix_final')).toBe(false);
+    expect(isForwardState('mastered_final', 'previewing')).toBe(false);
+    expect(isForwardState('mastering_review', 'mix_review')).toBe(false);
+  });
+
+  it('maxState returns the forward-most state', () => {
+    expect(maxState('previewing', 'mix_review')).toBe('mix_review');
+    expect(maxState('mastered_final', 'previewing')).toBe('mastered_final');
+    expect(maxState('uploading', 'uploading')).toBe('uploading');
   });
 });

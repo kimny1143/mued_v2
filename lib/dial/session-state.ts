@@ -138,3 +138,31 @@ export function canRollbackToMix(state: DialState): boolean {
 export function isTerminal(state: DialState): boolean {
   return state === 'delivered';
 }
+
+/**
+ * Linear progress rank of each state. Used by route lifecycle writes to advance `state`
+ * MONOTONICALLY — a render/approval event sets the state forward but a late or duplicate task
+ * event (e.g. a webhook arriving after the user already advanced) must never regress it.
+ * Backward moves (rollback) and the settle/deliver branch are decision-driven (Phase 2/3), not
+ * lifecycle writes, so a strict forward rank is the right guard for Phase 1b's write-side.
+ */
+const STATE_RANK: Record<DialState, number> = {
+  uploading: 0,
+  previewing: 1,
+  mix_review: 2,
+  mix_final: 3,
+  mastering_review: 4,
+  mastered_final: 5,
+  settling: 6,
+  delivered: 7,
+};
+
+/** True iff `to` is strictly forward of `from` (for monotonic lifecycle advances). */
+export function isForwardState(from: DialState, to: DialState): boolean {
+  return STATE_RANK[to] > STATE_RANK[from];
+}
+
+/** The forward-most of two states (the state a lifecycle write should leave the session in). */
+export function maxState(a: DialState, b: DialState): DialState {
+  return STATE_RANK[a] >= STATE_RANK[b] ? a : b;
+}
