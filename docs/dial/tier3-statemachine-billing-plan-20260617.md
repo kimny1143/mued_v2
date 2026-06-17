@@ -1,0 +1,153 @@
+# 技術 Plan: MUEDial セッション状態機械 / WYSIWYG / 後決済 (Tier3)
+
+作成: 2026-06-17 / mued課 / **Plan のみ — 実装は本 Plan への kimny GO 後**
+正本設計: conductor repo `docs/inbox/tier3-design-muedial-session-statemachine-20260617.md`（kimny 決定済: ①後決済 ②WYSIWYG ハードゲートなし ③精算前 DL 不可 ④Final 後ミックスロック+明示ロールバック）
+本 Plan = 正本を**現状コードに接地**し実装単位に分解 + 検証4項目に推奨を付す。料金数値は freee 並行確定 → **機構は数値を後挿し可能に組む**（DIAL_CREDIT_COSTS / 新 pricing 定数を単一ソースに）。
+
+---
+
+## 0. 現状コード接地（実装の出発点・file:line）
+
+| 領域 | 実態 | 含意 |
+|---|---|---|
+| phase 判定 | `lib/dial/phase.ts` `detectPhase`/`isMasteringPhase`(sticky :67-69)/`selectTools`(:104)。**タスクから推測** | 明示 state 列で置換 |
+| phase 消費点 | `app/api/dial/chat/route.ts`(:121,:154,:253,:357) / `lib/ai/prompts/dial.ts` `getDialTools`(:1372-91、**:1389 dialogue が mastering ツールを常時含むバグ**) / `app/dial/session/[id]/page.tsx`(:1150,1189,1706,1829,1966) / `components/dial/v2/chat.tsx` / `unified-session-player-v2.tsx`(:425) / tests | state 読取りに置換（blast radius ~40 files） |
+| status 列 | `dialSessionStatusEnum`(db/schema/dial.ts:41-48,:82): uploading/previewing/mixing/mastering/completed/archived。書込=preview/final(:93,:384)/mastering/preview(:142)/mastering/final(:203)/roex webhook。`idx_dial_sessions_status` 索引済 | 新 `state` 列を並走させ status は移行窓で保持 |
+| mix 課金 | `final/route.ts`: reserve-before-charge atomic UPDATE(:224-260) + payment guard(:107=402) + taskType(:132-133) + submit charge(:272)。**MixCheck 生成時 250cr** | reserve パターン流用 |
+| master 課金 | `mastering/final/route.ts`: advisory lock(`4926082`:103-135)+sentinel insert-before-charge(:117-127)+`masterFinal`(:160)+payment guard(:87)。**承認時 220cr** | 非対称課金は既存実装と整合 |
+| Stripe | `checkout/route.ts` mode:'payment'(:215-230) / `webhooks/stripe/route.ts` `checkout.session.completed`→`paymentStatus='paid'`(:893,free guard:897)。**§③ async_payment_succeeded/_failed handler なし** | 後決済の前提 = §③ 修正必須 |
+| DL | `download/route.ts` withDialAuth(:108)+read-access(:125,:163)。**`status='delivered'` gate なし**(greenfield)。GCS 失効時 `refreshExpiredGcsUrl`(:223-239)が **!viaAdmin で最大250cr** | delivered gate を新設 |
+| ledger | `dial_credit_ledger`(:204-215): id/action/credits/balanceAfter/taskId/note/createdAt。**per-call deduction 本番未配線**(greenfield)・**userId/sessionId/精算state 列なし** | 後決済台帳 = ほぼ新規構築 |
+| 課金単価 | `lib/dial/pricing.ts` `DIAL_CREDIT_COSTS`(:76-83): mastering 220 / dialogue 530 / dialogue_mastering 750 | COGS 定数。ユーザー料金は別定数で freee 後挿し |
+| migration | `db/migrations/` 最新 `0053`・drizzle journal は 0008 止まり=**0009+ は kimny psql 手動**・raw .sql + `IF NOT EXISTS` + `pgEnum` は `DO $$`。**migration-first → code merge → auto-deploy** (0053 header / database-operations.md) | 0054/0055 を手動先行適用 |
+
+---
+
+## 1. 状態機械（背骨・Phase 1）
+
+### 1.1 schema（migration 0054）
+新 pgEnum `dial_session_state` + `dial_sessions.state` 列（`NOT NULL DEFAULT 'uploading'`、index 付与）。
+
+```sql
+-- 0054_add_dial_session_state.sql （migration-first・kimny psql）
+DO $$ BEGIN
+  CREATE TYPE dial_session_state AS ENUM
+    ('uploading','previewing','mix_review','mix_final',
+     'mastering_review','mastered_final','settling','delivered');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
+
+ALTER TABLE dial_sessions ADD COLUMN IF NOT EXISTS state dial_session_state NOT NULL DEFAULT 'uploading';
+CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
+
+-- 既存行 backfill: detectPhase 論理を SQL で一度だけ再現（保守側へ丸め）
+-- mastering final 完了→mastered_final / mix final 存在→mix_final / mixCheck>0→mix_review /
+-- preview 存在→previewing / それ以外→uploading。完了済(status='completed')は
+-- mastering 経路なら mastered_final、mix のみなら mix_final（DL 済の判定は付かないため delivered には上げない）
+```
+`status` 列は移行窓で**残置・dual-write**（rollback 安全 + `canEditSession`/分析の後方互換）。1-2 release 後に deprecate。
+
+### 1.2 遷移サービス（単一ソース）
+`lib/dial/session-state.ts`（新規・pure + guard）:
+- `type DialState`、`TRANSITIONS: Record<from, {to, guard, charge}>`（正本 §2 遷移表を機械化）。
+- `assertTransition(session, tasks, to)`: ガード検査（**無言フォールバック禁止 = 不正入力は throw**・入力 URL は durable r2 で解決 Y-05）。
+- `applyTransition(tx, sessionId, to)`: state UPDATE（既存 reserve/advisory-lock パターンと合成）。
+- 各遷移エンドポイント（preview/final/mastering/rollback/download）が散在 `.set({status})` の代わりに本サービスを呼ぶ（status 書込み 5 箇所を集約）。
+
+### 1.3 detectPhase 置換（blast radius）
+- `getDialTools` を `selectToolsByState(state, mode)` に置換し **state で決定的に gate**（:1389 バグも同時解消 = dialogue でも mastering 入りまで mastering ツールを出さない）。
+- chat/route.ts・page.tsx・chat.tsx・player の `isMasteringPhase` 推論を `session.state` 読取りに置換。
+- `phase.ts` は backfill 用に一時保持 → 全置換後に削除。`phase.test.ts` を state enum テストへ書換え。
+
+### 1.4 Hoo 状態スコープ権限（§5 / Y-06 恒久解決）
+`selectToolsByState`: 変更系ツール（`adjust_preview`/`request_mix_check`/`set_reverb_preference`/`set_musical_style`/フェーダー）は **`previewing`/`mix_review` のみ**。`mix_final` 以降で変更要求 → Hoo は変更せず「Final 確定済。変更は『ミックスに戻す』($X)」と応答し**明示ロールバック遷移を提示**。prompt(dial.ts) に state 別許可を明記。
+
+---
+
+## 2. WYSIWYG（Phase 2・正本 §3）
+
+**原則**: 「操作用＝ステム合算（フェーダー操作）」と「決定用＝実 retrieve 出力（実納品ファイル）」を分離。**強制ロックなし**・決定/コミット時に再生される音＝実納品ファイル（Y-01）。
+
+- 現状: `session-takes.ts` は MIXED の main を `taskStreamUrl`(:139=実 retrieve 出力)、stem を `stemStreamUrlByTask`(:140) で配線。`#483`(reverb_send をステム表示に包含 :72)は**応急** — 本質は下記分離。
+- 実装:
+  - **操作画面**（previewing/mix_review でフェーダー調整中）: `unified-session-player-v2.tsx` のステム合算再生（`use-multi-take-player.ts` の per-stem decode :134-187）。ここは概算でよい。
+  - **決定画面**（mix_review→mix_final 承認 / mastering_review→mastered_final 承認）: 再生ソースを**必ず実 retrieve 出力 `taskStreamUrl(該当 task)` に固定**し「これが納品される音」と明示。承認ボタンはロックしない（無料 preview を何度でも聴いた上での支払いコミット）。
+- 決定画面 UI は既存 `ParamChangeCard`(chat.tsx:135-217) の Generate ボタン系（BUTTON_ACTIONS :82-84）を土台に「実音プレビュー + 承認」カードへ拡張。
+
+---
+
+## 3. 後決済（Phase 3・正本 §4）
+
+**大原則**: 基本パッケージは前払い（現状どおり）。後決済は**追加タスク（追加 MixCheck / master→mix ロールバック）だけ**に掛かる。未精算 0 の基本ユーザーは **Checkout スキップで即 delivered**（決済ウォール非増設）。
+
+### 3.1 ledger 拡張（migration 0055・greenfield 寄り）
+`dial_credit_ledger` に追加（pure additive）: `session_id uuid` / `user_id text` / `amount_cents int`（ユーザー請求額・COGS cr とは別）/ `settled boolean NOT NULL DEFAULT false` / `settled_at timestamp` / `stripe_checkout_session_id text`。`action` enum に `accrue`/`settle` を追加（`DO $$` で `ALTER TYPE ... ADD VALUE`）。
+> per-call deduction は本番未配線のため、本台帳は**有料遷移のみ accrue 行を挿入**する新規配線（既存 consume route とは独立）。
+
+### 3.2 配線
+- **accrue**: 有料遷移（追加 MixCheck=R-2 / rollback=R-3）成立時に `accrue` 行（amount_cents=該当料金, settled=false）を atomic に挿入（reserve-before-charge と同一 tx）。基本パッケージ分は計上しない。
+- **DL 分岐**（download/route.ts に追加）:
+  - 未精算合計 = 0 → `applyTransition(→delivered)` で即配信（基本ユーザー）。
+  - 未精算 > 0 → `settling` へ → 未精算合計で **Stripe Checkout 1 回**（既存 checkout パターン流用・mode:'payment'）。
+- **DL gate（決定③）**: download は `session.state === 'delivered'` を guard（未満は 403）。**未精算 0 は即 delivered = 実質ノーゲート**。ウォーターマーク無料 DL は不採用。
+- **payment guard（R-4）**: webhook で Stripe `payment_status='paid'` 検証後に `settling→delivered`（§③ 修正と同根 = 下記 Phase 0）。
+
+---
+
+## 4. R-1 / R-2 / R-3
+
+- **R-1（自動 Final 廃止）**: `chat.tsx:363-365` の `adjust_preview & phase===3 → request_final` 自動昇格を**削除**。`request_final` は常に ParamChangeCard のボタン明示クリック必須。prompt は既にユーザー明示発話前提（dial.ts:493）なので prompt 変更は最小。遷移 mix_review→mix_final = 明示承認のみ。
+- **R-2（追加 MixCheck 後決済）**: `final/route.ts` の `mixCheckCount < 2` ハードキャップ(:235)を撤廃 → soft limit + 承認制。2 回目以降の MixCheck 成立時に accrue（$X・freee 確定）。COGS 250cr は生成時発生（reserve 維持）。
+- **R-3（master→mix ロールバック $X）**: 新エンドポイント `POST /api/dial/session/[id]/rollback`。`mastering_review|mastered_final → mix_review`。**意味論は §5 V3 推奨参照**（非破壊・version 保持・mix ロック解除・mix params 再編集可）。Yuu で手動 DELETE した reopen の**非破壊製品版**。
+
+---
+
+## 5. 検証4項目（conductor 指定）+ 推奨
+
+### V1. 無料 preview の音 == 有料 final の音（preview fidelity 実証）
+- **現状確度**: 両者は**同一 RoEx task**（final は previewTask.roexTaskId 再利用 `final/route.ts:163/206/283`）。ただし「同一 task」≠「ビット同一音」は**未実証**。これが WYSIWYG-at-無料-preview 前提の**最大リスク**。
+- **実証方法（Plan 内タスク・prod 必須）**: dev-key はスタブを返す（[[reference-dial-prod-debug-gotchas]] ①）ため **prod で**1 セッションを起こし、(a) `/mixpreview` 出力 wav と (b) 同 task `/retrievefinalmix` 出力 wav を取得 → **位相反転ヌルテスト**（合成して無音化するか）+ LUFS/true-peak/スペクトル差分。master も `/masteringpreview` vs `/retrievefinalmaster` で同様。既存 `scripts/experiment-dial-correct-sequence.ts` harness を流用。
+- **分岐**: ヌルテスト合格（実質同一）→ 無料 preview で WYSIWYG 担保確定・決定画面は無料 preview 音を流せる。不一致 → 決定画面は**有料 retrieve 後の実ファイル**を流す必要 → 「無料 WYSIWYG」前提が崩れ、課金フロー（試聴=有料後）を再設計。**この実証を Phase 2 着手前の gate にする**。
+
+### V2. retrievefinalmaster(220cr) 発火点: 承認 vs DL
+- **推奨 = 承認時発火**（正本 §2 表と整合・非対称「master=確定で課金」）。理由: ①master preview(`/masteringpreview`)は無料 → 承認前に WYSIWYG 担保可（V1 master 版が前提）②COGS は「この master にコミット」の承認で発生が自然 ③DL 発火だと mastered_final 状態が実ファイル不在で成立し WYSIWYG/状態整合が崩れる。
+- **トレードオフ明示**: 承認後 DL 前に離脱すると追加 re-master(R-3 経由)の 220cr COGS を MUED が被る（基本 master は前払いゆえ無risk・**risk は追加 re-master のみ**・離脱率低で bounded）。DL 発火を選ぶ場合は「承認＝無料 preview のまま / 実 master は DL 時 retrieve」となり paid 段で WYSIWYG が崩れる懸念。→ **承認発火を推奨**。kimny 判断項目。
+
+### V3. R-3 ロールバック意味論
+- **推奨**: ①**既存 master/final version は破棄せず保持**（非破壊・task に `superseded` フラグ or version 連番・Yuu の DELETE 運用を製品化して恒久回避・監査/復元可）②**mix ロック解除**（state=mix_review に戻し Hoo mix ツール再有効）③**reverb 含む全 mix params 再編集可**（戻る目的そのもの）。④戻り後の再 MixCheck=250cr COGS+$X accrue / 再 master=220cr COGS+$X accrue（課金単位は freee §8、「成果物の再レンダー単位」推奨）。
+- 状態整合: rollback は可逆遷移として TRANSITIONS に明示・version 保持で「どの master を delivered するか」は最新 mastered_final を指す。
+
+### V4. state migration → deploy 順序
+- **migration-first 厳守**（0053 header / database-operations.md）: 0054(state)/0055(ledger) を **kimny が psql で Neon prod に先行適用** → コード PR merge（=Vercel auto-deploy）。pure additive ゆえ旧コードは新列を無視（forward-compatible）。逆順は 42703 undefined_column の本番断（migration 0048/PR#426 教訓 [[feedback-migration-before-schema-deploy]]）。
+- Plan に**適用前 pre-check SQL**（enum 衝突 `SELECT typname FROM pg_type WHERE typname LIKE 'dial_%'` / 列存在確認）を同梱。drizzle journal は 0008 止まりのまま（0009+ 同様に手動 .sql）。
+
+---
+
+## 6. フェーズ順 / 工数 / 順序
+
+| Phase | 内容 | 規模 | migration | 依存 |
+|---|---|---|---|---|
+| **0**（先行・独立小 PR） | §③ Stripe `payment_status` guard + `async_payment_succeeded/_failed` handler / 全レンダー遷移の入力ガード原則化（#484 を一般化）/ download GCS 失効 250cr 経路の見直し | 小-中 | なし | 独立・後段の前提 |
+| **1** | 状態機械: 0054 migration + `session-state.ts` 遷移サービス + detectPhase 全置換 + Hoo state 権限 + R-1（自動 Final 廃止） | **大** | 0054（先行適用） | Phase 0 |
+| **2** | WYSIWYG: 操作用/決定用 再生分離 + 決定画面（実 retrieve 音提示） | 中 | なし | **V1 実証 gate** + Phase 1 |
+| **3** | 後決済: 0055 ledger + accrue 配線 + settle Checkout + delivered DL gate + payment guard + R-2 + R-3 | **大** | 0055（先行適用） | Phase 1, Phase 0(§③) |
+
+各 Phase は独立 PR。Phase 1 が背骨（state）で全土台。Phase 2 は **V1 実証合格を着手 gate**に。料金数値（基本パッケージ内訳 / 追加 $X）は freee §8 確定後に pricing 定数へ後挿し（機構は数値非依存に組む）。
+
+---
+
+## 7. リスク / kimny・conductor 決定待ち
+
+1. **★V1 preview fidelity 未実証**（最大リスク）: 無料 preview ≠ 有料 final 音なら無料 WYSIWYG 前提が崩れる。Phase 2 着手前に prod ヌルテストで確定。
+2. **V2 retrievefinalmaster 発火点**（承認 推奨 / DL）= kimny 決定。
+3. **後決済の COGS 回収**: 追加タスク承認後 DL 前離脱の COGS 被り（基本前払いゆえ追加分のみ・bounded）。許容可否 = kimny。
+4. **state backfill の正確さ**: detectPhase 論理を SQL 再現する一度きり backfill。保守側へ丸め + 既存セッション少数ゆえ手動検証可。
+5. **status 並走期間**: dual-write 期間の不整合 risk → 遷移サービス単一ソース化で抑制。
+6. **料金 canonical**（freee）: 数値未確定でも機構は組める。確定後 pricing 定数差替 + write課通知。
+
+## 8. 次工程
+本 Plan → **kimny GO** → Phase 0 から実装（各 Phase 独立 PR・migration は kimny psql 先行）。freee §8 料金マトリクス並行確定。
+
+## 関連
+- 正本: conductor `docs/inbox/tier3-design-muedial-session-statemachine-20260617.md`
+- 既存設計: `docs/dial/deferred-billing-session-statemachine-design-20260617.md`（WYSIWYG ゲート確定反映済）
+- memory: [[reference-muedial-credit-cost-architecture]] / [[reference-dial-prod-debug-gotchas]] / [[reference-roex-retrievefinalmix-needs-ready-preview]]
