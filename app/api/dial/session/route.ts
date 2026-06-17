@@ -13,6 +13,7 @@ import { verifyDialSessionOwnership, verifyDialSessionReadAccess } from '@/lib/m
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { createRoExClient, isRoExDevKey, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
 import { copyToR2 } from '@/lib/dial/r2-storage';
+import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { markDialTaskFailedWithReconcile, isUnchargedMasteringReservation } from '@/lib/dial/task-timeout';
 import { db } from '@/db';
 import { dialSessions, dialTasks, dialTracks } from '@/db/schema';
@@ -147,7 +148,11 @@ export const GET = withDialAuth(async (auth) => {
               const tracks = await db.query.dialTracks.findMany({
                 where: eq(dialTracks.sessionId, sessionId),
               });
-              const trackUrls = tracks.map((t) => t.roexUploadUrl);
+              // Resolve to the live URL (GCS→R2 fallback) like every sibling poll path
+              // (final/route.ts, webhooks/roex, download) — the raw roexUploadUrl is a ~1h GCS
+              // signed URL, so this inline poll would otherwise feed RoEx a dead URL for any
+              // returning/copied session whose GCS upload has expired.
+              const trackUrls = tracks.map((t) => resolveTrackUrl(t) ?? t.roexUploadUrl);
 
               // Free campaign: poll must not re-request the (+50cr) stems the free submit skipped.
               const result = await pollMixFinal(client, task.roexTaskId, trackUrls, {

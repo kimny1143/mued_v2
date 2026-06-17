@@ -133,8 +133,11 @@ export const POST = withDialAuth(async (auth) => {
       sessionId,
       roexTaskId: result.taskId,
       taskType: 'preview',
-      status: result.previewUrl ? 'completed' : 'processing',
-      previewUrl: result.previewUrl,
+      // Honor RoEx's failure signal: parseMixResponse derives previewUrl and isFailed from disjoint
+      // fields, so a failed response can still carry a previewUrl. Don't stamp such a task
+      // 'completed' (the GET poll path already gates on the same signal).
+      status: result.status === 'failed' ? 'failed' : (result.previewUrl ? 'completed' : 'processing'),
+      previewUrl: result.status === 'failed' ? null : result.previewUrl,
       fxSettings: result.fxSettings ?? null,
       stemsUrls: result.stemsUrl ?? null,
       previewParams,

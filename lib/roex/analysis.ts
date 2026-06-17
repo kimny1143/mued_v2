@@ -88,9 +88,24 @@ export async function analyzeMix(
   const diagResults = (raw.mixDiagnosisResults ?? raw) as Record<string, unknown>;
   const payload = (diagResults.payload ?? diagResults) as Record<string, unknown>;
 
+  // Don't silently coerce a missing core measurement to 0 — a RoEx payload-shape change (field
+  // rename/omission) would otherwise be cached verbatim into dial_sessions.analysisResult as a real
+  // "0 LUFS / 0 dBFS" reading and mislead the mastering prompt + RAW leveling. Fail loud so the
+  // caller surfaces it instead of persisting garbage (the analyze route only caches a returned result).
+  const lufs = payload.integrated_loudness_lufs;
+  const peak = payload.peak_loudness_dbfs;
+  if (
+    typeof lufs !== 'number' || !Number.isFinite(lufs) ||
+    typeof peak !== 'number' || !Number.isFinite(peak)
+  ) {
+    throw new Error(
+      'RoEx /mixanalysis returned no usable loudness/peak measurement (payload shape changed?)',
+    );
+  }
+
   return {
-    loudnessLufs: (payload.integrated_loudness_lufs as number) ?? 0,
-    peakDbfs: (payload.peak_loudness_dbfs as number) ?? 0,
+    loudnessLufs: lufs,
+    peakDbfs: peak,
     stereoField: (payload.stereo_field as string) ?? '',
     monoCompatible: (payload.mono_compatible as boolean) ?? false,
     clipping: (payload.clipping as string) ?? 'NONE',
