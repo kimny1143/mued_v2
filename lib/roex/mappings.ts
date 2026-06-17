@@ -25,9 +25,23 @@ export const MUSICAL_STYLE_MAP: Record<string, MusicalStyle> = {
   other: 'OTHER',
 };
 
-/** Resolve a UI style string to RoEx MusicalStyle. Defaults to 'OTHER'. */
-export function mapMusicalStyle(uiStyle: string): MusicalStyle {
-  return MUSICAL_STYLE_MAP[uiStyle] ?? 'OTHER';
+/** Valid RoEx MusicalStyle enum values (derived from the map's values). */
+const VALID_ROEX_STYLES = new Set<MusicalStyle>(Object.values(MUSICAL_STYLE_MAP));
+
+/**
+ * Resolve a style to a RoEx MusicalStyle. Accepts BOTH UI keys (e.g. 'rock') AND values that are
+ * already RoEx enums (e.g. 'ROCK_INDIE'). Idempotent: an enum value passes through unchanged instead
+ * of falling through to 'OTHER'.
+ *
+ * Why both: `dial_sessions.musicalStyle` is a UI key when set at session creation, but the RoEx ENUM
+ * when set via the `set_musical_style` chat tool. Passing the enum through the old UI-key-only lookup
+ * silently downgraded a chat-chosen genre (e.g. ROCK_INDIE) to 'OTHER' for every RoEx
+ * mix/master/analyze call — the user's genre was ignored. (Yuu df55abae: ROCK set in chat → mastered
+ * as OTHER.)
+ */
+export function mapMusicalStyle(style: string): MusicalStyle {
+  if (VALID_ROEX_STYLES.has(style as MusicalStyle)) return style as MusicalStyle;
+  return MUSICAL_STYLE_MAP[style] ?? 'OTHER';
 }
 
 // ─── Instrument Group ───────────────────────────────────────────────────────
