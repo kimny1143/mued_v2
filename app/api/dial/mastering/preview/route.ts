@@ -69,14 +69,23 @@ export const POST = withDialAuth(async (auth) => {
 
     if (finalTask?.finalUrl) {
       trackUrl = finalTask.finalUrl;
-    } else {
-      // Mastering-only: use the first uploaded track as 2-mix
+    } else if (!session.mode) {
+      // Mastering-ONLY session (no mix mode): the first uploaded track IS the user's 2-mix.
       const tracks = await db.query.dialTracks.findMany({
         where: eq(dialTracks.sessionId, sessionId),
       });
       if (tracks.length > 0) {
         trackUrl = resolveTrackUrl(tracks[0]);
       }
+    } else {
+      // Mix-flow session (session.mode set) with no completed final mix. tracks[0] here is a single
+      // STEM, not a 2-mix — mastering it would produce a vocals-only / near-silent master (Yuu
+      // df55abae: mastered chorus2.wav alone). Require a final mix first instead of silently
+      // mastering the wrong input.
+      return apiError('No final mix to master yet — generate your final mix first.', {
+        code: 'NO_FINAL_MIX',
+        status: 400,
+      });
     }
 
     if (!trackUrl) {
