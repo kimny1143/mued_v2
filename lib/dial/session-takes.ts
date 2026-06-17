@@ -64,9 +64,11 @@ export function stemStreamUrlByTask(taskId: string, stemKey: string, token?: str
 const hasStems = (t: SessionTakeTask): boolean =>
   !!t.stemsUrls && Object.keys(t.stemsUrls).length > 0;
 
-/** Real stem keys, excluding RoEx effect-return entries (reverb_send*). */
-const stemKeysOf = (urls: Record<string, string>): string[] =>
-  Object.keys(urls).filter((k) => !k.startsWith('reverb_send'));
+/** All stem keys, INCLUDING RoEx reverb_send effect-return entries. Excluding reverb_send made the
+ *  player's stem mix DRY while the rendered 2-mix (and the mastering input) bakes in the reverb
+ *  returns — so what the user heard ≠ what got mastered, masking baked-in reverb (Yuu df55abae).
+ *  Include them so stem playback matches the 2-mix. */
+const stemKeysOf = (urls: Record<string, string>): string[] => Object.keys(urls);
 
 export function buildSessionTakes(
   session: SessionTakeInput,
