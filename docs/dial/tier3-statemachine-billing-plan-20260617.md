@@ -83,14 +83,14 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 
 ## 3. 後決済（Phase 3・正本 §4）
 
-**大原則**: 基本パッケージは前払い（現状どおり）。後決済は**追加タスク（追加 MixCheck=R-2・rollback 後の再 redo）だけ**に掛かる。未精算 0 の基本ユーザーは **Checkout スキップで即 delivered**（決済ウォール非増設）。**rollback の課金 attribution（rollback 遷移=無料+再 mix=R-2 / rollback 自体=$X のどちらで計上するか・net redo $X は同じ）は kimny 確認中**（conductor relay・Phase 3 着手前に確定）。
+**大原則**: 基本パッケージは前払い（現状どおり）。後決済は**追加タスク（追加 MixCheck=R-2・rollback 後の再 redo）だけ**に掛かる。未精算 0 の基本ユーザーは **Checkout スキップで即 delivered**（決済ウォール非増設）。**rollback の課金 attribution = kimny 確定**: ロールバック遷移自体は無料・**課金はレンダー時点**。in-session 追加課金は「**追加 MixCheck $X**」一本（rollback 後の再 mix も R-2）。master は1セッション1回（基本込み・承認時 220cr）・再マスター=新規セッション。
 
 ### 3.1 ledger 拡張（migration 0055・greenfield 寄り）
 `dial_credit_ledger` に追加（pure additive）: `session_id uuid` / `user_id text` / `amount_cents int`（ユーザー請求額・COGS cr とは別）/ `settled boolean NOT NULL DEFAULT false` / `settled_at timestamp` / `stripe_checkout_session_id text`。`action` enum に `accrue`/`settle` を追加（`DO $$` で `ALTER TYPE ... ADD VALUE`）。
 > per-call deduction は本番未配線のため、本台帳は**有料遷移のみ accrue 行を挿入**する新規配線（既存 consume route とは独立）。
 
 ### 3.2 配線
-- **accrue**: 有料遷移（追加 MixCheck=R-2・rollback 後の再 redo）成立時に `accrue` 行（amount_cents=該当料金, settled=false）を atomic に挿入（reserve-before-charge と同一 tx）。基本パッケージ分は計上しない。**課金 attribution は kimny 確認中**（上記大原則）。
+- **accrue**: 有料遷移（追加 MixCheck=R-2・rollback 後の再 redo）成立時に `accrue` 行（amount_cents=該当料金, settled=false）を atomic に挿入（reserve-before-charge と同一 tx）。基本パッケージ分は計上しない。**課金=レンダー時点・追加 MixCheck $X 一本**（kimny 確定・上記大原則）。
 - **DL 分岐**（download/route.ts に追加）:
   - 未精算合計 = 0 → `applyTransition(→delivered)` で即配信（基本ユーザー）。
   - 未精算 > 0 → `settling` へ → 未精算合計で **Stripe Checkout 1 回**（既存 checkout パターン流用・mode:'payment'）。
@@ -103,7 +103,7 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 
 - **R-1（自動 Final 廃止）**: `chat.tsx:363-365` の `adjust_preview & phase===3 → request_final` 自動昇格を**削除**。`request_final` は常に ParamChangeCard のボタン明示クリック必須。prompt は既にユーザー明示発話前提（dial.ts:493）なので prompt 変更は最小。遷移 mix_review→mix_final = 明示承認のみ。
 - **R-2（追加 MixCheck 後決済）**: `final/route.ts` の `mixCheckCount < 2` ハードキャップ(:235)を撤廃 → soft limit + 承認制。2 回目以降の MixCheck 成立時に accrue（$X・freee 確定）。COGS 250cr は生成時発生（reserve 維持）。
-- **R-3（ロールバック）= kimny 簡潔化確定**: 新エンドポイント `POST /api/dial/session/[id]/rollback`。**`mastering_review`(無料プレビュー段)→ `mix_review` のみ**（mix_final からの pre-commit 戻りも同様に許容）。**`mastered_final → mix` は廃止** → 確定済マスターのやり直しは**新規 mastering-only セッション**（確定 2mix 入力）。意味論(§5 V3): master 未コミット段ゆえ **mix テイクに非破壊適用**・mix ロック解除・reverb 含む mix params 再編集可。**「再マスター課金 SKU」不要**。課金 attribution は kimny 確認中（上記）。
+- **R-3（ロールバック）= kimny 簡潔化確定**: 新エンドポイント `POST /api/dial/session/[id]/rollback`。**`mastering_review`(無料プレビュー段)→ `mix_review` のみ**（mix_final からの pre-commit 戻りも同様に許容）。**`mastered_final → mix` は廃止** → 確定済マスターのやり直しは**新規 mastering-only セッション**（確定 2mix 入力）。意味論(§5 V3): master 未コミット段ゆえ **mix テイクに非破壊適用**・mix ロック解除・reverb 含む mix params 再編集可。**「再マスター課金 SKU」不要**。課金 attribution=kimny 確定（rollback 遷移無料・課金はレンダー時点・追加 MixCheck $X 一本）。
 
 ---
 
@@ -121,7 +121,7 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 ### V3. ロールバック意味論（kimny 簡潔化確定）
 - **確定**: ロールバックは **`mastering_review`(無料プレビュー段)→ `mix_review` のみ**（mix_final からの pre-commit 戻りも許容）。master 未コミットゆえ ①**mix テイクに非破壊適用**（確定マスターは存在しない＝破棄でなく無料プレビュー再生成可）②**mix ロック解除**（Hoo mix ツール再有効）③**reverb 含む mix params 再編集可**。
 - **`mastered_final → mix` 廃止**: 確定済マスターのやり直し = **新規 mastering-only セッション**（確定 2mix 入力）。→ 220cr は1セッション1回・「再マスター課金 SKU」不要・mix テイク非破壊保持で「どの mix から再マスターするか」も明確。
-- **課金 attribution（kimny 確認中・conductor relay）**: 「rollback 遷移=無料 + 再 mix=R-2($X)」 vs 「rollback=$X」。net redo $X は同一・二重課金回避で前者が綺麗。Phase 3 着手前に確定受領。
+- **課金 attribution = kimny 確定**: ロールバック遷移は無料・**課金はレンダー時点**。in-session 追加課金は「追加 MixCheck $X」一本（rollback 後の再 mix もこれ＝R-2）。二重課金回避で綺麗。
 
 ### V4. state migration → deploy 順序
 - **migration-first 厳守**（0053 header / database-operations.md）: 0054(state)/0055(ledger) を **kimny が psql で Neon prod に先行適用** → コード PR merge（=Vercel auto-deploy）。pure additive ゆえ旧コードは新列を無視（forward-compatible）。逆順は 42703 undefined_column の本番断（migration 0048/PR#426 教訓 [[feedback-migration-before-schema-deploy]]）。
@@ -136,7 +136,7 @@ CREATE INDEX IF NOT EXISTS idx_dial_sessions_state ON dial_sessions(state);
 | **0**（先行・独立小 PR） | §③ Stripe `payment_status` guard + `async_payment_succeeded/_failed` handler / 全レンダー遷移の入力ガード原則化（#484 を一般化）/ download GCS 失効 250cr 経路の見直し | 小-中 | なし | 独立・後段の前提 |
 | **1** | 状態機械: 0054 migration + `session-state.ts` 遷移サービス + detectPhase 全置換 + Hoo state 権限 + R-1（自動 Final 廃止） | **大** | 0054（先行適用） | Phase 0 |
 | **2** | WYSIWYG: 操作用/決定用 再生分離 + 決定画面（実 retrieve 音提示） | 中 | なし | **V1 実証 gate** + Phase 1 |
-| **3** | 後決済: 0055 ledger + accrue 配線 + settle Checkout + delivered DL gate + payment guard + R-2 + rollback(mastering_review→mix・無料遷移)+ mastered_final やり直し=新規 mastering-only セッション導線 | **大** | 0055（先行適用） | Phase 1, Phase 0(§③), **rollback 課金 attribution 確定** |
+| **3** | 後決済: 0055 ledger + accrue 配線 + settle Checkout + delivered DL gate + payment guard + R-2 + rollback(mastering_review→mix・無料遷移)+ mastered_final やり直し=新規 mastering-only セッション導線 | **大** | 0055（先行適用） | Phase 1, Phase 0(§③) |
 
 各 Phase は独立 PR。Phase 1 が背骨（state）で全土台。Phase 2 は **V1 実証合格を着手 gate**に。料金数値（基本パッケージ内訳 / 追加 $X）は freee §8 確定後に pricing 定数へ後挿し（機構は数値非依存に組む）。
 
