@@ -19,6 +19,8 @@ import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
 import { withRoExRetry } from '@/lib/dial/retry-roex';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
+import { sessionStateForCompletedTask } from '@/lib/dial/session-state';
+import { advanceDialSessionState } from '@/lib/dial/session-state-write';
 import { db } from '@/db';
 import { dialTasks, dialTracks, dialSessions } from '@/db/schema';
 import { DELIVERY_TARGETS, DELIVERY_TARGET_LUFS, mapLufsToDesiredLoudness } from '@/lib/dial/lufs-presets';
@@ -143,6 +145,14 @@ export const POST = withDialAuth(async (auth) => {
       .set({ status: 'mastering', updatedAt: new Date() })
       .where(eq(dialSessions.id, sessionId));
 
+    // Tier3 state machine (Phase 1b): advance workflow `state` forward when the mastering preview
+    // completed synchronously (handles the mastering-only entry edge uploading → mastering_review).
+    // Forward-only; the GET poll / webhook cover async completion.
+    if (task.status === 'completed') {
+      const st = sessionStateForCompletedTask('mastering_preview');
+      if (st) await advanceDialSessionState(db, sessionId, st);
+    }
+
     return apiSuccess({
       taskId: task.id,
       roexTaskId: result.taskId,
@@ -214,6 +224,12 @@ export const GET = withDialAuth(async (auth) => {
           previewUrl: pollResult.previewUrl,
           completedAt: new Date(),
         }).where(and(eq(dialTasks.id, taskId), ne(dialTasks.status, 'failed')));
+
+        // Tier3 state machine (Phase 1b): sync-poll completion fallback (webhook may not fire —
+        // 2026-06-15 Vercel-DDoS incident). Forward-only advance to mastering_review.
+        const st = sessionStateForCompletedTask('mastering_preview');
+        if (st) await advanceDialSessionState(db, task.sessionId, st);
+
         return apiSuccess({ status: 'completed', previewUrl: pollResult.previewUrl });
       }
 

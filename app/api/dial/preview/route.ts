@@ -20,6 +20,8 @@ import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { sanitizeUpstreamRoExError } from '@/lib/dial/roex-error';
 import { withRoExRetry } from '@/lib/dial/retry-roex';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
+import { sessionStateForCompletedTask } from '@/lib/dial/session-state';
+import { advanceDialSessionState } from '@/lib/dial/session-state-write';
 import { db } from '@/db';
 import { dialTracks, dialTasks, dialSessions } from '@/db/schema';
 
@@ -152,6 +154,14 @@ export const POST = withDialAuth(async (auth) => {
       })
       .where(eq(dialSessions.id, sessionId));
 
+    // Tier3 state machine (Phase 1b): advance workflow `state` forward when the preview
+    // completed synchronously. Forward-only — a re-preview during a later phase can't regress
+    // it; the webhook / GET poll cover the async-completion path.
+    if (task.status === 'completed') {
+      const st = sessionStateForCompletedTask('preview');
+      if (st) await advanceDialSessionState(db, sessionId, st);
+    }
+
     recordDialEvent({
       sessionId, eventType: 'preview', userId: auth.userId, guestToken: auth.guestToken,
       mode: session.mode, metadata: { previewCount: (session.previewCount ?? 0) + 1 },
@@ -235,6 +245,11 @@ export const GET = withDialAuth(async (auth) => {
           stemsUrls: pollResult.stemsUrl ?? null,
           completedAt: new Date(),
         }).where(and(eq(dialTasks.id, taskId), ne(dialTasks.status, 'failed')));
+
+        // Tier3 state machine (Phase 1b): sync-poll completion fallback (webhook may not fire —
+        // 2026-06-15 Vercel-DDoS incident). Forward-only advance.
+        const st = sessionStateForCompletedTask('preview');
+        if (st) await advanceDialSessionState(db, task.sessionId, st);
 
         return apiSuccess({
           status: 'completed',

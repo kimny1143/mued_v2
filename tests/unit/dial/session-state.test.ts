@@ -10,6 +10,9 @@ import {
   isMixLocked,
   canRollbackToMix,
   isTerminal,
+  isForwardState,
+  maxState,
+  sessionStateForCompletedTask,
 } from '@/lib/dial/session-state';
 
 describe('dial session state machine — transitions (§2)', () => {
@@ -94,5 +97,82 @@ describe('dial session state machine — phase predicates', () => {
     expect(canRollbackToMix('mastered_final')).toBe(false);
     expect(canRollbackToMix('mix_review')).toBe(false);
     expect(canRollbackToMix('delivered')).toBe(false);
+  });
+});
+
+describe('dial session state machine — mode-aware transitions (mastering-only vs mix-flow)', () => {
+  it('structural (no opts): both uploading→previewing and uploading→mastering_review are valid edges', () => {
+    expect(canTransition('uploading', 'previewing')).toBe(true);
+    expect(canTransition('uploading', 'mastering_review')).toBe(true);
+  });
+
+  it('mastering-only (mode=null): enters mastering_review directly, mix-flow edges forbidden', () => {
+    expect(canTransition('uploading', 'mastering_review', { masteringOnly: true })).toBe(true);
+    expect(canTransition('mastering_review', 'mastered_final', { masteringOnly: true })).toBe(true);
+    // mix-flow edges are not available to a mastering-only session
+    expect(canTransition('uploading', 'previewing', { masteringOnly: true })).toBe(false);
+    expect(canTransition('mastering_review', 'mix_review', { masteringOnly: true })).toBe(false);
+  });
+
+  it('mix-flow (mode set): must enter via the mix phase — direct uploading→mastering_review forbidden', () => {
+    expect(canTransition('uploading', 'mastering_review', { masteringOnly: false })).toBe(false);
+    expect(canTransition('uploading', 'previewing', { masteringOnly: false })).toBe(true);
+    expect(canTransition('mix_final', 'mastering_review', { masteringOnly: false })).toBe(true);
+    expect(canTransition('mastering_review', 'mix_review', { masteringOnly: false })).toBe(true);
+  });
+
+  it('shared edges (master approve / download / settle) are valid in both modes', () => {
+    for (const masteringOnly of [true, false]) {
+      expect(canTransition('mastering_review', 'mastered_final', { masteringOnly })).toBe(true);
+      expect(canTransition('mastered_final', 'delivered', { masteringOnly })).toBe(true);
+      expect(canTransition('mastered_final', 'settling', { masteringOnly })).toBe(true);
+      expect(canTransition('settling', 'delivered', { masteringOnly })).toBe(true);
+    }
+  });
+
+  it('assertTransition honors the mode gate', () => {
+    expect(() => assertTransition('uploading', 'mastering_review', { masteringOnly: false })).toThrow(InvalidDialTransitionError);
+    expect(() => assertTransition('uploading', 'mastering_review', { masteringOnly: true })).not.toThrow();
+  });
+});
+
+describe('dial session state machine — forward-only lifecycle advance (write-side guard)', () => {
+  it('isForwardState: strictly forward by rank', () => {
+    expect(isForwardState('uploading', 'previewing')).toBe(true);
+    expect(isForwardState('uploading', 'mastering_review')).toBe(true); // mastering-only jump
+    expect(isForwardState('mix_review', 'mix_final')).toBe(true);
+    expect(isForwardState('mastered_final', 'delivered')).toBe(true);
+    // not forward (equal or backward) — guards late/duplicate task events from regressing state
+    expect(isForwardState('mix_final', 'mix_final')).toBe(false);
+    expect(isForwardState('mastered_final', 'previewing')).toBe(false);
+    expect(isForwardState('mastering_review', 'mix_review')).toBe(false);
+  });
+
+  it('maxState returns the forward-most state', () => {
+    expect(maxState('previewing', 'mix_review')).toBe('mix_review');
+    expect(maxState('mastered_final', 'previewing')).toBe('mastered_final');
+    expect(maxState('uploading', 'uploading')).toBe('uploading');
+  });
+});
+
+describe('sessionStateForCompletedTask — task completion → target state (write-side mapping)', () => {
+  it('maps each completed task type to the state it implies', () => {
+    expect(sessionStateForCompletedTask('preview')).toBe('previewing');
+    expect(sessionStateForCompletedTask('mix_check')).toBe('mix_review');
+    expect(sessionStateForCompletedTask('final_basic')).toBe('mix_final');
+    expect(sessionStateForCompletedTask('final_advanced')).toBe('mix_final');
+    expect(sessionStateForCompletedTask('mastering_preview')).toBe('mastering_review');
+    expect(sessionStateForCompletedTask('mastering')).toBe('mastered_final');
+  });
+
+  it('returns null for unknown / non-advancing task types', () => {
+    expect(sessionStateForCompletedTask('unknown')).toBeNull();
+    expect(sessionStateForCompletedTask('')).toBeNull();
+  });
+
+  it('mastering-only entry: a completed mastering_preview advances uploading→mastering_review (forward)', () => {
+    const target = sessionStateForCompletedTask('mastering_preview')!;
+    expect(target).toBe('mastering_review');
+    expect(isForwardState('uploading', target)).toBe(true);
   });
 });
