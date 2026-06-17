@@ -166,3 +166,31 @@ export function isForwardState(from: DialState, to: DialState): boolean {
 export function maxState(a: DialState, b: DialState): DialState {
   return STATE_RANK[a] >= STATE_RANK[b] ? a : b;
 }
+
+/**
+ * The session state a *completed* task of the given type implies — the render/approval lifecycle
+ * point routes/webhook advance to (forward-only via advanceDialSessionState). Independent of
+ * session.mode: a mastering-only session's first completed task is mastering_preview, which advances
+ * uploading→mastering_review directly. Returns null for task types that don't move the session state.
+ *
+ * Note: a completed `final_*` task means the mix is finalized → mix_final. Whether mastering follows
+ * is driven by the separate mastering tasks (→ mastering_review / mastered_final), not by this mix
+ * completion — so masteringMode is irrelevant here (unlike the legacy `status` mapping).
+ */
+export function sessionStateForCompletedTask(taskType: string): DialState | null {
+  switch (taskType) {
+    case 'preview':
+      return 'previewing';
+    case 'mix_check':
+      return 'mix_review';
+    case 'final_basic':
+    case 'final_advanced':
+      return 'mix_final';
+    case 'mastering_preview':
+      return 'mastering_review';
+    case 'mastering':
+      return 'mastered_final';
+    default:
+      return null;
+  }
+}

@@ -12,6 +12,7 @@ import {
   isTerminal,
   isForwardState,
   maxState,
+  sessionStateForCompletedTask,
 } from '@/lib/dial/session-state';
 
 describe('dial session state machine — transitions (§2)', () => {
@@ -151,5 +152,27 @@ describe('dial session state machine — forward-only lifecycle advance (write-s
     expect(maxState('previewing', 'mix_review')).toBe('mix_review');
     expect(maxState('mastered_final', 'previewing')).toBe('mastered_final');
     expect(maxState('uploading', 'uploading')).toBe('uploading');
+  });
+});
+
+describe('sessionStateForCompletedTask — task completion → target state (write-side mapping)', () => {
+  it('maps each completed task type to the state it implies', () => {
+    expect(sessionStateForCompletedTask('preview')).toBe('previewing');
+    expect(sessionStateForCompletedTask('mix_check')).toBe('mix_review');
+    expect(sessionStateForCompletedTask('final_basic')).toBe('mix_final');
+    expect(sessionStateForCompletedTask('final_advanced')).toBe('mix_final');
+    expect(sessionStateForCompletedTask('mastering_preview')).toBe('mastering_review');
+    expect(sessionStateForCompletedTask('mastering')).toBe('mastered_final');
+  });
+
+  it('returns null for unknown / non-advancing task types', () => {
+    expect(sessionStateForCompletedTask('unknown')).toBeNull();
+    expect(sessionStateForCompletedTask('')).toBeNull();
+  });
+
+  it('mastering-only entry: a completed mastering_preview advances uploading→mastering_review (forward)', () => {
+    const target = sessionStateForCompletedTask('mastering_preview')!;
+    expect(target).toBe('mastering_review');
+    expect(isForwardState('uploading', target)).toBe(true);
   });
 });

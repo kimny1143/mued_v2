@@ -21,6 +21,8 @@ import { copyToR2 } from '@/lib/dial/r2-storage';
 import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview, masterFinal } from '@/lib/roex';
 import { resolveTrackUrl } from '@/lib/dial/resolve-track-url';
 import { markDialTaskFailedWithReconcile, isUnchargedMasteringReservation } from '@/lib/dial/task-timeout';
+import { sessionStateForCompletedTask } from '@/lib/dial/session-state';
+import { advanceDialSessionState } from '@/lib/dial/session-state-write';
 
 // Allow up to 120s for R2 copy
 export const maxDuration = 120;
@@ -208,6 +210,12 @@ export async function POST(request: Request) {
           updatedAt: new Date(),
         }).where(eq(dialSessions.id, task.sessionId));
       }
+
+      // Tier3 state machine (Phase 1b): advance the explicit workflow `state` forward to reflect
+      // this completed render. Forward-only (advanceDialSessionState) so a late/duplicate webhook
+      // — or the sync-poll path having already advanced it — can never regress the state.
+      const stateTarget = sessionStateForCompletedTask(task.taskType);
+      if (stateTarget) await advanceDialSessionState(db, task.sessionId, stateTarget);
     }
 
     console.log(`[webhook/roex] Task ${roexTaskId} completed successfully`);
