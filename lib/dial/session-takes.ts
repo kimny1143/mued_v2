@@ -29,6 +29,7 @@ export interface SessionTakeTask {
   finalUrl: string | null;
   stemsUrls: Record<string, string> | null;
   createdAt: string;
+  completedAt?: string | null;
 }
 
 export interface SessionTakeInput {
@@ -138,6 +139,7 @@ export function buildSessionTakes(
       url: taskStreamUrl(task.id, guestToken),
       stemsUrls: perTakeStems(task),
       createdAt: task.createdAt,
+      completedAt: task.completedAt ?? null,
       enabled: true,
     });
   });
@@ -175,6 +177,7 @@ export function buildSessionTakes(
       url: taskStreamUrl(masteringFinalOrProcessingTask.id, guestToken),
       stemsUrls: null,
       createdAt: masteringFinalOrProcessingTask.createdAt,
+      completedAt: masteringFinalOrProcessingTask.completedAt ?? null,
       enabled: isMasteredEnabled,
     });
   } else {
@@ -189,6 +192,7 @@ export function buildSessionTakes(
         url: taskStreamUrl(masteringPreviewPlayable.id, guestToken),
         stemsUrls: null,
         createdAt: masteringPreviewPlayable.createdAt,
+        completedAt: masteringPreviewPlayable.completedAt ?? null,
         enabled: true,
       });
     }

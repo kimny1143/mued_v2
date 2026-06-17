@@ -1,6 +1,7 @@
 'use client';
 
 import { type TakeStage, type TakeEntry } from '@/components/dial/unified-session-player';
+import { formatTakeDuration } from '@/lib/dial/format-duration';
 import { Micro } from './atoms';
 import { IconSpinner, IconChevron } from './icons';
 
@@ -12,6 +13,8 @@ export interface TakeSub {
   label: string;
   when: string;
   flag?: string;
+  /** Persistent generation duration label (e.g. "1分49秒で完了"); null when unknown. */
+  duration?: string | null;
 }
 
 export interface TakeGroup {
@@ -42,6 +45,7 @@ export function groupTakeEntries(takes: TakeEntry[]): TakeGroup[] {
         label: t.sublabel ?? `${stage} ${i + 1}`,
         when: formatWhen(t.createdAt),
         flag: stage === 'RAW' && i === 0 ? 'SRC' : undefined,
+        duration: formatTakeDuration(t.createdAt, t.completedAt),
       })),
     };
   });
@@ -233,6 +237,11 @@ export function TakeHistory({ open, takes, activeTake, activeSub, onPick, onTogg
                           {!isDecoding && sub.flag && (
                             <span className="mono text-[8px] px-1 h-3.5 flex items-center rounded-[1.5px] bg-[#17171a] border border-[color:var(--line)] text-[color:var(--fg-2)] uppercase tracking-wider">
                               {sub.flag}
+                            </span>
+                          )}
+                          {!isDecoding && sub.duration && (
+                            <span className="mono text-[8px] text-[color:var(--fg-3)] whitespace-nowrap">
+                              {sub.duration}
                             </span>
                           )}
                         </div>

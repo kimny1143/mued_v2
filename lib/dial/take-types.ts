@@ -17,6 +17,9 @@ export interface TakeEntry {
   url: string;
   stemsUrls?: Record<string, string> | null;
   createdAt: string;
+  /** Task completion time (RoEx render done). Drives the persistent generation-duration label in
+   *  Take History. null/undefined for RAW (no task) or still-processing / legacy takes. */
+  completedAt?: string | null;
   /** false = task still processing; pill shown disabled with spinner, take not loaded */
   enabled: boolean;
 }

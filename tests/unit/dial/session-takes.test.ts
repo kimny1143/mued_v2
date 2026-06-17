@@ -15,6 +15,31 @@ function previewTask(id: string, createdAt: string, stemsUrls: Record<string, st
   return { id, taskType: 'preview', status: 'completed', previewUrl: `gcs://${id}.mp3`, finalUrl: null, stemsUrls, createdAt };
 }
 
+describe('buildSessionTakes — completedAt plumbing (R-6 duration display)', () => {
+  it('carries task.completedAt onto MIXED + MASTERED takes; RAW has none', () => {
+    const session: SessionTakeInput = {
+      id: 's',
+      tracks: [{ id: 't1', originalFilename: 'a.wav', r2Url: 'https://r2/a.wav' }],
+      tasks: [
+        { id: 'p', taskType: 'preview', status: 'completed', previewUrl: 'u', finalUrl: null, stemsUrls: { vox: 'u' }, createdAt: '2026-06-16T18:29:38Z', completedAt: '2026-06-16T18:30:15Z' },
+        { id: 'mp', taskType: 'mastering_preview', status: 'completed', previewUrl: 'x', finalUrl: null, stemsUrls: null, createdAt: '2026-06-16T21:37:04Z', completedAt: '2026-06-16T21:38:57Z' },
+      ],
+    };
+    const takes = buildSessionTakes(session, null);
+    expect(takes.find((t) => t.label === 'MIXED')!.completedAt).toBe('2026-06-16T18:30:15Z');
+    expect(takes.find((t) => t.label === 'MASTERED')!.completedAt).toBe('2026-06-16T21:38:57Z');
+    expect(takes.find((t) => t.label === 'RAW')!.completedAt ?? null).toBeNull();
+  });
+
+  it('defaults completedAt to null when the task has none (legacy rows)', () => {
+    const session: SessionTakeInput = {
+      id: 's', tracks: [],
+      tasks: [previewTask('p', '2026-06-11T07:00:00Z', { vox: 'u' })],
+    };
+    expect(buildSessionTakes(session, null).find((t) => t.label === 'MIXED')!.completedAt).toBeNull();
+  });
+});
+
 describe('buildSessionTakes — take/URL wiring (PR-A)', () => {
   it('gives each MIXED take its OWN task stems — Preview 2 ≠ Preview 1 (the reference bug)', () => {
     const session: SessionTakeInput = {
