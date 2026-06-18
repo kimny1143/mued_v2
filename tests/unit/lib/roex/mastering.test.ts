@@ -221,6 +221,24 @@ describe('parseMasteringResponse failure detection', () => {
     expect(result.error).toBeUndefined();
   });
 
+  it('audit ②: a bare NON-URL string response → failed (not a bogus completed after 220cr)', async () => {
+    // The 220cr is already consumed when we parse; a non-URL string (error text / empty / garbage)
+    // must NOT be stamped 'completed' with a dead finalUrl — it must fail so the route reconciles.
+    for (const bogus of ['Internal Server Error', '', '   ', 'task not found', 'null', 'ftp://x/y.wav']) {
+      const result = await masterFinal(createMockClient(bogus), 'm-x');
+      expect(result.status).toBe('failed');
+      expect(result.finalUrl).toBeUndefined();
+      expect(result.error).toBeDefined();
+    }
+  });
+
+  it('audit ②: a valid http(s) URL string (incl. surrounding whitespace) still → completed', async () => {
+    const result = await masterFinal(createMockClient('  https://cdn.roex.com/mastered.wav  '), 'm-x');
+    expect(result.status).toBe('completed');
+    expect(result.finalUrl).toBe('https://cdn.roex.com/mastered.wav'); // trimmed
+    expect(result.error).toBeUndefined();
+  });
+
   it('detects broadened failure shapes (string / object error, cancel|timeout status)', async () => {
     let r = await pollMasterPreview(createMockClient({ previewMasterTaskResults: { error: 'mastering decode failed' } }), 'm-x');
     expect(r.status).toBe('failed');
