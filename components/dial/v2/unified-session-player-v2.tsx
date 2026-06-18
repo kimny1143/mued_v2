@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef, type RefObject } from 'react';
 import { useMultiTakePlayer, type TakeDef } from '@/hooks/use-multi-take-player';
 import { useMultiTakeAnalyzerData } from '@/hooks/use-multi-take-analyzer-data';
 import { useStemPeaks } from '@/hooks/use-stem-peaks';
@@ -14,6 +14,7 @@ import type { TakeStage } from '@/components/dial/unified-session-player';
 import { StemPanel, type StemData, type StemUpdate } from './stem-panel';
 import { AnalyzerCluster } from './analyzer';
 import { ChatPanelV2, type ChatPanelV2Props } from './chat';
+import { type TransportSnapshot } from './mobile-transport';
 import type { TakeEntry, StemParamChange } from '@/components/dial/unified-session-player';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -188,6 +189,9 @@ export interface UnifiedSessionPlayerV2Props {
   rawLoudnessLufs?: number | null;
   // Chat props — omit to render player-only (no chat column)
   chatProps?: Omit<ChatPanelV2Props, 'className'>;
+  /** FF-1 sticky transport: the player writes its live transport snapshot here each render so a
+   *  sticky bar in the page can drive playback without re-rendering the page. Omit to skip. */
+  transportRef?: RefObject<TransportSnapshot | null>;
 }
 
 // ─── UnifiedSessionPlayerV2 ───────────────────────────────────────────────────
@@ -203,6 +207,7 @@ export function UnifiedSessionPlayerV2({
   stemLabelMap,
   rawLoudnessLufs,
   compact: _compact,
+  transportRef,
 }: UnifiedSessionPlayerV2Props) {
   // Only pass enabled (ready) takes to the player hook
   const takeDefs: TakeDef[] = useMemo(() =>
@@ -404,6 +409,16 @@ export function UnifiedSessionPlayerV2({
   // Active take label for header and analyzer reset
   const activeTakeObj = takes.find((t) => t.id === activeTakeId);
   const activeTakeLabel = activeTakeObj?.sublabel ?? activeTakeObj?.label ?? '';
+
+  // FF-1 sticky transport: mirror the live transport into the parent-provided ref each render (no
+  // dep array → runs after every render, so currentTime stays fresh per frame). Routing through a
+  // ref keeps the 1900-line session page from re-rendering on per-frame currentTime updates — the
+  // sticky <MobileTransport> reads this ref via rAF and re-renders only itself.
+  useEffect(() => {
+    if (transportRef) {
+      transportRef.current = { isReady, isPlaying, currentTime, duration, takeLabel: activeTakeLabel, play, pause, seek };
+    }
+  });
 
   // Derived sampleRate / bitDepth. NEVER fall back to `audioSampleRate`: that is the AudioContext's
   // (device) output rate — decodeAudioData resamples the decoded buffer to it, so it reflects the

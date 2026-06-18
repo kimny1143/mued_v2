@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ChatPanelV2 } from '@/components/dial/v2/chat';
 import { AudioAnalyzerProvider } from '@/hooks/use-audio-analyzer-context';
 import { UnifiedSessionPlayerV2 as UnifiedSessionPlayer } from '@/components/dial/v2/unified-session-player-v2';
+import { MobileTransport, type TransportSnapshot } from '@/components/dial/v2/mobile-transport';
 import type { TakeEntry } from '@/components/dial/unified-session-player';
 import { type DeliveryTarget, DELIVERY_TARGETS, DELIVERY_TARGET_LABELS, DELIVERY_TARGET_LUFS, getLufsGapJudgment } from '@/lib/dial/lufs-presets';
 import { isDialSessionTrackEditable } from '@/lib/dial/session-edit-lock';
@@ -192,6 +193,10 @@ function DialSessionContent() {
   // full screen and switch via a tab bar. Default 'chat' (Hoo dialogue = the primary tool — MUEDial's
   // "director's seat"). On lg+ both panels show side-by-side and this is ignored.
   const [mobileTab, setMobileTab] = useState<'chat' | 'player'>('chat');
+  // FF-1 sticky transport: the player writes its live transport here; the sticky <MobileTransport>
+  // (below the mobile tab bar) reads it via rAF, so playback control stays reachable on scroll and
+  // works from either tab without re-rendering this page.
+  const transportRef = useRef<TransportSnapshot | null>(null);
   const [showChatHistory, setShowChatHistory] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ id: string; role: string; content: string; createdAt: string }[]>([]);
   const [loadingChatHistory, setLoadingChatHistory] = useState(false);
@@ -1827,6 +1832,9 @@ function DialSessionContent() {
                   );
                 })}
               </div>
+              {/* FF-1: sticky play/scrub bar below the tab bar (mobile only) — stays reachable on
+                  scroll and works from either tab (the player stays mounted-but-hidden on Chat). */}
+              <MobileTransport transportRef={transportRef} />
               {/* 2-column layout: Player (left, flex-1) + Chat (right, fixed 440px) — both independently scrollable */}
               <div className="flex gap-3 flex-1 min-h-0">
                 {/* Left: Player — full screen on mobile (Player tab), flex-1 on desktop */}
@@ -1841,6 +1849,7 @@ function DialSessionContent() {
                     initialParams={latestParamChanges}
                     stemLabelMap={stemLabelMap}
                     rawLoudnessLufs={rawLoudnessLufs}
+                    transportRef={transportRef}
                     compact
                   />
                 ) : (
