@@ -1,7 +1,47 @@
 # PWA Phase 0.5 — セッション再入経路 assess（/plan 候補）
 
 状態: **assess（読み取り専用・実装なし）**。kimny iPhone E2E が炙り出した次層 gap の調査。/plan 化は kimny 承認後。
-親: PWA Phase 0（#517・installable+全画面）は prod LIVE で達成・有効。本書はその上の「実際に使える」化。
+親: PWA Phase 0（#517・installable+全画面・**E-1=sign-in standalone 成立で PASS/クローズ**）は prod LIVE。本書はその上の「実際に使える」化。
+
+---
+
+## 0. ★SHARPENED（kimny post-E2E 本丸 + 重要発見）
+
+kimny の本丸言語化: 「**multi-session ユーザーがセッション履歴（ダッシュボード）を見たい・今 dial からその導線が無い**」。これを受けた再精査で**重要発見**:
+
+### 発見: 統合ダッシュボードが既に存在し、dial セッションを一覧している
+`app/dashboard/page.tsx` = **MUEDnote + MUEDial + MUEDear 統合ダッシュボード**（server component）。
+- **dial セッションを userId(Clerk) で一覧**: `:139-153` `db.query.dialSessions.findMany({ where: eq(dialSessions.userId, user.id), orderBy: desc(createdAt), with: tracks/tasks })`。
+- リッチな表示: mode/status/title/trackCount/hasFinal/**hasDownload + daysRemaining(R2 失効カウントダウン)**/resume `href:/dial/session/${id}`（`:272-331`）。
+- `SessionLedger` コンポーネント（`components/dashboard/session-ledger.tsx`）で描画。**`showDialOnly` prop（:98）+ dial-only grouping（:49）が既にある**＝dial 単独ビューに転用可能。
+
+→ **「セッション履歴/ダッシュボード」はデータ層・UI 部品ともに既に構築済**。前 §2 の「dial 一覧 API/UI は無い」は **dial 'サーフェス' に限れば正**だが、**統合 /dashboard は dial を一覧している**（self-correction）。
+
+### 真の gap: dial サーフェスから履歴への導線 + PWA same-origin 整合
+- `/dashboard` は **mued.jp 配信**。**`dial.mued.jp/dashboard` は middleware（`middleware.ts:55`）が mued.jp/sign-in に cross-origin redirect** → dial.mued.jp の PWA same-origin モデルに**合わない**（PWA から踏むと standalone を出て mued.jp へ）。
+- dial トップ nav（`page.tsx:461-474`）に履歴への link は**無い**（Pricing + UserButton/SignIn のみ）。
+
+### 推奨（sharpened）: **dial-scoped セッション履歴ページ（same-origin）**
+- 新 same-origin route（例 `/dial/sessions`）= **既存の dial-by-userId クエリを再利用**（dashboard:139-153 を共有 helper or dial list API に抽出）+ **`SessionLedger showDialOnly`** で描画 → resume も dial.mued.jp に留まる＝**PWA 内で完結**（cross-origin leave なし）。
+- dial nav（signed-in 時）に「履歴 / My Sessions」link 追加。
+- **E-1 で Clerk standalone 成立済**ゆえ前提クリア（satellite 不要）。
+- データ層・`SessionLedger`（showDialOnly）が既存ゆえ、**主に same-origin route + nav link + クエリ抽出**＝中規模。
+- guest token 再入は**副次**（multi-session は主にログイン済）。guest fallback (B token 手入力) は後続オプション。
+
+### 代替
+- **(代替B) dial→/dashboard(mued.jp) を link するだけ**: 最小だが cross-origin（PWA を出て mued.jp へ・resume も mued.jp）＝PWA-native でない。multi-session signed-in には技術的に動くが「アプリ内に留まる」目的を外す。
+- **(代替C) middleware で dial.mued.jp/dashboard を redirect せず描画**: 統合 dashboard を dial に載せる = note/ear タブまで来る + routing/layout 大改修。非推奨。
+
+### Tier / scope（/plan 時確定）
+- dial-scoped 履歴ページ: 新 same-origin route + nav link + 既存クエリ抽出（+必要なら read-only list API）。schema 追加なし・auth は既存 `withAuth`/`withDialAuth` 踏襲・**userId 厳格 scope（列挙脆弱性回避）** → **Tier2** 見込。
+- character gate: kimny 実機で「PWA 内で履歴→resume が standalone のまま完結」。
+
+### kimny 確認事項（sharpened・/plan 前）
+1. **dial-scoped 履歴ページ（same-origin・PWA 内完結）** で良いか？ それとも既存 /dashboard への link（cross-origin・最小）で十分か？
+2. 履歴の置き場: dial nav の「履歴」link → 新 `/dial/sessions` ページ、で良いか（or dial トップ内セクション）？
+3. guest token 手入力 (B) は今回スコープ外（後続）で良いか？（multi-session=主にログイン済の前提）
+
+> 以下 §1〜§6 は post-E2E 前の初回 assess（guest token 再入を主軸に置いた版）。iOS 制約（§1）とデータモデル（§2）は引き続き有効。本丸は上記 §0（ログイン済 multi-session 履歴）に shift。
 
 ---
 
