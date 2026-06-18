@@ -371,16 +371,15 @@ export const POST = withDialAuth(async (auth) => {
           (t.taskType === 'final_basic' || t.taskType === 'final_advanced')
           && t.status !== 'failed',
         );
-        const hasMasteringTask = allTasks.some((t) =>
-          t.taskType === 'mastering' && t.status !== 'failed',
-        );
 
-        if (isMasteringPhase && hasMasteringPreview && !hasMasteringTask) {
-          masteringAction = 'request_mastering_final';
-        } else if (!isMasteringPhase && hasCompletedPreview && !hasFinalTask) {
-          // R-1 (Tier3 Phase 1b): never auto-promote text → request_final. A paid Final must be an
-          // explicit user action (the Final button, data-testid dial-chat-generate-final). Mix Check
-          // (not a billable final) keeps its auto-inject so Hoo's "button will appear" UX still works.
+        // R-1b (Tier3 Phase 1b): removed the text → request_mastering_final auto-promote. A paid
+        // mastering commit (220cr) must be an explicit user click — same fail-closed principle as
+        // R-1's request_final. The mastering final button still renders via the normal tool path
+        // (Hoo's request_mastering_final tool call); set_mastering_params auto-inject + the server
+        // guards (above) are unchanged.
+        // R-1 (Tier3 Phase 1b): likewise never auto-promote text → request_final. Mix Check (not a
+        // billable final) keeps its auto-inject so Hoo's "button will appear" UX still works.
+        if (!isMasteringPhase && hasCompletedPreview && !hasFinalTask) {
           if (phase >= 2 && !/ファイナル|確定|final/i.test(text)) {
             action = 'request_mix_check';
           }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectPhase, selectTools, type TaskRecord, type SessionState } from '@/lib/dial/phase';
+import { detectPhase, type TaskRecord, type SessionState } from '@/lib/dial/phase';
 import {
   DIAL_MIX_ACTION_TOOL,
   DIAL_SET_STYLE_TOOL,
@@ -135,31 +135,7 @@ describe('detectPhase', () => {
   });
 });
 
-// ─── selectTools ─────────────────────────────────────────────────────────────
-
-describe('selectTools', () => {
-  it('returns mastering tools when in mastering phase', () => {
-    const tools = selectTools({ isMasteringPhase: true, isOmakase: false });
-    expect(tools).toEqual([DIAL_MASTERING_ACTION_TOOL, DIAL_SET_STYLE_TOOL]);
-  });
-
-  it('returns omakase tool when in omakase mode', () => {
-    const tools = selectTools({ isMasteringPhase: false, isOmakase: true });
-    expect(tools).toEqual([DIAL_OMAKASE_MIX_ACTION_TOOL]);
-  });
-
-  it('returns dialogue tools by default', () => {
-    const tools = selectTools({ isMasteringPhase: false, isOmakase: false });
-    expect(tools).toEqual([DIAL_MIX_ACTION_TOOL, DIAL_SET_STYLE_TOOL]);
-  });
-
-  it('mastering phase takes precedence over omakase', () => {
-    const tools = selectTools({ isMasteringPhase: true, isOmakase: true });
-    expect(tools).toEqual([DIAL_MASTERING_ACTION_TOOL, DIAL_SET_STYLE_TOOL]);
-  });
-});
-
-// ─── selectToolsByState (Phase 1b read-side replacement for getDialTools) ──────
+// ─── selectToolsByState (Phase 1b read-side — the sole tool gate) ─────────────
 
 describe('selectToolsByState', () => {
   it('mastering tool-phase → set_style + mastering tool', () => {
