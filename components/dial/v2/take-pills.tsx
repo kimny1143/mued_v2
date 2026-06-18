@@ -168,7 +168,7 @@ export function TakeHistory({ open, takes, activeTake, activeSub, onPick, onTogg
       </button>
 
       {open && (
-        <div className="grid grid-cols-3 divide-x divide-[color:var(--line-soft)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-[color:var(--line-soft)]">
           {takes.map((take) => (
             <div key={take.key} className="p-2">
               <div className="flex items-center justify-between mb-1.5 px-1">

@@ -363,7 +363,9 @@ export function AnalyzerCluster({ data, activeTakeLabel, activeSubLabel }: Analy
         </div>
       </header>
 
-      <div className="grid" style={{ gridTemplateColumns: '1fr 92px 280px 180px' }}>
+      {/* Mobile (lg-): stack the 4 panels vertically (the fixed ~552px row overflowed 390px).
+          Desktop (lg+): the original 4-column meter row. */}
+      <div className="grid grid-cols-1 lg:[grid-template-columns:1fr_92px_280px_180px]">
         {/* Spectrum */}
         <div className="border-r border-[color:var(--line-soft)] p-3">
           <div className="flex items-center justify-between mb-1.5">
