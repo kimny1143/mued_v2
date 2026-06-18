@@ -89,6 +89,36 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://dial.mued.jp/",
   },
+  // PWA (Phase 0): installable only under /dial (i.e. dial.mued.jp). The root layout
+  // (mued.jp marketing) intentionally has no manifest, so mued.jp stays non-installable.
+  // Service worker is intentionally NOT registered in Phase 0 — iOS Add-to-Home-Screen
+  // does not require one, and a stale SW would be a liability for a dynamic app.
+  manifest: "/dial.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "MUEDial",
+    // "black" (not "black-translucent"): reserves the iOS status-bar area so content
+    // starts below it — the dial top tab bar (added in #509) is never obscured. The
+    // black bar blends with the near-black dial UI. True full-bleed-behind-status-bar
+    // would need safe-area-inset CSS; deferred to a later touch.
+    statusBarStyle: "black",
+  },
+  // Next 16 emits the standardized <meta name="mobile-web-app-capable"> for appleWebApp.capable
+  // and no longer emits the legacy apple-prefixed tag. Modern iOS honors the manifest's
+  // display:standalone, but we add the legacy tag explicitly as a zero-cost belt-and-suspenders
+  // so standalone launch is guaranteed across older iOS versions too.
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/dial-icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/dial-icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon-180.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   openGraph: {
     title: "MUEDial — 宅録・DTMの仕上げをAIと。",
     description:

@@ -1,0 +1,35 @@
+{
+  "id": "/",
+  "name": "MUEDial — AIミキシング・マスタリング",
+  "short_name": "MUEDial",
+  "description": "ステムをアップロードしてAIと話すだけ。宅録・DTM向けAIミキシング・マスタリング。 | Upload stems, chat with AI, get a pro-quality mix.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0f0f0f",
+  "lang": "ja",
+  "dir": "ltr",
+  "categories": ["music", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/dial-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/dial-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/dial-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
