@@ -3,10 +3,27 @@ import type { MasteringPreviewRequest, MasteringResult } from './types';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+/** True only for a well-formed http(s) URL — used to validate a bare-string mastering response. */
+function isHttpUrl(value: string): boolean {
+  try {
+    const u = new URL(value.trim());
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 function parseMasteringResponse(raw: unknown): MasteringResult {
-  // Final mastering can return a dict or a plain string URL
+  // Final mastering can return a dict OR a plain string URL. Validate the string is actually an
+  // http(s) URL before treating it as a completed deliverable (audit ②): the 220cr is already
+  // consumed by the time we parse, so a bare error / empty / garbage string stamped 'completed'
+  // with a bogus finalUrl would surface a broken download AS SUCCESS. A non-URL string → failed,
+  // so the route's existing failure path reconciles instead of delivering a dead link.
   if (typeof raw === 'string') {
-    return { taskId: '', status: 'completed', finalUrl: raw };
+    const trimmed = raw.trim();
+    return isHttpUrl(trimmed)
+      ? { taskId: '', status: 'completed', finalUrl: trimmed }
+      : { taskId: '', status: 'failed', error: 'RoEx mastering returned a non-URL string response' };
   }
 
   const top = raw as Record<string, unknown>;
