@@ -477,11 +477,32 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
       const take = takesRef.current.find((t) => t.id === takeId);
       if (!take) return;
       startedTakes.add(takeId);
-      takeDecodeCounts.set(takeId, { done: 0, success: 0, total: Object.keys(take.stemUrls).length });
+      const stemEntries = Object.entries(take.stemUrls);
+
+      // 0-stems guard. A take with no stem URLs would fire the decode loop zero times, so
+      // onStemDecoded never runs and `counts.done === counts.total` is never evaluated → status
+      // sticks on 'decoding' forever → isReady=false → permanent spinner (the same failure class as
+      // the Yuu multi-stem hang, reached from the empty-set edge instead). Fail fast to 'error' so
+      // the existing per-take error-pill / transport-retry path takes over. A completed take should
+      // never reach the player with zero stems — console.warn so a persistent 0-stems take is
+      // observable and can be escalated to an upstream (session/task wiring) investigation.
+      if (stemEntries.length === 0) {
+        console.warn(
+          `[dial:decode] take ${takeId.slice(-8)} (${take.label}) has 0 stem URLs — marking 'error' (no audio to decode)`,
+        );
+        setStatus(takeId, 'error');
+        if (takeId === activeTakeIdRef.current) {
+          setIsDecoding(false);
+          setDecodeProgress({ done: 0, total: 0 });
+        }
+        return;
+      }
+
+      takeDecodeCounts.set(takeId, { done: 0, success: 0, total: stemEntries.length });
       setStatus(takeId, 'decoding');
       if (takeId === activeTakeIdRef.current) {
         setIsDecoding(true);
-        setDecodeProgress({ done: 0, total: Object.keys(take.stemUrls).length });
+        setDecodeProgress({ done: 0, total: stemEntries.length });
         // Stall telemetry: surface a player that never reaches ready (detection layer).
         const stall = setTimeout(() => {
           if (cancelled) return;
@@ -496,7 +517,7 @@ export function useMultiTakePlayer(takes: TakeDef[]): UseMultiTakePlayerReturn {
         }, PLAYER_STALL_MS);
         stallTimers.set(takeId, stall);
       }
-      for (const [name, url] of Object.entries(take.stemUrls)) {
+      for (const [name, url] of stemEntries) {
         decodeStem(takeId, name, url).catch(() => {});
       }
     };

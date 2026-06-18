@@ -263,6 +263,26 @@ describe('useMultiTakePlayer — decode/playback stop-bleed', () => {
     expect(result.current.activeTakeId).toBe('');
   });
 
+  it('a take with 0 stem URLs → error (NOT a perpetual decoding spinner) + warns for observability', async () => {
+    // A take that reaches the player with no stems would fire the decode loop zero times, so
+    // onStemDecoded never runs and the per-take status sticks on 'decoding' forever → isReady=false
+    // → permanent spinner. The 0-stems guard must fail it fast to 'error' (and warn so a persistent
+    // 0-stems take is detectable for upstream investigation).
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const EMPTY: TakeDef = { id: 'empty-x', label: 'MIXED', stemUrls: {} };
+    const { result } = renderHook(() => useMultiTakePlayer([EMPTY]));
+    await flush();
+
+    expect(result.current.activeTakeId).toBe('empty-x');
+    expect(result.current.activeTakeStatus).toBe('error');
+    expect(result.current.isReady).toBe(false);
+    expect(result.current.isDecoding).toBe(false); // settled — not spinning forever
+    // No fetch was attempted (there were no stem URLs to fetch).
+    expect((globalThis.fetch as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('0 stem URLs'));
+    warnSpy.mockRestore();
+  });
+
   // ── PR-B: reconcile take changes in place, no remount ───────────────────────
   it('reconciles a newly-added take WITHOUT remounting (single AudioContext) and auto-shows it', async () => {
     const { result, rerender } = renderHook((tk: TakeDef[]) => useMultiTakePlayer(tk), {
