@@ -462,6 +462,11 @@ export default function DialPage() {
             <Link href="/dial/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors">
               {lp.navPricing}
             </Link>
+            {isSignedIn && (
+              <Link href="/dial/sessions" className="text-sm text-zinc-400 hover:text-white transition-colors">
+                {lp.navHistory}
+              </Link>
+            )}
             {isSignedIn ? (
               <UserButton />
             ) : (
