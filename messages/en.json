@@ -1444,7 +1444,8 @@
       "readinessBannerTitle": "Are your stems mix-ready?",
       "readinessBannerDesc": "A quick 4-question self-check — then join the waitlist.",
       "readinessBannerCta": "Join the waitlist",
-      "previewUpdatedBadge": "Preview updated"
+      "previewUpdatedBadge": "Preview updated",
+      "navHistory": "History"
     },
     "freeCampaign": {
       "badge": "15 spots · Free",
@@ -1730,6 +1731,19 @@
       "removeReference": "Remove reference",
       "chatMessages": "Chat messages",
       "processingSpinner": "Processing"
+    },
+    "history": {
+      "title": "Session history",
+      "back": "MUEDial",
+      "loading": "Loading…",
+      "signInTitle": "Sign in to see your sessions",
+      "signInBody": "Sign in to list and resume your past mixes and masters.",
+      "signInCta": "Sign in",
+      "guestNote": "Guest? Open your session directly from the link you were given.",
+      "empty": "No sessions yet.",
+      "emptyCta": "Start your first mix",
+      "error": "Couldn't load your history.",
+      "retry": "Retry"
     }
   },
   "marketingConsent": {
