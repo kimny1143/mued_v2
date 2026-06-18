@@ -1730,7 +1730,8 @@
       "solo": "Solo",
       "removeReference": "Remove reference",
       "chatMessages": "Chat messages",
-      "processingSpinner": "Processing"
+      "processingSpinner": "Processing",
+      "errorAnalysis": "Analysis failed. Please try again."
     },
     "history": {
       "title": "Session history",
