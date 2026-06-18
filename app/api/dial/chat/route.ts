@@ -190,8 +190,10 @@ export const POST = withDialAuth(async (auth) => {
           session.musicalStyle,
         );
         promptInput.comparisonResult = comparison;
-      } catch {
-        // Comparison is best-effort — don't block chat if it fails
+      } catch (err) {
+        // Comparison is best-effort — don't block chat if it fails, but log for observability
+        // (PR-R3b: was a fully silent swallow — a persistently-failing comparison left no trace).
+        console.warn('[dial/chat] reference comparison failed (non-blocking):', err instanceof Error ? err.message : err);
       }
     }
 

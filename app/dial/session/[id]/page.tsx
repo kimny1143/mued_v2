@@ -633,15 +633,24 @@ function DialSessionContent() {
   const runAnalysis = async () => {
     if (!session || analyzing) return;
     setAnalyzing(true);
+    setError(null);
     try {
-      await fetch('/api/dial/analyze', {
+      const res = await fetch('/api/dial/analyze', {
         method: 'POST',
         headers,
         body: JSON.stringify({ sessionId: session.id }),
       });
+      // PR-R3b (守り #1): surface analyze failure instead of swallowing it. The previous
+      // catch{} + missing res.ok check left a failed analysis with no user feedback or retry —
+      // the user couldn't tell analysis failed vs was just cached.
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({} as { error?: string }));
+        setError(data.error || t.dial.session.errorAnalysis);
+        return;
+      }
       await fetchSession();
     } catch {
-      // Analysis failure is non-blocking
+      setError(t.dial.session.errorAnalysis);
     } finally {
       setAnalyzing(false);
     }
