@@ -1731,7 +1731,8 @@
       "removeReference": "Remove reference",
       "chatMessages": "Chat messages",
       "processingSpinner": "Processing",
-      "errorAnalysis": "Analysis failed. Please try again."
+      "errorAnalysis": "Analysis failed. Please try again.",
+      "longWait": "Still working — this is taking longer than usual. Larger or more complex mixes can need extra time. It'll appear here automatically when it's ready; no need to refresh."
     },
     "history": {
       "title": "Session history",

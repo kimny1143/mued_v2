@@ -15,6 +15,7 @@ import { type DeliveryTarget, DELIVERY_TARGETS, DELIVERY_TARGET_LABELS, DELIVERY
 import { isDialSessionTrackEditable } from '@/lib/dial/session-edit-lock';
 import { buildSessionTakes, taskStreamUrl } from '@/lib/dial/session-takes';
 import { getUnusedCompletedPreview, withoutIntermediatePreviews, paramsSignature } from '@/lib/dial/iteration-orchestration';
+import { isDialLongWait } from '@/lib/dial/processing-long-wait';
 
 /** Convert InstrumentGroup enum to short DAW-style label: BASS_GROUP → BASS */
 function toShortLabel(group: string): string {
@@ -1982,18 +1983,31 @@ function DialSessionContent() {
                     }
                   })();
 
+                  // PREVIEW-10: once a render runs past its prod-p90 threshold (NOT a fail —
+                  // reassurance only; the wall-clock fail is the far-larger backstop), surface a
+                  // "still working, it'll appear automatically" line so the long tail of healthy-but-
+                  // slow jobs doesn't read as stuck and get abandoned/refreshed.
+                  const longWait = isDialLongWait(activeType, elapsedSeconds);
+
                   return (
-                    <div data-testid="dial-processing-banner" className="mb-2 px-4 py-3 bg-amber-900/20 border border-amber-800/40 rounded-xl flex items-center gap-3">
-                      <div className="h-4 w-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" role="status" />
-                      <div className="text-sm flex-1">
-                        <span className="text-amber-300 font-medium">{label}</span>
-                        {estimate && (
-                          <span className="text-zinc-500 ml-2 text-xs">
-                            est. {estimate}
-                          </span>
-                        )}
+                    <div data-testid="dial-processing-banner" className="mb-2 px-4 py-3 bg-amber-900/20 border border-amber-800/40 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="h-4 w-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin shrink-0" role="status" />
+                        <div className="text-sm flex-1">
+                          <span className="text-amber-300 font-medium">{label}</span>
+                          {estimate && (
+                            <span className="text-zinc-500 ml-2 text-xs">
+                              est. {estimate}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-zinc-500 text-xs font-mono tabular-nums">{elapsed}</span>
                       </div>
-                      <span className="text-zinc-500 text-xs font-mono tabular-nums">{elapsed}</span>
+                      {longWait && (
+                        <p data-testid="dial-processing-long-wait" className="mt-2 text-xs leading-relaxed text-zinc-400">
+                          {t.dial.session.longWait}
+                        </p>
+                      )}
                     </div>
                   );
                 })()}
