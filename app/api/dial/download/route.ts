@@ -28,6 +28,7 @@ import { withDialAuth } from '@/lib/middleware/with-dial-auth';
 import { verifyDialTaskReadAccess, verifyDialSessionReadAccess } from '@/lib/middleware/dial-ownership';
 import { apiValidationError, apiNotFound, apiServerError } from '@/lib/api-response';
 import { createRoExClient, pollMixPreview, pollMixFinal, pollMasterPreview } from '@/lib/roex';
+import { isR2Source, shouldRefreshR2Bookkeeping, R2_EXPIRY_MS } from '@/lib/dial/r2-download-recovery';
 
 // Allow longer duration for large WAV file streaming
 export const maxDuration = 120;
@@ -218,6 +219,19 @@ export const GET = withDialAuth(async (auth) => {
 
     let sourceRes = await fetch(sourceUrl, fetchOpts);
 
+    // PR-R2a (守り #1): R2 objects persist (workers/dial-r2 `/copy` = put, no TTL), so a present
+    // r2FinalUrl is normally live even past the bookkeeping r2ExpiresAt. But if the R2 worker returns
+    // a miss/non-ok (object never copied or removed), fall back to the GCS finalUrl/previewUrl so the
+    // ExpiredToken recovery below can re-poll RoEx (free same-task re-retrieve) when GCS is stale.
+    // Seals "completed but download broken" regardless of the R2 object lifecycle (A/B/C).
+    if (!sourceRes.ok && isR2Source(taskForRefresh, sourceUrl)) {
+      const gcsUrl = taskForRefresh!.finalUrl || taskForRefresh!.previewUrl;
+      if (gcsUrl && gcsUrl !== sourceUrl) {
+        sourceUrl = gcsUrl;
+        sourceRes = await fetch(sourceUrl, fetchOpts);
+      }
+    }
+
     // GCS returns 400 with <Code>ExpiredToken</Code> when presigned URL has expired (24-48h).
     // Re-poll RoEx for fresh URLs, update DB, and retry once.
     if (!sourceRes.ok && (sourceRes.status === 400 || sourceRes.status === 403) && taskForRefresh) {
@@ -237,6 +251,22 @@ export const GET = withDialAuth(async (auth) => {
           return new NextResponse('Audio link expired. Please reload the session.', { status: 410 });
         }
       }
+    }
+
+    // PR-R2a: R2 objects persist, so r2ExpiresAt is just the daysRemaining bookkeeping. When the
+    // owner streams a still-live R2 deliverable whose bookkeeping is near/past expiry, refresh it so
+    // returning users keep an honest countdown. (The R2-miss fallback above backstops the download
+    // if the object is ever actually gone, so this stays safe even under a CF lifecycle rule.) Admin
+    // reads stay non-mutating. Best-effort: never fail the download on the bookkeeping write.
+    if (
+      sourceRes.ok && !viaAdmin && taskForRefresh &&
+      isR2Source(taskForRefresh, sourceUrl) &&
+      shouldRefreshR2Bookkeeping(taskForRefresh.r2ExpiresAt, new Date())
+    ) {
+      await db.update(dialTasks)
+        .set({ r2ExpiresAt: new Date(Date.now() + R2_EXPIRY_MS) })
+        .where(eq(dialTasks.id, taskForRefresh.id))
+        .catch(() => {});
     }
 
     if (!sourceRes.body) {
