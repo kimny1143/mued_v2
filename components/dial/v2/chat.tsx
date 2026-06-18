@@ -218,7 +218,7 @@ function ParamChangeCard({
             onClick={onGenerate}
             disabled={generating}
             data-testid={isFinal ? 'dial-chat-generate-final' : isMasteringFinal ? 'dial-chat-generate-mastering-final' : 'dial-chat-generate-mix-check'}
-            className="w-full px-3 py-2 rounded-[3px] text-[11px] mono font-medium tracking-wide transition-colors disabled:opacity-40"
+            className="w-full px-3 py-2 min-h-[44px] lg:min-h-0 rounded-[3px] text-[12px] lg:text-[11px] mono font-medium tracking-wide transition-colors disabled:opacity-40"
             style={
               isFinal || isMasteringFinal
                 ? { background: 'var(--emerald)', color: '#081a0f' }
@@ -602,7 +602,8 @@ export function ChatPanelV2({
             disabled={sending || tracks.length === 0}
             aria-label={t.dial.chat.placeholder}
             data-testid="dial-chat-input"
-            className="flex-1 px-2.5 py-1.5 text-[12px] rounded-[3px] bevel-in outline-none disabled:opacity-40"
+            // Mobile: 16px font prevents iOS Safari auto-zoom on focus; ≥44px tap height. Desktop unchanged.
+            className="flex-1 px-3 py-2.5 text-[16px] min-h-[44px] lg:px-2.5 lg:py-1.5 lg:text-[12px] lg:min-h-0 rounded-[3px] bevel-in outline-none disabled:opacity-40"
             style={{
               background: 'var(--ink-2)',
               border: '1px solid var(--line)',
@@ -615,7 +616,7 @@ export function ChatPanelV2({
             aria-label={t.dial.chat.send}
             data-testid="dial-chat-send"
             active={canSend}
-            className="px-3"
+            className="px-3 min-h-[44px] lg:min-h-0"
           >
             {sending ? <IconSpinner size={10} /> : <IconSend size={10} />}
           </Btn>

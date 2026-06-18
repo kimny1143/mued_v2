@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import Script from "next/script";
 import { Geist_Mono, JetBrains_Mono, Sora } from "next/font/google";
@@ -29,6 +29,14 @@ const sora = Sora({
   weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
+
+// Explicit mobile viewport (was relying on the Next.js default). width=device-width + initialScale=1
+// makes responsive breakpoints apply correctly on iPhone Safari. maximumScale is intentionally
+// omitted so users can still pinch-zoom (accessibility).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "MUEDnote - 制作のそばに、いつもHoo。",

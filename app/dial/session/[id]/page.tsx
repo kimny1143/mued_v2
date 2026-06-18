@@ -144,7 +144,7 @@ function DialSessionContent() {
   const searchParams = useSearchParams();
   const sessionId = params.id as string;
   const { isSignedIn, getToken } = useAuth();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -188,6 +188,10 @@ function DialSessionContent() {
 
   // Take folding — show only latest 3, collapse older
   const [showOlderTakes, setShowOlderTakes] = useState(false);
+  // Mobile (lg-) tab: the session screen is a single-column device, so player + chat each take the
+  // full screen and switch via a tab bar. Default 'chat' (Hoo dialogue = the primary tool — MUEDial's
+  // "director's seat"). On lg+ both panels show side-by-side and this is ignored.
+  const [mobileTab, setMobileTab] = useState<'chat' | 'player'>('chat');
   const [showChatHistory, setShowChatHistory] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ id: string; role: string; content: string; createdAt: string }[]>([]);
   const [loadingChatHistory, setLoadingChatHistory] = useState(false);
@@ -1695,7 +1699,7 @@ function DialSessionContent() {
   // ─── Layout ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className={showChat ? 'h-screen overflow-hidden flex flex-col bg-zinc-950 text-white' : 'min-h-screen bg-zinc-950 text-white'}>
+    <div className={showChat ? 'h-[100dvh] overflow-hidden flex flex-col bg-zinc-950 text-white' : 'min-h-screen bg-zinc-950 text-white'}>
       <div className={showChat ? 'flex-1 min-h-0 flex flex-col px-3 pt-3' : hasFinal ? 'w-full px-3 py-3' : 'mx-auto max-w-3xl px-6 py-12'}>
         {/* Header */}
         <div className={showChat ? 'flex-shrink-0 mb-2' : 'mb-8'}>
@@ -1796,10 +1800,37 @@ function DialSessionContent() {
 
         {session.paymentStatus === 'paid' && !hasFinal && (
           showChat ? (
-            // 2-column layout: Player (left, flex-1) + Chat (right, fixed 440px) — both independently scrollable
-            <div className="flex gap-3 flex-1 min-h-0">
-              {/* Left: Player — fills remaining width, independently scrollable */}
-              <div className="flex-1 min-w-0 overflow-y-auto chat-scroll">
+            // Mobile (lg-): a tab bar switches between full-screen Chat (default, primary) and Player.
+            // Desktop (lg+): tab bar hidden, both panels side-by-side (Player flex-1 + Chat 440px) — no regression.
+            <>
+              {/* Mobile tab bar — Chat (primary) / Player */}
+              <div className="lg:hidden shrink-0 flex gap-1.5 mb-2" role="tablist" aria-label={locale === 'en' ? 'Session view' : 'セッション表示'}>
+                {([
+                  { key: 'chat' as const, label: locale === 'en' ? 'Chat' : '対話' },
+                  { key: 'player' as const, label: locale === 'en' ? 'Player' : 'プレイヤー' },
+                ]).map((tab) => {
+                  const active = mobileTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => setMobileTab(tab.key)}
+                      className="flex-1 min-h-[44px] rounded-[var(--radius-md)] text-sm font-medium border transition-colors"
+                      style={active
+                        ? { background: 'var(--amber-glow)', color: 'var(--amber)', borderColor: 'var(--amber-dim)' }
+                        : { background: 'var(--ink-2)', color: 'var(--fg-2)', borderColor: 'var(--line)' }}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {/* 2-column layout: Player (left, flex-1) + Chat (right, fixed 440px) — both independently scrollable */}
+              <div className="flex gap-3 flex-1 min-h-0">
+                {/* Left: Player — full screen on mobile (Player tab), flex-1 on desktop */}
+                <div className={`${mobileTab === 'player' ? 'block' : 'hidden'} lg:block flex-1 min-w-0 overflow-y-auto chat-scroll`}>
                 {/* Unified Player */}
                 {sessionTakes.length > 0 ? (
                   <UnifiedSessionPlayer
@@ -1892,8 +1923,8 @@ function DialSessionContent() {
                 {trackManagerSection}
               </div>
 
-              {/* Right: Chat — fixed 440px, independently scrollable */}
-              <div className="w-[440px] shrink-0 flex flex-col overflow-y-auto chat-scroll">
+                {/* Right: Chat — full screen on mobile (Chat tab, default), fixed 440px on desktop */}
+                <div className={`${mobileTab === 'chat' ? 'flex' : 'hidden'} lg:flex w-full lg:w-[440px] shrink-0 flex-col overflow-y-auto chat-scroll`}>
                 {/* Processing banner — visible during client-side API call (mixGenerating/previewing) or DB-driven processing */}
                 {(mixGenerating || previewing || isProcessing) && (() => {
                   const trackCount = session.tracks.length;
@@ -1968,6 +1999,7 @@ function DialSessionContent() {
                 </div>
               </div>
             </div>
+            </>
           ) : null
         )}
 
