@@ -1370,36 +1370,14 @@ ${input.hasPreview
   ].join('\n\n---\n\n');
 }
 
-export function getDialTools(input: Pick<DialPromptInput, 'mode' | 'isMasteringPhase' | 'locale'>) {
-  const en = input.locale === 'en';
-  if (input.isMasteringPhase) {
-    return [
-      en ? DIAL_SET_STYLE_TOOL_EN : DIAL_SET_STYLE_TOOL,
-      en ? DIAL_MASTERING_ACTION_TOOL_EN : DIAL_MASTERING_ACTION_TOOL,
-    ];
-  }
-  if (input.mode === 'omakase') {
-    return [
-      en ? DIAL_SET_STYLE_TOOL_EN : DIAL_SET_STYLE_TOOL,
-      en ? DIAL_OMAKASE_MIX_ACTION_TOOL_EN : DIAL_OMAKASE_MIX_ACTION_TOOL,
-    ];
-  }
-  return [
-    en ? DIAL_SET_STYLE_TOOL_EN : DIAL_SET_STYLE_TOOL,
-    en ? DIAL_MIX_ACTION_TOOL_EN : DIAL_MIX_ACTION_TOOL,
-    en ? DIAL_MASTERING_ACTION_TOOL_EN : DIAL_MASTERING_ACTION_TOOL,
-  ];
-}
-
 /**
- * State-driven tool selection — the read-side replacement for `getDialTools` (Tier3 Phase 1b).
- * Gates Hoo's tools by the explicit session `state` (+ mode / masteringMode) via
- * `isMasteringToolPhase`, instead of the inferred `isMasteringPhase` boolean.
+ * State-driven tool selection (Tier3 Phase 1b read-side) — the sole MUEDial tool gate, wired into
+ * the chat route (PR #501). Gates Hoo's tools by the explicit session `state` (+ mode / masteringMode)
+ * via `isMasteringToolPhase`, replacing the retired task-inferred `getDialTools`/`isMasteringPhase`.
  *
- * Difference from getDialTools: the mix dialogue branch does NOT expose the mastering tool
- * (getDialTools :1389 leaked DIAL_MASTERING_ACTION_TOOL into the pure mix phase — TRAP 2). The
- * mastering tool is available only in the mastering tool-phase. Dormant until the chat route + UI
- * switch their reads to `state`. See docs/dial/tier3-1b-readside-design-20260617.md.
+ * The mix dialogue branch deliberately does NOT expose the mastering tool — it is offered only in the
+ * mastering tool-phase (fixing the old getDialTools leak of DIAL_MASTERING_ACTION_TOOL into the pure
+ * mix phase, TRAP 2). See docs/dial/tier3-1b-readside-design-20260617.md.
  */
 export function selectToolsByState(input: {
   state: DialState;

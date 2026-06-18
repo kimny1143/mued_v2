@@ -1,15 +1,10 @@
 /**
- * MUEDial Phase Detection & Tool Selection
+ * MUEDial Phase Detection
  *
- * Pure functions extracted from app/api/dial/chat/route.ts for testability.
+ * Pure phase-inference functions extracted from app/api/dial/chat/route.ts for testability.
+ * Tool selection now lives in selectToolsByState (lib/ai/prompts/dial.ts), gated by the explicit
+ * session state (Tier3 Phase 1b read-side) — the legacy selectTools/getDialTools were retired.
  */
-
-import {
-  DIAL_MIX_ACTION_TOOL,
-  DIAL_SET_STYLE_TOOL,
-  DIAL_OMAKASE_MIX_ACTION_TOOL,
-  DIAL_MASTERING_ACTION_TOOL,
-} from '@/lib/ai/prompts/dial';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -90,22 +85,4 @@ export function detectPhase(session: SessionState, tasks: TaskRecord[]): PhaseRe
     masteringPreviewCount,
     mixFinalTask,
   };
-}
-
-// ─── Tool Selection ─────────────────────────────────────────────────────────
-
-/**
- * Select the appropriate tools based on mode and mastering state.
- */
-export function selectTools(opts: {
-  isMasteringPhase: boolean;
-  isOmakase: boolean;
-}) {
-  if (opts.isMasteringPhase) {
-    return [DIAL_MASTERING_ACTION_TOOL, DIAL_SET_STYLE_TOOL];
-  }
-  if (opts.isOmakase) {
-    return [DIAL_OMAKASE_MIX_ACTION_TOOL];
-  }
-  return [DIAL_MIX_ACTION_TOOL, DIAL_SET_STYLE_TOOL];
 }
