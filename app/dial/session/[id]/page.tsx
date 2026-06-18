@@ -1703,8 +1703,13 @@ function DialSessionContent() {
 
   // ─── Layout ─────────────────────────────────────────────────────────────────
 
+  // Root shell height: portrait uses 100dvh (#509's deliberate choice). landscape:h-[100svh]
+  // overrides it in landscape — in iOS Safari landscape the dynamic toolbar makes the visible
+  // viewport shorter than 100dvh, so a 100dvh overflow-hidden shell clips the bottom of the
+  // player scroll region (kimny Safari-landscape report). svh = the stable toolbar-shown height,
+  // so the shell always fits the visible area. PWA standalone has no toolbar → effectively a no-op.
   return (
-    <div className={showChat ? 'h-[100dvh] overflow-hidden flex flex-col bg-zinc-950 text-white' : 'min-h-screen bg-zinc-950 text-white'}>
+    <div className={showChat ? 'h-[100dvh] landscape:h-[100svh] overflow-hidden flex flex-col bg-zinc-950 text-white' : 'min-h-screen bg-zinc-950 text-white'}>
       <div className={showChat ? 'flex-1 min-h-0 flex flex-col px-3 pt-3' : hasFinal ? 'w-full px-3 py-3' : 'mx-auto max-w-3xl px-6 py-12'}>
         {/* Header */}
         <div className={showChat ? 'flex-shrink-0 mb-2' : 'mb-8'}>
