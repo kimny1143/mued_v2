@@ -13,6 +13,7 @@ import {
   isForwardState,
   maxState,
   sessionStateForCompletedTask,
+  isMasteringToolPhase,
 } from '@/lib/dial/session-state';
 
 describe('dial session state machine — transitions (§2)', () => {
@@ -174,5 +175,43 @@ describe('sessionStateForCompletedTask — task completion → target state (wri
     const target = sessionStateForCompletedTask('mastering_preview')!;
     expect(target).toBe('mastering_review');
     expect(isForwardState('uploading', target)).toBe(true);
+  });
+});
+
+describe('isMasteringToolPhase — read-side mastering-tool gate (replaces isMasteringPhase)', () => {
+  it('mix-only session (no masteringMode): never the mastering tool phase', () => {
+    for (const s of DIAL_STATES) {
+      expect(isMasteringToolPhase(s, 'dialogue', null)).toBe(false);
+    }
+  });
+
+  it('mastering-only session (mode=null): any pre-commit state, off once committed', () => {
+    expect(isMasteringToolPhase('uploading', null, 'dialogue')).toBe(true);
+    expect(isMasteringToolPhase('mastering_review', null, 'dialogue')).toBe(true);
+    expect(isMasteringToolPhase('mastered_final', null, 'dialogue')).toBe(false);
+    expect(isMasteringToolPhase('settling', null, 'dialogue')).toBe(false);
+    expect(isMasteringToolPhase('delivered', null, 'dialogue')).toBe(false);
+  });
+
+  it('mix+master session: only AFTER the mix is finalized (mix_final / mastering_review)', () => {
+    // still mixing → no mastering tool
+    expect(isMasteringToolPhase('uploading', 'dialogue', 'dialogue')).toBe(false);
+    expect(isMasteringToolPhase('previewing', 'dialogue', 'dialogue')).toBe(false);
+    expect(isMasteringToolPhase('mix_review', 'dialogue', 'dialogue')).toBe(false);
+    // mix finalized → mastering tool live
+    expect(isMasteringToolPhase('mix_final', 'dialogue', 'dialogue')).toBe(true);
+    expect(isMasteringToolPhase('mastering_review', 'dialogue', 'dialogue')).toBe(true);
+    // master committed → off
+    expect(isMasteringToolPhase('mastered_final', 'dialogue', 'dialogue')).toBe(false);
+    expect(isMasteringToolPhase('delivered', 'dialogue', 'dialogue')).toBe(false);
+  });
+
+  it('TRAP 1: NOT equal to isMasteringState — diverges at mix_final and mastered_final', () => {
+    // mix_final: tool phase TRUE (handoff) but isMasteringState FALSE → naive swap would regress
+    expect(isMasteringToolPhase('mix_final', 'dialogue', 'dialogue')).toBe(true);
+    expect(isMasteringState('mix_final')).toBe(false);
+    // mastered_final: tool phase FALSE (committed) but isMasteringState TRUE → naive swap over-exposes
+    expect(isMasteringToolPhase('mastered_final', 'dialogue', 'dialogue')).toBe(false);
+    expect(isMasteringState('mastered_final')).toBe(true);
   });
 });

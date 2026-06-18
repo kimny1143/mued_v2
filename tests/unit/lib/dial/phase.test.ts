@@ -5,6 +5,7 @@ import {
   DIAL_SET_STYLE_TOOL,
   DIAL_OMAKASE_MIX_ACTION_TOOL,
   DIAL_MASTERING_ACTION_TOOL,
+  selectToolsByState,
 } from '@/lib/ai/prompts/dial';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -155,5 +156,39 @@ describe('selectTools', () => {
   it('mastering phase takes precedence over omakase', () => {
     const tools = selectTools({ isMasteringPhase: true, isOmakase: true });
     expect(tools).toEqual([DIAL_MASTERING_ACTION_TOOL, DIAL_SET_STYLE_TOOL]);
+  });
+});
+
+// ─── selectToolsByState (Phase 1b read-side replacement for getDialTools) ──────
+
+describe('selectToolsByState', () => {
+  it('mastering tool-phase → set_style + mastering tool', () => {
+    const tools = selectToolsByState({ state: 'mastering_review', mode: 'dialogue', masteringMode: 'dialogue' });
+    expect(tools).toEqual([DIAL_SET_STYLE_TOOL, DIAL_MASTERING_ACTION_TOOL]);
+  });
+
+  it('omakase mode (mix phase) → set_style + omakase tool', () => {
+    const tools = selectToolsByState({ state: 'previewing', mode: 'omakase', masteringMode: null });
+    expect(tools).toEqual([DIAL_SET_STYLE_TOOL, DIAL_OMAKASE_MIX_ACTION_TOOL]);
+  });
+
+  it('mix dialogue phase → set_style + mix tool, and NO mastering tool (TRAP 2 / getDialTools :1389 fix)', () => {
+    const tools = selectToolsByState({ state: 'mix_review', mode: 'dialogue', masteringMode: null });
+    expect(tools).toEqual([DIAL_SET_STYLE_TOOL, DIAL_MIX_ACTION_TOOL]);
+    expect(tools).not.toContain(DIAL_MASTERING_ACTION_TOOL);
+  });
+
+  it('mix+master at mix_final → mastering tool live (handoff); at mix_review → still mix tool', () => {
+    expect(selectToolsByState({ state: 'mix_final', mode: 'dialogue', masteringMode: 'dialogue' }))
+      .toEqual([DIAL_SET_STYLE_TOOL, DIAL_MASTERING_ACTION_TOOL]);
+    expect(selectToolsByState({ state: 'mix_review', mode: 'dialogue', masteringMode: 'dialogue' }))
+      .toEqual([DIAL_SET_STYLE_TOOL, DIAL_MIX_ACTION_TOOL]);
+  });
+
+  it('locale=en returns the EN tool variants (distinct objects)', () => {
+    const ja = selectToolsByState({ state: 'mix_review', mode: 'dialogue', masteringMode: null, locale: 'ja' });
+    const en = selectToolsByState({ state: 'mix_review', mode: 'dialogue', masteringMode: null, locale: 'en' });
+    expect(en).not.toEqual(ja);
+    expect(en).not.toContain(DIAL_MIX_ACTION_TOOL); // EN variant is a different object
   });
 });

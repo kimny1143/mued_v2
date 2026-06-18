@@ -168,6 +168,34 @@ export function maxState(a: DialState, b: DialState): DialState {
 }
 
 /**
+ * The window where Hoo should be given the mastering tool — the state-based replacement for the
+ * legacy `isMasteringPhase` boolean (detectPhase / lib/dial/phase.ts), expressed over the explicit
+ * state + session mode. Mode-aware:
+ *   - mix-only session (no masteringMode): never.
+ *   - mastering-only session (mode === null, masteringMode set): any pre-commit state
+ *     (uploading / mastering_review), off once the master is committed.
+ *   - mix+master session (mode set, masteringMode set): only after the mix is finalized
+ *     (mix_final or mastering_review), off once the master is committed.
+ *
+ * Deliberately NOT isMasteringState(): legacy isMasteringPhase spans mix_final → mastering_review and
+ * turns OFF at mastered_final (master committed). A naive isMasteringPhase → isMasteringState swap
+ * would lose the mix→mastering handoff at mix_final and wrongly keep mastering tools at
+ * mastered_final. isMasteringState is for "master committed / past mix" UI flags, not the tool gate.
+ * (Phase 1b read-side — docs/dial/tier3-1b-readside-design-20260617.md TRAP 1.)
+ */
+export function isMasteringToolPhase(
+  state: DialState,
+  mode: string | null,
+  masteringMode: string | null,
+): boolean {
+  if (!masteringMode) return false; // mix-only — never mastering
+  const committed = STATE_RANK[state] >= STATE_RANK['mastered_final'];
+  if (committed) return false;
+  if (mode === null) return true; // mastering-only: any pre-commit state
+  return STATE_RANK[state] >= STATE_RANK['mix_final']; // mix+master: only after the mix is finalized
+}
+
+/**
  * The session state a *completed* task of the given type implies — the render/approval lifecycle
  * point routes/webhook advance to (forward-only via advanceDialSessionState). Independent of
  * session.mode: a mastering-only session's first completed task is mastering_preview, which advances

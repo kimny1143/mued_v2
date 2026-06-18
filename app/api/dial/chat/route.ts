@@ -19,8 +19,9 @@ import { verifyDialSessionOwnership, verifyDialSessionReadAccess } from '@/lib/m
 import { apiSuccess, apiValidationError, apiServerError, apiNotFound } from '@/lib/api-response';
 import { rateLimit } from '@/lib/middleware/rate-limit';
 import { sendHooChat, type HooChatMessage } from '@/lib/ai/providers';
-import { buildDialSystemPrompt, getDialTools, type DialPromptInput } from '@/lib/ai/prompts/dial';
+import { buildDialSystemPrompt, selectToolsByState, type DialPromptInput } from '@/lib/ai/prompts/dial';
 import { detectPhase } from '@/lib/dial/phase';
+import { isMasteringToolPhase, type DialState } from '@/lib/dial/session-state';
 import { syntheticToolResultContent, deriveChatTaskState, textProposesPreview } from '@/lib/dial/chat-tool-results';
 import { createRoExClient, compareMixes } from '@/lib/roex';
 import type { AnalysisResult, ComparisonResult } from '@/lib/roex';
@@ -119,7 +120,18 @@ export const POST = withDialAuth(async (auth) => {
 
     // Detect phase using extracted pure function
     const phaseResult = detectPhase(session, allTasks);
-    const { phase, isMasteringPhase, hasMasteringPreview, masteringPreviewCount, mixFinalTask } = phaseResult;
+    const { phase, hasMasteringPreview, masteringPreviewCount, mixFinalTask } = phaseResult;
+
+    // Tier3 Phase 1b read-side (minimal cut): the mastering gate now reads the explicit, durable
+    // session `state` (isMasteringToolPhase) instead of detectPhase's task-inferred isMasteringPhase.
+    // This is behavior-preserving — isMasteringToolPhase mirrors legacy isMasteringPhase across all
+    // three modes (conductor-verified) — and drives both the mastering prompt and tool gate from the
+    // state column. `phase` (1/2/3) stays on detectPhase for this cut.
+    const isMasteringPhase = isMasteringToolPhase(
+      session.state as DialState,
+      session.mode,
+      session.masteringMode,
+    );
 
     // Check if any completed preview exists (latestTask is ordered by createdAt desc)
     const hasPreview = latestTask?.taskType === 'preview' && latestTask?.status === 'completed'
@@ -249,8 +261,17 @@ export const POST = withDialAuth(async (auth) => {
       }
     }
 
-    // Send to AI with locale-aware tool definitions
-    const tools = getDialTools({ mode: promptInput.mode, isMasteringPhase, locale });
+    // Send to AI with locale-aware tool definitions, gated by the explicit session state.
+    // Pass the RAW session.mode (null for mastering-only) + masteringMode — NOT promptInput.mode
+    // (which coalesces mastering-only's mode to masteringMode) — so isMasteringToolPhase distinguishes
+    // mastering-only from mix+master. Mix dialogue no longer leaks the mastering tool (getDialTools
+    // :1389) — it's offered only in the mastering tool-phase.
+    const tools = selectToolsByState({
+      state: session.state as DialState,
+      mode: session.mode,
+      masteringMode: session.masteringMode,
+      locale,
+    });
 
     const startTime = Date.now();
     // Hoo dialogue runs on Haiku (kimny cost policy). A prior PR (#38) switched this to Sonnet;
@@ -357,8 +378,11 @@ export const POST = withDialAuth(async (auth) => {
         if (isMasteringPhase && hasMasteringPreview && !hasMasteringTask) {
           masteringAction = 'request_mastering_final';
         } else if (!isMasteringPhase && hasCompletedPreview && !hasFinalTask) {
-          if (phase >= 2) {
-            action = /ファイナル|確定|final/i.test(text) ? 'request_final' : 'request_mix_check';
+          // R-1 (Tier3 Phase 1b): never auto-promote text → request_final. A paid Final must be an
+          // explicit user action (the Final button, data-testid dial-chat-generate-final). Mix Check
+          // (not a billable final) keeps its auto-inject so Hoo's "button will appear" UX still works.
+          if (phase >= 2 && !/ファイナル|確定|final/i.test(text)) {
+            action = 'request_mix_check';
           }
         }
       }
