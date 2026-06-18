@@ -22,6 +22,7 @@ import { withRoExRetry } from '@/lib/dial/retry-roex';
 import { getDialBackstopMs, markDialTaskFailedWithReconcile } from '@/lib/dial/task-timeout';
 import { sessionStateForCompletedTask } from '@/lib/dial/session-state';
 import { advanceDialSessionState } from '@/lib/dial/session-state-write';
+import { reservePreviewSlot, submitWithPreviewSlotRefund } from '@/lib/dial/preview-reservation';
 import { db } from '@/db';
 import { dialTracks, dialTasks, dialSessions } from '@/db/schema';
 
@@ -50,14 +51,6 @@ export const POST = withDialAuth(async (auth) => {
     const session = await verifyDialSessionOwnership(sessionId, auth);
     if (!session) {
       return apiNotFound('Session not found');
-    }
-
-    // Omakase preview limit check
-    if (session.mode === 'omakase' && (session.previewCount ?? 0) >= 5) {
-      return apiError('Preview limit reached (max 5). Generate your final mix.', {
-        code: 'PREVIEW_LIMIT',
-        status: 400,
-      });
     }
 
     const tracks = await db.query.dialTracks.findMany({
@@ -97,24 +90,38 @@ export const POST = withDialAuth(async (auth) => {
 
     const roexMusicalStyle = mapMusicalStyle(session.musicalStyle);
 
+    // Atomic reserve (BEFORE the free RoEx submit). One conditional UPDATE enforces the omakase
+    // 5-preview cap AND consumes the slot, so two concurrent POSTs can't both pass a stale `< 5`
+    // read and both submit (the lost-update cap bypass). null = cap already reached → reject.
+    const newPreviewCount = await reservePreviewSlot(db, sessionId);
+    if (newPreviewCount === null) {
+      return apiError('Preview limit reached (max 5). Generate your final mix.', {
+        code: 'PREVIEW_LIMIT',
+        status: 400,
+      });
+    }
+
     const client = createRoExClient();
     // Preview submit is 0cr, so a retry can never double-charge — auto-retry transient RoEx
     // failures (5xx / 429 / network blip) so a one-off upstream hiccup doesn't dead-end the user
     // with INFRA_ERROR (incident 2026-06-15). A non-transient 4xx still propagates immediately.
-    const result = await withRoExRetry(
-      () =>
-        mixPreview(client, {
-          tracks: trackInputs,
-          musicalStyle: roexMusicalStyle as Parameters<typeof mixPreview>[1]['musicalStyle'],
-          returnStems: true,
-          retrieveFxSettings,
-        }),
-      {
-        onRetry: (err, attempt) =>
-          console.warn(
-            `[preview/POST] transient RoEx submit error (attempt ${attempt}), retrying: ${err instanceof Error ? err.message : String(err)}`,
-          ),
-      },
+    // Wrapped so a submit failure refunds the slot just reserved (0cr → no double-charge risk).
+    const result = await submitWithPreviewSlotRefund(db, sessionId, () =>
+      withRoExRetry(
+        () =>
+          mixPreview(client, {
+            tracks: trackInputs,
+            musicalStyle: roexMusicalStyle as Parameters<typeof mixPreview>[1]['musicalStyle'],
+            returnStems: true,
+            retrieveFxSettings,
+          }),
+        {
+          onRetry: (err, attempt) =>
+            console.warn(
+              `[preview/POST] transient RoEx submit error (attempt ${attempt}), retrying: ${err instanceof Error ? err.message : String(err)}`,
+            ),
+        },
+      ),
     );
 
     // Snapshot params used for this preview (for dirty-state comparison UI)
@@ -145,11 +152,10 @@ export const POST = withDialAuth(async (auth) => {
       previewParams,
     }).returning();
 
-    // Update session status + increment preview count
+    // Update session status. previewCount was already incremented atomically by the reserve above.
     await db.update(dialSessions)
       .set({
         status: 'previewing',
-        previewCount: (session.previewCount ?? 0) + 1,
         updatedAt: new Date(),
       })
       .where(eq(dialSessions.id, sessionId));
@@ -164,7 +170,7 @@ export const POST = withDialAuth(async (auth) => {
 
     recordDialEvent({
       sessionId, eventType: 'preview', userId: auth.userId, guestToken: auth.guestToken,
-      mode: session.mode, metadata: { previewCount: (session.previewCount ?? 0) + 1 },
+      mode: session.mode, metadata: { previewCount: newPreviewCount },
     });
 
     return apiSuccess({
