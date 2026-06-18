@@ -129,6 +129,12 @@ export const GET = withDialAuth(async (auth) => {
                 await db.update(dialTasks).set({
                   status: 'completed',
                   previewUrl: result.previewUrl,
+                  // PR-R3 (守り #1): persist stems too — the sibling mix_check/final poll writes
+                  // stemsUrls (below) but this preview-completion path omitted it, so when the
+                  // session GET poll (not the POST/webhook) is what completes a preview, the client
+                  // had no stem URLs → stem decode stalled ("Decoding…" forever). pollMixPreview
+                  // returns stemsUrl regardless of retrieveFxSettings.
+                  stemsUrls: result.stemsUrl ?? null,
                   completedAt: new Date(),
                 }).where(and(eq(dialTasks.id, task.id), ne(dialTasks.status, 'failed')));
 
