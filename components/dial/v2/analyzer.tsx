@@ -363,9 +363,12 @@ export function AnalyzerCluster({ data, activeTakeLabel, activeSubLabel }: Analy
         </div>
       </header>
 
-      {/* Mobile (lg-): stack the 4 panels vertically (the fixed ~552px row overflowed 390px).
-          Desktop (lg+): the original 4-column meter row. */}
-      <div className="grid grid-cols-1 lg:[grid-template-columns:1fr_92px_280px_180px]">
+      {/* Portrait phone (narrow): stack the 4 panels vertically (the fixed ~552px row overflowed
+          390px portrait width). Landscape: phones are ≥667px wide but short (~390px tall) — the
+          vertical STACK overflows that height and clips the lower meters, so use the 4-column row
+          (its ~552px fits the landscape width and collapses to a single panel-height). Desktop
+          (lg+): the original 4-column meter row. */}
+      <div className="grid grid-cols-1 landscape:[grid-template-columns:1fr_92px_280px_180px] lg:[grid-template-columns:1fr_92px_280px_180px]">
         {/* Spectrum */}
         <div className="border-r border-[color:var(--line-soft)] p-3">
           <div className="flex items-center justify-between mb-1.5">
