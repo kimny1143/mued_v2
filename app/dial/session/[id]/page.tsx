@@ -1723,16 +1723,29 @@ function DialSessionContent() {
       <div className={showChat ? 'flex-1 min-h-0 flex flex-col px-3 pt-3' : hasFinal ? 'w-full px-3 py-3' : 'mx-auto max-w-3xl px-6 py-12'}>
         {/* Header */}
         <div className={showChat ? 'flex-shrink-0 mb-2' : 'mb-8'}>
-          <div className="flex items-center justify-between">
-            <h1 className={`font-bold ${showChat ? 'text-xl' : 'text-3xl'}`}>
-              MUED<span className="text-indigo-400">ial</span>
-              <span className={`font-normal text-zinc-400 ml-3 ${showChat ? 'text-sm' : 'text-lg'}`}>
-                {isMasteringPhase || isMasteringOnly
-                  ? 'Mastering'
-                  : `${session.mode === 'omakase' ? 'Omakase' : 'Dialogue'} Mix`}
-              </span>
-            </h1>
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              {/* Always-visible back link — a session must never be a one-way trap (kimny report).
+                  signed-in → /dial/sessions (history; closes the LP↔history↔session loop in-PWA);
+                  guest → /dial (guests have no history list, and /dial/sessions is sign-in-walled). */}
+              <Link
+                href={isSignedIn ? '/dial/sessions' : '/dial'}
+                aria-label={isSignedIn ? t.dial.lp.navHistory : t.dial.history.back}
+                className="inline-flex items-center gap-1 min-h-[44px] -ml-1 pr-1 text-sm text-zinc-400 hover:text-white transition-colors shrink-0"
+              >
+                <span aria-hidden>←</span>
+                <span>{isSignedIn ? t.dial.lp.navHistory : t.dial.history.back}</span>
+              </Link>
+              <h1 className={`font-bold truncate ${showChat ? 'text-xl' : 'text-3xl'}`}>
+                MUED<span className="text-indigo-400">ial</span>
+                <span className={`font-normal text-zinc-400 ml-3 ${showChat ? 'text-sm' : 'text-lg'}`}>
+                  {isMasteringPhase || isMasteringOnly
+                    ? 'Mastering'
+                    : `${session.mode === 'omakase' ? 'Omakase' : 'Dialogue'} Mix`}
+                </span>
+              </h1>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
               {!isMasteringOnly && session.musicalStyle && session.musicalStyle !== 'other' && (
                 <span className="text-xs text-zinc-500 px-2 py-1 bg-zinc-900 rounded-lg">
                   {MUSICAL_STYLES.find((s) => s.value === session.musicalStyle)?.label ?? session.musicalStyle}
