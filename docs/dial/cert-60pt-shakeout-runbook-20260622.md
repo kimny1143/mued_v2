@@ -51,6 +51,13 @@ upload 済 session を使う場合は 4 から。
 - 朗報: F-1 fix 後 full unit suite (correct config) = 1719/1719 green → CI collection を直しても pre-existing failure の洪水は出ない。clean remediation 可能。
 - **推奨 remediation**: `package.json` の `test:unit` を `vitest run --config vitest.config.unit.ts` に変更 (全 101 file / 1719 test を no-Docker で実行)。CI gate 変更ゆえ Tier2/3 = conductor/kimny 判断。F-1 (#558) 着地後に別 PR。
 
+### F-4 (cert-execution 制約) — 60MB WAV stem は browser file_upload 不可
+- 実 separated stems = `Track 2 liberation/` の **9 WAV × 60MB(計 541MB)**。だが claude-in-chrome `file_upload` は **<10MB/call** + source は session-shared folder 限定 → **「UI から実 stem upload」は full mix loop で不可**。小さい音源は 2-mix(mp3)のみ=separated stem でない。
+- **→ 2 つの実行 path**(session 方式と束ねて kimny 判断):
+  - **(A) full mix→master loop**: stem を R2/CDN に pre-host し、`dial_tracks` を r2_url で **pre-seed**(goodwill grant Layer A pattern)→ UI upload 不要・RoEx が URL fetch・full mix も exercise。要 stem hosting + kimny prod-write。
+  - **(B) mastering-only loop**: 小さい 2-mix(`public/audio/demo/*.mp3` 等 <10MB)を upload → master-preview→retrievefinalmaster→DL。**master→DL(embed swap 点)+ concurrency を最小コストで実証**・mix loop は非対象。provisioning 軽量。
+- **推奨**: conductor/Chief の主眼が master→DL + concurrency ゆえ **(B) を Round A/concurrency に**、(A) は full-loop 厚みが要れば追加。kimny の session 方式(i/ii)決定にこの stem 制約を添える。
+
 ## 4. Pass criteria (rubric)
 
 - **及第 65-70**: Phase1b LIVE + full master→DL loop ×1 clean (anomaly 0)。
