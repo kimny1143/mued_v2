@@ -12,8 +12,10 @@
  * Secret hygiene: reads CRYOMIX_API_KEY from env (never printed). Signed download
  * URLs are fetched internally and NEVER logged/printed.
  *
- * Run:  npx tsx --env-file=.env.local scripts/cryo-phase-b.ts --song=1
- *       (inspect output) then  --song=2
+ * Run:  npx tsx --env-file=.env.local scripts/cryo-phase-b.ts --song=1 --confirm-purchase
+ *       (inspect output) then  --song=2 --confirm-purchase
+ * Safety: refuses to run without --confirm-purchase so this committed,
+ * purchase-capable tool cannot fire a real charge by accident.
  */
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -74,9 +76,17 @@ async function freshRun(client: CryoMixClient, song: SongB): Promise<void> {
 }
 
 async function main() {
+  // Safety gate: this script fires a REAL Tier3 purchase. Refuse to run without an
+  // explicit confirmation flag so a committed purchase-capable tool cannot fire by
+  // accident. Pass --confirm-purchase ONLY after explicit in-chat user authorization.
+  if (!process.argv.includes('--confirm-purchase')) {
+    console.error('REFUSED: scripts/cryo-phase-b.ts fires a REAL Cryo purchase (POST /api/api-checkout = Tier3 financial action).');
+    console.error('Re-run with --confirm-purchase ONLY after explicit in-chat user authorization. Aborting.');
+    process.exit(2);
+  }
   const songKey = arg('song');
   if (!songKey || !SONGS[songKey]) {
-    console.error('usage: cryo-phase-b.ts --song=1|2');
+    console.error('usage: cryo-phase-b.ts --song=1|2 --confirm-purchase');
     process.exit(2);
   }
   const song = SONGS[songKey];
