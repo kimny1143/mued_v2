@@ -44,7 +44,7 @@
 
 dsp 課（#174・peer `tk4s16a8`）の**汎用測定リグ `measure_master_fingerprint.py` を流用**（protocol §3「mued が Cryo を**同一指標**で測る」＝独自リグを作らず engine 間で指標を揃える）。Cryo 出力を MUEDsp 署名マスター（norm/clean/loud・`muedsp_cryo_compare_20260622/`）+ raw input と同一リグで並べた。
 
-> ⚠️ **Cryo 行は MP3 デコード由来**（リグは PCM WAV を取るため MP3→f32 WAV にデコードして測定）。**dBTP・PSR・stereo は lossy の影響を受ける**（特に Cryo の dBTP は codec overshoot 込み＝>0 になり得る）。LRA/PLR/crest/tonal は比較的頑健だが厳密でない。**§A の公正な Cryo 指紋は Phase B の WAV**。本表は同一指標で並べた**参考値**。
+> ⚠️ **Cryo 行は MP3 デコード由来**（リグは PCM WAV を取るため MP3→f32 WAV にデコードして測定）。**peak 項を含む指標は lossy overshoot バイアスを受ける**：dBTP（codec overshoot 込み＝>0 になり得る）／PSR／**PLR（=dBTP−LUFS）・crest（=samplePeak−RMS）も peak 項を含むため dBTP バイアスを部分継承＝「半頑健」**（dsp リグ作者 `tk4s16a8` 指摘）。**純粋に頑健（瞬時 peak 非依存）なのは LRA・tonal、energy 側（LUFS/RMS）も頑健**。stereo もデコードの影響を受け得る。**§A の公正な Cryo 指紋は Phase B の WAV**。本表は同一指標で並べた**参考値**。
 
 ### 曲1 — liberation
 
@@ -70,7 +70,7 @@ dsp 課（#174・peer `tk4s16a8`）の**汎用測定リグ `measure_master_finge
 
 **観察（数値の事実のみ・良し悪し判定はしない＝judge は kimny の耳・protocol §B）：**
 - **loudness 着地**：Cryo neutral は両曲とも LUFS-I ≈ **−12.5**（曲1 −12.56 / 曲2 −12.53）＝入力に依らず一定。曲1 では **Cryo ≈ MUEDsp norm（−12.5）**、曲2 では MUEDsp norm（−9.58）の方が大きい＝両者の loudness 関係は曲依存。（初回 ffmpeg ebur128 でも Cryo ≈ −12.5 を確認＝相互整合。）
-- **dynamics**：Cryo は LRA を保持寄り（曲2 9.77＝raw 9.39 をほぼ維持、MUEDsp norm は 5.91 へ圧縮）。PLR/crest も Cryo > MUEDsp norm の傾向。
+- **dynamics（LRA で立論＝瞬時 peak 非依存ゆえ MP3 でも頑健）**：Cryo は LRA 保持寄り（曲2 9.77 ≈ raw 9.39 をほぼ維持、MUEDsp norm は 5.91 へ圧縮）。**PLR/crest も Cryo > MUEDsp norm だが、これらは peak 項を含み MP3 overshoot バイアスを部分継承するため補助的扱い**（dynamics 保持の結論は LRA で立てる）。
 - **true peak**：MUEDsp は norm/clean/loud すべて dBTP ≤ −0.5 に制御。Cryo の dBTP（曲1 +0.65 / 曲2 +0.02）は MP3 overshoot 込み＝参考外。
 - **stereo**：Cryo は Side/Mid 高め（広め）・L/R corr 低め・mono Δ やや大（曲ごと一貫）。
 - ※これらは Phase B WAV で要再測定（MP3 由来の偏りを除去）。同一リグゆえ WAV が揃えば即 engine 横並び可能。
