@@ -32,7 +32,7 @@ upload 済 session を使う場合は 4 から。
 3. Chrome で session を開く → 必要なら stem upload (`docs/sunogen_audio/muedial/multitracks/Track 2 liberation/`)。
 4. Hoo と会話 → mix preview 生成 → 承認 → **mix final** (paid render, RoEx ~数分)。
 5. mastering 要求 → master preview → 承認 → **retrievefinalmaster** (paid render)。
-6. **download** final master (★MUEDsp embed Tier1 swap 点 = ここが clean か確認)。
+6. **download** final master (★MUEDsp embed Tier1 swap 点 = ここが clean か確認)。**★undici watch (F-3/#559)**: master→DL が clean に抜けるか = undici 6.27 bump の実 DL runtime 確証も兼ねる。DL/R2 で 404 / 壊れ / stall が出たら undici regression を疑い即報告(blast radius は @vercel/blob のみ・DL は global fetch ゆえ低リスクだが最終確証点)。
 7. concurrency: A の final render 待ち中に別 tab で B/C の step 4-5 を start (server-side overlap)。
 8. 走行中は別 shell で `... watch <ids>` で task status 遷移を live 観測。
 9. 完走後 `... report <ids>` で delta + COGS + anomaly。
