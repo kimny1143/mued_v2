@@ -56,7 +56,20 @@ upload 済 session を使う場合は 4 から。
 - **→ 2 つの実行 path**(session 方式と束ねて kimny 判断):
   - **(A) full mix→master loop**: stem を R2/CDN に pre-host し、`dial_tracks` を r2_url で **pre-seed**(goodwill grant Layer A pattern)→ UI upload 不要・RoEx が URL fetch・full mix も exercise。要 stem hosting + kimny prod-write。
   - **(B) mastering-only loop**: 小さい 2-mix(`public/audio/demo/*.mp3` 等 <10MB)を upload → master-preview→retrievefinalmaster→DL。**master→DL(embed swap 点)+ concurrency を最小コストで実証**・mix loop は非対象。provisioning 軽量。
-- **推奨**: conductor/Chief の主眼が master→DL + concurrency ゆえ **(B) を Round A/concurrency に**、(A) は full-loop 厚みが要れば追加。kimny の session 方式(i/ii)決定にこの stem 制約を添える。
+- **2026-06-22 conductor 決定: (A) full mix が本来の60点cert**((B) mastering-only は R3/R4/preview path を skip=reliability 核を未検証・rubric「full E2E 1周」不充足ゆえ却下)。kimny 全承認(prod / ~$24 / seed は kimny 適用 / Chrome lock)。
+
+### F-4b (provisioning 制約 — full mix の stem をどう入れるか)
+real RoEx mix は stem を **RoEx GCS(signed URL・prod RoEx key 経由)** か **任意 public `r2_url`**(`resolveTrackUrl` が GCS 失効時 r2_url に fallback=RoEx 消費可)から fetch。local からの pre-host を検証した結果:
+- ❌ **Vercel Blob**: store が private-access → public URL 不可。
+- ❌ **Vercel(public/ deploy)host**: RoEx の GCS IP を Vercel managed DDoS が deny する risk(2026-06-15 webhook incident と同型)→ stem fetch 失敗 risk。
+- ⚠️ **CF R2 直 put**: `wrangler` はあるが未認証(token 失効)・CF token も .env.local になし → kimny の `wrangler login` か CF token が要る。
+- ✅ `dial-r2`(muedial-deliverables)/ `mued-videos` は Cloudflare ゆえ DDoS 問題なし(RoEx fetch 可)だが直 put 経路が上記認証要。
+
+→ **2 provisioning path**:
+  - **(D) UI upload(推奨)**: 空 paid+mastering session を seed(下記 SQL・tracks なし)→ browser-drive で **trim 済(<10MB)stem を UI から upload** → app が real RoEx GCS upload を実施(prod key は app 側)。**hosting infra 不要・最も faithful**。risk=file_upload の <10MB/source 制約 + browser fragility → **upload を最初に test(fail-fast)**。
+  - **(C) wrangler R2 host(fallback)**: kimny `wrangler login` → trim stem を `wrangler r2 object put` で muedial-deliverables へ → `dial-r2 /stream/{key}` public URL → tracks seed(r2_url)。Cloudflare host ゆえ DDoS なし・robust だが kimny login 要。
+- **採用**: (D) を Chrome lock 取得後に試行、upload が通らなければ (C) に fallback。seed SQL は (D) 用=空 session(下記)。
+- **cleanup 必須**(conductor): cert 後に hosted stem(あれば)+ seed test session を delete(kimny 実 stem の trim が public に残らない・顧客データ非混在)。`scripts/cert-provision.ts cleanup` + stem del。
 
 ## 4. Pass criteria (rubric)
 
