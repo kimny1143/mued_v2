@@ -40,30 +40,50 @@
 4. **`MasteringReport.json`**（Cryo 自己分析）も無料応答に含まれる（本 Phase では未取得・Phase B で参照可）。
 5. **purchase 未発火**：スクリプトに purchase 経路が存在しない（構造的保証）。
 
-## 粗 objective（deliverable ④・informational のみ）
+## 客観指紋（deliverable ④・protocol §A・**informational のみ**）
 
-ffmpeg `ebur128 peak=true`。**MP3 は lossy** ゆえ参考値（true peak は codec のインターサンプル overshoot を含む）。**本番 blind A/B は Phase B の WAV**。
+dsp 課（#174・peer `tk4s16a8`）の**汎用測定リグ `measure_master_fingerprint.py` を流用**（protocol §3「mued が Cryo を**同一指標**で測る」＝独自リグを作らず engine 間で指標を揃える）。Cryo 出力を MUEDsp 署名マスター（norm/clean/loud・`muedsp_cryo_compare_20260622/`）+ raw input と同一リグで並べた。
 
-| 曲 | 区分 | Integrated LUFS | LRA (LU) | True peak (dBTP) |
-|----|------|-----------------|----------|------------------|
-| 曲1 liberation | 入力 WAV | −16.4 | 3.7 | −0.6 |
-| 曲1 liberation | **Cryo master MP3** | **−12.5** | 3.1 | +0.7※ |
-| 曲2 2mix | 入力 WAV | −11.1 | 9.3 | +0.6 |
-| 曲2 2mix | **Cryo master MP3** | **−12.5** | 9.8 | 0.0 |
+> ⚠️ **Cryo 行は MP3 デコード由来**（リグは PCM WAV を取るため MP3→f32 WAV にデコードして測定）。**dBTP・PSR・stereo は lossy の影響を受ける**（特に Cryo の dBTP は codec overshoot 込み＝>0 になり得る）。LRA/PLR/crest/tonal は比較的頑健だが厳密でない。**§A の公正な Cryo 指紋は Phase B の WAV**。本表は同一指標で並べた**参考値**。
 
-※曲1 の +0.7 dBTP は MP3 デコードの overshoot 込み（informational）。
+### 曲1 — liberation
 
-**観察（数値の事実のみ・良し悪し判定はしない＝judge は kimny の耳）：**
-- **Cryo neutral master は両曲とも integrated ≈ −12.5 LUFS に着地**（入力 −16.4 でも −11.1 でも同一）。→ Cryo default の loudness target が ≈ −12.5 LUFS である示唆。
-- LRA：曲1 3.7→3.1（やや圧縮）、曲2 9.3→9.8（ほぼ保持）。dynamics を強く潰してはいない。
-- true peak：曲2 は 0.0 dBTP に制御。曲1 の MP3 値は overshoot 込みで参考外。
+| master | LUFS-I | dBTP | PLR | crest | LRA | PSR(med/min) | Side/Mid | L/R corr | mono Δ |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| raw input | -16.40 | -0.60 | 15.79 | 17.81 | 3.95 | 13.48/11.16 | -9.48 | +0.798 | -0.51 |
+| **Cryo (MP3*)** | -12.56 | +0.65 | 13.20 | 14.96 | 3.21 | 12.41/10.81 | -7.21 | +0.681 | -0.90 |
+| MUEDsp norm | -12.49 | -0.89 | 11.60 | 13.82 | 3.82 | 11.81/9.07 | -8.50 | +0.753 | -0.64 |
+| MUEDsp clean | -14.20 | -1.23 | 12.97 | 15.36 | 3.78 | 12.73/10.66 | -8.50 | +0.753 | -0.64 |
+| MUEDsp loud | -9.89 | -0.58 | 9.31 | 11.51 | 2.63 | 8.99/7.19 | -8.45 | +0.751 | -0.65 |
+
+### 曲2 — forMUEDialMater 2mix
+
+| master | LUFS-I | dBTP | PLR | crest | LRA | PSR(med/min) | Side/Mid | L/R corr | mono Δ |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| raw input | -11.14 | +0.59 | 11.73 | 13.45 | 9.39 | 10.83/8.40 | -10.58 | +0.839 | -0.52 |
+| **Cryo (MP3*)** | -12.53 | +0.02 | 12.54 | 14.73 | 9.77 | 11.08/8.25 | -7.82 | +0.716 | -0.97 |
+| MUEDsp norm | -9.58 | -0.53 | 9.05 | 11.28 | 5.91 | 8.08/7.21 | -9.84 | +0.812 | -0.61 |
+| MUEDsp clean | -10.34 | -0.53 | 9.81 | 12.08 | 7.44 | 9.04/7.51 | -9.68 | +0.805 | -0.63 |
+| MUEDsp loud | -8.81 | -0.53 | 8.28 | 10.39 | 2.98 | 7.55/6.61 | -10.18 | +0.825 | -0.59 |
+
+（octave-band tonal curve は artifact `.cryo-phase-a/out/fingerprint_song{1,2}.md` に併記。Legend は同ファイル。）
+
+**観察（数値の事実のみ・良し悪し判定はしない＝judge は kimny の耳・protocol §B）：**
+- **loudness 着地**：Cryo neutral は両曲とも LUFS-I ≈ **−12.5**（曲1 −12.56 / 曲2 −12.53）＝入力に依らず一定。曲1 では **Cryo ≈ MUEDsp norm（−12.5）**、曲2 では MUEDsp norm（−9.58）の方が大きい＝両者の loudness 関係は曲依存。（初回 ffmpeg ebur128 でも Cryo ≈ −12.5 を確認＝相互整合。）
+- **dynamics**：Cryo は LRA を保持寄り（曲2 9.77＝raw 9.39 をほぼ維持、MUEDsp norm は 5.91 へ圧縮）。PLR/crest も Cryo > MUEDsp norm の傾向。
+- **true peak**：MUEDsp は norm/clean/loud すべて dBTP ≤ −0.5 に制御。Cryo の dBTP（曲1 +0.65 / 曲2 +0.02）は MP3 overshoot 込み＝参考外。
+- **stereo**：Cryo は Side/Mid 高め（広め）・L/R corr 低め・mono Δ やや大（曲ごと一貫）。
+- ※これらは Phase B WAV で要再測定（MP3 由来の偏りを除去）。同一リグゆえ WAV が揃えば即 engine 横並び可能。
 
 ## 成果物（artifacts・全て gitignore `.cryo-phase-a/`）
 
 - `.cryo-phase-a/in/song1_liberation_44k16.wav` / `song2_2mix_48k24.wav`（Cryo へ送った実バイト）
 - `.cryo-phase-a/out/song1_liberation.mp3` / `song2_2mix.mp3`（Cryo master MP3）
+- `.cryo-phase-a/out/song1_liberation_cryo.wav` / `song2_2mix_cryo.wav`（測定用に MP3→f32 デコード）
+- `.cryo-phase-a/out/fingerprint_song1.md` / `fingerprint_song2.md`（dsp リグ出力＝指紋+tonal+legend）
 - `.cryo-phase-a/out/phase-a-result.json`（各段成否・sessionId・download keys）
 - ドライバ：`scripts/cryo-phase-a.ts`（purchase 非搭載・Phase B 再実行可）
+- 測定リグ（dsp 課・流用）：`_mued-dsp/tests/standalone/measure_master_fingerprint.py`／MUEDsp 比較マスター：`_mued-dsp/plugin/reference_audio/muedsp_cryo_compare_20260622/`
 
 ## Phase B（kimny gate・Tier3）への引き継ぎ
 
