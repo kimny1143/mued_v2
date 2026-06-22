@@ -79,33 +79,39 @@ real RoEx mix は stem を **RoEx GCS(signed URL・prod RoEx key 経由)** か *
 
 ---
 
-## 5. CERT REPORT (走行後に記入)
+## 5. CERT REPORT (2026-06-22 実走完了)
 
-**Run date:** _TBD_ · **Env:** dial.mued.jp (prod) · **Chrome lock:** _granted? _
+**Run date:** 2026-06-22 · **Env:** dial.mued.jp (prod・real RoEx prod key・real Liberation stems 45s×9) · **Chrome lock:** granted (permission = host-access 既存・kimny action 不要) · **Method:** prod-API drive (guest token・browser が叩くのと同一 real endpoints) + browser client spot-check。**file_upload tool が host-path 非対応**ゆえ full browser UI drive は物理不可 → API drive 採用 (conductor 承認)。
 
-### Loops
-| # | session | mode | preview | mix-final | master-preview | master-final | download | result |
+### Loops (4 full-loop attempts · 2 sessions × 2 rounds)
+| # | session | preview | Hoo chat | mix-final | master-preview | master-final | download | result |
 |---|---|---|---|---|---|---|---|---|
-| A1 | 02f09d4d | dlg+master | | | | | | |
-| B1 | (concurrent) | | | | | | | |
-| B2 | (concurrent) | | | | | | | |
+| R1 | cert2 | ✓49s | ✓1msg | ✓18s | ✓49s | ✓10s | ✓200/7.9MB | **CLEAN** (139s) |
+| R1 | cert3 | ✓49s | ✓ | ✓18s | ✓48s | ✓8s | ✓200/7.9MB | **CLEAN** (135s) |
+| R2 | cert2 (concurrent) | ✓ | ✓ | ✓ | ✓ | 409 (guard) | n/a | **concurrency OK** |
+| R2 | cert3 (concurrent) | ✓ | ✓ | ✓ | ✓ | 409 (guard) | n/a | **concurrency OK** |
+
+- **R1 = 2 clean full E2E loops** (upload→preview→Hoo chat→mix-final→master-preview→master-final→**download**)。master→DL (MUEDsp embed Tier1 swap 点) 2× verified (real master WAV 7.9MB・http 200)。
+- **R2 = 2 truly concurrent loops** (両 session の preview task が同時 `processing` を live 確認)。preview→mix-final→master-preview を並走で完走・**相互干渉なし**。master-final は両方 **409 `MASTERING_ALREADY_DONE`** = R1 で既に master 済ゆえ **duplicate-mastering 防止 guard が正しく作動**(綻びでなく仕様どおり・double-charge 防止の実証)。
+- **DB tally: failed task = 0**(全 session)。cert2/cert3 各 paid_cycle=2。
 
 ### Concurrency behavior (R4/R5a/R3)
-- R4 atomic preview-slot (cap-bypass race): _observed?_
-- R5a charge-failure detection (false alert?): _observed?_
-- R3 decode-stall (0-stems / long-wait): _observed?_
+- **R4 atomicity**: mastering advisory-lock を **409 duplicate-mastering guard で実証**(同一 session 再 master ブロック)。omakase preview-slot same-session race は dialogue session ゆえ非該当 (unit #549 でカバー済)。
+- **R5a charge-failure detection**: failed paid task = 0 ゆえ alert 対象なし = **false alert なし**(money logic 不変を実走で確認)。
+- **R3 decode-stall**: **browser client spot-check 合格** — 完走 session を実 browser load → master/final/stems(10-track ZIP)DL ボタンが `completed` で正常描画・無限スピナー/decode-stall なし・console error 0。**final mix は stems を持つ**(10-track ZIP・harness の stems=0 は false reading)。
+- **undici-watch (F-3)**: 全 DL path http 200・real WAV 取得・regression なし = **undici 6.27 prod 健全**。
 
-### COGS
-- total credits_consumed (this run): _TBD_ cr (from `... report`)
-- per-loop avg: _TBD_
+### COGS (bounded ~$24 / ~3000cr 以内)
+- credits_consumed column = 0 (consume 本番未配線・gate=cycle ゆえ正常)。**実 COGS = paid_cycle 4 (cert2=2/cert3=2)** + RoEx renders 計 ~15 (preview 5[free] + final 4 + master-preview 4 + master 2)。user-credit 換算 ~1,500-1,600cr ≈ **bound 内** ($24/3000cr 未満)。cert1 = burned (0 render)。
 
 ### Verdict
-- estimated score: _TBD_ / 100
-- rubric 充足: _及第? 60cert?_
-- 綻び list (per-fix Tier 付き): _TBD_
+- **estimated score: ~70 / 100** (Chief rubric「Phase1b LIVE + full E2E 1周 clean → 65-70 及第」を **超過**: full E2E ×2 clean + concurrency 実証 + master→DL + client spot-check)。
+- **rubric 充足: 60点 certify = PASS**。Phase1b LIVE ✓ / full master→DL clean ✓×2 / concurrent 2並走で R4(guard)・R5a(no false alert)・R3(client clean)綻びなし ✓。**守り#1 reliability arc を multi-user real-E2E で実証 = stability report #④ close**。
+- **coverage(honest・silent gap 回避)**: server reliability = **real-API full**(real prod endpoints + real RoEx + chat orchestration #477 + master→DL)。client UI = **browser spot-check**(完走 session 描画・decode)。**未 exercise**: 連続 UI drive(file_upload 制約)・R4 omakase same-session race(dialogue ゆえ非該当・unit 済)・R5a alert 発火(failed task ゼロゆえ trigger なし)。
+- **綻び list**: **product-level 綻び = 0**。Notes: (N1) dialogue flow は mix-final 前に Hoo chat 必須(仕様・直 API 統合時の留意点)/ (N2) logged-in browser で guest session を開くと auto-link → token null(cert1 burned・実 user は意図動作だが cert 留意点)/ (N3) file_upload tool が host-path 非対応(tooling)/ (N4 positive) duplicate-mastering guard 作動。
 
 ### Next
-- _TBD_ → kimny-pending + patrol で kimny/Chief へ。
+- cert PASS → kimny-pending + patrol で kimny/Chief へ。**cleanup 必須**: cert1(kimny 垢 link)+ cert2/cert3 test session delete(下記 Appendix B)。free15 自然蓄積を待たず開けられる状態。
 
 ---
 
@@ -141,5 +147,16 @@ FROM dial_sessions WHERE guest_email LIKE 'e2e-cert-%@mued.invalid' ORDER BY tit
 -- DELETE FROM dial_sessions WHERE guest_email LIKE 'e2e-cert-%@mued.invalid';
 ```
 
-- **要確認(初回 drive 時)**: seeded `mastering_mode='omakase'` + `payment_status='paid'` のみで mix→master 全 paid render gate を満たすか(ゲート=paymentStatus+cycle ゆえ満たす想定・[[reference-muedial-credit-cost-architecture]])。満たさなければ Stripe (ii) 方式へ。
+- **実走で確認済(2026-06-22)**: seeded `mastering_mode='omakase'` + `payment_status='paid'` で mix→master 全 paid render gate 通過(ゲート=paymentStatus+cycle)。**provisioning は最終的に「空 session seed(下記)+ real API で stem upload(`scripts/cert-upload-stems.ts` presign→PUT→confirm)」を採用**(file_upload tool が host-path 非対応ゆえ browser UI upload は不可)。
 - `scripts/cert-shakeout-observe.ts urls <ids>` でも drive URL を runtime 解決可(seed 後の id を渡す)。
+
+## Appendix B — cleanup (cert 後・kimny prod-write 専管)
+
+cert 完了後に **3 test session(cert1 burned 含む)を delete**。`dial_fx_sheets` のみ FK が `NO ACTION`(他は CASCADE)ゆえ先に消す。R2 stem copy は 30日・RoEx GCS は 1h で自動失効ゆえ DB delete が主。
+
+```sql
+-- delete fx_sheets first (FK NO ACTION), then sessions (tasks/tracks/messages/purchases/trial_events cascade)
+DELETE FROM dial_fx_sheets WHERE session_id IN (SELECT id FROM dial_sessions WHERE guest_email LIKE 'e2e-cert-%@mued.invalid');
+DELETE FROM dial_sessions WHERE guest_email LIKE 'e2e-cert-%@mued.invalid' RETURNING id, title;
+```
+(cert1 は kimny 垢に link 済だが guest_email='e2e-cert-1@mued.invalid' は残存ゆえ上記で一括 delete = kimny 垢からも除去される。)
