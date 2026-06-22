@@ -94,3 +94,62 @@ dsp 課（#174・peer `tk4s16a8`）の**汎用測定リグ `measure_master_finge
 ## blocker
 
 **なし。** 両曲とも全段クリーン完走。
+
+---
+
+## Phase B（実行済み・2026-06-22・kimny 直接承認後）
+
+> Phase B は**初の本番 financial action**（purchase）。**kimny がセッション内で直接承認**（AskUserQuestion＝「両曲承認・song-1-first guard」）してから実行。conductor/Chief 経由の relay は状況認識として扱い、purchase の発火根拠にはしていない（instruction-source-boundary）。script＝`scripts/cryo-phase-b.ts`（purchase 搭載・Phase A の no-purchase script とは別物）。
+
+### ① purchase → WAV（§4① CLOSE）
+
+| 曲 | session | purchase response | post-purchase keys | WAV |
+|----|---------|-------------------|--------------------|-----|
+| 曲1 liberation | reuse `28044048` | `Api success, purchase successfully` | `FinalMaster.wav` 出現 | 5.05MB DL ✓ |
+| 曲2 2mix | reuse `1243bf24` | `Api success, purchase successfully` | `FinalMaster.wav` 出現 | 55.21MB DL ✓ |
+
+- **§4①（purchase 未実証）＝ CLOSE**：本番 purchase 経路が両曲で成功。旧 blocker「Active subscription required」は grace で解消（出現せず）。
+- **コストガード（song-1-first）**：purchase response は `Api success, purchase successfully` のみで **charge 額フィールド・非$0 シグナルは出ず**＝guard 充足。想定実費 **$0**（grace〜7/15 + origin dial.mued.jp billing対象外）。⚠ **API は charge 額を返さない**ため定量的 $ 確認は **Cryo dashboard が正本** → kimny/conductor が dashboard で $0 を最終確認推奨。
+- **gating 機構 実証**：purchase 前は `.wav` キーなし → purchase 後に `FinalMaster.wav` 出現（Phase A の予測どおり）。
+
+### ② 正式 §A 客観指紋（Cryo ＝ 実 WAV・MP3 informational を更新）
+
+同一リグ `measure_master_fingerprint.py`。**Cryo 行が実 WAV**ゆえ MP3 バイアス除去済（dBTP/PSR/PLR/crest も clean）。
+
+**曲1 — liberation**
+
+| master | LUFS-I | dBTP | PLR | crest | LRA | PSR(med/min) | Side/Mid | L/R corr | mono Δ |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| raw input | -16.40 | -0.60 | 15.79 | 17.81 | 3.95 | 13.48/11.16 | -9.48 | +0.798 | -0.51 |
+| **Cryo (WAV)** | -12.11 | +0.60 | 12.72 | 14.15 | 3.22 | 12.33/10.90 | -7.24 | +0.683 | -0.90 |
+| MUEDsp norm | -12.49 | -0.89 | 11.60 | 13.82 | 3.82 | 11.81/9.07 | -8.50 | +0.753 | -0.64 |
+| MUEDsp clean | -14.20 | -1.23 | 12.97 | 15.36 | 3.78 | 12.73/10.66 | -8.50 | +0.753 | -0.64 |
+| MUEDsp loud | -9.89 | -0.58 | 9.31 | 11.51 | 2.63 | 8.99/7.19 | -8.45 | +0.751 | -0.65 |
+
+**曲2 — forMUEDialMater 2mix**
+
+| master | LUFS-I | dBTP | PLR | crest | LRA | PSR(med/min) | Side/Mid | L/R corr | mono Δ |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| raw input | -11.14 | +0.59 | 11.73 | 13.45 | 9.39 | 10.83/8.40 | -10.58 | +0.839 | -0.52 |
+| **Cryo (WAV)** | -12.10 | +0.11 | 12.21 | 14.33 | 9.76 | 10.97/8.21 | -7.85 | +0.718 | -0.96 |
+| MUEDsp norm | -9.58 | -0.53 | 9.05 | 11.28 | 5.91 | 8.08/7.21 | -9.84 | +0.812 | -0.61 |
+| MUEDsp clean | -10.34 | -0.53 | 9.81 | 12.08 | 7.44 | 9.04/7.51 | -9.68 | +0.805 | -0.63 |
+| MUEDsp loud | -8.81 | -0.53 | 8.28 | 10.39 | 2.98 | 7.55/6.61 | -10.18 | +0.825 | -0.59 |
+
+（tonal curve は `.cryo-phase-a/out/fingerprint_song{1,2}_wav.md`。）
+
+**観察（数値の事実のみ・判定は kimny 耳・§B）：**
+- **Cryo true peak は実 WAV でも >0 dBTP**（曲1 +0.60 / 曲2 +0.11）＝MP3 由来でなく **Cryo が >0 dBTP を許容**（MUEDsp norm/clean/loud は dBTP ≤ −0.5 制御）。
+- **dynamics（LRA・頑健）**：Cryo は LRA 保持（曲2 9.76 ≈ raw 9.39 / MUEDsp norm は 5.91 へ圧縮）。
+- **stereo**：Cryo は Side/Mid 高め・L/R corr 低め・mono Δ やや大（曲ごと一貫）。
+- loudness：Cryo neutral は両曲 LUFS-I ≈ **−12.1**（MP3 では −12.5＝近接・相互整合）。
+
+### ③ ブラインド A/B（kimny 判定待ち）
+
+- 配置：`/Users/kimny/Dropbox/_[MUED]fileshare/muedsp-vs-cryo-blind-20260622/`（`{song}_A.wav`／`{song}_B.wav` ＋ `LISTENING_SHEET.md` ＋ `README.md`）。
+- 各ペア **同一曲・両エンジン**を **linear gain で −14.0 LUFS に整合**（master の character 不変＝音量で勝たせない・全て dBTP <0 に収束）。SR はペア内一致（曲1 44.1k／曲2 48k）。
+- **counterbalance**：各エンジンが A・B 各1回（位置バイアス相殺）。全ファイル metadata 同一（encoder tag のみ）＝engine 非漏洩・ペア内サイズ一致。
+- **A/B→engine 鍵は fileshare 非配置**＝conductor に send_message で渡す（kimny 判定後 reveal）。
+
+### 次
+kimny ブラインド判定（`LISTENING_SHEET.md` 記入）→ conductor→Chief で reveal → Chief が比較レポート結論を完成（`_chief/decisions/report-muedsp-vs-cryo-20260622.md`）。**「どっちが上か」でなく「どこで各々が勝つか」**＝判定は kimny の耳（AI は良し悪し書かない）。
