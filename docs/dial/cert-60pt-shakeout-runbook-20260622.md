@@ -86,3 +86,40 @@ upload 済 session を使う場合は 4 から。
 
 ### Next
 - _TBD_ → kimny-pending + patrol で kimny/Chief へ。
+
+---
+
+## Appendix A — clean test-session seed (DRAFT, option (i); kimny prod-write 専管)
+
+**条件**: kimny が「(i) DB-seed(Stripe 課金なし・RoEx COGS のみ)」を選んだ場合のみ適用。`…0003` の実 row 構造に倣った空 paid+mastering guest session を 3 本立てる(Round A 単発 + Round B 2-3 並走)。**guest_token は適用時に `gen_random_bytes` で生成**(file には書かない)。track は seed せず — drive 時に UI から実 stem(`docs/sunogen_audio/muedial/multitracks/Track 2 liberation/`)を upload(=実 R2 hosting + upload path も exercise)。**未適用**(kimny 承認後・本人 or conductor 経由)。
+
+```sql
+-- 3 dedicated cert test sessions (guest, paid, dialogue+omakase mastering, empty/uploading).
+INSERT INTO dial_sessions
+  (id, user_id, mode, status, state, musical_style, title, guest_email,
+   guest_token, guest_token_expires_at, payment_status, is_free_campaign,
+   mix_check_count, paid_cycle_count, preview_count,
+   base_cycle_limit, additional_cycles_purchased, additional_cycle_limit,
+   mastering_mode, draft_number, created_at, updated_at)
+SELECT
+  gen_random_uuid(), NULL, 'dialogue', 'uploading', 'uploading', 'POP',
+  'E2E 60pt cert ' || n || ' (TEST — safe to delete)',
+  'e2e-cert-' || n || '@mued.invalid',
+  encode(gen_random_bytes(32), 'hex'),          -- fresh 64-char guest token
+  now() + interval '7 days',
+  'paid', false,
+  0, 0, 0,
+  5, 0, 5,
+  'omakase', 1, now(), now()
+FROM generate_series(1, 3) AS n;
+
+-- read back drive URLs (token shown ONLY in psql output — do not persist):
+SELECT 'https://dial.mued.jp/dial/' || id || '?token=' || guest_token AS drive_url, title
+FROM dial_sessions WHERE guest_email LIKE 'e2e-cert-%@mued.invalid' ORDER BY title;
+
+-- cleanup after cert (run once all loops done):
+-- DELETE FROM dial_sessions WHERE guest_email LIKE 'e2e-cert-%@mued.invalid';
+```
+
+- **要確認(初回 drive 時)**: seeded `mastering_mode='omakase'` + `payment_status='paid'` のみで mix→master 全 paid render gate を満たすか(ゲート=paymentStatus+cycle ゆえ満たす想定・[[reference-muedial-credit-cost-architecture]])。満たさなければ Stripe (ii) 方式へ。
+- `scripts/cert-shakeout-observe.ts urls <ids>` でも drive URL を runtime 解決可(seed 後の id を渡す)。
