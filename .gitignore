@@ -91,3 +91,6 @@ docs/monetization/
 # Claude Code session memory (stored in project root, not committed)
 /memory/
 .cert-stems/
+
+# Cryo Phase A working artifacts (audio, gitignored)
+.cryo-phase-a/
