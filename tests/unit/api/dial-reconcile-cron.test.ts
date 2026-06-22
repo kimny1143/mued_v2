@@ -10,8 +10,9 @@ vi.mock('@/lib/dial/task-timeout', () => ({
   markDialTaskFailedWithReconcile: vi.fn(),
 }));
 vi.mock('@/db', () => ({ db: { select: vi.fn() } }));
-vi.mock('@/db/schema', () => ({ dialTasks: {} }));
-vi.mock('drizzle-orm', () => ({ inArray: vi.fn() }));
+// route.ts also reads dialSessions/dialCompLedger (R5a charge-failure scan) and and/gt/gte.
+vi.mock('@/db/schema', () => ({ dialTasks: {}, dialSessions: {}, dialCompLedger: {} }));
+vi.mock('drizzle-orm', () => ({ inArray: vi.fn(), and: vi.fn(), gt: vi.fn(), gte: vi.fn() }));
 
 import { POST } from '@/app/api/cron/dial-reconcile/route';
 import { db } from '@/db';
@@ -46,7 +47,10 @@ describe('POST /api/cron/dial-reconcile', () => {
   });
 
   it('fails a task past its backstop and reports the count', async () => {
-    vi.mocked(db.select).mockReturnValue(chain([{ id: 't1', taskType: 'preview', createdAt: new Date(0) }]));
+    // 1st select = runReconcile (active tasks); later selects = detectChargeFailures (no candidates → early return).
+    vi.mocked(db.select)
+      .mockReturnValueOnce(chain([{ id: 't1', taskType: 'preview', createdAt: new Date(0) }]))
+      .mockReturnValue(chain([]));
     vi.mocked(isDialTaskPastBackstop).mockReturnValue(true);
 
     const res = await POST(req('Bearer secret'));
@@ -57,7 +61,9 @@ describe('POST /api/cron/dial-reconcile', () => {
   });
 
   it('does NOT fail a task that is under its backstop', async () => {
-    vi.mocked(db.select).mockReturnValue(chain([{ id: 't2', taskType: 'preview', createdAt: new Date() }]));
+    vi.mocked(db.select)
+      .mockReturnValueOnce(chain([{ id: 't2', taskType: 'preview', createdAt: new Date() }]))
+      .mockReturnValue(chain([]));
     vi.mocked(isDialTaskPastBackstop).mockReturnValue(false);
 
     const res = await POST(req('Bearer secret'));
