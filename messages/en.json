@@ -2037,5 +2037,193 @@
       "fromBrowser": "Waveform check",
       "fromServer": "AI analysis (Hoo)"
     }
+  },
+  "aiMixing": {
+    "meta": {
+      "title": "AI Mixing — Just Tell the AI What You Want | MUEDial",
+      "description": "Upload your stems from vocal covers, VTuber tracks, or DTM production. Tell the AI how you want it to sound via chat. Works with Suno, Udio, DAW exports, and live recordings. No expertise needed."
+    },
+    "hero": {
+      "title": "Let AI Handle Your Mix",
+      "subtitle": "— Just chat to get it done",
+      "description1": "Upload your vocal covers, VTuber tracks, or DTM production stems.",
+      "description2": "Tell Hoo (AI) how you want it to sound via chat,",
+      "description3": "and your separate tracks come together as one.",
+      "description4": "No DAW or plugin knowledge required.",
+      "cta": "Start Mixing"
+    },
+    "steps": {
+      "title": "Done in 3 Steps",
+      "step1": {
+        "title": "Upload Stems",
+        "description": "Upload your audio files — vocals, backing track, drums, etc. Supports WAV, FLAC, AIFF, MP3, M4A. From 2 tracks."
+      },
+      "step2": {
+        "title": "Tell Hoo Your Vision",
+        "description": "\"Bring the vocals forward\" \"Keep the drums subtle\" — describe your vision in plain language. No jargon needed."
+      },
+      "step3": {
+        "title": "Get Your Mix",
+        "description": "AI processes your mix. Preview as many times as you like. When you are happy, get the final in WAV. (Unlimited previews. Credits are used for final delivery.)"
+      }
+    },
+    "utamita": {
+      "title": "Stuck on the mix for your vocal cover or VTuber track?",
+      "pain1": "\"My vocals get buried in the instrumental\"",
+      "pain2": "\"The loudness does not match other tracks on the platform\"",
+      "pain3": "\"My voice and the karaoke track just do not blend\"",
+      "solution": "Solve these problems by just chatting with the AI.",
+      "detail1": "MUEDial handles mixes from as few as 2 stems — vocal + backing track.",
+      "detail2": "No DAW needed. No plugin experience needed.",
+      "detail3": "Just describe how you want it to sound.",
+      "example": "\"Bring my voice forward\" \"Clean up the low end\" — one sentence is all it takes for AI to adjust the mix."
+    },
+    "comparison": {
+      "title": "How MUEDial Differs from Traditional AI Mixing",
+      "headers": {
+        "feature": "",
+        "traditional": "Traditional AI Mastering",
+        "muedial": "MUEDial"
+      },
+      "rows": {
+        "operation": {
+          "label": "How it works",
+          "traditional": "Upload → auto-process",
+          "muedial": "Chat instructions → AI adjusts interactively"
+        },
+        "flexibility": {
+          "label": "Flexibility",
+          "traditional": "Parameter selection only",
+          "muedial": "Natural language instructions"
+        },
+        "redo": {
+          "label": "Revisions",
+          "traditional": "Re-upload required",
+          "muedial": "Unlimited previews"
+        },
+        "mixing": {
+          "label": "Mixing support",
+          "traditional": "Mastering only",
+          "muedial": "Mixing + mastering"
+        },
+        "japanese": {
+          "label": "Japanese support",
+          "traditional": "Translation-level",
+          "muedial": "Native support"
+        },
+        "knowledge": {
+          "label": "Required knowledge",
+          "traditional": "Parameter understanding",
+          "muedial": "None"
+        }
+      },
+      "supplement1": "Traditional AI services are \"one-way\" — upload and get auto-processed results.",
+      "supplement2": "MUEDial is \"interactive\" — describe your vision via chat and refine the mix through conversation with AI.",
+      "supplement3": "\"Bring the vocals forward\" \"Tighten the low end\" — only MUEDial lets you direct AI like this."
+    },
+    "pricing": {
+      "title": "Pricing",
+      "subtitle": "Pay per mix or subscribe monthly. Only pay when you mix.",
+      "monthly": {
+        "label": "Monthly Plan",
+        "hooPass": {
+          "name": "Hoo Pass",
+          "price": "$5.99/mo",
+          "priceJpy": "",
+          "features": {
+            "credits": "100 credits/month",
+            "preview": "Unlimited previews",
+            "wav": "WAV final delivery",
+            "hoo": "Hoo AI mixing assistant",
+            "rollover": "Unlimited credit rollover (while subscribed)"
+          }
+        }
+      },
+      "single": {
+        "label": "Pay Per Use",
+        "dialogue": {
+          "name": "Dialogue Mix",
+          "price": "$13.99",
+          "priceJpy": "",
+          "description": "Chat with Hoo to adjust your mix. The core MUEDial experience.",
+          "featured": true
+        },
+        "omakase": {
+          "name": "Auto Mix",
+          "price": "$7.49",
+          "priceJpy": "",
+          "description": "AI auto-mixes your stems. Just upload and go."
+        },
+        "mastering": {
+          "name": "Mastering",
+          "price": "$5.99",
+          "priceJpy": "",
+          "description": "AI mastering. Loudness optimization and stereo correction."
+        }
+      },
+      "packs": {
+        "label": "Credit Packs",
+        "small": {
+          "name": "Small Pack (500cr)",
+          "price": "$12.99",
+          "priceJpy": ""
+        },
+        "large": {
+          "name": "Large Pack (1,500cr)",
+          "price": "$34.99",
+          "priceJpy": ""
+        },
+        "expiry": "Valid for 12 months from purchase."
+      },
+      "betaNote": "* Currently in research beta. Waitlisted users can access a one-time free mix diagnostic."
+    },
+    "faq": {
+      "title": "FAQ",
+      "q1": {
+        "question": "What is MUEDial?",
+        "answer": "MUEDial is an AI mixing service where you give instructions via chat. Upload your stems (audio files per track), tell Hoo (AI) how you want it to sound, and get a polished mix — no DAW or plugin expertise needed."
+      },
+      "q2": {
+        "question": "Can I mix vocal cover tracks?",
+        "answer": "Yes. MUEDial supports mixes from as few as 2 stems — vocals and backing track. No DAW needed — just your recorded vocals and a karaoke track."
+      },
+      "q3": {
+        "question": "Does it work with Suno or Udio tracks?",
+        "answer": "Yes. MUEDial works with Suno, Udio, DAW exports, live recordings — any WAV stems. Mixing and mastering regardless of how the audio was created."
+      },
+      "q4": {
+        "question": "What does \"chat instructions\" mean?",
+        "answer": "You can tell Hoo (AI) what you want in plain language — no technical jargon needed. For example, \"bring the vocals forward\" or \"clean up the low end.\" AI applies the changes to your mix. Preview as many times as you want, then request the final when satisfied. (Credits are used for final delivery.)"
+      },
+      "q5": {
+        "question": "Do I need mixing expertise?",
+        "answer": "No. Just describe how you want it to sound, and AI handles the EQ, compression, and other processing. Even vague descriptions like \"make it brighter\" or \"more punch\" work."
+      },
+      "q6": {
+        "question": "How much does it cost?",
+        "answer": "Hoo Pass is $5.99/month (100 credits). Pay-per-use: Dialogue Mix $13.99, Auto Mix $7.49, Mastering $5.99. Dialogue Mix is the core MUEDial feature — chat-based mix adjustment. Pay only when you mix."
+      },
+      "q7": {
+        "question": "How is this different from traditional AI mastering?",
+        "answer": "Traditional AI services auto-process your upload with no input — a one-way process. MUEDial lets you give interactive chat instructions to adjust the mix. It also handles mixing, not just mastering."
+      },
+      "q8": {
+        "question": "What format is the final delivered in?",
+        "answer": "Final mixes and masters are delivered in WAV. Previews are provided in MP3. LUFS-optimized and stereo-corrected."
+      },
+      "q9": {
+        "question": "Can VTubers use this for stream content?",
+        "answer": "Yes. Song streams, covers, original tracks — all supported. As with vocal covers, just provide vocal and backing track stems."
+      },
+      "q10": {
+        "question": "Can I try it for free?",
+        "answer": "The AI loudness diagnostic (LUFS measurement) is free. During the research beta, waitlisted users also get a one-time free mix diagnostic."
+      }
+    },
+    "footerCta": {
+      "title": "Ready to mix your track?",
+      "description": "Upload your stems and start chatting with Hoo.",
+      "cta": "Try MUEDial"
+    }
   }
 }
