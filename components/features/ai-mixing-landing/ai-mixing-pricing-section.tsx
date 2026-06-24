@@ -12,6 +12,13 @@ const HOO_PASS_FEATURES = [
   "rollover",
 ] as const;
 
+function JpyLabel({ value }: { value: string }) {
+  if (!value) return null;
+  return (
+    <span className="text-white/40 text-sm ml-2">（{value}）</span>
+  );
+}
+
 export function AiMixingPricingSection() {
   const t = useTranslations("aiMixing.pricing");
 
@@ -44,9 +51,7 @@ export function AiMixingPricingSection() {
                   </h4>
                   <p className="text-white/60 text-sm mt-1">
                     {t("monthly.hooPass.price")}
-                    <span className="text-white/40 ml-2">
-                      （{t("monthly.hooPass.priceJpy")}）
-                    </span>
+                    <JpyLabel value={t("monthly.hooPass.priceJpy")} />
                   </p>
                 </div>
               </div>
@@ -93,9 +98,7 @@ export function AiMixingPricingSection() {
                   </div>
                   <p className="text-white/80 font-semibold">
                     {t(`single.${key}.price`)}
-                    <span className="text-white/40 text-sm ml-2">
-                      （{t(`single.${key}.priceJpy`)}）
-                    </span>
+                    <JpyLabel value={t(`single.${key}.priceJpy`)} />
                   </p>
                   <p className="text-white/60 text-sm mt-2">
                     {t(`single.${key}.description`)}
@@ -126,9 +129,7 @@ export function AiMixingPricingSection() {
                   </h4>
                   <p className="text-white/80 font-semibold">
                     {t(`packs.${key}.price`)}
-                    <span className="text-white/40 text-sm ml-2">
-                      （{t(`packs.${key}.priceJpy`)}）
-                    </span>
+                    <JpyLabel value={t(`packs.${key}.priceJpy`)} />
                   </p>
                 </div>
               ))}
