@@ -2219,6 +2219,9 @@
         "label": "I agree to the handling of my data",
         "body": "The information you provide (name, email, and your message) is used only to contact you and respond. It is not shared with third parties except as required by law. See our <privacy>Privacy Policy</privacy> for details."
       }
+    },
+    "cta": {
+      "short": "Free 60 min"
     }
   }
 }

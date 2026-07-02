@@ -19,7 +19,9 @@ import { AdvisoryCtaSection } from "./advisory-cta-section";
 export function AdvisoryLandingContent() {
   const locale = useLocale();
   const tf = useTranslations("advisory.footer");
-  const th = useTranslations("advisory.hero");
+  // nav link + vertical tab use the short label (avoids a 2-line wrap in the tight header/tab);
+  // the Hero and CONTACT buttons keep the full hero.cta / footerCta.cta.
+  const tcta = useTranslations("advisory.cta");
 
   return (
     <div className="min-h-screen bg-white text-neutral-900">
@@ -35,14 +37,17 @@ export function AdvisoryLandingContent() {
             <span className="hidden text-[11px] tracking-wider text-neutral-400 sm:inline">glasswerks inc.</span>
           </Link>
           <div className="flex items-center gap-5">
-            <AdvisoryPrimaryCta label={th("cta")} variant="link" />
+            {/* header CTA hidden on mobile (cramped) — the Hero CTA sits right below; shown md+ alongside the vertical tab */}
+            <span className="hidden md:inline-block">
+              <AdvisoryPrimaryCta label={tcta("short")} variant="link" />
+            </span>
             <LocaleSwitcher />
           </div>
         </div>
       </header>
 
       {/* 案C signature: fixed right-edge vertical CTA tab */}
-      <AdvisoryPrimaryCta label={th("cta")} variant="tab" />
+      <AdvisoryPrimaryCta label={tcta("short")} variant="tab" />
 
       <main>
         <AdvisoryHeroSection />
