@@ -11,6 +11,7 @@
  * (insight課 can refine to Asia/Tokyo later if needed).
  */
 import { NextRequest } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { apiSuccess, apiUnauthorized, apiServerError } from "@/lib/api-response";
@@ -18,9 +19,16 @@ import { logger } from "@/lib/utils/logger";
 
 const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
 
+/** Constant-time, length-safe compare so the key can't be probed via response timing. */
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  return ab.length === bb.length && timingSafeEqual(ab, bb);
+}
+
 export async function GET(request: NextRequest) {
   const key = request.headers.get("X-Internal-API-Key");
-  if (!INTERNAL_API_KEY || key !== INTERNAL_API_KEY) {
+  if (!INTERNAL_API_KEY || !key || !safeEqual(key, INTERNAL_API_KEY)) {
     return apiUnauthorized("Unauthorized");
   }
 

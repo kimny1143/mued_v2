@@ -9,7 +9,7 @@
  * confirmation to the booker and a notify (with a one-tap "mark conducted" link) to the operator —
  * both fail-open, because email is not the record.
  */
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
@@ -111,47 +111,49 @@ export async function POST(request: NextRequest) {
     return apiServerError("Failed to create booking");
   }
 
-  // persist-first done — the KPI row is committed. Notifications are best-effort.
+  // persist-first done — the KPI row is committed. Send notifications in after() so Vercel keeps
+  // the function alive to actually deliver them: a bare fire-and-forget promise can be dropped once
+  // the response returns, which would silently lose the booker's confirmation + .ics (user-facing).
   const dateTimeLabel = formatDateTime(slot.startTime, input.locale);
-
-  if (MEET_URL && emailService.isConfigured()) {
-    const ics = buildAdvisoryIcs({
-      uid: `${bookingId}@mued.jp`,
-      start: slot.startTime,
-      end: slot.endTime,
-      summary: input.locale === "ja" ? "MUED 壁打ち (60分)" : "MUED consultation (60 min)",
-      description:
-        input.locale === "ja"
-          ? `無料60分相談 / MUED advisory\nGoogle Meet: ${MEET_URL}`
-          : `Free 60-min consultation / MUED advisory\nGoogle Meet: ${MEET_URL}`,
-      location: MEET_URL,
-      organizerName: "MUED",
-      organizerEmail: ORGANIZER_EMAIL,
-      attendeeName: input.name,
-      attendeeEmail: input.email,
-    });
-    const icsBase64 = Buffer.from(ics, "utf8").toString("base64");
-    emailService
-      .sendAdvisoryBookingConfirmed(
-        { email: input.email, name: input.name },
-        { name: input.name, locale: input.locale, dateTimeLabel, meetingUrl: MEET_URL, icsBase64 },
-      )
-      .catch((e) => logger.error("[advisory/booking] confirm email failed", { error: e, bookingId }));
-  } else {
-    logger.warn("[advisory/booking] confirm email skipped — ADVISORY_MEET_URL or Resend not configured", {
-      bookingId,
-    });
-  }
-
-  if (NOTIFY_EMAIL && emailService.isConfigured()) {
-    const completeUrl = `${APP_URL}/api/advisory/booking/${bookingId}/complete?t=${signBookingToken(bookingId)}`;
-    emailService
-      .sendAdvisoryBookingNotify(
-        { email: NOTIFY_EMAIL },
-        { name: input.name, email: input.email, dateTimeLabel, meetingUrl: MEET_URL, completeUrl },
-      )
-      .catch((e) => logger.error("[advisory/booking] notify email failed", { error: e, bookingId }));
-  }
+  after(async () => {
+    try {
+      if (MEET_URL && emailService.isConfigured()) {
+        const ics = buildAdvisoryIcs({
+          uid: `${bookingId}@mued.jp`,
+          start: slot.startTime,
+          end: slot.endTime,
+          summary: input.locale === "ja" ? "MUED 壁打ち (60分)" : "MUED consultation (60 min)",
+          description:
+            input.locale === "ja"
+              ? `無料60分相談 / MUED advisory\nGoogle Meet: ${MEET_URL}`
+              : `Free 60-min consultation / MUED advisory\nGoogle Meet: ${MEET_URL}`,
+          location: MEET_URL,
+          organizerName: "MUED",
+          organizerEmail: ORGANIZER_EMAIL,
+          attendeeName: input.name,
+          attendeeEmail: input.email,
+        });
+        const icsBase64 = Buffer.from(ics, "utf8").toString("base64");
+        await emailService.sendAdvisoryBookingConfirmed(
+          { email: input.email, name: input.name },
+          { name: input.name, locale: input.locale, dateTimeLabel, meetingUrl: MEET_URL, icsBase64 },
+        );
+      } else {
+        logger.warn("[advisory/booking] confirm email skipped — ADVISORY_MEET_URL or Resend not configured", {
+          bookingId,
+        });
+      }
+      if (NOTIFY_EMAIL && emailService.isConfigured()) {
+        const completeUrl = `${APP_URL}/api/advisory/booking/${bookingId}/complete?t=${signBookingToken(bookingId)}`;
+        await emailService.sendAdvisoryBookingNotify(
+          { email: NOTIFY_EMAIL },
+          { name: input.name, email: input.email, dateTimeLabel, meetingUrl: MEET_URL, completeUrl },
+        );
+      }
+    } catch (e) {
+      logger.error("[advisory/booking] notification failed", { error: e, bookingId });
+    }
+  });
 
   return apiSuccess({
     bookingId,

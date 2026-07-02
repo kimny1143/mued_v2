@@ -1,11 +1,12 @@
 /**
  * Advisory #8 — per-booking HMAC token for the operator's one-tap "mark conducted" link.
- * secret() reads INTERNAL_API_KEY at call time, so setting it before the test bodies run is enough.
+ * secret() reads ADVISORY_BOOKING_TOKEN_SECRET at call time, so setting it before the test bodies
+ * run is enough.
  */
 import { describe, it, expect } from "vitest";
 import { signBookingToken, verifyBookingToken } from "@/lib/advisory/booking-token";
 
-process.env.INTERNAL_API_KEY = "test-internal-key";
+process.env.ADVISORY_BOOKING_TOKEN_SECRET = "test-booking-token-secret";
 
 describe("booking-token", () => {
   it("signs a deterministic 32-hex token for a given id", () => {
