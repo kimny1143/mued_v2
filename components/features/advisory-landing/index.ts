@@ -1,0 +1,9 @@
+export { AdvisoryLandingContent } from "./advisory-landing-content";
+export { AdvisoryHeroSection } from "./advisory-hero-section";
+export { AdvisoryWhoSection } from "./advisory-who-section";
+export { AdvisoryStepsSection } from "./advisory-steps-section";
+export { AdvisoryPricingSection } from "./advisory-pricing-section";
+export { AdvisoryMyWaySection } from "./advisory-my-way-section";
+export { AdvisoryFaqSection } from "./advisory-faq-section";
+export { AdvisoryCtaSection } from "./advisory-cta-section";
+export { AdvisoryPrimaryCta } from "./advisory-primary-cta";
