@@ -1,20 +1,32 @@
 "use client";
 
 // Single-CTA slot for MUED advisory (free 60-min consultation).
-// STAGED STUB: plain <a> mailto (not next/link — mailto is not a route). advisory #8
-// (mued課) owns this component and swaps the internals to the pure-code booking flow
-// (.ics + Jitsi + curated slots) once #8 lands. Keep the public surface (props: { label })
-// stable so the LP PR and the #8 PR don't touch the same lines and can proceed in parallel.
-const CONTACT_EMAIL = "support@mued.jp";
-const SUBJECT = "無料60分相談希望";
+// advisory #8 swap (mued課): opens the pure-code booking modal (curated slots → .ics + fixed
+// Google Meet link). Public surface (props: { label }) is unchanged from the staged mailto stub, so
+// the LP is untouched — only this component's internals changed. Used in both the hero and footer
+// CTA; each instance owns its own modal state (only one is open at a time).
+import { useState } from "react";
+import { useLocale } from "next-intl";
+import { trackEvent } from "@/lib/analytics/gtag";
+import { AdvisoryBookingModal } from "./advisory-booking-modal";
 
 export function AdvisoryPrimaryCta({ label }: { label: string }) {
+  const [open, setOpen] = useState(false);
+  const locale = useLocale();
+
   return (
-    <a
-      href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(SUBJECT)}`}
-      className="inline-flex items-center px-8 py-4 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl transition-colors text-lg"
-    >
-      {label}
-    </a>
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          trackEvent({ action: "advisory_cta_click", params: { locale } });
+          setOpen(true);
+        }}
+        className="inline-flex min-h-[44px] items-center rounded-xl bg-amber-500 px-8 py-4 text-lg font-bold text-black transition-colors hover:bg-amber-400"
+      >
+        {label}
+      </button>
+      <AdvisoryBookingModal open={open} onClose={() => setOpen(false)} />
+    </>
   );
 }

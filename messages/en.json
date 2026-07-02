@@ -2182,6 +2182,31 @@
       "legalLink": "Legal",
       "privacyLink": "Privacy Policy",
       "signature": "MUED — AI-delegated development, run at a quality you can actually use."
+    },
+    "booking": {
+      "title": "Book your free 60-minute consultation",
+      "pickSlot": "Pick a time that works for you",
+      "noSlots": "No open slots right now. Please check back soon.",
+      "name": "Name (optional)",
+      "email": "Email",
+      "submit": "Book this time",
+      "submitting": "Booking…",
+      "close": "Close",
+      "successTitle": "You're booked",
+      "successBody": "We've emailed your confirmation with the Google Meet link for the session.",
+      "errorGeneric": "Booking failed. Please try again in a moment.",
+      "errorSlotTaken": "Sorry, that slot was just taken. Please choose another time."
+    },
+    "consent": {
+      "booking": {
+        "label": "I agree to the following and book (required)",
+        "body": "Your consultation (free 60 minutes) is recorded as a reference to give you a better response and to improve our quality. The information you provide (name, email, the content of your consultation, and the recording) is used only to manage your booking, contact you, respond to your consultation, and improve our quality internally. It is handled appropriately for those purposes and is not shared with third parties except as required by law. See our <privacy>Privacy Policy</privacy> for details. You may withdraw your consent at any time by contacting support@mued.jp.",
+        "required": "Consent is required to book."
+      },
+      "inquiry": {
+        "label": "I agree to the handling of my data",
+        "body": "The information you provide (name, email, and your message) is used only to contact you and respond. It is not shared with third parties except as required by law. See our <privacy>Privacy Policy</privacy> for details."
+      }
     }
   }
 }

@@ -5,7 +5,7 @@
  * (both fail-open). Recording consent does not apply here (no session); an optional data-handling
  * consent flag is captured if the form sends it.
  */
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { advisoryInquiries } from "@/db/schema";
@@ -68,24 +68,29 @@ export async function POST(request: NextRequest) {
       .returning({ id: advisoryInquiries.id });
     inquiryId = row.id;
   } catch (err) {
-    logger.error("[advisory/inquiry] insert failed", { error: err, email: input.email });
+    logger.error("[advisory/inquiry] insert failed", { error: err });
     return apiServerError("Failed to submit inquiry");
   }
 
-  // fail-open notifications (the committed row is the record)
-  if (emailService.isConfigured()) {
-    if (NOTIFY_EMAIL) {
-      emailService
-        .sendAdvisoryInquiryNotify(
+  // fail-open notifications in after() so serverless keeps the function alive to deliver them
+  // (the committed row is the record).
+  after(async () => {
+    if (!emailService.isConfigured()) return;
+    try {
+      if (NOTIFY_EMAIL) {
+        await emailService.sendAdvisoryInquiryNotify(
           { email: NOTIFY_EMAIL },
           { name: input.name, email: input.email, product: input.product ?? undefined, message: input.message },
-        )
-        .catch((e) => logger.error("[advisory/inquiry] notify email failed", { error: e, inquiryId }));
+        );
+      }
+      await emailService.sendAdvisoryInquiryConfirm(
+        { email: input.email, name: input.name },
+        { name: input.name, locale: input.locale },
+      );
+    } catch (e) {
+      logger.error("[advisory/inquiry] notification failed", { error: e, inquiryId });
     }
-    emailService
-      .sendAdvisoryInquiryConfirm({ email: input.email, name: input.name }, { name: input.name, locale: input.locale })
-      .catch((e) => logger.error("[advisory/inquiry] confirm email failed", { error: e, inquiryId }));
-  }
+  });
 
   return apiSuccess({ inquiryId });
 }
