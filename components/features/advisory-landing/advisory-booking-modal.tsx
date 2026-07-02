@@ -219,7 +219,7 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
                 <button
                   type="submit"
                   disabled={submitting || !slotId || !email || !consent}
-                  className="min-h-[44px] w-full rounded-xl bg-amber-500 font-bold text-black hover:bg-amber-400 disabled:opacity-50"
+                  className="min-h-[44px] w-full rounded-xl bg-amber-500 font-bold text-black hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber-500"
                 >
                   {submitting ? t("submitting") : t("submit")}
                 </button>
