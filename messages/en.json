@@ -410,6 +410,44 @@
         "title": "System Requirements",
         "web": "Web Browser: Latest Chrome, Safari, Firefox, Edge"
       }
+    },
+    "advisory": {
+      "name": "MUED advisory",
+      "description": "Consultation, design, build, and ongoing support for AI systems",
+      "url": {
+        "title": "Sales URL",
+        "value": "https://mued.jp/en/advisory"
+      },
+      "price": {
+        "title": "Pricing",
+        "description": "Prices for each option are as follows (tax included):",
+        "plans": {
+          "consult": "First consultation: First 60 min free / then ¥30,000 per session",
+          "diagnosis": "Assessment + blueprint (one-off): ¥250,000 (lump sum, prepaid)",
+          "build": "Monthly build: From ¥200,000/month",
+          "companion": "Monthly companion: From ¥400,000/month"
+        }
+      },
+      "paymentTiming": {
+        "title": "Payment Timing",
+        "value": "Consultation: per session. Assessment + blueprint: prepaid lump sum. Monthly plans: billed at the start of each month.\n* Payment method (invoice or payment link) will be stated once the payment design is finalized."
+      },
+      "delivery": {
+        "title": "Service Delivery",
+        "value": "[To be finalized] Service delivery timing will be stated once finalized."
+      },
+      "cancellation": {
+        "title": "Cancellation & Refund Policy",
+        "description": "[To be finalized] Cancellation and refund terms will be stated once finalized."
+      },
+      "environment": {
+        "title": "Delivery Method",
+        "online": "Online consultation, design, and ongoing support (details provided at booking)"
+      },
+      "contact": {
+        "title": "Contact for this service",
+        "value": "support@mued.jp"
+      }
     }
   },
   "muedear": {
@@ -2036,6 +2074,114 @@
       "retry": "Diagnose another file",
       "fromBrowser": "Waveform check",
       "fromServer": "AI analysis (Hoo)"
+    }
+  },
+  "advisory": {
+    "meta": {
+      "title": "Build the AI that moves your business forward, together | MUED advisory",
+      "description": "You want to move your work or ideas forward with AI, but can't shape it on your own — that's what we build together. By Atsushi Kimura (glasswerks inc.), who builds and runs his own service with AI every day. First 60 minutes free."
+    },
+    "hero": {
+      "title": "We build the AI that moves your business forward — together.",
+      "lead1": "You want to move your work, or a project, forward with AI. But on your own, you're not sure how to shape it — that's where we come in, together.",
+      "lead2": "For example: taking bookings. Replying to inquiries. Quotes and documents. Cutting back-office busywork. Prototyping a new idea. We turn \"could AI do this?\" into something that actually runs.",
+      "lead3": "You don't need to understand the hard parts. We bring the technical side. You just tell us what you want to do.",
+      "cta": "Start with a free 60 minutes"
+    },
+    "who": {
+      "title": "Who does the work",
+      "body1": "I'm Atsushi Kimura (kimny). I'm a composer and arranger for Japanese pop and advertising music, and the representative of glasswerks inc. Alongside my music work, I build and run my own service, mued.jp, by hand while delegating to AI every day.",
+      "body2": "Before asking anyone else, I build and run it with AI myself — and from within that hands-on practice, we build yours together.",
+      "recordLabel": "What I'm building",
+      "recordText": "mued.jp",
+      "recordHref": "https://mued.jp",
+      "profileLabel": "Background",
+      "profileText": "LinkedIn",
+      "profileHref": "https://www.linkedin.com/in/kimura-atsushi-758b8b156"
+    },
+    "steps": {
+      "title": "How it works",
+      "step1": {
+        "title": "First, a free 60 minutes",
+        "description": "Tell us what you want to move forward."
+      },
+      "step2": {
+        "title": "How we can build it",
+        "description": "We sketch the approach and shape it together."
+      },
+      "step3": {
+        "title": "We actually build it",
+        "description": "And run it in your real workflow."
+      },
+      "step4": {
+        "title": "We stay alongside",
+        "description": "We keep pace with whatever comes up as you use it."
+      }
+    },
+    "pricing": {
+      "title": "Pricing",
+      "subtitle": "It starts with a free consultation. This isn't a place you jump straight into a big contract.",
+      "headerWhat": "What it is",
+      "headerPrice": "Price",
+      "consult": {
+        "name": "First consultation",
+        "what": "Dig into what you want to move forward, together.",
+        "price": "First 60 min free / then ¥30,000 per session"
+      },
+      "diagnosis": {
+        "name": "Assessment + blueprint (one-off)",
+        "what": "In one go, an assessment of what can be built and how, plus a blueprint. No follow-on contract.",
+        "price": "¥250,000"
+      },
+      "build": {
+        "name": "Monthly build",
+        "what": "We build and run your system, together.",
+        "price": "From ¥200,000/month"
+      },
+      "companion": {
+        "name": "Monthly companion",
+        "what": "After it's built, ask anytime you're unsure.",
+        "price": "From ¥400,000/month"
+      }
+    },
+    "myWay": {
+      "title": "How I work",
+      "body": "Honestly, most of this text was written by AI too. Delegate what can be delegated, put my hands where hands are needed — deciding that balance is my job. We build yours the same way. This very document is one example."
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "q1": {
+        "question": "I don't understand the technical side at all — is that okay?",
+        "answer": "Yes. We bring the technical side. You just tell us \"I want this to work like that,\" and turning it into something that runs is our job."
+      },
+      "q2": {
+        "question": "How does it start?",
+        "answer": "With a free 60 minutes. We dig into what you want to move forward and give back an assessment of how it can be built. Whether to go further is something you decide afterward."
+      },
+      "q3": {
+        "question": "Does what you build become ours afterward?",
+        "answer": "Yes. We build it under your name, and the deliverables are yours. We don't lock them in."
+      },
+      "q4": {
+        "question": "Won't it end at \"it sort of works\" and turn out not to be usable?",
+        "answer": "No. We don't stop at \"it appears to work\" — a person checks that it's actually usable before we hand it over."
+      },
+      "q5": {
+        "question": "What's the rough cost?",
+        "answer": "The first consultation is a free 60 minutes (then ¥30,000 per session). A one-off assessment plus blueprint is ¥250,000. Building together on a monthly basis starts at ¥200,000/month, and staying alongside afterward starts at ¥400,000/month."
+      }
+    },
+    "footerCta": {
+      "title": "Let's talk",
+      "description": "\"Could AI do this?\" — 60 minutes, free. No jargon.",
+      "cta": "Start with a free 60 minutes"
+    },
+    "footer": {
+      "operator": "Operated by glasswerks inc.",
+      "contact": "Contact: support@mued.jp",
+      "legalLink": "Legal",
+      "privacyLink": "Privacy Policy",
+      "signature": "MUED — AI-delegated development, run at a quality you can actually use."
     }
   }
 }

@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
+import { ADVISORY_LIVE } from "@/lib/advisory/config";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -124,6 +125,33 @@ function TokushohoContent() {
                 t("muedial.environment.web"),
               ]}
             />
+
+            {ADVISORY_LIVE && (
+              <ServiceSection
+                name={t("advisory.name")}
+                description={t("advisory.description")}
+                urlTitle={t("advisory.url.title")}
+                urlValue={t("advisory.url.value")}
+                priceTitle={t("advisory.price.title")}
+                priceDescription={t("advisory.price.description")}
+                pricePlans={[
+                  t("advisory.price.plans.consult"),
+                  t("advisory.price.plans.diagnosis"),
+                  t("advisory.price.plans.build"),
+                  t("advisory.price.plans.companion"),
+                ]}
+                paymentTimingTitle={t("advisory.paymentTiming.title")}
+                paymentTimingValue={t("advisory.paymentTiming.value")}
+                deliveryTitle={t("advisory.delivery.title")}
+                deliveryValue={t("advisory.delivery.value")}
+                cancellationTitle={t("advisory.cancellation.title")}
+                cancellationDescription={t("advisory.cancellation.description")}
+                environmentTitle={t("advisory.environment.title")}
+                environmentItems={[t("advisory.environment.online")]}
+                contactTitle={t("advisory.contact.title")}
+                contactValue={t("advisory.contact.value")}
+              />
+            )}
           </div>
 
           {/* ─── Contact ─── */}
@@ -180,6 +208,8 @@ function ServiceSection({
   cancellationDescription,
   environmentTitle,
   environmentItems,
+  contactTitle,
+  contactValue,
 }: {
   name: string;
   description: string;
@@ -196,6 +226,8 @@ function ServiceSection({
   cancellationDescription: string;
   environmentTitle: string;
   environmentItems: string[];
+  contactTitle?: string;
+  contactValue?: string;
 }) {
   return (
     <section className="border border-white/10 rounded-xl overflow-hidden">
@@ -252,6 +284,16 @@ function ServiceSection({
             ))}
           </ul>
         </div>
+
+        {/* Contact (optional, per-service) */}
+        {contactValue && (
+          <div>
+            <h4 className="font-semibold text-white mb-1 text-sm">{contactTitle}</h4>
+            <a href={`mailto:${contactValue}`} className="text-blue-400 hover:underline text-sm">
+              {contactValue}
+            </a>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ADVISORY_LIVE } from "@/lib/advisory/config";
 
 const MUEDNOTE_CONTENT = `# MUEDnote — 音楽クリエイター向けプロダクションコンパニオン
 
@@ -113,11 +114,24 @@ MUEDialは、ステムファイルをアップロードしてAIと話すだけ�
 - **Hoo MCP**: AI向けAPIサービス（https://hoo-mcp.glasswerkskimny.workers.dev）
 `;
 
+const ADVISORY_CONTENT = `
+
+## MUED advisory — AIの仕組みづくりの相談・設計・構築・並走
+
+> 非技術の事業主の「これ、AIでできないかな」（予約受付・問い合わせ返信・見積/資料・事務・企画の試作）を、実際に動くかたちにして並走するサービス。作編曲家 Atsushi Kimura（glasswerks inc. 代表）が、毎日AIで自社サービス（mued.jp）を作って運営している手の内で提供します。
+
+- **URL**: https://mued.jp/ja/advisory
+- **運営**: glasswerks inc.（株式会社グラスワークス／代表: 木村篤史 Atsushi Kimura）
+- **連絡先**: support@mued.jp
+- **メニュー**: まず相談（初回60分無料→¥30,000/回）／見立て＋設計図 ¥250,000（単発）／月額でつくる ¥200,000/月〜／月額で並走する ¥400,000/月〜
+`;
+
 export async function GET(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const isDial = host.includes("dial.mued.jp");
 
-  const content = isDial ? MUEDIAL_CONTENT : MUEDNOTE_CONTENT;
+  const baseContent = isDial ? MUEDIAL_CONTENT : MUEDNOTE_CONTENT;
+  const content = !isDial && ADVISORY_LIVE ? baseContent + ADVISORY_CONTENT : baseContent;
 
   return new NextResponse(content, {
     headers: {
