@@ -48,6 +48,8 @@ export interface SendEmailOptions {
   text?: string;
   replyTo?: string;
   tags?: { name: string; value: string }[];
+  /** File attachments (e.g. a text/calendar .ics invite). `content` = base64 string. */
+  attachments?: { filename: string; content: string; contentType?: string }[];
 }
 
 export interface EmailResult {
@@ -896,6 +898,7 @@ class EmailService {
         text: options.text,
         replyTo: options.replyTo || SUPPORT_EMAIL,
         tags: options.tags,
+        ...(options.attachments ? { attachments: options.attachments } : {}),
       });
 
       if (error) {
@@ -1113,6 +1116,104 @@ class EmailService {
       subject: '[MUED Alert] Bonus campaign budget threshold',
       html: `<pre>${message}</pre>`,
       text: message,
+    });
+  }
+
+  // ========================================
+  // Advisory storefront #8
+  // ========================================
+
+  /** Booking confirmation to the booker — carries the Meet link + an .ics attachment. */
+  async sendAdvisoryBookingConfirmed(
+    to: EmailRecipient,
+    data: { name?: string; locale: 'ja' | 'en'; dateTimeLabel: string; meetingUrl: string; icsBase64: string },
+  ): Promise<EmailResult> {
+    const esc = (s?: string) => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const ja = data.locale !== 'en';
+    const greeting = data.name ? (ja ? `${esc(data.name)} 様` : `Hi ${esc(data.name)},`) : ja ? 'こんにちは' : 'Hello,';
+    const intro = ja
+      ? '無料60分のご相談を承りました。下記の日時にオンライン（Google Meet）でお会いしましょう。'
+      : "Your free 60-minute consultation is booked. We'll meet online (Google Meet) at the time below.";
+    const html = baseTemplate(
+      `<p>${greeting}</p><p>${intro}</p>` +
+        `<div class="info-box"><div class="info-row"><span class="label">${ja ? '日時' : 'When'}</span><span class="value">${esc(data.dateTimeLabel)}</span></div>` +
+        `<div class="info-row"><span class="label">${ja ? '所要' : 'Duration'}</span><span class="value">${ja ? '60分' : '60 min'}</span></div></div>` +
+        `<a class="button" href="${data.meetingUrl}">${ja ? 'Google Meet に参加' : 'Join Google Meet'}</a>` +
+        `<p style="font-size:13px;color:#6b7280;">${ja ? '添付のカレンダー招待（.ics）から予定に追加できます。' : 'Add it to your calendar from the attached invite (.ics).'}</p>`,
+    );
+    const text = `${data.name ? (ja ? `${data.name} 様` : `Hi ${data.name},`) : ''}\n${intro}\n${ja ? '日時' : 'When'}: ${data.dateTimeLabel}\nGoogle Meet: ${data.meetingUrl}`;
+    return this.send({
+      to,
+      subject: ja ? 'ご予約を受け付けました｜MUED 無料60分相談' : 'Your booking is confirmed | MUED free 60-min consultation',
+      html,
+      text,
+      tags: [{ name: 'type', value: 'advisory_booking_confirm' }],
+      attachments: [{ filename: 'invite.ics', content: data.icsBase64, contentType: 'text/calendar; method=REQUEST; charset=UTF-8' }],
+    });
+  }
+
+  /** New-booking notification to the operator (kimny) — includes the one-tap "mark conducted" link. */
+  async sendAdvisoryBookingNotify(
+    to: EmailRecipient,
+    data: { name?: string; email: string; dateTimeLabel: string; meetingUrl: string; completeUrl: string },
+  ): Promise<EmailResult> {
+    const esc = (s?: string) => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const html = baseTemplate(
+      `<h2 style="margin-top:0;">新規 壁打ち予約</h2>` +
+        `<div class="info-box"><div class="info-row"><span class="label">お名前</span><span class="value">${esc(data.name) || '(未入力)'}</span></div>` +
+        `<div class="info-row"><span class="label">メール</span><span class="value">${esc(data.email)}</span></div>` +
+        `<div class="info-row"><span class="label">日時</span><span class="value">${esc(data.dateTimeLabel)}</span></div></div>` +
+        `<a class="button" href="${data.meetingUrl}">Google Meet</a>` +
+        `<p><a href="${data.completeUrl}">▶ この相談を「実施済み」にする</a></p>`,
+    );
+    const text = `新規 壁打ち予約\nお名前: ${data.name || '(未入力)'}\nメール: ${data.email}\n日時: ${data.dateTimeLabel}\nMeet: ${data.meetingUrl}\n実施済みにする: ${data.completeUrl}`;
+    return this.send({
+      to,
+      subject: `[MUED advisory] 新規予約: ${data.name || data.email} — ${data.dateTimeLabel}`,
+      html,
+      text,
+      tags: [{ name: 'type', value: 'advisory_booking_notify' }],
+    });
+  }
+
+  /** Inquiry acknowledgement to the inquirer (lane B — no recording). */
+  async sendAdvisoryInquiryConfirm(
+    to: EmailRecipient,
+    data: { name?: string; locale: 'ja' | 'en' },
+  ): Promise<EmailResult> {
+    const esc = (s?: string) => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const ja = data.locale !== 'en';
+    const greeting = data.name ? (ja ? `${esc(data.name)} 様` : `Hi ${esc(data.name)},`) : ja ? 'こんにちは' : 'Hello,';
+    const body = ja ? 'お問い合わせありがとうございます。担当より折り返しご連絡します。' : "Thank you for your inquiry. We'll get back to you shortly.";
+    return this.send({
+      to,
+      subject: ja ? 'お問い合わせを受け付けました｜MUED advisory' : 'We received your inquiry | MUED advisory',
+      html: baseTemplate(`<p>${greeting}</p><p>${body}</p>`),
+      text: `${data.name ? (ja ? `${data.name} 様` : `Hi ${data.name},`) : ''}\n${body}`,
+      tags: [{ name: 'type', value: 'advisory_inquiry_confirm' }],
+    });
+  }
+
+  /** New-inquiry notification to the operator (kimny) — lane B. */
+  async sendAdvisoryInquiryNotify(
+    to: EmailRecipient,
+    data: { name?: string; email: string; product?: string; message?: string },
+  ): Promise<EmailResult> {
+    const esc = (s?: string) => (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const html = baseTemplate(
+      `<h2 style="margin-top:0;">新規 問い合わせ</h2>` +
+        `<div class="info-box"><div class="info-row"><span class="label">お名前</span><span class="value">${esc(data.name) || '(未入力)'}</span></div>` +
+        `<div class="info-row"><span class="label">メール</span><span class="value">${esc(data.email)}</span></div>` +
+        `<div class="info-row"><span class="label">関心</span><span class="value">${esc(data.product) || '-'}</span></div></div>` +
+        `<p style="white-space:pre-wrap;">${esc(data.message) || '(本文なし)'}</p>`,
+    );
+    const text = `新規 問い合わせ\nお名前: ${data.name || '(未入力)'}\nメール: ${data.email}\n関心: ${data.product || '-'}\n\n${data.message || ''}`;
+    return this.send({
+      to,
+      subject: `[MUED advisory] 新規問い合わせ: ${data.name || data.email}`,
+      html,
+      text,
+      tags: [{ name: 'type', value: 'advisory_inquiry_notify' }],
     });
   }
 
