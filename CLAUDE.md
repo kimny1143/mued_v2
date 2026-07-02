@@ -188,7 +188,7 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 <!-- COMMON-BLOCK-START: 01-operational-premise -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/01-operational-premise.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## 稼働の前提
 
@@ -208,7 +208,7 @@ Claudeは休まない。眠らない。疲れない。存在するのはコン�
 
 <!-- COMMON-BLOCK-START: 02-memory-cleanup -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/02-memory-cleanup.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## メモリ棚卸し
 
@@ -223,7 +223,7 @@ Claudeは休まない。眠らない。疲れない。存在するのはコン�
 
 <!-- COMMON-BLOCK-START: 03-chrome-lock -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/03-chrome-lock.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## Chrome拡張ロック制
 
@@ -241,7 +241,7 @@ chrome拡張（claude-in-chrome）は共有リソース。同時に1課しか使
 
 <!-- COMMON-BLOCK-START: 04-org-structure -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/04-org-structure.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 <!-- Evidence: 2026-06-11 組織再編 v2 改定 (kimny Q1-Q7 確定 / 即時移行)。
      確定版 = _conductor/docs/inbox/proposal-org-restructure-20260611.md (v2)。
@@ -278,7 +278,7 @@ chrome拡張（claude-in-chrome）は共有リソース。同時に1課しか使
 
 <!-- COMMON-BLOCK-START: 05-opus-fixed-plan-mode -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/05-opus-fixed-plan-mode.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## plan mode の出入りルール (Opus固定 2026-04-23〜)
 
@@ -292,7 +292,7 @@ chrome拡張（claude-in-chrome）は共有リソース。同時に1課しか使
 
 <!-- COMMON-BLOCK-START: 06-plan-trigger-conditions -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/06-plan-trigger-conditions.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## /plan 発動条件
 
@@ -316,7 +316,7 @@ Opus固定下、/plan は設計段階を明示する cognitive context separator
 
 <!-- COMMON-BLOCK-START: 07-available-models-rule -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/07-available-models-rule.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## 運用ルール: `availableModels` は settings.json に追加しない
 
@@ -331,7 +331,7 @@ Opus固定下、/plan は設計段階を明示する cognitive context separator
 
 <!-- COMMON-BLOCK-START: 08-conductor-delegation -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/08-conductor-delegation.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## conductor委任権限
 
@@ -353,7 +353,7 @@ conductorからの指示は、下記の範囲においてkimny直接指示と同
 
 <!-- COMMON-BLOCK-START: 09-peer-self-judgment-boundaries -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/09-peer-self-judgment-boundaries.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## peer self-judgment境界 (kimny手動作業ゼロ原則)
 
@@ -378,7 +378,7 @@ peer は可能な限り kimny 介在なしで自走完結する。安全側に�
 
 <!-- COMMON-BLOCK-START: 10-mass-production-principle -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/10-mass-production-principle.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## 量産が default (生成上限を自分で設定しない)
 
@@ -398,7 +398,7 @@ kimny 指示「産み続けるんだよ。ひたすら。産めば産むほど�
 
 <!-- COMMON-BLOCK-START: 11-existing-state-first -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/11-existing-state-first.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## 既存 state 優先 (assumption禁止)
 
@@ -413,7 +413,7 @@ memory / draft に記載した前提と repo / file system / git の実態にズ
 
 <!-- COMMON-BLOCK-START: 12-self-correction-as-growth -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/12-self-correction-as-growth.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## self-correction is growth (judgment reverse OK)
 
@@ -438,7 +438,7 @@ peer judgment の矛盾・不一致を後から認識したら **reverse 判断 
 
 <!-- COMMON-BLOCK-START: 13-reference-vs-docs-complement -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/13-reference-vs-docs-complement.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## reference memory ≠ docs (structural complement原則)
 
@@ -454,7 +454,7 @@ peer judgment の矛盾・不一致を後から認識したら **reverse 判断 
 
 <!-- COMMON-BLOCK-START: 15-urgency-marker -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/15-urgency-marker.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## URGENCY marker — peer → conductor send_message 先頭 6 行 format
 
@@ -502,7 +502,7 @@ peer の識別子は **受信 channel の `from_id` 属性を唯一の正本**�
 
 <!-- COMMON-BLOCK-START: 16-external-resource-gate -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/16-external-resource-gate.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## 外部リソース gate — 常に URGENCY: high + pre-approval 必須
 
@@ -526,7 +526,7 @@ peer の識別子は **受信 channel の `from_id` 属性を唯一の正本**�
 
 <!-- COMMON-BLOCK-START: 17-status-md-self-drive -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/17-status-md-self-drive.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## status.md 自走 update protocol
 
@@ -563,7 +563,7 @@ peer の識別子は **受信 channel の `from_id` 属性を唯一の正本**�
 
 <!-- COMMON-BLOCK-START: 18-judgment-request-contract -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/18-judgment-request-contract.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## judgment request contract — judgment request form
 
@@ -613,7 +613,7 @@ Phase 1 = soft enforcement (compliance 95% 目標、違反は guidance、reject 
 
 <!-- COMMON-BLOCK-START: 19-character-gate -->
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/19-character-gate.md -->
-<!-- Distribute via: scripts/distribute-claude-md-blocks.sh -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
 ## キャラクター gate — 機械テストで拾えない人間判断の合格基準
 
