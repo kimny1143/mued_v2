@@ -1,50 +1,28 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { motion } from "framer-motion";
-import { MessageCircle, Compass, Wrench, Users } from "lucide-react";
 
-const STEP_ICONS = [MessageCircle, Compass, Wrench, Users] as const;
+// PROCESS — 4 numbered steps (01–04, Sora tabular-nums, teal), clean editorial (no icons).
 const STEP_KEYS = ["step1", "step2", "step3", "step4"] as const;
 
 export function AdvisoryStepsSection() {
   const t = useTranslations("advisory.steps");
 
   return (
-    <section className="py-24 relative">
-      <div className="container mx-auto px-6">
-        <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-16 text-center tracking-tight">
-          {t("title")}
-        </h2>
-
-        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
-          {STEP_KEYS.map((key, i) => {
-            const Icon = STEP_ICONS[i];
-            return (
-              <motion.div
-                key={key}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
-              >
-                <div className="bg-[#111] border border-white/5 rounded-xl p-6 hover:border-white/10 transition-colors h-full">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-amber-400/10 rounded-xl flex items-center justify-center shrink-0">
-                      <Icon className="w-5 h-5 text-amber-400" />
-                    </div>
-                    <span className="text-sm font-bold text-amber-400">{i + 1}</span>
-                  </div>
-                  <h3 className="text-base font-bold text-white mb-2">
-                    {t(`${key}.title`)}
-                  </h3>
-                  <p className="text-white/70 text-sm leading-relaxed">
-                    {t(`${key}.description`)}
-                  </p>
-                </div>
-              </motion.div>
-            );
-          })}
+    <section className="border-t border-neutral-100 px-6 py-20">
+      <div className="mx-auto max-w-5xl">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-teal-600">Process</p>
+        <h2 className="mb-12 text-2xl font-medium tracking-tight text-neutral-900">{t("title")}</h2>
+        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-4">
+          {STEP_KEYS.map((key, i) => (
+            <div key={key}>
+              <div className="mb-3 text-3xl font-light tabular-nums text-teal-600">
+                {String(i + 1).padStart(2, "0")}
+              </div>
+              <h3 className="mb-2 text-base font-semibold text-neutral-900">{t(`${key}.title`)}</h3>
+              <p className="text-sm leading-[1.9] text-neutral-600">{t(`${key}.description`)}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>

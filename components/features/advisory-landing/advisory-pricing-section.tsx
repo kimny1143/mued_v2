@@ -1,50 +1,32 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { motion } from "framer-motion";
-import { Star } from "lucide-react";
 
+// PRICING — 4 tiers as capsule cards; the price is the emphasized figure (Sora, tabular-nums, teal).
+// "まず相談" is highlighted (teal). Prices come verbatim from canonical i18n.
 const TIERS = ["consult", "diagnosis", "build", "companion"] as const;
 
 export function AdvisoryPricingSection() {
   const t = useTranslations("advisory.pricing");
 
   return (
-    <section className="py-24 bg-[#0a0a0a] relative">
-      <div className="absolute top-0 left-0 right-0 h-px bg-white/5" />
-
-      <div className="container mx-auto px-6">
-        <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-4 text-center tracking-tight">
-          {t("title")}
-        </h2>
-        <p className="text-white/60 mb-16 text-center max-w-2xl mx-auto">
-          {t("subtitle")}
-        </p>
-
-        <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-          {TIERS.map((key, i) => (
-            <motion.div
+    <section className="border-t border-neutral-100 px-6 py-20">
+      <div className="mx-auto max-w-5xl">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-teal-600">Pricing</p>
+        <h2 className="mb-2 text-2xl font-medium tracking-tight text-neutral-900">{t("title")}</h2>
+        <p className="mb-10 max-w-2xl text-[15px] leading-[1.9] text-neutral-600">{t("subtitle")}</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          {TIERS.map((key) => (
+            <div
               key={key}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.05, ease: "easeOut" }}
+              className={`rounded-2xl border p-6 ${
+                key === "consult" ? "border-teal-500/40 bg-teal-50/50" : "border-neutral-200 bg-white"
+              }`}
             >
-              <div
-                className={`bg-[#111] border rounded-xl p-6 h-full transition-colors ${
-                  key === "consult"
-                    ? "border-amber-400/30 hover:border-amber-400/50"
-                    : "border-white/5 hover:border-white/10"
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  {key === "consult" && <Star className="w-4 h-4 text-amber-400" />}
-                  <h3 className="text-lg font-bold text-white">{t(`${key}.name`)}</h3>
-                </div>
-                <p className="text-amber-400 font-semibold mb-3">{t(`${key}.price`)}</p>
-                <p className="text-white/60 text-sm leading-relaxed">{t(`${key}.what`)}</p>
-              </div>
-            </motion.div>
+              <h3 className="text-base font-semibold text-neutral-900">{t(`${key}.name`)}</h3>
+              <p className="mb-3 mt-2 text-xl font-light tabular-nums text-teal-700">{t(`${key}.price`)}</p>
+              <p className="text-sm leading-[1.9] text-neutral-600">{t(`${key}.what`)}</p>
+            </div>
           ))}
         </div>
       </div>

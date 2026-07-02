@@ -1,28 +1,17 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { motion } from "framer-motion";
 
+// APPROACH — a quiet section on a faint tint (#f8fafc).
 export function AdvisoryMyWaySection() {
   const t = useTranslations("advisory.myWay");
 
   return (
-    <section className="py-24 relative">
-      <div className="container mx-auto px-6">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-6 tracking-tight">
-            {t("title")}
-          </h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="text-white/70 leading-relaxed"
-          >
-            {t("body")}
-          </motion.p>
-        </div>
+    <section className="border-t border-neutral-100 bg-slate-50 px-6 py-20">
+      <div className="mx-auto max-w-3xl">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-teal-600">Approach</p>
+        <h2 className="mb-6 text-2xl font-medium tracking-tight text-neutral-900">{t("title")}</h2>
+        <p className="text-[15px] leading-[1.9] text-neutral-600">{t("body")}</p>
       </div>
     </section>
   );
