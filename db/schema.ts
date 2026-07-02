@@ -347,3 +347,8 @@ export * from './schema/mcp-api-keys';
 // Marketing Consent (Self-Owned List)
 // ========================================
 export * from './schema/marketing-consents';
+
+// ========================================
+// Advisory storefront #8 (intake: slots + inquiries/bookings)
+// ========================================
+export * from './schema/advisory';
