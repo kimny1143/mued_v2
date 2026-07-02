@@ -300,6 +300,18 @@
       "retention": "Data is retained for a maximum of 2 months and is automatically deleted thereafter.",
       "purpose": "Purpose of use: Service improvement, marketing effectiveness measurement, A/B test analysis, UX improvement",
       "optout": "You can opt out of data collection at any time via your Google Account settings (https://myaccount.google.com/activitycontrols) or by using the Google Analytics Opt-out Browser Add-on."
+    },
+    "section10": {
+      "title": "About MUED advisory (consulting & build service)",
+      "description": "This section applies when you use MUED advisory (a consulting, design, build, and ongoing-support service for AI systems).",
+      "items": {
+        "collect": "Information we collect: your name, email address, the content of your consultation, the recording of your consultation, and booking-related information.",
+        "recording": "About recording: consultations are recorded as a reference to give you a better response and to improve our quality. Consent is obtained at the time of booking.",
+        "purpose": "Purpose: used only to manage your booking, contact you, respond to your consultation, and improve our quality internally.",
+        "retention": "Retention: handled appropriately for those purposes and deleted once no longer needed.",
+        "thirdParty": "Third parties: not shared with third parties except as required by law.",
+        "withdraw": "Withdrawing consent / inquiries: please contact support@mued.jp."
+      }
     }
   },
   "tokushoho": {

@@ -3,6 +3,7 @@ import { setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 import { locales, type Locale } from "@/lib/i18n/config";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
+import { ADVISORY_LIVE } from "@/lib/advisory/config";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -170,6 +171,22 @@ function PrivacyContent() {
             <p className="text-slate-400 mb-3">{t("section9.purpose")}</p>
             <p className="text-slate-400">{t("section9.optout")}</p>
           </section>
+
+          {/* Section 10 — MUED advisory (staged: hidden until ADVISORY_LIVE) */}
+          {ADVISORY_LIVE && (
+            <section className="mb-8">
+              <h2 className="text-xl font-semibold text-white mb-4">{t("section10.title")}</h2>
+              <p className="text-slate-400 mb-3">{t("section10.description")}</p>
+              <ul className="list-disc pl-6 space-y-2 text-slate-300">
+                <li>{t("section10.items.collect")}</li>
+                <li>{t("section10.items.recording")}</li>
+                <li>{t("section10.items.purpose")}</li>
+                <li>{t("section10.items.retention")}</li>
+                <li>{t("section10.items.thirdParty")}</li>
+                <li>{t("section10.items.withdraw")}</li>
+              </ul>
+            </section>
+          )}
         </div>
       </main>
 
