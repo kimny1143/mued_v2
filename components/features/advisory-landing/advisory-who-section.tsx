@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 
-// ABOUT — square 顔写真 placeholder (conductor → mued handoff, 480x480) + kimny real-name block.
+// ABOUT — square 顔写真 (kimny, 480x480) + kimny real-name block.
 export function AdvisoryWhoSection() {
   const t = useTranslations("advisory.who");
 
@@ -11,9 +12,14 @@ export function AdvisoryWhoSection() {
       <div className="mx-auto max-w-5xl">
         <p className="mb-8 text-[11px] font-semibold uppercase tracking-[0.15em] text-teal-600">About</p>
         <div className="grid gap-10 md:grid-cols-[200px_1fr] md:gap-14">
-          {/* 顔写真 placeholder — replaced by the 480x480 asset (conductor handoff) */}
-          <div className="flex aspect-square w-full max-w-[200px] items-center justify-center rounded-2xl bg-neutral-100 text-xs text-neutral-300">
-            Photo
+          <div className="aspect-square w-full max-w-[200px] overflow-hidden rounded-2xl bg-neutral-100">
+            <Image
+              src="/images/advisory-kimny-480.png"
+              alt={t("title")}
+              width={480}
+              height={480}
+              className="h-full w-full object-cover"
+            />
           </div>
           <div>
             <h2 className="mb-6 text-2xl font-medium tracking-tight text-neutral-900">{t("title")}</h2>
