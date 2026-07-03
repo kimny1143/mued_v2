@@ -446,11 +446,11 @@
       },
       "delivery": {
         "title": "Service Delivery",
-        "value": "[To be finalized] Service delivery timing will be stated once finalized."
+        "value": "Free consultations and advisory sessions are held online at the reserved date and time. The one-off assessment is delivered by a due date agreed individually at the initial meeting after the contract is concluded (the delivery due date is stated in the quotation, the booking confirmation email, or the contract). Monthly services are provided on a rolling monthly basis from the start date stated in the contract or the booking confirmation email."
       },
       "cancellation": {
         "title": "Cancellation & Refund Policy",
-        "description": "[To be finalized] Cancellation and refund terms will be stated once finalized."
+        "description": "Free consultations and advisory sessions may be cancelled if you notify us by the day before the scheduled date (a full refund is given if payment has already been made). No refund is given for same-day cancellation or no-show. For the one-off assessment, cancellation before work has begun is fully refunded. If you terminate midway after work has begun, we refund the balance after deducting the fee corresponding to the services already provided and the deliverables already produced, together with any external costs already incurred (the basis for calculating the deduction is stated in the individual contract, the quotation, or the booking confirmation email, and an itemized statement is provided at the time of refund). Monthly services may be cancelled at any time (please contact support@mued.jp). Cancellation takes effect on the last day of the contract month in which we receive your cancellation request; there is no pro-rated refund for the current month, and billing stops from the following contract month onward. For the purposes of this section, \"beginning of work\" means that, after the contract is concluded, we hold the initial meeting, or begin any research, analysis, design, or deliverable production based on the information or materials you provide (administrative steps alone — such as scheduling, invoice issuance, or payment confirmation — do not constitute the beginning of work)."
       },
       "environment": {
         "title": "Delivery Method",
