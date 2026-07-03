@@ -35,6 +35,9 @@ const schema = z.object({
   locale: z.enum(["ja", "en"]).default("ja"),
   // recording consent is REQUIRED for a booking (lane A). z.literal(true) rejects false/absent.
   recordingConsent: z.literal(true),
+  // pre-consult "biggest time-sink" answer. Required in the LP modal (client-side); optional here so
+  // the DB stays nullable and a legacy/direct call without it still persists the booking.
+  painPoint: z.string().max(1000).optional(),
   source: z.string().max(100).optional(),
   utm_source: z.string().max(200).nullable().optional(),
   utm_medium: z.string().max(200).nullable().optional(),
@@ -84,6 +87,7 @@ export async function POST(request: NextRequest) {
           name: input.name,
           email: input.email,
           locale: input.locale,
+          painPoint: input.painPoint ?? null,
           slotId: slot.id,
           scheduledAt: slot.startTime,
           meetingUrl: MEET_URL || null,

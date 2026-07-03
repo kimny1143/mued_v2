@@ -48,6 +48,9 @@ export const advisoryInquiries = pgTable(
     locale: text("locale").notNull().default("ja"), // 'ja' | 'en'
     product: text("product"), // inquiry-lane tier of interest: 'wallhit'|'diagnosis'|'build'|'run'|null
     message: text("message"),
+    // pre-consult intake question (booking lane, kimny-approved): "いま一番手間を食っている仕事は？".
+    // Required in the LP modal (client-side); nullable at the DB so older rows / the inquiry lane stay valid.
+    painPoint: text("pain_point"),
     // booking lane
     slotId: uuid("slot_id"), // the claimed advisory_slots.id
     scheduledAt: timestamp("scheduled_at"), // denormalized slot start (KPI + .ics + email)

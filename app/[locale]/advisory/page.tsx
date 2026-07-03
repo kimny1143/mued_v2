@@ -17,7 +17,8 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-const FAQ_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
+// q5 (費用感) removed — duplicated the Pricing section (content課 dedup, kimny live review).
+const FAQ_KEYS = ["q1", "q2", "q3", "q4"] as const;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
