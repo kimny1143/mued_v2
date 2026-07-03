@@ -25,6 +25,7 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
+  const [painPoint, setPainPoint] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -68,9 +69,23 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
     [locale],
   );
 
+  // Pre-consult required question (kimny-approved). content課 owns the canonical copy in messages/*.json
+  // (advisory.booking.painPointLabel / painPointHint); until they land it, fall back to the approved
+  // text via t.has() so the live modal is never broken or shows a raw key path.
+  const painPointLabel = t.has("painPointLabel")
+    ? t("painPointLabel")
+    : locale === "ja"
+      ? "いま一番手間を食っている仕事はなんですか？"
+      : "What's eating up the most of your time right now?";
+  const painPointHint = t.has("painPointHint")
+    ? t("painPointHint")
+    : locale === "ja"
+      ? "一言でOK"
+      : "One line is fine.";
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!slotId || !email || !consent || submitting) return;
+    if (!slotId || !email || !consent || !painPoint.trim() || submitting) return;
     setError(null);
     setSubmitting(true);
     trackEvent({ action: "advisory_booking_submitted", params: { locale } });
@@ -78,7 +93,7 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
       const res = await fetch("/api/advisory/booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slotId, name: name || undefined, email, locale, recordingConsent: true, source: "lp" }),
+        body: JSON.stringify({ slotId, name: name || undefined, email, painPoint: painPoint.trim(), locale, recordingConsent: true, source: "lp" }),
       });
       if (res.ok) {
         setDone(true);
@@ -194,6 +209,21 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
                   placeholder={t("email")}
                   className="min-h-[44px] w-full rounded-lg border border-white/10 bg-white/5 px-3 text-white placeholder-white/30"
                 />
+                <div>
+                  <label htmlFor="advisory-painpoint" className="mb-2 block text-sm text-white/70">
+                    {painPointLabel}
+                  </label>
+                  <textarea
+                    id="advisory-painpoint"
+                    required
+                    value={painPoint}
+                    onChange={(e) => setPainPoint(e.target.value)}
+                    placeholder={painPointHint}
+                    maxLength={1000}
+                    rows={2}
+                    className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30"
+                  />
+                </div>
                 <label className="flex items-start gap-2 text-xs text-white/70">
                   <input
                     type="checkbox"
@@ -218,7 +248,7 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
 
                 <button
                   type="submit"
-                  disabled={submitting || !slotId || !email || !consent}
+                  disabled={submitting || !slotId || !email || !consent || !painPoint.trim()}
                   className="min-h-[44px] w-full rounded-xl bg-amber-500 font-bold text-black hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber-500"
                 >
                   {submitting ? t("submitting") : t("submit")}

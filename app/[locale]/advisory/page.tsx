@@ -17,7 +17,8 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-const FAQ_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
+// q5 (費用感) removed — duplicated the Pricing section (content課 dedup, kimny live review).
+const FAQ_KEYS = ["q1", "q2", "q3", "q4"] as const;
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -87,7 +88,7 @@ export default async function AdvisoryPage({ params }: PageProps) {
       founder: {
         "@type": "Person",
         name: "Atsushi Kimura",
-        alternateName: "kimny",
+        alternateName: ["kimny", "木村篤史"],
         jobTitle:
           locale === "ja" ? "作編曲家 / 代表" : "Composer-Arranger / Representative",
         worksFor: {
@@ -107,32 +108,32 @@ export default async function AdvisoryPage({ params }: PageProps) {
         {
           "@type": "Offer",
           name: locale === "ja" ? "まず相談（壁打ち）" : "First consultation",
-          price: "30000",
+          price: "33000",
           priceCurrency: "JPY",
           description:
             locale === "ja"
-              ? "初回60分無料。以降 ¥30,000/回。"
-              : "First 60 minutes free. Then ¥30,000 per session.",
+              ? "初回60分無料。以降 33,000円（税込）/回。"
+              : "First 60 minutes free. Then ¥33,000 (incl. tax) per session.",
         },
         {
           "@type": "Offer",
           name: locale === "ja" ? "見立て＋設計図（単発）" : "Assessment + blueprint (one-off)",
-          price: "250000",
+          price: "275000",
           priceCurrency: "JPY",
         },
         {
           "@type": "Offer",
           name: locale === "ja" ? "月額でつくる" : "Monthly build",
-          price: "200000",
+          price: "220000",
           priceCurrency: "JPY",
-          description: locale === "ja" ? "¥200,000/月〜" : "From ¥200,000/month",
+          description: locale === "ja" ? "22万円〜／月（税込）" : "From ¥220,000/month (incl. tax)",
         },
         {
           "@type": "Offer",
           name: locale === "ja" ? "月額で並走する" : "Monthly companion",
-          price: "400000",
+          price: "440000",
           priceCurrency: "JPY",
-          description: locale === "ja" ? "¥400,000/月〜" : "From ¥400,000/month",
+          description: locale === "ja" ? "44万円〜／月（税込）" : "From ¥440,000/month (incl. tax)",
         },
       ],
     },

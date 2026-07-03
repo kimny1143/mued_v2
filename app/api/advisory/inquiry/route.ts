@@ -23,6 +23,7 @@ const schema = z.object({
   locale: z.enum(["ja", "en"]).default("ja"),
   product: z.enum(["wallhit", "diagnosis", "build", "run", "other"]).nullable().optional(),
   message: z.string().max(2000).optional(),
+  painPoint: z.string().max(1000).optional(), // pre-consult "biggest time-sink" answer (uniform KPI store)
   consent: z.boolean().optional(),
   source: z.string().max(100).optional(),
   utm_source: z.string().max(200).nullable().optional(),
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
         locale: input.locale,
         product: input.product ?? null,
         message: input.message,
+        painPoint: input.painPoint ?? null,
         recordingConsent: false,
         consentPolicyVersion: input.consent ? CONSENT_POLICY_VERSION : null,
         consentLocale: input.consent ? input.locale : null,

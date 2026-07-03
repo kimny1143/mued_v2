@@ -8,7 +8,8 @@ import { useTranslations } from "next-intl";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const FAQ_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
+// q5 (費用感) removed — it duplicated the Pricing section (content課 dedup, kimny live review).
+const FAQ_KEYS = ["q1", "q2", "q3", "q4"] as const;
 type FaqKey = (typeof FAQ_KEYS)[number];
 
 export function AdvisoryFaqSection() {
