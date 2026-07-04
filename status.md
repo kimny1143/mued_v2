@@ -3,15 +3,15 @@ peer: mued
 department: product
 activity: active
 status: active
-current_task: **advisory LP 全面改修 + 特商法完成 = 実装完納/staged（本セッション 2026-07-03）**。**#575（LP改修）MERGED**(squash b78f8d8e): 顔写真削除 text-forward About / 入口2段prominent+月額2段従属レンジ pricing / 税込併記(LP↔特商法↔JSON-LD 33k/275k/220k/440k 整合) / FAQ q5削除→q1-q4 / 予約 painPoint 必須textarea(schema `advisory_inquiries.pain_point` nullable+migration 0056+booking/inquiry route wiring) / トーン具体化 / 表示名 木村篤史。**#569（特商法 delivery/cancellation 最終文）MERGED**(511088a6)。**migration 0056 prod Neon 適用済+mued独立確認(pain_point/text/YES)**。content§6 full APPROVE+conductor verify(a)+CI全green。advisory storefront staged 実装完納。
+current_task: **advisory LP 全面改修 + 特商法完成 = 実装完納/staged（本セッション 2026-07-03）**。**#575（LP改修）MERGED**(squash b78f8d8e): 顔写真削除 text-forward About / 入口2段prominent+月額2段従属レンジ pricing / 税込併記(LP↔特商法↔JSON-LD 33k/275k/220k/440k 整合) / FAQ q5削除→q1-q4 / 予約 painPoint 必須textarea(schema `advisory_inquiries.pain_point` nullable+migration 0056+booking/inquiry route wiring) / トーン具体化 / 表示名 木村篤史。**#569（特商法 delivery/cancellation 最終文）MERGED**(511088a6)。**migration 0056 prod Neon 適用済+mued独立確認(pain_point/text/YES)**。content§6 full APPROVE+conductor verify(a)+CI全green。advisory storefront staged 実装完納。**7/5 EOD checkout: #573 planning briefs 永続化 MERGED**(Tier1 self-review・docs/advisory/ 4 briefs・CI全green)。
 next_action: **能動タスクなし=全 gated**（advisory 実装完納）。①LP公開GO=`ADVISORY_LIVE=true`(kimny不可逆gate・公開前=FAQ/opener kimny redline + 月額 JSON-LD offer priceSpecification化 follow-up) ②ロゴSVG=mued/design handoff待ち差替(placeholder幾何マーク先行) ③PR-4(¥30k Stripe)=held(no-mamagoto demand signal待ち)。次 dispatch or unlock gate 待ちで standby。fresh instance は status.md+[[project-advisory-intake-wiring]]で再開可。
-blocked_by: 全 gated: ①LP公開GO=kimny不可逆gate ②ロゴSVG=mued/design handoff ③月額JSON-LD priceSpec=unlock前kimny判断(defer合意済) ④PR-4=demand signal(held)。**別軸/park**: MUEDear Play C device声gate=kimny実機待ち(非干渉)。**完了/merged(本セッション)**: #575(b78f8d8e)+#569(511088a6)。
+blocked_by: 全 gated: ①LP公開GO=kimny不可逆gate ②ロゴSVG=mued/design handoff ③月額JSON-LD priceSpec=unlock前kimny判断(defer合意済) ④PR-4=demand signal(held)。**別軸/park**: MUEDear Play C device声gate=kimny実機待ち(非干渉)。**完了/merged**: #575(b78f8d8e)+#569(511088a6)+#573(planning briefs永続化・7/5 checkout)。**残 open PR(要判断)**: #530 dashboard DRY=Tier2 product課 review待ち / #561 SEO LP=kimny gate / #562 MUEDear status handback=owner product課寄り。
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-07-03T21:00:00+09:00
-last_update: 2026-07-03T11:58:00+09:00
-evidence: #575(LP改修)=MERGED b78f8d8e / #569(特商法 delivery/cancellation)=MERGED 511088a6 / migration 0056(pain_point nullable)prod適用+mued独立確認(information_schema: pain_point|text|YES on neondb)。content§6 full APPROVE(独立Read+スクショ5枚キャラクターゲート)+conductor verify(a)+CI全green。#569鮮度=canonical `_contents-writing/drafts/inbox/advisory-tokushoho-final-fill-20260702.md` byte-exact 4/4。ADVISORY_LIVE=false維持(公開ゼロ)。
+expected_next_check_at: 2026-07-05T21:00:00+09:00
+last_update: 2026-07-05T06:15:00+09:00
+evidence: #575(LP改修)=MERGED b78f8d8e / #569(特商法 delivery/cancellation)=MERGED 511088a6 / #573(planning briefs永続化)=MERGED(Tier1 self-review・docs/advisory/) / migration 0056(pain_point nullable)prod適用+mued独立確認(information_schema: pain_point|text|YES on neondb)。content§6 full APPROVE(独立Read+スクショ5枚キャラクターゲート)+conductor verify(a)+CI全green。#569鮮度=canonical `_contents-writing/drafts/inbox/advisory-tokushoho-final-fill-20260702.md` byte-exact 4/4。ADVISORY_LIVE=false維持(公開ゼロ)。
 confidence: high
 lane: active
 ---
