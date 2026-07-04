@@ -32,15 +32,16 @@
  * -----
  *   # explicit JST datetimes (full control over exactly when you're available) — PRIMARY:
  *   npx tsx scripts/seed-advisory-slots.ts --slots "2026-07-08 20:00, 2026-07-11 15:00"
- *   # recurring standing pattern for the next N weeks (edit STANDING_AVAILABILITY below):
- *   npx tsx scripts/seed-advisory-slots.ts --recur --weeks 3
+ *   # recurring standing pattern (STANDING_AVAILABILITY below) up to a bounded end date:
+ *   npx tsx scripts/seed-advisory-slots.ts --recur --until 2026-10-09
  *   # actually write (kimny-gated). Run under UTC so the read-back check mirrors Vercel:
  *   TZ=UTC npx tsx scripts/seed-advisory-slots.ts --slots "2026-07-08 20:00" --commit
  *
  * FLAGS
  *   --slots "<jst>,<jst>,..."   explicit JST datetimes ("YYYY-MM-DD HH:mm")
  *   --recur                     generate from STANDING_AVAILABILITY
- *   --weeks N                   recur horizon in weeks (default 3)
+ *   --weeks N                   recur horizon in weeks (default 3; ignored if --until given)
+ *   --until YYYY-MM-DD          recur horizon end date (JST, inclusive) — bounds a fixed campaign
  *   --duration N                slot length in minutes (default 60)
  *   --commit                    perform the writes (omit = dry-run)
  */
@@ -59,11 +60,14 @@ const DEFAULT_WEEKS = 3;
  * Standing weekly availability, used only with --recur. Times are JST wall-clock. EDIT THIS to your
  * real recurring hours — an empty list forces you to pass explicit --slots (no accidental auto-book).
  * weekday: 0=Sun … 6=Sat.
+ *
+ * Current (kimny, 2026-07 → early Oct): Tue/Wed/Thu 10:00–16:00 JST, 60-min slots, 12:00 lunch
+ * excluded → 5 slots/day at 10 / 11 / 13 / 14 / 15. kimny keeps these windows free (recurring cadence
+ * chosen with auto-book understood). Pair --recur with --until 2026-10-09 to bound the 3-month horizon.
  */
-const STANDING_AVAILABILITY: Array<{ weekday: number; hour: number; minute: number }> = [
-  // e.g. { weekday: 2, hour: 20, minute: 0 },  // Tue 20:00 JST
-  // e.g. { weekday: 6, hour: 15, minute: 0 },  // Sat 15:00 JST
-];
+const STANDING_AVAILABILITY: Array<{ weekday: number; hour: number; minute: number }> = [2, 3, 4].flatMap(
+  (weekday) => [10, 11, 13, 14, 15].map((hour) => ({ weekday, hour, minute: 0 })),
+);
 
 /** JST wall-clock → the absolute instant, independent of the machine's local timezone. */
 function jstToInstant(y: number, mo1: number, d: number, hh: number, mm: number): Date {
@@ -94,7 +98,7 @@ function parseJstLiteral(literal: string): { intended: string; start: Date } {
   return { intended: `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}`, start };
 }
 
-function generateRecurring(weeks: number): Array<{ intended: string; start: Date }> {
+function generateRecurring(weeks: number, untilJst?: string): Array<{ intended: string; start: Date }> {
   if (STANDING_AVAILABILITY.length === 0) {
     throw new Error(
       "--recur but STANDING_AVAILABILITY is empty. Edit it in this file, or use --slots for explicit times.",
@@ -105,12 +109,15 @@ function generateRecurring(weeks: number): Array<{ intended: string; start: Date
   const todayJst = renderJst(now).slice(0, 10); // YYYY-MM-DD in JST
   const [ty, tm, td] = todayJst.split("-").map(Number);
   const base = Date.UTC(ty, tm - 1, td); // midnight JST-day anchor (in UTC ms)
-  for (let day = 0; day < weeks * 7; day++) {
+  // --until bounds the horizon (JST date, inclusive); otherwise weeks*7 days. 400-day backstop.
+  const hardCap = untilJst ? 400 : weeks * 7;
+  for (let day = 0; day < hardCap; day++) {
     const cur = new Date(base + day * 86400000);
-    const weekday = new Date(cur).getUTCDay();
+    const dateStr = cur.toISOString().slice(0, 10); // JST calendar date being enumerated
+    if (untilJst && dateStr > untilJst) break;
+    const weekday = cur.getUTCDay();
     for (const a of STANDING_AVAILABILITY) {
       if (a.weekday !== weekday) continue;
-      const dateStr = new Date(cur).toISOString().slice(0, 10);
       const [yy, mm, dd] = dateStr.split("-").map(Number);
       const start = jstToInstant(yy, mm, dd, a.hour, a.minute);
       if (start.getTime() <= now.getTime()) continue; // never seed a past slot
@@ -146,7 +153,7 @@ async function main() {
       .filter(Boolean)
       .map(parseJstLiteral);
   } else if (hasFlag("--recur")) {
-    planned = generateRecurring(weeks);
+    planned = generateRecurring(weeks, getFlag("--until"));
   } else {
     console.error(
       "Nothing to seed. Pass --slots \"YYYY-MM-DD HH:mm,...\" (JST) or --recur (edit STANDING_AVAILABILITY).",
@@ -174,12 +181,28 @@ async function main() {
         `   but the post-commit read-back check needs TZ=UTC to mirror Vercel — re-run with TZ=UTC to verify.`,
     );
   }
+  // batch summary (total / distinct days / per-day / horizon) so a large recurring plan is auditable
+  const days = new Set(planned.map((p) => p.intended.slice(0, 10)));
+  const perDay = (planned.length / days.size).toFixed(1);
+  console.log(
+    `\n  ${planned.length} slot(s) · ${days.size} day(s) · ~${perDay}/day · ` +
+      `${planned[0].intended} → ${planned[planned.length - 1].intended} JST`,
+  );
+
   console.log("\n  intended (JST)     stored (UTC / ISO)          app shows (Asia/Tokyo)");
   console.log("  ─────────────────  ──────────────────────────  ──────────────────────");
-  for (const p of planned) {
+  const rowStr = (p: { intended: string; start: Date }) => {
     const shows = renderJst(p.start);
     const ok = shows === p.intended ? "" : "  ❌ MISMATCH";
-    console.log(`  ${p.intended}   ${p.start.toISOString()}   ${shows}${ok}`);
+    return `  ${p.intended}   ${p.start.toISOString()}   ${shows}${ok}`;
+  };
+  // sample large batches (first 6 + last 3) — every slot is still integrity-checked below
+  const sample: Array<{ intended: string; start: Date } | null> =
+    planned.length > 16 ? [...planned.slice(0, 6), null, ...planned.slice(-3)] : planned;
+  for (const p of sample) console.log(p ? rowStr(p) : `  … (${planned.length - 9} more) …`);
+  const mismatch = planned.filter((p) => renderJst(p.start) !== p.intended);
+  if (mismatch.length) {
+    console.log(`\n  ❌ ${mismatch.length} slot(s) render at the WRONG JST time — do NOT --commit until fixed.`);
   }
   console.log("");
 
