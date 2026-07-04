@@ -14,6 +14,11 @@ interface Slot {
  * Booking widget for the free 60-min 壁打ち. Opened by AdvisoryPrimaryCta. Fetches open slots
  * (GET /api/advisory/slots), collects name/email + the REQUIRED recording consent, and submits to
  * POST /api/advisory/booking. The consent body is content課 copy rendered via next-intl rich text.
+ *
+ * NO-SLOTS FALLBACK: when there is no open availability the booking form cannot render, so instead of
+ * dead-ending on "no slots" (and losing the lead entirely — this modal is the LP's only intake) we
+ * capture the visitor's email + biggest time-sink as an inquiry (POST /api/advisory/inquiry,
+ * product='wallhit', source='lp-no-slots') so the operator can follow up when a slot opens.
  */
 export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const t = useTranslations("advisory.booking");
@@ -28,14 +33,16 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
   const [painPoint, setPainPoint] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
+  // which flow succeeded — drives the success panel copy (booking vs no-slots inquiry).
+  const [done, setDone] = useState<null | "booking" | "inquiry">(null);
 
   useEffect(() => {
     if (!open) return;
     setSlots(null);
     setSlotId("");
     setError(null);
-    setDone(false);
+    setDone(null);
+    setConsent(false);
     let cancelled = false;
     fetch("/api/advisory/slots")
       .then((r) => r.json())
@@ -82,6 +89,27 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
     : locale === "ja"
       ? "一言でOK"
       : "One line is fine.";
+  // No-slots fallback copy (t.has() guarded — content課 canonicalizes advisory.booking.noSlots* later).
+  const noSlotsInviteBody = t.has("noSlotsInviteBody")
+    ? t("noSlotsInviteBody")
+    : locale === "ja"
+      ? "いまは空き枠がありません。メールアドレスと、いま一番手間を食っている仕事を教えていただければ、枠が空き次第こちらからご連絡します。"
+      : "No open slots right now. Leave your email and your biggest time-sink, and I'll reach out the moment one opens up.";
+  const noSlotsInviteSubmit = t.has("noSlotsInviteSubmit")
+    ? t("noSlotsInviteSubmit")
+    : locale === "ja"
+      ? "枠が空いたら知らせてもらう"
+      : "Notify me when a slot opens";
+  const noSlotsSuccessTitle = t.has("noSlotsSuccessTitle")
+    ? t("noSlotsSuccessTitle")
+    : locale === "ja"
+      ? "受け付けました"
+      : "Got it";
+  const noSlotsSuccessBody = t.has("noSlotsSuccessBody")
+    ? t("noSlotsSuccessBody")
+    : locale === "ja"
+      ? "枠が空き次第、いただいたメールアドレスにご連絡します。"
+      : "I'll email you as soon as a slot opens up.";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -96,7 +124,7 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
         body: JSON.stringify({ slotId, name: name || undefined, email, painPoint: painPoint.trim(), locale, recordingConsent: true, source: "lp" }),
       });
       if (res.ok) {
-        setDone(true);
+        setDone("booking");
         trackEvent({ action: "advisory_booking_success", params: { locale } });
         return;
       }
@@ -121,7 +149,100 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
     }
   }
 
+  // No-slots lead capture — routes to the inquiry lane (human follow-up, no booking, no recording).
+  async function submitInquiry(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email || !consent || !painPoint.trim() || submitting) return;
+    setError(null);
+    setSubmitting(true);
+    trackEvent({ action: "advisory_noslots_inquiry_submitted", params: { locale } });
+    try {
+      const res = await fetch("/api/advisory/inquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name: name || undefined,
+          painPoint: painPoint.trim(),
+          product: "wallhit",
+          locale,
+          consent: true,
+          source: "lp-no-slots",
+        }),
+      });
+      if (res.ok) {
+        setDone("inquiry");
+        trackEvent({ action: "advisory_noslots_inquiry_success", params: { locale } });
+        return;
+      }
+      setError(t("errorGeneric"));
+    } catch {
+      setError(t("errorGeneric"));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   if (!open) return null;
+
+  const nameInput = (
+    <input
+      type="text"
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      placeholder={t("name")}
+      maxLength={100}
+      className="min-h-[44px] w-full rounded-lg border border-white/10 bg-white/5 px-3 text-white placeholder-white/30"
+    />
+  );
+  const emailInput = (
+    <input
+      type="email"
+      required
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+      placeholder={t("email")}
+      className="min-h-[44px] w-full rounded-lg border border-white/10 bg-white/5 px-3 text-white placeholder-white/30"
+    />
+  );
+  const painPointInput = (
+    <div>
+      <label htmlFor="advisory-painpoint" className="mb-2 block text-sm text-white/70">
+        {painPointLabel}
+      </label>
+      <textarea
+        id="advisory-painpoint"
+        required
+        value={painPoint}
+        onChange={(e) => setPainPoint(e.target.value)}
+        placeholder={painPointHint}
+        maxLength={1000}
+        rows={2}
+        className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30"
+      />
+    </div>
+  );
+  const consentBox = (consentKey: "booking" | "inquiry") => (
+    <label className="flex items-start gap-2 text-xs text-white/70">
+      <input
+        type="checkbox"
+        required
+        checked={consent}
+        onChange={(e) => setConsent(e.target.checked)}
+        className="mt-1 accent-amber-500"
+      />
+      <span>
+        <span className="mb-1 block font-semibold">{tc(`${consentKey}.label`)}</span>
+        {tc.rich(`${consentKey}.body`, {
+          privacy: (chunks) => (
+            <a href={`/${locale}/privacy`} className="underline" target="_blank" rel="noopener noreferrer">
+              {chunks}
+            </a>
+          ),
+        })}
+      </span>
+    </label>
+  );
 
   return (
     <div
@@ -149,8 +270,8 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
 
         {done ? (
           <div>
-            <p className="mb-2 font-semibold text-white">{t("successTitle")}</p>
-            <p className="text-sm text-white/70">{t("successBody")}</p>
+            <p className="mb-2 font-semibold text-white">{done === "booking" ? t("successTitle") : noSlotsSuccessTitle}</p>
+            <p className="text-sm text-white/70">{done === "booking" ? t("successBody") : noSlotsSuccessBody}</p>
             <button
               type="button"
               onClick={onClose}
@@ -159,102 +280,65 @@ export function AdvisoryBookingModal({ open, onClose }: { open: boolean; onClose
               {t("close")}
             </button>
           </div>
+        ) : slots === null ? (
+          <p className="text-sm text-white/40">…</p>
+        ) : slots.length === 0 ? (
+          // No open slots — capture the lead instead of dead-ending.
+          <form onSubmit={submitInquiry} className="space-y-4">
+            <p className="text-sm text-white/70">{noSlotsInviteBody}</p>
+            {nameInput}
+            {emailInput}
+            {painPointInput}
+            {consentBox("inquiry")}
+            {error && <p className="text-sm text-red-400">{error}</p>}
+            <button
+              type="submit"
+              disabled={submitting || !email || !consent || !painPoint.trim()}
+              className="min-h-[44px] w-full rounded-xl bg-amber-500 font-bold text-black hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber-500"
+            >
+              {submitting ? t("submitting") : noSlotsInviteSubmit}
+            </button>
+          </form>
         ) : (
           <form onSubmit={submit} className="space-y-4">
             <div>
               <label className="mb-2 block text-sm text-white/70">{t("pickSlot")}</label>
-              {slots === null ? (
-                <p className="text-sm text-white/40">…</p>
-              ) : slots.length === 0 ? (
-                <p className="text-sm text-white/60">{t("noSlots")}</p>
-              ) : (
-                <div className="max-h-52 space-y-2 overflow-y-auto">
-                  {slots.map((s) => (
-                    <label
-                      key={s.id}
-                      className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 ${
-                        slotId === s.id ? "border-amber-500 bg-amber-500/10" : "border-white/10 hover:border-white/30"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="advisory-slot"
-                        value={s.id}
-                        checked={slotId === s.id}
-                        onChange={() => setSlotId(s.id)}
-                        className="accent-amber-500"
-                      />
-                      <span className="text-sm text-white">{formatSlot(s.startTime)}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+              <div className="max-h-52 space-y-2 overflow-y-auto">
+                {slots.map((s) => (
+                  <label
+                    key={s.id}
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 ${
+                      slotId === s.id ? "border-amber-500 bg-amber-500/10" : "border-white/10 hover:border-white/30"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="advisory-slot"
+                      value={s.id}
+                      checked={slotId === s.id}
+                      onChange={() => setSlotId(s.id)}
+                      className="accent-amber-500"
+                    />
+                    <span className="text-sm text-white">{formatSlot(s.startTime)}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
-            {slots && slots.length > 0 && (
-              <>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={t("name")}
-                  maxLength={100}
-                  className="min-h-[44px] w-full rounded-lg border border-white/10 bg-white/5 px-3 text-white placeholder-white/30"
-                />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={t("email")}
-                  className="min-h-[44px] w-full rounded-lg border border-white/10 bg-white/5 px-3 text-white placeholder-white/30"
-                />
-                <div>
-                  <label htmlFor="advisory-painpoint" className="mb-2 block text-sm text-white/70">
-                    {painPointLabel}
-                  </label>
-                  <textarea
-                    id="advisory-painpoint"
-                    required
-                    value={painPoint}
-                    onChange={(e) => setPainPoint(e.target.value)}
-                    placeholder={painPointHint}
-                    maxLength={1000}
-                    rows={2}
-                    className="w-full resize-none rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/30"
-                  />
-                </div>
-                <label className="flex items-start gap-2 text-xs text-white/70">
-                  <input
-                    type="checkbox"
-                    required
-                    checked={consent}
-                    onChange={(e) => setConsent(e.target.checked)}
-                    className="mt-1 accent-amber-500"
-                  />
-                  <span>
-                    <span className="mb-1 block font-semibold">{tc("booking.label")}</span>
-                    {tc.rich("booking.body", {
-                      privacy: (chunks) => (
-                        <a href={`/${locale}/privacy`} className="underline" target="_blank" rel="noopener noreferrer">
-                          {chunks}
-                        </a>
-                      ),
-                    })}
-                  </span>
-                </label>
+            {nameInput}
+            {emailInput}
+            {painPointInput}
+            {consentBox("booking")}
 
-                {error && <p className="text-sm text-red-400">{error}</p>}
+            {error && <p className="text-sm text-red-400">{error}</p>}
 
-                <button
-                  type="submit"
-                  disabled={submitting || !slotId || !email || !consent || !painPoint.trim()}
-                  className="min-h-[44px] w-full rounded-xl bg-amber-500 font-bold text-black hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber-500"
-                >
-                  {submitting ? t("submitting") : t("submit")}
-                </button>
-              </>
-            )}
+            <button
+              type="submit"
+              disabled={submitting || !slotId || !email || !consent || !painPoint.trim()}
+              className="min-h-[44px] w-full rounded-xl bg-amber-500 font-bold text-black hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber-500"
+            >
+              {submitting ? t("submitting") : t("submit")}
+            </button>
           </form>
         )}
       </div>
