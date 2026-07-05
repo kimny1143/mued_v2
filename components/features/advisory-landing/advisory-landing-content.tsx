@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { AdvisoryPrimaryCta } from "./advisory-primary-cta";
+import { AdvisoryHeaderImage } from "./advisory-header-image";
 import { AdvisoryHeroSection } from "./advisory-hero-section";
 import { AdvisoryWhoSection } from "./advisory-who-section";
 import { AdvisoryStepsSection } from "./advisory-steps-section";
@@ -50,6 +51,7 @@ export function AdvisoryLandingContent() {
       <AdvisoryPrimaryCta label={tcta("short")} variant="tab" />
 
       <main>
+        <AdvisoryHeaderImage />
         <AdvisoryHeroSection />
         <AdvisoryWhoSection />
         <AdvisoryStepsSection />
