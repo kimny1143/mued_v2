@@ -28,6 +28,10 @@ export function AdvisoryWhoSection() {
             <a href={t("profileHref")} target="_blank" rel="noopener noreferrer" className="text-teal-700 hover:underline">
               {t("profileText")}
             </a>
+            <span className="mx-1.5 text-neutral-300">・</span>
+            <a href={t("profileHref2")} target="_blank" rel="noopener noreferrer" className="text-teal-700 hover:underline">
+              {t("profileText2")}
+            </a>
           </li>
         </ul>
       </div>

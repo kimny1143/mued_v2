@@ -2109,7 +2109,9 @@
       "recordHref": "https://mued.jp",
       "profileLabel": "経歴",
       "profileText": "LinkedIn",
-      "profileHref": "https://www.linkedin.com/in/kimura-atsushi-758b8b156"
+      "profileHref": "https://www.linkedin.com/in/kimura-atsushi-758b8b156",
+      "profileText2": "glasswerks.jp",
+      "profileHref2": "https://glasswerks.jp"
     },
     "steps": {
       "title": "進め方",
