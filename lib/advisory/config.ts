@@ -17,4 +17,4 @@
 //
 // Spec: _contents-writing/drafts/inbox/advisory-lp-v7-plan-brief-20260702.md (§5, §5b).
 // Unlock flow: pre-publish 2 points clear -> conductor verify -> kimny irreversible gate.
-export const ADVISORY_LIVE = false;
+export const ADVISORY_LIVE = true;
