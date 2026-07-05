@@ -1,4 +1,5 @@
 export { AdvisoryLandingContent } from "./advisory-landing-content";
+export { AdvisoryHeaderImage } from "./advisory-header-image";
 export { AdvisoryHeroSection } from "./advisory-hero-section";
 export { AdvisoryWhoSection } from "./advisory-who-section";
 export { AdvisoryStepsSection } from "./advisory-steps-section";
