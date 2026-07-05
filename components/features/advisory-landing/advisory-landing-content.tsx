@@ -34,7 +34,9 @@ export function AdvisoryLandingContent() {
               <rect x="0" y="1" width="6" height="20" rx="1.5" fill="#0d9488" />
               <rect x="10" y="1" width="6" height="20" rx="1.5" fill="#134e4a" />
             </svg>
-            <span className="text-lg font-bold tracking-wide text-neutral-900">MUED</span>
+            <span className="text-lg tracking-wide text-neutral-900">
+              <span className="font-bold">MUED</span> <span className="font-light text-teal-700">advisory</span>
+            </span>
             <span className="hidden text-[11px] tracking-wider text-neutral-400 sm:inline">glasswerks inc.</span>
           </Link>
           <div className="flex items-center gap-5">
