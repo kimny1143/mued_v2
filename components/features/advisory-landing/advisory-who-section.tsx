@@ -14,7 +14,7 @@ export function AdvisoryWhoSection() {
       <div className="mx-auto max-w-3xl">
         <p className="mb-8 text-[11px] font-semibold uppercase tracking-[0.15em] text-teal-600">About</p>
         <h2 className="mb-6 text-2xl font-medium tracking-tight text-neutral-900">{t("title")}</h2>
-        <p className="mb-4 text-[15px] leading-[1.9] text-neutral-600">{t("body1")}</p>
+        <p className="mb-4 whitespace-pre-line text-[15px] leading-[1.9] text-neutral-600">{t("body1")}</p>
         <p className="mb-8 text-[15px] leading-[1.9] text-neutral-600">{t("body2")}</p>
         <ul className="space-y-2 text-sm">
           <li className="text-neutral-500">
