@@ -1,10 +1,13 @@
 /**
- * audience-sync unit tests — DB → Resend Audience projection for the self-owned list.
+ * audience-sync unit tests — DB → Resend segment projection for the self-owned marketing list.
  *
- * The critical PR1 property is NO-OP SAFETY: with RESEND_MARKETING_AUDIENCE_ID unset (the
- * Audience hasn't been created yet) the sync does nothing and never throws — so PR1 ships and
- * runs BEFORE the Audience exists. The configured path is covered via a fresh import with env
- * set (the module reads env at load time).
+ * Critical property is NO-OP SAFETY: with the segment env unset (segment not wired yet) the sync
+ * does nothing and never throws — so capture + recordConsent run BEFORE the segment exists. The
+ * configured path is covered via a fresh import with env set (the module reads env at load time).
+ *
+ * Resend migrated Audiences → Segments (audienceId === segmentId). The module reads
+ * RESEND_MARKETING_SEGMENT_ID with RESEND_MARKETING_AUDIENCE_ID as a backward-compat fallback —
+ * both are covered so a legacy-named env keeps working with no re-set.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 
@@ -12,12 +15,20 @@ vi.mock('@/lib/utils/logger', () => ({ logger: { warn: vi.fn() } }));
 
 const mockContactsCreate = vi.fn().mockResolvedValue({});
 const mockContactsUpdate = vi.fn().mockResolvedValue({});
+const mockSegmentsAdd = vi.fn().mockResolvedValue({});
 vi.mock('resend', () => ({
-  Resend: vi.fn(() => ({ contacts: { create: mockContactsCreate, update: mockContactsUpdate } })),
+  Resend: vi.fn(() => ({
+    contacts: {
+      create: mockContactsCreate,
+      update: mockContactsUpdate,
+      segments: { add: mockSegmentsAdd },
+    },
+  })),
 }));
 
 import { isAudienceSyncEnabled, syncConsentToAudience } from '@/lib/marketing/audience-sync';
 
+const ORIGINAL_SEGMENT = process.env.RESEND_MARKETING_SEGMENT_ID;
 const ORIGINAL_AUDIENCE = process.env.RESEND_MARKETING_AUDIENCE_ID;
 const ORIGINAL_KEY = process.env.RESEND_API_KEY;
 
@@ -28,58 +39,84 @@ function restoreEnv(key: string, value: string | undefined) {
 
 afterEach(() => {
   vi.clearAllMocks();
+  restoreEnv('RESEND_MARKETING_SEGMENT_ID', ORIGINAL_SEGMENT);
   restoreEnv('RESEND_MARKETING_AUDIENCE_ID', ORIGINAL_AUDIENCE);
   restoreEnv('RESEND_API_KEY', ORIGINAL_KEY);
 });
 
 describe('audience-sync — unconfigured (default)', () => {
-  it('isAudienceSyncEnabled() is false when the Audience env is unset', () => {
+  it('isAudienceSyncEnabled() is false when neither segment env is set', () => {
+    delete process.env.RESEND_MARKETING_SEGMENT_ID;
     delete process.env.RESEND_MARKETING_AUDIENCE_ID;
     expect(isAudienceSyncEnabled()).toBe(false);
   });
 
   it('syncConsentToAudience is a no-op and never throws', async () => {
+    delete process.env.RESEND_MARKETING_SEGMENT_ID;
     delete process.env.RESEND_MARKETING_AUDIENCE_ID;
     await expect(
       syncConsentToAudience({ email: 'u@example.com', status: 'granted' }),
     ).resolves.toBeUndefined();
     expect(mockContactsCreate).not.toHaveBeenCalled();
     expect(mockContactsUpdate).not.toHaveBeenCalled();
+    expect(mockSegmentsAdd).not.toHaveBeenCalled();
   });
 });
 
 describe('audience-sync — configured', () => {
-  async function freshConfiguredModule() {
-    process.env.RESEND_MARKETING_AUDIENCE_ID = 'aud_test';
+  async function freshModule(env: { segment?: string; audience?: string }) {
+    delete process.env.RESEND_MARKETING_SEGMENT_ID;
+    delete process.env.RESEND_MARKETING_AUDIENCE_ID;
+    if (env.segment) process.env.RESEND_MARKETING_SEGMENT_ID = env.segment;
+    if (env.audience) process.env.RESEND_MARKETING_AUDIENCE_ID = env.audience;
     process.env.RESEND_API_KEY = 're_test';
     vi.resetModules();
     return import('@/lib/marketing/audience-sync');
   }
 
-  it('granted → contacts.create (subscribed)', async () => {
-    const mod = await freshConfiguredModule();
+  it('granted → contacts.create adds the contact to the segment (subscribed)', async () => {
+    const mod = await freshModule({ segment: 'seg_test' });
     await mod.syncConsentToAudience({ email: 'u@example.com', name: 'Yuu', status: 'granted' });
     expect(mockContactsCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        audienceId: 'aud_test',
         email: 'u@example.com',
         unsubscribed: false,
         firstName: 'Yuu',
+        segments: [{ id: 'seg_test' }],
       }),
     );
   });
 
-  it('withdrawn → contacts.update (unsubscribed)', async () => {
-    const mod = await freshConfiguredModule();
+  it('withdrawn → contacts.update global unsubscribe (no audienceId)', async () => {
+    const mod = await freshModule({ segment: 'seg_test' });
     await mod.syncConsentToAudience({ email: 'u@example.com', status: 'withdrawn' });
     expect(mockContactsUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ audienceId: 'aud_test', email: 'u@example.com', unsubscribed: true }),
+      expect.objectContaining({ email: 'u@example.com', unsubscribed: true }),
+    );
+    expect(mockContactsUpdate.mock.calls[0][0]).not.toHaveProperty('audienceId');
+  });
+
+  it('backward-compat: legacy RESEND_MARKETING_AUDIENCE_ID still enables + drives the segment', async () => {
+    const mod = await freshModule({ audience: 'aud_legacy' });
+    expect(mod.isAudienceSyncEnabled()).toBe(true);
+    await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
+    expect(mockContactsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ segments: [{ id: 'aud_legacy' }] }),
     );
   });
 
-  it('a Resend failure is swallowed (best-effort)', async () => {
+  it('re-grant: existing contact (create throws) → segments.add + re-subscribe', async () => {
+    mockContactsCreate.mockRejectedValueOnce(new Error('contact already exists'));
+    const mod = await freshModule({ segment: 'seg_test' });
+    await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
+    expect(mockSegmentsAdd).toHaveBeenCalledWith({ email: 'u@example.com', segmentId: 'seg_test' });
+    expect(mockContactsUpdate).toHaveBeenCalledWith({ email: 'u@example.com', unsubscribed: false });
+  });
+
+  it('best-effort: create AND fallback both fail → still resolves (swallowed)', async () => {
     mockContactsCreate.mockRejectedValueOnce(new Error('resend 500'));
-    const mod = await freshConfiguredModule();
+    mockSegmentsAdd.mockRejectedValueOnce(new Error('resend 500'));
+    const mod = await freshModule({ segment: 'seg_test' });
     await expect(
       mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' }),
     ).resolves.toBeUndefined();
