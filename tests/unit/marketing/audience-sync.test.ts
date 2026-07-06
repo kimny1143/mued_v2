@@ -67,8 +67,8 @@ describe('audience-sync — configured', () => {
   async function freshModule(env: { segment?: string; audience?: string }) {
     delete process.env.RESEND_MARKETING_SEGMENT_ID;
     delete process.env.RESEND_MARKETING_AUDIENCE_ID;
-    if (env.segment) process.env.RESEND_MARKETING_SEGMENT_ID = env.segment;
-    if (env.audience) process.env.RESEND_MARKETING_AUDIENCE_ID = env.audience;
+    if (env.segment !== undefined) process.env.RESEND_MARKETING_SEGMENT_ID = env.segment;
+    if (env.audience !== undefined) process.env.RESEND_MARKETING_AUDIENCE_ID = env.audience;
     process.env.RESEND_API_KEY = 're_test';
     vi.resetModules();
     return import('@/lib/marketing/audience-sync');
@@ -98,6 +98,18 @@ describe('audience-sync — configured', () => {
 
   it('backward-compat: legacy RESEND_MARKETING_AUDIENCE_ID still enables + drives the segment', async () => {
     const mod = await freshModule({ audience: 'aud_legacy' });
+    expect(mod.isAudienceSyncEnabled()).toBe(true);
+    await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
+    expect(mockContactsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ segments: [{ id: 'aud_legacy' }] }),
+    );
+  });
+
+  it('empty-string RESEND_MARKETING_SEGMENT_ID falls back to legacy audience (|| not ??)', async () => {
+    // The .env.local.example ships `RESEND_MARKETING_SEGMENT_ID=` (empty). `??` would treat '' as a
+    // real value and skip the legacy fallback → silent no-op. `||` treats '' as unset, so a legacy
+    // RESEND_MARKETING_AUDIENCE_ID set at launch still drives the sync.
+    const mod = await freshModule({ segment: '', audience: 'aud_legacy' });
     expect(mod.isAudienceSyncEnabled()).toBe(true);
     await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
     expect(mockContactsCreate).toHaveBeenCalledWith(

@@ -21,7 +21,10 @@ import { logger } from '@/lib/utils/logger';
 
 // audienceId === segmentId (same Resend id space). Prefer the new env name, fall back to the legacy
 // one so a value already set under RESEND_MARKETING_AUDIENCE_ID keeps working without a re-set.
-const SEGMENT_ID = process.env.RESEND_MARKETING_SEGMENT_ID ?? process.env.RESEND_MARKETING_AUDIENCE_ID;
+// `||` (not `??`): an empty-string RESEND_MARKETING_SEGMENT_ID (e.g. the empty line shipped in
+// .env.local.example) must be treated as unset so the legacy fallback still fires — matching the
+// `!SEGMENT_ID` no-op guard's empty-is-unset semantics.
+const SEGMENT_ID = process.env.RESEND_MARKETING_SEGMENT_ID || process.env.RESEND_MARKETING_AUDIENCE_ID;
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
 let client: Resend | null = null;
