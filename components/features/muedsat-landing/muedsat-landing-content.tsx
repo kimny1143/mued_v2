@@ -1,7 +1,7 @@
 "use client";
 
 // MUEDsat free-download LP — dark, pro-audio faceplate aesthetic (not the advisory light editorial
-// theme). Steel + amber (glasswerks --amber #f5a524). All copy comes from the `muedsat.*` i18n
+// theme). Dark metallic + amber (glasswerks --amber #f5a524). All copy comes from the `muedsat.*` i18n
 // namespace (messages/{en,ja}.json) — no hardcoded copy. Staged behind MUEDSAT_LIVE (page.tsx robots).
 import { Suspense } from "react";
 import Link from "next/link";
@@ -57,7 +57,7 @@ function SaturationCurve() {
   );
 }
 
-// Plugin-faceplate hero visual: the transfer curve on a steel panel, control names along the bottom.
+// Plugin-faceplate hero visual: the transfer curve on a dark metal panel, control names along the bottom.
 function FaceplatePanel() {
   const t = useTranslations("muedsat.about");
   return (
