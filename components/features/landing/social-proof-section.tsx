@@ -15,7 +15,8 @@ interface SocialProofSectionProps {
 /**
  * Social Proof Section - Landing Page
  *
- * App Store status + Developer quote + Company attribution
+ * Company attribution (glasswerks credit). The MUEDnote App Store badge + origin-story
+ * quote were removed 2026-07-07 as part of the full MUEDnote delist from the home 製品面.
  */
 export function SocialProofSection({ useBrandKeys = true }: SocialProofSectionProps) {
   const t = useTranslations(useBrandKeys ? "landing.brand.social" : "landing.social");
