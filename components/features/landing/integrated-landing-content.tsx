@@ -4,8 +4,6 @@ import Link from "next/link";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { BrandHeroSection } from "./brand-hero-section";
-import { HeroSection } from "./hero-section";
-import { PhilosophySection } from "./philosophy-section";
 // LP簡素化: MUEDlobe/MeetHoo/GrowthPreview非表示 (2026-02-24)
 // import { GrowthPreviewSection } from "./growth-preview-section";
 // import { MeetHooSection } from "./meet-hoo-section";
@@ -21,7 +19,7 @@ import { MuedearPricingSection } from "@/components/features/muedear-landing/mue
 import { MuedearEarRankingSection } from "@/components/features/muedear-landing/muedear-ear-ranking-section";
 import { MuedialHeroSection } from "@/components/features/muedial-landing/muedial-hero-section";
 import { AppStoreButton } from "@/components/ui/app-store-button";
-import { ArrowUp, ChevronLeft, ChevronRight, ExternalLink, Music, Ear, Headphones, LogIn } from "lucide-react";
+import { ArrowUp, ChevronLeft, ChevronRight, ExternalLink, Ear, Headphones, LogIn } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
@@ -36,10 +34,16 @@ const GUMROAD_TEMPLATE_URL = `${GUMROAD_CLAUDE_CODE_TEMPLATE_URL}?utm_source=mue
  *
  * Structure:
  * 1. Brand Hero - MUED introduction with scroll CTAs
- * 2. MUEDnote Section - Full hero + features (id="muednote")
- * 3. MUEDear Section - Full hero + games/features (id="muedear")
+ * 2. MUEDear Section - Full hero + games/features (id="muedear")
+ * 3. MUEDial Section - hero (id="muedial")
  * 4. Social Proof
- * 5. Final CTA
+ * 5. Developer Story
+ * 6. Advisory teaser (ja only)
+ * 7. Final CTA
+ *
+ * NOTE: the MUEDnote product section was removed 2026-07-07 (kimny/Chief: 製品面は
+ * MUEDear/MUEDial のみ). MUEDnote is still referenced in the Developer Story (物語面) and
+ * remains in the Final CTA app buttons.
  */
 export function IntegratedLandingContent({
   freeCampaignActive = false,
@@ -96,24 +100,13 @@ export function IntegratedLandingContent({
         />
       </section>
 
-      {/* MUEDial Section */}
+      {/* MUEDial Section — last product surface (MUEDnote product section removed 2026-07-07,
+          kimny/Chief decision: 製品面は MUEDear/MUEDial のみ・今後 sp/sat) */}
       <section id="muedial" className="relative">
         <MuedialHeroSection freeCampaignActive={freeCampaignActive} />
         <SectionNav
           prevHref="#muedear"
           prevLabel="MUEDear"
-          nextHref="#muednote"
-          nextLabel="MUEDnote"
-        />
-      </section>
-
-      {/* MUEDnote Section */}
-      <section id="muednote">
-        <HeroSection />
-        <PhilosophySection />
-        <SectionNav
-          prevHref="#muedial"
-          prevLabel="MUEDial"
           nextHref="#"
           nextLabel={locale === "ja" ? "トップへ" : "Back to Top"}
           showNextIcon={false}
@@ -125,6 +118,31 @@ export function IntegratedLandingContent({
 
       {/* Developer Story */}
       <DeveloperStorySection />
+
+      {/* Advisory teaser — ja only / scoped / v7 verbatim copy / reversible（content handoff 20260707） */}
+      {locale === "ja" && (
+        <section className="py-24 bg-[#0a0a0a] relative">
+          <div className="absolute top-0 left-0 right-0 h-px bg-white/5" />
+          <div className="container mx-auto px-6 relative z-10">
+            <div className="max-w-2xl mx-auto text-center">
+              <h2 className="text-section text-white mb-4 font-extrabold tracking-tight">
+                AIに任せた開発を、ちゃんと使える品質で回す。
+              </h2>
+              <p className="text-subhead text-white/80 mb-8">
+                あなたのビジネスを前に進める仕組みを、AIと一緒に作ります。
+              </p>
+              <Link
+                href={`/${locale}/advisory`}
+                onClick={() => trackCtaClick("advisory", "home_advisory_teaser")}
+                className="inline-flex items-center gap-2 px-5 py-3 bg-transparent border-2 border-white/30 text-white hover:bg-white hover:text-black font-medium rounded-[var(--radius-lg)] transition-colors duration-200"
+              >
+                無料60分相談
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Claude Code Template Section (層A) - v2 variant only */}
       {isV2 && <ClaudeCodeTemplateSection />}
@@ -152,6 +170,15 @@ export function IntegratedLandingContent({
               >
                 {locale === "ja" ? "特定商取引法に基づく表記" : "Legal"}
               </Link>
+              {/* Advisory footer link — ja only / v7 verbatim（content handoff 20260707） */}
+              {locale === "ja" && (
+                <Link
+                  href={`/${locale}/advisory`}
+                  className="text-subtle hover:text-muted text-sm transition-colors"
+                >
+                  無料60分相談
+                </Link>
+              )}
               <Link
                 href={`/${locale}/support`}
                 className="text-subtle hover:text-muted text-sm transition-colors"
@@ -218,22 +245,6 @@ function FloatingNav() {
         title="Top"
       >
         <ArrowUp className="w-4 h-4" />
-      </button>
-
-      {/* MUEDnote button */}
-      <button
-        onClick={() => scrollToSection("muednote")}
-        className="
-          w-10 h-10 rounded-full
-          bg-[#1a1a1a] border border-indigo-500/30
-          text-indigo-400 hover:text-indigo-300 hover:bg-[#222]
-          transition-colors duration-200
-          flex items-center justify-center
-        "
-        aria-label="Go to MUEDnote"
-        title="MUEDnote"
-      >
-        <Music className="w-4 h-4" />
       </button>
 
       {/* MUEDial button */}
