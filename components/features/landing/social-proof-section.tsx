@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Smartphone } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 
@@ -15,7 +15,8 @@ interface SocialProofSectionProps {
 /**
  * Social Proof Section - Landing Page
  *
- * App Store status + Developer quote + Company attribution
+ * Company attribution (glasswerks credit). The MUEDnote App Store badge + origin-story
+ * quote were removed 2026-07-07 as part of the full MUEDnote delist from the home 製品面.
  */
 export function SocialProofSection({ useBrandKeys = true }: SocialProofSectionProps) {
   const t = useTranslations(useBrandKeys ? "landing.brand.social" : "landing.social");
@@ -33,22 +34,8 @@ export function SocialProofSection({ useBrandKeys = true }: SocialProofSectionPr
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="max-w-2xl mx-auto"
         >
-          {/* App Store Badge */}
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 badge-green border border-green-500/20 rounded-full">
-              <Smartphone className="w-4 h-4" />
-              <span className="text-sm font-medium">{t("badge")}</span>
-            </div>
-          </div>
-
-          {/* Developer Quote */}
-          <blockquote className="text-center mb-8">
-            <p className="text-subhead text-white/80 italic mb-2">
-              {t("quote")}
-            </p>
-            <cite className="text-subtle text-sm not-italic">— {t("author")}</cite>
-          </blockquote>
-
+          {/* MUEDnote App Store badge + origin-story quote removed 2026-07-07 — full delist
+              from home 製品面 (kimny/Chief). Only the glasswerks company attribution is retained. */}
           {/* Company Attribution */}
           <div className="text-center">
             <p className="text-subtle text-sm mb-2">{t("developedBy")}</p>

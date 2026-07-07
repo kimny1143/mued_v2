@@ -38,7 +38,6 @@
       "cta": {
         "title": "創る準備はできた？",
         "description": "君のメソッドを始めよう。",
-        "muednote": "MUEDnoteで始める",
         "muedear": "MUEDearで鍛える",
         "muedlobe": "MUEDlobeを試す",
         "muedial": {
@@ -52,10 +51,7 @@
         }
       },
       "social": {
-        "developedBy": "Developed by",
-        "badge": "App Store公開中",
-        "quote": "「制作中、気づいたら何時間も経ってた。でも、なぜそうしたのかは覚えていない」——そんな経験から生まれました。",
-        "author": "開発者より"
+        "developedBy": "Developed by"
       },
       "claudeCodeTemplate": {
         "badge": "Claude Code ユーザーへ",
@@ -151,10 +147,7 @@
       "button": "無料で始める"
     },
     "social": {
-      "developedBy": "Developed by",
-      "badge": "公開中・続々アップデート",
-      "quote": "「制作中、気づいたら何時間も経ってた。でも、あの時なぜそうしたのかは覚えていない」——そんな経験から生まれました。",
-      "author": "開発者より"
+      "developedBy": "Developed by"
     },
     "features": {
       "scheduling": {
