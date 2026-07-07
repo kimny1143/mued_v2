@@ -62,13 +62,9 @@ export function BrandHeroSection() {
                 <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
               </a>
               */}
-              <a
-                href="#muednote"
-                className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-sm transition-colors group py-2.5"
-              >
-                {t("exploreMuednote")}
-                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-              </a>
+              {/* MUEDnote hero CTA removed 2026-07-07 — full delist from product面
+                  (kimny/Chief). The #muednote section no longer exists, so this inbound
+                  link would dangle. MUEDnote survives only in the Developer Story. */}
             </div>
           </div>
         </div>

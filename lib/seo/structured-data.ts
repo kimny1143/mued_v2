@@ -48,33 +48,6 @@ export const structuredData = {
       ],
     },
 
-    // SoftwareApplication (MUEDnote)
-    {
-      "@type": "SoftwareApplication",
-      "@id": "https://mued.jp/#muednote",
-      name: "MUEDnote",
-      applicationCategory: "ProductivityApplication",
-      operatingSystem: "iOS",
-      description:
-        "音楽クリエイターの認知特性を7つのゲームで可視化し、AIアシスタントHooがパーソナライズされた対話で制作をサポートするiOSアプリ。完全無料。 | iOS app that maps cognitive traits of music creators through 7 games, with AI assistant Hoo providing personalized dialogue to support production. Completely free.",
-      featureList: [
-        "7種の耳トレゲームで音楽認知プロファイルを可視化",
-        "AIアシスタントHooとのパーソナライズ対話",
-        "MUEDlobeスコアリング（音程・リズム・和声・空間定位等）",
-        "制作ログ・会話履歴の蓄積",
-        "MUEDialとのシームレス連携",
-        "Hoo MCPによる外部AIツール連携",
-      ],
-      offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "JPY",
-      },
-      creator: {
-        "@id": "https://www.glasswerks.jp/#organization",
-      },
-    },
-
     // WebSite
     {
       "@type": "WebSite",
