@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next';
 import { headers } from 'next/headers';
 import { STORY_SLUGS } from '@/lib/story/articles';
 import { ADVISORY_LIVE } from '@/lib/advisory/config';
+import { MUEDSAT_LIVE } from '@/lib/muedsat/config';
 
 // Force dynamic rendering so headers() can be read per-request
 export const dynamic = 'force-dynamic';
@@ -48,6 +49,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ? [
           { url: `${MUED}/ja/advisory`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
           { url: `${MUED}/en/advisory`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
+        ]
+      : []),
+    ...(MUEDSAT_LIVE
+      ? [
+          { url: `${MUED}/ja/muedsat`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
+          { url: `${MUED}/en/muedsat`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
         ]
       : []),
   ];
