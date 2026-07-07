@@ -2222,21 +2222,21 @@
   "muedsat": {
     "meta": {
       "title": "MUEDsat — a free transformer saturation plugin",
-      "description": "MUEDsat is a free transformer-saturation plugin — steel-transformer color pulled straight out of the mastering chain we work with. macOS, VST3 + AU + AAX (Pro Tools). Nothing locked, nothing paywalled."
+      "description": "MUEDsat is a free transformer-saturation plugin — transformer color pulled straight out of the mastering chain we work with. macOS, VST3 + AU + AAX (Pro Tools). Nothing locked, nothing paywalled."
     },
     "hero": {
       "badge": "Free · macOS · VST3 · AU · AAX",
       "title": "MUEDsat",
       "tagline": "A free transformer saturation plugin",
-      "lead": "Steel transformer color, taken straight out of the mastering chain we work with. Free."
+      "lead": "Transformer color, taken straight out of the mastering chain we work with. Free."
     },
     "about": {
       "heading": "What it is",
-      "intro1": "MUEDsat is one stage from MUEDsp — the mastering plugin we're building to reproduce the master-bus chain our founder, a working composer and arranger, actually uses. We pulled the steel-transformer coloration out of that chain, made it a standalone plugin, and made it free.",
+      "intro1": "MUEDsat is one stage from MUEDsp — the mastering plugin we're building to reproduce the master-bus chain our founder, a working composer and arranger, actually uses. We pulled the transformer coloration out of that chain, made it a standalone plugin, and made it free.",
       "intro2": "At its heart is one thing: transformer-style saturation. Turn it up for obvious grit, or back it off until it just sits under the sound.",
       "controlsHeading": "Five controls",
       "controls": {
-        "drive": { "name": "DRIVE", "desc": "How hard you push into the steel-transformer character; harmonic weight and color that grows as you turn it up." },
+        "drive": { "name": "DRIVE", "desc": "How hard you push into the transformer character; harmonic weight and color that grows as you turn it up." },
         "air": { "name": "Air", "desc": "A clean high shelf up top, for a little sheen." },
         "mix": { "name": "Mix", "desc": "Blend against the dry signal for parallel saturation." },
         "output": { "name": "Output", "desc": "Trim your level." },
