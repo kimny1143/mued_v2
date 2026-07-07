@@ -20,12 +20,15 @@
 //         separate editorial decision, not part of the publish flip.
 //
 // Unlock flow: staged build -> conductor real-path verify -> kimny irreversible gate.
-export const MUEDSAT_LIVE = false;
+// 2026-07-08 UNLOCK (kimny GO・conductor 執行): flipped true. Reveals the DL page (indexable),
+// the home MUEDsat card, and the sitemap/llms entries together.
+export const MUEDSAT_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Empty while the dsp-owned
 // package (VST3 + AU, macOS, signed/notarized) is not yet uploaded — the confirmation email then
 // omits the link and says it's on the way. Set at unlock (kimny gate). NOT a secret (public CDN URL).
-export const MUEDSAT_DOWNLOAD_URL = "";
+// 2026-07-08 UNLOCK: mued.jp static hosting (public/downloads/, #598・sha256 c2f931f… conductor-verified).
+export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDsat-0.1.0-alpha-installer.pkg";
 
 // MUEDsp product page URL for the footer "where it came from" link. Empty => the link is hidden
 // (the copy's "MUEDsp product page — link TBD, kimny gate"). Set once the MUEDsp page exists.
