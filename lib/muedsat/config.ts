@@ -14,8 +14,10 @@
 //           - un-noindexes app/[locale]/muedsat/page.tsx     (robots.index = MUEDSAT_LIVE)
 //           - adds muedsat URLs to app/sitemap.ts             (gated on MUEDSAT_LIVE)
 //           - adds the MUEDsat blurb to app/llms.txt/route.ts (gated on MUEDSAT_LIVE)
-//         The homepage nav link is intentionally NOT auto-added — a nav entry is a separate,
-//         editorial "quiet launch" decision, not part of the publish flip.
+//           - reveals the MUEDsat home product card           (components/features/landing/
+//             integrated-landing-content.tsx — a /muedsat teaser in the MUEDear/MUEDial lineup)
+//         The header nav / FloatingNav quick-nav are intentionally NOT auto-added — those remain a
+//         separate editorial decision, not part of the publish flip.
 //
 // Unlock flow: staged build -> conductor real-path verify -> kimny irreversible gate.
 export const MUEDSAT_LIVE = false;

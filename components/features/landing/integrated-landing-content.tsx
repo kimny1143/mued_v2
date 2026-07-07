@@ -23,6 +23,7 @@ import { ArrowUp, ChevronLeft, ChevronRight, ExternalLink, Ear, Headphones, LogI
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
+import { MUEDSAT_LIVE } from "@/lib/muedsat/config";
 import { trackCtaClick, trackEvent } from "@/lib/analytics/gtag";
 import { GUMROAD_CLAUDE_CODE_TEMPLATE_URL } from "@/lib/gumroad/constants";
 
@@ -99,18 +100,22 @@ export function IntegratedLandingContent({
         />
       </section>
 
-      {/* MUEDial Section — last product surface (MUEDnote product section removed 2026-07-07,
-          kimny/Chief decision: 製品面は MUEDear/MUEDial のみ・今後 sp/sat) */}
+      {/* MUEDial Section — last product surface unless MUEDsat is live (kimny/Chief: 製品面は
+          MUEDear/MUEDial〔+ sat〕; MUEDsat card は MUEDSAT_LIVE gate で登場) */}
       <section id="muedial" className="relative">
         <MuedialHeroSection freeCampaignActive={freeCampaignActive} />
         <SectionNav
           prevHref="#muedear"
           prevLabel="MUEDear"
-          nextHref="#"
-          nextLabel={locale === "ja" ? "トップへ" : "Back to Top"}
-          showNextIcon={false}
+          nextHref={MUEDSAT_LIVE ? "#muedsat" : "#"}
+          nextLabel={MUEDSAT_LIVE ? "MUEDsat" : locale === "ja" ? "トップへ" : "Back to Top"}
+          showNextIcon={MUEDSAT_LIVE}
         />
       </section>
+
+      {/* MUEDsat Section — flag-gated (MUEDSAT_LIVE=false → hidden/staged・#591 と同 flag 流用).
+          無料サチュ plugin の製品カード teaser → /muedsat DL ページへ。flip まで非表示ゆえ merge しても露出ゼロ。 */}
+      {MUEDSAT_LIVE && <MuedsatTeaserSection locale={locale} />}
 
       {/* Social Proof */}
       <SocialProofSection />
@@ -395,6 +400,52 @@ function FinalCtaSection({ isV2 = false }: { isV2?: boolean }) {
           </div>
         </div>
       </div>
+    </section>
+  );
+}
+
+/**
+ * MUEDsat Teaser Section — flag-gated home product card (rendered only when MUEDSAT_LIVE).
+ * Compact teaser (formats badge + wordmark + tagline + CTA) linking to the /muedsat DL page.
+ * Copy reuses the muedsat.hero i18n namespace (VST3 · AU · AAX · macOS · free). Realizes the
+ * "sat" in Chief's product line (製品面は MUEDear/MUEDial + sat). Dark/amber to match the DL page.
+ */
+function MuedsatTeaserSection({ locale }: { locale: string }) {
+  const t = useTranslations("muedsat.hero");
+  return (
+    <section id="muedsat" className="relative">
+      <div className="relative bg-[#0a0a0a] py-28">
+        <div className="absolute top-0 left-0 right-0 h-px bg-white/5" />
+        <div className="container mx-auto px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="inline-block rounded-full border border-[#f5a524]/30 bg-[#f5a524]/10 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-[#f5a524]">
+              {t("badge")}
+            </span>
+            <h2 className="mt-6 text-4xl font-extrabold tracking-tight md:text-5xl">
+              <span className="text-white">MUED</span>
+              <span className="text-[#f5a524]">sat</span>
+            </h2>
+            <p className="mt-3 text-lg text-white/70">{t("tagline")}</p>
+            <div className="mt-8">
+              <Link
+                href={`/${locale}/muedsat`}
+                onClick={() => trackCtaClick("muedsat", "home_product_card")}
+                className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-[#f5a524] px-5 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
+              >
+                {locale === "ja" ? "MUEDsat を無料で入手" : "Get MUEDsat — free"}
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+      <SectionNav
+        prevHref="#muedial"
+        prevLabel="MUEDial"
+        nextHref="#"
+        nextLabel={locale === "ja" ? "トップへ" : "Back to Top"}
+        showNextIcon={false}
+      />
     </section>
   );
 }
