@@ -52,10 +52,7 @@
         }
       },
       "social": {
-        "developedBy": "Developed by",
-        "badge": "Live on App Store",
-        "quote": "\"Hours would pass without me noticing during production. But I couldn't remember why I made those choices\"—that's why we built this.",
-        "author": "From the Developer"
+        "developedBy": "Developed by"
       },
       "claudeCodeTemplate": {
         "badge": "For Claude Code Users",
@@ -151,10 +148,7 @@
       "button": "Get Started Free"
     },
     "social": {
-      "developedBy": "Developed by",
-      "badge": "Live on App Store",
-      "quote": "\"Hours would pass without me noticing during production. But I couldn't remember why I made those choices\"—that's why we built this.",
-      "author": "From the Developer"
+      "developedBy": "Developed by"
     },
     "features": {
       "scheduling": {
