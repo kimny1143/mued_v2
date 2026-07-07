@@ -66,47 +66,6 @@
         "ctaFinalSection": "Get the Claude Code Template"
       }
     },
-    "hero": {
-      "title": "Music Lessons Made Easy",
-      "tagline": "Making music visible.",
-      "hooIntro": "Meet Hoo, your MUEDnote companion",
-      "headline": "Your companion in music production.",
-      "description": "A recording and reflection tool for music producers.\nStay at your creative best — before burnout kicks in.",
-      "ctaPrimary": "Start Free with Hoo",
-      "ctaSecondary": "Log In",
-      "hooPhrases": [
-        "Ho-Hoo, time for a break?",
-        "Ho-Hoo, want to talk about your session?",
-        "Ho-Hoo, I noticed something interesting",
-        "Ho-Hoo, let's review what you did"
-      ],
-      "subtitle": "MUED LMS connects students with expert mentors through a next-generation learning management system",
-      "cta": "Get Started Free Today",
-      "login": "Log In",
-      "getStarted": "Get Started Free"
-    },
-    "philosophy": {
-      "title": "What MUEDnote Does",
-      "intro": "Map your cognitive traits. Let Hoo understand you.\nMaking music visible.",
-      "features": {
-        "lobe": {
-          "title": "Cognitive Profiling",
-          "description": "7 games map your cognitive traits across 5 dimensions. Discover your musical strengths and growth areas."
-        },
-        "hoo": {
-          "title": "Hoo Learns You",
-          "description": "Game results, production patterns, and conversation history shape Hoo's personalized dialogue with you."
-        },
-        "import": {
-          "title": "AI Chat Import",
-          "description": "Import exports from Claude, ChatGPT, or Gemini to automatically extract your music profile."
-        },
-        "free": {
-          "title": "Completely Free",
-          "description": "Every MUEDnote feature is free. Place your iPhone nearby and start recording your sessions."
-        }
-      }
-    },
     "muednote": {
       "badge": "iOS App",
       "title": "Your Sessions, Captured on iPhone",
@@ -117,27 +76,6 @@
       "preview": {
         "greeting": "Ho-hoo",
         "timer": "Completely Free"
-      }
-    },
-    "growth": {
-      "title": "MUEDnote, Evolving",
-      "subtitle": "Recent updates and what's ahead.",
-      "badge": "Latest Features",
-      "daw": {
-        "title": "DAW Log Integration",
-        "quote": "Your DAW actions are automatically recorded during sessions. Review what you did and why — after the fact.",
-        "features": [
-          "Automatic DAW action logging",
-          "Viewable in session details"
-        ]
-      },
-      "conversation": {
-        "title": "Personalized Hoo Conversations",
-        "quote": "Hoo uses your cognitive profile and production patterns to deliver dialogue tailored to you. Free for everyone.",
-        "features": [
-          "Dialogue informed by your cognitive profile",
-          "Completely free"
-        ]
       }
     },
     "cta": {

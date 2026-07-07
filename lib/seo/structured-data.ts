@@ -1,10 +1,11 @@
 /**
- * MUEDnote Structured Data for AI Search Engine Optimization (AIO)
+ * MUED Structured Data for AI Search Engine Optimization (AIO)
  *
  * JSON-LD structured data for AI crawlers (ChatGPT, Claude, Perplexity, etc.)
  * Based on Schema.org vocabulary
  *
- * 1/7 Launch: Focus on MUEDnote as decision recording tool
+ * Site identity = MUED umbrella brand (products: MUEDear / MUEDial / MUEDnote / advisory / MUEDsat).
+ * "MUEDnote" retained in Organization.alternateName to preserve 1/7-launch search equity.
  */
 
 export const structuredData = {
@@ -14,8 +15,8 @@ export const structuredData = {
     {
       "@type": "Organization",
       "@id": "https://mued.jp/#organization",
-      name: "MUEDnote",
-      alternateName: ["ミュードノート", "MUED", "ミュード"],
+      name: "MUED",
+      alternateName: ["ミュード", "MUEDnote", "ミュードノート"],
       url: "https://mued.jp",
       logo: {
         "@type": "ImageObject",
@@ -26,7 +27,7 @@ export const structuredData = {
         "音楽クリエイターの認知特性を可視化し、AIパーソナライゼーションで制作をサポートするプロダクトスイート。 | Product suite that visualizes cognitive traits of music creators and supports production with AI personalization.",
       sameAs: [
         "https://www.threads.net/@mued.jp",
-        "https://note.com/glasswerks",
+        "https://note.com/mued_glasswerks",
         "https://www.glasswerks.jp",
       ],
       parentOrganization: {
@@ -52,10 +53,10 @@ export const structuredData = {
     {
       "@type": "WebSite",
       "@id": "https://mued.jp/#website",
-      name: "MUEDnote",
+      name: "MUED",
       url: "https://mued.jp",
       description:
-        "音楽制作中の判断を資産にする | Making music visible",
+        "音楽制作を前に進める AI プロダクトスイート | Making music visible",
       inLanguage: ["ja", "en"],
       publisher: {
         "@id": "https://mued.jp/#organization",

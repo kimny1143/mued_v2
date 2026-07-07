@@ -16,10 +16,10 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps) {
   const { locale } = await params;
   return {
-    title: locale === "ja" ? "プライバシーポリシー | MUEDnote" : "Privacy Policy | MUEDnote",
+    title: locale === "ja" ? "プライバシーポリシー | MUED" : "Privacy Policy | MUED",
     description: locale === "ja"
-      ? "MUEDnoteのプライバシーポリシー"
-      : "MUEDnote Privacy Policy",
+      ? "MUEDのプライバシーポリシー"
+      : "MUED Privacy Policy",
   };
 }
 
@@ -39,7 +39,7 @@ function PrivacyContent() {
       <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6 bg-bg-primary/80 backdrop-blur-xl border-b border-white/5">
         <div className="container mx-auto flex justify-between items-center">
           <Link href="/" className="text-white font-semibold hover:text-slate-300 transition-colors">
-            MUEDnote
+            MUED
           </Link>
           <LocaleSwitcher />
         </div>

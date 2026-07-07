@@ -16,10 +16,10 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps) {
   const { locale } = await params;
   return {
-    title: locale === "ja" ? "サポート | MUEDnote" : "Support | MUEDnote",
+    title: locale === "ja" ? "サポート | MUED" : "Support | MUED",
     description: locale === "ja"
-      ? "MUEDnoteのサポートページ - よくある質問とお問い合わせ"
-      : "MUEDnote Support Page - FAQ and Contact",
+      ? "MUEDのサポートページ - よくある質問とお問い合わせ"
+      : "MUED Support Page - FAQ and Contact",
     alternates: {
       languages: generateHreflangAlternates("/support"),
     },
@@ -74,7 +74,7 @@ function SupportContent({ faqStructuredData }: SupportContentProps) {
       <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6 bg-bg-primary/80 backdrop-blur-xl border-b border-white/5">
         <div className="container mx-auto flex justify-between items-center">
           <Link href="/" className="text-white font-semibold hover:text-slate-300 transition-colors">
-            MUEDnote
+            MUED
           </Link>
           <LocaleSwitcher />
         </div>
