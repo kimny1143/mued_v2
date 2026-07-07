@@ -23,7 +23,6 @@ import { ArrowUp, ChevronLeft, ChevronRight, ExternalLink, Ear, Headphones, LogI
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
-import { MUEDNOTE_APP_STORE_URL } from "@/lib/muednote/constants";
 import { trackCtaClick, trackEvent } from "@/lib/analytics/gtag";
 import { GUMROAD_CLAUDE_CODE_TEMPLATE_URL } from "@/lib/gumroad/constants";
 
@@ -41,9 +40,9 @@ const GUMROAD_TEMPLATE_URL = `${GUMROAD_CLAUDE_CODE_TEMPLATE_URL}?utm_source=mue
  * 6. Advisory teaser (ja only)
  * 7. Final CTA
  *
- * NOTE: the MUEDnote product section was removed 2026-07-07 (kimny/Chief: 製品面は
- * MUEDear/MUEDial のみ). MUEDnote is still referenced in the Developer Story (物語面) and
- * remains in the Final CTA app buttons.
+ * NOTE: MUEDnote was fully delisted from the product面 2026-07-07 (kimny/Chief: 製品面は
+ * MUEDear/MUEDial のみ・iOS は静かに存在＝promote しない) — its product section AND its Final
+ * CTA App Store button were removed. MUEDnote now survives only as a Developer Story mention.
  */
 export function IntegratedLandingContent({
   freeCampaignActive = false,
@@ -369,7 +368,9 @@ function FinalCtaSection({ isV2 = false }: { isV2?: boolean }) {
             >
               {t("muedial.button")}
             </a>
-            <AppStoreButton href={MUEDNOTE_APP_STORE_URL} color="indigo" size="large" product="muednote" ctaLocation="final_cta" />
+            {/* MUEDnote App Store button removed 2026-07-07 — full delist from product面
+                (kimny/Chief: 製品面=MUEDear/MUEDial のみ・iOS は静かに存在＝promote しない).
+                MUEDnote remains only as a Developer Story mention. */}
             {isV2 && (
               <a
                 href={GUMROAD_TEMPLATE_URL}
