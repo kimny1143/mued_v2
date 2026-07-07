@@ -809,7 +809,7 @@ Hoo MCP経由の自動送信
              ${isJa ? 'MUEDsat をダウンロード' : 'Download MUEDsat'}
            </a>
          </p>
-         <p style="color: #6b7280; font-size: 13px; text-align: center;">VST3 · AU · macOS (Universal — Apple Silicon &amp; Intel)</p>`
+         <p style="color: #6b7280; font-size: 13px; text-align: center;">VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon &amp; Intel)</p>`
       : `<div class="info-box">
            <p style="margin: 0;">${isJa
              ? 'ダウンロードの準備が整い次第、このメールアドレスにリンクをお送りします。少しだけお待ちください。'
@@ -833,8 +833,8 @@ Hoo MCP経由の自動送信
     `);
 
     const text = isJa
-      ? `MUEDsat をありがとうございます。\n\n無料のトランス・サチュレーション・プラグインです。\n${hasLink ? `ダウンロード: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · macOS` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\nアップデートや MUEDsp の情報も追ってお知らせします。配信はいつでも解除できます。\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDsat.\n\nA free transformer-saturation plugin.\n${hasLink ? `Download: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · macOS` : "We'll email the download link to this address shortly."}\n\nWe'll also let you know about updates and when MUEDsp is ready. Unsubscribe anytime.\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDsat をありがとうございます。\n\n無料のトランス・サチュレーション・プラグインです。\n${hasLink ? `ダウンロード: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX（Pro Tools）· macOS` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\nアップデートや MUEDsp の情報も追ってお知らせします。配信はいつでも解除できます。\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDsat.\n\nA free transformer-saturation plugin.\n${hasLink ? `Download: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS` : "We'll email the download link to this address shortly."}\n\nWe'll also let you know about updates and when MUEDsp is ready. Unsubscribe anytime.\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },

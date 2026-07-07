@@ -136,7 +136,7 @@ const MUEDSAT_CONTENT = `
 - **URL**: https://mued.jp/ja/muedsat
 - **運営**: glasswerks inc.（株式会社グラスワークス）
 - **料金**: 完全無料（メール登録でダウンロードリンクを送付）
-- **対応OS / フォーマット**: macOS（Universal — Apple Silicon / Intel）／ VST3・AU
+- **対応OS / フォーマット**: macOS（Universal — Apple Silicon / Intel）／ VST3・AU・AAX（Pro Tools）
 - **コントロール**: DRIVE（トランス倍音量）／ Air（クリーン高域シェルフ）／ Mix（パラレル・サチュレーション）／ Output（トリム）／ Bypass（true dry passthrough）
 - **技術**: レイテンシー0 / ADAA によるエイリアス抑制
 `;

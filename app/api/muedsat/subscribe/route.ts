@@ -13,7 +13,7 @@
  * 200 so the UI shows success — the subscriber is never blocked by a downstream email failure, and
  * while staged (RESEND_MUEDSAT_AUDIENCE_ID unset) both side effects are silent no-ops.
  */
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { z } from "zod";
 import { apiSuccess, apiValidationError } from "@/lib/api-response";
 import { rateLimit } from "@/lib/middleware/rate-limit";
@@ -56,14 +56,18 @@ export async function POST(request: NextRequest) {
     logger.error("[muedsat/subscribe] audience add failed", { error: String(err) })
   );
 
-  // Send the download-link email — fail-open. Omits the link (says "on the way") until the dsp
-  // package URL (MUEDSAT_DOWNLOAD_URL) is configured at unlock.
+  // Send the download-link email in after() so Vercel keeps the serverless function alive to
+  // actually deliver it after the 200 (this email carries the DL link = the deliverable; a bare
+  // fire-and-forget can be dropped when the function is torn down — product review #591). fail-open.
+  // Omits the link (says "on the way") until MUEDSAT_DOWNLOAD_URL is configured at unlock.
   if (emailService.isConfigured()) {
-    emailService
-      .sendMuedsatDownloadWelcome({ email }, { locale })
-      .catch((err) =>
-        logger.error("[muedsat/subscribe] welcome email failed", { error: String(err) })
-      );
+    after(async () => {
+      try {
+        await emailService.sendMuedsatDownloadWelcome({ email }, { locale });
+      } catch (err) {
+        logger.error("[muedsat/subscribe] welcome email failed", { error: String(err) });
+      }
+    });
   }
 
   return apiSuccess({ subscribed: true });
