@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADVISORY_LIVE } from "@/lib/advisory/config";
+import { MUEDSAT_LIVE } from "@/lib/muedsat/config";
 
 const MUEDNOTE_CONTENT = `# MUEDnote — 音楽クリエイター向けプロダクションコンパニオン
 
@@ -126,12 +127,27 @@ const ADVISORY_CONTENT = `
 - **メニュー**: まず相談（初回60分無料→¥30,000/回）／見立て＋設計図 ¥250,000（単発）／月額でつくる ¥200,000/月〜／月額で並走する ¥400,000/月〜
 `;
 
+const MUEDSAT_CONTENT = `
+
+## MUEDsat — 無料のトランス・サチュレーション・プラグイン
+
+> MUEDsp（マスタリング・プラグイン）のマスターバス・チェーンからスチール・トランスの色付けだけを取り出した、単体の無料サチュレーション・プラグイン。機能ロック・期限・課金の壁なし。メールはダウンロードの対価であって、プラグインの対価ではない。
+
+- **URL**: https://mued.jp/ja/muedsat
+- **運営**: glasswerks inc.（株式会社グラスワークス）
+- **料金**: 完全無料（メール登録でダウンロードリンクを送付）
+- **対応OS / フォーマット**: macOS（Universal — Apple Silicon / Intel）／ VST3・AU・AAX（Pro Tools）
+- **コントロール**: DRIVE（トランス倍音量）／ Air（クリーン高域シェルフ）／ Mix（パラレル・サチュレーション）／ Output（トリム）／ Bypass（true dry passthrough）
+- **技術**: レイテンシー0 / ADAA によるエイリアス抑制
+`;
+
 export async function GET(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const isDial = host.includes("dial.mued.jp");
 
   const baseContent = isDial ? MUEDIAL_CONTENT : MUEDNOTE_CONTENT;
-  const content = !isDial && ADVISORY_LIVE ? baseContent + ADVISORY_CONTENT : baseContent;
+  let content = !isDial && ADVISORY_LIVE ? baseContent + ADVISORY_CONTENT : baseContent;
+  if (!isDial && MUEDSAT_LIVE) content += MUEDSAT_CONTENT;
 
   return new NextResponse(content, {
     headers: {

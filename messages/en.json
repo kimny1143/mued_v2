@@ -2226,5 +2226,55 @@
     "cta": {
       "short": "Free 60 min"
     }
+  },
+  "muedsat": {
+    "meta": {
+      "title": "MUEDsat — a free transformer saturation plugin",
+      "description": "MUEDsat is a free transformer-saturation plugin — steel-transformer color pulled straight out of the mastering chain we work with. macOS, VST3 + AU + AAX (Pro Tools). Nothing locked, nothing paywalled."
+    },
+    "hero": {
+      "badge": "Free · macOS · VST3 · AU · AAX",
+      "title": "MUEDsat",
+      "tagline": "A free transformer saturation plugin",
+      "lead": "Steel transformer color, taken straight out of the mastering chain we work with. Free."
+    },
+    "about": {
+      "heading": "What it is",
+      "intro1": "MUEDsat is one stage from MUEDsp — the mastering plugin we're building to reproduce the master-bus chain our founder, a working composer and arranger, actually uses. We pulled the steel-transformer coloration out of that chain, made it a standalone plugin, and made it free.",
+      "intro2": "At its heart is one thing: transformer-style saturation. Turn it up for obvious grit, or back it off until it just sits under the sound.",
+      "controlsHeading": "Five controls",
+      "controls": {
+        "drive": { "name": "DRIVE", "desc": "How hard you push into the steel-transformer character; harmonic weight and color that grows as you turn it up." },
+        "air": { "name": "Air", "desc": "A clean high shelf up top, for a little sheen." },
+        "mix": { "name": "Mix", "desc": "Blend against the dry signal for parallel saturation." },
+        "output": { "name": "Output", "desc": "Trim your level." },
+        "bypass": { "name": "Bypass", "desc": "A true dry passthrough, for honest A/B." }
+      },
+      "tech": "Zero latency, and no oversampling artifacts (ADAA anti-aliasing). We like it on a master bus, a drum group, or anything that wants a little more body — but we'd rather you decide with your own ears than take our word for it."
+    },
+    "whyFree": {
+      "heading": "Why it's free — and why we ask for your email",
+      "body1": "MUEDsat is completely free. Nothing in the plugin is locked, time-limited, or paywalled.",
+      "body2": "We ask for your email for two reasons: to send you the download link, and to let you know when we update MUEDsat — or when MUEDsp itself is ready. That's all it's for.",
+      "emphasis": "Your email is the price of the download, not the price of the plugin.",
+      "body3": "No spam, unsubscribe anytime."
+    },
+    "form": {
+      "emailLabel": "Email address",
+      "emailPlaceholder": "your@email",
+      "submit": "Download MUEDsat",
+      "submitting": "Sending…",
+      "note": "We'll email you the download link. Unsubscribe anytime.",
+      "successTitle": "Check your inbox.",
+      "successBody": "We've sent your download link. If it's not there, check your spam folder.",
+      "errorEmail": "Please enter a valid email address.",
+      "errorGeneric": "Something went wrong. Please try again."
+    },
+    "footer": {
+      "operator": "glasswerks inc. — mued.jp",
+      "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon & Intel)",
+      "muedspPrompt": "Curious where it came from?",
+      "muedspLink": "MUEDsp product page"
+    }
   }
 }
