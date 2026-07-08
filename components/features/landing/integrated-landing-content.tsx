@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { BrandHeroSection } from "./brand-hero-section";
-// LP簡素化: MUEDlobe/MeetHoo/GrowthPreview非表示 (2026-02-24)
-// import { GrowthPreviewSection } from "./growth-preview-section";
-// import { MeetHooSection } from "./meet-hoo-section";
+// LP簡素化: MUEDlobe 非表示 (2026-02-24)。MeetHoo/GrowthPreview + MUEDnote hero/philosophy
+// components は 2026-07-08 dead-section cleanup で削除済（site-identity rebrand PR）。
 // import { MuedlobeHeroSection } from "@/components/features/muedlobe-landing/muedlobe-hero-section";
 // import { MuedlobeOverviewSection } from "@/components/features/muedlobe-landing/muedlobe-overview-section";
 import { SocialProofSection } from "./social-proof-section";

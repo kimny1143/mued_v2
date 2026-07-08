@@ -10,22 +10,22 @@ export const metadata: Metadata = {
 /**
  * Sign In Page
  *
- * MUEDnote branded authentication page
+ * MUED branded authentication page
  * - Split layout: branding (left) + Clerk (right)
- * - Dark theme matching MUEDnote design
+ * - Dark theme matching MUED design
  * - Responsive: stacked on mobile
  */
 export default function SignInPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex" style={{ fontFamily: 'var(--font-sora), system-ui, sans-serif' }}>
-      {/* Left: MUEDnote Branding */}
+      {/* Left: MUED Branding */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-12 bg-gradient-to-br from-[#0a0a0a] to-[#111113]">
         <div className="max-w-md text-center">
           {/* Logo */}
           <Link href="/" className="inline-block mb-8">
             <Image
               src="/logo.webp"
-              alt="MUEDnote"
+              alt="MUED"
               width={120}
               height={120}
               className="drop-shadow-2xl"
@@ -34,7 +34,7 @@ export default function SignInPage() {
 
           {/* Tagline */}
           <h1 className="text-3xl font-bold text-white mb-4">
-            MUEDnote
+            MUED
           </h1>
           <p className="text-xl text-amber-400 mb-6">
             Making music visible.
@@ -55,13 +55,13 @@ export default function SignInPage() {
           <Link href="/">
             <Image
               src="/logo.webp"
-              alt="MUEDnote"
+              alt="MUED"
               width={80}
               height={80}
               className="mx-auto mb-4 drop-shadow-lg"
             />
           </Link>
-          <h1 className="text-2xl font-bold text-white">MUEDnote</h1>
+          <h1 className="text-2xl font-bold text-white">MUED</h1>
         </div>
 
         <SignIn

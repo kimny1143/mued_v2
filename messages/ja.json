@@ -66,47 +66,6 @@
         "ctaFinalSection": "Claude Code テンプレートを入手"
       }
     },
-    "hero": {
-      "title": "MUEDnote",
-      "tagline": "Making music visible.",
-      "hooIntro": "MUEDnoteのマスコット、Hoo（ホー）",
-      "headline": "制作のそばに、いつもHoo。",
-      "description": "音楽制作のための記録・振り返りツール。\n集中しすぎて疲れる前に、ベストな状態をキープ。",
-      "ctaPrimary": "無料でHooと始める",
-      "ctaSecondary": "ログイン",
-      "hooPhrases": [
-        "Ho-Hoo, そろそろ休憩しない？",
-        "Ho-Hoo, さっきのセッション、振り返ってみる？",
-        "Ho-Hoo, ちょっと気づいたことがあるんだけど",
-        "Ho-Hoo, 今日やったこと、一緒に整理しよっか"
-      ],
-      "subtitle": "MUED LMSは、次世代の学習管理システムで生徒と専門メンターをつなぎます",
-      "cta": "今すぐ無料で始める",
-      "login": "ログイン",
-      "getStarted": "無料で始める"
-    },
-    "philosophy": {
-      "title": "MUEDnoteでできること",
-      "intro": "あなたの認知特性を可視化し、Hooがあなたを理解する。\n制作のそばに、いつもHoo。",
-      "features": {
-        "lobe": {
-          "title": "認知プロファイリング",
-          "description": "7つのゲームで認知特性を5次元で可視化。あなたの音楽的な強みと伸びしろがわかる。"
-        },
-        "hoo": {
-          "title": "Hooがあなたを理解する",
-          "description": "ゲーム結果・制作傾向・会話履歴をもとに、Hooがパーソナライズされた対話を提供。"
-        },
-        "import": {
-          "title": "AI会話インポート",
-          "description": "Claude・ChatGPT・Geminiのエクスポートから、あなたの音楽プロファイルを自動抽出。"
-        },
-        "free": {
-          "title": "完全無料",
-          "description": "MUEDnoteのすべての機能は無料。iPhoneを置くだけで、制作の記録が始まる。"
-        }
-      }
-    },
     "muednote": {
       "badge": "iOS App",
       "title": "iPhoneひとつで、制作を記録",
@@ -117,27 +76,6 @@
       "preview": {
         "greeting": "ほほう",
         "timer": "すべて無料"
-      }
-    },
-    "growth": {
-      "title": "進化するMUEDnote",
-      "subtitle": "最近のアップデートと、これからの展望。",
-      "badge": "最新機能",
-      "daw": {
-        "title": "DAWログ連携",
-        "quote": "制作中のDAW操作を自動で記録。セッション後に「なぜそうしたか」を振り返れる。",
-        "features": [
-          "DAWの操作ログを自動記録",
-          "セッション詳細から確認可能"
-        ]
-      },
-      "conversation": {
-        "title": "Hooとパーソナライズ会話",
-        "quote": "認知プロファイルや制作傾向をもとに、Hooがあなたに合わせた対話を提供。無料で利用可能。",
-        "features": [
-          "認知プロファイルを反映した対話",
-          "すべて無料"
-        ]
       }
     },
     "cta": {

@@ -2,26 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { ADVISORY_LIVE } from "@/lib/advisory/config";
 import { MUEDSAT_LIVE } from "@/lib/muedsat/config";
 
-const MUEDNOTE_CONTENT = `# MUEDnote — 音楽クリエイター向けプロダクションコンパニオン
+const MUED_CONTENT = `# MUED — 音楽制作のための AI プロダクトスイート
 
-> 音楽クリエイターの認知特性を可視化するアプリ。AIアシスタントHooがパーソナライズされた対話で制作をサポート。完全無料。
+> 耳を鍛え、制作を記録し、ミックスを AI に任せる。音楽クリエイターのための AI プロダクトスイート。glasswerks inc.（株式会社グラスワークス）が開発・運営。
 
-MUEDnoteは、7つの耳トレゲームで音楽クリエイターの認知特性（MUEDlobeプロファイル）を可視化し、AIアシスタントHooが制作の悩みに寄り添うiOSアプリです。glasswerks inc.（株式会社グラスワークス）が運営しています。
+MUED は、音楽制作を前に進めるための AI プロダクト群です。「ミューズの教え——神秘ではなく、方法論。」をコンセプトに、耳のトレーニングから制作の記録、AI ミキシング、事業の仕組みづくりまでを、glasswerks inc. が開発・運営しています。
 
-## サービス概要
+## プロダクト
 
-- **運営**: glasswerks inc.（株式会社グラスワークス）
-- **URL**: https://mued.jp
-- **プラットフォーム**: iOS / Web（ブラウザ）
-- **料金**: 完全無料
-- **言語**: 日本語・英語対応
-
-## 主な機能
-
-- **MUEDlobe**: 7種の耳トレゲームで認知プロファイル（音程感知・リズム・和音・音場定位等）を可視化
-- **AIアシスタント Hoo**: プロファイルをもとに制作の悩みに対話でアドバイス
-- **制作ログ連携**: Hoo会話履歴を蓄積してHooの理解を深める
-- **プロファイル共有**: MUEDialへのシームレス誘導（AIミキシングへの文脈連携）
+- **MUEDear**: 7種の耳トレゲームで認知プロファイル（MUEDlobe／音程感知・リズム・和音・音場定位等）を可視化する iOS アプリ。完全無料。
+- **MUEDnote**: 制作を記録し、AIアシスタント Hoo が「ディレクター目線」で対話サポート。
+- **MUEDial**: ステムをアップロードして AI と話すだけでプロ品質のミックス・マスタリングを得る、日本語対応の AI ミキシングサービス（https://dial.mued.jp）。
+- **MUED advisory**: 事業の「これ、AIでできないか」を、実際に動くかたちにして並走するサービス（https://mued.jp/ja/advisory）。
+- **MUEDsat**: マスタリング・プラグイン MUEDsp のチェーンから取り出した、無料のトランス・サチュレーション・プラグイン（https://mued.jp/ja/muedsat）。
+- **MUEDsp**: 開発中のマスタリング・プラグイン。
 
 ## Hoo について
 
@@ -145,7 +139,7 @@ export async function GET(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const isDial = host.includes("dial.mued.jp");
 
-  const baseContent = isDial ? MUEDIAL_CONTENT : MUEDNOTE_CONTENT;
+  const baseContent = isDial ? MUEDIAL_CONTENT : MUED_CONTENT;
   let content = !isDial && ADVISORY_LIVE ? baseContent + ADVISORY_CONTENT : baseContent;
   if (!isDial && MUEDSAT_LIVE) content += MUEDSAT_CONTENT;
 

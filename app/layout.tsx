@@ -39,22 +39,22 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "MUEDnote - 制作のそばに、いつもHoo。",
+  title: "MUED — ミューズの教え。神秘ではなく、方法論。",
   description:
-    "音楽クリエイターの認知特性を可視化し、AIアシスタントHooがパーソナライズされた対話で制作をサポート。完全無料。",
+    "音楽制作を前に進めるための AI プロダクトスイート。耳を鍛え、制作を記録し、ミックスを AI に任せる。",
   metadataBase: new URL("https://mued.jp"),
   openGraph: {
-    title: "MUEDnote - 制作のそばに、いつもHoo。",
+    title: "MUED — ミューズの教え。神秘ではなく、方法論。",
     description:
-      "音楽クリエイターの認知特性を可視化し、AIアシスタントHooがパーソナライズされた対話で制作をサポート。",
+      "音楽制作を前に進めるための AI プロダクトスイート。耳を鍛え、制作を記録し、ミックスを AI に任せる。",
     url: "https://mued.jp",
-    siteName: "MUEDnote",
+    siteName: "MUED",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "MUEDnote - 音楽制作のおともアプリ",
+        alt: "MUED — 音楽制作のための AI プロダクトスイート",
       },
     ],
     locale: "ja_JP",
@@ -62,9 +62,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MUEDnote - 制作のそばに、いつもHoo。",
+    title: "MUED — ミューズの教え。神秘ではなく、方法論。",
     description:
-      "音楽クリエイターの認知特性を可視化し、AIアシスタントHooがパーソナライズされた対話で制作をサポート。",
+      "音楽制作を前に進めるための AI プロダクトスイート。耳を鍛え、制作を記録し、ミックスを AI に任せる。",
     images: ["/og-image.jpg"],
   },
 };
