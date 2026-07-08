@@ -424,6 +424,8 @@ function MuedsatTeaserSection({ locale }: { locale: string }) {
               <span className="text-white">MUED</span>
               <span className="text-[#f5a524]">sat</span>
             </h2>
+            {/* Formal name (Chief usage table: product card = formal "MUEDsp saturation" / nickname wordmark). */}
+            <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-white/40">MUEDsp saturation</p>
             <p className="mt-3 text-lg text-white/70">{t("tagline")}</p>
             <div className="mt-8">
               <Link

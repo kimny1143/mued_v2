@@ -2159,8 +2159,8 @@
   },
   "muedsat": {
     "meta": {
-      "title": "MUEDsat — a free transformer saturation plugin",
-      "description": "MUEDsat is a free transformer-saturation plugin — transformer color pulled straight out of the mastering chain we work with. macOS, VST3 + AU + AAX (Pro Tools). Nothing locked, nothing paywalled."
+      "title": "MUEDsp saturation (aka MUEDsat) — a free transformer saturation plugin",
+      "description": "MUEDsp saturation (aka MUEDsat) is a free transformer-saturation plugin — transformer color pulled straight out of the mastering chain we work with. macOS, VST3 + AU + AAX (Pro Tools). Nothing locked, nothing paywalled."
     },
     "hero": {
       "badge": "Free · macOS · VST3 · AU · AAX",
@@ -2170,7 +2170,7 @@
     },
     "about": {
       "heading": "What it is",
-      "intro1": "MUEDsat is one stage from MUEDsp — the mastering plugin we're building to reproduce the master-bus chain our founder, a working composer and arranger, actually uses. We pulled the transformer coloration out of that chain, made it a standalone plugin, and made it free.",
+      "intro1": "MUEDsp saturation (aka MUEDsat) is one module from MUEDsp, our plugin suite for mastering. Its finished form — MUEDsp masterchain — reproduces the master-bus chain our founder, a working composer and arranger, actually uses (we're building it now). MUEDsat isn't a stripped-down demo or trial: it's an actual stage of that chain — the transformer saturation — pulled out as a standalone plugin and made free.",
       "intro2": "At its heart is one thing: transformer-style saturation. Turn it up for obvious grit, or back it off until it just sits under the sound.",
       "controlsHeading": "Five controls",
       "controls": {
@@ -2185,7 +2185,7 @@
     "whyFree": {
       "heading": "Why it's free — and why we ask for your email",
       "body1": "MUEDsat is completely free. Nothing in the plugin is locked, time-limited, or paywalled.",
-      "body2": "We ask for your email for two reasons: to send you the download link, and to let you know when we update MUEDsat — or when MUEDsp itself is ready. That's all it's for.",
+      "body2": "We ask for your email for two reasons: to send you the download link, and to let you know when we update MUEDsat — or when MUEDsp masterchain is ready. That's all it's for.",
       "emphasis": "Your email is the price of the download, not the price of the plugin.",
       "body3": "No spam, unsubscribe anytime."
     },
@@ -2202,9 +2202,7 @@
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
-      "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon & Intel)",
-      "muedspPrompt": "Curious where it came from?",
-      "muedspLink": "MUEDsp product page"
+      "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon & Intel)"
     }
   }
 }

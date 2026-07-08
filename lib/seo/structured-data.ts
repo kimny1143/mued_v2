@@ -4,7 +4,7 @@
  * JSON-LD structured data for AI crawlers (ChatGPT, Claude, Perplexity, etc.)
  * Based on Schema.org vocabulary
  *
- * Site identity = MUED umbrella brand (products: MUEDear / MUEDial / MUEDnote / advisory / MUEDsat).
+ * Site identity = MUED umbrella brand (products: MUEDear / MUEDial / MUEDnote / advisory / MUEDsp saturation).
  * "MUEDnote" retained in Organization.alternateName to preserve 1/7-launch search equity.
  */
 

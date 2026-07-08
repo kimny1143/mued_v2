@@ -7,7 +7,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
-import { MUEDSAT_MUEDSP_URL } from "@/lib/muedsat/config";
 import { MuedsatSignupForm, MuedsatSignupFormFallback } from "./muedsat-signup-form";
 
 // The form reads useSearchParams (UTM + press bypass), so it must sit under a Suspense boundary on
@@ -120,6 +119,9 @@ export function MuedsatLandingContent() {
                 <span className="text-white">MUED</span>
                 <span className="text-[#f5a524]">sat</span>
               </h1>
+              {/* Formal name (Chief usage table: DL page = formal "MUEDsp saturation"; wordmark stays
+                  the nickname brand mark). Final wordmark/eyebrow treatment is a kimny 現物 decision. */}
+              <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-white/40">MUEDsp saturation</p>
               <p className="mt-3 text-xl font-light text-white/80 md:text-2xl">{th("tagline")}</p>
               <p className="mt-6 max-w-md text-[15px] leading-relaxed text-white/55">{th("lead")}</p>
               <div className="mt-8 max-w-md">
@@ -182,17 +184,6 @@ export function MuedsatLandingContent() {
         <div className="mx-auto max-w-6xl space-y-3">
           <p className="text-sm text-white/50">{tf("operator")}</p>
           <p className="font-mono text-xs uppercase tracking-wider text-white/35">{tf("format")}</p>
-          {MUEDSAT_MUEDSP_URL ? (
-            <p className="text-sm text-white/45">
-              {tf("muedspPrompt")}{" "}
-              <a
-                href={MUEDSAT_MUEDSP_URL}
-                className="text-[#f5a524] underline-offset-4 transition-colors hover:underline"
-              >
-                {tf("muedspLink")}
-              </a>
-            </p>
-          ) : null}
           <nav className="flex items-center gap-6 pt-2">
             <Link
               href={`/${locale}/privacy`}

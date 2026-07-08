@@ -53,7 +53,8 @@ export default async function MuedsatPage({ params }: PageProps) {
   const softwareStructuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "MUEDsat",
+    name: "MUEDsp saturation",
+    alternateName: "MUEDsat",
     applicationCategory: "MultimediaApplication",
     operatingSystem: "macOS",
     description: tMeta("description"),
