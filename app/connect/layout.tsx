@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Hoo MCP セットアップ | MUEDnote — AIアシスタントとの接続",
+  title: "Hoo MCP セットアップ | MUED — AIアシスタントとの接続",
   description:
     "HooをClaudeやCursorなどのAIツールに接続するセットアップガイド。APIキー発行 → ホスト設定 → 接続テストの3ステップで完了。MUEDnoteの制作コンテキストをどこでも活用。",
   keywords: [
@@ -20,11 +20,11 @@ export const metadata: Metadata = {
     canonical: "https://mued.jp/connect",
   },
   openGraph: {
-    title: "Hoo MCP セットアップ | MUEDnote",
+    title: "Hoo MCP セットアップ | MUED",
     description:
       "HooをClaudeやCursorなどのAIツールに接続。3ステップで音楽制作コンテキストをどこでも活用できます。",
     url: "https://mued.jp/connect",
-    siteName: "MUEDnote",
+    siteName: "MUED",
   },
 };
 
