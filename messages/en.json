@@ -2171,23 +2171,24 @@
     },
     "about": {
       "heading": "What it is",
-      "originLead": "Not a demo, not a trial — an actual stage of the master chain we use, pulled out and made free.",
+      "originLead": "Not a demo or a trial — it's the transformer-saturation stage of the master chain we actually use, pulled out and made free (its finished form, MUEDsp masterchain, is in development). Push it for obvious grit, or back it off until it just sits under the sound.",
       "intro1": "MUEDsp saturation (aka MUEDsat) is one module from MUEDsp, our plugin suite for mastering. Its finished form — MUEDsp masterchain — reproduces the master-bus chain our founder, a working composer and arranger, actually uses (we're building it now). MUEDsat isn't a stripped-down demo or trial: it's an actual stage of that chain — the transformer saturation — pulled out as a standalone plugin and made free.",
       "intro2": "At its heart is one thing: transformer-style saturation. Turn it up for obvious grit, or back it off until it just sits under the sound.",
-      "controlsHeading": "Five controls",
-      "controlsLead": "Five controls, nothing hidden.",
+      "controlsHeading": "Four knobs",
+      "controlsLead": "Four knobs, nothing hidden.",
+      "bypassNote": "Plus a true-dry bypass toggle, for honest A/B. Zero latency, no oversampling artifacts (ADAA).",
       "controls": {
-        "drive": { "name": "DRIVE", "desc": "How hard you push into the transformer character; harmonic weight and color that grows as you turn it up." },
-        "air": { "name": "Air", "desc": "A clean high shelf up top, for a little sheen." },
-        "mix": { "name": "Mix", "desc": "Blend against the dry signal for parallel saturation." },
-        "output": { "name": "Output", "desc": "Trim your level." },
+        "drive": { "name": "DRIVE", "desc": "how hard you push the transformer (more = more harmonics)." },
+        "air": { "name": "Air", "desc": "a touch of clean high-shelf sheen." },
+        "mix": { "name": "Mix", "desc": "blend with the dry signal (parallel saturation)." },
+        "output": { "name": "Output", "desc": "level trim." },
         "bypass": { "name": "Bypass", "desc": "A true dry passthrough, for honest A/B." }
       },
       "tech": "Zero latency, and no oversampling artifacts (ADAA anti-aliasing). We like it on a master bus, a drum group, or anything that wants a little more body — but we'd rather you decide with your own ears than take our word for it."
     },
     "whyFree": {
       "heading": "Why it's free — and why we ask for your email",
-      "lead": "Completely free. Nothing locked, timed, or paywalled. Your email is the price of the download — not the price of the plugin.",
+      "lead": "MUEDsat is completely free — nothing locked or time-limited. We ask for your email only to send the download link and to let you know when we update it (or when MUEDsp masterchain is ready). Your email is the price of the download, not the plugin. No spam; unsubscribe anytime.",
       "body1": "MUEDsat is completely free. Nothing in the plugin is locked, time-limited, or paywalled.",
       "body2": "We ask for your email for two reasons: to send you the download link, and to let you know when we update MUEDsat — or when MUEDsp masterchain is ready. That's all it's for.",
       "emphasis": "Your email is the price of the download, not the price of the plugin.",
