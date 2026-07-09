@@ -2166,13 +2166,16 @@
       "badge": "Free · macOS · VST3 · AU · AAX",
       "title": "MUEDsat",
       "tagline": "A free transformer saturation plugin",
-      "lead": "Transformer color, taken straight out of the mastering chain we work with. Free."
+      "lead": "Transformer color, taken straight out of the mastering chain we work with. Free.",
+      "tryLine": "Free. Just grab it and try it on your own music."
     },
     "about": {
       "heading": "What it is",
+      "originLead": "Not a demo, not a trial — an actual stage of the master chain we use, pulled out and made free.",
       "intro1": "MUEDsp saturation (aka MUEDsat) is one module from MUEDsp, our plugin suite for mastering. Its finished form — MUEDsp masterchain — reproduces the master-bus chain our founder, a working composer and arranger, actually uses (we're building it now). MUEDsat isn't a stripped-down demo or trial: it's an actual stage of that chain — the transformer saturation — pulled out as a standalone plugin and made free.",
       "intro2": "At its heart is one thing: transformer-style saturation. Turn it up for obvious grit, or back it off until it just sits under the sound.",
       "controlsHeading": "Five controls",
+      "controlsLead": "Five controls, nothing hidden.",
       "controls": {
         "drive": { "name": "DRIVE", "desc": "How hard you push into the transformer character; harmonic weight and color that grows as you turn it up." },
         "air": { "name": "Air", "desc": "A clean high shelf up top, for a little sheen." },
@@ -2184,6 +2187,7 @@
     },
     "whyFree": {
       "heading": "Why it's free — and why we ask for your email",
+      "lead": "Completely free. Nothing locked, timed, or paywalled. Your email is the price of the download — not the price of the plugin.",
       "body1": "MUEDsat is completely free. Nothing in the plugin is locked, time-limited, or paywalled.",
       "body2": "We ask for your email for two reasons: to send you the download link, and to let you know when we update MUEDsat — or when MUEDsp masterchain is ready. That's all it's for.",
       "emphasis": "Your email is the price of the download, not the price of the plugin.",
@@ -2203,6 +2207,20 @@
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
       "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon & Intel)"
+    },
+    "visuals": {
+      "idleLabel": "Idle (dry)",
+      "hotLabel": "Driven (saturating)",
+      "faceplateAlt": "The MUEDsat plugin interface: a large DRIVE knob glowing ember, and a black-glass window on the right showing the transfer curve and a live THD readout.",
+      "compareAlt": "The same MUEDsat interface, side by side: idle on the left (transfer curve near-linear, THD 0.00%) and driven on the right (curve bent, DRIVE glowing, THD 7.42%).",
+      "driveAlt": "Close-up of the DRIVE knob, an ember heat-ring lit around its base.",
+      "meterAlt": "Close-up of the transfer-curve meter: TRANSFER label, dashed unity reference, an ember saturation curve, and a live THD readout.",
+      "knobsAlt": "The three smaller knobs — MIX, AIR, and OUTPUT.",
+      "signatureHeading": "The transfer curve"
+    },
+    "masterchain": {
+      "eyebrow": "In development",
+      "body": "MUEDsat is one stage of MUEDsp masterchain — the finished chain we're building now."
     }
   }
 }
