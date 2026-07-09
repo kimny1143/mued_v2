@@ -3,11 +3,20 @@
 // MUEDsat free-download LP — dark, pro-audio faceplate aesthetic (not the advisory light editorial
 // theme). Dark metallic + amber (glasswerks --amber #f5a524). All copy comes from the `muedsat.*` i18n
 // namespace (messages/{en,ja}.json) — no hardcoded copy. Staged behind MUEDSAT_LIVE (page.tsx robots).
+//
+// v2 (kimny 現物 7/9): concise + dense — a small honest plugin's page, not a big-product-page.
+// content §A v2 canonical (muedsat-dl-copy-v2-20260709): copy is condensed and shown plainly (no
+// disclosure folds — short text + whitespace reads more premium/Valhalla-quiet). Two visuals only: the
+// real 案D faceplate (hero) and one idle↔hot compare that carries the transfer-curve story. Four knobs
+// (Bypass is a header toggle, mentioned once, not counted). Single primary CTA in the hero; the bottom
+// is a text link back to it. Visuals are exact pixels from the pixel-verified spec v2
+// (_conductor/designsystem/muedsat-ui/muedsat-D-layout-{hot,idle}.png), not redrawn.
+// Assets: public/muedsat/faceplate-{hot,idle}.webp.
 import { Suspense } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
-import { MUEDSAT_MUEDSP_URL } from "@/lib/muedsat/config";
 import { MuedsatSignupForm, MuedsatSignupFormFallback } from "./muedsat-signup-form";
 
 // The form reads useSearchParams (UTM + press bypass), so it must sit under a Suspense boundary on
@@ -20,81 +29,28 @@ function SignupForm() {
   );
 }
 
-const CONTROL_KEYS = ["drive", "air", "mix", "output", "bypass"] as const;
+const FACEPLATE_HOT = "/muedsat/faceplate-hot.webp";
+const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
 
-// Transformer-style saturation transfer curve — the literal character of the plugin, drawn as its
-// signature. Faint unity diagonal + a soft-clip (tanh) response in amber.
-function SaturationCurve() {
-  const pts: string[] = [];
-  const k = 2.6; // drive amount for the illustrative curve
-  const norm = Math.tanh(k);
-  for (let i = 0; i <= 60; i++) {
-    const x = i / 60; // 0..1
-    const sx = 10 + x * 180;
-    const sy = 190 - (Math.tanh(k * x) / norm) * 180;
-    pts.push(`${sx.toFixed(1)},${sy.toFixed(1)}`);
-  }
-  return (
-    <svg viewBox="0 0 200 200" className="h-full w-full" role="img" aria-hidden="true">
-      <defs>
-        <linearGradient id="msatCurve" x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0" stopColor="#b57a14" />
-          <stop offset="1" stopColor="#f5a524" />
-        </linearGradient>
-      </defs>
-      {/* grid */}
-      {[0, 1, 2, 3, 4].map((i) => (
-        <line key={`h${i}`} x1="10" y1={10 + i * 45} x2="190" y2={10 + i * 45} stroke="#ffffff" strokeOpacity="0.05" strokeWidth="1" />
-      ))}
-      {[0, 1, 2, 3, 4].map((i) => (
-        <line key={`v${i}`} x1={10 + i * 45} y1="10" x2={10 + i * 45} y2="190" stroke="#ffffff" strokeOpacity="0.05" strokeWidth="1" />
-      ))}
-      {/* unity (dry) diagonal */}
-      <line x1="10" y1="190" x2="190" y2="10" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="1" strokeDasharray="3 4" />
-      {/* saturation response */}
-      <polyline points={pts.join(" ")} fill="none" stroke="url(#msatCurve)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-// Plugin-faceplate hero visual: the transfer curve on a dark metal panel, control names along the bottom.
-function FaceplatePanel() {
-  const t = useTranslations("muedsat.about");
-  return (
-    <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-[#161616] to-[#0d0d0d] p-5 shadow-2xl shadow-black/40">
-      <div className="mb-4 flex items-center justify-between">
-        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/40">Transfer</span>
-        <span className="h-2 w-2 rounded-full bg-[#f5a524] shadow-[0_0_10px_2px_rgba(245,165,36,0.5)]" />
-      </div>
-      <div className="aspect-square w-full rounded-lg border border-white/[0.06] bg-black/40 p-2">
-        <SaturationCurve />
-      </div>
-      <div className="mt-4 grid grid-cols-5 gap-1.5">
-        {CONTROL_KEYS.map((key) => (
-          <span
-            key={key}
-            className="truncate rounded border border-white/[0.06] bg-white/[0.03] py-1.5 text-center font-mono text-[9px] uppercase tracking-wider text-white/45"
-          >
-            {t(`controls.${key}.name`)}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
+// Four knobs; Bypass is a header toggle, described in bypassNote (kimny 現物: the page must match the
+// knob count you can see).
+const KNOBS = ["drive", "mix", "air", "output"] as const;
 
 export function MuedsatLandingContent() {
   const locale = useLocale();
+  const isJa = locale === "ja";
   const th = useTranslations("muedsat.hero");
   const ta = useTranslations("muedsat.about");
   const tw = useTranslations("muedsat.whyFree");
   const tf = useTranslations("muedsat.footer");
+  const tv = useTranslations("muedsat.visuals");
+  const tm = useTranslations("muedsat.masterchain");
 
   return (
     <div className="dark min-h-screen bg-[#0a0a0a] text-white">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0a0a0a]/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link href={`/${locale}`} className="flex items-baseline gap-2">
             <span className="text-lg tracking-wide">
               <span className="font-bold">MUED</span>
@@ -109,42 +65,97 @@ export function MuedsatLandingContent() {
       </header>
 
       <main>
-        {/* Hero */}
-        <section className="px-6 pt-16 pb-20 md:pt-24">
-          <div className="mx-auto grid max-w-6xl items-center gap-12 md:grid-cols-2 md:gap-16">
+        {/* Hero — the real plugin, one image, and the only download form */}
+        <section className="relative overflow-hidden px-6 pt-14 pb-16">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute right-0 top-1/4 h-[480px] w-[480px] translate-x-1/3 rounded-full bg-[#ff5a1f]/[0.06] blur-[110px]"
+          />
+          <div className="relative mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-2 md:gap-14">
             <div>
               <span className="inline-block rounded-full border border-[#f5a524]/30 bg-[#f5a524]/10 px-3 py-1 font-mono text-[11px] uppercase tracking-widest text-[#f5a524]">
                 {th("badge")}
               </span>
-              <h1 className="mt-6 text-5xl font-extrabold tracking-tight md:text-7xl">
+              <h1 className="mt-5 text-5xl font-extrabold tracking-tight md:text-6xl">
                 <span className="text-white">MUED</span>
                 <span className="text-[#f5a524]">sat</span>
               </h1>
-              <p className="mt-3 text-xl font-light text-white/80 md:text-2xl">{th("tagline")}</p>
-              <p className="mt-6 max-w-md text-[15px] leading-relaxed text-white/55">{th("lead")}</p>
-              <div className="mt-8 max-w-md">
+              {/* Formal name (Chief usage table: DL page = formal "MUEDsp saturation"). */}
+              <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-white/40">MUEDsp saturation</p>
+              <p className="mt-3 text-lg font-light text-white/80 md:text-xl">{th("tagline")}</p>
+              <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/55">{th("lead")}</p>
+              <div id="get" className="mt-7 max-w-md scroll-mt-20">
                 <SignupForm />
               </div>
+              <p className="mt-3 max-w-md text-sm italic text-white/45">{th("tryLine")}</p>
             </div>
-            <div className="mx-auto w-full max-w-sm md:max-w-none">
-              <FaceplatePanel />
+            <div className="mx-auto w-full max-w-md md:max-w-none">
+              <div className="overflow-hidden rounded-xl border border-white/10 bg-black/30 p-2 shadow-2xl shadow-black/50">
+                <Image
+                  src={FACEPLATE_HOT}
+                  alt={tv("faceplateAlt")}
+                  width={1000}
+                  height={700}
+                  priority
+                  sizes="(min-width: 768px) 440px, 88vw"
+                  className="h-auto w-full rounded-lg"
+                />
+              </div>
             </div>
           </div>
         </section>
 
-        {/* What it is + controls */}
-        <section className="border-t border-white/5 px-6 py-20">
+        {/* What it is / does — one short paragraph + one visual: the same UI idle vs driven */}
+        <section className="border-t border-white/5 px-6 py-14">
           <div className="mx-auto max-w-3xl">
-            <h2 className="text-2xl font-bold tracking-tight md:text-3xl">{ta("heading")}</h2>
-            <p className="mt-6 text-[15px] leading-[1.9] text-white/70">{ta("intro1")}</p>
-            <p className="mt-4 text-[15px] leading-[1.9] text-white/70">{ta("intro2")}</p>
+            <h2 className="text-2xl font-bold tracking-tight">{ta("heading")}</h2>
+            <p className="mt-5 text-[17px] leading-[1.8] text-white/75">{ta("originLead")}</p>
 
-            <p className="mt-12 font-mono text-[11px] uppercase tracking-[0.2em] text-white/35">
-              {ta("controlsHeading")}
-            </p>
-            <dl className="mt-4 divide-y divide-white/5 border-y border-white/5">
-              {CONTROL_KEYS.map((key) => (
-                <div key={key} className="grid gap-1 py-4 sm:grid-cols-[8rem_1fr] sm:gap-6">
+            <figure className="mt-8">
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                <div>
+                  <div className="overflow-hidden rounded-lg border border-white/10 bg-black/30 p-1.5">
+                    <Image
+                      src={FACEPLATE_IDLE}
+                      alt={tv("compareAlt")}
+                      width={1000}
+                      height={700}
+                      sizes="(min-width: 640px) 40vw, 88vw"
+                      className="h-auto w-full rounded"
+                    />
+                  </div>
+                  <p className="mt-1.5 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-white/35">
+                    {tv("idleLabel")}
+                  </p>
+                </div>
+                <div>
+                  <div className="overflow-hidden rounded-lg border border-[#ff5a1f]/25 bg-black/30 p-1.5 shadow-[0_0_32px_-14px_rgba(255,90,31,0.4)]">
+                    <Image
+                      src={FACEPLATE_HOT}
+                      alt=""
+                      aria-hidden="true"
+                      width={1000}
+                      height={700}
+                      sizes="(min-width: 640px) 40vw, 88vw"
+                      className="h-auto w-full rounded"
+                    />
+                  </div>
+                  <p className="mt-1.5 text-center font-mono text-[10px] uppercase tracking-[0.18em] text-[#f5a524]/70">
+                    {tv("hotLabel")}
+                  </p>
+                </div>
+              </div>
+            </figure>
+          </div>
+        </section>
+
+        {/* Controls — four knobs, nothing hidden. Shown plainly; Bypass + tech in one quiet line. */}
+        <section className="border-t border-white/5 bg-white/[0.015] px-6 py-14">
+          <div className="mx-auto max-w-3xl">
+            <p className="text-lg font-medium leading-snug text-white/85">{ta("controlsLead")}</p>
+            <dl className="mt-6 divide-y divide-white/5 border-y border-white/5">
+              {KNOBS.map((key) => (
+                <div key={key} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr] sm:gap-5">
                   <dt className="font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">
                     {ta(`controls.${key}.name`)}
                   </dt>
@@ -154,51 +165,48 @@ export function MuedsatLandingContent() {
                 </div>
               ))}
             </dl>
-
-            <p className="mt-8 text-[15px] leading-[1.9] text-white/55">{ta("tech")}</p>
+            <p className="mt-5 text-sm leading-relaxed text-white/45">{ta("bypassNote")}</p>
           </div>
         </section>
 
-        {/* Why it's free */}
-        <section className="border-t border-white/5 bg-white/[0.015] px-6 py-20">
+        {/* Why it's free — one condensed paragraph, then a text link back to the hero form. No second form. */}
+        <section className="border-t border-white/5 px-6 py-14">
           <div className="mx-auto max-w-3xl">
-            <h2 className="text-2xl font-bold tracking-tight md:text-3xl">{tw("heading")}</h2>
-            <p className="mt-6 text-[15px] leading-[1.9] text-white/70">{tw("body1")}</p>
-            <p className="mt-4 text-[15px] leading-[1.9] text-white/70">{tw("body2")}</p>
-            <p className="mt-6 border-l-2 border-[#f5a524] pl-4 text-lg font-medium leading-relaxed text-white">
-              {tw("emphasis")}
-            </p>
-            <p className="mt-6 text-sm text-white/45">{tw("body3")}</p>
+            <h2 className="text-2xl font-bold tracking-tight">{tw("heading")}</h2>
+            <p className="mt-5 text-[17px] leading-[1.8] text-white/75">{tw("lead")}</p>
+            <a
+              href="#get"
+              className="mt-6 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]"
+            >
+              {isJa ? "無料でダウンロード ↑" : "Download it free ↑"}
+            </a>
+          </div>
+        </section>
 
-            <div className="mt-10 max-w-md">
-              <SignupForm />
+        {/* MUEDsp masterchain — the finished form, in development. A quiet heads-up, not a store. */}
+        <section className="border-t border-white/5 bg-white/[0.015] px-6 py-12">
+          <div className="mx-auto max-w-3xl">
+            <div className="rounded-xl border border-white/8 bg-gradient-to-b from-white/[0.03] to-transparent p-5 md:p-6">
+              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#f5a524]/70">
+                {tm("eyebrow")}
+              </p>
+              <p className="mt-2.5 text-[15px] leading-[1.7] text-white/70 md:text-base">{tm("body")}</p>
             </div>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 px-6 py-12">
-        <div className="mx-auto max-w-6xl space-y-3">
+      <footer className="border-t border-white/5 px-6 py-10">
+        <div className="mx-auto max-w-5xl space-y-2.5">
           <p className="text-sm text-white/50">{tf("operator")}</p>
           <p className="font-mono text-xs uppercase tracking-wider text-white/35">{tf("format")}</p>
-          {MUEDSAT_MUEDSP_URL ? (
-            <p className="text-sm text-white/45">
-              {tf("muedspPrompt")}{" "}
-              <a
-                href={MUEDSAT_MUEDSP_URL}
-                className="text-[#f5a524] underline-offset-4 transition-colors hover:underline"
-              >
-                {tf("muedspLink")}
-              </a>
-            </p>
-          ) : null}
-          <nav className="flex items-center gap-6 pt-2">
+          <nav className="flex items-center gap-6 pt-1">
             <Link
               href={`/${locale}/privacy`}
               className="text-sm text-white/40 transition-colors hover:text-white/70"
             >
-              {locale === "ja" ? "プライバシーポリシー" : "Privacy Policy"}
+              {isJa ? "プライバシーポリシー" : "Privacy Policy"}
             </Link>
           </nav>
         </div>
