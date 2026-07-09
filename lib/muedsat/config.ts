@@ -28,6 +28,8 @@ export const MUEDSAT_LIVE = true;
 // package (VST3 + AU, macOS, signed/notarized) is not yet uploaded — the confirmation email then
 // omits the link and says it's on the way. Set at unlock (kimny gate). NOT a secret (public CDN URL).
 // 2026-07-08 UNLOCK: mued.jp static hosting (public/downloads/, #598・sha256 c2f931f… conductor-verified).
+// 2026-07-09: replaced with the new signed/notarized UI build (DRIVE 2-layer glow + BYPASS lever;
+// audio byte-identical; same filename/URL/version 0.1.0-alpha). sha256 c1f11fa1… conductor-verified.
 export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDsat-0.1.0-alpha-installer.pkg";
 
 // MUEDsp product page URL for the footer "where it came from" link. Empty => the link is hidden
