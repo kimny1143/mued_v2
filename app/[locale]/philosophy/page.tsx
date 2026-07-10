@@ -17,10 +17,15 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export const metadata: Metadata = {
-  title: "MUED — philosophy (preview placeholder)",
-  robots: { index: false, follow: false },
-};
+// noindex placeholder — keep the tab title clean (no dev string) since the portal's "How we think →"
+// lands here and kimny reviews it. Locale-aware for JA/EN read-symmetry.
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: locale === "ja" ? "MUED — 哲学" : "MUED — philosophy",
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function PhilosophyPlaceholderPage({ params }: PageProps) {
   const { locale } = await params;
