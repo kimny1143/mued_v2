@@ -84,6 +84,33 @@ export function IntegratedLandingContentV2() {
           </div>
         </section>
 
+        {/* ── Philosophy 導線 — placed early (right under the hero) so it "explains" the hero line
+            ("method not inspiration"). kimny 7/10: 割と早めに philosophy への導線をみせることで、
+            ヒーローの文言を解説するような見せ方に。Copy = content課 (landing.v2.philosophy). The full
+            /philosophy page is wave2 (kimny-edited 宣言文); wave1 links to a noindex placeholder. ── */}
+        <section className="border-t border-white/5 px-6 py-16 md:py-20">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#f5a524]/70">
+              {t("philosophy.eyebrow")}
+            </p>
+            <p className="mt-4 text-xl leading-[1.9] text-white/75 md:text-2xl md:leading-[1.9]">
+              {t("philosophy.statement")}
+            </p>
+            {/* pull-quote — the 正典 aphorism, kept locale-safe (no hardcoded 「」 brackets) */}
+            <p className="mt-7 text-lg font-light italic leading-relaxed text-white/50 md:text-xl">
+              {t("philosophy.quote")}
+            </p>
+            <Link
+              href={`/${locale}/philosophy`}
+              onClick={() => trackCtaClick("philosophy", "portal_philosophy")}
+              className="mt-7 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]"
+            >
+              {t("philosophy.cta")}
+              <span aria-hidden="true">→</span>
+            </Link>
+          </div>
+        </section>
+
         {/* ── MIX — MUEDial (live conversion → dial.mued.jp). Image right. ───────────────── */}
         <ProductSection
           id="mix"

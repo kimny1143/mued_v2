@@ -1,6 +1,12 @@
 {
   "landing": {
     "v2": {
+      "philosophy": {
+        "eyebrow": "MUED の方法論",
+        "statement": "ミューズがくれるのは、ひらめきではなく方法。AIが差し出す最大公約数に、自分の偏り——何を選び、何を捨てるか——を重ねること。それが MUED の方法論です。",
+        "quote": "出力はAI、判断と欲は、人間。",
+        "cta": "MUED の考え方"
+      },
       "hero": {
         "eyebrow": "ミューズの教え",
         "title": "MUED",

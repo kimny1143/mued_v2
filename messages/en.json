@@ -1,6 +1,12 @@
 {
   "landing": {
     "v2": {
+      "philosophy": {
+        "eyebrow": "Our method",
+        "statement": "The Muses hand you method, not magic. MUED's method is the bias you bring — what you keep, what you cut — on top of the common denominator AI gives you.",
+        "quote": "Output is AI. Judgment and desire are human.",
+        "cta": "How we think"
+      },
       "hero": {
         "eyebrow": "From the Muses",
         "title": "MUED",
