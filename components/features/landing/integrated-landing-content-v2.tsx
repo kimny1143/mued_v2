@@ -36,7 +36,9 @@ const MUEDIAL_URL = "https://dial.mued.jp";
 // Real product renders (v1 poster stills). MASTER reuses the #607 案D faceplate.
 const RENDER_MIX = "/muedial-hoo-mixing-console.webp";
 const RENDER_MASTER = "/muedsat/faceplate-hot.webp";
-const RENDER_TRAIN = "/muedear-hero-bg.webp";
+// MUEDear: a real game screenshot (MuFreQ), NOT the atmospheric hero-bg — the bg rendered as an
+// empty-looking black frame (kimny: quality-signal damage). This is an actual app UI still.
+const RENDER_TRAIN = "/images/muedear/mufreq.webp";
 
 export function IntegratedLandingContentV2() {
   const locale = useLocale();
@@ -76,34 +78,43 @@ export function IntegratedLandingContentV2() {
               {t("hero.eyebrow")}
             </p>
             <h1 className="mt-6 text-6xl font-extrabold tracking-tight md:text-8xl">MUED</h1>
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/70 md:text-xl">
+            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/80 md:text-xl">
               {t("hero.lead")}
+            </p>
+            {/* FV 具体1行 — what MUED actually is (kimny: トップ=知る); brighter than the lead. */}
+            <p className="mx-auto mt-4 max-w-xl text-base font-medium leading-relaxed text-white/90">
+              {t("hero.subline")}
             </p>
             <a
               href="#mix"
-              className="mt-9 inline-flex items-center gap-2 rounded-[var(--radius-lg)] border border-white/15 px-5 py-3 text-sm font-medium text-white/80 transition-colors hover:border-white/30 hover:text-white"
+              className="mt-9 inline-flex items-center gap-2 rounded-[var(--radius-lg)] border border-white/15 px-5 py-3 text-sm font-medium text-white/85 transition-colors hover:border-white/30 hover:text-white"
             >
               {t("hero.cta")}
             </a>
+            {/* 設計者の事実1行 (kimny: 置く) — who made it, stated plainly. */}
+            <p className="mx-auto mt-8 max-w-xl text-sm text-white/50">{t("designer")}</p>
           </div>
         </section>
 
-        {/* ── MIX — MUEDial (live conversion → dial.mued.jp). Image right. ───────────────── */}
+        {/* ── MIX — MUEDial (→ /muedial LP · wave2 stub, App→App-format funnel). Image right. ── */}
         <ProductSection
           id="mix"
           label={t("mix.label")}
           heading={t("mix.heading")}
-          lead={t("mix.lead")}
-          body={t("mix.body")}
+          role={t("mix.role")}
           origin={t("mix.origin")}
           render={RENDER_MIX}
           renderAlt={isJa ? "MUEDial のミキシングコンソール画面" : "The MUEDial mixing console"}
           renderW={2752}
           renderH={1536}
           cta={
-            <ExternalCta href={MUEDIAL_URL} product="muedial" location="portal_mix">
+            <Link
+              href={`/${locale}/muedial`}
+              onClick={() => trackCtaClick("muedial", "portal_mix")}
+              className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-[#f5a524] px-5 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
+            >
               {t("mix.cta")}
-            </ExternalCta>
+            </Link>
           }
         />
 
@@ -112,8 +123,7 @@ export function IntegratedLandingContentV2() {
           id="master"
           label={t("master.label")}
           heading={t("master.heading")}
-          lead={t("master.lead")}
-          body={t("master.body")}
+          role={t("master.role")}
           origin={t("master.origin")}
           render={RENDER_MASTER}
           renderAlt={isJa ? "MUEDsp のプラグイン画面" : "The MUEDsp plugin interface"}
@@ -137,13 +147,12 @@ export function IntegratedLandingContentV2() {
           id="train"
           label={t("train.label")}
           heading={t("train.heading")}
-          lead={t("train.lead")}
-          body={t("train.body")}
+          role={t("train.role")}
           origin={t("train.origin")}
           render={RENDER_TRAIN}
-          renderAlt={isJa ? "MUEDear の耳トレ画面" : "The MUEDear ear-training app"}
-          renderW={2816}
-          renderH={1536}
+          renderAlt={isJa ? "MUEDear の MuFreQ（周波数トレーニング）ゲーム画面" : "The MuFreQ frequency-training game in MUEDear"}
+          renderW={2622}
+          renderH={1206}
           cta={
             <AppStoreButton
               href={MUEDEAR_APP_STORE_URL}
@@ -155,20 +164,23 @@ export function IntegratedLandingContentV2() {
           }
         />
 
-        {/* ── Advisory — ja only, v7 verbatim, migrated with the new dark system. Not in nav. ── */}
+        {/* ── Advisory — ja only, 控えめ 1 節 (kimny: トップ控えめ + フッター・7/7 水準). A quiet signed
+            node: eyebrow + signature heading + one line + a text-link CTA (not a big button). ── */}
         {isJa && (
-          <section className="border-t border-white/5 bg-white/[0.015] px-6 py-24">
+          <section className="border-t border-white/5 px-6 py-16">
             <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">
+              <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-white/35">Advisory</p>
+              <h2 className="mt-3 text-xl font-bold tracking-tight text-white/90 md:text-2xl">
                 {t("advisory.heading")}
               </h2>
-              <p className="mt-5 text-lg text-white/70">{t("advisory.lead")}</p>
+              <p className="mt-3 text-[15px] text-white/60">{t("advisory.lead")}</p>
               <Link
                 href={`/${locale}/advisory`}
                 onClick={() => trackCtaClick("advisory", "portal_advisory")}
-                className="mt-8 inline-flex items-center gap-2 rounded-[var(--radius-lg)] border-2 border-white/25 px-5 py-3 font-medium text-white transition-colors duration-200 hover:bg-white hover:text-black"
+                className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]"
               >
                 {t("advisory.cta")}
+                <span aria-hidden="true">→</span>
               </Link>
             </div>
           </section>
@@ -257,8 +269,7 @@ function ProductSection({
   id,
   label,
   heading,
-  lead,
-  body,
+  role,
   origin,
   render,
   renderAlt,
@@ -271,8 +282,7 @@ function ProductSection({
   id: string;
   label: string;
   heading: string;
-  lead: string;
-  body: string;
+  role?: string;
   origin?: string;
   render: string;
   renderAlt: string;
@@ -295,11 +305,15 @@ function ProductSection({
             {label}
           </span>
           <h2 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">{heading}</h2>
-          <p className="mt-4 text-xl font-light text-white/85">{lead}</p>
-          <p className="mt-4 max-w-md text-[16px] leading-[1.8] text-white/60">{body}</p>
-          {/* 出自の一行 (origin) — positioning A: each product carries its provenance, so philosophy
-              is woven in per-product instead of front-loaded. */}
-          {origin ? <p className="mt-4 max-w-md text-sm italic text-white/40">{origin}</p> : null}
+          {/* 機能肩書き (role) — directly under the product name (kimny: 各製品名の直下に機能肩書き1行) */}
+          {role ? (
+            <p className="mt-3 font-mono text-[13px] uppercase tracking-[0.18em] text-white/55">{role}</p>
+          ) : null}
+          {/* 出自の一行 (origin) — positioning A: philosophy woven in per-product, not front-loaded.
+              Portal product blocks are 知る-register only (label→heading→role→origin→cta + render);
+              selling framing (成果課金 / free entry) lives on the wave2 product LPs
+              (conductor-approved lead/body removal 2026-07-10). The render carries the moving evidence. */}
+          {origin ? <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/60">{origin}</p> : null}
           <div className="mt-8">{cta}</div>
         </div>
         <div className={reverse ? "md:order-1" : ""}>

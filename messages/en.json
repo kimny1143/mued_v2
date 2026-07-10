@@ -1,6 +1,7 @@
 {
   "landing": {
     "v2": {
+      "designer": "Designed by a working composer and mix engineer.",
       "philosophy": {
         "eyebrow": "Our method",
         "statement": "The Muses hand you method, not magic. MUED's method is the bias you bring — what you keep, what you cut — on top of the common denominator AI gives you.",
@@ -11,18 +12,21 @@
         "eyebrow": "From the Muses",
         "title": "MUED",
         "lead": "Not inspiration, but method. We build tools that move your music forward.",
+        "subline": "Mixing, mastering, ear training. We turn the judgment in music-making into tools.",
         "cta": "See the tools"
       },
       "mix": {
         "origin": "Born in a working composer's studio — a mix made by conversation.",
+        "role": "AI mixing & mastering",
         "label": "MIX",
         "heading": "MUEDial",
         "lead": "Hand your mix to Hoo.",
         "body": "Upload your stems and just talk. A finished track comes back — paid per track, not by subscription.",
-        "cta": "Try MUEDial"
+        "cta": "See MUEDial"
       },
       "master": {
         "origin": "From the master chain our founder — a working composer — actually uses.",
+        "role": "Master-bus plugin suite",
         "label": "MASTER",
         "heading": "MUEDsp",
         "lead": "Finish the record.",
@@ -31,6 +35,7 @@
       },
       "train": {
         "origin": "It all starts with an ear that can choose.",
+        "role": "Ear-training listening games",
         "label": "TRAIN",
         "heading": "MUEDear",
         "lead": "Train your ears while you create.",
