@@ -54,7 +54,7 @@ export default async function MuedialPlaceholderPage({ params }: PageProps) {
           </a>
           <div className="mt-6">
             <Link
-              href={`/${locale}/redesign`}
+              href={`/${locale}`}
               className="inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524]/80 transition-colors hover:text-[#ffc35a]"
             >
               {isJa ? "トップへ戻る" : "Back to top"}

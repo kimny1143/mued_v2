@@ -49,7 +49,7 @@ export default async function PhilosophyPlaceholderPage({ params }: PageProps) {
               : "The full MUED philosophy page is on the way."}
           </p>
           <Link
-            href={`/${locale}/redesign`}
+            href={`/${locale}`}
             className="mt-6 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]"
           >
             {isJa ? "トップへ戻る" : "Back to top"}
