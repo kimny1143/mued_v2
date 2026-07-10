@@ -1,5 +1,57 @@
 {
   "landing": {
+    "v2": {
+      "designer": "Designed by a working composer and mix engineer.",
+      "philosophy": {
+        "eyebrow": "Our method",
+        "statement": "The Muses hand you method, not magic. MUED's method is the bias you bring — what you keep, what you cut — on top of the common denominator AI gives you.",
+        "quote": "Output is AI. Judgment and desire are human.",
+        "cta": "How we think"
+      },
+      "hero": {
+        "eyebrow": "From the Muses",
+        "title": "MUED",
+        "lead": "Not inspiration, but method. We turn the judgment behind music-making into tools — mixing, mastering, ear training.",
+        "cta": "See the tools"
+      },
+      "mix": {
+        "origin": "Born in a working composer's studio — a mix made by conversation.",
+        "role": "AI mixing & mastering",
+        "label": "MIX",
+        "heading": "MUEDial",
+        "lead": "Hand your mix to Hoo.",
+        "body": "Upload your stems and just talk. A finished track comes back — paid per track, not by subscription.",
+        "cta": "See MUEDial"
+      },
+      "master": {
+        "origin": "From the master chain our founder — a working composer — actually uses.",
+        "role": "Master-bus plugin suite",
+        "label": "MASTER",
+        "heading": "MUEDsp",
+        "lead": "Finish the record.",
+        "body": "The whole master-bus chain in a single plugin. Start with one stage — the transformer saturation — free.",
+        "cta": "See MUEDsp"
+      },
+      "train": {
+        "origin": "It all starts with an ear that can choose.",
+        "role": "Ear-training listening games",
+        "label": "TRAIN",
+        "heading": "MUEDear",
+        "lead": "Train your ears while you create.",
+        "body": "Two or three minutes between sessions. Learn to hear EQ and compression through play.",
+        "cta": "Download on the App Store"
+      },
+      "advisory": {
+        "heading": "Run your AI-built work at a quality you can actually ship.",
+        "lead": "We build the systems that move your business forward — together with AI.",
+        "cta": "Free 60-min consult"
+      },
+      "close": {
+        "heading": "Ready to create?",
+        "lead": "You don't have to wait for inspiration. Start with method.",
+        "cta": "Start a mix"
+      }
+    },
     "brand": {
       "hero": {
         "title": "MUED",
@@ -2155,6 +2207,26 @@
     },
     "cta": {
       "short": "Free 60 min"
+    }
+  },
+  "muedsp": {
+    "meta": {
+      "title": "MUEDsp — a working composer's master chain, as-is.",
+      "description": "A plugin suite that reproduces the master-bus chain our founder — a working composer — actually uses for mastering. One stage, the transformer saturation, is available free right now as MUEDsat."
+    },
+    "hero": {
+      "eyebrow": "Mastering plugin suite",
+      "title": "MUEDsp",
+      "tagline": "Finish the record.",
+      "lead": "The master-bus chain our founder — a working composer and arranger — actually uses, reproduced as-is. Its finished form is MUEDsp masterchain.",
+      "cta": "Try one stage, free"
+    },
+    "masterchain": {
+      "eyebrow": "In development",
+      "heading": "MUEDsp masterchain",
+      "body": "Every stage of the master-bus chain in one plugin. The free MUEDsat is one of those stages — the transformer saturation. We're building it now.",
+      "priceNote": "One-time $69. Available at launch.",
+      "buyLabel": "Coming soon"
     }
   },
   "muedsat": {
