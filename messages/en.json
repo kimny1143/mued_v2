@@ -14,6 +14,7 @@
         "cta": "See the tools"
       },
       "mix": {
+        "origin": "Born in a working composer's studio — a mix made by conversation.",
         "label": "MIX",
         "heading": "MUEDial",
         "lead": "Hand your mix to Hoo.",
@@ -21,13 +22,15 @@
         "cta": "Try MUEDial"
       },
       "master": {
+        "origin": "From the master chain our founder — a working composer — actually uses.",
         "label": "MASTER",
         "heading": "MUEDsp",
         "lead": "Finish the record.",
-        "body": "The master chain our founder — a working composer — actually uses, rebuilt as a single plugin. Start with one stage, the transformer saturation, free.",
+        "body": "The whole master-bus chain in a single plugin. Start with one stage — the transformer saturation — free.",
         "cta": "See MUEDsp"
       },
       "train": {
+        "origin": "It all starts with an ear that can choose.",
         "label": "TRAIN",
         "heading": "MUEDear",
         "lead": "Train your ears while you create.",

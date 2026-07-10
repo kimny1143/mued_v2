@@ -1,7 +1,11 @@
 "use client";
 
 // Portal redesign (wave1 mock). Reworks the mued.jp home from ~13 sections / 11 CTAs down to
-// 7 sections / ~5 CTAs (each product = ONE section, ONE CTA), in工程順 MIX → MASTER → TRAIN.
+// ~7 sections / ~5 CTAs (each product = ONE section, ONE CTA), in工程順 MIX → MASTER → TRAIN.
+//
+// Positioning A (kimny 7/10): PRODUCTS LEAD. Philosophy is NOT front-loaded — it sits at the bottom
+// as one quiet quote + a /philosophy Read-more link, and as a one-line 出自 (origin) on each product.
+// The 3 宣言 live on /muedial + /philosophy, not here. Standing rule: 「哲学は下・出自は各製品に一行」.
 //
 // Design grammar (Chief brief §6): 1 section = 1 verb = 1 moving evidence (real product render, no
 // explanatory diagram) · copy is chunked, not reduced · glasswerks tokens (#0a0a0a / single amber
@@ -84,33 +88,6 @@ export function IntegratedLandingContentV2() {
           </div>
         </section>
 
-        {/* ── Philosophy 導線 — placed early (right under the hero) so it "explains" the hero line
-            ("method not inspiration"). kimny 7/10: 割と早めに philosophy への導線をみせることで、
-            ヒーローの文言を解説するような見せ方に。Copy = content課 (landing.v2.philosophy). The full
-            /philosophy page is wave2 (kimny-edited 宣言文); wave1 links to a noindex placeholder. ── */}
-        <section className="border-t border-white/5 px-6 py-16 md:py-20">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-[#f5a524]/70">
-              {t("philosophy.eyebrow")}
-            </p>
-            <p className="mt-4 text-xl leading-[1.9] text-white/75 md:text-2xl md:leading-[1.9]">
-              {t("philosophy.statement")}
-            </p>
-            {/* pull-quote — the 正典 aphorism, kept locale-safe (no hardcoded 「」 brackets) */}
-            <p className="mt-7 text-lg font-light italic leading-relaxed text-white/50 md:text-xl">
-              {t("philosophy.quote")}
-            </p>
-            <Link
-              href={`/${locale}/philosophy`}
-              onClick={() => trackCtaClick("philosophy", "portal_philosophy")}
-              className="mt-7 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]"
-            >
-              {t("philosophy.cta")}
-              <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-        </section>
-
         {/* ── MIX — MUEDial (live conversion → dial.mued.jp). Image right. ───────────────── */}
         <ProductSection
           id="mix"
@@ -118,6 +95,7 @@ export function IntegratedLandingContentV2() {
           heading={t("mix.heading")}
           lead={t("mix.lead")}
           body={t("mix.body")}
+          origin={t("mix.origin")}
           render={RENDER_MIX}
           renderAlt={isJa ? "MUEDial のミキシングコンソール画面" : "The MUEDial mixing console"}
           renderW={2752}
@@ -136,6 +114,7 @@ export function IntegratedLandingContentV2() {
           heading={t("master.heading")}
           lead={t("master.lead")}
           body={t("master.body")}
+          origin={t("master.origin")}
           render={RENDER_MASTER}
           renderAlt={isJa ? "MUEDsp のプラグイン画面" : "The MUEDsp plugin interface"}
           renderW={1000}
@@ -160,6 +139,7 @@ export function IntegratedLandingContentV2() {
           heading={t("train.heading")}
           lead={t("train.lead")}
           body={t("train.body")}
+          origin={t("train.origin")}
           render={RENDER_TRAIN}
           renderAlt={isJa ? "MUEDear の耳トレ画面" : "The MUEDear ear-training app"}
           renderW={2816}
@@ -206,6 +186,25 @@ export function IntegratedLandingContentV2() {
                 {t("close.cta")}
               </ExternalCta>
             </div>
+          </div>
+        </section>
+
+        {/* ── Philosophy — placed at the BOTTOM per positioning A (kimny 7/10): products lead;
+            philosophy is one quiet quote + a Read-more link, never front-loaded. The 3 宣言 live on
+            /muedial + /philosophy, not here. Standing rule: 「哲学は下」. ── */}
+        <section className="border-t border-white/5 px-6 py-14">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-lg font-light italic leading-relaxed text-white/45 md:text-xl">
+              {t("philosophy.quote")}
+            </p>
+            <Link
+              href={`/${locale}/philosophy`}
+              onClick={() => trackCtaClick("philosophy", "portal_philosophy_footer")}
+              className="mt-5 inline-flex items-center gap-1.5 text-[14px] font-medium text-[#f5a524]/80 transition-colors hover:text-[#ffc35a]"
+            >
+              {t("philosophy.cta")}
+              <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </section>
       </main>
@@ -260,6 +259,7 @@ function ProductSection({
   heading,
   lead,
   body,
+  origin,
   render,
   renderAlt,
   renderW,
@@ -273,6 +273,7 @@ function ProductSection({
   heading: string;
   lead: string;
   body: string;
+  origin?: string;
   render: string;
   renderAlt: string;
   renderW: number;
@@ -296,6 +297,9 @@ function ProductSection({
           <h2 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">{heading}</h2>
           <p className="mt-4 text-xl font-light text-white/85">{lead}</p>
           <p className="mt-4 max-w-md text-[16px] leading-[1.8] text-white/60">{body}</p>
+          {/* 出自の一行 (origin) — positioning A: each product carries its provenance, so philosophy
+              is woven in per-product instead of front-loaded. */}
+          {origin ? <p className="mt-4 max-w-md text-sm italic text-white/40">{origin}</p> : null}
           <div className="mt-8">{cta}</div>
         </div>
         <div className={reverse ? "md:order-1" : ""}>
