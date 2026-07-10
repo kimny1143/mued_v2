@@ -78,12 +78,11 @@ export function IntegratedLandingContentV2() {
               {t("hero.eyebrow")}
             </p>
             <h1 className="mt-6 text-6xl font-extrabold tracking-tight md:text-8xl">MUED</h1>
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/80 md:text-xl">
+            {/* hero.lead = C1 integrated sentence (kimny final): thought + 何屋か in one line. The
+                separate FV subline was merged in here (hero.subline deleted); resolves the "道具"
+                adjacency. eyebrow/title/designer/cta unchanged. */}
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/85 md:text-xl">
               {t("hero.lead")}
-            </p>
-            {/* FV 具体1行 — what MUED actually is (kimny: トップ=知る); brighter than the lead. */}
-            <p className="mx-auto mt-4 max-w-xl text-base font-medium leading-relaxed text-white/90">
-              {t("hero.subline")}
             </p>
             <a
               href="#mix"
