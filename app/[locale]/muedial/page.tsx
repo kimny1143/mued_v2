@@ -30,6 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       follow: MUEDIAL_LP_LIVE,
     },
     alternates: {
+      canonical: `https://mued.jp/${locale}/muedial`,
       languages: generateHreflangAlternates("/muedial"),
     },
     openGraph: {
