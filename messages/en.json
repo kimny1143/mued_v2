@@ -2298,8 +2298,8 @@
   },
   "muedsp": {
     "meta": {
-      "title": "MUEDsp — a working composer's master chain, as-is.",
-      "description": "A plugin suite that reproduces the master-bus chain our founder — a working composer — actually uses for mastering. One stage, the transformer saturation, is available free right now as MUEDsat."
+      "title": "MUEDsp — a whole mastering chain, in one plugin",
+      "description": "The master-bus chain we use for mastering, reproduced in a single plugin suite (in development). One stage, the transformer saturation, is free right now as MUEDsat."
     },
     "hero": {
       "eyebrow": "Mastering plugin suite",
