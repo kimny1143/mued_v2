@@ -147,7 +147,6 @@ const MUEDSP_CONTENT = `
 - **MUEDsp masterchain**: 完成形・開発中。コンプ→EQ→リミッターの署名チェーンを1つのプラグインに。買い切り $69（発売と同時に案内・現在 live 販売なし）。
 - **無料モジュール（各段を切り出した無料版）**:
   - **MUEDsp saturation（通称 MUEDsat）**: トランス・サチュレーションの段。公開中・無料（https://mued.jp/ja/muedsat）
-  - **MUEDsp limiter（通称 MUEDlim）**: ピークを抑える最後の段。開発中
 `;
 
 export async function GET(request: NextRequest) {

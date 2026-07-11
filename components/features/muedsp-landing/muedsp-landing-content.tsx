@@ -194,7 +194,8 @@ export function MuedspLandingContent() {
                 <span className="text-white">MUED</span>
                 <span className="text-[#f5a524]">sat</span>
                 <span className="ml-3 align-middle font-mono text-xs uppercase tracking-[0.2em] text-white/40">
-                  {isJa ? "MUEDsp サチュレーション" : "MUEDsp saturation"}
+                  {/* 3層命名: the official name is the English identifier in both locales (通称 = MUEDsat). */}
+                  MUEDsp saturation
                 </span>
               </h3>
               <p className="mt-4 text-lg font-light text-white/80">{tsHero("tagline")}</p>
