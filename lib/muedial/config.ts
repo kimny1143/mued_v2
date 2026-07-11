@@ -14,4 +14,7 @@
 //
 // NOTE: the separate "waitlist 撤去 + direct-upload + COGS 件数上限" change lives in the dial app
 // flow (campaign/upload gate), NOT on this marketing LP. This LP's CTA links to dial.mued.jp.
-export const MUEDIAL_LP_LIVE = false;
+// 2026-07-11 GO-LIVE (kimny「go-liveで」・conductor 執行): flipped true. Un-noindexes /muedial
+// (indexed), emits the Service JSON-LD, and adds /muedial to sitemap.ts. The /dial lean funnel
+// (?from=muedial) and the portal MIX→/muedial wiring are already live (#617 / GPT batch).
+export const MUEDIAL_LP_LIVE = true;
