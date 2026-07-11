@@ -11,11 +11,11 @@
       "hero": {
         "eyebrow": "From the Muses",
         "title": "MUED",
-        "lead": "Not inspiration, but method. We turn the judgment behind music-making into tools — mixing, mastering, ear training.",
+        "lead": "Not inspiration, but method. We turn the judgment behind music-making into tools.",
         "cta": "See the tools"
       },
       "mix": {
-        "origin": "Born in a working composer's studio — a mix made by conversation.",
+        "origin": "Born out of our own studio — a mix made by conversation.",
         "role": "AI mixing & mastering",
         "label": "MIX",
         "heading": "MUEDial",
@@ -24,7 +24,7 @@
         "cta": "See MUEDial"
       },
       "master": {
-        "origin": "From the master chain our founder — a working composer — actually uses.",
+        "origin": "From the chain we always master with.",
         "role": "Master-bus plugin suite",
         "label": "MASTER",
         "heading": "MUEDsp",
@@ -2305,13 +2305,13 @@
       "eyebrow": "Mastering plugin suite",
       "title": "MUEDsp",
       "tagline": "Finish the record.",
-      "lead": "We're trying to fold the chain we master with into a single plugin. That's MUEDsp masterchain.",
+      "lead": "The chain we master with, folded into one plugin — a master chain for finishing a track while you stay in the music. That's MUEDsp masterchain.",
       "cta": "Try one stage, free"
     },
     "masterchain": {
       "eyebrow": "In development",
       "heading": "MUEDsp masterchain",
-      "body": "We're bundling the chain we always master with into a single plugin — comp, EQ, limiter. Still building it.",
+      "body": "We're bundling the chain we always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details. Still building it.",
       "priceNote": "One-time $69. Available at launch.",
       "buyLabel": "Coming soon",
       "mockLabel": "A work-in-progress screen — not the real thing yet.",
