@@ -1,15 +1,20 @@
 "use client";
 
-// MUEDsat email gate. Submitting IS the opt-in ("your email is the price of the download").
-// POSTs to /api/muedsat/subscribe (no-op-safe while staged) and shows an honest success state.
+// Plugin email-gate form (MUEDsat + MUEDlim + future MUEDsp free modules). Submitting IS the opt-in
+// ("your email is the price of the download"). POSTs to the plugin's subscribe endpoint (no-op-safe
+// while staged) and shows an honest success state.
 //
-// Press design-room (dormant): if `?press=<token>` matches MUEDSAT_PRESS_TOKEN (empty by default,
-// so the check is always false) AND a download URL exists, the direct download is revealed without
-// the email gate. Costs nothing until a press push sets the token — no retrofit needed.
+// Parameterized by `plugin` (default "muedsat" → 100% unchanged for the existing MUEDsat usages =
+// regression 0). All plugin-specific config (endpoint, download URL, press token, i18n namespace,
+// source, form id) comes from lib/plugins/registry. Kept in the muedsat-landing folder + named
+// MuedsatSignupForm to avoid churning the live MUEDsat imports (it is generic despite the name).
+//
+// Press design-room (dormant): `?press=<token>` matching the plugin's press token (empty by default,
+// so the check is always false) AND a download URL exists → the direct download is revealed.
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { MUEDSAT_DOWNLOAD_URL, MUEDSAT_PRESS_TOKEN } from "@/lib/muedsat/config";
+import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
 import { trackCtaClick } from "@/lib/analytics/gtag";
 
 type Status = "idle" | "submitting" | "success" | "error";
@@ -18,10 +23,9 @@ type Status = "idle" | "submitting" | "success" | "error";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Static shell rendered during the Suspense fallback (the form uses useSearchParams, which needs a
-// Suspense boundary on a statically-prerendered page). Visually identical, non-interactive; the real
-// interactive form swaps in on hydration.
-export function MuedsatSignupFormFallback() {
-  const t = useTranslations("muedsat.form");
+// Suspense boundary on a statically-prerendered page). Visually identical, non-interactive.
+export function MuedsatSignupFormFallback({ plugin = "muedsat" as PluginKey } = {}) {
+  const t = useTranslations(`${PLUGIN_DIST[plugin].i18nNamespace}.form`);
   return (
     <div className="w-full" aria-hidden="true">
       <div className="flex flex-col gap-3 sm:flex-row">
@@ -37,8 +41,9 @@ export function MuedsatSignupFormFallback() {
   );
 }
 
-export function MuedsatSignupForm() {
-  const t = useTranslations("muedsat.form");
+export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
+  const dist = PLUGIN_DIST[plugin];
+  const t = useTranslations(`${dist.i18nNamespace}.form`);
   const locale = useLocale() as "ja" | "en";
   const searchParams = useSearchParams();
 
@@ -46,16 +51,18 @@ export function MuedsatSignupForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [errorKey, setErrorKey] = useState<"errorEmail" | "errorGeneric">("errorGeneric");
 
+  const inputId = `${plugin}-email`;
+
   // Dormant press bypass — false unless a token is provisioned.
   const pressUnlocked =
-    !!MUEDSAT_PRESS_TOKEN &&
-    searchParams.get("press") === MUEDSAT_PRESS_TOKEN &&
-    !!MUEDSAT_DOWNLOAD_URL;
+    !!dist.pressToken &&
+    searchParams.get("press") === dist.pressToken &&
+    !!dist.downloadUrl;
 
   if (pressUnlocked) {
     return (
       <a
-        href={MUEDSAT_DOWNLOAD_URL}
+        href={dist.downloadUrl}
         className="inline-flex items-center justify-center rounded-[var(--radius-lg)] bg-[#f5a524] px-6 py-3.5 font-semibold text-black transition-colors hover:bg-[#ffb638]"
       >
         {t("submit")}
@@ -85,15 +92,15 @@ export function MuedsatSignupForm() {
       return;
     }
     setStatus("submitting");
-    trackCtaClick("muedsat", "download_form");
+    trackCtaClick(plugin, "download_form");
     try {
-      const res = await fetch("/api/muedsat/subscribe", {
+      const res = await fetch(dist.subscribeEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: value,
           locale,
-          source: "muedsat_lp",
+          source: dist.source,
           utm_source: searchParams.get("utm_source"),
           utm_medium: searchParams.get("utm_medium"),
           utm_campaign: searchParams.get("utm_campaign"),
@@ -113,11 +120,11 @@ export function MuedsatSignupForm() {
   return (
     <form onSubmit={handleSubmit} noValidate className="w-full">
       <div className="flex flex-col gap-3 sm:flex-row">
-        <label htmlFor="muedsat-email" className="sr-only">
+        <label htmlFor={inputId} className="sr-only">
           {t("emailLabel")}
         </label>
         <input
-          id="muedsat-email"
+          id={inputId}
           type="email"
           inputMode="email"
           autoComplete="email"
@@ -129,7 +136,7 @@ export function MuedsatSignupForm() {
           }}
           placeholder={t("emailPlaceholder")}
           aria-invalid={status === "error"}
-          aria-describedby={status === "error" ? "muedsat-email-error" : "muedsat-email-note"}
+          aria-describedby={status === "error" ? `${inputId}-error` : `${inputId}-note`}
           className="min-w-0 flex-1 rounded-[var(--radius-lg)] border border-white/15 bg-white/[0.04] px-4 py-3.5 font-mono text-white placeholder:text-white/30 transition-colors focus:border-[#f5a524]/60 focus:outline-none focus:ring-1 focus:ring-[#f5a524]/40"
         />
         <button
@@ -142,11 +149,11 @@ export function MuedsatSignupForm() {
       </div>
 
       {status === "error" ? (
-        <p id="muedsat-email-error" role="alert" className="mt-2.5 text-sm text-red-400">
+        <p id={`${inputId}-error`} role="alert" className="mt-2.5 text-sm text-red-400">
           {t(errorKey)}
         </p>
       ) : (
-        <p id="muedsat-email-note" className="mt-2.5 text-sm text-white/40">
+        <p id={`${inputId}-note`} className="mt-2.5 text-sm text-white/40">
           {t("note")}
         </p>
       )}

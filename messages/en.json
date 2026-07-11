@@ -2318,6 +2318,67 @@
       "buyLabel": "Coming soon"
     }
   },
+  "muedlim": {
+    "meta": {
+      "title": "MUEDsp limiter (aka MUEDlim) — a free true-peak limiter",
+      "description": "MUEDsp limiter (aka MUEDlim) is a free true-peak limiter — the final peak-limiting stage pulled out of the mastering chain we use. It holds true peaks to a ceiling you set (−1 dBTP by default). macOS (Universal), VST3 · AU. Nothing locked, nothing paywalled."
+    },
+    "hero": {
+      "badge": "Free · macOS · VST3 · AU",
+      "title": "MUEDlim",
+      "tagline": "A free true-peak limiter",
+      "lead": "The final peak-limiting stage from the mastering chain we use, taken out on its own. Free.",
+      "tryLine": "Free. Just grab it and try it on your own music."
+    },
+    "about": {
+      "heading": "What it is",
+      "originLead": "Not a demo or a trial — it's the final peak-limiting stage (a true-peak limiter) of the master chain we actually use, pulled out and made free (its finished form, MUEDsp masterchain, is in development). It holds true peaks to a ceiling you set (−1 dBTP by default). Keep it transparent — catch only the ceiling — or push loudness with GAIN and CLIP.",
+      "controlsHeading": "Four knobs",
+      "controlsLead": "Four knobs, nothing hidden.",
+      "controls": {
+        "clip": {
+          "name": "CLIP",
+          "desc": "how much to clip ahead of the limiter (0–100%, default 0 = off)."
+        },
+        "ceiling": {
+          "name": "CEILING",
+          "desc": "the true-peak ceiling (−3 to 0 dBTP, default −1)."
+        },
+        "gain": {
+          "name": "GAIN",
+          "desc": "input drive, i.e. loudness (−6 to +18 dB)."
+        },
+        "output": {
+          "name": "OUTPUT",
+          "desc": "output level trim (−12 to +12 dB)."
+        },
+        "bypass": {
+          "name": "BYPASS",
+          "desc": "a true bypass (ACTIVE / BYPASS), for honest A/B."
+        }
+      },
+      "bypassNote": "Plus a BYPASS toggle (ACTIVE / BYPASS), for honest A/B."
+    },
+    "whyFree": {
+      "heading": "Why it's free, and why we ask for your email",
+      "lead": "MUEDlim is completely free — no feature locks, no expiry, no paywall. We ask for your email only to send the download link and to let you know about updates (and MUEDsp masterchain). Your email is the price of the download, not the price of the plugin. No spam, and you can unsubscribe anytime."
+    },
+    "form": {
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email",
+      "submit": "Download MUEDlim",
+      "submitting": "Sending…",
+      "note": "We'll email you the download link. Unsubscribe anytime.",
+      "successTitle": "Check your email.",
+      "successBody": "We've emailed you the download link. If it doesn't arrive, check your spam folder.",
+      "errorEmail": "Please enter a valid email address.",
+      "errorGeneric": "Something went wrong. Please try again."
+    },
+    "footer": {
+      "operator": "glasswerks inc. — mued.jp",
+      "format": "VST3 · AU · macOS (Universal — Apple Silicon / Intel)"
+    }
+  },
   "muedsat": {
     "meta": {
       "title": "MUEDsp saturation (aka MUEDsat) — a free transformer saturation plugin",
