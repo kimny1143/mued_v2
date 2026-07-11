@@ -1,21 +1,21 @@
 {
   "landing": {
     "v2": {
-      "designer": "Designed by a working composer and mix engineer.",
+      "designer": "Designed and built by me, one person — in between my own sessions.",
       "philosophy": {
-        "eyebrow": "Our method",
+        "eyebrow": "MUED's method",
         "statement": "The Muses hand you method, not magic. MUED's method is the bias you bring — what you keep, what you cut — on top of the common denominator AI gives you.",
         "quote": "Output is AI. Judgment and desire are human.",
-        "cta": "How we think"
+        "cta": "How MUED thinks"
       },
       "hero": {
         "eyebrow": "From the Muses",
         "title": "MUED",
-        "lead": "Not inspiration, but method. We turn the judgment behind music-making into tools.",
+        "lead": "Not inspiration, but method. The judgment behind music-making, turned into tools.",
         "cta": "See the tools"
       },
       "mix": {
-        "origin": "Born out of our own studio — a mix made by conversation.",
+        "origin": "Born out of my own studio — a mix made by conversation.",
         "role": "AI mixing & mastering",
         "label": "MIX",
         "heading": "MUEDial",
@@ -24,7 +24,7 @@
         "cta": "See MUEDial"
       },
       "master": {
-        "origin": "From the chain we always master with.",
+        "origin": "From the chain I always master with.",
         "role": "Master-bus plugin suite",
         "label": "MASTER",
         "heading": "MUEDsp",
@@ -2215,7 +2215,7 @@
     "hero": {
       "role": "AI mixing & mastering",
       "headline": "Hand your mix to Hoo.",
-      "origin": "Born in a working composer's studio — a mix made by conversation.",
+      "origin": "Born out of my own studio — a mix made by conversation.",
       "lead": "Upload your stems, talk to Hoo, and a finished track comes back.",
       "cta": "Start your mix"
     },
@@ -2299,19 +2299,19 @@
   "muedsp": {
     "meta": {
       "title": "MUEDsp — a whole mastering chain, in one plugin",
-      "description": "The master-bus chain we use for mastering, reproduced in a single plugin suite (in development). One stage, the transformer saturation, is free right now as MUEDsat."
+      "description": "The master-bus chain I use for mastering, reproduced in a single plugin suite (in development). One stage, the transformer saturation, is free right now as MUEDsat."
     },
     "hero": {
       "eyebrow": "Mastering plugin suite",
       "title": "MUEDsp",
       "tagline": "Finish the record.",
-      "lead": "The chain we master with, folded into one plugin — a master chain for finishing a track while you stay in the music. That's MUEDsp masterchain.",
+      "lead": "The chain I master with, folded into one plugin — a master chain for finishing a track while you stay in the music. That's MUEDsp masterchain.",
       "cta": "Try one stage, free"
     },
     "masterchain": {
       "eyebrow": "In development",
       "heading": "MUEDsp masterchain",
-      "body": "We're bundling the chain we always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details. Still building it.",
+      "body": "I'm bundling the chain I always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details. Still building it.",
       "priceNote": "One-time $69. Available at launch.",
       "buyLabel": "Coming soon",
       "mockLabel": "A work-in-progress screen — not the real thing yet.",
@@ -2325,7 +2325,7 @@
       }
     },
     "free": {
-      "lead": "We're releasing the masterchain's stages one at a time, each free. Try them on your own music, stage by stage.",
+      "lead": "I'm releasing the masterchain's stages one at a time, each free. Try them on your own music, stage by stage.",
       "satLabel": "The transformer-saturation stage"
     }
   },
