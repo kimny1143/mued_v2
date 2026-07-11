@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADVISORY_LIVE } from "@/lib/advisory/config";
 import { MUEDSAT_LIVE } from "@/lib/muedsat/config";
+import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 
 const MUED_CONTENT = `# MUED — 音楽制作のための AI プロダクトスイート
 
@@ -15,7 +16,7 @@ MUED は、音楽制作を前に進めるための AI プロダクト群です�
 - **MUEDial**: ステムをアップロードして AI と話すだけでプロ品質のミックス・マスタリングを得る、日本語対応の AI ミキシングサービス（https://dial.mued.jp）。
 - **MUED advisory**: 事業の「これ、AIでできないか」を、実際に動くかたちにして並走するサービス（https://mued.jp/ja/advisory）。
 - **MUEDsp saturation（通称 MUEDsat）**: マスタリングのためのプラグイン・スイート MUEDsp のマスターバス・チェーンから、トランスの色付けの1段だけを取り出した無料のサチュレーション・プラグイン（https://mued.jp/ja/muedsat）。
-- **MUEDsp**: マスタリングのためのプラグイン・スイート（署名 DSP スイート）。完成形＝MUEDsp masterchain（開発中）、その部品として MUEDsp saturation（無料・公開中）・MUEDsp limiter（無料・開発中）。
+- **MUEDsp**: マスタリングのためのプラグイン・スイート（署名 DSP スイート）。完成形＝MUEDsp masterchain（開発中）、その部品として MUEDsp saturation（無料・公開中）・MUEDsp limiter（無料・${MUEDLIM_LIVE ? "公開中" : "開発中"}）。
 
 ## Hoo について
 
@@ -135,6 +136,19 @@ const MUEDSAT_CONTENT = `
 - **技術**: レイテンシー0 / ADAA によるエイリアス抑制
 `;
 
+const MUEDLIM_CONTENT = `
+
+## MUEDsp limiter（通称 MUEDlim）— 無料の true-peak リミッター・プラグイン
+
+> MUEDsp（マスタリングのためのプラグイン・スイート）のマスターバス・チェーンから、ピークを抑える最後の段（true-peak リミッター）を取り出した単体の無料プラグイン。削ぎ落とした体験版ではなく、チェーンの実際の1段。スイートの完成形＝MUEDsp masterchain（開発中）。機能ロック・期限・課金の壁なし。メールはダウンロードの対価であって、プラグインの対価ではない。
+
+- **運営**: glasswerks inc.（株式会社グラスワークス）
+- **料金**: 完全無料（メール登録でダウンロードリンクを送付）
+- **対応OS / フォーマット**: macOS（Universal — Apple Silicon / Intel）／ VST3・AU
+- **コントロール**: CLIP（リミッター前のクリップ量・既定 0＝オフ）／ CEILING（真のピーク上限・既定 −1 dBTP）／ GAIN（入力ドライブ＝音圧）／ OUTPUT（出力トリム）／ BYPASS（true bypass）
+- **入手**: mued.jp のマスタリング（MUEDsp）ページから（メール登録でダウンロード）
+`;
+
 export async function GET(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const isDial = host.includes("dial.mued.jp");
@@ -142,6 +156,7 @@ export async function GET(request: NextRequest) {
   const baseContent = isDial ? MUEDIAL_CONTENT : MUED_CONTENT;
   let content = !isDial && ADVISORY_LIVE ? baseContent + ADVISORY_CONTENT : baseContent;
   if (!isDial && MUEDSAT_LIVE) content += MUEDSAT_CONTENT;
+  if (!isDial && MUEDLIM_LIVE) content += MUEDLIM_CONTENT;
 
   return new NextResponse(content, {
     headers: {

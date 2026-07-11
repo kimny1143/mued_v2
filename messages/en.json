@@ -2332,7 +2332,7 @@
     },
     "about": {
       "heading": "What it is",
-      "originLead": "Not a demo or a trial — it's the final peak-limiting stage (a true-peak limiter) of the master chain we actually use, pulled out and made free (its finished form, MUEDsp masterchain, is in development). It holds true peaks to a ceiling you set (−1 dBTP by default). Keep it transparent — catch only the ceiling — or push loudness with GAIN and CLIP.",
+      "originLead": "Not a demo or a trial — it's the final peak-limiting stage (a true-peak limiter) of the master chain we actually use, pulled out and made free (its finished form, MUEDsp masterchain, is in development). It holds true peaks to a ceiling you set (−1 dBTP by default). GAIN and CLIP push the loudness.",
       "controlsHeading": "Four knobs",
       "controlsLead": "Four knobs, nothing hidden.",
       "controls": {
