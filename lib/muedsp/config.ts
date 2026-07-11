@@ -14,4 +14,4 @@
 //
 // true  = LIVE: flipped ONLY in the kimny-gated unlock PR (conductor executes) once the redesign
 //         is approved and MUEDsp is ready to announce.
-export const MUEDSP_LIVE = false;
+export const MUEDSP_LIVE = true;
