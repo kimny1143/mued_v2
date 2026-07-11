@@ -2209,6 +2209,95 @@
       "short": "Free 60 min"
     }
   },
+  "muedialLp": {
+    "meta": {
+      "title": "MUEDial — Hand your mix to Hoo.",
+      "description": "Upload your stems, talk to Hoo, and a finished track comes back. AI mixing & mastering — a finished mix from $7.49."
+    },
+    "hero": {
+      "role": "AI mixing & mastering",
+      "headline": "Hand your mix to Hoo.",
+      "origin": "Born in a working composer's studio — a mix made by conversation.",
+      "lead": "Upload your stems, talk to Hoo, and a finished track comes back.",
+      "cta": "Start your mix"
+    },
+    "steps": {
+      "upload": {
+        "heading": "Upload",
+        "line": "Your stems, each track on its own. WAV, FLAC, AIFF, MP3, M4A — from 2 tracks up."
+      },
+      "chat": {
+        "heading": "Chat",
+        "line": "Tell Hoo in plain words. \"Vocals up a bit. Ease the drums.\" You decide the direction."
+      },
+      "listen": {
+        "heading": "Listen",
+        "line": "Raw stems next to the result. Same stems, no plugins, just a conversation with Hoo."
+      },
+      "finalize": {
+        "heading": "Finalize",
+        "line": "Lock it in, get the WAV. Mastering included, same day."
+      }
+    },
+    "listen": {
+      "label": "Hear the difference",
+      "sub": "Same stems. No plugins. Just a conversation with Hoo.",
+      "raw": "Raw Stems",
+      "mix": "AI Mix",
+      "mastered": "Mastered"
+    },
+    "faq": {
+      "heading": "Common questions",
+      "q1": {
+        "q": "What do I upload?",
+        "a": "Stems: each track exported on its own. WAV, FLAC, AIFF, MP3, M4A. At least 2 tracks."
+      },
+      "q2": {
+        "q": "What does the AI do?",
+        "a": "It analyzes your audio and processes it. You set the direction, through conversation. It doesn't finish everything on its own the moment you upload."
+      },
+      "q3": {
+        "q": "How long does it take?",
+        "a": "Previews in minutes. Final mix and master, same day."
+      },
+      "q4": {
+        "q": "Does a person check it at the end?",
+        "a": "No. The finishing is unmanned. That's why it's this fast and this affordable. The judgment stays with you, in the conversation — by design."
+      },
+      "q5": {
+        "q": "What happens to my audio?",
+        "a": "We don't use the audio you send us to train AI or for any secondary purpose. Mixing is handled in part by external audio-processing services."
+      }
+    },
+    "principles": {
+      "d1": {
+        "title": "AI doesn't compose.",
+        "body": "Composing, arranging, performing, the mixing calls — those are human work. MUED doesn't step into them."
+      },
+      "d2": {
+        "title": "Hoo is here to subtract.",
+        "body": "Less busywork, less waiting, less cost — so you have more time for the music."
+      },
+      "d3": {
+        "title": "AI fills the range you can't reach.",
+        "body": "Better AI handle the audio you can't afford to commission than let it go out unfinished."
+      },
+      "signature": "Output is AI. Judgment and desire are human."
+    },
+    "pricing": {
+      "headline": "A finished mix, from $7.49.",
+      "tier1": "Omakase Mix $7.49 (leave it to AI)",
+      "tier2": "Dialogue Mix $13.99 (finish it in conversation)",
+      "tier3": "+ Mastering $5.99",
+      "addon": "+ Retake $9.99 (redo the finished mix)",
+      "included": "What's included: WAV delivery, same day, no subscription — pay per track.",
+      "planNote": "Using it a lot? There's a monthly plan (Hoo Pass) and credit packs too."
+    },
+    "cta": {
+      "cta": "Start your mix",
+      "sub": "Have your stems ready — then just place your order. No account needed."
+    }
+  },
   "muedsp": {
     "meta": {
       "title": "MUEDsp — a working composer's master chain, as-is.",

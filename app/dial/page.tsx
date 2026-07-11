@@ -405,6 +405,16 @@ export default function DialPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Lean funnel: arriving from the /muedial LP (?from=muedial) hides the redundant marketing pitch
+  // (the /muedial page already sold it) and lands straight on plan-selection + checkout. Default
+  // (no param) leaves /dial completely unchanged — regression 0. Read post-mount (no hydration risk).
+  const [leanMode, setLeanMode] = useState(false);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setLeanMode(new URLSearchParams(window.location.search).get('from') === 'muedial');
+    }
+  }, []);
+
   const effectiveEmail = isSignedIn ? clerkEmail : email;
   const hasSelection = mixType || masteringType;
   const totalPrice = (mixType ? MIX_OPTIONS.find((o) => o.id === mixType)!.price : 0)
@@ -496,9 +506,10 @@ export default function DialPage() {
           {/* Bottom fade to solid black (seamless transition to next section) */}
           <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black to-transparent" />
 
-          <div className="relative z-10 max-w-6xl mx-auto w-full grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          <div className={`relative z-10 max-w-6xl mx-auto w-full items-center ${leanMode ? "flex justify-center" : "grid lg:grid-cols-2 gap-12 lg:gap-20"}`}>
 
-            {/* Left: Hook */}
+            {/* Left: Hook — hidden in lean mode (/muedial already delivered the pitch) */}
+            {!leanMode && (
             <div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
                 {lp.heroTitle}
@@ -514,9 +525,10 @@ export default function DialPage() {
                 <ChatMockup t={t as unknown as Record<string, unknown>} />
               </div>
             </div>
+            )}
 
             {/* Right: Checkout */}
-            <div className="lg:max-w-md lg:ml-auto bg-black/50 backdrop-blur-sm rounded-[var(--radius-lg)] p-6 lg:p-8 border border-white/5">
+            <div className={`bg-black/50 backdrop-blur-sm rounded-[var(--radius-lg)] p-6 lg:p-8 border border-white/5 ${leanMode ? "w-full max-w-md" : "lg:max-w-md lg:ml-auto"}`}>
               {/* First-run free campaign (renders only when eligible; dark by default) */}
               <FreeCampaignCta fc={t.dial.freeCampaign} locale={locale} />
 
@@ -648,37 +660,44 @@ export default function DialPage() {
               </Link>
             </div>
 
-            {/* ChatMockup — mobile only, after checkout */}
+            {/* ChatMockup — mobile only, after checkout (hidden in lean mode) */}
+            {!leanMode && (
             <div className="lg:hidden">
               <ChatMockup t={t as unknown as Record<string, unknown>} />
             </div>
+            )}
           </div>
         </div>
 
-        {/* ─── Before/After Audio Demo ─────────────────────────────── */}
-        <BeforeAfterDemo lp={lp} />
+        {/* Below-fold marketing pitch — hidden in lean mode (/muedial already covered demo/FAQ) */}
+        {!leanMode && (
+          <>
+            {/* ─── Before/After Audio Demo ─────────────────────────────── */}
+            <BeforeAfterDemo lp={lp} />
 
-        {/* ─── Video Promo ────────────────────────────────────────────── */}
-        <VideoPromo lp={lp as unknown as Record<string, string>} locale={locale} closeLabel={t.dial.session.close} />
+            {/* ─── Video Promo ────────────────────────────────────────────── */}
+            <VideoPromo lp={lp as unknown as Record<string, string>} locale={locale} closeLabel={t.dial.session.close} />
 
-        {/* ─── FAQ ──────────────────────────────────────────────────── */}
-        <section className="py-20 px-6 border-t border-zinc-900">
-          <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold mb-10 text-center">{lp.faqTitle}</h2>
-            <dl className="space-y-6">
-              {([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const).map((n) => (
-                <div key={n} className="border-b border-zinc-800 pb-6 last:border-0">
-                  <dt className="text-base font-medium text-white mb-2">
-                    {lp[`faq${n}q` as keyof typeof lp]}
-                  </dt>
-                  <dd className="text-sm text-white/60 leading-relaxed">
-                    {lp[`faq${n}a` as keyof typeof lp]}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </section>
+            {/* ─── FAQ ──────────────────────────────────────────────────── */}
+            <section className="py-20 px-6 border-t border-zinc-900">
+              <div className="max-w-2xl mx-auto">
+                <h2 className="text-2xl font-bold mb-10 text-center">{lp.faqTitle}</h2>
+                <dl className="space-y-6">
+                  {([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const).map((n) => (
+                    <div key={n} className="border-b border-zinc-800 pb-6 last:border-0">
+                      <dt className="text-base font-medium text-white mb-2">
+                        {lp[`faq${n}q` as keyof typeof lp]}
+                      </dt>
+                      <dd className="text-sm text-white/60 leading-relaxed">
+                        {lp[`faq${n}a` as keyof typeof lp]}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </section>
+          </>
+        )}
 
         {/* ─── Footer ─────────────────────────────────────────────────── */}
         <div className="border-t border-zinc-900 py-6 px-6">
