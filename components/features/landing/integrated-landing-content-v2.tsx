@@ -33,9 +33,10 @@ import { trackCtaClick } from "@/lib/analytics/gtag";
 
 const MUEDIAL_URL = "https://dial.mued.jp";
 
-// Real product renders (v1 poster stills). MASTER reuses the #607 案D faceplate.
+// Real product renders (v1 poster stills). MASTER = the MUEDsp masterchain flagship MOCK (in
+// development — an honest preview, not the shipping plugin; /muedsp §1 carries the full label).
 const RENDER_MIX = "/muedial-hoo-mixing-console.webp";
-const RENDER_MASTER = "/muedsat/faceplate-hot.webp";
+const RENDER_MASTER = "/muedsp/masterchain-mock.webp";
 // MUEDear: a real game screenshot (MuFreQ), NOT the atmospheric hero-bg — the bg rendered as an
 // empty-looking black frame (kimny: quality-signal damage). This is an actual app UI still.
 const RENDER_TRAIN = "/images/muedear/mufreq.webp";
@@ -125,9 +126,13 @@ export function IntegratedLandingContentV2() {
           role={t("master.role")}
           origin={t("master.origin")}
           render={RENDER_MASTER}
-          renderAlt={isJa ? "MUEDsp のプラグイン画面" : "The MUEDsp plugin interface"}
-          renderW={1000}
-          renderH={700}
+          renderAlt={
+            isJa
+              ? "MUEDsp masterchain の開発中UIモック（予定）"
+              : "A mock of the in-development MUEDsp masterchain UI (planned)"
+          }
+          renderW={1640}
+          renderH={740}
           reverse
           surface
           cta={

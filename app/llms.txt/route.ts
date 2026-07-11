@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADVISORY_LIVE } from "@/lib/advisory/config";
 import { MUEDSAT_LIVE } from "@/lib/muedsat/config";
+import { MUEDSP_LIVE } from "@/lib/muedsp/config";
 
 const MUED_CONTENT = `# MUED — 音楽制作のための AI プロダクトスイート
 
@@ -135,6 +136,19 @@ const MUEDSAT_CONTENT = `
 - **技術**: レイテンシー0 / ADAA によるエイリアス抑制
 `;
 
+const MUEDSP_CONTENT = `
+
+## MUEDsp — マスタリングのためのプラグイン・スイート（署名 DSP スイート）
+
+> 作編曲家である代表が、実際にマスタリングで使っているマスターバスのチェーンを、そのまま1つのプラグインに。完成形＝MUEDsp masterchain（開発中）。その各段を1つずつ無料で切り出して公開している。まず自分の音で、段ごとに試せる。
+
+- **URL**: https://mued.jp/ja/muedsp
+- **運営**: glasswerks inc.（株式会社グラスワークス）
+- **MUEDsp masterchain**: 完成形・開発中。コンプ→EQ→リミッターの署名チェーンを1つのプラグインに。買い切り $69（発売と同時に案内・現在 live 販売なし）。
+- **無料モジュール（各段を切り出した無料版）**:
+  - **MUEDsp saturation（通称 MUEDsat）**: トランス・サチュレーションの段。公開中・無料（https://mued.jp/ja/muedsat）
+`;
+
 export async function GET(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const isDial = host.includes("dial.mued.jp");
@@ -142,6 +156,7 @@ export async function GET(request: NextRequest) {
   const baseContent = isDial ? MUEDIAL_CONTENT : MUED_CONTENT;
   let content = !isDial && ADVISORY_LIVE ? baseContent + ADVISORY_CONTENT : baseContent;
   if (!isDial && MUEDSAT_LIVE) content += MUEDSAT_CONTENT;
+  if (!isDial && MUEDSP_LIVE) content += MUEDSP_CONTENT;
 
   return new NextResponse(content, {
     headers: {

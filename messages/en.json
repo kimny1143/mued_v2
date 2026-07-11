@@ -1,21 +1,21 @@
 {
   "landing": {
     "v2": {
-      "designer": "Designed by a working composer and mix engineer.",
+      "designer": "Designed and built by me, one person — in between my own sessions.",
       "philosophy": {
-        "eyebrow": "Our method",
+        "eyebrow": "MUED's method",
         "statement": "The Muses hand you method, not magic. MUED's method is the bias you bring — what you keep, what you cut — on top of the common denominator AI gives you.",
         "quote": "Output is AI. Judgment and desire are human.",
-        "cta": "How we think"
+        "cta": "How MUED thinks"
       },
       "hero": {
         "eyebrow": "From the Muses",
         "title": "MUED",
-        "lead": "Not inspiration, but method. We turn the judgment behind music-making into tools — mixing, mastering, ear training.",
+        "lead": "Not inspiration, but method. The judgment behind music-making, turned into tools.",
         "cta": "See the tools"
       },
       "mix": {
-        "origin": "Born in a working composer's studio — a mix made by conversation.",
+        "origin": "Born out of my own studio — a mix made by conversation.",
         "role": "AI mixing & mastering",
         "label": "MIX",
         "heading": "MUEDial",
@@ -24,12 +24,10 @@
         "cta": "See MUEDial"
       },
       "master": {
-        "origin": "From the master chain our founder — a working composer — actually uses.",
+        "origin": "From the chain I always master with.",
         "role": "Master-bus plugin suite",
         "label": "MASTER",
         "heading": "MUEDsp",
-        "lead": "Finish the record.",
-        "body": "The whole master-bus chain in a single plugin. Start with one stage — the transformer saturation — free.",
         "cta": "See MUEDsp"
       },
       "train": {
@@ -2217,7 +2215,7 @@
     "hero": {
       "role": "AI mixing & mastering",
       "headline": "Hand your mix to Hoo.",
-      "origin": "Born in a working composer's studio — a mix made by conversation.",
+      "origin": "Born out of my own studio — a mix made by conversation.",
       "lead": "Upload your stems, talk to Hoo, and a finished track comes back.",
       "cta": "Start your mix"
     },
@@ -2300,40 +2298,53 @@
   },
   "muedsp": {
     "meta": {
-      "title": "MUEDsp — a working composer's master chain, as-is.",
-      "description": "A plugin suite that reproduces the master-bus chain our founder — a working composer — actually uses for mastering. One stage, the transformer saturation, is available free right now as MUEDsat."
+      "title": "MUEDsp — a whole mastering chain, in one plugin",
+      "description": "The master-bus chain I use for mastering, reproduced in a single plugin suite (in development). One stage, the transformer saturation, is free right now as MUEDsat."
     },
     "hero": {
       "eyebrow": "Mastering plugin suite",
       "title": "MUEDsp",
       "tagline": "Finish the record.",
-      "lead": "The master-bus chain our founder — a working composer and arranger — actually uses, reproduced as-is. Its finished form is MUEDsp masterchain.",
+      "lead": "The chain I master with, folded into one plugin — a master chain for finishing a track while you stay in the music. That's MUEDsp masterchain.",
       "cta": "Try one stage, free"
     },
     "masterchain": {
       "eyebrow": "In development",
       "heading": "MUEDsp masterchain",
-      "body": "Every stage of the master-bus chain in one plugin. The free MUEDsat is one of those stages — the transformer saturation. We're building it now.",
+      "body": "I'm bundling the chain I always master with into a single plugin — comp, EQ, limiter. Few knobs, so you can finish a track without disappearing into the details. Still building it.",
       "priceNote": "One-time $69. Available at launch.",
-      "buyLabel": "Coming soon"
+      "buyLabel": "Coming soon",
+      "mockLabel": "A work-in-progress screen — not the real thing yet.",
+      "controlsLead": "Here's roughly how it'll work.",
+      "controls": {
+        "ceiling": { "name": "Ceiling", "desc": "The output ceiling (−3 to 0 dBTP)." },
+        "width": { "name": "Width", "desc": "Stereo width (0–200%)." },
+        "mono": { "name": "Mono", "desc": "Mono below this frequency (0–300 Hz)." },
+        "limiter": { "name": "Limiter", "desc": "The final brickwall (on by default)." },
+        "bypass": { "name": "Bypass", "desc": "The whole plugin on/off." }
+      }
+    },
+    "free": {
+      "lead": "I'm releasing the masterchain's stages one at a time, each free. Try them on your own music, stage by stage.",
+      "satLabel": "The transformer-saturation stage"
     }
   },
   "muedsat": {
     "meta": {
       "title": "MUEDsp saturation (aka MUEDsat) — a free transformer saturation plugin",
-      "description": "MUEDsp saturation (aka MUEDsat) is a free transformer-saturation plugin — transformer color pulled straight out of the mastering chain we work with. macOS, VST3 + AU + AAX (Pro Tools). Nothing locked, nothing paywalled."
+      "description": "MUEDsp saturation (aka MUEDsat) is a free transformer-saturation plugin — transformer color pulled straight out of the mastering chain I work with. macOS, VST3 + AU + AAX (Pro Tools). Nothing locked, nothing paywalled."
     },
     "hero": {
       "badge": "Free · macOS · VST3 · AU · AAX",
       "title": "MUEDsat",
       "tagline": "A free transformer saturation plugin",
-      "lead": "Transformer color, taken straight out of the mastering chain we work with. Free.",
+      "lead": "Transformer color, taken straight out of the mastering chain I work with. Free.",
       "tryLine": "Free. Just grab it and try it on your own music."
     },
     "about": {
       "heading": "What it is",
-      "originLead": "Not a demo or a trial — it's the transformer-saturation stage of the master chain we actually use, pulled out and made free (its finished form, MUEDsp masterchain, is in development). Push it for obvious grit, or back it off until it just sits under the sound.",
-      "intro1": "MUEDsp saturation (aka MUEDsat) is one module from MUEDsp, our plugin suite for mastering. Its finished form — MUEDsp masterchain — reproduces the master-bus chain our founder, a working composer and arranger, actually uses (we're building it now). MUEDsat isn't a stripped-down demo or trial: it's an actual stage of that chain — the transformer saturation — pulled out as a standalone plugin and made free.",
+      "originLead": "Not a demo or a trial — it's the transformer-saturation stage of the master chain I actually use, pulled out and made free (its finished form, MUEDsp masterchain, is in development). Push it for obvious grit, or back it off until it just sits under the sound.",
+      "intro1": "MUEDsp saturation (aka MUEDsat) is the first of MUEDsp — a mastering plugin suite I'm building. Its finished form — MUEDsp masterchain — brings together the chain I always master with (I'm building it now). MUEDsat isn't a stripped-down demo or trial: it's an actual stage of that chain — the transformer saturation — pulled out as a standalone plugin and made free.",
       "intro2": "At its heart is one thing: transformer-style saturation. Turn it up for obvious grit, or back it off until it just sits under the sound.",
       "controlsHeading": "Four knobs",
       "controlsLead": "Four knobs, nothing hidden.",
@@ -2345,13 +2356,13 @@
         "output": { "name": "Output", "desc": "level trim." },
         "bypass": { "name": "Bypass", "desc": "A true dry passthrough, for honest A/B." }
       },
-      "tech": "Zero latency, and no oversampling artifacts (ADAA anti-aliasing). We like it on a master bus, a drum group, or anything that wants a little more body — but we'd rather you decide with your own ears than take our word for it."
+      "tech": "Zero latency, and no oversampling artifacts (ADAA anti-aliasing). I like it on a master bus, a drum group, or anything that wants a little more body — but I'd rather you decide with your own ears than take my word for it."
     },
     "whyFree": {
-      "heading": "Why it's free — and why we ask for your email",
-      "lead": "MUEDsat is completely free — nothing locked or time-limited. We ask for your email only to send the download link and to let you know when we update it (or when MUEDsp masterchain is ready). Your email is the price of the download, not the plugin. No spam; unsubscribe anytime.",
+      "heading": "Why it's free — and why I ask for your email",
+      "lead": "MUEDsat is completely free — nothing locked or time-limited. I ask for your email only to send the download link and to let you know when I update it (or when MUEDsp masterchain is ready). Your email is the price of the download, not the plugin. No spam; unsubscribe anytime.",
       "body1": "MUEDsat is completely free. Nothing in the plugin is locked, time-limited, or paywalled.",
-      "body2": "We ask for your email for two reasons: to send you the download link, and to let you know when we update MUEDsat — or when MUEDsp masterchain is ready. That's all it's for.",
+      "body2": "I ask for your email for two reasons: to send you the download link, and to let you know when I update MUEDsat — or when MUEDsp masterchain is ready. That's all it's for.",
       "emphasis": "Your email is the price of the download, not the price of the plugin.",
       "body3": "No spam, unsubscribe anytime."
     },
@@ -2382,7 +2393,7 @@
     },
     "masterchain": {
       "eyebrow": "In development",
-      "body": "MUEDsat is one stage of MUEDsp masterchain — the finished chain we're building now."
+      "body": "MUEDsat is one stage of MUEDsp masterchain — the finished chain I'm building now."
     }
   }
 }
