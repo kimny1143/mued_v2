@@ -28,8 +28,6 @@
         "role": "マスターバス用プラグイン・スイート",
         "label": "MASTER",
         "heading": "MUEDsp",
-        "lead": "1曲を、仕上げる。",
-        "body": "マスターバスのチェーンを、まるごと1つのプラグインに。まず、その1段（トランス・サチュレーション）を無料で。",
         "cta": "MUEDsp を見る"
       },
       "train": {
@@ -2313,9 +2311,22 @@
     "masterchain": {
       "eyebrow": "開発中",
       "heading": "MUEDsp masterchain",
-      "body": "マスターバスのチェーン全段を、1つのプラグインに。無料の MUEDsat は、その1段（トランス・サチュレーション）です。いま作っています。",
+      "body": "作編曲家が実際に使うマスターバスのチェーンを、そのまま1つのプラグインに。コンプ→EQ→リミッターの署名チェーンで、1曲を仕上げます。いま作っています。",
       "priceNote": "買い切り $69。発売と同時にご案内します。",
-      "buyLabel": "近日発売"
+      "buyLabel": "近日発売",
+      "mockLabel": "開発中のUI（予定・実機ではありません）",
+      "controlsLead": "完成したら、こうなります。",
+      "controls": {
+        "ceiling": { "name": "Ceiling", "desc": "出力の天井（−3〜0 dBTP）。" },
+        "width": { "name": "Width", "desc": "ステレオの広がり（0〜200%）。" },
+        "mono": { "name": "Mono", "desc": "この周波数から下をモノに（0〜300 Hz）。" },
+        "limiter": { "name": "Limiter", "desc": "最終のブリックウォール（既定 on）。" },
+        "bypass": { "name": "Bypass", "desc": "プラグイン全体のオン/オフ。" }
+      }
+    },
+    "free": {
+      "lead": "masterchain の各段を、1つずつ無料で出しています。まず自分の音で、段ごとに試してください。",
+      "satLabel": "トランス・サチュレーションの段"
     }
   },
   "muedsat": {

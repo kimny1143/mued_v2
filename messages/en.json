@@ -28,8 +28,6 @@
         "role": "Master-bus plugin suite",
         "label": "MASTER",
         "heading": "MUEDsp",
-        "lead": "Finish the record.",
-        "body": "The whole master-bus chain in a single plugin. Start with one stage — the transformer saturation — free.",
         "cta": "See MUEDsp"
       },
       "train": {
@@ -2313,9 +2311,22 @@
     "masterchain": {
       "eyebrow": "In development",
       "heading": "MUEDsp masterchain",
-      "body": "Every stage of the master-bus chain in one plugin. The free MUEDsat is one of those stages — the transformer saturation. We're building it now.",
+      "body": "The master-bus chain a working composer actually uses, rebuilt as a single plugin — a signature chain, comp → EQ → limiter, to finish a track. We're building it now.",
       "priceNote": "One-time $69. Available at launch.",
-      "buyLabel": "Coming soon"
+      "buyLabel": "Coming soon",
+      "mockLabel": "UI in development — a preview, not the finished build",
+      "controlsLead": "Here's what it'll ship with.",
+      "controls": {
+        "ceiling": { "name": "Ceiling", "desc": "The output ceiling (−3 to 0 dBTP)." },
+        "width": { "name": "Width", "desc": "Stereo width (0–200%)." },
+        "mono": { "name": "Mono", "desc": "Mono below this frequency (0–300 Hz)." },
+        "limiter": { "name": "Limiter", "desc": "The final brickwall (on by default)." },
+        "bypass": { "name": "Bypass", "desc": "The whole plugin on/off." }
+      }
+    },
+    "free": {
+      "lead": "We're releasing the masterchain's stages one at a time, each free. Try them on your own music, stage by stage.",
+      "satLabel": "The transformer-saturation stage"
     }
   },
   "muedsat": {
