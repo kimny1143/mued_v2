@@ -2326,7 +2326,52 @@
     },
     "free": {
       "lead": "masterchain の各段を、1つずつ無料で出してます。まず自分の音で、段ごとに試してください。",
-      "satLabel": "トランス・サチュレーションの段"
+      "satLabel": "トランス・サチュレーションの段",
+      "limLabel": "ピークを抑える最後の段"
+    }
+  },
+  "muedlim": {
+    "meta": {
+      "title": "MUEDsp limiter（通称 MUEDlim）— 無料のトゥルーピーク・リミッター",
+      "description": "MUEDsp limiter（通称 MUEDlim）は無料のトゥルーピーク・リミッター。僕が作ってる MUEDsp っていうマスタリング用スイートの、ピークを抑える段を取り出したもの。インターサンプルピークまで見て、真のピークを、決めた天井（既定 −1 dBTP）に抑えます。macOS（Universal）、VST3 · AU。機能ロックも課金の壁もありません。"
+    },
+    "hero": {
+      "badge": "無料 · macOS · VST3 · AU",
+      "title": "MUEDlim",
+      "tagline": "無料のトゥルーピーク・リミッター",
+      "lead": "僕が作ってる MUEDsp っていうマスタリング用スイートから、ピークを抑える段だけを取り出しました。無料です。",
+      "tryLine": "無料。まず落として、自分の音で。"
+    },
+    "about": {
+      "heading": "これは何か",
+      "originLead": "体験版でも試供品でもありません。僕がいつもマスタリングで使ってるチェーンの、ピークを抑える最後の段（トゥルーピーク・リミッター）を取り出して無料にしたものです（完成形の MUEDsp masterchain は開発中）。インターサンプルピークまで見て、真のピークを、決めた天井（既定 −1 dBTP）に抑えます。",
+      "controlsHeading": "INPUT と CEILING",
+      "controlsLead": "音圧を決める INPUT と、天井を決める CEILING。それだけです。",
+      "controls": {
+        "input": { "name": "INPUT", "desc": "入力のドライブ＝音圧（−6〜+18 dB）。" },
+        "ceiling": { "name": "CEILING", "desc": "真のピークの上限（−3〜0 dBTP・既定 −1）。" },
+        "bypass": { "name": "BYPASS", "desc": "本当のバイパス（ACTIVE / BYPASS）。素直な A/B のために。" }
+      },
+      "bypassNote": "加えて BYPASS トグル（ACTIVE / BYPASS）。素直な A/B のために。"
+    },
+    "whyFree": {
+      "heading": "無料の理由と、メールをいただく理由",
+      "lead": "MUEDlim は完全に無料です。機能の制限も、期限も、課金の壁もありません。メールをいただくのは、ダウンロードリンクの送付と、アップデート（や MUEDsp masterchain）のお知らせのためだけ。メールはダウンロードの対価であって、プラグインの対価ではありません。スパムは送りませんし、いつでも解除できます。"
+    },
+    "form": {
+      "emailLabel": "メールアドレス",
+      "emailPlaceholder": "your@email",
+      "submit": "MUEDlim をダウンロード",
+      "submitting": "送信中…",
+      "note": "ダウンロードリンクをメールでお送りします。配信はいつでも解除できます。",
+      "successTitle": "メールをご確認ください。",
+      "successBody": "ダウンロードリンクをメールでお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
+      "errorEmail": "有効なメールアドレスを入力してください。",
+      "errorGeneric": "エラーが発生しました。もう一度お試しください。"
+    },
+    "footer": {
+      "operator": "glasswerks inc. — mued.jp",
+      "format": "VST3 · AU · macOS（Universal — Apple Silicon / Intel）"
     }
   },
   "muedsat": {
