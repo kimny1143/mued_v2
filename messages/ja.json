@@ -2328,6 +2328,11 @@
       "lead": "masterchain の各段を、1つずつ無料で出してます。まず自分の音で、段ごとに試してください。",
       "satLabel": "トランス・サチュレーションの段",
       "limLabel": "ピークを抑える最後の段"
+    },
+    "footer": {
+      "operator": "glasswerks inc. — mued.jp",
+      "format": "VST3 · AU · macOS（Universal — Apple Silicon / Intel）",
+      "formatNote": "AAX（Pro Tools）対応は MUEDsat のみ。"
     }
   },
   "muedlim": {

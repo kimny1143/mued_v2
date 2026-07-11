@@ -2328,6 +2328,11 @@
       "lead": "I'm releasing the masterchain's stages one at a time, each free. Try them on your own music, stage by stage.",
       "satLabel": "The transformer-saturation stage",
       "limLabel": "The final peak-limiting stage"
+    },
+    "footer": {
+      "operator": "glasswerks inc. — mued.jp",
+      "format": "VST3 · AU · macOS (Universal — Apple Silicon / Intel)",
+      "formatNote": "AAX (Pro Tools) support is MUEDsat only."
     }
   },
   "muedlim": {
