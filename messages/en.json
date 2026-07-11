@@ -2219,7 +2219,7 @@
       "headline": "Hand your mix to Hoo.",
       "origin": "Born in a working composer's studio — a mix made by conversation.",
       "lead": "Upload your stems, talk to Hoo, and a finished track comes back.",
-      "cta": "Upload and try it"
+      "cta": "Start your mix"
     },
     "steps": {
       "upload": {
@@ -2294,8 +2294,8 @@
       "planNote": "Using it a lot? There's a monthly plan (Hoo Pass) and credit packs too."
     },
     "cta": {
-      "cta": "Upload and try it.",
-      "sub": "If you have your stems, you're ready. No account needed."
+      "cta": "Start your mix",
+      "sub": "Have your stems ready — then just place your order. No account needed."
     }
   },
   "muedsp": {

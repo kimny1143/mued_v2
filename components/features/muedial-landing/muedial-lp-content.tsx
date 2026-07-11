@@ -17,7 +17,9 @@ import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { trackCtaClick } from "@/lib/analytics/gtag";
 import { BeforeAfterPlayer } from "./before-after-player";
 
-const DIAL_URL = "https://dial.mued.jp";
+// ?from=muedial triggers /dial's lean funnel mode (hides the redundant pitch, keeps plan-select +
+// checkout) — the /muedial LP already did the selling. kimny 7/11 導線 fix.
+const DIAL_URL = "https://dial.mued.jp/?from=muedial";
 const STEP_KEYS = ["upload", "chat", "listen", "finalize"] as const;
 const FAQ_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
 const PRINCIPLE_KEYS = ["d1", "d2", "d3"] as const;
