@@ -131,8 +131,8 @@ export function IntegratedLandingContentV2() {
               ? "MUEDsp masterchain の開発中UIモック（予定）"
               : "A mock of the in-development MUEDsp masterchain UI (planned)"
           }
-          renderW={1760}
-          renderH={1600}
+          renderW={1640}
+          renderH={740}
           reverse
           surface
           cta={

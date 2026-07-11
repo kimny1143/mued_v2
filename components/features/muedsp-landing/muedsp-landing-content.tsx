@@ -126,8 +126,8 @@ export function MuedspLandingContent() {
                       ? "MUEDsp masterchain の開発中UIモック（予定・実機ではありません）"
                       : "A mock of the in-development MUEDsp masterchain UI (planned — not the shipping product)"
                   }
-                  width={1760}
-                  height={1600}
+                  width={1640}
+                  height={740}
                   priority
                   sizes="(min-width: 768px) 720px, 90vw"
                   className="h-auto w-full rounded-lg"
