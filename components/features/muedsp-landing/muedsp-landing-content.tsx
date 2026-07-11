@@ -62,7 +62,7 @@ export function MuedspLandingContent() {
   const tsAbout = useTranslations("muedsat.about");
   const tsWhy = useTranslations("muedsat.whyFree");
   const tsViz = useTranslations("muedsat.visuals");
-  const tsFoot = useTranslations("muedsat.footer");
+  const tsFoot = useTranslations("muedsp.footer");
   // MUEDlim (peak-limiting stage) — 2nd free module. Text-forward (no faceplate); STAGED behind
   // MUEDLIM_LIVE (hidden until the 2-knob build is notarized + published at the kimny-gated flip).
   const tlHero = useTranslations("muedlim.hero");
@@ -329,6 +329,7 @@ export function MuedspLandingContent() {
         <div className="mx-auto max-w-5xl space-y-2.5">
           <p className="text-sm text-white/50">{tsFoot("operator")}</p>
           <p className="font-mono text-xs uppercase tracking-wider text-white/35">{tsFoot("format")}</p>
+          <p className="text-xs text-white/30">{tsFoot("formatNote")}</p>
           <nav className="flex items-center gap-6 pt-1">
             <Link
               href={`/${locale}/privacy`}
