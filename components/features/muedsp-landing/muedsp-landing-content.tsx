@@ -23,6 +23,8 @@ import {
   MuedsatSignupForm,
   MuedsatSignupFormFallback,
 } from "@/components/features/muedsat-landing/muedsat-signup-form";
+import { type PluginKey } from "@/lib/plugins/registry";
+import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 
 const FACEPLATE_HOT = "/muedsat/faceplate-hot.webp";
 const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
@@ -34,13 +36,16 @@ const MASTERCHAIN_MOCK = "/muedsp/masterchain-mock.webp";
 const KNOBS = ["drive", "mix", "air", "output"] as const;
 // masterchain planned controls (locked spec; shown as "こうなります" — not editable on this page).
 const MC_CONTROLS = ["ceiling", "width", "mono", "limiter", "bypass"] as const;
+// MUEDlim (2nd free module — the peak-limiting stage): TWO knobs (INPUT + CEILING); Bypass is a
+// toggle described once in bypassNote (not counted). dsp-confirmed 2-knob minimal build (e665fef5).
+const MUEDLIM_KNOBS = ["input", "ceiling"] as const;
 
 // The form reads useSearchParams (UTM + press bypass) → needs a Suspense boundary on this
-// statically-prerendered page.
-function SignupForm() {
+// statically-prerendered page. `plugin` selects the endpoint/copy/audience via the plugin registry.
+function SignupForm({ plugin = "muedsat" as PluginKey } = {}) {
   return (
-    <Suspense fallback={<MuedsatSignupFormFallback />}>
-      <MuedsatSignupForm />
+    <Suspense fallback={<MuedsatSignupFormFallback plugin={plugin} />}>
+      <MuedsatSignupForm plugin={plugin} />
     </Suspense>
   );
 }
@@ -58,6 +63,11 @@ export function MuedspLandingContent() {
   const tsWhy = useTranslations("muedsat.whyFree");
   const tsViz = useTranslations("muedsat.visuals");
   const tsFoot = useTranslations("muedsat.footer");
+  // MUEDlim (peak-limiting stage) — 2nd free module. Text-forward (no faceplate); STAGED behind
+  // MUEDLIM_LIVE (hidden until the 2-knob build is notarized + published at the kimny-gated flip).
+  const tlHero = useTranslations("muedlim.hero");
+  const tlAbout = useTranslations("muedlim.about");
+  const tlWhy = useTranslations("muedlim.whyFree");
 
   return (
     <div className="dark min-h-screen bg-[#0a0a0a] text-white">
@@ -263,6 +273,53 @@ export function MuedspLandingContent() {
               <p className="mt-3 max-w-md text-sm italic text-white/45">{tsHero("tryLine")}</p>
               <p className="mt-6 max-w-2xl text-[15px] leading-[1.8] text-white/55">{tsWhy("lead")}</p>
             </div>
+
+            {/* MUEDsp limiter (通称 MUEDlim) — the peak-limiting stage, free. Text-forward (no
+                faceplate). STAGED behind MUEDLIM_LIVE: hidden until the 2-knob build is notarized +
+                published at the kimny-gated flip. Two knobs (INPUT + CEILING); BYPASS is a toggle
+                (bypassNote). Download form uses plugin="muedlim" (own endpoint/audience). No latency
+                claim (~16ms lookahead, PDC-compensated — content fact-lock). ─────────────────────── */}
+            {MUEDLIM_LIVE && (
+              <div className="mt-14 border-t border-white/5 pt-14">
+                <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#f5a524]/70">
+                  {tf("limLabel")}
+                </span>
+                <h3 className="mt-3 text-3xl font-bold tracking-tight">
+                  <span className="text-white">MUED</span>
+                  <span className="text-[#f5a524]">lim</span>
+                  <span className="ml-3 align-middle font-mono text-xs uppercase tracking-[0.2em] text-white/40">
+                    MUEDsp limiter
+                  </span>
+                </h3>
+                <p className="mt-4 text-lg font-light text-white/80">{tlHero("tagline")}</p>
+                <p className="mt-5 text-[17px] leading-[1.8] text-white/75">{tlAbout("originLead")}</p>
+
+                {/* two knobs — INPUT + CEILING; BYPASS in one quiet line */}
+                <p className="mt-10 text-lg font-medium leading-snug text-white/85">
+                  {tlAbout("controlsLead")}
+                </p>
+                <dl className="mt-5 divide-y divide-white/5 border-y border-white/5">
+                  {MUEDLIM_KNOBS.map((key) => (
+                    <div key={key} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr] sm:gap-5">
+                      <dt className="font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">
+                        {tlAbout(`controls.${key}.name`)}
+                      </dt>
+                      <dd className="text-[15px] leading-relaxed text-white/70">
+                        {tlAbout(`controls.${key}.desc`)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="mt-4 text-sm leading-relaxed text-white/45">{tlAbout("bypassNote")}</p>
+
+                {/* the CTA for this module: the free download (email gate, plugin="muedlim") */}
+                <div id="get-muedlim" className="mt-8 max-w-md scroll-mt-20">
+                  <SignupForm plugin="muedlim" />
+                </div>
+                <p className="mt-3 max-w-md text-sm italic text-white/45">{tlHero("tryLine")}</p>
+                <p className="mt-6 max-w-2xl text-[15px] leading-[1.8] text-white/55">{tlWhy("lead")}</p>
+              </div>
+            )}
           </div>
         </section>
       </main>

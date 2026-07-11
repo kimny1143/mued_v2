@@ -850,7 +850,7 @@ Hoo MCP経由の自動送信
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDLIM_DOWNLOAD_URL;
 
-    const subject = isJa ? '[MUEDlim] ダウンロードリンクをお届けします' : '[MUEDlim] Your download link';
+    const subject = isJa ? 'MUEDlim のダウンロードリンクです' : 'Your MUEDlim download link';
 
     const linkBlockHtml = hasLink
       ? `<p style="text-align: center;">
@@ -869,21 +869,21 @@ Hoo MCP経由の自動送信
       <h2 style="color: #f5a524; margin-top: 0;">${isJa ? 'MUEDlim をありがとうございます' : 'Thanks for grabbing MUEDlim'}</h2>
 
       <p>${isJa
-        ? '無料の true-peak リミッター、MUEDlim です。機能の制限も、期限も、課金の壁もありません。'
-        : 'MUEDlim is a free true-peak limiter. Nothing in it is locked, time-limited, or paywalled.'}</p>
+        ? 'MUEDlim は無料のトゥルーピーク・リミッター。INPUT で音圧、CEILING で天井を決めるだけ。macOS（Universal）、VST3 と AU に対応しています。'
+        : 'MUEDlim is a free true-peak limiter — INPUT for loudness, CEILING for the ceiling. macOS (Universal), VST3 and AU.'}</p>
 
       ${linkBlockHtml}
 
       <p style="color: #6b7280; font-size: 14px;">
         ${isJa
-          ? '僕らの言葉より、あなた自身の耳で決めてください。アップデートや MUEDsp masterchain の情報も、追ってお知らせします。配信はいつでも解除できます。'
-          : "We'd rather you decide with your own ears than take our word for it. We'll also let you know about updates — and when MUEDsp masterchain is ready. Unsubscribe anytime."}
+          ? '完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。配信はいつでも解除できます。'
+          : "I'm still building the finished MUEDsp masterchain; I'll let you know when there's an update. Unsubscribe anytime."}
       </p>
     `);
 
     const text = isJa
-      ? `MUEDlim をありがとうございます。\n\n無料の true-peak リミッターです。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nVST3 · AU · macOS（Universal — Apple Silicon / Intel）` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\nアップデートや MUEDsp masterchain の情報も追ってお知らせします。配信はいつでも解除できます。\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nVST3 · AU · macOS (Universal — Apple Silicon / Intel)` : "We'll email the download link to this address shortly."}\n\nWe'll also let you know about updates and when MUEDsp masterchain is ready. Unsubscribe anytime.\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDlim をありがとうございます。\n\n無料のトゥルーピーク・リミッターです。INPUT で音圧、CEILING で天井を決めるだけ。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。配信はいつでも解除できます。\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter — INPUT for loudness, CEILING for the ceiling.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update. Unsubscribe anytime.\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },
