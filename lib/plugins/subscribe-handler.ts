@@ -6,15 +6,17 @@
 // (/api/muedsat, /api/muedlim) are thin wrappers around this. Regression 0 for MUEDsat is proven in
 // tests/unit/plugin-subscribe.test.ts.
 //
-// Everything after validation is fail-open: a Resend outage (audience add or email) still returns
-// 200 so the UI shows success — the subscriber is never blocked by a downstream failure, and while
-// staged (audience id unset) both side effects are silent no-ops.
-import { NextRequest, after } from "next/server";
+// Delivery is HONEST, not fake-open: the welcome email carries the download link (= the deliverable),
+// so it is sent synchronously and its failure returns a non-200 (the UI shows a retry path instead of
+// a false "sent"). The audience add (lead capture) is best-effort and does NOT fail the request — but
+// a configured-but-failed add is logged + operator-alerted so a lead loss is visible, never silent.
+// While staged (audience id unset) the audience add is a legitimate no-op (not treated as a failure).
+import { NextRequest } from "next/server";
 import { z } from "zod";
-import { apiSuccess, apiValidationError } from "@/lib/api-response";
+import { apiError, apiSuccess, apiValidationError } from "@/lib/api-response";
 import { rateLimit } from "@/lib/middleware/rate-limit";
-import { addPluginSubscriber } from "@/lib/plugins/audience";
-import { emailService } from "@/lib/services/email.service";
+import { addPluginSubscriber, isPluginAudienceEnabled } from "@/lib/plugins/audience";
+import { emailService, type EmailResult } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
 import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
 
@@ -59,20 +61,48 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
 
   const { email, locale } = parsed.data;
 
-  // Add to the plugin's Resend audience — best-effort, no-op-safe while staged.
-  await addPluginSubscriber(plugin, { email, locale }).catch((err) =>
-    logger.error(`[${plugin}/subscribe] audience add failed`, { error: String(err) })
-  );
+  // 1) Lead capture — add to the plugin's Resend audience. Best-effort + no-op-safe while staged, but
+  //    capture the outcome: a configured-but-failed add is a lead loss that must be VISIBLE (logged +
+  //    operator-alerted), never silent. It does NOT fail the request — the user still gets their
+  //    download below, which is the honest thing to report.
+  const audienceConfigured = isPluginAudienceEnabled(plugin);
+  const listCaptured = await addPluginSubscriber(plugin, { email, locale }).catch((err) => {
+    logger.error(`[${plugin}/subscribe] audience add threw`, { error: String(err) });
+    return false;
+  });
+  if (audienceConfigured && !listCaptured) {
+    logger.error(`[${plugin}/subscribe] audience add failed — lead not captured to Resend`, { plugin });
+    const alertEmail = process.env.OPERATOR_ALERT_EMAIL;
+    if (alertEmail && emailService.isConfigured()) {
+      // Best-effort operator alert — never blocks the response.
+      void emailService
+        .sendAdminAlert(
+          alertEmail,
+          `[${plugin}/subscribe] Resend audience add failed for a subscriber — lead not captured. Check Resend / audience config.`,
+        )
+        .catch((err) => logger.error(`[${plugin}/subscribe] operator alert failed`, { error: String(err) }));
+    }
+  }
 
-  // Send the download-link email in after() so the serverless function stays alive to deliver it
-  // after the 200 (this email carries the DL link = the deliverable — product review #591). fail-open.
-  if (emailService.isConfigured()) {
-    after(async () => {
-      try {
-        await sendWelcome(plugin, email, locale);
-      } catch (err) {
-        logger.error(`[${plugin}/subscribe] welcome email failed`, { error: String(err) });
-      }
+  // 2) Deliver the download-link email SYNCHRONOUSLY — it carries the DL link (= the deliverable), so
+  //    the HTTP response MUST reflect real delivery. (Previously this ran in after() AFTER the 200, so
+  //    a send failure was invisible and the UI falsely claimed "sent" — the bug this fix closes.)
+  if (!emailService.isConfigured()) {
+    logger.error(`[${plugin}/subscribe] email service not configured — cannot deliver the download link`);
+    return apiError("We couldn't send the download email. Please try again shortly.", {
+      code: "EMAIL_DELIVERY_FAILED",
+      status: 502,
+    });
+  }
+  const emailResult: EmailResult = await sendWelcome(plugin, email, locale).catch((err) => {
+    logger.error(`[${plugin}/subscribe] welcome email threw`, { error: String(err) });
+    return { success: false, error: String(err) };
+  });
+  if (!emailResult.success) {
+    logger.error(`[${plugin}/subscribe] welcome email failed — download link not delivered`, { error: emailResult.error });
+    return apiError("We couldn't send the download email. Please try again shortly.", {
+      code: "EMAIL_DELIVERY_FAILED",
+      status: 502,
     });
   }
 

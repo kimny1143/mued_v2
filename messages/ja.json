@@ -2372,7 +2372,8 @@
       "successTitle": "メールをご確認ください。",
       "successBody": "ダウンロードリンクをメールでお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
       "errorEmail": "有効なメールアドレスを入力してください。",
-      "errorGeneric": "エラーが発生しました。もう一度お試しください。"
+      "errorGeneric": "エラーが発生しました。もう一度お試しください。",
+      "errorEmailFailed": "ダウンロードメールを送信できませんでした。もう一度お試しいただくか、support@mued.jp までご連絡ください。"
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
@@ -2425,7 +2426,8 @@
       "successTitle": "メールをご確認ください。",
       "successBody": "ダウンロードリンクをメールでお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
       "errorEmail": "有効なメールアドレスを入力してください。",
-      "errorGeneric": "エラーが発生しました。もう一度お試しください。"
+      "errorGeneric": "エラーが発生しました。もう一度お試しください。",
+      "errorEmailFailed": "ダウンロードメールを送信できませんでした。もう一度お試しいただくか、support@mued.jp までご連絡ください。"
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",

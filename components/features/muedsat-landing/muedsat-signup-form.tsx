@@ -49,7 +49,7 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
 
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
-  const [errorKey, setErrorKey] = useState<"errorEmail" | "errorGeneric">("errorGeneric");
+  const [errorKey, setErrorKey] = useState<"errorEmail" | "errorGeneric" | "errorEmailFailed">("errorGeneric");
 
   const inputId = `${plugin}-email`;
 
@@ -107,7 +107,20 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
           utm_content: searchParams.get("utm_content"),
         }),
       });
-      if (!res.ok) throw new Error(`status ${res.status}`);
+      if (!res.ok) {
+        // The email carries the download link (the deliverable). A delivery failure now returns a
+        // non-2xx with code EMAIL_DELIVERY_FAILED — tell the user their download didn't go out and to
+        // retry, instead of a vague generic error (or, worse, a false "sent").
+        let code: string | undefined;
+        try {
+          code = (await res.json())?.code;
+        } catch {
+          /* body not JSON — fall back to generic */
+        }
+        setErrorKey(code === "EMAIL_DELIVERY_FAILED" ? "errorEmailFailed" : "errorGeneric");
+        setStatus("error");
+        return;
+      }
       setStatus("success");
     } catch {
       setErrorKey("errorGeneric");
