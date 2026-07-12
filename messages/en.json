@@ -1,7 +1,7 @@
 {
   "landing": {
     "v2": {
-      "designer": "Designed and built by me, alone — a working composer and mix engineer making the tools I need on the job.",
+      "designer": "Designed and developed by a working composer-arranger — drawn from the realities of each craft.",
       "meta": {
         "title": "MUED — Tools for music production: mixing, mastering, ear training.",
         "description": "Tools for music production, made by a working composer and mix engineer — MUEDial (AI mixing), MUEDsp (mastering plugins), and MUEDear (ear training)."
@@ -17,7 +17,7 @@
         "cta": "See the shelves"
       },
       "mix": {
-        "origin": "Born out of my own studio — a mix made by conversation.",
+        "origin": "Born on the studio floor — a mix made by conversation.",
         "role": "AI mixing & mastering",
         "label": "MIX",
         "heading": "MUEDial",
@@ -26,7 +26,7 @@
         "cta": "See MUEDial"
       },
       "master": {
-        "origin": "From the chain I always master with.",
+        "origin": "The everyday master chain, packaged into one.",
         "statusNote": "Two free modules to try right now; the full masterchain is in development.",
         "role": "Master-bus plugin suite",
         "label": "MASTER",
@@ -2208,7 +2208,7 @@
     "hero": {
       "role": "AI mixing & mastering",
       "headline": "Hand your mix to Hoo.",
-      "origin": "Born out of my own studio — a mix made by conversation.",
+      "origin": "Born on the studio floor — a mix made by conversation.",
       "lead": "Upload your stems, talk to Hoo, and a finished track comes back.",
       "cta": "Start your mix"
     },
