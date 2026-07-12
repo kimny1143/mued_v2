@@ -1,18 +1,20 @@
 {
   "landing": {
     "v2": {
-      "designer": "Designed and built by me, one person — in between my own sessions.",
+      "designer": "Designed and built by me, alone — a working composer and mix engineer making the tools I need on the job.",
+      "meta": {
+        "title": "MUED — Tools for music production: mixing, mastering, ear training.",
+        "description": "Tools for music production, made by a working composer and mix engineer — MUEDial (AI mixing), MUEDsp (mastering plugins), and MUEDear (ear training)."
+      },
       "philosophy": {
         "eyebrow": "MUED's method",
         "statement": "The Muses hand you method, not magic. MUED's method is the bias you bring — what you keep, what you cut — on top of the common denominator AI gives you.",
-        "quote": "Output is AI. Judgment and desire are human.",
-        "cta": "How MUED thinks"
+        "quote": "Output is AI. Judgment and desire are human."
       },
       "hero": {
-        "eyebrow": "From the Muses",
         "title": "MUED",
-        "lead": "Not inspiration, but method. The judgment behind music-making, turned into tools.",
-        "cta": "See the tools"
+        "lead": "The tools I use to finish music, made and laid out by hand — mixing (MIX), mastering (MASTER), and the ear that judges both (TRAIN). Some ready to use now, some still in the works.",
+        "cta": "See the shelves"
       },
       "mix": {
         "origin": "Born out of my own studio — a mix made by conversation.",
@@ -25,29 +27,20 @@
       },
       "master": {
         "origin": "From the chain I always master with.",
+        "statusNote": "Two free modules to try right now; the full masterchain is in development.",
         "role": "Master-bus plugin suite",
         "label": "MASTER",
         "heading": "MUEDsp",
         "cta": "See MUEDsp"
       },
       "train": {
-        "origin": "It all starts with an ear that can choose.",
+        "origin": "Practice hearing what EQ and compression actually do.",
         "role": "Ear-training listening games",
         "label": "TRAIN",
         "heading": "MUEDear",
         "lead": "Train your ears while you create.",
         "body": "Two or three minutes between sessions. Learn to hear EQ and compression through play.",
         "cta": "Download on the App Store"
-      },
-      "advisory": {
-        "heading": "Run your AI-built work at a quality you can actually ship.",
-        "lead": "We build the systems that move your business forward — together with AI.",
-        "cta": "Free 60-min consult"
-      },
-      "close": {
-        "heading": "Ready to create?",
-        "lead": "You don't have to wait for inspiration. Start with method.",
-        "cta": "Start a mix"
       }
     },
     "brand": {

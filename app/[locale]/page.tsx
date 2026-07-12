@@ -15,9 +15,9 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "landing.brand.hero" });
+  const t = await getTranslations({ locale, namespace: "landing.v2.meta" });
 
-  const title = `MUED - ${t("tagline")}`;
+  const title = t("title");
   const description = t("description");
 
   return {
@@ -27,6 +27,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       canonical: `https://mued.jp/${locale}`,
     },
     openGraph: {
+      title,
+      description,
+    },
+    // Override the root layout's lore twitter card so the home's social preview is product-first too
+    // (§4). Layout defaults stay for the other pages.
+    twitter: {
       title,
       description,
     },
