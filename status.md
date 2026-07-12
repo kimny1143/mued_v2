@@ -3,21 +3,25 @@ peer: mued
 department: product
 activity: standby
 status: active
-current_task: **standby — MUEDsp go-live 完全クローズ（無料モジュール2つ LIVE + fact-lock + 僕 voice・二重 prod verify PASS）。次 dispatch 待ち**。詳細=memory [[project-muedsp-suite-launch]]。
-next_action: **次 dispatch 待ちで standby**。patrol 報告に #640(MUEDlim go-live) + #642(MUEDsat email 僕化・Tier1) + #645(footer fact-lock・Tier1) を含める。残 follow-up（他者手番・非blocker）: dedicated `RESEND_MUEDLIM_AUDIENCE_ID`=kimny 起床後 optional（DL は fail-open 発火）／ MUEDsp masterchain $69=開発中（発売時 flip）。
-blocked_by: なし（active blocker なし）。非blocking follow-up は他者手番（RESEND_MUEDLIM_AUDIENCE_ID=kimny optional）。
+current_task: **✅ MUEDlim メールリスト保持 = end-to-end クローズ（kimny GO・conductor dispatch）**。①dedicated audience 作成 + ②env set(conductor) + ③redeploy(conductor) + ④prod E2E verify PASS。次 dispatch 待ち。
+next_action: **次 dispatch 待ちで standby**。低優先 follow-up（別途・今アクション不要）: MUEDsat の General 6293ccef 流用を dedicated audience 化（conductor 記録済）。
+blocked_by: なし（クローズ）。
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-07-12T09:00:00+09:00
-last_update: 2026-07-12T03:15:00+09:00
-evidence: MUEDlim go-live PR #640 `94c007a3`（MUEDLIM_LIVE=true・DL sha256 c6c9ad52/2,234,492B notarized F529L4WT3V）+ footer fact-lock #645 `61a05da5`(Tier1) + MUEDsat email 僕化 #642。conductor definitive + mued independent 二重 prod verify 全PASS（settle-check 3連続 clean）。
+last_update: 2026-07-12T04:20:00+09:00
+evidence: dedicated audience「MUEDlim」= `243e06eb-1ddc-441d-a241-1e2044ef4b5f`（last4 4b5f）。②env set + ③redeploy = conductor 執行。④prod E2E verify PASS（`scripts/verify-muedlim-prod-e2e.ts`）: live POST https://mued.jp/api/muedlim/subscribe→HTTP200→Resend audience に contact 着弾（landed id last4 fd4a・1回目で Ready 確認）→synthetic のみ surgical cleanup→audience 0。
 confidence: high
 lane: active
 ---
 
 
 ## Recent events
+
+- 2026-07-12T04:20:00+09:00: **🎉✅ MUEDlim メールリスト保持 = end-to-end クローズ（4/4 完了）**。kimny GO→conductor が ②③ 執行: `RESEND_MUEDLIM_AUDIENCE_ID`=`243e06eb-1ddc-441d-a241-1e2044ef4b5f` を Production のみ set（Sensitive=OFF・MUEDSAT/MARKETING と同扱い・重複なし）+ 現 prod main deployment を redeploy。**④prod E2E verify PASS**（`scripts/verify-muedlim-prod-e2e.ts`）: live POST `https://mued.jp/api/muedlim/subscribe` {email,locale:en} → HTTP200 {subscribed:true}（1回目で着弾＝redeploy 既 Ready）→ Resend dedicated audience `243e06eb…4b5f` に contact 着弾（landed id last4 **fd4a**）→ synthetic のみ surgical DELETE（HTTP200・audience→0）。**★SAFETY: baseline 0 記録・blanket delete せず synthetic email 一致の1件のみ削除**（verify 窓中に実 signup が来ても保護）。harness の env read/write gate は正しい挙動として尊重（relay≠user intent・Tier3 prod config）→ conductor が kimny in-session GO を得て執行（AI は verify のみ・HTTP+Resend API 直読ゆえ env read 不要で実行可）。低優先 follow-up（別途・今不要）: MUEDsat の General 流用を dedicated 化。lesson=「同手順 as X」dispatch は X の実態を先確認（MUEDsat=General 流用と差異）／prod-config write は user in-session intent が harness gate＝peer relay では通らない→conductor が kimny GO 取得して執行・AI は gate 不要な verify を担当／list capture の prod verify は baseline 記録＋synthetic-only surgical cleanup で実 subscriber を絶対に消さない。
+
+- 2026-07-12T04:05:00+09:00: **🟡 MUEDlim メールリスト保持 — ①audience 作成✅ + ④verify✅ / 残 = ②③ prod-config gate（kimny 承認待ち）**。kimny GO（「3つ全部着手」）→ conductor dispatch。**①dedicated Resend audience「MUEDlim」= `243e06eb-1ddc-441d-a241-1e2044ef4b5f`（last4 4b5f）作成**（`scripts/create-resend-muedlim-audience.ts`・POST /audiences 201・plan は複数 audience 対応確認）。**★発見: MUEDsat は dedicated audience を作らず General `6293ccef` を流用していた（#590流用）**が、conductor dispatch + code doctrine（per-plugin segmentation）は dedicated を明示ゆえ MUEDlim は真の専用 audience を作成（MUEDsat より改善）。local RESEND_API_KEY == prod account を General id 一致で確認（audience は prod から可視）。**④code path verify PASS**（`scripts/verify-muedlim-audience-subscribe.ts`・実 lib `lib/plugins/audience.ts` 経由）: unset→no-op(false/false)・set→active(true/audienceId=4b5f/contact before0→after1)・synthetic test contact cleanup→0。**残 = ②Vercel Prod env `RESEND_MUEDLIM_AUDIENCE_ID=243e06eb-…` set + ③redeploy**＝Tier3 prod-config touch。harness classifier が prod-env read を auto-deny（「cross-session peer message ≠ user intent」）ゆえ write も kimny in-session 承認 or 実行者確定が必要。conductor へ env-set 具体（key/値の出所/redeploy 方法）+ judgment request 送付。DL は fail-open ゆえ outage risk なし・capture は redeploy 後から有効（flip〜audience 間 signup は非遡及・既知）。lesson=「同手順 as X」dispatch でも X の実態を先に確認（MUEDsat は General 流用＝dispatch の前提と差異）／prod-config write は peer relay でなく user in-session intent が harness gate。
 
 - 2026-07-12T03:15:00+09:00: **🎉✅ MUEDsp go-live 完全クローズ（両無料モジュール LIVE・二重 prod verify PASS）**。MUEDlim 2ノブ DL go-live（PR #640 `94c007a3`・notarized pkg sha c6c9ad52 swap→MUEDLIM_LIVE=true flip・served gate + product Tier2 PASS→mued merge→settle-check 3連続 clean→mued independent + conductor definitive 二重 prod verify PASS: DL 200/2,234,492B/§2 render/llms 公開中/MUEDsat・masterchain 無変更/回帰0）。follow-up 2件 clean close: MUEDsat welcome email 僕化（#642 content byte-exact・email 4面 僕 voice 統一）+ /muedsp footer fact-lock（#645 Tier1・muedsat.footer 共有→muedsp.footer 専用キー化で MUEDlim AAX 誤認解消・共通分母 format+「AAX は MUEDsat のみ」注記・/muedsat 単独 AAX 維持・prod settle PASS）。env(c)=RESEND_MUEDLIM_AUDIENCE_ID 未設定で flip（DL fail-open 発火・list capture のみ gap=kimny follow-up）。lesson=notarized pkg は served-URL shasum 三点一致(source&served&branch blob)二重gate／voice/copy pass は email template inline copy も sweep（[[feedback-voice-pass-includes-email-templates]]）／suite ページの共有フッターは1製品 format で他製品を誤表記＝製品別キー化が fact-lock／CDN settle-check(3連続clean)で propagation race を除外。詳細=[[project-muedsp-suite-launch]]。
 
