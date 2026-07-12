@@ -3,21 +3,23 @@ peer: mued
 department: product
 activity: standby
 status: active
-current_task: **✅ MUEDlim メールリスト保持 = end-to-end クローズ（kimny GO・conductor dispatch）**。①dedicated audience 作成 + ②env set(conductor) + ③redeploy(conductor) + ④prod E2E verify PASS。次 dispatch 待ち。
-next_action: **次 dispatch 待ちで standby**。低優先 follow-up（別途・今アクション不要）: MUEDsat の General 6293ccef 流用を dedicated audience 化（conductor 記録済）。
-blocked_by: なし（クローズ）。
+current_task: **✅ Codex監査 P0 両PR上がり（Phase1 #649 + Phase2 #650）→ conductor correctness review + kimny merge consent 待ち**。加えて MUEDlim メールリスト保持 = end-to-end クローズ済（#648）。
+next_action: **conductor correctness review → CI green → kimny merge consent（両PR一括）待ちで standby**。merge/deploy 前: #649 env `PLUGIN_UNSUBSCRIBE_TOKEN_SECRET`=conductor prod set。Phase2 merge/deploy 後: content/write課 canonical 通知（Hoo Pass 退場=product-spec 変更）。
+blocked_by: **review/merge は conductor + kimny 手番**（peer 自走範囲外）。
 urgency: low
-action_owner: peer
+action_owner: conductor
 deadline: null
-expected_next_check_at: 2026-07-12T09:00:00+09:00
-last_update: 2026-07-12T04:20:00+09:00
-evidence: dedicated audience「MUEDlim」= `243e06eb-1ddc-441d-a241-1e2044ef4b5f`（last4 4b5f）。②env set + ③redeploy = conductor 執行。④prod E2E verify PASS（`scripts/verify-muedlim-prod-e2e.ts`）: live POST https://mued.jp/api/muedlim/subscribe→HTTP200→Resend audience に contact 着弾（landed id last4 fd4a・1回目で Ready 確認）→synthetic のみ surgical cleanup→audience 0。
+expected_next_check_at: 2026-07-12T12:00:00+09:00
+last_update: 2026-07-12T14:35:00+09:00
+evidence: **Phase1 #649**（`fix/plugin-email-gate-robustness`）: メールゲート honest delivery（after()→同期 await・失敗 502）+ one-click unsubscribe（RFC8058 `/api/plugins/unsubscribe`・HMAC token・List-Unsubscribe header）。20 unit + build green + live route runtime drive PASS。conductor correctness APPROVE 済。**Phase2 #650**（`fix/hoo-pass-removal`）: Hoo Pass 退場（pricing.ts deprecated 化・backend 温存）+ /dial/pricing page+API 3本撤去 + inbound links/i18n/llms/beta残骸(faq11a) 撤去 + middleware /pricing gate 撤去（sign-in ループ P0-3 moot）。tsc/lint/build green・**full unit 1742 pass（回帰0）**・grep sweep 0・runtime drive（撤去 route 404/都度払い intact）。conductor Phase2 plan APPROVE 済。
 confidence: high
 lane: active
 ---
 
 
 ## Recent events
+
+- 2026-07-12T14:35:00+09:00: **🟢 Codex監査 P0 = 両PR上がり（Phase1 #649 + Phase2 #650・別PR）→ conductor review + kimny merge 待ち**。conductor dispatch（kimny GO）per。**Phase1 #649（外報前必修・robustness/compliance）**: ①メールゲート成功偽装廃止（welcome email=DL link deliverable を `after()`非同期→**同期 await**・Resend 失敗時 502 `EMAIL_DELIVERY_FAILED`→form retry 表示・happy path 不変）・audience add 失敗は非blocking だが error log+operator alert（lead-loss 可視化）。②**one-click unsubscribe（RFC8058・Gmail bulk 要件）**: 新 `/api/plugins/unsubscribe`（GET 人間 confirm + POST one-click）・HMAC token（`lib/plugins/unsubscribe-token.ts`・advisory booking-token 同型・空 secret でも self-consistent）・DL email に `List-Unsubscribe`/`List-Unsubscribe-Post` header + footer link・`unsubscribePluginContact()`（Resend `contacts.update unsubscribed:true`）。verify: 20 unit（token 6 + handler honesty 7 + 回帰 3 + audience 4）・tsc/lint/build green・**live route runtime drive PASS**（one-click POST→200→contact unsubscribed:true〔by-id 正・list は stale〕・bad token 400・GET 200 confirm）。conductor correctness APPROVE 済（CI Build/Test green 待ち→kimny merge consent）。新 env `PLUGIN_UNSUBSCRIBE_TOKEN_SECRET`=conductor prod set（merge/deploy 前・空でも動く）。**Phase2 #650（Hoo Pass 退場 + beta残骸）**: kimny 直confirm（active subscriber 0・即時撤去）per。撤去=/dial/pricing page+layout・専用API 3本（subscription/credit-pack/status）・全 inbound links（dial nav+banner・session upsell・dashboard credits-ledger CTA・hoo-masthead→/dial repoint・gtag・sitemap×2・middleware /pricing gate〔**sign-in ループ P0-3 moot**〕）・i18n ja/en（dial.pricing 全消し・planBanner*・navPricing・faq8/9・session.hooPassCta*・muedialLp.planNote）・**faq11a beta残骸(P0-4)** + faq12a 是正・llms.txt・consume copy。温存（dangling-0）=hoo_pass `deprecated:true`（pgEnum/webhook/analyze/rate-limit/subscription DB 無変更）。verify: tsc/lint/build green（/dial/pricing route tree 消滅）・**full unit 1742 pass（回帰0**・pricing-constants invariant 更新）・grep sweep（/dial/pricing link 0・撤去 i18n キー 0・hoo_pass backend-only）・en/ja parity・runtime drive（撤去 route 404 / 都度払い `/dial`200・`/api/dial/checkout`(+additional) 存在）。conductor Phase2 plan APPROVE 済。**残**: 両PR conductor correctness review→CI green→kimny 一括 merge consent（pricing=kimny 直confirm で human gate 充足）。Phase2 merge/deploy 後に content/write課 canonical 通知（Hoo Pass 退場=spec 変更）。前提 check（hoo_pass Stripe 加入者数）= local key TEST mode ゆえ取得不可→kimny Dashboard 目視で 0 確定済。lesson=「同手順 as X」dispatch は X 実態を先確認（MUEDsat=General 流用）／honest delivery は after()→同期 await（after は post-200 で失敗を報告不能）／Resend list-contacts の unsubscribed は stale・**GET-by-id が authoritative**／pricing 撤去は「enum/webhook backward-compat 温存 + purchasable surface のみ削除」で dangling-0／removal verify は grep(link/key 0)+tsc+full unit+runtime(404/kept) の多層。
 
 - 2026-07-12T04:20:00+09:00: **🎉✅ MUEDlim メールリスト保持 = end-to-end クローズ（4/4 完了）**。kimny GO→conductor が ②③ 執行: `RESEND_MUEDLIM_AUDIENCE_ID`=`243e06eb-1ddc-441d-a241-1e2044ef4b5f` を Production のみ set（Sensitive=OFF・MUEDSAT/MARKETING と同扱い・重複なし）+ 現 prod main deployment を redeploy。**④prod E2E verify PASS**（`scripts/verify-muedlim-prod-e2e.ts`）: live POST `https://mued.jp/api/muedlim/subscribe` {email,locale:en} → HTTP200 {subscribed:true}（1回目で着弾＝redeploy 既 Ready）→ Resend dedicated audience `243e06eb…4b5f` に contact 着弾（landed id last4 **fd4a**）→ synthetic のみ surgical DELETE（HTTP200・audience→0）。**★SAFETY: baseline 0 記録・blanket delete せず synthetic email 一致の1件のみ削除**（verify 窓中に実 signup が来ても保護）。harness の env read/write gate は正しい挙動として尊重（relay≠user intent・Tier3 prod config）→ conductor が kimny in-session GO を得て執行（AI は verify のみ・HTTP+Resend API 直読ゆえ env read 不要で実行可）。低優先 follow-up（別途・今不要）: MUEDsat の General 流用を dedicated 化。lesson=「同手順 as X」dispatch は X の実態を先確認（MUEDsat=General 流用と差異）／prod-config write は user in-session intent が harness gate＝peer relay では通らない→conductor が kimny GO 取得して執行・AI は gate 不要な verify を担当／list capture の prod verify は baseline 記録＋synthetic-only surgical cleanup で実 subscriber を絶対に消さない。
 
