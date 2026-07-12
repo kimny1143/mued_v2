@@ -7,8 +7,6 @@
         "description": "現役の作編曲家／ミックスエンジニアが作る、音楽制作のための道具。AIミックスの MUEDial、マスタリング・プラグインの MUEDsp、耳を鍛える MUEDear。"
       },
       "philosophy": {
-        "eyebrow": "MUED の方法論",
-        "statement": "ミューズがくれるのは、ひらめきではなく方法。AIが差し出す最大公約数に、自分の偏り——何を選び、何を捨てるか——を重ねること。それが MUED の方法論です。",
         "quote": "出力はAI、判断と欲は、人間。"
       },
       "hero": {
@@ -41,72 +39,6 @@
         "lead": "制作しながら、耳を育てる。",
         "body": "制作の合間に2〜3分。EQやコンプの聴き分けを、ゲームで。",
         "cta": "App Store で入手"
-      }
-    },
-    "brand": {
-      "hero": {
-        "title": "MUED",
-        "tagline": "ミューズの教え——神秘ではなく、方法論。",
-        "description": "練習して、記憶して、創る。",
-        "hooIntro": "Hooがご案内します。",
-        "exploreMuedear": "MUEDearを見る",
-        "exploreMuedlobe": "MUEDlobeを見る"
-      },
-      "products": {
-        "title": "練習して、記憶する。",
-        "subtitle": "創作のための2つのメソッド。",
-        "muednote": {
-          "badge": "記憶する",
-          "tagline": "判断を残す、振り返る。",
-          "features": {
-            "rest": "休憩リマインダー",
-            "voice": "音声メモ＆文字起こし",
-            "sound": "音に反応するHoo"
-          },
-          "ctaLearnMore": "詳しく見る",
-          "ctaStart": "無料で始める"
-        },
-        "muedear": {
-          "badge": "練習する",
-          "tagline": "耳を鍛えて、方法論を磨く。",
-          "features": {
-            "games": "6つの耳トレゲーム",
-            "dsp": "本格DSP処理",
-            "free": "毎日無料で遊べる"
-          },
-          "ctaLearnMore": "詳しく見る",
-          "ctaDownload": "ダウンロード"
-        }
-      },
-      "cta": {
-        "title": "創る準備はできた？",
-        "description": "君のメソッドを始めよう。",
-        "muedear": "MUEDearで鍛える",
-        "muedlobe": "MUEDlobeを試す",
-        "muedial": {
-          "tagline": "そのミックス、Hooにお願いしてみない？",
-          "description": "AIミキシング。ステムをアップロードして、Hooとチャットするだけ。",
-          "button": "MUEDialを試す",
-          "free15Badge": "15名限定 · 無料",
-          "free15Headline": "Hooにミックスを任せる（無料）",
-          "free15Sub": "対話ミックス＋マスタリング（1曲・1回・リテイクなし）を無料で。先着15名・枠が埋まり次第終了。",
-          "free15Cta": "無料で試す →"
-        }
-      },
-      "social": {
-        "developedBy": "Developed by"
-      },
-      "claudeCodeTemplate": {
-        "badge": "Claude Code ユーザーへ",
-        "title": "Hooを、自分のワークフローに",
-        "description": "MUEDialを動かすHooの文脈設計を、Claude Code から直接呼び出せるMCPテンプレート。会話履歴・ミックス情報・認知プロファイルへのアクセス——そのまま使える。",
-        "features": [
-          "Hoo MCP公式テンプレート",
-          "Claude Code対応",
-          "セットアップ5分"
-        ],
-        "cta": "Gumroadで入手する",
-        "ctaFinalSection": "Claude Code テンプレートを入手"
       }
     },
     "muednote": {

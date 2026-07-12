@@ -7,8 +7,6 @@
         "description": "Tools for music production, made by a working composer and mix engineer — MUEDial (AI mixing), MUEDsp (mastering plugins), and MUEDear (ear training)."
       },
       "philosophy": {
-        "eyebrow": "MUED's method",
-        "statement": "The Muses hand you method, not magic. MUED's method is the bias you bring — what you keep, what you cut — on top of the common denominator AI gives you.",
         "quote": "Output is AI. Judgment and desire are human."
       },
       "hero": {
@@ -41,72 +39,6 @@
         "lead": "Train your ears while you create.",
         "body": "Two or three minutes between sessions. Learn to hear EQ and compression through play.",
         "cta": "Download on the App Store"
-      }
-    },
-    "brand": {
-      "hero": {
-        "title": "MUED",
-        "tagline": "From the Muses — not inspiration, but method.",
-        "description": "Practice. Remember. Create.",
-        "hooIntro": "Hoo will be your guide.",
-        "exploreMuedear": "Explore MUEDear",
-        "exploreMuedlobe": "Explore MUEDlobe"
-      },
-      "products": {
-        "title": "Practice. Remember.",
-        "subtitle": "Two tools for your creative method.",
-        "muednote": {
-          "badge": "Remember",
-          "tagline": "Your decisions, preserved.",
-          "features": {
-            "rest": "Rest Reminders",
-            "voice": "Voice Memos & Transcription",
-            "sound": "Sound-Reactive Hoo"
-          },
-          "ctaLearnMore": "Learn more",
-          "ctaStart": "Get Started Free"
-        },
-        "muedear": {
-          "badge": "Practice",
-          "tagline": "Train your ears, sharpen your method.",
-          "features": {
-            "games": "6 Ear Training Games",
-            "dsp": "Real DSP Processing",
-            "free": "Play Free Every Day"
-          },
-          "ctaLearnMore": "Learn more",
-          "ctaDownload": "Download"
-        }
-      },
-      "cta": {
-        "title": "Ready to create?",
-        "description": "Start with your method.",
-        "muedear": "Train with MUEDear",
-        "muedlobe": "Try MUEDlobe",
-        "muedial": {
-          "tagline": "Let AI handle your mix.",
-          "description": "Professional AI mixing. Upload stems, chat with Hoo, get your mix.",
-          "button": "Try MUEDial",
-          "free15Badge": "15 spots · Free",
-          "free15Headline": "Let Hoo handle your mix — free",
-          "free15Sub": "Conversational mixing and mastering — one track, one final, no retakes — on us. First 15 only, while spots last.",
-          "free15Cta": "Try it free →"
-        }
-      },
-      "social": {
-        "developedBy": "Developed by"
-      },
-      "claudeCodeTemplate": {
-        "badge": "For Claude Code Users",
-        "title": "Bring Hoo into your workflow",
-        "description": "The context design powering MUEDial—now accessible from Claude Code via MCP. Conversation history, mix data, cognitive profile: all of Hoo, ready for your workflow.",
-        "features": [
-          "Official Hoo MCP template",
-          "Claude Code ready",
-          "5-min setup"
-        ],
-        "cta": "Get on Gumroad",
-        "ctaFinalSection": "Get the Claude Code Template"
       }
     },
     "muednote": {
