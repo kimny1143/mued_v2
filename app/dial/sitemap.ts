@@ -7,7 +7,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     { url: `${DIAL}/`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
-    { url: `${DIAL}/pricing`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${DIAL}/waitlist`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${DIAL}/readiness`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
   ];

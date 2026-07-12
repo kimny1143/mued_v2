@@ -7,8 +7,8 @@
 //
 // Guardrails (content canonical): product-truth honest (stems ≥2, not one-click, unmanned) in
 // Q2/Q4/Upload/Listen caption/CTA sub; NO payment-processor name (Stripe hidden, fix②); NO
-// unbacked quality claims (precision seal); anonymous designer; per-mix pricing leads, Hoo Pass a
-// light line; signature「出力はAI、判断と欲は、人間。」once, quietly at the end of the 3宣言.
+// unbacked quality claims (precision seal); anonymous designer; per-mix pricing leads (pay-per-use
+// only, no subscription); signature「出力はAI、判断と欲は、人間。」once, quietly at the end of the 3宣言.
 //
 // STAGED behind MUEDIAL_LP_LIVE (page.tsx robots). Pricing shows (kimny gate①).
 import Link from "next/link";
@@ -152,7 +152,6 @@ export function MuedialLpContent() {
               </li>
             </ul>
             <p className="mt-6 text-[15px] leading-relaxed text-white/70">{t("pricing.included")}</p>
-            <p className="mt-3 text-sm text-white/40">{t("pricing.planNote")}</p>
           </div>
         </section>
 

@@ -55,10 +55,11 @@ describe('DIAL_SINGLE_PRICES — USD cents', () => {
 });
 
 describe('DIAL_SUB_PLANS', () => {
-  it('hoo_pass: $5.99/mo, 100cr (Phase 6 案X)', () => {
+  it('hoo_pass: $5.99/mo, 100cr — retired as purchasable (Codex P0 Phase2); kept deprecated for webhook backward-compat', () => {
     expect(DIAL_SUB_PLANS.hoo_pass.priceUsdCents).toBe(599);
     expect(DIAL_SUB_PLANS.hoo_pass.credits).toBe(100);
-    expect(DIAL_SUB_PLANS.hoo_pass.deprecated).toBeUndefined();
+    // Marked deprecated alongside basic/pro/studio when the purchase surface (/dial/pricing) was removed.
+    expect(DIAL_SUB_PLANS.hoo_pass.deprecated).toBe(true);
   });
 
   it('basic: $19.99/mo, 1000cr (deprecated)', () => {

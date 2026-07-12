@@ -52,7 +52,7 @@ export default clerkMiddleware(async (auth, req) => {
     // Clerk sessions are scoped to mued.jp (Hobby plan, no satellite).
     // After sign-in, users return to dial.mued.jp/ (public LP) to continue their flow.
     // Prerequisite: https://dial.mued.jp must be in Clerk Dashboard → Allowed redirect URLs.
-    if (pathname.startsWith('/dial/pricing') || pathname.startsWith('/dashboard')) {
+    if (pathname.startsWith('/dashboard')) {
       // After sign-in on mued.jp, redirect to /dial-return (same-origin) which then
       // does a server-side bounce to dial.mued.jp/. Same-origin redirect_url requires
       // no Clerk Dashboard configuration and works on Hobby plan.
@@ -69,7 +69,7 @@ export default clerkMiddleware(async (auth, req) => {
       response.cookies.set('NEXT_LOCALE', locale, { path: '/' });
       return response;
     }
-    if (pathname === '/waitlist' || pathname === '/readiness' || pathname === '/pricing') {
+    if (pathname === '/waitlist' || pathname === '/readiness') {
       const response = NextResponse.rewrite(new URL(`/dial${pathname}`, req.url));
       response.cookies.set('NEXT_LOCALE', locale, { path: '/' });
       return response;

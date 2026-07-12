@@ -176,8 +176,8 @@ export const POST = withAuth(async ({ userId, request }) => {
             return apiSuccess({ operation: 'mix_diagnosis', creditsConsumed: 0, freeTrial: true });
           }
           return apiValidationError(
-            'Mix diagnosis free trial already used. Please subscribe or purchase credits.',
-            [{ path: ['credits'], message: 'Free trial exhausted. Subscribe to Hoo Pass or buy credits.' }]
+            'Mix diagnosis free trial already used. Start a paid mix to continue.',
+            [{ path: ['credits'], message: 'Free mix diagnosis already used. Start a paid mix ($7.49+) to continue.' }]
           );
         }
       } catch (blobErr) {
