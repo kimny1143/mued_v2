@@ -2261,18 +2261,6 @@
       }
     },
     "principles": {
-      "d1": {
-        "title": "AI doesn't compose.",
-        "body": "Composing, arranging, performing, the mixing calls — those are human work. MUED doesn't step into them."
-      },
-      "d2": {
-        "title": "Hoo is here to subtract.",
-        "body": "Less busywork, less waiting, less cost — so you have more time for the music."
-      },
-      "d3": {
-        "title": "AI fills the range you can't reach.",
-        "body": "Better AI handle the audio you can't afford to commission than let it go out unfinished."
-      },
       "signature": "Output is AI. Judgment and desire are human."
     },
     "pricing": {
