@@ -113,14 +113,14 @@ export function trackCheckoutView(
 
 /** Track MUEDnote dashboard CTA clicks that lead to MUEDial */
 export function trackMuednoteToDialCta(
-  trigger: "buy_more" | "no_sub" | "masthead" | "empty_state",
-  sourceComponent: "credits_ledger" | "hoo_masthead" | "session_ledger"
+  trigger: "masthead" | "empty_state",
+  sourceComponent: "hoo_masthead" | "session_ledger"
 ): void {
   trackEvent({
     action: "muednote_to_dial_cta_click",
     params: {
       source_component: sourceComponent,
-      destination: trigger === "empty_state" ? "/dial" : "/dial/pricing",
+      destination: "/dial",
       trigger,
       funnel: "muednote_to_dial",
     },

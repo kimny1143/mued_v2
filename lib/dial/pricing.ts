@@ -20,10 +20,14 @@ export const DIAL_SUB_PLANS: Record<DialSubTier, {
   label: string;
   deprecated?: boolean;
 }> = {
+  // Retired as a purchasable tier (2026-07, Codex P0 Phase2). Kept here + in the dial_sub_tier enum
+  // ONLY for Stripe webhook backward-compat and rate-limit tiering of any pre-existing subscribers —
+  // there is no purchase surface for it anymore. Treated like the other deprecated tiers below.
   hoo_pass: {
     credits: 100,
     priceUsdCents: 599,
     label: 'MUEDial Hoo Pass',
+    deprecated: true,
   },
   basic: {
     credits: 1_000,

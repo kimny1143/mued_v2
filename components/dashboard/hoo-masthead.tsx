@@ -56,7 +56,7 @@ export function HooMasthead() {
   return (
     <div className="flex items-center gap-2">
       <Link
-        href="/dial/pricing"
+        href="/dial"
         className="flex items-center gap-2 group"
         onClick={() => trackMuednoteToDialCta('masthead', 'hoo_masthead')}
       >

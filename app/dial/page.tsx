@@ -469,9 +469,6 @@ export default function DialPage() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/dial/pricing" className="text-sm text-zinc-400 hover:text-white transition-colors">
-              {lp.navPricing}
-            </Link>
             {isSignedIn && (
               <Link href="/dial/sessions" className="text-sm text-zinc-400 hover:text-white transition-colors">
                 {lp.navHistory}
@@ -630,20 +627,6 @@ export default function DialPage() {
                 {isSignedIn ? t.dial.checkout.securePayment : t.dial.checkout.noAccountRequired}
               </p>
 
-              {/* Save with a Plan banner */}
-              <Link
-                href="/dial/pricing"
-                className="mt-6 flex items-center gap-3 p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 transition-colors group"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-amber-300">{lp.planBannerTitle}</p>
-                  <p className="text-xs text-white/40 mt-0.5">{lp.planBannerDesc}</p>
-                </div>
-                <span className="text-xs font-medium text-amber-400 group-hover:text-amber-300 shrink-0">
-                  {lp.planBannerCta} →
-                </span>
-              </Link>
-
               {/* Readiness check CTA — funnel step 2: dial top → /readiness */}
               <Link
                 href="/dial/readiness"
@@ -683,7 +666,7 @@ export default function DialPage() {
               <div className="max-w-2xl mx-auto">
                 <h2 className="text-2xl font-bold mb-10 text-center">{lp.faqTitle}</h2>
                 <dl className="space-y-6">
-                  {([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const).map((n) => (
+                  {([1, 2, 3, 4, 5, 6, 7, 10, 11, 12] as const).map((n) => (
                     <div key={n} className="border-b border-zinc-800 pb-6 last:border-0">
                       <dt className="text-base font-medium text-white mb-2">
                         {lp[`faq${n}q` as keyof typeof lp]}
