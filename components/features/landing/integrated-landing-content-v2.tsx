@@ -72,8 +72,9 @@ export function IntegratedLandingContentV2() {
         <section className="px-6 pt-24 pb-24 md:pt-32 md:pb-32">
           <div className="mx-auto max-w-3xl text-center">
             <h1 className="text-6xl font-extrabold tracking-tight md:text-8xl">MUED</h1>
-            {/* hero.lead = 案A (kimny 現物選定 2026-07-12): 「作って、並べている」maker voice that
-                carries what/which-tools/relation/availability + the 棚 (shelves) framing. */}
+            {/* hero.lead = kimny 確定ライン (2026-07-12): a brand-mothership frame with NO product
+                enumeration — the shelf stays invariant as the product line grows; the 3 products
+                (MIX/MASTER/TRAIN) live in the shelves below, not in the hero. */}
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/85 md:text-xl">
               {t("hero.lead")}
             </p>
