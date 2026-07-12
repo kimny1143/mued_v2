@@ -22,7 +22,6 @@ import { BeforeAfterPlayer } from "./before-after-player";
 const DIAL_URL = "https://dial.mued.jp/?from=muedial";
 const STEP_KEYS = ["upload", "chat", "listen", "finalize"] as const;
 const FAQ_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
-const PRINCIPLE_KEYS = ["d1", "d2", "d3"] as const;
 
 export function MuedialLpContent() {
   const locale = useLocale();
@@ -117,19 +116,12 @@ export function MuedialLpContent() {
           </div>
         </section>
 
-        {/* ── 3宣言（信頼） + quiet signature ────────────────────────────────────────────── */}
+        {/* ── Quiet canonical signature (the 3 declarations were removed 2026-07-12 · kimny (b):
+            let the signature + the real product speak, not declarations; d2/d3's substance already
+            lives in the pricing/FAQ sections). One quiet line, same treatment as the home footer. ── */}
         <section className="border-t border-white/5 px-6 py-20">
-          <div className="mx-auto max-w-2xl space-y-10">
-            {PRINCIPLE_KEYS.map((key) => (
-              <div key={key}>
-                <h3 className="text-2xl font-extrabold tracking-tight text-white md:text-3xl">
-                  {t(`principles.${key}.title`)}
-                </h3>
-                <p className="mt-3 text-[16px] leading-[1.8] text-white/60">{t(`principles.${key}.body`)}</p>
-              </div>
-            ))}
-            {/* 公開署名（正典1文）— once, quietly, at the end of the 3宣言 (front-load しない) */}
-            <p className="border-t border-white/5 pt-8 text-center text-[15px] font-light italic text-white/40">
+          <div className="mx-auto max-w-2xl">
+            <p className="text-center text-[15px] font-light italic text-white/40">
               {t("principles.signature")}
             </p>
           </div>

@@ -31,8 +31,6 @@ import { AppStoreButton } from "@/components/ui/app-store-button";
 import { MUEDEAR_APP_STORE_URL } from "@/lib/muedear/constants";
 import { trackCtaClick } from "@/lib/analytics/gtag";
 
-const MUEDIAL_URL = "https://dial.mued.jp";
-
 // Real product renders (v1 poster stills). MASTER = the MUEDsp masterchain flagship MOCK (in
 // development — an honest preview, not the shipping plugin; /muedsp §1 carries the full label).
 const RENDER_MIX = "/muedial-hoo-mixing-console.webp";
@@ -68,20 +66,15 @@ export function IntegratedLandingContentV2() {
       </header>
 
       <main>
-        {/* ── Brand hero — one line of what MUED is, one soft scroll cue ─────────────────── */}
-        <section className="relative overflow-hidden px-6 pt-24 pb-24 md:pt-32 md:pb-32">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[#f5a524]/[0.07] blur-[130px]"
-          />
-          <div className="relative mx-auto max-w-3xl text-center">
-            <p className="font-mono text-[12px] uppercase tracking-[0.28em] text-[#f5a524]/80">
-              {t("hero.eyebrow")}
-            </p>
-            <h1 className="mt-6 text-6xl font-extrabold tracking-tight md:text-8xl">MUED</h1>
-            {/* hero.lead = C1 integrated sentence (kimny final): thought + 何屋か in one line. The
-                separate FV subline was merged in here (hero.subline deleted); resolves the "道具"
-                adjacency. eyebrow/title/designer/cta unchanged. */}
+        {/* ── Brand hero — one line of what MUED is (products-first orientation, not a manifesto).
+            The lore light-orb + "From the Muses" eyebrow were removed (2026-07-12 home rebuild): the
+            real product renders in the sections below are the visual protagonist ("棚が語る"). ── */}
+        <section className="px-6 pt-24 pb-24 md:pt-32 md:pb-32">
+          <div className="mx-auto max-w-3xl text-center">
+            <h1 className="text-6xl font-extrabold tracking-tight md:text-8xl">MUED</h1>
+            {/* hero.lead = kimny 確定ライン (2026-07-12): a brand-mothership frame with NO product
+                enumeration — the shelf stays invariant as the product line grows; the 3 products
+                (MIX/MASTER/TRAIN) live in the shelves below, not in the hero. */}
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/85 md:text-xl">
               {t("hero.lead")}
             </p>
@@ -125,6 +118,7 @@ export function IntegratedLandingContentV2() {
           heading={t("master.heading")}
           role={t("master.role")}
           origin={t("master.origin")}
+          statusNote={t("master.statusNote")}
           render={RENDER_MASTER}
           renderAlt={
             isJa
@@ -168,59 +162,18 @@ export function IntegratedLandingContentV2() {
           }
         />
 
-        {/* ── Advisory — ja only, 控えめ 1 節 (kimny: トップ控えめ + フッター・7/7 水準). A quiet signed
-            node: eyebrow + signature heading + one line + a text-link CTA (not a big button). ── */}
-        {isJa && (
-          <section className="border-t border-white/5 px-6 py-16">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-white/35">Advisory</p>
-              <h2 className="mt-3 text-xl font-bold tracking-tight text-white/90 md:text-2xl">
-                {t("advisory.heading")}
-              </h2>
-              <p className="mt-3 text-[15px] text-white/60">{t("advisory.lead")}</p>
-              <Link
-                href={`/${locale}/advisory`}
-                onClick={() => trackCtaClick("advisory", "portal_advisory")}
-                className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-[#f5a524] transition-colors hover:text-[#ffc35a]"
-              >
-                {t("advisory.cta")}
-                <span aria-hidden="true">→</span>
-              </Link>
-            </div>
-          </section>
-        )}
+        {/* Advisory body node + Close (MUEDial pitch) sections removed (2026-07-12 home rebuild):
+            advisory demoted to a footer link (audience split ja/en), and each shelf carries its own
+            CTA so there is no repeated closing pitch. */}
 
-        {/* ── Close — single focus on the most live conversion (MUEDial). ───────────────── */}
-        <section className="border-t border-white/5 px-6 py-28">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-4xl font-extrabold tracking-tight text-white md:text-5xl">
-              {t("close.heading")}
-            </h2>
-            <p className="mt-5 text-lg text-white/70">{t("close.lead")}</p>
-            <div className="mt-9">
-              <ExternalCta href={MUEDIAL_URL} product="muedial" location="portal_close" primary>
-                {t("close.cta")}
-              </ExternalCta>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Philosophy — placed at the BOTTOM per positioning A (kimny 7/10): products lead;
-            philosophy is one quiet quote + a Read-more link, never front-loaded. The 3 宣言 live on
-            /muedial + /philosophy, not here. Standing rule: 「哲学は下」. ── */}
+        {/* ── Philosophy — one quiet canonical quote at the very bottom (first line only). The
+            Read-more link to /philosophy was removed (2026-07-12 home rebuild): that page is still a
+            noindex placeholder, so the link is restored when the real page ships. ── */}
         <section className="border-t border-white/5 px-6 py-14">
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-lg font-light italic leading-relaxed text-white/45 md:text-xl">
               {t("philosophy.quote")}
             </p>
-            <Link
-              href={`/${locale}/philosophy`}
-              onClick={() => trackCtaClick("philosophy", "portal_philosophy_footer")}
-              className="mt-5 inline-flex items-center gap-1.5 text-[14px] font-medium text-[#f5a524]/80 transition-colors hover:text-[#ffc35a]"
-            >
-              {t("philosophy.cta")}
-              <span aria-hidden="true">→</span>
-            </Link>
           </div>
         </section>
       </main>
@@ -249,7 +202,7 @@ export function IntegratedLandingContentV2() {
                 href={`/${locale}/advisory`}
                 className="text-sm text-white/40 transition-colors hover:text-white/70"
               >
-                無料60分相談
+                AI開発の相談 — MUED advisory
               </Link>
             )}
             <Link
@@ -275,6 +228,7 @@ function ProductSection({
   heading,
   role,
   origin,
+  statusNote,
   render,
   renderAlt,
   renderW,
@@ -288,6 +242,7 @@ function ProductSection({
   heading: string;
   role?: string;
   origin?: string;
+  statusNote?: string;
   render: string;
   renderAlt: string;
   renderW: number;
@@ -318,6 +273,11 @@ function ProductSection({
               selling framing (成果課金 / free entry) lives on the wave2 product LPs
               (conductor-approved lead/body removal 2026-07-10). The render carries the moving evidence. */}
           {origin ? <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/60">{origin}</p> : null}
+          {/* 状態注記 (statusNote) — honest availability line (e.g. MASTER: free modules live, full
+              chain in development). Muted, below origin; only rendered when provided. */}
+          {statusNote ? (
+            <p className="mt-3 max-w-md text-[13px] leading-relaxed text-white/45">{statusNote}</p>
+          ) : null}
           <div className="mt-8">{cta}</div>
         </div>
         <div className={reverse ? "md:order-1" : ""}>
@@ -334,36 +294,5 @@ function ProductSection({
         </div>
       </div>
     </section>
-  );
-}
-
-/** External CTA (dial.mued.jp) with analytics. `primary` = filled amber; default = amber outline. */
-function ExternalCta({
-  href,
-  product,
-  location,
-  primary = false,
-  children,
-}: {
-  href: string;
-  product: string;
-  location: string;
-  primary?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={() => trackCtaClick(product, location)}
-      className={
-        primary
-          ? "inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-[#f5a524] px-6 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
-          : "inline-flex items-center gap-2 rounded-[var(--radius-lg)] border-2 border-[#f5a524] px-5 py-3 font-medium text-[#f5a524] transition-colors duration-200 hover:bg-[#f5a524] hover:text-black"
-      }
-    >
-      {children}
-    </a>
   );
 }

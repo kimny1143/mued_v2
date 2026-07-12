@@ -1,21 +1,23 @@
 {
   "landing": {
     "v2": {
-      "designer": "Designed and built by me, one person — in between my own sessions.",
+      "designer": "Designed and developed by a working composer-arranger — drawn from the realities of each craft.",
+      "meta": {
+        "title": "MUED — Tools for music production: mixing, mastering, ear training.",
+        "description": "Tools for music production, made by a working composer and mix engineer — MUEDial (AI mixing), MUEDsp (mastering plugins), and MUEDear (ear training)."
+      },
       "philosophy": {
         "eyebrow": "MUED's method",
         "statement": "The Muses hand you method, not magic. MUED's method is the bias you bring — what you keep, what you cut — on top of the common denominator AI gives you.",
-        "quote": "Output is AI. Judgment and desire are human.",
-        "cta": "How MUED thinks"
+        "quote": "Output is AI. Judgment and desire are human."
       },
       "hero": {
-        "eyebrow": "From the Muses",
         "title": "MUED",
-        "lead": "Not inspiration, but method. The judgment behind music-making, turned into tools.",
-        "cta": "See the tools"
+        "lead": "Tools for creation, made by the creators who use them.",
+        "cta": "See the shelves"
       },
       "mix": {
-        "origin": "Born out of my own studio — a mix made by conversation.",
+        "origin": "Born on the studio floor — a mix made by conversation.",
         "role": "AI mixing & mastering",
         "label": "MIX",
         "heading": "MUEDial",
@@ -24,30 +26,21 @@
         "cta": "See MUEDial"
       },
       "master": {
-        "origin": "From the chain I always master with.",
+        "origin": "The everyday master chain, packaged into one.",
+        "statusNote": "Two free modules to try right now; the full masterchain is in development.",
         "role": "Master-bus plugin suite",
         "label": "MASTER",
         "heading": "MUEDsp",
         "cta": "See MUEDsp"
       },
       "train": {
-        "origin": "It all starts with an ear that can choose.",
+        "origin": "Practice hearing what EQ and compression actually do.",
         "role": "Ear-training listening games",
         "label": "TRAIN",
         "heading": "MUEDear",
         "lead": "Train your ears while you create.",
         "body": "Two or three minutes between sessions. Learn to hear EQ and compression through play.",
         "cta": "Download on the App Store"
-      },
-      "advisory": {
-        "heading": "Run your AI-built work at a quality you can actually ship.",
-        "lead": "We build the systems that move your business forward — together with AI.",
-        "cta": "Free 60-min consult"
-      },
-      "close": {
-        "heading": "Ready to create?",
-        "lead": "You don't have to wait for inspiration. Start with method.",
-        "cta": "Start a mix"
       }
     },
     "brand": {
@@ -2167,7 +2160,7 @@
     "hero": {
       "role": "AI mixing & mastering",
       "headline": "Hand your mix to Hoo.",
-      "origin": "Born out of my own studio — a mix made by conversation.",
+      "origin": "Born on the studio floor — a mix made by conversation.",
       "lead": "Upload your stems, talk to Hoo, and a finished track comes back.",
       "cta": "Start your mix"
     },
@@ -2220,18 +2213,6 @@
       }
     },
     "principles": {
-      "d1": {
-        "title": "AI doesn't compose.",
-        "body": "Composing, arranging, performing, the mixing calls — those are human work. MUED doesn't step into them."
-      },
-      "d2": {
-        "title": "Hoo is here to subtract.",
-        "body": "Less busywork, less waiting, less cost — so you have more time for the music."
-      },
-      "d3": {
-        "title": "AI fills the range you can't reach.",
-        "body": "Better AI handle the audio you can't afford to commission than let it go out unfinished."
-      },
       "signature": "Output is AI. Judgment and desire are human."
     },
     "pricing": {
