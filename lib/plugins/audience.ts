@@ -60,3 +60,26 @@ export async function addPluginSubscriber(
     return false;
   }
 }
+
+/**
+ * Mark a plugin subscriber as unsubscribed in its Resend audience (one-click List-Unsubscribe /
+ * withdrawal path). Returns true if an update was attempted, false on no-op (unconfigured) or error.
+ * Never throws. Uses contacts.update({ unsubscribed: true }) so the contact stays on the audience for
+ * suppression rather than being deleted (same pattern as lib/marketing/audience-sync.ts).
+ */
+export async function unsubscribePluginContact(plugin: PluginKey, email: string): Promise<boolean> {
+  const audienceId = pluginAudienceId(plugin);
+  const resend = getClient();
+  if (!resend || !audienceId || !email) return false; // no-op when unconfigured
+  try {
+    await resend.contacts.update({
+      audienceId,
+      email: email.trim().toLowerCase(),
+      unsubscribed: true,
+    });
+    return true;
+  } catch (err) {
+    logger.warn(`[plugins/audience] best-effort unsubscribe failed (${plugin})`, { err: String(err) });
+    return false;
+  }
+}

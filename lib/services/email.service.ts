@@ -12,6 +12,7 @@ import { Resend } from 'resend';
 import { logger } from '@/lib/utils/logger';
 import { MUEDSAT_DOWNLOAD_URL } from '@/lib/muedsat/config';
 import { MUEDLIM_DOWNLOAD_URL } from '@/lib/muedlim/config';
+import { signUnsubscribeToken } from '@/lib/plugins/unsubscribe-token';
 
 // ========================================
 // Configuration
@@ -20,6 +21,13 @@ import { MUEDLIM_DOWNLOAD_URL } from '@/lib/muedlim/config';
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL = process.env.EMAIL_FROM || 'MUED <noreply@mued.jp>';
 const SUPPORT_EMAIL = process.env.EMAIL_SUPPORT || 'support@mued.jp';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
+
+/** One-click List-Unsubscribe URL for a plugin free-download subscriber (RFC 8058). */
+function pluginUnsubscribeUrl(plugin: 'muedsat' | 'muedlim', email: string, locale: 'ja' | 'en'): string {
+  const t = signUnsubscribeToken(plugin, email);
+  return `${APP_URL}/api/plugins/unsubscribe?plugin=${plugin}&email=${encodeURIComponent(email)}&t=${t}&locale=${locale}`;
+}
 
 // Initialize Resend client (lazy initialization)
 let resendClient: Resend | null = null;
@@ -52,6 +60,8 @@ export interface SendEmailOptions {
   tags?: { name: string; value: string }[];
   /** File attachments (e.g. a text/calendar .ics invite). `content` = base64 string. */
   attachments?: { filename: string; content: string; contentType?: string }[];
+  /** Extra SMTP headers (e.g. List-Unsubscribe / List-Unsubscribe-Post for one-click unsubscribe). */
+  headers?: Record<string, string>;
 }
 
 export interface EmailResult {
@@ -798,11 +808,18 @@ Hoo MCP経由の自動送信
    * Includes the download button only when MUEDSAT_DOWNLOAD_URL is configured; while the dsp
    * package isn't uploaded yet it honestly says the link is on the way.
    */
-  muedsatDownloadWelcome(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
+  muedsatDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDSAT_DOWNLOAD_URL;
 
     const subject = isJa ? '[MUEDsat] ダウンロードリンクをお届けします' : '[MUEDsat] Your download link';
+
+    const unsubHtml = `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
+      ? `<a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a>`
+      : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.')}</p>`;
+    const unsubText = data.unsubscribeUrl
+      ? `${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}`
+      : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.');
 
     const linkBlockHtml = hasLink
       ? `<p style="text-align: center;">
@@ -828,14 +845,15 @@ Hoo MCP経由の自動送信
 
       <p style="color: #6b7280; font-size: 14px;">
         ${isJa
-          ? '僕の言葉より、あなた自身の耳で決めてください。アップデートや MUEDsp masterchain の情報も、追ってお知らせします。配信はいつでも解除できます。'
-          : "I'd rather you decide with your own ears than take my word for it. I'll also let you know about updates — and when MUEDsp masterchain is ready. Unsubscribe anytime."}
+          ? '僕の言葉より、あなた自身の耳で決めてください。アップデートや MUEDsp masterchain の情報も、追ってお知らせします。'
+          : "I'd rather you decide with your own ears than take my word for it. I'll also let you know about updates — and when MUEDsp masterchain is ready."}
       </p>
+      ${unsubHtml}
     `);
 
     const text = isJa
-      ? `MUEDsat をありがとうございます。\n\n無料のトランス・サチュレーション・プラグインです。\n${hasLink ? `ダウンロード: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX（Pro Tools）· macOS` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\nアップデートや MUEDsp masterchain の情報も追ってお知らせします。配信はいつでも解除できます。\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDsat.\n\nA free transformer-saturation plugin.\n${hasLink ? `Download: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS` : "I'll email the download link to this address shortly."}\n\nI'll also let you know about updates and when MUEDsp masterchain is ready. Unsubscribe anytime.\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDsat をありがとうございます。\n\n無料のトランス・サチュレーション・プラグインです。\n${hasLink ? `ダウンロード: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX（Pro Tools）· macOS` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\nアップデートや MUEDsp masterchain の情報も追ってお知らせします。\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDsat.\n\nA free transformer-saturation plugin.\n${hasLink ? `Download: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS` : "I'll email the download link to this address shortly."}\n\nI'll also let you know about updates and when MUEDsp masterchain is ready.\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },
@@ -846,11 +864,18 @@ Hoo MCP経由の自動送信
    * Claim discipline: own-value only — no competitor names / reproduction claims, and NO latency /
    * oversampling claims (dsp did not state them, so the MUEDsat ADAA line is intentionally not reused).
    */
-  muedlimDownloadWelcome(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
+  muedlimDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDLIM_DOWNLOAD_URL;
 
     const subject = isJa ? 'MUEDlim のダウンロードリンクです' : 'Your MUEDlim download link';
+
+    const unsubHtml = `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
+      ? `<a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a>`
+      : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.')}</p>`;
+    const unsubText = data.unsubscribeUrl
+      ? `${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}`
+      : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.');
 
     const linkBlockHtml = hasLink
       ? `<p style="text-align: center;">
@@ -876,14 +901,15 @@ Hoo MCP経由の自動送信
 
       <p style="color: #6b7280; font-size: 14px;">
         ${isJa
-          ? '完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。配信はいつでも解除できます。'
-          : "I'm still building the finished MUEDsp masterchain; I'll let you know when there's an update. Unsubscribe anytime."}
+          ? '完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。'
+          : "I'm still building the finished MUEDsp masterchain; I'll let you know when there's an update."}
       </p>
+      ${unsubHtml}
     `);
 
     const text = isJa
-      ? `MUEDlim をありがとうございます。\n\n無料のトゥルーピーク・リミッターです。INPUT で音圧、CEILING で天井を決めるだけ。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。配信はいつでも解除できます。\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter — INPUT for loudness, CEILING for the ceiling.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update. Unsubscribe anytime.\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDlim をありがとうございます。\n\n無料のトゥルーピーク・リミッターです。INPUT で音圧、CEILING で天井を決めるだけ。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter — INPUT for loudness, CEILING for the ceiling.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },
@@ -996,6 +1022,7 @@ class EmailService {
         replyTo: options.replyTo || SUPPORT_EMAIL,
         tags: options.tags,
         ...(options.attachments ? { attachments: options.attachments } : {}),
+        ...(options.headers ? { headers: options.headers } : {}),
       });
 
       if (error) {
@@ -1211,11 +1238,16 @@ class EmailService {
     to: EmailRecipient,
     data: { locale: 'ja' | 'en' }
   ): Promise<EmailResult> {
-    const template = emailTemplates.muedsatDownloadWelcome(data);
+    const unsubscribeUrl = pluginUnsubscribeUrl('muedsat', to.email, data.locale);
+    const template = emailTemplates.muedsatDownloadWelcome({ ...data, unsubscribeUrl });
     return this.send({
       to,
       ...template,
       tags: [{ name: 'type', value: 'muedsat_download_welcome' }],
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     });
   }
 
@@ -1223,11 +1255,16 @@ class EmailService {
     to: EmailRecipient,
     data: { locale: 'ja' | 'en' }
   ): Promise<EmailResult> {
-    const template = emailTemplates.muedlimDownloadWelcome(data);
+    const unsubscribeUrl = pluginUnsubscribeUrl('muedlim', to.email, data.locale);
+    const template = emailTemplates.muedlimDownloadWelcome({ ...data, unsubscribeUrl });
     return this.send({
       to,
       ...template,
       tags: [{ name: 'type', value: 'muedlim_download_welcome' }],
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
     });
   }
 

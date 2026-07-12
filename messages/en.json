@@ -2372,7 +2372,8 @@
       "successTitle": "Check your email.",
       "successBody": "I've emailed you the download link. If it doesn't arrive, check your spam folder.",
       "errorEmail": "Please enter a valid email address.",
-      "errorGeneric": "Something went wrong. Please try again."
+      "errorGeneric": "Something went wrong. Please try again.",
+      "errorEmailFailed": "We couldn't send the download email. Please try again, or contact support@mued.jp."
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
@@ -2425,7 +2426,8 @@
       "successTitle": "Check your inbox.",
       "successBody": "We've sent your download link. If it's not there, check your spam folder.",
       "errorEmail": "Please enter a valid email address.",
-      "errorGeneric": "Something went wrong. Please try again."
+      "errorGeneric": "Something went wrong. Please try again.",
+      "errorEmailFailed": "We couldn't send the download email. Please try again, or contact support@mued.jp."
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
