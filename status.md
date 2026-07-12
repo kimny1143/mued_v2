@@ -3,14 +3,14 @@ peer: mued
 department: product
 activity: standby
 status: active
-current_task: **3PR in-flight → 全て conductor/kimny 手番待ち**。①Codex P0: Phase1 #649 + Phase2 #650（correctness-APPROVED・CI green・conductor merge 待ち）②home-hero rebuild #652（preview LIVE・kimny 現物 gate 待ち・DO NOT MERGE）。MUEDlim 保持 #648 は済。
-next_action: **standby**。#649/#650=conductor merge + #649 env `PLUGIN_UNSUBSCRIBE_TOKEN_SECRET` prod set。#652=conductor 現物確認→kimny 現物 preview gate→flip。merge/deploy 後 content/write課 通知（Hoo Pass 退場 + home 主題変更）は conductor 一括。
+current_task: **3PR in-flight → 全て conductor/kimny 手番待ち**。①Codex P0: Phase1 #649 + Phase2 #650（correctness-APPROVED・CI green・conductor merge 待ち）②#652=**home-hero rebuild + /muedial 3宣言撤去（統合・1 preview）**（preview LIVE・kimny 両方一緒に現物 gate 待ち・EN A/B pick・DO NOT MERGE）。MUEDlim 保持 #648 済。
+next_action: **standby**。#649/#650=conductor merge + #649 env `PLUGIN_UNSUBSCRIBE_TOKEN_SECRET` prod set。#652=conductor 現物確認→kimny 現物 gate（home EN A/B pick）→flip（案B なら1行 swap）。merge/deploy 後 content/write課 通知（Hoo Pass 退場 + home 主題変更 + /muedial 宣言撤去）は conductor 一括。
 blocked_by: **全て review/merge/gate = conductor + kimny 手番**（peer 自走範囲外）。
 urgency: low
 action_owner: conductor
 deadline: null
-expected_next_check_at: 2026-07-12T18:00:00+09:00
-last_update: 2026-07-12T16:05:00+09:00
+expected_next_check_at: 2026-07-13T12:00:00+09:00
+last_update: 2026-07-13T05:40:00+09:00
 evidence: **Phase1 #649**（`fix/plugin-email-gate-robustness`）: メールゲート honest delivery（after()→同期 await・失敗 502）+ one-click unsubscribe（RFC8058 `/api/plugins/unsubscribe`・HMAC token・List-Unsubscribe header）。20 unit + build green + live route runtime drive PASS。conductor correctness APPROVE 済。**Phase2 #650**（`fix/hoo-pass-removal`）: Hoo Pass 退場（pricing.ts deprecated 化・backend 温存）+ /dial/pricing page+API 3本撤去 + inbound links/i18n/llms/beta残骸(faq11a) 撤去 + middleware /pricing gate 撤去（sign-in ループ P0-3 moot）。tsc/lint/build green・**full unit 1742 pass（回帰0）**・grep sweep 0・runtime drive（撤去 route 404/都度払い intact）。conductor Phase2 plan APPROVE 済。
 confidence: high
 lane: active
@@ -18,6 +18,8 @@ lane: active
 
 
 ## Recent events
+
+- 2026-07-13T05:40:00+09:00: **🟢 #652 に 2 修正 dispatch を統合（1 preview で home+/muedial）→ kimny 両方一緒に現物 gate 待ち**。(A) **home hero 差し替え**（conductor/kimny 確定・brand-mothership frame）: JA lead=「クリエイター自身が作る、制作のための道具。」＝**製品列挙を hero から除去**（棚の枠は不変・3製品は下の棚に・[[feedback_mued_brand_mothership_hero_not_personal_voice]]）／EN=content 忠実訳 **案A 適用**「Tools for creation, made by the creators who use them.」+ **案B「…the very creators…」を kimny gate の A/B pick 用に温存**（案B なら1行 swap）／title・cta 据置。(B) **/muedial 3宣言撤去**（kimny (b)＝宣言やめ署名+現物に語らせる・[[feedback_mued_philosophy_no_anti_ai_false_absolutes]]）: `muedial.principles.d1/d2/d3` 削除（d1「AIは作曲しない/MUED 踏み込まない」＝false absolute+echo chamber・d2/d3 の値打ちは pricing/FAQ に既出）・`signature`「出力はAI、判断と欲は、人間。」verbatim KEEP（単独の静かな1行＝home footer 引用同扱い）・付随 heading/eyebrow なし・PRINCIPLE_KEYS 除去。content(49mspsud) 確定 scope byte-exact・新 copy ゼロ。**verify 全PASS**: EN-JA parity・tsc/lint/build green・**full unit 1742（回帰0）**・**rendered-DOM check 両locale**（home hero=brand-frame present/旧列挙 absent・/muedial=signature 残/d1-d3 absent）・他ページ unaffected・統合 preview alias で両変更 実配信確認。段取り: conductor 現物確認→kimny 両方一緒に現物 gate（EN A/B）→flip。lesson=copy owner discipline（content が scope 確定→mued byte-exact 適用・削除でも scope は content に確認）／hero は brand-mothership frame（製品列挙を置くと line 追加のたび看板書換）／宣言形式の撤去は「値打ちは現物（pricing/FAQ）に既出ゆえ再吸収不要」を content と確認して安全に削る。
 
 - 2026-07-12T16:05:00+09:00: **🟢 mued.jp home-hero rebuild = staged preview LIVE（PR #652・DO NOT MERGE・kimny 現物 gate 待ち）**。conductor dispatch（kimny 選定確定: hero=案A / designer=(ii) / TRAIN origin=(a)）per。content canonical `_contents-writing/drafts/inbox/muedjp-home-hero-rebuild-copy-20260712.md` を byte-exact 適用。★発見: `IntegratedLandingContentV2` は wave1 cutover で **live home**（`/redesign` も同 component）ゆえ staged=branch preview・flip=merge。適用: hero.lead=案A「作って、並べている」+ cta「棚を見る/See the shelves」・**eyebrow「ミューズの教え/From the Muses」削除**・**光球 lore 撤去**（実製品 render=視覚主役）／designer=(ii)（現役 作編曲家/mix engineer・「合間に」落とし）／MASTER **statusNote** 追加（無料2モジュール LIVE・masterchain 開発中）／TRAIN origin=(a)（EQ・コンプ聴き分け 事実化）／ADVISORY 本文 KILL→footer「AI開発の相談 — MUED advisory」（ja-only・/advisory 不変）／CLOSE KILL／PHILOSOPHY quote KEEP・cta KILL／title/description=§4 product-first（新 `landing.v2.meta` キー・OG/twitter card も統一）。dead code 除去（MUEDIAL_URL/ExternalCta）。**verify 全PASS**: EN-JA parity・tsc/lint/build green・**full unit 1742（回帰0）**・**rendered-DOM check 両locale**（script-strip で bundle 誤検出を排除・撤去節 absent/保持要素 present/meta §4）・他ページ unaffected（/muedsp /muedsat /advisory /dial 200・/ja/muedear 404=muedear 非locale routing 既存仕様）・CI 全green・preview alias `muedv2-git-feat-home-hero-rebuild-glasswerks.vercel.app/{ja,en}` 200 で新 content 確認。変更 4 file。conductor へ preview URL 送付済。★design flag: 光球撤去し hero=clean text-forward（新 shelf-card 非発明・kimny gate で判断）。lesson=next-intl client component は full messages を bundle 出力ゆえ raw-HTML grep は他 namespace の同一文字列を誤検出→**rendered verify は script-strip 必須**／live component の「staged」= branch Vercel preview（/redesign 分離は cutover 済で無効）／root layout の default meta（twitter 等）は home generateMetadata が override しないと lore 残存＝home-scoped twitter override で解消（他ページ不変）。
 
