@@ -6,6 +6,7 @@ import { reservations, subscriptions, users, webhookEvents, lessonSlots, dialSes
 import { eq, sql, and, gt, or, isNull } from "drizzle-orm";
 import { DIAL_SUB_PLANS, CANCEL_GRACE_DAYS, CREDIT_PACK_EXPIRY_MONTHS, type DialSubTier } from '@/lib/dial/pricing';
 import { trackServerPurchase } from '@/lib/analytics/ga4-server';
+import { buildDialPurchaseEvent, type DialFirstTouchAttribution } from '@/lib/dial/purchase-analytics';
 import { grantFirstPurchaseBonus } from '@/lib/dial/bonus-campaign';
 import { dialCheckoutAction } from '@/lib/dial/checkout-payment-gate';
 import { validateStripeConfig } from "@/lib/utils/env";
@@ -970,12 +971,27 @@ async function handleDialCheckoutCompleted(
 
     logger.info(`[Dial Webhook] Purchase completed: ${purchaseIds.join(',')} (mix=${mixType})`);
 
-    // Fetch guest token + userId for email link and bonus eligibility
+    // Fetch guest token + userId (email link, bonus) + first_touch (GA4 attribution)
     const [dialSession] = await tx
-      .select({ guestToken: dialSessions.guestToken, userId: dialSessions.userId })
+      .select({ guestToken: dialSessions.guestToken, userId: dialSessions.userId, firstTouch: dialSessions.firstTouch })
       .from(dialSessions)
       .where(eq(dialSessions.id, dialSessionId))
       .limit(1);
+
+    // Fire GA4 purchase — best-effort, fail-open: never awaited, never blocks fulfillment.
+    // client_id + UTM come from the session's persisted first-touch (entry→checkout inheritance).
+    const purchaseEvent = buildDialPurchaseEvent({
+      firstTouch: dialSession?.firstTouch as DialFirstTouchAttribution | null,
+      amountTotalCents: session.amount_total,
+      currency: session.currency,
+      transactionId: (session.payment_intent as string) || eventId,
+      purchaseLabel:
+        session.metadata?.mixType || session.metadata?.masteringType || session.metadata?.purchaseType || 'purchase',
+    });
+    if (purchaseEvent) {
+      trackServerPurchase(purchaseEvent).catch((err) =>
+        logger.error('[Dial Webhook] GA4 purchase event failed', { error: err }));
+    }
 
     // Grant first-purchase 400cr bonus for authenticated users
     let bonusResult: { granted: boolean; newCumulativeCostUsd?: number; crossedThreshold?: number } = { granted: false };
@@ -1162,6 +1178,19 @@ async function handleDialAdditionalCycle(
         updatedAt: new Date(),
       })
       .where(and(eq(dialSessions.id, dialSessionId), eq(dialSessions.isFreeCampaign, false)));
+
+    // Fire GA4 purchase — best-effort, fail-open (never awaited, never blocks fulfillment).
+    const purchaseEvent = buildDialPurchaseEvent({
+      firstTouch: dialSession.firstTouch as DialFirstTouchAttribution | null,
+      amountTotalCents: session.amount_total,
+      currency: session.currency,
+      transactionId: (session.payment_intent as string) || `${dialSessionId}:additional`,
+      purchaseLabel: 'additional_cycle',
+    });
+    if (purchaseEvent) {
+      trackServerPurchase(purchaseEvent).catch((err) =>
+        logger.error('[Dial Webhook] GA4 purchase event failed', { error: err }));
+    }
   }
 
   logger.info(`[Dial Webhook] Additional cycle purchased for session: ${dialSessionId}`);
