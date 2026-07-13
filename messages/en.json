@@ -2196,7 +2196,7 @@
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
-      "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon / Intel)"
+      "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon & Intel)"
     }
   },
   "muedlim": {
@@ -2241,7 +2241,7 @@
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
-      "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon / Intel)"
+      "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon & Intel)"
     }
   },
   "muedsat": {
