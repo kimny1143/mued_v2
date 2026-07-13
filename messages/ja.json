@@ -25,7 +25,7 @@
       },
       "master": {
         "origin": "いつものマスターチェーンを1つのパッケージに。",
-        "statusNote": "無料の MUEDsat は今すぐ試せます。MUEDlim は近日公開、全段の masterchain は開発中。",
+        "statusNote": "無料モジュール2つは、今すぐ試せます。全段の masterchain は開発中。",
         "role": "マスターバス用プラグイン・スイート",
         "label": "MASTER",
         "heading": "MUEDsp",
@@ -2196,17 +2196,16 @@
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
-      "format": "VST3 · AU · macOS（Universal — Apple Silicon / Intel）",
-      "formatNote": "AAX（Pro Tools）対応は MUEDsat のみ。"
+      "format": "VST3 · AU · AAX（Pro Tools）· macOS（Universal — Apple Silicon / Intel）"
     }
   },
   "muedlim": {
     "meta": {
       "title": "MUEDsp limiter（通称 MUEDlim）— 無料のトゥルーピーク・リミッター",
-      "description": "MUEDsp limiter（通称 MUEDlim）は無料のトゥルーピーク・リミッター。僕が作ってる MUEDsp っていうマスタリング用スイートの、ピークを抑える段を取り出したもの。インターサンプルピークまで見て、真のピークを、決めた天井（既定 −1 dBTP）に抑えます。macOS（Universal）、VST3 · AU。機能ロックも課金の壁もありません。"
+      "description": "MUEDsp limiter（通称 MUEDlim）は無料のトゥルーピーク・リミッター。僕が作ってる MUEDsp っていうマスタリング用スイートの、ピークを抑える段を取り出したもの。インターサンプルピークまで見て、真のピークを、決めた天井（既定 −1 dBTP）に抑えます。macOS（Universal）、VST3 · AU · AAX（Pro Tools）。機能ロックも課金の壁もありません。"
     },
     "hero": {
-      "badge": "無料 · macOS · VST3 · AU",
+      "badge": "無料 · macOS · VST3 · AU · AAX",
       "title": "MUEDlim",
       "tagline": "無料のトゥルーピーク・リミッター",
       "lead": "僕が作ってる MUEDsp っていうマスタリング用スイートから、ピークを抑える段だけを取り出しました。無料です。",
@@ -2242,7 +2241,7 @@
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
-      "format": "VST3 · AU · macOS（Universal — Apple Silicon / Intel）"
+      "format": "VST3 · AU · AAX（Pro Tools）· macOS（Universal — Apple Silicon / Intel）"
     }
   },
   "muedsat": {

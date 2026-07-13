@@ -30,6 +30,16 @@ vi.mock("@/lib/services/email.service", () => ({
   },
 }));
 
+// Mock the registry so these tests control `live` independent of the real MUEDLIM_LIVE flag (which
+// flips as MUEDlim is closed/reopened) — muedsat stays live for the honest-delivery cases, muedlim is
+// forced not-live for the closed-plugin gate case. Keeps the suite stable across close/reopen PRs.
+vi.mock("@/lib/plugins/registry", () => ({
+  PLUGIN_DIST: {
+    muedsat: { key: "muedsat", live: true, source: "muedsat_lp", downloadUrl: "", pressToken: "", i18nNamespace: "muedsat", subscribeEndpoint: "/api/muedsat/subscribe", audienceEnvName: "RESEND_MUEDSAT_AUDIENCE_ID" },
+    muedlim: { key: "muedlim", live: false, source: "muedlim_lp", downloadUrl: "", pressToken: "", i18nNamespace: "muedlim", subscribeEndpoint: "/api/muedlim/subscribe", audienceEnvName: "RESEND_MUEDLIM_AUDIENCE_ID" },
+  },
+}));
+
 import { handlePluginSubscribe } from "@/lib/plugins/subscribe-handler";
 import type { NextRequest } from "next/server";
 

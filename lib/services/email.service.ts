@@ -883,7 +883,7 @@ Hoo MCP経由の自動送信
              ${isJa ? 'MUEDlim をダウンロード' : 'Download MUEDlim'}
            </a>
          </p>
-         <p style="color: #6b7280; font-size: 13px; text-align: center;">VST3 · AU · macOS (Universal — Apple Silicon / Intel)</p>`
+         <p style="color: #6b7280; font-size: 13px; text-align: center;">VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon / Intel)</p>`
       : `<div class="info-box">
            <p style="margin: 0;">${isJa
              ? 'ダウンロードの準備が整い次第、このメールアドレスにリンクをお送りします。少しだけお待ちください。'
@@ -908,8 +908,8 @@ Hoo MCP経由の自動送信
     `);
 
     const text = isJa
-      ? `MUEDlim をありがとうございます。\n\n無料のトゥルーピーク・リミッターです。INPUT で音圧、CEILING で天井を決めるだけ。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter — INPUT for loudness, CEILING for the ceiling.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDlim をありがとうございます。\n\n無料のトゥルーピーク・リミッターです。INPUT で音圧、CEILING で天井を決めるだけ。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU · AAX（Pro Tools）` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter — INPUT for loudness, CEILING for the ceiling.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU · AAX (Pro Tools)` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },

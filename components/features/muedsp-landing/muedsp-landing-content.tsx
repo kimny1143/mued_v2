@@ -348,7 +348,6 @@ export function MuedspLandingContent() {
         <div className="mx-auto max-w-5xl space-y-2.5">
           <p className="text-sm text-white/50">{tsFoot("operator")}</p>
           <p className="font-mono text-xs uppercase tracking-wider text-white/35">{tsFoot("format")}</p>
-          <p className="text-xs text-white/30">{tsFoot("formatNote")}</p>
           <nav className="flex items-center gap-6 pt-1">
             <Link
               href={`/${locale}/privacy`}

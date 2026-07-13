@@ -25,7 +25,7 @@
       },
       "master": {
         "origin": "The everyday master chain, packaged into one.",
-        "statusNote": "MUEDsat is free to try right now; MUEDlim is coming soon; the full masterchain is in development.",
+        "statusNote": "Two free modules to try right now; the full masterchain is in development.",
         "role": "Master-bus plugin suite",
         "label": "MASTER",
         "heading": "MUEDsp",
@@ -2196,17 +2196,16 @@
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
-      "format": "VST3 · AU · macOS (Universal — Apple Silicon / Intel)",
-      "formatNote": "AAX (Pro Tools) support is MUEDsat only."
+      "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon / Intel)"
     }
   },
   "muedlim": {
     "meta": {
       "title": "MUEDsp limiter (aka MUEDlim) — a free true-peak limiter",
-      "description": "MUEDsp limiter (aka MUEDlim) is a free true-peak limiter — the peak-limiting stage, taken out of MUEDsp, the mastering suite I'm building. It catches inter-sample peaks and holds true peaks to a ceiling you set (−1 dBTP by default). macOS (Universal), VST3 · AU. Nothing locked, nothing paywalled."
+      "description": "MUEDsp limiter (aka MUEDlim) is a free true-peak limiter — the peak-limiting stage, taken out of MUEDsp, the mastering suite I'm building. It catches inter-sample peaks and holds true peaks to a ceiling you set (−1 dBTP by default). macOS (Universal), VST3 · AU · AAX (Pro Tools). Nothing locked, nothing paywalled."
     },
     "hero": {
-      "badge": "Free · macOS · VST3 · AU",
+      "badge": "Free · macOS · VST3 · AU · AAX",
       "title": "MUEDlim",
       "tagline": "A free true-peak limiter",
       "lead": "The peak-limiting stage, taken out of MUEDsp — the mastering suite I'm building. Free.",
@@ -2242,7 +2241,7 @@
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
-      "format": "VST3 · AU · macOS (Universal — Apple Silicon / Intel)"
+      "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon / Intel)"
     }
   },
   "muedsat": {
