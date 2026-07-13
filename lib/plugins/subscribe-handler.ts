@@ -61,6 +61,13 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
 
   const { email, locale } = parsed.data;
 
+  // Plugin closed to "coming soon" (registry.live = false, e.g. MUEDlim from 2026-07-13) — no-op the
+  // capture so the email gate + download are fully disabled while closed. The UI form is already
+  // hidden; this covers a stray direct POST. Live siblings (MUEDsat) are unaffected. Benign 200.
+  if (!PLUGIN_DIST[plugin].live) {
+    return apiSuccess({ subscribed: false });
+  }
+
   // 1) Lead capture — add to the plugin's Resend audience. Best-effort + no-op-safe while staged, but
   //    capture the outcome: a configured-but-failed add is a lead loss that must be VISIBLE (logged +
   //    operator-alerted), never silent. It does NOT fail the request — the user still gets their

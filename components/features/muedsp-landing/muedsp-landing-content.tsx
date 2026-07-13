@@ -279,7 +279,7 @@ export function MuedspLandingContent() {
                 published at the kimny-gated flip. Two knobs (INPUT + CEILING); BYPASS is a toggle
                 (bypassNote). Download form uses plugin="muedlim" (own endpoint/audience). No latency
                 claim (~16ms lookahead, PDC-compensated — content fact-lock). ─────────────────────── */}
-            {MUEDLIM_LIVE && (
+            {MUEDLIM_LIVE ? (
               <div className="mt-14 border-t border-white/5 pt-14">
                 <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#f5a524]/70">
                   {tf("limLabel")}
@@ -318,6 +318,25 @@ export function MuedspLandingContent() {
                 </div>
                 <p className="mt-3 max-w-md text-sm italic text-white/45">{tlHero("tryLine")}</p>
                 <p className="mt-6 max-w-2xl text-[15px] leading-[1.8] text-white/55">{tlWhy("lead")}</p>
+              </div>
+            ) : (
+              /* MUEDlim closed to "coming soon" (2026-07-13, kimny: UI below standard). Visible
+                 teaser — name + tagline + a quiet 近日/UI整備中 badge — no download form/CTA. */
+              <div className="mt-14 border-t border-white/5 pt-14">
+                <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#f5a524]/70">
+                  {tf("limLabel")}
+                </span>
+                <h3 className="mt-3 text-3xl font-bold tracking-tight">
+                  <span className="text-white">MUED</span>
+                  <span className="text-[#f5a524]">lim</span>
+                  <span className="ml-3 align-middle font-mono text-xs uppercase tracking-[0.2em] text-white/40">
+                    MUEDsp limiter
+                  </span>
+                </h3>
+                <p className="mt-4 text-lg font-light text-white/80">{tlHero("tagline")}</p>
+                <p className="mt-6 inline-flex items-center rounded-[var(--radius-lg)] border border-white/12 bg-white/[0.03] px-4 py-2 font-mono text-[12px] uppercase tracking-[0.18em] text-white/50">
+                  {tf("limComingSoon")}
+                </p>
               </div>
             )}
           </div>

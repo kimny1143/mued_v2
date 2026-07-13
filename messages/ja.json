@@ -25,7 +25,7 @@
       },
       "master": {
         "origin": "いつものマスターチェーンを1つのパッケージに。",
-        "statusNote": "無料モジュール2つは、今すぐ試せます。全段の masterchain は開発中。",
+        "statusNote": "無料の MUEDsat は今すぐ試せます。MUEDlim は近日公開、全段の masterchain は開発中。",
         "role": "マスターバス用プラグイン・スイート",
         "label": "MASTER",
         "heading": "MUEDsp",
@@ -2191,7 +2191,8 @@
     "free": {
       "lead": "masterchain の各段を、1つずつ無料で出してます。まず自分の音で、段ごとに試してください。",
       "satLabel": "トランス・サチュレーションの段",
-      "limLabel": "ピークを抑える最後の段"
+      "limLabel": "ピークを抑える最後の段",
+      "limComingSoon": "近日公開。UI を整えています。"
     },
     "footer": {
       "operator": "glasswerks inc. — mued.jp",
