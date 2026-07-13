@@ -4,13 +4,13 @@ department: product
 activity: standby
 status: active
 current_task: **✅ MUEDlim reopen chain 完全クローズ = 全 prod LIVE・standby**。#658 reopen（3-format pkg a832976a・MUEDLIM_LIVE=true・/muedsp §2 download form LIVE・conductor 独立 prod verify PASS）→ #659 content byte-exact footer（EN "/ Intel"→"& Intel"）= **MERGED + prod verify PASS**（/en/muedsp==/en/muedsat footer byte-exact LIVE）。#660 status docs MERGED。open task なし。
-next_action: **standby（chain クローズ・次 dispatch 待ち）**。残 conductor 手番: #649 env `PLUGIN_UNSUBSCRIBE_TOKEN_SECRET` prod set / content canonical 通知（Hoo Pass 退場・home 主題変更・/muedial 宣言撤去・MUEDlim reopen）/ c6c9ad52 backup 退避＝dsp 手番（conductor 伝達）。低優先 follow-up: MUEDsat の General 6293ccef→dedicated 化 / `landing.social` dead key 除去。
+next_action: **standby（chain クローズ・次 dispatch 待ち）**。残 conductor 手番: #649 env `PLUGIN_UNSUBSCRIBE_TOKEN_SECRET` prod set / content canonical 通知（Hoo Pass 退場・home 主題変更・/muedial 宣言撤去・MUEDlim reopen）/ c6c9ad52 backup 退避＝dsp 手番（conductor 伝達）。低優先 follow-up: MUEDsat の General 6293ccef→dedicated 化 / `landing.social` dead key 除去。（作業ツリー clean: untracked `scripts/*.ts` + `.cert-stems/` + `.cryo-phase-a/` = 使い捨て診断/verify scratch・deliverable 外・非追跡で commit 不要。）
 blocked_by: なし（全 merged/LIVE・standby）。
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-07-13T21:00:00+09:00
-last_update: 2026-07-13T20:05:00+09:00
+expected_next_check_at: 2026-07-14T10:00:00+09:00
+last_update: 2026-07-13T21:20:00+09:00
 evidence: **#658 MUEDlim reopen**（`feat/muedlim-reopen`・MERGED 10:31Z・prod LIVE）: MUEDLIM_LIVE=true〔code const〕+ DOWNLOAD_URL 復元・pkg swap c6c9ad52→**a832976a**（3-format VST3·AU·AAX・3,191,130B・notarized）・/muedsp §2 download form LIVE・footer/badge/email/llms 3形式表記・回帰0・**conductor 独立 prod verify PASS**（DL 200/sha a832976a/§2 form/ /ja·en/muedsp·muedsat 200/MUEDsat endpoint 400 不変）。**#659 fast-follow**（`fix/muedsp-footer-en-byte-exact`・MERGED・prod verify PASS: /en/muedsp==/en/muedsat footer "& Intel" byte-exact LIVE）: content byte-exact refine 適用 — EN footer format "/ Intel"→"& Intel" で muedsat==muedsp==muedlim を EN/JA byte-exact 化（messages/en.json 2行・Tier1 copy-only）。**#656 MUEDlim coming-soon**（MERGED・#658 で reopen 済）: MUEDLIM_LIVE=false→coming-soon teaser 化（reopen で form 復帰）。**#652 home**（MERGED/LIVE・EN=案A）: brand-frame hero+de-personalize 3文+/muedial 3宣言撤去。**#655 cleanup**（MERGED）: dead v1 landing+理念本文 source 除去。**#649/#650 Codex P0**（MERGED）: メールゲート honest delivery+one-click unsubscribe / Hoo Pass 退場+/dial/pricing 撤去。
 confidence: high
 lane: active
