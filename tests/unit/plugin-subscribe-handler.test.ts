@@ -49,18 +49,20 @@ beforeEach(() => {
 });
 
 describe("handlePluginSubscribe — honest delivery", () => {
-  it("happy path → 200 subscribed:true (email sent, list captured, no alert)", async () => {
-    const res = await handlePluginSubscribe("muedlim", req({ email: "a@b.com", locale: "en" }));
+  // Honest-delivery behavior is plugin-agnostic — tested with a LIVE plugin (muedsat). MUEDlim is
+  // closed (registry.live=false, 2026-07-13) so it exercises the not-live gate below instead.
+  it("happy path (live plugin) → 200 subscribed:true (email sent, list captured, no alert)", async () => {
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.data.subscribed).toBe(true);
-    expect(mockSendLim).toHaveBeenCalledTimes(1);
+    expect(mockSendSat).toHaveBeenCalledTimes(1);
     expect(mockAlert).not.toHaveBeenCalled();
   });
 
   it("email send FAILS → 502 EMAIL_DELIVERY_FAILED (no fake success)", async () => {
-    mockSendLim.mockResolvedValue({ success: false, error: "resend down" });
-    const res = await handlePluginSubscribe("muedlim", req({ email: "a@b.com", locale: "en" }));
+    mockSendSat.mockResolvedValue({ success: false, error: "resend down" });
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
     expect(res.status).toBe(502);
     const json = await res.json();
     expect(json.success).toBe(false);
@@ -68,15 +70,15 @@ describe("handlePluginSubscribe — honest delivery", () => {
   });
 
   it("email throws → 502 (swallowed into an honest failure)", async () => {
-    mockSendLim.mockRejectedValue(new Error("network"));
-    const res = await handlePluginSubscribe("muedlim", req({ email: "a@b.com", locale: "en" }));
+    mockSendSat.mockRejectedValue(new Error("network"));
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
     expect(res.status).toBe(502);
   });
 
   it("audience add fails but email OK → 200 (user got their download) + operator alert fired", async () => {
     mockEnabled.mockReturnValue(true);
     mockAdd.mockResolvedValue(false); // configured but failed = lead loss
-    const res = await handlePluginSubscribe("muedlim", req({ email: "a@b.com", locale: "en" }));
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
     expect(res.status).toBe(200);
     expect(mockAlert).toHaveBeenCalledTimes(1);
   });
@@ -84,22 +86,25 @@ describe("handlePluginSubscribe — honest delivery", () => {
   it("staged (audience unconfigured) → email still delivered → 200, NO alert (expected no-op)", async () => {
     mockEnabled.mockReturnValue(false);
     mockAdd.mockResolvedValue(false); // no-op
-    const res = await handlePluginSubscribe("muedlim", req({ email: "a@b.com", locale: "en" }));
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
     expect(res.status).toBe(200);
     expect(mockAlert).not.toHaveBeenCalled();
   });
 
   it("invalid email → 400 validation before any side effect", async () => {
-    const res = await handlePluginSubscribe("muedlim", req({ email: "not-an-email" }));
+    const res = await handlePluginSubscribe("muedsat", req({ email: "not-an-email" }));
     expect(res.status).toBe(400);
     expect(mockAdd).not.toHaveBeenCalled();
-    expect(mockSendLim).not.toHaveBeenCalled();
+    expect(mockSendSat).not.toHaveBeenCalled();
   });
 
-  it("routes muedsat to its own welcome email (no cross-send)", async () => {
-    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "ja" }));
+  it("closed plugin (registry.live=false, e.g. MUEDlim) → 200 subscribed:false, no capture, no email", async () => {
+    // MUEDlim is closed to "coming soon" (MUEDLIM_LIVE=false) — the gate no-ops before any side effect.
+    const res = await handlePluginSubscribe("muedlim", req({ email: "a@b.com", locale: "en" }));
     expect(res.status).toBe(200);
-    expect(mockSendSat).toHaveBeenCalledTimes(1);
+    const json = await res.json();
+    expect(json.data.subscribed).toBe(false);
+    expect(mockAdd).not.toHaveBeenCalled();
     expect(mockSendLim).not.toHaveBeenCalled();
   });
 });
