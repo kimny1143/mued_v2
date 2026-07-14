@@ -2224,7 +2224,7 @@
       "bypassNote": "Plus a BYPASS toggle (ACTIVE / BYPASS), for honest A/B."
     },
     "visuals": {
-      "faceplateAlt": "The MUEDlim plugin interface, its loudness meter running: a large amber INTEGRATED LUFS readout (−11.8) at top left; SHORT-TERM, GR, RANGE and TRUE-PEAK (−1.0 dBTP) stacked at top right; a loudness-history graph with a dashed TARGET −14 line across the center; a vertical true-peak meter (green to red) with its ceiling at −1.0 dBTP on the right; and INPUT (+0.0 dB) and CEILING (−1.0 dBTP) knobs with an ACTIVE toggle along the bottom."
+      "faceplateAlt": "The MUEDlim plugin interface, its loudness meter running: a large amber INTEGRATED LUFS readout (−11.2) at top left; SHORT-TERM −10.8, GR −0.6 dB, RANGE 6.7 LU and TRUE-PEAK −1.0 dBTP stacked at top right; a steady loudness-history graph around −11 with a dashed TARGET −14 line across the center; a vertical true-peak meter sitting green (output below the ceiling, limiting lightly) with its ceiling at −1.0 dBTP on the right; and INPUT (+0.0 dB) and CEILING (−1.0 dBTP) knobs with an ACTIVE toggle along the bottom."
     },
     "whyFree": {
       "heading": "Why it's free, and why I ask for your email",

@@ -2224,7 +2224,7 @@
       "bypassNote": "加えて BYPASS トグル（ACTIVE / BYPASS）。素直な A/B のために。"
     },
     "visuals": {
-      "faceplateAlt": "MUEDlim のプラグイン画面（ラウドネス・メーター稼働中）。左上に大きな INTEGRATED LUFS 値（−11.8・アンバー）、右上に SHORT-TERM・GR・RANGE・TRUE-PEAK（−1.0 dBTP）。中央にラウドネス履歴グラフと TARGET −14 の破線、右に true-peak 縦メーター（緑→赤・上限 −1.0 dBTP）、下に INPUT（+0.0 dB）と CEILING（−1.0 dBTP）のノブと ACTIVE トグル。"
+      "faceplateAlt": "MUEDlim のプラグイン画面（ラウドネス・メーター稼働中）。左上に大きな INTEGRATED LUFS 値（−11.2・アンバー）、右上に SHORT-TERM −10.8・GR −0.6 dB・RANGE 6.7 LU・TRUE-PEAK −1.0 dBTP。中央に −11 前後で安定したラウドネス履歴グラフと TARGET −14 の破線、右に true-peak 縦メーター（緑＝出力が上限より下・軽くリミット中・上限 −1.0 dBTP）、下に INPUT（+0.0 dB）と CEILING（−1.0 dBTP）のノブと ACTIVE トグル。"
     },
     "whyFree": {
       "heading": "無料の理由と、メールをいただく理由",
