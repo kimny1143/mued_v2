@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { STORY_SLUGS } from '@/lib/story/articles';
 import { ADVISORY_LIVE } from '@/lib/advisory/config';
 import { MUEDSAT_LIVE } from '@/lib/muedsat/config';
+import { MUEDLIM_LIVE } from '@/lib/muedlim/config';
 import { MUEDSP_LIVE } from '@/lib/muedsp/config';
 import { MUEDIAL_LP_LIVE } from '@/lib/muedial/config';
 
@@ -56,6 +57,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ? [
           { url: `${MUED}/ja/muedsat`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
           { url: `${MUED}/en/muedsat`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
+        ]
+      : []),
+    ...(MUEDLIM_LIVE
+      ? [
+          { url: `${MUED}/ja/muedlim`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
+          { url: `${MUED}/en/muedlim`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
         ]
       : []),
     ...(MUEDSP_LIVE
