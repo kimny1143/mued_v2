@@ -1,0 +1,84 @@
+//
+// MUEDlim standalone free-download LP (/[locale]/muedlim). Mirrors app/[locale]/muedsat/page.tsx:
+// generateMetadata (robots tied to MUEDLIM_LIVE), SoftwareApplication JSON-LD, + a self-contained
+// client landing component. Spun out from the /muedsp §2 MUEDlim section for a direct-link press
+// response (kimny GO supersedes the 7/12 "no independent URL" decision). Copy = muedlim.* namespace.
+import type { Metadata } from "next";
+import { setRequestLocale, getTranslations } from "next-intl/server";
+import { locales, type Locale } from "@/lib/i18n/config";
+import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
+import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
+import { MuedlimLandingContent } from "@/components/features/muedlim-landing";
+
+interface PageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "muedlim.meta" });
+
+  return {
+    title: t("title"),
+    description: t("description"),
+    // Indexed only while MUEDLIM_LIVE (currently true — reopened at #658).
+    robots: {
+      index: MUEDLIM_LIVE,
+      follow: MUEDLIM_LIVE,
+    },
+    alternates: {
+      languages: generateHreflangAlternates("/muedlim"),
+    },
+    openGraph: {
+      title: t("title"),
+      description: t("description"),
+      type: "website",
+      url: `https://mued.jp/${locale}/muedlim`,
+    },
+  };
+}
+
+export default async function MuedlimPage({ params }: PageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale as Locale);
+
+  const tMeta = await getTranslations({ locale, namespace: "muedlim.meta" });
+
+  // SoftwareApplication (free plugin) — LLMO/GEO. Emitted only when LIVE. Numbers sealed per the
+  // fact-lock (no version, no rating).
+  const softwareStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "MUEDsp limiter",
+    alternateName: "MUEDlim",
+    applicationCategory: "MultimediaApplication",
+    operatingSystem: "macOS",
+    description: tMeta("description"),
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "glasswerks inc.",
+      url: "https://www.glasswerks.jp",
+    },
+  };
+
+  return (
+    <>
+      {MUEDLIM_LIVE && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareStructuredData) }}
+        />
+      )}
+      <MuedlimLandingContent />
+    </>
+  );
+}
