@@ -66,6 +66,10 @@ export async function handleMasterchainInterest(request: NextRequest) {
     });
   }
 
+  // TODO(C4): also write a marketingConsents audit record (consent-gated, source='masterchain_interest')
+  //   when the consent model is finalized with C4 (特商法/Privacy). The form submission is the opt-in;
+  //   this adds the auditable APPI/GDPR trail. Non-blocking — the DB row + audience add already work.
+  //
   // 2) Add to the interest audience — best-effort + no-op-safe while unprovisioned. Submitting the
   //    "notify me at launch" form IS the marketing opt-in. A failure never surfaces to the caller.
   const audienceConfigured = isMasterchainAudienceEnabled("interest");
