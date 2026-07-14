@@ -2223,6 +2223,9 @@
       },
       "bypassNote": "加えて BYPASS トグル（ACTIVE / BYPASS）。素直な A/B のために。"
     },
+    "visuals": {
+      "faceplateAlt": "MUEDlim のプラグイン画面（ラウドネス・メーター稼働中）。上部にタイトルと、右に ACTIVE / BYPASS トグル（ACTIVE 側）。その下、左に大きな INTEGRATED LUFS 値（−11.2・アンバー）、右に SHORT-TERM −10.8・GR −0.6 dB・RANGE 6.7 LU・TRUE-PEAK −1.0 dBTP。中央は −11 前後で安定したラウドネス履歴グラフと TARGET −14 の破線、右は true-peak 縦メーターが上限 −1.0 dBTP の下で緑に点灯、下に INPUT（+0.0 dB）と CEILING（−1.0 dBTP）のノブ。"
+    },
     "whyFree": {
       "heading": "無料の理由と、メールをいただく理由",
       "lead": "MUEDlim は完全に無料です。機能の制限も、期限も、課金の壁もありません。メールをいただくのは、ダウンロードリンクの送付と、アップデート（や MUEDsp masterchain）のお知らせのためだけ。メールはダウンロードの対価であって、プラグインの対価ではありません。スパムは送りませんし、いつでも解除できます。"

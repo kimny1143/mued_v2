@@ -2223,6 +2223,9 @@
       },
       "bypassNote": "Plus a BYPASS toggle (ACTIVE / BYPASS), for honest A/B."
     },
+    "visuals": {
+      "faceplateAlt": "The MUEDlim plugin interface, its loudness meter running. At the top, the title with an ACTIVE / BYPASS toggle (set to ACTIVE) at the right. Below, a large amber INTEGRATED LUFS readout (−11.2) at the left, and SHORT-TERM −10.8, GR −0.6 dB, RANGE 6.7 LU and TRUE-PEAK −1.0 dBTP stacked at the right. A steady loudness-history graph around −11 with a dashed TARGET −14 line fills the center; a vertical true-peak meter showing green below its −1.0 dBTP ceiling on the right; and INPUT (+0.0 dB) and CEILING (−1.0 dBTP) knobs along the bottom."
+    },
     "whyFree": {
       "heading": "Why it's free, and why I ask for your email",
       "lead": "MUEDlim is completely free — no feature locks, no expiry, no paywall. I ask for your email only to send the download link and to let you know about updates (and MUEDsp masterchain). Your email is the price of the download, not the plugin. No spam, and you can unsubscribe anytime."

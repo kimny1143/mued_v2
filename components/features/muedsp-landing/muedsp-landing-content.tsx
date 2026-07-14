@@ -28,6 +28,9 @@ import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
 
 const FACEPLATE_HOT = "/muedsat/faceplate-hot.webp";
 const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
+// MUEDlim faceplate — a REAL render of the shipping iPlug2 UI (a832976a LUFS-hero build), NOT a
+// mock (dsp-captured, dev version-string cropped out). One clean shot, 1000×700 (= MUEDsat parity).
+const FACEPLATE_MUEDLIM = "/muedlim/faceplate.webp";
 // masterchain flagship render — an honest MOCK (minimal.html → webp, conductor-rendered). NOT the
 // shipping plugin; always shown with the "開発中のUI（予定）" caption (mockLabel).
 const MASTERCHAIN_MOCK = "/muedsp/masterchain-mock.webp";
@@ -63,11 +66,12 @@ export function MuedspLandingContent() {
   const tsWhy = useTranslations("muedsat.whyFree");
   const tsViz = useTranslations("muedsat.visuals");
   const tsFoot = useTranslations("muedsp.footer");
-  // MUEDlim (peak-limiting stage) — 2nd free module. Text-forward (no faceplate); STAGED behind
-  // MUEDLIM_LIVE (hidden until the 2-knob build is notarized + published at the kimny-gated flip).
+  // MUEDlim (peak-limiting stage) — 2nd free module. STAGED behind MUEDLIM_LIVE (hidden until the
+  // 2-knob build is notarized + published at the kimny-gated flip). Now shows the shipping UI faceplate.
   const tlHero = useTranslations("muedlim.hero");
   const tlAbout = useTranslations("muedlim.about");
   const tlWhy = useTranslations("muedlim.whyFree");
+  const tlViz = useTranslations("muedlim.visuals");
 
   return (
     <div className="dark min-h-screen bg-[#0a0a0a] text-white">
@@ -293,6 +297,21 @@ export function MuedspLandingContent() {
                 </h3>
                 <p className="mt-4 text-lg font-light text-white/80">{tlHero("tagline")}</p>
                 <p className="mt-5 text-[17px] leading-[1.8] text-white/75">{tlAbout("originLead")}</p>
+
+                {/* the shipping UI — one clean render of the LUFS-hero limiter, meter running (real
+                    iPlug2 plugin, NOT a mock). 1000×700 = MUEDsat parity; same rounded/bordered frame. */}
+                <figure className="mt-8 max-w-2xl">
+                  <div className="overflow-hidden rounded-lg border border-white/10 bg-black/30 p-1.5">
+                    <Image
+                      src={FACEPLATE_MUEDLIM}
+                      alt={tlViz("faceplateAlt")}
+                      width={1000}
+                      height={700}
+                      sizes="(min-width: 640px) 42rem, 88vw"
+                      className="h-auto w-full rounded"
+                    />
+                  </div>
+                </figure>
 
                 {/* two knobs — INPUT + CEILING; BYPASS in one quiet line */}
                 <p className="mt-10 text-lg font-medium leading-snug text-white/85">
