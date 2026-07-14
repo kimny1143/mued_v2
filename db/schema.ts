@@ -352,3 +352,8 @@ export * from './schema/marketing-consents';
 // Advisory storefront #8 (intake: slots + inquiries/bookings)
 // ========================================
 export * from './schema/advisory';
+
+// ========================================
+// Paid line — MUEDsp masterchain $69 (interest + purchase ledgers)
+// ========================================
+export * from './schema/masterchain';
