@@ -6,13 +6,28 @@
 
 const GA4_MP_ENDPOINT = 'https://www.google-analytics.com/mp/collect';
 
-interface GA4PurchaseParams {
+/** UTM attribution carried from the session's first-touch onto the conversion event. */
+export interface GA4UtmParams {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  content?: string;
+  term?: string;
+}
+
+export interface GA4PurchaseParams {
   clientId: string;
   transactionId: string;
   value: number;
   currency: string;
   itemName: string;
   itemId: string;
+  /**
+   * Optional UTM from the session's first-touch. Primary attribution is still GA4's
+   * client_id session-stitch; these ride on the purchase event params so campaign/source
+   * is directly queryable on the conversion even before stitch resolves.
+   */
+  utm?: GA4UtmParams;
 }
 
 export async function trackServerPurchase(params: GA4PurchaseParams): Promise<void> {
@@ -24,24 +39,35 @@ export async function trackServerPurchase(params: GA4PurchaseParams): Promise<vo
     return;
   }
 
+  const eventParams: Record<string, unknown> = {
+    transaction_id: params.transactionId,
+    value: params.value,
+    currency: params.currency,
+    items: [
+      {
+        item_id: params.itemId,
+        item_name: params.itemName,
+        price: params.value,
+        quantity: 1,
+      },
+    ],
+  };
+
+  // Attach UTM as event params (only the ones present) — entry→checkout→purchase inheritance.
+  if (params.utm) {
+    if (params.utm.source) eventParams.source = params.utm.source;
+    if (params.utm.medium) eventParams.medium = params.utm.medium;
+    if (params.utm.campaign) eventParams.campaign = params.utm.campaign;
+    if (params.utm.content) eventParams.content = params.utm.content;
+    if (params.utm.term) eventParams.term = params.utm.term;
+  }
+
   const payload = {
     client_id: params.clientId,
     events: [
       {
         name: 'purchase',
-        params: {
-          transaction_id: params.transactionId,
-          value: params.value,
-          currency: params.currency,
-          items: [
-            {
-              item_id: params.itemId,
-              item_name: params.itemName,
-              price: params.value,
-              quantity: 1,
-            },
-          ],
-        },
+        params: eventParams,
       },
     ],
   };
