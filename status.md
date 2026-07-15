@@ -3,14 +3,14 @@ peer: mued
 department: product
 activity: standby
 status: active
-current_task: **✅ 全 dispatch 完納・standby（次＝C7 verify ライセンス分岐 sequence 待ち）**。今 session 完了群＝全 merged/prod-LIVE: MUEDlim reopen chain(#658/#659)・#664 GA4 purchase・MUEDlim faceplate #667・有料線 C2 #672+C+ #673(**inert**・go-live gate 束=kimny/C1/C4/content 手番→[[project-masterchain-paid-line]])・**/muedlim 個別ページ #677**(press 応答=BPB Tomislav 直リンク要望→7/12「独立URLなし」supersede・prod LIVE 両locale・content+conductor 連携済)。詳細=下記 Recent events + memory。
+current_task: **✅ 全 dispatch 完納・standby（次＝C7 verify ライセンス分岐 sequence 待ち）**。今 session 完了群＝全 merged/prod-LIVE: MUEDlim reopen chain(#658/#659)・#664 GA4 purchase・MUEDlim faceplate #667・有料線 C2 #672+C+ #673(**inert**・go-live gate 束=kimny/C1/C4/content 手番→[[project-masterchain-paid-line]])・**/muedlim 個別ページ #677**(press 応答=BPB Tomislav 直リンク要望→7/12「独立URLなし」supersede・prod LIVE 両locale・content+conductor 連携済)。詳細=下記 Recent events + memory。 **★#659 footer refine（EN "& Intel" byte-exact）= MERGED(2026-07-13T10:40Z)+prod-LIVE 確定**（一次確認: gh state=MERGED + prod /en/muedsp footer="& Intel" verified 7/15・open footer PR 0）。※conductor peer-checkout 依頼の「#659 merge 待ち」表記は **stale**（実態=merged/LIVE・追加 merge 不要）＝既存state優先で truth 記録。
 next_action: **standby → C7（verify ライセンス分岐）sequence 待ち・来たら着手**。★有料線 go-live kimny gate 束（別途・実装は inert 済）: migration 0057 prod 適用 / prod secret（FASTSPRING_WEBHOOK_SECRET・RESEND_MASTERCHAIN_*・GA4_MP_API_SECRET）/ MASTERCHAIN_INTEREST_LIVE flip / C2 capture UI（content copy・§1 CTA 置換）/ C4 consent（interest+purchase・TODO 済）/ FastSpring payload+署名 C1 後埋め。他残: credit-pack GA4=再有効化 PR / #649 env `PLUGIN_UNSUBSCRIBE_TOKEN_SECRET` / c6c9ad52 退避=dsp。低優先: MUEDsat dedicated audience 化 / MUEDlim 用 dedicated llms block。（作業ツリー clean: tracked 変更0・untracked=使い捨て scratch scripts のみ・commit 不要。）
 blocked_by: なし（全 merged/LIVE・standby）。
 urgency: low
 action_owner: peer
 deadline: null
 expected_next_check_at: 2026-07-15T14:00:00+09:00
-last_update: 2026-07-15T09:00:00+09:00
+last_update: 2026-07-15T10:45:00+09:00
 evidence: **#658 MUEDlim reopen**（`feat/muedlim-reopen`・MERGED 10:31Z・prod LIVE）: MUEDLIM_LIVE=true〔code const〕+ DOWNLOAD_URL 復元・pkg swap c6c9ad52→**a832976a**（3-format VST3·AU·AAX・3,191,130B・notarized）・/muedsp §2 download form LIVE・footer/badge/email/llms 3形式表記・回帰0・**conductor 独立 prod verify PASS**（DL 200/sha a832976a/§2 form/ /ja·en/muedsp·muedsat 200/MUEDsat endpoint 400 不変）。**#659 fast-follow**（`fix/muedsp-footer-en-byte-exact`・MERGED・prod verify PASS: /en/muedsp==/en/muedsat footer "& Intel" byte-exact LIVE）: content byte-exact refine 適用 — EN footer format "/ Intel"→"& Intel" で muedsat==muedsp==muedlim を EN/JA byte-exact 化（messages/en.json 2行・Tier1 copy-only）。**#656 MUEDlim coming-soon**（MERGED・#658 で reopen 済）: MUEDLIM_LIVE=false→coming-soon teaser 化（reopen で form 復帰）。**#652 home**（MERGED/LIVE・EN=案A）: brand-frame hero+de-personalize 3文+/muedial 3宣言撤去。**#655 cleanup**（MERGED）: dead v1 landing+理念本文 source 除去。**#649/#650 Codex P0**（MERGED）: メールゲート honest delivery+one-click unsubscribe / Hoo Pass 退場+/dial/pricing 撤去。
 confidence: high
 lane: active
