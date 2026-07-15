@@ -1,8 +1,8 @@
 # C7 — verify 手順のライセンス分岐設計（設計ドラフト）
 
-*mued lead 起草 / 2026-07-15（**dsp（8ldcps6r）§7 回答 folded 2026-07-15**・訂正ゼロ）/ **設計のみ・非gate・inert・本番非露出**（実装 + go-live は別 kimny gate と束ねる）。正本設計 = `_chief/decisions/mued/brief-paid-line-design-20260714.md`（C-7・item39）・執行計画 = `_conductor/docs/inbox/paid-line-execution-plan-20260714.md`（C7）。conductor review PASS→merged（#682/cbf9b32e）。本版は dsp §7 回答（keyfile 機構・iPlug2 clock 訂正・AAX×PACE 新論点）を反映した follow-up。*
+*mued lead 起草 / 2026-07-15（**dsp（8ldcps6r）§7 回答 folded 2026-07-15**・訂正ゼロ）/ **設計のみ・非gate・inert・本番非露出**（実装 + go-live は別 kimny gate と束ねる）。正本設計 = `_chief/decisions/mued/brief-paid-line-design-20260714.md`（C-7・item39）・執行計画 = `_conductor/docs/inbox/paid-line-execution-plan-20260714.md`（C7）。conductor review PASS→merged（#682/cbf9b32e）+ dsp §7 fold/②RESOLVED（#684）。本版は **kimny 2026-07-15 決定（demo 形態 = (A) output-restriction 確定・§8-1 RESOLVED）+ dsp 実装 firm-up 3制約（demo-ref SR pin・auval 構造保証・bypass suspend）**を反映。**開いた設計論点は残なし = 設計完全クローズ**。*
 
-前提（kimny gate 確定済）: **Q2=(a)** — Valhalla/u-he 型シリアル・keyfile・**DRM なし**・**未認証 = フルデモ**（期間 or 出力制限は Phase2 UI gate で現物選定）。masterchain = **単一製品・買い切り**（Q4）。サブスク = 将来の追設層（配管は将来アカウント層を建てられる形で確保）。
+前提（kimny gate 確定済）: **Q2=(a)** — Valhalla/u-he 型シリアル・keyfile・**DRM なし**。**★未認証挙動 = kimny 2026-07-15 決定 = Valhalla型 output-restriction**（無期限 + **45秒ごとフェードアウト/イン** + **プリセット保存不可**）。※旧「フルデモ」は Chief 仮推奨で kimny 明示批准なしと判明→本決定で置換（Q2 未認証挙動の source 訂正・(a) シリアル/keyfile・DRMなし方式自体は承認済み生存）。masterchain = **単一製品・買い切り**（Q4）。サブスク = 将来の追設層（配管は将来アカウント層を建てられる形で確保）。
 
 ---
 
@@ -70,9 +70,13 @@ harness は各 binary の **capability flag `hasLicense`** で分岐を keying �
 
 | state | VST3 | AU | AAX | render 期待値 |
 |---|---|---|---|---|
-| `unlicensed`（demo） | load+scan+render+UI | 同 | 同 | §4.2（demo 形態依存） |
-| `serial-licensed` | load+scan+render+UI | 同 | 同 | **LOCK md5 リファレンス（bit-identical 継承）** |
-| `invalid-license` | load+scan → **demo へ fallback** | 同 | 同 | = unlicensed と同一（full-unlock でない事を証明） |
+| `unlicensed`（demo） | load+scan+render+UI+**preset-save 無効** | 同 | 同 | **demo-ref**（(A) output-restriction・45秒周期フェード・§4.2 確定） |
+| `serial-licensed` | load+scan+render+UI+**preset-save 有効** | 同 | 同 | **LOCK md5 リファレンス（bit-identical 継承）** |
+| `invalid-license` | load+scan → **demo へ fallback** | 同 | 同 | = unlicensed（demo-ref）と同一（full-unlock でない事を証明） |
+
+**preset 保存の分岐（kimny 決定・別機構）**: 未認証デモは **プリセット保存不可**（audio-path とは別機構＝unlicensed state で save disable）。→ 各 state の assert に「preset-save が unlicensed=無効 / licensed=有効」を追加（license-UI assert の拡張・render 非依存・機械 assert 可）。
+
+**★ bypass passthrough assert（dsp firm-up #3・design constraint）**: 未認証 demo の周期フェードは **host bypass 下では suspend**（bypass = passthrough 透過を守る）。→ unlicensed × bypass の render は **licensed と同一の透過**になる assert を1項立てる（これを落とすと auval/pluginval の bypass 透過 test が割れる = 実装時 validation 落ちの catch・§4.2 #3）。**auval は周期フェード込みで構造的に PASS**（極低速トレモロ扱い・§4.2 #2）。
 
 **format 横断 uniform（確定）**: keyfile 軸は VST3/AU/AAX で同一（AAX 列に PACE 分岐なし）。**AAX×PACE は署名であって DRM でない**ことを conductor が verify 済（無料 AAX が既に PACE 署名 + license-free で LIVE = 実証）→ §8-2 RESOLVED。ゆえに上表の AU/AAX 列は VST3 と「同」。
 
@@ -80,19 +84,28 @@ harness は各 binary の **capability flag `hasLicense`** で分岐を keying �
 
 > **dsp commit（§7-4・2026-07-15）**: これは hopeful でなく **dsp が設計不変条件として commit** — license check は plugin の instantiation/validation/ProcessBlock を**絶対に失敗させない**。ゲートは cosmetic バッジ（フルデモ）or 出力制限ルールの toggle のみ・**構築 abort / ProcessBlock error は禁止**。自前コードゆえ保証容易（PACE/iLok と違い失敗要因が我々の管理下）。→ 既存 auval gate で「keyfile 無しで PASS」をそのまま検証可。
 
-### 4.2 ★ demo 形態が render リファレンスの本数を決める（Phase2 gate 依存・3-way）
+### 4.2 demo 形態 = (A) output-restriction に確定（kimny 2026-07-15 決定）
 
-Q2a「未認証 = フルデモ」の実体は Phase2 UI gate で kimny が現物選定。dsp §7-3/5/6（2026-07-15）を反映し、**選択肢は3-way**（正本 brief の「期間 or 出力制限」に、DRM-free Valhalla を字義通り取った **(0) バッジのみ**を加える）。この選択が render harness の構造を分岐させ、**verify コストは (0) < (A) < (B)**:
+> **★ 確定（kimny 2026-07-15・§8-1 RESOLVED）**: 未認証デモ = **Valhalla型 output-restriction**（無期限 + **45秒ごとフェードアウト/イン** + プリセット保存不可）。→ 下記3-way のうち **(A) 出力制限 branch に確定**（(0) バッジのみ・(B) 期間制限 は不採用）。**render リファレンス = 2本**（demo-ref[45s 周期フェード] + licensed-ref[LOCK md5]）。
+> **★ seam 不要の写像**: 45秒周期フェードは **sample-count relative の周期タイマー**で実現＝(B) 期間制限の wall-clock `NowUTC()` seam は**不要**（期限切れでなく周期妨害ゆえ）。→ 本 harness に clock seam は入らない。
+> **Phase2 UI gate の縮小**: model 選定は完了。Phase2 は **実物の微調整のみ**（フェード間隔/カーブ・preset-save-disable の UX 見せ方）＝harness 構造（2-ref）は不変。
 
-| demo 形態 | unlicensed の音 | render リファレンス | 追加 seam | LOCK bit-identical harness |
+以下は設計時に検討した3-way（decoupling の記録・harness が model 非依存で無改修に耐える証跡）。dsp §7-3/5/6（2026-07-15）反映・**verify コストは (0) < (A) < (B)**、**採用 = (A)**:
+
+| demo 形態 | 採否 | unlicensed の音 | render リファレンス | 追加 seam |
 |---|---|---|---|---|
-| **(0) バッジのみ**（Valhalla 字義・音声パス制限なし・GUI "UNREGISTERED" バッジのみ） | licensed と**完全同一** | **1本**（= LOCK md5・license 軸は GUI のみ） | 不要 | そのまま適用（音は state 不変・差はバッジで audio gate は見ない） |
-| **(A) 出力制限**（周期ミュート/バイパス等） | licensed と**異なる** | **2本**（demo-ref + licensed-ref・両者 deterministic） | 不要（clock 非依存の純関数） | **licensed path のみ**・demo path は専用 deterministic ref |
-| **(B) 期間制限**（例 30日 trial・full-quality→expiry で制限） | expiry まで**同一**・以降**異なる** | **2本**（licensed + expired） | **必要**（自前 `NowUTC()` seam・下記★） | expiry までは licensed と同一 |
+| **(0) バッジのみ**（Valhalla 字義・音声パス制限なし・GUI バッジのみ） | ✗ 不採用 | licensed と**完全同一** | **1本**（= LOCK md5） | 不要 |
+| **(A) 出力制限**（45秒ごとフェードアウト/イン） | ✅ **採用（kimny）** | licensed と**異なる** | **2本**（demo-ref + licensed-ref・両者 deterministic） | 不要（sample-count relative timer・clock 非依存） |
+| **(B) 期間制限**（例 30日 trial・full→expiry） | ✗ 不採用 | expiry まで**同一**・以降**異なる** | **2本**（licensed + expired） | 必要（`NowUTC()` seam）— **不採用ゆえ本 harness に seam なし** |
 
-- **★ iPlug2 clock 訂正（dsp §7-6）**: iPlug2 `GetTimeInfo()`/`ITimeInfo` は **DAW transport 位置（musical/sample pos）で wall-clock ではない** → trial expiry には使えず、暦時間の注入口にもならない。expiry は OS clock 直読（`std::chrono::system_clock`）になり iPlug2 は抽象化/注入を提供しない。→ verify 可能にするには **自前 seam**: clock 読取を1関数（`NowUTC()`）に包み、verify build で env（`MUEDSP_FAKE_NOW=<epoch>`）or test setter で上書き可に。settable な初回 timestamp file と組めば任意 elapsed を deterministic に模擬。**この seam が要るのは (B) 期間制限を選んだ時だけ**。
-- **(A) の要件**: 出力制限は **deterministic**（同入力 → 同制限出力）でなければ reference 化できない。ランダムノイズ注入型は reference render 不能 → verify 不能。**demo 制限は再現可能な形にする**のが verify 側の要求（Phase2 gate へのフィードバック事項）。dsp §7-3: 出力制限は clock/state 非依存の純関数ゆえ完全 deterministic → reference 化に最適。
-- **dsp 推奨（§7-3・意図確認事項）**: Q2a「未認証フルデモ・DRM なし」を字義通り取ると **(0) バッジのみ**（demo 制限 DSP は存在しない）が最も整合し、Q3/Q5/Q6 が畳めて verify 最安（音声パス制限なし・clock seam なし・ref 1本）。転換圧のため制限を入れるなら determinism・verify コスト両面で **(A) 出力制限 > (B) 期間制限**。ここは **Q2a と「demo *制限* が在る前提」で矛盾しうる意図確認事項** → §8 に conductor 経由 Phase2 gate 上程として立てる。
+- **✅ (A) 採用の要件（確定）**: 出力制限は **deterministic**（同入力 → 同制限出力）でなければ reference 化できない。**45秒周期フェードは sample-count relative timer** ＝ wall-clock 非依存の純関数ゆえ完全 deterministic → demo-ref render に最適（dsp §7-3）。**同一入力に対し demo-ref は再現可能** → 機械 render 照合が成立。
+- **iPlug2 clock 訂正（dsp §7-6・(B) 不採用ゆえ本 harness では moot・記録として保持）**: iPlug2 `GetTimeInfo()` は DAW transport 位置で wall-clock ではなく、trial expiry には使えない → (B) 期間制限を選んでいたら自前 `NowUTC()` seam が必要だった。**kimny が (A) を選び (B) 不採用ゆえ、本 harness に clock seam は入らない**（45s フェードは sample-count timer で完結）。
+- **意図確認事項 = RESOLVED（§8-1）**: dsp §7-3 が「Valhalla 字義なら (0) バッジのみが最安」と (0)/(A)/(B) の矛盾を指摘 → conductor 経由 kimny surface → **kimny が (A) output-restriction を決定**（転換圧を取る判断）。design space の議論は決着。
+
+**★ (A) 実装 design constraints（dsp firm-up・2026-07-15・落とすと実装で validation 割れる = 設計制約）**:
+1. **demo-ref 再現性 = 固定 SR + 原点 pin**: 周期フェードは SR 依存（45s = 45×SR samples）ゆえ demo-ref は **固定 SR(48kHz) + カウンタ原点 0** で render/verify を pin する（さもないと fade 位置ずれで demo-ref md5 が揺れて照合不能）。
+2. **auval PASS は構造保証・Phase2 微調整は auval 制約から自由**: 周期フェードは極低速トレモロにすぎず auval/pluginval を普通に PASS（「45秒間隔で host scan を回避する」効果は cosmetic bonus であって load-bearing ではない）→ Phase2 の fade 間隔/カーブ調整に auval 由来の制約はかからない。
+3. **★ host bypass 下は demo disruption を suspend（見落とすと validation 落ちる catch）**: host が plugin を bypass した時に周期フェードを止めないと、auval/pluginval の **bypass passthrough（透過）test が割れる**。→ **bypass 時は demo-ref も licensed と同一の passthrough** になる assert を1項立てる。anti-piracy 損失なし（bypass = 処理ゼロ = 価値ゼロゆえ妨害する意味がない）。
 
 **C7 の設計判断（decoupling は不変）**: harness を「state → 期待 render」の **写像で parameterize** し、Phase2 が demo 形態を LOCK した時点でこの写像を埋める。**3-way を今設計しておく**ことで、kimny の現物選定が (0)/(A)/(B) どれに落ちても **verify 構造は無改修で耐える**（選定後は写像を埋めるだけ）。dsp forward note（§7 ack）: 実装 GO 時に dsp 側で変わる deliverable は **reference-render 本数のみ**（(0)=1本 / (A)=2本 / (B)=2本+`NowUTC()` seam）・keyfile-inject の verify step は3形態共通で先行構築可。
 
@@ -107,10 +120,11 @@ verify を CI/harness で自動回すには、**`serial-licensed` state を head
 
 これが**無い**と Leg A の licensed path は手動 verify に落ちる（キャラクター gate = 手動なのは正当だが、load/scan/render の機械 assert は自動化したい）。→ keyfile-at-known-path 採用で **3形態（§4.2）共通の inject step として先行構築可**（dsp forward note）。
 
-### 4.4 キャラクター gate（demo 形態別）
-dsp の char gate = 試聴。paid の試聴回数は §4.2 の形態で決まる:
-- **(0) バッジのみ / (B) 期間制限（pre-expiry）**: demo音 = licensed音 で同一 → 試聴1回で足る（license 差は audio でなく GUI バッジ）。
-- **(A) 出力制限**: **制限音そのもの**も「安っぽくない・不快でない・でも買う動機になる」かの人間判断が要る（= demo 形態の商品性 gate）。制限音のキャラクターは機械テストで拾えない = kimny 耳。
+### 4.4 キャラクター gate（(A) 確定）
+dsp の char gate = 試聴。**(A) output-restriction 確定**ゆえ試聴は2軸:
+- **licensed音**: LOCK md5 の音（本来の仕上がり）。
+- **demo音（45秒周期フェード）**: **制限音そのもの**が「安っぽくない・不快でない・でも買う動機になる」かの人間判断＝**demo 形態の商品性 gate**（機械テストで拾えない = kimny 耳）。Phase2 の実物微調整（フェード間隔/カーブ）はこの試聴で詰める。
+- **preset-save-disable の UX**: 未認証で保存不可の見せ方（無効化の伝え方が親切か）も人間判断（Phase2 微調整項目）。
 
 ---
 
@@ -172,13 +186,13 @@ plugin 側実体（Q2a）に触れる6項を dsp（8ldcps6r）に pull → **全
 
 **★ 追加論点（dsp §7-＋・新規）— AAX × PACE cross-format = RESOLVED（conductor verified 2026-07-15）**: 当初「AAX が PACE wrap のままなら keyfile 軸は VST3/AU にしか効かず『未認証』が AAX で別物になり得る」を懸念したが、**conductor 一次調査で解決**: PACE 署名は全 AAX 必須だが **"署名" であって "DRM/copy-protection" ではない**・**無料 MUEDsat/MUEDlim の AAX が既に PACE 署名済 + license/DRM ゼロで LIVE 出荷** が実証 → **keyfile 軸は VST3/AU/AAX に uniform 適用・§4.1 マトリクスは format 横断 uniform で確定**（詳細 §8-2）。
 
-**dsp forward note（実装 GO 時の dsp スライス）**: Phase2 で形態確定後、dsp 側で変わる deliverable は **reference-render 本数だけ**（(0)=1本 / (A)=2本 / (B)=2本+`NowUTC()` seam）。keyfile-inject の verify step（test keyfile 置く/消す）は **3形態共通で先に組める**。実装 GO 後 dsp が reference render + inject step を担当。それまで dsp standby。
+**dsp forward note（実装 GO 時の dsp スライス）**: Phase2 で形態確定後、dsp 側で変わる deliverable は **reference-render 本数だけ**（設計時 (0)=1本 / (A)=2本 / (B)=2本+`NowUTC()` seam）。**→ kimny 決定 = (A) ゆえ 2本（demo-ref[45s 周期フェード] + licensed-ref）で確定・seam なし**。keyfile-inject の verify step（test keyfile 置く/消す）は形態非依存で先行構築可。実装 GO 後 dsp が reference render + inject step + preset-save-disable assert を担当。それまで dsp standby（demo 機構確定を conductor が relay 済）。
 
 ---
 
 ## 8. 開いた論点（conductor / kimny / dsp）
 
-1. **★ demo 形態 = 3-way（(0) バッジのみ / (A) 出力制限 / (B) 期間制限）= Phase2 UI gate + 意図確認**。C7 は3分岐を設計済み・選定後に render 写像を埋める（**選定を待たずに完成**・§4.2）。**意図確認（dsp §7-3 最重要指摘）**: Q2a「未認証フルデモ・DRM なし」を Valhalla 字義通り取ると **(0) バッジのみ**（demo 制限 DSP なし）が最整合で Q3/Q5/Q6 が畳め verify 最安 — だが正本 brief の Q2 推奨は「フルデモ（期間 or 出力制限）」＝**demo *制限* が在る前提**とも読め、両者が矛盾しうる。**どちらの意図か = kimny 確認事項**（3-way + verify コスト表 (0)<(A)<(B) を添えて conductor 経由 Phase2 gate に上程）。
+1. **~~★ demo 形態 = 3-way~~ = RESOLVED（kimny 2026-07-15 決定）**: dsp §7-3 が (0)/(A)/(B) の矛盾（Valhalla 字義なら (0) 最安 vs brief Q2「制限あり」前提）を指摘 → conductor 経由 kimny surface → **kimny が (A) output-restriction を決定**（無期限 + 45秒ごとフェードアウト/イン + プリセット保存不可）。→ **render 2本（demo-ref + licensed-ref）確定・45s フェード=sample-count timer ゆえ clock seam 不要・(0)/(B) 不採用**（§4.2）。★旧「フルデモ」= Chief 仮推奨で kimny 未批准だった（source 訂正・(a) 方式自体は生存）。**Phase2 UI gate は model 選定完了ゆえ実物微調整（フェード間隔/カーブ・save-disable の UX）のみに縮小**。
 2. **~~★ AAX × PACE cross-format~~ = RESOLVED（conductor verified 2026-07-15）**: 当初 dsp §7-＋ で「AAX が PACE wrap のままなら keyfile 軸は VST3/AU のみ・AAX×PACE 行が要るか」を policy-gate 論点として立てたが、**conductor 一次調査で解決**: **PACE 署名は全 AAX 必須だが "署名" であって "DRM/copy-protection" ではない**（登録 dev は無料）。決定打＝**無料版 MUEDsat/MUEDlim の AAX が既に PACE 署名済かつ license/DRM ゼロで出荷 LIVE** ＝「PACE 署名された AAX が license-free で成立」を自前 binary が実証。copy-protection（iLok authorization）は別物・任意・**不採用**。→ **keyfile 軸は VST3/AU/AAX に uniform 適用・AAX 列に PACE 分岐は不要・§4.1 マトリクスは format 横断 uniform で確定**。「DRM なし」は3形式で成立。belt-and-suspenders の Avid portal 直確認は実装時 dsp 任意（非必須）。
 3. **FastSpring test storefront の availability** — `.test.` storefront で webhook + license 発行まで通せるか（C1 = Kevin 審査後に確定）。commerce E2E [1]-[6] はそこで実行可能になる。
 4. **verify 専用 test keyfile の発行元** — FastSpring 内蔵ジェネレータの test キー使用か・dsp が verify 専用 keyfile を別発行か（本番発行キー = Ed25519 offline private key と分離）。
@@ -202,10 +216,10 @@ plugin 側実体（Q2a）に触れる6項を dsp（8ldcps6r）に pull → **全
 - **中核**: verify harness を license-state の **open enum で parameterize**（§3）。無料 = `unlicensed` 単一 = 従来通り（非干渉）、paid = state × format × 4-assert マトリクス。
 - **2脚に足す**: Leg A（dsp・plugin binary の md5/auval/render に state 軸）+ Leg B（mued・購入→webhook→キー配送 commerce E2E）。
 - **license 機構（dsp §7 確定）**: keyfile-at-known-path + Ed25519・offline・DRM-free。verify は test keyfile「置く/消す」で `serial-licensed` を deterministic 注入（§4.3）。未認証 auval PASS = dsp commit（§4.1）。
-- **Phase2 gate 依存を吸収**: demo 形態 = **3-way**（(0) バッジのみ / (A) 出力制限 / (B) 期間制限）で render リファレンスが 1本/2本 + seam に分岐 → 3分岐設計済・選定後に写像を埋めるだけ・**decoupling 不変**（§4.2）。
+- **demo 形態 = (A) output-restriction に確定（kimny 2026-07-15）**: 無期限 + 45秒周期フェード + preset 保存不可。render **2本**（demo-ref[固定48kHz+原点0 pin] + licensed-ref[LOCK md5]）・**clock seam 不要**（sample-count timer）・**bypass 下は demo suspend=passthrough assert**（dsp firm-up 3制約 §4.2/§4.1）。3-way 設計は decoupling の記録として保持（§4.2）。
 - **将来を塞がない**: enum に将来 state の席・buyer DB 土台の verify（§6）。
-- **dsp §7 = 6項 全回答受領・fold 済**（§7）。実装 owner: Leg A = dsp（reference render + keyfile-inject step）/ Leg B = mued / FastSpring test キー = C1 と連動。
-- **★ 上程**: ① demo 形態の意図確認（Valhalla 字義 (0) vs 制限あり (A)/(B)）= Phase2 gate + kimny（**conductor が kimny surface 済・答えが 3-way に写像・急ぎ確定不要**）。② AAX×PACE = **RESOLVED**（conductor verified・uniform keyfile・PACE=signing only・自前 AAX が実証・§8-2）。
-- **次**: 実装は kimny gate（C1 FastSpring 設定 + Phase2 demo 形態 LOCK）と束ねる。C1（Kevin 待ち）**非依存**で本設計は完成。
+- **dsp §7 = 6項 全回答受領・fold 済**（§7）。実装 owner: Leg A = dsp（demo-ref/licensed-ref 2本 + keyfile-inject + bypass-suspend + preset-disable assert）/ Leg B = mued / FastSpring test キー = C1 と連動。
+- **★ 上程2件とも RESOLVED**: ① demo 形態 = **kimny 決定 (A)**（§8-1・model 確定・Phase2 は実物微調整のみ）。② AAX×PACE = **conductor verified**（uniform keyfile・PACE=signing only・自前 AAX が実証・§8-2）。**開いた設計論点は残なし**。
+- **次**: 設計完全クローズ。実装は kimny gate（C1 FastSpring 設定 + Phase2 実物微調整）と束ねる。C1（Kevin 待ち）**非依存**で本設計は完成。
 </content>
 </invoke>
