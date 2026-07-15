@@ -74,6 +74,8 @@ harness は各 binary の **capability flag `hasLicense`** で分岐を keying �
 | `serial-licensed` | load+scan+render+UI | 同 | 同 | **LOCK md5 リファレンス（bit-identical 継承）** |
 | `invalid-license` | load+scan → **demo へ fallback** | 同 | 同 | = unlicensed と同一（full-unlock でない事を証明） |
 
+**format 横断 uniform（確定）**: keyfile 軸は VST3/AU/AAX で同一（AAX 列に PACE 分岐なし）。**AAX×PACE は署名であって DRM でない**ことを conductor が verify 済（無料 AAX が既に PACE 署名 + license-free で LIVE = 実証）→ §8-2 RESOLVED。ゆえに上表の AU/AAX 列は VST3 と「同」。
+
 **auval は両 state で PASS 必須**。理由: host のプラグイン scan は**ユーザーがシリアルを入れる前**に走る（インストール直後の初回スキャン）。未認証で auval FAIL するプラグインは「買う前に壊れて見える」= 転換面が死ぬ。→ **auval は `unlicensed` state で回すのが基準**（licensed でも当然 PASS だが、gate になるのは unlicensed 側）。
 
 > **dsp commit（§7-4・2026-07-15）**: これは hopeful でなく **dsp が設計不変条件として commit** — license check は plugin の instantiation/validation/ProcessBlock を**絶対に失敗させない**。ゲートは cosmetic バッジ（フルデモ）or 出力制限ルールの toggle のみ・**構築 abort / ProcessBlock error は禁止**。自前コードゆえ保証容易（PACE/iLok と違い失敗要因が我々の管理下）。→ 既存 auval gate で「keyfile 無しで PASS」をそのまま検証可。
@@ -168,7 +170,7 @@ plugin 側実体（Q2a）に触れる6項を dsp（8ldcps6r）に pull → **全
 | 5 | render が state で変わるか | (0) バッジのみ=1本 / (A) 出力制限=2本 / (B) 期間制限=2本（§4.2） |
 | 6 | 時刻注入 hook | **★訂正**: iPlug2 `GetTimeInfo()` は DAW transport で wall-clock 非対応 → 自前 `NowUTC()` seam 必須・**(B) を選んだ時だけ**（§4.2） |
 
-**★ 追加論点（dsp §7-＋・新規）— AAX × PACE cross-format**: 全 MUED は VST3/AU/AAX 3形式必須（恒久ルール）。**AAX が PACE wrap のままなら、AAX の anti-piracy/認証は PACE のもので keyfile 機構ではない** → keyfile 軸は VST3/AU にしか効かず「未認証」の意味が AAX で別物になり得る。state×format マトリクス（§4.1）に **AAX×PACE の行が要るか**、paid AAX を DRM-free（Avid の AAX-without-PACE 現行 policy）で出せるかは **dsp 未検証 = verify 必要 TODO**（no-unverified-license-assertion）。policy-gate 寄り → **§8 の conductor/kimny 確認事項に立てる**。
+**★ 追加論点（dsp §7-＋・新規）— AAX × PACE cross-format = RESOLVED（conductor verified 2026-07-15）**: 当初「AAX が PACE wrap のままなら keyfile 軸は VST3/AU にしか効かず『未認証』が AAX で別物になり得る」を懸念したが、**conductor 一次調査で解決**: PACE 署名は全 AAX 必須だが **"署名" であって "DRM/copy-protection" ではない**・**無料 MUEDsat/MUEDlim の AAX が既に PACE 署名済 + license/DRM ゼロで LIVE 出荷** が実証 → **keyfile 軸は VST3/AU/AAX に uniform 適用・§4.1 マトリクスは format 横断 uniform で確定**（詳細 §8-2）。
 
 **dsp forward note（実装 GO 時の dsp スライス）**: Phase2 で形態確定後、dsp 側で変わる deliverable は **reference-render 本数だけ**（(0)=1本 / (A)=2本 / (B)=2本+`NowUTC()` seam）。keyfile-inject の verify step（test keyfile 置く/消す）は **3形態共通で先に組める**。実装 GO 後 dsp が reference render + inject step を担当。それまで dsp standby。
 
@@ -177,7 +179,7 @@ plugin 側実体（Q2a）に触れる6項を dsp（8ldcps6r）に pull → **全
 ## 8. 開いた論点（conductor / kimny / dsp）
 
 1. **★ demo 形態 = 3-way（(0) バッジのみ / (A) 出力制限 / (B) 期間制限）= Phase2 UI gate + 意図確認**。C7 は3分岐を設計済み・選定後に render 写像を埋める（**選定を待たずに完成**・§4.2）。**意図確認（dsp §7-3 最重要指摘）**: Q2a「未認証フルデモ・DRM なし」を Valhalla 字義通り取ると **(0) バッジのみ**（demo 制限 DSP なし）が最整合で Q3/Q5/Q6 が畳め verify 最安 — だが正本 brief の Q2 推奨は「フルデモ（期間 or 出力制限）」＝**demo *制限* が在る前提**とも読め、両者が矛盾しうる。**どちらの意図か = kimny 確認事項**（3-way + verify コスト表 (0)<(A)<(B) を添えて conductor 経由 Phase2 gate に上程）。
-2. **★ AAX × PACE cross-format（dsp §7-＋・新規・policy-gate 寄り）**: AAX が PACE wrap のままなら keyfile 軸は VST3/AU のみ・AAX の「未認証」が別物 → state×format に **AAX×PACE 行が要るか**・paid AAX を **DRM-free（Avid AAX-without-PACE policy）で出せるか** = dsp 未検証 TODO。**conductor/kimny 確認事項**（keyfile 一本化できないと §4.1 マトリクスの AAX 列に PACE 分岐が生える）。
+2. **~~★ AAX × PACE cross-format~~ = RESOLVED（conductor verified 2026-07-15）**: 当初 dsp §7-＋ で「AAX が PACE wrap のままなら keyfile 軸は VST3/AU のみ・AAX×PACE 行が要るか」を policy-gate 論点として立てたが、**conductor 一次調査で解決**: **PACE 署名は全 AAX 必須だが "署名" であって "DRM/copy-protection" ではない**（登録 dev は無料）。決定打＝**無料版 MUEDsat/MUEDlim の AAX が既に PACE 署名済かつ license/DRM ゼロで出荷 LIVE** ＝「PACE 署名された AAX が license-free で成立」を自前 binary が実証。copy-protection（iLok authorization）は別物・任意・**不採用**。→ **keyfile 軸は VST3/AU/AAX に uniform 適用・AAX 列に PACE 分岐は不要・§4.1 マトリクスは format 横断 uniform で確定**。「DRM なし」は3形式で成立。belt-and-suspenders の Avid portal 直確認は実装時 dsp 任意（非必須）。
 3. **FastSpring test storefront の availability** — `.test.` storefront で webhook + license 発行まで通せるか（C1 = Kevin 審査後に確定）。commerce E2E [1]-[6] はそこで実行可能になる。
 4. **verify 専用 test keyfile の発行元** — FastSpring 内蔵ジェネレータの test キー使用か・dsp が verify 専用 keyfile を別発行か（本番発行キー = Ed25519 offline private key と分離）。
 5. **CI 統合の粒度** — Leg A licensed path の機械 assert を CI に載せるか（keyfile-inject は headless 可・§4.3）・load/scan/render は自動化狙い、試聴は手動 gate 維持。
@@ -203,7 +205,7 @@ plugin 側実体（Q2a）に触れる6項を dsp（8ldcps6r）に pull → **全
 - **Phase2 gate 依存を吸収**: demo 形態 = **3-way**（(0) バッジのみ / (A) 出力制限 / (B) 期間制限）で render リファレンスが 1本/2本 + seam に分岐 → 3分岐設計済・選定後に写像を埋めるだけ・**decoupling 不変**（§4.2）。
 - **将来を塞がない**: enum に将来 state の席・buyer DB 土台の verify（§6）。
 - **dsp §7 = 6項 全回答受領・fold 済**（§7）。実装 owner: Leg A = dsp（reference render + keyfile-inject step）/ Leg B = mued / FastSpring test キー = C1 と連動。
-- **★ 上程2件**: ① demo 形態の意図確認（Valhalla 字義 (0) vs 制限あり (A)/(B)）= Phase2 gate + kimny ② AAX×PACE cross-format = policy-gate（conductor/kimny・§8-1/2）。
+- **★ 上程**: ① demo 形態の意図確認（Valhalla 字義 (0) vs 制限あり (A)/(B)）= Phase2 gate + kimny（**conductor が kimny surface 済・答えが 3-way に写像・急ぎ確定不要**）。② AAX×PACE = **RESOLVED**（conductor verified・uniform keyfile・PACE=signing only・自前 AAX が実証・§8-2）。
 - **次**: 実装は kimny gate（C1 FastSpring 設定 + Phase2 demo 形態 LOCK）と束ねる。C1（Kevin 待ち）**非依存**で本設計は完成。
 </content>
 </invoke>
