@@ -3,14 +3,14 @@ peer: mued
 department: product
 activity: standby
 status: active
-current_task: **✅ press 応答 = /muedlim 個別ページ MERGED（#677）+ 本番 LIVE 確定（mued 独立 verify PASS 両locale）・standby**。BPB Tomislav Zlatic 本人が無料モジュール直リンク要望→kimny GO で 7/12「MUEDlim 独立URLなし」supersede→ /en·ja/muedlim 新設（/muedsat page 型流用・MUEDLIM_LIVE indexed + JSON-LD + sitemap + llms URL・DL 導線=既存メールゲート再利用・faceplate=#667 v2 再利用・全 copy=muedlim.* 新規0・fact-lock canon 準拠）。**prod verify PASS**: /en·ja/muedlim=200 + faceplate + title + DLform + fact-lock forbidden 0 + sitemap/llms 掲載。content課 canonical 通知済。conductor authoritative verify + BPB draft へ。**背景 done**: 有料線 C2 #672 + C+ #673 両 MERGED（inert）/ MUEDlim faceplate #667 / #664 GA4 purchase / reopen chain 全 LIVE。
-next_action: **standby（/muedlim LIVE・conductor が BPB draft→kimny 送信）→ C7（verify ライセンス分岐）sequence 待ち・来たら着手**。★有料線 go-live kimny gate 束（別途）: migration 0057 prod 適用 / prod secret（FASTSPRING_WEBHOOK_SECRET・RESEND_MASTERCHAIN_*・GA4_MP_API_SECRET）/ MASTERCHAIN_INTEREST_LIVE flip / C2 capture UI（content copy）/ C4 consent / FastSpring payload+署名 C1 後埋め。他残: credit-pack GA4=再有効化 PR / #649 env / c6c9ad52 退避=dsp。低優先: MUEDsat dedicated audience 化 / MUEDlim 用 dedicated llms block（MUEDsat 型・現状は MUEDSP block 内 URL のみ）。（作業ツリー clean: untracked scratch のみ。）
-blocked_by: なし（/muedlim LIVE・C2+C+ inert・全 merged・standby）。
+current_task: **✅ 全 dispatch 完納・standby（次＝C7 verify ライセンス分岐 sequence 待ち）**。今 session 完了群＝全 merged/prod-LIVE: MUEDlim reopen chain(#658/#659)・#664 GA4 purchase・MUEDlim faceplate #667・有料線 C2 #672+C+ #673(**inert**・go-live gate 束=kimny/C1/C4/content 手番→[[project-masterchain-paid-line]])・**/muedlim 個別ページ #677**(press 応答=BPB Tomislav 直リンク要望→7/12「独立URLなし」supersede・prod LIVE 両locale・content+conductor 連携済)。詳細=下記 Recent events + memory。
+next_action: **standby → C7（verify ライセンス分岐）sequence 待ち・来たら着手**。★有料線 go-live kimny gate 束（別途・実装は inert 済）: migration 0057 prod 適用 / prod secret（FASTSPRING_WEBHOOK_SECRET・RESEND_MASTERCHAIN_*・GA4_MP_API_SECRET）/ MASTERCHAIN_INTEREST_LIVE flip / C2 capture UI（content copy・§1 CTA 置換）/ C4 consent（interest+purchase・TODO 済）/ FastSpring payload+署名 C1 後埋め。他残: credit-pack GA4=再有効化 PR / #649 env `PLUGIN_UNSUBSCRIBE_TOKEN_SECRET` / c6c9ad52 退避=dsp。低優先: MUEDsat dedicated audience 化 / MUEDlim 用 dedicated llms block。（作業ツリー clean: tracked 変更0・untracked=使い捨て scratch scripts のみ・commit 不要。）
+blocked_by: なし（全 merged/LIVE・standby）。
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-07-14T20:00:00+09:00
-last_update: 2026-07-14T17:05:00+09:00
+expected_next_check_at: 2026-07-15T14:00:00+09:00
+last_update: 2026-07-15T09:00:00+09:00
 evidence: **#658 MUEDlim reopen**（`feat/muedlim-reopen`・MERGED 10:31Z・prod LIVE）: MUEDLIM_LIVE=true〔code const〕+ DOWNLOAD_URL 復元・pkg swap c6c9ad52→**a832976a**（3-format VST3·AU·AAX・3,191,130B・notarized）・/muedsp §2 download form LIVE・footer/badge/email/llms 3形式表記・回帰0・**conductor 独立 prod verify PASS**（DL 200/sha a832976a/§2 form/ /ja·en/muedsp·muedsat 200/MUEDsat endpoint 400 不変）。**#659 fast-follow**（`fix/muedsp-footer-en-byte-exact`・MERGED・prod verify PASS: /en/muedsp==/en/muedsat footer "& Intel" byte-exact LIVE）: content byte-exact refine 適用 — EN footer format "/ Intel"→"& Intel" で muedsat==muedsp==muedlim を EN/JA byte-exact 化（messages/en.json 2行・Tier1 copy-only）。**#656 MUEDlim coming-soon**（MERGED・#658 で reopen 済）: MUEDLIM_LIVE=false→coming-soon teaser 化（reopen で form 復帰）。**#652 home**（MERGED/LIVE・EN=案A）: brand-frame hero+de-personalize 3文+/muedial 3宣言撤去。**#655 cleanup**（MERGED）: dead v1 landing+理念本文 source 除去。**#649/#650 Codex P0**（MERGED）: メールゲート honest delivery+one-click unsubscribe / Hoo Pass 退場+/dial/pricing 撤去。
 confidence: high
 lane: active
