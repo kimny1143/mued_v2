@@ -1,16 +1,16 @@
 ---
 peer: mued
 department: product
-activity: standby
+activity: active
 status: active
-current_task: **✅ 全 dispatch 完納・standby（次＝C7 verify ライセンス分岐 sequence 待ち）**。今 session 完了群＝全 merged/prod-LIVE: MUEDlim reopen chain(#658/#659)・#664 GA4 purchase・MUEDlim faceplate #667・有料線 C2 #672+C+ #673(**inert**・go-live gate 束=kimny/C1/C4/content 手番→[[project-masterchain-paid-line]])・**/muedlim 個別ページ #677**(press 応答=BPB Tomislav 直リンク要望→7/12「独立URLなし」supersede・prod LIVE 両locale・content+conductor 連携済)。詳細=下記 Recent events + memory。 **★#659 footer refine（EN "& Intel" byte-exact）= MERGED(2026-07-13T10:40Z)+prod-LIVE 確定**（一次確認: gh state=MERGED + prod /en/muedsp footer="& Intel" verified 7/15・open footer PR 0）。※conductor peer-checkout 依頼の「#659 merge 待ち」表記は **stale**（実態=merged/LIVE・追加 merge 不要）＝既存state優先で truth 記録。
-next_action: **standby → C7（verify ライセンス分岐）sequence 待ち・来たら着手**。★有料線 go-live kimny gate 束（別途・実装は inert 済）: migration 0057 prod 適用 / prod secret（FASTSPRING_WEBHOOK_SECRET・RESEND_MASTERCHAIN_*・GA4_MP_API_SECRET）/ MASTERCHAIN_INTEREST_LIVE flip / C2 capture UI（content copy・§1 CTA 置換）/ C4 consent（interest+purchase・TODO 済）/ FastSpring payload+署名 C1 後埋め。他残: credit-pack GA4=再有効化 PR / #649 env `PLUGIN_UNSUBSCRIBE_TOKEN_SECRET` / c6c9ad52 退避=dsp。低優先: MUEDsat dedicated audience 化 / MUEDlim 用 dedicated llms block。（作業ツリー clean: tracked 変更0・untracked=使い捨て scratch scripts のみ・commit 不要。）
-blocked_by: なし（全 merged/LIVE・standby）。
+current_task: **C7（verify 手順のライセンス分岐設計）ドラフト提出済 → conductor review 待ち**。dispatch=conductor（kimny plan-GO 受領・非gate・inert・依存 Q2=(a)✓）。成果物=**PR #682**（`docs/paid-line/c7-verify-license-branch-design.md`・Tier1 docs-only）。設計中核: 既存 verify 2脚（Leg A plugin binary md5/auval/render / Leg B web commerce）に **license-state 軸を open enum で非干渉に追加**（無料=単一 state=従来通り／paid=state×format×4-assert）。demo 形態（期間/出力制限）で render リファレンス 1本/2本に分岐=両分岐設計済（Phase2 gate 後に写像埋め）。**dsp（8ldcps6r）に §7 plugin 側 6項 pull 済**（最優先=headless license 注入）。今 session 前段完了群（全 merged/prod-LIVE）: MUEDlim reopen chain(#658/#659)・#664 GA4 purchase・faceplate #667・有料線 C2 #672+C+ #673(**inert**)・/muedlim 個別ページ #677。#681 status refine MERGED。
+next_action: **C7 = conductor review 待ち + dsp §7 応答待ち**（応答来たら設計に反映・両者 non-blocking で並行）。★有料線 go-live kimny gate 束（別途・実装は inert 済）: migration 0057 prod 適用 / prod secret（FASTSPRING_WEBHOOK_SECRET・RESEND_MASTERCHAIN_*・GA4_MP_API_SECRET）/ MASTERCHAIN_INTEREST_LIVE flip / C2 capture UI（content copy・§1 CTA 置換）/ C4 consent / FastSpring payload+署名 C1 後埋め / **C7 実装（Leg A=dsp / Leg B=mued）は C1+Phase2 demo 形態 LOCK と束**。他残: credit-pack GA4=再有効化 PR / #649 env `PLUGIN_UNSUBSCRIBE_TOKEN_SECRET` / c6c9ad52 退避=dsp。
+blocked_by: なし（C7 draft=conductor review 待ち・dsp §7 応答待ち＝いずれも non-blocking）。
 urgency: low
-action_owner: peer
+action_owner: conductor
 deadline: null
-expected_next_check_at: 2026-07-15T14:00:00+09:00
-last_update: 2026-07-15T10:45:00+09:00
+expected_next_check_at: 2026-07-15T15:00:00+09:00
+last_update: 2026-07-15T13:05:00+09:00
 evidence: **#658 MUEDlim reopen**（`feat/muedlim-reopen`・MERGED 10:31Z・prod LIVE）: MUEDLIM_LIVE=true〔code const〕+ DOWNLOAD_URL 復元・pkg swap c6c9ad52→**a832976a**（3-format VST3·AU·AAX・3,191,130B・notarized）・/muedsp §2 download form LIVE・footer/badge/email/llms 3形式表記・回帰0・**conductor 独立 prod verify PASS**（DL 200/sha a832976a/§2 form/ /ja·en/muedsp·muedsat 200/MUEDsat endpoint 400 不変）。**#659 fast-follow**（`fix/muedsp-footer-en-byte-exact`・MERGED・prod verify PASS: /en/muedsp==/en/muedsat footer "& Intel" byte-exact LIVE）: content byte-exact refine 適用 — EN footer format "/ Intel"→"& Intel" で muedsat==muedsp==muedlim を EN/JA byte-exact 化（messages/en.json 2行・Tier1 copy-only）。**#656 MUEDlim coming-soon**（MERGED・#658 で reopen 済）: MUEDLIM_LIVE=false→coming-soon teaser 化（reopen で form 復帰）。**#652 home**（MERGED/LIVE・EN=案A）: brand-frame hero+de-personalize 3文+/muedial 3宣言撤去。**#655 cleanup**（MERGED）: dead v1 landing+理念本文 source 除去。**#649/#650 Codex P0**（MERGED）: メールゲート honest delivery+one-click unsubscribe / Hoo Pass 退場+/dial/pricing 撤去。
 confidence: high
 lane: active
