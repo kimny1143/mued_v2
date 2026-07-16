@@ -219,3 +219,8 @@ conductor が全文精読・**判定=(a) GO。ポータル先行 P-1→P-3 で�
 
 ### C7 順序（確定）
 並走。ポータル先行で進める（C7=dsp課 別 codepath）。
+
+### P-3 compliance 契約（確定・conductor 2026-07-17）— 所有 ≠ 連絡許可
+- **entitlements テーブル = unsubscribed 含む（所有の真実）**: 無料モジュールの所有/アクセスは marketing 購読と別次元。unsubscribed ユーザーこそメール非依存の更新導線（ポータル）の受益者。backfill は所有＝全件で正しい（変更なし）。
+- **P-3 案内便 recipient = subscribed のみ（opt-out 尊重・spam compliance）**: 所有セットを送信リストに流用しない。**Resend audience broadcast 経由（unsubscribed 自動 suppress）を既定**、手動送出時は `entitlements − unsubscribed` の recipient リストを生成。
+- P-3 束ね時に **recipient=subscribed-only の件数照合 evidence** を PR に添付。契約は `lib/plugins/backfill.ts` header にも明記（silent forget 回避＝firstTouch 教訓と同型）。
