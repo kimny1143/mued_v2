@@ -158,4 +158,22 @@ describe("handlePluginSubscribe — portal entitlement wiring (P-1)", () => {
     expect(res.status).toBe(200);
     expect(mockRecord).not.toHaveBeenCalled();
   });
+
+  it("carries submitted utm_* as firstTouch (attribution parity with 0050/0057)", async () => {
+    await handlePluginSubscribe(
+      "muedsat",
+      req({ email: "a@b.com", locale: "en", utm_source: "threads", utm_campaign: "launch" }),
+    );
+    expect(mockRecord).toHaveBeenCalledWith(
+      "muedsat",
+      expect.objectContaining({
+        firstTouch: expect.objectContaining({ utmSource: "threads", utmCampaign: "launch" }),
+      }),
+    );
+  });
+
+  it("firstTouch is null when no utm_* is submitted (no empty-object noise)", async () => {
+    await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
+    expect(mockRecord).toHaveBeenCalledWith("muedsat", expect.objectContaining({ firstTouch: null }));
+  });
 });

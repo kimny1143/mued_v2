@@ -120,7 +120,18 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
   //    BEST-EFFORT: it NEVER affects this response (the honest deliverable is the email above); the
   //    recorder swallows + logs its own errors, and the outer .catch guards against any unexpected
   //    throw. Idempotent (UNIQUE(email, plugin_key)); the P-3 audience backfill reconciles any loss.
-  await recordPluginEntitlement(plugin, { email, source }).catch(() => {
+  //    Attribution parity with 0050/0057: carry the submitted utm_* as first_touch when present (no
+  //    gaClientId — the plugin subscribe schema doesn't parse one), else null (no empty-object noise).
+  const firstTouch =
+    parsed.data.utm_source || parsed.data.utm_medium || parsed.data.utm_campaign || parsed.data.utm_content
+      ? {
+          utmSource: parsed.data.utm_source ?? null,
+          utmMedium: parsed.data.utm_medium ?? null,
+          utmCampaign: parsed.data.utm_campaign ?? null,
+          utmContent: parsed.data.utm_content ?? null,
+        }
+      : null;
+  await recordPluginEntitlement(plugin, { email, source, firstTouch }).catch(() => {
     /* recordPluginEntitlement already logs + swallows — this is belt-and-suspenders, never blocks 200 */
   });
 
