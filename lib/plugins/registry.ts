@@ -60,15 +60,21 @@ export function getPluginDist(plugin: PluginKey): PluginDist {
 
 // ── Honeypot (bot-trap) for the public email gate ─────────────────────────────
 // The email gate is public and unauthenticated; a naive bot that POSTs to the subscribe endpoint (or
-// autofills every field on the form) burns the Resend send quota one welcome email at a time. A
-// honeypot is the cheapest defense with zero false positives and no infra: a decoy field hidden from
-// humans (CSS off-screen + aria-hidden + tabindex -1 + autocomplete off) that real users never fill,
-// but form-filling bots do. The server treats any non-empty value as a bot and SILENTLY no-ops (same
-// 200 shape as the not-live path) — the bot can't tell it was blocked, and no email/quota is spent.
+// autofills every text field on the form) burns the Resend send quota one welcome email at a time. A
+// honeypot is the cheapest defense with no infra: a decoy field hidden from humans (CSS off-screen +
+// tabindex -1 + autocomplete off, labeled "leave empty") that real users never fill, but form-filling
+// bots do (naive bots fill EVERY text input regardless of name). The server treats any non-empty value
+// as a bot and SILENTLY no-ops (same 200 shape as the not-live path) — the bot can't tell it was
+// blocked, and no email/quota is spent.
 //
-// CLIENT-SAFE: this constant + predicate are imported by both the client form and the server handler
-// so the field name stays in one place (no drift). No secrets.
-export const HONEYPOT_FIELD = "website" as const;
+// Field name is deliberately OUTSIDE the browser-autofill vocabulary (not "url"/"website"/"email"/
+// "phone"/"address"/…) so a real user's autofill / password manager won't fill it and get silently
+// dropped (autocomplete="off" is not universally honored — product課 review #687 ③). It is still a
+// plain text input, so naive form-fillers still trip it.
+//
+// CLIENT-SAFE: this constant + predicate are the SINGLE SOURCE for the field name, imported by the
+// client form, the server handler + zod schema, and the tests (no drift). No secrets.
+export const HONEYPOT_FIELD = "contact_ref" as const;
 
 /** True when the honeypot decoy field carries a value — i.e. the submitter is (almost certainly) a bot. */
 export function isHoneypotTripped(value: unknown): boolean {

@@ -137,15 +137,17 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
   return (
     <form onSubmit={handleSubmit} noValidate className="w-full">
       {/*
-        Honeypot decoy — off-screen + aria-hidden + tabindex -1 + autocomplete off so no human (incl.
-        screen-reader / keyboard users) ever reaches or fills it, but form-filling bots do. A non-empty
-        value makes the server silently no-op the submit (protects the Resend send quota). Not display:none
-        (some bots skip that); kept in the a11y tree as hidden and out of tab order.
+        Honeypot decoy — off-screen + tabindex -1 + autocomplete off + a clear "leave empty" label. Not
+        aria-hidden (a focusable input inside an aria-hidden subtree trips axe `aria-hidden-focus`); the
+        input stays in the a11y tree but off-screen and out of tab order, and the LABEL tells any
+        screen-reader user in browse mode to leave it blank (so reaching it is not a false-positive —
+        the axe-clean standard honeypot, product課 review #687 ②). Not display:none (some bots skip it).
+        A non-empty value on submit makes the server silently no-op (protects the Resend send quota).
       */}
-      <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
-        <label htmlFor={`${inputId}-website`}>Leave this field empty</label>
+      <div style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
+        <label htmlFor={`${inputId}-hp`}>Leave this field empty</label>
         <input
-          id={`${inputId}-website`}
+          id={`${inputId}-hp`}
           type="text"
           name={HONEYPOT_FIELD}
           tabIndex={-1}

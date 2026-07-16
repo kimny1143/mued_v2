@@ -80,7 +80,12 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
   // email at a time. Fail-open (checkRateLimit returns null when Upstash is unconfigured). A 429 here
   // surfaces as the form's generic "try again" error — honest (a real temporary limit), never a false
   // "sent". Generous window (5/hour) so a legit resend still works.
-  const emailLimit = await checkRateLimit("plugin-email", `plugin-email:${email}`);
+  // ★ Fail-open on ANY error, not just unconfigured. checkRateLimit only returns null when Upstash is
+  // unconfigured; if `limiter.limit()` THROWS at runtime (network blip / Upstash-side 429 — precisely
+  // the launch-wave high-load this PR defends), the throw would 500 the request and the welcome email
+  // (= the deliverable) would never send. The IP-keyed rateLimit() wraps its own try/catch; this new
+  // direct call must too, or it fail-CLOSES the exact scenario it protects (product課 review #687).
+  const emailLimit = await checkRateLimit("plugin-email", `plugin-email:${email}`).catch(() => null);
   if (emailLimit && !emailLimit.success) {
     logger.warn(`[${plugin}/subscribe] per-email rate limit hit — welcome not resent`, { plugin });
     return apiError("You've requested this a few times recently. Please check your inbox and spam, then try again shortly.", {

@@ -8,7 +8,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockRateLimit = vi.fn();
-vi.mock("@/lib/middleware/rate-limit", () => ({ rateLimit: (...a: unknown[]) => mockRateLimit(...a) }));
+const mockCheckRateLimit = vi.fn();
+vi.mock("@/lib/middleware/rate-limit", () => ({
+  rateLimit: (...a: unknown[]) => mockRateLimit(...a),
+  checkRateLimit: (...a: unknown[]) => mockCheckRateLimit(...a),
+}));
 vi.mock("@/lib/utils/logger", () => ({ logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }));
 
 const mockAdd = vi.fn();
@@ -46,6 +50,8 @@ vi.mock("@/lib/plugins/registry", () => ({
     muedsat: { key: "muedsat", live: true, source: "muedsat_lp", downloadUrl: "", pressToken: "", i18nNamespace: "muedsat", subscribeEndpoint: "/api/muedsat/subscribe", audienceEnvName: "RESEND_MUEDSAT_AUDIENCE_ID" },
     muedlim: { key: "muedlim", live: false, source: "muedlim_lp", downloadUrl: "", pressToken: "", i18nNamespace: "muedlim", subscribeEndpoint: "/api/muedlim/subscribe", audienceEnvName: "RESEND_MUEDLIM_AUDIENCE_ID" },
   },
+  HONEYPOT_FIELD: "contact_ref",
+  isHoneypotTripped: (v: unknown) => typeof v === "string" && v.trim().length > 0,
 }));
 
 import { handlePluginSubscribe } from "@/lib/plugins/subscribe-handler";
@@ -57,7 +63,8 @@ function req(body: unknown): NextRequest {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockRateLimit.mockResolvedValue(null); // rate-limit passes
+  mockRateLimit.mockResolvedValue(null); // IP rate-limit passes
+  mockCheckRateLimit.mockResolvedValue(null); // per-email rate-limit unconfigured (fail-open) by default
   mockEnabled.mockReturnValue(true); // audience configured
   mockAdd.mockResolvedValue(true); // lead captured
   mockSendLim.mockResolvedValue({ success: true, messageId: "m1" });
@@ -175,5 +182,51 @@ describe("handlePluginSubscribe — portal entitlement wiring (P-1)", () => {
   it("firstTouch is null when no utm_* is submitted (no empty-object noise)", async () => {
     await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
     expect(mockRecord).toHaveBeenCalledWith("muedsat", expect.objectContaining({ firstTouch: null }));
+  });
+});
+
+describe("handlePluginSubscribe — bot defense (honeypot + per-email rate limit, 2026-07-16)", () => {
+  it("honeypot filled → silent no-op 200 subscribed:false, NO email, NO quota spent (bot can't tell)", async () => {
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en", contact_ref: "http://spam" }));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    // Byte-identical shape to the not-live no-op so a bot can't distinguish a block from success.
+    expect(json.data.subscribed).toBe(false);
+    expect(mockSendSat).not.toHaveBeenCalled(); // no welcome email = no quota burn
+    expect(mockAdd).not.toHaveBeenCalled();
+  });
+
+  it("empty honeypot → normal path (regression 0 for real users)", async () => {
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en", contact_ref: "" }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.subscribed).toBe(true);
+    expect(mockSendSat).toHaveBeenCalledTimes(1);
+  });
+
+  it("per-email rate limit exceeded → 429 RATE_LIMITED, honest error, NO welcome resent", async () => {
+    mockCheckRateLimit.mockResolvedValue({ success: false, limit: 5, remaining: 0, reset: Date.now() + 1000 });
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
+    expect(res.status).toBe(429);
+    const json = await res.json();
+    expect(json.success).toBe(false);
+    expect(json.code).toBe("RATE_LIMITED"); // form maps this to its generic "try again" error, never a false "sent"
+    expect(mockSendSat).not.toHaveBeenCalled();
+  });
+
+  it("per-email limiter THROWS (Upstash blip) → fail-OPEN, welcome still delivered (① review fix)", async () => {
+    // The exact launch-wave failure mode: high load makes limiter.limit() throw. The .catch(()=>null)
+    // must swallow it so the deliverable still ships — never fail-CLOSED on the scenario we defend.
+    mockCheckRateLimit.mockRejectedValue(new Error("upstash 429"));
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.subscribed).toBe(true);
+    expect(mockSendSat).toHaveBeenCalledTimes(1);
+  });
+
+  it("honeypot check runs BEFORE the per-email limiter (bot never consumes a real user's limit budget)", async () => {
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en", contact_ref: "x" }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.subscribed).toBe(false);
+    expect(mockCheckRateLimit).not.toHaveBeenCalled(); // short-circuited by honeypot
   });
 });
