@@ -7,8 +7,8 @@
 //
 // CLIENT-SAFE ONLY: no process.env secrets here (the form imports this). The Resend audience id is
 // read server-side in lib/plugins/audience.ts via `audienceEnvName` (the env var NAME is not a value).
-import { MUEDSAT_LIVE, MUEDSAT_DOWNLOAD_URL, MUEDSAT_PRESS_TOKEN } from "@/lib/muedsat/config";
-import { MUEDLIM_LIVE, MUEDLIM_DOWNLOAD_URL, MUEDLIM_PRESS_TOKEN } from "@/lib/muedlim/config";
+import { MUEDSAT_LIVE, MUEDSAT_DOWNLOAD_URL, MUEDSAT_PRESS_TOKEN, MUEDSAT_VERSION } from "@/lib/muedsat/config";
+import { MUEDLIM_LIVE, MUEDLIM_DOWNLOAD_URL, MUEDLIM_PRESS_TOKEN, MUEDLIM_VERSION } from "@/lib/muedlim/config";
 
 export type PluginKey = "muedsat" | "muedlim";
 
@@ -18,6 +18,8 @@ export interface PluginDist {
   live: boolean;
   /** download URL for the welcome email + press bypass; empty until go-live (kimny gate). */
   downloadUrl: string;
+  /** current build version shown in the user portal (P-2); updated with downloadUrl in the same PR. */
+  version: string;
   /** press/reviewer bypass token (dormant when empty). */
   pressToken: string;
   /** capture source label (analytics + the subscribe payload's `source`). */
@@ -36,6 +38,7 @@ export const PLUGIN_DIST: Record<PluginKey, PluginDist> = {
     key: "muedsat",
     live: MUEDSAT_LIVE,
     downloadUrl: MUEDSAT_DOWNLOAD_URL,
+    version: MUEDSAT_VERSION,
     pressToken: MUEDSAT_PRESS_TOKEN,
     source: "muedsat_lp",
     i18nNamespace: "muedsat",
@@ -46,6 +49,7 @@ export const PLUGIN_DIST: Record<PluginKey, PluginDist> = {
     key: "muedlim",
     live: MUEDLIM_LIVE,
     downloadUrl: MUEDLIM_DOWNLOAD_URL,
+    version: MUEDLIM_VERSION,
     pressToken: MUEDLIM_PRESS_TOKEN,
     source: "muedlim_lp",
     i18nNamespace: "muedlim",
