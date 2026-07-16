@@ -14,7 +14,7 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
+import { PLUGIN_DIST, HONEYPOT_FIELD, type PluginKey } from "@/lib/plugins/registry";
 import { trackCtaClick } from "@/lib/analytics/gtag";
 
 type Status = "idle" | "submitting" | "success" | "error";
@@ -48,6 +48,9 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
   const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
+  // Honeypot decoy — a hidden field real users never see/fill. A non-empty value on submit is a bot;
+  // the server silently no-ops it (protects the shared Resend send quota). See lib/plugins/registry.
+  const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorKey, setErrorKey] = useState<"errorEmail" | "errorGeneric" | "errorEmailFailed">("errorGeneric");
 
@@ -105,6 +108,7 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
           utm_medium: searchParams.get("utm_medium"),
           utm_campaign: searchParams.get("utm_campaign"),
           utm_content: searchParams.get("utm_content"),
+          [HONEYPOT_FIELD]: honeypot,
         }),
       });
       if (!res.ok) {
@@ -132,6 +136,24 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="w-full">
+      {/*
+        Honeypot decoy — off-screen + aria-hidden + tabindex -1 + autocomplete off so no human (incl.
+        screen-reader / keyboard users) ever reaches or fills it, but form-filling bots do. A non-empty
+        value makes the server silently no-op the submit (protects the Resend send quota). Not display:none
+        (some bots skip that); kept in the a11y tree as hidden and out of tab order.
+      */}
+      <div aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
+        <label htmlFor={`${inputId}-website`}>Leave this field empty</label>
+        <input
+          id={`${inputId}-website`}
+          type="text"
+          name={HONEYPOT_FIELD}
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <label htmlFor={inputId} className="sr-only">
           {t("emailLabel")}

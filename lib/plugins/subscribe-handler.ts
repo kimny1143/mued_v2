@@ -14,12 +14,12 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiError, apiSuccess, apiValidationError } from "@/lib/api-response";
-import { rateLimit } from "@/lib/middleware/rate-limit";
+import { rateLimit, checkRateLimit } from "@/lib/middleware/rate-limit";
 import { addPluginSubscriber, isPluginAudienceEnabled } from "@/lib/plugins/audience";
 import { recordPluginEntitlement } from "@/lib/plugins/entitlements";
 import { emailService, type EmailResult } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
-import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
+import { PLUGIN_DIST, HONEYPOT_FIELD, isHoneypotTripped, type PluginKey } from "@/lib/plugins/registry";
 
 function schemaFor(plugin: PluginKey) {
   return z.object({
@@ -30,6 +30,9 @@ function schemaFor(plugin: PluginKey) {
     utm_medium: z.string().max(128).nullable().optional(),
     utm_campaign: z.string().max(128).nullable().optional(),
     utm_content: z.string().max(128).nullable().optional(),
+    // Honeypot decoy — humans never fill it (hidden field). A non-empty value = bot; capped so a huge
+    // paste can't itself be abused. Kept lenient (optional) so legit submits without the field pass.
+    [HONEYPOT_FIELD]: z.string().max(200).optional(),
   });
 }
 
@@ -60,7 +63,31 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
     return apiValidationError("Validation failed", parsed.error.flatten());
   }
 
+  // Honeypot — a filled decoy field means a bot. SILENTLY no-op (same 200 shape as the not-live path)
+  // so the bot can't distinguish a block from a success, and NO welcome email is sent (protects the
+  // shared Resend send quota — the root vulnerability behind the 2026-07-16 launch-wave quota
+  // exhaustion). Logged at info for observability of bot pressure; never alerts.
+  if (isHoneypotTripped((parsed.data as Record<string, unknown>)[HONEYPOT_FIELD])) {
+    logger.info(`[${plugin}/subscribe] honeypot tripped — bot submit dropped (no email sent)`, { plugin });
+    return apiSuccess({ subscribed: false });
+  }
+
+  // `source` is kept here (from P-1) for the portal entitlement record below.
   const { email, locale, source } = parsed.data;
+
+  // Per-EMAIL rate limit (complements the IP-keyed bucket above). Caps welcome sends for a single
+  // address so a retry-storm or single-address abuser can't burn the shared Resend send quota one
+  // email at a time. Fail-open (checkRateLimit returns null when Upstash is unconfigured). A 429 here
+  // surfaces as the form's generic "try again" error — honest (a real temporary limit), never a false
+  // "sent". Generous window (5/hour) so a legit resend still works.
+  const emailLimit = await checkRateLimit("plugin-email", `plugin-email:${email}`);
+  if (emailLimit && !emailLimit.success) {
+    logger.warn(`[${plugin}/subscribe] per-email rate limit hit — welcome not resent`, { plugin });
+    return apiError("You've requested this a few times recently. Please check your inbox and spam, then try again shortly.", {
+      code: "RATE_LIMITED",
+      status: 429,
+    });
+  }
 
   // Plugin closed to "coming soon" (registry.live = false, e.g. MUEDlim from 2026-07-13) — no-op the
   // capture so the email gate + download are fully disabled while closed. The UI form is already

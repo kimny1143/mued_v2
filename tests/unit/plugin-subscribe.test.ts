@@ -8,7 +8,7 @@
  * proves the MUEDsat runtime is unchanged. (conductor merge gate: "回帰0 を test で証明", not asserted.)
  */
 import { describe, it, expect } from "vitest";
-import { PLUGIN_DIST } from "@/lib/plugins/registry";
+import { PLUGIN_DIST, HONEYPOT_FIELD, isHoneypotTripped } from "@/lib/plugins/registry";
 import { addPluginSubscriber, isPluginAudienceEnabled } from "@/lib/plugins/audience";
 import { MUEDSAT_LIVE, MUEDSAT_DOWNLOAD_URL, MUEDSAT_PRESS_TOKEN } from "@/lib/muedsat/config";
 import { MUEDLIM_LIVE, MUEDLIM_DOWNLOAD_URL, MUEDLIM_PRESS_TOKEN } from "@/lib/muedlim/config";
@@ -53,5 +53,31 @@ describe("plugin distribution registry — MUEDsat regression 0 (案A migration)
     }
     // never throws, whatever the env
     await expect(addPluginSubscriber("muedlim", { email: "", locale: "en" })).resolves.toBe(false);
+  });
+});
+
+describe("plugin email gate — honeypot bot-trap (2026-07-16 quota-defense)", () => {
+  it("HONEYPOT_FIELD is a stable, single-source field name shared by form + handler", () => {
+    expect(typeof HONEYPOT_FIELD).toBe("string");
+    expect(HONEYPOT_FIELD.length).toBeGreaterThan(0);
+  });
+
+  it("isHoneypotTripped: empty / whitespace / missing = human (false)", () => {
+    expect(isHoneypotTripped(undefined)).toBe(false);
+    expect(isHoneypotTripped("")).toBe(false);
+    expect(isHoneypotTripped("   ")).toBe(false);
+    expect(isHoneypotTripped(null)).toBe(false);
+  });
+
+  it("isHoneypotTripped: any non-empty value = bot (true)", () => {
+    expect(isHoneypotTripped("https://spam.example")).toBe(true);
+    expect(isHoneypotTripped("x")).toBe(true);
+    expect(isHoneypotTripped("  filled  ")).toBe(true);
+  });
+
+  it("non-string honeypot values are treated as absent (false), never throw", () => {
+    expect(isHoneypotTripped(123)).toBe(false);
+    expect(isHoneypotTripped({})).toBe(false);
+    expect(isHoneypotTripped([])).toBe(false);
   });
 });
