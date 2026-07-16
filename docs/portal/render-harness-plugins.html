@@ -1,0 +1,194 @@
+<style>
+  /* IMPLEMENTATION RENDER (ui-mock-fidelity overlay evidence for PR-2).
+     This is the /dashboard/plugins component output: the EXACT DOM emitted by
+     app/dashboard/plugins/plugins-portal-view.tsx + the production CSS from
+     plugins-portal.module.css, on the app's canonical globals.css tokens, inside a
+     MuednoteLayout-equivalent shell (dark #0a0a0a + centered container + Sora + footer).
+     Overlay against the approved mock (docs/portal/mock-plugins-portal.html). Documented,
+     intentional deltas vs the mock are listed in the strip below. */
+
+  /* globals.css tokens actually used by the module (verbatim values). */
+  :root, :root[data-theme="light"], :root[data-theme="dark"] {
+    --amber: #f5a524;
+    --amber-dim: #b57a14;
+    --amber-glow: rgba(245, 165, 36, 0.14);
+    --emerald: #4ea674;
+    --bg-base: #0a0a0a;
+    --bg-surface: #111113;
+    --bg-elevated: #17171a;
+    --line: #222226;
+    --line-soft: #18181b;
+    --text-primary: #fafafa;
+    --text-secondary: #a1a1a1;
+    --text-muted: #71717a;
+    --font-sans: "Sora", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+
+  .note {
+    background: #0a0a0a; color: #71717a; font-family: var(--font-mono);
+    font-size: 11.5px; letter-spacing: .02em; line-height: 1.7;
+    border-bottom: 1px solid var(--line); padding: 12px 18px;
+  }
+  .note b { color: var(--amber); }
+  .note code { color: #a1a1a1; }
+  .flabel {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: #6b6b73; padding: 22px 18px 0; background: #0a0a0a; display: flex; align-items: center; gap: 8px;
+  }
+  .flabel::before { content:""; width: 5px; height: 5px; border-radius: 50%; background: var(--amber); }
+
+  /* MuednoteLayout-equivalent shell */
+  .shell {
+    background: #0a0a0a; min-height: 40vh;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1152px; margin: 0 auto; padding: 32px 24px; }
+
+  /* ── plugins-portal.module.css (verbatim rules; class names un-hashed) ── */
+  .wrap { color: var(--text-primary); font-family: var(--font-sans); }
+  .inner { max-width: 940px; margin: 0 auto; }
+  .eyebrow { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--amber-dim); margin: 0 0 10px; }
+  .title { font-size: 25px; font-weight: 700; letter-spacing: -.01em; margin: 0 0 8px; text-wrap: balance; }
+  .lede { color: var(--text-secondary); font-size: 14px; max-width: 60ch; margin: 0; }
+  .racklabel { display: flex; align-items: center; gap: 10px; margin: 28px 0 12px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--text-muted); }
+  .racklabel::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+  .racklabel .count { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .rack { display: flex; flex-direction: column; gap: 12px; }
+  .module { position: relative; display: grid; grid-template-columns: 96px 1fr auto; gap: 18px; align-items: center; background: linear-gradient(180deg, var(--bg-surface), var(--bg-base)); border: 1px solid var(--line); border-radius: 13px; padding: 16px 18px; }
+  .module::before, .module::after { content: ""; position: absolute; top: 10px; width: 4px; height: 4px; border-radius: 50%; background: #000; box-shadow: inset 0 0 0 1px var(--line), 0 1px 0 rgba(255,255,255,.03); }
+  .module::before { left: 10px; }
+  .module::after { right: 10px; }
+  .faceplate { width: 96px; height: 66px; border-radius: 9px; background: linear-gradient(160deg, #1b1b1f, #0e0e11); border: 1px solid var(--line); display: block; }
+  .meta { min-width: 0; }
+  .name { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+  .name h3 { font-size: 16px; font-weight: 650; margin: 0; letter-spacing: -.01em; }
+  .name .kind { color: var(--text-muted); font-size: 12px; font-family: var(--font-mono); letter-spacing: .02em; }
+  .formats { display: flex; gap: 6px; margin: 9px 0 0; flex-wrap: wrap; }
+  .fmt { font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; color: var(--text-secondary); background: var(--bg-elevated); border: 1px solid var(--line); border-radius: 5px; padding: 2px 6px; }
+  .claimed { margin: 10px 0 0; font-size: 11.5px; color: var(--text-muted); font-family: var(--font-mono); letter-spacing: .01em; }
+  .action { display: flex; flex-direction: column; align-items: flex-end; gap: 11px; }
+  .readout { display: flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 12.5px; letter-spacing: .02em; color: var(--amber); background: var(--amber-glow); border: 1px solid rgba(245,165,36,.22); border-radius: 7px; padding: 4px 9px; box-shadow: 0 0 18px -6px var(--amber-glow); font-variant-numeric: tabular-nums; }
+  .led { width: 6px; height: 6px; border-radius: 50%; background: var(--emerald); box-shadow: 0 0 7px var(--emerald); flex: none; }
+  .readout .vlabel { color: var(--amber-dim); }
+  .dl { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; background: var(--amber); color: #140d00; border: none; border-radius: 9px; padding: 9px 17px; font-family: var(--font-sans); font-weight: 700; font-size: 13.5px; letter-spacing: .01em; cursor: pointer; text-decoration: none; box-shadow: 0 1px 0 rgba(255,255,255,.14) inset, 0 10px 22px -12px rgba(245,165,36,.7); }
+  .dl small { font-family: var(--font-mono); font-weight: 500; font-size: 9.5px; letter-spacing: .03em; color: #3a2600; }
+  .dl:hover { background: #ffb838; transform: translateY(-1px); }
+  .empty { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 44px 24px 46px; gap: 14px; border: 1px dashed var(--line); border-radius: 13px; background: repeating-linear-gradient(135deg, transparent 0 11px, rgba(255,255,255,.012) 11px 12px), var(--bg-base); }
+  .emptyGlyph { width: 54px; height: 40px; border-radius: 8px; border: 1px solid var(--line); background: linear-gradient(160deg, #17171b, #0d0d10); display: grid; place-items: center; }
+  .empty h3 { margin: 2px 0 0; font-size: 16px; font-weight: 650; }
+  .empty p { margin: 0; color: var(--text-secondary); font-size: 13.5px; max-width: 42ch; }
+  .emptyCta { margin-top: 6px; display: inline-flex; align-items: center; gap: 8px; color: var(--amber); text-decoration: none; font-weight: 600; font-size: 13.5px; border: 1px solid rgba(245,165,36,.3); border-radius: 9px; padding: 8px 15px; }
+  .foot { border-top: 1px solid rgba(255,255,255,.1); padding: 22px 24px; text-align: center; color: #52525b; font-size: 12px; font-family: var(--font-sans); background: #0a0a0a; }
+</style>
+
+<div class="note">
+  <b>IMPLEMENTATION RENDER</b> — <code>/dashboard/plugins</code> component output (production <code>plugins-portal.module.css</code> + <code>plugins-portal-view.tsx</code> DOM + globals.css tokens), inside the MuednoteLayout shell. Overlay vs the approved mock.<br>
+  <b>Intentional deltas vs mock (documented):</b>
+  (1) tokens canonicalized to globals — <code>--line #222226</code> (mock #26262b), LED <code>--emerald #4ea674</code> (mock #4ade80), glow <code>.14</code> (mock .16) — imperceptible, product-canonical;
+  (2) topbar/user-chip = the real MuednoteLayout chrome (the mock's topbar stood in for it, not re-implemented);
+  (3) background radial-gradient dropped to sit cleanly in the dashboard container.
+  Live authenticated render = Vercel PR preview.
+</div>
+
+<!-- EN · populated -->
+<p class="flabel">EN · owns 2 free modules (verified email)</p>
+<div class="shell"><div class="container">
+  <div class="wrap"><div class="inner">
+    <p class="eyebrow">Your rack</p>
+    <h1 class="title">Your plugins</h1>
+    <p class="lede">Every plugin you own, always current. Grab the latest build anytime — no email link to dig up.</p>
+    <div class="racklabel"><span>Owned</span> <span class="count">2</span></div>
+    <div class="rack">
+      <div class="module">
+        <svg class="faceplate" viewBox="0 0 96 66" role="img" aria-label="MUEDlim">
+          <rect x="8" y="8" width="80" height="50" rx="5" fill="#0d0d10" stroke="#2a2a30"/>
+          <circle cx="26" cy="30" r="10" fill="#161619" stroke="#3a3a42"/><line x1="26" y1="30" x2="26" y2="22" stroke="#e7e7ea" stroke-width="1.6" stroke-linecap="round"/>
+          <text x="26" y="49" fill="#6b6b73" font-family="monospace" font-size="5.2" text-anchor="middle">INPUT</text>
+          <circle cx="52" cy="30" r="10" fill="#161619" stroke="#3a3a42"/><line x1="52" y1="30" x2="58" y2="25" stroke="#f5a524" stroke-width="1.6" stroke-linecap="round"/>
+          <text x="52" y="49" fill="#6b6b73" font-family="monospace" font-size="5.2" text-anchor="middle">CEIL</text>
+          <rect x="70" y="16" width="10" height="34" rx="2" fill="#141417" stroke="#3a3a42"/><rect x="72" y="34" width="6" height="14" rx="1" fill="#f5a524" opacity="0.85"/><rect x="72" y="28" width="6" height="4" rx="1" fill="#f5a524" opacity="0.45"/>
+        </svg>
+        <div class="meta">
+          <div class="name"><h3>MUEDlim</h3><span class="kind">Limiter</span></div>
+          <div class="formats"><span class="fmt">VST3</span><span class="fmt">AU</span><span class="fmt">AAX</span><span class="fmt">macOS</span></div>
+          <p class="claimed">Added Jul 12, 2026</p>
+        </div>
+        <div class="action">
+          <span class="readout"><span class="led"></span><span class="vlabel">ver</span> 0.1.0-alpha</span>
+          <a class="dl" href="#">Download latest<small>MUEDlim-0.1.0-alpha</small></a>
+        </div>
+      </div>
+      <div class="module">
+        <svg class="faceplate" viewBox="0 0 96 66" role="img" aria-label="MUEDsat">
+          <defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#f5a524" stop-opacity=".55"/><stop offset="100%" stop-color="#f5a524" stop-opacity="0"/></radialGradient></defs>
+          <rect x="8" y="8" width="80" height="50" rx="5" fill="#0d0d10" stroke="#2a2a30"/>
+          <circle cx="34" cy="33" r="19" fill="url(#g)"/><circle cx="34" cy="33" r="13" fill="#161619" stroke="#3a3a42"/><line x1="34" y1="33" x2="34" y2="23" stroke="#f5a524" stroke-width="2" stroke-linecap="round"/>
+          <text x="34" y="55" fill="#6b6b73" font-family="monospace" font-size="6" text-anchor="middle">DRIVE</text>
+          <rect x="60" y="20" width="20" height="9" rx="2" fill="#141417" stroke="#3a3a42"/><circle cx="65" cy="24.5" r="2.4" fill="#f5a524"/>
+          <text x="70" y="46" fill="#8a8a93" font-family="monospace" font-size="8" text-anchor="middle" font-weight="700">SAT</text>
+        </svg>
+        <div class="meta">
+          <div class="name"><h3>MUEDsat</h3><span class="kind">Saturation</span></div>
+          <div class="formats"><span class="fmt">VST3</span><span class="fmt">AU</span><span class="fmt">AAX</span><span class="fmt">macOS</span></div>
+          <p class="claimed">Added Jul 9, 2026</p>
+        </div>
+        <div class="action">
+          <span class="readout"><span class="led"></span><span class="vlabel">ver</span> 0.1.0-alpha</span>
+          <a class="dl" href="#">Download latest<small>MUEDsat-0.1.0-alpha</small></a>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</div><div class="foot">MUED — © 2026</div></div>
+
+<!-- EN · empty -->
+<p class="flabel">EN · owns nothing yet (fail-closed)</p>
+<div class="shell"><div class="container">
+  <div class="wrap"><div class="inner">
+    <p class="eyebrow">Your rack</p>
+    <h1 class="title">Your plugins</h1>
+    <p class="lede">Every plugin you own, always current. Grab the latest build anytime — no email link to dig up.</p>
+    <div class="racklabel"><span>Owned</span> <span class="count">0</span></div>
+    <div class="empty">
+      <div class="emptyGlyph"><svg width="26" height="18" viewBox="0 0 26 18" aria-hidden="true"><rect x="1" y="1" width="24" height="16" rx="2" fill="none" stroke="#3a3a42"/><circle cx="8" cy="9" r="3.2" fill="none" stroke="#5a5a63"/><circle cx="18" cy="9" r="3.2" fill="none" stroke="#5a5a63"/></svg></div>
+      <h3>Your rack is empty</h3>
+      <p>Claim a free MUEDsp module and it shows up here — with the latest build one click away, for good.</p>
+      <a class="emptyCta" href="#">Browse the MUEDsp plugins →</a>
+    </div>
+  </div></div>
+</div><div class="foot">MUED — © 2026</div></div>
+
+<!-- JA · populated (i18n) -->
+<p class="flabel">JA · i18n（pluginPortal namespace）</p>
+<div class="shell"><div class="container">
+  <div class="wrap"><div class="inner">
+    <p class="eyebrow">あなたのラック</p>
+    <h1 class="title">あなたのプラグイン</h1>
+    <p class="lede">所有するプラグインを、いつでも最新版で。メールのリンクを探し直す必要はもうありません。</p>
+    <div class="racklabel"><span>所有</span> <span class="count">1</span></div>
+    <div class="rack">
+      <div class="module">
+        <svg class="faceplate" viewBox="0 0 96 66" role="img" aria-label="MUEDsat">
+          <defs><radialGradient id="g2" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#f5a524" stop-opacity=".55"/><stop offset="100%" stop-color="#f5a524" stop-opacity="0"/></radialGradient></defs>
+          <rect x="8" y="8" width="80" height="50" rx="5" fill="#0d0d10" stroke="#2a2a30"/>
+          <circle cx="34" cy="33" r="19" fill="url(#g2)"/><circle cx="34" cy="33" r="13" fill="#161619" stroke="#3a3a42"/><line x1="34" y1="33" x2="34" y2="23" stroke="#f5a524" stroke-width="2" stroke-linecap="round"/>
+          <text x="34" y="55" fill="#6b6b73" font-family="monospace" font-size="6" text-anchor="middle">DRIVE</text>
+          <rect x="60" y="20" width="20" height="9" rx="2" fill="#141417" stroke="#3a3a42"/><circle cx="65" cy="24.5" r="2.4" fill="#f5a524"/>
+          <text x="70" y="46" fill="#8a8a93" font-family="monospace" font-size="8" text-anchor="middle" font-weight="700">SAT</text>
+        </svg>
+        <div class="meta">
+          <div class="name"><h3>MUEDsat</h3><span class="kind">サチュレーション</span></div>
+          <div class="formats"><span class="fmt">VST3</span><span class="fmt">AU</span><span class="fmt">AAX</span><span class="fmt">macOS</span></div>
+          <p class="claimed">2026年7月9日 に追加</p>
+        </div>
+        <div class="action">
+          <span class="readout"><span class="led"></span><span class="vlabel">ver</span> 0.1.0-alpha</span>
+          <a class="dl" href="#">最新版をダウンロード<small>MUEDsat-0.1.0-alpha</small></a>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</div><div class="foot">MUED — © 2026</div></div>
