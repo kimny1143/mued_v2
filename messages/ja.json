@@ -2314,5 +2314,24 @@
       "eyebrow": "開発中",
       "body": "MUEDsat は、いま作っている MUEDsp masterchain の1段です。"
     }
+  },
+  "pluginPortal": {
+    "eyebrow": "あなたのラック",
+    "title": "あなたのプラグイン",
+    "lede": "所有するプラグインを、いつでも最新版で。メールのリンクを探し直す必要はもうありません。",
+    "owned": "所有",
+    "verified": "確認済み",
+    "versionLabel": "ver",
+    "download": "最新版をダウンロード",
+    "added": "{date} に追加",
+    "kind": {
+      "muedsat": "サチュレーション",
+      "muedlim": "リミッター"
+    },
+    "empty": {
+      "title": "ラックはまだ空です",
+      "body": "無料の MUEDsp モジュールを入手すると、ここに表示されます。以降は最新ビルドがワンクリックで手に入ります。",
+      "cta": "MUEDsp プラグインを見る"
+    }
   }
 }

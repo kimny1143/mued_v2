@@ -32,6 +32,11 @@ export const MUEDSAT_LIVE = true;
 // audio byte-identical; same filename/URL/version 0.1.0-alpha). sha256 c1f11fa1… conductor-verified.
 export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDsat-0.1.0-alpha-installer.pkg";
 
+// Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
+// Updated together with MUEDSAT_DOWNLOAD_URL in the same PR (the pkg filename carries this version) so
+// the portal's "latest version" and the DL link never drift. NOT a secret.
+export const MUEDSAT_VERSION = "0.1.0-alpha";
+
 // MUEDsp product page URL for the footer "where it came from" link. Empty => the link is hidden
 // (the copy's "MUEDsp product page — link TBD, kimny gate"). Set once the MUEDsp page exists.
 export const MUEDSAT_MUEDSP_URL = "";

@@ -28,6 +28,11 @@ export const MUEDLIM_LIVE = true;
 //   Verify after any swap: shasum -a 256 public/downloads/MUEDlim-0.1.0-alpha-installer.pkg
 export const MUEDLIM_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDlim-0.1.0-alpha-installer.pkg";
 
+// Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
+// Updated together with MUEDLIM_DOWNLOAD_URL in the same PR (the pkg filename carries this version) so
+// the portal's "latest version" and the DL link never drift. NOT a secret.
+export const MUEDLIM_VERSION = "0.1.0-alpha";
+
 // Press / reviewer bypass — DESIGN ROOM ONLY (dormant until a token is set; not a public feature).
 // When non-empty, `?press=<token>` reveals MUEDLIM_DOWNLOAD_URL directly, skipping the email gate.
 // Empty => the check is always false => fully no-op. (Same pattern as MUEDSAT_PRESS_TOKEN.)
