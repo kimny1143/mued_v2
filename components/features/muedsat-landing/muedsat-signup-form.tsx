@@ -14,7 +14,7 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
+import { PLUGIN_DIST, HONEYPOT_FIELD, type PluginKey } from "@/lib/plugins/registry";
 import { trackCtaClick } from "@/lib/analytics/gtag";
 
 type Status = "idle" | "submitting" | "success" | "error";
@@ -48,6 +48,9 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
   const searchParams = useSearchParams();
 
   const [email, setEmail] = useState("");
+  // Honeypot decoy — a hidden field real users never see/fill. A non-empty value on submit is a bot;
+  // the server silently no-ops it (protects the shared Resend send quota). See lib/plugins/registry.
+  const [honeypot, setHoneypot] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [errorKey, setErrorKey] = useState<"errorEmail" | "errorGeneric" | "errorEmailFailed">("errorGeneric");
 
@@ -105,6 +108,7 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
           utm_medium: searchParams.get("utm_medium"),
           utm_campaign: searchParams.get("utm_campaign"),
           utm_content: searchParams.get("utm_content"),
+          [HONEYPOT_FIELD]: honeypot,
         }),
       });
       if (!res.ok) {
@@ -132,6 +136,26 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="w-full">
+      {/*
+        Honeypot decoy — off-screen + tabindex -1 + autocomplete off + a clear "leave empty" label. Not
+        aria-hidden (a focusable input inside an aria-hidden subtree trips axe `aria-hidden-focus`); the
+        input stays in the a11y tree but off-screen and out of tab order, and the LABEL tells any
+        screen-reader user in browse mode to leave it blank (so reaching it is not a false-positive —
+        the axe-clean standard honeypot, product課 review #687 ②). Not display:none (some bots skip it).
+        A non-empty value on submit makes the server silently no-op (protects the Resend send quota).
+      */}
+      <div style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}>
+        <label htmlFor={`${inputId}-hp`}>Leave this field empty</label>
+        <input
+          id={`${inputId}-hp`}
+          type="text"
+          name={HONEYPOT_FIELD}
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <label htmlFor={inputId} className="sr-only">
           {t("emailLabel")}

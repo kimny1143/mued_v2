@@ -131,6 +131,21 @@ const limiters = {
       prefix: "ratelimit:research",
     });
   },
+
+  // Plugin email gate, keyed by EMAIL (not IP): 5 welcome sends per email per hour. The IP-keyed
+  // "research" bucket can't stop a retry-storm or a single-address abuser behind a rotating/shared IP
+  // from burning the shared Resend send quota one welcome at a time (the 2026-07-16 launch-wave
+  // exhaustion showed retries self-amplify). Generous enough that a legit "it didn't arrive, resend"
+  // still works; tight enough to cap runaway loops. Used with checkRateLimit("plugin-email", email).
+  "plugin-email": () => {
+    const r = getRedis();
+    if (!r) return null;
+    return new Ratelimit({
+      redis: r,
+      limiter: Ratelimit.slidingWindow(5, "1 h"),
+      prefix: "ratelimit:plugin-email",
+    });
+  },
 };
 
 export type RateLimitType = keyof typeof limiters;
