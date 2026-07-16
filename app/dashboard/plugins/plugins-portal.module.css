@@ -1,0 +1,212 @@
+/*
+ * User portal — /dashboard/plugins (P-2). Ported 1:1 from the kimny-approved mock
+ * (docs/portal/mock-plugins-portal.html) onto the app's canonical glasswerks tokens (globals.css:
+ * --amber / --bg-* / --line / --text-* / --emerald / --font-sans / --font-mono), so the render matches
+ * the mock while using the product's real palette. DAW/pro-audio console; amber spent in ONE place
+ * (version readout, Download action, meter glow); everything else quiet. Dark-committed by design.
+ */
+
+/* Sits inside MuednoteLayout (dark #0a0a0a shell + container + Sora + footer). This wrapper only
+   constrains width to the mock's proportions; the layout owns the page ground + padding. */
+.wrap { color: var(--text-primary); font-family: var(--font-sans); }
+.inner { max-width: 940px; margin: 0 auto; }
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--amber-dim);
+  margin: 0 0 10px;
+}
+.title {
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+  text-wrap: balance;
+}
+.lede { color: var(--text-secondary); font-size: 14px; max-width: 60ch; margin: 0; }
+
+.racklabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 28px 0 12px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.racklabel::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+.racklabel .count { color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+
+/* the rack — a vertical stack of module cards */
+.rack { display: flex; flex-direction: column; gap: 12px; }
+.module {
+  position: relative;
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  gap: 18px;
+  align-items: center;
+  background: linear-gradient(180deg, var(--bg-surface), var(--bg-base));
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 16px 18px;
+}
+/* faux rack-mount screws — a restrained hardware cue */
+.module::before,
+.module::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #000;
+  box-shadow: inset 0 0 0 1px var(--line), 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+.module::before { left: 10px; }
+.module::after { right: 10px; }
+
+.faceplate {
+  width: 96px;
+  height: 66px;
+  border-radius: 9px;
+  background: linear-gradient(160deg, #1b1b1f, #0e0e11);
+  border: 1px solid var(--line);
+  display: block;
+}
+
+.meta { min-width: 0; }
+.name { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.name h3 { font-size: 16px; font-weight: 650; margin: 0; letter-spacing: -0.01em; }
+.name .kind {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+.formats { display: flex; gap: 6px; margin: 9px 0 0; flex-wrap: wrap; }
+.fmt {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 2px 6px;
+}
+.claimed {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  letter-spacing: 0.01em;
+}
+
+.action { display: flex; flex-direction: column; align-items: flex-end; gap: 11px; }
+.readout {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  color: var(--amber);
+  background: var(--amber-glow);
+  border: 1px solid rgba(245, 165, 36, 0.22);
+  border-radius: 7px;
+  padding: 4px 9px;
+  box-shadow: 0 0 18px -6px var(--amber-glow);
+  font-variant-numeric: tabular-nums;
+}
+.led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--emerald);
+  box-shadow: 0 0 7px var(--emerald);
+  flex: none;
+}
+.readout .vlabel { color: var(--amber-dim); }
+.dl {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  background: var(--amber);
+  color: #140d00;
+  border: none;
+  border-radius: 9px;
+  padding: 9px 17px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset, 0 10px 22px -12px rgba(245, 165, 36, 0.7);
+}
+.dl small {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 9.5px;
+  letter-spacing: 0.03em;
+  color: #3a2600;
+}
+.dl:hover { background: #ffb838; transform: translateY(-1px); }
+.dl:focus-visible { outline: 2px solid #ffd98a; outline-offset: 2px; }
+
+/* empty state */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 44px 24px 46px;
+  gap: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 13px;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 11px, rgba(255, 255, 255, 0.012) 11px 12px),
+    var(--bg-base);
+}
+.emptyGlyph {
+  width: 54px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, #17171b, #0d0d10);
+  display: grid;
+  place-items: center;
+}
+.empty h3 { margin: 2px 0 0; font-size: 16px; font-weight: 650; }
+.empty p { margin: 0; color: var(--text-secondary); font-size: 13.5px; max-width: 42ch; }
+.emptyCta {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--amber);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 13.5px;
+  border: 1px solid rgba(245, 165, 36, 0.3);
+  border-radius: 9px;
+  padding: 8px 15px;
+  transition: background 0.12s ease;
+}
+.emptyCta:hover { background: var(--amber-glow); }
+
+@media (max-width: 620px) {
+  .module { grid-template-columns: 1fr; gap: 14px; }
+  .faceplate { width: 100%; height: 74px; }
+  .action { flex-direction: row; align-items: center; justify-content: space-between; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dl { transition: none; }
+}

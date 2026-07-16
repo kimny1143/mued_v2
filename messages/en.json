@@ -2314,5 +2314,24 @@
       "eyebrow": "In development",
       "body": "MUEDsat is one stage of MUEDsp masterchain — the finished chain I'm building now."
     }
+  },
+  "pluginPortal": {
+    "eyebrow": "Your rack",
+    "title": "Your plugins",
+    "lede": "Every plugin you own, always current. Grab the latest build anytime — no email link to dig up.",
+    "owned": "Owned",
+    "verified": "verified",
+    "versionLabel": "ver",
+    "download": "Download latest",
+    "added": "Added {date}",
+    "kind": {
+      "muedsat": "Saturation",
+      "muedlim": "Limiter"
+    },
+    "empty": {
+      "title": "Your rack is empty",
+      "body": "Claim a free MUEDsp module and it shows up here — with the latest build one click away, for good.",
+      "cta": "Browse the MUEDsp plugins"
+    }
   }
 }
