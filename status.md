@@ -1,16 +1,16 @@
 ---
 peer: mued
 department: product
-activity: standby
+activity: active
 status: active
-current_task: **C7（verify 手順のライセンス分岐設計）= 設計完全クローズ（開いた論点 残なし）**。**PR #682（draft）+ #684（dsp §7 fold + ②RESOLVED）MERGED + demo-form-locked follow-up 提出**。dispatch=conductor（kimny plan-GO・非gate・inert・Q2=(a)✓）。上程2件とも RESOLVED: ①**demo 形態=kimny 2026-07-15 決定=(A) output-restriction**（無期限+45秒周期フェード+preset 保存不可・render 2本[demo-ref+licensed-ref]・sample-count timer ゆえ clock seam 不要・旧「フルデモ」=Chief 仮推奨 source 訂正）＋dsp 実装 firm-up 3制約 fold（demo-ref 固定48kHz+原点 pin / auval 構造保証で Phase2 微調整自由 / **bypass 下 demo suspend=passthrough assert**＝validation catch）。②**AAX×PACE=conductor verified**（uniform keyfile・PACE=signing only・自前無料 AAX が license-free 実証）。設計中核不変: verify 2脚に license-state open enum 非干渉追加・keyfile-at-known-path+Ed25519 機構・auval-unlicensed PASS=dsp commit。今 session 前段完了群（全 merged/prod-LIVE）: MUEDlim reopen(#658/#659)・#664 GA4 purchase・faceplate #667・有料線 C2 #672+C+ #673(inert)・/muedlim #677・status #681/#683/#685。
-next_action: **C7 = 設計面 残手番なし**（実装は kimny gate 束ね待ち）。C7 実装（Leg A=dsp: demo-ref/licensed-ref 2本+keyfile-inject+bypass-suspend+preset-disable assert / Leg B=mued: commerce E2E）は kimny gate（C1 FastSpring + Phase2 実物微調整[フェード間隔/カーブ・save-disable UX]）と束。★有料線 go-live gate 束（inert 済）: migration 0057 prod / prod secret / MASTERCHAIN_INTEREST_LIVE flip / C2 capture UI / C4 consent / FastSpring payload+署名 C1 後埋め。他残: credit-pack GA4 再有効化 / #649 env / c6c9ad52 退避=dsp。
-blocked_by: なし（C7 設計完全クローズ・開いた論点残なし。残=実装 kimny gate 束ね待ちのみ＝他者手番）。
-urgency: low
+current_task: **🔴 Resend quota incident 対応（2026-07-16 URGENT dispatch）**。KVR 2製品 live+BPB press 波で共有 Resend 無料枠枯渇→mued.jp メールゲート（MUEDsat/MUEDlim DL 配信）送信不能（実害=Ian Thomas 氏 DL 未達 07:37 JST）。**初報 delivered（conductor 受領・「完璧な切り分け」）＝根本原因=実需要確定（bot にあらず）**: 一次3ソース突合（Resend `/emails` delivered / Vercel runtime logs / GA4）— 429 発火0/24h・全実消費者ドメイン・GA4 実人間ファネル・steady trickle・alert増幅0・「200%=送信"試行"でリトライ自己誘発」。→ **$20 Pro upgrade が本筋 fix（conductor→kimny surface 中）**。**defense-in-depth（conductor GO 並走）= PR #687 提出**（honeypot + per-email rate-limit・Tier2・reversible・prod-config 非タッチ・typecheck/lint/unit7 green・product課 dv8vi153 review 依頼済）。Ian 直 DL URL（MUEDlim/MUEDsat prod 200 verify）+ 棚別実数（MUEDsat12/MUEDlim9 delivered）を conductor に relay 済。【前段】C7 verify ライセンス分岐=設計完全クローズ（#682/#684/#686 merged・上程2件 RESOLVED）。
+next_action: **PR #687 = product課 review 待ち**（LGTM 後 merge は Tier2 code policy=kimny consent 同梱に従う）。Pro upgrade は conductor→kimny（本筋 fix・当日中）。Pro 後に丸1日クリーン棚別実数を段取り（Chief 再入トリガー）。email rate-limit の Upstash 実挙動は staging/prod verify 推奨。【前段 C7】実装は kimny gate（C1+Phase2 微調整）束ね待ち。有料線 go-live gate 束（inert 済）: migration 0057 prod / prod secret / flip / C2 UI / C4 consent。
+blocked_by: PR #687=product課 review 待ち（非ブロッキング）。incident 本筋($20 Pro)=conductor→kimny surface 中（mued 手番外）。
+urgency: mid
 action_owner: conductor
 deadline: null
-expected_next_check_at: 2026-07-15T17:00:00+09:00
-last_update: 2026-07-15T14:00:00+09:00
+expected_next_check_at: 2026-07-16T14:00:00+09:00
+last_update: 2026-07-16T13:05:00+09:00
 evidence: **#658 MUEDlim reopen**（`feat/muedlim-reopen`・MERGED 10:31Z・prod LIVE）: MUEDLIM_LIVE=true〔code const〕+ DOWNLOAD_URL 復元・pkg swap c6c9ad52→**a832976a**（3-format VST3·AU·AAX・3,191,130B・notarized）・/muedsp §2 download form LIVE・footer/badge/email/llms 3形式表記・回帰0・**conductor 独立 prod verify PASS**（DL 200/sha a832976a/§2 form/ /ja·en/muedsp·muedsat 200/MUEDsat endpoint 400 不変）。**#659 fast-follow**（`fix/muedsp-footer-en-byte-exact`・MERGED・prod verify PASS: /en/muedsp==/en/muedsat footer "& Intel" byte-exact LIVE）: content byte-exact refine 適用 — EN footer format "/ Intel"→"& Intel" で muedsat==muedsp==muedlim を EN/JA byte-exact 化（messages/en.json 2行・Tier1 copy-only）。**#656 MUEDlim coming-soon**（MERGED・#658 で reopen 済）: MUEDLIM_LIVE=false→coming-soon teaser 化（reopen で form 復帰）。**#652 home**（MERGED/LIVE・EN=案A）: brand-frame hero+de-personalize 3文+/muedial 3宣言撤去。**#655 cleanup**（MERGED）: dead v1 landing+理念本文 source 除去。**#649/#650 Codex P0**（MERGED）: メールゲート honest delivery+one-click unsubscribe / Hoo Pass 退場+/dial/pricing 撤去。
 confidence: high
 lane: active
