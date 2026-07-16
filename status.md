@@ -1,16 +1,16 @@
 ---
 peer: mued
 department: product
-activity: active
+activity: standby
 status: active
-current_task: **🟢 Resend quota incident = gate 復旧確定（2026-07-16）**。KVR 2製品 live+BPB press 波で無料枠枯渇→メールゲート送信不能（Ian Thomas 氏 DL 未達）。**根本原因=実需要確定（bot にあらず・一次3ソース突合: 429 発火0/24h・全実消費者ドメイン・GA4 実人間ファネル・steady trickle・alert増幅0・「200%=送信試行のリトライ自己誘発」）**。→ **kimny が $20 Resend Pro upgrade 済 → gate 復旧を mued が prod 実測 verify=✅**（LIVE POST HTTP 200 復帰[502 解消]・実ユーザ直近 9/10 delivered・synthetic bounced は非実在mailbox由来で quota 由来でないと切分け・cleanup 済）。conductor→kimny「復旧確定・波の取りこぼし停止」報告済。**defense-in-depth PR #687**（honeypot + per-email rate-limit・Tier2）: product課 review で **① checkRateLimit fail-CLOSED バグ**（Upstash throw→500→welcome 未達＝守る対象の負荷で fail-closed）+ 既存 handler test の新 import 未 mock 回帰(7/7 fail) 発見→修正 push（HEAD a7d15007・②aria-hidden除去/③名前 contact_ref/④accept・**unit 19 pass** 7+12・bot-defense handler test 5本追加）→ **product課 delta 再 review 依頼済**。Ian 直 DL URL + 棚別実数(MUEDsat12/MUEDlim9 delivered・truncated) relay 済。【前段】C7 verify=設計完全クローズ（#682/#684/#686）。
-next_action: **PR #687 = product課 delta 再 review→LGTM 待ち**（merge は Tier2 code policy=kimny consent 同梱）。**#688 status = self-merge 予定**。**Pro 後 丸1日クリーン棚別実数**を段取り（Chief 正式初観測値に差し替え・~24h 後 Resend `/emails` subject split で MUEDsat/MUEDlim 別 delivered を集計）。【前段 C7】実装 kimny gate（C1+Phase2 微調整）束ね待ち。有料線 go-live gate 束（inert 済）: migration 0057 / prod secret / flip / C2 UI / C4 consent。
-blocked_by: なし（gate 復旧確定。PR #687=product課 再 review 待ち・非ブロッキング。incident 本筋=$20 Pro 完了）。
+current_task: **🟢 Resend quota incident = 完全クローズ（2026-07-16・conductor 確認）**。KVR 2製品 live+BPB 波で無料枠枯渇→メールゲート送信不能→**根本原因=実需要確定（bot にあらず・3ソース突合: 429=0/24h・全実消費者ドメイン・GA4 実人間ファネル・「200%=送信試行のリトライ自己誘発」）**→ **kimny $20 Pro upgrade→mued prod 実測 verify ✅**（HTTP 200 復帰・実ユーザ 9/10 delivered）。**defense-in-depth PR #687**（honeypot+per-email rate-limit・Tier2）: **product課 Tier2 review→LGTM**（HEAD a7d15007・① checkRateLimit fail-CLOSED バグ+handler test 回帰[7/7 fail] を review で捕捉→修正・unit 19 pass・②aria-hidden除去/③contact_ref/④accept）。Ian 直 DL URL + 棚別実数 relay 済。診断法+防御+checkRateLimit gotcha を memory `reference-resend-quota-incident-playbook` に記録。**計測 tool `scripts/measure-muedsp-shelf-daily.ts` 用意**（untracked・棚別 delivered 集計）。【前段】C7 verify=設計完全クローズ（#682/#684/#686・上程2件 RESOLVED）。
+next_action: **① #687 merge = kimny consent batch 待ち**（conductor 執行・merge 後監視=mued）。**② ★7/18 clean full-day 棚別実数 = mued owner**（`npx tsx scripts/measure-muedsp-shelf-daily.ts 2026-07-17` を 2026-07-18 00:00 UTC 以降に実行 + 当日 Vercel logs で 502=0 併確認 → conductor→Chief に正式初観測値として渡す・台帳 truncated 差し替え）。ongoing 定点は 7/18 初回値で挙動確認後 cowork cron 化（conductor 段取り）。【前段 C7】実装 kimny gate（C1+Phase2 微調整）束ね待ち。有料線 go-live gate 束（inert 済）: migration 0057 / prod secret / flip / C2 UI / C4 consent。
+blocked_by: なし（incident 完全クローズ。#687=kimny consent 待ち・非ブロッキング。7/18 棚別実数=日付待ちの owned task）。
 urgency: low
-action_owner: conductor
-deadline: null
-expected_next_check_at: 2026-07-16T17:00:00+09:00
-last_update: 2026-07-16T13:25:00+09:00
+action_owner: peer
+deadline: 2026-07-18T00:00:00Z
+expected_next_check_at: 2026-07-16T18:00:00+09:00
+last_update: 2026-07-16T13:35:00+09:00
 evidence: **#658 MUEDlim reopen**（`feat/muedlim-reopen`・MERGED 10:31Z・prod LIVE）: MUEDLIM_LIVE=true〔code const〕+ DOWNLOAD_URL 復元・pkg swap c6c9ad52→**a832976a**（3-format VST3·AU·AAX・3,191,130B・notarized）・/muedsp §2 download form LIVE・footer/badge/email/llms 3形式表記・回帰0・**conductor 独立 prod verify PASS**（DL 200/sha a832976a/§2 form/ /ja·en/muedsp·muedsat 200/MUEDsat endpoint 400 不変）。**#659 fast-follow**（`fix/muedsp-footer-en-byte-exact`・MERGED・prod verify PASS: /en/muedsp==/en/muedsat footer "& Intel" byte-exact LIVE）: content byte-exact refine 適用 — EN footer format "/ Intel"→"& Intel" で muedsat==muedsp==muedlim を EN/JA byte-exact 化（messages/en.json 2行・Tier1 copy-only）。**#656 MUEDlim coming-soon**（MERGED・#658 で reopen 済）: MUEDLIM_LIVE=false→coming-soon teaser 化（reopen で form 復帰）。**#652 home**（MERGED/LIVE・EN=案A）: brand-frame hero+de-personalize 3文+/muedial 3宣言撤去。**#655 cleanup**（MERGED）: dead v1 landing+理念本文 source 除去。**#649/#650 Codex P0**（MERGED）: メールゲート honest delivery+one-click unsubscribe / Hoo Pass 退場+/dial/pricing 撤去。
 confidence: high
 lane: active
