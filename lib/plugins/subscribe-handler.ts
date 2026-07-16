@@ -16,6 +16,7 @@ import { z } from "zod";
 import { apiError, apiSuccess, apiValidationError } from "@/lib/api-response";
 import { rateLimit } from "@/lib/middleware/rate-limit";
 import { addPluginSubscriber, isPluginAudienceEnabled } from "@/lib/plugins/audience";
+import { recordPluginEntitlement } from "@/lib/plugins/entitlements";
 import { emailService, type EmailResult } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
 import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
@@ -59,7 +60,7 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
     return apiValidationError("Validation failed", parsed.error.flatten());
   }
 
-  const { email, locale } = parsed.data;
+  const { email, locale, source } = parsed.data;
 
   // Plugin closed to "coming soon" (registry.live = false, e.g. MUEDlim from 2026-07-13) — no-op the
   // capture so the email gate + download are fully disabled while closed. The UI form is already
@@ -112,6 +113,16 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
       status: 502,
     });
   }
+
+  // 3) Record the portal entitlement (P-1 — docs/portal/plan-brief-user-portal-20260717.md). The user
+  //    just received their download link (about to 200), so record that this email owns this plugin →
+  //    the portal (/dashboard/plugins) surfaces it + the latest version without an email re-fetch.
+  //    BEST-EFFORT: it NEVER affects this response (the honest deliverable is the email above); the
+  //    recorder swallows + logs its own errors, and the outer .catch guards against any unexpected
+  //    throw. Idempotent (UNIQUE(email, plugin_key)); the P-3 audience backfill reconciles any loss.
+  await recordPluginEntitlement(plugin, { email, source }).catch(() => {
+    /* recordPluginEntitlement already logs + swallows — this is belt-and-suspenders, never blocks 200 */
+  });
 
   return apiSuccess({ subscribed: true });
 }
