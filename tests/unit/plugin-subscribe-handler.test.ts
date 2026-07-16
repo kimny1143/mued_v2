@@ -18,6 +18,14 @@ vi.mock("@/lib/plugins/audience", () => ({
   isPluginAudienceEnabled: (...a: unknown[]) => mockEnabled(...a),
 }));
 
+// Portal entitlement recorder (P-1) — mocked so the handler test never touches @/db. Its wiring
+// contract: recorded on a served download (200), NOT on failed delivery, and a record failure never
+// breaks the 200 (best-effort / fail-open).
+const mockRecord = vi.fn();
+vi.mock("@/lib/plugins/entitlements", () => ({
+  recordPluginEntitlement: (...a: unknown[]) => mockRecord(...a),
+}));
+
 const mockSendLim = vi.fn();
 const mockSendSat = vi.fn();
 const mockAlert = vi.fn();
@@ -55,6 +63,7 @@ beforeEach(() => {
   mockSendLim.mockResolvedValue({ success: true, messageId: "m1" });
   mockSendSat.mockResolvedValue({ success: true, messageId: "m2" });
   mockAlert.mockResolvedValue(undefined);
+  mockRecord.mockResolvedValue(true); // portal entitlement recorded
   process.env.OPERATOR_ALERT_EMAIL = "ops@mued.jp";
 });
 
@@ -116,5 +125,55 @@ describe("handlePluginSubscribe — honest delivery", () => {
     expect(json.data.subscribed).toBe(false);
     expect(mockAdd).not.toHaveBeenCalled();
     expect(mockSendLim).not.toHaveBeenCalled();
+  });
+});
+
+describe("handlePluginSubscribe — portal entitlement wiring (P-1)", () => {
+  it("happy path records the entitlement once (plugin + email + source) after a served download", async () => {
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
+    expect(res.status).toBe(200);
+    expect(mockRecord).toHaveBeenCalledTimes(1);
+    expect(mockRecord).toHaveBeenCalledWith(
+      "muedsat",
+      expect.objectContaining({ email: "a@b.com", source: "muedsat_lp" }),
+    );
+  });
+
+  it("does NOT record when delivery FAILS (502) — the row means 'download served', not 'submitted'", async () => {
+    mockSendSat.mockResolvedValue({ success: false, error: "resend down" });
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
+    expect(res.status).toBe(502);
+    expect(mockRecord).not.toHaveBeenCalled();
+  });
+
+  it("record failure NEVER breaks the response (fail-open) — a throw still returns 200 subscribed:true", async () => {
+    mockRecord.mockRejectedValue(new Error("db down"));
+    const res = await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.subscribed).toBe(true);
+  });
+
+  it("closed plugin records nothing (gate no-ops before the recorder)", async () => {
+    const res = await handlePluginSubscribe("muedlim", req({ email: "a@b.com", locale: "en" }));
+    expect(res.status).toBe(200);
+    expect(mockRecord).not.toHaveBeenCalled();
+  });
+
+  it("carries submitted utm_* as firstTouch (attribution parity with 0050/0057)", async () => {
+    await handlePluginSubscribe(
+      "muedsat",
+      req({ email: "a@b.com", locale: "en", utm_source: "threads", utm_campaign: "launch" }),
+    );
+    expect(mockRecord).toHaveBeenCalledWith(
+      "muedsat",
+      expect.objectContaining({
+        firstTouch: expect.objectContaining({ utmSource: "threads", utmCampaign: "launch" }),
+      }),
+    );
+  });
+
+  it("firstTouch is null when no utm_* is submitted (no empty-object noise)", async () => {
+    await handlePluginSubscribe("muedsat", req({ email: "a@b.com", locale: "en" }));
+    expect(mockRecord).toHaveBeenCalledWith("muedsat", expect.objectContaining({ firstTouch: null }));
   });
 });

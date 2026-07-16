@@ -357,3 +357,8 @@ export * from './schema/advisory';
 // Paid line — MUEDsp masterchain $69 (interest + purchase ledgers)
 // ========================================
 export * from './schema/masterchain';
+
+// ========================================
+// User portal — free-module ownership records (plugin_entitlements, P-1)
+// ========================================
+export * from './schema/plugin-entitlements';
