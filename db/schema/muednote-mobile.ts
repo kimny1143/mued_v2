@@ -68,7 +68,7 @@ export const muednoteMobileLogs = pgTable(
     sessionId: uuid('session_id').notNull().references(() => muednoteMobileSessions.id, { onDelete: 'cascade' }),
     timestampSec: real('timestamp_sec').notNull(), // セッション開始からの秒数
     text: text('text').notNull(),                  // 文字起こしテキスト
-    confidence: real('confidence'),                // Whisper信頼度 (0-1)
+    confidence: real('confidence'),                // 端末側音声認識の信頼度 (0-1)
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   },
   (table) => [
