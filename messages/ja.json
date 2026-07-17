@@ -138,7 +138,7 @@
   },
   "privacy": {
     "title": "プライバシーポリシー",
-    "lastUpdated": "最終更新日: 2026年4月15日",
+    "lastUpdated": "最終更新日: 2026年7月18日",
     "intro": "株式会社グラスワークス（以下「当社」）は、MUEDnote（以下「本アプリ」）を運営しています。本プライバシーポリシーは、本アプリご利用時における情報の収集、使用、保護について説明するものです。",
     "section1": {
       "title": "1. 収集する情報",
@@ -162,12 +162,17 @@
     },
     "section3": {
       "title": "3. 第三者サービス",
-      "description": "本アプリの運営にあたり、以下の第三者サービスを利用しています。各サービスのプライバシーポリシーもご確認ください：",
-      "clerk": "Clerk（認証）",
-      "openai": "OpenAI（音声文字起こし - Whisper API）",
-      "vercel": "Vercel（ホスティング）",
+      "description": "当社のウェブサイト・アプリ・サービスの運営にあたり、以下の第三者サービスを利用しています。各サービスのプライバシーポリシーもご確認ください：",
+      "clerk": "Clerk（認証・アカウント管理）",
       "neon": "Neon（データベース）",
-      "googleAnalytics": "Google Analytics 4 / Google BigQuery（アクセス解析・データ分析）"
+      "resend": "Resend（メール配信・配信リストの管理 — ダウンロードリンク、取引に関するメール、製品アップデートのご案内）",
+      "stripe": "Stripe（決済処理）",
+      "vercel": "Vercel（ホスティング・サイト解析・ファイル保存）",
+      "cloudflare": "Cloudflare（ファイル配信・保存、bot 対策）",
+      "roex": "RoEx（アップロードされた音声の解析・ミックス・マスタリング）",
+      "openai": "OpenAI（AI 機能 — テキストの解析・生成）",
+      "googleAnalytics": "Google Analytics 4 / Google BigQuery（アクセス解析・データ分析）",
+      "upstash": "Upstash（レート制限・不正利用防止）"
     },
     "section4": {
       "title": "4. データの保管",
@@ -2235,7 +2240,7 @@
       "emailPlaceholder": "your@email",
       "submit": "MUEDlim をダウンロード",
       "submitting": "送信中…",
-      "note": "ダウンロードリンクをメールでお送りします。配信はいつでも解除できます。",
+      "note": "ダウンロードリンクの送付と、MUEDsp のプラグイン・ツールに関する今後のご案内にメールアドレスを使用します。配信はいつでも解除できます。",
       "successTitle": "メールをご確認ください。",
       "successBody": "ダウンロードリンクをメールでお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
       "errorEmail": "有効なメールアドレスを入力してください。",
@@ -2289,7 +2294,7 @@
       "emailPlaceholder": "your@email",
       "submit": "MUEDsat をダウンロード",
       "submitting": "送信中…",
-      "note": "ダウンロードリンクをメールでお送りします。配信はいつでも解除できます。",
+      "note": "ダウンロードリンクの送付と、MUEDsp のプラグイン・ツールに関する今後のご案内にメールアドレスを使用します。配信はいつでも解除できます。",
       "successTitle": "メールをご確認ください。",
       "successBody": "ダウンロードリンクをメールでお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
       "errorEmail": "有効なメールアドレスを入力してください。",
