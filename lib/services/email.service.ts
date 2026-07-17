@@ -197,6 +197,36 @@ function baseTemplate(content: string): string {
   `.trim();
 }
 
+/**
+ * User portal promo block for the free-download welcome emails (P-3 / C-1 — the "定着装置" hook).
+ * Woven per Chief C′: (1) ownership feel — "your plugins have a home", never "register/sign up";
+ * (2) the permanent passwordless door — the same email is the key (tap → emailed code → in, no
+ * password); (3) the portal button itself (this block). Links to /dashboard/plugins. Shared by both
+ * welcome templates so the copy never drifts.
+ */
+function portalPromoBlock(isJa: boolean): { html: string; text: string } {
+  const url = `${APP_URL}/dashboard/plugins`;
+  const html = `
+      <div style="margin: 28px 0 8px; padding: 18px 20px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fafafa;">
+        <p style="margin: 0 0 6px; font-weight: 600;">${isJa ? 'あなたのプラグインの置き場所ができました。' : 'Your plugins have a home now.'}</p>
+        <p style="margin: 0 0 14px; color: #4b5563; font-size: 14px;">${isJa
+          ? '入手したプラグインはあなたのポータルにまとまっています。いつでも最新版がワンクリック。次回からメールのリンクを探す必要はありません。'
+          : "Everything you've grabbed lives in your portal — always the latest build, one click away. No email link to dig up next time."}</p>
+        <p style="text-align: center; margin: 0 0 12px;">
+          <a href="${url}" class="button" style="background: transparent; color: #b57a14; border: 1px solid #f5a524; font-weight: 600;">
+            ${isJa ? 'ポータルを開く' : 'Open your portal'}
+          </a>
+        </p>
+        <p style="margin: 0; color: #6b7280; font-size: 12px;">${isJa
+          ? 'メールアドレスが鍵です。ボタンを押すとコードが届き、それだけで入れます。パスワードは要りません。'
+          : "Your email is the key: tap the button, we email you a code, and you're in — no password to remember."}</p>
+      </div>`;
+  const text = isJa
+    ? `\n\nあなたのプラグインの置き場所ができました。\n入手したプラグインはあなたのポータルにまとまっています（いつでも最新版がワンクリック）。\nポータルを開く: ${url}\nメールアドレスが鍵です。ボタンからコードが届き、それだけで入れます（パスワード不要）。`
+    : `\n\nYour plugins have a home now.\nEverything you've grabbed lives in your portal — always the latest build, one click away.\nOpen your portal: ${url}\nYour email is the key: tap the link, we email you a code, and you're in — no password to remember.`;
+  return { html, text };
+}
+
 export const emailTemplates = {
   /**
    * Reservation confirmed - sent to student
@@ -811,6 +841,7 @@ Hoo MCP経由の自動送信
   muedsatDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDSAT_DOWNLOAD_URL;
+    const portal = portalPromoBlock(isJa);
 
     const subject = isJa ? '[MUEDsat] ダウンロードリンクをお届けします' : '[MUEDsat] Your download link';
 
@@ -848,12 +879,13 @@ Hoo MCP経由の自動送信
           ? '僕の言葉より、あなた自身の耳で決めてください。アップデートや MUEDsp masterchain の情報も、追ってお知らせします。'
           : "I'd rather you decide with your own ears than take my word for it. I'll also let you know about updates — and when MUEDsp masterchain is ready."}
       </p>
+      ${portal.html}
       ${unsubHtml}
     `);
 
     const text = isJa
-      ? `MUEDsat をありがとうございます。\n\n無料のトランス・サチュレーション・プラグインです。\n${hasLink ? `ダウンロード: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX（Pro Tools）· macOS` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\nアップデートや MUEDsp masterchain の情報も追ってお知らせします。\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDsat.\n\nA free transformer-saturation plugin.\n${hasLink ? `Download: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS` : "I'll email the download link to this address shortly."}\n\nI'll also let you know about updates and when MUEDsp masterchain is ready.\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDsat をありがとうございます。\n\n無料のトランス・サチュレーション・プラグインです。\n${hasLink ? `ダウンロード: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX（Pro Tools）· macOS` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\nアップデートや MUEDsp masterchain の情報も追ってお知らせします。${portal.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDsat.\n\nA free transformer-saturation plugin.\n${hasLink ? `Download: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS` : "I'll email the download link to this address shortly."}\n\nI'll also let you know about updates and when MUEDsp masterchain is ready.${portal.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },
@@ -867,6 +899,7 @@ Hoo MCP経由の自動送信
   muedlimDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDLIM_DOWNLOAD_URL;
+    const portal = portalPromoBlock(isJa);
 
     const subject = isJa ? 'MUEDlim のダウンロードリンクです' : 'Your MUEDlim download link';
 
@@ -904,12 +937,13 @@ Hoo MCP経由の自動送信
           ? '完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。'
           : "I'm still building the finished MUEDsp masterchain; I'll let you know when there's an update."}
       </p>
+      ${portal.html}
       ${unsubHtml}
     `);
 
     const text = isJa
-      ? `MUEDlim をありがとうございます。\n\n無料のトゥルーピーク・リミッターです。INPUT で音圧、CEILING で天井を決めるだけ。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU · AAX（Pro Tools）` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter — INPUT for loudness, CEILING for the ceiling.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU · AAX (Pro Tools)` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDlim をありがとうございます。\n\n無料のトゥルーピーク・リミッターです。INPUT で音圧、CEILING で天井を決めるだけ。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU · AAX（Pro Tools）` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。${portal.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter — INPUT for loudness, CEILING for the ceiling.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU · AAX (Pro Tools)` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.${portal.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },
