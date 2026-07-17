@@ -498,3 +498,32 @@ describe('EmailService', () => {
     });
   });
 });
+
+// P-3 / C-1 — the free-download welcome emails carry the user-portal hook (Chief C′: ownership feel +
+// permanent passwordless door + portal button). Both plugins, both locales.
+describe('welcome email portal block (P-3 / C-1)', () => {
+  const welcomes = [
+    { name: 'muedsat', fn: emailTemplates.muedsatDownloadWelcome },
+    { name: 'muedlim', fn: emailTemplates.muedlimDownloadWelcome },
+  ] as const;
+
+  for (const { name, fn } of welcomes) {
+    it(`${name} EN welcome links to the portal with ownership + passwordless copy`, () => {
+      const { html, text } = fn({ locale: 'en' });
+      expect(html).toContain('/dashboard/plugins');
+      expect(html).toContain('Your plugins have a home now.'); // ownership feel, not "register"
+      expect(html).toContain('Open your portal'); // the portal button (C′ #3)
+      expect(html).toContain('no password to remember'); // permanent passwordless door (C′ #2)
+      expect(text).toContain('/dashboard/plugins'); // parity in the plain-text part
+    });
+
+    it(`${name} JA welcome links to the portal with ownership + passwordless copy`, () => {
+      const { html, text } = fn({ locale: 'ja' });
+      expect(html).toContain('/dashboard/plugins');
+      expect(html).toContain('あなたのプラグインの置き場所ができました。');
+      expect(html).toContain('ポータルを開く');
+      expect(html).toContain('パスワードは要りません');
+      expect(text).toContain('/dashboard/plugins');
+    });
+  }
+});
