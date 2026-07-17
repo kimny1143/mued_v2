@@ -94,7 +94,7 @@ currentUser()                        // Clerk（既存）
 ### PR-1（P-1・配線先行）— `plugin_entitlements` 新設 + subscribe 書込み 〔**Tier 2**〕
 
 - migration `0058`（純追加 CREATE TABLE）+ `db/schema/plugin-entitlements.ts` + re-export。
-- `lib/plugins/subscribe-handler.ts`: welcome email 送信成功後に `plugin_entitlements` へ **best-effort insert（onConflictDoNothing・`.catch()` で fail-open）**。理由＝配布物（welcome email の DL リンク）が honest な deliverable であり、ポータル用の所有レコードはその convenience。書込み失敗が DL 提供を壊してはならない（audience add が best-effort なのと同じ思想）。取りこぼしは P-3 backfill が reconciliation net。
+- `lib/plugins/subscribe-handler.ts`: welcome email 送信成功後に `plugin_entitlements` へ **best-effort insert（onConflictDoNothing・`.catch()` で fail-open）**。理由＝配布物（welcome email の DL リンク）が honest な deliverable であり、ポータル用の所有レコードはその convenience。書込み失敗が DL 提供を壊してはならない（audience add が best-effort なのと同じ思想）。取りこぼしは P-3 backfill が reconciliation net。**★脚注（2026-07-17 実行時に確定した恒久注記）**: reconciliation net の source は plugin ごとに異なる。**専用 audience があれば audience backfill で足りるが、無ければ delivered-log 由来で再構成すること**。muedsat は `RESEND_MUEDSAT_AUDIENCE_ID` が専用 audience ではなく **General（汎用マーケ全リストの superset）** を指すため、audience backfill すると非DL者へ over-grant になる → **将来の sat reconcile は Resend delivered-log 由来**（詳細は PR-3 の実行時訂正）。
 - unit test（`tests/unit/plugin-subscribe.test.ts` 拡張）: (a) live plugin subscribe → entitlement 1行 (b) 二重 subscribe → 冪等（1行のまま）(c) DB throw しても 200 + welcome 送信は不変（fail-open 回帰）(d) `live=false` plugin は no-op（entitlement 書かない）。
 - **prod 順序**: migration `0058` を **コード merge 前に** prod Neon へ kimny psql 適用（`feedback-migration-before-schema-deploy` 準拠・0050–0057 と同じ手書き運用）。
 - **Tier 2 理由**: 認可境界に触れない純追加テーブル+配線（決定 §Tier「P-1 の純粋追加テーブル+配線は Tier 2」）→ **product課 review**。
@@ -113,6 +113,7 @@ currentUser()                        // Clerk（既存）
 ### PR-3（P-3・リスト接続）— backfill script + welcome email 導線 + 案内便 〔script=**Tier 2** / 送信=**kimny gate**〕
 
 - `scripts/backfill-plugin-entitlements.ts`: Resend `contacts.list({ audienceId })`（muedsat + muedlim audience）→ `plugin_entitlements` へ `onConflictDoNothing` 冪等 insert。**--dry-run 既定**・件数レポート・source は audience 由来 tag or `'{plugin}_backfill'`。
+- **★実行時の訂正（2026-07-17・恒久メモ）**: 上記「plugin audience → backfill」は **muedlim では成立するが muedsat では成立しない**。`RESEND_MUEDSAT_AUDIENCE_ID` は専用 audience でなく **General（汎用マーケ全リストの superset・非DL者を含む）** を指すため（timestamp で確定: env は MUEDlim audience 作成より前に set＝当時 General のみ存在）、audience backfill すると非DL者へ false ownership（over-grant）になる。→ **muedsat は Resend delivered-log 由来で再構成**（`scripts/backfill-muedsat-from-list.ts` + `scripts/compute-muedsat-rescue-diff.ts`＝delivered-log base ∪ rescue〔lim audience − lim delivered の diff ∪ 個別救済〕∪ API top-up → dedup → 冪等 insert・freeze-then-commit で照合件数==write件数）。**muedlim は専用 audience ゆえ audience backfill 成立**（209）。実績: muedlim 209 / muedsat 280。**将来の無料モジュール reconcile は「専用 audience か否か」を GET /audiences で検証し、非専用なら delivered-log 由来で再構成すること**。
 - welcome email（`lib/services/email.service.ts` の muedsat/muedlim welcome）に「ポータルで更新を受け取れる」導線1行追加（copy=content課・`voice-pass-includes-email-templates` 準拠で email copy も対象）。
 - 既存 250+人への **案内便**（リスト初の能動接触）: 文面＝content課・**送信＝kimny gate**（外部公開発言）。
 - **Tier**: backfill script code = Tier 2。**prod audience に対する backfill 実行 + 案内便送信 = kimny/conductor gate**（mass list op + 外部発信）。
