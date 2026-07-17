@@ -19,7 +19,7 @@
 //
 //   npx tsx scripts/backfill-muedsat-from-list.ts --build \
 //     --base /Volumes/strage/_DevProjects/_chief/.scratch/sat-delivered-258-20260717.txt \
-//     [--rescue scripts/tmp/muedsat-c/rescue.txt] [--topup-since "2026-07-16 22:33:00"]
+//     [--rescue scripts/tmp/muedsat-c/rescue.txt] [--topup-since "2026-07-16 22:33:00"] [--no-topup]
 //   npx tsx scripts/backfill-muedsat-from-list.ts --commit     # write frozen union (GATED — kimny)
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { sql, eq } from "drizzle-orm";
@@ -64,7 +64,7 @@ function readEmails(path: string): Set<string> {
 type Email = { id: string; to?: string[]; subject?: string; last_event?: string; created_at?: string };
 function isSatDownload(subject?: string): boolean {
   const s = subject || "";
-  return /MUEDsat/.test(s) && /(download|ダウンロード)/i.test(s);
+  return /MUEDsat/i.test(s) && /(download|ダウンロード)/i.test(s); // case-insensitive: subject casing may drift
 }
 const norm = (s?: string) => String(s || "").replace("T", " "); // Resend created_at → space-separated for lexicographic compare
 
@@ -85,9 +85,11 @@ async function fetchTopup(cutoff: string): Promise<Set<string>> {
       if (!isSatDownload(e.subject)) continue;
       if (e.last_event !== "delivered") continue;
       if (norm(e.created_at) < cutoff) continue;
+      // Normalize through the SAME email regex as file sources (handles "Name <email>" form) so the
+      // build-time union == the --commit re-parse of the frozen file (freeze-then-commit invariant).
       (e.to || []).forEach((t) => {
-        const em = t.trim().toLowerCase();
-        if (!em.endsWith("@example.com")) emails.add(em);
+        const m = String(t).toLowerCase().match(EMAIL_RE);
+        if (m) for (const em of m) if (!em.endsWith("@example.com")) emails.add(em);
       });
     }
     const oldest = data.length ? norm(data[data.length - 1].created_at) : "";
@@ -122,6 +124,10 @@ async function build(): Promise<void> {
   const rescuePath = arg("--rescue") ?? DEFAULT_RESCUE;
   const topupSince = arg("--topup-since") ?? DEFAULT_TOPUP_CUTOFF;
 
+  if (!existsSync(basePath)) {
+    console.error(`[muedsat-c] base file ${basePath} not found — abort (fail-closed; base is required).`);
+    process.exit(1);
+  }
   const base = readEmails(basePath);
   const rescue = readEmails(rescuePath);
   const topup = arg("--no-topup") ? new Set<string>() : await fetchTopup(topupSince);
@@ -173,7 +179,10 @@ async function main(): Promise<void> {
   else await build();
   process.exit(0);
 }
-main().catch((e) => {
-  console.error("[muedsat-c] fatal", e);
+main().catch((e: unknown) => {
+  // PII-safe: print message/code only — a raw pg error object can embed row values (emails).
+  const msg = e instanceof Error ? e.message : String(e);
+  const code = (e as { code?: string })?.code;
+  console.error(`[muedsat-c] fatal: ${msg}${code ? ` (code ${code})` : ""}`);
   process.exit(1);
 });
