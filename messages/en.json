@@ -171,6 +171,7 @@
       "cloudflare": "Cloudflare (File delivery and storage, bot protection)",
       "roex": "RoEx (Audio analysis, mixing and mastering of uploaded audio)",
       "openai": "OpenAI (AI-powered features — text analysis and generation)",
+      "anthropic": "Anthropic (Claude — AI-powered conversation and analysis)",
       "googleAnalytics": "Google Analytics 4 / Google BigQuery (Access analytics & data analysis)",
       "upstash": "Upstash (Rate limiting and abuse prevention)"
     },

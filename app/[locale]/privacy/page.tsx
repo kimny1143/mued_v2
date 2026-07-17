@@ -131,6 +131,12 @@ function PrivacyContent() {
                 </a>
               </li>
               <li>
+                <strong>{t("section3.anthropic")}</strong>:{" "}
+                <a href="https://www.anthropic.com/legal/privacy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://www.anthropic.com/legal/privacy
+                </a>
+              </li>
+              <li>
                 <strong>{t("section3.googleAnalytics")}</strong>:{" "}
                 <a href="https://policies.google.com/privacy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
                   https://policies.google.com/privacy
