@@ -23,7 +23,7 @@ describe("GET /plugins/versions.json", () => {
 
     expect(body.muedsat).toEqual({
       latest: "0.1.0", // "-alpha" stripped → comparable to the plugin's PLUG_VERSION_STR
-      url: "https://mued.jp/muedsat", // product page (banner default)
+      url: "https://mued.jp/en/muedsat", // locale product page (non-locale /muedsat 404s in prod)
     });
     expect(body.muedsat).not.toHaveProperty("downloadUrl"); // v1: .pkg stays behind the email gate
     expect(body.muedlim).toBeUndefined(); // live:false → not advertised

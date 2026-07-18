@@ -36,7 +36,9 @@ export function GET() {
     if (!dist.live) continue; // staged (not-yet-live) plugins are not advertised
     manifest[key] = {
       latest: plainSemver(dist.version), // plain semver for the plugin's comparison
-      url: `${BASE}/${key}`, // product page (banner default — transparent, email-gated, no auto-update)
+      // Locale product page — the banner default (transparent, email-gated, no auto-update). Uses /en/
+      // explicitly: the non-locale /{key} path 404s in prod (only app/[locale]/ exists), verified by curl.
+      url: `${BASE}/en/${key}`,
     };
   }
   return NextResponse.json(manifest, {
