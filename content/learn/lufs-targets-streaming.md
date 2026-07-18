@@ -28,7 +28,7 @@ What integrated LUFS should you master to? The honest answer surprises people: t
 
 ## How loudness normalization works
 
-Every major streaming service plays all tracks toward one reference loudness, measured in **integrated LUFS** (see *[What is LUFS?]*). If your master is louder than the reference, it's **turned down** on playback. Some services also turn quiet masters **up**. Either way, the listener hears everything at roughly the same level.
+Every major streaming service plays all tracks toward one reference loudness, measured in **integrated LUFS** (see [What is LUFS?](/learn/what-is-lufs)). If your master is louder than the reference, it's **turned down** on playback. Some services also turn quiet masters **up**. Either way, the listener hears everything at roughly the same level.
 
 So two masters at the same LUFS sound equally loud on Spotify — regardless of how hard either was limited.
 
@@ -53,7 +53,7 @@ The practical move: **master for the music, then use integrated LUFS as a check,
 
 Two honest caveats:
 - **Genres differ.** A club-focused master and a jazz trio don't share a target; the platform reference is the same, but how close you sit to it is a musical choice.
-- **Loudness isn't the only spec.** Whatever your LUFS, keep your **true peak at or below −1 dBTP** so the master survives lossy encoding — that's a separate control (see *[How to set a true-peak ceiling]*).
+- **Loudness isn't the only spec.** Whatever your LUFS, keep your **true peak at or below −1 dBTP** so the master survives lossy encoding — that's a separate control (see [How to set a true-peak ceiling](/learn/set-true-peak-ceiling)).
 
 ## Takeaways
 
@@ -61,3 +61,5 @@ Two honest caveats:
 - Mastering louder than the reference gains you nothing — it's turned back down.
 - Use LUFS as a check; master for the song, and keep true peak ≤ −1 dBTP.
 - Reference levels drift — verify each platform's current figure.
+
+*Part of the [Loudness and true peak guide](/learn/loudness-and-true-peak).*

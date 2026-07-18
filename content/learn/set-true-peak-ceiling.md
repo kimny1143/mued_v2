@@ -21,7 +21,7 @@ _ops:
   sources: ["ITU-R BS.1770", "AES streaming loudness recommendations", "Apple Music mastering guidance"]
 ---
 
-Once you know true peak can exceed sample peak (see *[True peak vs sample peak]*), the practical question is simple: **what ceiling do I set on my limiter?** For most masters, the answer is **−1 dBTP**. Here's why, and how.
+Once you know true peak can exceed sample peak (see [True peak vs sample peak](/learn/true-peak-vs-sample-peak)), the practical question is simple: **what ceiling do I set on my limiter?** For most masters, the answer is **−1 dBTP**. Here's why, and how.
 
 ## Why not 0 dBFS
 
@@ -51,7 +51,7 @@ If you're unsure, −1 dBTP is the safe default; −2 dBTP is the conservative o
 1. Put a **true-peak** limiter last in your master chain (a plain sample-peak limiter won't protect you — it can't see inter-sample peaks).
 2. Set the output **ceiling to −1.0 dBTP**.
 3. Confirm the limiter is in **true-peak mode**, not sample-peak mode (on some plugins this is a switch; on a dedicated true-peak limiter it's the default).
-4. Drive loudness with input gain into the limiter until it reads right on your LUFS check (see *[LUFS targets for streaming]*) — the ceiling holds the peaks while you set level.
+4. Drive loudness with input gain into the limiter until it reads right on your LUFS check (see [LUFS targets for streaming](/learn/lufs-targets-streaming)) — the ceiling holds the peaks while you set level.
 
 ## Common mistakes
 
@@ -64,3 +64,5 @@ If you're unsure, −1 dBTP is the safe default; −2 dBTP is the conservative o
 - Set a **true-peak** ceiling, last in the chain, at **−1 dBTP** for most work; **−2 dBTP** for dense masters or podcast specs.
 - The ceiling protects against inter-sample and encoder overshoot; **input/drive** sets loudness.
 - Verify true-peak mode is actually on.
+
+*Part of the [Loudness and true peak guide](/learn/loudness-and-true-peak).*

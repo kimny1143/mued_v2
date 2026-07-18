@@ -7,8 +7,10 @@ import { LearnArticleView } from "@/components/features/learn/learn-article";
 
 //
 // /learn/<slug> — EN evergreen reference article (Road to 10k 層2 #8). NON-locale route (like app/dial,
-// app/muedear) → the JA face / next-intl tree is untouched. Fully static: dynamicParams=false + all
-// slugs pre-rendered, so the gray-matter fs reads run at build.
+// app/muedear) → the JA face / next-intl tree is untouched. dynamicParams=false → unknown slugs 404.
+// NOTE: these pages are request-time DYNAMIC (the root layout's cookies() forces it), so the gray-matter
+// fs read runs at RUNTIME — next.config's outputFileTracingIncludes bundles content/learn/*.md (removing
+// it → prod ENOENT). See lib/learn/articles.ts.
 //
 export const dynamicParams = false;
 

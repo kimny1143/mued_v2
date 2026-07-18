@@ -5,14 +5,18 @@
 // the canonical source of meta; `_handoff-meta.md` is a human summary, not parsed). mued renders.
 //
 // EN-only by design: this lives on the NON-locale route app/learn (like app/dial, app/muedear), so the
-// JA face / next-intl locale tree is never touched (JA非侵食). Read at build (SSG) — the route is fully
-// static (dynamicParams=false), so no runtime fs.
+// JA face / next-intl locale tree is never touched (JA非侵食). The .md are read via fs at REQUEST time —
+// the root layout's cookies() makes every route dynamic — so next.config's outputFileTracingIncludes is
+// LOAD-BEARING (it bundles content/learn/*.md into the serverless output; without it, prod ENOENT). Do
+// NOT remove it on the belief these pages are static. dynamicParams=false → unknown slugs 404.
 //
 import fs from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 
+// Pillar first (the hub), then the cluster articles it links out to.
 export const LEARN_SLUGS = [
+  "loudness-and-true-peak", // pillar
   "what-is-lufs",
   "lufs-targets-streaming",
   "true-peak-vs-sample-peak",

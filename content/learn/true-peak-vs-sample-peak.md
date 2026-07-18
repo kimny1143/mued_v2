@@ -45,7 +45,7 @@ So "−0.1 dBFS, no clip" on your sample meter is not a guarantee. The thing tha
 
 ## The fix, in one line
 
-Measure and limit **true peak**, not just sample peak, and leave headroom below 0 — commonly **−1 dBTP** — so inter-sample overshoot and lossy encoding have room to breathe. (The how-to is in *[How to set a true-peak ceiling]*.)
+Measure and limit **true peak**, not just sample peak, and leave headroom below 0 — commonly **−1 dBTP** — so inter-sample overshoot and lossy encoding have room to breathe. (The how-to is in [How to set a true-peak ceiling](/learn/set-true-peak-ceiling).)
 
 ## Takeaways
 
@@ -53,3 +53,5 @@ Measure and limit **true peak**, not just sample peak, and leave headroom below 
 - A master under 0 dBFS *sample* peak can still exceed 0 dBFS *true* peak — and clip in a converter or after MP3/AAC encoding.
 - True peak is measured by oversampling per ITU-R BS.1770, reported in dBTP.
 - Limit true peak and leave headroom (−1 dBTP is the common target).
+
+*Part of the [Loudness and true peak guide](/learn/loudness-and-true-peak).*

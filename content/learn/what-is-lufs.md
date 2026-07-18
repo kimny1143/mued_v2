@@ -52,7 +52,7 @@ When someone says "master to −14 LUFS," they mean *integrated*.
 
 ## Why it decides your loudness on streaming
 
-Spotify, Apple Music, YouTube and the rest normalize playback by **integrated LUFS**. Two tracks at the same LUFS play back equally loud — no matter how hard one of them was limited. That flips the old loudness-war logic: past a point, crushing your master doesn't make it louder to the listener, it just costs you dynamics. (More on the exact targets in *[LUFS targets for streaming]*.)
+Spotify, Apple Music, YouTube and the rest normalize playback by **integrated LUFS**. Two tracks at the same LUFS play back equally loud — no matter how hard one of them was limited. That flips the old loudness-war logic: past a point, crushing your master doesn't make it louder to the listener, it just costs you dynamics. (More on the exact targets in [LUFS targets for streaming](/learn/lufs-targets-streaming).)
 
 For reference, broadcast has used LUFS targets for years: **EBU R128** specifies −23 LUFS, and the US **ATSC A/85** standard uses −24 **LKFS** (LKFS and LUFS are the same scale under a different name).
 
@@ -61,3 +61,5 @@ For reference, broadcast has used LUFS targets for years: **EBU R128** specifies
 - LUFS = perceived loudness, K-weighted and gated per ITU-R BS.1770.
 - **Integrated** LUFS is the one streaming uses; momentary and short-term are for mixing decisions.
 - On streaming, LUFS — not peak — sets how loud you actually sound.
+
+*Part of the [Loudness and true peak guide](/learn/loudness-and-true-peak).*
