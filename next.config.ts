@@ -6,6 +6,13 @@ const withNextIntl = createNextIntlPlugin("./lib/i18n/request.ts");
 const nextConfig: NextConfig = {
   // テスト時にNext.js開発オーバーレイを無効化
   reactStrictMode: true,
+  // /learn reads content/learn/*.md via fs at request time (the root layout's cookies() makes routes
+  // dynamic), and the slug is variable so nft can't trace the reads. Force-include the seed markdown so
+  // it's in the serverless bundle (else runtime ENOENT).
+  outputFileTracingIncludes: {
+    "/learn": ["./content/learn/**/*.md"],
+    "/learn/[slug]": ["./content/learn/**/*.md"],
+  },
   experimental: {
     // 開発エラーオーバーレイをテスト環境で無効化
     ...(process.env.NODE_ENV === 'test' && {
