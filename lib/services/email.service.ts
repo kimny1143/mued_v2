@@ -227,6 +227,26 @@ function portalPromoBlock(isJa: boolean): { html: string; text: string } {
   return { html, text };
 }
 
+/**
+ * Road to 10k 層1 #2 — the zero-friction sharing hook. One subtle line in the free-download welcome
+ * (and future update) emails: forwarding costs nothing and the plugins are free for anyone, so every
+ * email touch becomes a sharing channel. Points forwarded recipients at /muedsp — the DL entry, NOT the
+ * portal (a portal link needs the recipient's OWN email, so it can't be forwarded). Zero spam feel by
+ * design (「役立ちそうな人がいたら」, not 「拡散して」). Shared by both welcome templates so copy never drifts.
+ */
+function forwardHookBlock(isJa: boolean): { html: string; text: string } {
+  const url = `${APP_URL}/muedsp`;
+  const link = `<a href="${url}" style="color: #b57a14; text-decoration: underline;">mued.jp/muedsp</a>`;
+  const html = `
+      <p style="margin: 18px 0 0; color: #6b7280; font-size: 13px;">${isJa
+        ? `役に立ちそうな人がいたら、このメールを転送してください。MUEDsat と MUEDlim は、どなたでも無料でお使いいただけます（${link}）。`
+        : `Know someone who'd use these? Forward this along — MUEDsat and MUEDlim are free for anyone at ${link}.`}</p>`;
+  const text = isJa
+    ? `\n\n役に立ちそうな人がいたら、このメールを転送してください。MUEDsat と MUEDlim は、どなたでも無料でお使いいただけます（${url}）。`
+    : `\n\nKnow someone who'd use these? Forward this along — MUEDsat and MUEDlim are free for anyone at ${url}.`;
+  return { html, text };
+}
+
 export const emailTemplates = {
   /**
    * Reservation confirmed - sent to student
@@ -842,6 +862,7 @@ Hoo MCP経由の自動送信
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDSAT_DOWNLOAD_URL;
     const portal = portalPromoBlock(isJa);
+    const forward = forwardHookBlock(isJa);
 
     const subject = isJa ? '[MUEDsat] ダウンロードリンクをお届けします' : '[MUEDsat] Your download link';
 
@@ -880,12 +901,13 @@ Hoo MCP経由の自動送信
           : "I'd rather you decide with your own ears than take my word for it. I'll also let you know about updates — and when MUEDsp masterchain is ready."}
       </p>
       ${portal.html}
+      ${forward.html}
       ${unsubHtml}
     `);
 
     const text = isJa
-      ? `MUEDsat をありがとうございます。\n\n無料のトランス・サチュレーション・プラグインです。\n${hasLink ? `ダウンロード: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX（Pro Tools）· macOS` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\nアップデートや MUEDsp masterchain の情報も追ってお知らせします。${portal.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDsat.\n\nA free transformer-saturation plugin.\n${hasLink ? `Download: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS` : "I'll email the download link to this address shortly."}\n\nI'll also let you know about updates and when MUEDsp masterchain is ready.${portal.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDsat をありがとうございます。\n\n無料のトランス・サチュレーション・プラグインです。\n${hasLink ? `ダウンロード: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX（Pro Tools）· macOS` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\nアップデートや MUEDsp masterchain の情報も追ってお知らせします。${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDsat.\n\nA free transformer-saturation plugin.\n${hasLink ? `Download: ${MUEDSAT_DOWNLOAD_URL}\nVST3 · AU · AAX (Pro Tools) · macOS` : "I'll email the download link to this address shortly."}\n\nI'll also let you know about updates and when MUEDsp masterchain is ready.${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },
@@ -900,6 +922,7 @@ Hoo MCP経由の自動送信
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDLIM_DOWNLOAD_URL;
     const portal = portalPromoBlock(isJa);
+    const forward = forwardHookBlock(isJa);
 
     const subject = isJa ? 'MUEDlim のダウンロードリンクです' : 'Your MUEDlim download link';
 
@@ -938,12 +961,13 @@ Hoo MCP経由の自動送信
           : "I'm still building the finished MUEDsp masterchain; I'll let you know when there's an update."}
       </p>
       ${portal.html}
+      ${forward.html}
       ${unsubHtml}
     `);
 
     const text = isJa
-      ? `MUEDlim をありがとうございます。\n\n無料のトゥルーピーク・リミッターです。INPUT で音圧、CEILING で天井を決めるだけ。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU · AAX（Pro Tools）` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。${portal.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
-      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter — INPUT for loudness, CEILING for the ceiling.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU · AAX (Pro Tools)` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.${portal.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
+      ? `MUEDlim をありがとうございます。\n\n無料のトゥルーピーク・リミッターです。INPUT で音圧、CEILING で天井を決めるだけ。\n${hasLink ? `ダウンロード: ${MUEDLIM_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU · AAX（Pro Tools）` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDlim.\n\nA free true-peak limiter — INPUT for loudness, CEILING for the ceiling.\n${hasLink ? `Download: ${MUEDLIM_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU · AAX (Pro Tools)` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
 
     return { subject, html, text };
   },
