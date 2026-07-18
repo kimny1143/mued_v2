@@ -2234,7 +2234,7 @@
     },
     "whyFree": {
       "heading": "Why it's free, and why I ask for your email",
-      "lead": "MUEDlim is completely free — no feature locks, no expiry, no paywall. I ask for your email only to send the download link and to let you know about updates (and MUEDsp masterchain). Your email is the price of the download, not the plugin. No spam, and you can unsubscribe anytime."
+      "lead": "MUEDlim is completely free — no feature locks, no expiry, no paywall. I ask for your email only to send the download link and to let you know about updates (and MUEDsp masterchain). No spam, and you can unsubscribe anytime."
     },
     "form": {
       "emailLabel": "Email",
@@ -2284,10 +2284,9 @@
     },
     "whyFree": {
       "heading": "Why it's free — and why I ask for your email",
-      "lead": "MUEDsat is completely free — nothing locked or time-limited. I ask for your email only to send the download link and to let you know when I update it (or when MUEDsp masterchain is ready). Your email is the price of the download, not the plugin. No spam; unsubscribe anytime.",
+      "lead": "MUEDsat is completely free — nothing locked or time-limited. I ask for your email only to send the download link and to let you know when I update it (or when MUEDsp masterchain is ready). No spam; unsubscribe anytime.",
       "body1": "MUEDsat is completely free. Nothing in the plugin is locked, time-limited, or paywalled.",
       "body2": "I ask for your email for two reasons: to send you the download link, and to let you know when I update MUEDsat — or when MUEDsp masterchain is ready. That's all it's for.",
-      "emphasis": "Your email is the price of the download, not the price of the plugin.",
       "body3": "No spam, unsubscribe anytime."
     },
     "form": {
