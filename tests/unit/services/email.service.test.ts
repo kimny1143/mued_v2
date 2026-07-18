@@ -527,3 +527,31 @@ describe('welcome email portal block (P-3 / C-1)', () => {
     });
   }
 });
+
+// Road to 10k 層1 #2 — the free-download welcome emails carry the zero-friction sharing hook (forward
+// this along → /muedsp, the DL entry — not the portal, which needs the recipient's own email). Presence
+// test guards the growth hook from a silent drop on refactor. Both plugins, both locales, html + text.
+describe('welcome email forward hook (Road to 10k 層1 #2)', () => {
+  const welcomes = [
+    { name: 'muedsat', fn: emailTemplates.muedsatDownloadWelcome },
+    { name: 'muedlim', fn: emailTemplates.muedlimDownloadWelcome },
+  ] as const;
+
+  for (const { name, fn } of welcomes) {
+    it(`${name} EN welcome carries the forward-sharing hook to /muedsp`, () => {
+      const { html, text } = fn({ locale: 'en' });
+      expect(html).toContain('/muedsp'); // forward destination = DL entry (a portal link can't be forwarded)
+      expect(html).toContain('Forward this along');
+      expect(text).toContain('/muedsp'); // parity in the plain-text part
+      expect(text).toContain('Forward this along');
+    });
+
+    it(`${name} JA welcome carries the forward-sharing hook to /muedsp`, () => {
+      const { html, text } = fn({ locale: 'ja' });
+      expect(html).toContain('/muedsp');
+      expect(html).toContain('このメールを転送してください');
+      expect(text).toContain('/muedsp');
+      expect(text).toContain('このメールを転送してください');
+    });
+  }
+});
