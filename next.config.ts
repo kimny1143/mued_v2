@@ -72,6 +72,14 @@ const nextConfig: NextConfig = {
         destination: '/en/support',
         permanent: true,
       },
+      // Non-locale product pages: app/[locale]/{muedsat,muedlim,muedsp} only exist under a locale, so the
+      // bare /muedsp (used as a locale-agnostic entry in the free-plugin welcome-email forward CTA, the
+      // portal empty-CTA, and the /learn gate) 404s without this. → /en (the site's x-default). Temporary
+      // (not permanent) because these are locale-symmetric pages — keeps the option to make /muedsp
+      // locale-aware later, unlike the EN-primary /privacy above.
+      { source: '/muedsat', destination: '/en/muedsat', permanent: false },
+      { source: '/muedlim', destination: '/en/muedlim', permanent: false },
+      { source: '/muedsp', destination: '/en/muedsp', permanent: false },
       // Convenience redirects for short paths → canonical /dial/* paths
       {
         source: '/waitlist',
