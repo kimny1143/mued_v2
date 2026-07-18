@@ -89,9 +89,21 @@ function PrivacyContent() {
                 </a>
               </li>
               <li>
-                <strong>{t("section3.openai")}</strong>:{" "}
-                <a href="https://openai.com/privacy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
-                  https://openai.com/privacy
+                <strong>{t("section3.neon")}</strong>:{" "}
+                <a href="https://neon.tech/privacy-policy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://neon.tech/privacy-policy
+                </a>
+              </li>
+              <li>
+                <strong>{t("section3.resend")}</strong>:{" "}
+                <a href="https://resend.com/legal/privacy-policy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://resend.com/legal/privacy-policy
+                </a>
+              </li>
+              <li>
+                <strong>{t("section3.stripe")}</strong>:{" "}
+                <a href="https://stripe.com/privacy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://stripe.com/privacy
                 </a>
               </li>
               <li>
@@ -101,15 +113,39 @@ function PrivacyContent() {
                 </a>
               </li>
               <li>
-                <strong>{t("section3.neon")}</strong>:{" "}
-                <a href="https://neon.tech/privacy-policy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
-                  https://neon.tech/privacy-policy
+                <strong>{t("section3.cloudflare")}</strong>:{" "}
+                <a href="https://www.cloudflare.com/privacypolicy/" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://www.cloudflare.com/privacypolicy/
+                </a>
+              </li>
+              <li>
+                <strong>{t("section3.roex")}</strong>:{" "}
+                <a href="https://roexaudio.com/privacy-policy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://roexaudio.com/privacy-policy
+                </a>
+              </li>
+              <li>
+                <strong>{t("section3.openai")}</strong>:{" "}
+                <a href="https://openai.com/privacy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://openai.com/privacy
+                </a>
+              </li>
+              <li>
+                <strong>{t("section3.anthropic")}</strong>:{" "}
+                <a href="https://www.anthropic.com/legal/privacy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://www.anthropic.com/legal/privacy
                 </a>
               </li>
               <li>
                 <strong>{t("section3.googleAnalytics")}</strong>:{" "}
                 <a href="https://policies.google.com/privacy" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
                   https://policies.google.com/privacy
+                </a>
+              </li>
+              <li>
+                <strong>{t("section3.upstash")}</strong>:{" "}
+                <a href="https://upstash.com/trust/privacy.pdf" className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                  https://upstash.com/trust/privacy.pdf
                 </a>
               </li>
             </ul>
@@ -156,8 +192,8 @@ function PrivacyContent() {
               <p className="text-slate-400">{t("section8.address")}</p>
               <p className="text-slate-400">
                 Email:{" "}
-                <a href="mailto:info@glasswerks.jp" className="text-blue-400 hover:underline">
-                  info@glasswerks.jp
+                <a href="mailto:support@mued.jp" className="text-blue-400 hover:underline">
+                  support@mued.jp
                 </a>
               </p>
             </div>

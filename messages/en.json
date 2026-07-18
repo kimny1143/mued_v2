@@ -138,7 +138,7 @@
   },
   "privacy": {
     "title": "Privacy Policy",
-    "lastUpdated": "Last updated: April 15, 2026",
+    "lastUpdated": "Last updated: July 18, 2026",
     "intro": "glasswerks inc. (\"we,\" \"our,\" or \"us\") operates MUEDnote (the \"App\"). This Privacy Policy explains how we collect, use, and protect your information when you use our App.",
     "section1": {
       "title": "1. Information We Collect",
@@ -162,12 +162,18 @@
     },
     "section3": {
       "title": "3. Third-Party Services",
-      "description": "We use the following third-party services to operate the App. Please review their respective privacy policies:",
-      "clerk": "Clerk (Authentication)",
-      "openai": "OpenAI (Voice transcription - Whisper API)",
-      "vercel": "Vercel (Hosting)",
+      "description": "We use the following third-party services to operate our website, apps, and services. Please review their respective privacy policies:",
+      "clerk": "Clerk (Authentication and account management)",
       "neon": "Neon (Database)",
-      "googleAnalytics": "Google Analytics 4 / Google BigQuery (Access analytics & data analysis)"
+      "resend": "Resend (Email delivery and mailing-list management — download links, transactional emails, and product-update emails)",
+      "stripe": "Stripe (Payment processing)",
+      "vercel": "Vercel (Hosting, site analytics, and file storage)",
+      "cloudflare": "Cloudflare (File delivery and storage, bot protection)",
+      "roex": "RoEx (Audio analysis, mixing and mastering of uploaded audio)",
+      "openai": "OpenAI (AI-powered features — text analysis and generation)",
+      "anthropic": "Anthropic (Claude — AI-powered conversation and analysis)",
+      "googleAnalytics": "Google Analytics 4 / Google BigQuery (Access analytics & data analysis)",
+      "upstash": "Upstash (Rate limiting and abuse prevention)"
     },
     "section4": {
       "title": "4. Data Storage",
@@ -2235,7 +2241,7 @@
       "emailPlaceholder": "your@email",
       "submit": "Download MUEDlim",
       "submitting": "Sending…",
-      "note": "I'll email you the download link. Unsubscribe anytime.",
+      "note": "I'll use your email to send the download link and occasional updates about MUEDsp plugins and tools. Unsubscribe anytime.",
       "successTitle": "Check your email.",
       "successBody": "I've emailed you the download link. If it doesn't arrive, check your spam folder.",
       "errorEmail": "Please enter a valid email address.",
@@ -2289,7 +2295,7 @@
       "emailPlaceholder": "your@email",
       "submit": "Download MUEDsat",
       "submitting": "Sending…",
-      "note": "We'll email you the download link. Unsubscribe anytime.",
+      "note": "We'll use your email to send the download link and occasional updates about MUEDsp plugins and tools. Unsubscribe anytime.",
       "successTitle": "Check your inbox.",
       "successBody": "We've sent your download link. If it's not there, check your spam folder.",
       "errorEmail": "Please enter a valid email address.",
