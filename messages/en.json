@@ -2233,8 +2233,8 @@
       "faceplateAlt": "The MUEDlim plugin interface, its loudness meter running. At the top, the title with an ACTIVE / BYPASS toggle (set to ACTIVE) at the right. Below, a large amber INTEGRATED LUFS readout (−11.2) at the left, and SHORT-TERM −10.8, GR −0.6 dB, RANGE 6.7 LU and TRUE-PEAK −1.0 dBTP stacked at the right. A steady loudness-history graph around −11 with a dashed TARGET −14 line fills the center; a vertical true-peak meter showing green below its −1.0 dBTP ceiling on the right; and INPUT (+0.0 dB) and CEILING (−1.0 dBTP) knobs along the bottom."
     },
     "whyFree": {
-      "heading": "Why it's free, and why I ask for your email",
-      "lead": "MUEDlim is completely free — no feature locks, no expiry, no paywall. I ask for your email only to send the download link and to let you know about updates (and MUEDsp masterchain). No spam, and you can unsubscribe anytime."
+      "heading": "Free — and your email gives it a home",
+      "lead": "MUEDlim is completely free — no feature locks, no expiry, no paywall. The email you give me is your key: your plugins get a home in your portal, always the latest build, one click away — no password, and no old email link to dig up next time. You'll also hear about updates, and when MUEDsp masterchain is ready. Unsubscribe anytime."
     },
     "form": {
       "emailLabel": "Email",
@@ -2283,8 +2283,8 @@
       "tech": "Zero latency, and no oversampling artifacts (ADAA anti-aliasing). I like it on a master bus, a drum group, or anything that wants a little more body — but I'd rather you decide with your own ears than take my word for it."
     },
     "whyFree": {
-      "heading": "Why it's free — and why I ask for your email",
-      "lead": "MUEDsat is completely free — nothing locked or time-limited. I ask for your email only to send the download link and to let you know when I update it (or when MUEDsp masterchain is ready). No spam; unsubscribe anytime.",
+      "heading": "Free — and your email gives it a home",
+      "lead": "MUEDsat is completely free — nothing locked, timed, or paywalled. The email you give me is your key: your plugins get a home in your portal, always the latest build, one click away — no password, and no old email link to dig up next time. You'll also hear when I update it, or when MUEDsp masterchain is ready. Unsubscribe anytime.",
       "body1": "MUEDsat is completely free. Nothing in the plugin is locked, time-limited, or paywalled.",
       "body2": "I ask for your email for two reasons: to send you the download link, and to let you know when I update MUEDsat — or when MUEDsp masterchain is ready. That's all it's for.",
       "body3": "No spam, unsubscribe anytime."
