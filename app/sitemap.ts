@@ -6,6 +6,8 @@ import { MUEDSAT_LIVE } from '@/lib/muedsat/config';
 import { MUEDLIM_LIVE } from '@/lib/muedlim/config';
 import { MUEDSP_LIVE } from '@/lib/muedsp/config';
 import { MUEDIAL_LP_LIVE } from '@/lib/muedial/config';
+import { LEARN_LIVE } from '@/lib/learn/config';
+import { LEARN_SLUGS } from '@/lib/learn/articles';
 
 // Force dynamic rendering so headers() can be read per-request
 export const dynamic = 'force-dynamic';
@@ -75,6 +77,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ? [
           { url: `${MUED}/ja/muedial`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.8 },
           { url: `${MUED}/en/muedial`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.8 },
+        ]
+      : []),
+    // /learn — EN reference track (non-locale, EN-only). Staged until LEARN_LIVE (kimny go-live gate).
+    ...(LEARN_LIVE
+      ? [
+          { url: `${MUED}/learn`, lastModified: now, changeFrequency: 'weekly' as const, priority: 0.6 },
+          ...LEARN_SLUGS.map((slug) => ({
+            url: `${MUED}/learn/${slug}`,
+            lastModified: now,
+            changeFrequency: 'monthly' as const,
+            priority: 0.6,
+          })),
         ]
       : []),
   ];
