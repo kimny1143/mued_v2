@@ -1,7 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { MuednoteLayout } from "@/components/layouts/muednote-layout";
-import { getPortalItemsForUser } from "@/lib/plugins/portal-data";
+import { getPortalItemsForUser, markPortalRegistered } from "@/lib/plugins/portal-data";
 import { PluginsPortalView, type PortalViewItem } from "./plugins-portal-view";
 
 /**
@@ -21,6 +21,9 @@ export default async function PluginsPortalPage() {
   if (!user) redirect("/sign-in?redirect_url=/dashboard/plugins");
 
   const items = await getPortalItemsForUser(user);
+  // North Star §③: record that this owner reached their portal (best-effort, fail-open, once). Does not
+  // block or affect the render — a write error is swallowed inside markPortalRegistered.
+  await markPortalRegistered(user);
   const viewItems: PortalViewItem[] = items.map((it) => ({
     pluginKey: it.pluginKey,
     i18nNamespace: it.i18nNamespace,

@@ -24,6 +24,7 @@ export const pluginEntitlements = pgTable('plugin_entitlements', {
   firstTouch: jsonb('first_touch'),                   // gaClientId + utm* (attribution parity)
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }), // nullable (guest; unauth at subscribe)
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  portalRegisteredAt: timestamp('portal_registered_at'), // best-effort, set once on first authed portal view (North Star §③ registration signal); NULL = not yet
 }, (t) => ({
   emailIdx: index('idx_plugin_entitlements_email').on(t.email),
   pluginIdx: index('idx_plugin_entitlements_plugin').on(t.pluginKey),
