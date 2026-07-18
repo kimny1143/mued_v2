@@ -1116,7 +1116,7 @@
         "name": "Free",
         "description": "Try MUEDnote for free",
         "features": [
-          "Voice transcription (Whisper)",
+          "Voice transcription",
           "Log storage: 90 days",
           "Hoo: Fixed responses only"
         ]
@@ -1126,7 +1126,7 @@
         "description": "Full features with unlimited Hoo AI",
         "features": [
           "Hoo AI conversation (unlimited)",
-          "Voice transcription (Whisper)",
+          "Voice transcription",
           "Cloud sync & unlimited log storage",
           "DAW log integration",
           "Practice data visualization"
