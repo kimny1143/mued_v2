@@ -18,6 +18,12 @@
 #   discovery : what a crawler is told exists (sitemap.xml / llms.txt — see --sitemap-only)
 # /tokushoho was correct in the sitemap while being a 404 from every in-page link.
 #
+# BLIND SPOT — a page can be live and invisible to BOTH axes. /learn is exactly that today: 200 in prod,
+# zero sitemap entries, and zero inbound hrefs anywhere on the live site (measured) — staged behind
+# LEARN_LIVE by design. Nothing here will ever look at it. Do not read a PASS as "the site is fine";
+# read it as "every link that exists resolves". A URL about to go live is in this third state, which is
+# why the go-live checklist curls /en/{key} individually instead of trusting a sweep.
+#
 # Page list is derived from sitemap.xml, so it stays correct as pages are added — no array to update.
 #
 # Usage:
@@ -66,12 +72,15 @@ if [[ $SITEMAP_ONLY == 1 ]]; then
 else
   while read -r page; do
     html="$(curl -s "$page")"
-    # Extract href from ANY tag, not just <a>. An <a>-only filter loses five hrefs at THIS step on mued.jp
-    # (/connect, /{en,ja}/muedsat, /{en,ja}/muedlim — they appear only in <link rel=alternate>), but the
-    # sitemap union below restores all five, so today the final target set is 38 either way (measured).
-    # The reason to stay wide is the case the union CANNOT cover: a page deliberately absent from the
-    # sitemap, linked from outside an <a>. /learn is exactly such a page — live (200) and staged/noindex,
-    # with zero sitemap entries. Resolving a URL is a plain GET, so casting the net wide costs nothing.
+    # Extract href from ANY tag, not just <a>. Be honest about what this buys TODAY: nothing. An <a>-only
+    # filter loses five hrefs at this step on mued.jp (/connect, /{en,ja}/muedsat, /{en,ja}/muedlim, which
+    # appear only in <link rel=alternate>), but every one of them is also in the sitemap, so the union
+    # below restores all five — measured 38 targets either way. Broad extraction is PRECAUTIONARY: the
+    # sitemap is not guaranteed to be a superset of the live pages, so a <link> pointing at an unlisted
+    # page would be missed by <a>-only + union. There is no such instance right now. Kept because
+    # resolving a URL is a plain GET — the net costs nothing to widen, and the claim above is small
+    # enough to survive being checked. (Two earlier versions of this comment overstated the benefit and
+    # were corrected by review; an inflated rationale gets the design thrown out with it.)
     printf '%s' "$html" \
       | grep -oE 'href=\\?"[^"\\]+' | sed -E 's/^href=\\?"//' \
       | sed -E "s#^$BASE##" \

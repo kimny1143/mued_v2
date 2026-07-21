@@ -23,8 +23,15 @@ MUEDsp のプラグイン（MUEDsat / MUEDlim / 今後のモジュール）を *
 
 - [ ] **dead 0** で PASS（404 が 1 件でも exit 1）
 - [ ] **locale-loss WARN 0**（bare path が redirect 経由でしか 200 にならない状態。status code だけ見ると "200 OK" に見えて隠れる）
+- [ ] **INCONCLUSIVE（exit 3）でない**（server-rendered HTML に `<a>` が 1 本も無い＝クライアント描画で curl からは何も見えていない。**検証していないのに緑を出す状態を止めるためのゲート**）
 
 **2 軸は互いを保証しない**。`/tokushoho` は sitemap 上は健全なまま、全ページ内リンクから 404 だった。両方走らせる。
+
+### ★sweep の盲点 — PASS は「サイトが健全」を意味しない
+
+**live なのに 2 軸のどちらからも見えないページがある。** `/learn` が現にそれで、**200 / sitemap 0 件 / サイト全体の inbound href 0 件**（実測）＝ `LEARN_LIVE` 前の staged 状態。sweep は**存在するリンクが解決するか**しか測らないので、この種のページは永久に視界に入らない。
+
+**これから live にする URL はまさにこの第3の状態にある**。だから次項の `/en/{key}` 個別 curl を sweep で代替してはいけない。
 
 ## 3. プラグイン固有の 3 点
 
