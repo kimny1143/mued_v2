@@ -66,10 +66,12 @@ if [[ $SITEMAP_ONLY == 1 ]]; then
 else
   while read -r page; do
     html="$(curl -s "$page")"
-    # Extract href from ANY tag, not just <a>. <link rel=alternate/canonical> legitimately reveals real
-    # pages: measured on mued.jp, five targets (/connect, /{en,ja}/muedsat, /{en,ja}/muedlim) appear ONLY
-    # outside <a> tags, so an <a>-only filter would silently drop the plugin pages. Resolving a URL is a
-    # plain GET, so casting the net wide costs nothing.
+    # Extract href from ANY tag, not just <a>. An <a>-only filter loses five hrefs at THIS step on mued.jp
+    # (/connect, /{en,ja}/muedsat, /{en,ja}/muedlim — they appear only in <link rel=alternate>), but the
+    # sitemap union below restores all five, so today the final target set is 38 either way (measured).
+    # The reason to stay wide is the case the union CANNOT cover: a page deliberately absent from the
+    # sitemap, linked from outside an <a>. /learn is exactly such a page — live (200) and staged/noindex,
+    # with zero sitemap entries. Resolving a URL is a plain GET, so casting the net wide costs nothing.
     printf '%s' "$html" \
       | grep -oE 'href=\\?"[^"\\]+' | sed -E 's/^href=\\?"//' \
       | sed -E "s#^$BASE##" \
