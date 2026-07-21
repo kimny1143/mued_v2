@@ -1,0 +1,63 @@
+/**
+ * Unit — the legal trio (privacy / support / tokushoho) keeps its cross-links locale-aware, and bare
+ * /tokushoho keeps a redirect safety net.
+ *
+ * Regression guard for a live bug (2026-07-21, found by product課's prod link sweep): the three legal
+ * pages cross-linked each other with BARE paths (`<Link href="/tokushoho">`). /privacy and /support had
+ * next.config redirects so they merely lost the locale (a JA reader clicking "サポート" on /ja/privacy
+ * landed on /en/support), but /tokushoho had none — so the 特定商取引法 disclosure, which a paid service
+ * is legally required to publish, was a hard 404 from all four rendered pages (/en|/ja × privacy|support)
+ * while /en/tokushoho and /ja/tokushoho themselves returned 200.
+ *
+ * Every other footer in the repo (advisory / integrated-landing-v2 / muedsp / muedial / muedear) already
+ * builds `/${locale}/tokushoho`, so this was the legal trio drifting off the house convention rather than
+ * a new pattern. These tests pin the convention at the source level: a source-text guard is what catches
+ * the regression class, because a bare `<Link href="/x">` renders and type-checks perfectly fine — only a
+ * prod fetch (or this test) can tell it is wrong.
+ */
+import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+const LEGAL_PAGES = ["privacy", "support", "tokushoho"] as const;
+
+function readPage(page: (typeof LEGAL_PAGES)[number]): string {
+  return readFileSync(join(process.cwd(), "app", "[locale]", page, "page.tsx"), "utf8");
+}
+
+describe("legal pages — internal links carry the locale", () => {
+  it.each(LEGAL_PAGES)("%s/page.tsx has no bare <Link href=\"/…\">", (page) => {
+    const bare = [...readPage(page).matchAll(/<Link\s+href="(\/[^"]*)"/g)].map((m) => m[1]);
+    // A bare internal href drops the locale (best case) or 404s (worst case — see the header comment).
+    expect(bare).toEqual([]);
+  });
+
+  it.each(LEGAL_PAGES)("%s/page.tsx links its siblings + home under /${locale}", (page) => {
+    const src = readPage(page);
+    const siblings = LEGAL_PAGES.filter((p) => p !== page);
+    for (const sibling of siblings) {
+      expect(src).toContain("`/${locale}/" + sibling + "`");
+    }
+    expect(src).toContain("`/${locale}`"); // the header "MUED" home link
+  });
+});
+
+describe("next.config — bare /tokushoho safety net", () => {
+  it("redirects /tokushoho → /en/tokushoho, temporarily (307)", async () => {
+    const { default: config } = await import("@/next.config");
+    const redirects = await config.redirects!();
+    const tokushoho = redirects.find((r) => r.source === "/tokushoho");
+
+    expect(tokushoho).toBeDefined();
+    expect(tokushoho!.destination).toBe("/en/tokushoho");
+    // Temporary, like the locale-symmetric product pages (#717) and unlike the EN-primary /privacy:
+    // a permanently-cached EN target would be a liability for a JA-audience legal disclosure.
+    expect(tokushoho!.permanent).toBe(false);
+  });
+
+  it("keeps the sibling legal redirects intact", async () => {
+    const { default: config } = await import("@/next.config");
+    const sources = (await config.redirects!()).map((r) => r.source);
+    expect(sources).toEqual(expect.arrayContaining(["/privacy", "/support", "/tokushoho"]));
+  });
+});

@@ -48,14 +48,15 @@ export default async function SupportPage({ params }: PageProps) {
     })),
   };
 
-  return <SupportContent faqStructuredData={faqStructuredData} />;
+  return <SupportContent faqStructuredData={faqStructuredData} locale={locale} />;
 }
 
 interface SupportContentProps {
   faqStructuredData: object;
+  locale: string;
 }
 
-function SupportContent({ faqStructuredData }: SupportContentProps) {
+function SupportContent({ faqStructuredData, locale }: SupportContentProps) {
   const t = useTranslations("support");
 
   const faqKeys = ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"] as const;
@@ -73,7 +74,7 @@ function SupportContent({ faqStructuredData }: SupportContentProps) {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6 bg-bg-primary/80 backdrop-blur-xl border-b border-white/5">
         <div className="container mx-auto flex justify-between items-center">
-          <Link href="/" className="text-white font-semibold hover:text-slate-300 transition-colors">
+          <Link href={`/${locale}`} className="text-white font-semibold hover:text-slate-300 transition-colors">
             MUED
           </Link>
           <LocaleSwitcher />
@@ -139,10 +140,10 @@ function SupportContent({ faqStructuredData }: SupportContentProps) {
               &copy; {new Date().getFullYear()} MUED. All rights reserved.
             </p>
             <nav className="flex items-center gap-6">
-              <Link href="/privacy" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+              <Link href={`/${locale}/privacy`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
                 Privacy
               </Link>
-              <Link href="/tokushoho" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+              <Link href={`/${locale}/tokushoho`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
                 Legal
               </Link>
             </nav>

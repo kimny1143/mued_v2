@@ -80,6 +80,13 @@ const nextConfig: NextConfig = {
       { source: '/muedsat', destination: '/en/muedsat', permanent: false },
       { source: '/muedlim', destination: '/en/muedlim', permanent: false },
       { source: '/muedsp', destination: '/en/muedsp', permanent: false },
+      // Safety net for the third legal page. The in-page links now carry the locale (the pages themselves
+      // are the fix), but bare /tokushoho can still arrive from bookmarks, already-sent email and external
+      // citations — it 404'd until now, unlike its /privacy + /support siblings above. Temporary (307),
+      // matching the product pages rather than the permanent /privacy: the legal trio is locale-symmetric
+      // (JA is the primary audience for a 特定商取引法 disclosure), so a permanently-cached EN target
+      // would be a liability if this is ever made locale-aware.
+      { source: '/tokushoho', destination: '/en/tokushoho', permanent: false },
       // Convenience redirects for short paths → canonical /dial/* paths
       {
         source: '/waitlist',

@@ -27,10 +27,10 @@ export default async function TokushohoPage({ params }: PageProps) {
   const { locale } = await params;
   setRequestLocale(locale as Locale);
 
-  return <TokushohoContent />;
+  return <TokushohoContent locale={locale} />;
 }
 
-function TokushohoContent() {
+function TokushohoContent({ locale }: { locale: string }) {
   const t = useTranslations("tokushoho");
 
   return (
@@ -38,7 +38,7 @@ function TokushohoContent() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 py-4 px-6 bg-bg-primary/80 backdrop-blur-xl border-b border-white/5">
         <div className="container mx-auto flex justify-between items-center">
-          <Link href="/" className="text-white font-semibold hover:text-slate-300 transition-colors">
+          <Link href={`/${locale}`} className="text-white font-semibold hover:text-slate-300 transition-colors">
             MUED
           </Link>
           <LocaleSwitcher />
@@ -169,10 +169,10 @@ function TokushohoContent() {
               &copy; {new Date().getFullYear()} MUED. All rights reserved.
             </p>
             <nav className="flex items-center gap-6">
-              <Link href="/privacy" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+              <Link href={`/${locale}/privacy`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
                 Privacy
               </Link>
-              <Link href="/support" className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
+              <Link href={`/${locale}/support`} className="text-slate-500 hover:text-slate-300 text-sm transition-colors">
                 Support
               </Link>
             </nav>
