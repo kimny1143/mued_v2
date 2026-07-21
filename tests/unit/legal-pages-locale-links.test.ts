@@ -27,7 +27,12 @@ function readPage(page: (typeof LEGAL_PAGES)[number]): string {
 
 describe("legal pages — internal links carry the locale", () => {
   it.each(LEGAL_PAGES)("%s/page.tsx has no bare <Link href=\"/…\">", (page) => {
-    const bare = [...readPage(page).matchAll(/<Link\s+href="(\/[^"]*)"/g)].map((m) => m[1]);
+    // `[^>]*` (not `\s+`): href is not necessarily the first attribute, and a negated class also spans
+    // newlines, so multi-line JSX is covered. An earlier `<Link\s+href=` version let a NEWLY added
+    // `<Link className="…" href="/tokushoho">` through while the sibling-link assertion below still
+    // passed on the untouched locale-aware links — i.e. the guard was blind to exactly the case it
+    // exists for (product課 review, verified by reintroducing the bug).
+    const bare = [...readPage(page).matchAll(/<Link[^>]*href="(\/[^"]*)"/g)].map((m) => m[1]);
     // A bare internal href drops the locale (best case) or 404s (worst case — see the header comment).
     expect(bare).toEqual([]);
   });
