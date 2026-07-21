@@ -37,7 +37,9 @@ export function GET() {
     manifest[key] = {
       latest: plainSemver(dist.version), // plain semver for the plugin's comparison
       // Locale product page — the banner default (transparent, email-gated, no auto-update). Uses /en/
-      // explicitly: the non-locale /{key} path 404s in prod (only app/[locale]/ exists), verified by curl.
+      // explicitly: pages only exist under app/[locale]/, and the non-locale /{key} path now 307s here
+      // via the next.config redirects (#717). We link the final target directly so the banner does not
+      // depend on the redirect layer — do NOT "simplify" back to `${BASE}/${key}`.
       url: `${BASE}/en/${key}`,
     };
   }
