@@ -25,7 +25,7 @@
 #   ./prod-link-sweep.sh https://staging.host   # sweep another origin
 #   ./prod-link-sweep.sh --sitemap-only         # resolve only the sitemap's own entries
 #
-# Exit codes:  0 = clean   1 = at least one 404 (hard failure)
+# Exit codes:  0 = clean   1 = at least one 404 (hard failure)   3 = inconclusive (nothing verifiable)
 # Locale-loss (a bare path that 200s only via redirect) is reported as a WARNING, not a failure:
 # it is a UX/SEO defect, not a broken link. Both classes were real findings on 2026-07-21.
 #
@@ -60,22 +60,52 @@ echo "sitemap entries: $(wc -l < "$tmp/pages.txt" | tr -d ' ')"
 
 # --- collect targets ---
 : > "$tmp/targets.txt"
+anchors=0
 if [[ $SITEMAP_ONLY == 1 ]]; then
   sed "s#^$BASE##" "$tmp/pages.txt" >> "$tmp/targets.txt"
 else
   while read -r page; do
-    curl -s "$page" \
+    html="$(curl -s "$page")"
+    # Extract href from ANY tag, not just <a>. <link rel=alternate/canonical> legitimately reveals real
+    # pages: measured on mued.jp, five targets (/connect, /{en,ja}/muedsat, /{en,ja}/muedlim) appear ONLY
+    # outside <a> tags, so an <a>-only filter would silently drop the plugin pages. Resolving a URL is a
+    # plain GET, so casting the net wide costs nothing.
+    printf '%s' "$html" \
       | grep -oE 'href=\\?"[^"\\]+' | sed -E 's/^href=\\?"//' \
       | sed -E "s#^$BASE##" \
       | grep -E '^/' \
       | grep -vE "$SKIP_RE" \
       | grep -vE "$ASSET_RE" >> "$tmp/targets.txt"
+    # Count <a> tags separately. This does NOT decide what gets checked — only whether checking means
+    # anything at all (see the coverage gate below).
+    n=$(printf '%s' "$html" | grep -oE '<a [^>]*href="[^"]*"' | wc -l | tr -d ' ')
+    anchors=$((anchors + n))
   done < "$tmp/pages.txt"
   # the sitemap's own entries are targets too
   sed "s#^$BASE##" "$tmp/pages.txt" >> "$tmp/targets.txt"
 fi
 sort -u "$tmp/targets.txt" | grep -vE '^/?$' > "$tmp/unique.txt"
 echo "unique internal targets: $(wc -l < "$tmp/unique.txt" | tr -d ' ')"
+
+# --- coverage gate: is this origin actually server-rendering clickable links? ---
+# This sweep only sees what is in the SERVER-RENDERED HTML. On a client-rendered site (Vite/CRA SPA) the
+# shell carries assets plus canonical/alternate <link>s and nothing else — every navigation link is built
+# by JS after load. Those stray <link> hrefs are enough to make a run look busy and print a confident PASS
+# having verified essentially nothing. A check that cannot fail is worse than no check: it manufactures
+# false comfort. So the verdict is gated on <a> tags, which exist only if the server rendered real links.
+# Found the hard way (product課, 2026-07-21): sweeping www.glasswerks.jp (Vite SPA) returned PASS while
+# seeing zero clickable links. Measured: mued.jp = 199 anchors across 35 pages; glasswerks = 0.
+INCONCLUSIVE=0
+if [[ $SITEMAP_ONLY == 0 ]]; then
+  echo "clickable <a> links seen in server-rendered HTML: $anchors"
+  if [[ "$anchors" -eq 0 ]]; then
+    INCONCLUSIVE=1
+    echo
+    echo "!! INCONCLUSIVE — not one <a> tag came back in the server-rendered HTML."
+    echo "!! This origin is almost certainly client-rendered, so its real links are invisible to curl"
+    echo "!! and any PASS here would be meaningless. Verify it with a headless browser (rendered DOM)."
+  fi
+fi
 echo
 
 # --- resolve ---
@@ -107,4 +137,6 @@ done < "$tmp/unique.txt"
 echo
 echo "dead: $dead   locale-loss warnings: $warn"
 [[ $dead -eq 0 ]] || { echo "FAIL — a rendered link does not resolve"; exit 1; }
+# Never print PASS when coverage was nil — that is exactly the false comfort the gate above exists to stop.
+[[ $INCONCLUSIVE -eq 0 ]] || { echo "INCONCLUSIVE — nothing meaningful was verified (see above)"; exit 3; }
 echo "PASS — every rendered internal link resolves"
