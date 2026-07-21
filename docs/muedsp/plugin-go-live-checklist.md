@@ -39,7 +39,7 @@ MUEDsp のプラグイン（MUEDsat / MUEDlim / 今後のモジュール）を *
 
 - **非 locale path は redirect が無いと 404**。pages は `app/[locale]/` にしか無い。新しい非 locale entry path を足すなら `next.config.ts` の redirects も同時に。
 - **redirect を足しても内部リンクの正解にはならない**。redirect は bookmark・既送信メール・外部引用のための安全網。**ページ内リンクは `` href={`/${locale}/…`} `` にする**（locale 落ちは redirect では直らない）。
-- **`/api/` を sweep しない**。`GET /api/plugins/unsubscribe` は実際に配信解除する。副作用のある GET を足したら `prod-link-sweep.sh` の `SKIP_RE` に追加する。
+- **`/api/` を sweep しない**。`GET /api/plugins/unsubscribe` は **GET でも**署名トークンが有効なら実際に配信解除する（RFC 8058 one-click ＝ **token that IS the capability**）。ただし **bare path 単体は無害**（handler が token 検証で early return する。`app/api/plugins/unsubscribe/route.ts` の `processUnsubscribe` 実読で確認）。**「/api/ を curl すると解除される」と過大に書かない** — bare path を試して何も起きないのを見た人が「この警告は大げさ」とガードごと外しかねない。**真の露出はトークン付き URL**（メール本文・fixture・ログ由来）を sweep が拾う経路。公開 API は**クローラが入ってよい名前空間ではない**、が正しい理解。副作用のある GET を足したら `prod-link-sweep.sh` の `SKIP_RE` に追加する。
 - **ローカル `next start` での検証はポート占有を疑う**。起動ログの成否を確認してから curl する（`curl が 200` ≠ `自分のビルドが応答した`）。
 
 ## 関連

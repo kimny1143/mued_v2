@@ -2,9 +2,10 @@
 #
 # prod-link-sweep.sh — resolve every internal link that the live site actually renders.
 #
-# Authored by product課 (2026-07-21) and vendored here so the plugin/product go-live checklist
-# (docs/muedsp/plugin-go-live-checklist.md) can call it. Keep the two copies in sync by hand; if they
-# diverge, product課's is the original.
+# Authored by product課 (2026-07-21), vendored here so the go-live checklist
+# (docs/muedsp/plugin-go-live-checklist.md) can call it. THIS copy is canonical: it is the one under
+# version control with review history. product課 keeps a local working mirror and sends improvements as
+# PRs here (their call, 2026-07-21) — so if the two ever diverge, this file wins.
 #
 # Why this exists (2026-07-21): three dead-link bugs shipped in one week because reviews reasoned about
 # URL resolution from next.config / middleware instead of measuring it — #712 (welcome-email CTA), #716
@@ -28,9 +29,13 @@
 # Locale-loss (a bare path that 200s only via redirect) is reported as a WARNING, not a failure:
 # it is a UX/SEO defect, not a broken link. Both classes were real findings on 2026-07-21.
 #
-# SAFETY: /api/ is never requested. `GET /api/plugins/unsubscribe?...` actually unsubscribes the address
-# in the query string — a sweep that follows it would silently mutate production data. Any new
-# side-effecting GET route must be added to SKIP_RE below.
+# SAFETY: /api/ is never requested. `GET /api/plugins/unsubscribe` mutates for real — the signed token IS
+# the capability (RFC 8058 one-click), so a valid-token URL unsubscribes that address on GET. A BARE path
+# is harmless (the handler returns early on token verification), so do not read this as "curling /api/
+# unsubscribes people" — that overstates it, and someone who tests the bare path and sees nothing happen
+# could conclude the guard is superstition and remove it. The real exposure is a token-bearing URL reaching
+# the sweep from an email body, fixture or log. Public API routes are not a namespace a crawler belongs in.
+# Any new side-effecting GET route must be added to SKIP_RE below.
 set -uo pipefail
 
 BASE="https://mued.jp"
