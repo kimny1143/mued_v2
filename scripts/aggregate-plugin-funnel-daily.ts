@@ -13,7 +13,9 @@
  *
  * 北極星2段計数 (conductor dispatch 2026-07-23): 本 collector が Stage A。insight課 Stage B (#276 merged)
  * は null 安全 passthrough 済ゆえ、ここで下記2キーを出せば Stage B 無変更で反映される:
- *   - marketing_contacts_total (②): 全 Resend audience の email を union dedup した distinct 件数 (def B)。
+ *   - marketing_contacts_total (②): 全 audience union の distinct email (billing exposure・CFO 指標)。
+ *     ★muedsp_reachable = 北極星線 (MUEDsp セグメントのみ・unsub 除外・kimny 7/18 批准スコープ)。
+ *     marketing_contacts_reachable = org 全体リーチ (別行・AND 保守側)。各 definition 同梱。
  *   - portal_registrations (③b): plugin_entitlements.portal_registered_at (列 0059) の cumulative + day_utc。
  *
  * MUEDsp audience id は rescue8-muedsp-delta.ts (2026-07-18 CLOSED, verify PASS, owner union=311) と
@@ -107,7 +109,7 @@ async function muedspAudienceSnapshot(): Promise<{ total: number; unsubscribed: 
  * READ-ONLY GET のみ。accuracy guard: audience 一覧 or 各 audience contacts が has_more なら過小集計→abort。
  * 現状 audience は MUEDsp + General の2本 (実測 has_more=false)。将来 audience 追加時も一覧を辿るので追随する。
  */
-async function audienceEmails(audienceId: string): Promise<string[]> {
+async function audienceContacts(audienceId: string): Promise<Array<{ email: string; unsubscribed: boolean }>> {
   const r = await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, { headers: H });
   const text = await r.text();
   if (!r.ok) throw new Error(`audience ${audienceId} list ${r.status}: ${text.slice(0, 160)}`);
@@ -116,11 +118,24 @@ async function audienceEmails(audienceId: string): Promise<string[]> {
     throw new Error(`audience ${audienceId} has_more=true — single-call list truncated. pagination未実装ゆえabort.`);
   }
   return (body.data ?? [])
-    .map((c) => (c.email || "").trim().toLowerCase())
-    .filter((e) => e.length > 0);
+    .map((c) => ({ email: (c.email || "").trim().toLowerCase(), unsubscribed: c.unsubscribed === true }))
+    .filter((c) => c.email.length > 0);
 }
 
-async function marketingContactsTotal(): Promise<number> {
+/**
+ * marketing_contacts の3系列を1度の走査で出す。★スコープが北極星定義と一致するかが肝 (Chief 検出・
+ * 2026-07-23): kimny 批准の北極星分母は「MUEDsp セグメント10,000人」(brief-road-to-10k-20260718 L4) で
+ * あって union(MUEDsp+General) ではない。General を混ぜると非プラグイン契約で北極星が膨らむ (同 brief L31
+ * の「転換不能な分母で 10k の見かけを膨らませる」と同型)。ゆえに3系列を明確に分ける:
+ *  - total          = 全 audience union の distinct email (unsub 含む＝billing exposure・CFO 指標)。
+ *  - muedspReachable = ★北極星線。MUEDsp セグメントのみ・unsubscribed=false・distinct。単一スコープゆえ
+ *                      OR/AND の問い自体が無い。
+ *  - reachableUnionAnd = org 全体リーチ (北極星でない別行)。Chief 裁定で AND=保守側 (どこか1つの audience
+ *                      でも解除なら除外=どの audience でも解除されていない email のみ)。
+ * 数え方は各 definition フィールドに同梱 (消費側が引き算せず取り違えない)。
+ * accuracy guard: audience 一覧 or 各 audience contacts が has_more なら過小集計→abort。
+ */
+async function marketingContacts(): Promise<{ total: number; muedspReachable: number; reachableUnionAnd: number }> {
   const listRes = await fetch("https://api.resend.com/audiences", { headers: H });
   const listText = await listRes.text();
   if (!listRes.ok) throw new Error(`audiences list ${listRes.status}: ${listText.slice(0, 160)}`);
@@ -129,12 +144,25 @@ async function marketingContactsTotal(): Promise<number> {
     throw new Error("audiences list has_more=true — >100 audiences, pagination未実装ゆえabort.");
   }
   const ids = (listBody.data ?? []).map((a) => a.id);
-  const union = new Set<string>();
+  const allEmails = new Set<string>();
+  const unsubAnywhere = new Set<string>();       // >=1 audience で unsubscribed=true な email
+  const muedspReachableSet = new Set<string>();  // MUEDsp segment で subscribed な email (北極星スコープ)
   for (const id of ids) {
-    for (const email of await audienceEmails(id)) union.add(email);
+    for (const c of await audienceContacts(id)) {
+      allEmails.add(c.email);
+      if (c.unsubscribed) unsubAnywhere.add(c.email);
+      if (id === MUEDSP_AUDIENCE_ID && !c.unsubscribed) muedspReachableSet.add(c.email);
+    }
   }
-  return union.size;
+  let reachableUnionAnd = 0;
+  for (const email of allEmails) if (!unsubAnywhere.has(email)) reachableUnionAnd++;
+  return { total: allEmails.size, muedspReachable: muedspReachableSet.size, reachableUnionAnd };
 }
+
+const MUEDSP_REACHABLE_DEFINITION =
+  "MUEDsp segment only; unsubscribed=false; unique. ★North-star denominator (kimny ratified 2026-07-18: 北極星=MUEDsp セグメント10,000人). Single scope → no OR/AND question.";
+const MARKETING_REACHABLE_DEFINITION =
+  "union across all audiences (currently MUEDsp+General); reachable = NOT unsubscribed in ANY audience (AND/conservative, Chief ruling 2026-07-23). Org-wide reach — NOT the north-star. total (marketing_contacts_total) = billing exposure incl. unsubscribed.";
 
 /**
  * ★forward-only signal の起点日 = #710 (markPortalRegistered) が prod deploy された日 (2026-07-23)。
@@ -209,12 +237,12 @@ async function dbOwnerUnionTotal(): Promise<number> {
 }
 
 async function main() {
-  const [welcomeEmails, audience, dbNetNew, ownerUnionTotal, marketingContacts, portalReg] = await Promise.all([
+  const [welcomeEmails, audience, dbNetNew, ownerUnionTotal, mktg, portalReg] = await Promise.all([
     fetchWelcomeEmailsForDay(DAY),
     muedspAudienceSnapshot(),
     dbShelfNetNew(DAY),
     dbOwnerUnionTotal(),
-    marketingContactsTotal(),
+    marketingContacts(),
     portalRegistrations(DAY),
   ]);
 
@@ -257,9 +285,13 @@ async function main() {
     db_owner_union_total: ownerUnionTotal,
     // ② 全 audience unique dedup (def B・freee サインオフ)。insight Stage B (#276) が passthrough で拾う。
     // ★これは billing exposure (Resend は unsubscribed も課金対象として保持) であり "reachable な到達可能数"
-    //   ではない (reachable は unsub 除外)。unsubscribed 単体は上の mued_sp_unsubscribed_total で分離可能
-    //   (product課 review 指摘の明示)。
-    marketing_contacts_total: marketingContacts,
+    //   ではない (reachable は unsub 除外)。unsubscribed 単体は上の mued_sp_unsubscribed_total で分離可能。
+    marketing_contacts_total: mktg.total,
+    // ★北極星線 = MUEDsp セグメントの到達可能数 (kimny 7/18 批准スコープ)。ダッシュボードの 10k 分母はこれ。
+    muedsp_reachable: { count: mktg.muedspReachable, definition: MUEDSP_REACHABLE_DEFINITION },
+    // org 全体リーチ (北極星でない別行・Chief 裁定で AND=保守側)。dedup と unsub 除外の数え方を collector に
+    //   閉じ込め (消費側が引き算で二重計上しない)、definition を同梱。
+    marketing_contacts_reachable: { count: mktg.reachableUnionAnd, definition: MARKETING_REACHABLE_DEFINITION },
     // ③b 北極星③ registration signal (列 0059)。cumulative=tz非依存 / day_utc=レポート全体と同 UTC 基準。
     portal_registrations: portalReg,
     anomalies,
