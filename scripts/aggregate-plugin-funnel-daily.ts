@@ -11,6 +11,11 @@
  * READ-ONLY: Resend GET + DB SELECT のみ。write/upsert 一切なし。
  * PII: 出力JSONは件数・率のみ。emailアドレス等は一切書き出さない。
  *
+ * 北極星2段計数 (conductor dispatch 2026-07-23): 本 collector が Stage A。insight課 Stage B (#276 merged)
+ * は null 安全 passthrough 済ゆえ、ここで下記2キーを出せば Stage B 無変更で反映される:
+ *   - marketing_contacts_total (②): 全 Resend audience の email を union dedup した distinct 件数 (def B)。
+ *   - portal_registrations (③b): plugin_entitlements.portal_registered_at (列 0059) の cumulative + day_utc。
+ *
  * MUEDsp audience id は rescue8-muedsp-delta.ts (2026-07-18 CLOSED, verify PASS, owner union=311) と
  * 同じ 243e06eb-...（旧MUEDlim audienceをリネームし統一）を権威として使う。
  * ★count-plugin-backfill-dryrun.ts に残る "General"(6293ccef-...) 参照は rescue-8 統合前の名残と判断
@@ -37,6 +42,7 @@ if (!KEY) {
 const H = { Authorization: `Bearer ${KEY}` };
 
 const MUEDSP_AUDIENCE_ID = "243e06eb-1ddc-441d-a241-1e2044ef4b5f";
+const GENERAL_AUDIENCE_ID = "6293ccef-c19f-4a4e-bb52-4bd8a6ef5c6f";
 
 const arg = process.argv[2];
 function utcDay(offsetDays: number): string {
@@ -95,6 +101,63 @@ async function muedspAudienceSnapshot(): Promise<{ total: number; unsubscribed: 
   return { total: contacts.length, unsubscribed, netNewDay };
 }
 
+/**
+ * ② marketing_contacts_total — 全 Resend audience の email を lower/trim して union した distinct 件数
+ * (freee/CFO サインオフの def B: General 単体は billing exposure 過小ゆえ全 audience dedup)。
+ * READ-ONLY GET のみ。accuracy guard: audience 一覧 or 各 audience contacts が has_more なら過小集計→abort。
+ * 現状 audience は MUEDsp + General の2本 (実測 has_more=false)。将来 audience 追加時も一覧を辿るので追随する。
+ */
+async function audienceEmails(audienceId: string): Promise<string[]> {
+  const r = await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, { headers: H });
+  const text = await r.text();
+  if (!r.ok) throw new Error(`audience ${audienceId} list ${r.status}: ${text.slice(0, 160)}`);
+  const body = JSON.parse(text) as { data?: Contact[]; has_more?: boolean };
+  if (body.has_more) {
+    throw new Error(`audience ${audienceId} has_more=true — single-call list truncated. pagination未実装ゆえabort.`);
+  }
+  return (body.data ?? [])
+    .map((c) => (c.email || "").trim().toLowerCase())
+    .filter((e) => e.length > 0);
+}
+
+async function marketingContactsTotal(): Promise<number> {
+  const listRes = await fetch("https://api.resend.com/audiences", { headers: H });
+  const listText = await listRes.text();
+  if (!listRes.ok) throw new Error(`audiences list ${listRes.status}: ${listText.slice(0, 160)}`);
+  const listBody = JSON.parse(listText) as { data?: Array<{ id: string }>; has_more?: boolean };
+  if (listBody.has_more) {
+    throw new Error("audiences list has_more=true — >100 audiences, pagination未実装ゆえabort.");
+  }
+  const ids = (listBody.data ?? []).map((a) => a.id);
+  const union = new Set<string>();
+  for (const id of ids) {
+    for (const email of await audienceEmails(id)) union.add(email);
+  }
+  return union.size;
+}
+
+/**
+ * ③b portal_registrations — 認証済 owner が /dashboard/plugins を初回表示した signal (北極星③・列 0059)。
+ * markPortalRegistered は owner の verified email に紐づく全 entitlement 行に同一 timestamp を1度だけ書く
+ * ため、行数でなく DISTINCT email で「登録した人数」を数える。
+ *
+ * ★tz 基準: portal_registered_at は `timestamp without time zone` に UTC instant を格納 (new Date())。
+ * daily は本レポート全体と同じ UTC 日付でバケットする (report header も "UTC ${DAY}")。JST 早朝
+ * (00:00–08:59 JST) の登録は UTC 前日に落ちる — これはレポート全体の tz 基準と揃えた意図的挙動で、
+ * 出力キー名 `day_utc` で明示する (product課 review 指摘の反映)。cumulative は tz 非依存 (IS NOT NULL)。
+ */
+async function portalRegistrations(day: string): Promise<{ cumulative: number; day_utc: number }> {
+  const rows = await db.execute(sql`
+    SELECT
+      count(DISTINCT lower(trim(email))) FILTER (WHERE portal_registered_at IS NOT NULL)::int AS cumulative,
+      count(DISTINCT lower(trim(email))) FILTER (WHERE portal_registered_at::date = ${day}::date)::int AS day_utc
+    FROM plugin_entitlements
+    WHERE plugin_key IN ('muedsat', 'muedlim')
+  `);
+  const r = rows.rows[0] as { cumulative: number; day_utc: number };
+  return { cumulative: r.cumulative, day_utc: r.day_utc };
+}
+
 async function dbShelfNetNew(day: string): Promise<Record<PluginKey, number>> {
   const rows = await db.execute(sql`
     SELECT plugin_key, count(*)::int AS cnt
@@ -120,11 +183,13 @@ async function dbOwnerUnionTotal(): Promise<number> {
 }
 
 async function main() {
-  const [welcomeEmails, audience, dbNetNew, ownerUnionTotal] = await Promise.all([
+  const [welcomeEmails, audience, dbNetNew, ownerUnionTotal, marketingContacts, portalReg] = await Promise.all([
     fetchWelcomeEmailsForDay(DAY),
     muedspAudienceSnapshot(),
     dbShelfNetNew(DAY),
     dbOwnerUnionTotal(),
+    marketingContactsTotal(),
+    portalRegistrations(DAY),
   ]);
 
   const shelfEmail: Record<PluginKey, { delivered: number; bounced: number; other: number }> = {
@@ -164,6 +229,10 @@ async function main() {
       muedlim: { db_net_new: dbNetNew.muedlim, email_delivered: shelfEmail.muedlim.delivered, email_bounced: shelfEmail.muedlim.bounced },
     },
     db_owner_union_total: ownerUnionTotal,
+    // ② 全 audience unique dedup (def B・freee サインオフ)。insight Stage B (#276) が passthrough で拾う。
+    marketing_contacts_total: marketingContacts,
+    // ③b 北極星③ registration signal (列 0059)。cumulative=tz非依存 / day_utc=レポート全体と同 UTC 基準。
+    portal_registrations: portalReg,
     anomalies,
   };
 
