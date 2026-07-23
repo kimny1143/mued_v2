@@ -126,7 +126,13 @@ while read -r path; do
   case "$code" in
     200) ;;
     3*)  loc=$(curl -s -o /dev/null -w '%{redirect_url}' "$BASE$path")
-         final=$(curl -s -o /dev/null -w '%{http_code}' "$loc")
+         # Follow the WHOLE chain (-L) for the pass/fail status, not one hop. A single-hop check misreports
+         # a legitimate multi-hop redirect (307→307→200) as DEAD by mistaking the intermediate 3xx for the
+         # final status — a real false-FAIL. `loc` stays the FIRST hop (that is what reveals a dropped
+         # locale); only the verdict uses the fully-resolved end of the chain. (Hardened 2026-07-23: no
+         # multi-hop redirect exists on mued.jp today, so nothing changes here now, but the latent bug was
+         # real — surfaced when conductor asked whether the sweep could fail in the -L direction.)
+         final=$(curl -sL -o /dev/null -w '%{http_code}' "$BASE$path")
          if [[ "$final" != "200" ]]; then
            printf 'DEAD  %-34s %s -> %s [%s]\n' "$path" "$code" "$loc" "$final"; dead=$((dead+1))
          elif [[ "$loc" =~ /(sign-in|sign-up|login) ]]; then
