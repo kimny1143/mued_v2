@@ -13,7 +13,8 @@
  *
  * 北極星2段計数 (conductor dispatch 2026-07-23): 本 collector が Stage A。insight課 Stage B (#276 merged)
  * は null 安全 passthrough 済ゆえ、ここで下記2キーを出せば Stage B 無変更で反映される:
- *   - marketing_contacts_total (②): 全 Resend audience の email を union dedup した distinct 件数 (def B)。
+ *   - marketing_contacts_total (②): 全 Resend audience の email を union dedup した distinct 件数 (def B・
+ *     billing exposure)。併せて marketing_contacts_reachable (unsub 除外・到達可能数・definition 同梱)。
  *   - portal_registrations (③b): plugin_entitlements.portal_registered_at (列 0059) の cumulative + day_utc。
  *
  * MUEDsp audience id は rescue8-muedsp-delta.ts (2026-07-18 CLOSED, verify PASS, owner union=311) と
@@ -107,7 +108,7 @@ async function muedspAudienceSnapshot(): Promise<{ total: number; unsubscribed: 
  * READ-ONLY GET のみ。accuracy guard: audience 一覧 or 各 audience contacts が has_more なら過小集計→abort。
  * 現状 audience は MUEDsp + General の2本 (実測 has_more=false)。将来 audience 追加時も一覧を辿るので追随する。
  */
-async function audienceEmails(audienceId: string): Promise<string[]> {
+async function audienceContacts(audienceId: string): Promise<Array<{ email: string; unsubscribed: boolean }>> {
   const r = await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, { headers: H });
   const text = await r.text();
   if (!r.ok) throw new Error(`audience ${audienceId} list ${r.status}: ${text.slice(0, 160)}`);
@@ -116,11 +117,21 @@ async function audienceEmails(audienceId: string): Promise<string[]> {
     throw new Error(`audience ${audienceId} has_more=true — single-call list truncated. pagination未実装ゆえabort.`);
   }
   return (body.data ?? [])
-    .map((c) => (c.email || "").trim().toLowerCase())
-    .filter((e) => e.length > 0);
+    .map((c) => ({ email: (c.email || "").trim().toLowerCase(), unsubscribed: c.unsubscribed === true }))
+    .filter((c) => c.email.length > 0);
 }
 
-async function marketingContactsTotal(): Promise<number> {
+/**
+ * marketing_contacts の total (billing exposure) と reachable を1度の走査で出す。
+ * ★total = 全 audience union の distinct email 件数 (freee def B・unsubscribed 含む＝billing exposure)。
+ * ★reachable = そのうち「いずれかの audience で subscribed (unsubscribed=false)」な email 件数。
+ *   定義判断: Resend の unsubscribe は audience 単位ゆえ、ある audience で解除でも別 audience で購読中なら
+ *   その audience 経由で到達可能 → reachable は OR (少なくとも1つで subscribed)。この選択を出力の
+ *   `definition` フィールドに同梱し、Chief 台帳が別定義 (どこか1つでも解除なら除外=AND) を採るなら
+ *   follow-up で差し替え可能にする (北極星の分母の最終判断は Chief 領分・conductor 経由)。
+ * accuracy guard: audience 一覧 or 各 audience contacts が has_more なら過小集計→abort。
+ */
+async function marketingContacts(): Promise<{ total: number; reachable: number }> {
   const listRes = await fetch("https://api.resend.com/audiences", { headers: H });
   const listText = await listRes.text();
   if (!listRes.ok) throw new Error(`audiences list ${listRes.status}: ${listText.slice(0, 160)}`);
@@ -129,12 +140,21 @@ async function marketingContactsTotal(): Promise<number> {
     throw new Error("audiences list has_more=true — >100 audiences, pagination未実装ゆえabort.");
   }
   const ids = (listBody.data ?? []).map((a) => a.id);
-  const union = new Set<string>();
+  // email → reachableAnywhere (いずれかの audience で unsubscribed=false なら true)
+  const reachableByEmail = new Map<string, boolean>();
   for (const id of ids) {
-    for (const email of await audienceEmails(id)) union.add(email);
+    for (const c of await audienceContacts(id)) {
+      const prev = reachableByEmail.get(c.email) ?? false;
+      reachableByEmail.set(c.email, prev || !c.unsubscribed);
+    }
   }
-  return union.size;
+  let reachable = 0;
+  for (const ok of reachableByEmail.values()) if (ok) reachable++;
+  return { total: reachableByEmail.size, reachable };
 }
+
+const MARKETING_REACHABLE_DEFINITION =
+  "union dedup across all audiences (currently MUEDsp+General); reachable = subscribed (unsubscribed=false) in at least one audience. total (marketing_contacts_total) = billing exposure incl. unsubscribed.";
 
 /**
  * ★forward-only signal の起点日 = #710 (markPortalRegistered) が prod deploy された日 (2026-07-23)。
@@ -209,12 +229,12 @@ async function dbOwnerUnionTotal(): Promise<number> {
 }
 
 async function main() {
-  const [welcomeEmails, audience, dbNetNew, ownerUnionTotal, marketingContacts, portalReg] = await Promise.all([
+  const [welcomeEmails, audience, dbNetNew, ownerUnionTotal, mktg, portalReg] = await Promise.all([
     fetchWelcomeEmailsForDay(DAY),
     muedspAudienceSnapshot(),
     dbShelfNetNew(DAY),
     dbOwnerUnionTotal(),
-    marketingContactsTotal(),
+    marketingContacts(),
     portalRegistrations(DAY),
   ]);
 
@@ -257,9 +277,12 @@ async function main() {
     db_owner_union_total: ownerUnionTotal,
     // ② 全 audience unique dedup (def B・freee サインオフ)。insight Stage B (#276) が passthrough で拾う。
     // ★これは billing exposure (Resend は unsubscribed も課金対象として保持) であり "reachable な到達可能数"
-    //   ではない (reachable は unsub 除外)。unsubscribed 単体は上の mued_sp_unsubscribed_total で分離可能
-    //   (product課 review 指摘の明示)。
-    marketing_contacts_total: marketingContacts,
+    //   ではない (reachable は unsub 除外)。unsubscribed 単体は上の mued_sp_unsubscribed_total で分離可能。
+    marketing_contacts_total: mktg.total,
+    // ★reachable = billing exposure から unsub を除いた到達可能数。dedup と unsub 除外の数え方を1か所に
+    //   閉じ込め (消費側が引き算で二重計上しない)、definition を同梱 (数え方をデータに埋める＝
+    //   portal_registrations の counting_since と同思想)。北極星の分母にどちらを使うかは Chief 台帳判断。
+    marketing_contacts_reachable: { count: mktg.reachable, definition: MARKETING_REACHABLE_DEFINITION },
     // ③b 北極星③ registration signal (列 0059)。cumulative=tz非依存 / day_utc=レポート全体と同 UTC 基準。
     portal_registrations: portalReg,
     anomalies,
