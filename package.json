@@ -75,7 +75,7 @@
     "inversify": "^7.10.3",
     "isomorphic-dompurify": "^2.31.0",
     "lucide-react": "^0.544.0",
-    "next": "^16.2.1",
+    "next": "^16.2.11",
     "next-intl": "^4.7.0",
     "openai": "^6.0.0",
     "puppeteer": "^24.26.1",
@@ -101,7 +101,9 @@
     "brace-expansion@1": "^1.1.16",
     "brace-expansion@2": "^2.1.2",
     "brace-expansion@5": "^5.0.7",
-    "js-yaml@4": "^4.3.0"
+    "js-yaml@4": "^4.3.0",
+    "sharp": "^0.35.0",
+    "fast-uri@3": "^3.1.4"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
