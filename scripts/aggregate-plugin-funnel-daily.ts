@@ -137,16 +137,37 @@ async function marketingContactsTotal(): Promise<number> {
 }
 
 /**
+ * ★forward-only signal の起点日 = #710 (markPortalRegistered) が prod deploy された日 (2026-07-23)。
+ * portal_registered_at はこの日以降の初回ポータル表示しか記録しない — deploy 前の到達は列が存在しなかった
+ * ので backfill 不可。GA4 で観測した broadcast 反応 (7/18–22 の到達15) は別軸・遡れない。
+ * ★これを ↓ の出力に counting_since + note として同梱する (conductor + product課 が独立に要求)。理由:
+ * 消費側 (insight Stage B / Chief 台帳 / kimny PWA) は JSON しか読まないので、意味を別文書の注記に置くと
+ * 剥がれて「cumulative=0 なのに GA は15 = ポータル壊れてる」と誤読される。データに意味を同梱すれば
+ * 誰がどの順で読んでも取り違えない (この session で繰り返した「中間表現を最終形として読む」の予防)。
+ */
+const PORTAL_REG_COUNTING_SINCE = "2026-07-23";
+const PORTAL_REG_NOTE =
+  "forward-only; not backfillable (recording shipped 2026-07-23). Portal arrivals before that date are only observable in GA4, not here.";
+
+type PortalRegistrations = {
+  cumulative: number;
+  day_utc: number;
+  counting_since: string;
+  note: string;
+};
+
+/**
  * ③b portal_registrations — 認証済 owner が /dashboard/plugins を初回表示した signal (北極星③・列 0059)。
- * markPortalRegistered は owner の verified email に紐づく全 entitlement 行に同一 timestamp を1度だけ書く
- * ため、行数でなく DISTINCT email で「登録した人数」を数える。
+ * markPortalRegistered は owner の verified email に紐づく全 entitlement 行に同一 timestamp を1度だけ書く。
+ * 行数でなく DISTINCT email で数えるが、これは厳密には「人数」でなく「distinct registered email」＝
+ * 1人が複数 verified email に entitlement を持つと複数計上されうる (稀)。北極星 signal としては実用十分。
  *
  * ★tz 基準: portal_registered_at は `timestamp without time zone` に UTC instant を格納 (new Date())。
  * daily は本レポート全体と同じ UTC 日付でバケットする (report header も "UTC ${DAY}")。JST 早朝
- * (00:00–08:59 JST) の登録は UTC 前日に落ちる — これはレポート全体の tz 基準と揃えた意図的挙動で、
- * 出力キー名 `day_utc` で明示する (product課 review 指摘の反映)。cumulative は tz 非依存 (IS NOT NULL)。
+ * (00:00–08:59 JST) の登録は UTC 前日に落ちる — レポート全体の tz 基準と揃えた意図的挙動で、出力キー名
+ * `day_utc` で明示する (product課 review 指摘の反映)。cumulative は tz 非依存 (IS NOT NULL)。
  */
-async function portalRegistrations(day: string): Promise<{ cumulative: number; day_utc: number }> {
+async function portalRegistrations(day: string): Promise<PortalRegistrations> {
   const rows = await db.execute(sql`
     SELECT
       count(DISTINCT lower(trim(email))) FILTER (WHERE portal_registered_at IS NOT NULL)::int AS cumulative,
@@ -155,7 +176,12 @@ async function portalRegistrations(day: string): Promise<{ cumulative: number; d
     WHERE plugin_key IN ('muedsat', 'muedlim')
   `);
   const r = rows.rows[0] as { cumulative: number; day_utc: number };
-  return { cumulative: r.cumulative, day_utc: r.day_utc };
+  return {
+    cumulative: r.cumulative,
+    day_utc: r.day_utc,
+    counting_since: PORTAL_REG_COUNTING_SINCE,
+    note: PORTAL_REG_NOTE,
+  };
 }
 
 async function dbShelfNetNew(day: string): Promise<Record<PluginKey, number>> {
@@ -230,6 +256,9 @@ async function main() {
     },
     db_owner_union_total: ownerUnionTotal,
     // ② 全 audience unique dedup (def B・freee サインオフ)。insight Stage B (#276) が passthrough で拾う。
+    // ★これは billing exposure (Resend は unsubscribed も課金対象として保持) であり "reachable な到達可能数"
+    //   ではない (reachable は unsub 除外)。unsubscribed 単体は上の mued_sp_unsubscribed_total で分離可能
+    //   (product課 review 指摘の明示)。
     marketing_contacts_total: marketingContacts,
     // ③b 北極星③ registration signal (列 0059)。cumulative=tz非依存 / day_utc=レポート全体と同 UTC 基準。
     portal_registrations: portalReg,
