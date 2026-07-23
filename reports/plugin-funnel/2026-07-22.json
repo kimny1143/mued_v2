@@ -1,0 +1,32 @@
+{
+  "date": "2026-07-22",
+  "generated_at": "2026-07-23T07:37:51.166Z",
+  "resend": {
+    "mued_sp_total_contacts": 372,
+    "mued_sp_net_new_day": 12,
+    "mued_sp_unsubscribed_total": 6,
+    "welcome_delivered_total": 17,
+    "broadcast": null
+  },
+  "shelf": {
+    "muedsat": {
+      "db_net_new": 9,
+      "email_delivered": 9,
+      "email_bounced": 0
+    },
+    "muedlim": {
+      "db_net_new": 8,
+      "email_delivered": 8,
+      "email_bounced": 0
+    }
+  },
+  "db_owner_union_total": 372,
+  "marketing_contacts_total": 376,
+  "portal_registrations": {
+    "cumulative": 0,
+    "day_utc": 0,
+    "counting_since": "2026-07-23",
+    "note": "forward-only; not backfillable (recording shipped 2026-07-23). Portal arrivals before that date are only observable in GA4, not here."
+  },
+  "anomalies": []
+}
