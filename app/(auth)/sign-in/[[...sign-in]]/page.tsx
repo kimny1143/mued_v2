@@ -65,30 +65,43 @@ export default function SignInPage() {
         </div>
 
         {/*
-         * Passwordless hint — the door does not advertise the email-code path.
+         * Passwordless hint — the door never says the password is skippable.
          *
-         * The Clerk instance has email_code as the first factor and password is optional
-         * (`password.used_for_first_factor: false`; the password input renders with
-         * `required=false`, and submitting it blank reaches the server — verified against
-         * prod). But the rendered form shows only "Email address or username" + "Password"
-         * with no "Optional" marker and no "email me a code" affordance, while the welcome
+         * The rendered form is only "Email address or username" + "Password" + Continue:
+         * no "Optional" marker, no "email me a code" affordance. Meanwhile the welcome
          * email promises "your email is the key … no password to remember"
-         * (`lib/services/email.service.ts`). Portal users are passwordless signups, so they
-         * have no password to type — leaving Apple/Google as the only obvious route, which
-         * is exactly what dies inside an in-app webview.
+         * (`lib/services/email.service.ts`), and portal users are passwordless signups —
+         * they have no password to type. That leaves Apple/Google as the only route that
+         * looks usable, which is exactly what an in-app webview blocks.
          *
-         * This line sits above the card so it is read before the form on both viewports.
-         * It is NOT `localization.formFieldLabel__password`: that key is ClerkProvider-wide
-         * and would also relabel the password field on sign-up and on UserProfile's
-         * set/change-password screens, where "leave it blank" is wrong.
+         * The claim here is provable from the instance config alone (Clerk FAPI
+         * /v1/environment): `password.used_for_first_factor: false` with `first_factors: []`
+         * means a password can never be demanded to sign in, and `password.required: false`
+         * means signups aren't given one. So "no password needed" is true regardless of what
+         * the next screen does.
          *
-         * Bilingual because this route has no locale segment (it lives outside app/[locale],
-         * and Clerk itself renders English here).
+         * Deliberately says nothing about what happens after Continue ("we'll email you a
+         * code"). That is a claim about the NEXT screen's behaviour and is not verified yet;
+         * it lands in a follow-up once the walkthrough confirms it.
+         *
+         * Wording holds on every sub-route of this catch-all — /sign-in/factor-one (the code
+         * entry screen, which has no password field) and /sign-in/sso-callback render this
+         * same shell, so anything phrased as "leave the password blank" would appear with
+         * nothing to refer to.
+         *
+         * NOT `localization.formFieldLabel__password`: `localization` sits on ClerkOptions
+         * (ClerkProvider-wide), so it would also relabel the password field on sign-up and on
+         * UserProfile's set/change-password screens, where "you don't need one" is wrong.
+         * Not a placeholder either — placeholders vanish as soon as the user types.
+         *
+         * Right column on purpose: the left pane is `hidden lg:flex`, so anything placed
+         * there is invisible to the mobile cohort this is for. Bilingual because this route
+         * has no locale segment (it lives outside app/[locale]) and Clerk renders English.
          */}
         <p className="mb-4 max-w-md text-center text-sm leading-relaxed text-slate-400">
-          <span className="text-slate-300">No password? Leave it blank and press Continue — we&apos;ll email you a code.</span>
+          <span className="text-slate-300">No password needed — your email address is enough.</span>
           <br />
-          パスワード未設定の方は空欄のまま「Continue」を押してください。メールにコードをお送りします。
+          パスワードは不要です。メールアドレスだけでご利用いただけます。
         </p>
 
         <SignIn
