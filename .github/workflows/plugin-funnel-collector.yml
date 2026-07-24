@@ -103,6 +103,9 @@ jobs:
           REPORT_PATH: ${{ steps.collect.outputs.report_path }}
           REPORT_NAME: ${{ steps.collect.outputs.report_name }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          # この行の存在理由が「鮮度の正本を機械可読にする」である以上、来歴を固定値にすると
+          # ファイル自身が嘘をつく (手動 dispatch の publish が automated と記録される)。
+          TRIGGER: ${{ github.event_name }}
         run: |
           set -euo pipefail
           cp "$REPORT_PATH" "$RUNNER_TEMP/$REPORT_NAME"
@@ -123,7 +126,7 @@ jobs:
           cat > LAST_PUBLISH.json <<JSON
           {
             "last_publish_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "mode": "automated",
+            "trigger": "$TRIGGER",
             "workflow": "plugin-funnel-collector",
             "workflow_run": "$RUN_URL",
             "report": "reports/plugin-funnel/$REPORT_NAME"
