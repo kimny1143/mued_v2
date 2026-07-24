@@ -64,6 +64,52 @@ export default function SignInPage() {
           <h1 className="text-2xl font-bold text-white">MUED</h1>
         </div>
 
+        {/*
+         * Passwordless hint — the door never says the password is skippable.
+         *
+         * The rendered form is only "Email address or username" + "Password" + Continue:
+         * no "Optional" marker, no "email me a code" affordance. Meanwhile the welcome
+         * email promises "your email is the key … no password to remember"
+         * (`lib/services/email.service.ts`), and portal users are passwordless signups —
+         * they have no password to type. That leaves Apple/Google as the only route that
+         * looks usable, which is exactly what an in-app webview blocks.
+         *
+         * The claim here is provable from the instance config alone (Clerk FAPI
+         * /v1/environment): `password.used_for_first_factor: false` with `first_factors: []`
+         * means a password can never be demanded to sign in, and `password.required: false`
+         * means signups are never forced to set one (some accounts may still have one). So
+         * "no password needed" is true regardless of what the next screen does.
+         *
+         * That also means this copy's truth lives in the Clerk Dashboard, not in this repo:
+         * flipping `password.used_for_first_factor` to true would make the line silently
+         * false, and no diff, CI run or review here would catch it. The pointer back the
+         * other way — "changing this setting invalidates the /sign-in copy" — is carried in
+         * the change request for that setting, since whoever edits it is not reading this file.
+         *
+         * Deliberately says nothing about what happens after Continue ("we'll email you a
+         * code"). That is a claim about the NEXT screen's behaviour and is not verified yet;
+         * it lands in a follow-up once the walkthrough confirms it.
+         *
+         * Wording holds on every sub-route of this catch-all — /sign-in/factor-one (the code
+         * entry screen, which has no password field) and /sign-in/sso-callback render this
+         * same shell, so anything phrased as "leave the password blank" would appear with
+         * nothing to refer to.
+         *
+         * NOT `localization.formFieldLabel__password`: `localization` sits on ClerkOptions
+         * (ClerkProvider-wide), so it would also relabel the password field on sign-up and on
+         * UserProfile's set/change-password screens, where "you don't need one" is wrong.
+         * Not a placeholder either — placeholders vanish as soon as the user types.
+         *
+         * Right column on purpose: the left pane is `hidden lg:flex`, so anything placed
+         * there is invisible to the mobile cohort this is for. Bilingual because this route
+         * has no locale segment (it lives outside app/[locale]) and Clerk renders English.
+         */}
+        <p className="mb-4 max-w-md text-center text-sm leading-relaxed text-slate-400">
+          <span className="text-slate-300">No password needed — your email address is enough.</span>
+          <br />
+          パスワードは不要です。メールアドレスだけでご利用いただけます。
+        </p>
+
         <SignIn
           fallbackRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
           signUpFallbackRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
