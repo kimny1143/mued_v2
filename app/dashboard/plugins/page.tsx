@@ -18,6 +18,12 @@ export default async function PluginsPortalPage() {
   const user = await currentUser();
   // Belt-and-suspenders: middleware already gates /dashboard(.*). The redirect_url returns the user
   // straight back here after sign-in (no sign-in loop — verify #3).
+  //
+  // The literal path is safe only because middleware runs first and handles the real bounce, query
+  // string included (lib/middleware/sign-in-redirect.ts). This branch is reached only if that gate
+  // stops covering /dashboard(.*) — and at that point this line would silently drop the query, which
+  // is exactly the bug that made the welcome emails' campaign parameters vanish. If the matcher ever
+  // changes, route this through buildSignInRedirectTarget too.
   if (!user) redirect("/sign-in?redirect_url=/dashboard/plugins");
 
   const items = await getPortalItemsForUser(user);

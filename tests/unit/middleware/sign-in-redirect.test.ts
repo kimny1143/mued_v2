@@ -25,22 +25,36 @@ describe('buildSignInRedirectTarget', () => {
     expect(buildSignInRedirectTarget('/dashboard', 'a=1&b=2')).toBe('/dashboard?a=1&b=2');
   });
 
-  // A leading "//" would be read as protocol-relative — //evil.example resolves to another origin.
-  it('collapses leading slashes so the value cannot become protocol-relative', () => {
+  // Leading "//" AND "/\" are both read as protocol-relative — browsers treat the backslash as a
+  // slash, so /\evil.example resolves to https://evil.example exactly like //evil.example does.
+  it('collapses leading slashes and backslashes so the value cannot become protocol-relative', () => {
     expect(buildSignInRedirectTarget('//evil.example/path')).toBe('/evil.example/path');
     expect(buildSignInRedirectTarget('////evil.example')).toBe('/evil.example');
     expect(buildSignInRedirectTarget('//evil.example', '?x=1')).toBe('/evil.example?x=1');
+    expect(buildSignInRedirectTarget('/\\evil.example')).toBe('/evil.example');
+    expect(buildSignInRedirectTarget('\\\\evil.example')).toBe('/evil.example');
+    expect(buildSignInRedirectTarget('/\\/\\evil.example')).toBe('/evil.example');
   });
 
   it('roots a path that arrives without a leading slash', () => {
     expect(buildSignInRedirectTarget('dashboard/plugins')).toBe('/dashboard/plugins');
   });
 
-  it('never returns a value that parses as an absolute URL', () => {
-    for (const pathname of ['//evil.example', '///evil.example', '/dashboard/plugins']) {
+  // Assert the property that actually matters — where the value RESOLVES — not the proxy "it isn't a
+  // scheme-qualified absolute URL". `/\evil.example` satisfies the proxy and still resolves off-origin.
+  it('always resolves to the same origin', () => {
+    const base = 'https://mued.jp';
+    const hostile = [
+      '//evil.example',
+      '///evil.example',
+      '/\\evil.example',
+      '\\\\evil.example',
+      '/\\/evil.example',
+      '/dashboard/plugins',
+    ];
+    for (const pathname of hostile) {
       const target = buildSignInRedirectTarget(pathname, '?utm_source=email');
-      expect(target.startsWith('//')).toBe(false);
-      expect(() => new URL(target)).toThrow(); // relative-only: not parseable without a base
+      expect(new URL(target, base).origin).toBe(base);
     }
   });
 });
