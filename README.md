@@ -3,9 +3,14 @@
 **これはアプリコードのブランチではありません。** プラグイン funnel の日次集計レポート
 (`reports/plugin-funnel/YYYY-MM-DD.json`) だけを持つ orphan branch です。
 
-> ★**現状は手動 publish です（自動化は未実装）。最終手動 publish: 2026-07-23。**
-> 「自動で最新化されている」と読まないでください。各レポートの鮮度は JSON 内の
-> `generated_at` を、更新運用の状態はこの行を正としてください。
+> ★**最終 publish の日時と、それが自動か手動かは `LAST_PUBLISH.json` を見てください。**
+> ここに日付を書かないのは意図的です。散文の日付は必ず古くなり、しかも古くなったことが
+> 誰にも分からないまま「最新のはず」と読まれます（実際、上流の台帳に「日次で自動監視」と
+> 書かれる一方で運用は手動 publish、という乖離が起きました）。
+>
+> **現在: GitHub Actions `plugin-funnel-collector` が publish します。ただし `schedule` は
+> 未有効で、走るのは手動 dispatch の時だけです。**＝ 放っておいても最新化されません。
+> 各レポート自体の鮮度は JSON 内の `generated_at` を正としてください。
 
 ## 目的
 - Stage A collector (`scripts/aggregate-plugin-funnel-daily.ts` on `main`) が生成する
@@ -24,7 +29,10 @@
 - 各レポートは自己記述的（数え方・起点日を JSON 自体に同梱・別文書の注記に依存しない）。
 
 ## 運用
-- 現状 **手動 publish**（上記 最終日を参照）。
-- 将来 GHA workflow で自動 push 予定（`schedule` 有効化は上流安定後・別 PR。cron の
-  `if:` filter gotcha 回避のため。手動 publish と二重に走らないよう切替時に手動を止める）。
+- publish は GitHub Actions `plugin-funnel-collector`（`main` 上）が行う。**`schedule` は未有効**で、
+  現状は **手動 dispatch のみ**。無人化は別 PR（受入条件＝消費側が `LAST_PUBLISH.json` の鮮度を読む
+  reconciliation 型の監視 / DB 資格情報の least privilege / 下記フィールド集合の凍結）。
+- **`LAST_PUBLISH.json`** = 更新運用の正本（機械可読）。フィールド:
+  `last_publish_at`（UTC）/ `trigger`（`workflow_dispatch` or `schedule`）/ `workflow` /
+  `workflow_run`（実行ログ URL）/ `report`（この run が書いたレポートのパス）。
 - **このブランチを main に merge しない。**
