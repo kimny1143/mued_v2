@@ -26,6 +26,16 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
 /**
  * Campaign tagging for links we send by email, so their traffic stops landing in GA4 as "direct".
  *
+ * ★Where this actually takes effect today (measured against prod, not assumed):
+ *   - `/muedsp` (forward hook) — the next.config redirect keeps the query, so gtag reads it. ✓
+ *   - `dial.mued.jp` (waitlist beta) — served 200 directly. ✓
+ *   - `/dashboard/plugins` (portal button) — ✗ **only for recipients who are already signed in.**
+ *     A signed-out visit is bounced to `/sign-in?redirect_url=%2Fdashboard%2Fplugins`, which keeps the
+ *     pathname and DROPS the query, and the post-auth landing has no parameters either. So the campaign
+ *     never reaches gtag for exactly the cohort the welcome email is aimed at. Fixing that means making
+ *     the auth redirect carry the original query — an auth-path change, tracked separately.
+ * Tagging is still correct here: the parameters are right, the delivery path is what's lossy.
+ *
  * Taxonomy owned by content/data (data課 PR #177 is canonical); this file only applies it.
  * `utm_campaign` says WHICH EMAIL, `utm_content` says WHICH LINK in it — a shared block used by two
  * different emails therefore has to be told its campaign, never hardcode one (it would still send,
@@ -39,6 +49,9 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
  * existing customer opening their receipt into "acquired via email". Over-tagging is much harder to
  * unwind afterwards than under-tagging. The .pkg links are excluded for a different reason: they are
  * direct file downloads, so no page loads and no gtag ever runs to read the parameters.
+ *
+ * Appends to the end, so a URL carrying a fragment (`#…`) would end up with the parameters inside the
+ * fragment. No caller has one; split on `#` first if that ever changes.
  */
 function withEmailUtm(url: string, campaign: string, content: string): string {
   const sep = url.includes('?') ? '&' : '?';
