@@ -23,6 +23,41 @@ const FROM_EMAIL = process.env.EMAIL_FROM || 'MUED <noreply@mued.jp>';
 const SUPPORT_EMAIL = process.env.EMAIL_SUPPORT || 'support@mued.jp';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://mued.jp';
 
+/**
+ * Campaign tagging for links we send by email, so their traffic stops landing in GA4 as "direct".
+ *
+ * Taxonomy owned by content/data (data課 PR #177 is canonical); this file only applies it.
+ * `utm_campaign` says WHICH EMAIL, `utm_content` says WHICH LINK in it — a shared block used by two
+ * different emails therefore has to be told its campaign, never hardcode one (it would still send,
+ * just mis-attributed, which is the kind of bug nothing fails on).
+ *
+ * ★Only add this to links whose job is acquisition. Do NOT tag:
+ *   - unsubscribe links,
+ *   - transactional links (dashboard / receipt / session / update-payment / complete),
+ *   - the plugin .pkg download URLs.
+ * A campaign-tagged link starts a new attributed GA4 session, so tagging a receipt link would turn an
+ * existing customer opening their receipt into "acquired via email". Over-tagging is much harder to
+ * unwind afterwards than under-tagging. The .pkg links are excluded for a different reason: they are
+ * direct file downloads, so no page loads and no gtag ever runs to read the parameters.
+ */
+function withEmailUtm(url: string, campaign: string, content: string): string {
+  const sep = url.includes('?') ? '&' : '?';
+  const params = new URLSearchParams({
+    utm_source: 'email',
+    utm_medium: 'lifecycle',
+    utm_campaign: campaign,
+    utm_content: content,
+  });
+  return `${url}${sep}${params.toString()}`;
+}
+
+/** Campaign ids, one per email (content課 2026-07-24 / `email_` prefix mirrors the existing `zenn_` pattern). */
+const UTM_CAMPAIGN = {
+  welcomeMuedsat: 'email_welcome-muedsat',
+  welcomeMuedlim: 'email_welcome-muedlim',
+  waitlistMuedial: 'email_waitlist-muedial',
+} as const;
+
 /** One-click List-Unsubscribe URL for a plugin free-download subscriber (RFC 8058). */
 function pluginUnsubscribeUrl(plugin: 'muedsat' | 'muedlim', email: string, locale: 'ja' | 'en'): string {
   const t = signUnsubscribeToken(plugin, email);
@@ -204,8 +239,8 @@ function baseTemplate(content: string): string {
  * password); (3) the portal button itself (this block). Links to /dashboard/plugins. Shared by both
  * welcome templates so the copy never drifts.
  */
-function portalPromoBlock(isJa: boolean): { html: string; text: string } {
-  const url = `${APP_URL}/dashboard/plugins`;
+function portalPromoBlock(isJa: boolean, campaign: string): { html: string; text: string } {
+  const url = withEmailUtm(`${APP_URL}/dashboard/plugins`, campaign, 'portal-button');
   const html = `
       <div style="margin: 28px 0 8px; padding: 18px 20px; border: 1px solid #e5e7eb; border-radius: 10px; background: #fafafa;">
         <p style="margin: 0 0 6px; font-weight: 600;">${isJa ? 'あなたのプラグインの置き場所ができました。' : 'Your plugins have a home now.'}</p>
@@ -234,8 +269,8 @@ function portalPromoBlock(isJa: boolean): { html: string; text: string } {
  * portal (a portal link needs the recipient's OWN email, so it can't be forwarded). Zero spam feel by
  * design (「役立ちそうな人がいたら」, not 「拡散して」). Shared by both welcome templates so copy never drifts.
  */
-function forwardHookBlock(isJa: boolean): { html: string; text: string } {
-  const url = `${APP_URL}/muedsp`;
+function forwardHookBlock(isJa: boolean, campaign: string): { html: string; text: string } {
+  const url = withEmailUtm(`${APP_URL}/muedsp`, campaign, 'forward-hook');
   const link = `<a href="${url}" style="color: #b57a14; text-decoration: underline;">mued.jp/muedsp</a>`;
   const html = `
       <p style="margin: 18px 0 0; color: #6b7280; font-size: 13px;">${isJa
@@ -817,6 +852,7 @@ Hoo MCP経由の自動送信
    */
   researchWaitlistWelcome(data: { locale: 'ja' | 'en' }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
+    const dialBetaUrl = withEmailUtm('https://dial.mued.jp', UTM_CAMPAIGN.waitlistMuedial, 'beta-button');
 
     const subject = isJa
       ? '[MUEDial] ほほう、登録完了ですね。'
@@ -834,7 +870,7 @@ Hoo MCP経由の自動送信
         : 'When Q3 launches, you\'ll be the first to know.<br>Keep working on those tracks in the meantime.'}</p>
 
       <div style="margin: 24px 0;">
-        <a href="https://dial.mued.jp" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
+        <a href="${dialBetaUrl}" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
           ${isJa ? '先行βで今すぐ試す →' : 'Try the beta now →'}
         </a>
       </div>
@@ -847,8 +883,8 @@ Hoo MCP経由の自動送信
     `);
 
     const text = isJa
-      ? `ほほう、登録完了ですね。\n\nHooが確認しました。Q3ローンチの際に一番先にお知らせします。\n\n先行βで今すぐ試す: https://dial.mued.jp\n\nMUEDial team`.trim()
-      : `You're on the list.\n\nHoo received your registration. You'll be the first to know when Q3 launches.\n\nTry the beta: https://dial.mued.jp\n\nMUEDial team`.trim();
+      ? `ほほう、登録完了ですね。\n\nHooが確認しました。Q3ローンチの際に一番先にお知らせします。\n\n先行βで今すぐ試す: ${dialBetaUrl}\n\nMUEDial team`.trim()
+      : `You're on the list.\n\nHoo received your registration. You'll be the first to know when Q3 launches.\n\nTry the beta: ${dialBetaUrl}\n\nMUEDial team`.trim();
 
     return { subject, html, text };
   },
@@ -861,8 +897,9 @@ Hoo MCP経由の自動送信
   muedsatDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDSAT_DOWNLOAD_URL;
-    const portal = portalPromoBlock(isJa);
-    const forward = forwardHookBlock(isJa);
+    // The shared blocks carry this email's campaign — MUEDlim's welcome passes its own.
+    const portal = portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedsat);
+    const forward = forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedsat);
 
     const subject = isJa ? '[MUEDsat] ダウンロードリンクをお届けします' : '[MUEDsat] Your download link';
 
@@ -921,8 +958,8 @@ Hoo MCP経由の自動送信
   muedlimDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
     const isJa = data.locale === 'ja';
     const hasLink = !!MUEDLIM_DOWNLOAD_URL;
-    const portal = portalPromoBlock(isJa);
-    const forward = forwardHookBlock(isJa);
+    const portal = portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedlim);
+    const forward = forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedlim);
 
     const subject = isJa ? 'MUEDlim のダウンロードリンクです' : 'Your MUEDlim download link';
 
