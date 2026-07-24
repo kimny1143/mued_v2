@@ -64,6 +64,33 @@ export default function SignInPage() {
           <h1 className="text-2xl font-bold text-white">MUED</h1>
         </div>
 
+        {/*
+         * Passwordless hint — the door does not advertise the email-code path.
+         *
+         * The Clerk instance has email_code as the first factor and password is optional
+         * (`password.used_for_first_factor: false`; the password input renders with
+         * `required=false`, and submitting it blank reaches the server — verified against
+         * prod). But the rendered form shows only "Email address or username" + "Password"
+         * with no "Optional" marker and no "email me a code" affordance, while the welcome
+         * email promises "your email is the key … no password to remember"
+         * (`lib/services/email.service.ts`). Portal users are passwordless signups, so they
+         * have no password to type — leaving Apple/Google as the only obvious route, which
+         * is exactly what dies inside an in-app webview.
+         *
+         * This line sits above the card so it is read before the form on both viewports.
+         * It is NOT `localization.formFieldLabel__password`: that key is ClerkProvider-wide
+         * and would also relabel the password field on sign-up and on UserProfile's
+         * set/change-password screens, where "leave it blank" is wrong.
+         *
+         * Bilingual because this route has no locale segment (it lives outside app/[locale],
+         * and Clerk itself renders English here).
+         */}
+        <p className="mb-4 max-w-md text-center text-sm leading-relaxed text-slate-400">
+          <span className="text-slate-300">No password? Leave it blank and press Continue — we&apos;ll email you a code.</span>
+          <br />
+          パスワード未設定の方は空欄のまま「Continue」を押してください。メールにコードをお送りします。
+        </p>
+
         <SignIn
           fallbackRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
           signUpFallbackRedirectUrl={process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
