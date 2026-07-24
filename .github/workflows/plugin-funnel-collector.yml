@@ -1,0 +1,149 @@
+name: Plugin Funnel Daily Collector
+
+# Stage A collector (scripts/aggregate-plugin-funnel-daily.ts) を毎日走らせ、出力 JSON を
+# orphan branch `data/plugin-funnel-reports` に publish する。insight課 Stage B が sparse-checkout
+# でそのパスだけを消費する。
+#
+# main には一切書かない: publish は専用 worktree の中で orphan branch に対してのみ commit する
+# (`/reports/` は .gitignore 済で main には元々 1 件も入っていない)。
+#
+# ★cron gotcha 回避 (root CLAUDE.md「GitHub Actions cron変更時の job-level if: filter dependency」):
+# 本 workflow は cron 文字列を job/step の `if:` で比較する条件を **持たない**。持つと schedule を
+# 変えた時に条件が false になり、job が silent skip して失敗として通知されない。repo 全体でも
+# 該当 0 件であることを確認済み (検出コマンドは上記 CLAUDE.md 参照。ここに検出対象の文字列そのものを
+# 書くと、その grep が本コメントに当たって偽陽性になるため書かない)。今後も導入しないこと。
+#
+# READ-ONLY な集計: collector は Resend GET + DB SELECT のみで write は無い。出力は件数・率だけで
+# PII を含まない (scripts/aggregate-plugin-funnel-daily.ts のヘッダ参照)。
+
+on:
+  # ★この PR では workflow_dispatch のみ (schedule は未有効)。
+  # data branch の README に「schedule 有効化は上流安定後・別 PR」と書いてある通りの順序で、
+  # まず手動 dispatch で 1 回通し、data branch に正しく publish されることを実測してから
+  # 次の PR で下記 schedule を有効化する。無人で走り始める前に成功を1度見る、が目的。
+  #
+  #  schedule:
+  #    # 01:30 UTC = 10:30 JST。collector の既定は「昨日 UTC」なのでこの時刻には対象日が確定済み。
+  #    # daily-rag-metrics.yml (17:00 UTC) とは時間帯をずらして同時実行を避ける。
+  #    - cron: '30 1 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Target UTC date (YYYY-MM-DD). 空なら昨日 UTC。'
+        required: false
+        type: string
+      publish:
+        description: 'data/plugin-funnel-reports に push するか (false なら集計してログに出すだけ)'
+        required: false
+        default: true
+        type: boolean
+
+# 既定は read。publish step のために contents: write を明示的に与える。
+permissions:
+  contents: write
+
+# 同時に走らせない (orphan branch への push が競合するため)。
+concurrency:
+  group: plugin-funnel-collector
+  cancel-in-progress: false
+
+jobs:
+  collect-and-publish:
+    name: Collect plugin funnel metrics and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          # shallow のままだと orphan branch を fetch して push する時に
+          # "shallow update not allowed" で弾かれうるため全履歴を取る。
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Stage A collector
+        id: collect
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # ★ inputs を run: 内へ直接展開しない (script injection 回避)。必ず env 経由で参照する。
+          TARGET_DATE: ${{ inputs.date }}
+        run: |
+          set -euo pipefail
+          if [ -n "${TARGET_DATE:-}" ]; then
+            echo "target date (input): $TARGET_DATE"
+            npx tsx scripts/aggregate-plugin-funnel-daily.ts "$TARGET_DATE" | tee collector.log
+          else
+            echo "target date: yesterday UTC (collector default)"
+            npx tsx scripts/aggregate-plugin-funnel-daily.ts | tee collector.log
+          fi
+          # 日付は collector が決めるのでこちらで推測せず、collector 自身が出力した行から取る。
+          report="$(sed -n 's/^→ written: //p' collector.log | tail -n 1)"
+          if [ -z "$report" ] || [ ! -f "$report" ]; then
+            echo "::error::collector did not report a written file (looked for '→ written: <path>')"
+            exit 1
+          fi
+          echo "report_path=$report" >> "$GITHUB_OUTPUT"
+          echo "report_name=$(basename "$report")" >> "$GITHUB_OUTPUT"
+          echo "produced: $report"
+
+      - name: Publish to data/plugin-funnel-reports
+        # 集計が失敗したら publish しない (古い/欠けたデータを最新として出さない)。
+        if: success() && (github.event_name != 'workflow_dispatch' || inputs.publish)
+        env:
+          REPORT_PATH: ${{ steps.collect.outputs.report_path }}
+          REPORT_NAME: ${{ steps.collect.outputs.report_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          # この行の存在理由が「鮮度の正本を機械可読にする」である以上、来歴を固定値にすると
+          # ファイル自身が嘘をつく (手動 dispatch の publish が automated と記録される)。
+          TRIGGER: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          cp "$REPORT_PATH" "$RUNNER_TEMP/$REPORT_NAME"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin data/plugin-funnel-reports
+          # 専用 worktree の中でだけ操作する = main の作業ツリーは触らない
+          git worktree add "$RUNNER_TEMP/pub" origin/data/plugin-funnel-reports
+          cd "$RUNNER_TEMP/pub"
+          git switch -c publish-tmp
+
+          mkdir -p reports/plugin-funnel
+          cp "$RUNNER_TEMP/$REPORT_NAME" "reports/plugin-funnel/$REPORT_NAME"
+
+          # 鮮度は散文でなく機械可読ファイルを正本にする (README の日付が stale 化する事故を防ぐ)。
+          cat > LAST_PUBLISH.json <<JSON
+          {
+            "last_publish_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "trigger": "$TRIGGER",
+            "workflow": "plugin-funnel-collector",
+            "workflow_run": "$RUN_URL",
+            "report": "reports/plugin-funnel/$REPORT_NAME"
+          }
+          JSON
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "no change to publish (same report content) — skipping commit"
+            exit 0
+          fi
+          git commit -m "data(funnel): $REPORT_NAME 自動 publish (run $GITHUB_RUN_ID)"
+          git push origin HEAD:data/plugin-funnel-reports
+          echo "published $REPORT_NAME to data/plugin-funnel-reports"
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "::error::plugin funnel collector failed — data/plugin-funnel-reports は更新されていません"
+          echo "鮮度の正本は data branch の LAST_PUBLISH.json です。最終 publish がこの run より古ければ、この失敗が原因です。"
