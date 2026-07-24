@@ -77,8 +77,14 @@ export default function SignInPage() {
          * The claim here is provable from the instance config alone (Clerk FAPI
          * /v1/environment): `password.used_for_first_factor: false` with `first_factors: []`
          * means a password can never be demanded to sign in, and `password.required: false`
-         * means signups aren't given one. So "no password needed" is true regardless of what
-         * the next screen does.
+         * means signups are never forced to set one (some accounts may still have one). So
+         * "no password needed" is true regardless of what the next screen does.
+         *
+         * That also means this copy's truth lives in the Clerk Dashboard, not in this repo:
+         * flipping `password.used_for_first_factor` to true would make the line silently
+         * false, and no diff, CI run or review here would catch it. The pointer back the
+         * other way — "changing this setting invalidates the /sign-in copy" — is carried in
+         * the change request for that setting, since whoever edits it is not reading this file.
          *
          * Deliberately says nothing about what happens after Continue ("we'll email you a
          * code"). That is a claim about the NEXT screen's behaviour and is not verified yet;
