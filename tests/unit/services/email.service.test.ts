@@ -555,3 +555,93 @@ describe('welcome email forward hook (Road to 10k 層1 #2)', () => {
     });
   }
 });
+
+// Campaign tagging (content課 taxonomy 2026-07-24). Before this, every link we mailed arrived in GA4 as
+// "direct", so email was invisible as an acquisition channel. Two failure modes are worth a test each:
+// a shared block hardcoding one campaign (it still sends — just mis-attributed), and tagging spreading
+// to links that must stay untagged (a campaign-tagged link starts a new attributed session, so a
+// receipt link would re-attribute an existing customer to "email").
+describe('email UTM tagging', () => {
+  const welcomes = [
+    { name: 'muedsat', fn: emailTemplates.muedsatDownloadWelcome, campaign: 'email_welcome-muedsat' },
+    { name: 'muedlim', fn: emailTemplates.muedlimDownloadWelcome, campaign: 'email_welcome-muedlim' },
+  ] as const;
+
+  for (const { name, fn, campaign } of welcomes) {
+    for (const locale of ['en', 'ja'] as const) {
+      it(`${name} ${locale} welcome tags the portal button with ${campaign}`, () => {
+        const { html, text } = fn({ locale });
+        const tagged = `/dashboard/plugins?utm_source=email&utm_medium=lifecycle&utm_campaign=${campaign}&utm_content=portal-button`;
+        expect(html).toContain(tagged);
+        expect(text).toContain(tagged); // text-only clients must carry the parameters too
+      });
+
+      it(`${name} ${locale} welcome tags the forward hook with ${campaign}`, () => {
+        const { html, text } = fn({ locale });
+        const tagged = `/muedsp?utm_source=email&utm_medium=lifecycle&utm_campaign=${campaign}&utm_content=forward-hook`;
+        expect(html).toContain(tagged);
+        expect(text).toContain(tagged);
+      });
+    }
+  }
+
+  // The shared-block trap: portalPromoBlock/forwardHookBlock serve both welcomes, so a hardcoded
+  // campaign would make one of them lie. Assert each email carries ONLY its own campaign.
+  it('shared blocks carry the campaign of the email that used them, not the other one', () => {
+    const sat = emailTemplates.muedsatDownloadWelcome({ locale: 'en' });
+    const lim = emailTemplates.muedlimDownloadWelcome({ locale: 'en' });
+    expect(sat.html).toContain('email_welcome-muedsat');
+    expect(sat.html).not.toContain('email_welcome-muedlim');
+    expect(lim.html).toContain('email_welcome-muedlim');
+    expect(lim.html).not.toContain('email_welcome-muedsat');
+  });
+
+  for (const locale of ['en', 'ja'] as const) {
+    it(`MUEDial waitlist ${locale} tags the beta link`, () => {
+      const { html, text } = emailTemplates.researchWaitlistWelcome({ locale });
+      const tagged = 'https://dial.mued.jp?utm_source=email&utm_medium=lifecycle&utm_campaign=email_waitlist-muedial&utm_content=beta-button';
+      expect(html).toContain(tagged);
+      expect(text).toContain(tagged);
+    });
+  }
+
+  // Over-tagging is harder to unwind than under-tagging: these must stay clean.
+  it('does not tag the unsubscribe link', () => {
+    const unsubscribeUrl = 'https://mued.jp/api/plugins/unsubscribe?plugin=muedsat&email=a%40b.c&t=sig&locale=en';
+    for (const fn of [emailTemplates.muedsatDownloadWelcome, emailTemplates.muedlimDownloadWelcome]) {
+      const { html } = fn({ locale: 'en', unsubscribeUrl });
+      expect(html).toContain(unsubscribeUrl);
+      expect(html).not.toContain(`${unsubscribeUrl}&utm_source=email`);
+    }
+  });
+
+  it('does not tag the receipt link', () => {
+    const receiptUrl = 'https://receipt.example/r/1';
+    const paid = emailTemplates.paymentCompleted({
+      studentName: 'S',
+      mentorName: 'M',
+      lessonDate: '2026-07-24',
+      amount: '5,000円',
+      paymentId: 'pi_test_1234567890',
+      receiptUrl,
+    });
+    expect(paid.html).toContain(receiptUrl);
+    expect(paid.html).not.toContain('utm_source=email');
+  });
+
+  it('does not tag the dashboard link', () => {
+    const dashboardUrl = 'https://mued.jp/dashboard';
+    const confirmed = emailTemplates.reservationConfirmedStudent({
+      studentName: 'S',
+      mentorName: 'M',
+      lessonDate: '2026-07-24',
+      lessonTime: '10:00',
+      duration: '60分',
+      price: '5,000円',
+      reservationId: 'res_1',
+      dashboardUrl,
+    });
+    expect(confirmed.html).toContain(dashboardUrl);
+    expect(confirmed.html).not.toContain('utm_source=email');
+  });
+});
