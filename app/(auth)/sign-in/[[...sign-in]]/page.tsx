@@ -65,14 +65,20 @@ export default function SignInPage() {
         </div>
 
         {/*
-         * Passwordless hint — the door never says the password is skippable.
+         * Passwordless hint — the door never names the email-code route.
          *
-         * The rendered form is only "Email address or username" + "Password" + Continue:
-         * no "Optional" marker, no "email me a code" affordance. Meanwhile the welcome
-         * email promises "your email is the key … no password to remember"
-         * (`lib/services/email.service.ts`), and portal users are passwordless signups —
-         * they have no password to type. That leaves Apple/Google as the only route that
-         * looks usable, which is exactly what an in-app webview blocks.
+         * What prod actually renders on first paint (measured, screenshot): Apple, Google,
+         * a divider, "Email address or username", Continue. The password row IS in the DOM
+         * but is collapsed — `opacity: 0` with `height: 0`, i.e. progressive disclosure, not
+         * `display: none` (which is why innerText reports it and an earlier reading of this
+         * page wrongly called it visible). So nothing on this screen says "we can email you a
+         * code": the email route has to be inferred from a field labelled "Email address or
+         * username" sitting under two prominent OAuth buttons.
+         *
+         * That matters because the welcome email promises "your email is the key … no
+         * password to remember" (`lib/services/email.service.ts`) and portal users arrive as
+         * passwordless signups. The route that *looks* actionable is Apple/Google, which is
+         * exactly what an in-app webview blocks.
          *
          * The claim here is provable from the instance config alone (Clerk FAPI
          * /v1/environment): `password.used_for_first_factor: false` with `first_factors: []`
@@ -91,9 +97,10 @@ export default function SignInPage() {
          * it lands in a follow-up once the walkthrough confirms it.
          *
          * Wording holds on every sub-route of this catch-all — /sign-in/factor-one (the code
-         * entry screen, which has no password field) and /sign-in/sso-callback render this
-         * same shell, so anything phrased as "leave the password blank" would appear with
-         * nothing to refer to.
+         * entry screen) and /sign-in/sso-callback render this same shell, so anything phrased
+         * as "leave the password blank" would appear with nothing to refer to. It also holds
+         * if the collapsed password row expands after Continue, since the claim is about what
+         * can be demanded, not about which fields are on screen.
          *
          * NOT `localization.formFieldLabel__password`: `localization` sits on ClerkOptions
          * (ClerkProvider-wide), so it would also relabel the password field on sign-up and on
