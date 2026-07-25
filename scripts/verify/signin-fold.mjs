@@ -42,10 +42,17 @@
  *   node scripts/verify/signin-fold.mjs                        # defaults to https://mued.jp/sign-in
  *   node scripts/verify/signin-fold.mjs http://localhost:3000/sign-in   # dev instance — see caveat above
  */
-import { chromium } from "playwright";
+import { chromium, webkit } from "playwright";
 
 const DEFAULT_URL = "https://mued.jp/sign-in";
 const url = process.argv[2] ?? DEFAULT_URL;
+
+// ★ Chrome is the default because it is stable and installed. It is still a proxy: the viewport heights
+// below are named after Safari, and the cohort this page is for arrives in an iOS mail webview — both
+// WebKit. `ENGINE=webkit node scripts/verify/signin-fold.mjs` measures the engine those names refer to.
+// Naming a viewport "Safari" while only ever measuring Blink is exactly the substitution this file warns
+// about, so the WebKit path exists and is one env var away.
+const ENGINE = process.env.ENGINE ?? "chrome";
 
 // ★ 667 and 844 are SCREEN heights, not browser viewport heights. Safari's chrome eats ~108px, and the
 // cohort this page is for arrives in a mail-app webview, which is the same or worse. 375x559 is the
@@ -74,20 +81,43 @@ if (isLocal) {
 // for "position in the user's browser" — the same substitution this whole file exists to avoid.
 let browser;
 let engineLabel;
-try {
-  browser = await chromium.launch({ channel: "chrome" });
-  engineLabel = "real Chrome (channel: chrome)";
-} catch {
-  browser = await chromium.launch();
-  engineLabel =
-    "★bundled headless Chromium — Chrome not found. Numbers run OPTIMISTIC (measured ~53px on prod); treat a PASS as unconfirmed.";
+if (ENGINE === "webkit") {
+  try {
+    browser = await webkit.launch();
+    engineLabel = "WebKit (the engine the 375x559 'Safari viewport' is named after)";
+  } catch {
+    console.error(
+      "\n✗ WebKit is not installed for Playwright. Install it once with:\n" +
+        "    npx playwright install webkit\n" +
+        "  (Chrome is the default engine here; WebKit is opt-in via ENGINE=webkit.)\n",
+    );
+    process.exit(2);
+  }
+} else {
+  try {
+    browser = await chromium.launch({ channel: "chrome" });
+    engineLabel = "real Chrome (channel: chrome) — still Blink; try ENGINE=webkit for the Safari engine";
+  } catch {
+    browser = await chromium.launch();
+    engineLabel =
+      "★bundled headless Chromium — Chrome not found. Numbers run OPTIMISTIC; treat a PASS as unconfirmed.";
+  }
 }
 console.log(`engine: ${engineLabel}`);
 
 let failed = false;
 
 for (const vp of VIEWPORTS) {
-  const page = await browser.newPage({ viewport: { width: vp.w, height: vp.h } });
+  // deviceScaleFactor 2 matches real phones (SE = 2x). Measured 2026-07-25 on prod: dsf 1 / 2 / 3 give
+  // IDENTICAL layout (copy 141px, 6 lines, logo 98px, identifier bottom 633/634), so this is for fidelity,
+  // not because it moves the numbers — a dpr-based explanation for cross-machine differences was tested
+  // and refuted here.
+  const page = await browser.newPage({
+    viewport: { width: vp.w, height: vp.h },
+    deviceScaleFactor: 2,
+    isMobile: ENGINE !== "webkit", // WebKit in Playwright rejects isMobile
+    hasTouch: true,
+  });
   await page.goto(url, { waitUntil: "networkidle" });
   await page.waitForSelector(".cl-card", { timeout: 15000 }).catch(() => {});
   // ★ Wait for webfonts. Measuring before they apply understates the layout: the same page measured
