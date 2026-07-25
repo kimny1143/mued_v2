@@ -47,6 +47,23 @@ GRANT SELECT  ON public.plugin_entitlements TO funnel_collector_ro;
 **すべて `BEGIN … ROLLBACK` で囲ってあるので、この検証で本番データは変わらない**
 （万一 GRANT が広すぎて書き込みが通ってしまっても、ROLLBACK で捨てられる）。
 
+> ### 先に読む — 2つのつまずきポイント
+>
+> **① `SET LOCAL ROLE` 自体が落ちたら**
+> `ERROR: permission denied to set role "funnel_collector_ro"` が出た場合、**これは権限が絞られすぎた
+> のではなく検証手順側の問題**（`SET ROLE` は実行者がそのロールのメンバーであることを要求する。
+> PostgreSQL のバージョンによっては作成者に自動付与されない）。**一度だけ**次を実行してから戻る:
+> ```sql
+> GRANT funnel_collector_ro TO current_user;
+> ```
+> ★**Step 1 をやり直す必要はない。**
+>
+> **② 「エラーが出た」では合格にしない**
+> (b)(c) の合格条件は **`ERROR` が出ること**ではなく **`permission denied` が出ること**。
+> 例えばテーブル名が変わっていると `relation "..." does not exist` が出るが、これも ERROR なので
+> 「弾かれた＝合格」と読めてしまう。**実際には何も検証できていない**。
+> ★**エラーメッセージの文言まで見る。**
+
 ### (a) 読めるべきものが読める → **成功するのが正解**
 
 ```sql
@@ -56,7 +73,7 @@ SELECT count(*) FROM public.plugin_entitlements;
 ROLLBACK;
 ```
 
-### (b) 書き込みは弾かれる → **ERROR: permission denied が出るのが正解**
+### (b) 書き込みは弾かれる → **`ERROR: permission denied for table plugin_entitlements` が出るのが正解**
 
 ```sql
 BEGIN;
@@ -65,7 +82,7 @@ UPDATE public.plugin_entitlements SET plugin_key = plugin_key WHERE false;
 ROLLBACK;
 ```
 
-### (c) 他のテーブルは読めない → **ERROR: permission denied が出るのが正解**
+### (c) 他のテーブルは読めない → **`ERROR: permission denied for table dial_purchases` が出るのが正解**
 
 ```sql
 BEGIN;
@@ -74,14 +91,20 @@ SELECT count(*) FROM public.dial_purchases;
 ROLLBACK;
 ```
 
-| ブロック | 期待 | これが違ったら |
+| ブロック | 合格条件（**文言まで見る**） | これが違ったら |
 |---|---|---|
 | (a) | 件数が返る | `GRANT SELECT` が効いていない → Step 1 を見直す |
-| (b) | `permission denied` | **GRANT が広すぎる**。`REVOKE ALL ON public.plugin_entitlements FROM funnel_collector_ro;` から Step 1 をやり直す |
-| (c) | `permission denied` | 同上。決済データが読める状態なので**先へ進まない** |
+| (b) | **`permission denied for table plugin_entitlements`** | **GRANT が広すぎる**。`REVOKE ALL ON public.plugin_entitlements FROM funnel_collector_ro;` から Step 1 をやり直す |
+| (c) | **`permission denied for table dial_purchases`** | 決済データが読める状態。**先へ進まない**（同上の REVOKE → Step 1） |
+
+★**`permission denied` 以外のエラーは合格ではない。** 特に `relation "..." does not exist` は
+**テーブル名が変わっただけ**で、権限については何も確認できていない。その場合は
+`\dt public.*` 等で実在するテーブル名を確認し、(c) の対象を**現存する機微テーブル**に差し替えて測り直す。
+（2026-07-25 時点で `dial_purchases` は実在 — `db/schema/dial.ts:270`・migration `0008_lucky_korvac.sql`。）
 
 ★(c) が効くことが strict least privilege の実効確認。prod には決済・認証データもあるので、
 **「書けない」だけでなく「余計なものを読めない」まで見て初めて閉じる**。
+（過去に `GRANT ... TO PUBLIC` が打たれていた場合の暗黙の読み取り権限も、ここで一緒に捕まる。）
 
 ---
 
