@@ -85,9 +85,24 @@ function findMinimatchDirs(nodeModules: string, found: string[] = [], depth = 0)
 describe("dependency invariant: minimatch ↔ brace-expansion export shapes match", () => {
   const minimatchDirs = findMinimatchDirs(path.join(ROOT, "node_modules"));
 
-  it("finds the installed minimatch copies (guards against the walk silently matching nothing)", () => {
-    // A zero-length sweep would make every assertion below vacuously pass.
-    expect(minimatchDirs.length).toBeGreaterThan(0);
+  it("the sweep covers the load-bearing case (a minimatch 3.x, which the brace-expansion@1 override protects)", () => {
+    // A zero-length sweep would make every assertion below vacuously pass — but `length > 0` alone
+    // is still too weak. The override that actually carries weight is `brace-expansion@1`, and its
+    // sole consumer is the dev-only minimatch@3 that eslint pulls in via @eslint/eslintrc. If that
+    // copy ever drops out of the tree, every remaining minimatch is 10.x, they all pass, and the
+    // case this file exists to protect stops being covered — with the suite still green.
+    const versions = minimatchDirs.map(
+      (dir) => require_(path.join(dir, "package.json")).version as string,
+    );
+
+    expect(versions.length, "the node_modules walk matched no minimatch at all").toBeGreaterThan(0);
+
+    expect(
+      versions.some((v) => v.startsWith("3.")),
+      `No minimatch 3.x found (present: ${versions.join(", ")}). Either the walk broke, or eslint no ` +
+        `longer pulls in minimatch@3 — in which case the "brace-expansion@1" override in package.json ` +
+        `is no longer load-bearing and this file's premise needs re-checking before it is removed.`,
+    ).toBe(true);
   });
 
   it.each(minimatchDirs.map((dir) => [path.relative(ROOT, dir), dir] as const))(
