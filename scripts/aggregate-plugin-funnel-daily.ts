@@ -309,8 +309,97 @@ async function main() {
   }
 }
 
+/**
+ * Strip credentials from anything we print. The driver's cause can carry the connection DSN, and
+ * GitHub Actions masking only hides strings that match a secret VERBATIM — a percent-encoded password
+ * (`%40` for `@`, etc.) inside a DSN would sail straight through into the log.
+ */
+function redact(s: string): string {
+  return s.replace(/(postgres(?:ql)?:\/\/[^:@\s/]+:)[^@\s]+(@)/gi, "$1***$2");
+}
+
+/**
+ * Render one link of the chain. `String(x)` gives "[object Object]" for the plain objects these
+ * drivers actually throw (observed: a bad host produced exactly that), which is no more diagnosable
+ * than the bare message this whole block exists to replace — so pull the fields that identify a
+ * failure (code / errno / syscall / hostname) and fall back to JSON before giving up.
+ */
+function describeError(err: unknown): string {
+  if (err instanceof Error) {
+    const extra = ["code", "errno", "syscall", "hostname"]
+      .map((k) => [k, (err as unknown as Record<string, unknown>)[k]] as const)
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => `${k}=${String(v)}`);
+    return `${err.name}: ${err.message}${extra.length ? ` (${extra.join(" ")})` : ""}`;
+  }
+  if (err && typeof err === "object") {
+    const rec = err as Record<string, unknown>;
+    const named = ["message", "code", "errno", "syscall", "hostname", "reason"]
+      .map((k) => [k, rec[k]] as const)
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => `${k}=${String(v)}`);
+    if (named.length) return named.join(" ");
+    try {
+      const json = JSON.stringify(err);
+      if (json && json !== "{}") return json;
+    } catch {
+      /* circular or non-serialisable — fall through */
+    }
+    const ctor = (err as { constructor?: { name?: string } }).constructor?.name;
+    return ctor ? `<${ctor} with no readable fields>` : "<object with no readable fields>";
+  }
+  return String(err);
+}
+
 main().then(() => process.exit(0)).catch((e: unknown) => {
   const msg = e instanceof Error ? e.message : String(e);
-  console.error(`[aggregate-plugin-funnel-daily] fatal: ${msg}`);
-  process.exit(1);
+  console.error(`[aggregate-plugin-funnel-daily] fatal: ${redact(msg)}`);
+
+  // ★ Print the cause chain. drizzle/neon wrap the driver error, so `e.message` alone is just
+  // "Failed query: SELECT …" — it does NOT say whether the query was rejected for authentication,
+  // for permissions, or for connectivity. Those need completely different fixes, and this runs
+  // unattended: without the cause, a failure is visible but not diagnosable, and whoever picks it
+  // up has to reproduce it by hand against prod to find out why.
+  //
+  // Observed 2026-07-25 (run 30149602277): the collector failed on the first query after switching
+  // to the read-only role, and the log showed only the SQL. The actual reason (a password mismatch
+  // in DATABASE_URL_READONLY — the role's own GRANTs were correct) had to be established by
+  // separately querying has_table_privilege() against prod.
+  // Walk BOTH links: `.cause` (drizzle/neon wrapping a driver error) and `AggregateError.errors`
+  // (undici/neon surface connection failures — ECONNREFUSED / ENOTFOUND / TLS — as an AggregateError
+  // whose reasons live in `.errors`, NOT `.cause`). Following only `.cause` printed nothing at all for
+  // exactly the connectivity case this is supposed to distinguish.
+  const MAX_DEPTH = 5;
+  let truncated = false;
+  const seen = new Set<unknown>(); // cause graphs can loop back on themselves
+  const walk = (err: unknown, depth: number): void => {
+    if (err === undefined || err === null || seen.has(err)) return;
+    if (depth > MAX_DEPTH) {
+      truncated = true;
+      return;
+    }
+    seen.add(err);
+    console.error(`[aggregate-plugin-funnel-daily]   caused by (${depth}): ${redact(describeError(err))}`);
+    // Duck-typed, not `instanceof`: the wrapper is not always a real AggregateError/Error, and an
+    // instanceof check would silently skip the links that carry the reason.
+    const rec = err as { errors?: unknown; cause?: unknown };
+    if (Array.isArray(rec?.errors)) for (const sub of rec.errors) walk(sub, depth + 1);
+    if (rec?.cause !== undefined) walk(rec.cause, depth + 1);
+  };
+  const root = e as { errors?: unknown; cause?: unknown };
+  if (Array.isArray(root?.errors)) for (const sub of root.errors) walk(sub, 1);
+  if (root?.cause !== undefined) walk(root.cause, 1);
+  if (truncated) {
+    // Say it rather than stopping quietly — a silently shortened chain reads like the end of the chain.
+    console.error(`[aggregate-plugin-funnel-daily]   … cause chain truncated at depth ${MAX_DEPTH}`);
+  }
+
+  // ★ NOT process.exit(1): on macOS, stderr to a pipe is ASYNC, so exiting immediately can discard the
+  // very lines printed above — and the case that needs them most is a human reproducing this locally
+  // with `| tee`. (CI on ubuntu pipes synchronously, so it would never have shown up there.) Setting
+  // exitCode lets the buffers drain and the process end on its own.
+  process.exitCode = 1;
+  // Backstop so an unattended run can never hang on a live driver handle. unref'd: it does not hold the
+  // loop open by itself, but it still fires if something else is holding it.
+  setTimeout(() => process.exit(1), 5000).unref();
 });
