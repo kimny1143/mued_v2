@@ -98,11 +98,15 @@ export default function SignInPage() {
          * kimny to sign in with a passwordless email account, and there is no way to CREATE one
          * — which is the very gap this file's INTERIM block below is working around.)
          *
-         * Wording holds on every sub-route of this catch-all — /sign-in/factor-one (the code
-         * entry screen) and /sign-in/sso-callback render this same shell, so anything phrased
-         * as "leave the password blank" would appear with nothing to refer to. It also holds
-         * if the collapsed password row expands after Continue, since the claim is about what
-         * can be demanded, not about which fields are on screen.
+         * The "no password needed" half holds on every sub-route of this catch-all —
+         * /sign-in/factor-one (the code entry screen) and /sign-in/sso-callback render this
+         * same shell, so anything phrased as "leave the password blank" would appear with
+         * nothing to refer to. It also holds if the collapsed password row expands after
+         * Continue, since the claim is about what can be demanded, not about which fields are
+         * on screen. NOTE: the "New here?" half added below is written for the FIRST screen —
+         * on factor-one the visitor has already chosen a route, so it reads as redundant
+         * there. Accepted: it is a pointer, not a claim, and the interim block goes away once
+         * sign-up accepts an email.
          *
          * NOT `localization.formFieldLabel__password`: `localization` sits on ClerkOptions
          * (ClerkProvider-wide), so it would also relabel the password field on sign-up and on
@@ -133,18 +137,19 @@ export default function SignInPage() {
          */}
         <p className="mb-4 max-w-md text-center text-sm leading-relaxed text-slate-400">
           <span className="text-slate-300">
-            <strong className="font-semibold">Already have an account?</strong> No password needed — your
-            email address is enough.
+            <strong className="font-semibold">Have an account?</strong> Email only — no password.
           </span>
           <br />
           <span className="text-slate-300">
-            <strong className="font-semibold">New here?</strong> Create your account with Apple or Google.
+            <strong className="font-semibold">New here?</strong> Sign up with Apple or Google — use your
+            download email.
           </span>
           <br />
           <span className="mt-1 inline-block">
-            アカウントをお持ちの方はパスワード不要です。
+            <strong className="font-semibold text-slate-300">お持ちの方</strong>：メールのみ・パスワード不要
             <br />
-            はじめての方は Apple または Google でご登録ください。
+            <strong className="font-semibold text-slate-300">はじめて</strong>：Apple / Google
+            で登録（ダウンロード時と同じメール）
           </span>
         </p>
 
