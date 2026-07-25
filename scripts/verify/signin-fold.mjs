@@ -47,10 +47,13 @@ import { chromium } from "playwright";
 const DEFAULT_URL = "https://mued.jp/sign-in";
 const url = process.argv[2] ?? DEFAULT_URL;
 
-// 375x667 is the smallest phone still in common use and the tightest case; 390x844 is the modern median.
+// ★ 667 and 844 are SCREEN heights, not browser viewport heights. Safari's chrome eats ~108px, and the
+// cohort this page is for arrives in a mail-app webview, which is the same or worse. 375x559 is the
+// honest worst case and is included as a gate — measuring only the screen height flatters the layout.
 const VIEWPORTS = [
-  { w: 375, h: 667, label: "375x667 (iPhone SE)" },
-  { w: 390, h: 844, label: "390x844 (iPhone 14)" },
+  { w: 375, h: 559, label: "375x559 (iPhone SE, Safari viewport)" },
+  { w: 375, h: 667, label: "375x667 (iPhone SE, full screen)" },
+  { w: 390, h: 844, label: "390x844 (iPhone 14, full screen)" },
 ];
 
 const isLocal = /localhost|127\.0\.0\.1/.test(url);
@@ -63,13 +66,34 @@ if (isLocal) {
   );
 }
 
-const browser = await chromium.launch();
+// ★ Use the REAL Chrome that is installed, not Playwright's bundled headless Chromium. product課
+// measured the same prod page in real Chrome and got the identifier input 53px LOWER than this script
+// originally reported — enough to move it from "34px of room" to "19px past the fold". Part of that was
+// webfonts (see fonts.ready below); the rest is attributable to headless Chromium's font fallback and
+// text metrics. Visitors use Chrome and Safari, so "position in headless Chromium" is itself a proxy
+// for "position in the user's browser" — the same substitution this whole file exists to avoid.
+let browser;
+let engineLabel;
+try {
+  browser = await chromium.launch({ channel: "chrome" });
+  engineLabel = "real Chrome (channel: chrome)";
+} catch {
+  browser = await chromium.launch();
+  engineLabel =
+    "★bundled headless Chromium — Chrome not found. Numbers run OPTIMISTIC (measured ~53px on prod); treat a PASS as unconfirmed.";
+}
+console.log(`engine: ${engineLabel}`);
+
 let failed = false;
 
 for (const vp of VIEWPORTS) {
   const page = await browser.newPage({ viewport: { width: vp.w, height: vp.h } });
   await page.goto(url, { waitUntil: "networkidle" });
-  await page.waitForTimeout(2500); // Clerk hydrates the card client-side
+  await page.waitForSelector(".cl-card", { timeout: 15000 }).catch(() => {});
+  // ★ Wait for webfonts. Measuring before they apply understates the layout: the same page measured
+  // before/after fonts.ready moved every element down ~30px (the mobile logo block grows 98→128px).
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(500);
 
   const m = await page.evaluate(() => {
     const rect = (sel) => {
@@ -78,17 +102,34 @@ for (const vp of VIEWPORTS) {
       const r = el.getBoundingClientRect();
       return { top: Math.round(r.top), bottom: Math.round(r.bottom), height: Math.round(r.height) };
     };
+    const copyEl = document.querySelector("p.mb-4.max-w-md");
     return {
       copy: rect("p.mb-4.max-w-md"),
       social: rect(".cl-socialButtonsRoot"),
-      identifier: rect("input[name=identifier]"),
+      // /sign-in labels it `identifier`; /sign-up (since email became Required) uses `emailAddress`.
+      identifier: rect("input[name=identifier]") ?? rect("input[name=emailAddress]"),
       continue: rect(".cl-formButtonPrimary"),
       socialButtonCount: document.querySelectorAll(".cl-socialButtonsBlockButton").length,
+      // Diagnostics that make two people's measurements comparable instead of just different.
+      fontsStatus: document.fonts.status,
+      // Rendered line count = height / line-height. NOT getClientRects().length — a block-level <p>
+      // returns exactly 1 rect no matter how many times its text wraps, so that would silently report
+      // "1 line" for a 9-line paragraph. (Caught while comparing two people's diagnostics.)
+      copyLines: copyEl
+        ? Math.round(copyEl.getBoundingClientRect().height / parseFloat(getComputedStyle(copyEl).lineHeight))
+        : null,
+      copyFont: copyEl ? getComputedStyle(copyEl).fontFamily.split(",")[0] : null,
+      logoBlock: rect("div.lg\\:hidden.mb-8"),
+      dpr: window.devicePixelRatio,
+      innerWidth: window.innerWidth,
     };
   });
 
   console.log(`\n===== ${vp.label} =====`);
-  console.log(`  social buttons rendered: ${m.socialButtonCount}`);
+  console.log(
+    `  social=${m.socialButtonCount}  fonts=${m.fontsStatus}  dpr=${m.dpr}  innerWidth=${m.innerWidth}` +
+      `  copyLines=${m.copyLines}  font=${m.copyFont}`,
+  );
 
   // --- GATE ---
   for (const [label, r] of [
@@ -119,6 +160,12 @@ for (const vp of VIEWPORTS) {
   if (m.copy) {
     const pct = Math.round((m.copy.height / vp.h) * 100);
     console.log(`    diag  copy block         height=${m.copy.height}px = ${pct}% of viewport`);
+  }
+  if (m.logoBlock) {
+    // ★ If you need vertical room, take it from here first. This block is the word "MUED" under a
+    // logo — decoration. The copy above the card is information (it stops the door from misleading
+    // people who have no account). Shrink the decoration before you shorten the message.
+    console.log(`    diag  mobile logo block  height=${m.logoBlock.height}px (decoration — cut this first)`);
   }
 
   await page.close();
