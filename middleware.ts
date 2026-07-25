@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { locales, type Locale, getPreferredLocale } from "@/lib/i18n/config";
+import { buildSignInRedirectTarget } from "@/lib/middleware/sign-in-redirect";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -43,7 +44,7 @@ const isNonProduction = process.env.NODE_ENV !== 'production';
 const isE2EBypassEnabled = isNonProduction && process.env.ENABLE_E2E_BYPASS === 'true';
 
 export default clerkMiddleware(async (auth, req) => {
-  const { pathname } = req.nextUrl;
+  const { pathname, search } = req.nextUrl;
   const hostname = req.headers.get('host') ?? '';
 
   // Subdomain routing: dial.mued.jp → serve /dial page
@@ -120,7 +121,9 @@ export default clerkMiddleware(async (auth, req) => {
     const { userId } = await auth();
     if (!userId) {
       const signInUrl = new URL('/sign-in', req.url);
-      signInUrl.searchParams.set('redirect_url', pathname);
+      // Keeps the query string (see lib/middleware/sign-in-redirect.ts for why that matters and
+      // why the value is forced to stay same-origin).
+      signInUrl.searchParams.set('redirect_url', buildSignInRedirectTarget(pathname, search));
       return NextResponse.redirect(signInUrl);
     }
   }
