@@ -17,19 +17,22 @@ name: Plugin Funnel Daily Collector
 # PII を含まない (scripts/aggregate-plugin-funnel-daily.ts のヘッダ参照)。
 
 on:
-  # ★schedule はまだ未有効。理由は「無人で走り始める前に成功を1度見る」で、これは上流が
-  # 安定したかどうかとは別に、★**資格情報が変わるたびに**適用される。
-  #
-  # 2026-07-25: DATABASE_URL → DATABASE_URL_READONLY に切り替えた。この新しい secret の値は
-  # **まだ一度も使われていない**。登録時に 1 度、シェル差 (bash の `read -s -p` を zsh で実行)
-  # でパスワードが空のまま書き込まれた経緯があり、再登録の際の guard が保証しているのは
-  # 「空でないこと」までで、★**Step 1 で設定したパスワードと一致するかは誰も確認していない**。
-  # → 手動 dispatch (publish: false) が唯一の検証手段。それが通ってから次の PR で schedule を開ける。
-  #
-  #  schedule:
-  #    # 01:30 UTC = 10:30 JST。collector の既定は「昨日 UTC」なのでこの時刻には対象日が確定済み。
-  #    # daily-rag-metrics.yml (17:00 UTC) とは時間帯をずらして同時実行を避ける。
-  #    - cron: '30 1 * * *'
+  # schedule を開ける条件は「無人で走り始める前に成功を1度見る」。これは上流が安定したかとは別に、
+  # ★**資格情報が変わるたびに**適用される。read-only ロール (DATABASE_URL_READONLY) への切替でも
+  # 同じ手順を踏んだ:
+  #   run 30149602277 (2026-07-25) = failure  … 最初の secret はパスワード不一致だった
+  #   run 30150368722 (2026-07-25) = success  … 再登録後。Stage A collector 成功 /
+  #                                             Publish は publish:false ゆえ skipped /
+  #                                             muedsp_reachable=383 (7/22 366 → 7/23 374 と連続)
+  # ＝ **この cron を開けてよい根拠は上の success 1件**。次に資格情報を触る時は、また一度
+  # 手動 dispatch を通してから schedule に戻すこと。
+  schedule:
+    # 01:30 UTC = 10:30 JST。collector の既定は「昨日 UTC」なのでこの時刻には対象日が確定済み。
+    # daily-rag-metrics.yml (17:00 UTC) とは時間帯をずらして同時実行を避ける。
+    # ★cron を変える時は、job/step の `if:` が schedule 文字列を比較していないかを先に全列挙する
+    # (残っていると条件 false で silent skip する — threads-api #140)。検出コマンドは冒頭コメントと
+    # root CLAUDE.md 参照。★ここに検出対象の文字列を書くと grep が自分に当たって偽陽性になる。
+    - cron: '30 1 * * *'
   workflow_dispatch:
     inputs:
       date:
@@ -88,10 +91,10 @@ jobs:
           set -euo pipefail
           if [ -n "${TARGET_DATE:-}" ]; then
             echo "target date (input): $TARGET_DATE"
-            npx tsx scripts/aggregate-plugin-funnel-daily.ts "$TARGET_DATE" | tee collector.log
+            npx tsx scripts/aggregate-plugin-funnel-daily.ts "$TARGET_DATE" 2>&1 | tee collector.log
           else
             echo "target date: yesterday UTC (collector default)"
-            npx tsx scripts/aggregate-plugin-funnel-daily.ts | tee collector.log
+            npx tsx scripts/aggregate-plugin-funnel-daily.ts 2>&1 | tee collector.log
           fi
           # 日付は collector が決めるのでこちらで推測せず、collector 自身が出力した行から取る。
           report="$(sed -n 's/^→ written: //p' collector.log | tail -n 1)"
