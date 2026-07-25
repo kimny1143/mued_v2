@@ -92,21 +92,22 @@ export default function SignInPage() {
          * other way — "changing this setting invalidates the /sign-in copy" — is carried in
          * the change request for that setting, since whoever edits it is not reading this file.
          *
-         * Deliberately says nothing about what happens after Continue ("we'll email you a
-         * code"). That is a claim about the NEXT screen's behaviour and is still unverified.
-         * (The walkthrough that was going to confirm it was cancelled on 2026-07-25: it asked
-         * kimny to sign in with a passwordless email account, and there is no way to CREATE one
-         * — which is the very gap this file's INTERIM block below is working around.)
+         * ★ TWO Dashboard settings hold this line up, not one. `email_address.required` is the
+         * other: it was turned ON on 2026-07-25, which is what put an email field on /sign-up.
+         * If it is turned back OFF, /sign-up loses that field and "your email address is enough"
+         * becomes a dead end for anyone without an account again — see PR #757 for what that
+         * looked like and what it cost. Same fragility, same reason it is written down here.
          *
-         * The "no password needed" half holds on every sub-route of this catch-all —
-         * /sign-in/factor-one (the code entry screen) and /sign-in/sso-callback render this
-         * same shell, so anything phrased as "leave the password blank" would appear with
-         * nothing to refer to. It also holds if the collapsed password row expands after
-         * Continue, since the claim is about what can be demanded, not about which fields are
-         * on screen. NOTE: the "New here?" half added below is written for the FIRST screen —
-         * on factor-one the visitor has already chosen a route, so it reads as redundant
-         * there. Accepted: it is a pointer, not a claim, and the interim block goes away once
-         * sign-up accepts an email.
+         * Deliberately says nothing about what happens after Continue ("we'll email you a
+         * code"). That is a claim about the NEXT screen's behaviour and is still unverified —
+         * `first_factors: ["email_code"]` makes it the only possible first factor, but that is
+         * an inference from config, not an observation of the screen.
+         *
+         * Wording holds on every sub-route of this catch-all — /sign-in/factor-one (the code
+         * entry screen) and /sign-in/sso-callback render this same shell, so anything phrased
+         * as "leave the password blank" would appear with nothing to refer to. It also holds
+         * if the collapsed password row expands after Continue, since the claim is about what
+         * can be demanded, not about which fields are on screen.
          *
          * NOT `localization.formFieldLabel__password`: `localization` sits on ClerkOptions
          * (ClerkProvider-wide), so it would also relabel the password field on sign-up and on
@@ -117,40 +118,34 @@ export default function SignInPage() {
          * there is invisible to the mobile cohort this is for. Bilingual because this route
          * has no locale segment (it lives outside app/[locale]) and Clerk renders English.
          */}
-        {/* INTERIM (2026-07-25) — remove the "New here?" half once sign-up accepts an email.
+        {/* ★ THE HEIGHT OF THIS BLOCK IS LOAD-BEARING. Before adding a line here, run:
+         *      node scripts/verify/signin-fold.mjs          (defaults to prod)
+         *    It fails if the social buttons or the identifier input fall below the fold. This does NOT
+         *    run in CI (it needs a real browser) — nothing else will catch it for you. The 2026-07-25
+         *    version of this block was 4 lines and pushed the identifier past the fold at 375x559
+         *    (Safari's real viewport, not the 667 screen height).
          *
-         * The original single line ("No password needed — your email address is enough") is TRUE for
-         * anyone who already has an account, and MISLEADING for anyone who does not: prod Clerk has
-         * `email_address.required: false`, so /sign-up renders NO identifier field at all — only Apple
-         * and Google. We promise "your email is enough" and then offer no email door to walk through.
+         *    ★ Numbers here are environment-dependent — quote them with the machine, not as facts.
+         *    Same prod URL, same day, two people in real Chrome: copy block 141px vs 163px, mobile logo
+         *    block 98px vs 128px. deviceScaleFactor was tested (1/2/3) and does NOT explain it. So run
+         *    the script yourself rather than trusting a number written here.
          *
-         * That is the live cohort: the ~311 plugin owners have `plugin_entitlements` rows created by the
-         * UNAUTHENTICATED email gate (lib/plugins/entitlements.ts) and therefore NO Clerk account yet.
+         *    If you need vertical room, take it from the `lg:hidden mb-8` logo block above (~98-128px of
+         *    decoration — a logo and the word "MUED") before you shorten this text, which is what stops
+         *    the door from misleading people.
          *
-         * The real fix is Clerk Dashboard → Email address → Required (Tier 3, kimny). When that lands,
-         * /sign-up gains an email field, this split stops being necessary, and this block should go back
-         * to the single line above.
-         *
-         * Deliberately NOT saying "we'll email you a code" (unverified next-screen behaviour) and NOT
-         * saying "open in a browser if the buttons don't work" — the in-app-webview OAuth theory is still
-         * only supported by n=5-6, and an unproven claim does not belong on the door.
+         * 2026-07-25: this went back to a single line once `email_address.required` was turned on in
+         * the Clerk Dashboard. Before that, /sign-up rendered NO identifier field at all (only Apple and
+         * Google), so "your email address is enough" was true for existing accounts and a dead end for
+         * everyone else — the ~311 plugin owners hold `plugin_entitlements` rows written by the
+         * UNAUTHENTICATED email gate (lib/plugins/entitlements.ts) and had no Clerk account. A temporary
+         * "New here? Sign up with Apple or Google" half covered that gap. With email sign-up open, the
+         * one line is true on both paths again and the split is gone.
          */}
         <p className="mb-4 max-w-md text-center text-sm leading-relaxed text-slate-400">
-          <span className="text-slate-300">
-            <strong className="font-semibold">Have an account?</strong> Email only — no password.
-          </span>
+          <span className="text-slate-300">No password needed — your email address is enough.</span>
           <br />
-          <span className="text-slate-300">
-            <strong className="font-semibold">New here?</strong> Sign up with Apple or Google — use your
-            download email.
-          </span>
-          <br />
-          <span className="mt-1 inline-block">
-            <strong className="font-semibold text-slate-300">お持ちの方</strong>：メールのみ・パスワード不要
-            <br />
-            <strong className="font-semibold text-slate-300">はじめて</strong>：Apple / Google
-            で登録（ダウンロード時と同じメール）
-          </span>
+          パスワードは不要です。メールアドレスだけでご利用いただけます。
         </p>
 
         <SignIn
