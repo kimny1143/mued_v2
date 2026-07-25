@@ -93,14 +93,20 @@ export default function SignInPage() {
          * the change request for that setting, since whoever edits it is not reading this file.
          *
          * Deliberately says nothing about what happens after Continue ("we'll email you a
-         * code"). That is a claim about the NEXT screen's behaviour and is not verified yet;
-         * it lands in a follow-up once the walkthrough confirms it.
+         * code"). That is a claim about the NEXT screen's behaviour and is still unverified.
+         * (The walkthrough that was going to confirm it was cancelled on 2026-07-25: it asked
+         * kimny to sign in with a passwordless email account, and there is no way to CREATE one
+         * — which is the very gap this file's INTERIM block below is working around.)
          *
-         * Wording holds on every sub-route of this catch-all — /sign-in/factor-one (the code
-         * entry screen) and /sign-in/sso-callback render this same shell, so anything phrased
-         * as "leave the password blank" would appear with nothing to refer to. It also holds
-         * if the collapsed password row expands after Continue, since the claim is about what
-         * can be demanded, not about which fields are on screen.
+         * The "no password needed" half holds on every sub-route of this catch-all —
+         * /sign-in/factor-one (the code entry screen) and /sign-in/sso-callback render this
+         * same shell, so anything phrased as "leave the password blank" would appear with
+         * nothing to refer to. It also holds if the collapsed password row expands after
+         * Continue, since the claim is about what can be demanded, not about which fields are
+         * on screen. NOTE: the "New here?" half added below is written for the FIRST screen —
+         * on factor-one the visitor has already chosen a route, so it reads as redundant
+         * there. Accepted: it is a pointer, not a claim, and the interim block goes away once
+         * sign-up accepts an email.
          *
          * NOT `localization.formFieldLabel__password`: `localization` sits on ClerkOptions
          * (ClerkProvider-wide), so it would also relabel the password field on sign-up and on
@@ -111,10 +117,40 @@ export default function SignInPage() {
          * there is invisible to the mobile cohort this is for. Bilingual because this route
          * has no locale segment (it lives outside app/[locale]) and Clerk renders English.
          */}
+        {/* INTERIM (2026-07-25) — remove the "New here?" half once sign-up accepts an email.
+         *
+         * The original single line ("No password needed — your email address is enough") is TRUE for
+         * anyone who already has an account, and MISLEADING for anyone who does not: prod Clerk has
+         * `email_address.required: false`, so /sign-up renders NO identifier field at all — only Apple
+         * and Google. We promise "your email is enough" and then offer no email door to walk through.
+         *
+         * That is the live cohort: the ~311 plugin owners have `plugin_entitlements` rows created by the
+         * UNAUTHENTICATED email gate (lib/plugins/entitlements.ts) and therefore NO Clerk account yet.
+         *
+         * The real fix is Clerk Dashboard → Email address → Required (Tier 3, kimny). When that lands,
+         * /sign-up gains an email field, this split stops being necessary, and this block should go back
+         * to the single line above.
+         *
+         * Deliberately NOT saying "we'll email you a code" (unverified next-screen behaviour) and NOT
+         * saying "open in a browser if the buttons don't work" — the in-app-webview OAuth theory is still
+         * only supported by n=5-6, and an unproven claim does not belong on the door.
+         */}
         <p className="mb-4 max-w-md text-center text-sm leading-relaxed text-slate-400">
-          <span className="text-slate-300">No password needed — your email address is enough.</span>
+          <span className="text-slate-300">
+            <strong className="font-semibold">Have an account?</strong> Email only — no password.
+          </span>
           <br />
-          パスワードは不要です。メールアドレスだけでご利用いただけます。
+          <span className="text-slate-300">
+            <strong className="font-semibold">New here?</strong> Sign up with Apple or Google — use your
+            download email.
+          </span>
+          <br />
+          <span className="mt-1 inline-block">
+            <strong className="font-semibold text-slate-300">お持ちの方</strong>：メールのみ・パスワード不要
+            <br />
+            <strong className="font-semibold text-slate-300">はじめて</strong>：Apple / Google
+            で登録（ダウンロード時と同じメール）
+          </span>
         </p>
 
         <SignIn
