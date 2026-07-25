@@ -175,10 +175,13 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 ---
 
-## write課への canonical変更通知義務
+## content課への canonical変更通知義務
 
-公式pricing・product spec・ロードマップ等を変更した場合、write課に claude-peers で通知必須。
-迷ったら**過剰通知側に倒す**。詳細手順: `.claude/rules/write-notification.md`
+公式pricing・product spec・ロードマップ等を変更した場合、content課に claude-peers で通知必須。
+迷ったら**過剰通知側に倒す**。詳細手順: `.claude/rules/canonical-change-notification.md`
+
+★**通知は「merge 後にやる」ではなく merge するその手で送る**。「後で通知」は担い手が消えて落ちる
+（2026-07-12 Hoo Pass 退役 #650 で実際に落ちた。下記 rule ファイル冒頭に経緯）。
 
 ---
 
@@ -250,6 +253,8 @@ chrome拡張（claude-in-chrome）は共有リソース。同時に1課しか使
      ★ native の workspace 物理畳込は Tier2 matrix main 反映後 (保護条件)。 -->
 ## 組織体制（2026-06-11 組織再編v2改定）
 
+> **この一覧は写しである。正本は `_conductor/.claude/rules/current-organization.md`。食い違ったら正本が勝つ。**
+
 ### 経営体制
 | 役職 | 課 | 機能 |
 |------|-----|------|
@@ -280,13 +285,16 @@ chrome拡張（claude-in-chrome）は共有リソース。同時に1課しか使
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/05-opus-fixed-plan-mode.md -->
 <!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
-## plan mode の出入りルール (Opus固定 2026-04-23〜)
+## plan mode の出入りルール
 
-経営部4課は Opus固定起動。/plan は Opus 切替手段ではなく、設計段階を明示する cognitive context separator。
+/plan は**モデル切替の手段ではなく**、設計段階を明示する cognitive context separator。
 
 - **1タスク = 0回または1回の plan 発動**。同一タスク内で plan mode を複数回出入りしない
 - 設計が必要なら最初に /plan、完了したら解除して実装。実装中に追加設計判断が出たらタスクを区切り、次タスクで新たに /plan
 - タスク分割の目安: 1タスク = 1コミットの粒度。3ファイル以上の変更ならファイル単位で実装タスクを分割してもよい
+
+> **モデルの正本は `_conductor/.claude/rules/current-organization.md` の Model Policy。ここには写さない。**
+> どの課がどのモデルで起動するか（Opus / Sonnet / Fable・`--model` flag・effort）は組織の形が変わるたびに動くため、ここに複製すると必ず古くなる。
 
 <!-- COMMON-BLOCK-END: 05-opus-fixed-plan-mode -->
 
@@ -296,7 +304,7 @@ chrome拡張（claude-in-chrome）は共有リソース。同時に1課しか使
 
 ## /plan 発動条件
 
-Opus固定下、/plan は設計段階を明示する cognitive context separator。
+/plan は設計段階を明示する cognitive context separator。
 
 ### 発動する
 - 新規 skill / hook の設計 (SKILL.md・挙動仕様を 0 から書き起こす)
@@ -320,12 +328,15 @@ Opus固定下、/plan は設計段階を明示する cognitive context separator
 
 ## 運用ルール: `availableModels` は settings.json に追加しない
 
-2026-04-14 確立、Opus固定移行後も継続の全課共通ルール。
+2026-04-14 確立の全課共通ルール。**どの課がどのモデルで動くかに関わらず継続する。**
 
 - `~/.claude/settings.json` / `~/.claude/settings.local.json` / 各peer `.claude/settings.local.json` いずれにも `availableModels` を追加しない
 - 理由: [anthropics/claude-code#41720](https://github.com/anthropics/claude-code/issues/41720) — `availableModels` をカスタム追加した環境で `/model opus` 等に戻れなくなるバグ。追加しなければ踏まない
-- モデル切替は起動時の `--model` フラグで行う (経営部4課は Opus固定)。実行中の手動切替は非推奨
+- モデル切替は起動時の `--model` フラグで行う。実行中の手動切替は非推奨
 - 将来 `availableModels` が必要になった場合は本ルール改定を policy-gate 経由で
+
+> **モデルの正本は `_conductor/.claude/rules/current-organization.md` の Model Policy。ここには写さない。**
+> どの課がどのモデルで起動するか（Opus / Sonnet / Fable・`--model` flag・effort）は組織の形が変わるたびに動くため、ここに複製すると必ず古くなる。
 
 <!-- COMMON-BLOCK-END: 07-available-models-rule -->
 
