@@ -17,10 +17,14 @@ name: Plugin Funnel Daily Collector
 # PII を含まない (scripts/aggregate-plugin-funnel-daily.ts のヘッダ参照)。
 
 on:
-  # ★この PR では workflow_dispatch のみ (schedule は未有効)。
-  # data branch の README に「schedule 有効化は上流安定後・別 PR」と書いてある通りの順序で、
-  # まず手動 dispatch で 1 回通し、data branch に正しく publish されることを実測してから
-  # 次の PR で下記 schedule を有効化する。無人で走り始める前に成功を1度見る、が目的。
+  # ★schedule はまだ未有効。理由は「無人で走り始める前に成功を1度見る」で、これは上流が
+  # 安定したかどうかとは別に、★**資格情報が変わるたびに**適用される。
+  #
+  # 2026-07-25: DATABASE_URL → DATABASE_URL_READONLY に切り替えた。この新しい secret の値は
+  # **まだ一度も使われていない**。登録時に 1 度、シェル差 (bash の `read -s -p` を zsh で実行)
+  # でパスワードが空のまま書き込まれた経緯があり、再登録の際の guard が保証しているのは
+  # 「空でないこと」までで、★**Step 1 で設定したパスワードと一致するかは誰も確認していない**。
+  # → 手動 dispatch (publish: false) が唯一の検証手段。それが通ってから次の PR で schedule を開ける。
   #
   #  schedule:
   #    # 01:30 UTC = 10:30 JST。collector の既定は「昨日 UTC」なのでこの時刻には対象日が確定済み。
@@ -74,7 +78,10 @@ jobs:
         id: collect
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # read-only ロール (funnel_collector_ro) の資格情報。collector は SELECT 3本しか撃たない
+          # (scripts/aggregate-plugin-funnel-daily.ts:199,216,231・全て plugin_entitlements 単一) ので、
+          # 無人ジョブに書ける資格情報を渡さない。ロール作成手順は docs/ops/collector-readonly-role.md。
+          DATABASE_URL: ${{ secrets.DATABASE_URL_READONLY }}
           # ★ inputs を run: 内へ直接展開しない (script injection 回避)。必ず env 経由で参照する。
           TARGET_DATE: ${{ inputs.date }}
         run: |
