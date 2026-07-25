@@ -312,5 +312,22 @@ async function main() {
 main().then(() => process.exit(0)).catch((e: unknown) => {
   const msg = e instanceof Error ? e.message : String(e);
   console.error(`[aggregate-plugin-funnel-daily] fatal: ${msg}`);
+
+  // ★ Print the cause chain. drizzle/neon wrap the driver error, so `e.message` alone is just
+  // "Failed query: SELECT …" — it does NOT say whether the query was rejected for authentication,
+  // for permissions, or for connectivity. Those need completely different fixes, and this runs
+  // unattended: without the cause, a failure is visible but not diagnosable, and whoever picks it
+  // up has to reproduce it by hand against prod to find out why.
+  //
+  // Observed 2026-07-25 (run 30149602277): the collector failed on the first query after switching
+  // to the read-only role, and the log showed only the SQL. The actual reason (a password mismatch
+  // in DATABASE_URL_READONLY — the role's own GRANTs were correct) had to be established by
+  // separately querying has_table_privilege() against prod.
+  let cause: unknown = e instanceof Error ? e.cause : undefined;
+  for (let depth = 1; cause !== undefined && depth <= 5; depth += 1) {
+    const causeMsg = cause instanceof Error ? cause.message : String(cause);
+    console.error(`[aggregate-plugin-funnel-daily]   caused by (${depth}): ${causeMsg}`);
+    cause = cause instanceof Error ? cause.cause : undefined;
+  }
   process.exit(1);
 });
