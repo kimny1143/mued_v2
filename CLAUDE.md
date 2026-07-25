@@ -175,10 +175,13 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 ---
 
-## write課への canonical変更通知義務
+## content課への canonical変更通知義務
 
-公式pricing・product spec・ロードマップ等を変更した場合、write課に claude-peers で通知必須。
-迷ったら**過剰通知側に倒す**。詳細手順: `.claude/rules/write-notification.md`
+公式pricing・product spec・ロードマップ等を変更した場合、content課に claude-peers で通知必須。
+迷ったら**過剰通知側に倒す**。詳細手順: `.claude/rules/canonical-change-notification.md`
+
+★**通知は「merge 後にやる」ではなく merge するその手で送る**。「後で通知」は担い手が消えて落ちる
+（2026-07-12 Hoo Pass 退役 #650 で実際に落ちた。下記 rule ファイル冒頭に経緯）。
 
 ---
 
