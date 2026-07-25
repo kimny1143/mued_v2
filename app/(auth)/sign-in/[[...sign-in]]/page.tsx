@@ -92,6 +92,12 @@ export default function SignInPage() {
          * other way — "changing this setting invalidates the /sign-in copy" — is carried in
          * the change request for that setting, since whoever edits it is not reading this file.
          *
+         * ★ TWO Dashboard settings hold this line up, not one. `email_address.required` is the
+         * other: it was turned ON on 2026-07-25, which is what put an email field on /sign-up.
+         * If it is turned back OFF, /sign-up loses that field and "your email address is enough"
+         * becomes a dead end for anyone without an account again — see PR #757 for what that
+         * looked like and what it cost. Same fragility, same reason it is written down here.
+         *
          * Deliberately says nothing about what happens after Continue ("we'll email you a
          * code"). That is a claim about the NEXT screen's behaviour and is still unverified —
          * `first_factors: ["email_code"]` makes it the only possible first factor, but that is
@@ -116,10 +122,15 @@ export default function SignInPage() {
          *      node scripts/verify/signin-fold.mjs          (defaults to prod)
          *    It fails if the social buttons or the identifier input fall below the fold. This does NOT
          *    run in CI (it needs a real browser) — nothing else will catch it for you. The 2026-07-25
-         *    version of this block was 4 lines / 141px and pushed the identifier past the fold at
-         *    375x559 (Safari's real viewport, not the 667 screen height).
+         *    version of this block was 4 lines and pushed the identifier past the fold at 375x559
+         *    (Safari's real viewport, not the 667 screen height).
          *
-         *    If you need vertical room, take it from the `lg:hidden mb-8` logo block above (~98px of
+         *    ★ Numbers here are environment-dependent — quote them with the machine, not as facts.
+         *    Same prod URL, same day, two people in real Chrome: copy block 141px vs 163px, mobile logo
+         *    block 98px vs 128px. deviceScaleFactor was tested (1/2/3) and does NOT explain it. So run
+         *    the script yourself rather than trusting a number written here.
+         *
+         *    If you need vertical room, take it from the `lg:hidden mb-8` logo block above (~98-128px of
          *    decoration — a logo and the word "MUED") before you shorten this text, which is what stops
          *    the door from misleading people.
          *
