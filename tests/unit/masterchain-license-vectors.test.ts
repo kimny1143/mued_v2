@@ -15,6 +15,11 @@
  * which is worse. Every case is hashed against MANIFEST.tsv before it is used, so an out-of-date copy
  * fails loudly here instead of passing against yesterday's bytes.
  *
+ * ★If one of those hash assertions fails, read `../fixtures/license-vectors/PROVENANCE.md` first.
+ * A mismatch means either "our copy is stale" (re-vendor) or "upstream changed" (the expected
+ * VERDICTS may have moved, so read the diff before copying) — and the sha256 alone cannot tell you
+ * which. The recorded `repo@commit` + MANIFEST blob is what separates them.
+ *
  * ## ★Verdicts come from evaluateLicense, not verifyLicense
  *
  * `verifyLicense` answers "did we issue this?" only. `wrong_scope` is a REAL signature of ours whose
