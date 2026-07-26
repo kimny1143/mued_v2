@@ -11,7 +11,7 @@
  *   a different `scope` / the old 16-hex scaffold.
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { generateKeyPairSync } from "node:crypto";
+import { generateKeyPairSync, sign } from "node:crypto";
 import {
   issueLicense,
   verifyLicense,
@@ -137,6 +137,25 @@ describe("masterchain license v2 — ★the spec's bypass list", () => {
     for (const bad of ["", "MUEDSP-LICENSE-v2\n", "sig=\n", "nonsense"]) {
       expect(verifyLicense(bad, PUB_PEM)).toBeNull();
     }
+  });
+
+  it("★rejects a duplicated known field — an injected expires_at must not grant perpetuity", () => {
+    // ★Privilege escalation, not a missed rejection (dsp measured it): `expires_at` comes AFTER
+    // `owner`, and `owner` is buyer-supplied. A newline in it injects an EMPTY `expires_at=` that
+    // lands BEFORE the real one, so first-match reads a lapsed key as perpetual. The signature is
+    // genuine — the injected line is inside the signed region — so only a structural rule catches it.
+    // Rejecting duplicates is order-independent; "take the last match" would break the day someone
+    // reorders the template.
+    const prefix =
+      `${LICENSE_MAGIC}\nproduct=MUEDsp\nscope=masterchain\n` +
+      `owner=buyer@example.com\nexpires_at=\n` + // injected, wins under first-match
+      `order=TEST-0001\nissued_at=2026-07-26T00:00:00Z\nexpires_at=2020-01-01T00:00:00Z\n`;
+    const sig = sign(null, Buffer.from(prefix, "utf8"), privateKey).toString("base64");
+    const forged = `${prefix}sig=${sig}\n`;
+
+    // The signature really is ours — that is the whole problem.
+    expect(sign(null, Buffer.from(prefix, "utf8"), privateKey).length).toBe(64);
+    expect(verifyLicense(forged, PUB_PEM)).toBeNull();
   });
 
   it("★refuses to ISSUE when a value contains a newline (field injection)", () => {

@@ -178,6 +178,28 @@ export function verifyLicense(keyfile: string, publicKeyPem: string): LicensePay
     // payload can never be interpreted on the strength of an unchecked signature.
     const lines = prefix.split("\n");
     if (lines[0] !== LICENSE_MAGIC) return null;
+
+    // ★A known field appearing twice makes the keyfile INVALID — we do not pick a winner.
+    //
+    // This is not tidiness. `expires_at` comes after `owner`, and `owner` is a value the buyer
+    // supplies: a newline in it injects an EMPTY `expires_at=` line that lands BEFORE the real one,
+    // and first-match reads it as perpetual. dsp measured a lapsed key verifying as `Licensed`.
+    // ★The signature cannot catch it — the injected line is inside the signed region, so it is
+    // genuinely ours. Reproduced here before fixing.
+    //
+    // ★Deliberately NOT "take the last match": any rule that depends on field ORDER breaks the day
+    // someone reorders the template. Rejecting duplicates is order-independent — the same reason
+    // `sig=` must appear exactly once rather than "use the last one".
+    //
+    // ★And this belongs here even though the issuer now refuses newlines. A verifier must not assume
+    // the issuer behaved: the plugin runs on machines we do not control, against keyfiles produced by
+    // code we may not know about. `verifyLicense` is also the judge for the self-check and the golden
+    // vectors, so if it tolerated duplicates the `injected_field` vector would false-pass.
+    const KNOWN_FIELDS = ["product", "scope", "owner", "order", "issued_at", "expires_at"] as const;
+    for (const name of KNOWN_FIELDS) {
+      if (lines.filter((l) => l.startsWith(`${name}=`)).length > 1) return null;
+    }
+
     const field = (name: string): string | null => {
       const line = lines.find((l) => l.startsWith(`${name}=`));
       return line === undefined ? null : line.slice(name.length + 1);
@@ -219,6 +241,27 @@ export function verifyLicense(keyfile: string, publicKeyPem: string): LicensePay
  */
 export type LicenseVerdict = "accept" | "reject" | "unlicensed";
 
+/**
+ * Does this verified payload entitle the holder to `expected`? Pure, and separate from authenticity
+ * on purpose: "we issued this" and "this unlocks that product" are different questions, and
+ * conflating them is what lets a genuine key for one product open another.
+ *
+ * Frozen name — the golden-vector runner and the plugin must reach the same conclusion by the same
+ * rule, so the rule has to be callable rather than re-derived at each call site.
+ */
+export function isEntitled(
+  payload: LicensePayload,
+  expected: { product: string; scope: string },
+  now: Date = new Date(),
+): boolean {
+  if (payload.product !== expected.product || payload.scope !== expected.scope) return false;
+  if (payload.expiresAt === "") return true; // empty = perpetual
+  const expiry = Date.parse(payload.expiresAt);
+  // An unreadable expiry counts as expired: the safe reading of "we cannot tell when this ends" is
+  // "it has ended" (and that lands in the non-punitive `unlicensed` state, not `reject`).
+  return !Number.isNaN(expiry) && expiry > now.getTime();
+}
+
 export function evaluateLicense(
   keyfile: string,
   publicKeyPem: string,
@@ -235,18 +278,12 @@ export function evaluateLicense(
     return { verdict: looksLikeOurs ? "reject" : "unlicensed", payload: null };
   }
 
+  // Wrong product/scope and expiry are BOTH "not entitled", but they are not the same verdict:
+  // a key for another product is a rejection (cross-product replay), while a lapsed key is simply
+  // not unlocked — the plugin must keep running. Both go through isEntitled so the rule exists once.
   if (payload.product !== expected.product || payload.scope !== expected.scope) {
-    return { verdict: "reject", payload }; // cross-product replay: valid signature, wrong entitlement
+    return { verdict: "reject", payload };
   }
 
-  if (payload.expiresAt !== "") {
-    const expiry = Date.parse(payload.expiresAt);
-    // An unparseable expiry is treated as expired rather than ignored — the safe reading of "we
-    // cannot tell when this ends" is "it has ended", and it lands in the non-punitive state.
-    if (Number.isNaN(expiry) || expiry <= now.getTime()) {
-      return { verdict: "unlicensed", payload };
-    }
-  }
-
-  return { verdict: "accept", payload };
+  return { verdict: isEntitled(payload, expected, now) ? "accept" : "unlicensed", payload };
 }
