@@ -903,6 +903,53 @@ Hoo MCP経由の自動送信
   },
 
   /**
+   * masterchain ($69) license delivery — the key itself, in the body.
+   *
+   * ★Body text, not an attachment (kimny, 2026-07-26): an attached .key is the more obvious UX, but
+   * attachments draw spam filtering and on a phone the buyer often cannot tell where the file went.
+   * A text block always arrives, is quotable in support, and can be re-copied later.
+   *
+   * The plugin reads ~/Library/Application Support/glasswerks/MUEDsp/license.key, so the copy has to
+   * say what to DO with the text — a key with no destination is not a delivery.
+   *
+   * ★Deliberately no unsubscribe link and no forward hook: transactional. See the send method.
+   */
+  masterchainLicenseDelivery(data: { locale: 'ja' | 'en'; licenseKey: string }): { subject: string; html: string; text: string } {
+    const isJa = data.locale === 'ja';
+    const subject = isJa
+      ? '[MUEDsp] masterchain のライセンスキー'
+      : '[MUEDsp] Your masterchain license key';
+
+    const path = '~/Library/Application Support/glasswerks/MUEDsp/license.key';
+    const intro = isJa
+      ? 'masterchain をご購入いただきありがとうございます。ライセンスキーをお届けします。'
+      : 'Thank you for buying masterchain. Here is your license key.';
+    const howTo = isJa
+      ? `下のブロックを（<code>-----BEGIN</code> と <code>-----END</code> の行を含めて）すべてコピーし、次の場所に <strong>license.key</strong> という名前のテキストファイルとして保存してください。`
+      : `Copy the whole block below (including the <code>-----BEGIN</code> and <code>-----END</code> lines) and save it as a text file named <strong>license.key</strong> here:`;
+    const keep = isJa
+      ? 'このメールは保管してください。キーを再取得できます。'
+      : 'Keep this email — it is how you get the key again.';
+
+    const html = `
+      <h2 style="color: #f5a524; margin-top: 0;">${isJa ? 'MUEDsp masterchain' : 'MUEDsp masterchain'}</h2>
+      <p>${intro}</p>
+      <p>${howTo}</p>
+      <p style="background: #f4f4f5; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; word-break: break-all;">${path}</p>
+      <pre style="background: #111113; color: #e5e7eb; padding: 16px; border-radius: 6px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all;">${data.licenseKey}</pre>
+      <p>${keep}</p>
+      <p style="color: #9ca3af; font-size: 12px;">glasswerks inc. — mued.jp</p>
+    `;
+
+    const textHowTo = isJa
+      ? `下のブロックを（-----BEGIN と -----END の行を含めて）すべてコピーし、次の場所に license.key という名前で保存してください。`
+      : `Copy the whole block below (including the -----BEGIN and -----END lines) and save it as license.key here:`;
+    const text = `${intro}\n\n${textHowTo}\n${path}\n\n${data.licenseKey}\n\n${keep}\n\nglasswerks inc. — mued.jp`;
+
+    return { subject, html, text };
+  },
+
+  /**
    * MUEDsat free-download gate — download-link email (maker voice, honest tone).
    * Includes the download button only when MUEDSAT_DOWNLOAD_URL is configured; while the dsp
    * package isn't uploaded yet it honestly says the link is on the way.
@@ -1373,6 +1420,31 @@ class EmailService {
         'List-Unsubscribe': `<${unsubscribeUrl}>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       },
+    });
+  }
+
+  /**
+   * masterchain ($69) license delivery — carries the deliverable itself.
+   *
+   * ★The CALLER must treat a false result as fatal (fail-CLOSED). If this does not arrive the buyer
+   * has paid and cannot use the product; see handleFastspringOrderCompleted, which rolls the webhook
+   * transaction back so FastSpring retries. Same doctrine as lib/plugins/subscribe-handler.ts.
+   *
+   * ★No List-Unsubscribe and no forwardHookBlock, unlike the free-plugin welcomes: this is
+   * transactional (a receipt for a purchase), not marketing — matching every other transactional
+   * mail here. The forward hook's copy is free-module specific and would be wrong on a $69 receipt.
+   * ★No UTM either — email.service.ts's do-not-tag list names transactional/receipt links explicitly
+   * (tagging one would re-attribute an existing customer as freshly "acquired via email").
+   */
+  async sendMasterchainLicenseDelivery(
+    to: EmailRecipient,
+    data: { locale: 'ja' | 'en'; licenseKey: string }
+  ): Promise<EmailResult> {
+    const template = emailTemplates.masterchainLicenseDelivery(data);
+    return this.send({
+      to,
+      ...template,
+      tags: [{ name: 'type', value: 'masterchain_license_delivery' }],
     });
   }
 
