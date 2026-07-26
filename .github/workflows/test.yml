@@ -41,7 +41,13 @@ jobs:
         run: npm run lint
 
       - name: Security audit (production deps)
-        run: npm audit --omit=dev --audit-level=high
+        # Not a plain `npm audit`: that exits 1 both when vulnerabilities are found AND when the
+        # audit API is unreachable, so a registry outage is indistinguishable from a security finding
+        # (npm's API failed on both endpoints 2026-07-26 and blocked every PR in this repo).
+        # The script BLOCKS on real high/critical exactly as before, and only treats "could not ask"
+        # differently — loudly, and with an expiry date after which it becomes a hard failure.
+        # ★Restore the one-liner above once the registry is healthy; see the script header.
+        run: npx tsx scripts/verify/audit-prod-deps.ts
 
   # ============================================
   # 2. Test: unit + component tests
