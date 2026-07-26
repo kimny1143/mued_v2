@@ -113,7 +113,13 @@ harness は各 binary の **capability flag `hasLicense`** で分岐を keying �
 
 verify を CI/harness で自動回すには、**`serial-licensed` state を headless に再現**できる必要がある（人手でシリアル UI に打ち込むのは自動化不能）。dsp §7-1/2（2026-07-15・**現状 plugin に license 機構は一切存在せず** = 以下は実装 feasibility）の推奨:
 
-- **一次 = keyfile-at-known-path 型**: iPlug2 `AppSupportPath()` → `~/Library/Application Support/glasswerks/MUEDsp/license.key` を plugin 構築時に1回読む。plugin が読むもの = keyfile → **Ed25519 署名検証**（name+email+product payload・public key を binary 焼込・private key は mued/glasswerks が offline 保持）。**server 通信なし = offline・DRM-free**＝Q2a「未認証フルデモ」と整合。検証は pure/deterministic → verify 向き。
+- **一次 = keyfile-at-known-path 型**: iPlug2 `AppSupportPath()` → `~/Library/Application Support/glasswerks/MUEDsp/license.key` を plugin 構築時に1回読む。plugin が読むもの = keyfile → **Ed25519 署名検証**（name+email+product payload・public key を binary 焼込・~~private key は mued/glasswerks が offline 保持~~ ★**下記参照**）。**server 通信なし = offline・DRM-free**＝Q2a「未認証フルデモ」と整合。検証は pure/deterministic → verify 向き。
+
+  > ★**「private key は offline 保持」は 2026-07-26 に緩和されました（kimny 決定）。**
+  > **理由**: 発行を**注文 webhook 内で自動化**する（＝売れるたびに人が CLI を叩かない）には、**署名時に秘密鍵がサーバから読める必要**があり、offline 保持と両立しません。→ **`MASTERCHAIN_LICENSE_PRIVATE_KEY`（Vercel env）**。実装 `lib/masterchain/license.ts` / 発行点 `handleFastspringOrderCompleted`。
+  > ★**この doc の「秘密鍵は offline」を根拠に設計判断しないでください。** 検証側（本 doc の主題）は**一切変わりません**——変わったのは**発行側の鍵の置き場所だけ**です。
+  > ★**代償**: オフライン検証 + revocation 無しなので **鍵が漏れても回収不能**。復旧は「全買い手へ再発行 → 新ビルドで旧鍵を配列から外す」のみで、**買い手台帳（`masterchain_purchases`）が唯一の復旧経路**。
+  > **形式の正本**: `lib/masterchain/license.ts` のヘッダ + **golden vector**（`tests/unit/masterchain-license.test.ts`・固定鍵で byte 固定）。**dsp の C++ verifier はこの vector と突き合わせられます**（実鍵不要・捨て鍵で両側が完成できる）。
 - **verify 注入**: 既知の **test keyfile を上記 path に置く → auval/render → 消す** で `serial-licensed` state を完全 deterministic に再現・**実 read path を通す**・UI 不要。GUI serial 欄も置くなら「同じ keyfile を書く」だけにして read path を一本化。
 - **補助 = compile-gated env override**（`MUEDSP_FORCE_LICENSED=1`）: CI で最も楽だが **必ず非 release build に compile-time gate**（さもないと出荷 binary の自明な海賊化）。負例/expiry 用途の補助に留める。
 - **不採用 = DAW project chunk（`SerializeState`）を license に使う**: per-project で「この Mac が licensed」を表現できない（dsp §7-1 明示）。

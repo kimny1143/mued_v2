@@ -28,18 +28,18 @@ const sampleEvent = {
     total: 69,
     currency: "USD",
     address: { country: "US" },
+    // ★A FastSpring-generated key may still sit here; we deliberately do NOT read it (see below).
     items: [{ fulfillments: { license: [{ license: "LICENSE-KEY-XYZ" }] } }],
     tags: { gaClientId: "GA1.1.1.2", utmSource: "threads", utmCampaign: "launch_jul", marketingConsent: "true" },
   },
 };
 
 describe("parseFastspringOrderCompleted", () => {
-  it("extracts order / buyer / license / amount / country / tags", () => {
+  it("extracts order / buyer / name / amount / country / tags", () => {
     const p = parseFastspringOrderCompleted(sampleEvent);
     expect(p).toMatchObject({
       orderId: "ORDER-123",
       email: "buyer@example.com", // lowercased
-      licenseKey: "LICENSE-KEY-XYZ",
       productId: "muedsp_masterchain",
       amountCents: 6900, // 69 * 100
       currency: "USD",
@@ -49,6 +49,25 @@ describe("parseFastspringOrderCompleted", () => {
       utmCampaign: "launch_jul",
       marketingConsent: true,
     });
+  });
+
+  it("★does NOT read a FastSpring-generated license key out of the payload", () => {
+    // The issuer changed (2026-07-25): we mint the keyfile with Ed25519 ourselves, because FastSpring
+    // cannot sign with our private key and the plugin verifies offline against our baked-in public
+    // key. Reading a key back from the payload would silently reintroduce a serial the plugin rejects.
+    const p = parseFastspringOrderCompleted(sampleEvent) as Record<string, unknown>;
+    expect(p.licenseKey).toBeUndefined();
+    expect(JSON.stringify(p)).not.toContain("LICENSE-KEY-XYZ");
+  });
+
+  it("derives the buyer name for the license payload, and tolerates its absence", () => {
+    const named = parseFastspringOrderCompleted({
+      ...sampleEvent,
+      data: { ...sampleEvent.data, account: { contact: { email: "a@b.com", first: "Ada", last: "Lovelace" } } },
+    });
+    expect(named?.name).toBe("Ada Lovelace");
+    // No name in the payload → empty string, never undefined (the license payload field is required).
+    expect(parseFastspringOrderCompleted(sampleEvent)?.name).toBe("");
   });
 
   it("returns null when orderId is missing", () => {

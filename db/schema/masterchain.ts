@@ -38,8 +38,15 @@ export type NewMasterchainInterest = typeof masterchainInterest.$inferInsert;
 export const masterchainPurchases = pgTable('masterchain_purchases', {
   id: uuid('id').primaryKey().defaultRandom(),
   orderId: text('order_id').notNull().unique(),       // FastSpring order id (idempotent join key)
-  email: text('email').notNull(),                     // buyer
-  licenseKey: text('license_key'),                    // key FastSpring issued (ownership + future acct layer)
+  email: text('email').notNull(),                     // buyer — ★re-issue address if the key ever leaks
+  // ★The Ed25519 keyfile WE issued (lib/masterchain/license.ts) — NOT a FastSpring-generated serial.
+  // The issuer changed 2026-07-25: FastSpring cannot sign with our private key, so a key it generated
+  // could never pass the plugin's offline verification. email + this column together are the ONLY
+  // recovery path from a signing-key leak (re-issue to every buyer → drop the old key in a new build),
+  // because verification is offline and nothing can be revoked remotely.
+  licenseKey: text('license_key'),
+  licenseVersion: integer('license_version'),         // keyfile format version (LICENSE_VERSION)
+  issuedAt: timestamp('issued_at'),                   // when we signed it (≠ createdAt on re-issue)
   productId: text('product_id').notNull(),            // 'muedsp_masterchain'
   amountCents: integer('amount_cents'),               // order total (smallest unit)
   currency: text('currency'),                         // e.g. 'USD'

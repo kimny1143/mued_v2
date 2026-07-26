@@ -17,7 +17,10 @@
 import { trackServerPurchase, type GA4PurchaseParams } from "@/lib/analytics/ga4-server";
 import { masterchainPurchases } from "@/db/schema";
 import { addMasterchainContact } from "@/lib/masterchain/audience";
+import { issueLicense, LICENSE_VERSION } from "@/lib/masterchain/license";
+import { emailService } from "@/lib/services/email.service";
 import { logger } from "@/lib/utils/logger";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 
 // ── safe JSON access (lint-clean, no `any`) for the untyped external payload ───────────────────────
@@ -29,7 +32,8 @@ const asNum = (v: unknown): number | undefined => (typeof v === "number" ? v : u
 export interface FastspringOrderParsed {
   orderId: string;
   email: string;
-  licenseKey?: string;
+  /** Buyer name for the license payload. Empty string when FastSpring gives us no name. */
+  name: string;
   productId: string;
   amountCents?: number;
   currency?: string;
@@ -65,10 +69,13 @@ export function parseFastspringOrderCompleted(event: unknown): FastspringOrderPa
 
   const total = asNum(data.total) ?? asNum(data.totalInPayoutCurrencyValue);
 
+  const first = asStr(contact.first) ?? "";
+  const last = asStr(contact.last) ?? "";
+
   return {
     orderId,
     email: email.toLowerCase().trim(),
-    licenseKey: firstLicenseKey(data), // TODO(C1): confirm fulfillment path
+    name: [first, last].filter(Boolean).join(" ").trim(),
     productId: "muedsp_masterchain",
     amountCents: total !== undefined ? Math.round(total * 100) : undefined,
     currency: asStr(data.currency),
@@ -83,23 +90,18 @@ export function parseFastspringOrderCompleted(event: unknown): FastspringOrderPa
   };
 }
 
-/** Best-effort dig for the first issued license key. TODO(C1): confirm the real fulfillments path. */
-function firstLicenseKey(data: Json): string | undefined {
-  const items = Array.isArray(data.items) ? data.items : [];
-  for (const it of items) {
-    const fulfillments = asObj(asObj(it).fulfillments);
-    for (const key of Object.keys(fulfillments)) {
-      const list = fulfillments[key];
-      if (Array.isArray(list)) {
-        for (const f of list) {
-          const lic = asStr(asObj(f).license) ?? asStr(asObj(f).value);
-          if (lic) return lic;
-        }
-      }
-    }
-  }
-  return undefined;
-}
+// ── REMOVED: firstLicenseKey() ────────────────────────────────────────────────────────────────────
+// It dug through `data.items[].fulfillments[]` for a key FastSpring had generated and placed in the
+// order payload, and carried `TODO(C1): confirm the real fulfillments path` because that shape was
+// never checked against a real order.
+//
+// ★It is gone because the ISSUER CHANGED (2026-07-25, product): we mint the license ourselves with
+// Ed25519 (lib/masterchain/license.ts). FastSpring cannot produce a signature the plugin will accept
+// — it does not hold our private key — so there is no FastSpring-generated key to read back. We do
+// not learn the key from the payload; we already have it, because we made it.
+//
+// docs/paid-line/c-plus-fastspring-reflux-webhook-design.md:90 still describes the old model and is
+// SUPERSEDED; the note there points here.
 
 const ITEM_NAME = "MUEDsp masterchain";
 
@@ -132,8 +134,18 @@ export function buildMasterchainPurchaseEvent(parsed: FastspringOrderParsed): GA
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
- * Handle a verified, deduped `order.completed`. The buyer record is CRITICAL (awaited, in tx); the
- * GA4 purchase, buyers-audience add, and welcome email are FAIL-OPEN (never block fulfillment).
+ * Handle a verified, deduped `order.completed`.
+ *
+ * CRITICAL (awaited, in tx, a failure rolls the tx back → 5xx → FastSpring retries):
+ *   - the buyer + issued-license record. ★This ledger is the ONLY recovery path if the signing key
+ *     ever leaks: verification is offline with no revocation, so the only fix is "re-issue to every
+ *     known buyer, then drop the old key in a new plugin build". Without the buyer list that is
+ *     impossible. It is a business-continuity requirement, not a feature (conductor/dsp, 2026-07-26).
+ *   - the license issuance itself, and its delivery email — the buyer cannot use the product without
+ *     the key, so a delivery failure must NOT be swallowed. Same doctrine as the free-plugin gate in
+ *     lib/plugins/subscribe-handler.ts: "Delivery is HONEST, not fake-open".
+ *
+ * FAIL-OPEN (never blocks fulfillment): GA4 purchase, buyers-audience add.
  */
 export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Promise<void> {
   const parsed = parseFastspringOrderCompleted(event);
@@ -142,13 +154,43 @@ export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Pr
     return;
   }
 
-  // CRITICAL — self-owned buyer + license-key record (idempotent on orderId).
+  // ── issue the license, ONCE per order ───────────────────────────────────────────────────────────
+  // ★Idempotency is on the STORED keyfile, not on issueLicense(): the payload carries `issuedAt`, so
+  // signing the same order twice yields two different (both valid) keys. FastSpring retries webhooks,
+  // and without this read-back one retry would mail the buyer a second, different key.
+  const [existing] = await tx
+    .select({ licenseKey: masterchainPurchases.licenseKey })
+    .from(masterchainPurchases)
+    .where(eq(masterchainPurchases.orderId, parsed.orderId))
+    .limit(1);
+
+  let licenseKey = existing?.licenseKey ?? null;
+  if (!licenseKey) {
+    licenseKey = issueLicense({
+      name: parsed.name,
+      email: parsed.email,
+      product: parsed.productId,
+      orderId: parsed.orderId,
+    });
+    if (!licenseKey) {
+      // Fail-CLOSED: no signing key configured (or it is malformed). Throwing rolls the tx back and
+      // returns non-2xx, so FastSpring retries — better than recording a purchase with no license and
+      // telling the buyer nothing. ★Never log the key material or the underlying crypto error.
+      throw new Error(
+        `[fastspring] cannot issue license for order ${parsed.orderId}: MASTERCHAIN_LICENSE_PRIVATE_KEY missing or invalid`,
+      );
+    }
+  }
+
+  // CRITICAL — self-owned buyer + issued-license record (idempotent on orderId).
   await tx
     .insert(masterchainPurchases)
     .values({
       orderId: parsed.orderId,
       email: parsed.email,
-      licenseKey: parsed.licenseKey,
+      licenseKey,
+      licenseVersion: LICENSE_VERSION,
+      issuedAt: new Date(),
       productId: parsed.productId,
       amountCents: parsed.amountCents,
       currency: parsed.currency,
@@ -179,7 +221,23 @@ export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Pr
       logger.error("[fastspring] buyers audience add failed", { error: String(err) }));
   }
 
-  // TODO(C+): transactional welcome/delivery email (license key + self-hosted DL link) — FastSpring's
-  // DL link expires in 7 days, so our own delivery is the durable "客を所有する" touch. Needs an
-  // email.service method + content copy; fail-open like the plugin welcome. Deferred to the email step.
+  // CRITICAL — deliver the key. ★Only when we just issued it: on a FastSpring retry `existing` is
+  // already set, and re-sending would mail the same buyer a duplicate for one order.
+  if (!existing?.licenseKey) {
+    // ★locale: the order payload carries no language today (FastspringOrderParsed has no locale
+    // field), so this is 'en' until a popup custom tag supplies one — TODO(C1), same confirmation
+    // pass as the payload shape. Guessing from buyerCountry would be a proxy for the buyer's reading
+    // language, not a measurement of it.
+    const delivery = await emailService
+      .sendMasterchainLicenseDelivery({ email: parsed.email }, { locale: "en", licenseKey })
+      .catch((err: unknown) => ({ success: false, error: String(err) }));
+
+    if (!delivery.success) {
+      // Fail-CLOSED: roll back → non-2xx → FastSpring retries. The retry is safe because the purchase
+      // row was never committed, so the next attempt re-issues and re-sends exactly once.
+      throw new Error(
+        `[fastspring] license delivery email failed for order ${parsed.orderId}: ${delivery.error ?? "unknown"}`,
+      );
+    }
+  }
 }
