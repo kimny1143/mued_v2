@@ -102,6 +102,17 @@ export function issueLicense(
   const key = privateKey();
   if (!key) return null;
 
+  // ★Refuse to sign a value containing a newline. The format is line-based, so a `\n` inside owner /
+  // order / scope INJECTS A LINE — and because we then sign the result, the injected line is
+  // perfectly authentic. Signature verification cannot catch this; it is the one class of attack a
+  // signature is structurally blind to, because we are the ones signing it. Field lookup returns the
+  // FIRST match, so an injected line placed before the real one wins.
+  // Inputs are external (buyer email, FastSpring order id), so this is closed at the issuer —
+  // fail-CLOSED, consistent with every other refusal in this file. (product課, 2026-07-26.)
+  for (const value of [input.owner, input.order, input.scope ?? "", input.issuedAt ?? "", input.expiresAt ?? ""]) {
+    if (/[\r\n]/.test(value)) return null;
+  }
+
   // LF only — the CRLF fold on the verifying side exists for keyfiles that pass through a Windows
   // editor, not as licence for us to emit CRLF.
   const prefix =
@@ -128,8 +139,11 @@ export function issueLicense(
  */
 export function verifyLicense(keyfile: string, publicKeyPem: string): LicensePayload | null {
   try {
-    // CRLF → LF before anything else: keyfiles travel by email and get opened in Windows editors.
-    const text = keyfile.replace(/\r\n/g, "\n");
+    // ★Strip a leading UTF-8 BOM, then fold CRLF → LF. Both exist for the same real path: the buyer
+    // saves the emailed .key with Notepad, which adds a BOM and CRLF line endings. Without the BOM
+    // strip the magic line no longer matches and a legitimately purchased key is rejected — a failure
+    // that happens only to buyers and is therefore the hardest kind to reproduce.
+    const text = keyfile.replace(/^﻿/, "").replace(/\r\n/g, "\n");
 
     // ★Exactly one `sig=` line, and it must be last. Multiple sig lines are a classic bypass (the
     // issuer signs one, the verifier reads the other), and content after it would let an attacker
@@ -183,4 +197,56 @@ export function verifyLicense(keyfile: string, publicKeyPem: string): LicensePay
   } catch {
     return null;
   }
+}
+
+/**
+ * ★The FINAL decision — the one the plugin makes, reproduced here so both sides can be checked
+ * against the same golden vectors.
+ *
+ * `verifyLicense` deliberately answers only "did we issue this?" and does NOT check entitlement. That
+ * separation is right, but it means verifyLicense alone ACCEPTS a genuinely-signed key for another
+ * product: `wrong_scope` in dsp's vector set is a real signature of ours whose expected verdict is
+ * `reject`. Running the vectors through verifyLicense would report "all as expected" while silently
+ * disagreeing with the plugin. The vector runner must go through this function.
+ *
+ * Three verdicts, matching dsp's MANIFEST:
+ *   accept      — licensed.
+ *   reject      — it looks like one of our keyfiles but is not valid for this product (forged,
+ *                 tampered, structurally illegal, or issued for a different scope).
+ *   unlicensed  — there is no usable licence here at all (absent, unreadable, or expired). ★The
+ *                 plugin must run normally in this state; it is NOT an error. Expiry lands here on
+ *                 purpose: a lapsed licence means "not unlocked", not "you are a pirate".
+ */
+export type LicenseVerdict = "accept" | "reject" | "unlicensed";
+
+export function evaluateLicense(
+  keyfile: string,
+  publicKeyPem: string,
+  expected: { product: string; scope: string },
+  now: Date = new Date(),
+): { verdict: LicenseVerdict; payload: LicensePayload | null } {
+  const payload = verifyLicense(keyfile, publicKeyPem);
+
+  if (!payload) {
+    // Distinguish "not a licence file" from "a licence file that failed". Anything carrying our magic
+    // was meant to be a licence, so a failure there is a rejection; random bytes or an empty file are
+    // simply the unlicensed state.
+    const looksLikeOurs = /^﻿?MUEDSP-LICENSE-/.test(keyfile.replace(/\r\n/g, "\n"));
+    return { verdict: looksLikeOurs ? "reject" : "unlicensed", payload: null };
+  }
+
+  if (payload.product !== expected.product || payload.scope !== expected.scope) {
+    return { verdict: "reject", payload }; // cross-product replay: valid signature, wrong entitlement
+  }
+
+  if (payload.expiresAt !== "") {
+    const expiry = Date.parse(payload.expiresAt);
+    // An unparseable expiry is treated as expired rather than ignored — the safe reading of "we
+    // cannot tell when this ends" is "it has ended", and it lands in the non-punitive state.
+    if (Number.isNaN(expiry) || expiry <= now.getTime()) {
+      return { verdict: "unlicensed", payload };
+    }
+  }
+
+  return { verdict: "accept", payload };
 }

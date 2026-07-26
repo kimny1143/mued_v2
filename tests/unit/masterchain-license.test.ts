@@ -11,7 +11,7 @@
  *   a different `scope` / the old 16-hex scaffold.
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { generateKeyPairSync, createPrivateKey, createPublicKey } from "node:crypto";
+import { generateKeyPairSync } from "node:crypto";
 import {
   issueLicense,
   verifyLicense,
@@ -138,11 +138,35 @@ describe("masterchain license v2 — ★the spec's bypass list", () => {
       expect(verifyLicense(bad, PUB_PEM)).toBeNull();
     }
   });
+
+  it("★refuses to ISSUE when a value contains a newline (field injection)", () => {
+    // The one class a signature cannot catch: a `\n` in an input injects a line, and then WE sign it,
+    // so the result is perfectly authentic. Field lookup takes the FIRST match, so a line injected
+    // ahead of the real one wins. Inputs are external (buyer email, FastSpring order id), so this is
+    // closed at the issuer — there is nowhere downstream that could tell the difference.
+    expect(issueLicense({ ...ORDER, owner: "a@b.com\nscope=everything" })).toBeNull();
+    expect(issueLicense({ ...ORDER, order: "X\nissued_at=1999-01-01T00:00:00Z" })).toBeNull();
+    expect(issueLicense({ ...ORDER, scope: "masterchain\nproduct=MUEDsp" })).toBeNull();
+    expect(issueLicense({ ...ORDER, owner: "a@b.com\r\nx=1" })).toBeNull();
+    // …and the ordinary case still issues.
+    expect(issueLicense(ORDER)).not.toBeNull();
+  });
 });
 
 describe("masterchain license v2 — tolerated variations", () => {
   it("★accepts CRLF (keyfiles travel by email and get re-saved on Windows)", () => {
     expect(verifyLicense(issueLicense(ORDER)!.replace(/\n/g, "\r\n"), PUB_PEM)).not.toBeNull();
+  });
+
+  it("★accepts a leading UTF-8 BOM (Notepad adds one when the buyer saves the .key)", () => {
+    // Without the BOM strip the magic line no longer matches and a legitimately purchased key is
+    // rejected — a failure that happens only to buyers, and so is the hardest kind to reproduce.
+    expect(verifyLicense("﻿" + issueLicense(ORDER)!, PUB_PEM)).not.toBeNull();
+  });
+
+  it("accepts BOM and CRLF together (the actual Notepad round-trip)", () => {
+    const kf = "﻿" + issueLicense(ORDER)!.replace(/\n/g, "\r\n");
+    expect(verifyLicense(kf, PUB_PEM)).not.toBeNull();
   });
 
   it("accepts a missing trailing newline", () => {
@@ -156,44 +180,7 @@ describe("masterchain license v2 — tolerated variations", () => {
   });
 });
 
-describe("masterchain license v2 — ★golden vector (format contract with dsp)", () => {
-  // ★A THROWAWAY key, DERIVED FROM A SEED rather than stored as a PEM: a scanner cannot tell a test
-  // key from a real one, and getting that alert dismissed teaches everyone to wave through the next.
-  // (This comment also avoids spelling out the PEM header — writing the pattern you are telling
-  // people not to commit makes the scanner match your own warning.)
-  // Ed25519 PKCS#8 DER = fixed 16-byte prefix + raw seed.
-  const GOLDEN_SEED = "4d5545447370206d61737465726368616e20676f6c64656e2076656374307221";
-  const PKCS8_ED25519_PREFIX = "302e020100300506032b657004220420";
-  const goldenPriv = createPrivateKey({
-    key: Buffer.concat([Buffer.from(PKCS8_ED25519_PREFIX, "hex"), Buffer.from(GOLDEN_SEED, "hex")]),
-    format: "der",
-    type: "pkcs8",
-  });
-  const GOLDEN_PRIV = goldenPriv.export({ type: "pkcs8", format: "pem" }).toString();
-  const GOLDEN_PUB = createPublicKey(goldenPriv).export({ type: "spki", format: "pem" }).toString();
-
-  it("produces a byte-identical keyfile for a fixed key + fixed fields", () => {
-    process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = GOLDEN_PRIV;
-    const kf = issueLicense({
-      owner: "golden@example.com",
-      order: "FS-GOLDEN-0001",
-      issuedAt: "2026-08-05T00:00:00.000Z", // pinned — otherwise the signature moves every run
-    });
-    expect(verifyLicense(kf!, GOLDEN_PUB)).not.toBeNull();
-
-    // ★If this string changes, the format changed. Coordinate with dsp before updating it — their
-    // verifier is pinned to the same bytes. Ed25519 is deterministic (RFC 8032), so this is stable
-    // across machines and runs.
-    expect(kf).toMatchInlineSnapshot(`
-      "MUEDSP-LICENSE-v2
-      product=MUEDsp
-      scope=masterchain
-      owner=golden@example.com
-      order=FS-GOLDEN-0001
-      issued_at=2026-08-05T00:00:00.000Z
-      expires_at=
-      sig=EhWEqNuYRaYtT5Xa+0PZWBaTmz51VqR3Q/JSuG0RWdNtUfwEev5eFV01uqbk5sIR3KiHFWHJhA2NrqRU+9RFDg==
-      "
-    `);
-  });
-});
+// ★The golden vector lives in tests/unit/masterchain-license-vectors.test.ts, against the SHARED
+// set vendored from dsp (#232) — not here. A second, self-made vector for the same contract is
+// the same as a second specification: each side passes its own and the drift stays invisible.
+// This file covers behaviour; that one covers the bytes both implementations must agree on.
