@@ -19,6 +19,11 @@
  * not a gate. Discrimination is structural (does the payload contain a vulnerabilities report?), not
  * a match on the message text — that would be a proxy for the outcome.
  *
+ * ★SCOPE, stated plainly: this bypass is NOT limited to the 2026-07-26 outage. ANY reason npm fails
+ * to return a readable report — proxy, offline runner, npm missing, a future schema change — lands
+ * in the same branch and goes green with a warning. That is bounded by BYPASS_UNTIL, not by cause.
+ * (It does still block if the unreadable payload names a high/critical finding — see auditVerdict.)
+ *
  * Usage:  npx tsx scripts/verify/audit-prod-deps.ts
  */
 import { execFileSync } from "node:child_process";
@@ -59,6 +64,12 @@ try {
 } catch {
   parsed = null; // unparseable output is itself an endpoint-side symptom
 }
+
+// ★"no parseable audit report" collapses several distinct causes into one sentence — truncated
+// stdout, a proxy returning HTML, npm missing entirely, and today's undecoded-gzip all look
+// identical. Keep the first bytes so the next person can tell which. (Same reason #763 prints the
+// cause chain instead of just the message.)
+const rawPreview = raw.trim().slice(0, 200).replace(/\s+/g, " ");
 
 const verdict = auditVerdict(parsed);
 
@@ -105,6 +116,7 @@ console.warn(
 summary(
   `### ⚠ Security audit NOT PERFORMED\n\n${verdict.reason}\n\n` +
     `**This run did not check production dependencies.** Green here means "could not ask", not ` +
-    `"nothing found".\n\nBypass expires **${BYPASS_UNTIL}**, after which this becomes a hard failure.`,
+    `"nothing found".\n\nBypass expires **${BYPASS_UNTIL}**, after which this becomes a hard failure.\n\n` +
+    `<details><summary>first 200 bytes of npm output</summary>\n\n\`\`\`\n${rawPreview || "(empty)"}\n\`\`\`\n</details>`,
 );
 process.exit(0);

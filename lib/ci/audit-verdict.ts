@@ -36,6 +36,22 @@ export function auditVerdict(parsed: AuditReportish | null): AuditVerdict {
   const isRealReport = !!(parsed && parsed.vulnerabilities && parsed.metadata);
 
   if (!isRealReport) {
+    // ★Before concluding "we learned nothing", look for findings anyway.
+    //
+    // A payload can carry `vulnerabilities` without `metadata` — and BOTH classifications exit 0
+    // here, so there is no "safe side" in this branch to fall back on: mis-filing it as
+    // not-performed would hand us a payload that literally says "critical" and let the build
+    // through. The realistic trigger is npm schema drift, which has already happened once (v6
+    // reported under `advisories`, v7+ under `vulnerabilities` + `metadata`). If `metadata` is ever
+    // renamed, every real report would land here — and the bypass header invites extending the
+    // expiry, so it would not even self-correct on time. (product課, 2026-07-26.)
+    const named = Object.entries(parsed?.vulnerabilities ?? {})
+      .filter(([, v]) => v?.severity === "high" || v?.severity === "critical")
+      .map(([name, v]) => `${name} (${v.severity})`);
+    if (named.length > 0) {
+      return { kind: "vulnerable", blocking: named.length, names: named };
+    }
+
     const reason =
       parsed?.statusCode || parsed?.message
         ? `HTTP ${parsed.statusCode ?? "?"} from ${parsed.uri ?? "the audit API"}`

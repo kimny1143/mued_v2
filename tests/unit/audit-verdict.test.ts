@@ -68,11 +68,37 @@ describe("auditVerdict — ★endpoint failure is NOT mistaken for a clean run",
     expect(v.kind).toBe("not-performed");
   });
 
-  it("★does not accept a half-shaped payload as a report", () => {
-    // A response carrying `vulnerabilities` but no `metadata` (or vice versa) is not a report we can
-    // read severity counts from — treating it as one would silently pass an unaudited build.
+  it("does not read severity counts from a half-shaped payload", () => {
+    // Missing `metadata` means the counts cannot be trusted…
     expect(auditVerdict({ vulnerabilities: {} }).kind).toBe("not-performed");
     expect(auditVerdict({ metadata: { vulnerabilities: {} } }).kind).toBe("not-performed");
+  });
+
+  it("★STILL blocks when a half-shaped payload names a high/critical finding", () => {
+    // …but "cannot read the counts" must not become "ignore the findings". Both not-performed and a
+    // mis-filed report exit 0, so there is no safe default here — it has to block explicitly.
+    // Realistic trigger: npm schema drift (v6 used `advisories`; v7+ uses `vulnerabilities` +
+    // `metadata`). If `metadata` is renamed, every real report lands in this branch.
+    const v = auditVerdict({
+      vulnerabilities: { "some-pkg": { severity: "critical" }, other: { severity: "low" } },
+      // no metadata
+    });
+    expect(v.kind).toBe("vulnerable");
+    if (v.kind !== "vulnerable") throw new Error("unreachable");
+    expect(v.names).toEqual(["some-pkg (critical)"]);
+  });
+
+  it("does not block on a half-shaped payload that only names low/moderate", () => {
+    expect(auditVerdict({ vulnerabilities: { p: { severity: "moderate" } } }).kind).toBe("not-performed");
+  });
+
+  it("★the real endpoint-error envelope still classifies as not-performed (no false block)", () => {
+    // Guard the other direction: the fix above must not turn a genuine outage into a hard failure.
+    const v = auditVerdict({
+      body: "…", error: "Bad Request", headers: {}, message: "400 Bad Request",
+      method: "POST", statusCode: 400, uri: "https://registry.npmjs.org/-/npm/v1/security/audits/quick",
+    } as Parameters<typeof auditVerdict>[0]);
+    expect(v.kind).toBe("not-performed");
   });
 });
 
