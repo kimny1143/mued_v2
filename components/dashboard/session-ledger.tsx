@@ -66,8 +66,19 @@ function groupByProduct(sessions: UnifiedSession[], dialOnly: boolean): Array<{ 
 //
 // So the six-column register is a >=sm layout. Below that the same cells reflow to two
 // lines — name on top, date/dot/status beneath — which is what a phone can actually show.
-// `minmax(0,1fr)` rather than `1fr` so the name track may shrink past its content and let
-// `truncate` do its job; plain `1fr` floors at min-content and pushes the row wider instead.
+//
+// On why the two rows failed differently (measured at a 342px content box, not reasoned):
+//
+//   1fr           + truncate ->   0px      1fr           (no truncate) -> 167.8px
+//   minmax(0,1fr) + truncate ->   0px      minmax(0,1fr) (no truncate) ->   0px
+//
+// `truncate` sets `overflow:hidden`, which makes the grid item a scroll container and drops
+// its automatic minimum size to 0 — so the session-name cell collapsed *because* it was
+// truncated, not despite it. The MUEDear label had no `truncate`, so its min-content floor
+// (167.8px) held the track open and pushed the row past the viewport instead. Same cause,
+// opposite symptom: one vanished silently, the other overflowed loudly.
+// `minmax(0,1fr)` is kept as defence for cells that are not truncated (it is what changes
+// 167.8px to 0px above); it does nothing for the truncated ones.
 const ROW_CLASS =
   'grid items-center gap-x-3 gap-y-1 grid-cols-[32px_minmax(0,1fr)_16px] ' +
   'sm:gap-y-0 sm:grid-cols-[40px_110px_20px_minmax(0,1fr)_120px_24px]';
