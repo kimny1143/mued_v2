@@ -69,7 +69,7 @@ header "Phase A-2: Stripe環境変数確認"
 
 check_env "STRIPE_SECRET_KEY"           "Stripe secret key (本番)"
 check_env "STRIPE_WEBHOOK_SECRET"       "Stripe webhook signing secret"
-check_env "STRIPE_DIAL_HOO_PASS_PRICE_ID" "Hoo Pass \$5.99/月 Price ID"
+# No subscription price id: Hoo Pass was retired 2026-07 (#650) with its checkout route.
 check_env "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "Stripe publishable key"
 
 # ============================================================

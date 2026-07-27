@@ -43,7 +43,6 @@ echo "╚═══════════════════════�
 # ─── 1. Environment variables ─────────────────────
 header "1. Environment Variables (.env.local)"
 
-check_env "STRIPE_DIAL_HOO_PASS_PRICE_ID"   "Hoo Pass \$5.99/月 Stripe Price ID"
 check_env "NEXT_PUBLIC_RESEARCH_BETA"         "Research beta price-hiding flag (must be 'true')"
 check_env "BLOB_READ_WRITE_TOKEN"             "Vercel Blob token for waitlist storage"
 check_env "RESEND_API_KEY"                    "Email delivery for waitlist welcome email"
@@ -93,6 +92,8 @@ fi
 # ─── 3. DB Migration check ────────────────────────
 header "3. DB Migration (Neon)"
 
+# The hoo_pass enum value is still required even though the tier is retired: existing rows may
+# reference it and Postgres cannot drop an in-use enum value. Checking the migration is still correct.
 migration_file="db/migrations/0045_add_hoo_pass_tier.sql"
 if [[ -f "$migration_file" ]]; then
   green "Migration file 0045 exists: $migration_file"
@@ -129,24 +130,20 @@ else
   inc_fail
 fi
 
-# ─── 4. Stripe Price ID format check ──────────────
+# ─── 4. Stripe Configuration ──────────────────────
 header "4. Stripe Configuration"
 
-hoo_price_id=$(grep -E "^STRIPE_DIAL_HOO_PASS_PRICE_ID=" .env.local 2>/dev/null | head -1 | cut -d'=' -f2- || true)
-if [[ "$hoo_price_id" == price_* ]]; then
-  green "STRIPE_DIAL_HOO_PASS_PRICE_ID format valid (starts with 'price_')"
-  inc_pass
-else
-  yellow "STRIPE_DIAL_HOO_PASS_PRICE_ID='$hoo_price_id' — verify this is a real Stripe Price ID"
-  inc_warn
-fi
+# No subscription price id to check: Hoo Pass was retired 2026-07 (#650) together with its checkout
+# route, and nothing else here is sold as a subscription. This section previously required
+# STRIPE_DIAL_HOO_PASS_PRICE_ID and failed without it — i.e. it pushed whoever ran a launch check
+# toward configuring a product that is no longer for sale.
+green "No subscription price ids required (MUEDial is one-off purchases only since 2026-07)"
+inc_pass
 
 # ─── 5. Manual checklist ──────────────────────────
 header "5. Manual Verification Required"
 echo ""
-echo "  □ Stripe Dashboard: Hoo Pass product active, \$5.99/month Price ID matches STRIPE_DIAL_HOO_PASS_PRICE_ID"
-echo "  □ Stripe Dashboard: 旧3tier (basic/pro/studio) Price IDs set to inactive"
-echo "  □ Vercel Dashboard: STRIPE_DIAL_HOO_PASS_PRICE_ID env var set (Production)"
+echo "  □ Stripe Dashboard: 退役 tier (hoo_pass/basic/pro/studio) の Price ID がすべて inactive"
 echo "  □ Vercel Dashboard: NEXT_PUBLIC_RESEARCH_BETA=true set (Production)"
 echo "  □ Vercel Dashboard: BLOB_READ_WRITE_TOKEN set (Production)"
 echo "  □ Browser: dial.mued.jp/waitlist — form submits successfully"
