@@ -17,6 +17,7 @@ import {
   verifyLicense,
   isLicenseIssuingConfigured,
   LICENSE_MAGIC,
+  licenseSigningPublicKeyHex,
 } from "@/lib/masterchain/license";
 
 const { publicKey, privateKey } = generateKeyPairSync("ed25519");
@@ -203,3 +204,42 @@ describe("masterchain license v2 — tolerated variations", () => {
 // set vendored from dsp (#232) — not here. A second, self-made vector for the same contract is
 // the same as a second specification: each side passes its own and the drift stays invisible.
 // This file covers behaviour; that one covers the bytes both implementations must agree on.
+
+describe("licenseSigningPublicKeyHex — which key is deployed", () => {
+  // A boolean ("a key is loaded") cannot tell K1 from K2, and the wrong key fails in the buyer's
+  // plugin rather than on our side. These pin the two properties that make the health field usable:
+  // it identifies the key, and it never leaks the private half.
+  const seedKey = generateKeyPairSync("ed25519");
+  const pkcs8 = seedKey.privateKey.export({ format: "pem", type: "pkcs8" }).toString();
+
+  it("returns the public half of the configured private key (32 raw bytes, hex)", () => {
+    process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = pkcs8;
+    const hex = licenseSigningPublicKeyHex();
+
+    const expected = seedKey.publicKey
+      .export({ format: "der", type: "spki" })
+      .subarray(12)
+      .toString("hex");
+
+    expect(hex).toBe(expected);
+    expect(hex).toMatch(/^[0-9a-f]{64}$/); // 32 bytes — not DER, not PEM, comparable by string
+  });
+
+  it("never returns any part of the private key", () => {
+    process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = pkcs8;
+    const hex = licenseSigningPublicKeyHex()!;
+    const secret = seedKey.privateKey.export({ format: "der", type: "pkcs8" }).toString("hex");
+    // The seed lives in the last 32 bytes of the pkcs8 DER; the public key must share none of it.
+    expect(secret.includes(hex)).toBe(false);
+  });
+
+  it("is null when no key is configured — null is the answer, not an error", () => {
+    delete process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY;
+    expect(licenseSigningPublicKeyHex()).toBeNull();
+  });
+
+  it("is null for a malformed key rather than throwing (health must stay serveable)", () => {
+    process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\nnope\n-----END PRIVATE KEY-----";
+    expect(licenseSigningPublicKeyHex()).toBeNull();
+  });
+});
