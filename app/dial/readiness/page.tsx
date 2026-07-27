@@ -290,7 +290,7 @@ export default function ReadinessPage() {
                 {r.resultQualified.cta}
               </button>
               <a
-                href="https://dial.mued.jp/pricing"
+                href="https://dial.mued.jp/"
                 className="text-sm text-amber-400 hover:underline"
                 onClick={() => trackCtaClick('muedial_try_now', 'readiness_qualified')}
               >
