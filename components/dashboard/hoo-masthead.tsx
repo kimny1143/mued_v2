@@ -39,19 +39,25 @@ export function HooMasthead() {
     return () => { controller.abort(); clearInterval(id); };
   }, []);
 
+  // ★Credits, not subscription. MUEDial has had no purchasable subscription since Hoo Pass was
+  // retired (2026-07, #650), so `hasSubscription` is false for every user — which meant this line
+  // returned "サブスク未加入" to everyone and the two credit branches below were unreachable.
+  // Worse, the launch bonus IS being granted (lib/dial/bonus-campaign.ts, 400cr), so the people who
+  // received it were the ones told they had nothing. The balance is what the user has; show that.
   const statusLine = () => {
     if (!balance) return t.muednote.dashboardHub.hoo.statusLoading;
-    if (!balance.hasSubscription) return t.muednote.dashboardHub.hoo.statusNoSub;
     const total = balance.totalCredits.toLocaleString();
     if (balance.packCredits > 0) {
       return t.muednote.dashboardHub.hoo.statusBonus
         .replace('{total}', total)
         .replace('{bonus}', balance.packCredits.toLocaleString());
     }
+    // 0cr shows as "Hoo: 0cr" rather than being hidden: it is the true balance, it reads the same as
+    // any other balance, and hiding it would leave the masthead silently different for some users.
     return t.muednote.dashboardHub.hoo.statusCredits.replace('{total}', total);
   };
 
-  const hasBonusActive = balance?.hasSubscription && (balance?.packCredits ?? 0) > 0;
+  const hasBonusActive = (balance?.packCredits ?? 0) > 0;
 
   return (
     <div className="flex items-center gap-2">

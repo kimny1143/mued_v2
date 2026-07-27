@@ -39,9 +39,11 @@ export function CreditsLedger() {
     return () => controller.abort();
   }, []);
 
-  const hasBonusActive = data
-    ? data.packCredits > 0 && !!data.subscription
-    : false;
+  // ★Not gated on a subscription. Hoo Pass was retired in 2026-07 (#650) and nothing else is sold as
+  // a subscription, so requiring one here meant the "Launchボーナス有効" badge could never appear —
+  // including for the users who actually hold the 400cr launch bonus (lib/dial/bonus-campaign.ts).
+  // The pack credits are the thing being labelled; their presence is the whole condition.
+  const hasBonusActive = data ? data.packCredits > 0 : false;
 
   // Nearest pack expiry
   const nearestPackExpiry = data?.packs

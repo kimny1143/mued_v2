@@ -1325,7 +1325,6 @@
       "hoo": {
         "statusCredits": "Hoo: {total}cr",
         "statusBonus": "Hoo: {total}cr ({bonus} bonus)",
-        "statusNoSub": "Hoo: no subscription",
         "statusLoading": "Hoo: —"
       },
       "sessions": {
@@ -1343,8 +1342,7 @@
         "exp": "exp {date}",
         "bonusActive": "Launch bonus active",
         "cancelling": "(cancelling)",
-        "buyMore": "Buy more →",
-        "noSub": "No subscription — view plans"
+        "buyMore": "Buy more →"
       },
       "account": {
         "title": "Account",

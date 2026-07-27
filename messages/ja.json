@@ -1325,7 +1325,6 @@
       "hoo": {
         "statusCredits": "Hoo: {total}cr",
         "statusBonus": "Hoo: {total}cr ({bonus} ボーナス)",
-        "statusNoSub": "Hoo: サブスク未加入",
         "statusLoading": "Hoo: —"
       },
       "sessions": {
@@ -1343,8 +1342,7 @@
         "exp": "期限 {date}",
         "bonusActive": "Launchボーナス有効",
         "cancelling": "（解約予定）",
-        "buyMore": "追加購入 →",
-        "noSub": "サブスク未加入 — プランを見る"
+        "buyMore": "追加購入 →"
       },
       "account": {
         "title": "アカウント",
