@@ -7,6 +7,8 @@ type BalanceData = {
   totalCredits: number;
   subscriptionCredits: number;
   packCredits: number;
+  /** Launch-bonus packs only. `packCredits` also includes packs the user paid for. */
+  bonusCredits: number;
   subscription: {
     tier: string;
     status: string;
@@ -39,11 +41,14 @@ export function CreditsLedger() {
     return () => controller.abort();
   }, []);
 
-  // ★Not gated on a subscription. Hoo Pass was retired in 2026-07 (#650) and nothing else is sold as
-  // a subscription, so requiring one here meant the "Launchボーナス有効" badge could never appear —
-  // including for the users who actually hold the 400cr launch bonus (lib/dial/bonus-campaign.ts).
-  // The pack credits are the thing being labelled; their presence is the whole condition.
-  const hasBonusActive = data ? data.packCredits > 0 : false;
+  // Bonus packs only — not every pack. #780 removed the subscription gate here so the badge could
+  // finally appear, but it keyed on `packCredits`, which also counts packs the user bought. That
+  // told anyone who had simply purchased credits that a "Launch bonus" was active. The gate fix was
+  // right (people who held the bonus were being told they had nothing); the label just needs to
+  // count the thing it names.
+  const bonusCredits = data?.bonusCredits ?? 0;
+  const purchasedCredits = (data?.packCredits ?? 0) - bonusCredits;
+  const hasBonusActive = bonusCredits > 0;
 
   // Nearest pack expiry
   const nearestPackExpiry = data?.packs
@@ -92,12 +97,20 @@ export function CreditsLedger() {
                   {data.subscriptionCredits.toLocaleString()} {hub.credits.sub}
                 </span>
               )}
-              {data.packCredits > 0 && data.subscriptionCredits > 0 && (
+              {purchasedCredits > 0 && data.subscriptionCredits > 0 && (
                 <span className="mx-2 text-white/20">+</span>
               )}
-              {data.packCredits > 0 && (
-                <span className={hasBonusActive ? 'text-amber-400/80' : ''}>
-                  {data.packCredits.toLocaleString()} {hub.credits.bonus}
+              {purchasedCredits > 0 && (
+                <span>
+                  {purchasedCredits.toLocaleString()} {hub.credits.pack}
+                </span>
+              )}
+              {bonusCredits > 0 && (purchasedCredits > 0 || data.subscriptionCredits > 0) && (
+                <span className="mx-2 text-white/20">+</span>
+              )}
+              {bonusCredits > 0 && (
+                <span className="text-amber-400/80">
+                  {bonusCredits.toLocaleString()} {hub.credits.bonus}
                   {expiryStr && (
                     <span className="ml-1 text-white/30">
                       {hub.credits.exp.replace('{date}', expiryStr)}

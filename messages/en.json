@@ -1338,6 +1338,7 @@
       },
       "credits": {
         "sub": "sub",
+        "pack": "pack",
         "bonus": "bonus",
         "exp": "exp {date}",
         "bonusActive": "Launch bonus active",
