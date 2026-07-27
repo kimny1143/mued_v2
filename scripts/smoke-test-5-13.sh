@@ -5,6 +5,12 @@
 #
 # Phase A: 5/12 EOD前実行 (事前確認)
 # Phase B: 5/13 09:00-09:30 JST 本番実行 (手動チェックリスト)
+#
+# ★2026-07-27 追記 — これは 2026-05-13 launch 当日の記録であって、いま実行できる手順ではない。
+# Hoo Pass は 2026-07 に退役し (#650)、購入導線 (/dial/pricing と checkout の subscription
+# ルート) ごと削除されている。よって Phase B の 09:05 (Hoo Pass → Stripe checkout) と
+# 09:18 (「Hoo Pass 契約中」ステータス) は再現できない。
+# 消さずに残すのは launch の記録だからで、live の手順として読まれないようにここに書いておく。
 
 set -euo pipefail
 
@@ -69,7 +75,7 @@ header "Phase A-2: Stripe環境変数確認"
 
 check_env "STRIPE_SECRET_KEY"           "Stripe secret key (本番)"
 check_env "STRIPE_WEBHOOK_SECRET"       "Stripe webhook signing secret"
-check_env "STRIPE_DIAL_HOO_PASS_PRICE_ID" "Hoo Pass \$5.99/月 Price ID"
+# No subscription price id: Hoo Pass was retired 2026-07 (#650) with its checkout route.
 check_env "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "Stripe publishable key"
 
 # ============================================================
@@ -153,7 +159,7 @@ echo ""
 echo "  [ ] 09:00 JST: preflight-launch.sh 最終実行"
 echo "  [ ] 09:01: https://dial.mued.jp/waitlist — $SMOKE_EMAIL で登録"
 echo "  [ ] 09:03: https://dial.mued.jp/readiness — 4問回答 → qualified判定"
-echo "  [ ] 09:05: https://dial.mued.jp/pricing → Hoo Pass → Stripe checkout"
+echo "  [x] 09:05: (2026-07 以降 再現不可) https://dial.mued.jp/pricing → Hoo Pass → Stripe checkout"
 echo "       Stripe test card: 4242 4242 4242 4242 / exp 12/30 / CVC 123"
 echo "  [ ] 09:08: [H-221] iPhone Safari で /pricing → /readiness → ファイルアップロードまでの画面遷移確認"
 echo "  [ ] 09:09: [H-221] iPhone Safari でダウンロードボタン → WAVファイル保存確認"
@@ -161,7 +167,7 @@ echo "  [ ] 09:10: Vercel Blob waitlist entry確認"
 echo "  [ ] 09:12: DB確認: SELECT * FROM dial_subscriptions ORDER BY created_at DESC LIMIT 1;"
 echo "  [ ] 09:15: DB確認: SELECT * FROM dial_subscription_events ORDER BY occurred_at DESC LIMIT 1;"
 echo "  [ ] 09:17: [H-423] $SMOKE_EMAIL でClerk認証 → dial.mued.jp/dashboard アクセス"
-echo "  [ ] 09:18: [H-423] ダッシュボードに「Hoo Pass 契約中」ステータスが表示されるか確認"
+echo "  [x] 09:18: (2026-07 以降 再現不可) [H-423] ダッシュボードに「Hoo Pass 契約中」ステータスが表示されるか確認"
 echo "  [ ] 09:19: [H-423] mix処理セッション開始 → ファイルアップロード → Preview生成まで動作確認"
 echo "  [ ] 09:20: [H-488] Stripe Dashboard → Webhooks → checkout.session.completed 受信ログ確認 (test mode)"
 echo "  [ ] 09:21: [H-488] dial.mued.jp/session → クレジット残高「30クレジット」表示を確認"
