@@ -23,28 +23,46 @@ import path from 'node:path';
  * ones included. Dropping AAX from a sentence is not a wording choice — Pro Tools is the DAW the
  * rule exists for.
  */
-const SOURCE = readFileSync(
-  path.resolve(__dirname, '../../lib/services/email.service.ts'),
-  'utf8',
-);
+/**
+ * ## Scope: user-facing copy only
+ *
+ * The emails and the site strings. ★Deliberately NOT the `lib/muedsat|muedlim/config.ts` comments:
+ * those legitimately describe past builds ("replaced the 2-format GR build, VST3/AU-only"), and a
+ * line rule there would flag an accurate sentence about history. A guard that fights true statements
+ * gets deleted by the next person, so it stops at the copy a buyer actually reads.
+ */
+const FILES = [
+  'lib/services/email.service.ts',
+  'messages/ja.json',
+  'messages/en.json',
+];
 
-// A line that enumerates plugin formats. `VST3` never appears for any other reason in this file.
-const FORMAT_LINES = SOURCE.split('\n')
-  .map((text, i) => ({ line: i + 1, text }))
-  .filter((l) => l.text.includes('VST3'));
+// A line that enumerates plugin formats. `VST3` appears for no other reason in these files.
+const FORMAT_LINES = FILES.flatMap((file) =>
+  readFileSync(path.resolve(__dirname, '../..', file), 'utf8')
+    .split('\n')
+    .map((text, i) => ({ file, line: i + 1, text }))
+    .filter((l) => l.text.includes('VST3')),
+);
 
 describe('free-plugin emails — format claims', () => {
   it('every place that names VST3 also names AAX (Pro Tools)', () => {
     const missing = FORMAT_LINES.filter((l) => !l.text.includes('AAX'));
     expect(
-      missing.map((l) => `email.service.ts:${l.line}`),
-      'a format list dropped AAX — Pro Tools users read that as "no build for me", and the AAX binary does ship',
+      missing.map((l) => `${l.file}:${l.line}`),
+      'a format list dropped AAX — Pro Tools users read that as "no build for me", and the AAX binary does ship (verified in the .pkg: vst3 / au / aax)',
     ).toEqual([]);
   });
 
   it('the enumerations exist at all (guards against this suite passing vacuously)', () => {
     // If the copy is refactored so `VST3` no longer appears literally, the assertion above becomes
     // trivially true. Fail loudly instead: whoever moved it should point this test at the new home.
-    expect(FORMAT_LINES.length).toBeGreaterThanOrEqual(4);
+    // Floor is per-file so deleting one surface's copy cannot be masked by another's.
+    for (const file of FILES) {
+      expect(
+        FORMAT_LINES.filter((l) => l.file === file).length,
+        `${file}: no format enumeration found — if the copy moved, move this test with it`,
+      ).toBeGreaterThanOrEqual(4);
+    }
   });
 });
