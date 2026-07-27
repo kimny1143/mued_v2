@@ -89,6 +89,44 @@ export function isLicenseIssuingConfigured(): boolean {
 }
 
 /**
+ * The raw Ed25519 public key (32 bytes, hex) belonging to whatever private key is configured, or
+ * null when none is. Safe to expose: a public key is public by definition, and this derives it —
+ * ★no part of the secret is returned or logged.
+ *
+ * ## Why derive it instead of returning a boolean
+ *
+ * `isLicenseIssuingConfigured()` answers "a key loaded". It cannot tell K1 from K2 from some other
+ * key entirely — and a keyfile signed by the wrong key fails in the buyer's plugin, not here.
+ * The derived public key IS the identity of the signer, so a deployment can be checked against the
+ * value burned into the verifier (`plugin/MUEDsp/dsp/LicenseVerifier.h`) with a string compare.
+ *
+ * Without this, the window between "kimny registers the key" and "the first real order" contains no
+ * check at all: the key is present but nothing has proved it is the RIGHT key. (dsp, 2026-07-27.)
+ */
+export function licenseSigningPublicKeyHex(): string | null {
+  const key = privateKey();
+  if (!key) return null;
+
+  // ★Refuse anything that is not Ed25519. createPrivateKey accepts RSA and EC just as happily, and
+  // the derivation below would then succeed and return a long hex string — measured: an RSA-2048 key
+  // yields 564 characters. dsp would compare that against the burned-in key, see a mismatch, and
+  // report "wrong key" when the true answer is "that is not a signing key at all". This field exists
+  // to remove the "which key?" doubt; returning a confident wrong answer would recreate it in a form
+  // that is harder to diagnose than null. (product課, 2026-07-27.)
+  if (key.asymmetricKeyType !== "ed25519") return null;
+
+  try {
+    // SPKI DER for Ed25519 is a fixed 12-byte prefix followed by the 32 raw key bytes. The length
+    // check is what makes `subarray(12)` safe to state as fact rather than assume.
+    const der = createPublicKey(key).export({ format: "der", type: "spki" });
+    if (der.length !== 44) return null;
+    return der.subarray(12).toString("hex");
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Issue a signed keyfile (format v2). Returns null when no signing key is configured (fail-CLOSED).
  *
  * ★NOT IDEMPOTENT BY ITSELF: `issued_at` differs per call, so issuing twice for one order yields two
