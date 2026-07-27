@@ -40,8 +40,11 @@ export function HooMasthead() {
   }, []);
 
   // ★Credits, not subscription. MUEDial has had no purchasable subscription since Hoo Pass was
-  // retired (2026-07, #650), so `hasSubscription` is false for every user — which meant this line
-  // returned "サブスク未加入" to everyone and the two credit branches below were unreachable.
+  // retired (2026-07, #650), so `hasSubscription` is false for everyone who does not already hold a
+  // pre-existing row (the stripe webhook and analyze/route.ts still read `hoo_pass` for those) —
+  // which meant this line returned "サブスク未加入" to all of them and the credit branches below
+  // were unreachable. Both branches end up at the same place after this change: a pre-existing
+  // subscriber saw the credit line before and still does.
   // Worse, the launch bonus IS being granted (lib/dial/bonus-campaign.ts, 400cr), so the people who
   // received it were the ones told they had nothing. The balance is what the user has; show that.
   const statusLine = () => {
