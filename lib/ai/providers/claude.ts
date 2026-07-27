@@ -35,9 +35,16 @@ export const defaultClaudeConfig: ClaudeProviderConfig = {
 };
 
 /**
- * Claude Sonnet 4 pricing (per 1M tokens)
- * Input: $3.00
- * Output: $15.00
+ * Claude pricing, USD per 1M tokens.
+ *
+ * verified 2026-07-27 by freee課 against Anthropic public pricing.
+ *
+ * These are plain literals: if Anthropic changes a price, nothing here fails — the numbers
+ * simply go on being wrong, and `hoo_conversations.total_cost_usd` is computed from them.
+ * Re-check on the line above when you touch this table, and say what you checked against.
+ *
+ * The production Hoo/dial path uses **haiku-4-5**, not the sonnet entry that the previous
+ * version of this comment described (it documented one model while the table held three).
  */
 const CLAUDE_PRICING = {
   'claude-sonnet-4-6': {
