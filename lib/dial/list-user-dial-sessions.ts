@@ -75,8 +75,19 @@ export function mapDialSessionsToUnified(rows: RawDialSession[], now: Date): Uni
   });
 }
 
-/** Query + map a signed-in user's dial sessions (newest first). */
-export async function listUserDialSessions(clerkUserId: string): Promise<UnifiedSession[]> {
+/**
+ * Query + map a signed-in user's dial sessions (newest first).
+ *
+ * `now` is injectable so a caller that already has a timestamp can pass it and get exactly the
+ * behaviour it had before delegating here. Without it the countdown would be computed AFTER this
+ * function's own DB round-trip — a gap of tens to hundreds of milliseconds, not microseconds — and
+ * a `daysRemaining` boundary could land on the other side of the `Math.ceil`. Vanishingly unlikely,
+ * but "vanishingly unlikely" is a worse thing to write in a refactor's PR description than "same".
+ */
+export async function listUserDialSessions(
+  clerkUserId: string,
+  now: Date = new Date(),
+): Promise<UnifiedSession[]> {
   const rows = await db.query.dialSessions.findMany({
     where: eq(dialSessions.userId, clerkUserId),
     orderBy: [desc(dialSessions.createdAt)],
@@ -94,5 +105,5 @@ export async function listUserDialSessions(clerkUserId: string): Promise<Unified
     },
   });
 
-  return mapDialSessionsToUnified(rows as RawDialSession[], new Date());
+  return mapDialSessionsToUnified(rows as RawDialSession[], now);
 }

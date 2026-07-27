@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { mapDialSessionsToUnified } from '@/lib/dial/list-user-dial-sessions';
+import { describe, it, expect, vi } from 'vitest';
+import { mapDialSessionsToUnified, listUserDialSessions } from '@/lib/dial/list-user-dial-sessions';
+
+// The wrapper is exercised against a stubbed query so the injected `now` can be observed. Only
+// findMany is stubbed; the mapping under test is the real one.
+const findMany = vi.fn();
+vi.mock('@/db', () => ({ db: { query: { dialSessions: { findMany: (...a: unknown[]) => findMany(...a) } } } }));
 
 // Fixed "now" so the daysRemaining (R2 download-expiry countdown) is deterministic.
 const NOW = new Date('2026-06-18T00:00:00.000Z');
@@ -89,5 +94,25 @@ describe('mapDialSessionsToUnified', () => {
     expect(out[1].createdAt).toBeNull();
     expect(out[1].hasDownload).toBe(false);
     expect(out[1].daysRemaining).toBeNull();
+  });
+});
+
+describe('listUserDialSessions — the caller may pin `now`', () => {
+  // Why this exists: the dashboard used to compute the expiry countdown from a `now` taken BEFORE
+  // its data fetch. Delegating to this helper moved that instant to AFTER the helper's own DB
+  // round-trip (tens to hundreds of ms later), which can move a `daysRemaining` across the
+  // Math.ceil boundary. Passing `now` through removes the difference — and this test fails if the
+  // parameter is ever dropped back to an internal `new Date()`, which is the only way to know the
+  // caller's instant is still the one being honoured.
+  it('computes daysRemaining from the caller-supplied instant, not from call time', async () => {
+    findMany.mockResolvedValueOnce([session()]); // expiry 2026-06-25T00:00:00Z
+
+    // 7 days + 1ms before the expiry: ceil() lands on 8. A `now` taken even 2ms later gives 7.
+    const pinned = new Date('2026-06-17T23:59:59.999Z');
+    const [u] = await listUserDialSessions('user_abc', pinned);
+
+    expect(u.daysRemaining).toBe(8);
+    expect(mapDialSessionsToUnified([session()], pinned)[0].daysRemaining).toBe(8);
+    expect(mapDialSessionsToUnified([session()], new Date('2026-06-18T00:00:00.001Z'))[0].daysRemaining).toBe(7);
   });
 });
