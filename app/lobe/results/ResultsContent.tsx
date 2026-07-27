@@ -120,14 +120,19 @@ export function ResultsContent({
   const [commentary, setCommentary] = useState<string | null>(null);
   const [commentaryLoading, setCommentaryLoading] = useState(false);
   const [commentaryError, setCommentaryError] = useState(false);
+  // 429 is separated from other failures: the retry button is useless until the window resets,
+  // so telling someone to "retry" immediately sends them into the same wall.
+  const [commentaryRateLimited, setCommentaryRateLimited] = useState(false);
 
   useEffect(() => {
     if (!hasProfile) return;
 
     setCommentaryLoading(true);
     setCommentaryError(false);
+    setCommentaryRateLimited(false);
     fetch('/api/lobe/commentary')
       .then(async (res) => {
+        if (res.status === 429) setCommentaryRateLimited(true);
         if (!res.ok) throw new Error(`Commentary API ${res.status}`);
         return res.json();
       })
@@ -187,6 +192,10 @@ export function ResultsContent({
                 <div className="h-4 bg-white/10 rounded animate-pulse w-4/6" />
                 <p className="text-xs text-white/30 mt-2">{t('generating')}</p>
               </div>
+            ) : commentaryRateLimited ? (
+              // No retry button here on purpose: the window has to pass first, and offering the
+              // button would just reproduce the failure the user has already seen.
+              <p className="text-xs text-white/30">{t('commentaryRateLimited')}</p>
             ) : commentaryError ? (
               <div className="flex items-center gap-3">
                 <p className="text-xs text-white/30">{t('commentaryFailed')}</p>
@@ -194,8 +203,10 @@ export function ResultsContent({
                   onClick={() => {
                     setCommentaryLoading(true);
                     setCommentaryError(false);
+                    setCommentaryRateLimited(false);
                     fetch('/api/lobe/commentary')
                       .then(async (res) => {
+                        if (res.status === 429) setCommentaryRateLimited(true);
                         if (!res.ok) throw new Error(`${res.status}`);
                         return res.json();
                       })

@@ -6,6 +6,7 @@
  */
 
 import { withAuthResolved } from '@/lib/middleware/with-auth';
+import { rateLimit } from '@/lib/middleware/rate-limit';
 import { apiSuccess, apiNotFound, apiServerError } from '@/lib/api-response';
 import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profiles.repository';
 import { generateCommentary } from '@/lib/muedlobe/scoring/commentaryGenerator';
@@ -13,6 +14,14 @@ import { getPreferredLocale } from '@/lib/i18n/config';
 import type { Scores, SignificantPattern } from '@/types/muedlobe';
 
 export const GET = withAuthResolved(async ({ clerkUserId, request }) => {
+  // Every call reaches Claude (generateCommentary -> sendClaudeChat) and nothing here is cached,
+  // so a signed-in user re-opening this tab spends money each time. `hoo/chat` has carried the
+  // same 'ai' limiter since it shipped; this route reached the same provider without one.
+  // The limiter only caps the rate — it does not decide who may use the feature, so it does not
+  // pre-empt whatever entitlement model gets chosen later.
+  const rateLimitResponse = await rateLimit(request, 'ai');
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     // Generate commentary (use clerkUserId for profile lookup)
     const profile = await cognitiveProfileRepository.findByUserId(clerkUserId);
