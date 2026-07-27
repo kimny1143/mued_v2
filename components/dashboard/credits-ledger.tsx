@@ -22,6 +22,8 @@ type BalanceData = {
   packs: Array<{
     creditsRemaining: number;
     expiresAt: string | null;
+    /** 'bonus' is the launch grant; 'small'/'large' were paid for. */
+    packSize: string;
   }>;
 };
 
@@ -50,20 +52,23 @@ export function CreditsLedger() {
   const purchasedCredits = (data?.packCredits ?? 0) - bonusCredits;
   const hasBonusActive = bonusCredits > 0;
 
-  // Nearest pack expiry
-  const nearestPackExpiry = data?.packs
-    .filter((p) => p.expiresAt !== null)
-    .map((p) => new Date(p.expiresAt!))
-    .sort((a, b) => a.getTime() - b.getTime())[0] ?? null;
-
-  const expiryStr = nearestPackExpiry
-    ? nearestPackExpiry.toLocaleDateString(
-        locale === 'ja' ? 'ja-JP' : 'en-CA',
-        locale === 'ja'
-          ? { year: 'numeric', month: '2-digit', day: '2-digit' }
-          : { year: 'numeric', month: '2-digit', day: '2-digit' }
-      )
-    : null;
+  // Expiry is per group, not one date for all packs. Splitting the number into "purchased" and
+  // "bonus" without splitting the date would put the earliest date of *either* group next to the
+  // bonus figure, and drop it entirely for someone holding only purchased packs — the same
+  // name-does-not-match-content fault this component is being fixed for.
+  const earliestExpiry = (isBonus: boolean) => {
+    const d = data?.packs
+      .filter((p) => (p.packSize === 'bonus') === isBonus && p.expiresAt !== null)
+      .map((p) => new Date(p.expiresAt!))
+      .sort((a, b) => a.getTime() - b.getTime())[0];
+    return d
+      ? d.toLocaleDateString(locale === 'ja' ? 'ja-JP' : 'en-CA', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+        })
+      : null;
+  };
+  const bonusExpiryStr = earliestExpiry(true);
+  const purchasedExpiryStr = earliestExpiry(false);
 
   return (
     <section className="mb-10">
@@ -103,6 +108,11 @@ export function CreditsLedger() {
               {purchasedCredits > 0 && (
                 <span>
                   {purchasedCredits.toLocaleString()} {hub.credits.pack}
+                  {purchasedExpiryStr && (
+                    <span className="ml-1 text-white/30">
+                      {hub.credits.exp.replace('{date}', purchasedExpiryStr)}
+                    </span>
+                  )}
                 </span>
               )}
               {bonusCredits > 0 && (purchasedCredits > 0 || data.subscriptionCredits > 0) && (
@@ -111,9 +121,9 @@ export function CreditsLedger() {
               {bonusCredits > 0 && (
                 <span className="text-amber-400/80">
                   {bonusCredits.toLocaleString()} {hub.credits.bonus}
-                  {expiryStr && (
+                  {bonusExpiryStr && (
                     <span className="ml-1 text-white/30">
-                      {hub.credits.exp.replace('{date}', expiryStr)}
+                      {hub.credits.exp.replace('{date}', bonusExpiryStr)}
                     </span>
                   )}
                 </span>
