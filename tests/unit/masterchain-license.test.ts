@@ -238,6 +238,17 @@ describe("licenseSigningPublicKeyHex — which key is deployed", () => {
     expect(licenseSigningPublicKeyHex()).toBeNull();
   });
 
+  it("★is null for a non-Ed25519 key — a confident wrong answer is worse than none", () => {
+    // createPrivateKey accepts RSA/EC too, and without a type check the derivation SUCCEEDS: an
+    // RSA-2048 key yields 564 hex characters. dsp would then compare that to the burned-in key and
+    // report "wrong key", when the true answer is "that is not a signing key at all".
+    const rsa = generateKeyPairSync("rsa", { modulusLength: 2048 });
+    process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = rsa.privateKey
+      .export({ format: "pem", type: "pkcs8" })
+      .toString();
+    expect(licenseSigningPublicKeyHex()).toBeNull();
+  });
+
   it("is null for a malformed key rather than throwing (health must stay serveable)", () => {
     process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\nnope\n-----END PRIVATE KEY-----";
     expect(licenseSigningPublicKeyHex()).toBeNull();
