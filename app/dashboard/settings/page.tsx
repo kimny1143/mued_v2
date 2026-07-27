@@ -353,7 +353,11 @@ export default function SettingsPage() {
                   <p className="text-sm text-slate-400">
                     {t.settings.muedlobe.empty}
                   </p>
-                  <Link href="/dashboard/muednote/lobe">
+                  {/* /dashboard/muednote/lobe was deleted in fa1b62ef (2026-04-01); this link kept
+                      pointing at it and 404'd for ~4 months. It only renders for users who have NOT
+                      done MUEDlobe yet — i.e. the CTA was broken for exactly its audience. The live
+                      page is /lobe (used by three other places in this repo). */}
+                  <Link href="/lobe">
                     <Button
                       variant="secondary"
                       size="sm"
