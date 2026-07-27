@@ -1331,7 +1331,7 @@
       "sessions": {
         "empty": "No sessions yet",
         "startFirst": "Start your first mix",
-        "comingSoon": "MUEDear — Coming Soon",
+        "appStore": "MUEDear — on the App Store",
         "muedlobeProfile": "MUEDlobe profile →",
         "durationSession": "{duration}min session",
         "practiceSession": "Practice session",

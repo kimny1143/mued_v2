@@ -1331,7 +1331,7 @@
       "sessions": {
         "empty": "セッションはまだありません",
         "startFirst": "最初のミックスを始める",
-        "comingSoon": "MUEDear — もうすぐ公開",
+        "appStore": "MUEDear — App Store で公開中",
         "muedlobeProfile": "MUEDlobeプロファイル →",
         "durationSession": "{duration}分のセッション",
         "practiceSession": "練習セッション",
