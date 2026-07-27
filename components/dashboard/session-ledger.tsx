@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { useLocale } from '@/lib/i18n/locale-context';
 import { trackMuednoteToDialCta } from '@/lib/analytics/gtag';
+import { MUEDEAR_APP_STORE_URL } from '@/lib/muedear/constants';
 
 export type SessionProduct = 'dial' | 'muednote' | 'muedear';
 
@@ -176,7 +177,9 @@ export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerP
           </div>
         ))}
 
-        {/* MUEDear coming soon — always at bottom */}
+        {/* MUEDear — shipped, so this row links out instead of promising a launch. The same deploy's
+            landing page already sends people to the App Store; the signed-in view said "coming soon"
+            until 2026-07-27, i.e. the people furthest along were the only ones told it wasn't out. */}
         <div>
           <div className="flex items-center gap-3 pt-4 pb-2">
             <span className={`text-[10px] font-medium uppercase tracking-widest ${PRODUCT_COLOR.muedear}`}>
@@ -184,17 +187,20 @@ export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerP
             </span>
             <div className="flex-1 border-t border-dotted border-white/[0.08]" />
           </div>
-          <div
-            className="grid border-b border-white/[0.04] items-center py-3"
+          <a
+            href={MUEDEAR_APP_STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group grid border-b border-white/[0.04] items-center py-3 hover:bg-white/[0.02] transition-colors"
             style={{ gridTemplateColumns: ROW_GRID, gap: '12px' }}
           >
             <span aria-hidden />
             <span className="mono text-xs text-white/20 pl-1">—</span>
             <span className="text-center text-xs text-white/20" aria-hidden>○</span>
-            <span className="mono text-xs text-white/25">{hub.sessions.comingSoon}</span>
+            <span className="mono text-xs text-white/50">{hub.sessions.appStore}</span>
             <span />
-            <span />
-          </div>
+            <ArrowRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors justify-self-end mr-1" />
+          </a>
         </div>
 
         {/* MUEDlobe profile link */}
