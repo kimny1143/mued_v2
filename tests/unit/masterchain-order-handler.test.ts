@@ -98,12 +98,14 @@ describe("handleFastspringOrderCompleted — issuance", () => {
     expect(row.orderId).toBe("ORDER-777");
     expect(row.email).toBe("buyer@example.com");
 
-    // ★The stored value must be a license OUR public key verifies — not an opaque string.
+    // ★The stored value must be a license OUR public key verifies — not an opaque string — and it
+    // must be format v2 (the shape dsp's verifier reads), not something this side invented.
     const payload = verifyLicense(row.licenseKey as string, PUB_PEM);
     expect(payload).not.toBeNull();
-    expect(payload!.email).toBe("buyer@example.com");
-    expect(payload!.orderId).toBe("ORDER-777");
-    expect(payload!.name).toBe("Ada Lovelace");
+    expect(payload!.owner).toBe("buyer@example.com");
+    expect(payload!.order).toBe("ORDER-777");
+    expect(payload!.scope).toBe("masterchain"); // without this, any valid key unlocks any product
+    expect(row.licenseKey as string).toContain("MUEDSP-LICENSE-v2");
 
     expect(sendMasterchainLicenseDelivery).toHaveBeenCalledTimes(1);
     const [to, data] = sendMasterchainLicenseDelivery.mock.calls[0];

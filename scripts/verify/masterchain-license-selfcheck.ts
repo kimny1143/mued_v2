@@ -43,10 +43,8 @@ if (!priv || !pub) {
   );
 } else {
   const keyfile = issueLicense({
-    name: "Self Check",
-    email: "selfcheck@mued.jp",
-    product: "muedsp_masterchain",
-    orderId: "SELFCHECK",
+    owner: "selfcheck@mued.jp",
+    order: "SELFCHECK",
     issuedAt: "2026-01-01T00:00:00.000Z",
   });
 
@@ -59,7 +57,7 @@ if (!priv || !pub) {
         "signed with the private key, but the public key does NOT verify it — the two are not a pair. " +
           "A license issued with this configuration would be rejected by the plugin.",
       );
-    } else if (payload.email !== "selfcheck@mued.jp") {
+    } else if (payload.owner !== "selfcheck@mued.jp") {
       fail("verified, but the payload did not round-trip — the keyfile format is inconsistent");
     } else {
       console.log("✓ masterchain license self-check PASSED — private key signs, public key verifies");

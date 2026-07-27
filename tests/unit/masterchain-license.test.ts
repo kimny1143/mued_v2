@@ -1,35 +1,29 @@
 /**
- * Unit — masterchain Ed25519 license keyfile (lib/masterchain/license.ts).
+ * Unit — masterchain Ed25519 license keyfile, format v2 (lib/masterchain/license.ts).
  *
- * The interesting assertions here are the ones about what must NOT happen:
- *  - no signing key → NO keyfile (fail-closed). An "unsigned license" would be forgeable by anyone.
- *  - a tampered payload must not verify, including the case where the payload is edited but the
- *    signature is left alone — that is what an attacker actually does.
- *  - the GOLDEN VECTOR: a fixed key + fixed payload must produce one exact byte string. This is the
- *    executable half of the format contract with dsp's C++ verifier; if either side drifts (base64
- *    vs base64url, signing raw JSON vs the encoded segment, field order) this test fails here rather
- *    than showing up as "the key I bought doesn't work" after launch.
+ * The format is frozen by product課 (`_product/docs/decision-masterchain-license-authenticity-20260725.md`)
+ * and read by dsp's dependency-free C++ verifier. ★These tests exist to keep this side pinned to THAT
+ * format: an earlier implementation invented its own container and asserted "dsp verifies the same
+ * bytes" without checking, which would have mailed buyers keyfiles their plugin cannot read.
+ *
+ * The assertions that matter are the negative ones — the spec's bypass list:
+ *   payload byte flipped / sig byte flipped / two `sig=` lines / content after `sig=` /
+ *   a different `scope` / the old 16-hex scaffold.
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { generateKeyPairSync, createPrivateKey, createPublicKey } from "node:crypto";
+import { generateKeyPairSync, sign } from "node:crypto";
 import {
   issueLicense,
   verifyLicense,
   isLicenseIssuingConfigured,
-  LICENSE_VERSION,
+  LICENSE_MAGIC,
 } from "@/lib/masterchain/license";
 
-// A throwaway pair generated once for this suite — NOT the production key.
 const { publicKey, privateKey } = generateKeyPairSync("ed25519");
 const PUB_PEM = publicKey.export({ type: "spki", format: "pem" }).toString();
 const PRIV_PEM = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
 
-const ORDER = {
-  name: "Test Buyer",
-  email: "buyer@example.com",
-  product: "muedsp_masterchain",
-  orderId: "FS-TEST-0001",
-};
+const ORDER = { owner: "buyer@example.com", order: "FS-TEST-0001" };
 
 const originalEnv = process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY;
 beforeEach(() => {
@@ -40,20 +34,35 @@ afterEach(() => {
   else process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = originalEnv;
 });
 
-describe("masterchain license — issue / verify", () => {
-  it("issues a keyfile that verifies and round-trips the payload", () => {
-    const keyfile = issueLicense(ORDER);
-    expect(keyfile).not.toBeNull();
-    expect(keyfile).toContain("-----BEGIN MUEDSP LICENSE-----");
-    expect(keyfile).toContain("-----END MUEDSP LICENSE-----");
+describe("masterchain license v2 — shape", () => {
+  it("emits the frozen line format with sig= last", () => {
+    const lines = issueLicense(ORDER)!.split("\n");
+    expect(lines[0]).toBe(LICENSE_MAGIC);
+    expect(lines[1]).toBe("product=MUEDsp");
+    expect(lines[2]).toBe("scope=masterchain");
+    expect(lines[3]).toBe("owner=buyer@example.com");
+    expect(lines[4]).toBe("order=FS-TEST-0001");
+    expect(lines[5]).toMatch(/^issued_at=\d{4}-\d{2}-\d{2}T/);
+    expect(lines[6]).toBe("expires_at="); // always emitted; empty = perpetual
+    expect(lines[7]).toMatch(/^sig=/);
+    expect(lines[8]).toBe(""); // single trailing newline
+  });
 
-    const payload = verifyLicense(keyfile!, PUB_PEM);
-    expect(payload).not.toBeNull();
-    expect(payload!.email).toBe("buyer@example.com");
-    expect(payload!.orderId).toBe("FS-TEST-0001");
-    expect(payload!.product).toBe("muedsp_masterchain");
-    expect(payload!.v).toBe(LICENSE_VERSION);
-    expect(Date.parse(payload!.issuedAt)).not.toBeNaN();
+  it("signature decodes to exactly 64 bytes of standard base64", () => {
+    const sig = issueLicense(ORDER)!.split("\n").find((l) => l.startsWith("sig="))!.slice(4);
+    expect(/^[A-Za-z0-9+/]+={0,2}$/.test(sig)).toBe(true);
+    expect(Buffer.from(sig, "base64").length).toBe(64);
+  });
+
+  it("round-trips every field", () => {
+    const p = verifyLicense(issueLicense(ORDER)!, PUB_PEM);
+    expect(p).not.toBeNull();
+    expect(p!.product).toBe("MUEDsp");
+    expect(p!.scope).toBe("masterchain");
+    expect(p!.owner).toBe("buyer@example.com");
+    expect(p!.order).toBe("FS-TEST-0001");
+    expect(p!.expiresAt).toBe("");
+    expect(Date.parse(p!.issuedAt)).not.toBeNaN();
   });
 
   it("★fails closed when no signing key is set — never returns an unsigned license", () => {
@@ -64,101 +73,133 @@ describe("masterchain license — issue / verify", () => {
 
   it("treats a malformed signing key as unconfigured rather than throwing", () => {
     process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = "not a pem";
-    expect(isLicenseIssuingConfigured()).toBe(false);
     expect(issueLicense(ORDER)).toBeNull();
   });
 
-  it("accepts an escaped-newline PEM (how a key pasted into an env var usually arrives)", () => {
+  it("accepts an escaped-newline PEM (how a key pasted into an env var arrives)", () => {
     process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = PRIV_PEM.replace(/\n/g, "\\n");
-    const keyfile = issueLicense(ORDER);
-    expect(keyfile).not.toBeNull();
-    expect(verifyLicense(keyfile!, PUB_PEM)).not.toBeNull();
+    expect(verifyLicense(issueLicense(ORDER)!, PUB_PEM)).not.toBeNull();
   });
 });
 
-describe("masterchain license — rejection", () => {
-  it("★rejects a payload edited after signing (signature left intact)", () => {
-    const keyfile = issueLicense(ORDER)!;
-    const body = keyfile.split("\n")[1];
-    const [encoded, signature] = body.split(".");
+describe("masterchain license v2 — ★the spec's bypass list", () => {
+  it("rejects a flipped payload byte", () => {
+    expect(verifyLicense(issueLicense(ORDER)!.replace("buyer@", "hacker"), PUB_PEM)).toBeNull();
+  });
 
-    const tampered = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8"));
-    tampered.email = "attacker@example.com";
-    const reEncoded = Buffer.from(JSON.stringify(tampered), "utf8").toString("base64url");
+  it("rejects a flipped signature byte", () => {
+    const kf = issueLicense(ORDER)!;
+    const sig = kf.split("\n").find((l) => l.startsWith("sig="))!.slice(4);
+    const flipped = (sig[0] === "A" ? "B" : "A") + sig.slice(1);
+    expect(verifyLicense(kf.replace(sig, flipped), PUB_PEM)).toBeNull();
+  });
 
-    const forged = `-----BEGIN MUEDSP LICENSE-----\n${reEncoded}.${signature}\n-----END MUEDSP LICENSE-----`;
-    expect(verifyLicense(forged, PUB_PEM)).toBeNull();
+  it("★rejects two sig= lines (issuer signs one, a verifier could read the other)", () => {
+    const kf = issueLicense(ORDER)!;
+    const sigLine = kf.split("\n").find((l) => l.startsWith("sig="))!;
+    expect(verifyLicense(`${kf}${sigLine}\n`, PUB_PEM)).toBeNull();
+  });
+
+  it("★rejects content appended after the sig= line (outside the signed region)", () => {
+    expect(verifyLicense(`${issueLicense(ORDER)!}scope=everything\n`, PUB_PEM)).toBeNull();
+  });
+
+  it("★a different scope stays verifiable but is NOT masterchain — validity ≠ entitlement", () => {
+    // Genuinely signed by us, for another product. Without checking scope, a MUEDlim key would
+    // unlock MUEDsp: the signature only says "we issued this", never "this unlocks that".
+    const p = verifyLicense(issueLicense({ ...ORDER, scope: "muedlim" })!, PUB_PEM);
+    expect(p).not.toBeNull();
+    expect(p!.scope).toBe("muedlim");
+    expect(p!.scope).not.toBe("masterchain");
+  });
+
+  it("rejects the old 16-hex scaffold format", () => {
+    expect(verifyLicense("MUEDSP-LICENSE-v1\nsig=0123456789abcdef\n", PUB_PEM)).toBeNull();
   });
 
   it("rejects a keyfile signed by a different key", () => {
-    const other = generateKeyPairSync("ed25519");
-    const otherPub = other.publicKey.export({ type: "spki", format: "pem" }).toString();
-    const keyfile = issueLicense(ORDER)!;
-    expect(verifyLicense(keyfile, otherPub)).toBeNull();
+    const otherPub = generateKeyPairSync("ed25519")
+      .publicKey.export({ type: "spki", format: "pem" })
+      .toString();
+    expect(verifyLicense(issueLicense(ORDER)!, otherPub)).toBeNull();
+  });
+
+  it("rejects a url-safe (base64url) signature", () => {
+    const kf = issueLicense(ORDER)!;
+    const sig = kf.split("\n").find((l) => l.startsWith("sig="))!.slice(4);
+    const urlSafe = Buffer.from(sig, "base64").toString("base64url");
+    if (urlSafe !== sig.replace(/=+$/, "")) {
+      expect(verifyLicense(kf.replace(sig, urlSafe), PUB_PEM)).toBeNull();
+    }
   });
 
   it("rejects structurally broken input instead of throwing", () => {
-    for (const bad of [
-      "",
-      "-----BEGIN MUEDSP LICENSE-----\n-----END MUEDSP LICENSE-----",
-      "-----BEGIN MUEDSP LICENSE-----\nnodot\n-----END MUEDSP LICENSE-----",
-      "-----BEGIN MUEDSP LICENSE-----\n.sig\n-----END MUEDSP LICENSE-----",
-      "-----BEGIN MUEDSP LICENSE-----\npayload.\n-----END MUEDSP LICENSE-----",
-      "-----BEGIN MUEDSP LICENSE-----\nnot!base64.also!bad\n-----END MUEDSP LICENSE-----",
-    ]) {
+    for (const bad of ["", "MUEDSP-LICENSE-v2\n", "sig=\n", "nonsense"]) {
       expect(verifyLicense(bad, PUB_PEM)).toBeNull();
     }
   });
-});
 
-describe("masterchain license — ★golden vector (format contract with dsp)", () => {
-  // Fixed key + fixed payload ⇒ one exact string. Ed25519 signatures are deterministic (RFC 8032),
-  // so this is stable across machines and runs — unlike ECDSA, which would need a fixed nonce.
-  // ★A THROWAWAY key, DERIVED FROM A SEED rather than stored as a PEM.
-  //
-  // The obvious way to pin a vector is to paste a PEM private-key block here. Don't: GitGuardian
-  // flags it (correctly — a scanner cannot tell a test key from a real one), and getting that alert
-  // dismissed teaches everyone to wave through the next one. So the repo holds 32 bytes of seed and
-  // rebuilds the key at run time. Same determinism, no key-shaped text in git history.
-  // ★Note this comment avoids spelling out the PEM header too: writing the pattern you are telling
-  // people not to commit makes the scanner match your own warning (same trap as putting a grep's
-  // search string inside the file that grep checks).
-  //
-  // Ed25519 PKCS#8 DER is a fixed 16-byte prefix followed by the raw seed.
-  // ★This key must NEVER be the production signer — a keyfile signed with it must not unlock a
-  // shipped plugin. It is published precisely so dsp can run the identical vector.
-  const GOLDEN_SEED = "4d5545447370206d61737465726368616e20676f6c64656e2076656374307221";
-  const PKCS8_ED25519_PREFIX = "302e020100300506032b657004220420";
-  const goldenPrivKey = createPrivateKey({
-    key: Buffer.concat([Buffer.from(PKCS8_ED25519_PREFIX, "hex"), Buffer.from(GOLDEN_SEED, "hex")]),
-    format: "der",
-    type: "pkcs8",
+  it("★rejects a duplicated known field — an injected expires_at must not grant perpetuity", () => {
+    // ★Privilege escalation, not a missed rejection (dsp measured it): `expires_at` comes AFTER
+    // `owner`, and `owner` is buyer-supplied. A newline in it injects an EMPTY `expires_at=` that
+    // lands BEFORE the real one, so first-match reads a lapsed key as perpetual. The signature is
+    // genuine — the injected line is inside the signed region — so only a structural rule catches it.
+    // Rejecting duplicates is order-independent; "take the last match" would break the day someone
+    // reorders the template.
+    const prefix =
+      `${LICENSE_MAGIC}\nproduct=MUEDsp\nscope=masterchain\n` +
+      `owner=buyer@example.com\nexpires_at=\n` + // injected, wins under first-match
+      `order=TEST-0001\nissued_at=2026-07-26T00:00:00Z\nexpires_at=2020-01-01T00:00:00Z\n`;
+    const sig = sign(null, Buffer.from(prefix, "utf8"), privateKey).toString("base64");
+    const forged = `${prefix}sig=${sig}\n`;
+
+    // The signature really is ours — that is the whole problem.
+    expect(sign(null, Buffer.from(prefix, "utf8"), privateKey).length).toBe(64);
+    expect(verifyLicense(forged, PUB_PEM)).toBeNull();
   });
-  const GOLDEN_PRIV = goldenPrivKey.export({ type: "pkcs8", format: "pem" }).toString();
-  const GOLDEN_PUB = createPublicKey(goldenPrivKey).export({ type: "spki", format: "pem" }).toString();
 
-  it("produces a byte-identical keyfile for a fixed key + fixed payload", () => {
-    process.env.MASTERCHAIN_LICENSE_PRIVATE_KEY = GOLDEN_PRIV;
-    const keyfile = issueLicense({
-      name: "Golden Vector",
-      email: "golden@example.com",
-      product: "muedsp_masterchain",
-      orderId: "FS-GOLDEN-0001",
-      issuedAt: "2026-08-05T00:00:00.000Z", // pinned — otherwise the signature moves every run
-    });
-    expect(keyfile).not.toBeNull();
-
-    // Round-trips under the matching public key…
-    const payload = verifyLicense(keyfile!, GOLDEN_PUB);
-    expect(payload).not.toBeNull();
-    expect(payload!.email).toBe("golden@example.com");
-
-    // …and is byte-stable. If this string changes, the format changed — coordinate with dsp before
-    // updating it, because their verifier is pinned to the same bytes.
-    expect(keyfile).toMatchInlineSnapshot(`
-      "-----BEGIN MUEDSP LICENSE-----
-      eyJuYW1lIjoiR29sZGVuIFZlY3RvciIsImVtYWlsIjoiZ29sZGVuQGV4YW1wbGUuY29tIiwicHJvZHVjdCI6Im11ZWRzcF9tYXN0ZXJjaGFpbiIsIm9yZGVySWQiOiJGUy1HT0xERU4tMDAwMSIsImlzc3VlZEF0IjoiMjAyNi0wOC0wNVQwMDowMDowMC4wMDBaIiwidiI6MX0.44UC7HIuuBav4mE1pErH7sq06bqV0kU8tuX7L3XRQkK2gC1mryUosHSrjV_7Fxh_uEUdcCN8aBzdH9KM6XRYCw
-      -----END MUEDSP LICENSE-----"
-    `);
+  it("★refuses to ISSUE when a value contains a newline (field injection)", () => {
+    // The one class a signature cannot catch: a `\n` in an input injects a line, and then WE sign it,
+    // so the result is perfectly authentic. Field lookup takes the FIRST match, so a line injected
+    // ahead of the real one wins. Inputs are external (buyer email, FastSpring order id), so this is
+    // closed at the issuer — there is nowhere downstream that could tell the difference.
+    expect(issueLicense({ ...ORDER, owner: "a@b.com\nscope=everything" })).toBeNull();
+    expect(issueLicense({ ...ORDER, order: "X\nissued_at=1999-01-01T00:00:00Z" })).toBeNull();
+    expect(issueLicense({ ...ORDER, scope: "masterchain\nproduct=MUEDsp" })).toBeNull();
+    expect(issueLicense({ ...ORDER, owner: "a@b.com\r\nx=1" })).toBeNull();
+    // …and the ordinary case still issues.
+    expect(issueLicense(ORDER)).not.toBeNull();
   });
 });
+
+describe("masterchain license v2 — tolerated variations", () => {
+  it("★accepts CRLF (keyfiles travel by email and get re-saved on Windows)", () => {
+    expect(verifyLicense(issueLicense(ORDER)!.replace(/\n/g, "\r\n"), PUB_PEM)).not.toBeNull();
+  });
+
+  it("★accepts a leading UTF-8 BOM (Notepad adds one when the buyer saves the .key)", () => {
+    // Without the BOM strip the magic line no longer matches and a legitimately purchased key is
+    // rejected — a failure that happens only to buyers, and so is the hardest kind to reproduce.
+    expect(verifyLicense("﻿" + issueLicense(ORDER)!, PUB_PEM)).not.toBeNull();
+  });
+
+  it("accepts BOM and CRLF together (the actual Notepad round-trip)", () => {
+    const kf = "﻿" + issueLicense(ORDER)!.replace(/\n/g, "\r\n");
+    expect(verifyLicense(kf, PUB_PEM)).not.toBeNull();
+  });
+
+  it("accepts a missing trailing newline", () => {
+    expect(verifyLicense(issueLicense(ORDER)!.replace(/\n$/, ""), PUB_PEM)).not.toBeNull();
+  });
+
+  it("★accepts whitespace inside the base64 value (mail clients wrap long lines)", () => {
+    const kf = issueLicense(ORDER)!;
+    const sig = kf.split("\n").find((l) => l.startsWith("sig="))!.slice(4);
+    expect(verifyLicense(kf.replace(sig, `${sig.slice(0, 40)} ${sig.slice(40)}`), PUB_PEM)).not.toBeNull();
+  });
+});
+
+// ★The golden vector lives in tests/unit/masterchain-license-vectors.test.ts, against the SHARED
+// set vendored from dsp (#232) — not here. A second, self-made vector for the same contract is
+// the same as a second specification: each side passes its own and the drift stays invisible.
+// This file covers behaviour; that one covers the bytes both implementations must agree on.

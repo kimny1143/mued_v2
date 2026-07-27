@@ -166,11 +166,11 @@ export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Pr
 
   let licenseKey = existing?.licenseKey ?? null;
   if (!licenseKey) {
+    // Format v2 (product課 frozen). `scope` defaults to "masterchain" — it is what stops a valid
+    // signature for one product from unlocking another.
     licenseKey = issueLicense({
-      name: parsed.name,
-      email: parsed.email,
-      product: parsed.productId,
-      orderId: parsed.orderId,
+      owner: parsed.email,
+      order: parsed.orderId,
     });
     if (!licenseKey) {
       // Fail-CLOSED: no signing key configured (or it is malformed). Throwing rolls the tx back and
