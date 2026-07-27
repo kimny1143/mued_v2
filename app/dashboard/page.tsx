@@ -136,8 +136,10 @@ export default async function DashboardPage() {
       .where(eq(measurementHistory.userId, user.id))
       .groupBy(measurementHistory.gameType),
 
-    // MUEDial sessions as UnifiedSession[] (Clerk ID) — shared helper, single source of truth
-    listUserDialSessions(user.id),
+    // MUEDial sessions as UnifiedSession[] (Clerk ID) — shared helper, single source of truth.
+    // `now` is passed explicitly so the download-expiry countdown is computed from the same instant
+    // this page has always used (page-level `now`, above), not from after the helper's own query.
+    listUserDialSessions(user.id, now),
   ]);
 
   // ========================================
