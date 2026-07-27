@@ -4,7 +4,10 @@ import { cognitiveProfileRepository } from '@/lib/repositories/cognitive-profile
 import { LobeListContent } from './LobeListContent';
 
 export default async function LobePage() {
-  // Auth + Premium check handled in layout.tsx
+  // Auth is handled in layout.tsx — sign-in only, no paid tier. MUEDlobe was gated behind a
+  // Premium subscription in d20704e6 and un-gated in d65d17ad (free-ify MUEDnote); this comment
+  // kept claiming the paid gate for the ~4 months after it was removed. Nothing on screen shows
+  // it, so only the comment was wrong — and it read as "members-only" to anyone opening the file.
   const { userId } = await auth();
   if (!userId) return null; // guarded by layout, satisfies TS
 
