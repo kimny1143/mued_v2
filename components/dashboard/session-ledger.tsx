@@ -56,14 +56,27 @@ function groupByProduct(sessions: UnifiedSession[], dialOnly: boolean): Array<{ 
   return order.filter(p => groups[p].length > 0).map(p => ({ product: p as SessionProduct, items: groups[p] }));
 }
 
-// grid: badge(40px) date(110px) dot(20px) name(1fr) status(120px) arrow(24px)
-const ROW_GRID = '40px 110px 20px 1fr 120px 24px';
+// The ledger is a six-column register on a real screen: badge(40) date(110) dot(20)
+// name(1fr) status(120) arrow(24). Those fixed tracks plus five 12px gaps come to 374px,
+// so on a phone (390px viewport => 342px content box inside `container ... px-6`) there is
+// nothing left for the name. Measured on origin/main at 390px before this change: the
+// session-name column resolved to 0px wide — every session title was invisible — and the
+// MUEDear row, whose text is not truncated, forced the row to 444px and made the whole
+// document scroll sideways with the arrow off-screen.
+//
+// So the six-column register is a >=sm layout. Below that the same cells reflow to two
+// lines — name on top, date/dot/status beneath — which is what a phone can actually show.
+// `minmax(0,1fr)` rather than `1fr` so the name track may shrink past its content and let
+// `truncate` do its job; plain `1fr` floors at min-content and pushes the row wider instead.
+const ROW_CLASS =
+  'grid items-center gap-x-3 gap-y-1 grid-cols-[32px_minmax(0,1fr)_16px] ' +
+  'sm:gap-y-0 sm:grid-cols-[40px_110px_20px_minmax(0,1fr)_120px_24px]';
 
-function SessionTypeBadge({ product }: { product: SessionProduct }) {
+function SessionTypeBadge({ product, className = '' }: { product: SessionProduct; className?: string }) {
   if (product === 'dial') {
     return (
       <div
-        className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+        className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 ${className}`}
         style={{ background: 'rgba(245,165,36,0.15)' }}
         aria-hidden
       >
@@ -80,7 +93,7 @@ function SessionTypeBadge({ product }: { product: SessionProduct }) {
   if (product === 'muednote') {
     return (
       <div
-        className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
+        className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 ${className}`}
         style={{ background: '#141417' }}
         aria-hidden
       >
@@ -93,7 +106,7 @@ function SessionTypeBadge({ product }: { product: SessionProduct }) {
       </div>
     );
   }
-  return <span aria-hidden />;
+  return <span aria-hidden className={className} />;
 }
 
 export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerProps) {
@@ -154,23 +167,29 @@ export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerP
                 <Link
                   key={session.id}
                   href={session.href}
-                  className="group grid border-b border-white/[0.04] hover:bg-white/[0.025] transition-colors items-center"
-                  style={{ gridTemplateColumns: ROW_GRID, gap: '12px' }}
+                  className={`group border-b border-white/[0.04] hover:bg-white/[0.025] transition-colors py-3 sm:py-0 ${ROW_CLASS}`}
                 >
-                  <SessionTypeBadge product={product} />
-                  <span className="mono text-xs text-white/40 py-3 pl-1 truncate">
-                    {formatDate(session.createdAt)}
-                  </span>
-                  <span className={`text-center text-xs ${dot.color}`} aria-hidden>
-                    {dot.symbol}
-                  </span>
-                  <span className="mono text-xs text-white/80 truncate">
+                  <SessionTypeBadge product={product} className="row-span-2 sm:row-span-1" />
+                  {/* The name leads on a phone — it is the only cell that says which session
+                      this is. On >=sm it drops back into the register's 4th column. */}
+                  <span className="mono text-xs text-white/80 truncate col-start-2 row-start-1 sm:col-start-4">
                     {displayName}
                   </span>
-                  <span className={`mono text-xs truncate ${session.status === 'completed' ? 'text-amber-400' : 'text-white/30'}`}>
-                    {statusLabel}
-                  </span>
-                  <ArrowRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors justify-self-end mr-1" />
+                  {/* date / dot / status share the second line on a phone. `sm:contents`
+                      dissolves this wrapper so the three become grid cells again in their
+                      original columns — one DOM, no duplicated markup. */}
+                  <div className="col-start-2 row-start-2 flex items-center gap-2 min-w-0 sm:contents">
+                    <span className="mono text-xs text-white/40 truncate sm:col-start-2 sm:row-start-1 sm:py-3 sm:pl-1">
+                      {formatDate(session.createdAt)}
+                    </span>
+                    <span className={`text-xs shrink-0 ${dot.color} sm:col-start-3 sm:row-start-1 sm:text-center`} aria-hidden>
+                      {dot.symbol}
+                    </span>
+                    <span className={`mono text-xs truncate sm:col-start-5 sm:row-start-1 ${session.status === 'completed' ? 'text-amber-400' : 'text-white/30'}`}>
+                      {statusLabel}
+                    </span>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors justify-self-end mr-1 col-start-3 row-start-1 row-span-2 sm:col-start-6 sm:row-span-1" />
                 </Link>
               );
             })}
@@ -191,15 +210,24 @@ export function SessionLedger({ sessions, showDialOnly = false }: SessionLedgerP
             href={MUEDEAR_APP_STORE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="group grid border-b border-white/[0.04] items-center py-3 hover:bg-white/[0.02] transition-colors"
-            style={{ gridTemplateColumns: ROW_GRID, gap: '12px' }}
+            className={`group border-b border-white/[0.04] py-3 hover:bg-white/[0.02] transition-colors ${ROW_CLASS}`}
           >
             <span aria-hidden />
-            <span className="mono text-xs text-white/20 pl-1">—</span>
-            <span className="text-center text-xs text-white/20" aria-hidden>○</span>
-            <span className="mono text-xs text-white/50">{hub.sessions.appStore}</span>
-            <span />
-            <ArrowRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors justify-self-end mr-1" />
+            {/* This label is the longest string in the ledger and, unlike the session rows,
+                it was never truncated — that is why this row alone forced the whole grid past
+                the viewport and wrapped to four lines on a phone. It is also the one row that
+                renders for every user, including one with no sessions at all. */}
+            <span className="mono text-xs text-white/50 truncate col-start-2 row-start-1 sm:col-start-4">
+              {hub.sessions.appStore}
+            </span>
+            {/* Placeholder date/status only — nothing to say, so this earns no second line on
+                a phone. `sm:contents` restores the two cells in the wide register. */}
+            <div className="hidden sm:contents">
+              <span className="mono text-xs text-white/20 sm:col-start-2 sm:row-start-1 sm:pl-1">—</span>
+              <span className="text-xs text-white/20 shrink-0 sm:col-start-3 sm:row-start-1 sm:text-center" aria-hidden>○</span>
+              <span className="sm:col-start-5 sm:row-start-1" />
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-white/20 group-hover:text-white/50 transition-colors justify-self-end mr-1 col-start-3 row-start-1 sm:col-start-6" />
           </a>
         </div>
 

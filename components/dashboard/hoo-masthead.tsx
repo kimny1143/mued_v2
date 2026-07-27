@@ -54,10 +54,14 @@ export function HooMasthead() {
   const hasBonusActive = balance?.hasSubscription && (balance?.packCredits ?? 0) > 0;
 
   return (
-    <div className="flex items-center gap-2">
+    // min-w-0 so this may shrink. Without it the nowrap status line below sets a floor on
+    // the whole header row, and the squeeze lands on the language switcher and sign-out
+    // button instead — measured at 390px they collapsed to one character per line and
+    // "ログアウト" was pushed off-screen entirely.
+    <div className="flex items-center gap-2 min-w-0">
       <Link
         href="/dial"
-        className="flex items-center gap-2 group"
+        className="flex items-center gap-2 group min-w-0"
         onClick={() => trackMuednoteToDialCta('masthead', 'hoo_masthead')}
       >
         <div className="relative w-8 h-8 flex-shrink-0">
@@ -69,8 +73,12 @@ export function HooMasthead() {
             sizes="32px"
           />
         </div>
+        {/* Hidden below sm rather than truncated: at 390px there is no slack left after the
+            wordmark, language switcher and sign-out, and a balance clipped to "H.." is noise
+            rather than information. The Hoo icon stays as the tap target, and the balance is
+            still stated in full by CreditsLedger further down the dashboard. */}
         <span
-          className={`text-xs font-mono tabular-nums whitespace-nowrap transition-colors ${
+          className={`hidden sm:inline text-xs font-mono tabular-nums truncate transition-colors ${
             hasBonusActive
               ? 'text-amber-400'
               : 'text-white/50 group-hover:text-white/80'
