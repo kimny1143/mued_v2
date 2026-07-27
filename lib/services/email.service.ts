@@ -1047,8 +1047,8 @@ Hoo MCP経由の自動送信
       <h2 style="color: #f5a524; margin-top: 0;">${isJa ? 'MUEDlim をありがとうございます' : 'Thanks for grabbing MUEDlim'}</h2>
 
       <p>${isJa
-        ? 'MUEDlim は無料のトゥルーピーク・リミッター。INPUT で音圧、CEILING で天井を決めるだけ。macOS（Universal）、VST3 と AU に対応しています。'
-        : 'MUEDlim is a free true-peak limiter — INPUT for loudness, CEILING for the ceiling. macOS (Universal), VST3 and AU.'}</p>
+        ? 'MUEDlim は無料のトゥルーピーク・リミッター。INPUT で音圧、CEILING で天井を決めるだけ。macOS（Universal）、VST3 · AU · AAX（Pro Tools）に対応しています。'
+        : 'MUEDlim is a free true-peak limiter — INPUT for loudness, CEILING for the ceiling. macOS (Universal), VST3 · AU · AAX (Pro Tools).'}</p>
 
       ${linkBlockHtml}
 

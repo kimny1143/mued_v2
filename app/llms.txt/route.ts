@@ -54,7 +54,7 @@ MUEDialは、ステムファイルをアップロードしてAIと話すだけ�
 
 - **運営**: glasswerks inc.（株式会社グラスワークス）
 - **URL**: https://dial.mued.jp
-- **料金プラン**: https://dial.mued.jp/pricing
+- **料金プラン**: https://mued.jp/ja/muedial
 - **ステム準備チェック**: https://dial.mued.jp/readiness
 - **ウェイトリスト登録**: https://dial.mued.jp/waitlist
 - **言語**: 日本語・英語対応

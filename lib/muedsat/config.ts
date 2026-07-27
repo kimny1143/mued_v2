@@ -25,7 +25,7 @@
 export const MUEDSAT_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Empty while the dsp-owned
-// package (VST3 + AU, macOS, signed/notarized) is not yet uploaded — the confirmation email then
+// package (VST3 · AU · AAX (Pro Tools), macOS, signed/notarized) is not yet uploaded — the email then
 // omits the link and says it's on the way. Set at unlock (kimny gate). NOT a secret (public CDN URL).
 // 2026-07-08 UNLOCK: mued.jp static hosting (public/downloads/, #598・sha256 c2f931f… conductor-verified).
 // 2026-07-09: replaced with the new signed/notarized UI build (DRIVE 2-layer glow + BYPASS lever;
