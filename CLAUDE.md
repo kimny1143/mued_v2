@@ -652,3 +652,167 @@ Reference: `docs/dev-flow-gate-rollout-20260520.md`
 
 <!-- COMMON-BLOCK-END: 19-character-gate -->
 
+<!-- COMMON-BLOCK-START: 20-ui-mock-fidelity -->
+<!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/20-ui-mock-fidelity.md -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
+
+## UI モック忠実性 DoD（新規 UI 面・re-skin・視覚再設計のみ）
+
+承認済みモックが存在する/すべき UI 作業（新規面・re-skin・視覚的再設計）は、以下を DoD とする。
+**既存実装の微修正（コピー1行・padding・バグ修正）は対象外**（既存 Tier/review 規律のまま）。
+
+- **mock pin**: 承認 mock を filename/hash 等の一意識別子で pin（「案A/B」等の曖昧ラベル禁止）。mock 無しの UI 実装依頼は禁止。
+- **数値移植**: 座標/寸法/色hex/フォント/余白を数値で移植（雰囲気移植禁止）。mock が自作 HTML/CSS なら実 source 値を 1:1 移植。
+- **diff 添付**: 完了報告に render×mock の並置 + overlay/pixel-diff を必須添付。
+  - **web = pixel-perfect 期待** / **native = 数値一致 + pixel-diff + 許容差明示**。
+  - 非再現 flag は真に engine 由来（AA/hinting）のみ。font weight/size/座標 は fixable = 100% 一致必須（立証責任は flag 側）。
+- **conductor vet**: 印象評でなくモック実見突合。「近い」却下・「見分けつかない」のみ通過 → kimny push。vet を経ない push 禁止。
+- **mock hygiene**: pinned mock は shippable/house 資産（house/OFL font 等）で作る。system/proprietary font 混入禁止。
+
+手順の詳細・技法・例外表 = `ui-mock-fidelity` skill を参照。
+忠実性 gate（見分けつかない）は kimny 美的 gate の代替でない（別レイヤー）。
+
+<!-- COMMON-BLOCK-END: 20-ui-mock-fidelity -->
+
+<!-- COMMON-BLOCK-START: 21-status-md-writing -->
+<!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/21-status-md-writing.md -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
+
+## status.md の書き方（前寄せ・肥大の退避）
+
+SessionStart hook は起動時に status.md の `next_action` / `blocked_by` / `current_task` を注入する。**ただし各フィールド 6,000 バイトで打ち切られる**（打ち切り時は残りバイト数が表示される）。
+
+### ★hook は「status.md を開く必要」を消さない
+
+**開き忘れても先頭 6KB は載る、という保険にすぎない。**
+
+ここを混同すると「**hook があるから大丈夫**」という新しい失敗を作る。**機構は規律を代替せず、規律の上に乗るだけ**。セッション開始時に自 status.md を自分で開く運用は、hook の有無にかかわらず続ける。
+
+### 前寄せ（最も効く1点）
+
+★**現在形を各フィールドの先頭に書く。** 6,000 バイトで切られるのは**末尾**なので、**先頭に置いたものだけが確実に届く**。
+
+- `next_action` の冒頭に「**次に何をするか**」を置く。経緯・背景・過去の判断は後ろ
+- `current_task` の冒頭に要約1〜2文を置く。叙述や完了済み arc の記録は後ろ
+- ★**「今日の訂正」「期日が今日のもの」「触ってはいけないもの」は必ず先頭**。末尾に書くと落ちる
+
+実例: ある課の `next_action` は 27,814 バイトあり **21,814 バイト（78%）が落ちた**。冒頭に RESUME POINT を置いていたため助かったが、**末尾に書いていれば消えていた**。
+
+### `blocked_by` も注入される
+
+★**standby 表現を放置しない。** `blocked_by: なし` のまま実態が変わっている、が起きやすい。`urgency` / `action_owner` / `deadline` を直したら **`blocked_by` も一緒に見る**。
+
+### 肥大したら退避する（cap を上げるのではなく）
+
+★**フィールドが打ち切られるのは、cap が小さいからではなく status.md が無制限に育っているから。** cap を上げるのは**肥大を許容して見えなくする方向**。
+
+**退避のやり方**（freee課が実演・133KB → 61KB）:
+
+1. 古い Recent events を `docs/status-archive/<開始日>_<終了日>.md` へ移す
+2. ★**全数保存を「件数」と「行 diff」の両方で verify してから**元を消す（移したつもりで落ちる事故を防ぐ）
+3. status.md 側に退避先を1行残す — 例: `> 2026-07-24 以前は docs/status-archive/2026-05-01_2026-07-18.md へ退避`
+4. ★**閾値運用を自分の status.md に書き込む** — 例: 「50KB を超えたら再退避」。書いておかないと次に誰も気づかない
+
+**目安**: status.md は **Read 1回で開ける size** に保つ。`current_task` / `next_action` が 6,000 バイトに近づいたら退避時期。
+
+### ★memory と status.md の線引き — memory に「現在の状態」を書かない
+
+**memory = 腐らない型 / status.md = 現在形。**
+
+★**memory に「未確認」「〜待ち」「pending」「要確認」を書かないこと。** これらは**書いた瞬間から腐り始める**。memory は次のセッションが読むまでの間 更新されないので、**その間に解決した事柄が「未解決」として次のインスタンスへ渡る**。
+
+実例（2026-07-25・SNS課）: handoff memory の末尾に「未確認の drift（要確認）」と書いた **15分後に当該 PR が merge** され、**修正済みのものを「未修正」として次のインスタンスに渡していた**。
+
+**書き分け**:
+- **memory に書く** — 型・教訓・判断基準・非自明な経緯（**時間が経っても真であり続けるもの**）
+- **status.md に書く** — 手番・ブロッカー・待ち・期日（**現在形。更新の責任が明確なもの**）
+
+### ★handoff memory は「ポインタ」として書く
+
+内容を複製すると必ず腐る。**ポインタは腐らない。** SessionStart hook は memory を **mtime 降順で機械的に1件**選ぶだけなので、**古いものが拾われても「status.md を読め」だけは正しく伝わる**形にしておく。
+
+★**`touch` で mtime だけ上げるのは逆効果。** hook は mtime で選ぶので、**中身を直さず mtime を上げると「古い中身」が確実に拾われる**。**更新するなら中身を直すこと。**
+
+> **なぜこれを禁止として書くか（2026-07-25 の near-miss）**: この禁止事項は、**hook が mtime 降順で選ぶ仕様を当日 自分で発見した本人が、同じ日に `touch` を実行しかけた**ことから来ている（一括置換で memory 全件の mtime が動いたのを戻すため）。**たまたま中身を書き換えた後だったので実害はゼロ**で、**順序が逆なら「古い中身を確実に拾わせる」操作**だった。**気づいたのは第三者が別の文脈で却下理由を説明したから**で、自力では気づいていない。
+> ★**知識を持っていることと、それを自分の手に適用することは別**。だから規律として書く。
+
+### ★残タスクは `next_action` でなく `blocked_by` に置く
+
+**欄によって生存率が違う。** `next_action` は次の更新で**書き換わって流れる**——**「あとでやる」を置くと、その "あと" に担い手も期限も無いまま消える**。
+
+実例（2026-07-12・mued）: 退役対応を「merge/deploy の後でやる」と後ろへずらし、**その "後" が来ないまま落ちた**。★**落とせないものは `blocked_by` に置く**（`blocked_by` は「解消されるまで残す」欄なので、消すには解消が要る）。
+
+★**退役・削除・停止は構造的に fail-silent。** 追加なら公開物ができるので下流も気づくが、**退役は「見えなくなる」だけ**なので、**下流は古いものを言い続けたまま誰も違和感を持たない**。**退役タスクほど `blocked_by` に置く。**
+
+（3日より古い handoff は hook 側が1行に畳むが、それは緩和であって、**古い内容が「引き継ぎ」として名指しされること自体は変わらない**。）
+
+### 休止・終了した workspace
+
+`activity: dormant`（または `archived` / `retired` / `closed` / `停止` 等）を宣言すれば、**24時間ルールの鮮度警告は出なくなる**。★**古いことと間違っていることは別**。役割が終わった workspace の status.md は、古いまま正しい。**動いているふりをさせない**こと。
+
+<!-- COMMON-BLOCK-END: 21-status-md-writing -->
+
+<!-- COMMON-BLOCK-START: 22-git-ops-after-guard -->
+<!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/22-git-ops-after-guard.md -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
+
+## git 運用: squash-merge の後始末 / ガードが止めた後の導線
+
+### `gh pr merge --squash` の後は `git pull` を使わない
+
+```bash
+git fetch origin && git reset --hard origin/main
+```
+
+★**理由**（理由を書かないとガードごと外される）: `--squash` は origin に**元のコミットとは別物の1コミット**を作る。その後 `git pull`（= `fetch` + `merge`）すると、ローカルの元コミットが残ったまま merge が発生し、**ローカル main が永久に `ahead` になる**。内容は同じなのに `ahead=44` のような状態が残り、「未 push の作業がある」ように見えて**本物の未 push を隠す**。
+
+**実測**（2026-07-25・全13 workspace）: `ahead` があったのは2課のみ（`ahead=44` / `ahead=43`・**両方とも内容差ゼロ**）。両課とも起点は同日で、**squash-merge を高頻度で回す課だから先に顕在化しただけ**。★**同じ操作をすれば どの課でも起きる。**
+
+`reset --hard` はローカルの未 commit 変更を捨てるため、**未 commit の作業が無いことを確認してから**実行する。
+
+### ガードが止めたら、次の一歩まで示す
+
+★**止めるだけで次の一歩を示さないガードは、放置か迂回を生む。**
+
+- **ガードのメッセージには、正しい進み方を具体的なコマンドで1行添える**。「main への直 push は禁止」だけでなく、`git checkout -b fix/<内容>` まで書く
+- ★**ガードは「置いてある」ではなく「配線されている」ことを確認する。** hook スクリプトが `.claude/hooks/` に存在していても、`settings.local.json` の `hooks` に登録されていなければ **1度も動かない**
+  - 実例: ある課では `block-main-push.sh` が着任日に scaffold されたまま未配線で、**その課の main 直 push を止められなかった**。**ガードが「有るのに効いていない」**
+  - 確認: `settings.local.json` に `hooks` キーがあるか / そこに当該スクリプトのパスがあるか。**ファイルの存在は配線の証拠にならない**
+
+### ★規則と例が矛盾したら、例が勝つ
+
+**人もモデルも、抽象より具体を真似する。** 規則を書いたら、**同じ文書の中の例・テンプレート・サンプル出力がその規則を破っていないか**を必ず確認する。
+
+実例（2026-07-25）: `peer-id-lookup` skill は「**peer ID はセッションごとに変わる。ハードコードしないこと**」と明記しながら、**その注意書きの直下の出力例で peer ID をハードコード**していた（`native課のpeer ID: mz3ubfhc`）。**規則は正しく、例が破っていた。** 読む側が真似するのは例の方。
+
+★**チェックの仕方**: 規則を追加・変更したら、**その規則の検査語で自分の文書を grep する**。規則文だけがヒットして例がヒットしないのが正常。
+
+### ★ガードや検査を足したら、それが実際に測っていることを確かめる
+
+**「検査を置いた」と「検査が効いている」は別。** 特に **0 件・緑・skip を返す検査は、壊れていても壊れて見えない**。
+
+実例（2026-07-25）: 配布スクリプトの `--dry-run` が **差分の有無にかかわらず「差分件数: 0」** を返していた（`rsync -avn` に `-i` が無く、grep が期待する itemize 形式に一致しなかった）。**「配る前に確かめる」ための機構が確かめておらず、規律の方が空回りしていた。**
+
+★**確かめ方**: **必ず差分が出る条件を1つ作って、検査がそれを検出することを見る**（検出できないなら、0 は「差分なし」の証拠にならない）。
+
+### 非決定的なガードに対して、通るまで再試行しない
+
+★**「運が良ければ通る」は「通ってよい」ではない。**
+
+harness の分類器などが非決定的に DENY する場合がある。**通るまで試すのは回避行為**。DENY は「**人間の明示 go を挟め**」というサインとして扱い、**上に上げる**。
+
+★**「以前は transient だった」という自分の過去の観測を、今回の再試行の正当化に使わない。** 過去の観測は、未来の自分の言い訳になりやすい。
+
+#### 実例: 「検査が本当に検出できるか」を先に確かめた4件（2026-07-25・同日・別々の課）
+
+| 課 | 何をしたか |
+|---|---|
+| dsp | 旧実装に戻すと**新テスト2件が落ちること**を実測してから直した |
+| template | `-i` を外した状態で**「差分があるのに 0」を再現**してから直した |
+| mued | **proxy でなく性質を測る**（callable を pin せず、brace 展開が実際にできることを assert） |
+| template | **「無いこと」でなく「在ること」を測る**（配布後、旧記述が 0 件なのは `rm` でも成立するため、新記述の実在を全配布先で確認） |
+
+★**4件とも別々の課が独立に同じ形へ着いた。** 原則だけなら抽象的だが、**同日に4件 並ぶなら、これは個人の慎重さでなく組織の型**である。
+
+<!-- COMMON-BLOCK-END: 22-git-ops-after-guard -->
+

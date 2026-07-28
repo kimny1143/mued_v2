@@ -44,6 +44,11 @@ on:
         required: false
         default: true
         type: boolean
+      hoo_usage_snapshot:
+        description: 'Hoo AI chat の使用量スナップショットを撮る (scripts/sql/hoo-usage-snapshot.sql・読み取りのみ)'
+        required: false
+        default: false
+        type: boolean
 
 # 既定は read。publish step のために contents: write を明示的に与える。
 permissions:
@@ -57,6 +62,15 @@ concurrency:
 jobs:
   collect-and-publish:
     name: Collect plugin funnel metrics and publish
+    # スナップショットだけを撮りに来た dispatch では collector を走らせない (Resend GET と DB を
+    # 無駄に叩かないため)。
+    #
+    # ★cron gotcha を踏まないよう、この条件は schedule 文字列を一切参照しない (冒頭コメント参照)。
+    # 参照するのは event 名と input だけ:
+    #   schedule                     → 第1項が true  → 走る
+    #   dispatch (hoo_usage=false)   → 第2項が true  → 走る
+    #   dispatch (hoo_usage=true)    → 両項 false    → skip (スナップショットのみ)
+    if: github.event_name != 'workflow_dispatch' || !inputs.hoo_usage_snapshot
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -157,3 +171,68 @@ jobs:
         run: |
           echo "::error::plugin funnel collector failed — data/plugin-funnel-reports は更新されていません"
           echo "鮮度の正本は data branch の LAST_PUBLISH.json です。最終 publish がこの run より古ければ、この失敗が原因です。"
+
+  # Hoo AI chat の使用量スナップショット (Chief の entitlement brief 用)。
+  #
+  # 既存 workflow に job を足す形にしたのは、★secret の参照先を増やさないため。新規 workflow を
+  # 作ると DATABASE_URL_READONLY を読む場所が 2 つになる。
+  #
+  # 手動 dispatch でのみ走る (既定 false)。collector の schedule には乗せない: これは「毎日の指標」
+  # ではなく「問いが立った時に撮る 1 枚」で、日次で回すとログが増えるだけで誰も読まない。
+  # 1k 到達時の再較正でも同じ job を再実行する (使い捨てにしない = そもそも workflow にした理由)。
+  #
+  # SQL は scripts/sql/hoo-usage-snapshot.sql に固定でコミットしてある。★workflow_dispatch の
+  # 入力で SQL を渡せる形にはしない — それは本番へ任意クエリを投げる口になる。
+  hoo-usage-snapshot:
+    name: Hoo usage snapshot (read-only)
+    if: github.event_name == 'workflow_dispatch' && inputs.hoo_usage_snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # collector と違い publish しないので書き込み権限を持たせない。
+    permissions:
+      contents: read
+
+    steps:
+      # ★"main" ではなく、起動した ref を checkout する (`ref` 未指定の既定)。実際この job の
+      # 初回検証は PR ブランチから dispatch して回した。
+      # → したがって「SQL は必ず main の版が走る」とは言えない。言えるのは
+      #   ★**SQL が workflow_dispatch の入力からは渡せない** ことまで (固定ファイルを読む)。
+      #   ブランチを push できる人は SQL を変えられるが、その人は merge もできるので脅威は増えない。
+      - name: Checkout the triggering ref
+        uses: actions/checkout@v4
+
+      - name: Run snapshot
+        env:
+          # collector と同じ read-only ロール。SELECT しか通らないので、SQL を間違えても
+          # 本番を壊せない (これが「当方の資格情報で 1 回叩く」より安全な理由)。
+          PGURL: ${{ secrets.DATABASE_URL_READONLY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${PGURL:-}" ]; then
+            echo "::error::DATABASE_URL_READONLY is empty — 資格情報が無い状態で 0 件を結果として出さない"
+            exit 1
+          fi
+
+          # ★空振り検出を先に置く: [0] の control が 0 行なら「使われていない」ではなく
+          # 「読めていない」。0 を結果として出さずにここで落とす。
+          rows="$(psql "$PGURL" -tAc 'SELECT count(*) FROM public.hoo_conversations;')"
+          echo "control: hoo_conversations rows = ${rows}"
+          if [ "${rows}" = "0" ]; then
+            echo "::error::control returned 0 rows — 「使われていない」と「読めていない」を区別できないため中断する。GRANT と接続先を確認すること。"
+            exit 1
+          fi
+
+          echo "--- snapshot (aggregate only; no identifiers are selected) ---"
+          # ★ON_ERROR_STOP=1 は必須。既定の psql は文がエラーでも続行して exit 0 を返すので、
+          # 付けないと「エラーを出力しながら job は緑」になる (= 本日 何度も踏んだ形)。
+          psql "$PGURL" -v ON_ERROR_STOP=1 -f scripts/sql/hoo-usage-snapshot.sql
+
+      - name: Interpretation guard
+        if: always()
+        run: |
+          echo "この出力から言えるのは POST /api/hoo/chat のぶんだけ。"
+          echo "dial/chat・hoo/poc/chat・lobe/commentary・タイトル生成は ここに記録されないため、"
+          echo "cost_usd は hoo/chat の下限値であって Anthropic 総額ではない。"
+          echo "max(started_at) が古い/無い場合の読みは 4 つある (未使用 / 書き込み破損 / 呼び手アプリ未更新 / 本番が別アカウント)。"
+          echo "退役の判断材料としては、これ単独では足りない。"

@@ -42,7 +42,12 @@ export const openai = new Proxy({} as OpenAI, {
   },
 });
 
-// Model pricing (per 1M tokens) - as of 2025
+// Model pricing, USD per 1M tokens.
+//
+// last verified: NOT VERIFIED — "as of 2025" was the only provenance this table carried, and
+// nobody has been named as having checked it against OpenAI's published prices. Treat any cost
+// derived from it as unverified until someone re-checks and records who/when/against-what here
+// (the Anthropic table in lib/ai/providers/claude.ts was verified 2026-07-27 by freee課).
 export const MODEL_PRICING = {
   // GPT-5 series (2025-08)
   'gpt-5': { input: 1.25, output: 10.0 },
