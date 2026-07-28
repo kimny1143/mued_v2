@@ -62,6 +62,15 @@ concurrency:
 jobs:
   collect-and-publish:
     name: Collect plugin funnel metrics and publish
+    # スナップショットだけを撮りに来た dispatch では collector を走らせない (Resend GET と DB を
+    # 無駄に叩かないため)。
+    #
+    # ★cron gotcha を踏まないよう、この条件は schedule 文字列を一切参照しない (冒頭コメント参照)。
+    # 参照するのは event 名と input だけ:
+    #   schedule                     → 第1項が true  → 走る
+    #   dispatch (hoo_usage=false)   → 第2項が true  → 走る
+    #   dispatch (hoo_usage=true)    → 両項 false    → skip (スナップショットのみ)
+    if: github.event_name != 'workflow_dispatch' || !inputs.hoo_usage_snapshot
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
