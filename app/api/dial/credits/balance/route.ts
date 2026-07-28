@@ -62,11 +62,19 @@ export const GET = withAuth(async ({ userId }) => {
       (sum, p) => sum + p.creditsRemaining, 0
     );
 
+    // Only 'bonus' packs are the launch bonus; 'small'/'large' are bought with money
+    // (lib/dial/bonus-campaign.ts is the sole writer of 'bonus'). `bonusCredits` used to be
+    // aliased to packCredits, which made every purchased pack read as a bonus — the dashboard
+    // then told people who had simply bought credits that a "Launch bonus" was active.
+    const bonusCredits = packs.reduce(
+      (sum, p) => sum + (p.packSize === 'bonus' ? p.creditsRemaining : 0), 0
+    );
+
     return apiSuccess({
       totalCredits: subscriptionCredits + packCredits,
       subscriptionCredits,
       packCredits,
-      bonusCredits: packCredits,
+      bonusCredits,
       subscription: subscription ? {
         tier: subscription.tier,
         status: subscription.status,

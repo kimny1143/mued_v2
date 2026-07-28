@@ -10,6 +10,8 @@ type BalanceSummary = {
   totalCredits: number;
   subscriptionCredits: number;
   packCredits: number;
+  /** Launch-bonus packs only. `packCredits` also includes packs the user paid for. */
+  bonusCredits: number;
   hasSubscription: boolean;
 };
 
@@ -28,6 +30,7 @@ export function HooMasthead() {
               totalCredits: res.data.totalCredits,
               subscriptionCredits: res.data.subscriptionCredits,
               packCredits: res.data.packCredits,
+              bonusCredits: res.data.bonusCredits ?? 0,
               hasSubscription: !!res.data.subscription,
             });
           }
@@ -47,20 +50,23 @@ export function HooMasthead() {
   // subscriber saw the credit line before and still does.
   // Worse, the launch bonus IS being granted (lib/dial/bonus-campaign.ts, 400cr), so the people who
   // received it were the ones told they had nothing. The balance is what the user has; show that.
+  // The "(N bonus)" variant names the launch bonus specifically, so it counts bonus packs only.
+  // Keying it on `packCredits` (as #780 did) also counted packs the user had paid for, i.e. it
+  // announced a bonus to people who had just bought credits.
   const statusLine = () => {
     if (!balance) return t.muednote.dashboardHub.hoo.statusLoading;
     const total = balance.totalCredits.toLocaleString();
-    if (balance.packCredits > 0) {
+    if (balance.bonusCredits > 0) {
       return t.muednote.dashboardHub.hoo.statusBonus
         .replace('{total}', total)
-        .replace('{bonus}', balance.packCredits.toLocaleString());
+        .replace('{bonus}', balance.bonusCredits.toLocaleString());
     }
     // 0cr shows as "Hoo: 0cr" rather than being hidden: it is the true balance, it reads the same as
     // any other balance, and hiding it would leave the masthead silently different for some users.
     return t.muednote.dashboardHub.hoo.statusCredits.replace('{total}', total);
   };
 
-  const hasBonusActive = (balance?.packCredits ?? 0) > 0;
+  const hasBonusActive = (balance?.bonusCredits ?? 0) > 0;
 
   return (
     // min-w-0 so this may shrink. Without it the nowrap status line below sets a floor on
