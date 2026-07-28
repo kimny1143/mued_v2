@@ -132,6 +132,26 @@ const limiters = {
     });
   },
 
+  // MUEDlobe commentary, kept out of the shared "ai" bucket on purpose.
+  //
+  // Both this and /api/hoo/chat reach Claude, so putting them in one bucket looks tidy — but the
+  // buckets are per-user, so a user's own Hoo chat would consume the allowance and the *profile
+  // page* would answer "Hoo's analysis is busy right now". That message is false: nothing is busy,
+  // the person simply used a different feature. Telling someone the wrong cause is worse than the
+  // limit itself, and the two calls are not substitutes for each other.
+  //
+  // Same 10/min as "ai": the number is not the point here, the isolation is. This endpoint fires on
+  // page mount, so the ceiling has to clear ordinary navigation and only catch loops.
+  "lobe-commentary": () => {
+    const r = getRedis();
+    if (!r) return null;
+    return new Ratelimit({
+      redis: r,
+      limiter: Ratelimit.slidingWindow(10, "1 m"),
+      prefix: "ratelimit:lobe-commentary",
+    });
+  },
+
   // Plugin email gate, keyed by EMAIL (not IP): 5 welcome sends per email per hour. The IP-keyed
   // "research" bucket can't stop a retry-storm or a single-address abuser behind a rotating/shared IP
   // from burning the shared Resend send quota one welcome at a time (the 2026-07-16 launch-wave
