@@ -1339,6 +1339,7 @@
       },
       "credits": {
         "sub": "サブスク",
+        "pack": "パック",
         "bonus": "ボーナス",
         "exp": "期限 {date}",
         "bonusActive": "Launchボーナス有効",
