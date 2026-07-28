@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import Link from "next/link";
 import { locales, type Locale } from "@/lib/i18n/config";
+import { generateHreflangAlternates } from "@/components/seo/hreflang-links";
 import { LocaleSwitcher } from "@/components/ui/locale-switcher";
 import { ADVISORY_LIVE } from "@/lib/advisory/config";
 
@@ -20,6 +21,14 @@ export async function generateMetadata({ params }: PageProps) {
     description: locale === "ja"
       ? "MUEDサービスの特定商取引法に基づく表記"
       : "MUED Services — Specified Commercial Transactions Act Disclosure",
+    alternates: {
+      // Self-referencing canonical. Without it, /ja/tokushoho and /en/tokushoho sit in the sitemap
+      // as near-identical pages with no declared preference, and Search Console reports
+      // "Duplicate, Google chose different canonical than user" — literally: the user
+      // (this site) never chose one.
+      canonical: `https://mued.jp/${locale}/tokushoho`,
+      languages: generateHreflangAlternates("/tokushoho"),
+    },
   };
 }
 
