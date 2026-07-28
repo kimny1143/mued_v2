@@ -652,3 +652,12 @@ Reference: `docs/dev-flow-gate-rollout-20260520.md`
 
 <!-- COMMON-BLOCK-END: 19-character-gate -->
 
+<!-- COMMON-BLOCK-START: 20-ui-mock-fidelity -->
+<!-- COMMON-BLOCK-END: 20-ui-mock-fidelity -->
+
+<!-- COMMON-BLOCK-START: 21-status-md-writing -->
+<!-- COMMON-BLOCK-END: 21-status-md-writing -->
+
+<!-- COMMON-BLOCK-START: 22-git-ops-after-guard -->
+<!-- COMMON-BLOCK-END: 22-git-ops-after-guard -->
+
