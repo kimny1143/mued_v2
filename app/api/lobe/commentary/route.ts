@@ -19,7 +19,9 @@ export const GET = withAuthResolved(async ({ clerkUserId, request }) => {
   // same 'ai' limiter since it shipped; this route reached the same provider without one.
   // The limiter only caps the rate — it does not decide who may use the feature, so it does not
   // pre-empt whatever entitlement model gets chosen later.
-  const rateLimitResponse = await rateLimit(request, 'ai');
+  // Its own bucket, not the shared 'ai' one: sharing made a user's Hoo chat exhaust the allowance
+  // here, so this page reported "Hoo's analysis is busy" when nothing was busy. See rate-limit.ts.
+  const rateLimitResponse = await rateLimit(request, 'lobe-commentary');
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
