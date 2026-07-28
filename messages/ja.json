@@ -675,6 +675,7 @@
       "hooComment": "Hooの分析",
       "generating": "あなたの思考スタイルを分析中...",
       "commentaryFailed": "Hooの分析を生成できませんでした。",
+      "commentaryRateLimited": "Hooの分析が混み合っています。しばらくしてから再度お試しください。",
       "retryCommentary": "再試行",
       "backToLobe": "Lobeに戻る",
       "variables": {

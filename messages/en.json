@@ -675,6 +675,7 @@
       "hooComment": "Hoo's Analysis",
       "generating": "Analyzing your thinking style...",
       "commentaryFailed": "Could not generate Hoo's analysis.",
+      "commentaryRateLimited": "Hoo's analysis is busy right now. Please try again in a little while.",
       "retryCommentary": "Retry",
       "backToLobe": "Back to Lobe",
       "variables": {
