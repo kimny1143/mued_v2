@@ -193,7 +193,12 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout main
+      # ★"main" ではなく、起動した ref を checkout する (`ref` 未指定の既定)。実際この job の
+      # 初回検証は PR ブランチから dispatch して回した。
+      # → したがって「SQL は必ず main の版が走る」とは言えない。言えるのは
+      #   ★**SQL が workflow_dispatch の入力からは渡せない** ことまで (固定ファイルを読む)。
+      #   ブランチを push できる人は SQL を変えられるが、その人は merge もできるので脅威は増えない。
+      - name: Checkout the triggering ref
         uses: actions/checkout@v4
 
       - name: Run snapshot
