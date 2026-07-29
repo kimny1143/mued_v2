@@ -70,8 +70,12 @@ concurrency:
   #   pull_request              → ci-refs/pull/N/merge
   # So a manual dispatch shares a group with the daily run. That is fine and deliberate:
   # cancel-in-progress is false on main, so the dispatch queues behind a run in flight instead
-  # of killing it — which is what we want, since killing the daily run is exactly the case the
-  # notifier cannot report (a cancelled run that never reaches its notify job).
+  # of killing it.
+  # ★NOT because the notifier would miss a cancelled run — it would not. `always()` runs even
+  # then (docs: "Causes the step to always execute, and returns `true`, even when canceled"), and
+  # this repo treats cancelled as red, so an issue WOULD be filed. The reason is that such an
+  # issue says only "cancelled": it carries no information about whether main is actually healthy,
+  # while the day's real coverage has been thrown away.
   # PR runs stay in their own group and still supersede stale runs on the same PR.
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
@@ -186,6 +190,13 @@ jobs:
   notify-main-red:
     name: Notify main red
     needs: [validate, test, build]
+    # ★Known and accepted, not overlooked: GitHub warns "Avoid using `always` for any task that
+    # could suffer from a critical failure, for example: getting sources, otherwise the workflow
+    # may hang until it times out" — and this job is `always()` + actions/checkout, exactly that
+    # shape. Accepted because the alternative the docs suggest, `!cancelled()`, would suppress the
+    # case we deliberately report: a cancelled scheduled run is "not success" and must file an
+    # issue. Revisit if a run is ever observed hanging here.
+    #
     # `always()` so this still runs when the jobs it watches have failed. Not gated on PRs: a PR
     # failure is already visible on the PR, and filing issues for those would bury the signal.
     # `workflow_dispatch` IS included so the whole path can be exercised on demand — without it

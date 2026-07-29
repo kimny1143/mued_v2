@@ -10,7 +10,7 @@ urgency: mid
 action_owner: peer
 deadline: 2026-08-01T00:00:00+09:00
 expected_next_check_at: 2026-07-31T12:00:00+09:00
-last_update: 2026-07-29T17:20:00+09:00
+last_update: 2026-07-29T17:22:16+09:00
 evidence: **PR #781**（`fix/dashboard-mobile-overflow`・4 files・typecheck 0 / build 成功 / unit **1953 passed** / lint 新規エラー 0）。**スマホ実測**: 375/390/393/430 × ja/en の **8通りで横溢れ 0・溢れ要素 0**（before は同8通りで docScrollWidth 444〜453）。セッション名 0px → **255〜310px で可視**、MUEDear 行 4行 → **1行**、JA ヘッダー 109 → **69px**。**デスクトップ非回帰**: 640/768/1280/1536 × ja/en の **8通りで描画座標が完全一致**（grid template・行高・各セル x/w/h/y を before/after 機械照合）。★**最初 index 基準で比較して「96件の差分」と出たが、それは DOM 順の入替えによる配列添字のズレで座標は同一**——**比較キーが誤っていただけ**と気づき位置基準で取り直した。★**検証用 probe route と計測スクリプトはコミットに含めていない**（削除済・`git status` clean で確認）。★**CI にレイアウトを実測する gate は無い**＝**この回帰を止める自動テストは #781 に入っていない**（実装文字列を照合するだけの proxy テストは「幅に収まる」という本来の性質を測れないので足さなかった）。
 confidence: high
 lane: delivery
@@ -38,7 +38,7 @@ lane: delivery
 > ★**1イベントは 1,500 B 以内に収める。超える分析は `docs/` に出して status.md からは1行リンクにする。**
 > **そうしないと数日で閾値に戻る**（今回 60 件消しても 129 KB までしか下がらず、切り直した）。
 
-- 2026-07-29T17:20:00+09:00: **✅ #807 merged（conductor）＋ ★最終形の gate を明朝を待たず end-to-end 実証**。**`workflow_dispatch on main`（run 30434353074）で `Notify main red = success`・ログ `green: nothing open, nothing to do`・open issue 0件**＝**RED 検証時は gate を外していたので最終形は一度も発火していなかった**が、これで発火済。★**product 提案の dispatch 経路が、そのまま検証手段になった**。**(2) ★同型の4件目**（product 検出）: `concurrency` コメントが **経路を2つしか数えていない**（`the two`）が、**dispatch on main が加わって3経路**で、**dispatch は schedule と同一 group**。★**挙動は正しく、間違っているのはコメントのモデルだけ**——**同じファイル・同じ日に4回**。→ 3経路を明記して修正（本 PR）。★**product が『日付付きなら現状維持で可』の初回判断を誤りと確定**させた。**(3) 出所**: conductor 起案 → product レビュー3周 → 当方実装。★**conductor は再レビューを待たず merge したが、未レビュー差分の全文を読み『レビュアの要求そのもので、それ以外を含まない』を実測した上での判断**と開示あり。
+- 2026-07-29T17:22:16+09:00: **✅ #807 merged（conductor）＋ ★最終形の gate を明朝を待たず end-to-end 実証**。**`workflow_dispatch on main`（run 30434353074）で `Notify main red = success`・ログ `green: nothing open, nothing to do`・open issue 0件**＝**RED 検証時は gate を外していたので最終形は一度も発火していなかった**が、これで発火済。★**product 提案の dispatch 経路が、そのまま検証手段になった**。**(2) ★同型の4件目**（product 検出）: `concurrency` コメントが **経路を2つしか数えていない**（`the two`）が、**dispatch on main が加わって3経路**で、**dispatch は schedule と同一 group**。★**挙動は正しく、間違っているのはコメントのモデルだけ**——**同じファイル・同じ日に4回**。→ 3経路を明記して修正（本 PR）。★**product が『日付付きなら現状維持で可』の初回判断を誤りと確定**させた。**(3) 出所**: conductor 起案 → product レビュー3周 → 当方実装。★**当イベントの stamp を最初 手書きして +3.0分 先付けした**（秒 ＝手書きの signature・conductor 検出）→ Wed Jul 29 17:22:16 JST 2026 実測に差し替え。★**先付けは鮮度検査3本を同時に沈黙させる前提行**。
 
 - 2026-07-29T17:01:48+09:00: **🧭 #807 に product 指摘2件を反映（head `d76bfab9`）＋ ★本日3回 踏んだ型を記録**。**(1) 反映**: ★**`workflow_dispatch` は任意 ref を選べるのに issue の title/body は「main」固定**＝赤いフィーチャーブランチで押すと**誤報**→ `github.ref == 'refs/heads/main'` を追加／**期待値表を `if:` と一致させ4行に**。★**dispatch を足したのは product 提案だが、文言を main 固定で書いたのは当方**＝**「試せるようになる」利益だけ見て「試せる範囲が広がった」副作用を見ていない**。**(2) ★★型: コメントは隣のコードより後で腐る（本日3回）**——①cron コメントに検出 literal を書き `grep -c` が**自分に当たった**（主張を検査が反証）／②`job-level 条件は 0件` が **notify job を足した瞬間に偽**／③**期待値表が `if:` より古い**。★**「将来 読まれるのはファイルの方」を知識として持ちながら行動になっていない。** ★**コードを変えたら隣のコメントが今も真かを同じ commit で確かめる**。**(3) 出所の記録**（conductor 申し送り）: **本日の CI 一連は conductor 起案 → product レビュー2周 → 当方実装。★中間の書き手が増えるほど訂正は元の数だけ伝播しない**ので、写した表には出所を書く。
 
