@@ -186,12 +186,22 @@ jobs:
     # the only way to find out whether this works is to wait for main to break, which is the
     # situation it exists to cover.
     #
-    # ★Expectation INVERTS by event — do not remember this as "skipped is fine":
-    #     pull_request → skipped   (a `success` here means the gate is broken)
-    #     schedule     → success   (a `skipped` here means the notifier never ran, and in a repo
-    #                               where Actions failures notify nobody, nothing else would say so)
-    # A green scheduled run still runs this job and reports success after doing nothing.
-    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    # Restricted to main on purpose. `workflow_dispatch` can be aimed at ANY ref, and both the
+    # issue title and body say "main" unconditionally — so without this a dispatch from a red
+    # feature branch would file "CI: main is red" while main was fine. This job watches main;
+    # a feature branch being red is already visible on its PR.
+    #
+    # ★Expectation depends on BOTH event and ref — do not remember this as "skipped is fine":
+    #     pull_request                  → skipped   (a `success` means the gate is broken)
+    #     schedule (always on main)     → success   (a `skipped` means the notifier never ran, and
+    #                                                where Actions failures notify nobody, nothing
+    #                                                else would tell you)
+    #     workflow_dispatch on main     → success   (this is the on-demand end-to-end test)
+    #     workflow_dispatch on any else → skipped   (correct — not a fault)
+    # A green run still executes this job and reports success after doing nothing.
+    if: >-
+      always() && github.ref == 'refs/heads/main'
+      && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       # ★BOTH are required. A job-level `permissions:` block REPLACES the default token scopes
