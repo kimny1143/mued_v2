@@ -45,8 +45,13 @@ async function writeDbEvent(input: RecordDialEventInput): Promise<void> {
 }
 
 async function sendGA4Event(input: RecordDialEventInput): Promise<void> {
-  const measurementId = process.env.GA4_MEASUREMENT_ID;
-  const apiSecret = process.env.GA4_API_SECRET;
+  // ★Must match the names that actually exist in production. These read GA4_MEASUREMENT_ID /
+  // GA4_API_SECRET from 2026-04-17 until 2026-07-29 — neither name was ever set in production, so
+  // this returned here silently for 103 days and every MUEDial server-side event was lost.
+  // The client-side gtag kept firing the whole time, which is why GA4 still showed dial_* events:
+  // ★data being present in GA4 does NOT mean this path works. See tests/unit/analytics-env-names.test.ts.
+  const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+  const apiSecret = process.env.GA4_MP_API_SECRET;
   if (!measurementId || !apiSecret) return;
 
   const clientId = input.userId ?? input.guestToken ?? `session-${input.sessionId}`;

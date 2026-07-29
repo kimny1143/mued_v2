@@ -21,7 +21,12 @@ const OLD_ENV = { ...process.env };
 
 beforeEach(() => {
   vi.restoreAllMocks();
-  process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID = "G-TEST";
+  // ★These two lines are why the 81-day outage was invisible: this file sets whatever name the
+  // module reads, so the suite stayed green regardless of which name that was — including one
+  // that existed nowhere in production. Setting the variable under test is what made the test
+  // blind to it. Name correctness is checked separately in tests/unit/analytics-env-names.test.ts,
+  // which reads the module source instead of running it.
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID = "G-TEST";
   process.env.GA4_MP_API_SECRET = "secret";
 });
 
@@ -38,8 +43,8 @@ describe("trackServerPurchase — fail-open env guard", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it("skips when NEXT_PUBLIC_GA4_MEASUREMENT_ID is unset", async () => {
-    delete process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID;
+  it("skips when NEXT_PUBLIC_GA_MEASUREMENT_ID is unset", async () => {
+    delete process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
     await trackServerPurchase(base);
