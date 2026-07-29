@@ -372,30 +372,25 @@ Coverage reports are generated in:
 
 ### GitHub Actions
 
-The test suite runs automatically on:
-- Pull requests to `main`
-- Pushes to `main`
-- Daily scheduled runs
+The test suite runs automatically on **pull requests to `main`** — and on nothing else.
+
+- There is **no push trigger**: it was removed 2026-07-29 because every change reaches main
+  through a PR, so it only re-tested the same tree twice (88% of the org's Actions spend).
+  A push that bypasses the PR flow is therefore **not** tested — see the comment in
+  `.github/workflows/test.yml` for when to restore it.
+- There is **no scheduled run** for this workflow. (This guide previously claimed a daily
+  run; that has never existed.)
 
 ### CI Test Configuration
 
+Three jobs — `validate` → then `test` and `build` in parallel. E2E / a11y / performance are
+**not** run in CI because they need external services (DB etc.); run them locally.
+
 ```yaml
 # .github/workflows/test.yml
-- name: Run unit tests
-  run: npm run test:unit
-
-- name: Run integration tests
-  run: npm run test:integration
-  env:
-    DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
-
-- name: Run E2E tests
-  run: npm run test:e2e
-
-- name: Upload coverage
-  uses: codecov/codecov-action@v3
-  with:
-    files: ./coverage/lcov.info
+validate:   # npx tsc --noEmit · npm run lint · scripts/verify/audit-prod-deps.ts
+test:       # needs: validate — npm run test:unit · npm run test:components
+build:      # needs: validate — npm run build (mock env vars)
 ```
 
 ### Pre-commit Hooks
