@@ -189,6 +189,13 @@ jobs:
     if: always() && github.event_name != 'push'   # TEMP(RED-test): PR でも走らせる
     runs-on: ubuntu-latest
     permissions:
+      # ★BOTH are required. A job-level `permissions:` block REPLACES the default token scopes
+      # rather than adding to them, so listing only `issues: write` silently drops `contents:
+      # read` and actions/checkout fails with "Repository not found" — which is how the first
+      # version of this job failed (run 30431382682, 2026-07-29). That failure mode is nasty
+      # here specifically: this job only runs when main is already red, so a broken notifier
+      # would break exactly when it is needed, and its own failure reaches nobody either.
+      contents: read
       issues: write
     steps:
       - uses: actions/checkout@v4
