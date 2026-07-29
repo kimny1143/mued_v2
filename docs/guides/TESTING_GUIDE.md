@@ -372,30 +372,28 @@ Coverage reports are generated in:
 
 ### GitHub Actions
 
-The test suite runs automatically on:
-- Pull requests to `main`
-- Pushes to `main`
-- Daily scheduled runs
+The test suite runs on **pull requests to `main`**, plus a **daily run of `main` at 21:00 UTC
+(06:00 JST)**, plus a **manual button** (`workflow_dispatch`).
+
+- There is **no push trigger**. It was removed 2026-07-29: it re-ran on every merge (235 runs
+  in 2026-07 = 88% of the org's Actions spend), and the daily run covers the same thing. Only
+  16.2% of those merges tested a tree the PR run had not already seen — about 1 in 6 — so once
+  a day is enough. A push that bypasses the PR flow is **not** tested until the next daily run;
+  see the comment in `.github/workflows/test.yml` for when to restore the trigger.
+- The daily run is **new as of 2026-07-29**. Before that this guide claimed a daily run that
+  did **not** exist — so if you are reading an older copy, it was wrong then and right now for
+  a different reason.
 
 ### CI Test Configuration
 
+Three jobs — `validate` → then `test` and `build` in parallel. E2E / a11y / performance are
+**not** run in CI because they need external services (DB etc.); run them locally.
+
 ```yaml
 # .github/workflows/test.yml
-- name: Run unit tests
-  run: npm run test:unit
-
-- name: Run integration tests
-  run: npm run test:integration
-  env:
-    DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
-
-- name: Run E2E tests
-  run: npm run test:e2e
-
-- name: Upload coverage
-  uses: codecov/codecov-action@v3
-  with:
-    files: ./coverage/lcov.info
+validate:   # npx tsc --noEmit · npm run lint · scripts/verify/audit-prod-deps.ts
+test:       # needs: validate — npm run test:unit · npm run test:components
+build:      # needs: validate — npm run build (mock env vars)
 ```
 
 ### Pre-commit Hooks
