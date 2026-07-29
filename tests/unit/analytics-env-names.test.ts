@@ -27,11 +27,19 @@
  * GitGuardian read as a key/value pair and reported as a Generic High Entropy Secret — a genuine
  * check failure caused by prose, with no secret in the commit. Keep names out of `foo: NAME` shape.)
  *
- * ★What this does NOT do, stated plainly rather than implied: it cannot compare code against
- * production. Reading Vercel's environment needs credentials CI does not have. It catches "a new
- * analytics env name was introduced without justification" — which is how all three wrong names got
- * in — but a name can be in this list and still be absent from production. That check is a human
- * step; last performed by hand on 2026-07-29.
+ * ★What this does NOT do, stated plainly rather than implied:
+ *
+ * 1. It cannot compare code against production. Reading Vercel's environment needs credentials CI
+ *    does not have. It catches "a new analytics env name was introduced without justification" —
+ *    which is how all three wrong names got in — but a name can be in this list and still be absent
+ *    from production. That check is a human step; last performed by hand on 2026-07-29.
+ *
+ * 2. ★It walks the FILESYSTEM at process.cwd(), not the git tree — so the set of files it checks is
+ *    not the same in CI as on a developer's machine. CI sees only tracked files; a working tree can
+ *    hold untracked ones. Concretely: `apps/` is gitignored (.gitignore:51) and has 0 files in this
+ *    repo, so the `apps` exclusion below is a no-op in CI and only bites locally. The consequence
+ *    runs both ways — a green CI run says nothing about untracked analytics code on someone's disk,
+ *    and someone can fail locally on a file no reviewer can see. (product, 2026-07-29)
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -59,12 +67,17 @@ const EXCLUDED_DIRS = new Set([
   // Test files legitimately assign these names themselves — which is precisely what made
   // tests/unit/ga4-server.test.ts blind to an 81-day outage.
   "tests",
-  // apps/ holds separate applications with their own environments. Checked before excluding, not
-  // waved past: apps/muedear is an Expo app reading EXPO_PUBLIC_GA4_FIREBASE_APP_ID and
-  // EXPO_PUBLIC_GA4_API_SECRET from its own apps/muedear/.env.local, and both names ARE present in
-  // its own apps/muedear/.env.example. It measures via a Firebase App ID, not a web Measurement ID,
-  // and its environment is not this project's Vercel environment — so "does this name exist in
-  // production" is a different question there and would need a different answer to be meaningful.
+  // apps/ holds separate applications with their own environments.
+  // ★This entry is a no-op in CI: apps/ is gitignored (.gitignore:51) and has 0 files in the repo.
+  // It only takes effect in a local working tree that happens to contain one — do not delete it as
+  // dead just because `ls apps/` is empty for you.
+  // Checked before excluding, not waved past — but note the evidence below came from a local
+  // working tree and CANNOT be reproduced from this repo: apps/muedear is an Expo app reading
+  // EXPO_PUBLIC_GA4_FIREBASE_APP_ID and EXPO_PUBLIC_GA4_API_SECRET from its own .env.local, and
+  // both names were present in its own .env.example. It measures via a Firebase App ID, not a web
+  // Measurement ID, and its environment is not this project's Vercel environment — so "does this
+  // name exist in production" is a different question there. The tracked copy of that code lives in
+  // kimny1143/mued_nativeapps, which product課 owns; they are following up there separately.
   "apps",
 ]);
 
