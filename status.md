@@ -10,7 +10,7 @@ urgency: mid
 action_owner: peer
 deadline: 2026-08-01T00:00:00+09:00
 expected_next_check_at: 2026-07-31T12:00:00+09:00
-last_update: 2026-07-29T20:00:53+09:00
+last_update: 2026-07-29T20:46:56+09:00
 evidence: **PR #781**（`fix/dashboard-mobile-overflow`・4 files・typecheck 0 / build 成功 / unit **1953 passed** / lint 新規エラー 0）。**スマホ実測**: 375/390/393/430 × ja/en の **8通りで横溢れ 0・溢れ要素 0**（before は同8通りで docScrollWidth 444〜453）。セッション名 0px → **255〜310px で可視**、MUEDear 行 4行 → **1行**、JA ヘッダー 109 → **69px**。**デスクトップ非回帰**: 640/768/1280/1536 × ja/en の **8通りで描画座標が完全一致**（grid template・行高・各セル x/w/h/y を before/after 機械照合）。★**最初 index 基準で比較して「96件の差分」と出たが、それは DOM 順の入替えによる配列添字のズレで座標は同一**——**比較キーが誤っていただけ**と気づき位置基準で取り直した。★**検証用 probe route と計測スクリプトはコミットに含めていない**（削除済・`git status` clean で確認）。★**CI にレイアウトを実測する gate は無い**＝**この回帰を止める自動テストは #781 に入っていない**（実装文字列を照合するだけの proxy テストは「幅に収まる」という本来の性質を測れないので足さなかった）。
 confidence: high
 lane: delivery
@@ -37,6 +37,8 @@ lane: delivery
 > ★**本当の主因は件数でなく1件の長さ**（平均 2,388 B・最大 6,123 B）。
 > ★**1イベントは 1,500 B 以内に収める。超える分析は `docs/` に出して status.md からは1行リンクにする。**
 > **そうしないと数日で閾値に戻る**（今回 60 件消しても 129 KB までしか下がらず、切り直した）。
+
+- 2026-07-29T20:46:56+09:00: **📉 サーバ側 GA4 が2本とも無発火だったのを発見・修正 PR #815**（product レビュー済・**merge は conductor / 8/4 以降**）。**詳細は PR #815 と `docs/hoo/retirement-scope-20260729.md`**。★**status には落とし穴だけ**: **(1) ★本番の GA 系 env は2つのみ**——`dial-events.ts` は **103日**、`ga4-server.ts` は **81日** 無発火（**fail-open なのでエラーもログも出ない**）。★**3名が2概念に在り、突合するものが無かった**。**(2) ★『GA4 にデータが在る』は経路の証拠にならない**——`dial_playback_issue` 300件の出所は **client gtag**。当方は危うく「dial 計測は生きている」と逆に読むところだった。**(3) ★検査の母集団を、自分が直している欠陥と同じ形で狭めていた**（`lib/analytics/` だけ走査＝`app/layout.tsx` の綴りズレは緑）→ **コードから導出に変更**（product 指摘）。**(4) ★force-push を跨いで生き残るのは commit sha でなく tree hash**。当方は「内容は変わっていません」と書いたが、それは**畳む前後**の話で、**レビュー時点とは tree が違った**——**機械的に真だが指すものが違う**。**(5) ★シェルのバッククォートで書き込む文字列が消えたのが本日3度目**——**`command not found` が出ているのに出力の見た目が正しい**。
 
 - 2026-07-29T20:00:53+09:00: **🔻 Hoo/chat 退役の scope を実測（kimny GO）＋ ★別件で本番の計測が1本 死んでいるのを発見**。**scope の実測は `docs/hoo/retirement-scope-20260729.md` に durable 化**（peer message にしか無い状態を作らない）。★**status に残す要点3つ**: **(1) ★★GA4 サーバ送信が本番で無発火**——**コードは `NEXT_PUBLIC_GA4_MEASUREMENT_ID` を読むが、本番に在るのは `NEXT_PUBLIC_GA_MEASUREMENT_ID`（`4` が無い）**。`GA4_MP_API_SECRET` は在る。∴ **PR #664 の purchase 計測は merge 以来 一度も発火していない**（GA4 60日 purchase 0件・陽性対照 page_view 1681）。★**当課 memory は #664 を『prod LIVE』・残 risk を『secret 未 set』と記録していたが、secret は在り原因は別変数**。★**`NEXT_PUBLIC_*` は build 時埋め込み＝env 追加後に再 deploy が要る**。**(2) 退役 scope は原理（原価の置き場）で切った**——`hoo/memory` と `toggle` は**削れない**（`dashboard/settings` が live で叩く）／`memory/extract` は **MCP 経済圏内で存続**／★**`conversations/[id]` は GET で LLM を呼ぶ**（読み取り面が黙って課金）／`lobe/hoo` は **LLM 非到達で対象外**。**(3) ★本番 24h の `/api/hoo` 呼び出しは 0件**（陽性対照つき）。**7d は timeout＝取得できていないので 0 と読まない**。
 
