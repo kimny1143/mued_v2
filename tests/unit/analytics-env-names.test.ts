@@ -38,7 +38,35 @@ import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = process.cwd();
-const SEARCH_ROOTS = ["lib", "app"];
+
+/**
+ * ★An EXCLUSION list, deliberately not an inclusion list. An earlier draft searched ["lib","app"] —
+ * the places we happened to remember — which left root-level files out. `instrumentation.ts` is
+ * literally documented as "initialize monitoring and observability tools" and is the natural home
+ * for the next piece of server-side analytics; a wrong name written there would have passed.
+ * An inclusion list leaks whenever someone forgets a directory; an exclusion list only leaks when
+ * someone deliberately adds an entry, and each entry below has to justify itself. (product, 2026-07-29)
+ *
+ * `tests` is excluded because test files legitimately assign these names themselves — which is
+ * precisely what made tests/unit/ga4-server.test.ts blind to an 81-day outage.
+ */
+const EXCLUDED_DIRS = new Set([
+  "node_modules",
+  ".next",
+  ".git",
+  "coverage",
+  "dist",
+  // Test files legitimately assign these names themselves — which is precisely what made
+  // tests/unit/ga4-server.test.ts blind to an 81-day outage.
+  "tests",
+  // apps/ holds separate applications with their own environments. Checked before excluding, not
+  // waved past: apps/muedear is an Expo app reading EXPO_PUBLIC_GA4_FIREBASE_APP_ID and
+  // EXPO_PUBLIC_GA4_API_SECRET from its own apps/muedear/.env.local, and both names ARE present in
+  // its own apps/muedear/.env.example. It measures via a Firebase App ID, not a web Measurement ID,
+  // and its environment is not this project's Vercel environment — so "does this name exist in
+  // production" is a different question there and would need a different answer to be meaningful.
+  "apps",
+]);
 
 /** Names that identify the analytics destination. Deliberately excludes NEXT_PUBLIC_GAME_DEBUG. */
 const ANALYTICS_NAME =
@@ -59,8 +87,8 @@ const ALLOWED: Record<string, string> = {
 
 const walk = (dir: string): string[] =>
   readdirSync(dir).flatMap((entry) => {
+    if (EXCLUDED_DIRS.has(entry) || entry.startsWith(".")) return [];
     const full = join(dir, entry);
-    if (entry === "node_modules" || entry.startsWith(".")) return [];
     if (statSync(full).isDirectory()) return walk(full);
     return full.endsWith(".ts") || full.endsWith(".tsx") ? [full] : [];
   });
@@ -68,14 +96,16 @@ const walk = (dir: string): string[] =>
 const envNamesIn = (file: string): string[] =>
   [...readFileSync(file, "utf8").matchAll(/process\.env\.([A-Z0-9_]+)/g)].map((m) => m[1]);
 
-/** Files anywhere under lib/ or app/ that read at least one analytics-identifying name. */
-const analyticsFiles: string[] = SEARCH_ROOTS.flatMap((r) => walk(join(ROOT, r)))
+/** Every source file in the repo that reads at least one analytics-identifying name. */
+const allSourceFiles: string[] = walk(ROOT);
+const analyticsFiles: string[] = allSourceFiles
   .filter((f) => envNamesIn(f).some((n) => ANALYTICS_NAME.test(n)))
   .sort();
 
 describe("analytics environment variable names", () => {
   it("finds files to check (guards against the check silently covering nothing)", () => {
     // If this ever hits 0 the walk or the regex broke — it does NOT mean "no analytics env vars".
+    expect(allSourceFiles.length).toBeGreaterThan(100); // the walk reaches the whole repo, not one corner
     expect(analyticsFiles.length).toBeGreaterThan(0);
     expect(analyticsFiles.flatMap(envNamesIn).length).toBeGreaterThan(0);
   });
