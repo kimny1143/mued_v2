@@ -195,7 +195,12 @@ jobs:
     # may hang until it times out" — and this job is `always()` + actions/checkout, exactly that
     # shape. Accepted because the alternative the docs suggest, `!cancelled()`, would suppress the
     # case we deliberately report: a cancelled scheduled run is "not success" and must file an
-    # issue. Revisit if a run is ever observed hanging here.
+    # issue.
+    # ★So the hang is bounded here instead, by timeout-minutes below. An earlier version of this
+    # comment said "revisit if a run is ever observed hanging" — that does not work in this repo:
+    # the observing is done by whoever notices a stuck Actions run, and Actions failures reached
+    # nobody 13 times out of 13. The observation path is the very hole this job exists to cover,
+    # so it cannot also be the safety net for the job itself.
     #
     # `always()` so this still runs when the jobs it watches have failed. Not gated on PRs: a PR
     # failure is already visible on the PR, and filing issues for those would bury the signal.
@@ -220,6 +225,13 @@ jobs:
       always() && github.ref == 'refs/heads/main'
       && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    # Bounds the hang described above. Measured: this job took 9s on run 30434353074, so 5 minutes
+    # is ~33x headroom — it can only fire on a genuine stall, not on a slow day. Deliberately NOT
+    # added to validate/test/build: none of them use `always()`, so the documented hazard does not
+    # apply to them, and they legitimately run for several minutes.
+    # (No claim is made here about what the default timeout would otherwise be — that number is
+    # widely repeated but was not verified. What is verified is that there was no explicit bound.)
+    timeout-minutes: 5
     permissions:
       # ★BOTH are required. A job-level `permissions:` block REPLACES the default token scopes
       # rather than adding to them, so listing only `issues: write` silently drops `contents:
