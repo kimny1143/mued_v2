@@ -180,10 +180,18 @@ jobs:
   notify-main-red:
     name: Notify main red
     needs: [validate, test, build]
-    # `always()` so this still runs when the jobs it watches have failed. Gated to `schedule`
-    # only: PR failures are already visible on the PR itself, and turning those into issues
-    # would bury the signal this issue is meant to carry.
-    if: always() && github.event_name == 'schedule'
+    # `always()` so this still runs when the jobs it watches have failed. Not gated on PRs: a PR
+    # failure is already visible on the PR, and filing issues for those would bury the signal.
+    # `workflow_dispatch` IS included so the whole path can be exercised on demand — without it
+    # the only way to find out whether this works is to wait for main to break, which is the
+    # situation it exists to cover.
+    #
+    # ★Expectation INVERTS by event — do not remember this as "skipped is fine":
+    #     pull_request → skipped   (a `success` here means the gate is broken)
+    #     schedule     → success   (a `skipped` here means the notifier never ran, and in a repo
+    #                               where Actions failures notify nobody, nothing else would say so)
+    # A green scheduled run still runs this job and reports success after doing nothing.
+    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
       # ★BOTH are required. A job-level `permissions:` block REPLACES the default token scopes

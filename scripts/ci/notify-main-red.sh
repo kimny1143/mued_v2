@@ -33,8 +33,12 @@ failed=$(printf '%s' "$NEEDS_JSON" | jq -r '[.[].result] | if length == 0 then t
 summary=$(printf '%s' "$NEEDS_JSON" | jq -r 'to_entries | map("\(.key)=\(.value.result // "null")") | join(" · ")')
 [ -n "$summary" ] || summary="(no job results reported)"
 
-# Idempotent: creates the label the first time, updates it afterwards. NOT silenced — if this
-# fails for a permissions reason we want the step to go red rather than skip the notification.
+# Idempotent: creates the label the first time, updates it afterwards.
+# NOT silenced with `|| true`. Note the reason is NOT "so the step goes red" — a red step in this
+# repo notifies nobody, which is the whole premise of this script. It is that swallowing the error
+# here would let the run continue and finish *successfully* while no issue was ever filed: a
+# genuinely silent loss. Failing leaves a record on the run for anyone who does look, and stops
+# us reporting a notification that did not happen.
 gh label create "$LABEL" --color B60205 --description "Scheduled CI run on main is failing" --force >/dev/null
 
 existing=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')
