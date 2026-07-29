@@ -43,8 +43,9 @@ on:
   # plugin-funnel-collector.yml. ★The literal strings to search for are deliberately NOT written
   # here — writing them would make the sweep match this comment and report a false positive
   # (same reason plugin-funnel-collector.yml omits them).
-  # Verified 2026-07-29: this workflow declares no job-level conditions at all, so nothing here
-  # can skip that way today. Anchor the search to the start of a line to exclude prose like this.
+  # Verified 2026-07-29: the only job-level condition in this workflow is on `notify-main-red`
+  # below, and it gates on the event name, NOT on the schedule string — so changing this cron
+  # cannot silently disable anything here. Anchor the search to line starts to skip prose.
   schedule:
     - cron: '0 21 * * *'
 
@@ -117,6 +118,9 @@ jobs:
 
       - run: npm ci --prefer-offline --no-audit
 
+      - name: TEMP(RED-test) 故意に失敗させる
+        run: exit 1
+
       - name: Unit tests
         run: npm run test:unit
         env:
@@ -165,3 +169,32 @@ jobs:
           NEXT_PUBLIC_STRIPE_PRICE_PREMIUM: "price_mock_premium"
           RESEND_API_KEY: "re_mock_resend"
           NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+
+  # ============================================
+  # 4. Notify: convert a red scheduled run into a GitHub issue
+  # ============================================
+  # ★Why: main no longer gets a CI run per merge, so the daily run is the only thing standing
+  # behind it — and that only pays if a failure is NOTICED. Measured 2026-07-29 (conductor):
+  # 13 CI failures in 2026-07, and Actions-failure notifications delivered by any route: ZERO
+  # (0 emails in 60 days incl. spam, 0 `ci_activity` in the notification inbox). Issue/PR comment
+  # notifications, by contrast, were verified as arriving. So this converts the channel that does
+  # not work into the one that does. The hole predates the schedule: it was already 0/13 while
+  # `push: main` existed — the daily run did not create it, it just removed the excuse.
+  notify-main-red:
+    name: Notify main red
+    needs: [validate, test, build]
+    # `always()` so this still runs when the jobs it watches have failed. Gated to `schedule`
+    # only: PR failures are already visible on the PR itself, and turning those into issues
+    # would bury the signal this issue is meant to carry.
+    if: always() && github.event_name != 'push'   # TEMP(RED-test): PR でも走らせる
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Open / update / close the main-red issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: ./scripts/ci/notify-main-red.sh
