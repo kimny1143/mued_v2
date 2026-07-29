@@ -1,16 +1,16 @@
 ---
 peer: mued
 department: product
-activity: active
+activity: standby
 status: active
-current_task: **📊 Hoo 使用量の実測が出た（Chief entitlement brief）+ 露出面の修正 4本 レビュー待ち**。★**`hoo/chat` 実測 = 生涯 $0.317871 / 利用者 1人 / 最終利用 2026-03-31 = 119日前 = STALE**（閾値は**数字を見る前に固定**: live ≤30 / dormant 30-90 / stale >90）。★**「原価青天井」は現時点で実現していない**——freee の [ESTIMATE]「1万人で月 ¥140,000」は仮定した往復数の上に立つ。★**ただし退役の材料としては渡していない**（STALE の読みは4つあり (b)書込破損 (c)呼び手 iOS 未更新 を潰していない）。insight課 は `reports/hoo-entitlement-brief-usage-20260728.md` に反映して close。
-next_action: **(1) ★#786 は merge 可**（head `1cd32665`・**`GitGuardian = success` を名前で確認済**・total=5）→ conductor 執行待ち。**#792 は その後**（**#786 merge 後に main 取り込み → 同手順で scan 確認**）。**(2) ★翌 10:30 JST の scheduled run 確認**（#788 の残り・**基準 head = `b6bffc1d`**）。**(3) content課 の waitlist コピー適用**（**26 keys**・★**`dial.lp.*` 3+3 は3者の誰も数えていなかった**・★**JA/EN でキー集合が違う**・★**配列の中まで walk**＋陽性対照 `Hoo`>0）。**(4) fact ③ の残り**: ★**lobe 網羅は完了**（6本中 `commentary` 1本のみ・HTTP 経由もゼロ）／**インポート原価・FastSpring 連結は未着手**。**(5) 棚卸し 45**（★`gate` 列は正規表現ベースで信用できない・`NONE?` の `?` を残す）。**(6) #786 非ブロッキング 1・2・4**。
-blocked_by: **(1) masterchain = ★鍵の検証は完了（K1 一致）。残る律速は kimny の表示名判断 → FastSpring 商品作成 → test order**（★その回は【確認】であって【初回証明】ではない）。**(2) #530 = kimny gate**（dial セッション持ちアカウントで `/dashboard` を1回開く。★**#777 と同じ画面なので conductor が盤面カードを1枚に統合済＝kimny の手番は1回**）。**(3) ③H = content課 のコピー author 待ち**（ブリーフは本 status の 07-27 checkout event に記載）。**(4) masterchain = ★★dsp 判定確定 = 「入っている」も「効いている（＝K1 であることを確認）」も印が付いた**。**prod 実測**（`05:24:25Z`・#778 merged 後の反映）: `licenseKeyPublic` = **64桁 hex・null ではない**（＝ガード通過＝**Ed25519 であることは確定**）。★**当方は判定を付けずに dsp へ値だけ送付**——**送る側が答えも決めると独立確認が1つ消える**ため。★★**dsp の3択が要点**: **K1 一致＝正 / ★K2 一致＝「動くが設計違反」（出荷 binary は K1・K2 両方を信頼＝`kNumTrustedKeys=2` なので K2 署名でも `Licensed` が返る＝テストしても通る。しかし予備の秘密鍵がサーバーに載る＝冗長性が消え、サーバーが破られたら K1 も K2 も同時に失う）/ どちらでもない＝別の Ed25519 鍵**。★**「動いているから正しい」では検出できない誤りで、hex を見るこの経路でしか捕まらない**。■★**判定 = K1 一致**（dsp・`05:25:58Z`）＝**K2 ではない（予備の秘密鍵はサーバーに載っていない＝冗長性は保たれている）・別鍵でもない・null でもない**。★**独立2観測**: dsp は**当方の送付を待たずに自分で prod を直接 curl**しており、**両者を機械照合して同値**＝**「prod → mued → チャット → dsp」の転記経路を通らない値でも同じ結果**＝**転記ミスでは崩れない判定**。**dsp は照合先を毎回 `origin/main` の `K1.pub.pem` から導出**し、**判定も目視でなく突合スクリプト**（4分岐 自己テスト済）。■★**まだ言えないこと（dsp の正確な留保）**: **「本番で実際に1本 発行して通した」わけではない**。上は**「正しい鍵が入っている」＋「その鍵で署名すれば通る形である」（本日 形式 E2E 実測済）からの推論**（Ed25519 の検証は決定的なので安全）。→ ★**test order の回は【初回証明】ではなく【確認】**。**そこで通らなければ、原因は鍵でも形式でもなく配線側**という切り分けになる。**(5) 7/31 = 特商法の統合版適用**（content の統合版を1回で当てる・★gate は出現数でなく意味）。
+current_task: **⏸️ peer-checkout 2026-07-29（kimny 指示）。★手番待ちのみ・中断作業ゼロ**。★**#788 の残りを閉じた**＝**schedule 経路を初観測**（run 30416562236・`trigger:"schedule"` で `2026-07-28.json` を publish・**collector=success / snapshot=skipped**＝`if:` は daily を silent skip していない・26/27/28 連続で欠測ゼロ）。■**FastSpring test order は 7/29 朝 kimny 実施予定だが、★このままでは鍵が届かない**（`FASTSPRING_WEBHOOK_SECRET` が Production に無く署名検証は fail-CLOSED → 401 → 発行も配信も起きない）。**鍵の配送はメール本文**（`sendMasterchainLicenseDelivery` 実装済・置き場所も本文に記載・fail-CLOSED・重複送信も塞ぎ済）。★**署名ヘッダ名/encoding は `TODO(C1)` で実物と未突合**＝secret を set しても 401 が続く可能性あり。
+next_action: **(1) ★7/31 deploy 後の3本チェック（当方担当）**＝`/muedsat` `/muedlim` `/en/muedsp` が **200** かつ **email 入力欄が消えていない**の2点。★**`/en/muedsp` を特に見る**。**GET のみ・送信しない**。**bytes 完全一致は不要**（特商法本文が変わるため）。**崩れていたら growth へ1行**。**(2) 8/4 以降**: **#795 を draft 解除 → merge**（canonical 14面 + dial 2面）／**`/dial/sessions` noindex を別 PR**（Tier 2）。**(3) content課 の waitlist コピー適用（26 keys）**——★**JA/EN でキー集合が違う**・★**配列の中まで walk**・陽性対照 `Hoo`>0。**(4) 棚卸しの残り 45**（★`gate` 列は正規表現ベースで信用できない・`NONE?` の `?` を残す）。**(5) #786 非ブロッキング 1・2・4**。**(6) fact ③ の残り**（インポート原価 / FastSpring 連結）。★**lobe 網羅は完了**（6本中 `commentary` 1本のみ・HTTP 経由もゼロ）。
+blocked_by: **(1) ★kimny 手番**: **`FASTSPRING_WEBHOOK_SECRET` の set**（★**注文の前に**・`printf` を使う＝`echo` は末尾改行が混入する）／**`RESEND_MUEDSAT_AUDIENCE_ID` と `RESEND_MUEDLIM_AUDIENCE_ID` の値の目視**（**先頭8文字の比較のみ**・★**当方の 7/17『muedsat=General 確定』は条件を書かず stale 化しており、timestamp 推論では もう解けない**）。**(2) 8/4 まで deploy 凍結**（下記ブロック）。**(3) #795 は product レビューも 8/4 以降**。
 urgency: low
-action_owner: peer
+action_owner: kimny
 deadline: null
-expected_next_check_at: 2026-07-29T11:00:00+09:00
-last_update: 2026-07-28T23:02:59+09:00
+expected_next_check_at: 2026-07-31T12:00:00+09:00
+last_update: 2026-07-29T11:59:24+09:00
 evidence: **PR #781**（`fix/dashboard-mobile-overflow`・4 files・typecheck 0 / build 成功 / unit **1953 passed** / lint 新規エラー 0）。**スマホ実測**: 375/390/393/430 × ja/en の **8通りで横溢れ 0・溢れ要素 0**（before は同8通りで docScrollWidth 444〜453）。セッション名 0px → **255〜310px で可視**、MUEDear 行 4行 → **1行**、JA ヘッダー 109 → **69px**。**デスクトップ非回帰**: 640/768/1280/1536 × ja/en の **8通りで描画座標が完全一致**（grid template・行高・各セル x/w/h/y を before/after 機械照合）。★**最初 index 基準で比較して「96件の差分」と出たが、それは DOM 順の入替えによる配列添字のズレで座標は同一**——**比較キーが誤っていただけ**と気づき位置基準で取り直した。★**検証用 probe route と計測スクリプトはコミットに含めていない**（削除済・`git status` clean で確認）。★**CI にレイアウトを実測する gate は無い**＝**この回帰を止める自動テストは #781 に入っていない**（実装文字列を照合するだけの proxy テストは「幅に収まる」という本来の性質を測れないので足さなかった）。
 confidence: high
 lane: delivery
@@ -18,7 +18,21 @@ lane: delivery
 ---
 
 
+## ★測定窓 2026-07-28 〜 08-03（★窓が明けたら本ブロックごと削除）
+
+★**測定対象に自分で書き込まない。** `mued.jp/muedsat` / `mued.jp/muedlim` / `mued.jp/en/muedsp` の
+**DL フォームに新しいアドレスで送信しない**（`+test` エイリアスも別アドレス扱い）。
+確認は「**200 かつフォームが描画されている**」まで。★**跨がなくても、自分で入れた行を自分で数えるのは
+事前登録の趣旨に反する**（product 起案。★**旧根拠「1通で中央値が跨ぐ」は growth 計算で撤回済**——
+参照期間 7/21-27 の中央値は 8 で、4番目が 2 になるには7日中6日が ≤2 まで崩れる必要）。
+
+★**deploy も 8/4 以降**: #795（canonical 14面 + dial 2面）／`/dial/sessions` noindex。
+★**SLOT-2（masterchain 販売URL）は JA/EN とも 8/4**——**当方の推奨した `https://mued.jp/en/muedsp` が
+測定対象と完全一致**し、**「特商法から測定対象への href は 0本」を 0本でなくするのは当方が返した1行**だった。
+
 ## Recent events
+
+- 2026-07-29T11:59:24+09:00: **⏸️ peer-checkout 2026-07-29 — ★#788 クローズ（schedule 初観測）+ FastSpring は「このままでは鍵が届かない」を実測**。**(1) ★#788 の残りを閉じた**: **run 30416562236（schedule）**で **collector=success / snapshot=skipped**、**`LAST_PUBLISH.json` が `trigger:"schedule"` で `2026-07-28.json` を記録**、**26/27/28 連続・欠測ゼロ**。★**job の success だけでなく publish 実体まで確認**した（**「落ちなかった」は「測った」ではない**）。★**危ない向き（schedule で silent skip）が、これで初めて観測済**になった。**(2) ★★FastSpring**: **`FASTSPRING_WEBHOOK_SECRET` が Production に無い**（`MASTERCHAIN_LICENSE_PRIVATE_KEY` ✅ / `RESEND_API_KEY` ✅）。**署名検証は fail-CLOSED**（`fastspring-signature.ts:30-32`・コード逐語「nothing is processed until … is set」）→ ★**test order を出しても 401 で弾かれ、発行も配信も起きず、課金だけが動く**。**鍵の配送経路はメール本文**（`sendMasterchainLicenseDelivery` 実装済・`Application Support`/`glasswerks/MUEDsp`/`license.key` を本文に記載・**配信失敗は throw して非2xx＝購入行を commit しない**・**retry 時の重複送信も塞ぎ済**）。★**署名ヘッダ名と encoding は `TODO(C1)` で実物と未突合**＝**secret を set しても 401 が続く可能性**。**切り分け: 401=署名層 / 2xx なのに鍵が来ない=payload parse 層**。**(3) ★SLOT-2 は当方の推奨が窓を汚す側だった**（`https://mued.jp/en/muedsp` が測定対象と完全一致）→ **JA/EN とも 8/4**（freee 決定）。**(4) ★母集団を sitemap でなく実装から作り直した**（conductor の sitemap 定義は索引の全数であってサイトの全数ではない）→ **`/redesign` が sitemap 外で canonical 無しだが `robots:{index:false}` ゆえ対象外**・**非 locale 面は layout 継承込みで確認**。**(5) org 全体で確定した規律を記録**: **`total_count=0` は absent でなく unknown（4 も同じ）** / **`success` 以外は全部 FAIL（`neutral`/`skipped`/`cancelled`/`null`）・`status` も見る** / **時刻の窓で切らず head ごとに叩き直す** / **導線は件数でなく `href` を列挙** / **母集団は調べたい欠陥と独立な源から取る** / ★**新しい検査を入れたら検査自体を1回 壊して壊れたと分かるか確かめる（当方起案・meta-RED）** / **正しい規則に、計算していない定量的な理由づけを付けない**。
 
 - 2026-07-28T23:02:59+09:00: **⚠️ 7/17 の『muedsat=General 確定』は stale — 条件を書かなかったので、11日後に前提が壊れたまま引用された**。**(1) ★growth 起案の問い**（8/4 の外向き解釈に直撃）: **`RESEND_MUEDSAT_AUDIENCE_ID` と `RESEND_MUEDLIM_AUDIENCE_ID` が同じ audience を指しているか**。**別なら series は『muedlim の新規 + 7/18 の一度きり backfill』を数えており片肺の annuity**（★**判定自体は壊れない**——参照期間も測定窓も同じ object・閾値は この series に事前登録済＝内部的に valid。★**壊れるのは外向きの読み**＝「1万人の算術が部分的な分母の上に立つ」）。★★**8/4 に集計を union へ変えてはいけない**（**窓の途中で定義を変えると比較が成立しない。注記に書き、数字は動かさない**）。**(2) ★★当方は答えられなかった**: `vercel env ls` = **MUEDSAT 11d ago（7/17）/ MUEDLIM 16d ago（7/12）**・**値は出ない**。★**7/17 の当方の結論『vercel 上 10日前(≈7/7) set＝MUEDlim(7/12 作成)より前ゆえ muedsat=General 確定（timestamp 証明・secret 非読）』は、更新日が 7/7 のままであることに依存していた。今日 測ると 7/17 更新＝その日に書き換えられている**（**当方の記録によれば null バイト混入 → デプロイ失敗 → conductor が CLI で再 set**）。→ ★**再 set が General を入れ直したのか 243e06eb に張り替えたのかは、当方の記録からは決まらない**。★**null バイトの値が `2\x004\x003…` で始まるのは示唆的だが根拠にしない**（推測）。→ **kimny に値の目視を依頼**（先頭8文字の比較のみ）。★**`vercel env pull` はしない**——**audience ID 2つのために production の全 secret をローカルに落とすことになる**。**(3) ★★教訓（growth 規律5と同型）**: **当方は「確定」と書いたが、実際は「7/17 時点で、更新日が動かない限り」という条件付き**だった。★**条件を書かなかったので、11日後に conductor が『確定した事実』として引用し、その間に前提が壊れていた**。**書くべきだったのは「7/17 現在。更新日が動いたら再測定が要る」**。★**growth 逐語「正しい規則に、計算していない定量的な理由づけを付けた。理由が崩れると規則ごと捨てられる」の、当方版**＝**正しい結論に、条件を書かない『確定』を付けた**。**(4) 全課 broadcast の撤回を受領**: **「1通で中央値が跨ぐ」は growth 計算で撤回**（参照期間 7/21-27 = 7・12・6・13・1・8・11 → **中央値 8**・4番目が 2 になるには7日中6日が ≤2 まで崩れる必要）。★**規律は有効・主文が変わる**＝**「測定対象に自分で書き込まない。跨がなくても、自分で入れた行を自分で数えるのは事前登録の趣旨に反する」**（product 起案）。
 
