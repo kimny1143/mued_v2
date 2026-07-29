@@ -118,9 +118,6 @@ jobs:
 
       - run: npm ci --prefer-offline --no-audit
 
-      - name: TEMP(RED-test) 故意に失敗させる
-        run: exit 1
-
       - name: Unit tests
         run: npm run test:unit
         env:
@@ -186,7 +183,7 @@ jobs:
     # `always()` so this still runs when the jobs it watches have failed. Gated to `schedule`
     # only: PR failures are already visible on the PR itself, and turning those into issues
     # would bury the signal this issue is meant to carry.
-    if: always() && github.event_name != 'push'   # TEMP(RED-test): PR でも走らせる
+    if: always() && github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       # ★BOTH are required. A job-level `permissions:` block REPLACES the default token scopes
