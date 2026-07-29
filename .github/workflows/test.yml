@@ -5,32 +5,67 @@
 name: CI
 
 on:
-  # `push:` is intentionally absent (removed 2026-07-29, kimny decision).
+  # `push:` is intentionally absent (removed 2026-07-29 to stop duplicate billing).
   # Every change reaches main through a PR, and the push trigger was scoped to [main, develop]
   # — so it never fired on feature branches. All 235 of its 602 runs in 2026-07 were the
   # post-merge re-run on main, at ~8.4 billable min each (measured per job, all ubuntu-latest)
   # = ~1,965 min/month, which by itself pushed the org past the 3,000 min free tier.
-  # Precisely: the squashed main commit is a NEW commit, but its tree equals what the PR run
-  # already tested UNLESS another PR landed in between. So this trigger was redundant in the
-  # common case and only distinguishable when merges interleave — which is real (see below)
-  # but was not worth ~$15/month of duplicate runs.
+  #
+  # What it actually re-tested: the squashed main commit is a NEW commit, but its tree equals
+  # what the PR run already checked UNLESS another PR landed in between.
+  # ★Do not read that as "rare": measured over all 235 merges into main in 2026-07, another PR
+  # landed between the PR's CI run and its merge in 38 of them = 16.2%, about 1 in 6 (worst
+  # case #530: 8 PRs in between). So this trigger genuinely tested something new roughly once
+  # every six merges — and in 2026-07 it found nothing in all 38 of those. That, not
+  # "it was a duplicate", is the reason it goes: ~1.2 genuinely-new trees a day is worth
+  # covering, but it is worth covering ONCE a day, not 235 times a month. Hence the schedule
+  # below — that is what replaces this trigger, and why removing it is not simply dropping
+  # coverage.
   #
   # ★What this gives up, stated plainly: a push landing on main WITHOUT going through a PR is
-  # never tested. That is currently prevented only by convention plus the local
-  # block-main-push hook — the server does NOT enforce it (ruleset 14319569 "main-protection"
-  # requires a pull request but carries required_status_checks: 0). So a push from another
-  # machine or a bypassed hook reaches main untested.
+  # never tested. The server does NOT prevent that: ruleset 14319569 "main-protection" requires
+  # a pull request but carries required_status_checks: 0, AND has
+  #   bypass_actors: [{actor_id: 5, actor_type: RepositoryRole, bypass_mode: "always"}]
+  # — a role that is allowed to push to main directly, always. (The API does not name role id 5;
+  # do not assume. What is certain: this repo has exactly one collaborator, kimny1143, admin.)
+  # So the only thing standing between a direct push and untested main is the local
+  # block-main-push hook plus convention.
   # Restore this block if main ever starts receiving pushes that did not come from a PR.
+
+  # Replaces the per-merge run: main is tested once a day instead of once per merge.
+  # 21:00 UTC = 06:00 JST, finishing before the working day starts.
+  # Scheduled runs always use the default branch (main), so this covers exactly what the push
+  # trigger covered — the interleaved trees described above — at ~8.4 billable min × 31 days
+  # ≈ 260 min/month against the ~1,974 min/month it replaces.
+  # ★If you ever change this cron, first sweep every workflow for job-level conditions that
+  # compare the schedule string: a stale one silently skips the whole run, and a skip is not
+  # reported as a failure. Detection command: root CLAUDE.md, and the header of
+  # plugin-funnel-collector.yml. ★The literal strings to search for are deliberately NOT written
+  # here — writing them would make the sweep match this comment and report a false positive
+  # (same reason plugin-funnel-collector.yml omits them).
+  # Verified 2026-07-29: this workflow declares no job-level conditions at all, so nothing here
+  # can skip that way today. Anchor the search to the start of a line to exclude prose like this.
+  schedule:
+    - cron: '0 21 * * *'
+
+  # A manual button, so a broken scheduled run does not mean waiting until tomorrow.
+  workflow_dispatch: {}
+
   pull_request:
-    branches: [main, develop]
+    # `develop` deliberately not listed: the branch does not exist (git ls-remote → absent, and
+    # all 235 push-triggered runs in 2026-07 had head_branch=main). Leaving a dead branch name
+    # here is how `docs/guides/TESTING_GUIDE.md` came to claim a daily run that never existed.
+    # Re-add it here if develop is ever created, or its PRs will run no CI at all.
+    branches: [main]
 
 env:
   NODE_VERSION: '20'
 
 concurrency:
   group: ci-${{ github.ref }}
-  # With the push trigger gone, every run is a PR ref (refs/pull/N/merge), so this condition is
-  # now always true — kept as-is because restoring `push:` should also restore its behaviour.
+  # Scheduled runs resolve to refs/heads/main and PR runs to refs/pull/N/merge, so the two land
+  # in different concurrency groups and never cancel each other. The condition keeps the daily
+  # main run un-cancellable while still superseding stale PR runs.
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:

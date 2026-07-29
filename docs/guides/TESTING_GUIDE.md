@@ -372,14 +372,17 @@ Coverage reports are generated in:
 
 ### GitHub Actions
 
-The test suite runs automatically on **pull requests to `main`** — and on nothing else.
+The test suite runs on **pull requests to `main`**, plus a **daily run of `main` at 21:00 UTC
+(06:00 JST)**, plus a **manual button** (`workflow_dispatch`).
 
-- There is **no push trigger**: it was removed 2026-07-29 because every change reaches main
-  through a PR, so it only re-tested the same tree twice (88% of the org's Actions spend).
-  A push that bypasses the PR flow is therefore **not** tested — see the comment in
-  `.github/workflows/test.yml` for when to restore it.
-- There is **no scheduled run** for this workflow. (This guide previously claimed a daily
-  run; that has never existed.)
+- There is **no push trigger**. It was removed 2026-07-29: it re-ran on every merge (235 runs
+  in 2026-07 = 88% of the org's Actions spend), and the daily run covers the same thing. Only
+  16.2% of those merges tested a tree the PR run had not already seen — about 1 in 6 — so once
+  a day is enough. A push that bypasses the PR flow is **not** tested until the next daily run;
+  see the comment in `.github/workflows/test.yml` for when to restore the trigger.
+- The daily run is **new as of 2026-07-29**. Before that this guide claimed a daily run that
+  did **not** exist — so if you are reading an older copy, it was wrong then and right now for
+  a different reason.
 
 ### CI Test Configuration
 
