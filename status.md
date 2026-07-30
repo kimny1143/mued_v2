@@ -10,7 +10,7 @@ urgency: mid
 action_owner: peer
 deadline: 2026-08-01T00:00:00+09:00
 expected_next_check_at: 2026-07-31T12:00:00+09:00
-last_update: 2026-07-29T21:13:17+09:00
+last_update: 2026-07-30T10:26:35+09:00
 evidence: **PR #781**（`fix/dashboard-mobile-overflow`・4 files・typecheck 0 / build 成功 / unit **1953 passed** / lint 新規エラー 0）。**スマホ実測**: 375/390/393/430 × ja/en の **8通りで横溢れ 0・溢れ要素 0**（before は同8通りで docScrollWidth 444〜453）。セッション名 0px → **255〜310px で可視**、MUEDear 行 4行 → **1行**、JA ヘッダー 109 → **69px**。**デスクトップ非回帰**: 640/768/1280/1536 × ja/en の **8通りで描画座標が完全一致**（grid template・行高・各セル x/w/h/y を before/after 機械照合）。★**最初 index 基準で比較して「96件の差分」と出たが、それは DOM 順の入替えによる配列添字のズレで座標は同一**——**比較キーが誤っていただけ**と気づき位置基準で取り直した。★**検証用 probe route と計測スクリプトはコミットに含めていない**（削除済・`git status` clean で確認）。★**CI にレイアウトを実測する gate は無い**＝**この回帰を止める自動テストは #781 に入っていない**（実装文字列を照合するだけの proxy テストは「幅に収まる」という本来の性質を測れないので足さなかった）。
 confidence: high
 lane: delivery
@@ -31,6 +31,8 @@ lane: delivery
 測定対象と完全一致**し、**「特商法から測定対象への href は 0本」を 0本でなくするのは当方が返した1行**だった。
 
 ## Recent events
+
+- 2026-07-30T10:26:35+09:00: **✅ peer-checkout 2026-07-30 ＋ ★初回の定時実行を独立に追試（#807 の宿題を閉じた）**。**run 30491727074（`event=schedule`・21:16Z＝予定より16分 遅れ＝cron の既知のばらつき）**: ★**`Notify main red = success`**（**`skipped` なら通知機構が一度も動いていない印だった**）・**3 job とも success**・**`ci-main-red` の open issue 0件**。∴ **「毎マージ → 毎朝1回」は通知まで含めて回る**。★**残っていたのは「cron が実際に発火するか」だけで、それが埋まった**（**gate 本体は 7/29 に dispatch で先に実証済**）。**(2) WIP ゼロ**（`git status` 0件・未 push 0件・main == origin/main）。**(3) ★conductor の「`grep` が2つ在り片方は symlink を辿らない」は当方には当たらない**——**走査先7つとも実ディレクトリ**・**python→`bash -c` と Bash tool 直が同数（127）**を実測。**(4) memory 棚卸し**: 新規2（**宛先のデータは経路の証拠でない** / **母集団は包含でなく除外で切る**）+ 既存2 更新（**テストが自分で set した env 名は永久に検査できない** / **force-push を跨ぐのは tree hash**）+ 索引。
 
 > 2026-07-25 以前の **76 件**は [`docs/status-archive/2026-07-09_2026-07-25.md`](docs/status-archive/2026-07-09_2026-07-25.md) へ退避（2026-07-29・234 KB → 約 77 KB）。
 > ★**次の退避閾値: 100 KB**（★80 KB と書きかけたが、**今 77 KB なので次の1件で即トリップする**＝**踏んだ瞬間に無視される閾値**になる。閾値は「置いた」でなく「機能する」側に置く）。
