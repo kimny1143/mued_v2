@@ -934,6 +934,26 @@ DOC
 
 ★**弁別しているのは `-r` / `-R` ではなく、起点パスの末尾に `/` が在るか。** **`-R` に変えても 0 のままなので、「`-R` を使え」は効かない規則。**
 
+★★**ただし落ちるのは symlink が「パスの★最終要素」の時だけ。** ★**途中の要素なら OS がパス解決するので BSD grep でも落ちない。**
+
+| 起点パス | `/usr/bin/grep -rl` |
+|---|---:|
+| `<memory dir>`（★最終要素が symlink） | ★**0** |
+| 同上 + 末尾 `/` | **44** |
+| ★`~/Dropbox/_DevProjects/<課>`（★途中が symlink・最終は実dir） | ★**178** |
+
+★**この上限が無いと「symlink が在れば危ない」と読まれる。** ★**hook の配線は全課 Dropbox 側（＝途中に symlink）なので、そう読むと12課ぶんの hook パスが全部 疑わしく見える。**
+
+★**確認は「危ない側」と「危なくない側」を必ず一緒に走らせる**（片方だけだと過剰反応する）:
+
+```bash
+M=~/.claude/projects/<自課>/memory
+ls -ld "$M"                                          # symlink か
+/usr/bin/grep -rl . "$M"  | wc -l                    # ★0 なら該当
+/usr/bin/grep -rl . "$M/" | wc -l                    # 末尾 / で戻る
+/usr/bin/grep -rl . ~/Dropbox/_DevProjects/<自課> | wc -l   # ★非0＝途中は安全
+```
+
 ★**なぜ同じコマンドで結果が違うのか**: **Bash tool 内の `grep` は Claude Code が挿入した★シェル関数**（`shell-snapshots/` 由来・`ugrep` を呼ぶ）で、**こちらは symlink を辿る**。★**`subprocess.run(['grep',…])` や script 内から呼ぶと `/usr/bin/grep`（BSD grep）**になり、辿らない。
 
 ★**そして 0 は exit=1・stderr 空で返る**——**「無い」と「辿れていない」が出力で区別できない。**
