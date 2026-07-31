@@ -1392,10 +1392,10 @@
       "faq11q": "Will prices change without warning?",
       "faq11a": "No. The prices shown are the final prices. We'll email you in advance if anything ever changes.",
       "faq12q": "Is there a free plan?",
-      "faq12a": "Pay-per-use only — there's no monthly plan. Waitlist members do get one free mix diagnosis session.",
+      "faq12a": "Pay-per-use only — there's no monthly plan. But if you register your email and sign up with that same address, your first mix diagnosis is free.",
       "readinessBannerTitle": "Are your stems mix-ready?",
-      "readinessBannerDesc": "A quick 4-question self-check — then join the waitlist.",
-      "readinessBannerCta": "Join the waitlist",
+      "readinessBannerDesc": "A quick 4-question self-check — you can register your email right after.",
+      "readinessBannerCta": "Start the self-check",
       "previewUpdatedBadge": "Preview updated",
       "navHistory": "History"
     },
@@ -1806,10 +1806,10 @@
   },
   "waitlist": {
     "hero": {
-      "badge": "Q3 2026 (late Aug–Sep) launch — Early access open",
-      "h1": "Tracks stuck at mix.\nMoving again in Q3.",
-      "sub": "MUEDial is AI mixing through conversation with Hoo.\nNo plugins, no studio, no back-and-forth with engineers.\nUpload your stems. Talk to Hoo in your language.",
-      "cta": "Join the waitlist (free)",
+      "badge": "One free mix diagnosis — just your email",
+      "h1": "Tracks stuck at mix.\nLet Hoo hear one.",
+      "sub": "MUEDial is AI mixing through conversation with Hoo.\nNo plugins, no studio, no back-and-forth with engineers.\n\nRegister your email, then sign up with that same address\nto get one free mix diagnosis.",
+      "cta": "Get your free diagnosis",
       "qualifiedBadge": "Readiness check complete"
     },
     "diff": {
@@ -1827,20 +1827,20 @@
         },
         {
           "icon": "🔬",
-          "title": "research beta",
-          "desc": "Pricing still being tuned. Waitlist members get notified first when we officially launch."
+          "title": "Try one free",
+          "desc": "Register your email, sign up with the same address, and your first mix diagnosis is free. Find out if it fits before you pay."
         }
       ],
       "tableNote": "eMastered & LANDR are mastering-only. Conversational mix revisions are unique to MUEDial.",
-      "pricingNote": "※ Pricing is being adjusted during the research beta. Confirmed pricing will be sent to waitlist members first."
+      "pricingNote": "※ Pay-per-use only. There is no monthly plan."
     },
     "benefits": {
-      "title": "Perks for early registrants",
+      "title": "What registering gets you",
       "items": [
         {
           "icon": "🚀",
-          "title": "Day-one access (research beta)",
-          "desc": "Start before general availability. We'll email you first when launch day arrives."
+          "title": "One free mix diagnosis",
+          "desc": "Sign up with the same email address. If it differs from the one you registered, the free diagnosis won't apply."
         },
         {
           "icon": "📬",
@@ -1850,7 +1850,7 @@
       ]
     },
     "form": {
-      "title": "Join the waitlist",
+      "title": "Register your email",
       "emailLabel": "Email address",
       "emailPlaceholder": "you@example.com",
       "dtmLabel": "How long have you been making music? (optional)",
@@ -1861,18 +1861,18 @@
       "dtmOver5y": "5+ years",
       "challengeLabel": "What's your biggest mixing challenge? (optional)",
       "challengePlaceholder": "e.g. vocals get buried, too much low end, etc.",
-      "submit": "Complete registration →",
+      "submit": "Register →",
       "submitting": "Submitting...",
-      "notice": "Your email is used only for MUEDial launch notifications and early-access perks. No spam, no third-party sharing. Unsubscribe anytime.",
+      "notice": "Your email is used only to grant your free diagnosis and to send MUEDial updates. No spam, no third-party sharing. Unsubscribe anytime.",
       "privacyLink": "Privacy Policy"
     },
     "thankyou": {
       "h1": "You're on the list.",
-      "sub": "Hoo sent a confirmation email your way.\nCheck your spam folder if you don't see it.\n\nWhen Q3 launches, you'll be the first to know.\nKeep working on those tracks in the meantime.",
-      "cta": "Try the beta now →",
-      "alreadyRegistered": "That email is already registered. We'll reach out when Q3 launches.",
+      "sub": "Hoo sent a confirmation email your way.\nCheck your spam folder if you don't see it.\n\nSign up with this same address\nand your first mix diagnosis is free.",
+      "cta": "Sign up with the same address →",
+      "alreadyRegistered": "That email is already registered. Sign up with it and your first mix diagnosis is free.",
       "qualifiedCta": "Sign up and try the free diagnosis →",
-      "qualifiedDesc": "As a waitlist member, you get one free mix diagnosis. Sign up and try it now.",
+      "qualifiedDesc": "You're registered, so your first mix diagnosis is free. Sign up using this same email address.",
       "qualifiedLabel": "✓ Readiness: qualified"
     }
   },
@@ -1910,22 +1910,22 @@
     "emailOptional": {
       "label": "Get your results by email (optional)",
       "placeholder": "you@example.com",
-      "note": "You'll also receive Q3 launch notifications."
+      "note": "Registering also gets you one free mix diagnosis."
     },
     "submit": "Check my readiness →",
     "submitting": "Submitting...",
-    "pricingNote": "※ Pricing is being adjusted during the research beta. Confirmed pricing will be sent to waitlist members first.",
+    "pricingNote": "※ Pay-per-use only. There is no monthly plan.",
     "resultQualified": {
       "h1": "You're ready.",
-      "sub": "Stems are set, release is planned.\nAll that's left is to hand it over to Hoo.\n\nYou'll be the first to hear when Q3 launches.\nJoin the waitlist to hold your spot.",
-      "cta": "Join the waitlist (free) →",
+      "sub": "Stems are set, release is planned.\nAll that's left is to hand it over to Hoo.\n\nRegister your email, sign up with that same address,\nand your first mix diagnosis is free.",
+      "cta": "Get your free diagnosis →",
       "secondary": "Want to try it now? → dial.mued.jp"
     },
     "resultRaw": {
       "h1": "Almost there — stems are the next step.",
       "sub": "Once your stems are ready, Hoo is waiting.\n\nThese articles can help you get set up:",
-      "secondary": "Still want to wait for Q3 launch?",
-      "secondaryCta": "Join the waitlist (optional) →"
+      "secondary": "Want to try it once your stems are ready?",
+      "secondaryCta": "Register your email (optional) →"
     },
     "uploadStep": {
       "h2": "Diagnose with one stem file",

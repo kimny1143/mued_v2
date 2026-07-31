@@ -115,13 +115,17 @@ export default function WaitlistPage() {
               </Link>
             </div>
           ) : (
-            <a
-              href="https://dial.mued.jp"
+            // The CTA now says "sign up with this same address" (the free mix diagnosis is gated on the
+            // signed-up email matching the registered one — credits/consume checkWaitlistEmailExists).
+            // It used to point at the marketing LP, which the new copy would have made a lie; send it to
+            // the same sign-in route the qualified branch above already uses.
+            <Link
+              href="/sign-in?redirect_url=/dial"
               onClick={() => trackCtaClick('muedial_from_waitlist_thanks', 'waitlist_thankyou')}
               className="inline-block px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors"
             >
               {w.thankyou.cta}
-            </a>
+            </Link>
           )}
         </div>
       </div>
