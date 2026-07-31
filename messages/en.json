@@ -318,7 +318,7 @@
       },
       "paymentTiming": {
         "title": "Payment Timing",
-        "value": "Pay-per-use: Charged immediately upon purchase.\nHoo Pass (subscription): Charged on signup date, then auto-renewed monthly on the same date. Next charge date is available in the Stripe Customer Portal and on the invoice sent to your registered email."
+        "value": "Pay-per-use: Charged immediately upon purchase.\n\nHoo Pass (monthly subscription) is closed to new sign-ups. The following applies only where a subscription is already in effect: charged on the sign-up date, then auto-renewed monthly on the same date. The next charge date is available in the Stripe Customer Portal and on the invoice sent to your registered email address."
       },
       "delivery": {
         "title": "Service Delivery",
@@ -326,7 +326,7 @@
       },
       "cancellation": {
         "title": "Cancellation & Refund Policy",
-        "description": "Pay-per-use: Cancellation is available before AI audio processing begins. Refunds are not available after processing starts due to the nature of digital services.\n\nHoo Pass (subscription): Cancel anytime by emailing support@mued.jp with subject 'Hoo Pass cancellation' (cancellation processed within 24 business hours). Service remains available until the next renewal date, after which charges stop. Cancelled credits remain usable for 30 days. Pro-rated refunds are not provided."
+        "description": "Pay-per-use: Cancellation is available before AI audio processing begins. Refunds are not available after processing starts due to the nature of digital services.\n\nHoo Pass (monthly subscription) is closed to new sign-ups. The following applies only where a subscription is already in effect: you may cancel at any time by emailing support@mued.jp with the subject \"Hoo Pass cancellation\" (processed within 24 business hours). Service remains available until the day before the next renewal date, after which charges stop. Remaining credits stay usable for 30 days after cancellation. Pro-rated refunds are not provided."
       },
       "environment": {
         "title": "System Requirements",
@@ -2186,11 +2186,26 @@
       "mockLabel": "A work-in-progress screen — not the real thing yet.",
       "controlsLead": "Here's roughly how it'll work.",
       "controls": {
-        "ceiling": { "name": "Ceiling", "desc": "The output ceiling (−3 to 0 dBTP)." },
-        "width": { "name": "Width", "desc": "Stereo width (0–200%)." },
-        "mono": { "name": "Mono", "desc": "Mono below this frequency (0–300 Hz)." },
-        "limiter": { "name": "Limiter", "desc": "The final brickwall (on by default)." },
-        "bypass": { "name": "Bypass", "desc": "The whole plugin on/off." }
+        "ceiling": {
+          "name": "Ceiling",
+          "desc": "The output ceiling (−3 to 0 dBTP)."
+        },
+        "width": {
+          "name": "Width",
+          "desc": "Stereo width (0–200%)."
+        },
+        "mono": {
+          "name": "Mono",
+          "desc": "Mono below this frequency (0–300 Hz)."
+        },
+        "limiter": {
+          "name": "Limiter",
+          "desc": "The final brickwall (on by default)."
+        },
+        "bypass": {
+          "name": "Bypass",
+          "desc": "The whole plugin on/off."
+        }
       }
     },
     "free": {
@@ -2222,9 +2237,18 @@
       "controlsHeading": "INPUT and CEILING",
       "controlsLead": "INPUT for loudness, CEILING for the ceiling. That's all.",
       "controls": {
-        "input": { "name": "INPUT", "desc": "input drive, i.e. loudness (−6 to +18 dB)." },
-        "ceiling": { "name": "CEILING", "desc": "the true-peak ceiling (−3 to 0 dBTP, default −1)." },
-        "bypass": { "name": "BYPASS", "desc": "a true bypass (ACTIVE / BYPASS), for honest A/B." }
+        "input": {
+          "name": "INPUT",
+          "desc": "input drive, i.e. loudness (−6 to +18 dB)."
+        },
+        "ceiling": {
+          "name": "CEILING",
+          "desc": "the true-peak ceiling (−3 to 0 dBTP, default −1)."
+        },
+        "bypass": {
+          "name": "BYPASS",
+          "desc": "a true bypass (ACTIVE / BYPASS), for honest A/B."
+        }
       },
       "bypassNote": "Plus a BYPASS toggle (ACTIVE / BYPASS), for honest A/B."
     },
@@ -2273,11 +2297,26 @@
       "controlsLead": "Four knobs, nothing hidden.",
       "bypassNote": "Plus a true-dry bypass toggle, for honest A/B. Zero latency, no oversampling artifacts (ADAA).",
       "controls": {
-        "drive": { "name": "DRIVE", "desc": "how hard you push the transformer (more = more harmonics)." },
-        "air": { "name": "Air", "desc": "a touch of clean high-shelf sheen." },
-        "mix": { "name": "Mix", "desc": "blend with the dry signal (parallel saturation)." },
-        "output": { "name": "Output", "desc": "level trim." },
-        "bypass": { "name": "Bypass", "desc": "A true dry passthrough, for honest A/B." }
+        "drive": {
+          "name": "DRIVE",
+          "desc": "how hard you push the transformer (more = more harmonics)."
+        },
+        "air": {
+          "name": "Air",
+          "desc": "a touch of clean high-shelf sheen."
+        },
+        "mix": {
+          "name": "Mix",
+          "desc": "blend with the dry signal (parallel saturation)."
+        },
+        "output": {
+          "name": "Output",
+          "desc": "level trim."
+        },
+        "bypass": {
+          "name": "Bypass",
+          "desc": "A true dry passthrough, for honest A/B."
+        }
       },
       "tech": "Zero latency, and no oversampling artifacts (ADAA anti-aliasing). I like it on a master bus, a drum group, or anything that wants a little more body — but I'd rather you decide with your own ears than take my word for it."
     },
