@@ -164,9 +164,18 @@ jobs:
           # 未指定の branch は既定 true なので main と PR preview は影響を受けない。
           # ★毎回 書き直すのは、branch が作り直されても guard が復活するようにするため
           #   (ファイルが消えたことは出力に出ないので、消えても誰も気づけない)。
-          # ★実測 2026-08-03: この設定を持つ commit を push すると deployment が 1件も作られない。
-          #   修正前は push の 2.3〜2.8 秒後に必ず作られていた (陽性対照)。
+          #   ★ただし復活には1周期の遅れがある: guard を書き戻す push 自体が「guard の無い branch への
+          #   push」なので、その1回だけは ERROR が出る。「二度と ERROR は出ない」ではない。
+          # ★実測 2026-08-03: この設定を持つ commit を push しても deployment が作られない。
+          #   陽性対照 = 修正前の3回は push から 2.3〜2.8 秒で生成されていた (Vercel API の
+          #   repoPushedAt→created)。同時対照 = guard 付き push の 7 分後、同じ repo の別 ref
+          #   (PR #830 head / status branch) では deployment が生成されている
+          #   = 「Vercel 統合ごと止まった」ではないことを別経路で確認済 (product課 検出)。
           # ★delimiter を quote するのは $schema をシェルに展開させないため。
+          #   ★quote を外すと「静かに壊れた JSON」ではなく、この step は 1 行目で set -u を
+          #   立てているので `schema: unbound variable` で step ごと落ちる (実測・exit 1)。
+          #   ＝ここでは失敗は目に見える。★同じ型を set -u の無い step へ写す時は、そちらでは
+          #   本当に静かに壊れるので注意 (product課 指摘)。
           cat > vercel.json <<'VERCELJSON'
           {
             "$schema": "https://openapi.vercel.sh/vercel.json",
