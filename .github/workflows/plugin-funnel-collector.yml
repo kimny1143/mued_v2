@@ -157,6 +157,27 @@ jobs:
           }
           JSON
 
+          # このデータ branch には app も pages も無いので、Vercel が preview build を試みると
+          # 必ず「Couldn't find any `pages` or `app` directory」で ERROR になる。publish 自体は
+          # 成功しているのに kimny へ毎日 失敗メールが届き、本物の失敗が埋もれる
+          # (2026-07-25〜08-02 で9日連続)。git.deploymentEnabled をこの branch にだけ false で置く。
+          # 未指定の branch は既定 true なので main と PR preview は影響を受けない。
+          # ★毎回 書き直すのは、branch が作り直されても guard が復活するようにするため
+          #   (ファイルが消えたことは出力に出ないので、消えても誰も気づけない)。
+          # ★実測 2026-08-03: この設定を持つ commit を push すると deployment が 1件も作られない。
+          #   修正前は push の 2.3〜2.8 秒後に必ず作られていた (陽性対照)。
+          # ★delimiter を quote するのは $schema をシェルに展開させないため。
+          cat > vercel.json <<'VERCELJSON'
+          {
+            "$schema": "https://openapi.vercel.sh/vercel.json",
+            "git": {
+              "deploymentEnabled": {
+                "data/plugin-funnel-reports": false
+              }
+            }
+          }
+          VERCELJSON
+
           git add -A
           if git diff --cached --quiet; then
             echo "no change to publish (same report content) — skipping commit"
