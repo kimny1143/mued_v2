@@ -16,13 +16,22 @@ import type { Metadata } from "next";
 //
 // ★index するべきかという「別の product 判断」には、ここで答えを出す:
 //   サインイン前に見えるのはサインイン導線だけで、クローラに出せる中身が無い。
-//   ∴ robots: { index: false }。★noindex にしたので canonical は置かない
-//   （消える予定の URL に正規化先を宣言しない）。
+//   ∴ robots: { index: false }。
+//
+// ★★canonical は「置かない」ではなく「実在する自 URL を置く」。
+//   一度 外して本番で実測したら、app/dial/layout.tsx:90 の
+//   canonical: "https://dial.mued.jp/" を★継承して「このページは dial root である」と
+//   宣言していた —— analyzer/layout.tsx のコメントが警告していた、まさにその状態。
+//   ★「外す」は「無くなる」ではなく「親を継ぐ」。metadata は継承される。
 // ★robots.txt の `Disallow: /dial/session/` は★単数形で、この `/dial/sessions` に
 //   当たらない（実測）。かつ Disallow は crawl を止めるので noindex が読まれなくなる
 //   ——ここでは noindex 側を採り、robots.txt は触らない。
 export const metadata: Metadata = {
   robots: { index: false, follow: true },
+  alternates: {
+    // ★実在する URL（mued.jp/dial/sessions = 200）。dial.mued.jp/sessions は 404。
+    canonical: "https://mued.jp/dial/sessions",
+  },
 };
 
 export default function SessionsLayout({ children }: { children: React.ReactNode }) {
