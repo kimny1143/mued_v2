@@ -8,7 +8,13 @@ import type { Metadata } from "next";
 // the canonical was the sole signal Google had for this URL.
 export const metadata: Metadata = {
   alternates: {
-    canonical: "https://dial.mued.jp/analyzer",
+    // ★2026-08-04 実測: dial.mued.jp/analyzer は 404（middleware が rewrite しない）。
+    // 実体は mued.jp/dial/analyzer = 200。★上のコメントの「a wrong tag asks it to drop
+    // this URL」が、この行自身に当たっていた —— 前回の修正は「dial root を指す誤り」を
+    // 「404 を指す誤り」に置き換えていた。
+    // ★dial.mued.jp/analyzer を実在させる（middleware に rewrite を足す）かは routing の
+    // 判断なので、ここでは「実在する URL を指す」までに留める。
+    canonical: "https://mued.jp/dial/analyzer",
   },
 };
 
