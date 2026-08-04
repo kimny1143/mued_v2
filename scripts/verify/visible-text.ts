@@ -16,6 +16,10 @@
  *   npx tsx scripts/verify/visible-text.ts <url> --expect <term> --absent <term>
  *
  *   --expect <term>  … 可視に 1 件以上 在ることを要求（無ければ exit 1）
+ *                      ★語は「検査対象の本文」から選ぶこと。nav / footer の語だと、
+ *                      本文が client 描画で届いていなくても通ってしまう
+ *                      ——★対照は「知っている場所」でなく「測りたい場所」から採る
+ *                      （product課 指摘 2026-08-04）
  *   --absent <term>  … 可視に 0 件であることを要求（在れば exit 1）
  *                      ★--expect と併用すること。--absent だけだと「届いていない検査」も
  *                      通ってしまう（陽性対照が無い状態）。
