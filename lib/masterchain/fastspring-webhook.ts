@@ -118,6 +118,17 @@ const ITEM_NAME = "MUEDsp masterchain";
 export function buildMasterchainPurchaseEvent(parsed: FastspringOrderParsed): GA4PurchaseParams | null {
   const gaClientId = parsed.gaClientId?.trim();
   if (!gaClientId) return null;
+  // ★金額か通貨が欠けた注文は、GA4 へ送らない (freee課 検出 2026-08-04)。
+  // 以前は `?? 0` と `|| "usd"` で埋めていたが、どちらも数字を壊す:
+  //   - amountCents 欠け → 「purchase・value 0」= 無料で売れたように見える (過小)
+  //   - currency 欠け   → value は購入者通貨のまま "USD" と申告 = JPY なら約150倍 (過大)
+  // ★GA4 の purchase value は CAC / ROAS の分母になるので、どちらも「広告を止める/増やす」
+  //   の判断を直接 動かす。★そして GA4 側は「送られなかった注文」と「value 0 の注文」を
+  //   区別しない。∴ 埋めずに送らない。注文自体は masterchain_purchases に残るので、
+  //   後から突合できる (呼び出し側が理由をログに出す)。
+  // ★value / currency を optional にする案は採らなかった: GA4PurchaseParams は dial の
+  //   購入経路 (#664) と共有の型で、緩めると そちらにも欠けた purchase が通る。
+  if (parsed.amountCents === undefined || !parsed.currency) return null;
   const utm = {
     source: parsed.utmSource,
     medium: parsed.utmMedium,
@@ -129,8 +140,8 @@ export function buildMasterchainPurchaseEvent(parsed: FastspringOrderParsed): GA
   return {
     clientId: gaClientId,
     transactionId: parsed.orderId, // FastSpring order id → GA4 dedup on webhook retry
-    value: (parsed.amountCents ?? 0) / 100,
-    currency: (parsed.currency || "usd").toUpperCase(),
+    value: parsed.amountCents / 100,
+    currency: parsed.currency.toUpperCase(),
     itemName: ITEM_NAME,
     itemId: parsed.productId,
     utm: hasUtm ? utm : undefined,
@@ -217,6 +228,16 @@ export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Pr
   if (ga) {
     trackServerPurchase(ga).catch((err) =>
       logger.error("[fastspring] GA4 purchase event failed", { error: String(err) }));
+  } else {
+    // ★送らなかったことを無音にしない。GA4 側は「送られなかった注文」と「value 0 の注文」を
+    // 区別しないので、区別できる場所はここしかない。DB には行が残っているので、この log と
+    // masterchain_purchases の件数を突き合わせれば欠測が特定できる。
+    logger.warn("[fastspring] GA4 purchase event skipped — required field missing", {
+      orderId: parsed.orderId,
+      hasGaClientId: Boolean(parsed.gaClientId?.trim()),
+      hasAmount: parsed.amountCents !== undefined,
+      hasCurrency: Boolean(parsed.currency),
+    });
   }
 
   // FAIL-OPEN — buyers marketing audience add, CONSENT-GATED (#670): a purchase is not a marketing
