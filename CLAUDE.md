@@ -156,6 +156,7 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 - **Vercel CLIで直接デプロイしない**: featureブランチがProductionにデプロイされ本番が壊れた。デプロイは `git push` 経由の自動デプロイのみ。再デプロイはVercelダッシュボードから
 - **`echo` でVercel環境変数を設定すると末尾改行が混入する**: `printf 'value' | vercel env add` を使うこと
+- ★**orphan / データ branch を新設したら、同じ回に `vercel.json` を置く**: `{"git":{"deploymentEnabled":{"<branch名>":false}}}`。★**app も pages も無い branch を Vercel が build しようとして必ず ERROR になる**（`data/plugin-funnel-reports` が **9日連続**・**publish 自体は成功していたのに毎日 失敗メールが届き、本物の失敗が埋もれる**）。★**`vercel.json` は push された commit 側が読まれる**（実測）ので**データ branch に置けばよく、main は触らない**。★**`ignoreCommand` ではなく `git.deploymentEnabled`**——**前者は deployment を作ってから build を skip、後者は deployment 自体を作らせない**
 - **価格改定は全レイヤーを網羅する**: Stripe定数 → UI → 翻訳(EN/JA) → AIプロンプト → テスト期待値。grepで旧価格を一掃してから検証
 - **PoCは全フロー通るまで完了と言わない**: 一部動作だけでPR提案しない。エンドツーエンドで通して初めてPoC完了
 
