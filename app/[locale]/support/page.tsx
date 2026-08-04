@@ -21,6 +21,12 @@ export async function generateMetadata({ params }: PageProps) {
       ? "MUEDのサポートページ - よくある質問とお問い合わせ"
       : "MUED Support Page - FAQ and Contact",
     alternates: {
+      // Self-referencing canonical. Without it, /ja/support and /en/support are near-identical
+      // pages in the sitemap with no declared preference, so Search Console reports
+      // "Duplicate, Google chose different canonical than user" — the message is literal:
+      // the user (this site) never chose one. hreflang alone does not say which URL is
+      // canonical for a given locale.
+      canonical: `https://mued.jp/${locale}/support`,
       languages: generateHreflangAlternates("/support"),
     },
   };

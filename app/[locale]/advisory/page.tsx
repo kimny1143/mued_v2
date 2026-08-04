@@ -33,6 +33,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       follow: ADVISORY_LIVE,
     },
     alternates: {
+      // Self-referencing canonical. Without it, /ja/advisory and /en/advisory are near-identical
+      // pages in the sitemap with no declared preference, so Search Console reports
+      // "Duplicate, Google chose different canonical than user" — the message is literal:
+      // the user (this site) never chose one. hreflang alone does not say which URL is
+      // canonical for a given locale.
+      canonical: `https://mued.jp/${locale}/advisory`,
       languages: generateHreflangAlternates("/advisory"),
     },
     openGraph: {
