@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from '@/lib/i18n/locale-context';
 import {
@@ -106,18 +105,33 @@ export default function WaitlistPage() {
             <div className="mt-2 mb-6 rounded-xl border border-green-500/30 bg-green-500/10 px-6 py-5 text-left">
               <p className="text-sm text-green-400 font-medium mb-2">{w.thankyou.qualifiedLabel}</p>
               <p className="text-sm text-gray-300 mb-4">{w.thankyou.qualifiedDesc}</p>
-              <Link
-                href="/sign-in?redirect_url=/dial"
+              {/* Absolute, and /sign-up not /sign-in — see the block on the other branch below. This
+                  branch already promised "サインアップして…" / "Sign up and try…" while pointing at
+                  /sign-in, so it had the same defect before this change. */}
+              <a
+                href="https://mued.jp/sign-up?redirect_url=/dial"
                 onClick={() => trackCtaClick('muedial_signup_qualified_waitlist', 'waitlist_thankyou_qualified')}
                 className="inline-block w-full text-center px-6 py-3 bg-green-500 hover:bg-green-400 text-black font-bold rounded-lg transition-colors"
               >
                 {w.thankyou.qualifiedCta}
-              </Link>
+              </a>
             </div>
           ) : (
+            /* The copy now says "sign up with this same address" — the free mix diagnosis is gated on
+               the signed-up email matching the registered one (credits/consume checkWaitlistEmailExists).
+               It used to point at the marketing LP, which the new copy would have made a lie.
+
+               ★/sign-up, not /sign-in: a waitlist registrant has no Clerk account yet by definition.
+               Sending them to /sign-in is how ~311 people were stranded in #757.
+
+               ★Absolute, not relative: this thank-you renders on two origins (mued.jp/dial/waitlist and
+               dial.mued.jp/waitlist via the middleware rewrite), and Clerk sessions are scoped to mued.jp
+               — no satellite on the Hobby plan (middleware.ts:53, which builds an absolute URL for the
+               same reason). A relative href would sign the buyer in on the wrong origin. The old code was
+               absolute for this reason; keep it absolute. */
             <a
-              href="https://dial.mued.jp"
-              onClick={() => trackCtaClick('muedial_from_waitlist_thanks', 'waitlist_thankyou')}
+              href="https://mued.jp/sign-up?redirect_url=/dial"
+              onClick={() => trackCtaClick('muedial_signup_from_waitlist_thanks', 'waitlist_thankyou')}
               className="inline-block px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors"
             >
               {w.thankyou.cta}
