@@ -228,15 +228,28 @@ export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Pr
   if (ga) {
     trackServerPurchase(ga).catch((err) =>
       logger.error("[fastspring] GA4 purchase event failed", { error: String(err) }));
-  } else {
-    // ★送らなかったことを無音にしない。GA4 側は「送られなかった注文」と「value 0 の注文」を
-    // 区別しないので、区別できる場所はここしかない。DB には行が残っているので、この log と
-    // masterchain_purchases の件数を突き合わせれば欠測が特定できる。
-    logger.warn("[fastspring] GA4 purchase event skipped — required field missing", {
+  } else if (parsed.amountCents === undefined || !parsed.currency) {
+    // ★異常。この log は load-bearing で、鳴らす条件を絞る必要がある (product課 検出)。
+    //
+    // 理由: 本ファイル冒頭のとおり payload の SHAPE は実物と未突合 (C1 で確定させる)。
+    // ★もし `data.total` のパスが違えば、amountCents は全注文で undefined になる。
+    //   本 PR 前: 「purchase が全部 value 0」= 変なパターンとして GA4 で目に付いた
+    //   ★本 PR 後: 「purchase が1件も無い」= 売れていないのと区別できない
+    // ∴ ★パスのずれを検出できる唯一の場所がここになった。
+    //
+    // GA4 側は「送られなかった注文」と「value 0 の注文」を区別しない。DB には行が残るので、
+    // この log と masterchain_purchases の件数を突き合わせれば欠測が特定できる。
+    logger.warn("[fastspring] GA4 purchase skipped — amount/currency missing (payload path?)", {
       orderId: parsed.orderId,
-      hasGaClientId: Boolean(parsed.gaClientId?.trim()),
       hasAmount: parsed.amountCents !== undefined,
       hasCurrency: Boolean(parsed.currency),
+    });
+  } else {
+    // ★gaClientId の不在は routine —— `tags` は popup セッション由来なので、直リンク・
+    // メール経由・cookie 無しでは普通に欠ける。★上の warn に混ぜると、C1 で本当に
+    // パスがずれていた時に埋もれる (product課 検出)。
+    logger.debug("[fastspring] GA4 purchase skipped — no ga client_id (routine)", {
+      orderId: parsed.orderId,
     });
   }
 
