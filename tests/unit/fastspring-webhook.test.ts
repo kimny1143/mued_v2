@@ -51,6 +51,28 @@ describe("parseFastspringOrderCompleted", () => {
     });
   });
 
+  it("★does NOT fall back to the payout-currency total (currency/amount would disagree)", () => {
+    // freee課 検出 2026-08-04: `data.total` は購入者通貨、`totalInPayoutCurrencyValue` は
+    // 支払通貨 (USD)。`currency` は常に購入者通貨を入れるので、fallback が発火した行は
+    // 「通貨欄 JPY・金額欄 USD」になり、$69 と ¥12,856 で桁が約150倍ずれる。
+    // ★金額は、欠けているより間違っている方が高くつく。欠けたら undefined のままにし、
+    // FastSpring の Line Item Detail Export から後で補う。
+    const jpyBuyerMissingTotal = {
+      ...sampleEvent,
+      data: {
+        ...sampleEvent.data,
+        total: undefined,
+        totalInPayoutCurrencyValue: 69, // USD
+        currency: "JPY",
+      },
+    };
+    const p = parseFastspringOrderCompleted(jpyBuyerMissingTotal);
+    expect(p).not.toBeNull();
+    // ★USD の 69 を JPY 建ての 6900 として記録しない
+    expect(p!.amountCents).toBeUndefined();
+    expect(p!.currency).toBe("JPY");
+  });
+
   it("★does NOT read a FastSpring-generated license key out of the payload", () => {
     // The issuer changed (2026-07-25): we mint the keyfile with Ed25519 ourselves, because FastSpring
     // cannot sign with our private key and the plugin verifies offline against our baked-in public

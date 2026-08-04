@@ -67,7 +67,13 @@ export function parseFastspringOrderCompleted(event: unknown): FastspringOrderPa
   const email = asStr(contact.email) ?? asStr(asObj(data.customer).email);
   if (!orderId || !email) return null;
 
-  const total = asNum(data.total) ?? asNum(data.totalInPayoutCurrencyValue);
+  // ★fallback を外した (freee課 検出 2026-08-04)。`data.total` は購入者通貨、
+  // `totalInPayoutCurrencyValue` は支払通貨 (USD) で、`currency` は常に購入者通貨を入れる。
+  // ∴ fallback が発火した行は「通貨欄 JPY・金額欄 USD」になり、$69 と ¥12,856 で
+  // 桁が約150倍ずれる。★金額は、欠けているより間違っている方が高くつく。
+  // 欠けた場合は undefined のままにし、FastSpring の Line Item Detail Export から
+  // 後で補う (fee/tax/net と同じ経路・freee課 7/27)。
+  const total = asNum(data.total);
 
   const first = asStr(contact.first) ?? "";
   const last = asStr(contact.last) ?? "";
