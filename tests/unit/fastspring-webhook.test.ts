@@ -51,6 +51,49 @@ describe("parseFastspringOrderCompleted", () => {
     });
   });
 
+  it("★does NOT fall back to the payout-currency total (currency/amount would disagree)", () => {
+    // freee課 検出 2026-08-04: `data.total` は購入者通貨、`totalInPayoutCurrencyValue` は
+    // 支払通貨 (USD)。`currency` は常に購入者通貨を入れるので、fallback が発火した行は
+    // 「通貨欄 JPY・金額欄 USD」になり、$69 と ¥12,856 で桁が約150倍ずれる。
+    // ★金額は、欠けているより間違っている方が高くつく。欠けたら undefined のままにし、
+    // FastSpring の Line Item Detail Export から後で補う。
+    const jpyBuyerMissingTotal = {
+      ...sampleEvent,
+      data: {
+        ...sampleEvent.data,
+        total: undefined,
+        totalInPayoutCurrencyValue: 69, // USD
+        currency: "JPY",
+      },
+    };
+    const p = parseFastspringOrderCompleted(jpyBuyerMissingTotal);
+    expect(p).not.toBeNull();
+    // ★USD の 69 を JPY 建ての 6900 として記録しない
+    expect(p!.amountCents).toBeUndefined();
+    expect(p!.currency).toBe("JPY");
+  });
+
+  it("★sends no GA4 purchase when amount or currency is missing (no 0 / no 'usd' default)", () => {
+    // freee課 検出 2026-08-04（:70 の修正で amountCents が undefined になりうるようになった先）。
+    // 埋めると数字が両方向に壊れる:
+    //   amountCents 欠け → value 0 = 無料で売れたように見える（過小）
+    //   currency 欠け    → value は購入者通貨のまま "USD" 申告 = JPY なら約150倍（過大）
+    // ★GA4 の purchase value は CAC / ROAS の分母なので、どちらも広告判断を直接 動かす。
+    const base = parseFastspringOrderCompleted(sampleEvent)!;
+
+    const noAmount = buildMasterchainPurchaseEvent({ ...base, amountCents: undefined });
+    expect(noAmount).toBeNull(); // ★value 0 で送らない
+
+    const noCurrency = buildMasterchainPurchaseEvent({ ...base, currency: undefined });
+    expect(noCurrency).toBeNull(); // ★"usd" を既定値にして送らない
+
+    // 陽性対照: 揃っていれば送る（上2つの null が「常に null」でないこと）
+    const ok = buildMasterchainPurchaseEvent(base);
+    expect(ok).not.toBeNull();
+    expect(ok!.value).toBe(69);
+    expect(ok!.currency).toBe("USD");
+  });
+
   it("★does NOT read a FastSpring-generated license key out of the payload", () => {
     // The issuer changed (2026-07-25): we mint the keyfile with Ed25519 ourselves, because FastSpring
     // cannot sign with our private key and the plugin verifies offline against our baked-in public
@@ -111,15 +154,20 @@ describe("buildMasterchainPurchaseEvent", () => {
     expect(buildMasterchainPurchaseEvent(p)).toBeNull();
   });
 
-  it("value falls back to 0 and currency to USD when absent", () => {
+  // ★2026-08-04 に期待値を反転させた。旧テストは "value falls back to 0 and currency to
+  // USD when absent" として ★既定値で埋める挙動を「正しい」と固定していた。
+  // ★テストが在ったから安心だった、ではなく、テストがバグを仕様として保存していた。
+  // freee課（CFO）の指摘で、その既定値が数字を両方向に壊すと分かったので反転させる:
+  //   value 0   → 無料で売れたように見える（過小）
+  //   "USD" 既定 → value は購入者通貨のまま = JPY なら約150倍（過大）
+  // ★GA4 の purchase value は CAC / ROAS の分母なので、広告判断を直接 動かす。
+  it("★returns null (does NOT default) when value or currency is absent", () => {
     const ev = buildMasterchainPurchaseEvent({
       orderId: "O-4",
       email: "a@b.com",
       productId: "muedsp_masterchain",
       gaClientId: "c1",
     });
-    expect(ev?.value).toBe(0);
-    expect(ev?.currency).toBe("USD");
-    expect(ev?.utm).toBeUndefined();
+    expect(ev).toBeNull();
   });
 });

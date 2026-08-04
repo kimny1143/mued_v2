@@ -48,8 +48,16 @@ export const masterchainPurchases = pgTable('masterchain_purchases', {
   licenseVersion: integer('license_version'),         // keyfile format version (LICENSE_VERSION)
   issuedAt: timestamp('issued_at'),                   // when we signed it (≠ createdAt on re-issue)
   productId: text('product_id').notNull(),            // 'muedsp_masterchain'
-  amountCents: integer('amount_cents'),               // order total (smallest unit)
-  currency: text('currency'),                         // e.g. 'USD'
+  // ★これは「当社の売上」でも「入金額」でもない —— 購入者が払った総額 (税込) である。
+  // FastSpring が Merchant of Record なので、当社が受け取るのは手数料を引いた純額:
+  //   購入者が払う  ¥12,856 (うち消費税 ¥1,169)  ← この欄に入る値
+  //   当社が受け取る $63.98 ($69 − 手数料 $5.02)
+  // ★同じ DB に `amount_cents` が3本 在り、dial 側の2本 (dial.ts:277,343・notNull) は
+  //   「自社の価格」を指す。★同じ名前が別の意味を持っているので、集計を書く時は
+  //   どのテーブルの amount_cents かを必ず見ること (freee課 検出 2026-08-04)。
+  // 改名は migration になるため未実施。判断は #841 と同じく「見つけた」までで保留。
+  amountCents: integer('amount_cents'),               // ★buyer gross (tax incl), NOT our revenue
+  currency: text('currency'),                         // ★always the BUYER's currency (e.g. 'JPY')
   buyerCountry: text('buyer_country'),
   firstTouch: jsonb('first_touch'),                   // inherited gaClientId + utm* (attribution)
   fastspringSubscriptionId: text('fastspring_subscription_id'), // null for buy-once; reserved for future subs

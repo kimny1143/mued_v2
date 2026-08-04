@@ -67,7 +67,13 @@ export function parseFastspringOrderCompleted(event: unknown): FastspringOrderPa
   const email = asStr(contact.email) ?? asStr(asObj(data.customer).email);
   if (!orderId || !email) return null;
 
-  const total = asNum(data.total) ?? asNum(data.totalInPayoutCurrencyValue);
+  // ★fallback を外した (freee課 検出 2026-08-04)。`data.total` は購入者通貨、
+  // `totalInPayoutCurrencyValue` は支払通貨 (USD) で、`currency` は常に購入者通貨を入れる。
+  // ∴ fallback が発火した行は「通貨欄 JPY・金額欄 USD」になり、$69 と ¥12,856 で
+  // 桁が約150倍ずれる。★金額は、欠けているより間違っている方が高くつく。
+  // 欠けた場合は undefined のままにし、FastSpring の Line Item Detail Export から
+  // 後で補う (fee/tax/net と同じ経路・freee課 7/27)。
+  const total = asNum(data.total);
 
   const first = asStr(contact.first) ?? "";
   const last = asStr(contact.last) ?? "";
@@ -112,6 +118,17 @@ const ITEM_NAME = "MUEDsp masterchain";
 export function buildMasterchainPurchaseEvent(parsed: FastspringOrderParsed): GA4PurchaseParams | null {
   const gaClientId = parsed.gaClientId?.trim();
   if (!gaClientId) return null;
+  // ★金額か通貨が欠けた注文は、GA4 へ送らない (freee課 検出 2026-08-04)。
+  // 以前は `?? 0` と `|| "usd"` で埋めていたが、どちらも数字を壊す:
+  //   - amountCents 欠け → 「purchase・value 0」= 無料で売れたように見える (過小)
+  //   - currency 欠け   → value は購入者通貨のまま "USD" と申告 = JPY なら約150倍 (過大)
+  // ★GA4 の purchase value は CAC / ROAS の分母になるので、どちらも「広告を止める/増やす」
+  //   の判断を直接 動かす。★そして GA4 側は「送られなかった注文」と「value 0 の注文」を
+  //   区別しない。∴ 埋めずに送らない。注文自体は masterchain_purchases に残るので、
+  //   後から突合できる (呼び出し側が理由をログに出す)。
+  // ★value / currency を optional にする案は採らなかった: GA4PurchaseParams は dial の
+  //   購入経路 (#664) と共有の型で、緩めると そちらにも欠けた purchase が通る。
+  if (parsed.amountCents === undefined || !parsed.currency) return null;
   const utm = {
     source: parsed.utmSource,
     medium: parsed.utmMedium,
@@ -123,8 +140,8 @@ export function buildMasterchainPurchaseEvent(parsed: FastspringOrderParsed): GA
   return {
     clientId: gaClientId,
     transactionId: parsed.orderId, // FastSpring order id → GA4 dedup on webhook retry
-    value: (parsed.amountCents ?? 0) / 100,
-    currency: (parsed.currency || "usd").toUpperCase(),
+    value: parsed.amountCents / 100,
+    currency: parsed.currency.toUpperCase(),
     itemName: ITEM_NAME,
     itemId: parsed.productId,
     utm: hasUtm ? utm : undefined,
@@ -211,6 +228,29 @@ export async function handleFastspringOrderCompleted(tx: Tx, event: unknown): Pr
   if (ga) {
     trackServerPurchase(ga).catch((err) =>
       logger.error("[fastspring] GA4 purchase event failed", { error: String(err) }));
+  } else if (parsed.amountCents === undefined || !parsed.currency) {
+    // ★異常。この log は load-bearing で、鳴らす条件を絞る必要がある (product課 検出)。
+    //
+    // 理由: 本ファイル冒頭のとおり payload の SHAPE は実物と未突合 (C1 で確定させる)。
+    // ★もし `data.total` のパスが違えば、amountCents は全注文で undefined になる。
+    //   本 PR 前: 「purchase が全部 value 0」= 変なパターンとして GA4 で目に付いた
+    //   ★本 PR 後: 「purchase が1件も無い」= 売れていないのと区別できない
+    // ∴ ★パスのずれを検出できる唯一の場所がここになった。
+    //
+    // GA4 側は「送られなかった注文」と「value 0 の注文」を区別しない。DB には行が残るので、
+    // この log と masterchain_purchases の件数を突き合わせれば欠測が特定できる。
+    logger.warn("[fastspring] GA4 purchase skipped — amount/currency missing (payload path?)", {
+      orderId: parsed.orderId,
+      hasAmount: parsed.amountCents !== undefined,
+      hasCurrency: Boolean(parsed.currency),
+    });
+  } else {
+    // ★gaClientId の不在は routine —— `tags` は popup セッション由来なので、直リンク・
+    // メール経由・cookie 無しでは普通に欠ける。★上の warn に混ぜると、C1 で本当に
+    // パスがずれていた時に埋もれる (product課 検出)。
+    logger.debug("[fastspring] GA4 purchase skipped — no ga client_id (routine)", {
+      orderId: parsed.orderId,
+    });
   }
 
   // FAIL-OPEN — buyers marketing audience add, CONSENT-GATED (#670): a purchase is not a marketing
