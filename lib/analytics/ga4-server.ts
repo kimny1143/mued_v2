@@ -31,11 +31,15 @@ export interface GA4PurchaseParams {
 }
 
 export async function trackServerPurchase(params: GA4PurchaseParams): Promise<void> {
-  const measurementId = process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID;
+  // ★Must match the names that actually exist in production. This read said
+  // NEXT_PUBLIC_GA4_MEASUREMENT_ID (with a "4") from 2026-05-09 until 2026-07-29; production only
+  // ever had NEXT_PUBLIC_GA_MEASUREMENT_ID, so `measurementId` was undefined and every purchase
+  // event returned here silently for 81 days. See tests/unit/analytics-env-names.test.ts.
+  const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
   const apiSecret = process.env.GA4_MP_API_SECRET;
 
   if (!measurementId || !apiSecret) {
-    console.warn('[ga4-server] GA4_MP_API_SECRET or NEXT_PUBLIC_GA4_MEASUREMENT_ID not set — skipping purchase event');
+    console.warn('[ga4-server] GA4_MP_API_SECRET or NEXT_PUBLIC_GA_MEASUREMENT_ID not set — skipping purchase event');
     return;
   }
 
