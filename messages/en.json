@@ -326,7 +326,7 @@
       },
       "cancellation": {
         "title": "Cancellation & Refund Policy",
-        "description": "Pay-per-use: Cancellation is available before AI audio processing begins. Refunds are not available after processing starts due to the nature of digital services.\n\nHoo Pass (monthly subscription) is closed to new sign-ups. The following applies only where a subscription is already in effect: you may cancel at any time by emailing support@mued.jp with the subject \"Hoo Pass cancellation\" (processed within 24 business hours). Service remains available until the day before the next renewal date, after which charges stop. Remaining credits stay usable for 30 days after cancellation. Pro-rated refunds are not provided."
+        "description": "Pay-per-use: Cancellation is available before AI audio processing begins. Refunds are not available after processing starts due to the nature of digital services.\n\nHoo Pass (monthly subscription) is closed to new sign-ups. The following applies only where a subscription is already in effect: you may cancel at any time by emailing support@mued.jp with the subject \"Hoo Pass cancellation\" (processed within 24 business hours). Service remains available until the end of your paid period, after which charges stop. Remaining credits stay usable for 30 days after cancellation. Pro-rated refunds are not provided."
       },
       "environment": {
         "title": "System Requirements",
