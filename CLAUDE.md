@@ -1032,3 +1032,15 @@ harness の分類器などが非決定的に DENY する場合がある。**通�
 
 <!-- COMMON-BLOCK-END: 22-git-ops-after-guard -->
 
+<!-- COMMON-BLOCK-START: 23-done-vs-delivered -->
+<!-- COMMON-BLOCK-END: 23-done-vs-delivered -->
+
+<!-- COMMON-BLOCK-START: 24-remote-trigger-gotchas -->
+<!-- COMMON-BLOCK-END: 24-remote-trigger-gotchas -->
+
+<!-- COMMON-BLOCK-START: 25-macos-runtime-gotchas -->
+<!-- COMMON-BLOCK-END: 25-macos-runtime-gotchas -->
+
+<!-- COMMON-BLOCK-START: 26-user-scope-hook-audit-log -->
+<!-- COMMON-BLOCK-END: 26-user-scope-hook-audit-log -->
+
