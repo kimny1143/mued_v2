@@ -1033,14 +1033,208 @@ harness の分類器などが非決定的に DENY する場合がある。**通�
 <!-- COMMON-BLOCK-END: 22-git-ops-after-guard -->
 
 <!-- COMMON-BLOCK-START: 23-done-vs-delivered -->
+<!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/23-done-vs-delivered.md -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
+
+## ★やった ≠ 届いた（完了と書く前に、下流で観測できる事実を1つ）
+
+★**「完了」と書く前に、★下流で観測できる事実を1つ挙げる。** 自分の側で終わったことは、届いたことの証拠にならない。
+
+**同じ形が別の言葉で何度も出る**:
+
+| 自分の側 | ★届いた側 |
+|---|---|
+| **PR を merge した** | ★**発出された**（通達が相手に届いた） |
+| **repo 側で完納した** | ★**live に反映された**（deploy が降りた） |
+| **コードを直した** | ★**イベントが到達した**（計測が動いた） |
+| **配布した** | ★**commit 着地した**（さらに ★その課のセッションが読んだ） |
+| **script を書いた** | ★**実行された**（誰かが回した） |
+
+★**欠落は全部「人・別 repo・別ドメイン・別プロセスが挟まる境界」で起きる。** 自分の workspace の中で完結する作業では、まず起きない。
+
+★**∴ これは per-workspace の memory では構造的に止まらない**（**境界の向こう側は自分の memory に載らない**）。**だから共通ブロックに置く。**
+
+### 実測（2026-07-28〜08-03・1週間で4課7回）
+
+- **通達 #263 / #265 が「merged」で止まり未発出**（**受け手は一度も見ていない**）
+- **CTA 17本が repo 側 live なのにページに未反映**
+- **GA4 イベントがコード修正後も未到達**
+- **配布が working tree 止まりで未 commit**（**8課ぶん**）
+
+★**7件とも「自分の側では終わっていた」。** **どれも嘘をついていない——★観測の位置が自分の側だっただけ。**
+
+### How to apply
+
+★**完了報告に、下流の事実を1行 入れる。** 無ければ「まだ届いていない」と書く。
+
+```
+✗ 「PR #123 を merge しました」
+✓ 「PR #123 merged → ★相手の repo の origin/main に着地を確認（grep で本文1件・陰性 control 0）」
+✗ 「配布しました」
+✓ 「配布 → ★11/12 が commit 着地（残り1課は未 commit・依頼済）」
+```
+
+★**状態は2値でなく3値で書く**: **`未実行` / `実行済だが未着地` / `着地確認済`**。★**「merged」と「実行済」は別**（**正本の変更と、それを回したかは別行為**）。
+
+### ★到達の観測点は「型ごと」に違う（2026-08-04 mgc 実測）
+
+★**「読まれたまで確認せよ」は書かない。** **skill には強すぎ、memory には弱すぎる。** ★**型ごとに観測点を先に決めて、その1つを報告に添える。**
+
+| 型 | 到達の観測点 | ★実際に見た壊れ方 |
+|---|---|---|
+| **skill** | 配布先セッションの一覧に `name`+`description` が出る ＝ ★**invocable になった**（★**本体はここでは読まれない**——`Skill` で invoke した時に load される） | — |
+| **CLAUDE.md block** | 配布先セッションの **context に本文が現れる**（★skill と違い**本文まで観測できる**） | — |
+| **hook** | **起動時に実出力が出る** | ★**dry-run が通っても本番経路は別**（dry-run 成功の3日後に、本番注入を別途 実測して初めて確認） |
+| **memory** | **recall 時に本文が出る** | ★**index 1行だけ来て本文が来ない劣化**を実検出 ＝ **「index が在る」は「本文が届く」ではない** |
+
+★**この表自体が、この節の主題に当たった実例から出ている**——**提供された当初の証拠は「harness が読んだ」だったが、★実際に観測されたのは `description` までで、本体は読まれていなかった。** ★**提供した側が、block に入る前に自分で1段 弱めた。**
+
+★**再現性の限界も一緒に持つ**: **この観測は配布がセッション途中に起きたため偶然 見えたもので、harness の挙動に依存する。** ∴ ★**再現可能にするなら「配布後に配布先セッションを1つ起動して、一覧／context を1回 確認する」を手順にする。**
+
+### ★測る側の注意
+
+- ★**「送った」を下流の事実にしない**（**送信は自分の側の出来事**）。**相手が「受け取った」と書いたものを引く**
+- ★**下流が観測できない時は、観測できないと書く**（**「たぶん届いた」を完了にしない**）
+- ★**件数だけで完了にしない**（**「11/12」は「11 が届いた」であって「1 が届いていない」も同時に言っている。★後半を落とさない**）
+
 <!-- COMMON-BLOCK-END: 23-done-vs-delivered -->
 
 <!-- COMMON-BLOCK-START: 24-remote-trigger-gotchas -->
+<!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/24-remote-trigger-gotchas.md -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
+
+## ★RemoteTrigger / cloud routine の恒久 gotchas
+
+★**時計（cloud routine）を持つ課は、以下を前提として持つ。** **どれも「気づけない形で落ちる」ので、事故から学べない。**
+
+### ① ★`list` は網羅ではない — 最新20件の窓
+
+★**`RemoteTrigger list` が返すのは `created_at` 降順の先頭20件だけ。** ∴ ★**「list に無い ≠ 存在しない」。**
+
+**実測（2026-08-02）**: **窓の外に在った4ヶ月前の trigger を `get` で確認**（**窓内の一覧では一度も見えなかった**）。
+
+★**全数把握には「既知 ID 表 ＋ 個別 `get`」が要る。** **一覧だけで棚卸しをすると、古いものから順に見えなくなる。**
+
+### ② ★trigger を作ったら ID を durable に記録する
+
+**作成時に ID を控えないと、後から `get` できない**（**窓の外に出た瞬間に到達不能**）。**初期に作った batch は ID 無記録で、後から個別確認ができなくなった。**
+
+### ③ ★PR 作成が成功しても、機構が動いたとは限らない
+
+**routine が PR を作れば「動いた」ように見えるが、★参照先が誤っていても PR は成功する。** ∴ ★**成果物の存在を「機構が正しく動いた」の証拠にしない。** **中身が意図どおりかを別に見る。**
+
+### ④ ★cloud session に peer 接続は無い
+
+★**routine の prompt に「`list_peers` で peer へ通知」と書いても、cloud 側では実行されない。** ∴ ★**通知は届かず、しかも routine 自体は成功で終わる。**
+
+**実測（2026-08-04）**: **通知を書いた routine が9件・9件とも接続なし。** **ある課は発火に気づかず3時間 焼いた。**
+
+★**∴ routine は「repo への書き込みまで」で終わらせる。** **通知は人（conductor）が別経路で配る。** ★**時計に依存する側は「発火時刻に自分で `get` を叩く」——届くのを待たない。**
+
+### ⑤ ★dormant な受信側への通知は黙って消える
+
+**送信は成功し、受信側が起動していないだけなので、★どちらの側にもエラーが出ない。** **毎週 消え続けていた実例がある。**
+
+### How to apply
+
+- ★**「list で現況確認」と書いてある手順書は古い。** **窓の意味論（最新20件）を知らずに書かれている**
+- ★**routine を停止・変更する時は、窓の外の同種 routine を `get` で確認してから**（**窓内だけ直すと、外のゾンビが動き続ける**）
+- ★**「発火した」を「届いた」の代わりにしない**（→ [[23-done-vs-delivered]]）
+
 <!-- COMMON-BLOCK-END: 24-remote-trigger-gotchas -->
 
 <!-- COMMON-BLOCK-START: 25-macos-runtime-gotchas -->
+<!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/25-macos-runtime-gotchas.md -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
+
+## ★macOS / 実行環境の gotchas（配布 script・検査を書く時）
+
+★**どれも「書いた人の環境でだけ緑になる」形で落ちる。** **∴ 実行環境を前提として持つ。**
+
+### ① ★macOS 既定 bash は 3.2 — `declare -A`（連想配列）が無い
+
+`set -u` の下では **`unbound variable` で落ちる**。★**bash 4+ でだけ動く script は、書いた人の環境でだけ緑になる。**
+
+**回避**: **`|` 区切りの文字列 ＋ `cut`／`case`** で持つ。★**`${var#pattern}` に多バイト文字を書かない**（**bash 3.2 で変数名ごと壊れる実測あり**）。
+
+### ② ★macOS の grep は、不正バイト1個で「出力も stderr も空の exit=1」
+
+```
+grep -c 'x' good.txt  → 出力='1'  exit=0
+grep -c 'x' bad.txt   → 出力=''   exit=1  stderr=''   ★不正バイト1個でこうなる
+```
+
+★**「不一致」と完全に同一で、出力から区別できない。** ★**`LC_ALL=C` では直らない**（よくある誤解）。**`grep -a` で直る。**
+
+★**∴ 「0件」を報告する検査が、黙って死んでいることがある。** **2課が独立に同型で被弾し、以後 `grep -a` の手動回避が常態化した。**
+
+### ③ ★同じコマンド名でも、経路が違えば別物
+
+**ハーネス内の `grep`（ugrep 等）と `/usr/bin/grep` は挙動が違う。** ★**「同じコマンドを打った」は「同じ判定をした」ではない。** **検査を配る時は、どちらで走るかを書く。**
+
+### ④ ★`sed -i` は macOS で引数が要る
+
+**`sed -i '' -e ...`**（GNU の `sed -i -e ...` は macOS で失敗する）。★**配布 script に書くと、実行環境ごとに別の結果になる。**
+
+### ⑤ ★`/Volumes` と `Dropbox` の二重計上
+
+**`~/Dropbox/_DevProjects` → `/Volumes/strage/_DevProjects` の symlink が1本 在り、両方から同じ実体に着く。** ★**両方を数えると二重計上になる**（**実測: hook の取りこぼし件数に混入した**）。
+
+★**そして Dropbox は symlink の実体を同期しない。** ∴ ★**「Dropbox に在るから写しがある」は偽**（**同一ディスクの別名にすぎない**）。
+
+### ⑥ ★`PATH` を壊して「無い時の挙動」を測る時は、壊しすぎない
+
+**`PATH=/nonexistent` にすると `cat` すら引けず、★検査対象の script が起動しない**（`rc=127`）。★**「無い時の挙動を測った」つもりで、何も測っていない状態になる。**
+
+**正しい形**: ★**外したいコマンドの在り処を全部 measure してから**（**`which -a`**）、**必要な外部コマンドだけを持つ PATH を組む。** ★**外れたことを先に1行 出す**（`command -v jq && echo "★まだ引ける=試験無効"`）。
+
+### How to apply
+
+- ★**「0件」「差分なし」を出す検査には、必ず陽性 control を同じ出力に並べる**（→ `positive-control-verify` skill）
+- ★**件数の根拠が match 数なら、match 行（か上限つきサンプル）を同じ出力に併記する**——**「20」は読む人に再検査の手掛かりを与えない**
+- ★**全部 見ていない時は「サンプルを見た・残りは未確認」と残差にラベルを付ける**（**「全部 見た」と書かないことのほうが機構として重要**）
+
 <!-- COMMON-BLOCK-END: 25-macos-runtime-gotchas -->
 
 <!-- COMMON-BLOCK-START: 26-user-scope-hook-audit-log -->
+<!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/26-user-scope-hook-audit-log.md -->
+<!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
+
+## ★user スコープ hook は全 repo で走る／tool-audit に本文が平文で残る
+
+★**機微ファイル（`.env` / 受託 / 会計 / 見積）を扱う課は、これを前提として持つ。**
+
+### ① ★`~/.claude/settings.json` の hook は、全 workspace で走る
+
+**user スコープの `PreToolUse`（`matcher: "*"` 等）は、★client repo を含むすべての workspace で発火する。** ★**「この repo には hook を入れていない」は、user スコープには効かない。**
+
+★**受託 / クライアント repo を持つ課は、user スコープに何が配線されているかを1回 実測する**（**repo 側だけ見ても分からない**）。
+
+### ② ★`~/.claude/tool-audit.jsonl` に Write/Edit の本文が平文で残る
+
+**実測**: **末尾 8MB の窓に Write/Edit が 723件・最大 15,678字が平文**。
+
+★**`.gitignore` の保護はここに及ばない。** ★**untrack しても、ログには残る。** ∴ ★**「commit しない ≠ 記録されない」。**
+
+**`.env` を Write すれば、`.gitignore` していても平文で載る。**
+
+### ③ ★ログを secret で grep しない
+
+★**探す行為そのものが context を汚染し、しかも その grep 自体もログに載る。**
+
+**必要なのは「何が載っているか」ではなく「載る経路が在る」という前提**で、**経路は ① ② で分かる。** ★**中身を確認しにいくと、確認した事実が増えるだけ。**
+
+### How to apply
+
+- ★**機微を書く前に「これは平文で残る」を前提に置く**（**消す手段が無い**——**ログは kimny の home に在り、課の権限外**）
+- ★**受託案件では、クライアントの機微を扱う操作を Write/Edit で行わない選択肢を先に検討する**（**別経路・別ツール・そもそも書かない**）
+- ★**この節は「危険を知らせる」ためであって「対処が在る」わけではない。** **対処が無いことを、対処が在るかのように読まないこと**
+
+### ★この節が共通ブロックに在る理由（器の話）
+
+★**本来の宛先は org の root `CLAUDE.md`（全 workspace が読む親）だった。** ★**しかしその器は、実測で ★版管理なし・バックアップなし・物理1枚**（**どの repo にも属さず / Time Machine 未設定 / Dropbox は同一ディスクへの symlink**）。
+
+∴ ★**「まだ判断していない」でなく「書ける状態にない」**ため、**知識の側だけ先に共通ブロックへ置いた。** ★**器の整備は別途**（**版管理・レビュー経路・off-machine の写し**）。
+
 <!-- COMMON-BLOCK-END: 26-user-scope-hook-audit-log -->
 
