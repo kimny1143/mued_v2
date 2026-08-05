@@ -47,27 +47,54 @@ export async function syncConsentToAudience(opts: {
 }): Promise<void> {
   const resend = getClient();
   if (!resend || !opts.email) return; // no-op when unconfigured
+
+  // ★resend SDK は API エラーで throw しない —— `{ data, error }` を resolve する。
+  // 実測 (resend@6.12.4 の dist/index.cjs): `throw new Error` は全体で2件だけで、
+  //   ① @react-email/render の import 失敗  ② constructor の Missing API key
+  // のどちらも この経路に無い (②は getClient() が先に null を返す)。
+  // `fetchRequest` は `!response.ok` で `{ data: null, error }` を return する。
+  // ∴ ★以前の try/catch は発火せず、catch の中の「再 grant 経路」は死にコードだった
+  //   ——既存 contact が再 grant した時、segment に戻らず unsubscribed のまま残る。
+  //   ledger は granted なのに配信対象に入らない (product課 検出 2026-08-05)。
   try {
     if (opts.status === 'granted') {
-      // New contact → create it directly into the segment. If the contact already exists (create →
-      // duplicate error), fall back to ensuring segment membership + re-subscribing (the re-grant case).
-      try {
-        await resend.contacts.create({
-          email: opts.email,
-          unsubscribed: false,
-          ...(opts.name ? { firstName: opts.name } : {}),
-          segments: [{ id: SEGMENT_ID! }],
-        });
-      } catch {
-        await resend.contacts.segments.add({ email: opts.email, segmentId: SEGMENT_ID! });
-        await resend.contacts.update({ email: opts.email, unsubscribed: false });
+      // New contact → create it directly into the segment.
+      const created = await resend.contacts.create({
+        email: opts.email,
+        unsubscribed: false,
+        ...(opts.name ? { firstName: opts.name } : {}),
+        segments: [{ id: SEGMENT_ID! }],
+      });
+
+      // ★create が失敗したら再 grant 経路へ。既に存在する contact は create が error を返すので、
+      // segment への復帰と再購読を明示的にやる。★error を読まないとここへ来ない。
+      if (created?.error) {
+        const added = await resend.contacts.segments.add({ email: opts.email, segmentId: SEGMENT_ID! });
+        const updated = await resend.contacts.update({ email: opts.email, unsubscribed: false });
+        // ★best-effort だが「ログには残る」を成立させる。resolve された失敗は catch に来ないので、
+        //   ここで見なければ どこにも出ない。
+        if (added?.error || updated?.error) {
+          logger.warn('[audience-sync] re-grant failed', {
+            createError: String(created.error?.message ?? created.error),
+            addError: added?.error ? String(added.error?.message ?? added.error) : null,
+            updateError: updated?.error ? String(updated.error?.message ?? updated.error) : null,
+            status: opts.status,
+          });
+        }
       }
     } else {
       // Withdrawn → global unsubscribe (keeps the contact but suppresses; preserves suppression on re-grant).
-      await resend.contacts.update({ email: opts.email, unsubscribed: true });
+      const updated = await resend.contacts.update({ email: opts.email, unsubscribed: true });
+      if (updated?.error) {
+        logger.warn('[audience-sync] unsubscribe failed', {
+          err: String(updated.error?.message ?? updated.error),
+          status: opts.status,
+        });
+      }
     }
   } catch (err) {
-    // Best-effort: a duplicate-on-create or transient Resend error must not surface to the caller.
+    // ★到達しうるのはネットワーク層の例外など (fetch 自体が throw する場合) のみ。
+    // API エラーは上の error 分岐で扱う。
     logger.warn('[audience-sync] best-effort sync failed', { err: String(err), status: opts.status });
   }
 }

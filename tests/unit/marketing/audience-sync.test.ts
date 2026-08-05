@@ -117,17 +117,34 @@ describe('audience-sync — configured', () => {
     );
   });
 
-  it('re-grant: existing contact (create throws) → segments.add + re-subscribe', async () => {
-    mockContactsCreate.mockRejectedValueOnce(new Error('contact already exists'));
+  // ★2026-08-05 に契約を実 SDK に合わせた。以前は mockRejectedValueOnce を使っていたが、
+  // ★resend は API エラーで throw せず `{ data, error }` を resolve する
+  // （実測 resend@6.12.4: dist の `throw new Error` は2件だけで、どちらも この経路に無い）。
+  // ★∴ 旧テストは「catch が書かれていること」を確かめており、「catch が到達すること」を
+  //   確かめていなかった —— テストは緑、本番では再 grant 経路が一度も走らない。
+  it('★re-grant: existing contact (create resolves an error) → segments.add + re-subscribe', async () => {
+    mockContactsCreate.mockResolvedValueOnce({
+      data: null,
+      error: { name: 'validation_error', message: 'Contact already exists' },
+    });
     const mod = await freshModule({ segment: 'seg_test' });
     await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
     expect(mockSegmentsAdd).toHaveBeenCalledWith({ email: 'u@example.com', segmentId: 'seg_test' });
     expect(mockContactsUpdate).toHaveBeenCalledWith({ email: 'u@example.com', unsubscribed: false });
   });
 
-  it('best-effort: create AND fallback both fail → still resolves (swallowed)', async () => {
-    mockContactsCreate.mockRejectedValueOnce(new Error('resend 500'));
-    mockSegmentsAdd.mockRejectedValueOnce(new Error('resend 500'));
+  it('★create が成功した時は再 grant 経路へ行かない（error 分岐の陰性対照）', async () => {
+    mockContactsCreate.mockResolvedValueOnce({ data: { id: 'c_1' }, error: null });
+    const mod = await freshModule({ segment: 'seg_test' });
+    await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
+    expect(mockSegmentsAdd).not.toHaveBeenCalled();
+  });
+
+  it('best-effort: create と fallback が両方 error を返しても resolve する', async () => {
+    const err = { name: 'application_error', message: 'resend 500' };
+    mockContactsCreate.mockResolvedValueOnce({ data: null, error: err });
+    mockSegmentsAdd.mockResolvedValueOnce({ data: null, error: err });
+    mockContactsUpdate.mockResolvedValueOnce({ data: null, error: err });
     const mod = await freshModule({ segment: 'seg_test' });
     await expect(
       mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' }),
