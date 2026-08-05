@@ -1,0 +1,137 @@
+/**
+ * 有料 AI SDK（Anthropic / OpenAI）に到達する API route を列挙し、
+ * レート制限が掛かっているかを出す。
+ *
+ * ★なぜ記号 grep では足りないか（#786 の実例）:
+ * `app/api/lobe/commentary/route.ts` には `claude` も `anthropic` も出てこない。
+ * 書いてあるのは `generateCommentary` だけで、★記号は `lib/muedlobe/scoring/` に在り、
+ * 性質（＝課金が積む面）は `app/api/` に在った。
+ * ∴ ★import の推移閉包で当てる（seed = SDK を直接 import するモジュール → 逆向き到達）。
+ *
+ * ★これは「レート制限が無い route を全部 直せ」という gate ではない。
+ * ★ratchet である —— 現状を BASELINE に pin し、★増えた時だけ落とす。
+ * 既存分の扱いは判断（認証済なので abuse には account が要る）だが、
+ * ★「新しく無防備な課金面が増えた」は必ず出力に出る。
+ *
+ * 使い方:
+ *   npx tsx scripts/verify/paid-sdk-reachability.ts
+ *
+ * exit: 0=BASELINE 以下 / 1=★増えた / 2=★検査不成立（seed 0・閉包 0・既知 YES を検出できない）
+ */
+
+import { readFileSync, existsSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
+import { join, dirname, normalize } from 'node:path';
+
+/** ★2026-08-05 実測。増えた時だけ落とす（減った時は下げること） */
+const BASELINE_UNPROTECTED = 8;
+
+/**
+ * ★陽性対照。この route は #786 で rateLimit を入れた既知 YES。
+ * 閉包がこれを拾えなければ、走査が壊れている＝この回の 0 件は証拠にならない。
+ */
+const KNOWN_REACHABLE = 'app/api/lobe/commentary/route.ts';
+
+const SKIP = new Set(['node_modules', '.next', '.git', 'tests', 'scripts', 'docs']);
+const PAID = /from\s+['"](@anthropic-ai\/sdk|openai)['"]/;
+const RATE = /\brateLimit\s*\(|checkRateLimit\s*\(/;
+/** ★認証は複数の書き方が在る。withAuth* だけを見ると取りこぼす（実測 2026-08-05） */
+const AUTH = /withAuthResolved|withAuth\b|withDialAuth|authenticateApiRequest|auth\(\)|currentUser/;
+
+function walk(dir: string, out: string[] = []): string[] {
+  for (const name of readdirSync(dir)) {
+    if (SKIP.has(name) || name.startsWith('.')) continue;
+    const p = join(dir, name);
+    if (statSync(p).isDirectory()) walk(p, out);
+    else if (p.endsWith('.ts') || p.endsWith('.tsx')) out.push(p);
+  }
+  return out;
+}
+
+function resolve(from: string, spec: string): string | null {
+  let base: string;
+  if (spec.startsWith('@/')) base = spec.slice(2);
+  else if (spec.startsWith('.')) base = normalize(join(dirname(from), spec));
+  else return null;
+  for (const ext of ['.ts', '.tsx', '/index.ts', '/index.tsx']) {
+    if (existsSync(base + ext)) return base + ext;
+  }
+  return null;
+}
+
+function main() {
+  const files = walk('.');
+  const imports = new Map<string, Set<string>>();
+  const seed = new Set<string>();
+
+  for (const f of files) {
+    const t = readFileSync(f, 'utf8');
+    if (PAID.test(t)) seed.add(f);
+    const deps = new Set<string>();
+    for (const m of t.matchAll(/from\s+['"]([^'"]+)['"]/g)) {
+      const r = resolve(f, m[1]);
+      if (r) deps.add(r);
+    }
+    imports.set(f, deps);
+  }
+
+  console.log(`走査              : ${files.length} files`);
+  console.log(`有料 SDK 直接 import: ${seed.size}`);
+
+  // ★seed 0 は「使っていない」でなく「走査が届いていない」の可能性がある
+  if (files.length === 0 || seed.size === 0) {
+    console.log('★検査不成立: 走査 0 件 または seed 0 件。この回の結果は証拠にならない。');
+    process.exit(2);
+  }
+
+  const rev = new Map<string, Set<string>>();
+  for (const [a, bs] of imports) {
+    for (const b of bs) {
+      if (!rev.has(b)) rev.set(b, new Set());
+      rev.get(b)!.add(a);
+    }
+  }
+
+  const reach = new Set(seed);
+  const stack = [...seed];
+  while (stack.length) {
+    for (const p of rev.get(stack.pop()!) ?? []) {
+      if (!reach.has(p)) { reach.add(p); stack.push(p); }
+    }
+  }
+
+  const routes = [...reach].filter((r) => /app\/api\/.*\/route\.ts$/.test(r)).sort();
+  console.log(`閉包の全モジュール  : ${reach.size}`);
+  console.log(`★到達する API route : ${routes.length}\n`);
+
+  // ★陽性対照 — 既知 YES を拾えなければ表を出さずに落とす
+  if (!routes.includes(KNOWN_REACHABLE)) {
+    console.log(`★検査不成立: 既知 YES (${KNOWN_REACHABLE}) を閉包が拾えていない。`);
+    console.log('  走査か import 解決が壊れている。この回の件数は証拠にならない。');
+    process.exit(2);
+  }
+  console.log(`★陽性対照 OK: 既知 YES (${KNOWN_REACHABLE}) を検出\n`);
+
+  const unprotected: string[] = [];
+  for (const r of routes) {
+    const t = readFileSync(r, 'utf8');
+    const rate = RATE.test(t);
+    const auth = AUTH.test(t);
+    if (!rate) unprotected.push(r);
+    console.log(`  ${rate ? '✓ rate' : '✗ rate'}  ${auth ? 'auth' : '★auth 無し'}  ${r}`);
+  }
+
+  console.log(`\n★レート制限なし: ${unprotected.length} / ${routes.length}（BASELINE ${BASELINE_UNPROTECTED}）`);
+
+  if (unprotected.length > BASELINE_UNPROTECTED) {
+    console.log(`✗ ★増えた（+${unprotected.length - BASELINE_UNPROTECTED}）— 新しい課金面にレート制限が無い`);
+    process.exit(1);
+  }
+  if (unprotected.length < BASELINE_UNPROTECTED) {
+    console.log(`✓ ★減った。BASELINE_UNPROTECTED を ${unprotected.length} に下げること（下げないと次の増加を見逃す）`);
+  } else {
+    console.log('✓ BASELINE と同数');
+  }
+}
+
+main();
