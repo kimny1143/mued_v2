@@ -27,6 +27,7 @@ vi.mock('resend', () => ({
 }));
 
 import { isAudienceSyncEnabled, syncConsentToAudience } from '@/lib/marketing/audience-sync';
+import { logger } from '@/lib/utils/logger';
 
 const ORIGINAL_SEGMENT = process.env.RESEND_MARKETING_SEGMENT_ID;
 const ORIGINAL_AUDIENCE = process.env.RESEND_MARKETING_AUDIENCE_ID;
@@ -138,6 +139,28 @@ describe('audience-sync — configured', () => {
     const mod = await freshModule({ segment: 'seg_test' });
     await mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' });
     expect(mockSegmentsAdd).not.toHaveBeenCalled();
+  });
+
+  // ★product課 の観察 (2026-08-05) への回答をテストにした。`created?.error` と書くと
+  // 「応答そのものが無かった」が undefined = falsy = ★成功と同じ側に畳まれ、再 grant されない
+  // まま静かに通る。`.` にしてあるので TypeError が catch に落ち、best-effort ログに★出る。
+  // ★分岐は増やさず、不定を「成功」でなく「ログ」へ倒したことを ここで固定する。
+  it('★応答が無い場合は「成功」でなく ログに倒れる（?. で畳まない）', async () => {
+    mockContactsCreate.mockResolvedValueOnce(undefined); // SDK が戻り形を変えた場合
+    const mod = await freshModule({ segment: 'seg_test' });
+    await expect(
+      mod.syncConsentToAudience({ email: 'u@example.com', status: 'granted' }),
+    ).resolves.toBeUndefined(); // best-effort は保つ（呼び出し側を壊さない）
+    expect(logger.warn).toHaveBeenCalledWith(
+      '[audience-sync] best-effort sync failed',
+      expect.objectContaining({ err: expect.stringContaining('TypeError') }),
+    );
+    // ★陽性対照: 正常な応答なら このログは出ない（上の assert が「常に出る」でないこと）
+    vi.mocked(logger.warn).mockClear();
+    mockContactsCreate.mockResolvedValueOnce({ data: { id: 'c_2' }, error: null });
+    const ok = await freshModule({ segment: 'seg_test' });
+    await ok.syncConsentToAudience({ email: 'v@example.com', status: 'granted' });
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('best-effort: create と fallback が両方 error を返しても resolve する', async () => {

@@ -68,16 +68,22 @@ export async function syncConsentToAudience(opts: {
 
       // ★create が失敗したら再 grant 経路へ。既に存在する contact は create が error を返すので、
       // segment への復帰と再購読を明示的にやる。★error を読まないとここへ来ない。
-      if (created?.error) {
+      //
+      // ★`created?.error` と書かないのは意図的 (product課 の観察 2026-08-05 への回答)。
+      //   `?.` は「応答そのものが無かった」を undefined = falsy = ★「成功」と同じ側に畳む。
+      //   SDK が戻り形を変えたら、再 grant されないまま静かに成功として通る向きになる。
+      //   `.` にしておけば TypeError が下の catch に落ち、best-effort ログとして★見える。
+      //   分岐もテストも増やさずに、不定を「成功」でなく「ログ」へ倒せる。
+      if (created.error) {
         const added = await resend.contacts.segments.add({ email: opts.email, segmentId: SEGMENT_ID! });
         const updated = await resend.contacts.update({ email: opts.email, unsubscribed: false });
         // ★best-effort だが「ログには残る」を成立させる。resolve された失敗は catch に来ないので、
         //   ここで見なければ どこにも出ない。
-        if (added?.error || updated?.error) {
+        if (added.error || updated.error) {
           logger.warn('[audience-sync] re-grant failed', {
             createError: String(created.error?.message ?? created.error),
-            addError: added?.error ? String(added.error?.message ?? added.error) : null,
-            updateError: updated?.error ? String(updated.error?.message ?? updated.error) : null,
+            addError: added.error ? String(added.error?.message ?? added.error) : null,
+            updateError: updated.error ? String(updated.error?.message ?? updated.error) : null,
             status: opts.status,
           });
         }
@@ -85,7 +91,7 @@ export async function syncConsentToAudience(opts: {
     } else {
       // Withdrawn → global unsubscribe (keeps the contact but suppresses; preserves suppression on re-grant).
       const updated = await resend.contacts.update({ email: opts.email, unsubscribed: true });
-      if (updated?.error) {
+      if (updated.error) {
         logger.warn('[audience-sync] unsubscribe failed', {
           err: String(updated.error?.message ?? updated.error),
           status: opts.status,
