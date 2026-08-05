@@ -48,10 +48,26 @@ export function trackDialPlaybackIssue(params: {
  * CTA の遷移先。★呼び出し側が明示する（推測しない）。
  *
  * 以前は `product === "muedial" ? "external_site" : "app_store"` で決めていた。
- * ★2026-08-05 実測: 11 call site 中 7件が実態と違う値を送っていた——
- *   muedsp / muedsat / dial 配下の CTA は App Store へ行かないのに `app_store`。
+ *
+ * ★2026-08-05 実測（call site 全 11 件）。★「何件 直った」は静的には確定しないので、
+ *   リテラルと変数を分けて書く（product課 指摘 2026-08-05。当初この節は「7件」と
+ *   単一の数だけ書いており、★その数は後から引用される durable な記述だった）:
+ *
+ *     リテラル 9 件 … ★変 7 / 同 2
+ *       app_store → signup / internal_page / external_site  … 5件
+ *       external_site → internal_page ("muedial" だが同一サイト内) … 1件
+ *       app_store → internal_page ("muedsp")                … 1件
+ *       external_site のまま ("muedial" の LP から dial へ)  … 2件
+ *     変数 2 件   … ★旧値は実行時の値に依存＝静的には決まらない
+ *       `product`（app-store-button）→ 新 app_store
+ *       `plugin` （muedsat の DL フォーム）→ 新 download_form
+ *
+ * ★誤りは両方向に出ていた（App Store へ行かないのに `app_store` / 同一サイト内なのに
+ *   `external_site`）。∴ 「片側に寄っていた」ではなく「導出できないものを導出していた」。
  * ★`product` の文字列から遷移先は導けない（`waitlist_from_readiness` は MUEDial ですらない）。
  * ★`startsWith("muedial")` に変えるだけでは、その1件が救われない。
+ * ★そして変数 2 件は、そもそも静的に直しようがなかった——★必須化すると
+ *   呼び出し側が明示するので、推測が要らなくなる。これが「数を直す」より効いた点。
  */
 export type CtaDestination =
   | "app_store"      // iOS/Android のストアへ出る
