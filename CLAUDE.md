@@ -159,6 +159,7 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 - ★**orphan / データ branch を新設したら、同じ回に `vercel.json` を置く**: `{"git":{"deploymentEnabled":{"<branch名>":false}}}`。★**app も pages も無い branch を Vercel が build しようとして必ず ERROR になる**（`data/plugin-funnel-reports` が **9日連続**・**publish 自体は成功していたのに毎日 失敗メールが届き、本物の失敗が埋もれる**）。★**`vercel.json` は push された commit 側が読まれる**（実測）ので**データ branch に置けばよく、main は触らない**。★**`ignoreCommand` ではなく `git.deploymentEnabled`**——**前者は deployment を作ってから build を skip、後者は deployment 自体を作らせない**
 - **価格改定は全レイヤーを網羅する**: Stripe定数 → UI → 翻訳(EN/JA) → AIプロンプト → テスト期待値。grepで旧価格を一掃してから検証
 - **PoCは全フロー通るまで完了と言わない**: 一部動作だけでPR提案しない。エンドツーエンドで通して初めてPoC完了
+- ★**`messages/*.json` に formatter を当てない**（2026-08-05 実測）。★**このリポには formatter が無い**——`.prettierrc` 無し / `package.json` に `format` script も prettier 依存も無し / `.editorconfig` `.prettierignore` `.vscode` すべて無し。∴ ★**「formatter-clean でない」という状態は定義されていない**。★**さらに悪いことに、2つのツールが★反対方向に整形する**: **#823 で入った reflow は1行のオブジェクトを4行へ★展開**（`"ceiling": { "name": …, "desc": … }` → 4行）した一方、★**prettier 既定は逆に配列を1行へ潰す**（`"features": [ 3行 ]` → 1行）。★**どちらを当てても、もう一方に対する churn を永久に作る**。**そして配列を1行に潰すと、翻訳の1項目を直しただけで行全体が reflow して diff が読めなくなる**＝★**現状の手書き整形の方が良い**。**整形 commit を出すなら、それは掃除でなく「どの formatter を採用するか」の規約決定**（内容は不変なので安全ではあるが、決めずに当てないこと）
 
 ---
 
