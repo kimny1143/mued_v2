@@ -95,7 +95,7 @@ export function MuedsatSignupForm({ plugin = "muedsat" as PluginKey } = {}) {
       return;
     }
     setStatus("submitting");
-    trackCtaClick(plugin, "download_form");
+    trackCtaClick(plugin, "download_form", "download_form");
     try {
       const res = await fetch(dist.subscribeEndpoint, {
         method: "POST",

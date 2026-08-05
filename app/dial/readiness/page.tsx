@@ -213,7 +213,7 @@ export default function ReadinessPage() {
   }
 
   function handleWaitlistCta(isQualified: boolean) {
-    trackCtaClick('waitlist_from_readiness', isQualified ? 'result_qualified' : 'result_raw');
+    trackCtaClick('waitlist_from_readiness', isQualified ? 'result_qualified' : 'result_raw', 'internal_page');
     const params = new URLSearchParams({ from: 'readiness', qualified: String(isQualified) });
     // Pass readiness answers so the waitlist API can re-run calcReadinessScore accurately
     params.set('launches_within_30d', String(answers.q1 === 'yes'));
@@ -292,7 +292,7 @@ export default function ReadinessPage() {
               <a
                 href="https://dial.mued.jp/"
                 className="text-sm text-amber-400 hover:underline"
-                onClick={() => trackCtaClick('muedial_try_now', 'readiness_qualified')}
+                onClick={() => trackCtaClick('muedial_try_now', 'readiness_qualified', 'external_site')}
               >
                 {r.resultQualified.secondary}
               </a>

@@ -69,7 +69,7 @@ export function MuedialLpContent() {
               href={DIAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackCtaClick("muedial", "muedial_lp_hero")}
+              onClick={() => trackCtaClick("muedial", "muedial_lp_hero", "external_site")}
               className="mt-8 inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-[#f5a524] px-6 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
             >
               {t("hero.cta")}
@@ -154,7 +154,7 @@ export function MuedialLpContent() {
               href={DIAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackCtaClick("muedial", "muedial_lp_footer")}
+              onClick={() => trackCtaClick("muedial", "muedial_lp_footer", "external_site")}
               className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-[#f5a524] px-7 py-4 text-lg font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
             >
               {t("cta.cta")}

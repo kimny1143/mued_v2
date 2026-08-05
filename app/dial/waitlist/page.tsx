@@ -110,7 +110,7 @@ export default function WaitlistPage() {
                   /sign-in, so it had the same defect before this change. */}
               <a
                 href="https://mued.jp/sign-up?redirect_url=/dial"
-                onClick={() => trackCtaClick('muedial_signup_qualified_waitlist', 'waitlist_thankyou_qualified')}
+                onClick={() => trackCtaClick('muedial_signup_qualified_waitlist', 'waitlist_thankyou_qualified', 'signup')}
                 className="inline-block w-full text-center px-6 py-3 bg-green-500 hover:bg-green-400 text-black font-bold rounded-lg transition-colors"
               >
                 {w.thankyou.qualifiedCta}
@@ -131,7 +131,7 @@ export default function WaitlistPage() {
                absolute for this reason; keep it absolute. */
             <a
               href="https://mued.jp/sign-up?redirect_url=/dial"
-              onClick={() => trackCtaClick('muedial_signup_from_waitlist_thanks', 'waitlist_thankyou')}
+              onClick={() => trackCtaClick('muedial_signup_from_waitlist_thanks', 'waitlist_thankyou', 'signup')}
               className="inline-block px-8 py-3 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition-colors"
             >
               {w.thankyou.cta}
