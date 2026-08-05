@@ -269,7 +269,11 @@ function ServiceSection({
         {/* Payment Timing */}
         <div>
           <h4 className="font-semibold text-white mb-1 text-sm">{paymentTimingTitle}</h4>
-          <p className="text-slate-300 text-sm">{paymentTimingValue}</p>
+          {/* ★whitespace-pre-line: 訳文に段落区切りの改行が入っている（muedial / advisory の
+              支払時期は「都度購入」と「Hoo Pass」で段を分けてある）。CSS 既定の
+              white-space:normal は改行を潰すので、無いと法定表記が1つの塊で描画される。
+              ★この class の要否は tests/unit/tokushoho-newline-render.test.ts が実測で守る。 */}
+          <p className="text-slate-300 text-sm whitespace-pre-line">{paymentTimingValue}</p>
         </div>
 
         {/* Delivery */}
@@ -281,7 +285,7 @@ function ServiceSection({
         {/* Cancellation */}
         <div>
           <h4 className="font-semibold text-white mb-1 text-sm">{cancellationTitle}</h4>
-          <p className="text-slate-300 text-sm">{cancellationDescription}</p>
+          <p className="text-slate-300 text-sm whitespace-pre-line">{cancellationDescription}</p>
         </div>
 
         {/* Environment */}
