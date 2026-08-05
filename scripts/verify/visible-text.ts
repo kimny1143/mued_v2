@@ -25,6 +25,8 @@
  *                      通ってしまう（陽性対照が無い状態）。
  */
 
+import { toVisible, count } from './html-text';
+
 type Mode = 'report' | 'expect' | 'absent';
 
 interface Term {
@@ -47,41 +49,6 @@ function parseArgs(argv: string[]): { url: string; terms: Term[] } {
     pending = 'report';
   }
   return { url, terms };
-}
-
-/**
- * ブラウザが実際に見せるものに寄せる:
- *   1. <script> / <style> / <template> を落とす（RSC payload・CSS・非描画テンプレ）
- *   2. タグを剥がす
- *   3. HTML entity を戻す
- *   4. ★空白を1つに畳む —— white-space: normal の既定挙動。ソースの改行は表示の改行ではない
- *
- * ★注意: `white-space: pre-line` が付いた要素だけはソースの改行が表示される。
- * 本 script はそれを区別しないので、「改行が見えるか」の判定には使えない。
- * 用途は「その文字列が可視領域に在るか / 何件か」まで。
- */
-function toVisible(html: string): string {
-  let s = html;
-  s = s.replace(/<script\b[\s\S]*?<\/script>/gi, '');
-  s = s.replace(/<style\b[\s\S]*?<\/style>/gi, '');
-  s = s.replace(/<template\b[\s\S]*?<\/template>/gi, '');
-  s = s.replace(/<[^>]+>/g, ' ');
-  s = s
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)));
-  return s.replace(/\s+/g, ' ').trim();
-}
-
-function count(haystack: string, needle: string): number {
-  if (!needle) return 0;
-  let n = 0;
-  let i = haystack.indexOf(needle);
-  while (i !== -1) { n++; i = haystack.indexOf(needle, i + needle.length); }
-  return n;
 }
 
 async function main() {
