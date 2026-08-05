@@ -44,14 +44,40 @@ export function trackDialPlaybackIssue(params: {
   });
 }
 
-/** Track CTA button clicks on the landing page */
-export function trackCtaClick(product: string, location: string): void {
+/**
+ * CTA の遷移先。★呼び出し側が明示する（推測しない）。
+ *
+ * 以前は `product === "muedial" ? "external_site" : "app_store"` で決めていた。
+ * ★2026-08-05 実測: 11 call site 中 7件が実態と違う値を送っていた——
+ *   muedsp / muedsat / dial 配下の CTA は App Store へ行かないのに `app_store`。
+ * ★`product` の文字列から遷移先は導けない（`waitlist_from_readiness` は MUEDial ですらない）。
+ * ★`startsWith("muedial")` に変えるだけでは、その1件が救われない。
+ */
+export type CtaDestination =
+  | "app_store"      // iOS/Android のストアへ出る
+  | "external_site"  // 別ホストの web へ出る（dial.mued.jp 等）
+  | "internal_page"  // 同一サイト内の別ページ
+  | "signup"         // サインアップ / サインイン
+  | "download_form"; // その場の DL フォーム（ページ遷移しない）
+
+/**
+ * Track CTA button clicks on the landing page.
+ *
+ * ★`destination` は必須。既定値を置くと、置いた値が「判定不能」を実在する正しい値として
+ * 確定させ、出力が健全に見える（本日 org で潰した型）。★必須にすることで、
+ * 新しい call site を足した人に tsc が必ず判断を求める。
+ */
+export function trackCtaClick(
+  product: string,
+  location: string,
+  destination: CtaDestination
+): void {
   trackEvent({
     action: "cta_click",
     params: {
       product,
       location,
-      destination: product === "muedial" ? "external_site" : "app_store",
+      destination,
     },
   });
 }

@@ -630,7 +630,7 @@ export default function DialPage() {
               {/* Readiness check CTA — funnel step 2: dial top → /readiness */}
               <Link
                 href="/dial/readiness"
-                onClick={() => trackCtaClick('muedial_readiness_check', 'dial_top_checkout')}
+                onClick={() => trackCtaClick('muedial_readiness_check', 'dial_top_checkout', 'internal_page')}
                 className="mt-3 flex items-center gap-3 p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 transition-colors group"
               >
                 <div className="flex-1 min-w-0">

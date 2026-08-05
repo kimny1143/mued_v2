@@ -103,7 +103,7 @@ export function IntegratedLandingContentV2() {
           cta={
             <Link
               href={`/${locale}/muedial`}
-              onClick={() => trackCtaClick("muedial", "portal_mix")}
+              onClick={() => trackCtaClick("muedial", "portal_mix", "internal_page")}
               className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-[#f5a524] px-5 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
             >
               {t("mix.cta")}
@@ -132,7 +132,7 @@ export function IntegratedLandingContentV2() {
           cta={
             <Link
               href={`/${locale}/muedsp`}
-              onClick={() => trackCtaClick("muedsp", "portal_master")}
+              onClick={() => trackCtaClick("muedsp", "portal_master", "internal_page")}
               className="inline-flex items-center gap-2 rounded-[var(--radius-lg)] bg-[#f5a524] px-5 py-3 font-semibold text-black transition-colors duration-200 hover:bg-[#ffb638]"
             >
               {t("master.cta")}

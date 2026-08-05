@@ -1,4 +1,7 @@
-# GA4: このプロパティには custom dimension が1件も登録されていない
+# GA4: custom dimension の登録と、param 計測の落とし穴
+
+> ★**2026-08-05 更新**: **`destination` を登録済**（この文書の発端）。**「0件」だったのは登録前の状態**。
+> ★**遡及の可否も確定**（§2）／★**`destination` の誤りの規模も実測し直した**（§4）。
 
 - **測定**: 2026-08-04 / mued（GA4 Data API 実測）
 - **対象**: GA4 property `525457895`
@@ -43,6 +46,21 @@ mcp__ga4__run_report(dimensions=["customEvent:destination"], metrics=["eventCoun
 
 ★**「遡及しない」と書いてある文は見つかっていない。** **「見つからなかった」であって「遡及する」ではない。**
 
+### ★★2026-08-05: 実測で確定した（登録後に測った）
+
+**`destination` 登録後、登録前の期間 2026-07-20〜08-03 を引いた**:
+
+```
+① customEvent:destination → ★1行のみ「(not set)」= 2,114
+② eventName（★陽性対照）  → cta_click 185 / page_view 632 / scroll 261 …（10種）
+```
+
+★**②で「その期間にデータは在る」が確定**（**`cta_click` 185件・実装上これらは必ず `destination` を送っている**）。★**にもかかわらず①は `(not set)` のみ。**
+
+∴ ★**遡及しない。** ★**ただし機序は「引けない」ではなく「引けるが空」**——**ディメンションは過去期間でも引けるが、値は保持されていない。**
+
+★**②が無ければ、この `(not set)` を「その期間に cta_click が無かった」と読めた**（conductor 起案の陽性対照）。
+
 ### ★それでも「先に登録する」で良い理由（両分岐を見た）
 
 | 仮に | 早く登録 | 遅らせる |
@@ -75,11 +93,21 @@ mcp__ga4__run_report(dimensions=["customEvent:destination"], metrics=["eventCoun
 destination: product === "muedial" ? "external_site" : "app_store",
 ```
 
-★**`trackCtaClick` の call site 5件のうち `'muedial'` を渡しているものは 0 件**（product課 実測）＝**`external_site` は到達不能な死枝で、`cta_click` は全件 `destination: "app_store"` が付く**。★**実際にはどれも App Store へは行かない**（web の LP・waitlist・サインアップ）。
+★★**2026-08-05 に当課が測り直したところ、上記の申告は誤りだった。** **数字も、結論の向きも違う。**
 
-★**修正 PR は登録が済んでから出す。** **先に出すと「正しい値が書かれているが誰にも読めない」を自分で作る。**
+| | product課 申告（当課が運んだ） | ★当課の実測（2026-08-05） |
+|---|---|---|
+| call site 数 | **5** | ★**11** |
+| `'muedial'` を渡す数 | **0** | ★**3** |
+| `external_site` | **到達不能な死枝** | ★**3件で発火していた** |
+| `app_store` | **全件 誤り** | ★**muedear の3件では正しい**（実際に App Store へ行く） |
+| 実態と違う件数 | （全件） | ★**8 / 11** |
 
-★**注意**: `product === "muedial"` は等値比較なので、`startsWith('muedial')` に変えるだけでは `waitlist_from_readiness`（**MUEDial ですらない**）が救われない。**呼び出し側から明示的に渡すのが素直**（product課）。
+★**当課はこの申告を検算せず、この文書・status.md・conductor への報告に運んだ。** ★**本日ずっと「渡された主張をそのまま運ばない」と書いていた当課が、それを運んだ。**
+
+★**そして誤りは両方向だった**——**`integrated:106` は `"muedial"` なので `external_site` が付くが、href は `/{locale}/muedial`（★内部ページ）。** **「app_store が誤り」だけを見ていると、この向きは出てこない。**
+
+**修正 = 呼び出し側から明示的に渡す**（`CtaDestination` 型を必須引数に）。★**必須にしたので、新しい call site を足した人に tsc が必ず判断を求める。** ★**call site の母集団は当課の grep でなく tsc が決めた**（11件・grep と一致）。
 
 ---
 

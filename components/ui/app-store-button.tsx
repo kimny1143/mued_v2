@@ -68,7 +68,7 @@ export function AppStoreButton({
 
   const handleClick = () => {
     if (product && ctaLocation) {
-      trackCtaClick(product, ctaLocation);
+      trackCtaClick(product, ctaLocation, "app_store");
     }
   };
 
