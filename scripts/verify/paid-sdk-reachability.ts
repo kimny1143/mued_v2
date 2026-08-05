@@ -27,10 +27,23 @@ import { join, dirname, normalize } from 'node:path';
 const BASELINE_UNPROTECTED = 8;
 
 /**
- * ★陽性対照。この route は #786 で rateLimit を入れた既知 YES。
- * 閉包がこれを拾えなければ、走査が壊れている＝この回の 0 件は証拠にならない。
+ * ★陽性対照。閉包がこれを拾えなければ走査が壊れている＝この回の件数は証拠にならない。
+ *
+ * ★2件 置く理由 (product課 指摘 2026-08-05): 1件だと、その1件が★偶然 別経路で
+ * 拾われた時に「閉包が効いている」と読めてしまう。別サブツリーから2件 採る。
+ * どちらも seed からの距離 2 ＝ ★SDK を直接 import していない (直接なら閉包の検査にならない)。
  */
-const KNOWN_REACHABLE = 'app/api/lobe/commentary/route.ts';
+const KNOWN_REACHABLE = [
+  'app/api/lobe/commentary/route.ts',      // #786 で rateLimit を入れた既知 YES
+  'app/api/muednote/sessions/route.ts',    // 別サブツリー・レート制限なし側
+];
+
+/**
+ * ★閉包が「何段 辿ったか」も検査する。
+ * 全 route が距離 0 (＝SDK を直接 import) なら、それは閉包でなく ただの grep であり、
+ * ★#786 の面 (記号は lib/ に在り性質は app/api/ に在る) は原理的に見つからない。
+ */
+const MIN_MAX_DEPTH = 2;
 
 const SKIP = new Set(['node_modules', '.next', '.git', 'tests', 'scripts', 'docs']);
 const PAID = /from\s+['"](@anthropic-ai\/sdk|openai)['"]/;
@@ -92,25 +105,39 @@ function main() {
     }
   }
 
-  const reach = new Set(seed);
-  const stack = [...seed];
-  while (stack.length) {
-    for (const p of rev.get(stack.pop()!) ?? []) {
-      if (!reach.has(p)) { reach.add(p); stack.push(p); }
+  // ★幅優先にして seed からの距離を持つ（＝閉包が何段 辿ったかを出力に出すため）
+  const depth = new Map<string, number>();
+  for (const s of seed) depth.set(s, 0);
+  const queue = [...seed];
+  while (queue.length) {
+    const n = queue.shift()!;
+    for (const p of rev.get(n) ?? []) {
+      if (!depth.has(p)) { depth.set(p, depth.get(n)! + 1); queue.push(p); }
     }
   }
 
-  const routes = [...reach].filter((r) => /app\/api\/.*\/route\.ts$/.test(r)).sort();
-  console.log(`閉包の全モジュール  : ${reach.size}`);
-  console.log(`★到達する API route : ${routes.length}\n`);
+  const routes = [...depth.keys()].filter((r) => /app\/api\/.*\/route\.ts$/.test(r)).sort();
+  const maxDepth = Math.max(0, ...routes.map((r) => depth.get(r)!));
+  console.log(`閉包の全モジュール  : ${depth.size}`);
+  console.log(`★到達する API route : ${routes.length}`);
+  console.log(`★閉包が辿った最大段数: ${maxDepth}（1 以上でなければ ただの grep）\n`);
 
   // ★陽性対照 — 既知 YES を拾えなければ表を出さずに落とす
-  if (!routes.includes(KNOWN_REACHABLE)) {
-    console.log(`★検査不成立: 既知 YES (${KNOWN_REACHABLE}) を閉包が拾えていない。`);
+  const missing = KNOWN_REACHABLE.filter((k) => !routes.includes(k));
+  if (missing.length > 0) {
+    console.log(`★検査不成立: 既知 YES を閉包が拾えていない → ${missing.join(', ')}`);
     console.log('  走査か import 解決が壊れている。この回の件数は証拠にならない。');
     process.exit(2);
   }
-  console.log(`★陽性対照 OK: 既知 YES (${KNOWN_REACHABLE}) を検出\n`);
+  // ★「拾えた」だけでは、直接 import で拾えた可能性が残る。段数まで見る。
+  if (maxDepth < MIN_MAX_DEPTH) {
+    console.log(`★検査不成立: 閉包の最大段数が ${maxDepth}（期待 ${MIN_MAX_DEPTH} 以上）。`);
+    console.log('  逆向き到達が効いていない＝#786 型の面（記号は lib/・性質は app/api/）を見逃す。');
+    process.exit(2);
+  }
+  console.log(`★陽性対照 OK: 既知 YES ${KNOWN_REACHABLE.length} 件を検出`);
+  for (const k of KNOWN_REACHABLE) console.log(`   距離 ${depth.get(k)}  ${k}`);
+  console.log('');
 
   const unprotected: string[] = [];
   for (const r of routes) {
