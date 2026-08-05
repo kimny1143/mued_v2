@@ -11,7 +11,7 @@
  * ツリー全体が何を出すかは別) ので、出力に当てる検査が要る。
  */
 import { describe, it, expect } from 'vitest';
-import { headOf, readHeadMeta, evaluate } from '../../scripts/verify/head-meta';
+import { headOf, readHeadMeta, evaluate } from '../../scripts/verify/head-meta-lib';
 
 const page = (headInner: string) =>
   `<!doctype html><html><head>${headInner}</head><body><p>本文</p></body></html>`;

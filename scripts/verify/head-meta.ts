@@ -21,14 +21,22 @@
  *
  * 期待値は URL ごとに直前の URL へ結び付く。複数 URL を並べれば一度に測れる。
  *
+ * ★`--robots` は部分一致なので `--robots index` は `noindex` にも当たる。
+ *   「index であること」の確認には使えない (product課 指摘 2026-08-05)。
+ *   いまの用途は noindex の確認のみ。
+ *
  * ★exit code: 0=全て期待どおり / 1=期待と違う / 2=★検査不成立 (取得失敗・<head> 無し)。
  *   ★「測れなかった」を「合格」と同じ 0 で返さない。0 件と 0 と成功を混ぜない。
+ *
+ * ★判定の本体は head-meta-lib.ts に在る (fetch も exit もしない)。
+ *   この file は top-level で main() を呼ぶので、テストからは lib 側を import すること。
  */
 
-interface Target {
-  url: string;
-  canonical?: string; // 完全一致で期待する値。'@self' は URL 自身
-  robots?: string; // content への部分一致で期待する語
+import { readHeadMeta, evaluate, type Target } from './head-meta-lib';
+
+function die(msg: string): never {
+  console.error(`★検査不成立: ${msg}`);
+  process.exit(2);
 }
 
 function parseArgs(argv: string[]): Target[] {
@@ -52,69 +60,6 @@ function parseArgs(argv: string[]): Target[] {
   }
   if (!targets.length) die('usage: head-meta.ts <url> [--canonical-self | --canonical <v>] [--robots <v>]');
   return targets;
-}
-
-function die(msg: string): never {
-  console.error(`★検査不成立: ${msg}`);
-  process.exit(2);
-}
-
-/** <head> だけを対象にする。本文に同じ文字列が在っても拾わないため */
-export function headOf(html: string): string | null {
-  const m = html.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
-  return m ? m[1] : null;
-}
-
-function attr(head: string, re: RegExp): string | null {
-  const m = head.match(re);
-  return m ? m[1] : null;
-}
-
-/**
- * ★ネットワークから切り離した本体。テストはここに当てる
- * （script の self-RED を手作業に残さないため。手で1回 通した RED は、
- *   検査が変わった日に誰も再実行しない）。
- * head が取れない場合は null を返す ＝「無い」でなく「測れていない」。
- */
-export function readHeadMeta(html: string): { canonical: string | null; robots: string | null } | null {
-  const head = headOf(html);
-  if (head === null) return null;
-  return {
-    canonical:
-      attr(head, /<link[^>]+rel="canonical"[^>]+href="([^"]*)"/i)
-      ?? attr(head, /<link[^>]+href="([^"]*)"[^>]+rel="canonical"/i),
-    robots: attr(head, /<meta[^>]+name="robots"[^>]+content="([^"]*)"/i),
-  };
-}
-
-/** 期待との突合。★戻り値が空配列 = 合格。文字列の配列 = 不合格の理由 */
-export function evaluate(
-  target: { url: string; canonical?: string; robots?: string },
-  meta: { canonical: string | null; robots: string | null },
-): string[] {
-  const problems: string[] = [];
-  const strip = (s: string) => s.replace(/\/$/, '');
-
-  if (target.canonical !== undefined) {
-    const want = strip(target.canonical === '@self' ? target.url : target.canonical);
-    const got = meta.canonical === null ? null : strip(meta.canonical);
-    if (got !== want) {
-      problems.push(`canonical: 期待 ${want} / 実際 ${meta.canonical ?? '(無し)'}`);
-      // ★いちばん危ない外し方を名指しする。「無い」ではなく「親を継いだ」がこの形
-      if (meta.canonical && !meta.canonical.includes(new URL(target.url).pathname)) {
-        problems.push(
-          '  ★別 URL を指している = 親 layout の metadata を継承している疑い。'
-          + ' Next.js は canonical を継承する ——★「外す」は「無くなる」ではない。',
-        );
-      }
-    }
-  }
-
-  if (target.robots !== undefined && !(meta.robots ?? '').includes(target.robots)) {
-    problems.push(`robots: 期待に "${target.robots}" を含む / 実際 ${meta.robots ?? '(無し)'}`);
-  }
-
-  return problems;
 }
 
 async function main() {
