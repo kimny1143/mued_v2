@@ -38,8 +38,13 @@ export const POST = withAuth(async ({ request }) => {
     const page = await browser.newPage();
 
     // HTMLをロード
+    // ★puppeteer 25 で setContent の waitUntil から 'networkidle0' が削除された
+    //   （型は 'load' | 'domcontentloaded' のみ）。tsc が検出。
+    // ★'load' で等価: 上の renderQuickTestToHtml が返す HTML は★完全に自己完結で、
+    //   外部 URL / <script> / <link> / @font-face / url() が★1つも無い（2026-08-13 実測）。
+    //   ∴ networkidle0 は待つ対象が存在しなかった。楽譜は abcjs が SVG を直接 埋め込む。
     await page.setContent(html, {
-      waitUntil: 'networkidle0',
+      waitUntil: 'load',
       timeout: 30000,
     });
 

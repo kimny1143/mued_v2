@@ -78,7 +78,7 @@
     "next": "^16.2.11",
     "next-intl": "^4.7.0",
     "openai": "^6.0.0",
-    "puppeteer": "^24.26.1",
+    "puppeteer": "^25.6.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-markdown": "^10.1.0",
