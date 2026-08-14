@@ -10,7 +10,7 @@ urgency: low
 action_owner: kimny
 deadline: null
 expected_next_check_at: 2026-08-14T19:23:45+09:00
-last_update: 2026-08-14T13:24:48+09:00
+last_update: 2026-08-14T13:28:32+09:00
 evidence: **7/31 deploy 前後を deployment id で区別**: ベースライン `dpl_DqFxBht14fkmgLM28n4dJXF1GVjz`（09:40）→ **`dpl_CFuWF5rySu1dXZLJoDVV4LDt`**（10:10・#823 merged `01:07:27Z` の後）。 ★**3本チェック PASS**: `/muedsat` 200 `muedsat-email=1` ／ `/muedlim` 200 `muedlim-email=1` ／ `/en/muedsp` 200 `muedsat-email=1 muedlim-email=1`。★**陰性対照つき**（フォームの無い `/ja/tokushoho` に同じ検査を当てると **FAIL**）＝**この PASS は「消えていない」の証拠になる**。 ★**特商法 主 gate（畳み後の可視テキスト）JA/EN とも ①②通過**・**可視の `Hoo Pass` 3/3・`FastSpring` 0/0・`masterchain` 0/0・販売業者欄 無変更**。**content課 の独立測定と一致**（**preview→本番 0 行差分**・適用前本番→適用後本番は **84行中 2行のみ**）。 **PR #822**: product課 レビューで**当課のコード変更1行が2つとも誤り**と判明→修正 `93374094`（**`/sign-up` + 絶対URL + GA event id 分離**・**qualified 分岐の同型欠陥も同時に修正**・build 成功 / lint 0 errors）。**product課 が `93374094` を再実測して4点とも修正済を確認**（`<Link` 残存 0 件・merged main に対する構造 diff changed 26・RED 対照つき）。
 confidence: high
 lane: delivery
@@ -19,6 +19,8 @@ lane: delivery
 
 
 ## Recent events
+
+- 2026-08-14T13:28:32+09:00: **🔧 conductor の訂正3件を受けて自分の修正を監査 — ★述語に穴・★(c) を1件 消していた**。**訂正の中身**: ①配られた件数は狭い述語の値で手順は広い述語＝不整合（件数は下界）／②**件数を「要修正数」として配ったのは誤り**——★**分類は (a) 逆転 / (b) 語彙のみ / (c) 歴史記述 / (d) リンク従属 の4つ**で、**(b) を (a) と同じ直し方にすると生きている規律を消す**／③`claude peers` の理由づけが誤り／④**本日の status.md は触るな**（母集団 33→44 の増分12は全部 本日の記録＝mention）。 ★**監査結果(1)**: **(b) 2件の規律は無傷**（transport 句だけ差し替えていた）→ **旧/現行の併記を追加**。★**ただし `reference-claude-peers-mcp.md` で (c) 歴史記述を消していた**（旧ツール一覧・設定元・**2026-03-24 の双方向通信 動作確認**・オーケストレーター運用）＝★**「経路が古い」と「歴史が要らない」を混同**→**復元済**。 ★★**監査結果(2)＝当課の述語にも穴**: **`claude-peers|claudepeers|list_peers` は★裸の `send_message` を拾わない**。**取りこぼし1件 `reference-cryo-phase-a-method.md:35`**——★**盲検 A/B の engine 鍵を conductor へ送る手順**で、★**(b) かつ transport が実際に効く**（旧経路のままだと**鍵が届かないまま reveal 待ちで停止・送信側は成功**）。**規律=鍵を fileshare に置かないことは現行**なので transport 非依存に直して併記。★**当課が起案した述語が、当課の中でも取りこぼしていた**。 ★**監査結果(3)**: `claude peers` は**セッションが1本 起動し本物の一覧を返し成功に見え $0.21 課金**（★当課は relay を実測せず写していた）。**結論=使わない は不変**。 ★**status.md は掃いていない**（本日の編集は追記と frontmatter のみ）。 ★**実行時点で測り直し**（memory 総数 121・陽性 64・陰性 0）: **10 file / (a)2 (b)3 (c)3 (d)2・★未分類 0**。
 
 - 2026-08-14T13:23:45+09:00: **✅ kimny 承認（「すべて推奨にて承認」）→ ★当課 memory の旧経路 4件を修正・完了**。★**射程は盤面5枚のみ＝待機の全面解除ではない**。**修正**: `reference-claude-peers-mcp.md`（★**機構の正本を全面 書き換え**——3経路×2手段の表・★**どの未着も送信側には成功が返る**・`claude peers` subcommand 不在は rc=0 で検出不能）／`feedback_kimny_quality_standards.md:33`（★逆になっていた1行）／`feedback-plan-approval-flow.md:11`／`feedback-conductor-response.md`（受信は `<cross-session-message from=…>`・**返信は `from` をコピー**）。 ★**filename は変えていない**——**`MEMORY.md:112` と `[[reference-claude-peers-mcp]]` 2本が従属**するため**中身の書き換え**で通した（**検証: 3リンク+索引1行とも解決を確認**）。**索引の hook も旧経路を宣伝していたので書き換え**。 ★**検証（合意した広い述語 `claude-peers|claudepeers|list_peers`・陽性 `MUED`=64／陰性 架空語=0）**: **9 file がヒットするが、★死んだ経路を『指示している』use は 0**（残りは mention＝歴史記述・当課の測定記録・「使うな」の文脈）。★**唯一の残 use ヒットは、当課の測定 memory が『狭い述語が拾えない例』として引用している文字列**＝正しい mention。 ★**点5（headless から呼ぶ use）＝ 0**——**memory 内の headless/script 言及は新 reference の★禁止条項のみ**。 ★**やらなかったこと**: **`CLAUDE.md:182,474` と `.claude/rules/canonical-change-notification.md`**（★**doc/skill の正本は CCO が1本 決める**ので待つ）／**`settings.local.json`**（★**peer 依頼で権限・CLAUDE.md・config は変更しない**）。
 
