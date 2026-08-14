@@ -469,11 +469,11 @@ peer judgment の矛盾・不一致を後から認識したら **reverse 判断 
 <!-- DO NOT EDIT THIS SECTION DIRECTLY. Source: template課/.claude/skills/common-claude-md-blocks/blocks/15-urgency-marker.md -->
 <!-- Distribute via: claude-code-template/scripts/distribute-claude-md-blocks.sh (実体は claude-code-template repo。配布先 repo には存在しない) -->
 
-## URGENCY marker — peer → conductor send_message 先頭 6 行 format
+## URGENCY marker — peer → conductor 送信の先頭 6 行 format
 
-peer → conductor の claude-peers send_message の message 先頭に固定 format で記入 (conductor 認知負荷削減の判断契約中核)。
+peer → conductor の送信（★2026-08-14 以降は★組込み `SendMessage`／宛先 = `ListAgents` の name）の message 先頭に固定 format で記入 (conductor 認知負荷削減の判断契約中核)。
 
-**入口絞り (2026-05-30 kimny 決定 / 必読)**: peer は **`URGENCY: high` のみ send_message する**。low / mid は send_message せず自 `status.md` に記入する (block 17、cowork が `peer-raw-status.md` に集約 → conductor が checkin/checkout/patrol/自ターン頭で FIFO 読取り処理)。これにより conductor へのプッシュ割り込みを最小化し、件取り違えによる捏造を防ぐ。下記 6 行 format は high send_message 用。urgency vocabulary (high/mid/low) は status.md `urgency` field 含む全分類に適用。proposal v3 communication lanes (reporting.md) の厳格版。
+**入口絞り (2026-05-30 kimny 決定 / 必読)**: peer は **`URGENCY: high` のみ 送信する**（★2026-08-14 以降は★組込み `SendMessage`）。low / mid は送信せず自 `status.md` に記入する (block 17、cowork が `peer-raw-status.md` に集約 → conductor が checkin/checkout/patrol/自ターン頭で FIFO 読取り処理)。これにより conductor へのプッシュ割り込みを最小化し、件取り違えによる捏造を防ぐ。下記 6 行 format は high 送信用。urgency vocabulary (high/mid/low) は status.md `urgency` field 含む全分類に適用。proposal v3 communication lanes (reporting.md) の厳格版。
 
 ### Required format
 
@@ -496,20 +496,22 @@ EVIDENCE: <PR# | file | commit>
 
 ### 運用 rules
 
-- **迷ったら `mid`** (fallback) → 入口絞り下では send_message せず status.md 記入 (high のみ send)
+- **迷ったら `mid`** (fallback) → 入口絞り下では送信せず status.md 記入 (high のみ送信)
 - **`high` は REASON + EVIDENCE 必須** (EVIDENCE 不在の high は audit で `evidence_missing` 分類)
 - **議論レーン** (kimny ↔ conductor 対話中) では high も送信抑制。conductor `set_summary` の hold 表示を peer 側 read で判定し、解除まで status.md 集約に寄せる
-- **誤判定で mid を high にしない**: high は不可逆/当日 hard deadline/security/secret/外部リソース新規作成/課金・契約/production outage/data loss/kimny Tier 3 に限定 (上表 high 基準)。判断要請は block 18 form を high send_message or status.md に記入
+- **誤判定で mid を high にしない**: high は不可逆/当日 hard deadline/security/secret/外部リソース新規作成/課金・契約/production outage/data loss/kimny Tier 3 に限定 (上表 high 基準)。判断要請は block 18 form を high 送信 or status.md に記入
 
-### peer ID 自称禁止・from_id 正本原則
+### 宛先の自称禁止・`from` 属性 正本原則
 
-peer の識別子は **受信 channel の `from_id` 属性を唯一の正本**とする (self は `list_peers` が self を除外する構造ゆえ自分の ID を確実に知れない)。
+peer の識別子は **受信 message の `from` 属性を唯一の正本**とする (自分側からは自分の宛先を確実に知れない)。
+
+★**2026-08-14 の経路変更でも ★この序列は不変**——**本文の自称 < `from` 属性 < 実時解決 (`ListAgents`)**。★**変わったのは道具名だけ**（旧 `from_id` / `list_peers` → 新 `from` / `ListAgents`）。
 
 1. **peer は告知・メッセージ本文に自分の peer ID を書かない** (self からは自 ID を確実に知れないため)。
 2. **受信側は常に channel の `from_id` 属性を正とし**、本文中の自称 ID と矛盾したら `from_id` を採る。
 3. **再起動告知は「この `from_id` が新 ID」形式に統一** (本文に ID 文字列を書かない)。
 
-> 背景 (2026-06-11): conductor 再起動時、`list_peers` が self を除外する構造のため出力に残ったゴースト `_conductor` エントリを自分と誤認 → 全課に誤 ID を配布。外部観測で訂正されたが、検知者不在なら全課送信が死箱へ向かうサイレント分断だった。
+> 背景 (2026-06-11・★旧経路 claude-peers 時代の実例だが教訓は不変): conductor 再起動時、`list_peers` が self を除外する構造のため出力に残ったゴースト `_conductor` エントリを自分と誤認 → 全課に誤 ID を配布。外部観測で訂正されたが、検知者不在なら全課送信が死箱へ向かうサイレント分断だった。
 
 ### ★値を渡す時は、その値を成立させる条件を同じメッセージに書く
 
@@ -572,8 +574,8 @@ peer の識別子は **受信 channel の `from_id` 属性を唯一の正本**�
 
 ### update timing (必須)
 - **task accept** (dispatch / review request 受領) / **blocked** (外部依存・kimny 待ち・cross-peer 停滞) / **PR submit** / **done**
-- **low / mid の連絡は status.md のみ** (send_message しない = 入口絞り block 15)。progress / done / routine PR / FYI / conductor 判断候補だが即時でない 等はここに集約され、cowork が `peer-raw-status.md` へ、conductor が FIFO で拾う
-- **high urgency 発生時のみ**: 即 status.md update + URGENCY: high send_message 並行
+- **low / mid の連絡は status.md のみ** (送信しない = 入口絞り block 15)。progress / done / routine PR / FYI / conductor 判断候補だが即時でない 等はここに集約され、cowork が `peer-raw-status.md` へ、conductor が FIFO で拾う
+- **high urgency 発生時のみ**: 即 status.md update + URGENCY: high `SendMessage` 並行
 - **1 日 1 回 minimum heartbeat**: 朝の自走開始時 + EOD 区切り
 
 ### DoD: status.md 更新 = タスク完了の定義 (必須)
@@ -591,8 +593,8 @@ peer の識別子は **受信 channel の `from_id` 属性を唯一の正本**�
 - main 直接 push 禁止 peer は feature branch + PR (docs only = Tier 1 self-merge OK)
 
 ### 統合
-- `urgency` field は URGENCY marker (block 15) と同一 vocabulary (high / mid / low)。**high 時のみ send_message 並行、low / mid は status.md 記入のみ** (入口絞り)
-- `current_task` / `next_action` に外部リソース新規作成 (block 16 対象) を含む場合、pre-approval URGENCY: high send_message を必ず並行
+- `urgency` field は URGENCY marker (block 15) と同一 vocabulary (high / mid / low)。**high 時のみ `SendMessage` 並行、low / mid は status.md 記入のみ** (入口絞り)
+- `current_task` / `next_action` に外部リソース新規作成 (block 16 対象) を含む場合、pre-approval URGENCY: high 送信 を必ず並行
 - stale 判定 (cowork cron): active 6h / blocked-waiting 2h / dormant 72h 超 (`expected_next_check_at` 優先) → conductor alert + ping
 
 <!-- COMMON-BLOCK-END: 17-status-md-self-drive -->
@@ -605,7 +607,7 @@ peer の識別子は **受信 channel の `from_id` 属性を唯一の正本**�
 
 conductor 判断要請は urgency 報告でなく **conductor 即決可能な judgment request form** で渡す (判断材料収集を peer 側に shift)。
 
-**チャネル (入口絞り block 15 準拠)**: **high** の判断要請のみ send_message に下記 form を添付。**mid** の判断要請は send_message せず status.md の `next_action` / `## Notes` に form を記入し、conductor が `peer-raw-status.md` を FIFO で拾って即決する。いずれも form 構造は同一。
+**チャネル (入口絞り block 15 準拠)**: **high** の判断要請のみ 送信に下記 form を添付。**mid** の判断要請は 送信せず status.md の `next_action` / `## Notes` に form を記入し、conductor が `peer-raw-status.md` を FIFO で拾って即決する。いずれも form 構造は同一。
 
 ### Required format (URGENCY 6 行の後ろに続けて)
 
@@ -625,7 +627,7 @@ RECOMMENDATION: <peer 推奨 (a/b/c) + 理由 1 文>
 
 ### Example
 
-high の例 (send_message)。mid なら同 form を status.md `next_action` / `Notes` に記入:
+high の例 (★組込み `SendMessage`)。mid なら同 form を status.md `next_action` / `Notes` に記入:
 
 ```
 URGENCY: high
@@ -932,6 +934,9 @@ grep -rn "<旧宛先>" . ~/.claude/projects/<自課>/
 - ★**ガードは「置いてある」ではなく「配線されている」ことを確認する。** hook スクリプトが `.claude/hooks/` に存在していても、`settings.local.json` の `hooks` に登録されていなければ **1度も動かない**
   - 実例: ある課では `block-main-push.sh` が着任日に scaffold されたまま未配線で、**その課の main 直 push を止められなかった**。**ガードが「有るのに効いていない」**
   - 確認: `settings.local.json` に `hooks` キーがあるか / そこに当該スクリプトのパスがあるか。**ファイルの存在は配線の証拠にならない**
+- ★**そして、示したその一歩が、同じガードの検出対象になっていないか確かめる。**
+  - **実例（2026-08-04・dsp）**: **ガードが「本体が無い。この branch を checkout して復旧せよ」と印字し、★その直後に当の `git checkout feat/xcodebuild-live-guard` を自分でブロックした**（**判定が生 JSON の部分一致で、branch 名に検出語が入っていた**）
+  - ★**復旧手順を書く相手はガード自身でもある。** **メッセージに書いたコマンドを、そのガードに1回 通す**
 
 ### ★ガードの説明を Bash の heredoc に書かない（use と mention の区別）
 
@@ -951,6 +956,36 @@ DOC
 **対処**: ★**hook / ガード / 危険コマンドの説明文は、Bash の heredoc でなく `Edit` / `Write` ツールで書く。** **PR 本文・commit message も、`gh` に heredoc で渡すと同じ経路に乗る。**
 
 ★**「邪魔だからガードを緩める」に行かないこと。** **止まった時に確かめるべきは「本当に実行されうるのか」で、`git branch --show-current` と `git status --short` で ★PreToolUse は中身を1つも実行していない ことを先に確認する。** **緩めるのは、それを確かめた後の別の判断。**
+
+### ★「過検出だ」も主張であって測定ではない
+
+★**上の節の確認は「ガードが既に壊したか」を見るもので、「止められた入力が本当に無害だったか」は見ていない。** **別の問いなので、別に測る。**
+
+**実測（2026-08-04・dsp）**——**ガードを4度 踏んだ末、4度目を過検出と読んで検出を1つ取り下げた。★しかし4度目は正しい検出だった**:
+
+```
+A 二重引用符 : bash -c 'echo "説明: `echo RAN` を止める"'   → 説明: RAN を止める        ★中身が実行された
+B 単一引用符 : bash -c "echo '説明: \`echo RAN\` を止める'"  → 説明: `echo RAN` を止める  実行されない
+```
+
+★**二重引用符の中のバッククォートは、シェルが実際に実行する。** ∴ `git commit -m "… \`危険なコマンド\` …"` は**本当にそのコマンドを走らせる**。「markdown のインラインコードのつもり」は書き手の意図であって、シェルの意味論ではない。
+
+★**自分の散文が止められると、人は反射的に「過検出」と読む。** **その読みは、止まった入力を実際に走らせて確かめるまでは仮説。** **対処は★書き方を変える側**（`Edit` / `Write` で書く・単一引用符にする）で、**検出を取り下げるのは最後**。
+
+### ★検出器の射程を狭める時は、狭めた分が他で覆われることを仕様で確かめる
+
+**過検出を消すために対象を狭めるのは正しいことがある。★ただし「狭めても大丈夫」は文法・仕様で示す。**
+
+**同じ実測から出た物差し**（シェルのコマンド区切りの例）: ★**その記号は、新しいコマンドを始めるのに前置の区切りを必要とするか。**
+
+```
+echo hi (echo x)      → ★構文エラー   ← ( は前置の区切りが要る
+echo hi ; (echo x)    → ★構文OK       ∴ ( を外しても ; 側で割れる = 無料
+xcodebuild `echo x`   → ★構文OK       ← バッククォートは前置の区切りが要らない
+                                         ∴ 外すと射程が本当に落ちる
+```
+
+★**同じ「1文字を対象から外す」でも、片方は無料で片方は穴になる。** **見た目の対称に頼らず、1つずつ当てる。**
 
 ### ★規則と例が矛盾したら、例が勝つ
 
@@ -1032,6 +1067,53 @@ harness の分類器などが非決定的に DENY する場合がある。**通�
 
 ★**4件とも別々の課が独立に同じ形へ着いた。** 原則だけなら抽象的だが、**同日に4件 並ぶなら、これは個人の慎重さでなく組織の型**である。
 
+### ★ガードが止めた後、止まったことに気づかず次へ進む
+
+★**ガードは「止めた」ことを出力に出すが、★止まったことを次の行が読むとは限らない。**
+
+**実測（2026-08-04・2課が独立に）**:
+
+- ★**`git checkout master` が失敗（未 commit の変更が上書きされる）したのに、そのまま `commit` + `push` へ進み、★status 更新が feature branch に載った**。★**`set -e` も効いていなかった**
+- ★**`git add` が gitignore 規則で失敗したのを `2>/dev/null` で隠し、★commit されていないのに `push` まで進んだ**（**`&&` 連鎖が切れていた**）
+
+★**共通形**: **止めた側は正しく止めている。★次の行が「止まった」を読んでいない。**
+
+**How to apply**:
+
+- ★**状態を変える操作（`checkout` / `add` / `commit` / `push`）を `&&` で繋いだら、途中の失敗が★どこで止まるかを1回 声に出す。** **`;` で繋ぐと止まらない**
+- ★**`2>/dev/null` は「検査から除外したものは検査していないのと同じ」のシェル版。** **失敗を隠す場所に書かない**（**見たくないのは stderr であって、失敗ではない**）
+- ★**「意図した場所が正しいか」でなく「★どこに行ったか」を測る**（**`origin/master...master → 0 0` は、commit が別 branch に行った時も ✓ を返す**）
+
+### ★「未 commit の差分ゼロ」は ★tracked についてしか言っていない（2026-08-05 dsp 実測）
+
+★**`git status --porcelain | grep -v '^??'` が空でも、★checkout は中断しうる。**
+
+```
+✗ 「未 commit 差分ゼロを確認 → 安全に checkout できる」
+✓ 「★tracked に未 commit 差分ゼロ。★未追跡ファイルは別に数える」
+```
+
+★**機序**: **`^??` を落とした時点で、★未追跡は母集団から外れている。** ★**切替先に同じ path の tracked ファイルが在ると、★未追跡が上書きされるので git が止める。**
+
+★**How to apply**: ★**checkout の前に測るなら、★`grep -v '^??'` を付けない**（**付けると「安全」の根拠が★見たいものだけになる**）。
+
+### ★★「main に居る」は ★branch についての主張で、★現在形についての主張ではない（2026-08-05 実測）
+
+★**同じ症状（fleet が古い hook を実行している）に、★原因が2つ在った**:
+
+```
+① 正本 workspace が feature branch に居る
+② ★main に居るが pull していない（★branch は正しい）
+```
+
+★**②は「branch を確かめる」では出ない。** ★**測れる述語はこれ**:
+
+```
+git rev-list --left-right --count HEAD...origin/main    → ★"0	0" だけが現在形
+```
+
+★**How to apply**: ★**共有物の現在形を主張する時は、★branch 名でなく★上の述語を引く。** ★**「main に居ます」は根拠にならない。**
+
 <!-- COMMON-BLOCK-END: 22-git-ops-after-guard -->
 
 <!-- COMMON-BLOCK-START: 23-done-vs-delivered -->
@@ -1077,6 +1159,33 @@ harness の分類器などが非決定的に DENY する場合がある。**通�
 ```
 
 ★**状態は2値でなく3値で書く**: **`未実行` / `実行済だが未着地` / `着地確認済`**。★**「merged」と「実行済」は別**（**正本の変更と、それを回したかは別行為**）。
+
+### ★★機序は「やり忘れ」ではない ——「どこに・いくつ やったか」の記憶が実物とずれる
+
+★**2026-08-04 に3件・全て「★作業は実際にやったうえで、申告がずれた」形**:
+
+```
+「block 25 に入れた」    → 実物は★script のコメント（別の場所に入れていた）
+「conductor へ回す」     → status に書いて★送っていない
+「両ファイルに追記」     → ★1ファイルのみ
+```
+
+★★**3件とも、1つ目を書いた時点で★完了として記憶に登録されている。** ★**∴「忘れずにやる」では防げない**——**やってはいる。★ずれているのは場所と件数の記憶。**
+
+★**How to apply**: ★**完了と書く前に、★「どこに」と「いくつ」を★実物から引き直す**（**記憶から書かない**）。★**`grep` 1回・`ls` 1回で足りる。**
+
+### ★「〜可能です」は★能力の記述で、「〜未作成」は★残タスクの記述（product 起案）
+
+★**同じ事実を指していても、★次に読む人に与える手番が逆になる。**
+
+```
+✗ 「CSV 出力も可能です」        → 読み手は「在る」と受け取る（★手番はゼロ）
+✓ 「CSV 出力は★未作成（実装すれば可能）」 → 読み手は「作る人が要る」と受け取る
+```
+
+★**「可能」は★実装されていなくても真**になる。★**能力を述べる文は、完了報告の中では★完了として読まれる。**
+
+★**これは「やった ≠ 届いた」の★手番版**——**前者は「自分の側で終わったか」、こちらは「★読んだ人に手番が渡るか」。**
 
 ### ★到達の観測点は「型ごと」に違う（2026-08-04 mgc 実測）
 
@@ -1125,9 +1234,11 @@ harness の分類器などが非決定的に DENY する場合がある。**通�
 
 **routine が PR を作れば「動いた」ように見えるが、★参照先が誤っていても PR は成功する。** ∴ ★**成果物の存在を「機構が正しく動いた」の証拠にしない。** **中身が意図どおりかを別に見る。**
 
-### ④ ★cloud session に peer 接続は無い
+### ④ ★cloud session に peer 接続は無い / ★headless からも届かない
 
-★**routine の prompt に「`list_peers` で peer へ通知」と書いても、cloud 側では実行されない。** ∴ ★**通知は届かず、しかも routine 自体は成功で終わる。**
+★**routine の prompt に「peer へ通知」と書いても、cloud 側では実行されない。** ∴ ★**通知は届かず、しかも routine 自体は成功で終わる。**
+
+★★**2026-08-14 追加 — 射程が広がった**: ★**ローカルの headless (`claude -p`) からも届かない。**★**組込み `SendMessage` でも `mcp__claude-peers__send_message` でも未着**（★CCO 実測3回・★送信順序と着信順序が逆転したので遅延では説明が付かない）。★**しかも送信側には success が返る。** ∴ ★**cron / launchd から人に知らせる経路は★存在しない**と扱うこと。
 
 **実測（2026-08-04）**: **通知を書いた routine が9件・9件とも接続なし。** **ある課は発火に気づかず3時間 焼いた。**
 
