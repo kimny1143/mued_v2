@@ -1,0 +1,42 @@
+{
+  "date": "2026-08-16",
+  "generated_at": "2026-08-17T02:45:09.228Z",
+  "resend": {
+    "mued_sp_total_contacts": 534,
+    "mued_sp_net_new_day": 9,
+    "mued_sp_unsubscribed_total": 8,
+    "welcome_delivered_total": 9,
+    "broadcast": null
+  },
+  "shelf": {
+    "muedsat": {
+      "db_net_new": 1,
+      "email_delivered": 1,
+      "email_bounced": 0
+    },
+    "muedlim": {
+      "db_net_new": 9,
+      "email_delivered": 8,
+      "email_bounced": 1
+    }
+  },
+  "db_owner_union_total": 535,
+  "marketing_contacts_total": 538,
+  "muedsp_reachable": {
+    "count": 526,
+    "definition": "MUEDsp segment only; unsubscribed=false; unique. ★North-star denominator (kimny ratified 2026-07-18: 北極星=MUEDsp セグメント10,000人). Single scope → no OR/AND question."
+  },
+  "marketing_contacts_reachable": {
+    "count": 530,
+    "definition": "union across all audiences (currently MUEDsp+General); reachable = NOT unsubscribed in ANY audience (AND/conservative, Chief ruling 2026-07-23). Org-wide reach — NOT the north-star. total (marketing_contacts_total) = billing exposure incl. unsubscribed."
+  },
+  "portal_registrations": {
+    "cumulative": 20,
+    "day_utc": 0,
+    "counting_since": "2026-07-23",
+    "note": "forward-only; not backfillable (recording shipped 2026-07-23). Portal arrivals before that date are only observable in GA4, not here."
+  },
+  "anomalies": [
+    "muedlim: db_net_new(9) > email_delivered(8) — welcome email未達の疑い"
+  ]
+}
