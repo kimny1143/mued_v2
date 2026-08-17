@@ -1369,3 +1369,6 @@ grep -c 'x' bad.txt   → 出力=''   exit=1  stderr=''   ★不正バイト1個
 
 <!-- COMMON-BLOCK-END: 26-user-scope-hook-audit-log -->
 
+<!-- COMMON-BLOCK-START: 27-command-authority -->
+<!-- COMMON-BLOCK-END: 27-command-authority -->
+
