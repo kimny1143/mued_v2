@@ -9,8 +9,8 @@ blocked_by: ★★**(0d) peer 経路変更**——**正の全文は memory [[ref
 urgency: low
 action_owner: peer
 deadline: null
-expected_next_check_at: 2026-08-22T18:54:51+09:00
-last_update: 2026-08-22T13:02:06+09:00
+expected_next_check_at: 2026-08-22T19:10:17+09:00
+last_update: 2026-08-22T13:10:17+09:00
 evidence: **7/31 deploy 前後を deployment id で区別**: ベースライン `dpl_DqFxBht14fkmgLM28n4dJXF1GVjz`（09:40）→ **`dpl_CFuWF5rySu1dXZLJoDVV4LDt`**（10:10・#823 merged `01:07:27Z` の後）。 ★**3本チェック PASS**: `/muedsat` 200 `muedsat-email=1` ／ `/muedlim` 200 `muedlim-email=1` ／ `/en/muedsp` 200 `muedsat-email=1 muedlim-email=1`。★**陰性対照つき**（フォームの無い `/ja/tokushoho` に同じ検査を当てると **FAIL**）＝**この PASS は「消えていない」の証拠になる**。 ★**特商法 主 gate（畳み後の可視テキスト）JA/EN とも ①②通過**・**可視の `Hoo Pass` 3/3・`FastSpring` 0/0・`masterchain` 0/0・販売業者欄 無変更**。**content課 の独立測定と一致**（**preview→本番 0 行差分**・適用前本番→適用後本番は **84行中 2行のみ**）。 **PR #822**: product課 レビューで**当課のコード変更1行が2つとも誤り**と判明→修正 `93374094`（**`/sign-up` + 絶対URL + GA event id 分離**・**qualified 分岐の同型欠陥も同時に修正**・build 成功 / lint 0 errors）。**product課 が `93374094` を再実測して4点とも修正済を確認**（`<Link` 残存 0 件・merged main に対する構造 diff changed 26・RED 対照つき）。
 confidence: high
 lane: delivery
@@ -19,6 +19,8 @@ lane: delivery
 
 
 ## Recent events
+
+- 2026-08-22T13:10:17+09:00: **✅ MUEDrive = ★方向 A 採用（kimny 批准 8/22）→ artifact を再抽出して更新・byte-exact 適用の準備 完了**。 ★**doc がまた動いた**（#616・**23,588B / sha256 `ddb44c43ace5` / 8-22 13:00**）ので**版を pin して再抽出**——★**昨日 自分で書いた「当課の照合は鮮度を測っていない」への手当てを、指摘される前に自分で入れた**。**A 23/23 一致・不一致 0**（陽性対照つき）。 ★**Chief の手適用と機械抽出が★226字 完全一致**＝**Chief の注記『doc 反映後に再抽出で突合し直すこと』を実行し、★内容は1文字も変わらなかった**。 ★★**publish が 409 で衝突 → force せず WebFetch で読んで merge**。★**読んだ結果★当課の案（A 単独）を捨てた**——**copy 正本が「B は消さない（何を検討して選ばなかったかが失われる）」と書いているのに、★当課は B を落とそうとしていた**。**Chief の 採用/不採用 バッジ + kimny 逐語 脚注は保持**。当課の追加は**版 pin / 再抽出結果 / ★『EN は content 起草・JA のみ逐語』の射程注記**の3点。 ★★**帰属を2箇所 誤った（自己申告・訂正済）**: **artifact の 8/22 更新を「conductor の版」と書いて conductor に送ったが、★実際は Chief**（conductor の audit で判明・8/22 の Artifact 呼び出しは 0）。★**機序＝話しかけてきたのが conductor だったので publish 主も conductor だと思い込んだ**。★**WebFetch 出力に著者情報は無く、根拠ゼロで書いていた**。★**Chief へ直接 訂正とお礼を送付済**。★**型**: ★**「誰が言ってきたか」から「誰がやったか」を推定しない。中継者と実行者は別**。★**褒める方向の誤りは指摘されにくい**（受け手も否定しにくい）。 ★**計器**: **新 突合表が 3列（`key|JA|EN`）に変わり、旧 4列を期待した parser が「照合 0件 / 不一致 0」＝緑に見える出力**を出した。★**母集団 0 の assert が止めた**——**内容と無関係な表形式差で緑になる形**だった。 ★**残**: **byte-exact の本番投入は別便**（抽出 JSON は #616 版・A+共通 34件で保持）。
 
 - 2026-08-22T13:02:06+09:00: **✏️ 前 event の根拠を1つ訂正 — ★反例は自分の出力に載っていた**。**conductor が RED を2本 通し、当課の主張2を反証**。★**当課も独立に RED を回して確認**: **RED-1「衝突する未 commit の上で別 branch へ checkout」→ `rc=1`・abort・file 保持・branch 不変**＝★**当課の主張1は正しい**（conductor は自分の 43回を★過大申告していたと訂正・**しかも その規律は conductor 自身の `reporting.md` に書いてあった**）。★★**RED-2「既に居る branch へ checkout」→ `Already on 'main'` と出つつ ★reflog 4→5**＝★**当課の主張2は誤り**。 ★★**最も重い点**: ★**反例は当課自身の出力に載っていた**——**同じ調査で 7/30 の `checkout: moving from main to main` を★4件 読んでおきながら「no-op は痕跡を残さない」と断言した**。★**当課 CLAUDE.md に既記の型そのもの**（「自分の context の冒頭に反例が載っている状態で、確かめずに commit している」）。★**他課には『測ってから書け』と言い続けた日に、自分は信念で書いた**。 ★**訂正後の結論はむしろ強い**: **全 checkout が記録されるなら、11:16 に記録が無い＝その時 当課 repo で実行されていない**。**「失われた commit は見つからない」は不変**。 ★**conductor の指摘の形も記録**: **結論は正しく、根拠の1つが誤り**＝**誤った理由で正しい文を残していた**（本日 content が出したのと同型）。
 
