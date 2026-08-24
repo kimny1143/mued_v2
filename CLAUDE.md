@@ -179,7 +179,7 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 
 ## content課への canonical変更通知義務
 
-公式pricing・product spec・ロードマップ等を変更した場合、content課に claude-peers で通知必須。
+公式pricing・product spec・ロードマップ等を変更した場合、content課に**組込み `SendMessage`**（宛先=`ListAgents` の name）で**通知必須**。★**規律は不変・transport のみ 2026-08-14 に変更**（旧=claude-peers）。★**旧経路は送信側に成功が返るのに届かない**。
 迷ったら**過剰通知側に倒す**。詳細手順: `.claude/rules/canonical-change-notification.md`
 
 ★**通知は「merge 後にやる」ではなく merge するその手で送る**。「後で通知」は担い手が消えて落ちる

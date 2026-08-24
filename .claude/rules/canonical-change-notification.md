@@ -1,6 +1,7 @@
 # content課への canonical変更通知義務
 
-本peer が以下の canonical を変更/公開した場合、**content課に claude-peers 経由で通知する義務**を持つ。
+本peer が以下の canonical を変更/公開した場合、**content課に通知する義務**を持つ。
+★**規律（誰に・いつ・何を）は不変。★transport のみ 2026-08-14 に変更**——**旧=claude-peers MCP / 現行=組込み `SendMessage`**。
 
 > ## ★この rule が一度 空振りした記録（2026-07-12）
 >
@@ -34,11 +35,14 @@
 
 ## 通知手順
 
-1. content課 peer ID = `mcp__claude-peers__list_peers` で取得
-   - cwd: `/Volumes/strage/_DevProjects/_contents-writing`（母体は旧 `_contents-writing`）
-   - ★**peer ID は再起動で変わる。ID をここに書き写さない**（受信時は `from_id` を正本とする）
-2. **SNS課**（cwd: `.../mued/threads-api`）と**混同しない**。両方とも発信系だが、canonical 通知先は content課
-3. `mcp__claude-peers__send_message` で通知
+1. **`ListAgents` を呼び、content課の `name` を確認する**（母体は旧 `_contents-writing`）
+   - ★**name はセッションごとに変わる。この rule に書き写さない**——**毎回 `ListAgents` で解決する**
+   - ★**返信する時は、届いたメッセージの `from` 属性をそのまま `to` にコピーする**（本文中の自称 ID は正本ではない）
+2. **SNS課**（`.../mued/threads-api`）と**混同しない**。両方とも発信系だが、canonical 通知先は content課
+3. **組込み `SendMessage({to: "<name>", message: "..."})` で通知**
+   - ★**`mcp__claude-peers__send_message` は使わない**——★**送信側に「成功」が返るのに届かない**（silent drop）。★**通知が落ちても誰も気づかない**
+   - ★**headless (`claude -p`) / cron / cloud routine からは、どちらの経路でも届かない**。★**script から通知する経路を作らない**
+   - 詳細: memory `reference-claude-peers-mcp`
 
 ## 通知内容（必須）
 
