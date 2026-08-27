@@ -25,7 +25,7 @@
       },
       "master": {
         "origin": "いつものマスターチェーンを1つのパッケージに。",
-        "statusNote": "無料モジュール2つは、今すぐ試せます。全段の masterchain は開発中。",
+        "statusNote": "無料モジュールは、今すぐ試せます。全段の masterchain は開発中。",
         "role": "マスターバス用プラグイン・スイート",
         "label": "MASTER",
         "heading": "MUEDsp",
