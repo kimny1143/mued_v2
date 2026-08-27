@@ -2450,7 +2450,8 @@
     "added": "Added {date}",
     "kind": {
       "muedsat": "Saturation",
-      "muedlim": "Limiter"
+      "muedlim": "Limiter",
+      "muedrive": "Drive"
     },
     "empty": {
       "title": "Your rack is empty",

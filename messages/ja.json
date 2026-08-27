@@ -2450,7 +2450,8 @@
     "added": "{date} に追加",
     "kind": {
       "muedsat": "サチュレーション",
-      "muedlim": "リミッター"
+      "muedlim": "リミッター",
+      "muedrive": "ドライブ"
     },
     "empty": {
       "title": "ラックはまだ空です",
