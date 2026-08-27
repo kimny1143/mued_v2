@@ -24,7 +24,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: t("title"),
     description: t("description"),
-    // Indexed only while MUEDRIVE_LIVE (currently true — reopened at #658).
+    // Indexed only while MUEDRIVE_LIVE (currently ★false — staged until the signed .pkg and the
+    // Resend audience land; the flip is its own kimny-gated PR). Keep this comment in step with
+    // lib/muedrive/config.ts — the flip PR author reads this line first.
     robots: {
       index: MUEDRIVE_LIVE,
       follow: MUEDRIVE_LIVE,
@@ -58,7 +60,7 @@ export default async function MuedrivePage({ params }: PageProps) {
   const softwareStructuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    name: "MUEDsp limiter",
+    name: "MUEDsp drive",
     alternateName: "MUEDrive",
     applicationCategory: "MultimediaApplication",
     operatingSystem: "macOS",

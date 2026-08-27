@@ -81,8 +81,8 @@ export function MuedriveLandingContent() {
                 <span className="text-white">MUED</span>
                 <span className="text-[#f5a524]">lim</span>
               </h1>
-              {/* Formal name (3-layer naming: DL page shows the formal "MUEDsp limiter"). */}
-              <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-white/40">MUEDsp limiter</p>
+              {/* Formal name (3-layer naming: DL page shows the formal "MUEDsp drive"). */}
+              <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-white/40">MUEDsp drive</p>
               <p className="mt-3 text-lg font-light text-white/80 md:text-xl">{th("tagline")}</p>
               <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/55">{th("lead")}</p>
               <div id="get" className="mt-7 max-w-md scroll-mt-20">
@@ -134,7 +134,7 @@ export function MuedriveLandingContent() {
           </div>
         </section>
 
-        {/* Controls — two knobs (INPUT + CEILING), nothing hidden. Bypass in one quiet line. */}
+        {/* Controls — DRIVE + FOCUS + MIX + OUTPUT and a true BYPASS. CHARACTER is the selector above. */}
         <section className="border-t border-white/5 bg-white/[0.015] px-6 py-14">
           <div className="mx-auto max-w-3xl">
             <p className="text-lg font-medium leading-snug text-white/85">{ta("controlsLead")}</p>

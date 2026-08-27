@@ -12,6 +12,7 @@ import { Resend } from 'resend';
 import { logger } from '@/lib/utils/logger';
 import { MUEDSAT_DOWNLOAD_URL } from '@/lib/muedsat/config';
 import { MUEDLIM_DOWNLOAD_URL } from '@/lib/muedlim/config';
+import { MUEDRIVE_DOWNLOAD_URL } from '@/lib/muedrive/config';
 import { signUnsubscribeToken } from '@/lib/plugins/unsubscribe-token';
 
 // ========================================
@@ -68,11 +69,12 @@ function withEmailUtm(url: string, campaign: string, content: string): string {
 const UTM_CAMPAIGN = {
   welcomeMuedsat: 'email_welcome-muedsat',
   welcomeMuedlim: 'email_welcome-muedlim',
+  welcomeMuedrive: 'email_welcome-muedrive',
   waitlistMuedial: 'email_waitlist-muedial',
 } as const;
 
 /** One-click List-Unsubscribe URL for a plugin free-download subscriber (RFC 8058). */
-function pluginUnsubscribeUrl(plugin: 'muedsat' | 'muedlim', email: string, locale: 'ja' | 'en'): string {
+function pluginUnsubscribeUrl(plugin: 'muedsat' | 'muedlim' | 'muedrive', email: string, locale: 'ja' | 'en'): string {
   const t = signUnsubscribeToken(plugin, email);
   return `${APP_URL}/api/plugins/unsubscribe?plugin=${plugin}&email=${encodeURIComponent(email)}&t=${t}&locale=${locale}`;
 }
@@ -1068,6 +1070,65 @@ Hoo MCP経由の自動送信
 
     return { subject, html, text };
   },
+  /**
+   * MUEDrive free-download welcome. Mirrors muedlimDownloadWelcome; download button only when
+   * MUEDRIVE_DOWNLOAD_URL is set (else "on the way") — MUEDrive ships staged with an empty URL, so
+   * this branch is the one that actually runs until the signed .pkg lands.
+   * Copy: content canonical (drafts/inbox/muedrive-dl-lp-copy-20260821.md, email section, 方向A採用).
+   */
+  muedriveDownloadWelcome(data: { locale: 'ja' | 'en'; unsubscribeUrl?: string }): { subject: string; html: string; text: string } {
+    const isJa = data.locale === 'ja';
+    const hasLink = !!MUEDRIVE_DOWNLOAD_URL;
+    const portal = portalPromoBlock(isJa, UTM_CAMPAIGN.welcomeMuedrive);
+    const forward = forwardHookBlock(isJa, UTM_CAMPAIGN.welcomeMuedrive);
+
+    const subject = isJa ? 'MUEDrive のダウンロードリンクです' : 'Your MUEDrive download link';
+
+    const unsubHtml = `<p style="color: #9ca3af; font-size: 12px;">${data.unsubscribeUrl
+      ? `<a href="${data.unsubscribeUrl}" style="color: #9ca3af; text-decoration: underline;">${isJa ? 'メール配信を解除する' : 'Unsubscribe from these emails'}</a>`
+      : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.')}</p>`;
+    const unsubText = data.unsubscribeUrl
+      ? `${isJa ? 'メール配信の解除' : 'Unsubscribe'}: ${data.unsubscribeUrl}`
+      : (isJa ? 'メール配信はいつでも解除できます。' : 'Unsubscribe anytime.');
+
+    const linkBlockHtml = hasLink
+      ? `<p style="text-align: center;">
+           <a href="${MUEDRIVE_DOWNLOAD_URL}" class="button" style="background: #f5a524; color: #000; font-weight: 600;">
+             ${isJa ? 'MUEDrive をダウンロード' : 'Download MUEDrive'}
+           </a>
+         </p>
+         <p style="color: #6b7280; font-size: 13px; text-align: center;">VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon / Intel)</p>`
+      : `<div class="info-box">
+           <p style="margin: 0;">${isJa
+             ? 'ダウンロードの準備が整い次第、このメールアドレスにリンクをお送りします。少しだけお待ちください。'
+             : "We're putting the finishing touches on the download — we'll email the link to this address shortly."}</p>
+         </div>`;
+
+    const html = baseTemplate(`
+      <h2 style="color: #f5a524; margin-top: 0;">${isJa ? 'MUEDrive をありがとうございます' : 'Thanks for grabbing MUEDrive'}</h2>
+
+      <p>${isJa
+        ? 'MUEDrive は無料のサチュレーター。tube、warm、console の3つを切り替えて、バスに通してみてください。macOS（Universal）、VST3 · AU · AAX に対応しています。'
+        : 'MUEDrive is a free saturator — switch between tube, warm and console, and mix through it on a bus. macOS (Universal), VST3 · AU and AAX.'}</p>
+
+      ${linkBlockHtml}
+
+      <p style="color: #6b7280; font-size: 14px;">
+        ${isJa
+          ? '完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。'
+          : "I'm still building the finished MUEDsp masterchain; I'll let you know when there's an update."}
+      </p>
+      ${portal.html}
+      ${forward.html}
+      ${unsubHtml}
+    `);
+
+    const text = isJa
+      ? `MUEDrive をありがとうございます。\n\n無料のサチュレーターです。tube、warm、console の3つを切り替えて、バスに通してみてください。\n${hasLink ? `ダウンロード: ${MUEDRIVE_DOWNLOAD_URL}\nmacOS（Universal）、VST3 · AU · AAX（Pro Tools）` : '準備が整い次第、このメールアドレスにリンクをお送りします。'}\n\n完成形の MUEDsp masterchain も、いま作っています。アップデートがあればお知らせします。${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim()
+      : `Thanks for grabbing MUEDrive.\n\nA free saturator — switch between tube, warm and console, and mix through it on a bus.\n${hasLink ? `Download: ${MUEDRIVE_DOWNLOAD_URL}\nmacOS (Universal), VST3 · AU · AAX (Pro Tools)` : "We'll email the download link to this address shortly."}\n\nI'm still building the finished MUEDsp masterchain; I'll let you know when there's an update.${portal.text}${forward.text}\n\n${unsubText}\n\nglasswerks inc. — mued.jp`.trim();
+
+    return { subject, html, text };
+  },
 
   /**
    * glasswerks inquiry — user confirmation email
@@ -1416,6 +1477,23 @@ class EmailService {
       to,
       ...template,
       tags: [{ name: 'type', value: 'muedlim_download_welcome' }],
+      headers: {
+        'List-Unsubscribe': `<${unsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    });
+  }
+
+  async sendMuedriveDownloadWelcome(
+    to: EmailRecipient,
+    data: { locale: 'ja' | 'en' }
+  ): Promise<EmailResult> {
+    const unsubscribeUrl = pluginUnsubscribeUrl('muedrive', to.email, data.locale);
+    const template = emailTemplates.muedriveDownloadWelcome({ ...data, unsubscribeUrl });
+    return this.send({
+      to,
+      ...template,
+      tags: [{ name: 'type', value: 'muedrive_download_welcome' }],
       headers: {
         'List-Unsubscribe': `<${unsubscribeUrl}>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
