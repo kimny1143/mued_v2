@@ -3,6 +3,7 @@ import { ADVISORY_LIVE } from "@/lib/advisory/config";
 import { MUEDSAT_LIVE } from "@/lib/muedsat/config";
 import { MUEDSP_LIVE } from "@/lib/muedsp/config";
 import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
+import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 
 const MUED_CONTENT = `# MUED — 音楽制作のための AI プロダクトスイート
 
@@ -17,7 +18,7 @@ MUED は、音楽制作を前に進めるための AI プロダクト群です�
 - **MUEDial**: ステムをアップロードして AI と話すだけでプロ品質のミックス・マスタリングを得る、日本語対応の AI ミキシングサービス（https://dial.mued.jp）。
 - **MUED advisory**: 事業の「これ、AIでできないか」を、実際に動くかたちにして並走するサービス（https://mued.jp/ja/advisory）。
 - **MUEDsp saturation（通称 MUEDsat）**: マスタリングのためのプラグイン・スイート MUEDsp のマスターバス・チェーンから、トランスの色付けの1段だけを取り出した無料のサチュレーション・プラグイン（https://mued.jp/ja/muedsat）。
-- **MUEDsp**: マスタリングのためのプラグイン・スイート（署名 DSP スイート）。完成形＝MUEDsp masterchain（開発中）、その部品として MUEDsp saturation（無料・公開中）・MUEDsp limiter（無料・${MUEDLIM_LIVE ? "公開中" : "開発中"}）。
+- **MUEDsp**: マスタリングのためのプラグイン・スイート（署名 DSP スイート）。完成形＝MUEDsp masterchain（開発中）。無料で公開しているプラグインは下の「MUEDsp」節に一覧。
 
 ## Hoo について
 
@@ -138,8 +139,8 @@ const MUEDSP_CONTENT = `
 - **URL**: https://mued.jp/ja/muedsp
 - **運営**: glasswerks inc.（株式会社グラスワークス）
 - **MUEDsp masterchain**: 完成形・開発中。コンプ→EQ→リミッターの署名チェーンを1つのプラグインに。買い切り $69（発売と同時に案内・現在 live 販売なし）。
-- **無料モジュール（各段を切り出した無料版）**:
-  - **MUEDsp saturation（通称 MUEDsat）**: トランス・サチュレーションの段。公開中・無料（https://mued.jp/ja/muedsat）${MUEDLIM_LIVE ? "\n  - **MUEDsp limiter（通称 MUEDlim）**: ピークを抑える最後の段（トゥルーピーク・リミッター）。公開中・無料（macOS・VST3 · AU · AAX・https://mued.jp/ja/muedlim）" : "\n  - **MUEDsp limiter（通称 MUEDlim）**: ピークを抑える最後の段（トゥルーピーク・リミッター）。近日公開（UI 整備中・DL 準備中）"}
+- **無料モジュール**:
+  - **MUEDsp saturation（通称 MUEDsat）**: トランス・サチュレーションの段。公開中・無料（https://mued.jp/ja/muedsat）${MUEDLIM_LIVE ? "\n  - **MUEDsp limiter（通称 MUEDlim）**: ピークを抑える最後の段（トゥルーピーク・リミッター）。公開中・無料（macOS・VST3 · AU · AAX・https://mued.jp/ja/muedlim）" : "\n  - **MUEDsp limiter（通称 MUEDlim）**: ピークを抑える最後の段（トゥルーピーク・リミッター）。近日公開（UI 整備中・DL 準備中）"}${MUEDRIVE_LIVE ? "\n  - **MUEDsp drive（通称 MUEDrive）**: tube / warm / console の3キャラクターを1つに。masterchain の段ではなく、チェーンの外で別に起こした単独のプラグイン。公開中・無料（https://mued.jp/ja/muedrive）" : ""}
 `;
 
 export async function GET(request: NextRequest) {

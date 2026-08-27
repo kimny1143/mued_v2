@@ -289,11 +289,11 @@ function forwardHookBlock(isJa: boolean, campaign: string): { html: string; text
   const link = `<a href="${url}" style="color: #b57a14; text-decoration: underline;">mued.jp/muedsp</a>`;
   const html = `
       <p style="margin: 18px 0 0; color: #6b7280; font-size: 13px;">${isJa
-        ? `役に立ちそうな人がいたら、このメールを転送してください。MUEDsat と MUEDlim は、どなたでも無料でお使いいただけます（${link}）。`
-        : `Know someone who'd use these? Forward this along — MUEDsat and MUEDlim are free for anyone at ${link}.`}</p>`;
+        ? `役に立ちそうな人がいたら、このメールを転送してください。MUEDsp の無料モジュールは、どなたでもお使いいただけます（${link}）。`
+        : `Know someone who'd use these? Forward this along — the free modules in MUEDsp are open to anyone at ${link}.`}</p>`;
   const text = isJa
-    ? `\n\n役に立ちそうな人がいたら、このメールを転送してください。MUEDsat と MUEDlim は、どなたでも無料でお使いいただけます（${url}）。`
-    : `\n\nKnow someone who'd use these? Forward this along — MUEDsat and MUEDlim are free for anyone at ${url}.`;
+    ? `\n\n役に立ちそうな人がいたら、このメールを転送してください。MUEDsp の無料モジュールは、どなたでもお使いいただけます（${url}）。`
+    : `\n\nKnow someone who'd use these? Forward this along — the free modules in MUEDsp are open to anyone at ${url}.`;
   return { html, text };
 }
 
