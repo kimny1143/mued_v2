@@ -25,7 +25,7 @@
       },
       "master": {
         "origin": "The everyday master chain, packaged into one.",
-        "statusNote": "Two free modules to try right now; the full masterchain is in development.",
+        "statusNote": "Free modules to try right now; the full masterchain is in development.",
         "role": "Master-bus plugin suite",
         "label": "MASTER",
         "heading": "MUEDsp",
