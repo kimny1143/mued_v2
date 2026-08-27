@@ -2334,7 +2334,7 @@
       }
     },
     "visuals": {
-      "faceplateAlt": "The MUEDrive plugin interface. At the top, an owl mark with the MUEDrive title, a THREE-CHARACTER DRIVE subtitle beneath it, and a BYPASS toggle at the right. At the left, the three-position CHARACTER selector points to TUBE (lit amber), with WARM and CONSOLE at the other positions and a 3-POSITION · DETENTED note below. The center holds a large DRIVE knob tracing an amber arc at 50 %, with an AUTO −6.9 dB readout under it. At the right, three knobs stacked top to bottom: MIX 100 %, OUTPUT 0.0 dB and FOCUS 600 Hz. Along the bottom, GLASSWERKS INC. and TUBE · WARM · CONSOLE."
+      "faceplateAlt": "The MUEDrive plugin interface. At the top left, a wordmark setting MUED in bright type against a dimmer rive, with a THREE-CHARACTER DRIVE subtitle beneath it and a BYPASS toggle at the right. At the left, the three-position CHARACTER selector points to TUBE (lit amber), with WARM and CONSOLE at the other positions and a 3-POSITION · DETENTED note below. The center holds a large DRIVE knob tracing an amber arc at 50 %, with an AUTO −6.9 dB readout under it. At the right, three knobs stacked top to bottom: MIX 100 %, OUTPUT 0.0 dB and FOCUS 600 Hz. Along the bottom, GLASSWERKS INC. and TUBE · WARM · CONSOLE."
     },
     "whyFree": {
       "heading": "Why it's free, and why I ask for your email",
