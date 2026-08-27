@@ -9,8 +9,9 @@
 // read server-side in lib/plugins/audience.ts via `audienceEnvName` (the env var NAME is not a value).
 import { MUEDSAT_LIVE, MUEDSAT_DOWNLOAD_URL, MUEDSAT_PRESS_TOKEN, MUEDSAT_VERSION } from "@/lib/muedsat/config";
 import { MUEDLIM_LIVE, MUEDLIM_DOWNLOAD_URL, MUEDLIM_PRESS_TOKEN, MUEDLIM_VERSION } from "@/lib/muedlim/config";
+import { MUEDRIVE_LIVE, MUEDRIVE_DOWNLOAD_URL, MUEDRIVE_PRESS_TOKEN, MUEDRIVE_VERSION } from "@/lib/muedrive/config";
 
-export type PluginKey = "muedsat" | "muedlim";
+export type PluginKey = "muedsat" | "muedlim" | "muedrive";
 
 export interface PluginDist {
   key: PluginKey;
@@ -55,6 +56,18 @@ export const PLUGIN_DIST: Record<PluginKey, PluginDist> = {
     i18nNamespace: "muedlim",
     subscribeEndpoint: "/api/muedlim/subscribe",
     audienceEnvName: "RESEND_MUEDLIM_AUDIENCE_ID",
+  },
+  // muedrive — third free module. Started outside MUEDsp masterchain (standalone), unlike the first two.
+  muedrive: {
+    key: "muedrive",
+    live: MUEDRIVE_LIVE,
+    downloadUrl: MUEDRIVE_DOWNLOAD_URL,
+    version: MUEDRIVE_VERSION,
+    pressToken: MUEDRIVE_PRESS_TOKEN,
+    source: "muedrive_lp",
+    i18nNamespace: "muedrive",
+    subscribeEndpoint: "/api/muedrive/subscribe",
+    audienceEnvName: "RESEND_MUEDRIVE_AUDIENCE_ID",
   },
 };
 

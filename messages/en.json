@@ -2276,6 +2276,87 @@
       "format": "VST3 · AU · AAX (Pro Tools) · macOS (Universal — Apple Silicon & Intel)"
     }
   },
+
+  "muedrive": {
+    "meta": {
+      "title": "MUEDsp drive (aka MUEDrive) — a free saturator with three characters",
+      "description": "MUEDsp drive (aka MUEDrive) is a free saturator with three characters — tube, warm and console — in one plugin. Put it on a bus, push DRIVE, and listen. macOS (Universal), VST3 · AU · AAX. Nothing locked, nothing paywalled."
+    },
+    "hero": {
+      "badge": "Free · macOS · VST3 · AU · AAX",
+      "title": "MUEDrive",
+      "tagline": "A free saturator, three characters",
+      "lead": "tube, warm, console. Switch between three characters and mix through it. Free.",
+      "tryLine": "Free. Just grab it and try it on your own music."
+    },
+    "about": {
+      "heading": "What it is",
+      "originLead": "Not a demo or a trial — it's the third free plugin I've put out under MUED. Unlike the first two, though, it isn't a stage lifted out of MUEDsp masterchain, my mastering chain; it's a standalone plugin I started outside the chain. Where MUEDsat adds sheen up top, this one is about what happens when you push the middle and the low end. On a bus, a drum bus, or before your master: run it through, push DRIVE, and each character breaks up differently.",
+      "charactersHeading": "Three characters",
+      "charactersLead": "Switch with the selector. Same DRIVE, different break-up.",
+      "characters": {
+        "tube": {
+          "name": "tube",
+          "desc": "tube-like second harmonics. It swells when you hit it, and settles when you let go."
+        },
+        "warm": {
+          "name": "warm",
+          "desc": "even harmonics dominate and the upper ones fall away quickly. The gentlest of the three. I like it blended in under a bass."
+        },
+        "console": {
+          "name": "console",
+          "desc": "the hardness of pushing into a desk. It pushes forward."
+        }
+      },
+      "controlsHeading": "DRIVE and FOCUS",
+      "controlsLead": "DRIVE for how much, FOCUS for where it starts. Then MIX and OUTPUT.",
+      "controls": {
+        "drive": {
+          "name": "DRIVE",
+          "desc": "how much (0–100%)."
+        },
+        "focus": {
+          "name": "FOCUS",
+          "desc": "the line above which it distorts; below it passes through. The readout shows the actual value for the character you've selected, so it changes when you switch."
+        },
+        "mix": {
+          "name": "MIX",
+          "desc": "blend with the dry signal (0–100%)."
+        },
+        "output": {
+          "name": "OUTPUT",
+          "desc": "output level (−12 to +12 dB)."
+        },
+        "bypass": {
+          "name": "BYPASS",
+          "desc": "a true bypass, for honest A/B."
+        }
+      }
+    },
+    "visuals": {
+      "faceplateAlt": "The MUEDrive plugin interface. At the top, an owl mark with the MUEDrive title, a THREE-CHARACTER DRIVE subtitle beneath it, and a BYPASS toggle at the right. At the left, the three-position CHARACTER selector points to TUBE (lit amber), with WARM and CONSOLE at the other positions and a 3-POSITION · DETENTED note below. The center holds a large DRIVE knob tracing an amber arc at 50 %, with an AUTO −6.9 dB readout under it. At the right, three knobs stacked top to bottom: MIX 100 %, OUTPUT 0.0 dB and FOCUS 600 Hz. Along the bottom, GLASSWERKS INC. and TUBE · WARM · CONSOLE."
+    },
+    "whyFree": {
+      "heading": "Why it's free, and why I ask for your email",
+      "lead": "MUEDrive is completely free — no feature locks, no expiry, no paywall. I ask for your email only to send the download link and to let you know about updates (and MUEDsp masterchain). Your email is the price of the download, not the plugin. No spam, and you can unsubscribe anytime."
+    },
+    "form": {
+      "emailLabel": "Email",
+      "emailPlaceholder": "your@email",
+      "submit": "Download MUEDrive",
+      "submitting": "Sending…",
+      "note": "I'll email you the download link. Unsubscribe anytime.",
+      "successTitle": "Check your email.",
+      "successBody": "I've emailed you the download link. If it doesn't arrive, check your spam folder.",
+      "errorEmail": "Please enter a valid email address.",
+      "errorGeneric": "Something went wrong. Please try again.",
+      "errorEmailFailed": "We couldn't send the download email. Please try again, or contact support@mued.jp."
+    },
+    "footer": {
+      "operator": "glasswerks inc. — mued.jp",
+      "format": "VST3 · AU · AAX · macOS (Universal — Apple Silicon / Intel)"
+    }
+  },
   "muedsat": {
     "meta": {
       "title": "MUEDsp saturation (aka MUEDsat) — a free transformer saturation plugin",

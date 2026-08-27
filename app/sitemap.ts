@@ -4,6 +4,7 @@ import { STORY_SLUGS } from '@/lib/story/articles';
 import { ADVISORY_LIVE } from '@/lib/advisory/config';
 import { MUEDSAT_LIVE } from '@/lib/muedsat/config';
 import { MUEDLIM_LIVE } from '@/lib/muedlim/config';
+import { MUEDRIVE_LIVE } from '@/lib/muedrive/config';
 import { MUEDSP_LIVE } from '@/lib/muedsp/config';
 import { MUEDIAL_LP_LIVE } from '@/lib/muedial/config';
 import { LEARN_LIVE } from '@/lib/learn/config';
@@ -65,6 +66,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ? [
           { url: `${MUED}/ja/muedlim`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
           { url: `${MUED}/en/muedlim`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
+        ]
+      : []),
+    ...(MUEDRIVE_LIVE
+      ? [
+          { url: `${MUED}/ja/muedrive`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
+          { url: `${MUED}/en/muedrive`, lastModified: now, changeFrequency: 'monthly' as const, priority: 0.7 },
         ]
       : []),
     ...(MUEDSP_LIVE
