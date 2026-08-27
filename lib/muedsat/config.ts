@@ -24,18 +24,25 @@
 // the home MUEDsat card, and the sitemap/llms entries together.
 export const MUEDSAT_LIVE = true;
 
-// Download asset URL emailed to subscribers after they submit the gate. Empty while the dsp-owned
-// package (VST3 · AU · AAX (Pro Tools), macOS, signed/notarized) is not yet uploaded — the email then
-// omits the link and says it's on the way. Set at unlock (kimny gate). NOT a secret (public CDN URL).
-// 2026-07-08 UNLOCK: mued.jp static hosting (public/downloads/, #598・sha256 c2f931f… conductor-verified).
-// 2026-07-09: replaced with the new signed/notarized UI build (DRIVE 2-layer glow + BYPASS lever;
-// audio byte-identical; same filename/URL/version 0.1.0-alpha). sha256 c1f11fa1… conductor-verified.
-export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDsat-0.1.0-alpha-installer.pkg";
+// Download asset URL emailed to subscribers after they submit the gate. Served from mued.jp static
+// hosting (public/downloads/, #598). NOT a secret (public CDN URL).
+// Package: MUEDsat 0.1.1-alpha — crash fix over 0.1.0 (audio unchanged). Notarized + stapled
+//   (Developer ID Installer: glasswerks inc. F529L4WT3V).
+//   sha256: b3ac87fc4a789660c398421fe64a2f5a34e78d8c2c263e28c4d3a439ad332d0c
+//   size:   3,405,698 B
+//   Verify after any swap: shasum -a 256 public/downloads/MUEDsat-0.1.1-alpha-installer.pkg
+//   History: 2026-07-08 unlock (sha256 c2f931f…), 2026-07-09 signed UI rebuild (c1f11fa1…, audio
+//   byte-identical, same filename/URL at 0.1.0-alpha).
+//
+// ★2026-08-27 (A'): the 0.1.0 FILENAME was ALSO overwritten with this same 0.1.1 payload, on purpose —
+//   same reason as MUEDlim (already-sent emails carry the literal 0.1.0 URL and cannot be edited).
+//   The old name is a compatibility alias; this constant points at the honest new name.
+export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDsat-0.1.1-alpha-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Updated together with MUEDSAT_DOWNLOAD_URL in the same PR (the pkg filename carries this version) so
 // the portal's "latest version" and the DL link never drift. NOT a secret.
-export const MUEDSAT_VERSION = "0.1.0-alpha";
+export const MUEDSAT_VERSION = "0.1.1-alpha";
 
 // MUEDsp product page URL for the footer "where it came from" link. Empty => the link is hidden
 // (the copy's "MUEDsp product page — link TBD, kimny gate"). Set once the MUEDsp page exists.

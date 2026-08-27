@@ -20,18 +20,24 @@ export const MUEDLIM_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Served from the mued.jp
 // static path (public/downloads/). NOT a secret.
-// Package: MUEDlim 0.1.0-alpha — 2-knob (INPUT + CEILING) LUFS-hero build, THREE formats (VST3 · AU ·
-//   AAX (Pro Tools)) + uninstaller, notarized + stapled (Developer ID Installer: glasswerks inc.
-//   F529L4WT3V — spctl accepted / Apple notary trusted).
-//   sha256: a832976a9fa4da91dc05b33f4f384c89731ac6598c82f1110e8bece80a807729
-//   size:   3,191,130 B. Replaced the 2-format GR build (c6c9ad52…, VST3/AU-only) at reopen.
-//   Verify after any swap: shasum -a 256 public/downloads/MUEDlim-0.1.0-alpha-installer.pkg
-export const MUEDLIM_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDlim-0.1.0-alpha-installer.pkg";
+// Package: MUEDlim 0.1.1-alpha — crash fix over 0.1.0 (audio unchanged; bit-identical output verified
+//   by dsp). 2-knob (INPUT + CEILING), THREE formats (VST3 · AU · AAX (Pro Tools)) + uninstaller,
+//   notarized + stapled (Developer ID Installer: glasswerks inc. F529L4WT3V).
+//   sha256: dc51d7cbc23ab56f540ba43bbafbd362bbfa69f801b051c8c2602f110c437bc5
+//   size:   3,238,046 B
+//   Verify after any swap: shasum -a 256 public/downloads/MUEDlim-0.1.1-alpha-installer.pkg
+//
+// ★2026-08-27 (A'): the 0.1.0 FILENAME was ALSO overwritten with this same 0.1.1 payload, on purpose.
+//   311 people already received emails containing the literal 0.1.0 URL; those emails cannot be
+//   edited. Publishing only under a new name would leave every one of them on the crashing build.
+//   So the old name survives as a compatibility alias (its filename now understates its contents),
+//   and this constant points at the honest new name. Both files are byte-identical.
+export const MUEDLIM_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDlim-0.1.1-alpha-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
 // Updated together with MUEDLIM_DOWNLOAD_URL in the same PR (the pkg filename carries this version) so
 // the portal's "latest version" and the DL link never drift. NOT a secret.
-export const MUEDLIM_VERSION = "0.1.0-alpha";
+export const MUEDLIM_VERSION = "0.1.1-alpha";
 
 // Press / reviewer bypass — DESIGN ROOM ONLY (dormant until a token is set; not a public feature).
 // When non-empty, `?press=<token>` reveals MUEDLIM_DOWNLOAD_URL directly, skipping the email gate.

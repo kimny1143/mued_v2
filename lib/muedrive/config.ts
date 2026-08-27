@@ -14,13 +14,18 @@
 //           - adds muedrive URLs to app/sitemap.ts         (gated on MUEDRIVE_LIVE)
 export const MUEDRIVE_LIVE = false;
 
-// Download asset URL emailed to subscribers after they submit the gate. Served from the mued.jp
-// static path (public/downloads/). NOT a secret.
+// Download asset URL emailed to subscribers after they submit the gate. Served from mued.jp static
+// hosting (public/downloads/). NOT a secret (public CDN URL).
+// Package: MUEDrive 0.1.0-alpha — first release. Three-position CHARACTER (tube / warm / console) +
+//   DRIVE / FOCUS / MIX / OUTPUT and a true BYPASS. THREE formats (VST3 · AU · AAX (Pro Tools)),
+//   macOS Universal, notarized + stapled (Developer ID Installer: glasswerks inc. F529L4WT3V).
+//   sha256: 42aa60274bd828b02eab402a63dde3ab0c32589f17e3ad4c8cf00077d50e2d13
+//   size:   3,590,153 B
+//   Verify after any swap: shasum -a 256 public/downloads/MUEDrive-0.1.0-alpha-installer.pkg
 //
-// ★EMPTY UNTIL THE SIGNED PACKAGE LANDS. The email template renders an "on the way" line instead of a
-// download button while this is empty (same guard as MUEDlim's), so shipping the page before the .pkg
-// exists cannot mail a 404 to anyone.
-export const MUEDRIVE_DOWNLOAD_URL = "";
+// No 0.1.0-alias problem here (unlike MUEDsat/MUEDlim): MUEDrive has never been emailed under an
+// older filename, so this URL is the only one that has ever existed for it.
+export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-0.1.0-alpha-installer.pkg";
 
 // Current build version shown in the user portal. Updated together with MUEDRIVE_DOWNLOAD_URL in the
 // same PR (the pkg filename carries this version) so the portal's "latest version" and the DL link
