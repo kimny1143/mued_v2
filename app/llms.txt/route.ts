@@ -140,7 +140,7 @@ const MUEDSP_CONTENT = `
 - **運営**: glasswerks inc.（株式会社グラスワークス）
 - **MUEDsp masterchain**: 完成形・開発中。コンプ→EQ→リミッターの署名チェーンを1つのプラグインに。買い切り $69（発売と同時に案内・現在 live 販売なし）。
 - **無料モジュール**:
-  - **MUEDsp saturation（通称 MUEDsat）**: トランス・サチュレーションの段。公開中・無料（https://mued.jp/ja/muedsat）${MUEDLIM_LIVE ? "\n  - **MUEDsp limiter（通称 MUEDlim）**: ピークを抑える最後の段（トゥルーピーク・リミッター）。公開中・無料（macOS・VST3 · AU · AAX・https://mued.jp/ja/muedlim）" : "\n  - **MUEDsp limiter（通称 MUEDlim）**: ピークを抑える最後の段（トゥルーピーク・リミッター）。近日公開（UI 整備中・DL 準備中）"${MUEDRIVE_LIVE ? "\n  - **MUEDsp drive（通称 MUEDrive）**: tube / warm / console の3キャラクターを1つに。masterchain の段ではなく、チェーンの外で別に起こした単独のプラグイン。公開中・無料（https://mued.jp/ja/muedrive）" : ""}
+  - **MUEDsp saturation（通称 MUEDsat）**: トランス・サチュレーションの段。公開中・無料（https://mued.jp/ja/muedsat）${MUEDLIM_LIVE ? "\n  - **MUEDsp limiter（通称 MUEDlim）**: ピークを抑える最後の段（トゥルーピーク・リミッター）。公開中・無料（macOS・VST3 · AU · AAX・https://mued.jp/ja/muedlim）" : "\n  - **MUEDsp limiter（通称 MUEDlim）**: ピークを抑える最後の段（トゥルーピーク・リミッター）。近日公開（UI 整備中・DL 準備中）"}${MUEDRIVE_LIVE ? "\n  - **MUEDsp drive（通称 MUEDrive）**: tube / warm / console の3キャラクターを1つに。masterchain の段ではなく、チェーンの外で別に起こした単独のプラグイン。公開中・無料（https://mued.jp/ja/muedrive）" : ""}
 `;
 
 export async function GET(request: NextRequest) {
