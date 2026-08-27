@@ -20,7 +20,7 @@ export const MUEDRIVE_LIVE = false;
 // ★EMPTY UNTIL THE SIGNED PACKAGE LANDS. The email template renders an "on the way" line instead of a
 // download button while this is empty (same guard as MUEDlim's), so shipping the page before the .pkg
 // exists cannot mail a 404 to anyone.
-export const MUEDRIVE_DOWNLOAD_URL = "";
+export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-0.1.0-alpha-installer.pkg";
 
 // Current build version shown in the user portal. Updated together with MUEDRIVE_DOWNLOAD_URL in the
 // same PR (the pkg filename carries this version) so the portal's "latest version" and the DL link
