@@ -38,11 +38,21 @@ function schemaFor(plugin: PluginKey) {
 
 // Per-plugin welcome email — kept as separate email-service methods so each plugin's copy is
 // independent (MUEDsat's email is untouched by the MUEDlim add).
+// ★Record<PluginKey, …> にしてある。if/else で書くと、4本目を足した人が else に落ちても
+// tsc が通ってしまい、★別製品のメールが届く（2026-08-27 に muedrive で実際に起きかけた:
+// 3値 union を2分岐で消費していて、muedrive が muedlim の else に落ちていた。product課 検出）。
+// この形なら、キーを足し忘れた時点で tsc が止まる。
+const WELCOME_SENDER: Record<
+  PluginKey,
+  (email: string, locale: "ja" | "en") => Promise<EmailResult>
+> = {
+  muedsat: (email, locale) => emailService.sendMuedsatDownloadWelcome({ email }, { locale }),
+  muedlim: (email, locale) => emailService.sendMuedlimDownloadWelcome({ email }, { locale }),
+  muedrive: (email, locale) => emailService.sendMuedriveDownloadWelcome({ email }, { locale }),
+};
+
 async function sendWelcome(plugin: PluginKey, email: string, locale: "ja" | "en") {
-  if (plugin === "muedsat") {
-    return emailService.sendMuedsatDownloadWelcome({ email }, { locale });
-  }
-  return emailService.sendMuedlimDownloadWelcome({ email }, { locale });
+  return WELCOME_SENDER[plugin](email, locale);
 }
 
 /** POST handler for a plugin's free-download email gate. Used by the per-plugin route wrappers. */

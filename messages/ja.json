@@ -2276,6 +2276,87 @@
       "format": "VST3 · AU · AAX（Pro Tools）· macOS（Universal — Apple Silicon / Intel）"
     }
   },
+
+  "muedrive": {
+    "meta": {
+      "title": "MUEDsp drive（通称 MUEDrive）— 無料のサチュレーター、キャラクター3つ",
+      "description": "MUEDsp drive（通称 MUEDrive）は無料のサチュレーター。tube・warm・console の3つのキャラクターを、ひとつのプラグインに入れました。バスやドラムバスに通して、DRIVE を上げるだけ。macOS（Universal）、VST3 · AU · AAX。機能ロックも課金の壁もありません。"
+    },
+    "hero": {
+      "badge": "無料 · macOS · VST3 · AU · AAX",
+      "title": "MUEDrive",
+      "tagline": "キャラクター3つの、無料のサチュレーター",
+      "lead": "tube、warm、console。3つのキャラクターを切り替えて、バスに通します。無料です。",
+      "tryLine": "無料。まず落として、自分の音で。"
+    },
+    "about": {
+      "heading": "これは何か",
+      "originLead": "体験版でも試供品でもありません。僕が MUED で出してる無料プラグインの3本目です。ただし前の2本と違って、マスタリング用チェーンの MUEDsp masterchain から段を取り出したものではなく、チェーンの外で別に起こした単独のプラグインです。高域に艶を足す MUEDsat に対して、こっちは中域から下を押したときの動きを作りました。バス、ドラムバス、マスターの手前。通して DRIVE を上げると、キャラクターごとに違う歪みかたをします。",
+      "charactersHeading": "3つのキャラクター",
+      "charactersLead": "セレクタで切り替えます。同じ DRIVE でも、歪みかたが変わります。",
+      "characters": {
+        "tube": {
+          "name": "tube",
+          "desc": "真空管的な2次倍音。叩くと膨らんで、抜けると戻ります。"
+        },
+        "warm": {
+          "name": "warm",
+          "desc": "偶数倍音が優位で、上の倍音が速く落ちます。3つのうち、いちばん角が立ちません。ベースに薄く混ぜるのが好きです。"
+        },
+        "console": {
+          "name": "console",
+          "desc": "卓に押し込んだような硬さ。押し出しが強くなります。"
+        }
+      },
+      "controlsHeading": "DRIVE と FOCUS",
+      "controlsLead": "どれだけ歪ませるかの DRIVE と、どこから歪ませるかの FOCUS。あとは MIX と OUTPUT です。",
+      "controls": {
+        "drive": {
+          "name": "DRIVE",
+          "desc": "歪みの量（0〜100%）。"
+        },
+        "focus": {
+          "name": "FOCUS",
+          "desc": "ここから上を歪ませる、という境目。下は素通しです。表示はいま選んでいるキャラクターの実際の値なので、切り替えると数字が変わります。"
+        },
+        "mix": {
+          "name": "MIX",
+          "desc": "原音との混ぜ具合（0〜100%）。"
+        },
+        "output": {
+          "name": "OUTPUT",
+          "desc": "出力（−12〜+12 dB）。"
+        },
+        "bypass": {
+          "name": "BYPASS",
+          "desc": "本当のバイパス。素直な A/B のために。"
+        }
+      }
+    },
+    "visuals": {
+      "faceplateAlt": "MUEDrive のプラグイン画面。上部にフクロウのマークと MUEDrive のタイトル、その下に THREE-CHARACTER DRIVE の小見出し、右端に BYPASS トグル。左は CHARACTER の3位置セレクタで、つまみは TUBE（アンバーで点灯）を指し、他の位置に WARM と CONSOLE、下に 3-POSITION · DETENTED の注記。中央は大きな DRIVE ノブがアンバーの弧を描いて 50 %、その下に AUTO −6.9 dB の表示。右は上から MIX 100 %、OUTPUT 0.0 dB、FOCUS 600 Hz の3つのノブ。最下部に GLASSWERKS INC. と TUBE · WARM · CONSOLE。"
+    },
+    "whyFree": {
+      "heading": "無料の理由と、メールをいただく理由",
+      "lead": "MUEDrive は完全に無料です。機能の制限も、期限も、課金の壁もありません。メールをいただくのは、ダウンロードリンクの送付と、アップデート（や MUEDsp masterchain）のお知らせのためだけ。メールはダウンロードの対価であって、プラグインの対価ではありません。スパムは送りませんし、いつでも解除できます。"
+    },
+    "form": {
+      "emailLabel": "メールアドレス",
+      "emailPlaceholder": "your@email",
+      "submit": "MUEDrive をダウンロード",
+      "submitting": "送信中…",
+      "note": "ダウンロードリンクをメールでお送りします。配信はいつでも解除できます。",
+      "successTitle": "メールをご確認ください。",
+      "successBody": "ダウンロードリンクをメールでお送りしました。届かない場合は迷惑メールフォルダもご確認ください。",
+      "errorEmail": "有効なメールアドレスを入力してください。",
+      "errorGeneric": "エラーが発生しました。もう一度お試しください。",
+      "errorEmailFailed": "ダウンロードメールを送信できませんでした。もう一度お試しいただくか、support@mued.jp までご連絡ください。"
+    },
+    "footer": {
+      "operator": "glasswerks inc. — mued.jp",
+      "format": "VST3 · AU · AAX · macOS（Universal — Apple Silicon / Intel）"
+    }
+  },
   "muedsat": {
     "meta": {
       "title": "MUEDsp saturation（通称 MUEDsat） — 無料のトランス・サチュレーション・プラグイン",
@@ -2369,7 +2450,8 @@
     "added": "{date} に追加",
     "kind": {
       "muedsat": "サチュレーション",
-      "muedlim": "リミッター"
+      "muedlim": "リミッター",
+      "muedrive": "ドライブ"
     },
     "empty": {
       "title": "ラックはまだ空です",
