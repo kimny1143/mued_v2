@@ -18,7 +18,7 @@ MUED は、音楽制作を前に進めるための AI プロダクト群です�
 - **MUEDial**: ステムをアップロードして AI と話すだけでプロ品質のミックス・マスタリングを得る、日本語対応の AI ミキシングサービス（https://dial.mued.jp）。
 - **MUED advisory**: 事業の「これ、AIでできないか」を、実際に動くかたちにして並走するサービス（https://mued.jp/ja/advisory）。
 - **MUEDsp saturation（通称 MUEDsat）**: マスタリングのためのプラグイン・スイート MUEDsp のマスターバス・チェーンから、トランスの色付けの1段だけを取り出した無料のサチュレーション・プラグイン（https://mued.jp/ja/muedsat）。
-- **MUEDsp**: マスタリングのためのプラグイン・スイート（署名 DSP スイート）。完成形＝MUEDsp masterchain（開発中）、その部品として MUEDsp saturation（無料・公開中）・MUEDsp limiter（無料・${MUEDLIM_LIVE ? "公開中" : "開発中"}）。
+- **MUEDsp**: マスタリングのためのプラグイン・スイート（署名 DSP スイート）。完成形＝MUEDsp masterchain（開発中）。無料で公開しているプラグインは下の「MUEDsp」節に一覧。
 
 ## Hoo について
 
