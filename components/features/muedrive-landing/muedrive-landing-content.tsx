@@ -29,8 +29,13 @@ function SignupForm() {
   );
 }
 
-// Real render of the shipped iPlug2 UI, 1000×700 (mued-dsp docs/img/muedrive_ui_render_20260827.png,
-// kimny 意匠 gate 合格・2026-08-27). Not a mock.
+// Real render of the shipped iPlug2 UI, 1000×700 (mued-dsp docs/img/muedrive_faceplate_20260827.png,
+// house-wordmark rebuild, kimny 意匠 gate 合格・2026-08-27). Not a mock.
+// ★Provenance of the look (CCO 2026-08-27): the FORM follows the shipped MUEDsat/MUEDlim house.
+//   The COLOUR PAIR of the wordmark is a NEW choice made for this build, not inherited — MUEDlim
+//   sets its tail 0xf2→0xc2 (Δ48) where MUEDrive sets 0xfa→0x56 (Δ164). Not a violation (the house
+//   spec leaves latitude and kimny passed the render), but do not cite MUEDrive as precedent for
+//   the pair without saying it was chosen here.
 const FACEPLATE = "/muedrive/faceplate.png";
 
 // Two knobs; Bypass is a header toggle described once in bypassNote (the page matches the knob count).

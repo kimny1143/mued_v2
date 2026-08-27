@@ -49,8 +49,8 @@ const ARTIFACTS = [
   {
     name: "MUEDrive",
     url: MUEDRIVE_DOWNLOAD_URL,
-    sha256: "42aa60274bd828b02eab402a63dde3ab0c32589f17e3ad4c8cf00077d50e2d13",
-    bytes: 3_590_153,
+    sha256: "77a13bd14bb3e00effe7156d4ffc0d06f98b7c98e174064931801d0c51d08cdc",
+    bytes: 3_584_446,
   },
 ];
 
