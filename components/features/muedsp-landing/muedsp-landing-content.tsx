@@ -374,7 +374,12 @@ export function MuedspLandingContent() {
                 whole reason tf("driveLabel") differs in kind from satLabel/limLabel, and why the
                 §2 lead was rewritten (content 2026-08-28): the old lead claimed the free set was
                 "masterchain の各段" which stopped being true the moment this shipped.
-                Gated on MUEDRIVE_LIVE so the card and the flip stay one switch. ─────────────── */}
+                Gated on MUEDRIVE_LIVE with `&&`, NOT the ternary MUEDlim uses above. ★Do not
+                "unify" them: MUEDlim was announced before it shipped, so "coming soon" is a real
+                product state it passed through and the ternary has a reachable else. MUEDrive went
+                straight from absent to LIVE with no announcement — it never had that state, so an
+                else branch here would be dead code that can never render. The shapes differ
+                because the histories differ. (product課 2026-08-28, reviewing #902.) ─────────── */}
             {MUEDRIVE_LIVE && (
               <div className="mt-14 border-t border-white/5 pt-14">
                 <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#f5a524]/70">
