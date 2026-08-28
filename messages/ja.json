@@ -2334,7 +2334,7 @@
       }
     },
     "visuals": {
-      "faceplateAlt": "MUEDrive のプラグイン画面。上部にフクロウのマークと MUEDrive のタイトル、その下に THREE-CHARACTER DRIVE の小見出し、右端に BYPASS トグル。左は CHARACTER の3位置セレクタで、つまみは TUBE（アンバーで点灯）を指し、他の位置に WARM と CONSOLE、下に 3-POSITION · DETENTED の注記。中央は大きな DRIVE ノブがアンバーの弧を描いて 50 %、その下に AUTO −6.9 dB の表示。右は上から MIX 100 %、OUTPUT 0.0 dB、FOCUS 600 Hz の3つのノブ。最下部に GLASSWERKS INC. と TUBE · WARM · CONSOLE。"
+      "faceplateAlt": "MUEDrive のプラグイン画面。左上に MUED（明るい字）と rive（暗い字）を並べたワードマーク、その下に THREE-CHARACTER DRIVE の小見出し、右端に BYPASS トグル。左は CHARACTER の3位置セレクタで、つまみは TUBE（アンバーで点灯）を指し、他の位置に WARM と CONSOLE、下に 3-POSITION · DETENTED の注記。中央は大きな DRIVE ノブがアンバーの弧を描いて 50 %、その下に AUTO −6.9 dB の表示。右は上から MIX 100 %、OUTPUT 0.0 dB、FOCUS 600 Hz の3つのノブ。最下部に GLASSWERKS INC. と TUBE · WARM · CONSOLE。"
     },
     "whyFree": {
       "heading": "無料の理由と、メールをいただく理由",

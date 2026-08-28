@@ -29,7 +29,16 @@ export interface PluginDist {
   i18nNamespace: string;
   /** POST target for the email-gate form. */
   subscribeEndpoint: string;
-  /** NAME of the Resend audience env var — the VALUE is read server-side (lib/plugins/audience.ts). */
+  /**
+   * NAME of the Resend audience env var — the VALUE is read server-side (lib/plugins/audience.ts).
+   *
+   * ★These names are per-product for historical reasons ONLY. They do not imply per-product lists.
+   * kimny 2026-08-27: "MUEDsp はプラグイン全てを包括したブランド名" — there is ONE MUEDsp audience
+   * and every module points at it. Measured the same day: the account holds two segments total
+   * (MUEDsp, General); no per-product segment has ever existed.
+   * ★Do not infer "a new module needs a new audience" from the fact that this name is new — that
+   * inference was made here on 2026-08-27 from the variable names alone and was wrong.
+   */
   audienceEnvName: string;
 }
 
