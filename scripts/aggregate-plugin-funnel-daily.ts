@@ -237,17 +237,22 @@ async function portalRegistrations(day: string): Promise<PortalRegistrations> {
   };
 }
 
+// ★The array goes after IN, never after ANY(. drizzle expands a JS array into the row expression
+//   `($1, $2, $3)`: valid to the right of IN, invalid to the right of ANY( — Postgres answers
+//   `op ANY/ALL (array) requires array on right side (42809)`. Hit on 2026-08-28 in #903; main's
+//   collector was broken until a manual dispatch executed it. tsc/unit/lint/build all stayed green
+//   because none of them run SQL. The shape is guarded by tests/unit/collector-sql-shape.test.ts.
+//
+// ★This note lives OUT here, above the query, and not inside the sql`` template — which is the
+//   second bug of the same afternoon. A `--` comment inside a template literal is a comment to
+//   Postgres but NOT to JavaScript: `${...}` inside it is still an interpolation, so writing
+//   `${array}` in the prose made esbuild fail to PARSE the file (`Expected ")" but found "IN"`).
+//   ★Never put a `${` inside a sql`` template unless you mean to interpolate it.
 async function dbShelfNetNew(day: string): Promise<Record<PluginKey, number>> {
   const rows = await db.execute(sql`
     SELECT plugin_key, count(*)::int AS cnt
     FROM plugin_entitlements
     WHERE created_at::date = ${day}::date
-      -- ★`IN ${array}`。★`= ANY(${array})` にしてはいけない: drizzle は JS 配列を
-      --   `($1, $2, $3)` という行式に展開するので、`ANY(` の右に置くと Postgres が
-      --   `op ANY/ALL (array) requires array on right side (42809)` で落ちる。
-      --   ★2026-08-28 に #903 でこれを踏み、★collector が main で壊れた（本番 DB に当てるまで
-      --   誰も気づけない — tsc も unit も lint も build も SQL を実行しない）。
-      --   ★形は tests/unit/collector-sql-shape.test.ts が守る。
       AND plugin_key IN ${PLUGIN_KEYS}
     GROUP BY plugin_key
   `);

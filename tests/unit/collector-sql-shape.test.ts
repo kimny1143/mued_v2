@@ -24,6 +24,19 @@ const dialect = new PgDialect();
 const render = (q: ReturnType<typeof sql>) => dialect.sqlToQuery(q).sql;
 const KEYS = ["muedsat", "muedlim", "muedrive"];
 
+/**
+ * ★Remove every comment syntax this file uses — THREE of them, not two: block, TS line, and SQL
+ * `--` inside the sql`` templates. A first attempt missed the SQL one and the test failed against
+ * the very comment that documents the rule. ★A regex cannot tell USE from MENTION, so the mention
+ * has to leave the population before the assertion runs — deleting the explanation to satisfy the
+ * grep would be the wrong fix.
+ */
+const strip = (src: string) =>
+  src
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "")
+    .replace(/^\s*--.*$/gm, "");
+
 describe("collector SQL shape", () => {
   it("★RED: `= ANY(${array})` renders a row expression, which Postgres rejects", () => {
     // ★The failing form, kept so the reason for the rule is executable rather than folklore.
@@ -47,16 +60,24 @@ describe("collector SQL shape", () => {
     //   ★Three comment syntaxes live in this file, not two: block, line, and ★SQL `--` inside the
     //   template literals. The second version of this test still failed because it stripped only
     //   the TypeScript ones — the mention that tripped it was an SQL comment inside the query.
-    const code = raw
-      .replace(/\/\*[\s\S]*?\*\//g, "")   // block
-      .replace(/^\s*\/\/.*$/gm, "")        // TS line
-      .replace(/^\s*--.*$/gm, "");         // ★SQL line, inside the sql`` templates
+    const code = strip(raw);
 
     // ★Positive controls — prove the strip did not eat the code we are asserting about.
     expect(code).toContain("FROM plugin_entitlements");
     expect(code).toMatch(/plugin_key IN \$\{PLUGIN_KEYS\}/);
-    // ★Negative control — the mention survives in raw, so raw is NOT a valid population here.
-    expect(raw).toMatch(/ANY\(\$\{[A-Za-z_]+\}\)/);
+    // ★Negative control on the STRIPPER, not on the file's prose. An earlier version asserted that
+    //   `raw` still contained the forbidden form — true only while some comment happened to mention
+    //   it, so rewording a comment broke the test. ★A control must exercise the mechanism, not
+    //   depend on wording that is free to change.
+    const synthetic = [
+      "const a = 1; /* mentions ANY(${keys}) in a block comment */",
+      "// mentions ANY(${keys}) in a TS line comment",
+      "  -- mentions ANY(${keys}) in an SQL line comment",
+      "const live = sql`WHERE k = ANY(${keys})`;",
+    ].join("\n");
+    expect(synthetic).toMatch(/ANY\(\$\{[A-Za-z_]+\}\)/); // present before stripping
+    expect(strip(synthetic)).toMatch(/ANY\(\$\{[A-Za-z_]+\}\)/); // ★the live one SURVIVES the strip
+    expect(strip(synthetic).match(/ANY\(\$\{[A-Za-z_]+\}\)/g)).toHaveLength(1); // ★only the live one
 
     // ★The actual assertion, against code only.
     expect(code).not.toMatch(/ANY\(\$\{[A-Za-z_]+\}\)/);
