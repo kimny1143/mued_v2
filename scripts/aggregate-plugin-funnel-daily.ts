@@ -34,6 +34,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 import { mkdirSync, writeFileSync } from "node:fs";
 import { db } from "@/db";
+import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
 import { sql } from "drizzle-orm";
 
 const KEY = process.env.RESEND_API_KEY;
@@ -55,13 +56,26 @@ function utcDay(offsetDays: number): string {
 const DAY = arg || utcDay(-1); // default = yesterday UTC (last complete day)
 
 type Email = { id: string; subject?: string; last_event?: string; created_at?: string };
-type PluginKey = "muedsat" | "muedlim";
+// ★Derived from the registry, NOT a local list. This file used to redeclare
+//   `type PluginKey = "muedsat" | "muedlim"` — a SECOND definition that tsc could never reconcile
+//   with lib/plugins/registry.ts, so MUEDrive shipped (2026-08-27) counting zero here while the
+//   type checker stayed green. Adding a 4th module must not require editing this file.
+const PLUGIN_KEYS = Object.keys(PLUGIN_DIST) as PluginKey[];
+
+// ★Welcome-email subjects, both locales (lib/services/email.service.ts):
+//     JA "[MUEDsat] ダウンロードリンクをお届けします" / "MUEDlim のダウンロードリンクです"
+//     EN "[MUEDsat] Your download link"              / "Your MUEDlim download link"
+// ★The old guard was `/download/i`, which NO Japanese subject contains — every JA welcome was
+//   filed as "other" from the day this collector started. That is an undercount of the JA side of
+//   the email shelf, not a MUEDrive-only problem. Match either language's word.
+const DOWNLOAD_RE = /download|ダウンロード/i;
 
 function shelf(subject?: string): PluginKey | "other" {
   const s = subject || "";
-  if (/MUEDsat/.test(s) && /download/i.test(s)) return "muedsat";
-  if (/MUEDlim/.test(s) && /download/i.test(s)) return "muedlim";
-  return "other";
+  if (!DOWNLOAD_RE.test(s)) return "other";
+  // Subjects carry the display name ("MUEDsat"), the registry carries the key ("muedsat").
+  const hit = PLUGIN_KEYS.find((k) => new RegExp(k, "i").test(s));
+  return hit ?? "other";
 }
 
 async function fetchWelcomeEmailsForDay(day: string): Promise<Email[]> {
@@ -201,6 +215,10 @@ async function portalRegistrations(day: string): Promise<PortalRegistrations> {
       count(DISTINCT lower(trim(email))) FILTER (WHERE portal_registered_at IS NOT NULL)::int AS cumulative,
       count(DISTINCT lower(trim(email))) FILTER (WHERE portal_registered_at::date = ${day}::date)::int AS day_utc
     FROM plugin_entitlements
+    -- ★DELIBERATELY still the two original modules. Adding MUEDrive here would change what this
+    -- number MEANS (it is a denominator carried across a time series), not fix a bug — unlike the
+    -- per-plugin breakdown above, which was simply blind to a third product. Whether the
+    -- denominator should widen is insight課's call; asked 2026-08-28, unanswered at time of writing.
     WHERE plugin_key IN ('muedsat', 'muedlim')
   `);
   const r = rows.rows[0] as { cumulative: number; day_utc: number };
@@ -217,10 +235,12 @@ async function dbShelfNetNew(day: string): Promise<Record<PluginKey, number>> {
     SELECT plugin_key, count(*)::int AS cnt
     FROM plugin_entitlements
     WHERE created_at::date = ${day}::date
-      AND plugin_key IN ('muedsat', 'muedlim')
+      AND plugin_key = ANY(${PLUGIN_KEYS})
     GROUP BY plugin_key
   `);
-  const out: Record<PluginKey, number> = { muedsat: 0, muedlim: 0 };
+  // ★Zero-filled from the registry so a module with no signups still reports 0 rather than being
+  //   absent — an absent key and a real zero are not the same thing downstream.
+  const out = Object.fromEntries(PLUGIN_KEYS.map((k) => [k, 0])) as Record<PluginKey, number>;
   for (const r of rows.rows as Array<{ plugin_key: PluginKey; cnt: number }>) {
     out[r.plugin_key] = r.cnt;
   }
@@ -231,6 +251,10 @@ async function dbOwnerUnionTotal(): Promise<number> {
   const rows = await db.execute(sql`
     SELECT count(DISTINCT lower(trim(email)))::int AS cnt
     FROM plugin_entitlements
+    -- ★DELIBERATELY still the two original modules. Adding MUEDrive here would change what this
+    -- number MEANS (it is a denominator carried across a time series), not fix a bug — unlike the
+    -- per-plugin breakdown above, which was simply blind to a third product. Whether the
+    -- denominator should widen is insight課's call; asked 2026-08-28, unanswered at time of writing.
     WHERE plugin_key IN ('muedsat', 'muedlim')
   `);
   return (rows.rows[0] as { cnt: number }).cnt;
