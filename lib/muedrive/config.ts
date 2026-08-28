@@ -19,8 +19,8 @@ export const MUEDRIVE_LIVE = false;
 // Package: MUEDrive 0.1.0-alpha — first release. Three-position CHARACTER (tube / warm / console) +
 //   DRIVE / FOCUS / MIX / OUTPUT and a true BYPASS. THREE formats (VST3 · AU · AAX (Pro Tools)),
 //   macOS Universal, notarized + stapled (Developer ID Installer: glasswerks inc. F529L4WT3V).
-//   sha256: 42aa60274bd828b02eab402a63dde3ab0c32589f17e3ad4c8cf00077d50e2d13
-//   size:   3,590,153 B
+//   sha256: 77a13bd14bb3e00effe7156d4ffc0d06f98b7c98e174064931801d0c51d08cdc
+//   size:   3,584,446 B
 //   Verify after any swap: shasum -a 256 public/downloads/MUEDrive-0.1.0-alpha-installer.pkg
 //
 // No 0.1.0-alias problem here (unlike MUEDsat/MUEDlim): MUEDrive has never been emailed under an
