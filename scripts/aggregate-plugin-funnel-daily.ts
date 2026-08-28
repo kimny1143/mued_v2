@@ -75,6 +75,13 @@ const SHELF_DEFINITION =
   '(大小無視) を含むものをその製品の棚へ。どちらも満たさなければ "other"。' +
   '★2026-08-28 以前は /download/i のみだったため、日本語件名の welcome は全て "other" に落ちていた。';
 
+// ★合成行（smoke test / 動作確認）を集計から外す述語。★正本は insight課 の設計 doc
+//   `reports/plugin-funnel-automation-design-20260718.md` §10（2026-08-28 合意）。
+//   ★経緯: 2026-08-28 の MUEDrive ローンチ検証で本番フォームを2回 通した。★うち1件は解除にメール内
+//   トークンが要り、その受信箱に到達できないため★行を消せない。∴ 述語で外すしかない。
+//   ★次に smoke を撃つ人は source='smoke-test' を使うこと（doc §10 が正本）。
+const SYNTHETIC_SOURCE = "smoke-test";
+
 const DOWNLOAD_RE = /download|ダウンロード/i;
 
 function shelf(subject?: string): PluginKey | "other" {
@@ -227,6 +234,9 @@ async function portalRegistrations(day: string): Promise<PortalRegistrations> {
     -- per-plugin breakdown above, which was simply blind to a third product. Whether the
     -- denominator should widen is insight課's call; asked 2026-08-28, unanswered at time of writing.
     WHERE plugin_key IN ('muedsat', 'muedlim')
+      -- ★合成行の除外。★今日この行は値を変えない（既知の smoke 行は plugin_key='muedrive' で、
+      --   この WHERE は既にそれを外している）。★(b) で分母が3製品へ広がった日に効く。
+      AND source <> ${SYNTHETIC_SOURCE}
   `);
   const r = rows.rows[0] as { cumulative: number; day_utc: number };
   return {
@@ -266,6 +276,7 @@ async function dbShelfNetNew(day: string): Promise<Record<PluginKey, number>> {
     FROM plugin_entitlements
     WHERE created_at::date = ${day}::date
       AND plugin_key IN ${PLUGIN_KEYS}
+      AND source <> ${SYNTHETIC_SOURCE}
     GROUP BY plugin_key
   `);
   // ★Zero-filled from the registry so a module with no signups still reports 0 rather than being
@@ -286,6 +297,9 @@ async function dbOwnerUnionTotal(): Promise<number> {
     -- per-plugin breakdown above, which was simply blind to a third product. Whether the
     -- denominator should widen is insight課's call; asked 2026-08-28, unanswered at time of writing.
     WHERE plugin_key IN ('muedsat', 'muedlim')
+      -- ★合成行の除外。★今日この行は値を変えない（既知の smoke 行は plugin_key='muedrive' で、
+      --   この WHERE は既にそれを外している）。★(b) で分母が3製品へ広がった日に効く。
+      AND source <> ${SYNTHETIC_SOURCE}
   `);
   return (rows.rows[0] as { cnt: number }).cnt;
 }
