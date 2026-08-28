@@ -243,11 +243,23 @@ async function portalRegistrations(day: string): Promise<PortalRegistrations> {
 //   collector was broken until a manual dispatch executed it. tsc/unit/lint/build all stayed green
 //   because none of them run SQL. The shape is guarded by tests/unit/collector-sql-shape.test.ts.
 //
-// ★This note lives OUT here, above the query, and not inside the sql`` template — which is the
-//   second bug of the same afternoon. A `--` comment inside a template literal is a comment to
-//   Postgres but NOT to JavaScript: `${...}` inside it is still an interpolation, so writing
-//   `${array}` in the prose made esbuild fail to PARSE the file (`Expected ")" but found "IN"`).
-//   ★Never put a `${` inside a sql`` template unless you mean to interpolate it.
+// ★This note lives OUT here, above the query, and not inside the sql`` template — which was the
+//   second bug of the same afternoon. A `--` line inside a template literal is a comment to
+//   Postgres but NOT to JavaScript; the template is parsed by JS first, and prose written for
+//   humans is parsed along with it.
+//
+//   ★The rule is NOT "avoid ${" — that was the first diagnosis and it is too narrow. Measured
+//   with node --check across four variants (product課, reviewing #907; reproduced here):
+//
+//       -- use `IN ${keys}` not ANY     ← backtick + interpolation   ★parse FAILS
+//       -- use IN ${keys} not ANY       ← interpolation only          parses (fails at RUNTIME)
+//       -- use `IN` not ANY             ← ★backtick only              ★parse FAILS
+//       -- use IN not ANY               ← neither (control)           parses
+//
+//   ★A backtick CLOSES the template on the spot, so whatever follows becomes bare code. That is
+//   what produced `Expected ")" but found "IN"`. Following "no ${" to the letter still lets the
+//   third line through. ★The rule that actually holds: put no prose inside a sql`` template —
+//   no backticks, no ${. Explanations go above the function, as this one does.
 async function dbShelfNetNew(day: string): Promise<Record<PluginKey, number>> {
   const rows = await db.execute(sql`
     SELECT plugin_key, count(*)::int AS cnt
