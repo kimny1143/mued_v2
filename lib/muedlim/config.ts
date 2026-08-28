@@ -8,7 +8,9 @@
 //         sitemap / llms.txt, and the email-capture form is a no-op-safe silent add (until the
 //         RESEND_MUEDLIM_AUDIENCE_ID audience is provisioned). Reachable by direct URL for review.
 //
-// true  = LIVE: flipped ONLY in the kimny-gated unlock PR (conductor executes) once distribution is
+// true  = LIVE: flipped ONLY in the kimny-gated unlock PR (★the OWNING PEER opens and merges the PR after kimny's go — NOT conductor, whose standing
+//         constraint makes other peers' repos read-only. See lib/muedrive/config.ts for the full note
+//         and for what a flip actually opens.) once distribution is
 //         approved — reveals the section, un-gates discoverability, and (with the DL URL + audience
 //         set) turns the capture into a real list add + download email.
 //

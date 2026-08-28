@@ -5,13 +5,27 @@
 // standalone plugin (kimny 2026-08-22 — the copy says so explicitly, so the code comment says so too;
 // if these ever disagree, the tokushoho/LP copy is canonical).
 //
-// false = staged: the page renders but is noindex + kept out of the sitemap, and /muedsp does not
-//         link it. Nothing is public.
-// true  = LIVE: flipped ONLY in the kimny-gated unlock PR (conductor executes), once distribution is
-//         actually ready (signed .pkg in public/downloads/ + Resend audience provisioned).
-//         Flipping this single constant:
-//           - un-noindexes app/[locale]/muedrive/page.tsx  (robots.index = MUEDRIVE_LIVE)
-//           - adds muedrive URLs to app/sitemap.ts         (gated on MUEDRIVE_LIVE)
+// false = staged: the page renders but is noindex + kept out of the sitemap, and the email gate
+//         no-ops (the form returns 200 without sending anything). Nothing is public.
+// true  = LIVE. Flipped 2026-08-27 on kimny's verbatim go.
+//
+//   ★WHO FLIPS IT: the owning peer (mued) opens the PR and merges it after receiving kimny's go.
+//   NOT conductor. This line previously read "(conductor executes)" — that was already false when
+//   the flip came: conductor holds a standing constraint that other peers' repos are READ-ONLY
+//   (2026-08-27, after they moved another peer's working tree and deleted a branch as a merge
+//   side-effect). They cannot write this file. The stale note cost a round-trip on launch night;
+//   left alone it would cost the next one too.
+//
+//   ★WHAT IT OPENS — measured 2026-08-27, not inferred. Six surfaces, and the last is the point:
+//     1. app/sitemap.ts        — adds /ja/muedrive + /en/muedrive
+//     2. app/llms.txt/route.ts — emits the MUEDrive line
+//     3. page.tsx robots       — noindex,nofollow → index,follow
+//     4. page.tsx              — emits the SoftwareApplication JSON-LD
+//     5. registry.live         — ★drops the `!live` early return in subscribe-handler, so the email
+//                                gate actually runs and the welcome mail carries the download link
+//     6. versions.json         — the module starts being advertised
+//   ★5 is the launch. Until then the form is a well-behaved no-op. Treat this constant as
+//   "publish", not "a boolean" — it is effectively irreversible (indexed + mail starts going out).
 export const MUEDRIVE_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Served from mued.jp static

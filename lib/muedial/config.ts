@@ -8,7 +8,9 @@
 //         gate). The home MIX CTA already points to /muedial, so the page is reachable but
 //         unannounced/unindexed until go-live.
 //
-// true  = LIVE: flipped ONLY in the kimny-gated unlock PR (conductor executes) — un-noindexes the
+// true  = LIVE: flipped ONLY in the kimny-gated unlock PR (★the OWNING PEER opens and merges the PR after kimny's go — NOT conductor, whose standing
+//         constraint makes other peers' repos read-only. See lib/muedrive/config.ts for the full note
+//         and for what a flip actually opens.) — un-noindexes the
 //         page (and adds sitemap/OGP surfaces if wired). Pricing display is already kimny-gated
 //         (gate①: 現行設定価格で公開 GO), so prices show on the LP regardless of this flag.
 //

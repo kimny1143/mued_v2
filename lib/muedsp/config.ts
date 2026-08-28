@@ -12,6 +12,8 @@
 // false = STAGED: the page is noindex, absent from sitemap.ts / llms.txt, and NOT linked from nav.
 //         Still reachable by direct URL for the preview gate (muedsat / advisory precedent).
 //
-// true  = LIVE: flipped ONLY in the kimny-gated unlock PR (conductor executes) once the redesign
+// true  = LIVE: flipped ONLY in the kimny-gated unlock PR (★the OWNING PEER opens and merges the PR after kimny's go — NOT conductor, whose standing
+//         constraint makes other peers' repos read-only. See lib/muedrive/config.ts for the full note
+//         and for what a flip actually opens.) once the redesign
 //         is approved and MUEDsp is ready to announce.
 export const MUEDSP_LIVE = true;
