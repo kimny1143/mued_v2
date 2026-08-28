@@ -79,13 +79,28 @@ const tracked = new Set(
     .map((p) => p.slice(SKILLS.length + 1).split("/")[0]),
 );
 
-const unprotected = realDirs.filter((d) => !tracked.has(d) && !distributed.has(d));
-const stale = [...distributed].filter((d) => !realDirs.includes(d)).sort();
+// ★★A CLONE CANNOT RUN THIS CHECK, and finding that out cost a red CI run. A fresh checkout
+//   contains only TRACKED files — the ignored skills and the symlinks are simply not there. So in
+//   CI the walk sees 10 dirs, every manifest name looks "gone", and the stale rule fires on all 9.
+//   ★The thing this check looks for (an ignored, unprotected skill) is BY DEFINITION absent from a
+//   clone. Running it in CI and reading green as safety would be theatre: CI can never see one.
+//   ∴ detect the clone and say so, out loud, instead of failing falsely or passing silently.
+//   The real enforcement point is the SessionStart hook, which runs against the working tree.
+const symlinkCount = readdirSync(SKILLS, { withFileTypes: true }).filter((e) => e.isSymbolicLink()).length;
+const anyDistributedPresent = [...distributed].some((d) => existsSync(join(SKILLS, d)));
+const isClone = symlinkCount === 0 && !anyDistributedPresent;
+
+const unprotected = isClone ? [] : realDirs.filter((d) => !tracked.has(d) && !distributed.has(d));
+const stale = isClone ? [] : [...distributed].filter((d) => !realDirs.includes(d)).sort();
 
 // ★Dirent.isDirectory() uses lstat semantics, so it is FALSE for a symlink — `isDirectory() &&
 //   isSymbolicLink()` can never both hold, and the first version of this line reported "0 symlinks"
-//   while 16 existed. Count symlinks with isSymbolicLink() alone, and assert the parts sum to the
-//   whole so a miscount cannot pass as a report again.
+//   while 16 existed. Count symlinks with isSymbolicLink() alone.
+// ★The sum check below is a CANARY, not a live measurement: because Dirent's two predicates are
+//   mutually exclusive today, it is tautological and cannot currently fail (product課, reviewing
+//   #915 — the `!isSymbolicLink()` on realDirs is redundant for the same reason). It is kept so the
+//   day someone swaps lstat semantics for stat semantics, the counts stop adding up and say so.
+//   ★Do not read it as "the parts were verified against the whole" — nothing is being verified yet.
 const entries = readdirSync(SKILLS, { withFileTypes: true });
 const symlinks = entries.filter((e) => e.isSymbolicLink()).length;
 const trackedHere = realDirs.filter((d) => tracked.has(d)).length;
@@ -99,16 +114,31 @@ console.log(
     `${symlinks} symlinks · ${realDirs.length - trackedHere - listed} unclassified`,
 );
 
+if (isClone) {
+  // ★State the limit rather than implying coverage. What a clone CAN confirm is checked above:
+  //   the manifest exists and is tracked, and the tracked skills are present.
+  console.log(
+    "✓ clone detected (no symlinks, no distributed skills on disk) — manifest is tracked and " +
+      `${trackedHere} tracked skill dirs are present.\n` +
+      "  ★An unprotected skill is an IGNORED file, so it is absent from a clone by definition:\n" +
+      "  ★this run cannot detect one. The working-tree run (SessionStart hook) is the real check.",
+  );
+  process.exit(0);
+}
+
 if (unprotected.length === 0 && stale.length === 0) {
-  console.log("✓ every skill has a recovery path (tracked here, distributed, or a symlink).");
+  console.log("✓ every skill is classified (tracked here, distributed, or a symlink).");
   process.exit(0);
 }
 
 if (unprotected.length) {
-  console.error(`\n✗ ${unprotected.length} skill(s) exist on this disk only — no clone, no backup:\n`);
+  console.error(`\n✗ ${unprotected.length} skill(s) are UNCLASSIFIED — neither tracked here nor in the manifest:\n`);
   for (const d of unprotected) console.error(`    ${SKILLS}/${d}`);
   console.error(
-    "\n  Pick one and do it in the same commit:\n" +
+    "\n  ★This says UNCLASSIFIED, not doomed. A skill that just arrived from the distributor has a\n" +
+      "  copy upstream — only the classification is missing, and one line fixes it. A skill someone\n" +
+      "  hand-wrote here has no copy anywhere, and needs tracking. The two look identical from here,\n" +
+      "  which is exactly why the answer has to be written down rather than inferred.\n" +
       "    · mued-authored → add `!.claude/skills/<name>/` to .gitignore and `git add` the files\n" +
       `    · distributed   → add the name to ${MANIFEST}`,
   );
