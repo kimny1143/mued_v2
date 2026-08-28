@@ -76,6 +76,9 @@ scripts/tmp/
 #   and `git status` reported the repo clean the whole time, because ignored files are not untracked.
 # ★When adding a mued-authored skill, add its line here in the same commit.
 .claude/skills/*
+# ★The manifest that scripts/verify/skill-durability.ts reads. It was itself swallowed by the glob
+#   on first write — the list of what is protected was not protected. Keep this line above the rest.
+!.claude/skills/DISTRIBUTED.txt
 !.claude/skills/ai-models/
 !.claude/skills/aio-seo/
 !.claude/skills/database/

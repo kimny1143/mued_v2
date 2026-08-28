@@ -108,6 +108,14 @@ jobs:
       - name: TypeScript check (scripts/)
         run: npx tsx scripts/verify/typecheck-scripts.ts
 
+      # .gitignore hides `.claude/skills/*` behind a short allowlist, so a skill that is neither a
+      # symlink nor allowlisted is invisible to git — `git status` says clean while the file exists
+      # on one disk. Three mued-authored skills were in that state on 2026-08-29 (#914). This check
+      # requires every real skill dir to be tracked here or named in .claude/skills/DISTRIBUTED.txt.
+      # ★A new distribution turns this red until the skill is classified. That is intended.
+      - name: Skill durability (.claude/skills)
+        run: npx tsx scripts/verify/skill-durability.ts
+
       - name: ESLint
         run: npm run lint
 
