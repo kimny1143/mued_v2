@@ -34,6 +34,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 import { mkdirSync, writeFileSync } from "node:fs";
 import { db } from "@/db";
+import { PLUGIN_DIST, type PluginKey } from "@/lib/plugins/registry";
 import { sql } from "drizzle-orm";
 
 const KEY = process.env.RESEND_API_KEY;
@@ -55,13 +56,33 @@ function utcDay(offsetDays: number): string {
 const DAY = arg || utcDay(-1); // default = yesterday UTC (last complete day)
 
 type Email = { id: string; subject?: string; last_event?: string; created_at?: string };
-type PluginKey = "muedsat" | "muedlim";
+// ★Derived from the registry, NOT a local list. This file used to redeclare
+//   `type PluginKey = "muedsat" | "muedlim"` — a SECOND definition that tsc could never reconcile
+//   with lib/plugins/registry.ts, so MUEDrive shipped (2026-08-27) counting zero here while the
+//   type checker stayed green. Adding a 4th module must not require editing this file.
+const PLUGIN_KEYS = Object.keys(PLUGIN_DIST) as PluginKey[];
+
+// ★Welcome-email subjects, both locales (lib/services/email.service.ts):
+//     JA "[MUEDsat] ダウンロードリンクをお届けします" / "MUEDlim のダウンロードリンクです"
+//     EN "[MUEDsat] Your download link"              / "Your MUEDlim download link"
+// ★The old guard was `/download/i`, which NO Japanese subject contains — every JA welcome was
+//   filed as "other" from the day this collector started. That is an undercount of the JA side of
+//   the email shelf, not a MUEDrive-only problem. Match either language's word.
+// ★消費側へ同梱する分類規則。★数え方が変わった日を、値の変化と区別できるようにするため。
+//   2026-08-28 まで: /download/i のみ → ★JA の件名に "download" が無く、JA の welcome は全部 "other"。
+const SHELF_DEFINITION =
+  'welcome email を件名で分類。件名が /download|ダウンロード/i に一致し、かつ registry の plugin key ' +
+  '(大小無視) を含むものをその製品の棚へ。どちらも満たさなければ "other"。' +
+  '★2026-08-28 以前は /download/i のみだったため、日本語件名の welcome は全て "other" に落ちていた。';
+
+const DOWNLOAD_RE = /download|ダウンロード/i;
 
 function shelf(subject?: string): PluginKey | "other" {
   const s = subject || "";
-  if (/MUEDsat/.test(s) && /download/i.test(s)) return "muedsat";
-  if (/MUEDlim/.test(s) && /download/i.test(s)) return "muedlim";
-  return "other";
+  if (!DOWNLOAD_RE.test(s)) return "other";
+  // Subjects carry the display name ("MUEDsat"), the registry carries the key ("muedsat").
+  const hit = PLUGIN_KEYS.find((k) => new RegExp(k, "i").test(s));
+  return hit ?? "other";
 }
 
 async function fetchWelcomeEmailsForDay(day: string): Promise<Email[]> {
@@ -201,6 +222,10 @@ async function portalRegistrations(day: string): Promise<PortalRegistrations> {
       count(DISTINCT lower(trim(email))) FILTER (WHERE portal_registered_at IS NOT NULL)::int AS cumulative,
       count(DISTINCT lower(trim(email))) FILTER (WHERE portal_registered_at::date = ${day}::date)::int AS day_utc
     FROM plugin_entitlements
+    -- ★DELIBERATELY still the two original modules. Adding MUEDrive here would change what this
+    -- number MEANS (it is a denominator carried across a time series), not fix a bug — unlike the
+    -- per-plugin breakdown above, which was simply blind to a third product. Whether the
+    -- denominator should widen is insight課's call; asked 2026-08-28, unanswered at time of writing.
     WHERE plugin_key IN ('muedsat', 'muedlim')
   `);
   const r = rows.rows[0] as { cumulative: number; day_utc: number };
@@ -217,10 +242,12 @@ async function dbShelfNetNew(day: string): Promise<Record<PluginKey, number>> {
     SELECT plugin_key, count(*)::int AS cnt
     FROM plugin_entitlements
     WHERE created_at::date = ${day}::date
-      AND plugin_key IN ('muedsat', 'muedlim')
+      AND plugin_key = ANY(${PLUGIN_KEYS})
     GROUP BY plugin_key
   `);
-  const out: Record<PluginKey, number> = { muedsat: 0, muedlim: 0 };
+  // ★Zero-filled from the registry so a module with no signups still reports 0 rather than being
+  //   absent — an absent key and a real zero are not the same thing downstream.
+  const out = Object.fromEntries(PLUGIN_KEYS.map((k) => [k, 0])) as Record<PluginKey, number>;
   for (const r of rows.rows as Array<{ plugin_key: PluginKey; cnt: number }>) {
     out[r.plugin_key] = r.cnt;
   }
@@ -231,6 +258,10 @@ async function dbOwnerUnionTotal(): Promise<number> {
   const rows = await db.execute(sql`
     SELECT count(DISTINCT lower(trim(email)))::int AS cnt
     FROM plugin_entitlements
+    -- ★DELIBERATELY still the two original modules. Adding MUEDrive here would change what this
+    -- number MEANS (it is a denominator carried across a time series), not fix a bug — unlike the
+    -- per-plugin breakdown above, which was simply blind to a third product. Whether the
+    -- denominator should widen is insight課's call; asked 2026-08-28, unanswered at time of writing.
     WHERE plugin_key IN ('muedsat', 'muedlim')
   `);
   return (rows.rows[0] as { cnt: number }).cnt;
@@ -246,10 +277,15 @@ async function main() {
     portalRegistrations(DAY),
   ]);
 
-  const shelfEmail: Record<PluginKey, { delivered: number; bounced: number; other: number }> = {
-    muedsat: { delivered: 0, bounced: 0, other: 0 },
-    muedlim: { delivered: 0, bounced: 0, other: 0 },
-  };
+  // ★PLUGIN_KEYS から zero-fill で建てる。手書きの2キーを置くと、shelf() が3値を返すようになった
+  //   瞬間に shelfEmail["muedrive"] が undefined になり、★MUEDrive の welcome が1通 delivered された
+  //   日に収集器ごと落ちる（product課 が #903 レビューで実測: TypeError reading 'delivered'）。
+  //   ★この file は tsconfig の exclude に入っている（`scripts/**/*`）ので Record<PluginKey,…> は
+  //   ★型検査を受けない＝注釈は装飾。守るのは注釈ではなく「registry から建てる」という構造の方。
+  const shelfEmail: Record<PluginKey, { delivered: number; bounced: number; other: number }> =
+    Object.fromEntries(
+      PLUGIN_KEYS.map((k) => [k, { delivered: 0, bounced: 0, other: 0 }]),
+    ) as Record<PluginKey, { delivered: number; bounced: number; other: number }>;
   for (const e of welcomeEmails) {
     const sh = shelf(e.subject);
     if (sh === "other") continue;
@@ -260,7 +296,7 @@ async function main() {
 
   // anomaly signal: DB純増(権威) > email delivered なら「DLは成立したがwelcome email失敗」を示唆。
   const anomalies: string[] = [];
-  for (const sh of ["muedsat", "muedlim"] as const) {
+  for (const sh of PLUGIN_KEYS) {
     if (dbNetNew[sh] > shelfEmail[sh].delivered) {
       anomalies.push(
         `${sh}: db_net_new(${dbNetNew[sh]}) > email_delivered(${shelfEmail[sh].delivered}) — welcome email未達の疑い`,
@@ -275,13 +311,19 @@ async function main() {
       mued_sp_total_contacts: audience.total,
       mued_sp_net_new_day: audience.netNewDay,
       mued_sp_unsubscribed_total: audience.unsubscribed,
-      welcome_delivered_total: shelfEmail.muedsat.delivered + shelfEmail.muedlim.delivered,
+      welcome_delivered_total: PLUGIN_KEYS.reduce((n, k) => n + shelfEmail[k].delivered, 0),
       broadcast: null, // v1未収集。broadcast送信日のみ別途pull（follow-up）。
     },
-    shelf: {
-      muedsat: { db_net_new: dbNetNew.muedsat, email_delivered: shelfEmail.muedsat.delivered, email_bounced: shelfEmail.muedsat.bounced },
-      muedlim: { db_net_new: dbNetNew.muedlim, email_delivered: shelfEmail.muedlim.delivered, email_bounced: shelfEmail.muedlim.bounced },
-    },
+    shelf: Object.fromEntries(
+      PLUGIN_KEYS.map((k) => [
+        k,
+        { db_net_new: dbNetNew[k], email_delivered: shelfEmail[k].delivered, email_bounced: shelfEmail[k].bounced },
+      ]),
+    ),
+    // ★継ぎ目の印。shelf の分類規則を毎回 同梱する（他の指標が definition を同梱しているのと同じ形）。
+    //   これが無いと、2026-08-28 の分類修正で JA の welcome が `other` から各製品へ移ったことが、
+    //   ★読む人には「other の急減」に見える。値の変化と、数え方の変化を、消費側が区別できるように。
+    shelf_definition: SHELF_DEFINITION,
     db_owner_union_total: ownerUnionTotal,
     // ② 全 audience unique dedup (def B・freee サインオフ)。insight Stage B (#276) が passthrough で拾う。
     // ★これは billing exposure (Resend は unsubscribed も課金対象として保持) であり "reachable な到達可能数"
