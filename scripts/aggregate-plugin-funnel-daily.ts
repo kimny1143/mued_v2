@@ -73,7 +73,12 @@ const PLUGIN_KEYS = Object.keys(PLUGIN_DIST) as PluginKey[];
 const SHELF_DEFINITION =
   'welcome email を件名で分類。件名が /download|ダウンロード/i に一致し、かつ registry の plugin key ' +
   '(大小無視) を含むものをその製品の棚へ。どちらも満たさなければ "other"。' +
-  '★2026-08-28 以前は /download/i のみだったため、日本語件名の welcome は全て "other" に落ちていた。';
+  '★2026-08-28 以前は /download/i のみだったため、日本語件名の welcome は全て "other" に落ちていた。' +
+  // ★母集団の非対称を値と一緒に運ぶ（product課 #905 レビュー）。揃えられないなら、揃っていないことを
+  //   消費側へ伝える — 同じ行に並ぶ db_net_new と email_delivered は別の母集団を数えており、anomaly
+  //   検査は db > email の向きにしか鳴らないので、この差は放っておくと静かなまま残る。
+  '★母集団の非対称: db_net_new は source=smoke-test の合成行を除外するが、email_delivered / ' +
+  'email_bounced は Resend 側の件名分類なので除外していない（同じ行の2数は別母集団）。';
 
 // ★合成行（smoke test / 動作確認）を集計から外す述語。★正本は insight課 の設計 doc
 //   `reports/plugin-funnel-automation-design-20260718.md` §10（2026-08-28 合意）。
