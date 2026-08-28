@@ -1,0 +1,32 @@
+# Skills distributed here by claude-code-template, whose canonical copy lives in THAT repo.
+#
+# ★Why this file exists. `.gitignore` excludes `.claude/skills/*` with a small allowlist, so a
+# skill that is neither a symlink nor on the allowlist is invisible to git — `git status` says the
+# repo is clean while the file exists on exactly one disk. On 2026-08-29 three mued-authored skills
+# were in that state (web-performance, mued-onboarding, legal-compliance — 43 KB, two of them named
+# in CLAUDE.md). The .gitignore now protects those, and this file closes the other half: it turns
+# "everything else, ignored" — an unnamed, uncountable set — into an explicit list.
+#
+# ★The rule scripts/verify/skill-durability.ts enforces: every real (non-symlink) directory under
+# .claude/skills must be EITHER tracked by git (this repo is canonical) OR listed below (the
+# template repo is canonical). Anything in neither has no recovery path, and the check fails.
+#
+# ★A new distribution will therefore turn the check red until its skill is added here. That is the
+# intended behaviour: a newly arrived skill should be CLASSIFIED, not silently ignored. Adding a
+# line is the whole fix.
+#
+# ★Do not list symlinks — git does not follow them, they are covered by the template repo already,
+# and a `check-ignore` run through a symlinked path reports "not ignored" while the contents are
+# still untracked (measured 2026-08-29; the path is never matched against .gitignore at all).
+#
+# One skill name per line. Blank lines and #-comments are ignored.
+
+i18n-key-diff
+peer-checkout
+peer-id-lookup
+plan-mode-policy
+positive-control-verify
+pwa-dashboard
+tier-judge
+tier2-review-intake
+ui-mock-fidelity
