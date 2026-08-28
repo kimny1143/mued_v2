@@ -9,7 +9,9 @@
 //         precedent) but is undiscoverable/unannounced. The email-capture form still works (adds to
 //         the Resend audience when configured), so a reviewer can exercise the full flow while staged.
 //
-// true  = LIVE: flipped ONLY in the kimny-gated unlock PR (conductor executes). Flipping this single
+// true  = LIVE: flipped ONLY in the kimny-gated unlock PR (★the OWNING PEER opens and merges the PR after kimny's go — NOT conductor, whose standing
+//         constraint makes other peers' repos read-only. See lib/muedrive/config.ts for the full note
+//         and for what a flip actually opens.). Flipping this single
 //         constant atomically:
 //           - un-noindexes app/[locale]/muedsat/page.tsx     (robots.index = MUEDSAT_LIVE)
 //           - adds muedsat URLs to app/sitemap.ts             (gated on MUEDSAT_LIVE)
