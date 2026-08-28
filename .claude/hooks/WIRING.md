@@ -18,10 +18,30 @@ fired). This file is the recoverable half.
 | `PreToolUse` | `.claude/hooks/block-main-push.sh` | blocks `git push` issued while `main`/`master` is checked out |
 | `PreToolUse` | `claude-code-template/.claude/hooks/validate-dangerous-ops-v2.sh` | ×3 matchers — destructive-operation guard |
 
-★**Scripts present here but NOT wired** (deliberate — they are older or superseded; listed so their
-silence is a recorded fact rather than something to rediscover):
-`suggest-claude-md-update.sh`, `suggest-git-cleanup.sh`, `suggest-poc-log-update.sh`,
-`validate-dangerous-ops.sh` (superseded by `-v2`).
+★**Measure wiring by RESOLVED PATH, not by filename.** The first version of this table compared
+basenames and reported `validate-dangerous-ops-v2.sh` as wired — it is not. The live registration
+points at the *template's* copy; this repo also holds a local file of the same name that nothing
+calls. `block-main-push.sh` looks the same but is a **symlink** into the template, so its realpath
+matches the registration and it genuinely runs. Basename comparison cannot tell those two apart.
+
+★**Scripts present here but NOT wired** — measured 2026-08-29 by resolved path:
+
+| Script | Why it is silent |
+|---|---|
+| `suggest-claude-md-update.sh` | last touched 2025-11-26; superseded, never registered |
+| `suggest-git-cleanup.sh` | last touched 2025-12-13; same |
+| `suggest-poc-log-update.sh` | last touched 2025-12-12; same |
+| `validate-dangerous-ops.sh` | v1, 113 lines; superseded by `-v2` |
+| ★**`validate-dangerous-ops-v2.sh`** | ★**a real 210-line local file, last committed 2026-04-22, 125 lines adrift from the 323-line template copy that is actually wired — and it has never run** |
+
+★**The last row is a trap, not just dead weight.** It is tracked, it sits beside hooks that do run,
+and its name says `-v2`, so someone hardening the guard would naturally edit it and change nothing.
+This is the shape the parent CLAUDE.md warns about ("ガードは『置いてある』ではなく『配線されている』
+ことを確認する"), with the twist that here the stale copy looks *more* current than the live one.
+
+★**UNDECIDED**: delete the local copy, or re-point the wiring at it. Deciding needs the 125-line
+diff read, and removing a guard is not a call to make in passing — so it is recorded as open rather
+than quietly left. ★Writing "undecided" is the point: an unrecorded non-decision reads as "fine".
 
 ## To restore after losing settings.local.json
 
