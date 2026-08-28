@@ -1,0 +1,28 @@
+{
+  // ★scripts/ の型検査。tsconfig.json は `exclude: ["scripts/**/*"]` で 74本 まるごと外している。
+  //
+  // ★2026-08-28: その glob のせいで、collector の消費側を2キーのまま残しても tsc が緑だった
+  //   （#903・product課 検出）。★MUEDrive の welcome が1通 delivered された日に収集器ごと落ちる
+  //   ところだった。★`Record<PluginKey,…>` と書いてあったが、★型検査を受けない層だったので装飾だった。
+  //
+  // ★この file は「除外」を glob から★明示リストへ移すためのもの。
+  //   glob は「何本が無防備か」も「どれか」も隠す。★リストなら借金が数えられて名前を持つ。
+  //   ★下の exclude を減らすことが返済であり、★増やしたら PR で見える。
+  //
+  // ★tsconfig.json 側は一切 触らない（＝ next build への影響ゼロ）。
+  "extends": "./tsconfig.json",
+  "include": ["scripts/**/*.ts", "lib/**/*.ts", "types/**/*.d.ts"],
+  "exclude": [
+    "node_modules",
+
+    // ───── 借金（2026-08-28 時点で 6本 / 74本・計 14 エラー）─────
+    // ★実行で数えた: npx tsc -p tsconfig.scripts.json（この exclude を空にして）
+    "scripts/rollback-sessions-phase2.ts",   // 5
+    "scripts/test-content-api.ts",           // 3
+    "scripts/tmp/tmp-chat-history.ts",       // 2
+    "scripts/dial-simulation-test.ts",       // 2
+    "scripts/poc-dialogue-cost.ts",          // 1
+    "scripts/daw-hub/test-osc.ts"            // 1
+  ],
+  "compilerOptions": { "noEmit": true }
+}

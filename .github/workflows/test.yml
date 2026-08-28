@@ -99,6 +99,15 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
+      # scripts/ is excluded wholesale from tsconfig.json, so the step above never sees it. On
+      # 2026-08-28 that hid a crash-on-launch in the funnel collector behind a Record<PluginKey,…>
+      # annotation that was never checked (#903). This step covers the 68 of 74 files that pass
+      # today; the other 6 are listed BY NAME in tsconfig.scripts.json so the debt stays countable.
+      # ★It plants a known type error first and asserts tsc catches it — exit 2 means the check
+      # itself could not be trusted, which is NOT the same as "no errors found".
+      - name: TypeScript check (scripts/)
+        run: npx tsx scripts/verify/typecheck-scripts.ts
+
       - name: ESLint
         run: npm run lint
 
