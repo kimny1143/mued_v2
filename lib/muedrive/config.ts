@@ -12,7 +12,7 @@
 //         Flipping this single constant:
 //           - un-noindexes app/[locale]/muedrive/page.tsx  (robots.index = MUEDRIVE_LIVE)
 //           - adds muedrive URLs to app/sitemap.ts         (gated on MUEDRIVE_LIVE)
-export const MUEDRIVE_LIVE = false;
+export const MUEDRIVE_LIVE = true;
 
 // Download asset URL emailed to subscribers after they submit the gate. Served from mued.jp static
 // hosting (public/downloads/). NOT a secret (public CDN URL).
