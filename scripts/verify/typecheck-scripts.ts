@@ -64,15 +64,28 @@ try {
 } finally {
   if (existsSync(PROBE)) unlinkSync(PROBE);
 }
-if (red.code === 0 || !red.out.includes("__typecheck_self_red")) {
+// ★Two ways the probe error can be absent, and they mean opposite things:
+//   (a) tsc reported nothing under scripts/ at all → the project genuinely does not see scripts/.
+//   (b) tsc reported errors in OTHER scripts/ files → it DOES see scripts/; a pre-existing syntax
+//       error in another file simply stopped it before it got to the probe. Calling that "not
+//       measuring" would be false, and would send the next reader to fix the config instead of the
+//       actual broken file. ★An unhelpful diagnosis is its own kind of silent failure.
+const sawProbe = red.out.includes("__typecheck_self_red");
+const sawOtherScripts = /(^|\n)scripts[/\\](?!__typecheck_self_red)/.test(red.out);
+if (!sawProbe && !sawOtherScripts) {
   fail(
-    "SELF-RED FAILED — tsc did not report the planted error in scripts/.\n" +
+    "SELF-RED FAILED — tsc reported nothing at all under scripts/.\n" +
       `  This check is NOT measuring scripts/. Do not read its green as safety.\n` +
       `  Most likely ${PROJECT} include/exclude no longer matches scripts/.\n` +
       (red.out ? `  tsc said:\n${red.out.split("\n").slice(0, 8).map((l) => `    ${l}`).join("\n")}\n` : ""),
   );
 }
-console.log("✓ self-RED: tsc detected a planted error under scripts/ — the check is measuring.");
+console.log(
+  sawProbe
+    ? "✓ self-RED: tsc detected a planted error under scripts/ — the check is measuring."
+    : "✓ self-RED (indirect): the planted error was masked by other errors under scripts/, which\n" +
+      "  themselves prove tsc is reading scripts/. Those errors are reported below.",
+);
 
 // ── 2) The real run.
 const real = tsc();
