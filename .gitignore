@@ -65,14 +65,27 @@ scripts/tmp/
 !.claude/agents/database-architect.md
 !.claude/agents/mued-architect-manager.md
 !.claude/agents/script-consolidator.md
+# ★Two kinds of skill live under .claude/skills, and only one of them is safe to ignore:
+#   - SYMLINKS into claude-code-template — the real file is tracked and pushed there, so ignoring
+#     the link here is correct and the skill survives losing this working copy.
+#   - REAL DIRECTORIES authored for mued and existing nowhere else. Ignoring one of those means it
+#     has no clone, no backup and no recovery path; it lives on one disk.
+# ★So the allowlist below is not decoration — a mued-authored skill that is missing from it is
+#   invisible to git and unrecoverable. Audit (2026-08-29) found three in exactly that state
+#   (web-performance, mued-onboarding, legal-compliance — 43 KB, two of them named in CLAUDE.md),
+#   and `git status` reported the repo clean the whole time, because ignored files are not untracked.
+# ★When adding a mued-authored skill, add its line here in the same commit.
 .claude/skills/*
 !.claude/skills/ai-models/
 !.claude/skills/aio-seo/
 !.claude/skills/database/
 !.claude/skills/daw-osc/
+!.claude/skills/legal-compliance/
+!.claude/skills/mued-onboarding/
 !.claude/skills/muedial-api/
 !.claude/skills/threads-insight/
 !.claude/skills/video-branding/
+!.claude/skills/web-performance/
 
 # Large binary files
 *.ipa
