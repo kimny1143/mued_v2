@@ -2175,7 +2175,7 @@
       "title": "MUEDsp",
       "tagline": "Finish the record.",
       "lead": "The chain I master with, folded into one plugin — a master chain for finishing a track while you stay in the music. That's MUEDsp masterchain.",
-      "cta": "Try one stage, free"
+      "cta": "Try one, free"
     },
     "masterchain": {
       "eyebrow": "In development",
@@ -2209,9 +2209,10 @@
       }
     },
     "free": {
-      "lead": "I'm releasing the masterchain's stages one at a time, each free. Try them on your own music, stage by stage.",
+      "lead": "I'm putting out free plugins one at a time — some are stages taken from masterchain, some started outside the chain. Try them on your own music.",
       "satLabel": "The transformer-saturation stage",
       "limLabel": "The final peak-limiting stage",
+      "driveLabel": "Started outside the chain",
       "limComingSoon": "Coming soon — polishing the UI."
     },
     "footer": {

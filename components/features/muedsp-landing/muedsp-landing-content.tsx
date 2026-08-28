@@ -25,12 +25,14 @@ import {
 } from "@/components/features/muedsat-landing/muedsat-signup-form";
 import { type PluginKey } from "@/lib/plugins/registry";
 import { MUEDLIM_LIVE } from "@/lib/muedlim/config";
+import { MUEDRIVE_LIVE } from "@/lib/muedrive/config";
 
 const FACEPLATE_HOT = "/muedsat/faceplate-hot.webp";
 const FACEPLATE_IDLE = "/muedsat/faceplate-idle.webp";
 // MUEDlim faceplate — a REAL render of the shipping iPlug2 UI (a832976a LUFS-hero build), NOT a
 // mock (dsp-captured, dev version-string cropped out). One clean shot, 1000×700 (= MUEDsat parity).
 const FACEPLATE_MUEDLIM = "/muedlim/faceplate.webp";
+const FACEPLATE_MUEDRIVE = "/muedrive/faceplate.png";
 // masterchain flagship render — an honest MOCK (minimal.html → webp, conductor-rendered). NOT the
 // shipping plugin; always shown with the "開発中のUI（予定）" caption (mockLabel).
 const MASTERCHAIN_MOCK = "/muedsp/masterchain-mock.webp";
@@ -42,6 +44,7 @@ const MC_CONTROLS = ["ceiling", "width", "mono", "limiter", "bypass"] as const;
 // MUEDlim (2nd free module — the peak-limiting stage): TWO knobs (INPUT + CEILING); Bypass is a
 // toggle described once in bypassNote (not counted). dsp-confirmed 2-knob minimal build (e665fef5).
 const MUEDLIM_KNOBS = ["input", "ceiling"] as const;
+const MUEDRIVE_KNOBS = ["drive", "focus", "mix", "output"] as const;
 
 // The form reads useSearchParams (UTM + press bypass) → needs a Suspense boundary on this
 // statically-prerendered page. `plugin` selects the endpoint/copy/audience via the plugin registry.
@@ -72,6 +75,12 @@ export function MuedspLandingContent() {
   const tlAbout = useTranslations("muedlim.about");
   const tlWhy = useTranslations("muedlim.whyFree");
   const tlViz = useTranslations("muedlim.visuals");
+
+  // MUEDrive (third free module). ★NOT a stage lifted out of masterchain — started outside the
+  // chain (content fact-lock 2026-08-28). The card must not imply "another stage".
+  const tdHero = useTranslations("muedrive.hero");
+  const tdAbout = useTranslations("muedrive.about");
+  const tdViz = useTranslations("muedrive.visuals");
 
   return (
     <div className="dark min-h-screen bg-[#0a0a0a] text-white">
@@ -356,6 +365,74 @@ export function MuedspLandingContent() {
                 <p className="mt-6 inline-flex items-center rounded-[var(--radius-lg)] border border-white/12 bg-white/[0.03] px-4 py-2 font-mono text-[12px] uppercase tracking-[0.18em] text-white/50">
                   {tf("limComingSoon")}
                 </p>
+              </div>
+            )}
+
+            {/* ── §2-c MUEDrive ─────────────────────────────────────────────────────────────
+                Third free module. ★Unlike MUEDsat/MUEDlim this one is NOT a stage taken out of
+                masterchain — it was started outside the chain as a standalone plugin. That is the
+                whole reason tf("driveLabel") differs in kind from satLabel/limLabel, and why the
+                §2 lead was rewritten (content 2026-08-28): the old lead claimed the free set was
+                "masterchain の各段" which stopped being true the moment this shipped.
+                Gated on MUEDRIVE_LIVE with `&&`, NOT the ternary MUEDlim uses above. ★Do not
+                "unify" them: MUEDlim was announced before it shipped, so "coming soon" is a real
+                product state it passed through and the ternary has a reachable else. MUEDrive went
+                straight from absent to LIVE with no announcement — it never had that state, so an
+                else branch here would be dead code that can never render. The shapes differ
+                because the histories differ. (product課 2026-08-28, reviewing #902.) ─────────── */}
+            {MUEDRIVE_LIVE && (
+              <div className="mt-14 border-t border-white/5 pt-14">
+                <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#f5a524]/70">
+                  {tf("driveLabel")}
+                </span>
+                <h3 className="mt-3 text-3xl font-bold tracking-tight">
+                  <span className="text-white">MUED</span>
+                  <span className="text-[#f5a524]">rive</span>
+                  <span className="ml-3 align-middle font-mono text-xs uppercase tracking-[0.2em] text-white/40">
+                    MUEDsp drive
+                  </span>
+                </h3>
+                <p className="mt-4 text-lg font-light text-white/80">{tdHero("tagline")}</p>
+                <p className="mt-5 text-[17px] leading-[1.8] text-white/75">{tdAbout("originLead")}</p>
+
+                <figure className="mt-8 max-w-2xl">
+                  <div className="overflow-hidden rounded-lg border border-white/10 bg-black/30 p-1.5">
+                    <Image
+                      src={FACEPLATE_MUEDRIVE}
+                      alt={tdViz("faceplateAlt")}
+                      width={1000}
+                      height={700}
+                      sizes="(min-width: 640px) 42rem, 88vw"
+                      className="h-auto w-full rounded"
+                    />
+                  </div>
+                </figure>
+
+                {/* DRIVE + FOCUS carry the character; MIX and OUTPUT are the plumbing. BYPASS is a
+                    toggle, so it is listed in the JSON but deliberately left out of the knob row. */}
+                <p className="mt-10 text-lg font-medium leading-snug text-white/85">
+                  {tdAbout("controlsLead")}
+                </p>
+                <dl className="mt-5 divide-y divide-white/5 border-y border-white/5">
+                  {MUEDRIVE_KNOBS.map((key) => (
+                    <div key={key} className="grid gap-1 py-3 sm:grid-cols-[7rem_1fr] sm:gap-5">
+                      <dt className="font-mono text-sm font-semibold uppercase tracking-wider text-[#f5a524]">
+                        {tdAbout(`controls.${key}.name`)}
+                      </dt>
+                      <dd className="text-[15px] leading-relaxed text-white/70">
+                        {tdAbout(`controls.${key}.desc`)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="mt-4 text-sm leading-relaxed text-white/45">
+                  {tdAbout("charactersLead")}
+                </p>
+
+                <div id="get-muedrive" className="mt-8 max-w-md scroll-mt-20">
+                  <SignupForm plugin="muedrive" />
+                </div>
+                <p className="mt-3 max-w-md text-sm italic text-white/45">{tdHero("tryLine")}</p>
               </div>
             )}
           </div>
