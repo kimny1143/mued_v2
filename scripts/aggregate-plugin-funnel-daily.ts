@@ -237,17 +237,34 @@ async function portalRegistrations(day: string): Promise<PortalRegistrations> {
   };
 }
 
+// ★The array goes after IN, never after ANY(. drizzle expands a JS array into the row expression
+//   `($1, $2, $3)`: valid to the right of IN, invalid to the right of ANY( — Postgres answers
+//   `op ANY/ALL (array) requires array on right side (42809)`. Hit on 2026-08-28 in #903; main's
+//   collector was broken until a manual dispatch executed it. tsc/unit/lint/build all stayed green
+//   because none of them run SQL. The shape is guarded by tests/unit/collector-sql-shape.test.ts.
+//
+// ★This note lives OUT here, above the query, and not inside the sql`` template — which was the
+//   second bug of the same afternoon. A `--` line inside a template literal is a comment to
+//   Postgres but NOT to JavaScript; the template is parsed by JS first, and prose written for
+//   humans is parsed along with it.
+//
+//   ★The rule is NOT "avoid ${" — that was the first diagnosis and it is too narrow. Measured
+//   with node --check across four variants (product課, reviewing #907; reproduced here):
+//
+//       -- use `IN ${keys}` not ANY     ← backtick + interpolation   ★parse FAILS
+//       -- use IN ${keys} not ANY       ← interpolation only          parses (fails at RUNTIME)
+//       -- use `IN` not ANY             ← ★backtick only              ★parse FAILS
+//       -- use IN not ANY               ← neither (control)           parses
+//
+//   ★A backtick CLOSES the template on the spot, so whatever follows becomes bare code. That is
+//   what produced `Expected ")" but found "IN"`. Following "no ${" to the letter still lets the
+//   third line through. ★The rule that actually holds: put no prose inside a sql`` template —
+//   no backticks, no ${. Explanations go above the function, as this one does.
 async function dbShelfNetNew(day: string): Promise<Record<PluginKey, number>> {
   const rows = await db.execute(sql`
     SELECT plugin_key, count(*)::int AS cnt
     FROM plugin_entitlements
     WHERE created_at::date = ${day}::date
-      -- ★`IN ${array}`。★`= ANY(${array})` にしてはいけない: drizzle は JS 配列を
-      --   `($1, $2, $3)` という行式に展開するので、`ANY(` の右に置くと Postgres が
-      --   `op ANY/ALL (array) requires array on right side (42809)` で落ちる。
-      --   ★2026-08-28 に #903 でこれを踏み、★collector が main で壊れた（本番 DB に当てるまで
-      --   誰も気づけない — tsc も unit も lint も build も SQL を実行しない）。
-      --   ★形は tests/unit/collector-sql-shape.test.ts が守る。
       AND plugin_key IN ${PLUGIN_KEYS}
     GROUP BY plugin_key
   `);
