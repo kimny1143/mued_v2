@@ -79,4 +79,17 @@ describe("JA subject detector", () => {
     expect(SRC).toContain("welcome_ja_definition");
     expect(SRC).toContain("JA_DEFINITION");
   });
+
+  it("★the shipped definition describes the behaviour that actually exists", () => {
+    // ★The first version of this shipped saying the detector "self-tests at import" — true of the
+    //   draft, false of what merged (the throw became a null + anomaly). ★The definition rides along
+    //   with every day's value, so a stale one misinforms every consumer, permanently. Caught by
+    //   reading the real run's output, not by any check — hence this one.
+    const m = SRC.match(/const JA_DEFINITION =([\s\S]*?);\n/);
+    expect(m, "JA_DEFINITION not found").toBeTruthy();
+    const def = m![1];
+    expect(def, "definition still claims an import-time self-test").not.toContain("import 時");
+    // The three-value contract must be stated where the consumer reads it, not only in comments.
+    expect(def).toContain("null");
+  });
 });
