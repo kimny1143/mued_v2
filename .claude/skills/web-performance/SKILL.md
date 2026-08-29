@@ -1,6 +1,6 @@
 # Web Performance Optimization Skill
 
-Next.js 15 App Router向けのCore Web Vitals最適化スキル。
+Next.js 16 App Router向けのCore Web Vitals最適化スキル。
 
 ---
 
@@ -63,7 +63,7 @@ npx @next/bundle-analyzer
 
 ---
 
-## Next.js 15 最適化パターン
+## Next.js 16 最適化パターン
 
 ### 1. Server Components優先
 

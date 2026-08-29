@@ -3,7 +3,8 @@
 ## クイックコマンド
 
 ```bash
-npm run test           # ユニットテスト (Vitest)
+npm run test:unit      # ユニットテスト (Vitest・★CI が回すのはこれ)
+npm run test           # ★全層 直列（unit+components+integration+e2e）
 npm run test:e2e       # E2E テスト (Playwright)
 npm run typecheck      # 型チェック
 npm run lint           # Lint

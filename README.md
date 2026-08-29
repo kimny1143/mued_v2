@@ -58,7 +58,6 @@ MUED is a product suite for music creators — from ear training to AI-powered m
 | Stripe | Payments & subscription management |
 | Resend | Transactional email |
 | Upstash Redis | Rate limiting |
-| Inversify | Dependency injection |
 | Zod | Runtime validation |
 
 ### AI
@@ -214,7 +213,6 @@ mued_v2/
 │   │   └── tools.ts           # AI tool definitions
 │   ├── repositories/          # Data access (10 repositories)
 │   ├── services/              # Business logic (9 services)
-│   ├── di/                    # Dependency injection (Inversify)
 │   ├── i18n/                  # Internationalization
 │   ├── middleware/             # Auth, rate limit, usage limit
 │   ├── audio/                 # ABC player, loop handler
@@ -301,7 +299,6 @@ npm run job:rag-metrics       # Calculate RAG metrics
 - **Server Components** - Default for all pages; `use client` only where needed
 - **Repository Pattern** - Data access abstraction (`lib/repositories/`)
 - **Service Layer** - Business logic separation (`lib/services/`)
-- **Dependency Injection** - Inversify IoC container (`lib/di/`)
 - **Plugin System** - Dynamic content fetcher loading (`lib/plugins/`)
 
 ### Database Schema

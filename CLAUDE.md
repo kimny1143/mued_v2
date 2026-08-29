@@ -16,7 +16,8 @@ npm run dev                       # 開発サーバー
 npm run db:test-connection        # DB接続確認
 
 # テスト・品質
-npm run test                      # ユニットテスト
+npm run test:unit                 # ユニットテスト（★CI が回すのはこれ・Docker 不要）
+npm run test                      # ★全層 直列（unit+components+integration+e2e）。e2e/integration はローカル専用
 npm run test:e2e                  # E2Eテスト
 npm run typecheck                 # 型チェック
 npm run lint                      # Lint
@@ -51,11 +52,11 @@ MUEDの創業者は作曲家派生のクリエイターであり、生粋のエ�
 
 | カテゴリ | 技術 |
 |---------|------|
-| **Frontend** | Next.js 15.5 (App Router), React 19, TypeScript, TailwindCSS 4 |
+| **Frontend** | Next.js 16.2 (App Router), React 19, TypeScript, TailwindCSS 4 |
 | **Backend** | Next.js API Routes, Clerk認証 |
 | **Database** | Neon PostgreSQL, Drizzle ORM |
 | **Payments** | Stripe |
-| **AI** | OpenAI (本番), Claude (開発/MCP経由) |
+| **AI** | 本番=OpenAI（RAG・ドリル生成 `lib/ai/providers/openai.ts`）＋ Anthropic Claude（Hoo/dial の会話 `lib/ai/providers/claude.ts`・SDK 直呼び） / 開発=MCP 経由 |
 | **Testing** | Vitest (unit), Playwright (E2E) |
 | **Analytics** | GA4 (gtag.js + `lib/analytics/gtag.ts`), Vercel Analytics |
 
@@ -64,7 +65,6 @@ MUEDの創業者は作曲家派生のクリエイターであり、生粋のエ�
 - **App Router**: ファイルベースルーティング、Server Components優先
 - **Repository パターン**: データアクセス抽象化 (`lib/repositories/`)
 - **サービス層**: ビジネスロジック分離 (`lib/services/`)
-- **DI**: 依存性注入でテスタビリティ確保 (`lib/di/`)
 
 ---
 
