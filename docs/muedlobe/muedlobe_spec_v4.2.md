@@ -65,7 +65,7 @@
 │                   MUED Ecosystem (mued.jp)                │
 ├──────────────────────────────────────────────────────────┤
 │                                                           │
-│   mued_v2/ (メインリポ - Next.js 15)                      │
+│   mued_v2/ (メインリポ - Next.js 16)                      │
 │   ┌─────────────────────────────────────────────────┐    │
 │   │ app/                                             │    │
 │   │  ├── dashboard/       ダッシュボード              │    │
@@ -116,7 +116,7 @@ MUEDlobeの目的は「IQの正確な数値を出す」ことではなく、**Ho
 
 | Component | Technology | Role |
 |-----------|------------|------|
-| **Web (mued.jp)** | Next.js 15, React 19, TailwindCSS 4 | 認知測定、Cortex Editor、分析結果表示 |
+| **Web (mued.jp)** | Next.js 16, React 19, TailwindCSS 4 | 認知測定、Cortex Editor、分析結果表示 |
 | **Backend** | Next.js API Routes | API |
 | **Database** | Neon PostgreSQL + Drizzle ORM | データ永続化 |
 | **Auth** | Clerk | 認証 |

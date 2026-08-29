@@ -84,7 +84,8 @@ cp .env.local.example .env.local
 npm run dev
 
 # テスト
-npm run test           # ユニットテスト
+npm run test:unit      # ユニットテスト（★CI が回すのはこれ）
+npm run test           # ★全層 直列（unit+components+integration+e2e）
 npm run test:e2e       # E2E テスト
 npm run typecheck      # 型チェック
 ```
