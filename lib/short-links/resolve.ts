@@ -108,18 +108,45 @@ export function validateTable(rows: readonly ShortLink[]): TableProblem[] {
       problems.push({ slug: at, problem: `path が規則に合わない（'' か /… のみ・'//' と '\\' は不可）: ${JSON.stringify(row.path)}` });
     }
 
-    // ★utm_content is the field condition ② protects, so its absence is an error rather than a
-    //   default — a row that silently loses it would keep redirecting and quietly stop being
-    //   attributable, which no green check would catch.
     for (const [field, value] of [
       ['utmSource', row.utmSource],
       ['utmMedium', row.utmMedium],
       ['utmCampaign', row.utmCampaign],
-      ['utmContent', row.utmContent],
     ] as const) {
       if (typeof value !== 'string' || value.trim() === '') {
         problems.push({ slug: at, problem: `${field} が空` });
       }
+    }
+
+    // ★utmContent may be empty — but only because the property being protected is not "the field is
+    //   non-empty", it is "★this row stays distinguishable in analytics". The two came apart when the
+    //   real links were measured (conductor, 2026-08-29): 19 of the 60 article links never carried a
+    //   `utm_content` at all, and GA4 already holds them as one `(not set)` bucket, so there is no
+    //   series to preserve. The original rule read "a row that silently LOSES it would quietly stop
+    //   being attributable" — losing a value and never having one are different, and only the first is
+    //   a defect. Requiring the field's presence in the TYPE (it is not optional) keeps a row from
+    //   dropping it by accident; the uniqueness check below is what actually holds the property.
+    if (typeof row.utmContent !== 'string') {
+      problems.push({ slug: at, problem: 'utmContent が文字列でない（空文字は可・欠落は不可）' });
+    }
+  });
+
+  // ★The property, measured directly: no two rows may share (utm_campaign, utm_content). Two such rows
+  //   collapse into one bucket in GA4 and become permanently indistinguishable — which is what "loses
+  //   attributability" actually means. This subsumes the empty-content case (19 empty rows are fine
+  //   because their campaigns differ) and catches the case the old non-empty rule never could: two rows
+  //   with the SAME non-empty content under the same campaign.
+  const byPair = new Map<string, string>();
+  rows.forEach((row) => {
+    const key = `${row.utmCampaign}\u0000${row.utmContent}`;
+    const prev = byPair.get(key);
+    if (prev !== undefined) {
+      problems.push({
+        slug: row.slug || '(no slug)',
+        problem: `(utm_campaign, utm_content) が ${prev} と重複 — GA4 で1つのバケツに潰れる`,
+      });
+    } else {
+      byPair.set(key, row.slug || '(no slug)');
     }
   });
 
@@ -172,7 +199,13 @@ export function resolveShortLink(
   url.searchParams.set('utm_source', row.utmSource);
   url.searchParams.set('utm_medium', row.utmMedium);
   url.searchParams.set('utm_campaign', row.utmCampaign);
-  url.searchParams.set('utm_content', row.utmContent);
+  // ★An empty utmContent emits NO parameter, rather than `utm_content=`. The 19 rows it applies to had
+  //   no such parameter in the original article link, and `?utm_content=` is a different URL from one
+  //   without it — emitting it would be adding something the verbatim contract says to preserve as
+  //   absent. It would also stake the outcome on GA4 folding "" and absent into the same `(not set)`
+  //   bucket, which is an assumption this code does not need to make. (Caught by running the 60 rows,
+  //   not by reading them: the table looked right and the URL was wrong.)
+  if (row.utmContent) url.searchParams.set('utm_content', row.utmContent);
   if (row.utmTerm) url.searchParams.set('utm_term', row.utmTerm);
 
   return url.toString();
