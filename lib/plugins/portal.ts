@@ -54,7 +54,13 @@ export interface PortalItem {
   i18nNamespace: string;
   version: string;
   downloadUrl: string;
-  claimedAt: Date;
+  /**
+   * When this person claimed it — ★null for a module included because they already hold another one.
+   * ★Null rather than a stand-in date: they never claimed it, and inventing a date to make the rows
+   * look uniform would put a fact on screen that no one measured. The view renders those rows with a
+   * different line instead.
+   */
+  claimedAt: Date | null;
 }
 
 /** Minimal entitlement shape the assembler consumes (decoupled from the Drizzle row). */
@@ -86,7 +92,45 @@ export function buildPortalItems(entitlements: readonly OwnedEntitlement[] | nul
       claimedAt: e.createdAt,
     });
   }
-  items.sort((a, b) => b.claimedAt.getTime() - a.claimedAt.getTime()); // newest claim first
+  items.sort((a, b) => (b.claimedAt?.getTime() ?? 0) - (a.claimedAt?.getTime() ?? 0)); // newest claim first
+
+  // ★THE FREE FAMILY IS ALL-OR-NOTHING once you are in it (kimny 2026-08-29). MUEDsat and MUEDlim were
+  //   backfilled onto existing owners' shelves in July; MUEDrive was not, so the same uniform portal
+  //   showed those people a "get it" card for a module the announcement email had already called
+  //   theirs, and asked for their email a second time. kimny, verbatim: 「そしてポータルも他の２つと
+  //   やり方が違う」. ★The portal code was identical for all three — what differed was history.
+  //
+  // ★Scoped to people who already hold at least one: someone with nothing has not given us an email
+  //   yet, and the gate that captures it is the point. So the empty shelf is unchanged.
+  //
+  // ★KNOWN AND INTENDED CONSEQUENCE, recorded so it is not read as a bug later: a person who took
+  //   ONLY MUEDrive today now also sees MUEDsat and MUEDlim on their shelf. That is consistent with
+  //   having announced all three as free, and it is the same affordance running in the other
+  //   direction. It is a visible change; it is not a defect.
+  //
+  // ★Nothing is written. This is a view over the registry, not a grant recorded in
+  //   plugin_entitlements — that table keeps meaning "actually obtained", which is what the funnel
+  //   collector's north-star denominator reads.
+  //
+  // ★★∴ THESE DOWNLOADS DO NOT APPEAR IN THAT DENOMINATOR (product課, 2026-08-29). An included tile
+  //   renders the same direct .pkg link as a claimed one, so a MUEDsat owner can take MUEDrive without
+  //   passing the email gate — intended — but no row is created, so MUEDrive's obtained count reads
+  //   LOW, and "low" is indistinguishable from "not visible to this instrument" in the numbers alone.
+  //   ★A trade-off, not a defect: the alternative was writing rows for people who never obtained the
+  //   module, which is the thing this table exists to not say. ★Written down so that someone reading
+  //   the north-star in six months does not take the low figure for the reality.
+  if (items.length > 0) {
+    for (const dist of Object.values(PLUGIN_DIST)) {
+      if (!dist.live || seen.has(dist.key)) continue;
+      items.push({
+        pluginKey: dist.key,
+        i18nNamespace: dist.i18nNamespace,
+        version: dist.version,
+        downloadUrl: dist.downloadUrl,
+        claimedAt: null, // ★included, not claimed
+      });
+    }
+  }
   return items;
 }
 

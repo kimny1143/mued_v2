@@ -36,7 +36,8 @@ export default async function PluginsPortalPage() {
     i18nNamespace: it.i18nNamespace,
     version: it.version,
     downloadUrl: it.downloadUrl,
-    claimedAtISO: it.claimedAt.toISOString(),
+    // ★null when the module is included because they already hold another one (never claimed).
+    claimedAtISO: it.claimedAt ? it.claimedAt.toISOString() : null,
   }));
 
   // The live free modules this user does NOT own yet. Registry-derived and read-only — nothing is

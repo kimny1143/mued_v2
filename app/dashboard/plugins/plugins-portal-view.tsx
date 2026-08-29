@@ -12,7 +12,8 @@ export interface PortalViewItem {
   i18nNamespace: string;
   version: string;
   downloadUrl: string;
-  claimedAtISO: string;
+  /** ★null = included with the family (see lib/plugins/portal.ts), never claimed. */
+  claimedAtISO: string | null;
 }
 
 // Fixed brand display names + shipped formats (technical labels — not translated). Both current free
@@ -88,7 +89,11 @@ export function PluginsPortalView({
                         </span>
                       ))}
                     </div>
-                    <p className={styles.claimed}>{t("added", { date: fmtDate(it.claimedAtISO) })}</p>
+                    {/* ★No claim date for a module included with the family — say that, rather than
+                        printing a date nobody recorded. */}
+                    <p className={styles.claimed}>
+                      {it.claimedAtISO ? t("added", { date: fmtDate(it.claimedAtISO) }) : t("included")}
+                    </p>
                   </div>
                   <div className={styles.action}>
                     <span className={styles.readout}>

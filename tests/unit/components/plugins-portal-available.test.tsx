@@ -103,6 +103,21 @@ describe('PluginsPortalView — available section', () => {
     expect(new Set(headings).size).toBe(headings.length);
   });
 
+  it('★an included module (claimedAtISO=null) shows "included", never a made-up date', () => {
+    render(
+      <PluginsPortalView
+        items={[{ ...owned[0], pluginKey: 'muedrive', claimedAtISO: null }, ...owned]}
+        available={[]}
+      />,
+    );
+    expect(screen.getByText('included')).toBeTruthy();
+    // ★Positive control in the same render: the genuinely claimed tile DOES print its date line, so
+    //   "no date on the included one" is the branch and not a component that stopped rendering dates.
+    expect(screen.getByText(/^added:/)).toBeTruthy();
+    // ★And no date string leaked onto the included tile.
+    expect(screen.queryAllByText(/^added:/).length).toBe(1);
+  });
+
   it('the available tile carries no download control at all', () => {
     render(<PluginsPortalView items={owned} available={available} />);
     const tile = screen.getByText('MUEDrive').closest('div[class]')!.parentElement!.parentElement!;
