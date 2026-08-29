@@ -1,0 +1,46 @@
+{
+  "date": "2026-08-28",
+  "generated_at": "2026-08-29T08:13:49.971Z",
+  "resend": {
+    "mued_sp_total_contacts": 675,
+    "mued_sp_net_new_day": 41,
+    "mued_sp_unsubscribed_total": 13,
+    "welcome_delivered_total": 75,
+    "broadcast": null
+  },
+  "shelf": {
+    "muedsat": {
+      "db_net_new": 28,
+      "email_delivered": 30,
+      "email_bounced": 1
+    },
+    "muedlim": {
+      "db_net_new": 14,
+      "email_delivered": 16,
+      "email_bounced": 0
+    },
+    "muedrive": {
+      "db_net_new": 26,
+      "email_delivered": 29,
+      "email_bounced": 1
+    }
+  },
+  "shelf_definition": "welcome email を件名で分類。件名が /download|ダウンロード/i に一致し、かつ registry の plugin key (大小無視) を含むものをその製品の棚へ。どちらも満たさなければ \"other\"。★2026-08-28 以前は /download/i のみだったため、日本語件名の welcome は全て \"other\" に落ちていた。★母集団の非対称: db_net_new は source=smoke-test の合成行を除外するが、email_delivered / email_bounced は Resend 側の件名分類なので除外していない（同じ行の2数は別母集団）。",
+  "db_owner_union_total": 662,
+  "marketing_contacts_total": 679,
+  "muedsp_reachable": {
+    "count": 662,
+    "definition": "MUEDsp segment only; unsubscribed=false; unique. ★North-star denominator (kimny ratified 2026-07-18: 北極星=MUEDsp セグメント10,000人). Single scope → no OR/AND question."
+  },
+  "marketing_contacts_reachable": {
+    "count": 666,
+    "definition": "union across all audiences (currently MUEDsp+General); reachable = NOT unsubscribed in ANY audience (AND/conservative, Chief ruling 2026-07-23). Org-wide reach — NOT the north-star. total (marketing_contacts_total) = billing exposure incl. unsubscribed."
+  },
+  "portal_registrations": {
+    "cumulative": 48,
+    "day_utc": 6,
+    "counting_since": "2026-07-23",
+    "note": "forward-only; not backfillable (recording shipped 2026-07-23). Portal arrivals before that date are only observable in GA4, not here."
+  },
+  "anomalies": []
+}
