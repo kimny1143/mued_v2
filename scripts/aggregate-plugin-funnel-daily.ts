@@ -80,6 +80,17 @@ const SHELF_DEFINITION =
   '★母集団の非対称: db_net_new は source=smoke-test の合成行を除外するが、email_delivered / ' +
   'email_bounced は Resend 側の件名分類なので除外していない（同じ行の2数は別母集団）。';
 
+// ★welcome_ja_delivered の定義。値と一緒に運ぶ（SHELF_DEFINITION と同じ形）— 数え方が変われば
+//   消費側が「値が動いた」と「数え方が動いた」を区別できるように。
+const JA_DEFINITION =
+  'その日の welcome email（件名が /download|ダウンロード/i に一致）のうち、件名に日本語文字' +
+  '（/[ぁ-んァ-ヶ一-龠]/）を含み last_event=delivered のもの。' +
+  '★製品軸とは独立: 1通が製品別の集計とここの両方に入る。★shelf() が "other" と判定する件名も含む' +
+  '（問いは「日本語面が使われているか」であって「どの製品か」ではないため）。' +
+  '★検出器は import 時に自己検査する（既知の日本語件名が一致し、ASCII のみの件名が一致しないこと）。' +
+  '∴ 0 は「使われていない」であって「測れていない」ではない。' +
+  '★母集団の非対称は SHELF_DEFINITION と同じ（Resend 側の件名分類なので smoke を除外していない）。';
+
 // ★合成行（smoke test / 動作確認）を集計から外す述語。★正本は insight課 の設計 doc
 //   `reports/plugin-funnel-automation-design-20260718.md` §10（2026-08-28 合意）。
 //   ★経緯: 2026-08-28 の MUEDrive ローンチ検証で本番フォームを2回 通した。★うち1件は解除にメール内
@@ -88,6 +99,34 @@ const SHELF_DEFINITION =
 const SYNTHETIC_SOURCE = "smoke-test";
 
 const DOWNLOAD_RE = /download|ダウンロード/i;
+
+// ★Japanese-subject welcome emails (insight課 dispatch 2026-08-29). Hiragana / katakana / CJK.
+//   ★An axis INDEPENDENT of product: one email is counted under its product AND here, because the
+//   question is "is the /ja/ surface being used at all", not "which product did they take".
+const JA_SUBJECT_RE = /[ぁ-んァ-ヶ一-龠]/;
+
+// ★SELF-CHECK. This metric is expected to sit at 0 for long stretches (conductor's census: real-user
+//   JA welcomes were 0 across 8/17–8/28, first one on 8/29), and ★a 0 from a broken detector looks
+//   exactly like a 0 from an unused surface. A typo in the character ranges would return 0 forever
+//   and nothing else in this pipeline would notice.
+//   ★Positive AND negative control: a known JA subject must match, and a pure-ASCII one must NOT —
+//   the second is what catches a range written so wide it matches everything.
+export const JA_SELF_TEST_POSITIVE = "MUEDriveのダウンロードリンクです";
+export const JA_SELF_TEST_NEGATIVE = "Your MUEDrive download link";
+export function jaDetectorHealthy(): boolean {
+  return JA_SUBJECT_RE.test(JA_SELF_TEST_POSITIVE) && !JA_SUBJECT_RE.test(JA_SELF_TEST_NEGATIVE);
+}
+// ★NOT a throw at import. Failing here would take the whole collector down — db_net_new,
+//   muedsp_reachable, everything — for one auxiliary field. ★Instead the field goes to null with an
+//   anomaly, so the consumer can tell "not measured" from 0, and the rest of the report survives.
+//   ★The typo itself is caught before merge by tests/unit/collector-ja-subject.test.ts; this runtime
+//   check is the second line, for the case where the constants drift without the test being run.
+
+/** A welcome email whose subject is in Japanese. Independent of the product axis. */
+function isJaWelcome(subject?: string): boolean {
+  const t = subject || "";
+  return DOWNLOAD_RE.test(t) && JA_SUBJECT_RE.test(t);
+}
 
 function shelf(subject?: string): PluginKey | "other" {
   const s = subject || "";
@@ -328,6 +367,21 @@ async function main() {
     Object.fromEntries(
       PLUGIN_KEYS.map((k) => [k, { delivered: 0, bounced: 0, other: 0 }]),
     ) as Record<PluginKey, { delivered: number; bounced: number; other: number }>;
+  // ★Counted over the same input as shelf(), on its own axis — a JA "MUEDriveのダウンロードリンク"
+  //   lands in BOTH muedrive and here. ★Includes subjects shelf() calls "other": the question is
+  //   whether the JA surface is used, and a JA welcome that does not name a product is still one.
+  const jaHealthy = jaDetectorHealthy();
+  let welcomeJaDelivered: number | null = 0;
+  if (jaHealthy) {
+    let n = 0;
+    for (const e of welcomeEmails) {
+      if (e.last_event === "delivered" && isJaWelcome(e.subject)) n++;
+    }
+    welcomeJaDelivered = n;
+  } else {
+    welcomeJaDelivered = null; // ★null = not measured. Never 0, which would read as "not used".
+  }
+
   for (const e of welcomeEmails) {
     const sh = shelf(e.subject);
     if (sh === "other") continue;
@@ -338,6 +392,11 @@ async function main() {
 
   // anomaly signal: DB純増(権威) > email delivered なら「DLは成立したがwelcome email失敗」を示唆。
   const anomalies: string[] = [];
+  if (!jaHealthy) {
+    anomalies.push(
+      "★welcome_ja_delivered: 検出器の自己検査が失敗（陽性/陰性 control）— この日は null で出す。0 ではない。",
+    );
+  }
   for (const sh of PLUGIN_KEYS) {
     if (dbNetNew[sh] > shelfEmail[sh].delivered) {
       anomalies.push(
@@ -354,6 +413,12 @@ async function main() {
       mued_sp_net_new_day: audience.netNewDay,
       mued_sp_unsubscribed_total: audience.unsubscribed,
       welcome_delivered_total: PLUGIN_KEYS.reduce((n, k) => n + shelfEmail[k].delivered, 0),
+      // ★Independent axis, so this is NOT a subset of the per-product sums above — a JA welcome is
+      //   counted there too, and a JA welcome shelf() cannot classify is counted only here.
+      //   ★Expected to be 0 most days; the detector self-tests at import so a 0 means "not used",
+      //   not "not measured". Definition shipped alongside, as with shelf_definition.
+      welcome_ja_delivered: welcomeJaDelivered,
+      welcome_ja_definition: JA_DEFINITION,
       broadcast: null, // v1未収集。broadcast送信日のみ別途pull（follow-up）。
     },
     shelf: Object.fromEntries(
