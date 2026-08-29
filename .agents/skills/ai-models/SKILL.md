@@ -7,7 +7,7 @@ description: OpenAI APIモデル選定、GPT-5/GPT-4.1使い分け、AI機能実
 
 ## 基本方針
 
-**本プロジェクトでは GPT-4o を使用しない。**
+**本プロジェクトで GPT-4o を新規採用しない。**★**現存する例外は1箇所** — `lib/services/analyzer.service.ts:79` の `gpt-4o-mini`（MVP・コード内コメントに「upgrade to gpt-5-mini when available」）。`lib/openai.ts` の `MODEL_PRICING` に `gpt-4o` / `gpt-4o-mini` が在るのは★課金計算のための価格表で、呼び出しではない。
 
 ## モデル選定ガイド
 
@@ -32,9 +32,10 @@ description: OpenAI APIモデル選定、GPT-5/GPT-4.1使い分け、AI機能実
 
 ## 使用禁止モデル
 
-- **GPT-4o**: 品質が低いため使用禁止
+- **GPT-4o**: 新規採用しない（★既存の例外1件は上記。「禁止」と書くと、実在する例外を読む人が bug と誤認する）
 - **o3, o4-mini**: 使用しない
 
 ## 詳細ドキュメント
 
-[docs/archive/ai-model-comparison.md](docs/archive/ai-model-comparison.md)
+★**無し**。旧 `docs/archive/ai-model-comparison.md` は commit `8cc4906a` で意図的に削除された（`docs/archive/` は現在 0 件）。
+必要なら `git show 8cc4906a^:docs/archive/ai-model-comparison.md` で取り出せる。

@@ -1,5 +1,5 @@
 ---
-name: database-operations
+name: database
 description: PostgreSQL/Neon データベース操作、Drizzle ORMスキーマ設計、マイグレーション作成・実行、クエリ最適化。DB操作、スキーマ変更、マイグレーション、データベース設計時に使用。
 ---
 
@@ -61,4 +61,4 @@ END $$;
 
 ## 詳細ドキュメント
 
-[docs/database/database-operations.md](docs/database/database-operations.md)
+[docs/guides/database-operations.md](docs/guides/database-operations.md)
