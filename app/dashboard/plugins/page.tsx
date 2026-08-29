@@ -2,7 +2,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { MuednoteLayout } from "@/components/layouts/muednote-layout";
 import { getPortalItemsForUser, markPortalRegistered } from "@/lib/plugins/portal-data";
-import { PluginsPortalView, type PortalViewItem } from "./plugins-portal-view";
+import { buildAvailableItems } from "@/lib/plugins/portal";
+import { PluginsPortalView, type PortalViewItem, type AvailableViewItem } from "./plugins-portal-view";
 
 /**
  * User portal — /dashboard/plugins (P-2, docs/portal/plan-brief-user-portal-20260717.md).
@@ -38,9 +39,17 @@ export default async function PluginsPortalPage() {
     claimedAtISO: it.claimedAt.toISOString(),
   }));
 
+  // The live free modules this user does NOT own yet. Registry-derived and read-only — nothing is
+  // written, and the alternative (bulk-inserting entitlement rows so the shelf looks right) was
+  // rejected because it would put "never obtained it" rows into the table the funnel collector reads.
+  const available: AvailableViewItem[] = buildAvailableItems(items).map((a) => ({
+    pluginKey: a.pluginKey,
+    lpPath: a.lpPath,
+  }));
+
   return (
     <MuednoteLayout>
-      <PluginsPortalView items={viewItems} />
+      <PluginsPortalView items={viewItems} available={available} />
     </MuednoteLayout>
   );
 }
