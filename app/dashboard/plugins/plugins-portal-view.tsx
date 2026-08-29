@@ -116,7 +116,11 @@ export function PluginsPortalView({
             </div>
             <h3>{t("empty.title")}</h3>
             <p>{t("empty.body")}</p>
-            <Link className={styles.emptyCta} href="/muedsp">
+            {/* ★Locale-prefixed. The bare `/muedsp` 307s to /en unconditionally, ignoring the reader's
+                locale — so a JA visitor with an empty shelf was sent to the English catalogue. This
+                component already knows the locale (useLocale above); the non-locale pages under
+                app/learn keep the bare form on purpose, since they have no locale to carry. */}
+            <Link className={styles.emptyCta} href={`/${locale}/muedsp`}>
               {t("empty.cta")} →
             </Link>
           </div>
