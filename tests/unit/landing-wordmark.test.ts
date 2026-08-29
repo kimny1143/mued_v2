@@ -7,10 +7,14 @@
  * was otherwise correct (21–22 other "MUEDrive" occurrences), which is why it survived review: the
  * error is two three-letter strings inside a page that is right everywhere else.
  *
- * ★Nothing could have caught it. The wordmark is split into two spans so the tail can be tinted, so
- * it is not copy in an i18n file — `muedrive.hero.title` exists and equals "MUEDrive", but the H1 does
- * not use it. tsc sees two valid strings. The page renders. Only a person reading the rendered header,
- * or this test, can tell. ★And it landed on the page that receives the rekkerd / KVR referral traffic.
+ * ★No STATIC check could have caught it. The wordmark is split into two spans so the tail can be
+ * tinted, so it is not copy in an i18n file — `muedrive.hero.title` exists and equals "MUEDrive", but
+ * the H1 does not use it. tsc sees two valid strings; the page renders.
+ * ★But "nothing could have caught it" would be too strong, and this file said that until product課
+ * corrected it: ★`curl -s https://mued.jp/en/muedrive | grep -c '>lim<'` finds it in one line, and
+ * that is how both this review and this fix confirmed it. The honest form is "★invisible to static
+ * analysis; visible the moment anyone reads the rendered output". This test is an approximation of
+ * reading it. ★And it landed on the page that receives the rekkerd / KVR referral traffic.
  *
  * ★The population is the FILESYSTEM (`components/features/*-landing/*-landing-content.tsx`), not a
  * list kept here — a fourth module gets covered on the day its directory appears, which is the same
