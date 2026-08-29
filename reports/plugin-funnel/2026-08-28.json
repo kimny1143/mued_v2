@@ -1,13 +1,13 @@
 {
   "date": "2026-08-28",
-  "generated_at": "2026-08-29T15:09:59.471Z",
+  "generated_at": "2026-08-29T15:13:19.507Z",
   "resend": {
     "mued_sp_total_contacts": 682,
     "mued_sp_net_new_day": 41,
     "mued_sp_unsubscribed_total": 14,
     "welcome_delivered_total": 0,
     "welcome_ja_delivered": 0,
-    "welcome_ja_definition": "その日の welcome email（件名が /download|ダウンロード/i に一致）のうち、件名に日本語文字（/[ぁ-んァ-ヶ一-龠]/）を含み last_event=delivered のもの。★製品軸とは独立: 1通が製品別の集計とここの両方に入る。★shelf() が \"other\" と判定する件名も含む（問いは「日本語面が使われているか」であって「どの製品か」ではないため）。★検出器は import 時に自己検査する（既知の日本語件名が一致し、ASCII のみの件名が一致しないこと）。∴ 0 は「使われていない」であって「測れていない」ではない。★母集団の非対称は SHELF_DEFINITION と同じ（Resend 側の件名分類なので smoke を除外していない）。",
+    "welcome_ja_definition": "その日の welcome email（件名が /download|ダウンロード/i に一致）のうち、件名に日本語文字（/[ぁ-んァ-ヶ一-龠]/）を含み last_event=delivered のもの。★製品軸とは独立: 1通が製品別の集計とここの両方に入る。★shelf() が \"other\" と判定する件名も含む（問いは「日本語面が使われているか」であって「どの製品か」ではないため）。★検出器は毎回 自己検査する（既知の日本語件名が一致し、ASCII のみの件名が一致しないこと）。★自己検査が失敗した日は★この値が null になり anomalies に1行 出る。∴ ★0 は「使われていない」／★null は「測れていない」。0 が両方を意味することはない。★母集団の非対称は SHELF_DEFINITION と同じ（Resend 側の件名分類なので smoke を除外していない）。",
     "broadcast": null
   },
   "shelf": {
