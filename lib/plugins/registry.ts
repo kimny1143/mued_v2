@@ -30,6 +30,13 @@ export interface PluginDist {
   /** POST target for the email-gate form. */
   subscribeEndpoint: string;
   /**
+   * Landing-page path (locale-prefixed at render: `/{locale}{lpPath}`) — the page that carries the
+   * email gate. ★The portal's "not on your shelf yet" affordance links HERE and never at
+   * `downloadUrl`: the direct .pkg bypasses the gate, so no entitlement row is written and the module
+   * would never move onto the shelf — the same bug in a new shape.
+   */
+  lpPath: string;
+  /**
    * NAME of the Resend audience env var — the VALUE is read server-side (lib/plugins/audience.ts).
    *
    * ★These names are per-product for historical reasons ONLY. They do not imply per-product lists.
@@ -53,6 +60,7 @@ export const PLUGIN_DIST: Record<PluginKey, PluginDist> = {
     source: "muedsat_lp",
     i18nNamespace: "muedsat",
     subscribeEndpoint: "/api/muedsat/subscribe",
+    lpPath: "/muedsat",
     audienceEnvName: "RESEND_MUEDSAT_AUDIENCE_ID",
   },
   muedlim: {
@@ -64,6 +72,7 @@ export const PLUGIN_DIST: Record<PluginKey, PluginDist> = {
     source: "muedlim_lp",
     i18nNamespace: "muedlim",
     subscribeEndpoint: "/api/muedlim/subscribe",
+    lpPath: "/muedlim",
     audienceEnvName: "RESEND_MUEDLIM_AUDIENCE_ID",
   },
   // muedrive — third free module. Started outside MUEDsp masterchain (standalone), unlike the first two.
@@ -76,6 +85,7 @@ export const PLUGIN_DIST: Record<PluginKey, PluginDist> = {
     source: "muedrive_lp",
     i18nNamespace: "muedrive",
     subscribeEndpoint: "/api/muedrive/subscribe",
+    lpPath: "/muedrive",
     audienceEnvName: "RESEND_MUEDRIVE_AUDIENCE_ID",
   },
 };

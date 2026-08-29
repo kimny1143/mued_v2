@@ -2454,6 +2454,11 @@
       "muedlim": "Limiter",
       "muedrive": "Drive"
     },
+    "available": {
+      "label": "Not on your shelf yet",
+      "body": "Free MUEDsp modules. Enter your email on the product page and it joins this shelf.",
+      "cta": "Get it"
+    },
     "empty": {
       "title": "Your rack is empty",
       "body": "Claim a free MUEDsp module and it shows up here — with the latest build one click away, for good.",

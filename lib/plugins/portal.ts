@@ -89,3 +89,37 @@ export function buildPortalItems(entitlements: readonly OwnedEntitlement[] | nul
   items.sort((a, b) => b.claimedAt.getTime() - a.claimedAt.getTime()); // newest claim first
   return items;
 }
+
+/** A live free module the user does NOT own yet — the portal's "get it" affordance. */
+export interface AvailableItem {
+  pluginKey: PluginKey;
+  i18nNamespace: string;
+  /** Landing-page path (locale-prefixed by the view). ★NOT the .pkg — see PluginDist.lpPath. */
+  lpPath: string;
+}
+
+/**
+ * The live free modules a user does NOT own yet.
+ *
+ * ★WHY THIS EXISTS (2026-08-29). The portal renders only what `plugin_entitlements` records, and it
+ * had no branch for anything else — so someone holding two of the three modules saw two tiles and no
+ * way to reach the third. The announcement email for MUEDrive told an existing list the module was
+ * "already on your shelf", and for anyone who had not downloaded it the shelf disagreed.
+ *
+ * ★The alternative considered and rejected was bulk-inserting entitlement rows for the announcement
+ * list. That would have put "never obtained it" rows into the table the funnel collector reads, to
+ * work around a missing affordance — and the next module would land in exactly the same state.
+ * Nothing is written here: this is a catalogue view of the registry minus what the caller owns.
+ *
+ * `live` is honoured, so a staged module stays invisible. Order follows the registry (stable).
+ */
+export function buildAvailableItems(owned: readonly { pluginKey: string }[] | null | undefined): AvailableItem[] {
+  const ownedKeys = new Set((owned ?? []).map((o) => o.pluginKey));
+  const out: AvailableItem[] = [];
+  for (const dist of Object.values(PLUGIN_DIST)) {
+    if (!dist.live) continue;            // staged module — not discoverable yet
+    if (ownedKeys.has(dist.key)) continue;
+    out.push({ pluginKey: dist.key, i18nNamespace: dist.i18nNamespace, lpPath: dist.lpPath });
+  }
+  return out;
+}

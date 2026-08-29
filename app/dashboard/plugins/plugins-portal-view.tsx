@@ -33,7 +33,21 @@ function fileStem(url: string): string {
   }
 }
 
-export function PluginsPortalView({ items }: { items: PortalViewItem[] }) {
+// A live free module the signed-in user does NOT own yet. ★lpPath, never a .pkg URL — the landing
+// page carries the email gate that writes the entitlement, and a direct .pkg download would leave the
+// shelf empty forever (see lib/plugins/portal.ts buildAvailableItems).
+export interface AvailableViewItem {
+  pluginKey: string;
+  lpPath: string;
+}
+
+export function PluginsPortalView({
+  items,
+  available = [],
+}: {
+  items: PortalViewItem[];
+  available?: AvailableViewItem[];
+}) {
   const t = useTranslations("pluginPortal");
   const locale = useLocale();
   const fmtDate = (iso: string) =>
@@ -101,6 +115,46 @@ export function PluginsPortalView({ items }: { items: PortalViewItem[] }) {
               {t("empty.cta")} →
             </Link>
           </div>
+        )}
+
+        {available.length > 0 && (
+          <>
+            <div className={styles.racklabel}>
+              <span>{t("available.label")}</span> <span className={styles.count}>{available.length}</span>
+            </div>
+            <p className={styles.lede}>{t("available.body")}</p>
+            <div className={styles.rack}>
+              {available.map((a) => {
+                const d = DISPLAY[a.pluginKey as PluginKey] ?? { name: a.pluginKey, formats: [] as string[] };
+                return (
+                  <div className={styles.module} key={a.pluginKey}>
+                    <Faceplate pluginKey={a.pluginKey} />
+                    <div className={styles.meta}>
+                      <div className={styles.name}>
+                        <h3>{d.name}</h3>
+                        <span className={styles.kind}>{t(`kind.${a.pluginKey}`)}</span>
+                      </div>
+                      <div className={styles.formats}>
+                        {d.formats.map((f) => (
+                          <span className={styles.fmt} key={f}>
+                            {f}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className={styles.action}>
+                      {/* ★Locale-prefixed LP, never `downloadUrl`. The gate on that page is what writes
+                          the entitlement; linking the .pkg would download the plugin and leave this
+                          shelf unchanged — the same failure this section exists to fix. */}
+                      <Link className={styles.emptyCta} href={`/${locale}${a.lpPath}`}>
+                        {t("available.cta")} →
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>
