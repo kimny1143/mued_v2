@@ -48,6 +48,10 @@ async function main(): Promise<void> {
   const base = baseFromArgv();
   console.log(`短リンク到達確認 — base=${base}`);
   console.log(`表の行数 = ${SHORT_LINKS.length}`);
+  // ★utm_content が空の行数を毎回 印字する。空は合法（19行は元リンクが最初から持っていない）だが、
+  //   ★"失って空になった" と "最初から無い" は表からは区別できない。∴ 数が動いたら人が気づく形にする
+  //   （conductor 起案 2026-08-29）。★増減の検出はテスト側の ratchet が担当し、ここは目視用。
+  console.log(`  うち utm_content が空 = ${SHORT_LINKS.filter((r) => r.utmContent === '').length}`);
 
   // ★母集団 0 を先に落とす。以下の for-all は 0 行でも全部 通る。
   if (SHORT_LINKS.length === 0) {

@@ -66,6 +66,15 @@ describe('resolveShortLink', () => {
     expect(url.searchParams.getAll('utm_source')).toHaveLength(1);
   });
 
+  it('★emits NO utm_content parameter when the row is empty (absent ≠ empty in a URL)', () => {
+    const url = new URL(resolveShortLink([row({ utmContent: '' })], 'demo')!);
+    expect(url.searchParams.has('utm_content')).toBe(false);
+    expect(url.toString()).not.toContain('utm_content');
+    // ★Positive control in the same call: a non-empty one IS emitted, so "absent" is the branch and
+    //   not a resolver that dropped every utm parameter.
+    expect(new URL(resolveShortLink([row()], 'demo')!).searchParams.get('utm_content')).toBe('body_cta');
+  });
+
   it('emits utm_term only when the row has one', () => {
     expect(new URL(resolveShortLink([row()], 'demo')!).searchParams.has('utm_term')).toBe(false);
     expect(
@@ -130,11 +139,49 @@ describe('validateTable', () => {
     ).not.toEqual([]);
   });
 
-  it('catches an empty utm field — utm_content especially (condition ②)', () => {
-    expect(validateTable([row({ utmContent: '' })]).some((p) => p.problem.includes('utmContent'))).toBe(
-      true,
-    );
+  it('catches an empty utm_source / medium / campaign', () => {
     expect(validateTable([row({ utmCampaign: '   ' })])).not.toEqual([]);
+    expect(validateTable([row({ utmSource: '' })])).not.toEqual([]);
+    expect(validateTable([row({ utmMedium: '' })])).not.toEqual([]);
+  });
+
+  // ★utm_content is the one utm field that may be empty. 19 of the 60 real article links never carried
+  //   one (measured 2026-08-29), and GA4 already holds them as a single `(not set)` bucket — there is no
+  //   series a non-empty rule would protect. The property is uniqueness, asserted below.
+  it('★accepts an EMPTY utm_content (never having one is not the same as losing one)', () => {
+    expect(validateTable([row({ utmContent: '' })])).toEqual([]);
+  });
+
+  it('★rejects a MISSING utm_content (the type requires it; dropping it is still a defect)', () => {
+    expect(
+      validateTable([{ ...row(), utmContent: undefined } as unknown as ShortLink]),
+    ).not.toEqual([]);
+  });
+
+  it('★catches two rows that collapse into one GA4 bucket — same (campaign, content)', () => {
+    const problems = validateTable([
+      row({ slug: 'aa', utmCampaign: 'c1', utmContent: 'x' }),
+      row({ slug: 'bb', utmCampaign: 'c1', utmContent: 'x' }),
+    ]);
+    expect(problems.some((p) => p.problem.includes('重複'))).toBe(true);
+  });
+
+  it('★two EMPTY-content rows are fine while their campaigns differ (the real 19-row shape)', () => {
+    expect(
+      validateTable([
+        row({ slug: 'aa', utmCampaign: 'c1', utmContent: '' }),
+        row({ slug: 'bb', utmCampaign: 'c2', utmContent: '' }),
+      ]),
+    ).toEqual([]);
+  });
+
+  it('★…but two EMPTY-content rows under the SAME campaign are not (indistinguishable)', () => {
+    expect(
+      validateTable([
+        row({ slug: 'aa', utmCampaign: 'c1', utmContent: '' }),
+        row({ slug: 'bb', utmCampaign: 'c1', utmContent: '' }),
+      ]).some((p) => p.problem.includes('重複')),
+    ).toBe(true);
   });
 
   it('catches a path that could escape the host', () => {
@@ -143,7 +190,8 @@ describe('validateTable', () => {
   });
 
   it('reports every problem, not just the first', () => {
-    expect(validateTable([row({ slug: 'BAD', utmContent: '' })]).length).toBeGreaterThan(1);
+    // ★utmContent: '' is legal now, so the two problems have to be genuinely separate ones.
+    expect(validateTable([row({ slug: 'BAD', utmCampaign: '' })]).length).toBeGreaterThan(1);
   });
 });
 
@@ -158,6 +206,41 @@ describe('assertNonVacuous', () => {
 });
 
 describe('the shipped table', () => {
+  // ★Ratchet, not a target. Empty utm_content is legal — 19 of the ported rows never had one — but the
+  //   table cannot tell "never had one" from "had one and lost it", which is the case condition ② exists
+  //   to stop. So the COUNT is pinned: a row that silently goes blank pushes it to 20 and fails here.
+  //   ★Adding a new link that genuinely has no utm_content also fails, on purpose — bumping this number
+  //   is a one-line, conscious edit, which is the whole point. ★Do not update it to make a red go green
+  //   without checking which of the two happened.
+  //
+  // ★WHERE 19 COMES FROM: the 60 dial.mued.jp links in `drafts/published/*.md` as measured 2026-08-29
+  //   (conductor, _conductor docs/handoff/short-links-porting-20260829.md). ★It is a property of that
+  //   article set, not of this code — ★it moves legitimately when articles are added or edited.
+  //
+  // ★HOW TO UPDATE IT LEGITIMATELY (so a real update and a silent loss stay distinguishable):
+  //   1. Re-count the empty utm_content links in the article corpus with the SAME predicate.
+  //   2. If the corpus number matches the new table number → update this baseline, and say in the
+  //      commit which articles changed.
+  //   3. If they DISAGREE → a row lost a value it used to have. That is the defect this pins. Do not
+  //      touch this number; fix the row.
+  //   ★Without step 3 the ratchet becomes a formality that gets bumped whenever it turns red.
+  //   ★UPDATED 19 → 21 on 2026-08-29, by running the procedure above: product課 found the port was
+  //   missing two links (the corpus has 62 dial links, not 60). Step 1 re-counted the corpus at 21
+  //   empty; step 2 matched the table's 21 → legitimate update, not a lost value.
+  const EMPTY_CONTENT_BASELINE = 21;
+
+  it(`★has exactly ${EMPTY_CONTENT_BASELINE} rows with an empty utm_content (ratchet)`, () => {
+    expect(SHORT_LINKS.filter((r) => r.utmContent === '').length).toBe(EMPTY_CONTENT_BASELINE);
+  });
+
+  it('★every empty-content row is still unique by campaign alone', () => {
+    // ★insight課 2026-08-29: these 19 are distinguished by utm_campaign on its own — the
+    //   (campaign, content) pair is what carries the OTHER 41. Asserting the actual property here
+    //   rather than relying on the pair check to cover both cases.
+    const empties = SHORT_LINKS.filter((r) => r.utmContent === '');
+    expect(new Set(empties.map((r) => r.utmCampaign)).size).toBe(empties.length);
+  });
+
   it('has no malformed rows', () => {
     // ★Vacuously true while the table is empty. That is why it is not the only check —
     //   scripts/verify/short-links.ts refuses to report green on an empty table.
