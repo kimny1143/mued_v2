@@ -111,6 +111,14 @@ export function buildPortalItems(entitlements: readonly OwnedEntitlement[] | nul
   // ★Nothing is written. This is a view over the registry, not a grant recorded in
   //   plugin_entitlements — that table keeps meaning "actually obtained", which is what the funnel
   //   collector's north-star denominator reads.
+  //
+  // ★★∴ THESE DOWNLOADS DO NOT APPEAR IN THAT DENOMINATOR (product課, 2026-08-29). An included tile
+  //   renders the same direct .pkg link as a claimed one, so a MUEDsat owner can take MUEDrive without
+  //   passing the email gate — intended — but no row is created, so MUEDrive's obtained count reads
+  //   LOW, and "low" is indistinguishable from "not visible to this instrument" in the numbers alone.
+  //   ★A trade-off, not a defect: the alternative was writing rows for people who never obtained the
+  //   module, which is the thing this table exists to not say. ★Written down so that someone reading
+  //   the north-star in six months does not take the low figure for the reality.
   if (items.length > 0) {
     for (const dist of Object.values(PLUGIN_DIST)) {
       if (!dist.live || seen.has(dist.key)) continue;

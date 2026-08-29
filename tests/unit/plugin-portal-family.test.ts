@@ -13,6 +13,14 @@
  * ★A separate file because tests/unit/plugin-portal.test.ts mocks the registry WITHOUT `live`, so the
  * inclusion branch is dead there — its 11 tests passing says nothing about this behaviour. (Measured:
  * they still passed after this shipped.)
+ *
+ * ★product課 swept for the same hole and found it is TWO files, not one: `plugin-portal-data.test.ts`
+ * also mocks a `live`-less registry, and that one is heavier — it covers `getPortalItemsForUser`, the
+ * entry point page.tsx actually calls, which reaches `buildPortalItems`. So the de-facto integration
+ * test never exercised this. (`plugin-portal-register.test.ts` mocks `PLUGIN_DIST: {}` but is harmless:
+ * markPortalRegistered never reads the registry.) ★The mechanism is worth naming: a missing mock field
+ * does not merely leave a branch untested, it makes NEW behaviour invisible — the old tests keep
+ * passing, and that reads as "nothing changed" when it means "nothing ran". Not fixed here.
  */
 import { describe, it, expect, vi } from 'vitest';
 
