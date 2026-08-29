@@ -36,6 +36,17 @@
  *     ★The completeness of this table cannot be checked from THIS repo: the corpus lives in
  *     _contents-writing. Every count below is therefore a measurement someone made elsewhere, and
  *     `verify:short-links` can only prove the rows here resolve — never that a row is missing.
+ *
+ *     ★"Cannot be checked from here" is not "cannot be checked". ★HOW TO RE-VERIFY (product課 asked
+ *     that the limitation be written as a procedure, since 60→62 was found by someone doing exactly
+ *     this):
+ *       正本  : _contents-writing の `drafts/published/*.md`, on origin/main (confirm 0/0 first)
+ *       述語  : strip code fences → extract `https?://[^\s)>\]"'`]+` → urlparse, host == 'dial.mued.jp'
+ *       突合  : ★BOTH directions — 記事→表 AND 表→記事 must each be 0. ★One direction cannot tell you
+ *               whether adding the difference closes it; the 60→62 fix was only safe to make because
+ *               "in the table but not in the corpus" was also measured, and was 0.
+ *       副産物: the count of empty utm_content links = step 1 of the ratchet in
+ *               tests/unit/short-links/resolve.test.ts.
  *     path の異なり              5      bare 30 / `/` 16 / `/dial` 12 / `/waitlist` 1 / `/readiness` 1
  *
  *     ★utm_content の異なり — ★TWO axes move the number, so state both. There is no single answer:
