@@ -27,13 +27,22 @@
  * `drafts/published/*.md` on origin/main of the articles repo):
  *
  *     ★dial.mued.jp 宛のリンク  60      ← the rows below
- *     utm_content の異なり      40      ★(dial 分。全体 43)
  *     path の異なり              5      bare 30 / `/` 16 / `/dial` 12 / `/waitlist` 1 / `/readiness` 1
  *
- * ★TWO CORRECTIONS to the numbers this header first carried (conductor, measured 2026-08-29):
- *   - "utm_content の異なり 44" does not reproduce. A correct URL parse gives ★40 for dial (43 overall);
- *     44/45/47 come from a naive `utm_content=[^&]*` grep swallowing the markdown link's closing `)`.
- *     Stable at 40 across 120 commits, so it was never a value that moved with article edits.
+ *     ★utm_content の異なり — ★state the counting rule, there is no single "correct" number:
+ *         dial   ★40 counting the empty value as one  /  ★39 excluding it   (19 rows are empty)
+ *         全体   ★43 counting it                      /  ★42 excluding it
+ *         ★a naive `utm_content=[^&]*` grep gives 47 — the markdown link's closing `)` splits values.
+ *       Verified here against the shipped rows: 40 / 39 / 19.
+ *
+ * ★THIS HEADER FIRST SAID "44", THEN "★correct is 40". ★Both framings were wrong in the same way.
+ *   44 was a real measurement under a different predicate (content課), and writing "correct is 40"
+ *   would make the next person who measures 44 conclude the retraction was the error. ★What moved was
+ *   the predicate — whether an empty value counts — not the answer. content課's wording, kept verbatim
+ *   because it is the lesson: 「『正しい値は 43』と書くと、次に別の述語で測った人が 44 を出して、
+ *   取り下げが誤りだったと読みます」。
+ *   ★The row count (60) is unaffected by any of this: rows are the distinct (campaign, content) pairs,
+ *   which does not depend on how utm_content alone is tallied.
  *   - ★"60" was never host-scoped. The 60 published articles carry ★110 mued-family links: ★60 to
  *     dial.mued.jp (these) and ★50 to mued.jp (48 of them utm-tagged) that nobody had counted.
  *     ALLOWED_HOSTS already accepts mued.jp, so the table can hold them — whether to port them is a
