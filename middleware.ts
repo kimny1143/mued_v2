@@ -27,6 +27,11 @@ const isPublicRoute = createRouteMatcher([
   "/waitlist(.*)",
   "/readiness(.*)",
   "/api/research(.*)",
+  // Short links (mued.jp/l/<slug>). They already fall through today — /l/… matches neither
+  // isProtectedRoute nor any other entry — but they are PUBLISHED URLs inside articles, so
+  // being explicit is what stops a future catch-all protected route from silently bouncing
+  // them to /sign-in. See app/l/[slug]/route.ts.
+  "/l(.*)",
 ]);
 
 // Check if path starts with a locale
