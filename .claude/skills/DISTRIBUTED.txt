@@ -15,9 +15,14 @@
 # intended behaviour: a newly arrived skill should be CLASSIFIED, not silently ignored. Adding a
 # line is the whole fix.
 #
-# ★Do not list symlinks — git does not follow them, they are covered by the template repo already,
-# and a `check-ignore` run through a symlinked path reports "not ignored" while the contents are
-# still untracked (measured 2026-08-29; the path is never matched against .gitignore at all).
+# ★Do not list symlinks — git does not follow them, and they are covered by the template repo.
+# ★CORRECTION (re-measured 2026-08-30, git 2.48.1). This note used to say check-ignore "reports
+# not ignored" through a symlinked path. It does not: it REFUSES.
+#     git check-ignore -v .claude/skills/tdd/SKILL.md   → rc=128  fatal: pathspec ... is beyond a symbolic link
+#     git check-ignore -v .claude/skills/tdd            → rc=0    .gitignore:78:.claude/skills/*
+# ★So the symlink itself IS matched (rc=0); only a path THROUGH it is rejected, and with --stdin the
+# refusal takes the rest of the batch with it. The old wording would have had someone read a silent
+# rc=1 that never occurs — a wrong shape for the failure, in a note whose whole job is the failure.
 #
 # One skill name per line. Blank lines and #-comments are ignored.
 
