@@ -212,6 +212,18 @@ describe('the shipped table', () => {
   //   ★Adding a new link that genuinely has no utm_content also fails, on purpose — bumping this number
   //   is a one-line, conscious edit, which is the whole point. ★Do not update it to make a red go green
   //   without checking which of the two happened.
+  //
+  // ★WHERE 19 COMES FROM: the 60 dial.mued.jp links in `drafts/published/*.md` as measured 2026-08-29
+  //   (conductor, _conductor docs/handoff/short-links-porting-20260829.md). ★It is a property of that
+  //   article set, not of this code — ★it moves legitimately when articles are added or edited.
+  //
+  // ★HOW TO UPDATE IT LEGITIMATELY (so a real update and a silent loss stay distinguishable):
+  //   1. Re-count the empty utm_content links in the article corpus with the SAME predicate.
+  //   2. If the corpus number matches the new table number → update this baseline, and say in the
+  //      commit which articles changed.
+  //   3. If they DISAGREE → a row lost a value it used to have. That is the defect this pins. Do not
+  //      touch this number; fix the row.
+  //   ★Without step 3 the ratchet becomes a formality that gets bumped whenever it turns red.
   const EMPTY_CONTENT_BASELINE = 19;
 
   it(`★has exactly ${EMPTY_CONTENT_BASELINE} rows with an empty utm_content (ratchet)`, () => {

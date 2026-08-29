@@ -29,11 +29,21 @@
  *     ★dial.mued.jp 宛のリンク  60      ← the rows below
  *     path の異なり              5      bare 30 / `/` 16 / `/dial` 12 / `/waitlist` 1 / `/readiness` 1
  *
- *     ★utm_content の異なり — ★state the counting rule, there is no single "correct" number:
- *         dial   ★40 counting the empty value as one  /  ★39 excluding it   (19 rows are empty)
- *         全体   ★43 counting it                      /  ★42 excluding it
+ *     ★utm_content の異なり — ★TWO axes move the number, so state both. There is no single answer:
+ *         axis ① does an ABSENT utm_content count as one value?
+ *         axis ② is the host population restricted to the mued.jp family?
+ *
+ *                          ①counted   ①not counted
+ *           dial only         ★40          ★39        ← the rows below; ★verified here: 40 / 39 / 19 empty
+ *           mued family       43           42
+ *           ★host unrestricted 44          ★44        ← +2 from apps.apple.com (muedear / muednote)
+ *
  *         ★a naive `utm_content=[^&]*` grep gives 47 — the markdown link's closing `)` splits values.
- *       Verified here against the shipped rows: 40 / 39 / 19.
+ *
+ *       ★Only the "dial only" row is measured here; the others are conductor's and content課's counts
+ *       over the article corpus, which is not in this repo. ★Attributed rather than restated as ours.
+ *       ★When writing "全体", say what it is the whole of — that omission is what made 43 and 44 look
+ *       like a contradiction for half a day.
  *
  * ★THIS HEADER FIRST SAID "44", THEN "★correct is 40". ★Both framings were wrong in the same way.
  *   44 was a real measurement under a different predicate (content課), and writing "correct is 40"
