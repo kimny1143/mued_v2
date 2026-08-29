@@ -61,8 +61,10 @@ const distributed = new Set(
 );
 
 /** Real (non-symlink) skill directories. Symlinks are excluded on purpose: git never follows them,
- *  their contents live in the template repo, and running check-ignore through a symlinked path
- *  reports "not ignored" while the contents are still untracked — an aim error, not a finding. */
+ *  their contents live in the template repo, and check-ignore REFUSES a path through a symlink
+ *  (`rc=128 fatal: ... is beyond a symbolic link`) rather than answering it — so asking about them
+ *  is an aim error, not a finding. ★Re-measured 2026-08-30: the earlier note here said it "reports
+ *  not ignored", which never happens; the symlink itself answers rc=0 against `.claude/skills/*`. */
 const realDirs = readdirSync(SKILLS, { withFileTypes: true })
   .filter((e) => e.isDirectory() && !lstatSync(join(SKILLS, e.name)).isSymbolicLink())
   .map((e) => e.name)

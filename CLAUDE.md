@@ -28,7 +28,9 @@ npm run build                     # ビルド
 
 ## プロジェクト概要
 
-**MUED v2** - 音楽クリエイター向けプロダクトスイート（MUEDear: 耳トレ / MUEDial: AIミキシング / MUEDnote: 制作ログ）
+**MUED v2** - 音楽クリエイター向けプロダクトスイート（MUEDear: 耳トレ / MUEDial: AIミキシング / MUEDnote: 制作ログ / MUEDsp: プラグイン群〔無料 MUEDsat・MUEDlim・MUEDrive ＋ 有料線 masterchain〕 / MUED Advisory / MUEDlobe）
+
+> ★**この列挙は腐る**（実際、上の3製品だけだった間に MUEDsp・Advisory が live になっていた）。★**live な製品の正本は `lib/plugins/registry.ts` の `PLUGIN_DIST`（`live` flag）と各 `lib/*/config.ts` の `*_LIVE`**。数える時はそちらを引くこと。
 
 ### プロダクト哲学: ディレクターモデル
 
@@ -173,7 +175,7 @@ UI/UX作業時は `.claude/skills/ui-ux-pro-max/SKILL.md` を参照。
 - Core Web Vitals LCP: 2.5s 超（Lighthouse CI アラート検知）
 - Clerk 認証エラー: 連続5件以上（middleware rejected rate）
 
-閾値未達 → 定常確認として Sonnet のまま継続。
+閾値未達 → 定常確認として継続（/plan は発動しない）。★モデル名は書かない —— 同じ file の共通 block が「どの課がどのモデルで起動するかは…ここに複製すると必ず古くなる」と定めており、この節が言いたいのは起動モデルでなく /plan の発動可否。
 
 ---
 
