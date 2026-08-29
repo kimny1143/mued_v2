@@ -35,8 +35,10 @@ npx lighthouse https://mued.jp --view --preset=desktop
 npx lighthouse https://mued.jp --view --preset=perf --emulated-form-factor=mobile
 
 # Bundle分析
+# ★`npx @next/bundle-analyzer` は動かない —— これは next.config を包む wrapper で、単独 CLI を持たない。
+# ★この repo では未導入（devDependencies に無く、next.config.ts に消費者 0 件）。
+# 使うなら: npm i -D @next/bundle-analyzer → next.config.ts を withBundleAnalyzer({enabled: process.env.ANALYZE==='true'}) で包む → ANALYZE=true npm run build
 npm run build
-npx @next/bundle-analyzer
 ```
 
 ### Phase 2: 問題特定

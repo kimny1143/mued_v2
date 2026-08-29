@@ -150,19 +150,24 @@ https://[実際のドメイン]/ja/tokushoho
 
 ## プロジェクト固有情報
 
-### MUEDnote
+★**この節に値を書き写さない。** 特商法ページの本文の正本は **`messages/ja.json` / `messages/en.json` の `tokushoho` 配下**で、
+`app/[locale]/tokushoho/page.tsx` が `useTranslations("tokushoho")` で読む★唯一の source。
+★複製をここに置くと、法定表記が改定された時にこの skill だけが古くなる——★この節が実際にそうなっていた
+（2026-01-24 の版が MUEDnote 1製品ぶんだけを載せたまま、実ページは★3製品に増えていた）。
 
-| 項目 | 値 |
-|------|-----|
-| 販売業者 | 株式会社グラスワークス |
-| 運営責任者 | 木村篤史 |
-| 所在地 | 〒153-0042 東京都目黒区青葉台4-7-27 3F |
-| メール | info@glasswerks.jp |
-| **販売URL** | **https://mued.jp** |
-| サービス名 | MUEDnote（ミュードノート）|
+### 構造（2026-08-30 実測）
+
+`tokushoho` は **共通項目 + サービス別**の2層:
+
+| 層 | キー |
+|----|------|
+| 共通 | `seller` / `representative` / `address` / `email` / `phone` / `contact` / `payment` / `additionalCost` / `contractEstablishment` / `lastUpdated` |
+| サービス別 | ★`muednote` / ★`muedial` / ★`advisory`（`servicesSectionTitle` の下） |
+
+★**サービスが増えたらここも増える。** 値も一覧も引く時は `messages/ja.json` を直接 読むこと。
 
 **注意**: `muednote.com` は取得していない。正しいドメインは `mued.jp`
 
 ---
 
-*最終更新: 2026-01-24*
+*最終更新: 2026-08-30（値の複製をやめ、正本へのポインタに置換）*

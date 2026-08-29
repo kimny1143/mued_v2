@@ -12,6 +12,6 @@
 
 **トーン:** 砕けた口語体（「〜なんだよね」「〜なわけ」）。論文調・格言調・上から目線にしない。
 
-**保存先:** `/Users/kimny/Dropbox/_DevProjects/_cowork/20260222/threads-api/insights.json` に追記（直接編集 or ユーザーに提示してthreads-apiワークスペースで追加）。
+**保存先:** `/Volumes/strage/_DevProjects/mued/threads-api/insights.json`（★2026-08-30 実測で実在・git 追跡下。旧記載の `_cowork/20260222/...` は★親 dir ごと存在しない） に追記（直接編集 or ユーザーに提示してthreads-apiワークスペースで追加）。
 
 **頻度:** バッチ量産しない。セッション中に自然に出たものだけ。
