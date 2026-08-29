@@ -28,11 +28,17 @@
  *
  *     ★dial.mued.jp 宛のリンク  ★62     ← the rows below
  *
- *     ★THE FIRST PORT SAID 60 AND WAS TWO SHORT. product課 re-measured the corpus with its own
- *     predicate and found 62 (`ai_dependency_risk`, `muedear_270_sounds` — both bare-path, both
- *     empty-content, in origin/main since 2026-06-11 / 2026-08-14). ★Not a timing difference and
- *     not a re-numbering: those two campaigns had ZERO rows here. Reproduced independently before
- *     adding them, with 0 rows present here that the corpus lacks — the table was a strict subset.
+ *     ★60 vs 62 IS A LAYER DIFFERENCE, NOT A MISS — corrected 2026-08-29 after it had already been
+ *     written up (twice) as "the first port was two short". Measured over the same drafts:
+ *         markdown links `](…)` to dial   ★60   ← conductor's original count. ★Correct for links.
+ *         ALL URL occurrences to dial     ★62   ← product課's and this repo's predicate
+ *         the difference                  ★2    ← ★BARE URLs, not links at all
+ *     ★Both extras are exactly the two rows added later (`ai_dependency_risk`, `muedear_270_sounds`).
+ *     ★So no one measured wrongly; the two counts answer different questions, and "two short" named
+ *     the wrong party. On note's live pages one of the two IS a real <a> (note linked it) and the
+ *     other is still plain text — see the comment on those rows.
+ *     ★The table is a strict superset of the links and a strict subset of the URL occurrences, and
+ *     the corpus↔table match is 0/0 in both directions under the URL-occurrence predicate.
  *     ★The completeness of this table cannot be checked from THIS repo: the corpus lives in
  *     _contents-writing. Every count below is therefore a measurement someone made elsewhere, and
  *     `verify:short-links` can only prove the rows here resolve — never that a row is missing.
@@ -103,6 +109,12 @@ export const SHORT_LINKS: readonly ShortLink[] = [
   { slug: '24h-operation', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: '24h_operation', utmContent: '' },
   { slug: '32pr-day', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: '32pr_day', utmContent: '' },
   { slug: 'ai-critique-judgment', path: '/dial', utmSource: 'note', utmMedium: 'article', utmCampaign: 'ai_critique_judgment', utmContent: 'article_ai_critique_judgment' },
+  // ★These two came from BARE URLs in the draft, not markdown links — see the "60 vs 62" note in the
+  //   header. On note's live pages (conductor, 2026-08-29): `muedear_270_sounds` IS a real <a> (note
+  //   auto-linked it), while ★`ai_dependency_risk` is plain text there too — that article carries no
+  //   <a href> at all, so its CTA is not clickable. ★Kept anyway: the row costs nothing (an unused
+  //   slug), and it is what content課 will need the moment that CTA becomes a link. ★Do not delete it
+  //   as "a row with no live link" — that is a known state, recorded here, not a drift.
   { slug: 'ai-dependency-risk', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: 'ai_dependency_risk', utmContent: '' },
   { slug: 'ai-detector-worldview', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: 'ai_detector_worldview', utmContent: '' },
   { slug: 'ai-detour-connected', path: '/dial', utmSource: 'note', utmMedium: 'article', utmCampaign: 'ai_detour_connected', utmContent: 'article_ai_detour_connected' },
