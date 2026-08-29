@@ -26,7 +26,16 @@
  * ★Scope this table is being populated for (conductor, measured 2026-08-29 against
  * `drafts/published/*.md` on origin/main of the articles repo):
  *
- *     ★dial.mued.jp 宛のリンク  60      ← the rows below
+ *     ★dial.mued.jp 宛のリンク  ★62     ← the rows below
+ *
+ *     ★THE FIRST PORT SAID 60 AND WAS TWO SHORT. product課 re-measured the corpus with its own
+ *     predicate and found 62 (`ai_dependency_risk`, `muedear_270_sounds` — both bare-path, both
+ *     empty-content, in origin/main since 2026-06-11 / 2026-08-14). ★Not a timing difference and
+ *     not a re-numbering: those two campaigns had ZERO rows here. Reproduced independently before
+ *     adding them, with 0 rows present here that the corpus lacks — the table was a strict subset.
+ *     ★The completeness of this table cannot be checked from THIS repo: the corpus lives in
+ *     _contents-writing. Every count below is therefore a measurement someone made elsewhere, and
+ *     `verify:short-links` can only prove the rows here resolve — never that a row is missing.
  *     path の異なり              5      bare 30 / `/` 16 / `/dial` 12 / `/waitlist` 1 / `/readiness` 1
  *
  *     ★utm_content の異なり — ★TWO axes move the number, so state both. There is no single answer:
@@ -83,6 +92,7 @@ export const SHORT_LINKS: readonly ShortLink[] = [
   { slug: '24h-operation', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: '24h_operation', utmContent: '' },
   { slug: '32pr-day', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: '32pr_day', utmContent: '' },
   { slug: 'ai-critique-judgment', path: '/dial', utmSource: 'note', utmMedium: 'article', utmCampaign: 'ai_critique_judgment', utmContent: 'article_ai_critique_judgment' },
+  { slug: 'ai-dependency-risk', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: 'ai_dependency_risk', utmContent: '' },
   { slug: 'ai-detector-worldview', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: 'ai_detector_worldview', utmContent: '' },
   { slug: 'ai-detour-connected', path: '/dial', utmSource: 'note', utmMedium: 'article', utmCampaign: 'ai_detour_connected', utmContent: 'article_ai_detour_connected' },
   { slug: 'ai-groove-moving-boundary', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: 'ai_groove_moving_boundary', utmContent: '' },
@@ -113,6 +123,7 @@ export const SHORT_LINKS: readonly ShortLink[] = [
   { slug: 'monitor-change-judgment', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: 'cat3_seo', utmContent: 'article_monitor_change_judgment' },
   { slug: 'mued-22months-part1', path: '/', utmSource: 'note', utmMedium: 'article', utmCampaign: 'mued_22months_part1', utmContent: 'mued_22months_part1' },
   { slug: 'mued-22months-part2', path: '/', utmSource: 'note', utmMedium: 'article', utmCampaign: 'mued_22months_part2', utmContent: 'mued_22months_part2' },
+  { slug: 'muedear-270-sounds', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: 'muedear_270_sounds', utmContent: '' },
   { slug: 'muedear-v0912-update', path: '', utmSource: 'note', utmMedium: 'article', utmCampaign: 'muedear-v0912-update', utmContent: '' },
   { slug: 'muedial-research-beta-launch-1', path: '/readiness', utmSource: 'note', utmMedium: 'article', utmCampaign: 'muedial_readiness', utmContent: 'research_beta_launch_20260513' },
   { slug: 'muedial-research-beta-launch-2', path: '/', utmSource: 'note', utmMedium: 'article', utmCampaign: 'ai_mix_request', utmContent: 'research_beta_launch_20260513' },

@@ -224,7 +224,10 @@ describe('the shipped table', () => {
   //   3. If they DISAGREE → a row lost a value it used to have. That is the defect this pins. Do not
   //      touch this number; fix the row.
   //   ★Without step 3 the ratchet becomes a formality that gets bumped whenever it turns red.
-  const EMPTY_CONTENT_BASELINE = 19;
+  //   ★UPDATED 19 → 21 on 2026-08-29, by running the procedure above: product課 found the port was
+  //   missing two links (the corpus has 62 dial links, not 60). Step 1 re-counted the corpus at 21
+  //   empty; step 2 matched the table's 21 → legitimate update, not a lost value.
+  const EMPTY_CONTENT_BASELINE = 21;
 
   it(`★has exactly ${EMPTY_CONTENT_BASELINE} rows with an empty utm_content (ratchet)`, () => {
     expect(SHORT_LINKS.filter((r) => r.utmContent === '').length).toBe(EMPTY_CONTENT_BASELINE);

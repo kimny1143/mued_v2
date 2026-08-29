@@ -131,11 +131,21 @@ export function validateTable(rows: readonly ShortLink[]): TableProblem[] {
     }
   });
 
-  // ★The property, measured directly: no two rows may share (utm_campaign, utm_content). Two such rows
-  //   collapse into one bucket in GA4 and become permanently indistinguishable — which is what "loses
-  //   attributability" actually means. This subsumes the empty-content case (19 empty rows are fine
-  //   because their campaigns differ) and catches the case the old non-empty rule never could: two rows
-  //   with the SAME non-empty content under the same campaign.
+  // ★No two rows IN THIS TABLE may share (utm_campaign, utm_content): they would land in one GA4 bucket
+  //   and stop being tellable apart. This subsumes the empty-content rows (fine, their campaigns differ)
+  //   and catches what the old non-empty rule never could — two rows with the SAME non-empty content
+  //   under one campaign.
+  //
+  // ★SCOPE, because the claim is narrower than "unique in GA4" (product課, measured 2026-08-29). The
+  //   check sees only these rows. The same articles also carry ~50 mued.jp links that are NOT in this
+  //   table, and 30 of those share a (campaign, content) pair with a row here. So `utm_content` is used
+  //   operationally to name the ARTICLE, not the destination, and the pair is unique per destination
+  //   only while an article links a destination once. ★Pre-existing and out of this table's scope —
+  //   recorded so the guarantee is not read as wider than it is.
+  //
+  // ★GA4's real key also includes source / medium / term, which this check ignores. That errs toward
+  //   OVER-detection (rows GA4 could tell apart by source would be flagged here), which is the safe
+  //   direction — but if a second utm_source is ever added, expect a legitimate row to go red here.
   const byPair = new Map<string, string>();
   rows.forEach((row) => {
     const key = `${row.utmCampaign}\u0000${row.utmContent}`;
