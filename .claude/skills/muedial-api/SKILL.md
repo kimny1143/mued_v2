@@ -13,8 +13,9 @@ AIミキシング/マスタリングサービス。RoEx Tonn APIを使用。ゲ�
 - **認証**: `withDialAuth` — Clerk auth と `X-Dial-Guest-Token` ヘッダーの両対応
 - **ミドルウェア**: `/dial` と `/api/dial` は Clerk middleware matcher から**完全除外**（`clerkMiddleware`はpublicルートでもCookie存在時にハンドシェイクリダイレクトするため）
 - **決済**: Stripe先払い → webhook (`metadata.service === 'dial'`) → `paymentStatus: paid` → Upload解放
-- **価格 (USD表示のみ, JPYハードコード撤廃済み)**: 単品 Omakase $8 | Dialogue $15 | Mastering +$6 | Retake $10。サブスク Basic $19.99/月 | Pro $34.99/月 | Studio $49.99/月
-- **クレジットポリシー (Spliceモデル)**: サブスク継続中は無期限ロールオーバー、解約後30日で失効、Credit Pack 12ヶ月有効
+- **価格 (USD表示のみ, JPYハードコード撤廃済み)**: ★**正本＝`lib/dial/pricing.ts` の `DIAL_SINGLE_PRICES`**。★値をここに書き写さない——この行は 2026-05〜06 の改定後も $8/$15/$6/$10 のまま残り、4/4 が誤っていた。（2026-08-30 時点の実測: Omakase $7.49 / Dialogue $13.99 / Mastering +$5.99 / Retake $9.99）
+- ★**サブスク4層 (`hoo_pass` / `basic` / `pro` / `studio`) は退役済み**（`DIAL_SUB_PLANS` の全4層に `deprecated: true`・2026-07 Phase2）。★**購入導線は存在しない**。定数が残っているのは webhook の後方互換のためで、★live の商品ではない。
+- **クレジットポリシー (Spliceモデル)**: ★**サブスクが退役済みなので、この節はサブスク購入者にはもう適用されない**（記述は履歴として残す）。Credit Pack 12ヶ月有効の部分は継続。
 - **クライアント**: `lib/roex/` — upload, mixing, mastering, analysis
 
 ## RoEx Tonn API
@@ -35,7 +36,7 @@ AIミキシング/マスタリングサービス。RoEx Tonn APIを使用。ゲ�
 
 ## Enum マッピング（UI → RoEx）
 - **Musical Style**: `pop`→`POP`, `rock`→`ROCK_INDIE`, `hiphop`→`HIPHOP_GRIME`, `electronic`→`ELECTRONIC`, `classical`→`ORCHESTRAL`, `metal`→`METAL`, etc.
-- **Instrument Group**: `VOCAL`→`VOCAL_GROUP`, `BASS`→`BASS_GROUP`, `DRUMS`→`DRUM_GROUP`, `GUITAR`→`GUITAR_GROUP`, `KEYS`→`KEYS_GROUP`, etc.
+- **Instrument Group**: ★**正本＝`lib/roex/mappings.ts` の `INSTRUMENT_GROUP_MAP`**。★不規則な2つに注意——`DRUMS`→`DRUMS_GROUP`（★`DRUM_GROUP` ではない）／`GUITAR`→`E_GUITAR_GROUP`（★`GUITAR_GROUP` ではない）。他は `VOCAL`/`BASS`/`KEYS`/`SYNTH`/`STRINGS`/`BRASS`→`*_GROUP`、`OTHER`→`OTHER_GROUP1`。
 
 ## Gotchas (RoEx固有)
 - **RoEx APIのリクエスト形式はドキュメントを信用せず実測で確認**: `/mixanalysis` は `mixDiagnosisData` ラッパーが必要、フィールド名はキャメルケース（`audioFileLocation`）、レスポンスは `{ mixDiagnosisResults: { payload: { ... } } }` の2段ネスト。`musicalStyle` の enum も mixing API とは異なる（`OTHER` → `BALANCED`）
