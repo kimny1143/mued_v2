@@ -77,8 +77,15 @@ const nextConfig: NextConfig = {
       // portal empty-CTA, and the /learn gate) 404s without this. → /en (the site's x-default). Temporary
       // (not permanent) because these are locale-symmetric pages — keeps the option to make /muedsp
       // locale-aware later, unlike the EN-primary /privacy above.
+      // ★This list is hand-enumerated while the plugin family itself is typed (PLUGIN_DIST is a
+      // Record<PluginKey, …>, so a new module cannot omit its lpPath without failing tsc). Nothing
+      // enforced the two staying in step, and muedrive shipped without its line — bare /muedrive was a
+      // hard 404 in production from launch until 2026-08-29 (found by product課). Reachable from any
+      // hand-composed link, so tests/unit/plugin-bare-path-redirects.test.ts now derives the expected
+      // set from PLUGIN_DIST instead of repeating this list: a 5th module fails the test, not prod.
       { source: '/muedsat', destination: '/en/muedsat', permanent: false },
       { source: '/muedlim', destination: '/en/muedlim', permanent: false },
+      { source: '/muedrive', destination: '/en/muedrive', permanent: false },
       { source: '/muedsp', destination: '/en/muedsp', permanent: false },
       // Safety net for the third legal page. The in-page links now carry the locale (the pages themselves
       // are the fix), but bare /tokushoho can still arrive from bookmarks, already-sent email and external
