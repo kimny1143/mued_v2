@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "typecheck:scripts": "tsx scripts/verify/typecheck-scripts.ts",
     "verify:skills": "tsx scripts/verify/skill-durability.ts",
+    "verify:short-links": "tsx scripts/verify/short-links.ts",
     "db:studio": "drizzle-kit studio",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
