@@ -60,7 +60,7 @@ export function MuedriveLandingContent() {
           <Link href={`/${locale}`} className="flex items-baseline gap-2">
             <span className="text-lg tracking-wide">
               <span className="font-bold">MUED</span>
-              <span className="font-light text-[#f5a524]">lim</span>
+              <span className="font-light text-[#f5a524]">rive</span>
             </span>
             <span className="hidden text-[11px] uppercase tracking-widest text-white/30 sm:inline">
               {th("badge")}
@@ -84,7 +84,7 @@ export function MuedriveLandingContent() {
               </span>
               <h1 className="mt-5 text-5xl font-extrabold tracking-tight md:text-6xl">
                 <span className="text-white">MUED</span>
-                <span className="text-[#f5a524]">lim</span>
+                <span className="text-[#f5a524]">rive</span>
               </h1>
               {/* Formal name (3-layer naming: DL page shows the formal "MUEDsp drive"). */}
               <p className="mt-2 font-mono text-xs uppercase tracking-[0.2em] text-white/40">MUEDsp drive</p>
