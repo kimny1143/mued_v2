@@ -25,6 +25,13 @@ export const pluginEntitlements = pgTable('plugin_entitlements', {
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }), // nullable (guest; unauth at subscribe)
   createdAt: timestamp('created_at').notNull().defaultNow(),
   portalRegisteredAt: timestamp('portal_registered_at'), // best-effort, set once on first authed portal view (North Star §③ registration signal); NULL = not yet
+  // ★Landing-page locale of the capture (0061). ★ja = exact; ★en = UPPER bound — the subscribe zod
+  //   schema is `.default("en")`, so a request that omits the field lands here as 'en' too; the
+  //   shared form always sends the real value. NULL = row written before the column existed.
+  //   ★Measures WHICH PAGE was used, not a person's language or country.
+  //   ★Nothing writes this yet — the writer ships only after the migration is applied to prod,
+  //   because recordPluginEntitlement swallows its errors and would lose every row silently.
+  locale: text('locale'),
 }, (t) => ({
   emailIdx: index('idx_plugin_entitlements_email').on(t.email),
   pluginIdx: index('idx_plugin_entitlements_plugin').on(t.pluginKey),
