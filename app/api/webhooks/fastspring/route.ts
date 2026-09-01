@@ -67,8 +67,19 @@ async function processFastspringEvent(event: unknown): Promise<void> {
   const eventId = typeof e.id === "string" ? e.id : undefined;
   const type = typeof e.type === "string" ? e.type : "unknown";
   if (!eventId) {
-    logger.error("[fastspring] event missing id — skipped");
-    return;
+    // ★An event we cannot identify is not an event we processed. Returning here used to fall through
+    // to `{ received: true }` — FastSpring reads a 2xx as delivered and never redelivers, so a paid
+    // order would vanish with nothing red anywhere: charge taken, no license, no row, one log line.
+    //
+    // ★The envelope shape above is still unconfirmed against a real `.test.` storefront (TODO(C1)),
+    // and that is precisely why this has to be loud. If our read of `id` is wrong, the FIRST live
+    // order is the one that discovers it — a throw makes that discovery a 500 and a retry window
+    // instead of a silent success.
+    //
+    // ★5xx rather than 4xx on purpose: the unconfirmed assumption is OURS, so this is our failure,
+    // not a malformed request. A 4xx would both blame the sender and drop the order permanently.
+    // (Throwing lands in the POST handler's catch, which logs and returns 500.)
+    throw new Error("[fastspring] event has no readable id — refusing to report success");
   }
 
   const [existing] = await db
