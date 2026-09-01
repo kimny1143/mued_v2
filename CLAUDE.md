@@ -510,8 +510,8 @@ peer の識別子は **受信 message の `from` 属性を唯一の正本**と�
 ★**2026-08-14 の経路変更でも ★この序列は不変**——**本文の自称 < `from` 属性 < 実時解決 (`ListAgents`)**。★**変わったのは道具名だけ**（旧 `from_id` / `list_peers` → 新 `from` / `ListAgents`）。
 
 1. **peer は告知・メッセージ本文に自分の peer ID を書かない** (self からは自 ID を確実に知れないため)。
-2. **受信側は常に channel の `from_id` 属性を正とし**、本文中の自称 ID と矛盾したら `from_id` を採る。
-3. **再起動告知は「この `from_id` が新 ID」形式に統一** (本文に ID 文字列を書かない)。
+2. **受信側は常に channel の `from` 属性を正とし**、本文中の自称 ID と矛盾したら `from` を採る。
+3. **再起動告知は「この `from` が新 ID」形式に統一** (本文に ID 文字列を書かない)。
 
 > 背景 (2026-06-11・★旧経路 claude-peers 時代の実例だが教訓は不変): conductor 再起動時、`list_peers` が self を除外する構造のため出力に残ったゴースト `_conductor` エントリを自分と誤認 → 全課に誤 ID を配布。外部観測で訂正されたが、検知者不在なら全課送信が死箱へ向かうサイレント分断だった。
 
@@ -572,7 +572,7 @@ peer の識別子は **受信 message の `from` 属性を唯一の正本**と�
 
 各 peer は自 workspace の `status.md` (root 推奨、`docs/status.md` 許容・peer 内で path 統一) を直接記入 + 自 git repo に commit & push。cowork peer の cron (5-15 分間隔) が各 peer repo から fetch し `_conductor/docs/inbox/peer-raw-status.md` に集約する (peer 側操作不要)。
 
-- format: `docs/templates/peer-status-md.template.md` (frontmatter YAML 13 fields)
+- format: ★**`claude-code-template` repo の** `docs/templates/peer-status-md.template.md` (frontmatter YAML ★15 キー)。★**自 workspace には配布されない** —— 必要なら repo から copy する（★2026-08-30 実測: 配布先 ★16課すべてで当該 file が不在。★conductor だけ `docs/templates/` 自体は在るが、★中身は別 file）
 
 ### update timing (必須)
 - **task accept** (dispatch / review request 受領) / **blocked** (外部依存・kimny 待ち・cross-peer 停滞) / **PR submit** / **done**
@@ -661,7 +661,7 @@ Phase 1 = soft enforcement (compliance 95% 目標、違反は guidance、reject 
 
 ### 各課はキャラクター gate を 1 つ持つ
 
-機械テストで構造的に拾えない、人間が知覚して初めて分かる合格基準を各課が 1 つ名指しし、`.github/pull_request_template.md` の「成果物 verify」section に明記する。
+機械テストで構造的に拾えない、人間が知覚して初めて分かる合格基準を各課が 1 つ名指しし、★**自 repo の** `.github/pull_request_template.md` の「成果物 verify」section に明記する。★**無ければ作る**（★2026-08-30 実測: 配布先 16課すべてで不在。★`PULL_REQUEST_TEMPLATE.md` の綴りでも不在）。★**書き方の例＝`claude-code-template` repo の同 path**（★配布されない）。
 
 | 課 | キャラクター gate の例 |
 |----|----------------------|
@@ -677,7 +677,7 @@ Phase 1 = soft enforcement (compliance 95% 目標、違反は guidance、reject 
 - **証拠なしに「通過」と書けない**: スクショ / 録画 / dry-run 出力等の実行証跡を必須。evidence なしの「通過」記載は無効 (未検証扱い)
 - **ツール化できない一線**: 最終判断 (試聴・実機体験・読者視点) は構造的に人間のもの。自動化は判断を「省く」でなく「届きやすくする」ために使う
 
-Reference: `docs/dev-flow-gate-rollout-20260520.md`
+Reference: ★**`claude-code-template` repo の** `docs/dev-flow-gate-rollout-20260520.md`（★**自 workspace には配布されない**）
 
 <!-- COMMON-BLOCK-END: 19-character-gate -->
 
