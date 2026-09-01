@@ -80,6 +80,46 @@ function extractEvents(payload: unknown): unknown[] {
   return Array.isArray(p.events) ? p.events : [p];
 }
 
+/**
+ * ★A value-free description of an envelope: field names and types, never contents.
+ *
+ * Both refusals below fire at exactly the moment `TODO(C1)` describes — the envelope is not the shape
+ * we assumed — and ★that is the one moment the real shape is in our hands. Before this, nothing
+ * survived it: the `type` refusal throws before the row that used to persist `payload`, and the `id`
+ * refusal never had a row to write (the id IS the idempotency key). ★So the first live order to
+ * discover our reading is wrong would prove it and leave nothing to correct it with.
+ *
+ * ★Shape, not payload, on purpose. A FastSpring order carries buyer email and country (see
+ * `lib/masterchain/fastspring-webhook.ts`), and logs are not where those belong. ★The diagnosis does
+ * not need them: to learn that `type` lives at `event.data.type` rather than `event.type`, the field
+ * names are sufficient and the values contribute nothing. (product課, review of #958.)
+ */
+const MAX_KEYS = 40;
+
+function envelopeShape(v: unknown, depth = 2): unknown {
+  if (v === null) return "null";
+  // ★`v[0]` is a sample of one. The `[N]` is what tells the reader so — "N items, one of them shown"
+  // — and that is a second job it is doing: it was put there to say "this is an array". ★Shortening
+  // it to `"array"` would look like dropping noise and would silently turn a sample into something a
+  // reader takes for the whole. Keep the N. (product課, review of #959.)
+  if (Array.isArray(v)) return depth > 0 ? [`array[${v.length}]`, envelopeShape(v[0], depth - 1)] : `array[${v.length}]`;
+  if (typeof v !== "object") return typeof v;
+  if (depth <= 0) return "object";
+  // ★Capped: an unexpected shape could be enormous, and a log line nobody can read is its own failure.
+  const all = Object.entries(v as Record<string, unknown>);
+  const out: Record<string, unknown> = Object.fromEntries(
+    all.slice(0, MAX_KEYS).map(([k, x]) => [k, envelopeShape(x, depth - 1)]),
+  );
+  // ★The cap has to say when it fired. Without this line, 40 keys and 80 keys produce byte-identical
+  // output and the reader cannot tell one from the other — the same shape as `gh --json files`
+  // returning exactly 100 and meaning "at least 100". ★It matters more here than in most places
+  // because the failure points the same way as the purpose: this log exists to reveal an envelope
+  // bigger or different than assumed, and the further it deviates, the likelier the cap hides it.
+  // ★Only the fact of truncation is added — no extra keys, no values. (product課, review of #959.)
+  if (all.length > MAX_KEYS) out["…"] = `+${all.length - MAX_KEYS} more keys`;
+  return out;
+}
+
 async function processFastspringEvent(event: unknown): Promise<void> {
   const e = event && typeof event === "object" ? (event as Record<string, unknown>) : {};
   const eventId = typeof e.id === "string" ? e.id : undefined;
@@ -96,6 +136,9 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     // ★5xx rather than 4xx on purpose: the unconfirmed assumption is OURS, so this is our failure,
     // not a malformed request. A 4xx would both blame the sender and drop the order permanently.
     // (Throwing lands in the POST handler's catch, which logs and returns 500.)
+    logger.error("[fastspring] no readable id — the envelope is not the shape we assumed", {
+      shape: envelopeShape(e),
+    });
     throw new Error("[fastspring] event has no readable id — refusing to report success");
   }
 
@@ -113,6 +156,10 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     // and simply fails `type === "order.completed"` below, which is the routine skip. Reaching here
     // means `type` is not a string at all — the envelope is not the shape we assumed, the same
     // unconfirmed-shape class as the id above (TODO(C1)).
+    logger.error("[fastspring] no readable type — the envelope is not the shape we assumed", {
+      eventId,
+      shape: envelopeShape(e),
+    });
     throw new Error(
       `[fastspring] event ${eventId} has no readable type — refusing to record it as processed`,
     );
