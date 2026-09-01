@@ -83,6 +83,11 @@ const nextConfig: NextConfig = {
       // hard 404 in production from launch until 2026-08-29 (found by product課). Reachable from any
       // hand-composed link, so tests/unit/plugin-bare-path-redirects.test.ts now derives the expected
       // set from PLUGIN_DIST instead of repeating this list: a 5th module fails the test, not prod.
+      // ★Non-plugin public pages with the same shape (product課 measured 2026-08-29: both were
+      //   bare-404 with a 200 locale page, exactly like /muedrive). ★/redesign is deliberately
+      //   absent — it is a noindex preview route, see the allowlist in the test.
+      { source: '/advisory', destination: '/en/advisory', permanent: false },
+      { source: '/muedial', destination: '/en/muedial', permanent: false },
       { source: '/muedsat', destination: '/en/muedsat', permanent: false },
       { source: '/muedlim', destination: '/en/muedlim', permanent: false },
       { source: '/muedrive', destination: '/en/muedrive', permanent: false },
