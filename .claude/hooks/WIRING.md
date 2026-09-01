@@ -15,6 +15,7 @@ fired). This file is the recoverable half.
 | `SessionStart` | `claude-code-template/.claude/hooks/load-handoff-memory.sh` | injects status.md's three fields + a handoff memory |
 | `SessionStart` | `.claude/hooks/status-caps-notice.sh` | prints whether status.md's injected fields exceed the 6,000 B cap |
 | `SessionStart` | `.claude/hooks/skill-durability-notice.sh` | prints whether any skill under `.claude/skills` is unclassified |
+| `SessionStart` | `.claude/hooks/vector-drift-notice.sh` | prints whether dsp's license-vector set has moved past the generation `tests/fixtures/license-vectors/` was vendored from (added 2026-09-01) |
 | `PreToolUse` | `.claude/hooks/block-main-push.sh` | blocks `git push` issued while `main`/`master` is checked out |
 | `PreToolUse` | `claude-code-template/.claude/hooks/validate-dangerous-ops-v2.sh` | ×3 matchers — destructive-operation guard |
 
