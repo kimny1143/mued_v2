@@ -55,15 +55,24 @@ const HISTORY_DEPTH = 50;
  * invisible" sends you to the network; "our own record is broken" sends you to PROVENANCE.md. A
  * diagnosis that points at the wrong half costs more than the failure it describes.
  */
-type Blindness = "upstream-unreachable" | "record-broken";
+type Blindness = "upstream-unreachable" | "record-broken" | "check-broke";
+
+const BLINDNESS_MESSAGE: Record<Blindness, string> = {
+  "upstream-unreachable":
+    "  ★これは「差分なし」ではありません — 上流が見えていないだけです。",
+  "record-broken":
+    "  ★これは「差分なし」ではありません — ★この repo 側の記録が実物と食い違っています。",
+  // ★The first two both name a state of the SUBJECT. A broken classifier is not a third state of the
+  // subject, so it needs somewhere else to point: not PROVENANCE.md, not `gh auth status`, but this
+  // file and the stack. ★Without this branch, a bug in this script has to answer under one of the
+  // other two — and it did: an EISDIR on PROVENANCE.md was reported as "drift".
+  "check-broke":
+    "  ★これは vectors についての事実ではありません — ★検査 (scripts/verify/vector-drift.ts) 自身の欠陥です。",
+};
 
 function cannotCheck(why: string, fix?: string, kind: Blindness = "upstream-unreachable"): never {
   console.error(`★UNKNOWN(vectors): ${why}`);
-  console.error(
-    kind === "record-broken"
-      ? "  ★これは「差分なし」ではありません — ★この repo 側の記録が実物と食い違っています。"
-      : "  ★これは「差分なし」ではありません — 上流が見えていないだけです。",
-  );
+  console.error(BLINDNESS_MESSAGE[kind]);
   if (fix) console.error(`  → ${fix}`);
   process.exit(2);
 }
@@ -274,4 +283,30 @@ function main(): void {
   process.exit(1);
 }
 
-main();
+// ★Every throw that escapes main() lands here, and this is a class, not a list.
+//
+// The previous revision guarded the two paths a reviewer had named — `readFileSync(PROVENANCE)` and
+// `execFileSync("git", …)` — and the comment generalised them as "external commands must all land on
+// 2". ★That generalisation was drawn from the sample, and the sample happened to be two external
+// commands: `readFileSync` is not one. The real class is "an uncaught throw exits 1", and 1 is what
+// this script defines as "re-vendor due".
+//
+// ★Measured: replacing PROVENANCE.md with a DIRECTORY passes `existsSync`, throws EISDIR inside
+// `readFileSync`, and exited 1 — a bug in the checker reported as a fact about the vectors.
+// (product課, review of #955.)
+//
+// ★Enumerating the remaining I/O would not close it either: the next line added to main() is not on
+// any list. Catching at the boundary is what makes the guarantee structural rather than maintained.
+try {
+  main();
+} catch (err) {
+  // ★Print the stack: this branch means the reader has to look at THIS file, and a stack is the only
+  // thing that says where. The other two kinds deliberately do not print one — there the defect is
+  // in the subject, and a stack would point at the wrong place.
+  console.error(err instanceof Error && err.stack ? err.stack : String(err));
+  cannotCheck(
+    `the check itself threw: ${String(err).split("\n")[0]}`,
+    "fix scripts/verify/vector-drift.ts — do NOT read this as drift, and do NOT re-vendor on account of it",
+    "check-broke",
+  );
+}
