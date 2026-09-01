@@ -8,8 +8,10 @@
 > 誰にも分からないまま「最新のはず」と読まれます（実際、上流の台帳に「日次で自動監視」と
 > 書かれる一方で運用は手動 publish、という乖離が起きました）。
 >
-> **現在: GitHub Actions `plugin-funnel-collector` が publish します。ただし `schedule` は
-> 未有効で、走るのは手動 dispatch の時だけです。**＝ 放っておいても最新化されません。
+> ★**この段落に運用状態を書かないこと。** 以前ここには「`schedule` は未有効・手動 dispatch のみ・
+> 放っておいても最新化されません」と書いてあり、`schedule` が有効化された後も**そのまま残りました**
+> （2026-09-01 に訂正）。★**同じ README の中で、機械可読の `LAST_PUBLISH.json` は正しく、
+> 隣の散文だけが誤っていた** —— この段落が戒めているその失敗を、この段落自身がやりました。
 > 各レポート自体の鮮度は JSON 内の `generated_at` を正としてください。
 
 ## 目的
@@ -29,9 +31,12 @@
 - 各レポートは自己記述的（数え方・起点日を JSON 自体に同梱・別文書の注記に依存しない）。
 
 ## 運用
-- publish は GitHub Actions `plugin-funnel-collector`（`main` 上）が行う。**`schedule` は未有効**で、
-  現状は **手動 dispatch のみ**。無人化は別 PR（受入条件＝消費側が `LAST_PUBLISH.json` の鮮度を読む
-  reconciliation 型の監視 / DB 資格情報の least privilege / 下記フィールド集合の凍結）。
+- publish は GitHub Actions `plugin-funnel-collector`（`main` 上）が行う。
+  ★**運用状態はここに書かない。`LAST_PUBLISH.json` の `trigger` を見ること**（`schedule` なら無人運転）。
+  ★**遅延は日によって大きく揺れる**（GitHub の schedule は best-effort）。実測では
+  数十分のこともあれば **10時間超** のこともあった。★**「今日ぶんが見えない」を「発火しなかった」と
+  読まないこと** —— 遅れて success している場合があります。判断は `LAST_PUBLISH.json` の
+  `last_publish_at` と、レポート側の `generated_at` で。
 - **`LAST_PUBLISH.json`** = 更新運用の正本（機械可読）。フィールド:
   `last_publish_at`（UTC）/ `trigger`（`workflow_dispatch` or `schedule`）/ `workflow` /
   `workflow_run`（実行ログ URL）/ `report`（この run が書いたレポートのパス）。
