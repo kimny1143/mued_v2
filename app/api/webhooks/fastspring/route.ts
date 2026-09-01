@@ -98,6 +98,10 @@ const MAX_KEYS = 40;
 
 function envelopeShape(v: unknown, depth = 2): unknown {
   if (v === null) return "null";
+  // ★`v[0]` is a sample of one. The `[N]` is what tells the reader so — "N items, one of them shown"
+  // — and that is a second job it is doing: it was put there to say "this is an array". ★Shortening
+  // it to `"array"` would look like dropping noise and would silently turn a sample into something a
+  // reader takes for the whole. Keep the N. (product課, review of #959.)
   if (Array.isArray(v)) return depth > 0 ? [`array[${v.length}]`, envelopeShape(v[0], depth - 1)] : `array[${v.length}]`;
   if (typeof v !== "object") return typeof v;
   if (depth <= 0) return "object";
