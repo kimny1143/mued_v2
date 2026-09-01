@@ -18,6 +18,12 @@ other*, which is the one thing the vectors exist to prevent.
 | `vector-set-version` | **3** (pinned in `masterchain-license-vectors.test.ts`) |
 | vendored | 2026-09-01 (re-vendored; earlier copies were `88e2b83` / 14 cases and `463d3f8` / 13 cases) |
 
+★**The blob row above is checked, not merely asserted.** `npm run verify:vector-drift` re-hashes
+`MANIFEST.tsv` against it on every run (and at session start), and refuses to compare against upstream
+when they disagree. ★Until 2026-09-02 this was prose only — which meant editing the commit row forward
+without re-vendoring left both the drift check and the vector suite green while the copy was a
+generation behind. ★A sentence holds only for whoever read it on the day they read it.
+
 Verified at vendoring time: the `MANIFEST.tsv` blob hash above matches this copy exactly, and all 15
 case files are byte-identical to `f207182`. The upstream diff was read before copying: **it adds
 only** — one case (`valid_issued_at_millis`, verdict `accept`) and a comment; **no existing verdict
@@ -74,9 +80,17 @@ surfaced the drift was an unrelated survey (2026-09-01) that ran the command in 
 against upstream.
 
 ★**So: `git log <recorded-commit>..main` on the upstream path is not only the first step of
-re-vendoring — it is the only thing in this procedure that can tell you a re-vendor is due.** Until
-something runs it on a schedule, "green" here means "consistent with whatever generation we last
-copied", not "current".
+re-vendoring — it is the only thing in this procedure that can tell you a re-vendor is due.**
+
+★**Since 2026-09-02 something does run it**: `npm run verify:vector-drift` (#954) asks upstream
+directly and prints the answer at session start — `0` current, `1` re-vendor due, ★`2` no trustworthy
+answer, which is deliberately not `0`. ★It is not in CI: no workflow here checks out `mued-dsp`, and
+giving CI a token to another private repo is a secrets change, while a skipping job would be a green
+that means nothing.
+
+★**It removes the "nobody is watching" half, not the "green means current" caveat.** When it cannot
+reach upstream it says so instead of passing, so a quiet session start is still only as good as the
+last run that actually answered.
 
 (For the record, the drift was benign: the current issuer accepts the millis form — verified by
 running the new case through `evaluateLicense` before vendoring, with `valid_no_expiry` as a positive

@@ -33,6 +33,15 @@
  * is meant to be a deliberate act: upstream bumps it when the SET changes, which is exactly when
  * someone has to read the diff rather than copy bytes over.
  *
+ * ## ★HALF A CHAIN — the other end runs outside vitest
+ *
+ * This file links `MANIFEST.tsv` to each case file by sha256. The other link — PROVENANCE.md's
+ * recorded blob to `MANIFEST.tsv` itself — lives in `scripts/verify/vector-drift.ts` and runs from
+ * the SessionStart hook, not here. ★Only both together say "these files are the generation
+ * PROVENANCE claims". Without the other end, a manifest edited to match doctored cases would pass
+ * everything in this file. Neither runner can see it is holding one end, so if you change one, look
+ * at the other. (product課, review of #955.)
+ *
  * ## ★Verdicts come from evaluateLicense, not verifyLicense
  *
  * `verifyLicense` answers "did we issue this?" only. `wrong_scope` is a REAL signature of ours whose
