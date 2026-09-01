@@ -271,13 +271,25 @@ describe("POST — idempotency and routing", () => {
     expect(txUpdates.at(-1)).toMatchObject({ status: "processed" });
   });
 
-  it("★an event whose type is unreadable is still recorded, under type 'unknown'", async () => {
-    // ★Deliberately NOT a throw: unlike a missing id, this leaves a row someone can find. Whether
-    // that is the right call is a separate question from the 2xx bug and is flagged for review —
-    // this test pins today's behaviour so a future change to it is deliberate.
+  it("★an event whose type is unreadable is NOT recorded as processed — it is a 500", async () => {
+    // ★This used to record `type: "unknown"` and finish with `status: "processed"`. That row does not
+    // merely fail to help — it asserts success (indistinguishable from a fulfilled order) and the
+    // idempotency guard then refuses the redelivery, sealing an `order.completed` we could not read.
+    // ★"A record exists" and "a repair path is open" are different things.
     const res = await POST(req({ events: [{ id: "e10" }] }));
+    expect(res.status).toBe(500);
+    expect(txInserts).toHaveLength(0);
+    expect(mockHandleOrder).not.toHaveBeenCalled();
+  });
+
+  it("★an UNKNOWN event type is still a routine skip — this is not a catch-all for new types", async () => {
+    // ★The distinction the change above turns on: a new FastSpring event arrives as a readable
+    // string and simply is not `order.completed`. Only a non-string `type` means "the envelope is
+    // not the shape we assumed". Without this test the two are easy to conflate on the next read.
+    const res = await POST(req({ events: [{ id: "e11", type: "subscription.deactivated" }] }));
     expect(res.status).toBe(200);
-    expect(txInserts[0]).toMatchObject({ eventId: "e10", type: "unknown" });
+    expect(txInserts[0]).toMatchObject({ eventId: "e11", type: "subscription.deactivated" });
+    expect(mockHandleOrder).not.toHaveBeenCalled();
   });
 });
 
