@@ -25,6 +25,18 @@
  * open so the order survives long enough for us to fix the parse. A 4xx would blame the sender and
  * lose the order for good.
  *
+ * ## ★A batch is not one event — and the first cut of this fix assumed it was
+ *
+ * ★Refusing to report success is only half of it. The first version threw straight out of the
+ * event loop, which meant a batch of `[unreadable, paid order]` never reached the paid order — and
+ * never would, because every redelivery meets the unreadable event first and aborts in the same
+ * place. ★The tests here only covered `[readable, unreadable]`, so they were green.
+ *
+ * product課 found it in review. The lesson worth keeping is not "test both orders" but the reason
+ * this one was easy to miss: ★we throw precisely BECAUSE the envelope shape is unconfirmed, and
+ * then quietly assumed that same unconfirmed envelope carries one event. Each event is now
+ * processed in its own try, failures are collected, and the 500 is decided after the loop.
+ *
  * ## ★What these tests do NOT establish
  *
  * They pin OUR reading of the envelope. They cannot tell us whether that reading is ★correct —
@@ -192,12 +204,28 @@ describe("POST — ★an unreadable event must not be reported as success", () =
     expect(res.status).toBe(500);
   });
 
-  it("★fails the whole batch when one event is unreadable — the readable ones are covered by the idempotency guard on redelivery", async () => {
+  it("★reports 500 but still processes the readable event — [readable, unreadable]", async () => {
     const res = await POST(req({ events: [order("good"), { type: "order.completed" }] }));
     expect(res.status).toBe(500);
-    // The first event was already committed before the throw; on FastSpring's retry it is skipped.
-    expect(txInserts).toHaveLength(1);
-    expect(txInserts[0]).toMatchObject({ eventId: "good" });
+    expect(txInserts.map((i) => (i as { eventId: string }).eventId)).toContain("good");
+  });
+
+  it("★★and in the OTHER order too — [unreadable, readable]. A paid order behind an unreadable one must not be lost", async () => {
+    // ★The counterexample product課 found in review. The first cut of this fix threw straight out of
+    // the loop, so this order left `good` unprocessed — and permanently, because the redelivery meets
+    // the unreadable event first and aborts at the same place every time. The tests above missed it
+    // because they only covered one direction. ★Both orders, or the pair proves nothing.
+    const res = await POST(req({ events: [{ type: "order.completed" }, order("good")] }));
+    expect(res.status).toBe(500);
+    expect(txInserts.map((i) => (i as { eventId: string }).eventId)).toContain("good");
+    expect(mockHandleOrder).toHaveBeenCalledTimes(1);
+  });
+
+  it("★a failure in one event does not stop the ones after it either", async () => {
+    mockHandleOrder.mockRejectedValueOnce(new Error("transient"));
+    const res = await POST(req({ events: [order("a"), order("b")] }));
+    expect(res.status).toBe(500);
+    expect(mockHandleOrder).toHaveBeenCalledTimes(2);
   });
 
   it("★a handler failure is also a 500 — never a 2xx with the sale unrecorded", async () => {
@@ -240,3 +268,4 @@ describe("POST — idempotency and routing", () => {
     expect(txInserts[0]).toMatchObject({ eventId: "e10", type: "unknown" });
   });
 });
+

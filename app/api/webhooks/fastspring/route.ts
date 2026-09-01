@@ -43,17 +43,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid JSON" }, { status: 400 });
   }
 
-  // 2+3) process each (batched) event idempotently. A throw → 500 so FastSpring retries; the
-  // already-processed events in the batch are skipped by the idempotency guard on retry.
-  try {
-    for (const event of extractEvents(payload)) {
+  // 2+3) Process EVERY event, then report. Each event is its own transaction, so one failing must
+  // not stop the ones behind it.
+  //
+  // ★Why per-event and not a single try around the loop (product課, review of #953): a batch can mix
+  // an event we cannot read with a readable, PAID order. Aborting the loop leaves that order
+  // unprocessed — and permanently so, because the redelivery meets the same unreadable event first
+  // and aborts again at the same place. The first cut of this fix had exactly that bug, and the
+  // tests missed it because they only covered the `[readable, unreadable]` order.
+  //
+  // ★The batch itself is an unconfirmed assumption (TODO(C1)), which is the same reason we refuse to
+  // report success below. Assuming a batch holds one event would be trusting the shape we are, in
+  // the very next branch, declining to trust.
+  const failures: string[] = [];
+  for (const event of extractEvents(payload)) {
+    try {
       await processFastspringEvent(event);
+    } catch (err) {
+      failures.push(String(err));
+      logger.error("[fastspring] event failed", { error: String(err) });
     }
-    return NextResponse.json({ received: true });
-  } catch (err) {
-    logger.error("[fastspring] processing failed", { error: String(err) });
+  }
+
+  if (failures.length > 0) {
+    // ★Still not a 2xx — FastSpring must redeliver. Replaying the batch is safe: the events that DID
+    // succeed are skipped by the idempotency guard, so only the failed ones are retried.
+    logger.error("[fastspring] processing failed", { failed: failures.length });
     return NextResponse.json({ error: "processing failed" }, { status: 500 });
   }
+  return NextResponse.json({ received: true });
 }
 
 /** FastSpring batches events under `events`; fall back to a single-event body. TODO(C1): confirm. */
