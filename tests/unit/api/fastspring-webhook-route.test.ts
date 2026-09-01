@@ -302,6 +302,24 @@ describe("POST — ★the refusal is the one chance to see the real envelope", (
     expect(dump).not.toContain("email");
   });
 
+  it("★★says so when the key cap fires — a silent cap makes 40 keys and 80 keys identical", async () => {
+    // ★The failure points the same way as the purpose: this log exists to reveal an envelope bigger
+    // or different than we assumed, so the further it deviates the likelier the cap hides it.
+    // Same shape as `gh --json files` returning exactly 100 and meaning "at least 100".
+    // (product課, review of #959 — measured: before this, 40 and 80 keys produced byte-identical output.)
+    const wide = Object.fromEntries(Array.from({ length: 80 }, (_, i) => [`k${i}`, "v"]));
+    await POST(req({ events: [{ ...wide }] })); // no id → refusal path
+    const dump = loggedShapes().join(" ");
+    expect(dump).toContain("+40 more keys");
+  });
+
+  it("★does NOT claim truncation when nothing was cut", async () => {
+    // ★Negative control: a marker that always appears says as little as one that never does.
+    const narrow = Object.fromEntries(Array.from({ length: 5 }, (_, i) => [`k${i}`, "v"]));
+    await POST(req({ events: [{ ...narrow }] }));
+    expect(loggedShapes().join(" ")).not.toContain("more keys");
+  });
+
   it("★a normal event logs no shape at all — this is a refusal path, not tracing", async () => {
     await POST(req({ events: [order("ok")] }));
     expect(loggedShapes()).toHaveLength(0);

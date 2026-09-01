@@ -94,14 +94,26 @@ function extractEvents(payload: unknown): unknown[] {
  * not need them: to learn that `type` lives at `event.data.type` rather than `event.type`, the field
  * names are sufficient and the values contribute nothing. (product課, review of #958.)
  */
+const MAX_KEYS = 40;
+
 function envelopeShape(v: unknown, depth = 2): unknown {
   if (v === null) return "null";
   if (Array.isArray(v)) return depth > 0 ? [`array[${v.length}]`, envelopeShape(v[0], depth - 1)] : `array[${v.length}]`;
   if (typeof v !== "object") return typeof v;
   if (depth <= 0) return "object";
   // ★Capped: an unexpected shape could be enormous, and a log line nobody can read is its own failure.
-  const entries = Object.entries(v as Record<string, unknown>).slice(0, 40);
-  return Object.fromEntries(entries.map(([k, x]) => [k, envelopeShape(x, depth - 1)]));
+  const all = Object.entries(v as Record<string, unknown>);
+  const out: Record<string, unknown> = Object.fromEntries(
+    all.slice(0, MAX_KEYS).map(([k, x]) => [k, envelopeShape(x, depth - 1)]),
+  );
+  // ★The cap has to say when it fired. Without this line, 40 keys and 80 keys produce byte-identical
+  // output and the reader cannot tell one from the other — the same shape as `gh --json files`
+  // returning exactly 100 and meaning "at least 100". ★It matters more here than in most places
+  // because the failure points the same way as the purpose: this log exists to reveal an envelope
+  // bigger or different than assumed, and the further it deviates, the likelier the cap hides it.
+  // ★Only the fact of truncation is added — no extra keys, no values. (product課, review of #959.)
+  if (all.length > MAX_KEYS) out["…"] = `+${all.length - MAX_KEYS} more keys`;
+  return out;
 }
 
 async function processFastspringEvent(event: unknown): Promise<void> {
