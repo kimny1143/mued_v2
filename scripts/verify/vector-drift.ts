@@ -153,8 +153,21 @@ function assertUpstreamPathExists(): number {
  *
  * ★Runs before any network call, and needs none: when `gh` is unreachable this is still answerable,
  * so an offline session gets a real verdict on the half that does not need upstream.
+ *
+ * ★HALF A CHAIN. This links PROVENANCE's blob row to `MANIFEST.tsv`. The other link — `MANIFEST.tsv`
+ * to each case file, by sha256 — lives in `tests/unit/masterchain-license-vectors.test.ts` and runs
+ * under vitest. ★Only both together say "these 15 files are f207182's". Neither runner can see that
+ * it is holding one end, so removing either would leave the other looking sufficient. If you change
+ * one, look at the other. (product課, review of #955.)
  */
 function assertRecordFitsCopy(): void {
+  // ★Both halves, and PROVENANCE first. This function moved ahead of recordedCommit(), which used to
+  // be what guarded PROVENANCE's existence — so for one revision a MISSING PROVENANCE.md threw
+  // uncaught and left node's exit code 1, i.e. "re-vendor due". ★The function added to catch a broken
+  // record was announcing drift on the most literal broken record there is. (product課, review of
+  // #955.) Moving a check earlier moves the guards it was standing behind.
+  if (!existsSync(PROVENANCE))
+    cannotCheck(`PROVENANCE.md not found at ${PROVENANCE}`, undefined, "record-broken");
   if (!existsSync(MANIFEST))
     cannotCheck(`MANIFEST.tsv not found at ${MANIFEST}`, undefined, "record-broken");
   const rows = readFileSync(PROVENANCE, "utf8").match(
@@ -168,10 +181,24 @@ function assertRecordFitsCopy(): void {
     );
   }
   const recorded = rows[0].match(/`([0-9a-f]{40})`/)![1];
-  const actual = execFileSync("git", ["hash-object", MANIFEST], {
-    encoding: "utf8",
-    cwd: REPO,
-  }).trim();
+  // ★The gh side is funnelled to exit 2 by its helper; git was left bare, so a git failure would
+  // surface as node's uncaught-exception code 1 — "re-vendor due" — for a reason that has nothing to
+  // do with upstream. Every external command in this script has to land on 2, not just the ones we
+  // were thinking about when we wrote the helper.
+  let actual: string;
+  try {
+    actual = execFileSync("git", ["hash-object", MANIFEST], {
+      encoding: "utf8",
+      cwd: REPO,
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+  } catch (err) {
+    cannotCheck(
+      `could not hash ${MANIFEST}: ${String(err).split("\n")[0]}`,
+      "is git on PATH, and is this a git work tree?",
+      "record-broken",
+    );
+  }
   if (recorded !== actual) {
     cannotCheck(
       `PROVENANCE.md records MANIFEST blob ${recorded.slice(0, 12)} but the vendored file hashes to ${actual.slice(0, 12)} — the record does not describe the copy, so "which generation is this?" has no trustworthy answer`,
