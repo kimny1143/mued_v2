@@ -74,7 +74,7 @@ const MANIFEST = readFileSync(path.join(DIR, "MANIFEST.tsv"), "utf8");
 // ★Pinned deliberately. Upstream bumps this when the SET changes (a case added or removed), which
 // per-case hashes cannot detect — see the header. A failure here is not "re-copy the files": read
 // dsp's diff first, because a new case may encode a decision this repo has not made yet.
-const EXPECTED_SET_VERSION = 2;
+const EXPECTED_SET_VERSION = 3;
 const setVersion = Number(MANIFEST.match(/^# vector-set-version:\s*(\d+)$/m)?.[1] ?? NaN);
 
 const vectors: Vector[] = MANIFEST
@@ -90,7 +90,7 @@ const vectors: Vector[] = MANIFEST
 const NOW = new Date("2026-08-05T00:00:00Z");
 const EXPECTED = { product: "MUEDsp", scope: "masterchain" };
 
-describe("masterchain license — shared golden vectors (dsp #234/#235)", () => {
+describe("masterchain license — shared golden vectors (dsp #234/#235/#242)", () => {
   it("the manifest was found and lists every case", () => {
     // A zero-length parse would make every assertion below vacuously pass.
     expect(vectors.length).toBeGreaterThan(0);

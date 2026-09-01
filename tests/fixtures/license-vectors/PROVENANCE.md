@@ -11,15 +11,18 @@ other*, which is the one thing the vectors exist to prevent.
 |---|---|
 | repo | `mued-dsp` (`_mued-dsp`) |
 | ref | `main` |
-| commit | **`88e2b83`** — *test(license): stamp the vector set with a version (#235)*, on top of `d37ee7a` *land the 14th vector on trunk (#234)* |
+| commit | **`f207182`** — *docs(license): say plainly that the seed trick must never reach the product key (#233)*, on top of `7194b39` *the shape the production path emits (ms) + repair the public key #240 dropped silently (#242)* |
 | path | `plugin/MUEDsp/tests/license-vectors/` |
-| `MANIFEST.tsv` git blob | **`15b3e05438fb1786a619f588ae7229856459e46e`** |
-| cases | **14** |
-| `vector-set-version` | **2** (pinned in `masterchain-license-vectors.test.ts`) |
-| vendored | 2026-07-27 (re-vendored; first copy was `463d3f8` / 13 cases) |
+| `MANIFEST.tsv` git blob | **`d06125eae963e62706275c238dbf5df06e481307`** |
+| cases | **15** |
+| `vector-set-version` | **3** (pinned in `masterchain-license-vectors.test.ts`) |
+| vendored | 2026-09-01 (re-vendored; earlier copies were `88e2b83` / 14 cases and `463d3f8` / 13 cases) |
 
-Verified at vendoring time: the `MANIFEST.tsv` blob hash above matches this copy exactly, and all 14
-case files are byte-identical to `main`.
+Verified at vendoring time: the `MANIFEST.tsv` blob hash above matches this copy exactly, and all 15
+case files are byte-identical to `f207182`. The upstream diff was read before copying: **it adds
+only** — one case (`valid_issued_at_millis`, verdict `accept`) and a comment; **no existing verdict
+moved**, which `git status` showed independently (one `M` on the manifest, one `??` on the new case,
+nothing else touched).
 
 ## ★Why the commit and blob are recorded, not just the sha256
 
@@ -52,6 +55,33 @@ That is what `# vector-set-version` in `MANIFEST.tsv` is for: upstream bumps it 
 and `masterchain-license-vectors.test.ts` pins the expected value. It is the only assertion in that
 file that a self-consistent stale copy cannot satisfy. ★**When it fails, do not just copy the files
 over — read dsp's diff first**, because an added case can encode a decision this repo has not made.
+
+## ★★The version pin fires when you re-vendor. Nothing here fires when upstream moves.
+
+It happened a second time, and this time it is worth reading how it was found — because it was not
+found by anything in this repo.
+
+dsp landed `valid_issued_at_millis` on 2026-07-27 (`7194b39`, #242) — ★**the shape the production
+path actually emits**: `fastspring-webhook.ts` passes only `{owner, order}` to `issueLicense`, so
+`issued_at` is `new Date().toISOString()` and carries milliseconds, and every hand-written vector
+until then used whole seconds. This copy stayed at 14 cases and ★**stayed green for 35 days** — 85
+tests passing the entire time — while the one vector pinning the production shape was absent.
+
+★**No assertion here could have failed.** The set-version pin compares this copy against ★*this
+copy's own* manifest; both were version 2 and internally consistent. The pin is what makes a
+re-vendor deliberate — ★**it is not a monitor, and reading it as one is the mistake.** What actually
+surfaced the drift was an unrelated survey (2026-09-01) that ran the command in *Re-vendoring* below
+against upstream.
+
+★**So: `git log <recorded-commit>..main` on the upstream path is not only the first step of
+re-vendoring — it is the only thing in this procedure that can tell you a re-vendor is due.** Until
+something runs it on a schedule, "green" here means "consistent with whatever generation we last
+copied", not "current".
+
+(For the record, the drift was benign: the current issuer accepts the millis form — verified by
+running the new case through `evaluateLicense` before vendoring, with `valid_no_expiry` as a positive
+control and a tampered payload as a negative one. ★**A coverage hole, not a break** — but the hole
+was invisible, and that is the part worth keeping.)
 
 ## Re-vendoring
 
