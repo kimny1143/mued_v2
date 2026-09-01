@@ -34,3 +34,37 @@
 
 ★**(4) masterchain の律速は kimny** — ★**正本＝MEMORY.md セッション引き継ぎ（毎回 注入）**。★**C1 parse は実物と未突合＝形が違えば null で静かに失敗**。
 
+## (0o)(ii) — 孤立した branch: `origin/docs/status-defer-decided`
+
+> 退避日時: 2026-09-01T18:26:28+09:00（`date` 機械生成）。★2026-09-01 の memory 監査中に発見。
+
+★**PR #557 は MERGED なのに、その branch には main に無い commit が 20本 在る**（その後 push されたぶん）。
+★**9 file が main に一度も入っていない**:
+
+```
+docs/dial/cert-60pt-shakeout-runbook-20260622.md
+docs/dial/cryo-phase-a-report-20260622.md
+scripts/cert-drive-loop.ts
+scripts/cert-find-drivable-sessions.ts
+scripts/cert-provision.ts
+scripts/cert-shakeout-observe.ts
+scripts/cert-upload-stems.ts
+scripts/cryo-phase-a.ts
+scripts/cryo-phase-b.ts
+```
+
+★**「PR merged」を「中身が main に在る」と読まないこと**——これが誰も気づかなかった理由。
+
+**測り方**（再確認する時）:
+
+```
+git merge-base --is-ancestor origin/docs/status-defer-decided origin/main   # ★偽
+git rev-list --left-right --count origin/docs/status-defer-decided...origin/main   # 20  374
+git diff --name-only origin/main...origin/docs/status-defer-decided | while read -r f; do
+  git cat-file -e origin/main:"$f" 2>/dev/null || echo "main に無い: $f"
+done
+```
+
+**未決**: 拾い上げる / 捨てる のどちらか。
+★**`scripts/cryo-phase-b.ts` は実購入（financial action）を行う＝Tier 3**。
+★cryo memory（[[reference-cryo-phase-a-method]]）は所在つきで既に訂正済み。
