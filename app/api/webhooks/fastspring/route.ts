@@ -80,6 +80,30 @@ function extractEvents(payload: unknown): unknown[] {
   return Array.isArray(p.events) ? p.events : [p];
 }
 
+/**
+ * ★A value-free description of an envelope: field names and types, never contents.
+ *
+ * Both refusals below fire at exactly the moment `TODO(C1)` describes — the envelope is not the shape
+ * we assumed — and ★that is the one moment the real shape is in our hands. Before this, nothing
+ * survived it: the `type` refusal throws before the row that used to persist `payload`, and the `id`
+ * refusal never had a row to write (the id IS the idempotency key). ★So the first live order to
+ * discover our reading is wrong would prove it and leave nothing to correct it with.
+ *
+ * ★Shape, not payload, on purpose. A FastSpring order carries buyer email and country (see
+ * `lib/masterchain/fastspring-webhook.ts`), and logs are not where those belong. ★The diagnosis does
+ * not need them: to learn that `type` lives at `event.data.type` rather than `event.type`, the field
+ * names are sufficient and the values contribute nothing. (product課, review of #958.)
+ */
+function envelopeShape(v: unknown, depth = 2): unknown {
+  if (v === null) return "null";
+  if (Array.isArray(v)) return depth > 0 ? [`array[${v.length}]`, envelopeShape(v[0], depth - 1)] : `array[${v.length}]`;
+  if (typeof v !== "object") return typeof v;
+  if (depth <= 0) return "object";
+  // ★Capped: an unexpected shape could be enormous, and a log line nobody can read is its own failure.
+  const entries = Object.entries(v as Record<string, unknown>).slice(0, 40);
+  return Object.fromEntries(entries.map(([k, x]) => [k, envelopeShape(x, depth - 1)]));
+}
+
 async function processFastspringEvent(event: unknown): Promise<void> {
   const e = event && typeof event === "object" ? (event as Record<string, unknown>) : {};
   const eventId = typeof e.id === "string" ? e.id : undefined;
@@ -96,6 +120,9 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     // ★5xx rather than 4xx on purpose: the unconfirmed assumption is OURS, so this is our failure,
     // not a malformed request. A 4xx would both blame the sender and drop the order permanently.
     // (Throwing lands in the POST handler's catch, which logs and returns 500.)
+    logger.error("[fastspring] no readable id — the envelope is not the shape we assumed", {
+      shape: envelopeShape(e),
+    });
     throw new Error("[fastspring] event has no readable id — refusing to report success");
   }
 
@@ -113,6 +140,10 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     // and simply fails `type === "order.completed"` below, which is the routine skip. Reaching here
     // means `type` is not a string at all — the envelope is not the shape we assumed, the same
     // unconfirmed-shape class as the id above (TODO(C1)).
+    logger.error("[fastspring] no readable type — the envelope is not the shape we assumed", {
+      eventId,
+      shape: envelopeShape(e),
+    });
     throw new Error(
       `[fastspring] event ${eventId} has no readable type — refusing to record it as processed`,
     );

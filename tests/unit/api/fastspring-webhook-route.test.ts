@@ -55,6 +55,7 @@ const {
   mockVerify,
   mockHandleOrder,
   mockSelectLimit,
+  mockLogError,
   txInserts,
   txUpdates,
   mockTransaction,
@@ -82,6 +83,7 @@ const {
     mockVerify: vi.fn(() => true),
     mockHandleOrder: vi.fn(() => Promise.resolve()),
     mockSelectLimit: vi.fn(() => Promise.resolve([])),
+    mockLogError: vi.fn(),
     txInserts,
     txUpdates,
     mockTransaction: vi.fn((cb: (t: typeof tx) => Promise<void>) => cb(tx)),
@@ -95,7 +97,7 @@ vi.mock("next/server", () => ({
 }));
 vi.mock("next/headers", () => ({ headers: async () => ({ get: mockHeaderGet }) }));
 vi.mock("@/lib/utils/logger", () => ({
-  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
+  logger: { error: mockLogError, warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 vi.mock("@/db", () => ({
   db: {
@@ -244,6 +246,65 @@ describe("POST — ★an unreadable event must not be reported as success", () =
     mockHandleOrder.mockRejectedValueOnce(new Error("no signing key"));
     const res = await POST(req({ events: [order("e1")] }));
     expect(res.status).toBe(500);
+  });
+});
+
+describe("POST — ★the refusal is the one chance to see the real envelope", () => {
+  /** Every `shape:` argument the route logged, serialised. */
+  const loggedShapes = () =>
+    mockLogError.mock.calls
+      .filter((c) => c[1] && typeof c[1] === "object" && "shape" in (c[1] as object))
+      .map((c) => JSON.stringify(c[1]));
+
+  it("★records the field NAMES when the id cannot be read", async () => {
+    // ★Both refusals fire exactly when TODO(C1) is realised — the envelope is not what we assumed —
+    // and that is the only moment the real shape is in our hands. The `id` refusal can never write a
+    // row (the id IS the idempotency key), so a log is the only thing that can survive it.
+    await POST(req({ events: [{ eventId: "wrong-key", data: { order: "x" } }] }));
+    const shapes = loggedShapes();
+    expect(shapes).toHaveLength(1);
+    // The diagnosis this enables: "id is not at event.id — look, the field is called eventId".
+    expect(shapes[0]).toContain("eventId");
+    expect(shapes[0]).toContain("data");
+  });
+
+  it("★records the field NAMES when the type cannot be read, alongside the id", async () => {
+    await POST(req({ events: [{ id: "e1", data: { type: "order.completed" } }] }));
+    const shapes = loggedShapes();
+    expect(shapes).toHaveLength(1);
+    expect(shapes[0]).toContain('"eventId":"e1"');
+    // ★The whole point: it shows `type` living one level down, without showing what it says.
+    expect(shapes[0]).toContain("data");
+  });
+
+  it("★★logs the shape and NOT the values — a FastSpring order carries buyer email and country", async () => {
+    // ★The property that actually matters. Field names are schema; values are someone's personal
+    // data, and a log is not where those belong. (product課, review of #958.)
+    await POST(
+      req({
+        events: [
+          {
+            id: "e2",
+            data: { customer: { email: "buyer@example.com", country: "JP" }, total: 6900 },
+          },
+        ],
+      }),
+    );
+    const dump = loggedShapes().join(" ");
+    expect(dump).toContain("customer"); // ★name kept — enough to say "the buyer block is here"
+    expect(dump).not.toContain("buyer@example.com"); // ★★value gone
+    expect(dump).not.toContain("JP");
+    expect(dump).not.toContain("6900");
+    // ★Depth 2 stops at `customer`, so `email` is not even named. That is the depth the diagnosis
+    // needs — `type` living at `event.data.type` is two levels — and going deeper would name more
+    // fields for no diagnostic gain. ★The first draft of this test asserted `email` was named,
+    // which would have argued for depth 3; the assertion was wrong, not the depth.
+    expect(dump).not.toContain("email");
+  });
+
+  it("★a normal event logs no shape at all — this is a refusal path, not tracing", async () => {
+    await POST(req({ events: [order("ok")] }));
+    expect(loggedShapes()).toHaveLength(0);
   });
 });
 
