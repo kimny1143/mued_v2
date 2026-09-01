@@ -76,12 +76,29 @@ describe("plugin_entitlements — column-addition safety", () => {
     expect(migration).toMatch(/if not exists/i);
   });
 
-  it("★the writer is NOT wired yet — that is deliberate, not an oversight", () => {
-    // recordPluginEntitlement swallows errors, so wiring it before production has the column would
-    // lose every new row without an error surfacing. The writer ships in a later PR, after the apply.
+  // ★This gate used to assert the OPPOSITE — "the writer is NOT wired yet" — because
+  //   recordPluginEntitlement swallows its errors, so shipping the writer before production had the
+  //   column would have lost every new row with nothing surfacing. ★kimny applied 0061 to production
+  //   on 2026-09-01, so the window closed and the gate flips. ★It is replaced, not deleted: the
+  //   hazard it guarded is gone, but a different one takes its place (below).
+  it("★the recorder writes locale", () => {
     const rec = readFileSync(join(process.cwd(), "lib", "plugins", "entitlements.ts"), "utf8");
-    expect(rec).not.toContain("locale");
-    // ★Positive control: the file really is the recorder, so "does not mention locale" means something.
+    expect(rec).toMatch(/locale:\s*opts\.locale/);
+    // ★Positive control: the file really is the recorder, so the assertion above means something.
     expect(rec).toContain("recordPluginEntitlement");
+  });
+
+  it("★the CALL SITE passes locale — this is the half that actually broke", () => {
+    // ★The original defect was never that the recorder could not store locale. The value was already
+    //   in scope in the subscribe handler (destructured for the welcome email and the Resend
+    //   audience) and was simply not forwarded. ★A recorder that accepts locale while every caller
+    //   omits it would pass the test above and still record nothing — so measure the call, not the
+    //   signature. (feedback-test-the-property-not-a-proxy)
+    const src = readFileSync(join(process.cwd(), "lib", "plugins", "subscribe-handler.ts"), "utf8");
+    const call = src.match(/recordPluginEntitlement\(\s*plugin\s*,\s*\{([^}]*)\}/);
+    expect(call, "the recordPluginEntitlement call site moved — this test went blind").toBeTruthy();
+    expect(call![1]).toContain("locale");
+    // ★Positive control on the same matcher: it really is reading the argument object.
+    expect(call![1]).toContain("email");
   });
 });
