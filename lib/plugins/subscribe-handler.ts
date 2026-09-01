@@ -173,7 +173,10 @@ export async function handlePluginSubscribe(plugin: PluginKey, request: NextRequ
           utmContent: parsed.data.utm_content ?? null,
         }
       : null;
-  await recordPluginEntitlement(plugin, { email, source, firstTouch }).catch(() => {
+  // ★`locale` is passed through (0061). It was already in scope here — destructured at the top of
+  //   this function for the welcome email and the Resend audience — and simply not forwarded, so the
+  //   landing-page surface a capture came from was recorded nowhere. That is the whole defect.
+  await recordPluginEntitlement(plugin, { email, source, firstTouch, locale }).catch(() => {
     /* recordPluginEntitlement already logs + swallows — this is belt-and-suspenders, never blocks 200 */
   });
 
