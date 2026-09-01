@@ -33,7 +33,8 @@
  * Exit codes — ★2 is deliberately not 0:
  *   0  the vendored copy is the generation upstream is on
  *   1  upstream moved: a re-vendor is due (read the diff first, per PROVENANCE.md)
- *   2  ★the check could not see upstream. This is NOT "no drift" — it is "no answer".
+ *   2  ★the check has no trustworthy answer — either upstream is unreachable, or this repo's own
+ *      record does not describe its own copy. Neither is "no drift".
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -41,6 +42,7 @@ import { join, resolve } from "node:path";
 
 const REPO = resolve(__dirname, "../..");
 const PROVENANCE = join(REPO, "tests/fixtures/license-vectors/PROVENANCE.md");
+const MANIFEST = join(REPO, "tests/fixtures/license-vectors/MANIFEST.tsv");
 const UPSTREAM_REPO = "kimny1143/mued-dsp";
 const UPSTREAM_PATH = "plugin/MUEDsp/tests/license-vectors";
 /** Bounded so an unreachable network cannot hang session start. Exceeding it is exit 2, not 0. */
@@ -48,9 +50,20 @@ const GH_TIMEOUT_MS = 8_000;
 /** How far back to look for the recorded commit. Beyond this we can still say "behind", just not by how much. */
 const HISTORY_DEPTH = 50;
 
-function cannotCheck(why: string, fix?: string): never {
+/**
+ * ★Both reasons exit 2, but they are not the same failure and must not read as one. "Upstream is
+ * invisible" sends you to the network; "our own record is broken" sends you to PROVENANCE.md. A
+ * diagnosis that points at the wrong half costs more than the failure it describes.
+ */
+type Blindness = "upstream-unreachable" | "record-broken";
+
+function cannotCheck(why: string, fix?: string, kind: Blindness = "upstream-unreachable"): never {
   console.error(`★UNKNOWN(vectors): ${why}`);
-  console.error("  ★これは「差分なし」ではありません — 上流が見えていないだけです。");
+  console.error(
+    kind === "record-broken"
+      ? "  ★これは「差分なし」ではありません — ★この repo 側の記録が実物と食い違っています。"
+      : "  ★これは「差分なし」ではありません — 上流が見えていないだけです。",
+  );
   if (fix) console.error(`  → ${fix}`);
   process.exit(2);
 }
@@ -69,13 +82,15 @@ function gh(args: string[]): string {
 
 /** The commit PROVENANCE.md says this copy came from. Exactly one row may match. */
 function recordedCommit(): string {
-  if (!existsSync(PROVENANCE)) cannotCheck(`PROVENANCE.md not found at ${PROVENANCE}`);
+  if (!existsSync(PROVENANCE))
+    cannotCheck(`PROVENANCE.md not found at ${PROVENANCE}`, undefined, "record-broken");
   const rows = readFileSync(PROVENANCE, "utf8").match(/^\| commit \| \*\*`([0-9a-f]{7,40})`\*\*/gm);
   if (!rows || rows.length !== 1) {
     // ★Ambiguity here would silently pick a commit. Refuse instead.
     cannotCheck(
       `expected exactly one recorded commit row in PROVENANCE.md, found ${rows?.length ?? 0}`,
       "restore the `| commit | **`<sha>`** |` row",
+      "record-broken",
     );
   }
   return rows[0].match(/`([0-9a-f]{7,40})`/)![1];
@@ -122,7 +137,54 @@ function assertUpstreamPathExists(): number {
   return n;
 }
 
+/**
+ * ★Does PROVENANCE.md describe the copy sitting next to it?
+ *
+ * Everything below compares the RECORDED commit against upstream — so a record that has drifted from
+ * the files it claims to describe makes the whole comparison answer the wrong question. Editing only
+ * the commit row forward, without re-vendoring, leaves this script saying "current" while the copy is
+ * a generation behind, and `masterchain-license-vectors.test.ts` green as well (the copy and its own
+ * manifest still agree, and `vector-set-version` did not move). ★That is the 35-day hole reproduced
+ * WITH the monitor in place. (product課, review of #954.)
+ *
+ * PROVENANCE.md already asserts this in prose — "Verified at vendoring time: the MANIFEST.tsv blob
+ * hash above matches this copy exactly". ★A sentence is not a check: it holds only for whoever read
+ * it on the day they read it, which is the same shape as a hand-run RED nobody re-runs.
+ *
+ * ★Runs before any network call, and needs none: when `gh` is unreachable this is still answerable,
+ * so an offline session gets a real verdict on the half that does not need upstream.
+ */
+function assertRecordFitsCopy(): void {
+  if (!existsSync(MANIFEST))
+    cannotCheck(`MANIFEST.tsv not found at ${MANIFEST}`, undefined, "record-broken");
+  const rows = readFileSync(PROVENANCE, "utf8").match(
+    /^\| `MANIFEST\.tsv` git blob \| \*\*`([0-9a-f]{40})`\*\*/gm,
+  );
+  if (!rows || rows.length !== 1) {
+    cannotCheck(
+      `expected exactly one recorded MANIFEST blob row in PROVENANCE.md, found ${rows?.length ?? 0}`,
+      "restore the ``| `MANIFEST.tsv` git blob | **`<sha>`** |`` row",
+      "record-broken",
+    );
+  }
+  const recorded = rows[0].match(/`([0-9a-f]{40})`/)![1];
+  const actual = execFileSync("git", ["hash-object", MANIFEST], {
+    encoding: "utf8",
+    cwd: REPO,
+  }).trim();
+  if (recorded !== actual) {
+    cannotCheck(
+      `PROVENANCE.md records MANIFEST blob ${recorded.slice(0, 12)} but the vendored file hashes to ${actual.slice(0, 12)} — the record does not describe the copy, so "which generation is this?" has no trustworthy answer`,
+      "re-vendor per PROVENANCE.md § Re-vendoring, or correct the recorded blob — do NOT read the upstream comparison below until they agree",
+      "record-broken",
+    );
+  }
+}
+
 function main(): void {
+  // ★First, and network-free: everything after this trusts PROVENANCE to describe the copy.
+  assertRecordFitsCopy();
+
   const recorded = recordedCommit();
   const upstreamCases = assertUpstreamPathExists();
 
@@ -162,6 +224,7 @@ function main(): void {
       cannotCheck(
         `PROVENANCE.md records ${recorded}, which is not a commit in ${UPSTREAM_REPO}`,
         "fix the recorded commit in tests/fixtures/license-vectors/PROVENANCE.md",
+        "record-broken",
       );
     }
   }

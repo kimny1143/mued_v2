@@ -176,6 +176,18 @@ describe("POST — the envelope (★our assumption, not a confirmed shape)", () 
     expect(txInserts[0]).toMatchObject({ eventId: "solo", type: "order.completed" });
   });
 
+  it("★an explicitly empty `events: []` is a 200 with nothing done — a judgement, not an oversight", async () => {
+    // ★Pinned because the alternative reading is invisible otherwise. `extractEvents` falls back to
+    // "the whole body is one event" only when `events` is absent or not an array; an actual empty
+    // array means FastSpring said "no events", and answering 200 to that is correct. ★Without this
+    // test, a later reader cannot tell whether that was decided or never considered — the same
+    // reason the `type: "unknown"` behaviour below is pinned. (product課, review of #953.)
+    const res = await POST(req({ events: [] }));
+    expect(res.status).toBe(200);
+    expect(mockTransaction).not.toHaveBeenCalled();
+    expect(mockHandleOrder).not.toHaveBeenCalled();
+  });
+
   it("records the event under source 'fastspring' before handing off", async () => {
     await POST(req({ events: [order("e1")] }));
     expect(txInserts[0]).toMatchObject({ eventId: "e1", source: "fastspring", status: "processing" });
