@@ -83,7 +83,6 @@ function extractEvents(payload: unknown): unknown[] {
 async function processFastspringEvent(event: unknown): Promise<void> {
   const e = event && typeof event === "object" ? (event as Record<string, unknown>) : {};
   const eventId = typeof e.id === "string" ? e.id : undefined;
-  const type = typeof e.type === "string" ? e.type : "unknown";
   if (!eventId) {
     // ★An event we cannot identify is not an event we processed. Returning here used to fall through
     // to `{ received: true }` — FastSpring reads a 2xx as delivered and never redelivers, so a paid
@@ -99,6 +98,26 @@ async function processFastspringEvent(event: unknown): Promise<void> {
     // (Throwing lands in the POST handler's catch, which logs and returns 500.)
     throw new Error("[fastspring] event has no readable id — refusing to report success");
   }
+
+  if (typeof e.type !== "string") {
+    // ★Same class as an unreadable id, and for a sharper reason than symmetry.
+    //
+    // This used to record the event as `type: "unknown"` and finish the transaction with
+    // `status: "processed"`. ★That row is not a trace of a problem — it is a row that ASSERTS
+    // success: nothing distinguishes it from a fulfilled order, and the idempotency guard skips
+    // anything marked `processed`, so the redelivery is refused too. ★An `order.completed` whose
+    // type we could not read would be sealed — no license, no retry, and a green-looking row.
+    // "A record exists" and "a repair path is open" are different things. (product課, review of #953.)
+    //
+    // ★This does NOT catch unknown event types: a new FastSpring event arrives as a readable string
+    // and simply fails `type === "order.completed"` below, which is the routine skip. Reaching here
+    // means `type` is not a string at all — the envelope is not the shape we assumed, the same
+    // unconfirmed-shape class as the id above (TODO(C1)).
+    throw new Error(
+      `[fastspring] event ${eventId} has no readable type — refusing to record it as processed`,
+    );
+  }
+  const type = e.type;
 
   const [existing] = await db
     .select()
