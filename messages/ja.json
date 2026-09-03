@@ -1348,6 +1348,7 @@
       },
       "account": {
         "title": "アカウント",
+        "plugins": "あなたのプラグイン",
         "settings": "設定",
         "import": "インポート (AI会話)",
         "mcp": "MCP設定",
