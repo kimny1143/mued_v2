@@ -1348,6 +1348,7 @@
       },
       "account": {
         "title": "Account",
+        "plugins": "Your plugins",
         "settings": "Settings",
         "import": "Import (AI conversations)",
         "mcp": "MCP Setup",
