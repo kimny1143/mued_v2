@@ -6,6 +6,17 @@
       on purpose — this is a single visual world, not a missing light mode).
      Accent amber #f5a524 spent in ONE place: version readouts, the Download
      action, and the meter glow. Everything else stays quiet.
+
+     ★SUPERSEDED IN ONE PLACE (2026-09-03) — do not implement this detail from here.
+     The Download action's <small> in this mock reads the .pkg FILENAME
+     ("MUEDsat-0.1.0-alpha · .pkg"). The shipped view now renders
+     "MUEDsat 0.1.1 · .pkg" — product name + plain version + extension — because a
+     shipped product must not display a maker's pre-release tag (kimny 2026-09-03,
+     「版表記は alpha 外します」), while the .pkg files deliberately KEEP their
+     "-alpha" names (renaming them would strand subscribers holding that literal URL
+     in already-sent mail). ★This mock is left as the record of what was approved;
+     the divergence is intentional, not drift. Re-deriving the label from the URL is
+     pinned against in tests/unit/components/plugin-version-display.test.tsx.
      ──────────────────────────────────────────────────────────────────────── */
   :root, :root[data-theme="light"], :root[data-theme="dark"] {
     --bg-base:    #0a0a0a;

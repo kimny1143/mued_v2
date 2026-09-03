@@ -5,7 +5,13 @@
      plugins-portal.module.css, on the app's canonical globals.css tokens, inside a
      MuednoteLayout-equivalent shell (dark #0a0a0a + centered container + Sora + footer).
      Overlay against the approved mock (docs/portal/mock-plugins-portal.html). Documented,
-     intentional deltas vs the mock are listed in the strip below. */
+     intentional deltas vs the mock are listed in the strip below.
+
+     ★STALE IN ONE PLACE (2026-09-03): the Download action's <small> below shows the
+     .pkg filename, which is what the component emitted at PR-2 time. It now emits
+     "<product> <plain version> · <ext>" instead — see the note in
+     docs/portal/mock-plugins-portal.html. This file is overlay evidence from that
+     date, so it is left as-is; do not treat this line as the current output. */
 
   /* globals.css tokens actually used by the module (verbatim values). */
   :root, :root[data-theme="light"], :root[data-theme="dark"] {
