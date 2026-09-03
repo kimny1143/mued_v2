@@ -245,10 +245,19 @@ const MARKETING_REACHABLE_DEFINITION =
  * 消費側 (insight Stage B / Chief 台帳 / kimny PWA) は JSON しか読まないので、意味を別文書の注記に置くと
  * 剥がれて「cumulative=0 なのに GA は15 = ポータル壊れてる」と誤読される。データに意味を同梱すれば
  * 誰がどの順で読んでも取り違えない (この session で繰り返した「中間表現を最終形として読む」の予防)。
+ *
+ * ★第2の不連続 (#964 — 起点日は #964 の merge/デプロイ日。この行を書いた時点では未デプロイなので
+ * 日付を断言しない): ポータルには #693 の出荷以来 UI 上の導線が無く、in-product の入口は
+ * welcome/告知メールのボタンだけだった (実測: UI から /dashboard/plugins へ張る .tsx = 0 file、陽性control
+ * の /dashboard/settings = 3 file)。#964 のデプロイ以降はダッシュボードからも入れる ∴ 到達数の増加は
+ * それ自体では「メールが効いた」の証拠にならない。列もクエリも変えていない (流入経路が増えただけ) ので
+ * 数字の定義は真のまま解釈だけが静かにずれる型 — だから上と同じく note に同梱して消費側へ運ぶ。
+ * 分母を広げるか否か (メール経由と回遊を分けて数えるか) は insight課の判断。
  */
 const PORTAL_REG_COUNTING_SINCE = "2026-07-23";
 const PORTAL_REG_NOTE =
-  "forward-only; not backfillable (recording shipped 2026-07-23). Portal arrivals before that date are only observable in GA4, not here.";
+  "forward-only; not backfillable (recording shipped 2026-07-23). Portal arrivals before that date are only observable in GA4, not here. " +
+  "★Second discontinuity (#964 — its merge date is the cutover; look it up rather than trusting a date typed here before the deploy): the dashboard did not link to the portal at all until then — before that deploy the only in-product door was the welcome/announcement email, so a rise after it is NOT by itself evidence that a mail landed. Column and query unchanged; only the inflow widened.";
 
 type PortalRegistrations = {
   cumulative: number;
