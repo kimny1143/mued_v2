@@ -44,7 +44,13 @@ export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-0.1.0-a
 // Current build version shown in the user portal. Updated together with MUEDRIVE_DOWNLOAD_URL in the
 // same PR (the pkg filename carries this version) so the portal's "latest version" and the DL link
 // never drift. NOT a secret.
-export const MUEDRIVE_VERSION = "0.1.0-alpha";
+// ★No pre-release tag: kimny 2026-09-03 (「版表記は alpha 外します」) — a maker's "unfinished"
+// label must not ride along with a shipped product. ★The .pkg FILENAME deliberately keeps its
+// "-alpha" (see *_DOWNLOAD_URL above): renaming it would strand the subscribers who already hold
+// that URL in sent mail, and force yet another byte-identical alias. Display and filename are
+// decoupled on purpose — do NOT "fix" the mismatch by renaming the file or by re-deriving the
+// on-screen label from the URL (tests/unit/components/plugin-version-display.test.tsx pins both).
+export const MUEDRIVE_VERSION = "0.1.0";
 
 // Press / reviewer bypass — DESIGN ROOM ONLY (dormant until a token is set; not a public feature).
 // When non-empty, `?press=<token>` reveals MUEDRIVE_DOWNLOAD_URL directly, skipping the email gate.
