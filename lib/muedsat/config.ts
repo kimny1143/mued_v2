@@ -42,9 +42,20 @@ export const MUEDSAT_LIVE = true;
 export const MUEDSAT_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDsat-0.1.1-alpha-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
-// Updated together with MUEDSAT_DOWNLOAD_URL in the same PR (the pkg filename carries this version) so
-// the portal's "latest version" and the DL link never drift. NOT a secret.
-export const MUEDSAT_VERSION = "0.1.1-alpha";
+// Bumped when a new build ships. NOT a secret.
+//
+// ★This constant is deliberately NOT kept in sync with the .pkg filename. It reads plain semver while
+// MUEDSAT_DOWNLOAD_URL still points at "MUEDsat-0.1.1-alpha-installer.pkg" — that is the intended state, not drift.
+// kimny 2026-09-03 (「版表記は alpha 外します」): a maker's "unfinished" label must not ride along with
+// a shipped product. Renaming the CURRENT file to match would strand every subscriber holding that
+// literal URL in already-sent mail (which cannot be edited) and force another byte-identical alias.
+// ★So: do NOT "fix" the mismatch by renaming the shipped file, and do NOT re-derive the on-screen
+// label from the URL (tests/unit/components/plugin-version-display.test.tsx pins both directions).
+//
+// ★The tag still retires at zero cost — on the NEXT build, not by renaming this one. Ship the next
+// one as "MUEDsat-0.1.2-installer.pkg" (no "-alpha", no alias needed: no sent mail points at that
+// version yet). What is expensive is renaming the current file; dropping the tag going forward is free.
+export const MUEDSAT_VERSION = "0.1.1";
 
 // MUEDsp product page URL for the footer "where it came from" link. Empty => the link is hidden
 // (the copy's "MUEDsp product page — link TBD, kimny gate"). Set once the MUEDsp page exists.

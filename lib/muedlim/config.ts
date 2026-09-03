@@ -37,9 +37,20 @@ export const MUEDLIM_LIVE = true;
 export const MUEDLIM_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDlim-0.1.1-alpha-installer.pkg";
 
 // Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
-// Updated together with MUEDLIM_DOWNLOAD_URL in the same PR (the pkg filename carries this version) so
-// the portal's "latest version" and the DL link never drift. NOT a secret.
-export const MUEDLIM_VERSION = "0.1.1-alpha";
+// Bumped when a new build ships. NOT a secret.
+//
+// ★This constant is deliberately NOT kept in sync with the .pkg filename. It reads plain semver while
+// MUEDLIM_DOWNLOAD_URL still points at "MUEDlim-0.1.1-alpha-installer.pkg" — that is the intended state, not drift.
+// kimny 2026-09-03 (「版表記は alpha 外します」): a maker's "unfinished" label must not ride along with
+// a shipped product. Renaming the CURRENT file to match would strand every subscriber holding that
+// literal URL in already-sent mail (which cannot be edited) and force another byte-identical alias.
+// ★So: do NOT "fix" the mismatch by renaming the shipped file, and do NOT re-derive the on-screen
+// label from the URL (tests/unit/components/plugin-version-display.test.tsx pins both directions).
+//
+// ★The tag still retires at zero cost — on the NEXT build, not by renaming this one. Ship the next
+// one as "MUEDlim-0.1.2-installer.pkg" (no "-alpha", no alias needed: no sent mail points at that
+// version yet). What is expensive is renaming the current file; dropping the tag going forward is free.
+export const MUEDLIM_VERSION = "0.1.1";
 
 // Press / reviewer bypass — DESIGN ROOM ONLY (dormant until a token is set; not a public feature).
 // When non-empty, `?press=<token>` reveals MUEDLIM_DOWNLOAD_URL directly, skipping the email gate.

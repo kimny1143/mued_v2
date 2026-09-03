@@ -26,9 +26,16 @@ const DISPLAY: Record<PluginKey, { name: string; formats: string[] }> = {
   muedrive: { name: "MUEDrive", formats: ["VST3", "AU", "AAX", "macOS"] },
 };
 
-function fileStem(url: string): string {
+// The artifact's FORMAT, never its name. ★The .pkg files keep their historical "-alpha" filenames on
+// purpose (see lib/mued*/config.ts), so quoting the filename here would put a pre-release tag back on
+// screen for a shipped product. Stripping "-alpha" out of the displayed filename was rejected as the
+// alternative: it prints a name that does not exist, and the viewer can check it against their own
+// Downloads folder. Derived from the URL rather than hardcoded so a future .zip/.dmg stays truthful.
+function fileExt(url: string): string {
   try {
-    return decodeURIComponent(url.split("/").pop() ?? "").replace(/\.pkg$/i, "");
+    const name = decodeURIComponent(url.split("/").pop() ?? "");
+    const dot = name.lastIndexOf(".");
+    return dot > 0 ? name.slice(dot).toLowerCase() : "";
   } catch {
     return "";
   }
@@ -102,7 +109,7 @@ export function PluginsPortalView({
                     </span>
                     <a className={styles.dl} href={it.downloadUrl} download>
                       {t("download")}
-                      <small>{fileStem(it.downloadUrl)}</small>
+                      <small>{`${d.name} ${it.version}${fileExt(it.downloadUrl) ? ` · ${fileExt(it.downloadUrl)}` : ""}`}</small>
                     </a>
                   </div>
                 </div>

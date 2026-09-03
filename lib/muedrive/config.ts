@@ -41,10 +41,21 @@ export const MUEDRIVE_LIVE = true;
 // older filename, so this URL is the only one that has ever existed for it.
 export const MUEDRIVE_DOWNLOAD_URL = "https://mued.jp/downloads/MUEDrive-0.1.0-alpha-installer.pkg";
 
-// Current build version shown in the user portal. Updated together with MUEDRIVE_DOWNLOAD_URL in the
-// same PR (the pkg filename carries this version) so the portal's "latest version" and the DL link
-// never drift. NOT a secret.
-export const MUEDRIVE_VERSION = "0.1.0-alpha";
+// Current build version shown in the user portal (P-2 — docs/portal/plan-brief-user-portal-20260717.md).
+// Bumped when a new build ships. NOT a secret.
+//
+// ★This constant is deliberately NOT kept in sync with the .pkg filename. It reads plain semver while
+// MUEDRIVE_DOWNLOAD_URL still points at "MUEDrive-0.1.0-alpha-installer.pkg" — that is the intended state, not drift.
+// kimny 2026-09-03 (「版表記は alpha 外します」): a maker's "unfinished" label must not ride along with
+// a shipped product. Renaming the CURRENT file to match would strand every subscriber holding that
+// literal URL in already-sent mail (which cannot be edited) and force another byte-identical alias.
+// ★So: do NOT "fix" the mismatch by renaming the shipped file, and do NOT re-derive the on-screen
+// label from the URL (tests/unit/components/plugin-version-display.test.tsx pins both directions).
+//
+// ★The tag still retires at zero cost — on the NEXT build, not by renaming this one. Ship the next
+// one as "MUEDrive-0.1.1-installer.pkg" (no "-alpha", no alias needed: no sent mail points at that
+// version yet). What is expensive is renaming the current file; dropping the tag going forward is free.
+export const MUEDRIVE_VERSION = "0.1.0";
 
 // Press / reviewer bypass — DESIGN ROOM ONLY (dormant until a token is set; not a public feature).
 // When non-empty, `?press=<token>` reveals MUEDRIVE_DOWNLOAD_URL directly, skipping the email gate.
