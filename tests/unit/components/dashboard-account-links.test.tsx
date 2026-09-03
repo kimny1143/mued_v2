@@ -11,6 +11,18 @@
  * MUEDrive 0.1.0). With the welcome email as the only door, a customer who loses that mail can never
  * fetch a newer build — the exact "no email link to dig up" the portal's own lede promises.
  *
+ * ★What each assertion actually catches — MEASURED in two separate RED runs, not derived:
+ *   keys ABSENT (the state this PR started from): 4/4 fail, but only TWO of them on the anchor. The
+ *     accessible-name test degenerates instead (an undefined label drops the name filter, so it
+ *     matches all three links and fails on multiple-match), and the locale test compares undefined
+ *     to undefined.
+ *   keys PRESENT, only the <Link> row removed: 3/4 fail on the anchor — "expected null not to be
+ *     null" (x2) and "Unable to find an accessible element with the role 'link' and name 'Your
+ *     plugins'" — while the locale test correctly PASSES.
+ * ★So the locale test is an i18n guard, not a reachability guard. That distinction is on the record
+ * because an over-stated rationale gets checked, fails the check, and takes the sound design down
+ * with it (product課, reviewing #964).
+ *
  * ★Asserted through a render, not a grep: the label and the destination have to survive together.
  * An i18n key that resolves to nothing still renders an anchor, and a grep for the path would be
  * happy with a link nobody can read. So the accessible name is asserted too, from the real

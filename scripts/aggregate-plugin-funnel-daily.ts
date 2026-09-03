@@ -253,11 +253,16 @@ const MARKETING_REACHABLE_DEFINITION =
  * それ自体では「メールが効いた」の証拠にならない。列もクエリも変えていない (流入経路が増えただけ) ので
  * 数字の定義は真のまま解釈だけが静かにずれる型 — だから上と同じく note に同梱して消費側へ運ぶ。
  * 分母を広げるか否か (メール経由と回遊を分けて数えるか) は insight課の判断。
+ *
+ * ★段の「形」も同梱する (product課 review・#964): markPortalRegistered は★既存行への UPDATE
+ * (`isNull(portal_registered_at)` 条件つき) なので、導線追加で★新たに数えられるのは「7月から
+ * entitlement を持つが一度も到達していない所有者」＝★最古コホートの掘り起こし＝★一度きりの段。
+ * ★rate の変化ではない。★消費側はこの段をキャンペーン効果に読む方へ倒れるので、note に区別を書く。
  */
 const PORTAL_REG_COUNTING_SINCE = "2026-07-23";
 const PORTAL_REG_NOTE =
   "forward-only; not backfillable (recording shipped 2026-07-23). Portal arrivals before that date are only observable in GA4, not here. " +
-  "★Second discontinuity (#964 — its merge date is the cutover; look it up rather than trusting a date typed here before the deploy): the dashboard did not link to the portal at all until then — before that deploy the only in-product door was the welcome/announcement email, so a rise after it is NOT by itself evidence that a mail landed. Column and query unchanged; only the inflow widened.";
+  "★Second discontinuity (#964 — its merge date is the cutover; look it up rather than trusting a date typed here before the deploy): the dashboard did not link to the portal at all until then — before that deploy the only in-product door was the welcome/announcement email, so a rise after it is NOT by itself evidence that a mail landed. Column and query unchanged; only the inflow widened. ★Expect a one-time STEP, not a change in rate: the write is an UPDATE over existing entitlement rows WHERE portal_registered_at IS NULL, so what the dashboard link newly reaches is the standing backlog of owners who held an entitlement since July and never arrived — a cohort that drains once. Reading the step as campaign lift is the specific misread this note exists to prevent.";
 
 type PortalRegistrations = {
   cumulative: number;
