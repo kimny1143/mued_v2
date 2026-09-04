@@ -88,8 +88,27 @@ jobs:
           # ★`--paginate --slurp --jq` is rejected outright by gh 2.74.1 ("the --slurp option is not
           # supported with --jq or --template"), so the filter has to run in a real jq. --slurp makes
           # the result an array OF PAGES, hence the `.[][]` to flatten.
-          body=$(gh api "repos/$REPO/dependabot/alerts?per_page=100" --paginate --slurp 2>&1 \
-                   | jq '[.[][] | select(.state=="open" and .dependency.scope=="runtime")] | length') && rc=0 || rc=$?
+          # ★stderr must NOT go into jq. The first version piped `2>&1 | jq`, and that made the probe
+          # unable to answer its own question: a genuine failure and ★a SUCCESS carrying any stderr
+          # warning both arrive at jq as non-JSON, both produce a parse error, and both land in the
+          # FORBIDDEN branch — while gh's actual message (403? 404? rate limit?) is destroyed on the
+          # way. Measured on run 33827844263: output was `jq: parse error: Invalid numeric literal`
+          # and nothing else, so the run had to be reported as VOID rather than as an answer.
+          # ★Keep the streams apart: rc decides, stderr is shown, jq only ever sees stdout.
+          err="${RUNNER_TEMP:-/tmp}/probe-stderr.txt"
+          raw=$(gh api "repos/$REPO/dependabot/alerts?per_page=100" --paginate --slurp 2>"$err") && rc=0 || rc=$?
+          if [ "$rc" -eq 0 ]; then
+            body=$(printf '%s' "$raw" | jq '[.[][] | select(.state=="open" and .dependency.scope=="runtime")] | length') || rc=$?
+            # ★A jq failure here is NOT a permissions answer — gh already succeeded. Say so, rather
+            # than letting it fall through to FORBIDDEN and mislabel a parsing problem as a scope one.
+            if [ "${rc:-0}" -ne 0 ]; then
+              echo "✗ ★VOID — gh は成功したが、その出力を jq が読めなかった（★権限の答えではない）"
+              printf '%s\n' "$raw" | head -c 400
+              exit 0
+            fi
+          else
+            body=$(cat "$err")
+          fi
           if [ "$rc" -eq 0 ]; then
             echo "✓ ★OK — GITHUB_TOKEN CAN read Dependabot alerts."
             echo "  open+runtime alerts: $body"
