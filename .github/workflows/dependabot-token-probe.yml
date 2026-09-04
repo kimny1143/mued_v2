@@ -57,6 +57,20 @@ jobs:
           echo
 
           # ★The actual question.
+          #
+          # ★WHY `scope == "runtime"` IS NOT A DETAIL — it is what makes this equivalent to the thing
+          # it replaces. `npm audit --omit=dev` counts production dependencies only. Measured on this
+          # repo, 2026-09-04:
+          #
+          #     npm audit --omit=dev, directly vulnerable   7 packages   0 high / 0 critical
+          #     dependabot open + scope=runtime             7 packages   0 high / 0 critical
+          #        ★same 7, zero difference in either direction
+          #     dependabot open, ALL scopes               98 alerts   ★1 critical / 22 high
+          #        ★every one of those 23 is scope=development
+          #
+          # ★So dropping this filter does not report "production has vulnerabilities" — it reports a
+          # different population, and 23 high/critical is indistinguishable from a real emergency to
+          # whoever reads it next. The filter IS the equivalence. Do not remove it to "be thorough".
           code=$(gh api "repos/$REPO/dependabot/alerts?per_page=1" \
                    --include --silent 2>/dev/null | head -1 | tr -d '\r' || true)
           body=$(gh api "repos/$REPO/dependabot/alerts?per_page=100" --paginate \
