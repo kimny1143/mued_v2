@@ -94,6 +94,20 @@ describe("PR merge gate — classify", () => {
     expect(classify(noKey).kind).toBe("void");
   });
 
+  it("★all three spellings of `no conclusion` collapse to void — null, absent, and GraphQL's empty string", () => {
+    // Measured: GraphQL returns "" for an unfinished run while the REST check-runs API returns null.
+    // Comparing the raw values made every in-flight PR report a false instrument disagreement.
+    for (const c of [null, undefined, ""]) {
+      const runs = [{ name: "Validate", status: "completed", conclusion: c } as CheckRun, ok("Test"), ok("Build")];
+      expect(classify(runs).kind).toBe("void");
+    }
+    expect(fromRollup({ __typename: "CheckRun", name: "Validate", status: "IN_PROGRESS", conclusion: "" })).toEqual({
+      name: "Validate",
+      status: "in_progress",
+      conclusion: null, // ★not "" — otherwise the cross-check compares null against "" and cries wolf
+    });
+  });
+
   it("★cancelled / timed_out / stale are void, not not_ready — the job never delivered an answer", () => {
     for (const c of ["cancelled", "timed_out", "stale", "neutral"]) {
       expect(classify([ok("Validate"), done("Test", c), ok("Build")]).kind).toBe("void");

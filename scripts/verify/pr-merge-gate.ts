@@ -122,6 +122,8 @@ export type Verdict =
  */
 export function classify(runs: CheckRun[]): Verdict {
   const excused = (r: CheckRun) => r.conclusion === "skipped" && SKIPPABLE.has(r.name);
+  // ★All three spellings of "no answer" collapse here: null, undefined (absent key), and "" (GraphQL).
+  const noAnswer = (c: string | null | undefined) => c == null || c === "" || NO_VERDICT.has(c);
 
   // ★Decided failures first: when something genuinely failed, that is the most actionable truth even
   // if other checks are also void. (#969's head: Validate=failure with Test/Build skipped behind it —
@@ -149,12 +151,7 @@ export function classify(runs: CheckRun[]): Verdict {
 
   // ★Completed but no answer — including `conclusion: null`, which the previous version let through
   // to "ready". `== null` so a missing key lands here too, not just an explicit null.
-  const undecided = runs.filter(
-    (r) =>
-      r.status === "completed" &&
-      !excused(r) &&
-      (r.conclusion == null || NO_VERDICT.has(r.conclusion))
-  );
+  const undecided = runs.filter((r) => r.status === "completed" && !excused(r) && noAnswer(r.conclusion));
   if (undecided.length > 0) {
     return {
       kind: "void",
@@ -186,9 +183,18 @@ export function actionFor(v: Verdict, doMerge: boolean): { exit: 0 | 1 | 2; merg
   return { exit: 0, merge: doMerge };
 }
 
-/** Normalise a `statusCheckRollup` entry (CheckRun | StatusContext) into one shape. */
+/**
+ * Normalise a `statusCheckRollup` entry (CheckRun | StatusContext) into one shape.
+ *
+ * ★"no conclusion" has THREE spellings and they must all collapse to one. The check-runs API sends
+ * `null`, an absent key sends `undefined`, and ★GraphQL sends the empty string for a run that has not
+ * finished. Measured: the freshness cross-check reported `Validate: rollup=in_progress/
+ * check-runs=in_progress/-` and called it a disagreement — the two instruments agreed perfectly and
+ * only spelled "no answer" differently. ★A false VOID is the safe direction, but it is still wrong,
+ * and it is exactly what teaches an operator to stop reading VOID.
+ */
 export function fromRollup(e: Record<string, unknown>): CheckRun {
-  const lower = (v: unknown) => (typeof v === "string" ? v.toLowerCase() : null);
+  const lower = (v: unknown) => (typeof v === "string" && v !== "" ? v.toLowerCase() : null);
   if (e.__typename === "StatusContext") {
     // ★Commit statuses (this repo: `Vercel`) have no `status`, only a state. PENDING must land in the
     // "still running" branch, not be mistaken for a conclusion.
@@ -409,9 +415,13 @@ function main(): void {
     JSON.parse(gh(["api", `repos/${repo}/commits/${meta.headRefOid}/check-runs`])) as { check_runs: CheckRun[] }
   ).check_runs;
   const byName = new Map(api.map((r) => [r.name, r]));
+  // ★Compare normalised values, not raw ones: the two instruments spell "no answer" differently
+  // (GraphQL `""` vs REST `null`) and case differently. Comparing raw made every in-flight PR look
+  // like a disagreement — a false VOID on both open PRs, measured.
+  const norm = (v: string | null | undefined) => (typeof v === "string" && v !== "" ? v.toLowerCase() : null);
   const disagree = rollup.filter((r) => {
     const other = byName.get(r.name);
-    return other && (other.status !== r.status || (other.conclusion ?? null) !== (r.conclusion ?? null));
+    return other && (norm(other.status) !== norm(r.status) || norm(other.conclusion) !== norm(r.conclusion));
   });
   if (disagree.length > 0) {
     console.error(`\n★VOID: 2つの計器が同じ check について違うことを言っている。`);
