@@ -98,7 +98,15 @@ jobs:
           err="${RUNNER_TEMP:-/tmp}/probe-stderr.txt"
           raw=$(gh api "repos/$REPO/dependabot/alerts?per_page=100" --paginate --slurp 2>"$err") && rc=0 || rc=$?
           if [ "$rc" -eq 0 ]; then
-            body=$(printf '%s' "$raw" | jq '[.[][] | select(.state=="open" and .dependency.scope=="runtime")] | length') || rc=$?
+            # ★`jq -e`, not bare `jq`: on EMPTY input plain jq exits 0 and prints nothing, so `body`
+            # becomes "" and the OK branch below reports `open+runtime alerts: ` — ★"could not measure"
+            # arriving as a PASS. That is the fifth instance today of two different things landing on
+            # one output (product課 found it; the others were population, null-vs-empty-string,
+            # scope, and stderr-vs-failure).
+            # ★The seam that matters is that a LEGITIMATE count of zero must still pass, or the probe
+            # can never report "no vulnerabilities" — its whole purpose. Measured 2026-09-04:
+            #     empty input → rc=4 · non-JSON → rc=5 · [[]] → rc=0 "0" · real count 0 → ★rc=0 "0"
+            body=$(printf '%s' "$raw" | jq -e '[.[][] | select(.state=="open" and .dependency.scope=="runtime")] | length') || rc=$?
             # ★A jq failure here is NOT a permissions answer — gh already succeeded. Say so, rather
             # than letting it fall through to FORBIDDEN and mislabel a parsing problem as a scope one.
             if [ "${rc:-0}" -ne 0 ]; then
@@ -122,6 +130,11 @@ jobs:
             echo "  ★注意: これは「脆弱性が無い」ではない。★測れていない、が正しい読み。"
           fi
 
+          # ★NOTE FOR ANYONE WHO LATER READS THIS EXIT CODE MECHANICALLY: `0` here means "OK **or**
+          # VOID" — the measurement succeeding and the measurement failing to happen are NOT separated
+          # by rc, only by the text above. That is deliberate for a job that answers rather than gates,
+          # but it is the same collapse this file's author had to undo twice elsewhere (#973 F-2, the
+          # harness's `64`). ★If anything ever branches on this job's exit code, split them first.
           # ★Exit 0 for BOTH answers — OK and FORBIDDEN are both valid results of a question, and a red
           # X would be read as "the repo has a problem", which FORBIDDEN does not mean.
           # ★The one non-zero exit is above, when the POSITIVE CONTROL fails: that is not an answer at
