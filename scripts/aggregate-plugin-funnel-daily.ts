@@ -260,14 +260,39 @@ const MARKETING_REACHABLE_DEFINITION =
  * ★rate の変化ではない。★消費側はこの段をキャンペーン効果に読む方へ倒れるので、note に区別を書く。
  */
 const PORTAL_REG_COUNTING_SINCE = "2026-07-23";
+
+/**
+ * ★第2の不連続の起点 (UTC 日付)。#964 が main に着地し、本番 deploy が降りて
+ * /dashboard から /dashboard/plugins へのリンクが初めて存在した日。
+ *
+ * ★2つの独立ソースで実測して一致 (2026-09-04 に確認):
+ *   git    `git log -1 --format=%cI 4d2e7113` → 2026-09-03T23:20:29+09:00
+ *   Vercel  deployment(githubCommitSha=4d2e7113, target=production, state=READY)
+ *           repoPushedAt=1788445229000 → 同一 instant
+ *   → UTC 2026-09-03T14:20:29Z ∴ ★UTC 日付 = 2026-09-03
+ *
+ * ★UTC で持つ理由: この report は day_utc でバケットするので、起点も同じフレームで持たないと
+ * 消費側が JST 日付と突き合わせて1日ずれる (JST 早朝の登録は UTC 前日に落ちる)。
+ * ★今回は JST/UTC とも 2026-09-03 なので割れていないが、フレームは明示しておく。
+ *
+ * ★なぜ後から書いたか: この値は #964 の deploy が降りるまで★存在しなかった。commit 時点で
+ * 書けば「まだ観測していない日付を publish される data に断言する」ことになり、先付け stamp は
+ * 鮮度検査を沈黙させる。∴ 書かずに blocked_by へ登録し、deploy 後に測って埋め戻した
+ * (product課 review ③b の依頼どおり)。★埋め戻し前は散文だけで、消費側が counting_since で
+ * 割った手元には「位置の分からない切れ目」が残っていた。
+ */
+const PORTAL_REG_DASHBOARD_LINK_SINCE = "2026-09-03";
 const PORTAL_REG_NOTE =
   "forward-only; not backfillable (recording shipped 2026-07-23). Portal arrivals before that date are only observable in GA4, not here. " +
-  "★Second discontinuity (#964 — its merge date is the cutover; look it up rather than trusting a date typed here before the deploy): the dashboard did not link to the portal at all until then — before that deploy the only in-product door was the welcome/announcement email, so a rise after it is NOT by itself evidence that a mail landed. Column and query unchanged; only the inflow widened. ★Expect a one-time STEP, not a change in rate: the write is an UPDATE over existing entitlement rows WHERE portal_registered_at IS NULL, so what the dashboard link newly reaches is the standing backlog of owners who held an entitlement since July and never arrived — a cohort that drains once. Reading the step as campaign lift is the specific misread this note exists to prevent.";
+  "★Second discontinuity — see dashboard_link_since (#964; UTC, measured from git and the Vercel production deployment after it shipped): the dashboard did not link to the portal at all until then — before that deploy the only in-product door was the welcome/announcement email, so a rise after it is NOT by itself evidence that a mail landed. Column and query unchanged; only the inflow widened. ★Expect a one-time STEP, not a change in rate: the write is an UPDATE over existing entitlement rows WHERE portal_registered_at IS NULL, so what the dashboard link newly reaches is the standing backlog of owners who held an entitlement since July and never arrived — a cohort that drains once. Reading the step as campaign lift is the specific misread this note exists to prevent.";
 
 type PortalRegistrations = {
   cumulative: number;
   day_utc: number;
   counting_since: string;
+  /** ★UTC date of the 2nd discontinuity — machine-readable so a consumer can split the series
+   *  without parsing `note`. Absent in reports emitted before 2026-09-04. */
+  dashboard_link_since: string;
   note: string;
 };
 
@@ -302,6 +327,7 @@ async function portalRegistrations(day: string): Promise<PortalRegistrations> {
     cumulative: r.cumulative,
     day_utc: r.day_utc,
     counting_since: PORTAL_REG_COUNTING_SINCE,
+    dashboard_link_since: PORTAL_REG_DASHBOARD_LINK_SINCE,
     note: PORTAL_REG_NOTE,
   };
 }
