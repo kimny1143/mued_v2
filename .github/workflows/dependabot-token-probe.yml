@@ -1,0 +1,82 @@
+# ★Single-question probe: can this workflow's GITHUB_TOKEN read Dependabot alerts?
+#
+# ★WHY THIS EXISTS AS A WORKFLOW AND NOT AS AN ANSWER. main has been red since 2026-09-01 because
+# `Validate` → `Security audit (production deps)` gets HTTP 503 from the npm registry and the script's
+# bypass expired 2026-08-09. The agreed fix (conductor, 2026-09-04) is to read Dependabot alerts
+# instead — GitHub-side data that does not depend on the npm registry being reachable from CI.
+#
+# ★That fix has one unmeasured precondition: whether the Actions `GITHUB_TOKEN` can read the
+# Dependabot alerts API at all. A maintainer PAT can (measured locally: 98 alerts). ★That proves
+# nothing about GITHUB_TOKEN — it is a different principal with a different scope set, and this repo
+# has already been bitten once by reasoning about token scopes instead of executing them
+# (see `Notify main red`, run 30431382682). So: execute it, once, and read the number.
+#
+# ★If this probe reports FORBIDDEN, the swap needs a PAT — which is a Tier 3 (secret) decision and
+# goes to conductor, not into this repo. If it reports OK, the swap stays Tier 2.
+#
+# ★This workflow only ever reads. It is workflow_dispatch-only, so it never runs on a push or a PR,
+# and it is expected to be DELETED once its one question is answered.
+name: Dependabot token probe (read-only, one question)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    name: Can GITHUB_TOKEN read Dependabot alerts?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # ★Job-level, and listing EVERY scope this job needs — a `permissions:` block REPLACES the default
+    # token scopes rather than adding to them. Omitting `contents: read` here is exactly how the
+    # `Notify main red` job broke on its first version (run 30431382682, 2026-07-29).
+    # ★`security-events` is the documented scope for alert data; whether it actually covers Dependabot
+    # alerts for GITHUB_TOKEN is THE QUESTION THIS JOB EXISTS TO ANSWER. Do not assume it from this
+    # file — read the run's output.
+    permissions:
+      contents: read
+      security-events: read
+
+    steps:
+      - name: Probe (with a positive control, so FORBIDDEN is distinguishable from a dead token)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+
+          # ★Positive control FIRST. If this fails, the token is broken generally and any result from
+          # the real call below is meaningless — a 403 would look identical to "scope insufficient".
+          ctl=$(gh api "repos/$REPO" --jq '.full_name' 2>&1) && ctl_rc=0 || ctl_rc=$?
+          if [ "$ctl_rc" -ne 0 ]; then
+            echo "✗ POSITIVE CONTROL FAILED: GITHUB_TOKEN cannot even read repos/$REPO"
+            echo "$ctl"
+            echo "★この run の結果は無効。トークン自体が引けていないので、下の結果は読まないこと。"
+            exit 1
+          fi
+          echo "✓ positive control: GITHUB_TOKEN reads repos/$REPO ($ctl) — the token is alive."
+          echo
+
+          # ★The actual question.
+          code=$(gh api "repos/$REPO/dependabot/alerts?per_page=1" \
+                   --include --silent 2>/dev/null | head -1 | tr -d '\r' || true)
+          body=$(gh api "repos/$REPO/dependabot/alerts?per_page=100" --paginate \
+                   --jq '[.[] | select(.state=="open" and .dependency.scope=="runtime")] | length' 2>&1) && rc=0 || rc=$?
+
+          echo "HTTP line: ${code:-<none>}"
+          if [ "$rc" -eq 0 ]; then
+            echo "✓ ★OK — GITHUB_TOKEN CAN read Dependabot alerts."
+            echo "  open+runtime alerts: $body"
+            echo "  ★ローカルの PAT 実測（2026-09-04）= 7パッケージ / 19件。★件数が大きく違うなら、"
+            echo "  ★同じものを見ていない可能性がある（scope filter / pagination を疑う）。"
+            echo "  → ★条件2 クリア。差し替えは Tier 2 のまま進められる。"
+          else
+            echo "✗ ★FORBIDDEN or unavailable — GITHUB_TOKEN CANNOT read Dependabot alerts."
+            echo "$body"
+            echo "  → ★条件2 に当たった。PAT（secret）が要る ＝ ★Tier 3。conductor へ上げること。"
+            echo "  ★注意: これは「脆弱性が無い」ではない。★測れていない、が正しい読み。"
+          fi
+
+          # ★The probe's own exit code is deliberately 0 either way: this job answers a question, it
+          # does not gate anything. A red X here would be read as "the repo has a problem", which is
+          # not what a FORBIDDEN result means.
+          exit 0
